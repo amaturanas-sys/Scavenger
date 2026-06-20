@@ -10,11 +10,20 @@ from .base import FoodProvider, FoodRecord
 from .fatsecret import FatSecretProvider
 from .jumbo import JumboProvider
 from .local import LocalDatasetProvider
+from .santa_isabel import SantaIsabelProvider
+from .vtex import VTEXProvider
 
 PROVIDERS: dict[str, type[FoodProvider]] = {
     "local": LocalDatasetProvider,
     "jumbo": JumboProvider,
+    "santa_isabel": SantaIsabelProvider,
     "fatsecret": FatSecretProvider,
+}
+
+# Proveedores de scraping de precios por cadena (retailer_id -> clase).
+PRICE_PROVIDERS: dict[str, type[VTEXProvider]] = {
+    "jumbo": JumboProvider,
+    "santa_isabel": SantaIsabelProvider,
 }
 
 
@@ -29,7 +38,10 @@ __all__ = [
     "FoodRecord",
     "LocalDatasetProvider",
     "JumboProvider",
+    "SantaIsabelProvider",
+    "VTEXProvider",
     "FatSecretProvider",
     "PROVIDERS",
+    "PRICE_PROVIDERS",
     "get_provider",
 ]

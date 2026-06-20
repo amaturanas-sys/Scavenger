@@ -52,10 +52,14 @@ backend/                FastAPI + SQLAlchemy
   learning.py           aprendizaje de preferencias por saciedad/gusto
   services.py           orquestación (diario / semanal)
   seed.py               carga del catálogo a la BD
+  pricing.py            refresco de precios por cadena (scraping)
+  refresh_prices.py     CLI de scraping de precios (python -m)
   providers/            fuentes de datos pluggables
     base.py             interfaz FoodProvider + FoodRecord
     local.py            dataset local (offline, por defecto)
-    jumbo.py            scraper Jumbo (VTEX) — listo para conectar
+    vtex.py             cliente VTEX (parseo, matching, extraccion de oferta)
+    jumbo.py            scraper Jumbo (VTEX)
+    santa_isabel.py     scraper Santa Isabel (VTEX)
     fatsecret.py        API FatSecret (OAuth) — listo para conectar
   routers/              users, foods, plans, feedback
 data/
@@ -84,8 +88,40 @@ tests/                  pruebas de nutrición, optimizador y catálogo
   python3 scripts/build_catalog.py   # regenera el catálogo
   ```
 
-> Los precios por cadena son **estimaciones modeladas** hasta conectar el
-> scraping real (cada proveedor reemplaza estos valores sin tocar el resto).
+> Los precios por cadena parten como **estimaciones modeladas** y se
+> reemplazan por **precios reales** con el scraper (ver más abajo).
+
+### Conectar precios reales (scraping VTEX)
+
+Jumbo y Santa Isabel (Cencosud) exponen la misma API pública de catálogo VTEX.
+El módulo `backend/pricing.py` recorre los alimentos del catálogo, busca cada
+uno en la cadena, elige la mejor coincidencia (matching por nombre/marca),
+parsea el **tamaño del envase** para normalizar a precio/100 g y actualiza su
+`FoodPrice`. La nutrición autorada **no** se toca.
+
+```bash
+# Refresca precios reales (Jumbo + Santa Isabel)
+python3 -m backend.refresh_prices
+
+# Solo una cadena, acotado y sin caché
+python3 -m backend.refresh_prices --retailer jumbo --limit 20 --no-cache
+```
+
+**Requisito de red — allowlist de egress.** En Claude Code on the web la red
+saliente está gobernada por la política del entorno. Para permitir el scraping,
+agrega estos hosts al **allowlist de egress** del entorno (al crearlo o
+editarlo; ver https://code.claude.com/docs/en/claude-code-on-the-web):
+
+```
+www.jumbo.cl
+www.santaisabel.cl
+```
+
+Si los hosts no están permitidos, el comando aborta con un mensaje claro
+(`Host bloqueado por la política de red del entorno: ... Agrégalo al allowlist
+de egress`). Las respuestas se cachean en `data/cache/` para no repetir
+consultas. Líder/Walmart usa otra plataforma (no VTEX): requiere su propio
+adaptador `FoodProvider`, que encaja en la misma interfaz.
 
 ### Proveedores de datos (pluggables)
 
