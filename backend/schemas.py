@@ -124,3 +124,37 @@ class FeedbackOut(BaseModel):
     cost_score: int
     notes: str
     updated_preferences: dict[str, float] = {}
+
+
+# ----- Lista de compras -----
+class ShoppingListRequest(BaseModel):
+    payload: dict[str, Any]
+
+
+class ShoppingItemOut(BaseModel):
+    food_id: str
+    name: str
+    brand: str
+    category: str
+    needed_g: float
+    consumed_cost_clp: float
+    package_g: float | None = None
+    packages: int | None = None
+    package_price_clp: float | None = None
+    packages_cost_clp: float | None = None
+
+
+class ShoppingRetailerOut(BaseModel):
+    retailer: str
+    retailer_id: str | None = None
+    item_count: int
+    items: list[ShoppingItemOut]
+    subtotal_consumed_clp: float
+    subtotal_packages_clp: float
+
+
+class ShoppingListOut(BaseModel):
+    retailers: list[ShoppingRetailerOut]
+    total_consumed_clp: float
+    total_packages_clp: float
+    retailer_count: int

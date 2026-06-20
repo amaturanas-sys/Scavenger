@@ -6,10 +6,23 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Plan, User
-from ..schemas import GeneratePlanRequest, PlanOut, SavePlanRequest
+from ..schemas import (
+    GeneratePlanRequest,
+    PlanOut,
+    SavePlanRequest,
+    ShoppingListOut,
+    ShoppingListRequest,
+)
 from ..services import generate_daily_plan, generate_weekly_plan
+from ..shopping import build_shopping_list
 
 router = APIRouter(prefix="/api/plans", tags=["minutas"])
+
+
+@router.post("/shopping-list", response_model=ShoppingListOut)
+def shopping_list_from_payload(req: ShoppingListRequest, db: Session = Depends(get_db)):
+    """Lista de compras consolidada por cadena para una minuta (no guardada)."""
+    return build_shopping_list(db, req.payload)
 
 
 @router.post("/generate")
@@ -70,6 +83,15 @@ def get_plan(plan_id: int, db: Session = Depends(get_db)):
     if not plan:
         raise HTTPException(404, "Minuta no encontrada")
     return plan
+
+
+@router.get("/{plan_id}/shopping-list", response_model=ShoppingListOut)
+def get_plan_shopping_list(plan_id: int, db: Session = Depends(get_db)):
+    """Lista de compras consolidada por cadena para una minuta guardada."""
+    plan = db.get(Plan, plan_id)
+    if not plan:
+        raise HTTPException(404, "Minuta no encontrada")
+    return build_shopping_list(db, plan.payload or {})
 
 
 @router.delete("/{plan_id}", status_code=204)
