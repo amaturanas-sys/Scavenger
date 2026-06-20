@@ -2,6 +2,7 @@
 const API = "";
 let currentUserId = null;
 let lastPlanPayload = null; // ultima minuta generada (para guardar)
+let retailersCache = []; // cadenas disponibles
 
 // ---------- helpers ----------
 const $ = (sel) => document.querySelector(sel);
@@ -58,6 +59,19 @@ function fillForm(u) {
     if (f[k]) f[k].value = u[k];
   });
   f.diet_tags.value = (u.diet_tags && u.diet_tags[0]) || "";
+  const pref = new Set(u.preferred_retailers || []);
+  $$("#retailerChecks input").forEach((chk) => (chk.checked = pref.has(chk.value)));
+}
+
+async function loadRetailers() {
+  retailersCache = await api("/api/foods/retailers");
+  $("#retailerChecks").innerHTML = retailersCache
+    .map((r) => `<label><input type="checkbox" value="${r.retailer_id}" /> ${r.retailer}</label>`)
+    .join("");
+}
+
+function selectedRetailers() {
+  return [...$$("#retailerChecks input:checked")].map((c) => c.value);
 }
 
 $("#userSelect").addEventListener("change", async (e) => {
@@ -81,6 +95,7 @@ $("#userForm").addEventListener("submit", async (e) => {
     daily_budget_clp: +f.daily_budget_clp.value,
     diet_tags: diet,
     excluded_foods: [],
+    preferred_retailers: selectedRetailers(),
   };
   // Si hay usuario seleccionado, actualiza; si no, crea.
   let u;
@@ -161,6 +176,7 @@ function mealTable(meal) {
     .map(
       (i) => `<tr>
       <td>${i.name} <span class="muted">${i.brand || ""}</span></td>
+      <td><span class="shop">${i.retailer || "—"}</span></td>
       <td class="num">${num(i.grams)} g</td>
       <td class="num">${num(i.kcal)}</td>
       <td class="num">${num(i.protein_g, 1)}</td>
@@ -170,8 +186,8 @@ function mealTable(meal) {
     .join("");
   return `<div class="meal">
     <h3>${meal.meal} <span>${num(meal.subtotal.kcal)} kcal · ${clp(meal.subtotal.cost_clp)}</span></h3>
-    <table><thead><tr><th>Alimento</th><th class="num">Cantidad</th><th class="num">kcal</th><th class="num">Prot (g)</th><th class="num">Costo</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="5" class="muted">Sin items</td></tr>'}</tbody></table>
+    <table><thead><tr><th>Alimento</th><th>Comprar en</th><th class="num">Cantidad</th><th class="num">kcal</th><th class="num">Prot (g)</th><th class="num">Costo</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6" class="muted">Sin items</td></tr>'}</tbody></table>
   </div>`;
 }
 
@@ -302,19 +318,26 @@ $("#foodSearch").addEventListener("input", (e) => {
 });
 function renderFoods(foods) {
   const rows = foods
-    .map(
-      (f) => `<tr>
+    .map((f) => {
+      const cmp = (f.prices || [])
+        .map((p) => `${p.retailer}: ${clp(p.price_per_100g)}`)
+        .join(" · ");
+      const range =
+        f.price_max_per_100g > f.price_per_100g
+          ? `<span class="muted"> – ${clp(f.price_max_per_100g)}</span>`
+          : "";
+      return `<tr title="${cmp}">
       <td>${f.name} <span class="muted">${f.brand}</span></td>
       <td>${f.category}</td>
       <td class="num">${num(f.kcal)}</td>
       <td class="num">${num(f.protein_g, 1)}</td>
-      <td class="num">${clp(f.price_per_100g)}</td>
+      <td class="num"><strong>${clp(f.price_per_100g)}</strong>${range}<br><span class="shop">${f.retailer}</span></td>
       <td class="num">${num(f.satiety_index)}</td>
-    </tr>`
-    )
+    </tr>`;
+    })
     .join("");
-  $("#foodsTable").innerHTML = `<table><thead><tr><th>Alimento</th><th>Categoría</th><th class="num">kcal/100g</th><th class="num">Prot/100g</th><th class="num">Precio/100g</th><th class="num">Sac.</th></tr></thead><tbody>${rows}</tbody></table>`;
+  $("#foodsTable").innerHTML = `<table><thead><tr><th>Alimento</th><th>Categoría</th><th class="num">kcal/100g</th><th class="num">Prot/100g</th><th class="num">Precio/100g (más barato)</th><th class="num">Sac.</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 // ---------- init ----------
-loadUsers();
+loadRetailers().then(loadUsers);

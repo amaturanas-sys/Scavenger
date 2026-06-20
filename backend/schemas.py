@@ -18,6 +18,7 @@ class UserBase(BaseModel):
     daily_budget_clp: float = Field(4000, ge=0)
     diet_tags: list[str] = []
     excluded_foods: list[str] = []
+    preferred_retailers: list[str] = []
 
 
 class UserCreate(UserBase):
@@ -35,6 +36,7 @@ class UserUpdate(BaseModel):
     daily_budget_clp: float | None = None
     diet_tags: list[str] | None = None
     excluded_foods: list[str] | None = None
+    preferred_retailers: list[str] | None = None
 
 
 class UserOut(UserBase):
@@ -44,15 +46,23 @@ class UserOut(UserBase):
 
 
 # ----- Alimentos -----
+class FoodPriceOut(BaseModel):
+    retailer: str
+    retailer_id: str
+    price_clp: float
+    price_per_100g: float
+
+
 class FoodOut(BaseModel):
     id: str
     name: str
     brand: str
     category: str
-    retailer: str
+    retailer: str          # cadena mas economica
     package_g: float
-    price_clp: float
-    price_per_100g: float
+    price_clp: float       # precio mas economico (envase)
+    price_per_100g: float  # precio/100g mas economico
+    price_max_per_100g: float
     serving_g: float
     satiety_index: float
     kcal: float
@@ -61,8 +71,14 @@ class FoodOut(BaseModel):
     fat_g: float
     fiber_g: float
     tags: list[str]
+    prices: list[FoodPriceOut] = []
 
     model_config = {"from_attributes": True}
+
+
+class RetailerOut(BaseModel):
+    retailer_id: str
+    retailer: str
 
 
 # ----- Generacion de planes -----

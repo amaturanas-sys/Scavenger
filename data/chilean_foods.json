@@ -1,57 +1,5132 @@
 {
   "_meta": {
-    "descripcion": "Base de datos semilla de alimentos disponibles en retail chileno (referencia tipo Jumbo). Valores nutricionales por 100 g segun rotulado declarado. Precios en CLP aproximados a modo de ejemplo; se actualizan con los proveedores (scraper Jumbo) cuando esten conectados.",
+    "descripcion": "Catalogo base autorado de alimentos del retail chileno: nutricion por 100 g (rotulado / FatSecret Chile, referencial) y un precio de referencia (base_price_clp). El catalogo final con precios por cadena se genera con scripts/build_catalog.py.",
     "moneda": "CLP",
-    "fuente_nutricion": "Rotulado / FatSecret Chile (referencial)",
-    "fuente_precio": "Retail Chile (referencial)",
+    "indice_saciedad": "Escala relativa estilo Holt (pan blanco = 100)",
     "actualizado": "2026-06-20",
-    "indice_saciedad": "Escala relativa estilo Holt (pan blanco = 100)"
+    "fuente_precio": "Estimacion modelada por cadena (build_catalog.py). Reemplazable por scraping real (Jumbo/Lider/etc.).",
+    "cadenas": [
+      "Jumbo",
+      "Lider",
+      "Santa Isabel",
+      "Tottus",
+      "Unimarc",
+      "Mayorista 10"
+    ],
+    "generado_por": "scripts/build_catalog.py"
   },
+  "retailers": [
+    {
+      "id": "jumbo",
+      "name": "Jumbo",
+      "group": "Cencosud",
+      "factor": 1.0
+    },
+    {
+      "id": "lider",
+      "name": "Lider",
+      "group": "Walmart",
+      "factor": 0.95
+    },
+    {
+      "id": "santa_isabel",
+      "name": "Santa Isabel",
+      "group": "Cencosud",
+      "factor": 0.98
+    },
+    {
+      "id": "tottus",
+      "name": "Tottus",
+      "group": "Falabella",
+      "factor": 0.96
+    },
+    {
+      "id": "unimarc",
+      "name": "Unimarc",
+      "group": "SMU",
+      "factor": 1.0
+    },
+    {
+      "id": "mayorista10",
+      "name": "Mayorista 10",
+      "group": "SMU",
+      "factor": 0.87
+    }
+  ],
   "alimentos": [
-    {"id": "arroz_grado2", "name": "Arroz grado 2", "brand": "Tucapel", "category": "cereal", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1490, "serving_g": 70, "max_servings_day": 4, "satiety_index": 138, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 358, "protein_g": 7.0, "carb_g": 79.0, "fat_g": 0.8, "fiber_g": 1.3, "sodium_mg": 1, "calcium_mg": 10, "iron_mg": 0.8, "potassium_mg": 86, "vitamin_c_mg": 0}},
-    {"id": "fideos_spaghetti", "name": "Fideos spaghetti", "brand": "Carozzi", "category": "cereal", "retailer": "Jumbo", "package_g": 400, "price_clp": 990, "serving_g": 80, "max_servings_day": 3, "satiety_index": 119, "tags": ["vegano"], "per_100g": {"kcal": 359, "protein_g": 12.0, "carb_g": 73.0, "fat_g": 1.5, "fiber_g": 3.0, "sodium_mg": 6, "calcium_mg": 21, "iron_mg": 1.3, "potassium_mg": 161, "vitamin_c_mg": 0}},
-    {"id": "pan_marraqueta", "name": "Pan marraqueta", "brand": "Granel", "category": "panaderia", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1890, "serving_g": 100, "max_servings_day": 3, "satiety_index": 100, "tags": ["vegano"], "per_100g": {"kcal": 277, "protein_g": 8.5, "carb_g": 56.0, "fat_g": 1.2, "fiber_g": 2.7, "sodium_mg": 540, "calcium_mg": 30, "iron_mg": 2.5, "potassium_mg": 120, "vitamin_c_mg": 0}},
-    {"id": "pan_integral", "name": "Pan integral molde", "brand": "Ideal", "category": "panaderia", "retailer": "Jumbo", "package_g": 500, "price_clp": 2190, "serving_g": 60, "max_servings_day": 3, "satiety_index": 154, "tags": ["vegano"], "per_100g": {"kcal": 247, "protein_g": 10.0, "carb_g": 43.0, "fat_g": 3.5, "fiber_g": 6.5, "sodium_mg": 450, "calcium_mg": 60, "iron_mg": 2.8, "potassium_mg": 230, "vitamin_c_mg": 0}},
-    {"id": "avena_instantanea", "name": "Avena instantanea", "brand": "Quaker", "category": "cereal", "retailer": "Jumbo", "package_g": 800, "price_clp": 2490, "serving_g": 40, "max_servings_day": 2, "satiety_index": 209, "tags": ["vegano"], "per_100g": {"kcal": 379, "protein_g": 13.0, "carb_g": 67.0, "fat_g": 6.5, "fiber_g": 10.0, "sodium_mg": 5, "calcium_mg": 52, "iron_mg": 4.3, "potassium_mg": 360, "vitamin_c_mg": 0}},
-    {"id": "papa", "name": "Papa", "brand": "Granel", "category": "verdura", "retailer": "Jumbo", "package_g": 1000, "price_clp": 990, "serving_g": 150, "max_servings_day": 3, "satiety_index": 323, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 77, "protein_g": 2.0, "carb_g": 17.0, "fat_g": 0.1, "fiber_g": 2.2, "sodium_mg": 6, "calcium_mg": 12, "iron_mg": 0.8, "potassium_mg": 421, "vitamin_c_mg": 19.7}},
-    {"id": "lentejas", "name": "Lentejas", "brand": "Wasil", "category": "legumbre", "retailer": "Jumbo", "package_g": 1000, "price_clp": 2290, "serving_g": 70, "max_servings_day": 2, "satiety_index": 200, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 352, "protein_g": 24.6, "carb_g": 63.0, "fat_g": 1.1, "fiber_g": 10.7, "sodium_mg": 6, "calcium_mg": 35, "iron_mg": 6.5, "potassium_mg": 677, "vitamin_c_mg": 4.5}},
-    {"id": "porotos_negros", "name": "Porotos negros", "brand": "Wasil", "category": "legumbre", "retailer": "Jumbo", "package_g": 1000, "price_clp": 2690, "serving_g": 70, "max_servings_day": 2, "satiety_index": 168, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 341, "protein_g": 21.0, "carb_g": 62.0, "fat_g": 1.4, "fiber_g": 15.0, "sodium_mg": 5, "calcium_mg": 123, "iron_mg": 5.0, "potassium_mg": 1483, "vitamin_c_mg": 0}},
-    {"id": "garbanzos", "name": "Garbanzos", "brand": "Wasil", "category": "legumbre", "retailer": "Jumbo", "package_g": 1000, "price_clp": 2890, "serving_g": 70, "max_servings_day": 2, "satiety_index": 160, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 364, "protein_g": 19.0, "carb_g": 61.0, "fat_g": 6.0, "fiber_g": 17.0, "sodium_mg": 24, "calcium_mg": 105, "iron_mg": 6.2, "potassium_mg": 875, "vitamin_c_mg": 4.0}},
-    {"id": "huevo", "name": "Huevos", "brand": "Granel", "category": "huevo", "retailer": "Jumbo", "package_g": 720, "price_clp": 3990, "serving_g": 60, "max_servings_day": 3, "satiety_index": 150, "tags": ["vegetariano", "sin_gluten"], "per_100g": {"kcal": 143, "protein_g": 12.6, "carb_g": 0.7, "fat_g": 9.9, "fiber_g": 0.0, "sodium_mg": 142, "calcium_mg": 56, "iron_mg": 1.8, "potassium_mg": 138, "vitamin_c_mg": 0}},
-    {"id": "pechuga_pollo", "name": "Pechuga de pollo", "brand": "Super Pollo", "category": "carne", "retailer": "Jumbo", "package_g": 1000, "price_clp": 5990, "serving_g": 150, "max_servings_day": 2, "satiety_index": 190, "tags": ["sin_gluten"], "per_100g": {"kcal": 165, "protein_g": 31.0, "carb_g": 0.0, "fat_g": 3.6, "fiber_g": 0.0, "sodium_mg": 74, "calcium_mg": 15, "iron_mg": 1.0, "potassium_mg": 256, "vitamin_c_mg": 0}},
-    {"id": "carne_molida", "name": "Carne molida de vacuno", "brand": "Granel", "category": "carne", "retailer": "Jumbo", "package_g": 1000, "price_clp": 8990, "serving_g": 150, "max_servings_day": 2, "satiety_index": 176, "tags": ["sin_gluten"], "per_100g": {"kcal": 250, "protein_g": 26.0, "carb_g": 0.0, "fat_g": 17.0, "fiber_g": 0.0, "sodium_mg": 75, "calcium_mg": 18, "iron_mg": 2.6, "potassium_mg": 318, "vitamin_c_mg": 0}},
-    {"id": "jurel_conserva", "name": "Jurel en conserva", "brand": "San Jose", "category": "pescado", "retailer": "Jumbo", "package_g": 425, "price_clp": 1690, "serving_g": 120, "max_servings_day": 2, "satiety_index": 180, "tags": ["sin_gluten"], "per_100g": {"kcal": 146, "protein_g": 20.0, "carb_g": 0.0, "fat_g": 7.0, "fiber_g": 0.0, "sodium_mg": 380, "calcium_mg": 185, "iron_mg": 1.5, "potassium_mg": 280, "vitamin_c_mg": 0}},
-    {"id": "atun_conserva", "name": "Atun en agua", "brand": "Robinson Crusoe", "category": "pescado", "retailer": "Jumbo", "package_g": 160, "price_clp": 1390, "serving_g": 120, "max_servings_day": 2, "satiety_index": 185, "tags": ["sin_gluten"], "per_100g": {"kcal": 116, "protein_g": 26.0, "carb_g": 0.0, "fat_g": 1.0, "fiber_g": 0.0, "sodium_mg": 320, "calcium_mg": 11, "iron_mg": 1.3, "potassium_mg": 237, "vitamin_c_mg": 0}},
-    {"id": "merluza", "name": "Filete de merluza", "brand": "Granel", "category": "pescado", "retailer": "Jumbo", "package_g": 500, "price_clp": 4490, "serving_g": 150, "max_servings_day": 2, "satiety_index": 195, "tags": ["sin_gluten"], "per_100g": {"kcal": 90, "protein_g": 18.0, "carb_g": 0.0, "fat_g": 1.8, "fiber_g": 0.0, "sodium_mg": 88, "calcium_mg": 30, "iron_mg": 0.4, "potassium_mg": 370, "vitamin_c_mg": 0}},
-    {"id": "leche", "name": "Leche entera", "brand": "Soprole", "category": "lacteo", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1090, "serving_g": 200, "max_servings_day": 3, "satiety_index": 130, "tags": ["vegetariano", "sin_gluten"], "per_100g": {"kcal": 61, "protein_g": 3.1, "carb_g": 4.7, "fat_g": 3.2, "fiber_g": 0.0, "sodium_mg": 43, "calcium_mg": 113, "iron_mg": 0.0, "potassium_mg": 132, "vitamin_c_mg": 0}},
-    {"id": "yogur_natural", "name": "Yogur natural", "brand": "Colun", "category": "lacteo", "retailer": "Jumbo", "package_g": 1000, "price_clp": 2390, "serving_g": 150, "max_servings_day": 2, "satiety_index": 140, "tags": ["vegetariano", "sin_gluten"], "per_100g": {"kcal": 61, "protein_g": 3.5, "carb_g": 4.7, "fat_g": 3.3, "fiber_g": 0.0, "sodium_mg": 46, "calcium_mg": 121, "iron_mg": 0.1, "potassium_mg": 155, "vitamin_c_mg": 0}},
-    {"id": "queso_gauda", "name": "Queso gauda", "brand": "Colun", "category": "lacteo", "retailer": "Jumbo", "package_g": 500, "price_clp": 4990, "serving_g": 40, "max_servings_day": 2, "satiety_index": 146, "tags": ["vegetariano", "sin_gluten"], "per_100g": {"kcal": 356, "protein_g": 25.0, "carb_g": 2.0, "fat_g": 28.0, "fiber_g": 0.0, "sodium_mg": 600, "calcium_mg": 700, "iron_mg": 0.3, "potassium_mg": 100, "vitamin_c_mg": 0}},
-    {"id": "platano", "name": "Platano", "brand": "Granel", "category": "fruta", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1290, "serving_g": 120, "max_servings_day": 2, "satiety_index": 118, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 89, "protein_g": 1.1, "carb_g": 23.0, "fat_g": 0.3, "fiber_g": 2.6, "sodium_mg": 1, "calcium_mg": 5, "iron_mg": 0.3, "potassium_mg": 358, "vitamin_c_mg": 8.7}},
-    {"id": "manzana", "name": "Manzana roja", "brand": "Granel", "category": "fruta", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1490, "serving_g": 150, "max_servings_day": 2, "satiety_index": 197, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 52, "protein_g": 0.3, "carb_g": 14.0, "fat_g": 0.2, "fiber_g": 2.4, "sodium_mg": 1, "calcium_mg": 6, "iron_mg": 0.1, "potassium_mg": 107, "vitamin_c_mg": 4.6}},
-    {"id": "naranja", "name": "Naranja", "brand": "Granel", "category": "fruta", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1190, "serving_g": 180, "max_servings_day": 2, "satiety_index": 202, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 47, "protein_g": 0.9, "carb_g": 12.0, "fat_g": 0.1, "fiber_g": 2.4, "sodium_mg": 0, "calcium_mg": 40, "iron_mg": 0.1, "potassium_mg": 181, "vitamin_c_mg": 53.2}},
-    {"id": "tomate", "name": "Tomate", "brand": "Granel", "category": "verdura", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1690, "serving_g": 120, "max_servings_day": 3, "satiety_index": 220, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 18, "protein_g": 0.9, "carb_g": 3.9, "fat_g": 0.2, "fiber_g": 1.2, "sodium_mg": 5, "calcium_mg": 10, "iron_mg": 0.3, "potassium_mg": 237, "vitamin_c_mg": 13.7}},
-    {"id": "cebolla", "name": "Cebolla", "brand": "Granel", "category": "verdura", "retailer": "Jumbo", "package_g": 1000, "price_clp": 890, "serving_g": 80, "max_servings_day": 2, "satiety_index": 150, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 40, "protein_g": 1.1, "carb_g": 9.3, "fat_g": 0.1, "fiber_g": 1.7, "sodium_mg": 4, "calcium_mg": 23, "iron_mg": 0.2, "potassium_mg": 146, "vitamin_c_mg": 7.4}},
-    {"id": "zanahoria", "name": "Zanahoria", "brand": "Granel", "category": "verdura", "retailer": "Jumbo", "package_g": 1000, "price_clp": 990, "serving_g": 80, "max_servings_day": 3, "satiety_index": 230, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 41, "protein_g": 0.9, "carb_g": 9.6, "fat_g": 0.2, "fiber_g": 2.8, "sodium_mg": 69, "calcium_mg": 33, "iron_mg": 0.3, "potassium_mg": 320, "vitamin_c_mg": 5.9}},
-    {"id": "lechuga", "name": "Lechuga", "brand": "Granel", "category": "verdura", "retailer": "Jumbo", "package_g": 500, "price_clp": 990, "serving_g": 60, "max_servings_day": 3, "satiety_index": 250, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 15, "protein_g": 1.4, "carb_g": 2.9, "fat_g": 0.2, "fiber_g": 1.3, "sodium_mg": 28, "calcium_mg": 36, "iron_mg": 0.9, "potassium_mg": 194, "vitamin_c_mg": 9.2}},
-    {"id": "espinaca", "name": "Espinaca", "brand": "Granel", "category": "verdura", "retailer": "Jumbo", "package_g": 500, "price_clp": 1490, "serving_g": 80, "max_servings_day": 2, "satiety_index": 240, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 23, "protein_g": 2.9, "carb_g": 3.6, "fat_g": 0.4, "fiber_g": 2.2, "sodium_mg": 79, "calcium_mg": 99, "iron_mg": 2.7, "potassium_mg": 558, "vitamin_c_mg": 28.1}},
-    {"id": "brocoli", "name": "Brocoli", "brand": "Granel", "category": "verdura", "retailer": "Jumbo", "package_g": 500, "price_clp": 1690, "serving_g": 100, "max_servings_day": 2, "satiety_index": 240, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 34, "protein_g": 2.8, "carb_g": 6.6, "fat_g": 0.4, "fiber_g": 2.6, "sodium_mg": 33, "calcium_mg": 47, "iron_mg": 0.7, "potassium_mg": 316, "vitamin_c_mg": 89.2}},
-    {"id": "aceite_vegetal", "name": "Aceite vegetal", "brand": "Chef", "category": "grasa", "retailer": "Jumbo", "package_g": 900, "price_clp": 1990, "serving_g": 10, "max_servings_day": 4, "satiety_index": 40, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 884, "protein_g": 0.0, "carb_g": 0.0, "fat_g": 100.0, "fiber_g": 0.0, "sodium_mg": 0, "calcium_mg": 0, "iron_mg": 0.0, "potassium_mg": 0, "vitamin_c_mg": 0}},
-    {"id": "aceite_oliva", "name": "Aceite de oliva", "brand": "Las Doscientas", "category": "grasa", "retailer": "Jumbo", "package_g": 500, "price_clp": 4990, "serving_g": 10, "max_servings_day": 3, "satiety_index": 45, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 884, "protein_g": 0.0, "carb_g": 0.0, "fat_g": 100.0, "fiber_g": 0.0, "sodium_mg": 1, "calcium_mg": 1, "iron_mg": 0.6, "potassium_mg": 1, "vitamin_c_mg": 0}},
-    {"id": "mani", "name": "Mani tostado", "brand": "Granel", "category": "fruto_seco", "retailer": "Jumbo", "package_g": 500, "price_clp": 2990, "serving_g": 30, "max_servings_day": 2, "satiety_index": 84, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 567, "protein_g": 25.8, "carb_g": 16.0, "fat_g": 49.0, "fiber_g": 8.5, "sodium_mg": 18, "calcium_mg": 92, "iron_mg": 4.6, "potassium_mg": 705, "vitamin_c_mg": 0}},
-    {"id": "almendras", "name": "Almendras", "brand": "Granel", "category": "fruto_seco", "retailer": "Jumbo", "package_g": 500, "price_clp": 6990, "serving_g": 30, "max_servings_day": 1, "satiety_index": 90, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 579, "protein_g": 21.0, "carb_g": 22.0, "fat_g": 50.0, "fiber_g": 12.5, "sodium_mg": 1, "calcium_mg": 269, "iron_mg": 3.7, "potassium_mg": 733, "vitamin_c_mg": 0}},
-    {"id": "quinoa", "name": "Quinoa", "brand": "Wasil", "category": "cereal", "retailer": "Jumbo", "package_g": 500, "price_clp": 3490, "serving_g": 70, "max_servings_day": 2, "satiety_index": 180, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 368, "protein_g": 14.1, "carb_g": 64.0, "fat_g": 6.1, "fiber_g": 7.0, "sodium_mg": 5, "calcium_mg": 47, "iron_mg": 4.6, "potassium_mg": 563, "vitamin_c_mg": 0}},
-    {"id": "tofu", "name": "Tofu firme", "brand": "Long Life", "category": "legumbre", "retailer": "Jumbo", "package_g": 350, "price_clp": 3290, "serving_g": 120, "max_servings_day": 2, "satiety_index": 170, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 144, "protein_g": 15.0, "carb_g": 3.0, "fat_g": 8.0, "fiber_g": 2.0, "sodium_mg": 12, "calcium_mg": 350, "iron_mg": 2.7, "potassium_mg": 121, "vitamin_c_mg": 0}},
-    {"id": "azucar", "name": "Azucar granulada", "brand": "Iansa", "category": "otro", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1190, "serving_g": 10, "max_servings_day": 2, "satiety_index": 30, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 387, "protein_g": 0.0, "carb_g": 100.0, "fat_g": 0.0, "fiber_g": 0.0, "sodium_mg": 0, "calcium_mg": 1, "iron_mg": 0.0, "potassium_mg": 2, "vitamin_c_mg": 0}},
-    {"id": "palta", "name": "Palta Hass", "brand": "Granel", "category": "fruta", "retailer": "Jumbo", "package_g": 1000, "price_clp": 3990, "serving_g": 80, "max_servings_day": 2, "satiety_index": 110, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 160, "protein_g": 2.0, "carb_g": 9.0, "fat_g": 15.0, "fiber_g": 6.7, "sodium_mg": 7, "calcium_mg": 12, "iron_mg": 0.6, "potassium_mg": 485, "vitamin_c_mg": 10.0}},
-    {"id": "zapallo_italiano", "name": "Zapallo italiano", "brand": "Granel", "category": "verdura", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1290, "serving_g": 120, "max_servings_day": 2, "satiety_index": 235, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 17, "protein_g": 1.2, "carb_g": 3.1, "fat_g": 0.3, "fiber_g": 1.0, "sodium_mg": 8, "calcium_mg": 16, "iron_mg": 0.4, "potassium_mg": 261, "vitamin_c_mg": 17.9}},
-    {"id": "choclo_congelado", "name": "Choclo congelado", "brand": "Frutos del Maipo", "category": "verdura", "retailer": "Jumbo", "package_g": 400, "price_clp": 1990, "serving_g": 100, "max_servings_day": 2, "satiety_index": 130, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 96, "protein_g": 3.4, "carb_g": 21.0, "fat_g": 1.5, "fiber_g": 2.4, "sodium_mg": 15, "calcium_mg": 2, "iron_mg": 0.5, "potassium_mg": 270, "vitamin_c_mg": 6.8}},
-    {"id": "arvejas_congeladas", "name": "Arvejas congeladas", "brand": "Frutos del Maipo", "category": "legumbre", "retailer": "Jumbo", "package_g": 400, "price_clp": 1890, "serving_g": 90, "max_servings_day": 2, "satiety_index": 175, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 81, "protein_g": 5.4, "carb_g": 14.0, "fat_g": 0.4, "fiber_g": 5.1, "sodium_mg": 5, "calcium_mg": 25, "iron_mg": 1.5, "potassium_mg": 244, "vitamin_c_mg": 40.0}},
-    {"id": "mantequilla_mani", "name": "Mantequilla de mani", "brand": "Gold", "category": "fruto_seco", "retailer": "Jumbo", "package_g": 500, "price_clp": 3990, "serving_g": 20, "max_servings_day": 2, "satiety_index": 95, "tags": ["vegano"], "per_100g": {"kcal": 588, "protein_g": 25.0, "carb_g": 20.0, "fat_g": 50.0, "fiber_g": 6.0, "sodium_mg": 350, "calcium_mg": 49, "iron_mg": 1.9, "potassium_mg": 564, "vitamin_c_mg": 0}},
-    {"id": "pollo_trutro", "name": "Trutro de pollo", "brand": "Super Pollo", "category": "carne", "retailer": "Jumbo", "package_g": 1000, "price_clp": 3490, "serving_g": 150, "max_servings_day": 2, "satiety_index": 170, "tags": ["sin_gluten"], "per_100g": {"kcal": 209, "protein_g": 26.0, "carb_g": 0.0, "fat_g": 11.0, "fiber_g": 0.0, "sodium_mg": 90, "calcium_mg": 12, "iron_mg": 1.3, "potassium_mg": 240, "vitamin_c_mg": 0}},
-    {"id": "huevo_codorniz", "name": "Salmon fresco", "brand": "Granel", "category": "pescado", "retailer": "Jumbo", "package_g": 500, "price_clp": 7990, "serving_g": 150, "max_servings_day": 1, "satiety_index": 185, "tags": ["sin_gluten"], "per_100g": {"kcal": 208, "protein_g": 20.0, "carb_g": 0.0, "fat_g": 13.0, "fiber_g": 0.0, "sodium_mg": 59, "calcium_mg": 9, "iron_mg": 0.3, "potassium_mg": 363, "vitamin_c_mg": 0}},
-    {"id": "harina", "name": "Harina sin polvos", "brand": "Selecta", "category": "cereal", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1090, "serving_g": 60, "max_servings_day": 2, "satiety_index": 100, "tags": ["vegano"], "per_100g": {"kcal": 364, "protein_g": 10.0, "carb_g": 76.0, "fat_g": 1.0, "fiber_g": 2.7, "sodium_mg": 2, "calcium_mg": 15, "iron_mg": 1.2, "potassium_mg": 107, "vitamin_c_mg": 0}},
-    {"id": "yogur_proteico", "name": "Yogur proteico", "brand": "Colun Protein", "category": "lacteo", "retailer": "Jumbo", "package_g": 800, "price_clp": 3990, "serving_g": 150, "max_servings_day": 2, "satiety_index": 160, "tags": ["vegetariano", "sin_gluten"], "per_100g": {"kcal": 60, "protein_g": 10.0, "carb_g": 4.0, "fat_g": 0.5, "fiber_g": 0.0, "sodium_mg": 50, "calcium_mg": 130, "iron_mg": 0.0, "potassium_mg": 160, "vitamin_c_mg": 0}},
-    {"id": "betarraga", "name": "Betarraga", "brand": "Granel", "category": "verdura", "retailer": "Jumbo", "package_g": 1000, "price_clp": 990, "serving_g": 80, "max_servings_day": 2, "satiety_index": 210, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 43, "protein_g": 1.6, "carb_g": 10.0, "fat_g": 0.2, "fiber_g": 2.8, "sodium_mg": 78, "calcium_mg": 16, "iron_mg": 0.8, "potassium_mg": 325, "vitamin_c_mg": 4.9}},
-    {"id": "camote", "name": "Camote", "brand": "Granel", "category": "verdura", "retailer": "Jumbo", "package_g": 1000, "price_clp": 1490, "serving_g": 150, "max_servings_day": 2, "satiety_index": 230, "tags": ["vegano", "sin_gluten"], "per_100g": {"kcal": 86, "protein_g": 1.6, "carb_g": 20.0, "fat_g": 0.1, "fiber_g": 3.0, "sodium_mg": 55, "calcium_mg": 30, "iron_mg": 0.6, "potassium_mg": 337, "vitamin_c_mg": 2.4}}
+    {
+      "id": "arroz_grado2",
+      "name": "Arroz grado 2",
+      "brand": "Tucapel",
+      "category": "cereal",
+      "package_g": 1000,
+      "serving_g": 70,
+      "max_servings_day": 4,
+      "satiety_index": 138,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 358,
+        "protein_g": 7.0,
+        "carb_g": 79.0,
+        "fat_g": 0.8,
+        "fiber_g": 1.3,
+        "sodium_mg": 1,
+        "calcium_mg": 10,
+        "iron_mg": 0.8,
+        "potassium_mg": 86,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1100,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1380,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1430,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1490,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1520,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1530,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "arroz_integral",
+      "name": "Arroz integral",
+      "brand": "Tucapel",
+      "category": "cereal",
+      "package_g": 1000,
+      "serving_g": 70,
+      "max_servings_day": 3,
+      "satiety_index": 160,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 362,
+        "protein_g": 7.5,
+        "carb_g": 76.0,
+        "fat_g": 2.7,
+        "fiber_g": 3.5,
+        "sodium_mg": 7,
+        "calcium_mg": 23,
+        "iron_mg": 1.5,
+        "potassium_mg": 268,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1580,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1980,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1990,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2220,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2230,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2240,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "fideos_spaghetti",
+      "name": "Fideos spaghetti",
+      "brand": "Carozzi",
+      "category": "cereal",
+      "package_g": 400,
+      "serving_g": 80,
+      "max_servings_day": 3,
+      "satiety_index": 119,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 359,
+        "protein_g": 12.0,
+        "carb_g": 73.0,
+        "fat_g": 1.5,
+        "fiber_g": 3.0,
+        "sodium_mg": 6,
+        "calcium_mg": 21,
+        "iron_mg": 1.3,
+        "potassium_mg": 161,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 700,
+          "package_g": 400
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 880,
+          "package_g": 400
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 890,
+          "package_g": 400
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 940,
+          "package_g": 400
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1000,
+          "package_g": 400
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1030,
+          "package_g": 400
+        }
+      ]
+    },
+    {
+      "id": "fideos_integrales",
+      "name": "Fideos integrales",
+      "brand": "Carozzi",
+      "category": "cereal",
+      "package_g": 400,
+      "serving_g": 80,
+      "max_servings_day": 3,
+      "satiety_index": 150,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 348,
+        "protein_g": 13.0,
+        "carb_g": 67.0,
+        "fat_g": 2.5,
+        "fiber_g": 8.0,
+        "sodium_mg": 8,
+        "calcium_mg": 30,
+        "iron_mg": 3.6,
+        "potassium_mg": 220,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1080,
+          "package_g": 400
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1340,
+          "package_g": 400
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1390,
+          "package_g": 400
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1450,
+          "package_g": 400
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1490,
+          "package_g": 400
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1490,
+          "package_g": 400
+        }
+      ]
+    },
+    {
+      "id": "pan_marraqueta",
+      "name": "Pan marraqueta",
+      "brand": "Granel",
+      "category": "panaderia",
+      "package_g": 1000,
+      "serving_g": 100,
+      "max_servings_day": 3,
+      "satiety_index": 100,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 277,
+        "protein_g": 8.5,
+        "carb_g": 56.0,
+        "fat_g": 1.2,
+        "fiber_g": 2.7,
+        "sodium_mg": 540,
+        "calcium_mg": 30,
+        "iron_mg": 2.5,
+        "potassium_mg": 120,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1360,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1700,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1730,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1920,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1920,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1940,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "pan_integral",
+      "name": "Pan integral molde",
+      "brand": "Ideal",
+      "category": "panaderia",
+      "package_g": 500,
+      "serving_g": 60,
+      "max_servings_day": 3,
+      "satiety_index": 154,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 247,
+        "protein_g": 10.0,
+        "carb_g": 43.0,
+        "fat_g": 3.5,
+        "fiber_g": 6.5,
+        "sodium_mg": 450,
+        "calcium_mg": 60,
+        "iron_mg": 2.8,
+        "potassium_mg": 230,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1600,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2040,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2080,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2170,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "pan_pita",
+      "name": "Pan pita",
+      "brand": "Ideal",
+      "category": "panaderia",
+      "package_g": 500,
+      "serving_g": 60,
+      "max_servings_day": 3,
+      "satiety_index": 110,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 275,
+        "protein_g": 9.0,
+        "carb_g": 55.0,
+        "fat_g": 1.2,
+        "fiber_g": 2.2,
+        "sodium_mg": 520,
+        "calcium_mg": 60,
+        "iron_mg": 2.4,
+        "potassium_mg": 120,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1510,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1830,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1920,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1950,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1990,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2030,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "avena_instantanea",
+      "name": "Avena instantanea",
+      "brand": "Quaker",
+      "category": "cereal",
+      "package_g": 800,
+      "serving_g": 40,
+      "max_servings_day": 2,
+      "satiety_index": 209,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 379,
+        "protein_g": 13.0,
+        "carb_g": 67.0,
+        "fat_g": 6.5,
+        "fiber_g": 10.0,
+        "sodium_mg": 5,
+        "calcium_mg": 52,
+        "iron_mg": 4.3,
+        "potassium_mg": 360,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1780,
+          "package_g": 800
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2260,
+          "package_g": 800
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2300,
+          "package_g": 800
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2350,
+          "package_g": 800
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2410,
+          "package_g": 800
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2490,
+          "package_g": 800
+        }
+      ]
+    },
+    {
+      "id": "quinoa",
+      "name": "Quinoa",
+      "brand": "Wasil",
+      "category": "cereal",
+      "package_g": 500,
+      "serving_g": 70,
+      "max_servings_day": 2,
+      "satiety_index": 180,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 368,
+        "protein_g": 14.1,
+        "carb_g": 64.0,
+        "fat_g": 6.1,
+        "fiber_g": 7.0,
+        "sodium_mg": 5,
+        "calcium_mg": 47,
+        "iron_mg": 4.6,
+        "potassium_mg": 563,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2500,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 3180,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 3220,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 3520,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3620,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "harina",
+      "name": "Harina sin polvos",
+      "brand": "Selecta",
+      "category": "cereal",
+      "package_g": 1000,
+      "serving_g": 60,
+      "max_servings_day": 2,
+      "satiety_index": 100,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 364,
+        "protein_g": 10.0,
+        "carb_g": 76.0,
+        "fat_g": 1.0,
+        "fiber_g": 2.7,
+        "sodium_mg": 2,
+        "calcium_mg": 15,
+        "iron_mg": 1.2,
+        "potassium_mg": 107,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 780,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1020,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1030,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1040,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1050,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1110,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "semola",
+      "name": "Semola de trigo",
+      "brand": "Carozzi",
+      "category": "cereal",
+      "package_g": 500,
+      "serving_g": 60,
+      "max_servings_day": 2,
+      "satiety_index": 120,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 360,
+        "protein_g": 12.0,
+        "carb_g": 73.0,
+        "fat_g": 1.0,
+        "fiber_g": 3.9,
+        "sodium_mg": 1,
+        "calcium_mg": 17,
+        "iron_mg": 1.2,
+        "potassium_mg": 186,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 950,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1130,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1170,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1260,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1320,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1340,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "galletas_soda",
+      "name": "Galletas de soda",
+      "brand": "Costa",
+      "category": "panaderia",
+      "package_g": 600,
+      "serving_g": 30,
+      "max_servings_day": 2,
+      "satiety_index": 90,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 418,
+        "protein_g": 9.0,
+        "carb_g": 71.0,
+        "fat_g": 10.0,
+        "fiber_g": 2.5,
+        "sodium_mg": 1100,
+        "calcium_mg": 120,
+        "iron_mg": 3.0,
+        "potassium_mg": 130,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1490,
+          "package_g": 600
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1850,
+          "package_g": 600
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1960,
+          "package_g": 600
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2050,
+          "package_g": 600
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2060,
+          "package_g": 600
+        }
+      ]
+    },
+    {
+      "id": "cereal_hojuelas",
+      "name": "Hojuelas de maiz",
+      "brand": "Kellogg's",
+      "category": "cereal",
+      "package_g": 500,
+      "serving_g": 30,
+      "max_servings_day": 2,
+      "satiety_index": 118,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 357,
+        "protein_g": 7.0,
+        "carb_g": 84.0,
+        "fat_g": 0.9,
+        "fiber_g": 3.0,
+        "sodium_mg": 600,
+        "calcium_mg": 12,
+        "iron_mg": 8.0,
+        "potassium_mg": 130,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2130,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2830,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2890,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2900,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2960,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 3040,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "tortilla_trigo",
+      "name": "Tortilla de trigo",
+      "brand": "Guaytan",
+      "category": "panaderia",
+      "package_g": 500,
+      "serving_g": 50,
+      "max_servings_day": 2,
+      "satiety_index": 95,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 310,
+        "protein_g": 8.0,
+        "carb_g": 52.0,
+        "fat_g": 7.5,
+        "fiber_g": 3.0,
+        "sodium_mg": 600,
+        "calcium_mg": 80,
+        "iron_mg": 2.5,
+        "potassium_mg": 130,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1870,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2230,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2240,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2400,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2480,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2530,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "lentejas",
+      "name": "Lentejas",
+      "brand": "Wasil",
+      "category": "legumbre",
+      "package_g": 1000,
+      "serving_g": 70,
+      "max_servings_day": 2,
+      "satiety_index": 200,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 352,
+        "protein_g": 24.6,
+        "carb_g": 63.0,
+        "fat_g": 1.1,
+        "fiber_g": 10.7,
+        "sodium_mg": 6,
+        "calcium_mg": 35,
+        "iron_mg": 6.5,
+        "potassium_mg": 677,
+        "vitamin_c_mg": 4.5
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1710,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2060,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2070,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2220,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2260,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2280,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "porotos_negros",
+      "name": "Porotos negros",
+      "brand": "Wasil",
+      "category": "legumbre",
+      "package_g": 1000,
+      "serving_g": 70,
+      "max_servings_day": 2,
+      "satiety_index": 168,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 341,
+        "protein_g": 21.0,
+        "carb_g": 62.0,
+        "fat_g": 1.4,
+        "fiber_g": 15.0,
+        "sodium_mg": 5,
+        "calcium_mg": 123,
+        "iron_mg": 5.0,
+        "potassium_mg": 1483,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2390,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2520,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2560,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2710,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2750,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "porotos_blancos",
+      "name": "Porotos blancos",
+      "brand": "Wasil",
+      "category": "legumbre",
+      "package_g": 1000,
+      "serving_g": 70,
+      "max_servings_day": 2,
+      "satiety_index": 170,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 333,
+        "protein_g": 21.0,
+        "carb_g": 60.0,
+        "fat_g": 1.2,
+        "fiber_g": 15.0,
+        "sodium_mg": 5,
+        "calcium_mg": 240,
+        "iron_mg": 5.5,
+        "potassium_mg": 1185,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1890,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2310,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2360,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2450,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2490,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2520,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "garbanzos",
+      "name": "Garbanzos",
+      "brand": "Wasil",
+      "category": "legumbre",
+      "package_g": 1000,
+      "serving_g": 70,
+      "max_servings_day": 2,
+      "satiety_index": 160,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 364,
+        "protein_g": 19.0,
+        "carb_g": 61.0,
+        "fat_g": 6.0,
+        "fiber_g": 17.0,
+        "sodium_mg": 24,
+        "calcium_mg": 105,
+        "iron_mg": 6.2,
+        "potassium_mg": 875,
+        "vitamin_c_mg": 4.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2170,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2650,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2670,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2810,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2830,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2870,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "arvejas_congeladas",
+      "name": "Arvejas congeladas",
+      "brand": "Frutos del Maipo",
+      "category": "legumbre",
+      "package_g": 400,
+      "serving_g": 90,
+      "max_servings_day": 2,
+      "satiety_index": 175,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 81,
+        "protein_g": 5.4,
+        "carb_g": 14.0,
+        "fat_g": 0.4,
+        "fiber_g": 5.1,
+        "sodium_mg": 5,
+        "calcium_mg": 25,
+        "iron_mg": 1.5,
+        "potassium_mg": 244,
+        "vitamin_c_mg": 40.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1350,
+          "package_g": 400
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1730,
+          "package_g": 400
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1760,
+          "package_g": 400
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1900,
+          "package_g": 400
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1910,
+          "package_g": 400
+        }
+      ]
+    },
+    {
+      "id": "soya_texturizada",
+      "name": "Soya texturizada",
+      "brand": "Vitana",
+      "category": "legumbre",
+      "package_g": 400,
+      "serving_g": 40,
+      "max_servings_day": 2,
+      "satiety_index": 190,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 330,
+        "protein_g": 50.0,
+        "carb_g": 30.0,
+        "fat_g": 1.5,
+        "fiber_g": 18.0,
+        "sodium_mg": 3,
+        "calcium_mg": 240,
+        "iron_mg": 9.0,
+        "potassium_mg": 2000,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1880,
+          "package_g": 400
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2400,
+          "package_g": 400
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2400,
+          "package_g": 400
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2530,
+          "package_g": 400
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2570,
+          "package_g": 400
+        }
+      ]
+    },
+    {
+      "id": "tofu",
+      "name": "Tofu firme",
+      "brand": "Long Life",
+      "category": "legumbre",
+      "package_g": 350,
+      "serving_g": 120,
+      "max_servings_day": 2,
+      "satiety_index": 170,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 144,
+        "protein_g": 15.0,
+        "carb_g": 3.0,
+        "fat_g": 8.0,
+        "fiber_g": 2.0,
+        "sodium_mg": 12,
+        "calcium_mg": 350,
+        "iron_mg": 2.7,
+        "potassium_mg": 121,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2340,
+          "package_g": 350
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2960,
+          "package_g": 350
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 3170,
+          "package_g": 350
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3200,
+          "package_g": 350
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 3220,
+          "package_g": 350
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 3360,
+          "package_g": 350
+        }
+      ]
+    },
+    {
+      "id": "huevo",
+      "name": "Huevos",
+      "brand": "Granel",
+      "category": "huevo",
+      "package_g": 720,
+      "serving_g": 60,
+      "max_servings_day": 3,
+      "satiety_index": 150,
+      "tags": [
+        "vegetariano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 143,
+        "protein_g": 12.6,
+        "carb_g": 0.7,
+        "fat_g": 9.9,
+        "fiber_g": 0.0,
+        "sodium_mg": 142,
+        "calcium_mg": 56,
+        "iron_mg": 1.8,
+        "potassium_mg": 138,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 3260,
+          "package_g": 720
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 3650,
+          "package_g": 720
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 3670,
+          "package_g": 720
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3850,
+          "package_g": 720
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 3980,
+          "package_g": 720
+        }
+      ]
+    },
+    {
+      "id": "pechuga_pollo",
+      "name": "Pechuga de pollo",
+      "brand": "Super Pollo",
+      "category": "carne",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 190,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 165,
+        "protein_g": 31.0,
+        "carb_g": 0.0,
+        "fat_g": 3.6,
+        "fiber_g": 0.0,
+        "sodium_mg": 74,
+        "calcium_mg": 15,
+        "iron_mg": 1.0,
+        "potassium_mg": 256,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 5290,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 5420,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 5770,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 5800,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 5860,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "pollo_trutro",
+      "name": "Trutro de pollo",
+      "brand": "Super Pollo",
+      "category": "carne",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 170,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 209,
+        "protein_g": 26.0,
+        "carb_g": 0.0,
+        "fat_g": 11.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 90,
+        "calcium_mg": 12,
+        "iron_mg": 1.3,
+        "potassium_mg": 240,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 3130,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3380,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 3480,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 3520,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "carne_molida",
+      "name": "Carne molida de vacuno",
+      "brand": "Granel",
+      "category": "carne",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 176,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 250,
+        "protein_g": 26.0,
+        "carb_g": 0.0,
+        "fat_g": 17.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 75,
+        "calcium_mg": 18,
+        "iron_mg": 2.6,
+        "potassium_mg": 318,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 8060,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 8110,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 8770,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 8860,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 9190,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "posta_negra",
+      "name": "Posta negra de vacuno",
+      "brand": "Granel",
+      "category": "carne",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 185,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 150,
+        "protein_g": 22.0,
+        "carb_g": 0.0,
+        "fat_g": 6.5,
+        "fiber_g": 0.0,
+        "sodium_mg": 60,
+        "calcium_mg": 12,
+        "iron_mg": 2.8,
+        "potassium_mg": 330,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 7790,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 8960,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 9940,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 10030,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 10370,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "pulpa_cerdo",
+      "name": "Pulpa de cerdo",
+      "brand": "Granel",
+      "category": "carne",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 175,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 180,
+        "protein_g": 21.0,
+        "carb_g": 0.0,
+        "fat_g": 10.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 60,
+        "calcium_mg": 14,
+        "iron_mg": 0.9,
+        "potassium_mg": 350,
+        "vitamin_c_mg": 0.7
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 5700,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 6070,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 6230,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 6810,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 6830,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "longaniza",
+      "name": "Longaniza",
+      "brand": "San Jorge",
+      "category": "carne",
+      "package_g": 320,
+      "serving_g": 80,
+      "max_servings_day": 1,
+      "satiety_index": 130,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 330,
+        "protein_g": 16.0,
+        "carb_g": 2.0,
+        "fat_g": 29.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 900,
+        "calcium_mg": 12,
+        "iron_mg": 1.5,
+        "potassium_mg": 220,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2350,
+          "package_g": 320
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2690,
+          "package_g": 320
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2720,
+          "package_g": 320
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2930,
+          "package_g": 320
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3040,
+          "package_g": 320
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 3100,
+          "package_g": 320
+        }
+      ]
+    },
+    {
+      "id": "vienesas",
+      "name": "Vienesas",
+      "brand": "PF",
+      "category": "carne",
+      "package_g": 1000,
+      "serving_g": 70,
+      "max_servings_day": 1,
+      "satiety_index": 120,
+      "tags": [],
+      "per_100g": {
+        "kcal": 290,
+        "protein_g": 11.0,
+        "carb_g": 4.0,
+        "fat_g": 26.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 980,
+        "calcium_mg": 30,
+        "iron_mg": 1.2,
+        "potassium_mg": 200,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2850,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 3130,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 3150,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3480,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 3510,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 3520,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "jamon_pavo",
+      "name": "Jamon de pavo",
+      "brand": "San Jorge",
+      "category": "carne",
+      "package_g": 500,
+      "serving_g": 40,
+      "max_servings_day": 2,
+      "satiety_index": 140,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 110,
+        "protein_g": 17.0,
+        "carb_g": 2.0,
+        "fat_g": 4.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 1000,
+        "calcium_mg": 10,
+        "iron_mg": 0.8,
+        "potassium_mg": 280,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 3230,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 3490,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 3590,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 3850,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3900,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 4010,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "jurel_conserva",
+      "name": "Jurel en conserva",
+      "brand": "San Jose",
+      "category": "pescado",
+      "package_g": 425,
+      "serving_g": 120,
+      "max_servings_day": 2,
+      "satiety_index": 180,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 146,
+        "protein_g": 20.0,
+        "carb_g": 0.0,
+        "fat_g": 7.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 380,
+        "calcium_mg": 185,
+        "iron_mg": 1.5,
+        "potassium_mg": 280,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1380,
+          "package_g": 425
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1480,
+          "package_g": 425
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1520,
+          "package_g": 425
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1670,
+          "package_g": 425
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1700,
+          "package_g": 425
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1700,
+          "package_g": 425
+        }
+      ]
+    },
+    {
+      "id": "atun_conserva",
+      "name": "Atun en agua",
+      "brand": "Robinson Crusoe",
+      "category": "pescado",
+      "package_g": 160,
+      "serving_g": 120,
+      "max_servings_day": 2,
+      "satiety_index": 185,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 116,
+        "protein_g": 26.0,
+        "carb_g": 0.0,
+        "fat_g": 1.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 320,
+        "calcium_mg": 11,
+        "iron_mg": 1.3,
+        "potassium_mg": 237,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1160,
+          "package_g": 160
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1260,
+          "package_g": 160
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1280,
+          "package_g": 160
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1380,
+          "package_g": 160
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1450,
+          "package_g": 160
+        }
+      ]
+    },
+    {
+      "id": "sardinas_conserva",
+      "name": "Sardinas en conserva",
+      "brand": "San Jose",
+      "category": "pescado",
+      "package_g": 425,
+      "serving_g": 120,
+      "max_servings_day": 2,
+      "satiety_index": 182,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 208,
+        "protein_g": 24.0,
+        "carb_g": 0.0,
+        "fat_g": 12.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 400,
+        "calcium_mg": 380,
+        "iron_mg": 2.9,
+        "potassium_mg": 397,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1230,
+          "package_g": 425
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1360,
+          "package_g": 425
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1390,
+          "package_g": 425
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1520,
+          "package_g": 425
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1520,
+          "package_g": 425
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1520,
+          "package_g": 425
+        }
+      ]
+    },
+    {
+      "id": "merluza",
+      "name": "Filete de merluza",
+      "brand": "Granel",
+      "category": "pescado",
+      "package_g": 500,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 195,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 90,
+        "protein_g": 18.0,
+        "carb_g": 0.0,
+        "fat_g": 1.8,
+        "fiber_g": 0.0,
+        "sodium_mg": 88,
+        "calcium_mg": 30,
+        "iron_mg": 0.4,
+        "potassium_mg": 370,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 3630,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 4020,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 4350,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 4400,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 4580,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "salmon",
+      "name": "Salmon fresco",
+      "brand": "Granel",
+      "category": "pescado",
+      "package_g": 500,
+      "serving_g": 150,
+      "max_servings_day": 1,
+      "satiety_index": 185,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 208,
+        "protein_g": 20.0,
+        "carb_g": 0.0,
+        "fat_g": 13.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 59,
+        "calcium_mg": 9,
+        "iron_mg": 0.3,
+        "potassium_mg": 363,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 6350,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 7040,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 8140,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 8270,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "leche",
+      "name": "Leche entera",
+      "brand": "Soprole",
+      "category": "lacteo",
+      "package_g": 1000,
+      "serving_g": 200,
+      "max_servings_day": 3,
+      "satiety_index": 130,
+      "tags": [
+        "vegetariano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 61,
+        "protein_g": 3.1,
+        "carb_g": 4.7,
+        "fat_g": 3.2,
+        "fiber_g": 0.0,
+        "sodium_mg": 43,
+        "calcium_mg": 113,
+        "iron_mg": 0.0,
+        "potassium_mg": 132,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 870,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1020,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1070,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1080,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1090,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "leche_descremada",
+      "name": "Leche descremada",
+      "brand": "Soprole",
+      "category": "lacteo",
+      "package_g": 1000,
+      "serving_g": 200,
+      "max_servings_day": 3,
+      "satiety_index": 135,
+      "tags": [
+        "vegetariano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 35,
+        "protein_g": 3.4,
+        "carb_g": 5.0,
+        "fat_g": 0.1,
+        "fiber_g": 0.0,
+        "sodium_mg": 44,
+        "calcium_mg": 122,
+        "iron_mg": 0.0,
+        "potassium_mg": 156,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 930,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1070,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1160,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1180,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1210,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "yogur_natural",
+      "name": "Yogur natural",
+      "brand": "Colun",
+      "category": "lacteo",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 140,
+      "tags": [
+        "vegetariano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 61,
+        "protein_g": 3.5,
+        "carb_g": 4.7,
+        "fat_g": 3.3,
+        "fiber_g": 0.0,
+        "sodium_mg": 46,
+        "calcium_mg": 121,
+        "iron_mg": 0.1,
+        "potassium_mg": 155,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1960,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2200,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2260,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2270,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2410,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2420,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "yogur_proteico",
+      "name": "Yogur proteico",
+      "brand": "Colun Protein",
+      "category": "lacteo",
+      "package_g": 800,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 160,
+      "tags": [
+        "vegetariano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 60,
+        "protein_g": 10.0,
+        "carb_g": 4.0,
+        "fat_g": 0.5,
+        "fiber_g": 0.0,
+        "sodium_mg": 50,
+        "calcium_mg": 130,
+        "iron_mg": 0.0,
+        "potassium_mg": 160,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 3190,
+          "package_g": 800
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 3590,
+          "package_g": 800
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 3810,
+          "package_g": 800
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 3930,
+          "package_g": 800
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 4100,
+          "package_g": 800
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 4100,
+          "package_g": 800
+        }
+      ]
+    },
+    {
+      "id": "quesillo",
+      "name": "Quesillo",
+      "brand": "Colun",
+      "category": "lacteo",
+      "package_g": 250,
+      "serving_g": 60,
+      "max_servings_day": 2,
+      "satiety_index": 150,
+      "tags": [
+        "vegetariano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 98,
+        "protein_g": 11.0,
+        "carb_g": 3.4,
+        "fat_g": 4.3,
+        "fiber_g": 0.0,
+        "sodium_mg": 360,
+        "calcium_mg": 83,
+        "iron_mg": 0.1,
+        "potassium_mg": 104,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1670,
+          "package_g": 250
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1820,
+          "package_g": 250
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1880,
+          "package_g": 250
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1940,
+          "package_g": 250
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2010,
+          "package_g": 250
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2020,
+          "package_g": 250
+        }
+      ]
+    },
+    {
+      "id": "queso_gauda",
+      "name": "Queso gauda",
+      "brand": "Colun",
+      "category": "lacteo",
+      "package_g": 500,
+      "serving_g": 40,
+      "max_servings_day": 2,
+      "satiety_index": 146,
+      "tags": [
+        "vegetariano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 356,
+        "protein_g": 25.0,
+        "carb_g": 2.0,
+        "fat_g": 28.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 600,
+        "calcium_mg": 700,
+        "iron_mg": 0.3,
+        "potassium_mg": 100,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 4170,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 4570,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 4730,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 4840,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 5020,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "mantequilla",
+      "name": "Mantequilla",
+      "brand": "Soprole",
+      "category": "grasa",
+      "package_g": 250,
+      "serving_g": 10,
+      "max_servings_day": 3,
+      "satiety_index": 50,
+      "tags": [
+        "vegetariano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 717,
+        "protein_g": 0.9,
+        "carb_g": 0.1,
+        "fat_g": 81.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 11,
+        "calcium_mg": 24,
+        "iron_mg": 0.0,
+        "potassium_mg": 24,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1780,
+          "package_g": 250
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2180,
+          "package_g": 250
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2290,
+          "package_g": 250
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2430,
+          "package_g": 250
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2440,
+          "package_g": 250
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2540,
+          "package_g": 250
+        }
+      ]
+    },
+    {
+      "id": "margarina",
+      "name": "Margarina",
+      "brand": "Bonella",
+      "category": "grasa",
+      "package_g": 250,
+      "serving_g": 10,
+      "max_servings_day": 3,
+      "satiety_index": 48,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 717,
+        "protein_g": 0.2,
+        "carb_g": 0.7,
+        "fat_g": 80.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 750,
+        "calcium_mg": 30,
+        "iron_mg": 0.0,
+        "potassium_mg": 18,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1140,
+          "package_g": 250
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1230,
+          "package_g": 250
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1300,
+          "package_g": 250
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1310,
+          "package_g": 250
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1330,
+          "package_g": 250
+        }
+      ]
+    },
+    {
+      "id": "aceite_vegetal",
+      "name": "Aceite vegetal",
+      "brand": "Chef",
+      "category": "grasa",
+      "package_g": 900,
+      "serving_g": 10,
+      "max_servings_day": 4,
+      "satiety_index": 40,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 884,
+        "protein_g": 0.0,
+        "carb_g": 0.0,
+        "fat_g": 100.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 0,
+        "calcium_mg": 0,
+        "iron_mg": 0.0,
+        "potassium_mg": 0,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1450,
+          "package_g": 900
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1830,
+          "package_g": 900
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2010,
+          "package_g": 900
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2050,
+          "package_g": 900
+        }
+      ]
+    },
+    {
+      "id": "aceite_oliva",
+      "name": "Aceite de oliva",
+      "brand": "Las Doscientas",
+      "category": "grasa",
+      "package_g": 500,
+      "serving_g": 10,
+      "max_servings_day": 3,
+      "satiety_index": 45,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 884,
+        "protein_g": 0.0,
+        "carb_g": 0.0,
+        "fat_g": 100.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 1,
+        "calcium_mg": 1,
+        "iron_mg": 0.6,
+        "potassium_mg": 1,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 3580,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 4540,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 4660,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 4900,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 5110,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 5180,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "mani",
+      "name": "Mani tostado",
+      "brand": "Granel",
+      "category": "fruto_seco",
+      "package_g": 500,
+      "serving_g": 30,
+      "max_servings_day": 2,
+      "satiety_index": 84,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 567,
+        "protein_g": 25.8,
+        "carb_g": 16.0,
+        "fat_g": 49.0,
+        "fiber_g": 8.5,
+        "sodium_mg": 18,
+        "calcium_mg": 92,
+        "iron_mg": 4.6,
+        "potassium_mg": 705,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2220,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2620,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2710,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2910,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2930,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3050,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "almendras",
+      "name": "Almendras",
+      "brand": "Granel",
+      "category": "fruto_seco",
+      "package_g": 500,
+      "serving_g": 30,
+      "max_servings_day": 1,
+      "satiety_index": 90,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 579,
+        "protein_g": 21.0,
+        "carb_g": 22.0,
+        "fat_g": 50.0,
+        "fiber_g": 12.5,
+        "sodium_mg": 1,
+        "calcium_mg": 269,
+        "iron_mg": 3.7,
+        "potassium_mg": 733,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 4980,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 6440,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 6830,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 6940,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 7100,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "nueces",
+      "name": "Nueces",
+      "brand": "Granel",
+      "category": "fruto_seco",
+      "package_g": 250,
+      "serving_g": 30,
+      "max_servings_day": 1,
+      "satiety_index": 88,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 654,
+        "protein_g": 15.0,
+        "carb_g": 14.0,
+        "fat_g": 65.0,
+        "fiber_g": 6.7,
+        "sodium_mg": 2,
+        "calcium_mg": 98,
+        "iron_mg": 2.9,
+        "potassium_mg": 441,
+        "vitamin_c_mg": 1.3
+      },
+      "prices": [
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 3680,
+          "package_g": 250
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 3760,
+          "package_g": 250
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 3820,
+          "package_g": 250
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 3880,
+          "package_g": 250
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 4030,
+          "package_g": 250
+        }
+      ]
+    },
+    {
+      "id": "mantequilla_mani",
+      "name": "Mantequilla de mani",
+      "brand": "Gold",
+      "category": "fruto_seco",
+      "package_g": 500,
+      "serving_g": 20,
+      "max_servings_day": 2,
+      "satiety_index": 95,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 588,
+        "protein_g": 25.0,
+        "carb_g": 20.0,
+        "fat_g": 50.0,
+        "fiber_g": 6.0,
+        "sodium_mg": 350,
+        "calcium_mg": 49,
+        "iron_mg": 1.9,
+        "potassium_mg": 564,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2900,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 3580,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 3710,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3840,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 3980,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 3990,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "platano",
+      "name": "Platano",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 1000,
+      "serving_g": 120,
+      "max_servings_day": 2,
+      "satiety_index": 118,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 89,
+        "protein_g": 1.1,
+        "carb_g": 23.0,
+        "fat_g": 0.3,
+        "fiber_g": 2.6,
+        "sodium_mg": 1,
+        "calcium_mg": 5,
+        "iron_mg": 0.3,
+        "potassium_mg": 358,
+        "vitamin_c_mg": 8.7
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1080,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1200,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1210,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1240,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1240,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1370,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "manzana",
+      "name": "Manzana roja",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 197,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 52,
+        "protein_g": 0.3,
+        "carb_g": 14.0,
+        "fat_g": 0.2,
+        "fiber_g": 2.4,
+        "sodium_mg": 1,
+        "calcium_mg": 6,
+        "iron_mg": 0.1,
+        "potassium_mg": 107,
+        "vitamin_c_mg": 4.6
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1250,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1330,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1360,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1370,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1520,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1620,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "pera",
+      "name": "Pera",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 190,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 57,
+        "protein_g": 0.4,
+        "carb_g": 15.0,
+        "fat_g": 0.1,
+        "fiber_g": 3.1,
+        "sodium_mg": 1,
+        "calcium_mg": 9,
+        "iron_mg": 0.2,
+        "potassium_mg": 116,
+        "vitamin_c_mg": 4.3
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1500,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1560,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1600,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1840,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "naranja",
+      "name": "Naranja",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 1000,
+      "serving_g": 180,
+      "max_servings_day": 2,
+      "satiety_index": 202,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 47,
+        "protein_g": 0.9,
+        "carb_g": 12.0,
+        "fat_g": 0.1,
+        "fiber_g": 2.4,
+        "sodium_mg": 0,
+        "calcium_mg": 40,
+        "iron_mg": 0.1,
+        "potassium_mg": 181,
+        "vitamin_c_mg": 53.2
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1070,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1080,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1110,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1150,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1230,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1240,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "mandarina",
+      "name": "Mandarina",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 1000,
+      "serving_g": 120,
+      "max_servings_day": 2,
+      "satiety_index": 195,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 53,
+        "protein_g": 0.8,
+        "carb_g": 13.0,
+        "fat_g": 0.3,
+        "fiber_g": 1.8,
+        "sodium_mg": 2,
+        "calcium_mg": 37,
+        "iron_mg": 0.2,
+        "potassium_mg": 166,
+        "vitamin_c_mg": 26.7
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1310,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1370,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1380,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1390,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1460,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1580,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "limon",
+      "name": "Limon",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 1000,
+      "serving_g": 60,
+      "max_servings_day": 2,
+      "satiety_index": 150,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 29,
+        "protein_g": 1.1,
+        "carb_g": 9.0,
+        "fat_g": 0.3,
+        "fiber_g": 2.8,
+        "sodium_mg": 2,
+        "calcium_mg": 26,
+        "iron_mg": 0.6,
+        "potassium_mg": 138,
+        "vitamin_c_mg": 53.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1460,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1510,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1520,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1580,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1680,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1740,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "uva",
+      "name": "Uva",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 1000,
+      "serving_g": 120,
+      "max_servings_day": 2,
+      "satiety_index": 160,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 69,
+        "protein_g": 0.7,
+        "carb_g": 18.0,
+        "fat_g": 0.2,
+        "fiber_g": 0.9,
+        "sodium_mg": 2,
+        "calcium_mg": 10,
+        "iron_mg": 0.4,
+        "potassium_mg": 191,
+        "vitamin_c_mg": 10.8
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2190,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2230,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2340,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2370,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2580,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2640,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "kiwi",
+      "name": "Kiwi",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 1000,
+      "serving_g": 100,
+      "max_servings_day": 2,
+      "satiety_index": 180,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 61,
+        "protein_g": 1.1,
+        "carb_g": 15.0,
+        "fat_g": 0.5,
+        "fiber_g": 3.0,
+        "sodium_mg": 3,
+        "calcium_mg": 34,
+        "iron_mg": 0.3,
+        "potassium_mg": 312,
+        "vitamin_c_mg": 92.7
+      },
+      "prices": [
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2240,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2250,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2250,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2470,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2690,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "frutilla",
+      "name": "Frutilla",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 500,
+      "serving_g": 100,
+      "max_servings_day": 2,
+      "satiety_index": 185,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 32,
+        "protein_g": 0.7,
+        "carb_g": 7.7,
+        "fat_g": 0.3,
+        "fiber_g": 2.0,
+        "sodium_mg": 1,
+        "calcium_mg": 16,
+        "iron_mg": 0.4,
+        "potassium_mg": 153,
+        "vitamin_c_mg": 58.8
+      },
+      "prices": [
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2210,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2230,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2290,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2520,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2600,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "melon",
+      "name": "Melon",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 170,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 34,
+        "protein_g": 0.8,
+        "carb_g": 8.0,
+        "fat_g": 0.2,
+        "fiber_g": 0.9,
+        "sodium_mg": 16,
+        "calcium_mg": 9,
+        "iron_mg": 0.2,
+        "potassium_mg": 267,
+        "vitamin_c_mg": 36.7
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1130,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1170,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1220,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1280,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1360,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "palta",
+      "name": "Palta Hass",
+      "brand": "Granel",
+      "category": "fruta",
+      "package_g": 1000,
+      "serving_g": 80,
+      "max_servings_day": 2,
+      "satiety_index": 110,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 160,
+        "protein_g": 2.0,
+        "carb_g": 9.0,
+        "fat_g": 15.0,
+        "fiber_g": 6.7,
+        "sodium_mg": 7,
+        "calcium_mg": 12,
+        "iron_mg": 0.6,
+        "potassium_mg": 485,
+        "vitamin_c_mg": 10.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 3440,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 3590,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 3710,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 4120,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 4130,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "papa",
+      "name": "Papa",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 3,
+      "satiety_index": 323,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 77,
+        "protein_g": 2.0,
+        "carb_g": 17.0,
+        "fat_g": 0.1,
+        "fiber_g": 2.2,
+        "sodium_mg": 6,
+        "calcium_mg": 12,
+        "iron_mg": 0.8,
+        "potassium_mg": 421,
+        "vitamin_c_mg": 19.7
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 860,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 880,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 920,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 950,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1010,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "camote",
+      "name": "Camote",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 1000,
+      "serving_g": 150,
+      "max_servings_day": 2,
+      "satiety_index": 230,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 86,
+        "protein_g": 1.6,
+        "carb_g": 20.0,
+        "fat_g": 0.1,
+        "fiber_g": 3.0,
+        "sodium_mg": 55,
+        "calcium_mg": 30,
+        "iron_mg": 0.6,
+        "potassium_mg": 337,
+        "vitamin_c_mg": 2.4
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1340,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1350,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1350,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1480,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1610,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "tomate",
+      "name": "Tomate",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 1000,
+      "serving_g": 120,
+      "max_servings_day": 3,
+      "satiety_index": 220,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 18,
+        "protein_g": 0.9,
+        "carb_g": 3.9,
+        "fat_g": 0.2,
+        "fiber_g": 1.2,
+        "sodium_mg": 5,
+        "calcium_mg": 10,
+        "iron_mg": 0.3,
+        "potassium_mg": 237,
+        "vitamin_c_mg": 13.7
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1450,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1500,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1590,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1610,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1680,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1750,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "cebolla",
+      "name": "Cebolla",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 1000,
+      "serving_g": 80,
+      "max_servings_day": 2,
+      "satiety_index": 150,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 40,
+        "protein_g": 1.1,
+        "carb_g": 9.3,
+        "fat_g": 0.1,
+        "fiber_g": 1.7,
+        "sodium_mg": 4,
+        "calcium_mg": 23,
+        "iron_mg": 0.2,
+        "potassium_mg": 146,
+        "vitamin_c_mg": 7.4
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 770,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 810,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 820,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 830,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 960,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "zanahoria",
+      "name": "Zanahoria",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 1000,
+      "serving_g": 80,
+      "max_servings_day": 3,
+      "satiety_index": 230,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 41,
+        "protein_g": 0.9,
+        "carb_g": 9.6,
+        "fat_g": 0.2,
+        "fiber_g": 2.8,
+        "sodium_mg": 69,
+        "calcium_mg": 33,
+        "iron_mg": 0.3,
+        "potassium_mg": 320,
+        "vitamin_c_mg": 5.9
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 850,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 920,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 930,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 990,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1050,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "lechuga",
+      "name": "Lechuga",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 500,
+      "serving_g": 60,
+      "max_servings_day": 3,
+      "satiety_index": 250,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 15,
+        "protein_g": 1.4,
+        "carb_g": 2.9,
+        "fat_g": 0.2,
+        "fiber_g": 1.3,
+        "sodium_mg": 28,
+        "calcium_mg": 36,
+        "iron_mg": 0.9,
+        "potassium_mg": 194,
+        "vitamin_c_mg": 9.2
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 830,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 920,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 930,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 990,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1080,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "espinaca",
+      "name": "Espinaca",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 500,
+      "serving_g": 80,
+      "max_servings_day": 2,
+      "satiety_index": 240,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 23,
+        "protein_g": 2.9,
+        "carb_g": 3.6,
+        "fat_g": 0.4,
+        "fiber_g": 2.2,
+        "sodium_mg": 79,
+        "calcium_mg": 99,
+        "iron_mg": 2.7,
+        "potassium_mg": 558,
+        "vitamin_c_mg": 28.1
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1260,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1410,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1410,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1450,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1530,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1630,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "acelga",
+      "name": "Acelga",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 500,
+      "serving_g": 80,
+      "max_servings_day": 2,
+      "satiety_index": 240,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 19,
+        "protein_g": 1.8,
+        "carb_g": 3.7,
+        "fat_g": 0.2,
+        "fiber_g": 1.6,
+        "sodium_mg": 213,
+        "calcium_mg": 51,
+        "iron_mg": 1.8,
+        "potassium_mg": 379,
+        "vitamin_c_mg": 30.0
+      },
+      "prices": [
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1050,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1100,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1140,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1220,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1230,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "brocoli",
+      "name": "Brocoli",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 500,
+      "serving_g": 100,
+      "max_servings_day": 2,
+      "satiety_index": 240,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 34,
+        "protein_g": 2.8,
+        "carb_g": 6.6,
+        "fat_g": 0.4,
+        "fiber_g": 2.6,
+        "sodium_mg": 33,
+        "calcium_mg": 47,
+        "iron_mg": 0.7,
+        "potassium_mg": 316,
+        "vitamin_c_mg": 89.2
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1490,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1550,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1570,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1600,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1750,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1760,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "coliflor",
+      "name": "Coliflor",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 700,
+      "serving_g": 100,
+      "max_servings_day": 2,
+      "satiety_index": 240,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 25,
+        "protein_g": 1.9,
+        "carb_g": 5.0,
+        "fat_g": 0.3,
+        "fiber_g": 2.0,
+        "sodium_mg": 30,
+        "calcium_mg": 22,
+        "iron_mg": 0.4,
+        "potassium_mg": 299,
+        "vitamin_c_mg": 48.2
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1750,
+          "package_g": 700
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1870,
+          "package_g": 700
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1900,
+          "package_g": 700
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2160,
+          "package_g": 700
+        }
+      ]
+    },
+    {
+      "id": "repollo",
+      "name": "Repollo",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 1000,
+      "serving_g": 80,
+      "max_servings_day": 2,
+      "satiety_index": 235,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 25,
+        "protein_g": 1.3,
+        "carb_g": 5.8,
+        "fat_g": 0.1,
+        "fiber_g": 2.5,
+        "sodium_mg": 18,
+        "calcium_mg": 40,
+        "iron_mg": 0.5,
+        "potassium_mg": 170,
+        "vitamin_c_mg": 36.6
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1100,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1150,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1150,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1180,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1340,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1390,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "zapallo_italiano",
+      "name": "Zapallo italiano",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 1000,
+      "serving_g": 120,
+      "max_servings_day": 2,
+      "satiety_index": 235,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 17,
+        "protein_g": 1.2,
+        "carb_g": 3.1,
+        "fat_g": 0.3,
+        "fiber_g": 1.0,
+        "sodium_mg": 8,
+        "calcium_mg": 16,
+        "iron_mg": 0.4,
+        "potassium_mg": 261,
+        "vitamin_c_mg": 17.9
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1100,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1150,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1160,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1230,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1290,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1320,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "zapallo",
+      "name": "Zapallo",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 1000,
+      "serving_g": 120,
+      "max_servings_day": 2,
+      "satiety_index": 235,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 26,
+        "protein_g": 1.0,
+        "carb_g": 6.5,
+        "fat_g": 0.1,
+        "fiber_g": 0.5,
+        "sodium_mg": 1,
+        "calcium_mg": 21,
+        "iron_mg": 0.8,
+        "potassium_mg": 340,
+        "vitamin_c_mg": 9.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1000,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1070,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1090,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1110,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1140,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1300,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "betarraga",
+      "name": "Betarraga",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 1000,
+      "serving_g": 80,
+      "max_servings_day": 2,
+      "satiety_index": 210,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 43,
+        "protein_g": 1.6,
+        "carb_g": 10.0,
+        "fat_g": 0.2,
+        "fiber_g": 2.8,
+        "sodium_mg": 78,
+        "calcium_mg": 16,
+        "iron_mg": 0.8,
+        "potassium_mg": 325,
+        "vitamin_c_mg": 4.9
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 850,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 900,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 900,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 910,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1020,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1060,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "pepino",
+      "name": "Pepino",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 500,
+      "serving_g": 100,
+      "max_servings_day": 2,
+      "satiety_index": 230,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 15,
+        "protein_g": 0.7,
+        "carb_g": 3.6,
+        "fat_g": 0.1,
+        "fiber_g": 0.5,
+        "sodium_mg": 2,
+        "calcium_mg": 16,
+        "iron_mg": 0.3,
+        "potassium_mg": 147,
+        "vitamin_c_mg": 2.8
+      },
+      "prices": [
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1140,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1180,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1250,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1260,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1370,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "pimenton",
+      "name": "Pimenton",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 500,
+      "serving_g": 80,
+      "max_servings_day": 2,
+      "satiety_index": 230,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 31,
+        "protein_g": 1.0,
+        "carb_g": 6.0,
+        "fat_g": 0.3,
+        "fiber_g": 2.1,
+        "sodium_mg": 4,
+        "calcium_mg": 7,
+        "iron_mg": 0.4,
+        "potassium_mg": 211,
+        "vitamin_c_mg": 127.7
+      },
+      "prices": [
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2300,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2380,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2530,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2730,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "apio",
+      "name": "Apio",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 500,
+      "serving_g": 80,
+      "max_servings_day": 2,
+      "satiety_index": 240,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 16,
+        "protein_g": 0.7,
+        "carb_g": 3.0,
+        "fat_g": 0.2,
+        "fiber_g": 1.6,
+        "sodium_mg": 80,
+        "calcium_mg": 40,
+        "iron_mg": 0.2,
+        "potassium_mg": 260,
+        "vitamin_c_mg": 3.1
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1100,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1220,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1230,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1240,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1280,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1360,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "champinon",
+      "name": "Champinon",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 250,
+      "serving_g": 80,
+      "max_servings_day": 2,
+      "satiety_index": 200,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 22,
+        "protein_g": 3.1,
+        "carb_g": 3.3,
+        "fat_g": 0.3,
+        "fiber_g": 1.0,
+        "sodium_mg": 5,
+        "calcium_mg": 3,
+        "iron_mg": 0.5,
+        "potassium_mg": 318,
+        "vitamin_c_mg": 2.1
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1780,
+          "package_g": 250
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1800,
+          "package_g": 250
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1840,
+          "package_g": 250
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1870,
+          "package_g": 250
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2180,
+          "package_g": 250
+        }
+      ]
+    },
+    {
+      "id": "poroto_verde",
+      "name": "Poroto verde",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 500,
+      "serving_g": 90,
+      "max_servings_day": 2,
+      "satiety_index": 200,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 31,
+        "protein_g": 1.8,
+        "carb_g": 7.0,
+        "fat_g": 0.2,
+        "fiber_g": 2.7,
+        "sodium_mg": 6,
+        "calcium_mg": 37,
+        "iron_mg": 1.0,
+        "potassium_mg": 211,
+        "vitamin_c_mg": 12.2
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2170,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2210,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2310,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2320,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2510,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2580,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "ajo",
+      "name": "Ajo",
+      "brand": "Granel",
+      "category": "verdura",
+      "package_g": 250,
+      "serving_g": 10,
+      "max_servings_day": 1,
+      "satiety_index": 120,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 149,
+        "protein_g": 6.4,
+        "carb_g": 33.0,
+        "fat_g": 0.5,
+        "fiber_g": 2.1,
+        "sodium_mg": 17,
+        "calcium_mg": 181,
+        "iron_mg": 1.7,
+        "potassium_mg": 401,
+        "vitamin_c_mg": 31.2
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2510,
+          "package_g": 250
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2660,
+          "package_g": 250
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2830,
+          "package_g": 250
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2870,
+          "package_g": 250
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2930,
+          "package_g": 250
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3290,
+          "package_g": 250
+        }
+      ]
+    },
+    {
+      "id": "choclo_congelado",
+      "name": "Choclo congelado",
+      "brand": "Frutos del Maipo",
+      "category": "verdura",
+      "package_g": 400,
+      "serving_g": 100,
+      "max_servings_day": 2,
+      "satiety_index": 130,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 96,
+        "protein_g": 3.4,
+        "carb_g": 21.0,
+        "fat_g": 1.5,
+        "fiber_g": 2.4,
+        "sodium_mg": 15,
+        "calcium_mg": 2,
+        "iron_mg": 0.5,
+        "potassium_mg": 270,
+        "vitamin_c_mg": 6.8
+      },
+      "prices": [
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1790,
+          "package_g": 400
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1900,
+          "package_g": 400
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1940,
+          "package_g": 400
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1970,
+          "package_g": 400
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2030,
+          "package_g": 400
+        }
+      ]
+    },
+    {
+      "id": "salsa_tomate",
+      "name": "Salsa de tomate",
+      "brand": "Carozzi",
+      "category": "otro",
+      "package_g": 200,
+      "serving_g": 60,
+      "max_servings_day": 2,
+      "satiety_index": 100,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 32,
+        "protein_g": 1.6,
+        "carb_g": 7.0,
+        "fat_g": 0.2,
+        "fiber_g": 1.5,
+        "sodium_mg": 400,
+        "calcium_mg": 14,
+        "iron_mg": 0.8,
+        "potassium_mg": 300,
+        "vitamin_c_mg": 9.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 500,
+          "package_g": 200
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 630,
+          "package_g": 200
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 670,
+          "package_g": 200
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 670,
+          "package_g": 200
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 700,
+          "package_g": 200
+        }
+      ]
+    },
+    {
+      "id": "azucar",
+      "name": "Azucar granulada",
+      "brand": "Iansa",
+      "category": "otro",
+      "package_g": 1000,
+      "serving_g": 10,
+      "max_servings_day": 2,
+      "satiety_index": 30,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 387,
+        "protein_g": 0.0,
+        "carb_g": 100.0,
+        "fat_g": 0.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 0,
+        "calcium_mg": 1,
+        "iron_mg": 0.0,
+        "potassium_mg": 2,
+        "vitamin_c_mg": 0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 870,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1070,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1080,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1170,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1200,
+          "package_g": 1000
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1200,
+          "package_g": 1000
+        }
+      ]
+    },
+    {
+      "id": "miel",
+      "name": "Miel",
+      "brand": "Granel",
+      "category": "otro",
+      "package_g": 500,
+      "serving_g": 20,
+      "max_servings_day": 2,
+      "satiety_index": 50,
+      "tags": [
+        "vegetariano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 304,
+        "protein_g": 0.3,
+        "carb_g": 82.0,
+        "fat_g": 0.0,
+        "fiber_g": 0.2,
+        "sodium_mg": 4,
+        "calcium_mg": 6,
+        "iron_mg": 0.4,
+        "potassium_mg": 52,
+        "vitamin_c_mg": 0.5
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 3770,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 4500,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 4830,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 4860,
+          "package_g": 500
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 5010,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 5180,
+          "package_g": 500
+        }
+      ]
+    }
   ]
 }

@@ -52,6 +52,38 @@ def _eligible_foods(db: Session, user: User) -> list[Food]:
     return result
 
 
+def _price_in_retailers(food: Food, preferred: set[str]) -> tuple[float, str] | None:
+    """Precio/gramo y cadena mas barata para el alimento.
+
+    Si el usuario definio cadenas (preferred), busca solo entre esas y
+    devuelve None cuando el alimento no se vende en ninguna de ellas. Si no
+    definio cadenas, usa el precio mas economico de todo el catalogo.
+    """
+    if not preferred:
+        return food.price_per_g, food.retailer
+    candidates = [p for p in food.prices if p.retailer_id in preferred]
+    if not candidates:
+        return None
+    best = min(candidates, key=lambda p: p.price_per_g)
+    return best.price_per_g, best.retailer
+
+
+def _build_inputs(db: Session, user: User, extra_excluded: set[str] | None = None) -> list[FoodInput]:
+    """Arma los FoodInput aplicando dieta, exclusiones y cadenas del usuario."""
+    preferred = set(user.preferred_retailers or [])
+    extra_excluded = extra_excluded or set()
+    inputs: list[FoodInput] = []
+    for f in _eligible_foods(db, user):
+        if f.id in extra_excluded:
+            continue
+        priced = _price_in_retailers(f, preferred)
+        if priced is None:
+            continue  # no disponible en las cadenas del usuario
+        price_per_g, retailer = priced
+        inputs.append(FoodInput.from_orm(f, price_per_g=price_per_g, retailer=retailer))
+    return inputs
+
+
 def build_options(
     user: User,
     satiety_emphasis: float = 0.0,
@@ -75,10 +107,7 @@ def generate_daily_plan(
 ) -> dict:
     """Genera una minuta diaria optimizada para el usuario."""
     req = user_requirements(user)
-    foods = _eligible_foods(db, user)
-    if extra_excluded:
-        foods = [f for f in foods if f.id not in extra_excluded]
-    inputs = [FoodInput.from_orm(f) for f in foods]
+    inputs = _build_inputs(db, user, extra_excluded)
     prefs = get_preferences(db, user.id) if user.id else {}
     opts = build_options(user, satiety_emphasis=satiety_emphasis, use_budget=use_budget)
 

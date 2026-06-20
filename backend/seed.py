@@ -4,7 +4,7 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal, init_db
-from .models import Food
+from .models import Food, FoodPrice
 from .providers import get_provider
 
 
@@ -31,14 +31,30 @@ def seed_foods(db: Session, provider_name: str = "local", refresh: bool = False)
             tags=r.tags,
         )
         if existing is None:
-            db.add(Food(id=r.id, **data))
+            food = Food(id=r.id, **data)
+            db.add(food)
+            _sync_prices(db, food, r.prices)
             count += 1
         elif refresh:
             for k, v in data.items():
                 setattr(existing, k, v)
+            _sync_prices(db, existing, r.prices)
             count += 1
     db.commit()
     return count
+
+
+def _sync_prices(db: Session, food: Food, prices: list[dict]) -> None:
+    """Reemplaza los precios por cadena de un alimento."""
+    food.prices.clear()
+    db.flush()
+    for p in prices:
+        food.prices.append(FoodPrice(
+            retailer=p.get("retailer", ""),
+            retailer_id=p.get("retailer_id", ""),
+            price_clp=float(p.get("price_clp", 0)),
+            package_g=float(p.get("package_g", food.package_g)),
+        ))
 
 
 def run_seed(provider_name: str = "local", refresh: bool = False) -> int:

@@ -21,6 +21,8 @@ class FoodRecord:
     retailer: str = ""
     package_g: float = 1000.0
     price_clp: float = 0.0
+    # Precios por cadena: [{retailer, retailer_id, price_clp, package_g}, ...]
+    prices: list = field(default_factory=list)
     serving_g: float = 100.0
     max_servings_day: float = 3.0
     satiety_index: float = 100.0

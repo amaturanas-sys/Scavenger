@@ -47,14 +47,16 @@ class FoodInput:
     potassium_mg: float = 0.0
     vitamin_c_mg: float = 0.0
     brand: str = ""
+    retailer: str = ""  # cadena mas conveniente para comprarlo
 
     @classmethod
-    def from_orm(cls, food) -> "FoodInput":
+    def from_orm(cls, food, price_per_g: float | None = None, retailer: str | None = None) -> "FoodInput":
         return cls(
             id=food.id,
             name=food.name,
             category=food.category,
-            price_per_g=food.price_per_g,
+            price_per_g=food.price_per_g if price_per_g is None else price_per_g,
+            retailer=food.retailer if retailer is None else retailer,
             serving_g=food.serving_g,
             max_servings_day=food.max_servings_day,
             satiety_index=food.satiety_index,
@@ -93,6 +95,7 @@ class PlanItem:
     name: str
     brand: str
     category: str
+    retailer: str
     grams: float
     servings: float
     cost_clp: float
@@ -260,7 +263,7 @@ def _build_result(
         cost = f.price_per_g * g
         sat = f.satiety_index / 100.0 * g
         items.append(PlanItem(
-            food_id=fid, name=f.name, brand=f.brand, category=f.category,
+            food_id=fid, name=f.name, brand=f.brand, category=f.category, retailer=f.retailer,
             grams=round(g, 1), servings=round(g / f.serving_g, 2) if f.serving_g else 0.0,
             cost_clp=round(cost, 1), kcal=round(f.kcal * scale, 1),
             protein_g=round(f.protein_g * scale, 1), carb_g=round(f.carb_g * scale, 1),
