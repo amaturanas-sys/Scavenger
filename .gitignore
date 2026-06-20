@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Base de datos local (se regenera con el seed)
+*.db
+*.sqlite3
+scavenger.db
+
+# Herramientas
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+
+# Cachés de scrapers
+data/cache/
+*.log

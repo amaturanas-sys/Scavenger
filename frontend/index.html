@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCAVENGER · Meal prep costo-efectivo</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🍃</span>
+      <div>
+        <h1>SCAVENGER</h1>
+        <p class="tagline">Minutas optimizadas por costo, nutrición y saciedad · Chile</p>
+      </div>
+    </div>
+    <div class="user-switch">
+      <label for="userSelect">Usuario</label>
+      <select id="userSelect"></select>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="perfil">1 · Perfil</button>
+    <button class="tab" data-tab="requerimientos">2 · Requerimientos</button>
+    <button class="tab" data-tab="generar">3 · Generar minuta</button>
+    <button class="tab" data-tab="minutas">4 · Mis minutas</button>
+    <button class="tab" data-tab="alimentos">Catálogo</button>
+  </nav>
+
+  <main>
+    <!-- PERFIL -->
+    <section id="perfil" class="panel active">
+      <h2>Perfil del usuario</h2>
+      <p class="hint">Define tus datos. SCAVENGER calcula tus requerimientos y busca las
+        combinaciones de alimentos más económicas que los cumplen.</p>
+      <form id="userForm" class="grid">
+        <label>Nombre <input name="name" type="text" placeholder="Tu nombre" /></label>
+        <label>Sexo
+          <select name="sex"><option value="M">Masculino</option><option value="F">Femenino</option></select>
+        </label>
+        <label>Edad <input name="age" type="number" value="30" min="10" max="110" /></label>
+        <label>Peso (kg) <input name="weight_kg" type="number" value="70" step="0.1" /></label>
+        <label>Estatura (cm) <input name="height_cm" type="number" value="170" step="0.1" /></label>
+        <label>Actividad
+          <select name="activity_level">
+            <option value="sedentario">Sedentario</option>
+            <option value="ligero">Ligero</option>
+            <option value="moderado" selected>Moderado</option>
+            <option value="activo">Activo</option>
+            <option value="muy_activo">Muy activo</option>
+          </select>
+        </label>
+        <label>Objetivo
+          <select name="goal">
+            <option value="bajar">Bajar peso</option>
+            <option value="mantener" selected>Mantener</option>
+            <option value="subir">Subir masa</option>
+          </select>
+        </label>
+        <label>Presupuesto diario (CLP) <input name="daily_budget_clp" type="number" value="4000" step="100" /></label>
+        <label>Dieta
+          <select name="diet_tags">
+            <option value="">Sin restricción</option>
+            <option value="vegetariano">Vegetariano</option>
+            <option value="vegano">Vegano</option>
+            <option value="sin_gluten">Sin gluten</option>
+          </select>
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="primary">Guardar perfil</button>
+          <span id="userStatus" class="status"></span>
+        </div>
+      </form>
+    </section>
+
+    <!-- REQUERIMIENTOS -->
+    <section id="requerimientos" class="panel">
+      <h2>Requerimientos diarios</h2>
+      <p class="hint">Calculados con Mifflin-St Jeor + factor de actividad y ajuste por objetivo.</p>
+      <div id="reqCards" class="cards"></div>
+    </section>
+
+    <!-- GENERAR -->
+    <section id="generar" class="panel">
+      <h2>Generar minuta</h2>
+      <div class="controls">
+        <label>Alcance
+          <select id="scope"><option value="diario">Diario</option><option value="semanal">Semanal</option></select>
+        </label>
+        <label class="slider">Énfasis en saciedad: <strong id="satVal">0.0</strong>
+          <input id="satiety" type="range" min="0" max="1.5" step="0.1" value="0" />
+        </label>
+        <label class="check"><input id="useBudget" type="checkbox" /> Respetar presupuesto como tope</label>
+        <button id="generateBtn" class="primary">Generar</button>
+      </div>
+      <div id="genStatus" class="status"></div>
+      <div id="planResult"></div>
+    </section>
+
+    <!-- MINUTAS -->
+    <section id="minutas" class="panel">
+      <h2>Mis minutas guardadas</h2>
+      <div id="plansList"></div>
+    </section>
+
+    <!-- ALIMENTOS -->
+    <section id="alimentos" class="panel">
+      <h2>Catálogo de alimentos (retail Chile)</h2>
+      <input id="foodSearch" type="text" placeholder="Buscar alimento, marca o categoría..." />
+      <div id="foodsTable"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>SCAVENGER · datos referenciales de retail chileno · proveedores Jumbo / FatSecret conectables</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
