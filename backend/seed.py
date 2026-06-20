@@ -4,7 +4,7 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal, init_db
-from .models import Food, FoodPrice
+from .models import Food, FoodPrice, User
 from .providers import get_provider
 
 
@@ -55,6 +55,24 @@ def _sync_prices(db: Session, food: Food, prices: list[dict]) -> None:
             price_clp=float(p.get("price_clp", 0)),
             package_g=float(p.get("package_g", food.package_g)),
         ))
+
+
+def seed_demo_user(db: Session) -> bool:
+    """Crea un usuario de demostracion si no existe ninguno.
+
+    Hace que la app sea usable apenas se abre (perfil de ejemplo). Devuelve
+    True si lo creo, False si ya habia usuarios.
+    """
+    if db.query(User).count() > 0:
+        return False
+    db.add(User(
+        name="Demo", sex="M", age=30, weight_kg=75, height_cm=175,
+        activity_level="moderado", goal="mantener", daily_budget_clp=4000,
+        diet_tags=[], excluded_foods=[],
+        preferred_retailers=["lider", "mayorista10", "jumbo"],
+    ))
+    db.commit()
+    return True
 
 
 def run_seed(provider_name: str = "local", refresh: bool = False) -> int:
