@@ -56,6 +56,7 @@ def _scaled_item(item: PlanItem, grams: float) -> dict:
         "name": item.name,
         "brand": item.brand,
         "category": item.category,
+        "retailer": item.retailer,
         "grams": round(grams, 1),
         "servings": round(item.servings * ratio, 2),
         "cost_clp": round(item.cost_clp * ratio, 1),

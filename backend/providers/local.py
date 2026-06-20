@@ -24,14 +24,26 @@ class LocalDatasetProvider(FoodProvider):
         records: list[FoodRecord] = []
         for item in raw.get("alimentos", []):
             per = item.get("per_100g", {})
+            prices = item.get("prices", [])
+            # Precio/cadena por defecto = la opcion mas economica del catalogo.
+            if prices:
+                cheapest = min(prices, key=lambda p: p["price_clp"])
+                default_price = float(cheapest["price_clp"])
+                default_pkg = float(cheapest.get("package_g", item.get("package_g", 1000)))
+                default_retailer = cheapest.get("retailer", "")
+            else:
+                default_price = float(item.get("price_clp", 0))
+                default_pkg = float(item.get("package_g", 1000))
+                default_retailer = item.get("retailer", "")
             records.append(FoodRecord(
                 id=item["id"],
                 name=item["name"],
                 category=item.get("category", "otro"),
                 brand=item.get("brand", ""),
-                retailer=item.get("retailer", ""),
-                package_g=float(item.get("package_g", 1000)),
-                price_clp=float(item.get("price_clp", 0)),
+                retailer=default_retailer,
+                package_g=default_pkg,
+                price_clp=default_price,
+                prices=prices,
                 serving_g=float(item.get("serving_g", 100)),
                 max_servings_day=float(item.get("max_servings_day", 3)),
                 satiety_index=float(item.get("satiety_index", 100)),

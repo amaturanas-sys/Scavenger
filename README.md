@@ -4,9 +4,15 @@
 
 SCAVENGER genera pautas de alimentación (minutas diarias y semanales) que
 **cumplen los requerimientos nutricionales** de cada usuario al **menor costo
-posible**, usando precios del retail chileno (referencia tipo Jumbo) y valores
-nutricionales declarados (referencia FatSecret Chile). Aprende de la
-**saciedad** y las **preferencias** reportadas para afinar las sugerencias.
+posible**, comparando precios entre las **principales cadenas de supermercado
+de Chile** (Jumbo, Líder, Santa Isabel, Tottus, Unimarc y Mayorista 10) y
+usando valores nutricionales declarados (referencia FatSecret Chile). Aprende
+de la **saciedad** y las **preferencias** reportadas para afinar las sugerencias.
+
+> **Catálogo actual:** ~84 alimentos × 6 cadenas. El usuario indica qué
+> supermercados tiene cerca y SCAVENGER **compra cada producto en la cadena más
+> barata** de esas. (En pruebas, la misma dieta cuesta ~30% menos comprando en
+> mayoristas que restringido a cadenas premium.)
 
 ---
 
@@ -14,10 +20,13 @@ nutricionales declarados (referencia FatSecret Chile). Aprende de la
 
 1. **Perfil + requerimientos.** A partir de sexo, edad, peso, estatura,
    actividad y objetivo calcula las calorías (Mifflin-St Jeor + factor de
-   actividad), macronutrientes, fibra y mínimos de micronutrientes.
-2. **Optimización costo-efectiva.** Resuelve la _"dieta de costo mínimo"_
-   (programación lineal, variante del problema de Stigler) para elegir cuántos
-   gramos de cada alimento incluir y cubrir las metas gastando lo menos posible.
+   actividad), macronutrientes, fibra y mínimos de micronutrientes. El usuario
+   también marca las **cadenas de supermercado que tiene cerca**.
+2. **Optimización costo-efectiva multi-cadena.** Para cada alimento toma el
+   **precio más barato entre las cadenas elegidas** y resuelve la _"dieta de
+   costo mínimo"_ (programación lineal, variante del problema de Stigler):
+   elige cuántos gramos de cada alimento y **en qué supermercado comprarlo**
+   para cubrir las metas gastando lo menos posible.
 3. **Minutas por comida.** Distribuye la canasta diaria en desayuno, almuerzo,
    once y cena según afinidades por categoría y reparto calórico.
 4. **Guardado + saciedad.** Permite guardar minutas y registrar un **puntaje de
@@ -35,7 +44,7 @@ backend/                FastAPI + SQLAlchemy
   main.py               app, monta routers y sirve el frontend
   config.py             configuración por variables de entorno
   database.py           engine/sesión SQLite
-  models.py             Food, User, Plan, Feedback, Preference
+  models.py             Food, FoodPrice, User, Plan, Feedback, Preference
   schemas.py            esquemas Pydantic
   nutrition.py          requerimientos (Mifflin-St Jeor, macros, micros)
   optimizer.py          motor PL de dieta de costo mínimo (PuLP/CBC)
@@ -50,10 +59,33 @@ backend/                FastAPI + SQLAlchemy
     fatsecret.py        API FatSecret (OAuth) — listo para conectar
   routers/              users, foods, plans, feedback
 data/
-  chilean_foods.json    catálogo semilla (precios + nutrición referenciales)
+  foods_base.json       catálogo base autorado (nutrición + precio referencia)
+  chilean_foods.json    catálogo generado (precios por cadena) ← lo usa la app
+scripts/
+  build_catalog.py      genera chilean_foods.json desde foods_base.json
+  run.sh                arranca API + frontend
 frontend/               SPA sin framework (HTML/CSS/JS)
-tests/                  pruebas de nutrición y optimizador
+tests/                  pruebas de nutrición, optimizador y catálogo
 ```
+
+### Catálogo de alimentos y precios por cadena
+
+- `data/foods_base.json` se **autora a mano**: cada alimento con su nutrición
+  por 100 g y un `base_price_clp` de referencia.
+- `scripts/build_catalog.py` genera `data/chilean_foods.json` con un **precio
+  por cada cadena**, aplicando un modelo de posicionamiento
+  (`precio = base × factor_cadena × ajuste_categoría × variación`). Los
+  mayoristas quedan más baratos, las premium más caras, con variación por
+  categoría (ferias/Santa Isabel mejores en frutas/verduras; mayoristas en
+  abarrotes y carnes). Es reproducible: para **agregar alimentos o cadenas**,
+  edita `foods_base.json` y vuelve a correr el script.
+
+  ```bash
+  python3 scripts/build_catalog.py   # regenera el catálogo
+  ```
+
+> Los precios por cadena son **estimaciones modeladas** hasta conectar el
+> scraping real (cada proveedor reemplaza estos valores sin tocar el resto).
 
 ### Proveedores de datos (pluggables)
 
@@ -100,7 +132,8 @@ python3 -m pytest -q
 | POST   | `/api/users`                      | Crear usuario                                |
 | PATCH  | `/api/users/{id}`                 | Actualizar perfil                            |
 | GET    | `/api/users/{id}/requirements`    | Requerimientos nutricionales calculados      |
-| GET    | `/api/foods`                      | Catálogo (filtros `q`, `category`)           |
+| GET    | `/api/foods`                      | Catálogo con precios por cadena (filtros `q`, `category`) |
+| GET    | `/api/foods/retailers`            | Cadenas de supermercado disponibles          |
 | POST   | `/api/plans/generate`             | Generar minuta (diaria/semanal, no guarda)   |
 | POST   | `/api/plans`                      | Guardar minuta                               |
 | GET    | `/api/plans?user_id=`             | Listar minutas                               |

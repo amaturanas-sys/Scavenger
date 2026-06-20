@@ -40,6 +40,10 @@ class Food(Base):
 
     tags: Mapped[list] = mapped_column(JSON, default=list)
 
+    prices: Mapped[list["FoodPrice"]] = relationship(
+        back_populates="food", cascade="all, delete-orphan"
+    )
+
     @property
     def price_per_g(self) -> float:
         if self.package_g <= 0:
@@ -49,6 +53,26 @@ class Food(Base):
     @property
     def price_per_100g(self) -> float:
         return self.price_per_g * 100.0
+
+
+class FoodPrice(Base):
+    """Precio de un alimento en una cadena de supermercado especifica."""
+
+    __tablename__ = "food_prices"
+    __table_args__ = (UniqueConstraint("food_id", "retailer_id", name="uq_food_retailer"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    food_id: Mapped[str] = mapped_column(ForeignKey("foods.id"), index=True)
+    retailer: Mapped[str] = mapped_column(String, default="")
+    retailer_id: Mapped[str] = mapped_column(String, index=True, default="")
+    price_clp: Mapped[float] = mapped_column(Float, default=0.0)
+    package_g: Mapped[float] = mapped_column(Float, default=1000.0)
+
+    food: Mapped["Food"] = relationship(back_populates="prices")
+
+    @property
+    def price_per_g(self) -> float:
+        return self.price_clp / self.package_g if self.package_g else 0.0
 
 
 class User(Base):
@@ -72,6 +96,8 @@ class User(Base):
     diet_tags: Mapped[list] = mapped_column(JSON, default=list)
     # Categorias o ids de alimentos excluidos.
     excluded_foods: Mapped[list] = mapped_column(JSON, default=list)
+    # Cadenas que el usuario tiene cerca (retailer_id). Vacio = todas.
+    preferred_retailers: Mapped[list] = mapped_column(JSON, default=list)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
