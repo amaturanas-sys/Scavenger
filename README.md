@@ -54,6 +54,8 @@ backend/                FastAPI + SQLAlchemy
   seed.py               carga del catálogo a la BD
   pricing.py            refresco de precios por cadena (scraping)
   refresh_prices.py     CLI de scraping de precios (python -m)
+  nutrition_enrich.py   completa nutrición de alimentos vía FatSecret
+  enrich_nutrition.py   CLI de enriquecimiento nutricional (python -m)
   providers/            fuentes de datos pluggables
     base.py             interfaz FoodProvider + FoodRecord
     local.py            dataset local (offline, por defecto)
@@ -61,7 +63,7 @@ backend/                FastAPI + SQLAlchemy
     jumbo.py            scraper Jumbo (VTEX)
     santa_isabel.py     scraper Santa Isabel (VTEX)
     lider.py            scraper Lider / Walmart (BFF propio, no VTEX)
-    fatsecret.py        API FatSecret (OAuth) — listo para conectar
+    fatsecret.py        API FatSecret (OAuth): nutrición por 100 g
   routers/              users, foods, plans, feedback
 data/
   foods_base.json       catálogo base autorado (nutrición + precio referencia)
@@ -137,6 +139,38 @@ consultas.
 > `SCAVENGER_LIDER_BASE_URL` / `SCAVENGER_LIDER_SEARCH_PATH` o las listas de
 > claves candidatas en `providers/lider.py`.
 
+### Completar nutrición (FatSecret)
+
+El scraping de precios trae productos sin valores nutricionales. El módulo
+`backend/nutrition_enrich.py` los completa cruzando con **FatSecret** (Platform
+API, OAuth 2.0, región CL): busca cada alimento, obtiene su detalle y
+**normaliza la nutrición a valores por 100 g** (eligiendo la porción métrica
+más cercana a 100 g y escalando). Solo rellena alimentos sin datos; no
+sobreescribe la nutrición ya autorada (salvo `--all`).
+
+```bash
+# Completa solo los alimentos sin nutrición
+python3 -m backend.enrich_nutrition
+
+# Recalcula todos / acota
+python3 -m backend.enrich_nutrition --all --limit 20
+```
+
+Requiere **credenciales** y los **hosts en el allowlist de egress**:
+
+```
+oauth.fatsecret.com
+platform.fatsecret.com
+```
+
+```bash
+export SCAVENGER_FATSECRET_KEY=...      # Consumer key
+export SCAVENGER_FATSECRET_SECRET=...   # Consumer secret
+```
+
+Sin credenciales o con los hosts bloqueados, el comando aborta con un mensaje
+claro.
+
 ### Proveedores de datos (pluggables)
 
 El sistema es agnóstico a la fuente: todo se normaliza a `FoodRecord`.
@@ -206,6 +240,8 @@ python3 -m pytest -q
 | `SCAVENGER_LIDER_BASE_URL`     | `https://apps.lider.cl`| Host del BFF de Líder               |
 | `SCAVENGER_LIDER_SEARCH_PATH`  | `/supermercado/bff/products?term={q}&page=1` | Ruta de búsqueda de Líder |
 | `SCAVENGER_FATSECRET_KEY/SECRET` | —                    | Credenciales FatSecret (OAuth)      |
+| `SCAVENGER_FATSECRET_REGION`   | `CL`                   | Región de FatSecret (localización)  |
+| `SCAVENGER_FATSECRET_LANGUAGE` | `es`                   | Idioma de FatSecret                 |
 
 ---
 
