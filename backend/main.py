@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from . import config
 from .database import SessionLocal, init_db
 from .routers import feedback, foods, plans, users
-from .seed import seed_foods
+from .seed import seed_demo_user, seed_foods
 
 
 @asynccontextmanager
@@ -25,6 +25,7 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_foods(db, config.DEFAULT_FOOD_PROVIDER, refresh=False)
+        seed_demo_user(db)
     finally:
         db.close()
     yield

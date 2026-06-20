@@ -189,13 +189,26 @@ El sistema es agnóstico a la fuente: todo se normaliza a `FoodRecord`.
 
 ## Cómo correr
 
+**Local (Python):**
+
 ```bash
 pip3 install -r requirements.txt
 ./scripts/run.sh              # http://localhost:8000  (docs en /docs)
 ```
 
-El catálogo se carga automáticamente en el arranque (seed idempotente).
-Para recargarlo/actualizarlo manualmente:
+**Con Docker (un comando):**
+
+```bash
+docker build -t scavenger .
+docker run --rm -p 8000:8000 scavenger   # http://localhost:8000
+```
+
+**Con Make (atajos):** `make install`, `make run`, `make test`, `make seed`,
+`make refresh`, `make enrich`, `make docker-build`, `make docker-run`.
+
+En el arranque se cargan automáticamente (idempotente) el **catálogo** y un
+**usuario de demostración** ("Demo"), para que la app sea usable apenas se abre.
+Para recargar/actualizar el catálogo manualmente:
 
 ```bash
 python3 -m backend.seed local   # o: jumbo / fatsecret
@@ -204,7 +217,7 @@ python3 -m backend.seed local   # o: jumbo / fatsecret
 ### Pruebas
 
 ```bash
-python3 -m pytest -q
+python3 -m pytest -q     # o: make test
 ```
 
 ---
