@@ -60,6 +60,7 @@ backend/                FastAPI + SQLAlchemy
     vtex.py             cliente VTEX (parseo, matching, extraccion de oferta)
     jumbo.py            scraper Jumbo (VTEX)
     santa_isabel.py     scraper Santa Isabel (VTEX)
+    lider.py            scraper Lider / Walmart (BFF propio, no VTEX)
     fatsecret.py        API FatSecret (OAuth) — listo para conectar
   routers/              users, foods, plans, feedback
 data/
@@ -99,12 +100,18 @@ uno en la cadena, elige la mejor coincidencia (matching por nombre/marca),
 parsea el **tamaño del envase** para normalizar a precio/100 g y actualiza su
 `FoodPrice`. La nutrición autorada **no** se toca.
 
+Cadenas con scraper hoy: **Jumbo** y **Santa Isabel** (VTEX) y **Líder /
+Walmart** (BFF propio). Líder no es VTEX, por lo que tiene su propio adaptador
+(`providers/lider.py`) hecho **tolerante al esquema**: el mapeo busca cada
+campo (nombre, marca, precio, EAN) en varias ubicaciones conocidas y el
+endpoint es configurable por entorno.
+
 ```bash
-# Refresca precios reales (Jumbo + Santa Isabel)
+# Refresca precios reales de todas las cadenas con scraper
 python3 -m backend.refresh_prices
 
 # Solo una cadena, acotado y sin caché
-python3 -m backend.refresh_prices --retailer jumbo --limit 20 --no-cache
+python3 -m backend.refresh_prices --retailer lider --limit 20 --no-cache
 ```
 
 **Requisito de red — allowlist de egress.** En Claude Code on the web la red
@@ -115,13 +122,20 @@ editarlo; ver https://code.claude.com/docs/en/claude-code-on-the-web):
 ```
 www.jumbo.cl
 www.santaisabel.cl
+apps.lider.cl
 ```
 
 Si los hosts no están permitidos, el comando aborta con un mensaje claro
 (`Host bloqueado por la política de red del entorno: ... Agrégalo al allowlist
 de egress`). Las respuestas se cachean en `data/cache/` para no repetir
-consultas. Líder/Walmart usa otra plataforma (no VTEX): requiere su propio
-adaptador `FoodProvider`, que encaja en la misma interfaz.
+consultas.
+
+> **Nota sobre Líder:** su BFF no pudo inspeccionarse en vivo desde este
+> entorno (host bloqueado por la política de red). El adaptador está construido
+> según la estructura conocida de la plataforma de Walmart Chile y es tolerante
+> al esquema; si Walmart cambiara el endpoint o las claves, se ajustan vía
+> `SCAVENGER_LIDER_BASE_URL` / `SCAVENGER_LIDER_SEARCH_PATH` o las listas de
+> claves candidatas en `providers/lider.py`.
 
 ### Proveedores de datos (pluggables)
 
@@ -186,7 +200,11 @@ python3 -m pytest -q
 | `SCAVENGER_PREFERENCE_WEIGHT`  | `0.35`                 | Peso de preferencias en el costo    |
 | `SCAVENGER_LEARNING_RATE`      | `0.25`                 | Tasa de aprendizaje del feedback    |
 | `SCAVENGER_KCAL_TOLERANCE`     | `0.05`                 | Banda ± sobre calorías objetivo     |
-| `SCAVENGER_JUMBO_ENABLED`      | `0`                    | Habilita scraping de Jumbo          |
+| `SCAVENGER_JUMBO_ENABLED`      | `1`                    | Habilita scraping de Jumbo          |
+| `SCAVENGER_SANTA_ISABEL_ENABLED` | `1`                  | Habilita scraping de Santa Isabel   |
+| `SCAVENGER_LIDER_ENABLED`      | `1`                    | Habilita scraping de Líder          |
+| `SCAVENGER_LIDER_BASE_URL`     | `https://apps.lider.cl`| Host del BFF de Líder               |
+| `SCAVENGER_LIDER_SEARCH_PATH`  | `/supermercado/bff/products?term={q}&page=1` | Ruta de búsqueda de Líder |
 | `SCAVENGER_FATSECRET_KEY/SECRET` | —                    | Credenciales FatSecret (OAuth)      |
 
 ---
