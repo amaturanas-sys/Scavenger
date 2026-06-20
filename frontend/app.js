@@ -141,6 +141,7 @@ $("#generateBtn").addEventListener("click", async () => {
   if (!currentUserId) return alert("Primero guarda un perfil.");
   $("#genStatus").textContent = "Optimizando combinaciones más económicas...";
   $("#planResult").innerHTML = "";
+  $("#shoppingResult").innerHTML = "";
   try {
     const body = {
       user_id: currentUserId,
@@ -198,9 +199,11 @@ function renderDaily(data) {
     html += `<div class="warnbox">⚠ ${data.warnings.join(" ")}</div>`;
   html += totalsBar(data.totals, data.requirements, data.budget_clp, data.over_budget);
   html += data.meals.map(mealTable).join("");
-  html += `<button id="savePlanBtn" class="primary">Guardar esta minuta</button>`;
+  html += `<button id="savePlanBtn" class="primary">Guardar esta minuta</button>
+    <button id="shopBtn" class="btn-sm">🛒 Lista de compras consolidada</button>`;
   $("#planResult").innerHTML = html;
   $("#savePlanBtn").addEventListener("click", () => savePlan("diario", data));
+  $("#shopBtn").addEventListener("click", () => showShoppingForPayload(data));
 }
 
 function renderWeekly(data) {
@@ -219,9 +222,51 @@ function renderWeekly(data) {
       .join("");
     html += `</div>`;
   });
-  html += `<button id="savePlanBtn" class="primary">Guardar esta minuta semanal</button>`;
+  html += `<button id="savePlanBtn" class="primary">Guardar esta minuta semanal</button>
+    <button id="shopBtn" class="btn-sm">🛒 Lista de compras consolidada</button>`;
   $("#planResult").innerHTML = html;
   $("#savePlanBtn").addEventListener("click", () => savePlan("semanal", data));
+  $("#shopBtn").addEventListener("click", () => showShoppingForPayload(data));
+}
+
+// ---------- lista de compras ----------
+function shoppingHtml(d) {
+  if (!d.retailers || !d.retailers.length) return '<p class="muted">Sin productos para listar.</p>';
+  let html = `<div class="totbar">
+    <div class="pill">Total comprando envases: <strong>${clp(d.total_packages_clp)}</strong></div>
+    <div class="pill">Consumo neto: <strong>${clp(d.total_consumed_clp)}</strong></div>
+    <div class="pill">${d.retailer_count} cadena(s)</div>
+  </div>`;
+  for (const r of d.retailers) {
+    const rows = r.items
+      .map((i) => `<tr>
+        <td>${i.name} <span class="muted">${i.brand || ""}</span></td>
+        <td class="num">${num(i.needed_g)} g</td>
+        <td class="num">${i.packages != null ? `${i.packages} × ${num(i.package_g)} g` : "—"}</td>
+        <td class="num">${i.packages_cost_clp != null ? clp(i.packages_cost_clp) : "—"}</td>
+      </tr>`)
+      .join("");
+    html += `<div class="meal">
+      <h3>🛒 ${r.retailer} <span>${r.item_count} productos · ${clp(r.subtotal_packages_clp)}</span></h3>
+      <table><thead><tr><th>Producto</th><th class="num">Necesario</th><th class="num">Comprar</th><th class="num">Costo</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>`;
+  }
+  return html;
+}
+
+async function showShoppingForPayload(payload) {
+  $("#shoppingResult").innerHTML = '<p class="muted">Consolidando lista de compras…</p>';
+  const data = await api("/api/plans/shopping-list", { method: "POST", body: JSON.stringify({ payload }) });
+  $("#shoppingResult").innerHTML = `<h3 style="margin-top:18px">Lista de compras por cadena</h3>` + shoppingHtml(data);
+  $("#shoppingResult").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function showShoppingForSaved(planId, containerSel) {
+  const el = $(containerSel);
+  el.innerHTML = '<p class="muted">Consolidando…</p>';
+  const data = await api(`/api/plans/${planId}/shopping-list`);
+  el.innerHTML = shoppingHtml(data);
 }
 
 async function savePlan(scope, payload) {
@@ -253,10 +298,12 @@ function planCard(p) {
         ${p.satiety_score ? `<span class="muted"> · saciedad reportada: ${p.satiety_score}/5</span>` : ""}
       </div>
       <div>
+        <button class="btn-sm" data-act="shop" data-id="${p.id}">🛒 Lista de compras</button>
         <button class="btn-sm" data-act="fb" data-id="${p.id}">Registrar saciedad</button>
         <button class="btn-sm" data-act="del" data-id="${p.id}">Eliminar</button>
       </div>
     </div>
+    <div id="shop-${p.id}"></div>
     <div class="feedback-box" id="fb-${p.id}">
       <p class="muted">¿Qué tan saciado quedaste? (1 = mucha hambre, 5 = muy lleno)</p>
       <div class="stars" data-id="${p.id}">${[1, 2, 3, 4, 5].map((n) => `<span data-v="${n}">☆</span>`).join("")}</div>
@@ -275,6 +322,9 @@ function wirePlanCard(p) {
   let satiety = 3;
   card.querySelectorAll('[data-act="fb"]').forEach((b) =>
     b.addEventListener("click", () => $(`#fb-${p.id}`).classList.toggle("open"))
+  );
+  card.querySelectorAll('[data-act="shop"]').forEach((b) =>
+    b.addEventListener("click", () => showShoppingForSaved(p.id, `#shop-${p.id}`))
   );
   card.querySelectorAll('[data-act="del"]').forEach((b) =>
     b.addEventListener("click", async () => {
