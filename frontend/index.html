@@ -25,6 +25,7 @@
     <button class="tab active" data-tab="perfil">1 · Perfil</button>
     <button class="tab" data-tab="requerimientos">2 · Requerimientos</button>
     <button class="tab" data-tab="generar">3 · Generar minuta</button>
+    <button class="tab" data-tab="armar">🎰 Armar comida</button>
     <button class="tab" data-tab="minutas">4 · Mis minutas</button>
     <button class="tab" data-tab="alimentos">Catálogo</button>
   </nav>
@@ -112,6 +113,32 @@
       <div id="genStatus" class="status"></div>
       <div id="planResult"></div>
       <div id="shoppingResult"></div>
+    </section>
+
+    <!-- ARMAR COMIDA (tragamonedas) -->
+    <section id="armar" class="panel">
+      <h2>Armar comida 🎰</h2>
+      <p class="hint">Elige la comida y desliza cada carrete para escoger un elemento por rol.
+        Cada opción viene pre-porcionada para su rol, así los macros calzan. Mira la suma en vivo
+        o usa <strong>Girar</strong> para una combinación aleatoria.</p>
+      <div class="controls">
+        <label>Comida
+          <select id="builderMeal">
+            <option value="desayuno">Desayuno</option>
+            <option value="snack">Snack</option>
+            <option value="almuerzo" selected>Almuerzo</option>
+            <option value="cena">Cena</option>
+          </select>
+        </label>
+        <button id="spinBtn" class="primary">🎲 Girar</button>
+        <span id="builderStatus" class="status"></span>
+      </div>
+      <div id="mealTotals"></div>
+      <div id="reels"></div>
+      <div class="controls">
+        <button id="addMealBtn" class="btn-sm">➕ Agregar a la minuta del día</button>
+      </div>
+      <div id="dayBuild"></div>
     </section>
 
     <!-- MINUTAS -->
