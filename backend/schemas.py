@@ -81,6 +81,24 @@ class RetailerOut(BaseModel):
     retailer: str
 
 
+# ----- Historial de saciedad -----
+class SatietyHistoryEntry(BaseModel):
+    plan_id: int
+    title: str
+    scope: str
+    created_at: str | None = None
+    satiety_score: int
+    cost_score: int
+    total_cost_clp: float
+
+
+class SatietyHistoryOut(BaseModel):
+    entries: list[SatietyHistoryEntry]
+    count: int
+    avg_satiety: float
+    avg_cost_score: float
+
+
 # ----- Generacion de planes -----
 class GeneratePlanRequest(BaseModel):
     user_id: int

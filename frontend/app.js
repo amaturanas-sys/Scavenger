@@ -296,8 +296,39 @@ async function savePlan(scope, payload) {
 }
 
 // ---------- minutas guardadas ----------
+async function loadSatietyHistory() {
+  if (!currentUserId) return;
+  const h = await api(`/api/users/${currentUserId}/satiety-history`);
+  if (!h.count) {
+    $("#satietyHistory").innerHTML =
+      '<p class="muted">Aún no hay historial de saciedad. Registra la saciedad de tus minutas para ir afinando las sugerencias.</p>';
+    return;
+  }
+  const bars = h.entries
+    .map((e) => {
+      const pct = (e.satiety_score / 5) * 100;
+      const date = e.created_at ? new Date(e.created_at).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit" }) : "";
+      return `<div class="histbar" title="${e.title}: saciedad ${e.satiety_score}/5 · costo ${clp(e.total_cost_clp)}">
+        <div class="histfill" style="height:${pct}%"></div>
+        <div class="histlbl">${e.satiety_score}</div>
+        <div class="histdate">${date}</div>
+      </div>`;
+    })
+    .join("");
+  $("#satietyHistory").innerHTML = `<div class="card" style="margin-bottom:16px">
+    <div class="lbl">Historial de saciedad</div>
+    <div class="totbar" style="margin:8px 0">
+      <div class="pill">Promedio saciedad: <strong>${h.avg_satiety}/5</strong></div>
+      <div class="pill">Satisfacción de costo: <strong>${h.avg_cost_score}/5</strong></div>
+      <div class="pill">${h.count} registro(s)</div>
+    </div>
+    <div class="histchart">${bars}</div>
+  </div>`;
+}
+
 async function loadPlans() {
   if (!currentUserId) return;
+  loadSatietyHistory();
   const plans = await api(`/api/plans?user_id=${currentUserId}`);
   if (!plans.length) {
     $("#plansList").innerHTML = '<p class="muted">Aún no tienes minutas guardadas.</p>';
@@ -409,6 +440,7 @@ function renderFoods(foods) {
 // ---------- constructor de comidas (tragamonedas) ----------
 let builderData = null; // respuesta de /api/builder/slots
 let reelIdx = {};       // role -> índice actual
+let reelLocked = {};    // role -> bloqueado (no gira)
 let dayMeals = [];      // comidas agregadas al día
 
 async function loadReels() {
@@ -422,7 +454,11 @@ async function loadReels() {
     body: JSON.stringify({ user_id: currentUserId, meal: $("#builderMeal").value }),
   });
   reelIdx = {};
-  builderData.slots.forEach((s) => (reelIdx[s.role] = 0));
+  reelLocked = {};
+  builderData.slots.forEach((s) => {
+    reelIdx[s.role] = 0;
+    reelLocked[s.role] = false;
+  });
   $("#builderStatus").textContent = "";
   renderReels();
 }
@@ -446,8 +482,11 @@ function renderReels() {
              <div class="meta">P ${num(c.protein_g, 1)} · C ${num(c.carb_g, 1)} · G ${num(c.fat_g, 1)}</div>
              <div class="meta"><span class="shop">${c.retailer}</span></div></div>`
         : `<div class="item">— sin opciones —</div>`;
-      return `<div class="reel ${n ? "" : "empty"}">
-        <div class="role">${s.label}</div>
+      const locked = reelLocked[s.role];
+      return `<div class="reel ${n ? "" : "empty"} ${locked ? "locked" : ""}">
+        <div class="role">${s.label}
+          <button class="lockbtn" data-lock="${s.role}" title="Fijar este carrete al girar" ${n ? "" : "disabled"}>${locked ? "🔒" : "🔓"}</button>
+        </div>
         <div class="nav">
           <button data-dir="-1" data-role="${s.role}" ${n ? "" : "disabled"}>◀</button>
           <span class="counter">${n ? (reelIdx[s.role] % n) + 1 : 0}/${n}</span>
@@ -462,6 +501,12 @@ function renderReels() {
       const n = builderData.slots.find((s) => s.role === role).candidates.length;
       if (!n) return;
       reelIdx[role] = (reelIdx[role] + +b.dataset.dir + n) % n;
+      renderReels();
+    })
+  );
+  $$("#reels .lockbtn").forEach((b) =>
+    b.addEventListener("click", () => {
+      reelLocked[b.dataset.lock] = !reelLocked[b.dataset.lock];
       renderReels();
     })
   );
@@ -491,7 +536,9 @@ $("#builderMeal").addEventListener("change", loadReels);
 $("#spinBtn").addEventListener("click", () => {
   if (!builderData) return;
   builderData.slots.forEach((s) => {
-    if (s.candidates.length) reelIdx[s.role] = Math.floor(Math.random() * s.candidates.length);
+    // Los carretes bloqueados conservan su elemento; solo giran los libres.
+    if (s.candidates.length && !reelLocked[s.role])
+      reelIdx[s.role] = Math.floor(Math.random() * s.candidates.length);
   });
   renderReels();
 });

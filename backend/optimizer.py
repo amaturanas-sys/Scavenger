@@ -151,7 +151,8 @@ def _build_and_solve(
     # Variable: gramos de cada alimento (continua, acotada por porciones/dia).
     grams = {}
     for f in foods:
-        upper = max(f.max_servings_day * f.serving_g, f.serving_g)
+        sp = f.serving_g or 100.0  # evita upBound=0 si serving_g viene en 0
+        upper = max(f.max_servings_day * sp, sp)
         grams[f.id] = pulp.LpVariable(f"g_{f.id}", lowBound=0, upBound=upper)
 
     # Objetivo: minimizar costo efectivo - enfasis en saciedad.

@@ -33,7 +33,10 @@ def build_shopping_list(db: Session, payload: dict) -> dict:
     # Agrega gramos y costo consumido por (alimento, cadena).
     agg: dict[tuple, dict] = {}
     for it in _iter_items(payload):
-        key = (it["food_id"], it.get("retailer", "") or "Sin asignar")
+        fid = it.get("food_id")
+        if not fid:
+            continue
+        key = (fid, it.get("retailer", "") or "Sin asignar")
         a = agg.setdefault(key, {
             "grams": 0.0, "cost": 0.0,
             "name": it.get("name", ""), "brand": it.get("brand", ""),

@@ -39,11 +39,14 @@ de la **saciedad** y las **preferencias** reportadas para afinar las sugerencias
    carretes deslizables. Cada candidato viene **pre-porcionado** para su rol, de
    modo que cualquier combinación suma valores cercanos a la meta de la comida
    («los macros calzan»). Hay un botón **Girar** para una combinación aleatoria,
-   con suma de nutrición y costo en vivo. (`backend/builder.py`,
-   `POST /api/builder/slots|random|summary`.)
-4. **Guardado + saciedad.** Permite guardar minutas y registrar un **puntaje de
-   saciedad** (1–5) y de costo. Con ese feedback **aprende preferencias** por
-   alimento que modifican el "costo efectivo" en futuras optimizaciones.
+   con suma de nutrición y costo en vivo. Se puede **fijar (🔒) un carrete** para
+   que no gire mientras el resto sí, y soporta **snacks numerados** (Snack 1/2/3).
+   (`backend/builder.py`, `POST /api/builder/slots|random|summary`.)
+4. **Guardado + saciedad + historial.** Permite guardar minutas y registrar un
+   **puntaje de saciedad** (1–5) y de costo. Con ese feedback **aprende
+   preferencias** por alimento que modifican el "costo efectivo" en futuras
+   optimizaciones, y muestra un **historial de saciedad** por usuario (promedios
+   y evolución). (`GET /api/users/{id}/satiety-history`.)
 5. **Catálogo.** Explora alimentos con su nutrición por 100 g, precio por 100 g
    e índice de saciedad.
 

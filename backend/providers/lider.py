@@ -120,8 +120,9 @@ def _map_product(raw: dict) -> dict | None:
     if not name or price <= 0:
         return None
 
+    # Disponibilidad: tolera flags como False, 0, "false"/"no" (JSON variado).
     available = _first(raw, _AVAIL_KEYS, default=True)
-    if available is False:
+    if str(available).strip().lower() in ("false", "0", "no", "none", "off"):
         return None
 
     grams = None
