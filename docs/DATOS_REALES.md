@@ -2,16 +2,52 @@
 
 Checklist para reemplazar las **estimaciones modeladas** por **precios y
 nutrición reales** (scraping de cadenas + FatSecret). El código ya está listo
-y probado; lo único pendiente es **configurar el acceso de red del entorno** y,
-para FatSecret, las **credenciales**.
+y probado; lo único pendiente es **acceso a internet** y, para FatSecret, las
+**credenciales**.
 
-> Contexto: en Claude Code on the web el acceso a red se fija **al iniciar la
-> sesión**. Por eso, tras cambiar la configuración hay que **abrir una sesión
-> nueva** para que tome efecto (la sesión en curso no la recoge).
+Hay dos caminos. **El más simple es el local** (opción A): no requiere Claude
+Code on the web ni tocar configuración de red.
 
 ---
 
-## 1. Habilitar los hosts en el allowlist de egress
+## Opción A — Correr localmente (recomendado, sin Claude Code web)
+
+El bloqueo de red es exclusivo del entorno cloud administrado. En **tu propio
+computador** (o cualquier servidor con internet normal) no existe esa
+restricción: los comandos pegan directo a Jumbo/Líder/FatSecret.
+
+```bash
+git clone <url-del-repo> && cd Scavenger
+pip install -r requirements.txt          # o usa Docker (ver README)
+
+# Credenciales de FatSecret (gratis en https://platform.fatsecret.com/)
+export SCAVENGER_FATSECRET_KEY=<tu_consumer_key>
+export SCAVENGER_FATSECRET_SECRET=<tu_consumer_secret>
+
+make refresh    # precios reales: Jumbo, Santa Isabel, Líder  -> BD local
+make enrich     # nutrición real vía FatSecret                -> BD local
+make export     # vuelca la BD a data/chilean_foods.json (para versionar)
+make run        # http://localhost:8000 con datos reales
+```
+
+Luego revisa los datos, corre `make test`, y commitea `data/chilean_foods.json`
+con los datos reales (ver sección **Verificar y commitear**).
+
+---
+
+## Opción B — En el entorno cloud (Claude Code on the web)
+
+Solo si usas el entorno cloud administrado. Requiere editar el acceso de red,
+que **solo se hace por la interfaz web** (el terminal `/remote-env` no cambia la
+red). Si no puedes acceder a la web, usa la **Opción A**.
+
+> El acceso a red se fija **al iniciar la sesión**: tras cambiarlo hay que
+> **abrir una sesión nueva** para que tome efecto (la sesión en curso no lo
+> recoge).
+
+---
+
+### B.1 — Habilitar los hosts en el allowlist de egress
 
 En la web/app de Claude Code:
 
@@ -38,7 +74,7 @@ En la web/app de Claude Code:
 | Líder / Walmart   | `apps.lider.cl`                           | precios  |
 | FatSecret         | `oauth.fatsecret.com`, `platform.fatsecret.com` | nutrición |
 
-## 2. Credenciales de FatSecret (solo para `enrich`)
+### B.2 — Credenciales de FatSecret (solo para `enrich`)
 
 1. Crea una app gratuita en la [FatSecret Platform API](https://platform.fatsecret.com/).
 2. En **Environment variables** del entorno, agrega:
@@ -50,16 +86,19 @@ En la web/app de Claude Code:
 
    (Opcional) `SCAVENGER_FATSECRET_REGION=CL`, `SCAVENGER_FATSECRET_LANGUAGE=es`.
 
-## 3. Iniciar una sesión nueva
+### B.3 — Iniciar una sesión nueva
 
 La sesión actual **no** recoge el cambio de red. Abre una **sesión nueva** sobre
 este repositorio.
 
-## 4. Cargar los datos (en la sesión nueva)
+---
+
+## Cargar los datos (ambas opciones)
 
 ```bash
-make refresh    # precios reales: Jumbo, Santa Isabel, Líder
-make enrich     # nutrición real vía FatSecret
+make refresh    # precios reales: Jumbo, Santa Isabel, Líder   -> BD
+make enrich     # nutrición real vía FatSecret                 -> BD
+make export     # vuelca la BD a data/chilean_foods.json       (para versionar)
 ```
 
 Equivalente directo:
@@ -69,13 +108,15 @@ python3 -m backend.refresh_prices                      # todas las cadenas
 python3 -m backend.refresh_prices --retailer lider --limit 20 --no-cache
 python3 -m backend.enrich_nutrition                    # solo nutrición faltante
 python3 -m backend.enrich_nutrition --all --limit 20   # recalcula por tandas
+python3 -m backend.export_catalog                      # BD -> data/chilean_foods.json
 ```
 
-- Los resultados se cachean en `data/cache/` (no se versiona).
-- El catálogo en la BD se actualiza con los precios reales por cadena; la
-  nutrición autorada solo se rellena donde falta (salvo `--all`).
+- Los resultados de scraping se cachean en `data/cache/` (no se versiona).
+- `refresh` actualiza los precios por cadena en la BD; `enrich` rellena la
+  nutrición faltante (salvo `--all`). `export` deja todo en
+  `data/chilean_foods.json` para commitearlo y compartirlo.
 
-## 5. Verificar y commitear
+## Verificar y commitear
 
 1. Revisa el matching de productos, los tamaños de envase parseados y los
    precios (`GET /api/foods`, `GET /api/foods/{q}` o la pestaña **Catálogo**).
@@ -84,7 +125,7 @@ python3 -m backend.enrich_nutrition --all --limit 20   # recalcula por tandas
    - `SCAVENGER_LIDER_BASE_URL`, `SCAVENGER_LIDER_SEARCH_PATH`, o
    - las listas de claves en `backend/providers/lider.py`.
 3. Corre la suite: `make test`.
-4. Commitea el catálogo actualizado y abre un PR.
+4. Commitea `data/chilean_foods.json` (ya con datos reales) y abre un PR.
 
 ---
 

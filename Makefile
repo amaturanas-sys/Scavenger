@@ -1,5 +1,5 @@
 # SCAVENGER - atajos de desarrollo
-.PHONY: help install run test seed refresh enrich docker-build docker-run
+.PHONY: help install run test seed refresh enrich export docker-build docker-run
 
 help:
 	@echo "Comandos disponibles:"
@@ -9,6 +9,7 @@ help:
 	@echo "  make seed         Carga/actualiza el catalogo local en la BD"
 	@echo "  make refresh      Refresca precios reales por cadena (scraping)"
 	@echo "  make enrich       Completa nutricion via FatSecret"
+	@echo "  make export       Exporta el catalogo de la BD a data/chilean_foods.json"
 	@echo "  make docker-build Construye la imagen Docker"
 	@echo "  make docker-run   Corre la app en Docker (puerto 8000)"
 
@@ -29,6 +30,9 @@ refresh:
 
 enrich:
 	python -m backend.enrich_nutrition
+
+export:
+	python -m backend.export_catalog
 
 docker-build:
 	docker build -t scavenger .
