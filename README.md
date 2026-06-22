@@ -245,6 +245,14 @@ python3 -m backend.seed local   # o: jumbo / fatsecret
 python3 -m pytest -q     # o: make test
 ```
 
+### App Android (APK)
+
+Hay una app **cliente Android (WebView)** en `android/` que empaqueta esta
+interfaz y se conecta al backend que corras en tu PC/servidor (el motor de
+optimización vive en el backend). La APK se compila en GitHub Actions y se
+publica como Release **`android-latest`** (`scavenger-debug.apk`), lista para
+descargar e instalar. Pasos completos en [`docs/ANDROID.md`](docs/ANDROID.md).
+
 ---
 
 ## API (resumen)

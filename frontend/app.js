@@ -1,5 +1,16 @@
 // SCAVENGER · frontend (vanilla JS)
-const API = "";
+// Base del backend: en la web servida por FastAPI es el mismo origen ("");
+// en la APK (file://) el usuario configura la URL del servidor (localStorage).
+function apiBase() {
+  return (localStorage.getItem("scavenger_api_base") || window.SCAVENGER_API_BASE || "").replace(/\/+$/, "");
+}
+function setApiBase() {
+  const cur = apiBase();
+  const v = prompt("URL del servidor SCAVENGER\n(ej: http://192.168.1.10:8000)", cur);
+  if (v === null) return;
+  localStorage.setItem("scavenger_api_base", v.trim());
+  location.reload();
+}
 let currentUserId = null;
 let lastPlanPayload = null; // ultima minuta generada (para guardar)
 let retailersCache = []; // cadenas disponibles
@@ -11,7 +22,7 @@ const clp = (n) => "$" + Math.round(n || 0).toLocaleString("es-CL");
 const num = (n, d = 0) => (n ?? 0).toLocaleString("es-CL", { maximumFractionDigits: d });
 
 async function api(path, opts = {}) {
-  const res = await fetch(API + path, {
+  const res = await fetch(apiBase() + path, {
     headers: { "Content-Type": "application/json" },
     ...opts,
   });
@@ -614,4 +625,25 @@ async function saveBuiltDay() {
 }
 
 // ---------- init ----------
-loadRetailers().then(loadUsers);
+const serverBtn = document.getElementById("serverBtn");
+if (serverBtn) {
+  serverBtn.addEventListener("click", setApiBase);
+  serverBtn.title = "Servidor: " + (apiBase() || "este sitio");
+}
+
+function startApp() {
+  loadRetailers().then(loadUsers).catch((e) => {
+    const msg = "No se pudo conectar con el servidor SCAVENGER" + (apiBase() ? " (" + apiBase() + ")" : "") + ".";
+    const status = document.getElementById("genStatus");
+    if (status) status.textContent = msg;
+    console.error(msg, e);
+  });
+}
+
+// En la APK (file://) se requiere configurar la URL del backend antes de cargar.
+if (location.protocol === "file:" && !apiBase()) {
+  alert("Bienvenido a SCAVENGER.\n\nConfigura la URL del servidor (tu backend corriendo en el PC/servidor) para comenzar.");
+  setApiBase(); // recarga al guardar
+} else {
+  startApp();
+}
