@@ -55,6 +55,14 @@ def test_map_product_skips_unavailable_and_priceless():
     assert _map_product({"price": 1000}) is None  # sin nombre
 
 
+def test_map_product_handles_unavailable_as_string_or_zero():
+    # Disponibilidad como string "false" o entero 0 también debe descartarse.
+    assert _map_product({"displayName": "X 1 Kg", "price": 990, "available": "false"}) is None
+    assert _map_product({"displayName": "X 1 Kg", "price": 990, "inStock": 0}) is None
+    # Disponible (entero positivo / true) sí pasa.
+    assert _map_product({"displayName": "X 1 Kg", "price": 990, "inStock": 5}) is not None
+
+
 # --- search_products con red mockeada -------------------------------------
 class _FakeLider(LiderProvider):
     def __init__(self, payload, **kw):

@@ -25,6 +25,10 @@ from backend.seed import seed_foods
     ("Aceite Vegetal 1,5 L", 1500),
     ("Yogur Pack 6 x 125 g", 750),
     ("Fideos 500 GR", 500),
+    ("Arroz 6 x 1 kilo", 6000),
+    ("Bebida 12 x 350 cc", 4200),
+    ("Pack 2 x 1 kg", 2000),
+    ("100 x 600 g", 600),  # multipack absurdo (60 kg) -> cae al unitario 600 g
 ])
 def test_parse_package_grams_ok(text, grams):
     assert parse_package_grams(text) == grams

@@ -48,7 +48,7 @@ _UNIT_TO_G = {
 }
 _SIZE_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(kg|kilos|kilo|k|gramos|grs|gr|g|litros|litro|lts|lt|l|ml|cc)\b")
 # Multipack tipo "6 x 200 g" o "pack 6 un 200g".
-_MULTI_RE = re.compile(r"(\d+)\s*(?:x|un|u|unid|unidades)\s*(\d+(?:[.,]\d+)?)\s*(kg|gramos|grs|gr|g|litros|litro|lts|lt|l|ml|cc)\b")
+_MULTI_RE = re.compile(r"(\d+)\s*(?:x|un|u|unid|unidades)\s*(\d+(?:[.,]\d+)?)\s*(kg|kilos|kilo|k|gramos|grs|gr|g|litros|litro|lts|lt|l|ml|cc)\b")
 
 
 def parse_package_grams(text: str) -> float | None:
@@ -67,7 +67,9 @@ def parse_package_grams(text: str) -> float | None:
         size = float(m.group(2).replace(",", "."))
         unit = _UNIT_TO_G.get(m.group(3))
         if unit:
-            return count * size * unit
+            grams = count * size * unit
+            if 1 <= grams <= 50000:  # descarta valores absurdos
+                return grams
 
     m = _SIZE_RE.search(t)
     if m:

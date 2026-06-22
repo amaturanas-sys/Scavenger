@@ -124,9 +124,11 @@ def _upsert_price(db: Session, food: Food, retailer_id: str, match: dict) -> Non
 def _recompute_cheapest(foods: list[Food]) -> None:
     """Actualiza el precio/cadena denormalizado de cada alimento (el mas barato)."""
     for food in foods:
-        if not food.prices:
+        # Ignora precios no validos (0) para no denormalizar un precio espurio.
+        priced = [p for p in food.prices if p.price_per_g > 0]
+        if not priced:
             continue
-        cheapest = min(food.prices, key=lambda p: p.price_per_g)
+        cheapest = min(priced, key=lambda p: p.price_per_g)
         food.price_clp = cheapest.price_clp
         food.package_g = cheapest.package_g
         food.retailer = cheapest.retailer

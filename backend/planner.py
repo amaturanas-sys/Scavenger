@@ -84,9 +84,17 @@ def distribute_into_meals(
     meal_items: dict[str, list[dict]] = {m: [] for m in meals}
     for item in result.items:
         grams_per_meal = _split_item(item, meals, fractions)
-        for m, g in grams_per_meal.items():
-            if g >= 0.5:
-                meal_items[m].append(_scaled_item(item, g))
+        # Conserva la masa: las porciones < 0.5 g no se descartan (eso haria que
+        # los subtotales por comida no cuadren con los totales), sino que su
+        # gramaje se suma a la comida con mayor porcion del item.
+        kept = {m: g for m, g in grams_per_meal.items() if g >= 0.5}
+        dropped = sum(g for g in grams_per_meal.values() if g < 0.5)
+        if not kept:
+            kept = {max(grams_per_meal, key=grams_per_meal.get): item.grams}
+        elif dropped > 0:
+            kept[max(kept, key=kept.get)] += dropped
+        for m, g in kept.items():
+            meal_items[m].append(_scaled_item(item, g))
 
     meals_out = []
     for m in meals:

@@ -60,8 +60,13 @@ def _price_in_retailers(food: Food, preferred: set[str]) -> tuple[float, str] | 
     definio cadenas, usa el precio mas economico de todo el catalogo.
     """
     if not preferred:
+        # Sin cadenas elegidas: la opcion mas economica de todo el catalogo.
+        valid = [p for p in food.prices if p.price_per_g > 0]
+        if valid:
+            best = min(valid, key=lambda p: p.price_per_g)
+            return best.price_per_g, best.retailer
         return food.price_per_g, food.retailer
-    candidates = [p for p in food.prices if p.retailer_id in preferred]
+    candidates = [p for p in food.prices if p.retailer_id in preferred and p.price_per_g > 0]
     if not candidates:
         return None
     best = min(candidates, key=lambda p: p.price_per_g)
@@ -157,24 +162,27 @@ def generate_weekly_plan(
     """
     days = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
     daily_plans = []
-    rotation: set[str] = set()
+    # Lista ordenada de alimentos protagonistas recientes (ventana de los 3
+    # ultimos). Se usa lista, no set, para mantener el orden de insercion.
+    recent: list[str] = []
     total_cost = 0.0
 
     for day in days:
         plan = generate_daily_plan(
             db, user, satiety_emphasis=satiety_emphasis,
-            budget_mode=budget_mode, budget_clp=budget_clp, extra_excluded=rotation,
+            budget_mode=budget_mode, budget_clp=budget_clp,
+            extra_excluded=set(recent[-3:]),
         )
-        # Para dar variedad, excluye el item proteico/caloricamente dominante
-        # del dia siguiente (rotacion simple, acotada para no quedar sin opciones).
+        # Para dar variedad, excluye al dia siguiente el item dominante (mayor
+        # aporte calorico) de hoy. Ventana acotada para no quedar sin opciones.
         items = sorted(
             (it for meal in plan["meals"] for it in meal["items"]),
             key=lambda it: it["kcal"], reverse=True,
         )
-        for it in items[:1]:
-            rotation.add(it["food_id"])
-        if len(rotation) > 3:
-            rotation = set(list(rotation)[-3:])
+        if items:
+            top = items[0].get("food_id")
+            if top:
+                recent.append(top)
 
         daily_plans.append({"day": day, "plan": plan})
         total_cost += plan["totals"].get("cost_clp", 0.0)

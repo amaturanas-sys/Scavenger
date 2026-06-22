@@ -42,7 +42,7 @@ def list_foods(
     foods = query.order_by(Food.name).all()
     if q:
         ql = q.lower()
-        foods = [f for f in foods if ql in f.name.lower() or ql in f.brand.lower() or ql in f.category.lower()]
+        foods = [f for f in foods if ql in (f.name or "").lower() or ql in (f.brand or "").lower() or ql in (f.category or "").lower()]
     return [_to_out(f) for f in foods]
 
 

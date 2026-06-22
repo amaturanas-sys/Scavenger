@@ -74,17 +74,19 @@ def compute_requirements(
     bmr = mifflin_st_jeor(sex, weight_kg, height_cm, age)
     pal = ACTIVITY_FACTORS.get(activity_level, 1.55)
     tdee = bmr * pal
-    kcal = tdee * (1 + GOAL_ADJUSTMENT.get(goal, 0.0))
+    # Piso defensivo: ante inputs degenerados (que la API ya valida por rango)
+    # evita energia/macros negativos que volverian infactible al optimizador.
+    kcal = max(tdee * (1 + GOAL_ADJUSTMENT.get(goal, 0.0)), 0.0)
 
-    protein_g = PROTEIN_G_PER_KG.get(goal, 1.6) * weight_kg
-    fat_g = (kcal * FAT_KCAL_FRACTION) / KCAL_PER_G["fat"]
+    protein_g = max(PROTEIN_G_PER_KG.get(goal, 1.6) * weight_kg, 0.0)
+    fat_g = max((kcal * FAT_KCAL_FRACTION) / KCAL_PER_G["fat"], 0.0)
 
     # El resto de las calorias se asigna a carbohidratos.
     remaining_kcal = kcal - protein_g * KCAL_PER_G["protein"] - fat_g * KCAL_PER_G["fat"]
     carb_g = max(remaining_kcal, 0.0) / KCAL_PER_G["carb"]
 
     # Fibra: ~14 g por cada 1000 kcal (recomendacion general).
-    fiber_g = 14.0 * kcal / 1000.0
+    fiber_g = max(14.0 * kcal / 1000.0, 0.0)
 
     # Minimos de micronutrientes (referencia adulto, ajustable por sexo).
     micros = {

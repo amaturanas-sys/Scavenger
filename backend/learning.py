@@ -59,7 +59,10 @@ def apply_feedback(db: Session, plan: Plan, feedback: Feedback) -> dict[str, flo
     # comidas, por lo que un mismo food_id puede aparecer repetido).
     satiety_values: dict[str, float] = {}
     for it in items:
-        satiety_values[it["food_id"]] = satiety_values.get(it["food_id"], 0.0) + it.get("satiety_contrib", 0.0)
+        fid = it.get("food_id")
+        if not fid:
+            continue
+        satiety_values[fid] = satiety_values.get(fid, 0.0) + it.get("satiety_contrib", 0.0)
     max_sat = max(satiety_values.values()) if satiety_values else 1.0
     max_sat = max_sat or 1.0
 
