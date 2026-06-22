@@ -33,6 +33,14 @@ de la **saciedad** y las **preferencias** reportadas para afinar las sugerencias
      límite`. El monto es por día y se puede ajustar en cada generación.
 3. **Minutas por comida.** Distribuye la canasta diaria en desayuno, almuerzo,
    once y cena según afinidades por categoría y reparto calórico.
+3b. **Constructor de comidas (🎰 tragamonedas).** En vez de auto-generar, el
+   usuario arma cada comida (desayuno/snack/almuerzo/cena) eligiendo un elemento
+   por **rol** (proteínas, carbohidratos, grasas, vegetales, aderezos) en
+   carretes deslizables. Cada candidato viene **pre-porcionado** para su rol, de
+   modo que cualquier combinación suma valores cercanos a la meta de la comida
+   («los macros calzan»). Hay un botón **Girar** para una combinación aleatoria,
+   con suma de nutrición y costo en vivo. (`backend/builder.py`,
+   `POST /api/builder/slots|random|summary`.)
 4. **Guardado + saciedad.** Permite guardar minutas y registrar un **puntaje de
    saciedad** (1–5) y de costo. Con ese feedback **aprende preferencias** por
    alimento que modifican el "costo efectivo" en futuras optimizaciones.

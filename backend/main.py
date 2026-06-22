@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import config
 from .database import SessionLocal, init_db
-from .routers import feedback, foods, plans, users
+from .routers import builder, feedback, foods, plans, users
 from .seed import seed_demo_user, seed_foods
 
 
@@ -50,6 +50,7 @@ app.include_router(users.router)
 app.include_router(foods.router)
 app.include_router(plans.router)
 app.include_router(feedback.router)
+app.include_router(builder.router)
 
 
 @app.get("/api/health", tags=["sistema"])

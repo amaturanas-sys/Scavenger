@@ -30,6 +30,7 @@ $$(".tab").forEach((t) =>
     t.classList.add("active");
     $("#" + t.dataset.tab).classList.add("active");
     if (t.dataset.tab === "requerimientos") loadRequirements();
+    if (t.dataset.tab === "armar") loadReels();
     if (t.dataset.tab === "minutas") loadPlans();
     if (t.dataset.tab === "alimentos") loadFoods();
   })
@@ -403,6 +404,166 @@ function renderFoods(foods) {
     })
     .join("");
   $("#foodsTable").innerHTML = `<table><thead><tr><th>Alimento</th><th>Categoría</th><th class="num">kcal/100g</th><th class="num">Prot/100g</th><th class="num">Precio/100g (más barato)</th><th class="num">Sac.</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ---------- constructor de comidas (tragamonedas) ----------
+let builderData = null; // respuesta de /api/builder/slots
+let reelIdx = {};       // role -> índice actual
+let dayMeals = [];      // comidas agregadas al día
+
+async function loadReels() {
+  if (!currentUserId) {
+    $("#reels").innerHTML = '<p class="muted">Primero guarda un perfil.</p>';
+    return;
+  }
+  $("#builderStatus").textContent = "Cargando carretes…";
+  builderData = await api("/api/builder/slots", {
+    method: "POST",
+    body: JSON.stringify({ user_id: currentUserId, meal: $("#builderMeal").value }),
+  });
+  reelIdx = {};
+  builderData.slots.forEach((s) => (reelIdx[s.role] = 0));
+  $("#builderStatus").textContent = "";
+  renderReels();
+}
+
+function reelSelection() {
+  if (!builderData) return [];
+  return builderData.slots
+    .filter((s) => s.candidates.length)
+    .map((s) => s.candidates[reelIdx[s.role] % s.candidates.length]);
+}
+
+function renderReels() {
+  if (!builderData) return;
+  const reels = builderData.slots
+    .map((s) => {
+      const n = s.candidates.length;
+      const c = n ? s.candidates[reelIdx[s.role] % n] : null;
+      const item = c
+        ? `<div class="item"><div class="nm">${c.name}</div>
+             <div class="meta">${num(c.grams)} g · ${num(c.kcal)} kcal · ${clp(c.cost_clp)}</div>
+             <div class="meta">P ${num(c.protein_g, 1)} · C ${num(c.carb_g, 1)} · G ${num(c.fat_g, 1)}</div>
+             <div class="meta"><span class="shop">${c.retailer}</span></div></div>`
+        : `<div class="item">— sin opciones —</div>`;
+      return `<div class="reel ${n ? "" : "empty"}">
+        <div class="role">${s.label}</div>
+        <div class="nav">
+          <button data-dir="-1" data-role="${s.role}" ${n ? "" : "disabled"}>◀</button>
+          <span class="counter">${n ? (reelIdx[s.role] % n) + 1 : 0}/${n}</span>
+          <button data-dir="1" data-role="${s.role}" ${n ? "" : "disabled"}>▶</button>
+        </div>${item}</div>`;
+    })
+    .join("");
+  $("#reels").innerHTML = `<div class="reels">${reels}</div>`;
+  $$("#reels .nav button").forEach((b) =>
+    b.addEventListener("click", () => {
+      const role = b.dataset.role;
+      const n = builderData.slots.find((s) => s.role === role).candidates.length;
+      if (!n) return;
+      reelIdx[role] = (reelIdx[role] + +b.dataset.dir + n) % n;
+      renderReels();
+    })
+  );
+  renderMealTotals();
+}
+
+function renderMealTotals() {
+  if (!builderData) return;
+  const t = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0 };
+  reelSelection().forEach((c) => {
+    for (const k in t) t[k] += c[k] || 0;
+  });
+  const tg = builderData.target;
+  const fitClass = (r) => (r >= 0.8 && r <= 1.2 ? "ok" : "off");
+  const pill = (label, val, target, unit) =>
+    `<div class="pill fitpill ${fitClass(target ? val / target : 0)}">${label}: <strong>${num(val)}${unit}</strong> <span class="muted">/ ${num(target)}${unit}</span></div>`;
+  $("#mealTotals").innerHTML = `<div class="totbar">
+    <div class="pill">Costo: <strong>${clp(t.cost_clp)}</strong></div>
+    ${pill("Energía", t.kcal, tg.kcal, " kcal")}
+    ${pill("Proteína", t.protein_g, tg.protein_g, " g")}
+    ${pill("Carbs", t.carb_g, tg.carb_g, " g")}
+    ${pill("Grasa", t.fat_g, tg.fat_g, " g")}
+  </div>`;
+}
+
+$("#builderMeal").addEventListener("change", loadReels);
+$("#spinBtn").addEventListener("click", () => {
+  if (!builderData) return;
+  builderData.slots.forEach((s) => {
+    if (s.candidates.length) reelIdx[s.role] = Math.floor(Math.random() * s.candidates.length);
+  });
+  renderReels();
+});
+$("#addMealBtn").addEventListener("click", () => {
+  const items = reelSelection();
+  if (!items.length) return;
+  dayMeals.push({ meal: builderData.meal, items });
+  renderDayBuild();
+});
+
+function mealSubtotal(items) {
+  const s = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0, satiety: 0 };
+  items.forEach((i) => {
+    s.kcal += i.kcal; s.protein_g += i.protein_g; s.carb_g += i.carb_g;
+    s.fat_g += i.fat_g; s.cost_clp += i.cost_clp; s.satiety += i.satiety_contrib;
+  });
+  for (const k in s) s[k] = Math.round(s[k] * 10) / 10;
+  return s;
+}
+
+function renderDayBuild() {
+  if (!dayMeals.length) {
+    $("#dayBuild").innerHTML = "";
+    return;
+  }
+  let total = { kcal: 0, cost_clp: 0 };
+  let html = "<h3>Minuta del día en construcción</h3>";
+  dayMeals.forEach((m, idx) => {
+    const st = mealSubtotal(m.items);
+    total.kcal += st.kcal;
+    total.cost_clp += st.cost_clp;
+    html += `<div class="daycard">
+      <div style="display:flex;justify-content:space-between;gap:10px">
+        <strong style="text-transform:capitalize">${m.meal}</strong>
+        <span class="muted">${num(st.kcal)} kcal · ${clp(st.cost_clp)}
+          <button class="btn-sm" data-rm="${idx}">✕</button></span>
+      </div>
+      <div class="muted">${m.items.map((i) => `${i.name} (${num(i.grams)}g)`).join(" · ")}</div>
+    </div>`;
+  });
+  html += `<div class="totbar"><div class="pill">Día: <strong>${num(total.kcal)} kcal</strong></div>
+    <div class="pill">Total: <strong>${clp(total.cost_clp)}</strong></div></div>
+    <button id="saveDayBtn" class="primary">💾 Guardar minuta del día</button>
+    <span id="saveDayStatus" class="status"></span>`;
+  $("#dayBuild").innerHTML = html;
+  $$("#dayBuild [data-rm]").forEach((b) =>
+    b.addEventListener("click", () => {
+      dayMeals.splice(+b.dataset.rm, 1);
+      renderDayBuild();
+    })
+  );
+  $("#saveDayBtn").addEventListener("click", saveBuiltDay);
+}
+
+async function saveBuiltDay() {
+  if (!currentUserId || !dayMeals.length) return;
+  const meals = dayMeals.map((m) => ({ meal: m.meal, items: m.items, subtotal: mealSubtotal(m.items) }));
+  const totals = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0, satiety: 0 };
+  meals.forEach((m) => {
+    ["kcal", "protein_g", "carb_g", "fat_g", "cost_clp"].forEach((k) => (totals[k] += m.subtotal[k]));
+    totals.satiety += m.subtotal.satiety;
+  });
+  for (const k in totals) totals[k] = Math.round(totals[k] * 10) / 10;
+  const title = prompt("Nombre de la minuta:", "Armada " + new Date().toLocaleDateString("es-CL"));
+  if (title === null) return;
+  await api("/api/plans", {
+    method: "POST",
+    body: JSON.stringify({ user_id: currentUserId, title, scope: "diario", payload: { meals, totals } }),
+  });
+  $("#saveDayStatus").textContent = "✓ Minuta guardada.";
+  dayMeals = [];
+  renderDayBuild();
 }
 
 // ---------- init ----------
