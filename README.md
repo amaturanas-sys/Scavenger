@@ -96,6 +96,9 @@ tests/                  pruebas de nutrición, optimizador y catálogo
 
 ### Conectar precios reales (scraping VTEX)
 
+> 📋 Guía paso a paso para dejar **datos reales** (red + credenciales +
+> comandos): [`docs/DATOS_REALES.md`](docs/DATOS_REALES.md).
+
 Jumbo y Santa Isabel (Cencosud) exponen la misma API pública de catálogo VTEX.
 El módulo `backend/pricing.py` recorre los alimentos del catálogo, busca cada
 uno en la cadena, elige la mejor coincidencia (matching por nombre/marca),
@@ -114,7 +117,14 @@ python3 -m backend.refresh_prices
 
 # Solo una cadena, acotado y sin caché
 python3 -m backend.refresh_prices --retailer lider --limit 20 --no-cache
+
+# Vuelca el catálogo de la BD (ya con datos reales) al JSON versionable
+python3 -m backend.export_catalog        # o: make export
 ```
+
+> 💡 ¿Sin acceso a Claude Code on the web? Corre estos comandos **localmente**
+> (tu internet no tiene allowlist) y commitea `data/chilean_foods.json`. Ver
+> [`docs/DATOS_REALES.md`](docs/DATOS_REALES.md), **Opción A**.
 
 **Requisito de red — allowlist de egress.** En Claude Code on the web la red
 saliente está gobernada por la política del entorno. Para permitir el scraping,
