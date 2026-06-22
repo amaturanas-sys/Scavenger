@@ -1,0 +1,73 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - "frontend/**"
+      - ".github/workflows/android.yml"
+  pull_request:
+    paths:
+      - "android/**"
+      - "frontend/**"
+      - ".github/workflows/android.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Copy web frontend into app assets
+        run: |
+          mkdir -p android/app/src/main/assets/www
+          cp -r frontend/* android/app/src/main/assets/www/
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Stage APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk scavenger-debug.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scavenger-debug-apk
+          path: scavenger-debug.apk
+
+      - name: Publish to android-latest release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: SCAVENGER · APK de prueba (debug)
+          prerelease: true
+          files: scavenger-debug.apk
+          body: |
+            APK de prueba (debug) de SCAVENGER — app cliente (WebView).
+
+            Requiere el backend de SCAVENGER corriendo y accesible desde el
+            teléfono (misma red Wi-Fi o servidor desplegado). Al abrir la app,
+            configura la URL del servidor (ej: `http://192.168.1.10:8000`).
+
+            Ver `docs/ANDROID.md` para los pasos completos.

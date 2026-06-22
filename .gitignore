@@ -25,3 +25,14 @@ htmlcov/
 # Cachés de scrapers
 data/cache/
 *.log
+
+# Android (artefactos de build; el wrapper sí se versiona)
+android/.gradle/
+android/build/
+android/app/build/
+android/app/src/main/assets/www/
+android/local.properties
+android/captures/
+.cxx/
+*.apk
+*.aab
