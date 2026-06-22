@@ -86,7 +86,12 @@ class GeneratePlanRequest(BaseModel):
     user_id: int
     scope: str = Field("diario", description="diario o semanal")
     satiety_emphasis: float = Field(0.0, ge=0, le=2, description=">0 favorece saciedad")
-    use_budget: bool = False
+    # Modo de presupuesto: none | min_cost | target (por dia).
+    budget_mode: str = Field("none", description="none | min_cost | target")
+    # Monto de presupuesto seleccionado; si es None usa el del perfil.
+    budget_clp: float | None = Field(None, ge=0)
+    # Compatibilidad: si se envia y no hay budget_mode, equivale a min_cost.
+    use_budget: bool | None = None
 
 
 class SavePlanRequest(BaseModel):

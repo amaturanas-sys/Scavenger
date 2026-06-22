@@ -84,17 +84,38 @@ def _build_inputs(db: Session, user: User, extra_excluded: set[str] | None = Non
     return inputs
 
 
+# Modos de presupuesto que guian la optimizacion.
+#   none      -> ignora el presupuesto (la opcion mas economica posible)
+#   min_cost  -> minimiza el gasto sin pasar del presupuesto (tope)
+#   target    -> aprovecha el presupuesto: maximiza la saciedad sin pasarse
+BUDGET_MODES = ("none", "min_cost", "target")
+
+
+def _effective_budget(user: User, budget_clp: float | None) -> float:
+    return budget_clp if budget_clp is not None else user.daily_budget_clp
+
+
 def build_options(
     user: User,
     satiety_emphasis: float = 0.0,
-    use_budget: bool = False,
+    budget_mode: str = "none",
+    budget_clp: float | None = None,
     kcal_tolerance: float | None = None,
 ) -> OptimizeOptions:
+    budget = _effective_budget(user, budget_clp)
+    if budget_mode == "target":
+        max_budget, objective = budget, "satiety"
+    elif budget_mode == "min_cost":
+        max_budget, objective = budget, "cost"
+    else:  # none
+        max_budget, objective = None, "cost"
+
     return OptimizeOptions(
         kcal_tolerance=kcal_tolerance if kcal_tolerance is not None else config.DEFAULT_KCAL_TOLERANCE,
         preference_weight=config.PREFERENCE_WEIGHT,
         satiety_emphasis=satiety_emphasis,
-        max_budget_clp=user.daily_budget_clp if use_budget else None,
+        max_budget_clp=max_budget,
+        objective=objective,
     )
 
 
@@ -102,20 +123,24 @@ def generate_daily_plan(
     db: Session,
     user: User,
     satiety_emphasis: float = 0.0,
-    use_budget: bool = False,
+    budget_mode: str = "none",
+    budget_clp: float | None = None,
     extra_excluded: set[str] | None = None,
 ) -> dict:
     """Genera una minuta diaria optimizada para el usuario."""
     req = user_requirements(user)
     inputs = _build_inputs(db, user, extra_excluded)
     prefs = get_preferences(db, user.id) if user.id else {}
-    opts = build_options(user, satiety_emphasis=satiety_emphasis, use_budget=use_budget)
+    opts = build_options(user, satiety_emphasis=satiety_emphasis,
+                         budget_mode=budget_mode, budget_clp=budget_clp)
 
     result = optimize(inputs, req, preferences=prefs, opts=opts)
     plan = distribute_into_meals(result)
+    budget = _effective_budget(user, budget_clp)
     plan["requirements"] = req.to_dict()
-    plan["budget_clp"] = user.daily_budget_clp
-    plan["over_budget"] = plan["totals"].get("cost_clp", 0) > user.daily_budget_clp
+    plan["budget_clp"] = budget
+    plan["budget_mode"] = budget_mode
+    plan["over_budget"] = budget_mode != "none" and plan["totals"].get("cost_clp", 0) > budget
     return plan
 
 
@@ -123,9 +148,13 @@ def generate_weekly_plan(
     db: Session,
     user: User,
     satiety_emphasis: float = 0.0,
-    use_budget: bool = False,
+    budget_mode: str = "none",
+    budget_clp: float | None = None,
 ) -> dict:
-    """Genera 7 minutas diarias con variedad rotando alimentos protagonistas."""
+    """Genera 7 minutas diarias con variedad rotando alimentos protagonistas.
+
+    El presupuesto (budget_clp) se interpreta por dia.
+    """
     days = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
     daily_plans = []
     rotation: set[str] = set()
@@ -134,7 +163,7 @@ def generate_weekly_plan(
     for day in days:
         plan = generate_daily_plan(
             db, user, satiety_emphasis=satiety_emphasis,
-            use_budget=use_budget, extra_excluded=rotation,
+            budget_mode=budget_mode, budget_clp=budget_clp, extra_excluded=rotation,
         )
         # Para dar variedad, excluye el item proteico/caloricamente dominante
         # del dia siguiente (rotacion simple, acotada para no quedar sin opciones).

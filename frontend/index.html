@@ -97,7 +97,16 @@
         <label class="slider">Énfasis en saciedad: <strong id="satVal">0.0</strong>
           <input id="satiety" type="range" min="0" max="1.5" step="0.1" value="0" />
         </label>
-        <label class="check"><input id="useBudget" type="checkbox" /> Respetar presupuesto como tope</label>
+        <label>Presupuesto <span id="budgetUnit" class="muted">(por día)</span>
+          <select id="budgetMode">
+            <option value="min_cost">Gastar lo mínimo (tope)</option>
+            <option value="target">Aprovechar el presupuesto</option>
+            <option value="none">Sin límite</option>
+          </select>
+        </label>
+        <label>Monto (CLP)
+          <input id="budgetAmount" type="number" min="0" step="100" value="4000" />
+        </label>
         <button id="generateBtn" class="primary">Generar</button>
       </div>
       <div id="genStatus" class="status"></div>

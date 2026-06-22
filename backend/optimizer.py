@@ -87,6 +87,9 @@ class OptimizeOptions:
     preference_weight: float = 0.35      # cuanto pesan las preferencias en el costo
     satiety_emphasis: float = 0.0        # >0 favorece alimentos mas saciantes
     max_budget_clp: float | None = None  # tope duro de costo (opcional)
+    # Objetivo a optimizar: "cost" minimiza el gasto; "satiety" maximiza la
+    # saciedad sin pasar del presupuesto (aprovechar el presupuesto).
+    objective: str = "cost"
 
 
 @dataclass
@@ -152,12 +155,24 @@ def _build_and_solve(
         grams[f.id] = pulp.LpVariable(f"g_{f.id}", lowBound=0, upBound=upper)
 
     # Objetivo: minimizar costo efectivo - enfasis en saciedad.
-    cost_terms = []
-    for f in foods:
-        c = _effective_cost_per_g(f, preferences.get(f.id, 0.0), opts)
-        sat_density = (f.satiety_index / 100.0)
-        cost_terms.append((c - opts.satiety_emphasis * sat_density) * grams[f.id])
-    prob += pulp.lpSum(cost_terms)
+    if opts.objective == "satiety":
+        # Maximiza la saciedad total (sin pasar del presupuesto, ver cap abajo);
+        # un termino minimo de costo desempata hacia lo mas economico.
+        terms = []
+        for f in foods:
+            sat_density = f.satiety_index / 100.0
+            c = _effective_cost_per_g(f, preferences.get(f.id, 0.0), opts)
+            terms.append((-sat_density + 1e-4 * c) * grams[f.id])
+        prob += pulp.lpSum(terms)
+    else:
+        # Minimiza el costo efectivo (ajustado por preferencias), con un sesgo
+        # opcional hacia alimentos mas saciantes.
+        cost_terms = []
+        for f in foods:
+            c = _effective_cost_per_g(f, preferences.get(f.id, 0.0), opts)
+            sat_density = f.satiety_index / 100.0
+            cost_terms.append((c - opts.satiety_emphasis * sat_density) * grams[f.id])
+        prob += pulp.lpSum(cost_terms)
 
     def nutrient_sum(attr: str):
         # Los valores estan por 100 g; convertimos por gramo.

@@ -27,6 +27,10 @@ de la **saciedad** y las **preferencias** reportadas para afinar las sugerencias
    costo mínimo"_ (programación lineal, variante del problema de Stigler):
    elige cuántos gramos de cada alimento y **en qué supermercado comprarlo**
    para cubrir las metas gastando lo menos posible.
+   - **Selector de presupuesto** (junto a los requerimientos, guía las
+     decisiones): `Gastar lo mínimo` (tope que no se supera), `Aprovechar el
+     presupuesto` (maximiza la **saciedad** sin pasarse del monto) o `Sin
+     límite`. El monto es por día y se puede ajustar en cada generación.
 3. **Minutas por comida.** Distribuye la canasta diaria en desayuno, almuerzo,
    once y cena según afinidades por categoría y reparto calórico.
 4. **Guardado + saciedad.** Permite guardar minutas y registrar un **puntaje de

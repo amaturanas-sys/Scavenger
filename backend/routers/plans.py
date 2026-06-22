@@ -13,7 +13,7 @@ from ..schemas import (
     ShoppingListOut,
     ShoppingListRequest,
 )
-from ..services import generate_daily_plan, generate_weekly_plan
+from ..services import BUDGET_MODES, generate_daily_plan, generate_weekly_plan
 from ..shopping import build_shopping_list
 
 router = APIRouter(prefix="/api/plans", tags=["minutas"])
@@ -27,24 +27,24 @@ def shopping_list_from_payload(req: ShoppingListRequest, db: Session = Depends(g
 
 @router.post("/generate")
 def generate_plan(payload: GeneratePlanRequest, db: Session = Depends(get_db)):
-    """Genera una minuta (no la guarda) optimizada de lo mas economico hacia arriba."""
+    """Genera una minuta (no la guarda) guiada por requerimientos y presupuesto."""
     user = db.get(User, payload.user_id)
     if not user:
         raise HTTPException(404, "Usuario no encontrado")
 
+    # Resuelve el modo de presupuesto (con compatibilidad para use_budget).
+    budget_mode = payload.budget_mode
+    if budget_mode not in BUDGET_MODES:
+        budget_mode = "none"
+    if payload.use_budget is not None and payload.budget_mode == "none":
+        budget_mode = "min_cost" if payload.use_budget else "none"
+
+    common = dict(satiety_emphasis=payload.satiety_emphasis,
+                  budget_mode=budget_mode, budget_clp=payload.budget_clp)
+
     if payload.scope == "semanal":
-        return {
-            "scope": "semanal",
-            "data": generate_weekly_plan(
-                db, user, satiety_emphasis=payload.satiety_emphasis, use_budget=payload.use_budget
-            ),
-        }
-    return {
-        "scope": "diario",
-        "data": generate_daily_plan(
-            db, user, satiety_emphasis=payload.satiety_emphasis, use_budget=payload.use_budget
-        ),
-    }
+        return {"scope": "semanal", "data": generate_weekly_plan(db, user, **common)}
+    return {"scope": "diario", "data": generate_daily_plan(db, user, **common)}
 
 
 @router.post("", response_model=PlanOut, status_code=201)
