@@ -96,6 +96,9 @@ tests/                  pruebas de nutrición, optimizador y catálogo
 
 ### Conectar precios reales (scraping VTEX)
 
+> 📋 Guía paso a paso para dejar **datos reales** (red + credenciales +
+> comandos): [`docs/DATOS_REALES.md`](docs/DATOS_REALES.md).
+
 Jumbo y Santa Isabel (Cencosud) exponen la misma API pública de catálogo VTEX.
 El módulo `backend/pricing.py` recorre los alimentos del catálogo, busca cada
 uno en la cadena, elige la mejor coincidencia (matching por nombre/marca),
