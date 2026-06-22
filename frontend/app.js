@@ -61,6 +61,15 @@ function fillForm(u) {
   f.diet_tags.value = (u.diet_tags && u.diet_tags[0]) || "";
   const pref = new Set(u.preferred_retailers || []);
   $$("#retailerChecks input").forEach((chk) => (chk.checked = pref.has(chk.value)));
+  // Sincroniza el monto del selector de presupuesto con el del perfil.
+  if (u.daily_budget_clp != null) $("#budgetAmount").value = u.daily_budget_clp;
+}
+
+// Habilita/deshabilita el monto según el modo de presupuesto.
+function syncBudgetControls() {
+  const none = $("#budgetMode").value === "none";
+  $("#budgetAmount").disabled = none;
+  $("#budgetAmount").style.opacity = none ? 0.5 : 1;
 }
 
 async function loadRetailers() {
@@ -136,6 +145,8 @@ async function loadRequirements() {
 
 // ---------- generar minuta ----------
 $("#satiety").addEventListener("input", (e) => ($("#satVal").textContent = (+e.target.value).toFixed(1)));
+$("#budgetMode").addEventListener("change", syncBudgetControls);
+syncBudgetControls();
 
 $("#generateBtn").addEventListener("click", async () => {
   if (!currentUserId) return alert("Primero guarda un perfil.");
@@ -143,11 +154,13 @@ $("#generateBtn").addEventListener("click", async () => {
   $("#planResult").innerHTML = "";
   $("#shoppingResult").innerHTML = "";
   try {
+    const mode = $("#budgetMode").value;
     const body = {
       user_id: currentUserId,
       scope: $("#scope").value,
       satiety_emphasis: +$("#satiety").value,
-      use_budget: $("#useBudget").checked,
+      budget_mode: mode,
+      budget_clp: mode === "none" ? null : +$("#budgetAmount").value,
     };
     const res = await api("/api/plans/generate", { method: "POST", body: JSON.stringify(body) });
     $("#genStatus").textContent = "";
@@ -197,7 +210,10 @@ function renderDaily(data) {
   let html = "";
   if (data.warnings && data.warnings.length)
     html += `<div class="warnbox">⚠ ${data.warnings.join(" ")}</div>`;
-  html += totalsBar(data.totals, data.requirements, data.budget_clp, data.over_budget);
+  const showBudget = data.budget_mode && data.budget_mode !== "none";
+  html += totalsBar(data.totals, data.requirements, showBudget ? data.budget_clp : null, data.over_budget);
+  if (data.budget_mode === "target")
+    html += `<p class="muted">Modo «aprovechar el presupuesto»: maximiza saciedad sin pasar de ${clp(data.budget_clp)}.</p>`;
   html += data.meals.map(mealTable).join("");
   html += `<button id="savePlanBtn" class="primary">Guardar esta minuta</button>
     <button id="shopBtn" class="btn-sm">🛒 Lista de compras consolidada</button>`;
