@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import User
-from ..schemas import UserCreate, UserOut, UserUpdate
-from ..services import user_requirements
+from ..schemas import SatietyHistoryOut, UserCreate, UserOut, UserUpdate
+from ..services import satiety_history, user_requirements
 
 router = APIRouter(prefix="/api/users", tags=["usuarios"])
 
@@ -52,3 +52,10 @@ def get_requirements(user_id: int, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(404, "Usuario no encontrado")
     return user_requirements(user).to_dict()
+
+
+@router.get("/{user_id}/satiety-history", response_model=SatietyHistoryOut)
+def get_satiety_history(user_id: int, db: Session = Depends(get_db)):
+    if not db.get(User, user_id):
+        raise HTTPException(404, "Usuario no encontrado")
+    return satiety_history(db, user_id)

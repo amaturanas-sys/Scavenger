@@ -122,6 +122,16 @@ td.num, th.num { text-align: right; }
 .fitpill.ok { border-color: var(--accent); color: var(--accent); }
 .fitpill.off { border-color: var(--warn); color: var(--warn); }
 .daycard { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; }
+.reel.locked { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.reel .role { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.lockbtn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 0; }
+
+/* Mini-gráfico del historial de saciedad */
+.histchart { display: flex; align-items: flex-end; gap: 6px; height: 90px; overflow-x: auto; padding-top: 4px; }
+.histbar { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 26px; height: 100%; }
+.histfill { width: 18px; background: linear-gradient(180deg, var(--accent), var(--accent-2)); border-radius: 4px 4px 0 0; min-height: 4px; }
+.histlbl { font-size: 11px; color: var(--text); margin-top: 2px; }
+.histdate { font-size: 10px; color: var(--muted); }
 .btn-sm { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 7px; cursor: pointer; font-size: 13px; }
 .btn-sm:hover { border-color: var(--accent); }
 .stars { font-size: 22px; cursor: pointer; user-select: none; letter-spacing: 2px; }

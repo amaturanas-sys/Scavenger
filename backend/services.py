@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from . import config
 from .learning import get_preferences
-from .models import Food, User
+from .models import Feedback, Food, Plan, User
 from .nutrition import Requirements, compute_requirements
 from .optimizer import FoodInput, OptimizeOptions, optimize
 from .planner import distribute_into_meals
@@ -185,3 +185,27 @@ def generate_weekly_plan(
         "avg_daily_cost_clp": round(total_cost / len(days), 1),
         "requirements": user_requirements(user).to_dict(),
     }
+
+
+def satiety_history(db: Session, user_id: int) -> dict:
+    """Historial de saciedad/costo reportado por el usuario en sus minutas."""
+    rows = (
+        db.query(Feedback, Plan)
+        .join(Plan, Feedback.plan_id == Plan.id)
+        .filter(Plan.user_id == user_id)
+        .order_by(Feedback.created_at.asc())
+        .all()
+    )
+    entries = [
+        {
+            "plan_id": plan.id, "title": plan.title, "scope": plan.scope,
+            "created_at": fb.created_at.isoformat() if fb.created_at else None,
+            "satiety_score": fb.satiety_score, "cost_score": fb.cost_score,
+            "total_cost_clp": plan.total_cost_clp,
+        }
+        for fb, plan in rows
+    ]
+    n = len(entries)
+    avg_satiety = round(sum(e["satiety_score"] for e in entries) / n, 2) if n else 0.0
+    avg_cost = round(sum(e["cost_score"] for e in entries) / n, 2) if n else 0.0
+    return {"entries": entries, "count": n, "avg_satiety": avg_satiety, "avg_cost_score": avg_cost}

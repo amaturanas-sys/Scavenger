@@ -96,6 +96,15 @@ def test_random_meal_picks_one_per_slot_and_summarizes():
     assert isinstance(res["fit_ok"], bool)
 
 
+def test_numbered_snack_uses_snack_template():
+    db, u = _db_user()
+    data = build_slots(db, u, "snack 2")
+    assert data["meal"] == "snack 2"
+    assert data["meal_type"] == "snack"
+    roles = {s["role"] for s in data["slots"]}
+    assert roles == set(MEAL_TEMPLATES["snack"]["slots"])
+
+
 def test_summarize_totals_and_fit():
     db, u = _db_user()
     req = user_requirements(u)
