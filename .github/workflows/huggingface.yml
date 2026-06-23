@@ -1,0 +1,45 @@
+name: Deploy backend to Hugging Face Space
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "data/**"
+      - "frontend/**"
+      - "requirements.txt"
+      - "Dockerfile"
+      - "deploy/huggingface/**"
+      - ".github/workflows/huggingface.yml"
+
+# Requiere:
+#   - Secret  HF_TOKEN      : token de escritura de Hugging Face
+#   - Variable HF_SPACE_ID  : "usuario/nombre-del-space" (Space tipo Docker)
+jobs:
+  deploy:
+    name: Sync repo to HF Space
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_SPACE_ID" ]; then
+            echo "::notice::HF_TOKEN (secret) y/o HF_SPACE_ID (variable) no configurados; se omite el deploy. Ver docs/DEPLOY.md."
+            exit 0
+          fi
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # El Space usa el README con front-matter de Hugging Face.
+          cp deploy/huggingface/README.md README.md
+          git add README.md
+          git commit -m "Deploy: SCAVENGER backend ($GITHUB_SHA)" || echo "sin cambios"
+          git push --force "https://github-actions:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_ID}.git" HEAD:main

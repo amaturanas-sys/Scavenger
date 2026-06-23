@@ -16,7 +16,10 @@ COPY backend ./backend
 COPY data ./data
 COPY frontend ./frontend
 
+# Puerto configurable por entorno (HF Spaces / Render inyectan PORT; local: 8000).
+ENV PORT=8000
 EXPOSE 8000
 
 # El catalogo y el usuario demo se cargan en el arranque (lifespan).
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Forma shell para expandir ${PORT}.
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
