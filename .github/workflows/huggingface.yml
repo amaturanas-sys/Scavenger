@@ -15,7 +15,7 @@ on:
 
 # Requiere:
 #   - Secret  HF_TOKEN      : token de escritura de Hugging Face
-#   - Variable HF_SPACE_ID  : "usuario/nombre-del-space" (Space tipo Docker)
+#   - HF_SPACE_ID ("usuario/nombre-del-space"): admite variable O secret.
 jobs:
   deploy:
     name: Sync repo to HF Space
@@ -24,18 +24,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0  # historia completa: evita "shallow update not allowed" al push
 
       - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
+          # Tolera HF_SPACE_ID puesto como variable o como secret.
+          HF_SPACE_ID: ${{ vars.HF_SPACE_ID || secrets.HF_SPACE_ID }}
         run: |
           if [ -z "$HF_TOKEN" ] || [ -z "$HF_SPACE_ID" ]; then
-            echo "::notice::HF_TOKEN (secret) y/o HF_SPACE_ID (variable) no configurados; se omite el deploy. Ver docs/DEPLOY.md."
+            echo "::notice::HF_TOKEN y/o HF_SPACE_ID no configurados; se omite el deploy. Ver docs/DEPLOY.md."
             exit 0
           fi
           set -e
+          echo "Desplegando a Space: ${HF_SPACE_ID}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # El Space usa el README con front-matter de Hugging Face.
