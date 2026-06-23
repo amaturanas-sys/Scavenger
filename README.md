@@ -248,10 +248,17 @@ python3 -m pytest -q     # o: make test
 ### App Android (APK)
 
 Hay una app **cliente Android (WebView)** en `android/` que empaqueta esta
-interfaz y se conecta al backend que corras en tu PC/servidor (el motor de
-optimización vive en el backend). La APK se compila en GitHub Actions y se
-publica como Release **`android-latest`** (`scavenger-debug.apk`), lista para
-descargar e instalar. Pasos completos en [`docs/ANDROID.md`](docs/ANDROID.md).
+interfaz y se conecta al backend (el motor de optimización vive en el backend).
+La APK se compila en GitHub Actions y se publica como Release **`android-latest`**
+(`scavenger-debug.apk`), lista para descargar e instalar. Pasos completos en
+[`docs/ANDROID.md`](docs/ANDROID.md).
+
+### Backend público gratuito (Hugging Face + Postgres)
+
+Para que la web y la APK corran **sin depender de tu PC**, el backend se puede
+desplegar gratis en **Hugging Face Spaces** (Docker) con **Postgres** persistente
+(Neon/Supabase), desde GitHub y de forma automática. La APK puede traer la URL
+pública "horneada". Paso a paso en [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ---
 

@@ -9,9 +9,14 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from . import config
 
 # check_same_thread solo aplica a SQLite; permite uso desde el server.
-_connect_args = {"check_same_thread": False} if config.DATABASE_URL.startswith("sqlite") else {}
+_is_sqlite = config.DATABASE_URL.startswith("sqlite")
+_connect_args = {"check_same_thread": False} if _is_sqlite else {}
 
-engine = create_engine(config.DATABASE_URL, connect_args=_connect_args, future=True)
+# pool_pre_ping evita conexiones muertas en Postgres administrado (Neon/Supabase,
+# que cierran conexiones ociosas); pool_recycle las renueva periodicamente.
+_engine_kwargs = {} if _is_sqlite else {"pool_pre_ping": True, "pool_recycle": 1800}
+
+engine = create_engine(config.DATABASE_URL, connect_args=_connect_args, future=True, **_engine_kwargs)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 

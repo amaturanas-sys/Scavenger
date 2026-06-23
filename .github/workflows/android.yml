@@ -42,6 +42,12 @@ jobs:
           mkdir -p android/app/src/main/assets/www
           cp -r frontend/* android/app/src/main/assets/www/
 
+      - name: Bake backend URL into the APK (optional)
+        if: vars.SCAVENGER_API_BASE != ''
+        run: |
+          echo "Backend por defecto: ${{ vars.SCAVENGER_API_BASE }}"
+          echo "window.SCAVENGER_API_BASE = '${{ vars.SCAVENGER_API_BASE }}';" > android/app/src/main/assets/www/config.js
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew --no-daemon assembleDebug
