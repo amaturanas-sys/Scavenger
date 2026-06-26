@@ -66,14 +66,57 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-latest
-          name: SCAVENGER · APK de prueba (debug)
+          name: SCAVENGER · APK
           prerelease: true
           files: scavenger-debug.apk
           body: |
-            APK de prueba (debug) de SCAVENGER — app cliente (WebView).
+            APK de SCAVENGER — app cliente (WebView).
 
-            Requiere el backend de SCAVENGER corriendo y accesible desde el
-            teléfono (misma red Wi-Fi o servidor desplegado). Al abrir la app,
-            configura la URL del servidor (ej: `http://192.168.1.10:8000`).
+            - `scavenger-release.apk`: build de **release firmado** (recomendado).
+            - `scavenger-debug.apk`: build de prueba (debug).
 
-            Ver `docs/ANDROID.md` para los pasos completos.
+            La app se conecta al backend de SCAVENGER. Si la variable de repo
+            `SCAVENGER_API_BASE` está configurada, la APK ya viene apuntando al
+            backend público; si no, configura la URL al abrir la app (⚙️).
+
+            Ver `docs/ANDROID.md` y `docs/DEPLOY.md`.
+
+      # --- Release firmado (solo si están los secrets del keystore) ---
+      - name: Detect release signing
+        id: signing
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Sin ANDROID_KEYSTORE_BASE64; se omite el APK firmado. Ver docs/ANDROID.md."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build signed release APK
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/scavenger.keystore"
+          export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/scavenger.keystore"
+          (cd android && ./gradlew --no-daemon assembleRelease)
+          cp android/app/build/outputs/apk/release/app-release.apk scavenger-release.apk
+
+      - name: Upload signed release artifact
+        if: steps.signing.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: scavenger-release-apk
+          path: scavenger-release.apk
+
+      - name: Publish signed release to android-latest
+        if: ${{ steps.signing.outputs.enabled == 'true' && github.ref == 'refs/heads/main' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          files: scavenger-release.apk

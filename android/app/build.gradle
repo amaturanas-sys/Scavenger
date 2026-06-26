@@ -15,9 +15,26 @@ android {
         versionName '0.1.0'
     }
 
+    // Firma de release: se activa cuando el keystore llega por variables de
+    // entorno (en CI, desde secrets). Sin keystore, el release queda sin firmar.
+    def keystoreFile = System.getenv("ANDROID_KEYSTORE_FILE")
+    signingConfigs {
+        release {
+            if (keystoreFile) {
+                storeFile file(keystoreFile)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            if (keystoreFile) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
