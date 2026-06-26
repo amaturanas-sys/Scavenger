@@ -36,3 +36,6 @@ android/captures/
 .cxx/
 *.apk
 *.aab
+# Claves de firma: NUNCA versionar (van como secrets / respaldo local)
+*.jks
+*.keystore
