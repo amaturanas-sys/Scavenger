@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     # Inicializa la BD y carga el catalogo (idempotente), con reintentos para
     # tolerar una BD que aun despierta (HF Spaces/Supabase). Si falla, el server
     # arranca igual (no se cae) y /api/health reporta la BD como "down".
-    app.state.db_ready = init_and_seed(config.DEFAULT_FOOD_PROVIDER)
+    app.state.db_ready = init_and_seed(config.DEFAULT_FOOD_PROVIDER, seed_demo=config.SEED_DEMO)
     yield
 
 
@@ -36,9 +36,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_cors = config.CORS_ORIGINS.strip()
+_origins = ["*"] if _cors == "*" else [o.strip() for o in _cors.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

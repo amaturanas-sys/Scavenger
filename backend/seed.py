@@ -107,8 +107,9 @@ def init_and_seed(
     delay: float = 3.0,
     sleeper: Callable[[float], None] = time.sleep,
     log: Callable[[str], None] = print,
+    seed_demo: bool = True,
 ) -> bool:
-    """Inicializa la BD y carga catalogo + usuario demo, con reintentos.
+    """Inicializa la BD y carga catalogo (+ usuario demo opcional), con reintentos.
 
     Devuelve True si lo logro; False si la BD no respondio tras los reintentos
     (el server arranca igual para no caerse; ver /api/health).
@@ -118,7 +119,8 @@ def init_and_seed(
         db = SessionLocal()
         try:
             seed_foods(db, provider_name, refresh=False)
-            seed_demo_user(db)
+            if seed_demo:
+                seed_demo_user(db)
         finally:
             db.close()
         return True

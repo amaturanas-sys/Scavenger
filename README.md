@@ -287,6 +287,8 @@ pública "horneada". Paso a paso en [`docs/DEPLOY.md`](docs/DEPLOY.md).
 | `SCAVENGER_PREFERENCE_WEIGHT`  | `0.35`                 | Peso de preferencias en el costo    |
 | `SCAVENGER_LEARNING_RATE`      | `0.25`                 | Tasa de aprendizaje del feedback    |
 | `SCAVENGER_KCAL_TOLERANCE`     | `0.05`                 | Banda ± sobre calorías objetivo     |
+| `SCAVENGER_CORS_ORIGINS`       | `*`                    | Orígenes CORS permitidos (coma-sep.) |
+| `SCAVENGER_SEED_DEMO`          | `1`                    | Crear usuario demo al arrancar (`0` para no) |
 | `SCAVENGER_JUMBO_ENABLED`      | `1`                    | Habilita scraping de Jumbo          |
 | `SCAVENGER_SANTA_ISABEL_ENABLED` | `1`                  | Habilita scraping de Santa Isabel   |
 | `SCAVENGER_LIDER_ENABLED`      | `1`                    | Habilita scraping de Líder          |

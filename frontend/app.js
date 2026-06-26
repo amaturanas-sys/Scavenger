@@ -627,8 +627,14 @@ async function saveBuiltDay() {
 // ---------- init ----------
 const serverBtn = document.getElementById("serverBtn");
 if (serverBtn) {
-  serverBtn.addEventListener("click", setApiBase);
-  serverBtn.title = "Servidor: " + (apiBase() || "este sitio");
+  // El selector de servidor solo tiene sentido en la APK (origen file://).
+  // En la web servida por el backend se usa el mismo origen, así que se oculta.
+  if (location.protocol === "file:") {
+    serverBtn.addEventListener("click", setApiBase);
+    serverBtn.title = "Servidor: " + (apiBase() || "este sitio");
+  } else {
+    serverBtn.style.display = "none";
+  }
 }
 
 function startApp() {
