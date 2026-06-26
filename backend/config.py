@@ -58,3 +58,8 @@ APIFY_MONTHLY_BUDGET = int(os.getenv("SCAVENGER_APIFY_MONTHLY_BUDGET", "100"))
 APIFY_MAX_RESULTS = int(os.getenv("SCAVENGER_APIFY_MAX_RESULTS", "5"))
 # Token de Apify. Nunca se commitea: va como secret/variable de entorno.
 APIFY_TOKEN = os.getenv("SCAVENGER_APIFY_TOKEN", "")
+
+# Vigencia (dias) de un precio recolectado antes de volver a consultarlo. Como
+# el retail ajusta precios ~mensualmente, 30 dias evita gastar tokens en
+# productos ya vistos. Pon 0 para forzar siempre el refresco.
+PRICE_TTL_DAYS = float(os.getenv("SCAVENGER_PRICE_TTL_DAYS", "30"))

@@ -3,7 +3,17 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -166,6 +176,32 @@ class ScraperUsage(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class PriceCache(Base):
+    """Recuerdo del ultimo scraping de precio por (cadena, alimento).
+
+    Permite NO volver a gastar cuota/tokens (p.ej. de Apify) en productos ya
+    vistos mientras el dato siga fresco: los precios del retail cambian
+    ~mensualmente, asi que con un TTL (def. 30 dias) basta refrescar cada
+    producto una vez al mes. Guarda tambien los 'misses' (se busco y no hubo
+    coincidencia) para no reintentarlos dentro del TTL.
+    """
+
+    __tablename__ = "price_cache"
+    __table_args__ = (UniqueConstraint("retailer_id", "food_id", name="uq_cache_retailer_food"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    retailer_id: Mapped[str] = mapped_column(String, index=True, default="")
+    food_id: Mapped[str] = mapped_column(String, index=True, default="")
+    matched: Mapped[bool] = mapped_column(Boolean, default=False)
+    price_clp: Mapped[float] = mapped_column(Float, default=0.0)
+    package_g: Mapped[float] = mapped_column(Float, default=0.0)
+    retailer: Mapped[str] = mapped_column(String, default="")
+    product_name: Mapped[str] = mapped_column(String, default="")
+    # Epoch UTC (segundos) del ultimo fetch: comparacion de frescura sin lios de
+    # zona horaria entre SQLite (naive) y Postgres (aware).
+    fetched_epoch: Mapped[float] = mapped_column(Float, default=0.0)
 
 
 class Preference(Base):

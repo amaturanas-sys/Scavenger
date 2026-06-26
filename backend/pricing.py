@@ -16,7 +16,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from . import config
-from .models import Food, FoodPrice
+from .models import Food, FoodPrice, PriceCache
 from .providers import PRICE_PROVIDERS
 from .providers.vtex import best_match
 
@@ -29,11 +29,13 @@ class RefreshResult:
     matched: int = 0
     missed: int = 0
     updated: int = 0
+    cached: int = 0  # servidos desde la memoria (sin consultar -> sin token)
     misses: list[str] = field(default_factory=list)
 
     def summary(self) -> str:
         return (f"[{self.retailer_id}] {self.matched} con precio, {self.missed} sin "
-                f"coincidencia, {self.updated} FoodPrice actualizados.")
+                f"coincidencia, {self.updated} FoodPrice actualizados, "
+                f"{self.cached} desde cache (sin token).")
 
 
 def _slug(term: str) -> str:
@@ -64,6 +66,37 @@ def _search_term(food: Food) -> str:
     return f"{food.name} {brand}".strip()
 
 
+def _fresh_cache(db: Session, retailer_id: str, food_id: str, ttl_days: float,
+                 now: float | None = None) -> PriceCache | None:
+    """Devuelve el recuerdo del precio si sigue fresco (dentro del TTL), si no None."""
+    if ttl_days <= 0:
+        return None
+    now = time.time() if now is None else now
+    row = db.query(PriceCache).filter_by(retailer_id=retailer_id, food_id=food_id).one_or_none()
+    if row is None:
+        return None
+    if now - row.fetched_epoch > ttl_days * 86400:
+        return None  # vencido: hay que volver a consultar
+    return row
+
+
+def _record_cache(db: Session, retailer_id: str, food: Food, match: dict | None,
+                  now: float | None = None) -> None:
+    """Guarda (o actualiza) el recuerdo del scraping, incluido el 'miss'."""
+    now = time.time() if now is None else now
+    row = db.query(PriceCache).filter_by(retailer_id=retailer_id, food_id=food.id).one_or_none()
+    if row is None:
+        row = PriceCache(retailer_id=retailer_id, food_id=food.id)
+        db.add(row)
+    hit = bool(match and match.get("package_g"))
+    row.matched = hit
+    row.price_clp = float(match["price_clp"]) if hit else 0.0
+    row.package_g = float(match["package_g"]) if hit else 0.0
+    row.retailer = (match.get("retailer", retailer_id) if match else retailer_id)
+    row.product_name = (match.get("name", "") if match else "")
+    row.fetched_epoch = now
+
+
 def refresh_retailer(
     db: Session,
     retailer_id: str,
@@ -72,20 +105,40 @@ def refresh_retailer(
     sleep_s: float = 0.3,
     enabled: bool = True,
     log=print,
+    ttl_days: float | None = None,
+    now: float | None = None,
 ) -> RefreshResult:
-    """Actualiza los precios de una cadena para todos los alimentos."""
+    """Actualiza los precios de una cadena para todos los alimentos.
+
+    Antes de consultar (gastar token) revisa la memoria persistente
+    (`PriceCache`): si el precio de un producto se recolecto hace menos de
+    `ttl_days` dias, se sirve desde ahi sin consultar. Asi el presupuesto solo
+    se gasta en productos nuevos o vencidos.
+    """
     cls = PRICE_PROVIDERS.get(retailer_id)
     if cls is None:
         raise ValueError(f"No hay proveedor de precios para '{retailer_id}'. "
                          f"Disponibles: {sorted(PRICE_PROVIDERS)}")
     provider = cls(enabled=enabled)
     result = RefreshResult(retailer_id=retailer_id)
+    ttl_days = config.PRICE_TTL_DAYS if ttl_days is None else ttl_days
 
     foods = db.query(Food).order_by(Food.name).all()
     if limit:
         foods = foods[:limit]
 
     for food in foods:
+        # ¿Lo tenemos fresco en memoria? -> no consultamos (no gastamos token).
+        cached = _fresh_cache(db, retailer_id, food.id, ttl_days, now)
+        if cached is not None:
+            result.cached += 1
+            if cached.matched:
+                _upsert_price(db, food, retailer_id, {
+                    "retailer": cached.retailer or retailer_id,
+                    "price_clp": cached.price_clp, "package_g": cached.package_g,
+                })
+            continue
+
         term = _search_term(food)
         try:
             products = _cached_search(provider, retailer_id, term, use_cache)
@@ -94,6 +147,7 @@ def refresh_retailer(
             raise SystemExit(str(exc)) from exc
 
         match = best_match(food.name, food.brand, products)
+        _record_cache(db, retailer_id, food, match, now)  # recuerda hit o miss
         if not match or not match.get("package_g"):
             result.missed += 1
             result.misses.append(food.id)
