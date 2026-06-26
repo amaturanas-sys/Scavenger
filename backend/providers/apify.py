@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import os
 
+from .. import config
 from .base import FoodProvider, FoodRecord
 from .lider import _BRAND_KEYS, _EAN_KEYS, _ID_KEYS, _NAME_KEYS, _deep_price, _first
 from .vtex import parse_package_grams
@@ -44,13 +45,12 @@ class ApifyProvider(FoodProvider):
     def __init__(self, enabled: bool = True, token: str | None = None,
                  max_results: int | None = None):
         self.enabled = enabled
-        self.token = token if token is not None else os.getenv("SCAVENGER_APIFY_TOKEN", "")
-        self.max_results = int(
-            max_results if max_results is not None
-            else os.getenv("SCAVENGER_APIFY_MAX_RESULTS", "5")
-        )
-        self.actor_id = os.getenv(f"SCAVENGER_APIFY_{self.env_key}_ACTOR", self.actor_id)
-        self.input_tmpl = os.getenv(f"SCAVENGER_APIFY_{self.env_key}_INPUT", self.default_input)
+        self.token = (token if token is not None
+                      else os.getenv("SCAVENGER_APIFY_TOKEN", "")).strip()
+        self.max_results = int(max_results) if max_results is not None else config.APIFY_MAX_RESULTS
+        # Variables vacias (no definidas en Actions) -> usar el valor por defecto.
+        self.actor_id = os.getenv(f"SCAVENGER_APIFY_{self.env_key}_ACTOR", "").strip() or self.actor_id
+        self.input_tmpl = os.getenv(f"SCAVENGER_APIFY_{self.env_key}_INPUT", "").strip() or self.default_input
 
     @property
     def configured(self) -> bool:

@@ -52,6 +52,17 @@ jobs:
           SCAVENGER_DATABASE_URL: ${{ secrets.SCAVENGER_DATABASE_URL }}
           SCAVENGER_FATSECRET_KEY: ${{ secrets.SCAVENGER_FATSECRET_KEY }}
           SCAVENGER_FATSECRET_SECRET: ${{ secrets.SCAVENGER_FATSECRET_SECRET }}
+          # Apify: token como secret; actores/inputs/limites como variables.
+          SCAVENGER_APIFY_TOKEN: ${{ secrets.SCAVENGER_APIFY_TOKEN }}
+          SCAVENGER_APIFY_JUMBO_ACTOR: ${{ vars.SCAVENGER_APIFY_JUMBO_ACTOR }}
+          SCAVENGER_APIFY_UNIMARC_ACTOR: ${{ vars.SCAVENGER_APIFY_UNIMARC_ACTOR }}
+          SCAVENGER_APIFY_LIDER_ACTOR: ${{ vars.SCAVENGER_APIFY_LIDER_ACTOR }}
+          SCAVENGER_APIFY_JUMBO_INPUT: ${{ vars.SCAVENGER_APIFY_JUMBO_INPUT }}
+          SCAVENGER_APIFY_UNIMARC_INPUT: ${{ vars.SCAVENGER_APIFY_UNIMARC_INPUT }}
+          SCAVENGER_APIFY_LIDER_INPUT: ${{ vars.SCAVENGER_APIFY_LIDER_INPUT }}
+          SCAVENGER_APIFY_MAX_RESULTS: ${{ vars.SCAVENGER_APIFY_MAX_RESULTS }}
+          SCAVENGER_APIFY_MONTHLY_BUDGET: ${{ vars.SCAVENGER_APIFY_MONTHLY_BUDGET }}
+          SCAVENGER_PRICE_TTL_DAYS: ${{ vars.SCAVENGER_PRICE_TTL_DAYS }}
           RETAILERS: ${{ github.event.inputs.retailers }}
           LIMIT: ${{ github.event.inputs.limit }}
           # En schedule no hay inputs: el default efectivo es "enriquecer".
