@@ -38,10 +38,11 @@ jobs:
           fi
           set -e
           echo "Desplegando a Space: ${HF_SPACE_ID}"
+          HF_OWNER="${HF_SPACE_ID%%/*}"   # usuario dueño del Space (forma canónica de auth en HF)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # El Space usa el README con front-matter de Hugging Face.
           cp deploy/huggingface/README.md README.md
           git add README.md
           git commit -m "Deploy: SCAVENGER backend ($GITHUB_SHA)" || echo "sin cambios"
-          git push --force "https://github-actions:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_ID}.git" HEAD:main
+          git push --force "https://${HF_OWNER}:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_ID}.git" HEAD:main
