@@ -1,6 +1,9 @@
 """Carga el catalogo de alimentos a la base de datos desde un proveedor."""
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
+
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal, init_db
@@ -73,6 +76,58 @@ def seed_demo_user(db: Session) -> bool:
     ))
     db.commit()
     return True
+
+
+def run_with_retries(
+    fn: Callable,
+    attempts: int = 8,
+    delay: float = 3.0,
+    sleeper: Callable[[float], None] = time.sleep,
+    log: Callable[[str], None] = print,
+):
+    """Ejecuta fn() reintentando ante excepciones. Devuelve (ok, resultado_o_error).
+
+    Util para tolerar una BD que aun no responde (HF/Supabase despertando).
+    """
+    last = None
+    for i in range(1, attempts + 1):
+        try:
+            return True, fn()
+        except Exception as exc:  # noqa: BLE001 - resiliencia de arranque
+            last = exc
+            log(f"[startup] intento {i}/{attempts} de inicializar la BD fallo: {exc}")
+            if i < attempts:
+                sleeper(delay)
+    return False, last
+
+
+def init_and_seed(
+    provider_name: str = "local",
+    attempts: int = 8,
+    delay: float = 3.0,
+    sleeper: Callable[[float], None] = time.sleep,
+    log: Callable[[str], None] = print,
+) -> bool:
+    """Inicializa la BD y carga catalogo + usuario demo, con reintentos.
+
+    Devuelve True si lo logro; False si la BD no respondio tras los reintentos
+    (el server arranca igual para no caerse; ver /api/health).
+    """
+    def _do():
+        init_db()
+        db = SessionLocal()
+        try:
+            seed_foods(db, provider_name, refresh=False)
+            seed_demo_user(db)
+        finally:
+            db.close()
+        return True
+
+    ok, err = run_with_retries(_do, attempts, delay, sleeper, log)
+    if not ok:
+        log(f"[startup] la BD no respondio tras {attempts} intentos: {err}. "
+            f"El server arranca igual; revisa SCAVENGER_DATABASE_URL.")
+    return ok
 
 
 def run_seed(provider_name: str = "local", refresh: bool = False) -> int:
