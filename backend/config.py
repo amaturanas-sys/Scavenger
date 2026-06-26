@@ -8,6 +8,28 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+
+def _int_env(key: str, default: int) -> int:
+    """int() de una variable de entorno tratando vacio/ausente como default.
+
+    Las variables de GitHub Actions no definidas llegan como cadena vacia, que
+    rompería int(''); este helper las trata como 'usar el default'.
+    """
+    v = os.getenv(key, "").strip()
+    try:
+        return int(v) if v else default
+    except ValueError:
+        return default
+
+
+def _float_env(key: str, default: float) -> float:
+    v = os.getenv(key, "").strip()
+    try:
+        return float(v) if v else default
+    except ValueError:
+        return default
+
+
 # Rutas base del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -53,13 +75,13 @@ APIFY_PROVIDER_KEY = os.getenv("SCAVENGER_APIFY_PROVIDER_KEY", "apify")
 # Tope mensual de unidades (consultas/resultados) para no salir del plan
 # gratuito. ~100 alimentos/mes por defecto. Ajustar segun el modelo de precio
 # real del actor (por-resultado vs por-corrida vs compute units).
-APIFY_MONTHLY_BUDGET = int(os.getenv("SCAVENGER_APIFY_MONTHLY_BUDGET", "100"))
+APIFY_MONTHLY_BUDGET = _int_env("SCAVENGER_APIFY_MONTHLY_BUDGET", 100)
 # Maximo de resultados a pedir por busqueda (para no pagar de mas por consulta).
-APIFY_MAX_RESULTS = int(os.getenv("SCAVENGER_APIFY_MAX_RESULTS", "5"))
+APIFY_MAX_RESULTS = _int_env("SCAVENGER_APIFY_MAX_RESULTS", 5)
 # Token de Apify. Nunca se commitea: va como secret/variable de entorno.
 APIFY_TOKEN = os.getenv("SCAVENGER_APIFY_TOKEN", "")
 
 # Vigencia (dias) de un precio recolectado antes de volver a consultarlo. Como
 # el retail ajusta precios ~mensualmente, 30 dias evita gastar tokens en
 # productos ya vistos. Pon 0 para forzar siempre el refresco.
-PRICE_TTL_DAYS = float(os.getenv("SCAVENGER_PRICE_TTL_DAYS", "30"))
+PRICE_TTL_DAYS = _float_env("SCAVENGER_PRICE_TTL_DAYS", 30)
