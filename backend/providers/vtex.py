@@ -23,6 +23,29 @@ from .base import FoodProvider, FoodRecord
 # Palabras vacias que no aportan al matching de nombres.
 _STOPWORDS = {"de", "del", "la", "el", "los", "las", "y", "con", "sin", "en", "al", "un", "una"}
 
+# User-Agent de navegador real: muchos retailers chilenos rechazan clientes que
+# no parezcan un navegador (responden 403/404/410). Configurable por entorno.
+import os as _os
+
+BROWSER_UA = _os.getenv(
+    "SCAVENGER_SCRAPER_UA",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+)
+
+
+def browser_headers(referer: str = "") -> dict:
+    """Cabeceras tipo navegador (es-CL) para no ser bloqueado como bot."""
+    h = {
+        "User-Agent": BROWSER_UA,
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "es-CL,es;q=0.9,en;q=0.8",
+    }
+    if referer:
+        h["Referer"] = referer
+        h["Origin"] = referer.rstrip("/")
+    return h
+
 
 def strip_accents(text: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn")
@@ -158,7 +181,7 @@ class VTEXProvider(FoodProvider):
     retailer_name = "VTEX"
     base_url = ""  # ej: https://www.jumbo.cl
 
-    def __init__(self, enabled: bool = True, page_size: int = 24, user_agent: str = "scavenger/0.1"):
+    def __init__(self, enabled: bool = True, page_size: int = 24, user_agent: str = BROWSER_UA):
         self.enabled = enabled
         self.page_size = page_size
         self.user_agent = user_agent
@@ -167,7 +190,8 @@ class VTEXProvider(FoodProvider):
     def _http_get_json(self, url: str):  # pragma: no cover - requiere red
         import httpx
 
-        headers = {"User-Agent": self.user_agent, "Accept": "application/json"}
+        headers = browser_headers(referer=self.base_url)
+        headers["User-Agent"] = self.user_agent
         with httpx.Client(timeout=20, headers=headers, follow_redirects=True) as client:
             resp = client.get(url)
             if resp.status_code == 403 and "allowlist" in resp.text.lower():

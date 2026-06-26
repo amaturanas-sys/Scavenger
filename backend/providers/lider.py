@@ -30,7 +30,7 @@ import os
 from urllib.parse import quote
 
 from .base import FoodProvider, FoodRecord
-from .vtex import parse_package_grams
+from .vtex import BROWSER_UA, browser_headers, parse_package_grams
 
 # Claves candidatas para cada campo (se usa la primera presente).
 _NAME_KEYS = ("displayName", "name", "productName", "title", "description")
@@ -148,7 +148,7 @@ class LiderProvider(FoodProvider):
     name = "lider"
     retailer_name = "Lider"
 
-    def __init__(self, enabled: bool | None = None, user_agent: str = "scavenger/0.1"):
+    def __init__(self, enabled: bool | None = None, user_agent: str = BROWSER_UA):
         if enabled is None:
             enabled = os.getenv("SCAVENGER_LIDER_ENABLED", "1") == "1"
         self.enabled = enabled
@@ -162,7 +162,8 @@ class LiderProvider(FoodProvider):
     def _http_get_json(self, url: str):  # pragma: no cover - requiere red
         import httpx
 
-        headers = {"User-Agent": self.user_agent, "Accept": "application/json"}
+        headers = browser_headers(referer=self.base_url)
+        headers["User-Agent"] = self.user_agent
         with httpx.Client(timeout=20, headers=headers, follow_redirects=True) as client:
             resp = client.get(url)
             if resp.status_code == 403 and "allowlist" in resp.text.lower():
