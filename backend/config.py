@@ -38,3 +38,10 @@ CORS_ORIGINS = os.getenv("SCAVENGER_CORS_ORIGINS", "*")
 
 # Crear un usuario "Demo" en el arranque. Desactivar en produccion con "0".
 SEED_DEMO = os.getenv("SCAVENGER_SEED_DEMO", "1") == "1"
+
+# Refrescar el catalogo desde la semilla en cada arranque (refresh=True). Por
+# defecto "0": el seed solo inserta alimentos nuevos y respeta los precios ya
+# cargados (p.ej. los refrescados por scraping en la BD de produccion). Ponlo
+# en "1" cuando quieras que un redeploy propague los datos reales recien
+# commiteados en data/chilean_foods.json a una BD ya poblada.
+SEED_REFRESH = os.getenv("SCAVENGER_SEED_REFRESH", "0") == "1"

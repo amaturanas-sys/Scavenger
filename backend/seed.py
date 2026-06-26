@@ -108,8 +108,13 @@ def init_and_seed(
     sleeper: Callable[[float], None] = time.sleep,
     log: Callable[[str], None] = print,
     seed_demo: bool = True,
+    refresh: bool = False,
 ) -> bool:
     """Inicializa la BD y carga catalogo (+ usuario demo opcional), con reintentos.
+
+    Con ``refresh=True`` actualiza los alimentos ya existentes desde la semilla
+    (util para propagar datos reales recien commiteados a una BD ya poblada);
+    por defecto solo inserta los nuevos y respeta los precios ya cargados.
 
     Devuelve True si lo logro; False si la BD no respondio tras los reintentos
     (el server arranca igual para no caerse; ver /api/health).
@@ -118,7 +123,7 @@ def init_and_seed(
         init_db()
         db = SessionLocal()
         try:
-            seed_foods(db, provider_name, refresh=False)
+            seed_foods(db, provider_name, refresh=refresh)
             if seed_demo:
                 seed_demo_user(db)
         finally:
