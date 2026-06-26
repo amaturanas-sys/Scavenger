@@ -148,6 +148,26 @@ class Feedback(Base):
     plan: Mapped[Plan] = relationship(back_populates="feedback")
 
 
+class ScraperUsage(Base):
+    """Consumo mensual de un proveedor de scraping con cuota (p.ej. Apify).
+
+    Permite mantenerse en el plan gratuito: una fila por (proveedor, mes UTC)
+    con las unidades consumidas. Se comparte entre la app desplegada y los jobs
+    de GitHub Actions porque ambos apuntan a la misma BD.
+    """
+
+    __tablename__ = "scraper_usage"
+    __table_args__ = (UniqueConstraint("provider", "month", name="uq_provider_month"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    provider: Mapped[str] = mapped_column(String, index=True, default="")
+    month: Mapped[str] = mapped_column(String, index=True, default="")  # "YYYY-MM" (UTC)
+    used: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class Preference(Base):
     """Preferencia aprendida de un usuario por un alimento (peso -1..1)."""
 
