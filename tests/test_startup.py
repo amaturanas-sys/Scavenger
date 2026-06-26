@@ -58,3 +58,24 @@ def test_init_and_seed_respects_seed_demo(monkeypatch):
     calls.clear()
     s.init_and_seed("local", attempts=1, seed_demo=True, log=lambda *_: None)
     assert calls == ["foods", "demo"]
+
+
+def test_init_and_seed_propagates_refresh_flag(monkeypatch):
+    import backend.seed as s
+
+    class _FakeSession:
+        def close(self):
+            pass
+
+    seen = {}
+    monkeypatch.setattr(s, "init_db", lambda: None)
+    monkeypatch.setattr(s, "SessionLocal", lambda: _FakeSession())
+    monkeypatch.setattr(s, "seed_demo_user", lambda db: None)
+    monkeypatch.setattr(s, "seed_foods",
+                        lambda db, p, refresh=False: seen.__setitem__("refresh", refresh))
+
+    s.init_and_seed("local", attempts=1, seed_demo=False, refresh=True, log=lambda *_: None)
+    assert seen["refresh"] is True  # propaga refresh a la BD ya poblada
+
+    s.init_and_seed("local", attempts=1, seed_demo=False, log=lambda *_: None)
+    assert seen["refresh"] is False  # por defecto no refresca (respeta precios)

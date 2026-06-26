@@ -24,7 +24,11 @@ async def lifespan(app: FastAPI):
     # Inicializa la BD y carga el catalogo (idempotente), con reintentos para
     # tolerar una BD que aun despierta (HF Spaces/Supabase). Si falla, el server
     # arranca igual (no se cae) y /api/health reporta la BD como "down".
-    app.state.db_ready = init_and_seed(config.DEFAULT_FOOD_PROVIDER, seed_demo=config.SEED_DEMO)
+    app.state.db_ready = init_and_seed(
+        config.DEFAULT_FOOD_PROVIDER,
+        seed_demo=config.SEED_DEMO,
+        refresh=config.SEED_REFRESH,
+    )
     yield
 
 

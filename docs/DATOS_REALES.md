@@ -116,6 +116,42 @@ python3 -m backend.export_catalog                      # BD -> data/chilean_food
   nutrición faltante (salvo `--all`). `export` deja todo en
   `data/chilean_foods.json` para commitearlo y compartirlo.
 
+## Opción C — Llevar datos reales al backend desplegado (producción)
+
+El backend desplegado (Hugging Face Space + Postgres/Supabase) **no** scrapea
+desde el Space (su egress es restringido). Hay dos formas de poblar la BD de
+producción con datos reales:
+
+### C.1 — Commitear `chilean_foods.json` y refrescar en el deploy
+
+1. Genera los datos reales (Opción A o B) y commitea `data/chilean_foods.json`.
+2. En los **secrets/variables del Space**, define temporalmente
+   `SCAVENGER_SEED_REFRESH=1`. Por defecto el seed solo **inserta** alimentos
+   nuevos y **respeta** los precios ya cargados; con `=1`, el próximo arranque
+   **actualiza** los alimentos existentes desde el JSON commiteado.
+3. Redespliega (merge a `main` dispara `huggingface.yml`). Tras confirmar que la
+   BD quedó con los datos reales, vuelve a poner `SCAVENGER_SEED_REFRESH=0`
+   (o quítalo) para no sobrescribir en cada reinicio.
+
+### C.2 — Scraping programado directo a la BD (GitHub Actions)
+
+El workflow **`Refresh real data (prices + nutrition)`**
+(`.github/workflows/refresh-data.yml`) corre en un runner de GitHub (egress
+abierto) y escribe **directo** en la BD de producción. Es resiliente: si una
+cadena falla (red/esquema/403), las demás siguen.
+
+1. Define el secret **`SCAVENGER_DATABASE_URL`** del repo con la cadena de
+   conexión de producción (Supabase *Session pooler*, IPv4). Opcional para
+   nutrición: `SCAVENGER_FATSECRET_KEY` / `SCAVENGER_FATSECRET_SECRET`.
+2. Ejecútalo manualmente desde **Actions → Refresh real data → Run workflow**
+   (puedes acotar `retailers`, `limit` y `enrich`), o deja el `schedule`
+   semanal. Equivale a `make refresh-data` apuntando a la BD de producción.
+
+> Nunca pegues la cadena de conexión real en el chat ni la commitees: va solo
+> como **secret** del repositorio/Space.
+
+---
+
 ## Verificar y commitear
 
 1. Revisa el matching de productos, los tamaños de envase parseados y los

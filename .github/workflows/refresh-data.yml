@@ -1,0 +1,75 @@
+name: Refresh real data (prices + nutrition)
+
+# Refresca precios reales (scraping Jumbo/Santa Isabel/Lider) y, si hay
+# credenciales, la nutricion (FatSecret) directamente hacia la BD de
+# produccion. Los runners de GitHub tienen egress abierto, asi que pueden
+# alcanzar las cadenas y FatSecret (a diferencia del Space o el entorno cloud).
+#
+# Requiere:
+#   - Secret  SCAVENGER_DATABASE_URL : BD de produccion (p.ej. Supabase pooler).
+# Opcional (para nutricion):
+#   - Secrets SCAVENGER_FATSECRET_KEY / SCAVENGER_FATSECRET_SECRET.
+on:
+  workflow_dispatch:
+    inputs:
+      retailers:
+        description: "Cadenas a refrescar (coma-separado; vacio = todas)"
+        required: false
+        default: ""
+      limit:
+        description: "Maximo de alimentos a procesar (vacio = todos)"
+        required: false
+        default: ""
+      enrich:
+        description: "Completar nutricion via FatSecret"
+        type: boolean
+        required: false
+        default: true
+  schedule:
+    - cron: "17 8 * * 1"  # lunes 08:17 UTC (semanal)
+
+jobs:
+  refresh:
+    name: Scrape precios/nutricion reales hacia la BD
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Refrescar datos reales
+        env:
+          SCAVENGER_DATABASE_URL: ${{ secrets.SCAVENGER_DATABASE_URL }}
+          SCAVENGER_FATSECRET_KEY: ${{ secrets.SCAVENGER_FATSECRET_KEY }}
+          SCAVENGER_FATSECRET_SECRET: ${{ secrets.SCAVENGER_FATSECRET_SECRET }}
+          RETAILERS: ${{ github.event.inputs.retailers }}
+          LIMIT: ${{ github.event.inputs.limit }}
+          # En schedule no hay inputs: el default efectivo es "enriquecer".
+          ENRICH: ${{ github.event.inputs.enrich }}
+        run: |
+          if [ -z "$SCAVENGER_DATABASE_URL" ]; then
+            echo "::notice::SCAVENGER_DATABASE_URL no configurado; se omite el refresco. Ver docs/DATOS_REALES.md."
+            exit 0
+          fi
+          ARGS=""
+          if [ -n "$RETAILERS" ]; then
+            IFS=',' read -ra RS <<< "$RETAILERS"
+            for r in "${RS[@]}"; do
+              r="$(echo "$r" | xargs)"   # trim
+              [ -n "$r" ] && ARGS="$ARGS --retailer $r"
+            done
+          fi
+          if [ -n "$LIMIT" ]; then ARGS="$ARGS --limit $LIMIT"; fi
+          if [ "$ENRICH" = "false" ]; then ARGS="$ARGS --no-enrich"; fi
+          echo "Ejecutando: python -m backend.refresh_data $ARGS"
+          python -m backend.refresh_data $ARGS
