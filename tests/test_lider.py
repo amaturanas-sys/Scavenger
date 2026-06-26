@@ -15,8 +15,11 @@ from backend.providers.lider import (
 from backend.seed import seed_foods
 
 
-def test_lider_registered_as_price_provider():
-    assert PRICE_PROVIDERS.get("lider") is LiderProvider
+def test_lider_price_provider_is_apify():
+    # El proveedor de precios de Lider ahora es via Apify (el scraper HTTP
+    # directo quedo obsoleto); la clase LiderProvider sigue para sus tests.
+    from backend.providers.apify import LiderApifyProvider
+    assert PRICE_PROVIDERS.get("lider") is LiderApifyProvider
 
 
 # --- extraccion del contenedor de productos -------------------------------

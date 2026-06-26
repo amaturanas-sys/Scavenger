@@ -6,6 +6,12 @@ Jumbo (scraping) y FatSecret (API) quedan listos para conectarse.
 """
 from __future__ import annotations
 
+from .apify import (
+    ApifyProvider,
+    JumboApifyProvider,
+    LiderApifyProvider,
+    UnimarcApifyProvider,
+)
 from .base import FoodProvider, FoodRecord
 from .fatsecret import FatSecretProvider
 from .jumbo import JumboProvider
@@ -23,10 +29,13 @@ PROVIDERS: dict[str, type[FoodProvider]] = {
 }
 
 # Proveedores de scraping de precios por cadena (retailer_id -> clase).
+# Via Apify (actors mantenidos): los scrapers VTEX/HTTP directos quedaron
+# obsoletos cuando las cadenas cambiaron sus APIs. Las clases VTEX/Lider siguen
+# disponibles para sus pruebas unitarias y como fallback configurable.
 PRICE_PROVIDERS: dict[str, type[FoodProvider]] = {
-    "jumbo": JumboProvider,
-    "santa_isabel": SantaIsabelProvider,
-    "lider": LiderProvider,
+    "jumbo": JumboApifyProvider,
+    "unimarc": UnimarcApifyProvider,
+    "lider": LiderApifyProvider,
 }
 
 
@@ -45,6 +54,10 @@ __all__ = [
     "LiderProvider",
     "VTEXProvider",
     "FatSecretProvider",
+    "ApifyProvider",
+    "JumboApifyProvider",
+    "UnimarcApifyProvider",
+    "LiderApifyProvider",
     "PROVIDERS",
     "PRICE_PROVIDERS",
     "get_provider",
