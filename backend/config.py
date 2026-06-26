@@ -45,3 +45,16 @@ SEED_DEMO = os.getenv("SCAVENGER_SEED_DEMO", "1") == "1"
 # en "1" cuando quieras que un redeploy propague los datos reales recien
 # commiteados en data/chilean_foods.json a una BD ya poblada.
 SEED_REFRESH = os.getenv("SCAVENGER_SEED_REFRESH", "0") == "1"
+
+# --- Scraping con cuota (Apify, plan gratuito) ---------------------------
+# Apify factura por cuenta (credito compartido entre todos sus actors), asi que
+# todos los scrapers de Apify comparten un mismo presupuesto bajo esta clave.
+APIFY_PROVIDER_KEY = os.getenv("SCAVENGER_APIFY_PROVIDER_KEY", "apify")
+# Tope mensual de unidades (consultas/resultados) para no salir del plan
+# gratuito. ~100 alimentos/mes por defecto. Ajustar segun el modelo de precio
+# real del actor (por-resultado vs por-corrida vs compute units).
+APIFY_MONTHLY_BUDGET = int(os.getenv("SCAVENGER_APIFY_MONTHLY_BUDGET", "100"))
+# Maximo de resultados a pedir por busqueda (para no pagar de mas por consulta).
+APIFY_MAX_RESULTS = int(os.getenv("SCAVENGER_APIFY_MAX_RESULTS", "5"))
+# Token de Apify. Nunca se commitea: va como secret/variable de entorno.
+APIFY_TOKEN = os.getenv("SCAVENGER_APIFY_TOKEN", "")
