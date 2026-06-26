@@ -37,3 +37,24 @@ def test_run_with_retries_first_try_no_sleep():
     ok, res = run_with_retries(lambda: 42, attempts=3, delay=1.0,
                                sleeper=sleeps.append, log=lambda *_: None)
     assert ok and res == 42 and sleeps == []
+
+
+def test_init_and_seed_respects_seed_demo(monkeypatch):
+    import backend.seed as s
+
+    class _FakeSession:
+        def close(self):
+            pass
+
+    calls = []
+    monkeypatch.setattr(s, "init_db", lambda: None)
+    monkeypatch.setattr(s, "SessionLocal", lambda: _FakeSession())
+    monkeypatch.setattr(s, "seed_foods", lambda db, p, refresh=False: calls.append("foods"))
+    monkeypatch.setattr(s, "seed_demo_user", lambda db: calls.append("demo"))
+
+    s.init_and_seed("local", attempts=1, seed_demo=False, log=lambda *_: None)
+    assert calls == ["foods"]  # sin usuario demo
+
+    calls.clear()
+    s.init_and_seed("local", attempts=1, seed_demo=True, log=lambda *_: None)
+    assert calls == ["foods", "demo"]

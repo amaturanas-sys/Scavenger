@@ -30,3 +30,11 @@ LEARNING_RATE = float(os.getenv("SCAVENGER_LEARNING_RATE", "0.25"))
 
 # Tolerancia por defecto sobre las calorias objetivo (+/-).
 DEFAULT_KCAL_TOLERANCE = float(os.getenv("SCAVENGER_KCAL_TOLERANCE", "0.05"))
+
+# Origenes permitidos por CORS (coma-separados). "*" = cualquiera (necesario
+# para que la APK, de origen file://, consuma la API). Para un despliegue
+# cerrado, define los origenes exactos, ej: "https://mi-app.com".
+CORS_ORIGINS = os.getenv("SCAVENGER_CORS_ORIGINS", "*")
+
+# Crear un usuario "Demo" en el arranque. Desactivar en produccion con "0".
+SEED_DEMO = os.getenv("SCAVENGER_SEED_DEMO", "1") == "1"
