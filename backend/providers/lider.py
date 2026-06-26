@@ -166,19 +166,58 @@ class LiderProvider(FoodProvider):
         headers["User-Agent"] = self.user_agent
         with httpx.Client(timeout=20, headers=headers, follow_redirects=True) as client:
             resp = client.get(url)
-            if resp.status_code == 403 and "allowlist" in resp.text.lower():
-                raise PermissionError(
-                    f"Host bloqueado por la politica de red del entorno: {self.base_url}. "
-                    "Agregalo al allowlist de egress para permitir el scraping."
-                )
-            resp.raise_for_status()
+        ct = resp.headers.get("content-type", "")
+        snippet = " ".join(resp.text[:200].split())
+        diag = f"status={resp.status_code} ct='{ct}' final='{resp.url}' body[:200]={snippet!r}"
+        if resp.status_code == 403 and "allowlist" in resp.text.lower():
+            raise PermissionError(
+                f"Host bloqueado por la politica de red del entorno: {self.base_url}. "
+                "Agregalo al allowlist de egress para permitir el scraping."
+            )
+        if resp.status_code >= 400:
+            raise RuntimeError(f"HTTP {resp.status_code} | {diag}")
+        try:
             return resp.json()
+        except Exception as exc:  # respuesta no-JSON (HTML, challenge anti-bot, etc.)
+            raise RuntimeError(f"respuesta no-JSON | {diag}") from exc
+
+    # Endpoints alternativos por si el host por defecto (apps.lider.cl) responde
+    # 521 (origen caido). Se prueban en orden tras el configurado por entorno.
+    _ALT_ENDPOINTS = (
+        ("https://www.lider.cl", "/supermercado/bff/products?term={q}&page=1"),
+        ("https://www.lider.cl", "/supermercado/api/products/search?term={q}"),
+    )
+
+    def _candidate_urls(self, term: str) -> list[str]:
+        q = quote(term)
+        urls = [self.base_url + self.search_path.format(q=q)]
+        urls += [host + path.format(q=q) for host, path in self._ALT_ENDPOINTS]
+        seen, out = set(), []
+        for u in urls:
+            if u not in seen:
+                seen.add(u)
+                out.append(u)
+        return out
 
     def search_raw(self, term: str):
+        """Prueba el host configurado y alternativos, registrando diagnostico."""
         if not self.enabled:
             return []
-        url = self.base_url + self.search_path.format(q=quote(term))
-        return self._http_get_json(url)
+        last_exc = None
+        for url in self._candidate_urls(term):
+            try:
+                data = self._http_get_json(url)
+            except Exception as exc:  # noqa: BLE001 - diagnostico de scraping
+                print(f"[lider][diag] FALLO {url} | {exc}")
+                last_exc = exc
+                continue
+            prods = _extract_products(data)
+            print(f"[lider][diag] OK    {url} -> productos={len(prods)}")
+            if prods:
+                return data
+        if last_exc is not None:
+            raise last_exc
+        return []
 
     def search_products(self, term: str) -> list[dict]:
         out = []
