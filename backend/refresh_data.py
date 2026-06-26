@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 
 from sqlalchemy.orm import Session
 
+from . import config
 from .database import SessionLocal, init_db
 from .nutrition_enrich import enrich_foods
 from .pricing import refresh_retailer
@@ -65,6 +66,7 @@ def run_refresh(
     refresh_one=refresh_retailer,
     enrich_fn=enrich_foods,
     log=print,
+    budget: int | None = None,
 ) -> DataRefreshReport:
     """Refresca cada cadena de forma independiente y (opcional) la nutricion.
 
@@ -72,12 +74,18 @@ def run_refresh(
     ``enrich_provider``) son inyectables para poder verificar la orquestacion
     offline. Una excepcion en una cadena (incluido ``SystemExit`` por host
     bloqueado) se registra y no detiene al resto.
+
+    ``budget`` es la cuota mensual compartida para proveedores *metered* (Apify);
+    si es None se toma de la config. Las cadenas comparten el mismo presupuesto,
+    asi que se va consumiendo en orden hasta agotarse.
     """
     report = DataRefreshReport()
+    budget = config.APIFY_MONTHLY_BUDGET if budget is None else budget
     for rid in retailers:
         try:
             res = refresh_one(db, rid, limit=limit, use_cache=use_cache,
-                              sleep_s=sleep_s, enabled=True, log=log)
+                              sleep_s=sleep_s, enabled=True, log=log,
+                              budget=budget, provider_key=config.APIFY_PROVIDER_KEY)
             report.retailers[rid] = res.summary()
             report.ok_retailers += 1
         except (Exception, SystemExit) as exc:  # noqa: BLE001 - resiliencia del job

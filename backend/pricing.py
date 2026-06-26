@@ -15,7 +15,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from . import config
+from . import config, usage
 from .models import Food, FoodPrice, PriceCache
 from .providers import PRICE_PROVIDERS
 from .providers.vtex import best_match
@@ -30,12 +30,14 @@ class RefreshResult:
     missed: int = 0
     updated: int = 0
     cached: int = 0  # servidos desde la memoria (sin consultar -> sin token)
+    deferred: int = 0  # no consultados por agotarse la cuota mensual
     misses: list[str] = field(default_factory=list)
 
     def summary(self) -> str:
+        extra = f", {self.deferred} diferidos (cuota agotada)" if self.deferred else ""
         return (f"[{self.retailer_id}] {self.matched} con precio, {self.missed} sin "
                 f"coincidencia, {self.updated} FoodPrice actualizados, "
-                f"{self.cached} desde cache (sin token).")
+                f"{self.cached} desde cache (sin token){extra}.")
 
 
 def _slug(term: str) -> str:
@@ -107,6 +109,8 @@ def refresh_retailer(
     log=print,
     ttl_days: float | None = None,
     now: float | None = None,
+    budget: int | None = None,
+    provider_key: str | None = None,
 ) -> RefreshResult:
     """Actualiza los precios de una cadena para todos los alimentos.
 
@@ -114,6 +118,11 @@ def refresh_retailer(
     (`PriceCache`): si el precio de un producto se recolecto hace menos de
     `ttl_days` dias, se sirve desde ahi sin consultar. Asi el presupuesto solo
     se gasta en productos nuevos o vencidos.
+
+    Si el proveedor es *metered* (Apify) y se pasa `budget`, cada consulta nueva
+    descuenta de la cuota mensual compartida (`provider_key`, def. "apify"); al
+    agotarse, los productos restantes quedan *diferidos* (no se consultan) para
+    no salir del plan gratuito.
     """
     cls = PRICE_PROVIDERS.get(retailer_id)
     if cls is None:
@@ -122,12 +131,14 @@ def refresh_retailer(
     provider = cls(enabled=enabled)
     result = RefreshResult(retailer_id=retailer_id)
     ttl_days = config.PRICE_TTL_DAYS if ttl_days is None else ttl_days
+    metered = getattr(provider, "metered", False)
+    provider_key = provider_key or config.APIFY_PROVIDER_KEY
 
     foods = db.query(Food).order_by(Food.name).all()
     if limit:
         foods = foods[:limit]
 
-    for food in foods:
+    for i, food in enumerate(foods):
         # ¿Lo tenemos fresco en memoria? -> no consultamos (no gastamos token).
         cached = _fresh_cache(db, retailer_id, food.id, ttl_days, now)
         if cached is not None:
@@ -138,6 +149,14 @@ def refresh_retailer(
                     "price_clp": cached.price_clp, "package_g": cached.package_g,
                 })
             continue
+
+        # Cuota: una consulta nueva cuesta. Si se agoto, difiere el resto.
+        if metered and budget is not None:
+            if usage.try_spend(db, provider_key, 1, budget) == 0:
+                result.deferred += len(foods) - i
+                log(f"[{retailer_id}] cuota mensual agotada; {result.deferred} "
+                    f"productos diferidos al proximo mes.")
+                break
 
         term = _search_term(food)
         try:

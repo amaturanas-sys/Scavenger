@@ -46,6 +46,9 @@ class FoodProvider(abc.ABC):
     """Contrato que deben cumplir todas las fuentes de alimentos."""
 
     name: str = "base"
+    # True si cada consulta consume cuota de pago (p.ej. Apify): el refresco
+    # entonces respeta el presupuesto mensual antes de consultar.
+    metered: bool = False
 
     @abc.abstractmethod
     def fetch_foods(self) -> list[FoodRecord]:
