@@ -194,23 +194,70 @@ class VTEXProvider(FoodProvider):
         headers["User-Agent"] = self.user_agent
         with httpx.Client(timeout=20, headers=headers, follow_redirects=True) as client:
             resp = client.get(url)
-            if resp.status_code == 403 and "allowlist" in resp.text.lower():
-                raise PermissionError(
-                    f"Host bloqueado por la politica de red del entorno: {self.base_url}. "
-                    "Agregalo al allowlist de egress para permitir el scraping."
-                )
-            resp.raise_for_status()
+        ct = resp.headers.get("content-type", "")
+        snippet = " ".join(resp.text[:200].split())
+        diag = f"status={resp.status_code} ct='{ct}' final='{resp.url}' body[:200]={snippet!r}"
+        if resp.status_code == 403 and "allowlist" in resp.text.lower():
+            raise PermissionError(
+                f"Host bloqueado por la politica de red del entorno: {self.base_url}. "
+                "Agregalo al allowlist de egress para permitir el scraping."
+            )
+        if resp.status_code >= 400:
+            raise RuntimeError(f"HTTP {resp.status_code} | {diag}")
+        try:
             return resp.json()
+        except Exception as exc:  # respuesta no-JSON (HTML, challenge anti-bot, etc.)
+            raise RuntimeError(f"respuesta no-JSON | {diag}") from exc
 
-    def search_raw(self, term: str) -> list[dict]:
-        """Devuelve los productos VTEX crudos para un termino de busqueda."""
-        if not self.enabled or not self.base_url:
-            return []
+    # Endpoints candidatos VTEX (se prueban en orden; el primero con productos gana):
+    #  1) busqueda legacy por path, 2) legacy por query ?ft=, 3) Intelligent Search.
+    _SEARCH_TEMPLATES = (
+        "/api/catalog_system/pub/products/search/{q}?_from=0&_to={to}",
+        "/api/catalog_system/pub/products/search?ft={q}&_from=0&_to={to}",
+        "/api/io/_v/api/intelligent-search/product_search/trade-policy/1"
+        "?query={q}&locale=es-CL&hideUnavailableItems=false",
+    )
+
+    def _candidate_urls(self, term: str) -> list[str]:
         from urllib.parse import quote
 
-        url = f"{self.base_url}/api/catalog_system/pub/products/search/{quote(term)}?_from=0&_to={self.page_size - 1}"
-        data = self._http_get_json(url)
-        return data if isinstance(data, list) else []
+        q = quote(term)
+        to = self.page_size - 1
+        return [self.base_url + t.format(q=q, to=to) for t in self._SEARCH_TEMPLATES]
+
+    @staticmethod
+    def _products_from(data) -> list[dict]:
+        """Extrae la lista de productos tanto del formato legacy (lista) como
+        del de Intelligent Search ({'products': [...]})."""
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            for key in ("products", "data"):
+                v = data.get(key)
+                if isinstance(v, list):
+                    return v
+        return []
+
+    def search_raw(self, term: str) -> list[dict]:
+        """Productos VTEX crudos. Prueba varios endpoints y registra diagnostico
+        (status/content-type/url/cuerpo) para saber que devuelve cada tienda."""
+        if not self.enabled or not self.base_url:
+            return []
+        last_exc = None
+        for url in self._candidate_urls(term):
+            try:
+                data = self._http_get_json(url)
+            except Exception as exc:  # noqa: BLE001 - diagnostico de scraping
+                print(f"[{self.name}][diag] FALLO {url} | {exc}")
+                last_exc = exc
+                continue
+            prods = self._products_from(data)
+            print(f"[{self.name}][diag] OK    {url} -> productos={len(prods)}")
+            if prods:
+                return prods
+        if last_exc is not None:
+            raise last_exc
+        return []
 
     def search_products(self, term: str) -> list[dict]:
         """Productos normalizados (con precio y tamano) para un termino."""
