@@ -25,7 +25,7 @@ class _FakeApify(ApifyProvider):
 
 def test_build_input_default():
     p = _FakeApify([])
-    assert p._build_input("arroz") == {"search": "arroz", "maxItems": 5}
+    assert p._build_input("arroz") == {"term": "arroz", "maxPages": 1, "pageSize": 5}
 
 
 def test_input_env_override(monkeypatch):
@@ -48,6 +48,30 @@ def test_search_products_maps_and_filters():
     assert all(o["retailer_id"] == "fake" and o["retailer"] == "Fake" for o in out)
     arroz = next(o for o in out if o["name"].startswith("Arroz"))
     assert arroz["price_clp"] == 1490 and arroz["package_g"] == 1000
+
+
+def test_maps_real_lider_item():
+    # Item con el esquema real del actor scraperschile (Lider/Walmart).
+    raw = {
+        "id": "6dedce73", "us_item_id": "00079919256382",
+        "name": "4x Leche en Polvo NIDO® Entera 800g", "brand": "Nestlé",
+        "price": 32190, "price_string": "$32,190.00",
+        "availability": "In stock", "availability_value": "IN_STOCK",
+    }
+    p = _FakeApify([raw])
+    out = p.search_products("leche")
+    assert len(out) == 1
+    o = out[0]
+    assert o["name"] == "4x Leche en Polvo NIDO® Entera 800g"
+    assert o["brand"] == "Nestlé" and o["price_clp"] == 32190
+    assert o["package_g"] == 800  # parseado del nombre
+    assert o["retailer_id"] == "fake"
+
+
+def test_skips_unavailable_items():
+    raw = {"name": "Leche X 1 L", "price": 990, "availability_value": "OUT_OF_STOCK"}
+    p = _FakeApify([raw])
+    assert p.search_products("leche") == []
 
 
 def test_caps_at_max_results():
