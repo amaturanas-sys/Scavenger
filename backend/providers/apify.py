@@ -30,6 +30,19 @@ from .vtex import parse_package_grams
 
 API_BASE = "https://api.apify.com/v2"
 _SIZE_KEYS = ("size", "netContent", "packageSize", "format", "displayName", "name", "title")
+_AVAIL_KEYS = ("availability_value", "availability", "inStock", "available", "isAvailable")
+# Marcadores de "no disponible" (tolerante a varios formatos del actor).
+_UNAVAILABLE = ("out", "agotado", "no disp", "sin stock", "false", "unavailable")
+
+
+def _is_available(raw: dict) -> bool:
+    for k in _AVAIL_KEYS:
+        v = raw.get(k)
+        if v in (None, ""):
+            continue
+        val = str(v).strip().lower()
+        return not any(bad in val for bad in _UNAVAILABLE)
+    return True  # sin dato de stock -> se asume disponible
 
 
 class ApifyProvider(FoodProvider):
@@ -40,7 +53,11 @@ class ApifyProvider(FoodProvider):
     retailer_name = "Apify"
     env_key = "APIFY"          # prefijo de las variables de entorno por cadena
     actor_id = ""              # ej: scraperschile/jumbo (se setea por entorno)
-    default_input = '{"search": "{q}", "maxItems": {n}}'
+    # Input real de los actors scraperschile (Jumbo/Unimarc/Lider): buscan por
+    # 'term' y limitan con 'pageSize'. Usamos {n} (=MAX_RESULTS) como pageSize
+    # para pedir pocos resultados por busqueda y no gastar de mas. Override por
+    # entorno con SCAVENGER_APIFY_<CHAIN>_INPUT si algun actor difiere.
+    default_input = '{"term": "{q}", "maxPages": 1, "pageSize": {n}}'
 
     def __init__(self, enabled: bool = True, token: str | None = None,
                  max_results: int | None = None):
@@ -95,7 +112,7 @@ class ApifyProvider(FoodProvider):
         """Normaliza un item del dataset de Apify (tolerante al esquema)."""
         name = str(_first(raw, _NAME_KEYS))
         price = _deep_price(raw)
-        if not name or price <= 0:
+        if not name or price <= 0 or not _is_available(raw):
             return None
         grams = None
         for key in _SIZE_KEYS:
