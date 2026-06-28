@@ -43,6 +43,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # El Space usa el README con front-matter de Hugging Face.
           cp deploy/huggingface/README.md README.md
-          git add README.md
-          git commit -m "Deploy: SCAVENGER backend ($GITHUB_SHA)" || echo "sin cambios"
-          git push --force "https://${HF_OWNER}:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_ID}.git" HEAD:main
+          # Deploy como commit aplastado SIN historial: HF rechaza binarios
+          # grandes presentes en cualquier commit empujado (aunque la version
+          # actual sea chica). Un commit huerfano solo lleva el arbol actual.
+          git checkout --orphan hf-deploy
+          git add -A
+          git commit -m "Deploy: SCAVENGER ($GITHUB_SHA)"
+          git push --force "https://${HF_OWNER}:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_ID}.git" hf-deploy:main
