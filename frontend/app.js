@@ -204,7 +204,11 @@ function makeReelCtrl(data) {
     st.idx[role] = i >= 0 ? i : 0;
   }
   function spin() {
-    data.slots.forEach((s) => { if (s.candidates.length && !st.locked[s.role] && !st.removed[s.role]) st.idx[s.role] = Math.floor(Math.random() * s.candidates.length); });
+    data.slots.forEach((s) => {
+      if (st.locked[s.role] || st.removed[s.role]) return;
+      const n = sorted(s).length;                 // respeta el filtro de origen / orden vigente
+      if (n) st.idx[s.role] = Math.floor(Math.random() * n);
+    });
   }
   function render(container, onChange) {
     container.innerHTML = data.slots.map((s) => reelHtml(s, st, sorted)).join("");
@@ -364,8 +368,10 @@ const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto
 const DOW = ["L","M","M","J","V","S","D"];
 const DOW_FULL = ["lunes","martes","miércoles","jueves","viernes","sábado","domingo"];
 const dateKey = (d) => d.slice(0, 10);
-// Secuencia base de comidas para una jornada de N comidas.
-const MEAL_SEQUENCE = ["desayuno", "snack 1", "almuerzo", "snack 2", "cena", "snack 3", "cena 2", "desayuno 2"];
+// Orden de prioridad al armar una jornada de N comidas: primero las comidas
+// principales (para que una rutina de almuerzo/cena se precargue aun con pocas
+// comidas/día) y luego los snacks.
+const MEAL_PRIORITY = ["desayuno", "almuerzo", "cena", "snack 1", "snack 2", "snack 3", "cena 2", "desayuno 2"];
 // Lunes=0 ... domingo=6 (igual que el backend) a partir de una fecha YYYY-MM-DD.
 function weekdayOf(k) { return (new Date(k + "T12:00:00").getDay() + 6) % 7; }
 const PRESET_WEEKDAYS = { "L-V": [0,1,2,3,4], "finde": [5,6], "todos": [0,1,2,3,4,5,6] };
@@ -400,7 +406,8 @@ function renderCalendarGrid() {
   $("#calTitle").textContent = `${MONTHS[m]} ${y}`;
   const startDow = (new Date(y, m, 1).getDay() + 6) % 7;
   const days = new Date(y, m + 1, 0).getDate();
-  const todayK = dateKey(new Date().toISOString());
+  const td = new Date();   // clave local (no UTC): evita correr "hoy" de noche en Chile
+  const todayK = `${td.getFullYear()}-${String(td.getMonth() + 1).padStart(2, "0")}-${String(td.getDate()).padStart(2, "0")}`;
   let html = DOW.map((d) => `<div class="cal-dow">${d}</div>`).join("");
   for (let i = 0; i < startDow; i++) html += `<div class="cal-cell empty"></div>`;
   for (let d = 1; d <= days; d++) {
@@ -419,7 +426,7 @@ let jornada = null;   // { date, meals: [{meal, items, subtotal, routineId?}] }
 
 function defaultMeals(n) {
   n = Math.max(1, Math.min(8, n || 4));
-  return MEAL_SEQUENCE.slice(0, n).map((m) => ({ meal: m, items: [], subtotal: {} }));
+  return MEAL_PRIORITY.slice(0, n).map((m) => ({ meal: m, items: [], subtotal: {} }));
 }
 async function openJornada(k) {
   if (!currentUserId) { alert("Crea un perfil primero."); return; }
@@ -434,8 +441,11 @@ async function openJornada(k) {
     const wd = weekdayOf(k);
     const meals = defaultMeals(currentUserObj.meals_per_day);
     routinesAll.filter((r) => presetMatches(r.preset, wd)).forEach((r) => {
-      const slot = meals.find((m) => m.meal === r.meal && !m.items.length);
-      if (slot) { slot.items = r.items || []; slot.subtotal = r.subtotal || mealSubtotal(slot.items); slot.fromRoutine = true; }
+      // Calza con un slot vacío del mismo nombre; si no hay, anexa la comida para
+      // que la rutina siempre aparezca en su día (aunque sobren las comidas/día).
+      let slot = meals.find((m) => m.meal === r.meal && !m.items.length);
+      if (!slot) { slot = { meal: r.meal, items: [], subtotal: {} }; meals.push(slot); }
+      slot.items = r.items || []; slot.subtotal = r.subtotal || mealSubtotal(slot.items); slot.fromRoutine = true;
     });
     jornada = { date: k, meals };
   }
@@ -514,7 +524,8 @@ function renderJornada() {
   openOverlay("Jornada", html);
   $("#mealMinus").addEventListener("click", () => { if (jornada.meals.length > 1) { jornada.meals.pop(); renderJornada(); } });
   $("#mealPlus").addEventListener("click", () => {
-    const next = MEAL_SEQUENCE[jornada.meals.length] || `comida ${jornada.meals.length + 1}`;
+    const used = new Set(jornada.meals.map((m) => m.meal));
+    const next = MEAL_PRIORITY.find((m) => !used.has(m)) || `comida ${jornada.meals.length + 1}`;
     jornada.meals.push({ meal: next, items: [], subtotal: {} }); renderJornada();
   });
   $$("[data-rmmeal]").forEach((b) => b.addEventListener("click", () => { jornada.meals.splice(+b.dataset.rmmeal, 1); if (!jornada.meals.length) jornada.meals.push({ meal: "comida 1", items: [], subtotal: {} }); renderJornada(); }));
@@ -547,9 +558,17 @@ async function saveJornada() {
   if (!meals.length) { $("#jornadaStatus").textContent = "Arma al menos una comida."; return; }
   const totals = jornadaTotals();
   const title = `Jornada ${jornada.date}`;
-  if (jornada.planId) await api(`/api/plans/${jornada.planId}`, { method: "DELETE" }).catch(() => {});
-  await api("/api/plans", { method: "POST", body: JSON.stringify({
-    user_id: currentUserId, title, scope: "diario", payload: { date: jornada.date, meals, totals } }) });
+  const oldId = jornada.planId;
+  try {
+    // Crea primero; solo si el guardado nuevo tuvo éxito borra la jornada anterior.
+    const created = await api("/api/plans", { method: "POST", body: JSON.stringify({
+      user_id: currentUserId, title, scope: "diario", payload: { date: jornada.date, meals, totals } }) });
+    jornada.planId = created.id;
+    if (oldId) await api(`/api/plans/${oldId}`, { method: "DELETE" }).catch(() => {});
+  } catch (e) {
+    $("#jornadaStatus").textContent = "Error al guardar: " + e.message;
+    return;
+  }
   $("#jornadaStatus").textContent = "✓ Jornada guardada.";
   await loadCalendarData(); renderCalendarGrid();
   setTimeout(closeOverlay, 600);

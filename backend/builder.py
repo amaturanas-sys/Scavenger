@@ -125,6 +125,7 @@ def _portion_grams(food, role: str, target: dict) -> float:
 
     lo = max(10.0, sp * 0.4)
     hi = min(ABS_MAX_G.get(role, 300), max(sp * max(food.max_servings_day, 1), lo + 5))
+    lo = min(lo, hi)  # el tope absoluto del rol siempre manda sobre el piso
     g = max(lo, min(g, hi))
     return float(round(g / 5.0) * 5)  # multiplos de 5 g
 

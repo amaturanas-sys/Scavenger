@@ -117,3 +117,19 @@ def test_summarize_totals_and_fit():
     assert s["fit"]["kcal"] == 1.0
     assert s["fit_ok"] is True
     assert s["totals"]["cost_clp"] == 800
+
+
+def test_portion_grams_respects_absolute_max():
+    """Una grasa con porción de referencia grande no debe superar ABS_MAX_G."""
+    from backend.builder import ABS_MAX_G, _portion_grams
+
+    class _Fat:
+        serving_g = 200.0          # piso (lo) = 80 g, por encima del tope 50 g
+        protein_g = 0.0
+        carb_g = 0.0
+        fat_g = 99.0
+        max_servings_day = 3.0
+
+    target = {"protein_g": 40.0, "carb_g": 150.0, "fat_g": 30.0}
+    g = _portion_grams(_Fat(), "grasa", target)
+    assert g <= ABS_MAX_G["grasa"], f"{g} excede el tope {ABS_MAX_G['grasa']}"
