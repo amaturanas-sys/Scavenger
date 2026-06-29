@@ -81,8 +81,9 @@ async function loadUsers() {
 }
 function fillForm(u) {
   const f = $("#userForm");
-  ["name", "sex", "age", "weight_kg", "height_cm", "activity_level", "goal", "daily_budget_clp"].forEach((k) => {
-    if (f[k]) f[k].value = u[k];
+  ["name", "sex", "age", "weight_kg", "height_cm", "activity_level", "goal",
+   "daily_budget_clp", "monthly_budget_clp", "meals_per_day", "min_protein_per_meal_g"].forEach((k) => {
+    if (f[k] && u[k] != null) f[k].value = u[k];
   });
   f.diet_tags.value = (u.diet_tags && u.diet_tags[0]) || "";
   const pref = new Set(u.preferred_retailers || []);
@@ -118,6 +119,9 @@ $("#userForm").addEventListener("submit", async (e) => {
     weight_kg: +f.weight_kg.value, height_cm: +f.height_cm.value,
     activity_level: f.activity_level.value, goal: f.goal.value,
     daily_budget_clp: +f.daily_budget_clp.value,
+    monthly_budget_clp: +f.monthly_budget_clp.value,
+    meals_per_day: +f.meals_per_day.value,
+    min_protein_per_meal_g: +f.min_protein_per_meal_g.value,
     diet_tags: f.diet_tags.value ? [f.diet_tags.value] : [],
     excluded_foods: [], preferred_retailers: selectedRetailers(),
   };
@@ -138,7 +142,7 @@ async function loadRequirements() {
   $("#tKcal").textContent = num(r.kcal) + " kcal";
   $("#tBasal").textContent = num(r.bmr) + " kcal";
   $("#tNutri").textContent = `P ${num(r.protein_g)} · C ${num(r.carb_g)} · G ${num(r.fat_g)}`;
-  $("#tEco").textContent = clp((u.daily_budget_clp || 0) * 30);
+  $("#tEco").textContent = clp(u.monthly_budget_clp > 0 ? u.monthly_budget_clp : (u.daily_budget_clp || 0) * 30);
 }
 
 // ===================== CALENDARIO (overlay) =====================

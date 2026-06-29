@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from . import config
@@ -33,9 +33,40 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
+def _ensure_columns(eng=None) -> None:
+    """Migracion ligera: agrega columnas nuevas a tablas ya existentes.
+
+    create_all() crea tablas faltantes pero NO altera las existentes. Para que
+    una BD ya poblada (produccion) gane columnas nuevas del modelo, aqui se
+    comparan las columnas del modelo con las de la BD y se agregan las que
+    falten (ALTER TABLE ADD COLUMN; soportado por SQLite y Postgres).
+    """
+    eng = eng or engine
+    insp = inspect(eng)
+    tables = set(insp.get_table_names())
+    for table in Base.metadata.sorted_tables:
+        if table.name not in tables:
+            continue  # recien creada por create_all
+        have = {c["name"] for c in insp.get_columns(table.name)}
+        for col in table.columns:
+            if col.name in have:
+                continue
+            ddl = col.type.compile(dialect=eng.dialect)
+            default = ""
+            arg = getattr(col.default, "arg", None) if col.default is not None else None
+            if arg is not None and not callable(arg):
+                default = f" DEFAULT {arg!r}" if isinstance(arg, str) else f" DEFAULT {arg}"
+            try:
+                with eng.begin() as conn:
+                    conn.execute(text(f'ALTER TABLE {table.name} ADD COLUMN {col.name} {ddl}{default}'))
+            except Exception as exc:  # noqa: BLE001 - no romper el arranque
+                print(f"[migracion] no se pudo agregar {table.name}.{col.name}: {exc}")
+
+
 def init_db() -> None:
-    """Crea las tablas si no existen."""
+    """Crea las tablas si no existen y aplica migraciones ligeras."""
     # Importacion local para registrar los modelos en el metadata.
     from . import models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    _ensure_columns()

@@ -96,10 +96,13 @@ def meal_type(meal: str) -> str:
     return "almuerzo"
 
 
-def meal_target(req, meal: str) -> dict:
+def meal_target(req, meal: str, min_protein: float = 0.0) -> dict:
     f = MEAL_TEMPLATES[meal_type(meal)]["fraction"]
     return {
-        "kcal": round(req.kcal * f, 1), "protein_g": round(req.protein_g * f, 1),
+        "kcal": round(req.kcal * f, 1),
+        # Piso de proteina por plato (especificacion del usuario): el objetivo de
+        # proteina de la comida no baja de min_protein.
+        "protein_g": round(max(req.protein_g * f, min_protein or 0.0), 1),
         "carb_g": round(req.carb_g * f, 1), "fat_g": round(req.fat_g * f, 1),
         "fraction": f,
     }
@@ -147,7 +150,7 @@ def _candidate(food, role: str, target: dict, price_per_g: float, retailer: str)
 
 def _candidates_by_role(db: Session, user: User, meal: str):
     req = user_requirements(user)
-    target = meal_target(req, meal)
+    target = meal_target(req, meal, getattr(user, "min_protein_per_meal_g", 0.0))
     preferred = set(user.preferred_retailers or [])
     slots = MEAL_TEMPLATES[meal_type(meal)]["slots"]
     by_role: dict[str, list] = {r: [] for r in slots}

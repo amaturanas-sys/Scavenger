@@ -102,6 +102,11 @@ class User(Base):
     goal: Mapped[str] = mapped_column(String, default="mantener")
 
     daily_budget_clp: Mapped[float] = mapped_column(Float, default=4000.0)
+    # Presupuesto mensual (si > 0 manda sobre el diario), comidas/dia y proteina
+    # minima por plato: especificaciones que condicionan la recomendacion.
+    monthly_budget_clp: Mapped[float] = mapped_column(Float, default=0.0)
+    meals_per_day: Mapped[int] = mapped_column(Integer, default=4)
+    min_protein_per_meal_g: Mapped[float] = mapped_column(Float, default=0.0)
     # Restricciones dieteticas: lista de tags requeridos (ej: ["vegano"]).
     diet_tags: Mapped[list] = mapped_column(JSON, default=list)
     # Categorias o ids de alimentos excluidos.
