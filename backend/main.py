@@ -49,6 +49,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def _no_cache_frontend(request, call_next):
+    # Evita que el navegador sirva un frontend cacheado tras un deploy: los
+    # archivos estaticos (HTML/CSS/JS/imagenes) se revalidan en cada carga.
+    # StaticFiles entrega ETag/Last-Modified, asi que devuelve 304 si no cambio.
+    response = await call_next(request)
+    if not request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return response
+
+
 app.include_router(users.router)
 app.include_router(foods.router)
 app.include_router(plans.router)
