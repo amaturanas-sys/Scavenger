@@ -34,13 +34,17 @@ def seed_foods(db: Session, provider_name: str = "local", refresh: bool = False)
             tags=r.tags,
         )
         if existing is None:
-            food = Food(id=r.id, **data)
+            food = Food(id=r.id, ean=r.ean, **data)
             db.add(food)
             _sync_prices(db, food, r.prices)
             count += 1
         elif refresh:
             for k, v in data.items():
                 setattr(existing, k, v)
+            # Solo sobrescribe el EAN si el catalogo trae uno; preserva el que se
+            # haya autoaprendido desde un scraping (no lo borra en cada refresh).
+            if r.ean:
+                existing.ean = r.ean
             _sync_prices(db, existing, r.prices)
             count += 1
     db.commit()

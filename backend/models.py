@@ -29,6 +29,9 @@ class Food(Base):
     brand: Mapped[str] = mapped_column(String, default="")
     category: Mapped[str] = mapped_column(String, index=True)
     retailer: Mapped[str] = mapped_column(String, default="")
+    # Codigo de barras (EAN-13). Permite match exacto contra el producto del
+    # retail. Vacio por defecto; se autocompleta desde un match fuerte por nombre.
+    ean: Mapped[str] = mapped_column(String, default="", index=True)
 
     package_g: Mapped[float] = mapped_column(Float, default=1000.0)
     price_clp: Mapped[float] = mapped_column(Float, default=0.0)
