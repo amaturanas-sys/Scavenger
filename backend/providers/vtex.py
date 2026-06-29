@@ -55,9 +55,88 @@ def normalize(text: str) -> str:
     return strip_accents((text or "").lower()).strip()
 
 
+_VOWELS = "aeiou"
+
+
+def _singular(tok: str) -> str:
+    """Singulariza un token simple (plural vocal+s): 'fideos'->'fideo'."""
+    if len(tok) > 3 and tok.endswith("s") and tok[-2] in _VOWELS:
+        return tok[:-1]
+    return tok
+
+
 def tokens(text: str) -> set[str]:
     raw = re.split(r"[^a-z0-9]+", normalize(text))
-    return {t for t in raw if t and t not in _STOPWORDS and len(t) > 1}
+    # Singulariza para que 'fideos' (alimento) y 'fideos N5' (producto) calcen.
+    return {_singular(t) for t in raw if t and t not in _STOPWORDS and len(t) > 1}
+
+
+# Sinonimos chilenos: nombres distintos para el mismo alimento. Se expanden al
+# puntuar para que, p.ej., un alimento "palta" calce con un producto "Aguacate".
+_SYNONYM_GROUPS = [
+    {"palta", "aguacate"},
+    {"choclo", "maiz"},
+    {"frutilla", "fresa"},
+    {"betarraga", "remolacha"},
+    {"durazno", "melocoton"},
+    {"damasco", "albaricoque"},
+    {"poroto", "frejol", "frijol", "alubia"},
+    {"arveja", "guisante"},
+    {"cerdo", "chancho"},
+    {"vacuno", "res"},
+    {"zapallo", "calabaza"},
+    {"platano", "banana"},
+]
+_SYN_MAP: dict[str, set[str]] = {}
+for _grp in _SYNONYM_GROUPS:
+    for _w in _grp:
+        _SYN_MAP.setdefault(_w, set()).update(_grp)
+
+
+def _expand_synonyms(toks: set[str]) -> set[str]:
+    out = set(toks)
+    for t in toks:
+        out |= _SYN_MAP.get(t, set())
+    return out
+
+
+# --- Filtro de no-comestibles -------------------------------------------
+# El scraping del retail trae de todo (aseo, higiene, mascotas...). Estos items
+# nunca deben elegirse como precio de un alimento, asi que se descartan en el
+# mapeo de cada proveedor. Se chequea por token exacto (no substring) para no
+# descartar alimentos por coincidencias parciales.
+_NON_EDIBLE_PHRASES = (
+    "papel higienico", "papel absorbente", "toalla de papel", "toallas de papel",
+    "bolsa de basura", "bolsas de basura", "pasta dental", "pasta de dientes",
+    "cepillo de dientes", "toallitas humedas", "toallas humedas",
+)
+_NON_EDIBLE_TOKENS = {
+    # limpieza
+    "detergente", "cloro", "lavaloza", "lavalozas", "limpiavidrios", "desinfectante",
+    "desengrasante", "suavizante", "quitamanchas", "antisarro", "esponja", "esponjas",
+    "virutilla", "escoba", "trapero", "limpiador", "lustramuebles", "insecticida",
+    "raid", "lavandina",
+    # higiene / baño
+    "shampoo", "champu", "acondicionador", "jabon", "jabones", "desodorante",
+    "colonia", "perfume", "afeitar", "toalla", "toallas", "toallita", "toallitas",
+    "confort", "higienico", "servilleta", "servilletas", "algodon", "cotonito",
+    "cotonitos", "panal", "panales",
+    # mascotas
+    "mascota", "mascotas", "perro", "perros", "gato", "gatos",
+    # otros no comestibles
+    "pila", "pilas", "ampolleta", "ampolletas", "foco", "vela", "velas", "fosforo",
+    "fosforos", "encendedor", "carbon", "parafina", "cigarro", "cigarros",
+    "cigarrillo", "cigarrillos", "acetona",
+}
+
+
+def is_non_edible(name: str) -> bool:
+    """True si el nombre corresponde a un producto no comestible (aseo, etc.)."""
+    n = normalize(name)
+    if any(ph in n for ph in _NON_EDIBLE_PHRASES):
+        return True
+    raw = {t for t in re.split(r"[^a-z0-9]+", n) if t}
+    return bool(raw & _NON_EDIBLE_TOKENS)
 
 
 # --- Parseo de tamano de envase a gramos ---------------------------------
@@ -126,6 +205,8 @@ def extract_offer(product: dict) -> dict | None:
         return None
 
     name = product.get("productName", "") or item.get("name", "")
+    if is_non_edible(name):
+        return None  # aseo/higiene/mascotas: nunca es precio de un alimento
     brand = product.get("brand", "")
 
     # Intenta inferir el tamano del envase desde varios campos.
@@ -151,10 +232,10 @@ def extract_offer(product: dict) -> dict | None:
 def score_match(food_name: str, food_brand: str, product: dict) -> float:
     """Puntaje 0..1 de cuan bien un producto VTEX corresponde a un alimento."""
     fn = tokens(food_name)
-    pn = tokens(product.get("name", ""))
+    pn = _expand_synonyms(tokens(product.get("name", "")))  # incluye sinonimos del producto
     if not fn or not pn:
         return 0.0
-    overlap = len(fn & pn) / len(fn)  # cobertura de los tokens buscados
+    overlap = sum(1 for t in fn if t in pn) / len(fn)  # cobertura (con sinonimos/plurales)
     score = overlap
     if food_brand and normalize(food_brand) in normalize(product.get("name", "") + " " + product.get("brand", "")):
         score += 0.25

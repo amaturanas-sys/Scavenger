@@ -26,7 +26,7 @@ import os
 from .. import config
 from .base import FoodProvider, FoodRecord
 from .lider import _BRAND_KEYS, _EAN_KEYS, _ID_KEYS, _NAME_KEYS, _deep_price, _first
-from .vtex import parse_package_grams
+from .vtex import is_non_edible, parse_package_grams
 
 API_BASE = "https://api.apify.com/v2"
 _SIZE_KEYS = ("size", "netContent", "packageSize", "format", "displayName", "name", "title")
@@ -112,7 +112,7 @@ class ApifyProvider(FoodProvider):
         """Normaliza un item del dataset de Apify (tolerante al esquema)."""
         name = str(_first(raw, _NAME_KEYS))
         price = _deep_price(raw)
-        if not name or price <= 0 or not _is_available(raw):
+        if not name or price <= 0 or not _is_available(raw) or is_non_edible(name):
             return None
         grams = None
         for key in _SIZE_KEYS:

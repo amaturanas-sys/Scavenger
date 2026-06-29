@@ -10,6 +10,7 @@ from backend.providers.vtex import (
     VTEXProvider,
     best_match,
     extract_offer,
+    is_non_edible,
     parse_package_grams,
     score_match,
 )
@@ -84,6 +85,53 @@ def test_score_brand_bonus():
     base = {"name": "Arroz Grado 2 1 Kg", "brand": "", "package_g": 1000}
     branded = {"name": "Arroz Grado 2 Tucapel 1 Kg", "brand": "Tucapel", "package_g": 1000}
     assert score_match("Arroz grado 2", "Tucapel", branded) >= score_match("Arroz grado 2", "Tucapel", base)
+
+
+# --- filtro de no-comestibles --------------------------------------------
+@pytest.mark.parametrize("name", [
+    "Detergente Omo Matic 3 Kg", "Cloro Clorinda 900 cc", "Shampoo Sedal 400 ml",
+    "Papel Higienico Confort 12 un", "Pañales Babysec G 40 un",
+    "Alimento para Perros Master Dog 18 Kg", "Toallas Humedas Babysec",
+    "Pasta Dental Colgate 90 g", "Pilas AA Energizer",
+])
+def test_is_non_edible_blocks(name):
+    assert is_non_edible(name) is True
+
+
+@pytest.mark.parametrize("name", [
+    "Arroz Grado 2 Tucapel 1 Kg", "Leche Entera Soprole 1 L", "Sal de Mar 1 Kg",
+    "Pan de Molde Ideal", "Atun Robinson Crusoe 160 g", "Pasta Fideos Carozzi 400 g",
+    "Palta Hass Granel", "Aceite Vegetal Chef 1 L",
+])
+def test_is_non_edible_allows_food(name):
+    assert is_non_edible(name) is False
+
+
+def test_extract_offer_drops_non_edible():
+    p = _vtex_product("Detergente Omo Matic 3 Kg", "Omo", 5990)
+    assert extract_offer(p) is None
+
+
+# --- sinonimos y plurales en el scoring ----------------------------------
+def test_score_match_synonym_palta_aguacate():
+    prod = {"name": "Aguacate Hass Maduro", "brand": "", "package_g": 200}
+    # 'Palta' (catalogo) calza con 'Aguacate' (producto) por sinonimo.
+    assert score_match("Palta Hass", "", prod) >= 0.9
+
+
+def test_score_match_plural_singular():
+    prod = {"name": "Lenteja Granel", "brand": "", "package_g": 1000}
+    # 'Lentejas' (plural en el catalogo) calza con 'Lenteja' (singular) del producto.
+    assert score_match("Lentejas", "", prod) >= 0.9
+
+
+def test_best_match_uses_synonyms():
+    products = [
+        {"name": "Cloro Gel 1 L", "brand": "Z", "package_g": 1000},
+        {"name": "Maiz Dulce en Conserva 300 g", "brand": "Wong", "package_g": 300},
+    ]
+    m = best_match("Choclo", "", products)  # choclo == maiz
+    assert m is not None and "Maiz" in m["name"]
 
 
 # --- VTEXProvider.search_products (red mockeada) --------------------------
