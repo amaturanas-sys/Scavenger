@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SCAVENGER · Meal prep costo-efectivo</title>
   <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="apple-touch-icon" href="logo-icon.png" />
@@ -10,161 +10,158 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Cabecera: navegación entre pantallas (◀ logo ▶) -->
   <header class="topbar">
-    <div class="brand">
-      <img class="logo" src="logo.png" alt="Logo SCAVENGER" />
-      <div>
-        <h1>SCAVENGER</h1>
-        <p class="tagline">Minutas optimizadas por costo, nutrición y saciedad · Chile</p>
-      </div>
-    </div>
-    <div class="user-switch">
-      <label for="userSelect">Usuario</label>
-      <select id="userSelect"></select>
-    </div>
-    <button id="serverBtn" class="server-btn" title="Configurar servidor">⚙️</button>
+    <button class="navarrow" id="prevScreen" aria-label="Pantalla anterior">&#10094;</button>
+    <img class="logo" src="logo.png" alt="SCAVENGER" id="homeLogo" />
+    <button class="navarrow" id="nextScreen" aria-label="Pantalla siguiente">&#10095;</button>
   </header>
 
-  <nav class="tabs">
-    <button class="tab active" data-tab="perfil">1 · Perfil</button>
-    <button class="tab" data-tab="requerimientos">2 · Requerimientos</button>
-    <button class="tab" data-tab="generar">3 · Generar minuta</button>
-    <button class="tab" data-tab="armar">🎰 Armar comida</button>
-    <button class="tab" data-tab="minutas">4 · Mis minutas</button>
-    <button class="tab" data-tab="alimentos">Catálogo</button>
-  </nav>
+  <!-- Barra utilitaria: usuario, indicadores de pantalla, menú -->
+  <div class="utilbar">
+    <select id="userSelect" class="user-select" title="Usuario"></select>
+    <div class="dots" id="dots">
+      <span data-go="0" title="Inicio"></span>
+      <span data-go="1" title="Ruleta"></span>
+      <span data-go="2" title="Perfil"></span>
+    </div>
+    <button id="menuBtn" class="iconbtn" title="Más opciones">&#9776;</button>
+  </div>
 
-  <main>
-    <!-- PERFIL -->
-    <section id="perfil" class="panel active">
-      <h2>Perfil del usuario</h2>
-      <p class="hint">Define tus datos. SCAVENGER calcula tus requerimientos y busca las
-        combinaciones de alimentos más económicas que los cumplen.</p>
-      <form id="userForm" class="grid">
-        <label>Nombre <input name="name" type="text" placeholder="Tu nombre" /></label>
-        <label>Sexo
-          <select name="sex"><option value="M">Masculino</option><option value="F">Femenino</option></select>
-        </label>
-        <label>Edad <input name="age" type="number" value="30" min="10" max="110" /></label>
-        <label>Peso (kg) <input name="weight_kg" type="number" value="70" step="0.1" /></label>
-        <label>Estatura (cm) <input name="height_cm" type="number" value="170" step="0.1" /></label>
-        <label>Actividad
-          <select name="activity_level">
-            <option value="sedentario">Sedentario</option>
-            <option value="ligero">Ligero</option>
-            <option value="moderado" selected>Moderado</option>
-            <option value="activo">Activo</option>
-            <option value="muy_activo">Muy activo</option>
-          </select>
-        </label>
-        <label>Objetivo
-          <select name="goal">
-            <option value="bajar">Bajar peso</option>
-            <option value="mantener" selected>Mantener</option>
-            <option value="subir">Subir masa</option>
-          </select>
-        </label>
-        <label>Presupuesto diario (CLP) <input name="daily_budget_clp" type="number" value="4000" step="100" /></label>
-        <label>Dieta
-          <select name="diet_tags">
-            <option value="">Sin restricción</option>
-            <option value="vegetariano">Vegetariano</option>
-            <option value="vegano">Vegano</option>
-            <option value="sin_gluten">Sin gluten</option>
-          </select>
-        </label>
-        <fieldset class="retailers-field">
-          <legend>Supermercados que tengo cerca</legend>
-          <p class="hint">SCAVENGER comparará precios y comprará cada producto en la cadena más barata de las marcadas. Si no marcas ninguna, usa la más económica de todas.</p>
-          <div id="retailerChecks" class="retailer-checks"></div>
-        </fieldset>
-        <div class="form-actions">
-          <button type="submit" class="primary">Guardar perfil</button>
-          <span id="userStatus" class="status"></span>
-        </div>
-      </form>
-    </section>
-
-    <!-- REQUERIMIENTOS -->
-    <section id="requerimientos" class="panel">
-      <h2>Requerimientos diarios</h2>
-      <p class="hint">Calculados con Mifflin-St Jeor + factor de actividad y ajuste por objetivo.</p>
-      <div id="reqCards" class="cards"></div>
-    </section>
-
-    <!-- GENERAR -->
-    <section id="generar" class="panel">
-      <h2>Generar minuta</h2>
-      <div class="controls">
-        <label>Alcance
-          <select id="scope"><option value="diario">Diario</option><option value="semanal">Semanal</option></select>
-        </label>
-        <label class="slider">Énfasis en saciedad: <strong id="satVal">0.0</strong>
-          <input id="satiety" type="range" min="0" max="1.5" step="0.1" value="0" />
-        </label>
-        <label>Presupuesto <span id="budgetUnit" class="muted">(por día)</span>
-          <select id="budgetMode">
-            <option value="min_cost">Gastar lo mínimo (tope)</option>
-            <option value="target">Aprovechar el presupuesto</option>
-            <option value="none">Sin límite</option>
-          </select>
-        </label>
-        <label>Monto (CLP)
-          <input id="budgetAmount" type="number" min="0" step="100" value="4000" />
-        </label>
-        <button id="generateBtn" class="primary">Generar</button>
+  <main id="deck">
+    <!-- ===================== PANTALLA 0 · HOME / CALENDARIO ===================== -->
+    <section class="screen active" data-screen="home">
+      <div class="cal-head">
+        <button class="iconbtn" id="calPrev" aria-label="Mes anterior">&#10094;</button>
+        <h2 id="calTitle">—</h2>
+        <button class="iconbtn" id="calNext" aria-label="Mes siguiente">&#10095;</button>
       </div>
-      <div id="genStatus" class="status"></div>
-      <div id="planResult"></div>
-      <div id="shoppingResult"></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-day" id="calDay">
+        <p class="hint">Toca un día para ver sus minutas. Las que armes o generes se guardan con su fecha.</p>
+      </div>
     </section>
 
-    <!-- ARMAR COMIDA (tragamonedas) -->
-    <section id="armar" class="panel">
-      <h2>Armar comida 🎰</h2>
-      <p class="hint">Elige la comida y desliza cada carrete para escoger un elemento por rol.
-        Cada opción viene pre-porcionada para su rol, así los macros calzan. Mira la suma en vivo
-        o usa <strong>Girar</strong> para una combinación aleatoria.</p>
-      <div class="controls">
-        <label>Comida
+    <!-- ===================== PANTALLA 1 · RULETA ===================== -->
+    <section class="screen" data-screen="ruleta">
+      <div class="meal-row">
+        <label class="inline">Comida
           <select id="builderMeal">
             <option value="desayuno">Desayuno</option>
             <option value="snack 1">Snack 1</option>
             <option value="snack 2">Snack 2</option>
-            <option value="snack 3">Snack 3</option>
             <option value="almuerzo" selected>Almuerzo</option>
             <option value="cena">Cena</option>
           </select>
         </label>
-        <button id="spinBtn" class="primary">🎲 Girar</button>
         <span id="builderStatus" class="status"></span>
       </div>
-      <div id="mealTotals"></div>
-      <div id="reels"></div>
-      <div class="controls">
-        <button id="addMealBtn" class="btn-sm">➕ Agregar a la minuta del día</button>
+
+      <!-- Carretes (tragamonedas) -->
+      <div class="reelbox">
+        <div class="reels" id="reels"></div>
       </div>
+
+      <!-- Panel de control: dona de macros + acciones + costo -->
+      <div class="controlbox">
+        <div class="donut-wrap">
+          <svg class="donut" id="donut" viewBox="0 0 42 42" aria-label="Distribución de macros"></svg>
+        </div>
+        <div class="control-actions">
+          <button id="addMealBtn" class="bigbtn add" title="Agregar al día">&#43;</button>
+          <button id="spinBtn" class="bigbtn spin" title="Girar (aleatorio)">&#8634;</button>
+        </div>
+        <div class="pricebox" id="priceBox">$0</div>
+      </div>
+
+      <div class="platos" id="platosInfo"></div>
       <div id="dayBuild"></div>
     </section>
 
-    <!-- MINUTAS -->
-    <section id="minutas" class="panel">
-      <h2>Mis minutas guardadas</h2>
-      <div id="satietyHistory"></div>
-      <div id="plansList"></div>
-    </section>
+    <!-- ===================== PANTALLA 2 · PERFIL ===================== -->
+    <section class="screen" data-screen="perfil">
+      <div class="panel-dark targets" id="targetsCard">
+        <div class="t-row"><span>Kcal/d</span><strong id="tKcal">—</strong></div>
+        <div class="t-row"><span>Basal (TMB)</span><strong id="tBasal">—</strong></div>
+        <div class="t-row"><span>Objetivo nutrientes (g/d)</span><strong id="tNutri">—</strong></div>
+        <div class="t-row"><span>Objetivo economía ($/mes)</span><strong id="tEco">—</strong></div>
+      </div>
 
-    <!-- ALIMENTOS -->
-    <section id="alimentos" class="panel">
-      <h2>Catálogo de alimentos (retail Chile)</h2>
-      <input id="foodSearch" type="text" placeholder="Buscar alimento, marca o categoría..." />
-      <div id="foodsTable"></div>
+      <form id="userForm" class="panel-dark profile-form">
+        <label>Nombre <input name="name" type="text" placeholder="Tu nombre" /></label>
+        <div class="two">
+          <label>Peso (kg) <input name="weight_kg" type="number" value="70" step="0.1" /></label>
+          <label>Altura (cm) <input name="height_cm" type="number" value="170" step="0.1" /></label>
+        </div>
+        <div class="two">
+          <label>Edad <input name="age" type="number" value="30" min="10" max="110" /></label>
+          <label>Sexo
+            <select name="sex"><option value="M">Masculino</option><option value="F">Femenino</option></select>
+          </label>
+        </div>
+        <details class="advanced">
+          <summary>Objetivos y preferencias</summary>
+          <div class="two">
+            <label>Actividad
+              <select name="activity_level">
+                <option value="sedentario">Sedentario</option>
+                <option value="ligero">Ligero</option>
+                <option value="moderado" selected>Moderado</option>
+                <option value="activo">Activo</option>
+                <option value="muy_activo">Muy activo</option>
+              </select>
+            </label>
+            <label>Objetivo
+              <select name="goal">
+                <option value="bajar">Bajar peso</option>
+                <option value="mantener" selected>Mantener</option>
+                <option value="subir">Subir masa</option>
+              </select>
+            </label>
+          </div>
+          <div class="two">
+            <label>Presupuesto diario (CLP) <input name="daily_budget_clp" type="number" value="4000" step="100" /></label>
+            <label>Dieta
+              <select name="diet_tags">
+                <option value="">Sin restricción</option>
+                <option value="vegetariano">Vegetariano</option>
+                <option value="vegano">Vegano</option>
+                <option value="sin_gluten">Sin gluten</option>
+              </select>
+            </label>
+          </div>
+          <fieldset class="retailers-field">
+            <legend>Supermercados cercanos</legend>
+            <div id="retailerChecks" class="retailer-checks"></div>
+          </fieldset>
+        </details>
+        <div class="form-actions">
+          <button type="submit" class="primary">Guardar perfil</button>
+          <button type="button" id="newUserBtn" class="btn-sm">+ Nuevo</button>
+          <span id="userStatus" class="status"></span>
+        </div>
+      </form>
     </section>
   </main>
 
-  <footer>
-    <p>SCAVENGER · datos referenciales de retail chileno · proveedores Jumbo / FatSecret conectables</p>
-  </footer>
+  <!-- Menú secundario (drawer) -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="drawer" id="drawer">
+    <h3>Más</h3>
+    <button class="drawer-item" data-view="generar">⚙️ Generar minuta + lista de compras</button>
+    <button class="drawer-item" data-view="minutas">📋 Mis minutas y saciedad</button>
+    <button class="drawer-item" data-view="catalogo">🏷️ Catálogo de alimentos</button>
+    <button class="drawer-item" id="serverBtn">🖥️ Configurar servidor</button>
+  </aside>
+
+  <!-- Vistas secundarias a pantalla completa -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-head">
+      <button class="iconbtn" id="overlayClose" aria-label="Cerrar">&#10005;</button>
+      <h2 id="overlayTitle">—</h2>
+    </div>
+    <div class="overlay-body" id="overlayBody"></div>
+  </div>
 
   <script src="config.js"></script>
   <script src="app.js"></script>

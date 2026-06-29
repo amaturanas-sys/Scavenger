@@ -1,61 +1,53 @@
-// SCAVENGER · frontend (vanilla JS)
-// Base del backend: en la web servida por FastAPI es el mismo origen ("");
-// en la APK (file://) el usuario configura la URL del servidor (localStorage).
+// SCAVENGER · frontend móvil (vanilla JS)
+// Tres pantallas (carrusel): Inicio·calendario, Ruleta, Perfil + menú secundario.
 function apiBase() {
   return (localStorage.getItem("scavenger_api_base") || window.SCAVENGER_API_BASE || "").replace(/\/+$/, "");
 }
 function setApiBase() {
-  const cur = apiBase();
-  const v = prompt("URL del servidor SCAVENGER\n(ej: http://192.168.1.10:8000)", cur);
+  const v = prompt("URL del servidor SCAVENGER\n(ej: http://192.168.1.10:8000)", apiBase());
   if (v === null) return;
   localStorage.setItem("scavenger_api_base", v.trim());
   location.reload();
 }
-let currentUserId = null;
-let lastPlanPayload = null; // ultima minuta generada (para guardar)
-let retailersCache = []; // cadenas disponibles
 
-// ---------- helpers ----------
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
 const clp = (n) => "$" + Math.round(n || 0).toLocaleString("es-CL");
 const num = (n, d = 0) => (n ?? 0).toLocaleString("es-CL", { maximumFractionDigits: d });
 
 async function api(path, opts = {}) {
-  const res = await fetch(apiBase() + path, {
-    headers: { "Content-Type": "application/json" },
-    ...opts,
-  });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`${res.status}: ${txt}`);
-  }
+  const res = await fetch(apiBase() + path, { headers: { "Content-Type": "application/json" }, ...opts });
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
   return res.status === 204 ? null : res.json();
 }
 
-// ---------- tabs ----------
-$$(".tab").forEach((t) =>
-  t.addEventListener("click", () => {
-    $$(".tab").forEach((x) => x.classList.remove("active"));
-    $$(".panel").forEach((x) => x.classList.remove("active"));
-    t.classList.add("active");
-    $("#" + t.dataset.tab).classList.add("active");
-    if (t.dataset.tab === "requerimientos") loadRequirements();
-    if (t.dataset.tab === "armar") loadReels();
-    if (t.dataset.tab === "minutas") loadPlans();
-    if (t.dataset.tab === "alimentos") loadFoods();
-  })
-);
+let currentUserId = null;
+let retailersCache = [];
 
-// ---------- usuarios ----------
+// ===================== CARRUSEL =====================
+const SCREENS = ["home", "ruleta", "perfil"];
+let screenIdx = 0;
+function showScreen(i) {
+  screenIdx = (i + SCREENS.length) % SCREENS.length;
+  $$(".screen").forEach((s) => s.classList.toggle("active", s.dataset.screen === SCREENS[screenIdx]));
+  $$("#dots span").forEach((d, k) => d.classList.toggle("on", k === screenIdx));
+  if (SCREENS[screenIdx] === "home") loadCalendar();
+  if (SCREENS[screenIdx] === "ruleta") loadReels();
+  if (SCREENS[screenIdx] === "perfil") loadRequirements();
+}
+$("#prevScreen").addEventListener("click", () => showScreen(screenIdx - 1));
+$("#nextScreen").addEventListener("click", () => showScreen(screenIdx + 1));
+$("#homeLogo").addEventListener("click", () => showScreen(0));
+$$("#dots span").forEach((d) => d.addEventListener("click", () => showScreen(+d.dataset.go)));
+
+// ===================== USUARIOS / PERFIL =====================
 async function loadUsers() {
   const users = await api("/api/users");
   const sel = $("#userSelect");
   sel.innerHTML = "";
   users.forEach((u) => {
     const o = document.createElement("option");
-    o.value = u.id;
-    o.textContent = `${u.name || "Usuario"} #${u.id}`;
+    o.value = u.id; o.textContent = `${u.name || "Usuario"} #${u.id}`;
     sel.appendChild(o);
   });
   if (users.length) {
@@ -64,7 +56,6 @@ async function loadUsers() {
     fillForm(users[users.length - 1]);
   }
 }
-
 function fillForm(u) {
   const f = $("#userForm");
   ["name", "sex", "age", "weight_kg", "height_cm", "activity_level", "goal", "daily_budget_clp"].forEach((k) => {
@@ -73,483 +64,224 @@ function fillForm(u) {
   f.diet_tags.value = (u.diet_tags && u.diet_tags[0]) || "";
   const pref = new Set(u.preferred_retailers || []);
   $$("#retailerChecks input").forEach((chk) => (chk.checked = pref.has(chk.value)));
-  // Sincroniza el monto del selector de presupuesto con el del perfil.
-  if (u.daily_budget_clp != null) $("#budgetAmount").value = u.daily_budget_clp;
 }
-
-// Habilita/deshabilita el monto según el modo de presupuesto.
-function syncBudgetControls() {
-  const none = $("#budgetMode").value === "none";
-  $("#budgetAmount").disabled = none;
-  $("#budgetAmount").style.opacity = none ? 0.5 : 1;
-}
-
 async function loadRetailers() {
   retailersCache = await api("/api/foods/retailers");
   $("#retailerChecks").innerHTML = retailersCache
     .map((r) => `<label><input type="checkbox" value="${r.retailer_id}" /> ${r.retailer}</label>`)
     .join("");
 }
-
 function selectedRetailers() {
   return [...$$("#retailerChecks input:checked")].map((c) => c.value);
 }
-
 $("#userSelect").addEventListener("change", async (e) => {
   currentUserId = parseInt(e.target.value);
-  const u = await api(`/api/users/${currentUserId}`);
-  fillForm(u);
+  fillForm(await api(`/api/users/${currentUserId}`));
+  loadRequirements();
 });
-
+$("#newUserBtn").addEventListener("click", () => {
+  currentUserId = null;
+  $("#userForm").reset();
+  $("#userStatus").textContent = "Nuevo perfil — completa y guarda.";
+});
 $("#userForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const f = e.target;
-  const diet = f.diet_tags.value ? [f.diet_tags.value] : [];
   const body = {
-    name: f.name.value,
-    sex: f.sex.value,
-    age: +f.age.value,
-    weight_kg: +f.weight_kg.value,
-    height_cm: +f.height_cm.value,
-    activity_level: f.activity_level.value,
-    goal: f.goal.value,
+    name: f.name.value, sex: f.sex.value, age: +f.age.value,
+    weight_kg: +f.weight_kg.value, height_cm: +f.height_cm.value,
+    activity_level: f.activity_level.value, goal: f.goal.value,
     daily_budget_clp: +f.daily_budget_clp.value,
-    diet_tags: diet,
-    excluded_foods: [],
-    preferred_retailers: selectedRetailers(),
+    diet_tags: f.diet_tags.value ? [f.diet_tags.value] : [],
+    excluded_foods: [], preferred_retailers: selectedRetailers(),
   };
-  // Si hay usuario seleccionado, actualiza; si no, crea.
-  let u;
-  if (currentUserId) {
-    u = await api(`/api/users/${currentUserId}`, { method: "PATCH", body: JSON.stringify(body) });
-  } else {
-    u = await api("/api/users", { method: "POST", body: JSON.stringify(body) });
-  }
+  const u = currentUserId
+    ? await api(`/api/users/${currentUserId}`, { method: "PATCH", body: JSON.stringify(body) })
+    : await api("/api/users", { method: "POST", body: JSON.stringify(body) });
   currentUserId = u.id;
-  $("#userStatus").textContent = "✓ Perfil guardado (#" + u.id + ")";
+  $("#userStatus").textContent = "✓ Guardado (#" + u.id + ")";
   await loadUsers();
   $("#userSelect").value = currentUserId;
+  loadRequirements();
 });
 
-// Boton "nuevo usuario" implicito: limpiar seleccion
-$("#userForm").addEventListener("reset", () => (currentUserId = null));
-
-// ---------- requerimientos ----------
+// Objetivos calculados (tarjeta superior del perfil)
 async function loadRequirements() {
   if (!currentUserId) return;
   const r = await api(`/api/users/${currentUserId}/requirements`);
-  const cards = [
-    ["Calorías", num(r.kcal) + " kcal", "Objetivo diario"],
-    ["Proteína", num(r.protein_g) + " g", "Meta"],
-    ["Carbohidratos", num(r.carb_g) + " g", "Meta"],
-    ["Grasa", num(r.fat_g) + " g", "Meta"],
-    ["Fibra", num(r.fiber_g) + " g", "Mínimo"],
-    ["TMB", num(r.bmr) + " kcal", "Metabolismo basal"],
-    ["GET", num(r.tdee) + " kcal", "Gasto total"],
-    ["Hierro", num(r.micros.iron_mg, 1) + " mg", "Mínimo"],
-    ["Calcio", num(r.micros.calcium_mg) + " mg", "Mínimo"],
-    ["Vit. C", num(r.micros.vitamin_c_mg) + " mg", "Mínimo"],
-  ];
-  $("#reqCards").innerHTML = cards
-    .map((c) => `<div class="card"><div class="lbl">${c[0]}</div><div class="big">${c[1]}</div><div class="muted">${c[2]}</div></div>`)
-    .join("");
+  const u = await api(`/api/users/${currentUserId}`);
+  $("#tKcal").textContent = num(r.kcal) + " kcal";
+  $("#tBasal").textContent = num(r.bmr) + " kcal";
+  $("#tNutri").textContent = `P ${num(r.protein_g)} · C ${num(r.carb_g)} · G ${num(r.fat_g)}`;
+  $("#tEco").textContent = clp((u.daily_budget_clp || 0) * 30);
 }
 
-// ---------- generar minuta ----------
-$("#satiety").addEventListener("input", (e) => ($("#satVal").textContent = (+e.target.value).toFixed(1)));
-$("#budgetMode").addEventListener("change", syncBudgetControls);
-syncBudgetControls();
+// ===================== HOME / CALENDARIO =====================
+let calRef = null;           // primer día del mes mostrado
+let plansByDate = {};        // "YYYY-MM-DD" -> [plans]
+const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const DOW = ["L","M","M","J","V","S","D"];
 
-$("#generateBtn").addEventListener("click", async () => {
-  if (!currentUserId) return alert("Primero guarda un perfil.");
-  $("#genStatus").textContent = "Optimizando combinaciones más económicas...";
-  $("#planResult").innerHTML = "";
-  $("#shoppingResult").innerHTML = "";
-  try {
-    const mode = $("#budgetMode").value;
-    const body = {
-      user_id: currentUserId,
-      scope: $("#scope").value,
-      satiety_emphasis: +$("#satiety").value,
-      budget_mode: mode,
-      budget_clp: mode === "none" ? null : +$("#budgetAmount").value,
-    };
-    const res = await api("/api/plans/generate", { method: "POST", body: JSON.stringify(body) });
-    $("#genStatus").textContent = "";
-    if (res.scope === "semanal") renderWeekly(res.data);
-    else renderDaily(res.data);
-  } catch (err) {
-    $("#genStatus").textContent = "Error: " + err.message;
-  }
-});
-
-function totalsBar(t, req, budget, overBudget) {
-  const macroPill = (label, val, target, unit) => {
-    const pct = target ? Math.round((val / target) * 100) : 0;
-    return `<div class="pill">${label}: <strong>${num(val)}${unit}</strong> <span class="muted">/ ${num(target)}${unit} (${pct}%)</span></div>`;
-  };
-  let pills = `<div class="pill ${overBudget ? "danger" : ""}">Costo: <strong>${clp(t.cost_clp)}</strong>${budget ? ` <span class="muted">/ ${clp(budget)}</span>` : ""}</div>`;
-  pills += macroPill("Energía", t.kcal, req?.kcal, " kcal");
-  pills += macroPill("Proteína", t.protein_g, req?.protein_g, " g");
-  pills += macroPill("Carbs", t.carb_g, req?.carb_g, " g");
-  pills += macroPill("Grasa", t.fat_g, req?.fat_g, " g");
-  pills += `<div class="pill">Saciedad: <strong>${num(t.satiety)}</strong></div>`;
-  return `<div class="totbar">${pills}</div>`;
-}
-
-function mealTable(meal) {
-  const rows = meal.items
-    .map(
-      (i) => `<tr>
-      <td>${i.name} <span class="muted">${i.brand || ""}</span></td>
-      <td><span class="shop">${i.retailer || "—"}</span></td>
-      <td class="num">${num(i.grams)} g</td>
-      <td class="num">${num(i.kcal)}</td>
-      <td class="num">${num(i.protein_g, 1)}</td>
-      <td class="num">${clp(i.cost_clp)}</td>
-    </tr>`
-    )
-    .join("");
-  return `<div class="meal">
-    <h3>${meal.meal} <span>${num(meal.subtotal.kcal)} kcal · ${clp(meal.subtotal.cost_clp)}</span></h3>
-    <table><thead><tr><th>Alimento</th><th>Comprar en</th><th class="num">Cantidad</th><th class="num">kcal</th><th class="num">Prot (g)</th><th class="num">Costo</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="6" class="muted">Sin items</td></tr>'}</tbody></table>
-  </div>`;
-}
-
-function renderDaily(data) {
-  lastPlanPayload = data;
-  let html = "";
-  if (data.warnings && data.warnings.length)
-    html += `<div class="warnbox">⚠ ${data.warnings.join(" ")}</div>`;
-  const showBudget = data.budget_mode && data.budget_mode !== "none";
-  html += totalsBar(data.totals, data.requirements, showBudget ? data.budget_clp : null, data.over_budget);
-  if (data.budget_mode === "target")
-    html += `<p class="muted">Modo «aprovechar el presupuesto»: maximiza saciedad sin pasar de ${clp(data.budget_clp)}.</p>`;
-  html += data.meals.map(mealTable).join("");
-  html += `<button id="savePlanBtn" class="primary">Guardar esta minuta</button>
-    <button id="shopBtn" class="btn-sm">🛒 Lista de compras consolidada</button>`;
-  $("#planResult").innerHTML = html;
-  $("#savePlanBtn").addEventListener("click", () => savePlan("diario", data));
-  $("#shopBtn").addEventListener("click", () => showShoppingForPayload(data));
-}
-
-function renderWeekly(data) {
-  lastPlanPayload = data;
-  let html = totalsBar(
-    { cost_clp: data.avg_daily_cost_clp, kcal: data.requirements.kcal, protein_g: data.requirements.protein_g, carb_g: data.requirements.carb_g, fat_g: data.requirements.fat_g, satiety: 0 },
-    data.requirements
-  );
-  html = `<div class="pill">Costo semanal: <strong>${clp(data.weekly_cost_clp)}</strong></div><div class="pill">Promedio diario: <strong>${clp(data.avg_daily_cost_clp)}</strong></div>` + html;
-  html = `<div class="totbar">${html}</div>`;
-  data.days.forEach((d) => {
-    const t = d.plan.totals;
-    html += `<div class="week-day"><h3 style="text-transform:capitalize">${d.day} · ${num(t.kcal)} kcal · ${clp(t.cost_clp)}</h3>`;
-    html += d.plan.meals
-      .map((m) => `<div class="muted">• <strong style="text-transform:capitalize">${m.meal}</strong>: ${m.items.map((i) => i.name).join(", ") || "—"}</div>`)
-      .join("");
-    html += `</div>`;
-  });
-  html += `<button id="savePlanBtn" class="primary">Guardar esta minuta semanal</button>
-    <button id="shopBtn" class="btn-sm">🛒 Lista de compras consolidada</button>`;
-  $("#planResult").innerHTML = html;
-  $("#savePlanBtn").addEventListener("click", () => savePlan("semanal", data));
-  $("#shopBtn").addEventListener("click", () => showShoppingForPayload(data));
-}
-
-// ---------- lista de compras ----------
-function shoppingHtml(d) {
-  if (!d.retailers || !d.retailers.length) return '<p class="muted">Sin productos para listar.</p>';
-  let html = `<div class="totbar">
-    <div class="pill">Total comprando envases: <strong>${clp(d.total_packages_clp)}</strong></div>
-    <div class="pill">Consumo neto: <strong>${clp(d.total_consumed_clp)}</strong></div>
-    <div class="pill">${d.retailer_count} cadena(s)</div>
-  </div>`;
-  for (const r of d.retailers) {
-    const rows = r.items
-      .map((i) => `<tr>
-        <td>${i.name} <span class="muted">${i.brand || ""}</span></td>
-        <td class="num">${num(i.needed_g)} g</td>
-        <td class="num">${i.packages != null ? `${i.packages} × ${num(i.package_g)} g` : "—"}</td>
-        <td class="num">${i.packages_cost_clp != null ? clp(i.packages_cost_clp) : "—"}</td>
-      </tr>`)
-      .join("");
-    html += `<div class="meal">
-      <h3>🛒 ${r.retailer} <span>${r.item_count} productos · ${clp(r.subtotal_packages_clp)}</span></h3>
-      <table><thead><tr><th>Producto</th><th class="num">Necesario</th><th class="num">Comprar</th><th class="num">Costo</th></tr></thead>
-      <tbody>${rows}</tbody></table>
-    </div>`;
-  }
-  return html;
-}
-
-async function showShoppingForPayload(payload) {
-  $("#shoppingResult").innerHTML = '<p class="muted">Consolidando lista de compras…</p>';
-  const data = await api("/api/plans/shopping-list", { method: "POST", body: JSON.stringify({ payload }) });
-  $("#shoppingResult").innerHTML = `<h3 style="margin-top:18px">Lista de compras por cadena</h3>` + shoppingHtml(data);
-  $("#shoppingResult").scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-async function showShoppingForSaved(planId, containerSel) {
-  const el = $(containerSel);
-  el.innerHTML = '<p class="muted">Consolidando…</p>';
-  const data = await api(`/api/plans/${planId}/shopping-list`);
-  el.innerHTML = shoppingHtml(data);
-}
-
-async function savePlan(scope, payload) {
-  const title = prompt("Nombre de la minuta:", scope === "semanal" ? "Semana" : "Día " + new Date().toLocaleDateString("es-CL"));
-  if (title === null) return;
-  // Para semanal guardamos totales agregados aproximados.
-  const toSave = scope === "semanal" ? { ...payload, totals: { cost_clp: payload.weekly_cost_clp, kcal: payload.requirements.kcal, satiety: 0 } } : payload;
-  await api("/api/plans", { method: "POST", body: JSON.stringify({ user_id: currentUserId, title, scope, payload: toSave }) });
-  $("#genStatus").textContent = "✓ Minuta guardada.";
-}
-
-// ---------- minutas guardadas ----------
-async function loadSatietyHistory() {
-  if (!currentUserId) return;
-  const h = await api(`/api/users/${currentUserId}/satiety-history`);
-  if (!h.count) {
-    $("#satietyHistory").innerHTML =
-      '<p class="muted">Aún no hay historial de saciedad. Registra la saciedad de tus minutas para ir afinando las sugerencias.</p>';
-    return;
-  }
-  const bars = h.entries
-    .map((e) => {
-      const pct = (e.satiety_score / 5) * 100;
-      const date = e.created_at ? new Date(e.created_at).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit" }) : "";
-      return `<div class="histbar" title="${e.title}: saciedad ${e.satiety_score}/5 · costo ${clp(e.total_cost_clp)}">
-        <div class="histfill" style="height:${pct}%"></div>
-        <div class="histlbl">${e.satiety_score}</div>
-        <div class="histdate">${date}</div>
-      </div>`;
-    })
-    .join("");
-  $("#satietyHistory").innerHTML = `<div class="card" style="margin-bottom:16px">
-    <div class="lbl">Historial de saciedad</div>
-    <div class="totbar" style="margin:8px 0">
-      <div class="pill">Promedio saciedad: <strong>${h.avg_satiety}/5</strong></div>
-      <div class="pill">Satisfacción de costo: <strong>${h.avg_cost_score}/5</strong></div>
-      <div class="pill">${h.count} registro(s)</div>
-    </div>
-    <div class="histchart">${bars}</div>
-  </div>`;
-}
-
-async function loadPlans() {
-  if (!currentUserId) return;
-  loadSatietyHistory();
+function dateKey(d) { return d.slice(0, 10); }
+async function loadCalendar() {
+  if (!currentUserId) { $("#calGrid").innerHTML = '<p class="hint" style="grid-column:1/8">Crea un perfil primero.</p>'; return; }
   const plans = await api(`/api/plans?user_id=${currentUserId}`);
+  plansByDate = {};
+  plans.forEach((p) => {
+    const k = p.created_at ? dateKey(p.created_at) : null;
+    if (k) (plansByDate[k] = plansByDate[k] || []).push(p);
+  });
+  if (!calRef) { const n = new Date(); calRef = new Date(n.getFullYear(), n.getMonth(), 1); }
+  renderCalendar();
+}
+function renderCalendar() {
+  const y = calRef.getFullYear(), m = calRef.getMonth();
+  $("#calTitle").textContent = `${MONTHS[m]} ${y}`;
+  const first = new Date(y, m, 1);
+  let startDow = (first.getDay() + 6) % 7; // lunes=0
+  const days = new Date(y, m + 1, 0).getDate();
+  const todayK = dateKey(new Date().toISOString());
+  let html = DOW.map((d) => `<div class="cal-dow">${d}</div>`).join("");
+  for (let i = 0; i < startDow; i++) html += `<div class="cal-cell empty"></div>`;
+  for (let d = 1; d <= days; d++) {
+    const k = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const has = plansByDate[k] ? "has" : "";
+    const today = k === todayK ? "today" : "";
+    html += `<div class="cal-cell ${has} ${today}" data-k="${k}" data-d="${d}">${d}</div>`;
+  }
+  $("#calGrid").innerHTML = html;
+  $$("#calGrid .cal-cell[data-k]").forEach((c) =>
+    c.addEventListener("click", () => selectDay(c.dataset.k)));
+}
+$("#calPrev").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() - 1); renderCalendar(); });
+$("#calNext").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() + 1); renderCalendar(); });
+
+function selectDay(k) {
+  $$("#calGrid .cal-cell").forEach((c) => c.classList.toggle("sel", c.dataset.k === k));
+  const plans = plansByDate[k] || [];
   if (!plans.length) {
-    $("#plansList").innerHTML = '<p class="muted">Aún no tienes minutas guardadas.</p>';
+    $("#calDay").innerHTML = `<p class="hint">Sin minutas el ${k}. Arma una en la Ruleta 🎰 y guárdala.</p>`;
     return;
   }
-  $("#plansList").innerHTML = plans.map(planCard).join("");
-  plans.forEach((p) => wirePlanCard(p));
+  $("#calDay").innerHTML = `<h3 style="font-size:15px">Minutas · ${k}</h3>` + plans.map((p) =>
+    `<div class="daycard" data-plan="${p.id}">
+       <div class="top"><strong>${p.title}</strong>
+         <span class="muted">${num(p.total_kcal)} kcal · ${clp(p.total_cost_clp)}</span></div>
+     </div>`).join("");
+  $$("#calDay .daycard").forEach((c) =>
+    c.addEventListener("click", () => openPlanDetail(+c.dataset.plan)));
 }
-
-function planCard(p) {
-  return `<div class="plan-card" id="plan-${p.id}">
-    <div class="row">
-      <div>
-        <strong>${p.title}</strong> <span class="muted">· ${p.scope} · ${clp(p.total_cost_clp)} · ${num(p.total_kcal)} kcal</span>
-        ${p.satiety_score ? `<span class="muted"> · saciedad reportada: ${p.satiety_score}/5</span>` : ""}
-      </div>
-      <div>
-        <button class="btn-sm" data-act="shop" data-id="${p.id}">🛒 Lista de compras</button>
-        <button class="btn-sm" data-act="fb" data-id="${p.id}">Registrar saciedad</button>
-        <button class="btn-sm" data-act="del" data-id="${p.id}">Eliminar</button>
-      </div>
-    </div>
-    <div id="shop-${p.id}"></div>
-    <div class="feedback-box" id="fb-${p.id}">
-      <p class="muted">¿Qué tan saciado quedaste? (1 = mucha hambre, 5 = muy lleno)</p>
-      <div class="stars" data-id="${p.id}">${[1, 2, 3, 4, 5].map((n) => `<span data-v="${n}">☆</span>`).join("")}</div>
-      <label style="margin-top:8px">Satisfacción con el costo (1-5)
-        <input type="number" min="1" max="5" value="3" id="cost-${p.id}" style="width:70px" />
-      </label>
-      <label>Notas <input type="text" id="notes-${p.id}" placeholder="opcional" /></label>
-      <button class="primary" data-act="sendfb" data-id="${p.id}" style="margin-top:8px">Enviar y aprender</button>
-      <span class="status" id="fbstatus-${p.id}"></span>
-    </div>
-  </div>`;
-}
-
-function wirePlanCard(p) {
-  const card = $(`#plan-${p.id}`);
-  let satiety = 3;
-  card.querySelectorAll('[data-act="fb"]').forEach((b) =>
-    b.addEventListener("click", () => $(`#fb-${p.id}`).classList.toggle("open"))
-  );
-  card.querySelectorAll('[data-act="shop"]').forEach((b) =>
-    b.addEventListener("click", () => showShoppingForSaved(p.id, `#shop-${p.id}`))
-  );
-  card.querySelectorAll('[data-act="del"]').forEach((b) =>
-    b.addEventListener("click", async () => {
-      if (confirm("¿Eliminar esta minuta?")) {
-        await api(`/api/plans/${p.id}`, { method: "DELETE" });
-        loadPlans();
-      }
-    })
-  );
-  const starWrap = card.querySelector(".stars");
-  const paint = () =>
-    starWrap.querySelectorAll("span").forEach((s) => (s.textContent = +s.dataset.v <= satiety ? "★" : "☆"));
-  starWrap.querySelectorAll("span").forEach((s) =>
-    s.addEventListener("click", () => {
-      satiety = +s.dataset.v;
-      paint();
-    })
-  );
-  paint();
-  card.querySelector('[data-act="sendfb"]').addEventListener("click", async () => {
-    const body = {
-      satiety_score: satiety,
-      cost_score: +$(`#cost-${p.id}`).value,
-      notes: $(`#notes-${p.id}`).value,
-      food_ratings: {},
-    };
-    const res = await api(`/api/plans/${p.id}/feedback`, { method: "POST", body: JSON.stringify(body) });
-    $(`#fbstatus-${p.id}`).textContent = `✓ Aprendido · ${Object.keys(res.updated_preferences).length} preferencias ajustadas`;
+async function openPlanDetail(id) {
+  const p = await api(`/api/plans/${id}`);
+  let html = `<div class="totbar"><div class="pill">${p.scope}</div>
+    <div class="pill">${num(p.total_kcal)} kcal</div><div class="pill">${clp(p.total_cost_clp)}</div></div>`;
+  (p.payload.meals || []).forEach((m) => {
+    html += `<div class="meal"><h3 style="text-transform:capitalize">${m.meal}
+      <span>${num((m.subtotal || {}).kcal)} kcal · ${clp((m.subtotal || {}).cost_clp)}</span></h3>
+      <div class="muted">${(m.items || []).map((i) => `${i.name} (${num(i.grams)}g)`).join(" · ")}</div></div>`;
+  });
+  html += `<button class="btn-sm" id="delPlan">🗑️ Eliminar</button>`;
+  openOverlay(p.title, html);
+  $("#delPlan").addEventListener("click", async () => {
+    if (confirm("¿Eliminar esta minuta?")) { await api(`/api/plans/${id}`, { method: "DELETE" }); closeOverlay(); loadCalendar(); }
   });
 }
 
-// ---------- catalogo de alimentos ----------
-let foodsCache = [];
-async function loadFoods() {
-  if (!foodsCache.length) foodsCache = await api("/api/foods");
-  renderFoods(foodsCache);
-}
-$("#foodSearch").addEventListener("input", (e) => {
-  const q = e.target.value.toLowerCase();
-  renderFoods(foodsCache.filter((f) => (f.name + f.brand + f.category).toLowerCase().includes(q)));
-});
-function renderFoods(foods) {
-  const rows = foods
-    .map((f) => {
-      const cmp = (f.prices || [])
-        .map((p) => `${p.retailer}: ${clp(p.price_per_100g)}`)
-        .join(" · ");
-      const range =
-        f.price_max_per_100g > f.price_per_100g
-          ? `<span class="muted"> – ${clp(f.price_max_per_100g)}</span>`
-          : "";
-      return `<tr title="${cmp}">
-      <td>${f.name} <span class="muted">${f.brand}</span></td>
-      <td>${f.category}</td>
-      <td class="num">${num(f.kcal)}</td>
-      <td class="num">${num(f.protein_g, 1)}</td>
-      <td class="num"><strong>${clp(f.price_per_100g)}</strong>${range}<br><span class="shop">${f.retailer}</span></td>
-      <td class="num">${num(f.satiety_index)}</td>
-    </tr>`;
-    })
-    .join("");
-  $("#foodsTable").innerHTML = `<table><thead><tr><th>Alimento</th><th>Categoría</th><th class="num">kcal/100g</th><th class="num">Prot/100g</th><th class="num">Precio/100g (más barato)</th><th class="num">Sac.</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-// ---------- constructor de comidas (tragamonedas) ----------
-let builderData = null; // respuesta de /api/builder/slots
-let reelIdx = {};       // role -> índice actual
-let reelLocked = {};    // role -> bloqueado (no gira)
-let dayMeals = [];      // comidas agregadas al día
+// ===================== RULETA =====================
+let builderData = null, reelIdx = {}, reelLocked = {}, dayMeals = [];
 
 async function loadReels() {
-  if (!currentUserId) {
-    $("#reels").innerHTML = '<p class="muted">Primero guarda un perfil.</p>';
-    return;
-  }
-  $("#builderStatus").textContent = "Cargando carretes…";
-  builderData = await api("/api/builder/slots", {
-    method: "POST",
-    body: JSON.stringify({ user_id: currentUserId, meal: $("#builderMeal").value }),
-  });
-  reelIdx = {};
-  reelLocked = {};
-  builderData.slots.forEach((s) => {
-    reelIdx[s.role] = 0;
-    reelLocked[s.role] = false;
-  });
+  if (!currentUserId) { $("#reels").innerHTML = '<p class="hint">Crea un perfil primero.</p>'; return; }
+  $("#builderStatus").textContent = "Cargando…";
+  try {
+    builderData = await api("/api/builder/slots", {
+      method: "POST", body: JSON.stringify({ user_id: currentUserId, meal: $("#builderMeal").value }),
+    });
+  } catch (e) { $("#builderStatus").textContent = "Error: " + e.message; return; }
+  reelIdx = {}; reelLocked = {};
+  builderData.slots.forEach((s) => { reelIdx[s.role] = 0; reelLocked[s.role] = false; });
   $("#builderStatus").textContent = "";
   renderReels();
 }
-
 function reelSelection() {
   if (!builderData) return [];
-  return builderData.slots
-    .filter((s) => s.candidates.length)
+  return builderData.slots.filter((s) => s.candidates.length)
     .map((s) => s.candidates[reelIdx[s.role] % s.candidates.length]);
 }
-
 function renderReels() {
   if (!builderData) return;
-  const reels = builderData.slots
-    .map((s) => {
-      const n = s.candidates.length;
-      const c = n ? s.candidates[reelIdx[s.role] % n] : null;
-      const item = c
-        ? `<div class="item"><div class="nm">${c.name}</div>
-             <div class="meta">${num(c.grams)} g · ${num(c.kcal)} kcal · ${clp(c.cost_clp)}</div>
-             <div class="meta">P ${num(c.protein_g, 1)} · C ${num(c.carb_g, 1)} · G ${num(c.fat_g, 1)}</div>
-             <div class="meta"><span class="shop">${c.retailer}</span></div></div>`
-        : `<div class="item">— sin opciones —</div>`;
-      const locked = reelLocked[s.role];
-      return `<div class="reel ${n ? "" : "empty"} ${locked ? "locked" : ""}">
-        <div class="role">${s.label}
-          <button class="lockbtn" data-lock="${s.role}" title="Fijar este carrete al girar" ${n ? "" : "disabled"}>${locked ? "🔒" : "🔓"}</button>
-        </div>
-        <div class="nav">
-          <button data-dir="-1" data-role="${s.role}" ${n ? "" : "disabled"}>◀</button>
-          <span class="counter">${n ? (reelIdx[s.role] % n) + 1 : 0}/${n}</span>
-          <button data-dir="1" data-role="${s.role}" ${n ? "" : "disabled"}>▶</button>
-        </div>${item}</div>`;
-    })
-    .join("");
-  $("#reels").innerHTML = `<div class="reels">${reels}</div>`;
-  $$("#reels .nav button").forEach((b) =>
-    b.addEventListener("click", () => {
-      const role = b.dataset.role;
-      const n = builderData.slots.find((s) => s.role === role).candidates.length;
-      if (!n) return;
-      reelIdx[role] = (reelIdx[role] + +b.dataset.dir + n) % n;
-      renderReels();
-    })
-  );
-  $$("#reels .lockbtn").forEach((b) =>
-    b.addEventListener("click", () => {
-      reelLocked[b.dataset.lock] = !reelLocked[b.dataset.lock];
-      renderReels();
-    })
-  );
-  renderMealTotals();
+  $("#reels").innerHTML = builderData.slots.map((s) => {
+    const n = s.candidates.length;
+    const c = n ? s.candidates[reelIdx[s.role] % n] : null;
+    const win = c
+      ? `<div class="window">
+           <div class="nm">${c.name}</div>
+           ${c.brand ? `<div class="brand">${c.brand}</div>` : ""}
+           <div class="gr">${num(c.grams)} g</div>
+           <div class="mc">${num(c.kcal)} kcal · P${num(c.protein_g, 0)} C${num(c.carb_g, 0)} G${num(c.fat_g, 0)}</div>
+           <span class="shop">${c.retailer}</span>
+           ${c.platos_por_envase ? `<div class="platos">≈ ${c.platos_por_envase} platos/envase</div>` : ""}
+           <div class="cost">${clp(c.cost_clp)}</div>
+         </div>`
+      : `<div class="window empty">— sin opciones —</div>`;
+    return `<div class="reel ${reelLocked[s.role] ? "locked" : ""}">
+      <div class="role">${s.label}
+        <button class="lockbtn" data-lock="${s.role}" ${n ? "" : "disabled"}>${reelLocked[s.role] ? "🔒" : "🔓"}</button>
+      </div>
+      <button class="tri up" data-dir="-1" data-role="${s.role}" ${n ? "" : "disabled"}></button>
+      ${win}
+      <button class="tri down" data-dir="1" data-role="${s.role}" ${n ? "" : "disabled"}></button>
+      <span class="counter">${n ? (reelIdx[s.role] % n) + 1 : 0}/${n}</span>
+    </div>`;
+  }).join("");
+  $$("#reels .tri").forEach((b) => b.addEventListener("click", () => {
+    const role = b.dataset.role, n = builderData.slots.find((s) => s.role === role).candidates.length;
+    if (!n) return;
+    reelIdx[role] = (reelIdx[role] + +b.dataset.dir + n) % n;
+    renderReels();
+  }));
+  $$("#reels .lockbtn").forEach((b) => b.addEventListener("click", () => {
+    reelLocked[b.dataset.lock] = !reelLocked[b.dataset.lock]; renderReels();
+  }));
+  renderControl();
 }
-
-function renderMealTotals() {
-  if (!builderData) return;
+function renderControl() {
+  const sel = reelSelection();
   const t = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0 };
-  reelSelection().forEach((c) => {
-    for (const k in t) t[k] += c[k] || 0;
-  });
-  const tg = builderData.target;
-  const fitClass = (r) => (r >= 0.8 && r <= 1.2 ? "ok" : "off");
-  const pill = (label, val, target, unit) =>
-    `<div class="pill fitpill ${fitClass(target ? val / target : 0)}">${label}: <strong>${num(val)}${unit}</strong> <span class="muted">/ ${num(target)}${unit}</span></div>`;
-  $("#mealTotals").innerHTML = `<div class="totbar">
-    <div class="pill">Costo: <strong>${clp(t.cost_clp)}</strong></div>
-    ${pill("Energía", t.kcal, tg.kcal, " kcal")}
-    ${pill("Proteína", t.protein_g, tg.protein_g, " g")}
-    ${pill("Carbs", t.carb_g, tg.carb_g, " g")}
-    ${pill("Grasa", t.fat_g, tg.fat_g, " g")}
-  </div>`;
+  sel.forEach((c) => { for (const k in t) t[k] += c[k] || 0; });
+  renderDonut(t, builderData.target);
+  $("#priceBox").textContent = clp(t.cost_clp);
+  // platos: el producto más limitante (mínimo) rinde N platos completos.
+  const platos = sel.map((c) => c.platos_por_envase).filter((x) => x > 0);
+  const minP = platos.length ? Math.min(...platos) : 0;
+  const pcal = t.protein_g * 4, ccal = t.carb_g * 4, gcal = t.fat_g * 9, tot = pcal + ccal + gcal || 1;
+  $("#platosInfo").innerHTML =
+    `<span style="color:var(--p)">P ${Math.round(pcal / tot * 100)}%</span> ·
+     <span style="color:var(--c)">C ${Math.round(ccal / tot * 100)}%</span> ·
+     <span style="color:var(--g)">G ${Math.round(gcal / tot * 100)}%</span>
+     ${minP ? `<br>Con una compra de cada producto preparas <strong>≈ ${minP} platos</strong>.` : ""}`;
 }
-
+function renderDonut(t, target) {
+  const pcal = (t.protein_g || 0) * 4, ccal = (t.carb_g || 0) * 4, gcal = (t.fat_g || 0) * 9;
+  const tot = pcal + ccal + gcal || 1;
+  const segs = [[pcal / tot * 100, "var(--p)"], [ccal / tot * 100, "var(--c)"], [gcal / tot * 100, "var(--g)"]];
+  const kcalPct = target && target.kcal ? Math.round((t.kcal || 0) / target.kcal * 100) : 0;
+  let acc = 0;
+  const arcs = segs.map(([p, color]) => {
+    const c = `<circle cx="21" cy="21" r="15.915" fill="none" stroke="${color}" stroke-width="6"
+      stroke-dasharray="${p.toFixed(2)} ${(100 - p).toFixed(2)}" stroke-dashoffset="${(25 - acc).toFixed(2)}"/>`;
+    acc += p; return c;
+  }).join("");
+  $("#donut").innerHTML =
+    `<circle cx="21" cy="21" r="15.915" fill="none" stroke="#2a2a2d" stroke-width="6"/>${arcs}
+     <text x="21" y="20.5" text-anchor="middle" font-size="6">${kcalPct}%</text>
+     <text x="21" y="26" text-anchor="middle" font-size="3" fill="#b9b9c2">Kcal/d</text>`;
+}
 $("#builderMeal").addEventListener("change", loadReels);
 $("#spinBtn").addEventListener("click", () => {
   if (!builderData) return;
   builderData.slots.forEach((s) => {
-    // Los carretes bloqueados conservan su elemento; solo giran los libres.
-    if (s.candidates.length && !reelLocked[s.role])
-      reelIdx[s.role] = Math.floor(Math.random() * s.candidates.length);
+    if (s.candidates.length && !reelLocked[s.role]) reelIdx[s.role] = Math.floor(Math.random() * s.candidates.length);
   });
   renderReels();
 });
@@ -564,92 +296,241 @@ function mealSubtotal(items) {
   const s = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0, satiety: 0 };
   items.forEach((i) => {
     s.kcal += i.kcal; s.protein_g += i.protein_g; s.carb_g += i.carb_g;
-    s.fat_g += i.fat_g; s.cost_clp += i.cost_clp; s.satiety += i.satiety_contrib;
+    s.fat_g += i.fat_g; s.cost_clp += i.cost_clp; s.satiety += i.satiety_contrib || 0;
   });
   for (const k in s) s[k] = Math.round(s[k] * 10) / 10;
   return s;
 }
-
 function renderDayBuild() {
-  if (!dayMeals.length) {
-    $("#dayBuild").innerHTML = "";
-    return;
-  }
-  let total = { kcal: 0, cost_clp: 0 };
-  let html = "<h3>Minuta del día en construcción</h3>";
+  if (!dayMeals.length) { $("#dayBuild").innerHTML = ""; return; }
+  const total = { kcal: 0, cost_clp: 0 };
+  let html = '<h3 style="font-size:15px;margin-top:14px">Minuta del día</h3>';
   dayMeals.forEach((m, idx) => {
     const st = mealSubtotal(m.items);
-    total.kcal += st.kcal;
-    total.cost_clp += st.cost_clp;
-    html += `<div class="daycard">
-      <div style="display:flex;justify-content:space-between;gap:10px">
+    total.kcal += st.kcal; total.cost_clp += st.cost_clp;
+    html += `<div class="daycard"><div class="top">
         <strong style="text-transform:capitalize">${m.meal}</strong>
         <span class="muted">${num(st.kcal)} kcal · ${clp(st.cost_clp)}
-          <button class="btn-sm" data-rm="${idx}">✕</button></span>
-      </div>
-      <div class="muted">${m.items.map((i) => `${i.name} (${num(i.grams)}g)`).join(" · ")}</div>
-    </div>`;
+          <button class="btn-sm" data-rm="${idx}">✕</button></span></div>
+        <div class="muted">${m.items.map((i) => `${i.name} (${num(i.grams)}g)`).join(" · ")}</div></div>`;
   });
   html += `<div class="totbar"><div class="pill">Día: <strong>${num(total.kcal)} kcal</strong></div>
     <div class="pill">Total: <strong>${clp(total.cost_clp)}</strong></div></div>
     <button id="saveDayBtn" class="primary">💾 Guardar minuta del día</button>
     <span id="saveDayStatus" class="status"></span>`;
   $("#dayBuild").innerHTML = html;
-  $$("#dayBuild [data-rm]").forEach((b) =>
-    b.addEventListener("click", () => {
-      dayMeals.splice(+b.dataset.rm, 1);
-      renderDayBuild();
-    })
-  );
+  $$("#dayBuild [data-rm]").forEach((b) => b.addEventListener("click", () => {
+    dayMeals.splice(+b.dataset.rm, 1); renderDayBuild();
+  }));
   $("#saveDayBtn").addEventListener("click", saveBuiltDay);
 }
-
 async function saveBuiltDay() {
   if (!currentUserId || !dayMeals.length) return;
   const meals = dayMeals.map((m) => ({ meal: m.meal, items: m.items, subtotal: mealSubtotal(m.items) }));
   const totals = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0, satiety: 0 };
-  meals.forEach((m) => {
-    ["kcal", "protein_g", "carb_g", "fat_g", "cost_clp"].forEach((k) => (totals[k] += m.subtotal[k]));
-    totals.satiety += m.subtotal.satiety;
-  });
+  meals.forEach((m) => { ["kcal", "protein_g", "carb_g", "fat_g", "cost_clp", "satiety"].forEach((k) => (totals[k] += m.subtotal[k])); });
   for (const k in totals) totals[k] = Math.round(totals[k] * 10) / 10;
-  const title = prompt("Nombre de la minuta:", "Armada " + new Date().toLocaleDateString("es-CL"));
+  const title = prompt("Nombre de la minuta:", "Día " + new Date().toLocaleDateString("es-CL"));
   if (title === null) return;
-  await api("/api/plans", {
-    method: "POST",
-    body: JSON.stringify({ user_id: currentUserId, title, scope: "diario", payload: { meals, totals } }),
-  });
-  $("#saveDayStatus").textContent = "✓ Minuta guardada.";
-  dayMeals = [];
-  renderDayBuild();
+  await api("/api/plans", { method: "POST", body: JSON.stringify({ user_id: currentUserId, title, scope: "diario", payload: { meals, totals } }) });
+  $("#saveDayStatus").textContent = "✓ Guardada.";
+  dayMeals = []; renderDayBuild();
 }
 
-// ---------- init ----------
-const serverBtn = document.getElementById("serverBtn");
-if (serverBtn) {
-  // El selector de servidor solo tiene sentido en la APK (origen file://).
-  // En la web servida por el backend se usa el mismo origen, así que se oculta.
-  if (location.protocol === "file:") {
-    serverBtn.addEventListener("click", setApiBase);
-    serverBtn.title = "Servidor: " + (apiBase() || "este sitio");
-  } else {
-    serverBtn.style.display = "none";
+// ===================== MENÚ + OVERLAY =====================
+function openDrawer() { $("#drawer").classList.add("open"); $("#drawerBackdrop").classList.add("open"); }
+function closeDrawer() { $("#drawer").classList.remove("open"); $("#drawerBackdrop").classList.remove("open"); }
+$("#menuBtn").addEventListener("click", openDrawer);
+$("#drawerBackdrop").addEventListener("click", closeDrawer);
+function openOverlay(title, html) { $("#overlayTitle").textContent = title; $("#overlayBody").innerHTML = html; $("#overlay").classList.add("open"); }
+function closeOverlay() { $("#overlay").classList.remove("open"); }
+$("#overlayClose").addEventListener("click", closeOverlay);
+$$(".drawer-item[data-view]").forEach((b) => b.addEventListener("click", () => {
+  closeDrawer();
+  const v = b.dataset.view;
+  if (v === "generar") openGenerar();
+  if (v === "minutas") openMinutas();
+  if (v === "catalogo") openCatalogo();
+}));
+
+// ---- Generar minuta + lista de compras (overlay) ----
+function openGenerar() {
+  openOverlay("Generar minuta", `
+    <div class="controls">
+      <label>Alcance <select id="scope"><option value="diario">Diario</option><option value="semanal">Semanal</option></select></label>
+      <label>Énfasis saciedad: <strong id="satVal">0.0</strong><input id="satiety" type="range" min="0" max="1.5" step="0.1" value="0" /></label>
+      <label>Presupuesto <select id="budgetMode">
+        <option value="min_cost">Gastar lo mínimo</option><option value="target">Aprovechar el presupuesto</option><option value="none">Sin límite</option>
+      </select></label>
+      <label>Monto (CLP) <input id="budgetAmount" type="number" min="0" step="100" value="4000" /></label>
+      <button id="generateBtn" class="primary">Generar</button>
+    </div>
+    <div id="genStatus" class="status"></div><div id="planResult"></div><div id="shoppingResult"></div>`);
+  $("#satiety").addEventListener("input", (e) => ($("#satVal").textContent = (+e.target.value).toFixed(1)));
+  $("#generateBtn").addEventListener("click", generatePlan);
+}
+async function generatePlan() {
+  if (!currentUserId) return alert("Primero guarda un perfil.");
+  $("#genStatus").textContent = "Optimizando…"; $("#planResult").innerHTML = ""; $("#shoppingResult").innerHTML = "";
+  try {
+    const mode = $("#budgetMode").value;
+    const res = await api("/api/plans/generate", { method: "POST", body: JSON.stringify({
+      user_id: currentUserId, scope: $("#scope").value, satiety_emphasis: +$("#satiety").value,
+      budget_mode: mode, budget_clp: mode === "none" ? null : +$("#budgetAmount").value }) });
+    $("#genStatus").textContent = "";
+    res.scope === "semanal" ? renderWeekly(res.data) : renderDaily(res.data);
+  } catch (err) { $("#genStatus").textContent = "Error: " + err.message; }
+}
+function totalsBar(t, req) {
+  const pill = (l, v, tg, u) => `<div class="pill">${l}: <strong>${num(v)}${u}</strong> <span class="muted">/ ${num(tg)}${u}</span></div>`;
+  return `<div class="totbar"><div class="pill">Costo: <strong>${clp(t.cost_clp)}</strong></div>
+    ${pill("Energía", t.kcal, req?.kcal, " kcal")}${pill("Prot", t.protein_g, req?.protein_g, " g")}
+    ${pill("Carbs", t.carb_g, req?.carb_g, " g")}${pill("Grasa", t.fat_g, req?.fat_g, " g")}</div>`;
+}
+function mealBlock(m) {
+  return `<div class="meal"><h3 style="text-transform:capitalize">${m.meal}
+    <span>${num(m.subtotal.kcal)} kcal · ${clp(m.subtotal.cost_clp)}</span></h3>
+    <div class="muted">${m.items.map((i) => `${i.name} ${num(i.grams)}g <span class="shop">${i.retailer || "—"}</span>`).join("<br>") || "—"}</div></div>`;
+}
+let lastPlanPayload = null;
+function renderDaily(data) {
+  lastPlanPayload = data;
+  let html = (data.warnings || []).length ? `<div class="warnbox">⚠ ${data.warnings.join(" ")}</div>` : "";
+  html += totalsBar(data.totals, data.requirements) + data.meals.map(mealBlock).join("");
+  html += `<button id="savePlanBtn" class="primary">Guardar</button> <button id="shopBtn" class="btn-sm">🛒 Lista de compras</button>`;
+  $("#planResult").innerHTML = html;
+  $("#savePlanBtn").addEventListener("click", () => savePlan("diario", data));
+  $("#shopBtn").addEventListener("click", () => showShoppingForPayload(data));
+}
+function renderWeekly(data) {
+  lastPlanPayload = data;
+  let html = `<div class="totbar"><div class="pill">Semanal: <strong>${clp(data.weekly_cost_clp)}</strong></div>
+    <div class="pill">Prom/día: <strong>${clp(data.avg_daily_cost_clp)}</strong></div></div>`;
+  data.days.forEach((d) => {
+    html += `<div class="meal"><h3 style="text-transform:capitalize">${d.day} · ${clp(d.plan.totals.cost_clp)}</h3>
+      <div class="muted">${d.plan.meals.map((m) => `<strong style="text-transform:capitalize">${m.meal}</strong>: ${m.items.map((i) => i.name).join(", ") || "—"}`).join("<br>")}</div></div>`;
+  });
+  html += `<button id="savePlanBtn" class="primary">Guardar</button> <button id="shopBtn" class="btn-sm">🛒 Lista</button>`;
+  $("#planResult").innerHTML = html;
+  $("#savePlanBtn").addEventListener("click", () => savePlan("semanal", data));
+  $("#shopBtn").addEventListener("click", () => showShoppingForPayload(data));
+}
+async function savePlan(scope, payload) {
+  const title = prompt("Nombre de la minuta:", scope === "semanal" ? "Semana" : "Día " + new Date().toLocaleDateString("es-CL"));
+  if (title === null) return;
+  const toSave = scope === "semanal" ? { ...payload, totals: { cost_clp: payload.weekly_cost_clp, kcal: payload.requirements.kcal, satiety: 0 } } : payload;
+  await api("/api/plans", { method: "POST", body: JSON.stringify({ user_id: currentUserId, title, scope, payload: toSave }) });
+  $("#genStatus").textContent = "✓ Guardada (mírala en Inicio).";
+}
+function shoppingHtml(d) {
+  if (!d.retailers || !d.retailers.length) return '<p class="muted">Sin productos.</p>';
+  let html = `<div class="totbar"><div class="pill">Envases: <strong>${clp(d.total_packages_clp)}</strong></div>
+    <div class="pill">Neto: <strong>${clp(d.total_consumed_clp)}</strong></div><div class="pill">${d.retailer_count} cadena(s)</div></div>`;
+  for (const r of d.retailers) {
+    const rows = r.items.map((i) => `<tr><td>${i.name}</td><td class="num">${num(i.needed_g)} g</td>
+      <td class="num">${i.packages != null ? `${i.packages}×${num(i.package_g)}g` : "—"}</td>
+      <td class="num">${i.packages_cost_clp != null ? clp(i.packages_cost_clp) : "—"}</td></tr>`).join("");
+    html += `<div class="meal"><h3>🛒 ${r.retailer} <span>${clp(r.subtotal_packages_clp)}</span></h3>
+      <table><thead><tr><th>Producto</th><th class="num">Necesario</th><th class="num">Comprar</th><th class="num">Costo</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
+  return html;
+}
+async function showShoppingForPayload(payload) {
+  $("#shoppingResult").innerHTML = '<p class="muted">Consolidando…</p>';
+  const data = await api("/api/plans/shopping-list", { method: "POST", body: JSON.stringify({ payload }) });
+  $("#shoppingResult").innerHTML = `<h3 style="margin-top:14px">Lista por cadena</h3>` + shoppingHtml(data);
 }
 
-function startApp() {
-  loadRetailers().then(loadUsers).catch((e) => {
-    const msg = "No se pudo conectar con el servidor SCAVENGER" + (apiBase() ? " (" + apiBase() + ")" : "") + ".";
-    const status = document.getElementById("genStatus");
-    if (status) status.textContent = msg;
-    console.error(msg, e);
+// ---- Mis minutas y saciedad (overlay) ----
+async function openMinutas() {
+  openOverlay("Mis minutas", '<div id="satietyHistory"></div><div id="plansList"></div>');
+  loadSatietyHistory();
+  const plans = await api(`/api/plans?user_id=${currentUserId}`);
+  if (!plans.length) { $("#plansList").innerHTML = '<p class="muted">Aún no tienes minutas.</p>'; return; }
+  $("#plansList").innerHTML = plans.map(planCard).join("");
+  plans.forEach(wirePlanCard);
+}
+async function loadSatietyHistory() {
+  if (!currentUserId) return;
+  const h = await api(`/api/users/${currentUserId}/satiety-history`);
+  if (!h.count) { $("#satietyHistory").innerHTML = '<p class="muted">Sin historial de saciedad aún.</p>'; return; }
+  const bars = h.entries.map((e) => {
+    const pct = (e.satiety_score / 5) * 100;
+    const date = e.created_at ? new Date(e.created_at).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit" }) : "";
+    return `<div class="histbar" title="${e.title}: ${e.satiety_score}/5"><div class="histfill" style="height:${pct}%"></div><div class="histlbl">${e.satiety_score}</div><div class="histdate">${date}</div></div>`;
+  }).join("");
+  $("#satietyHistory").innerHTML = `<div class="card" style="margin-bottom:14px"><div class="lbl">Saciedad</div>
+    <div class="totbar"><div class="pill">Prom: <strong>${h.avg_satiety}/5</strong></div><div class="pill">Costo: <strong>${h.avg_cost_score}/5</strong></div></div>
+    <div class="histchart">${bars}</div></div>`;
+}
+function planCard(p) {
+  return `<div class="plan-card" id="plan-${p.id}"><div class="row">
+    <div><strong>${p.title}</strong> <span class="muted">${p.scope} · ${clp(p.total_cost_clp)} · ${num(p.total_kcal)} kcal</span></div>
+    <div><button class="btn-sm" data-act="shop" data-id="${p.id}">🛒</button>
+      <button class="btn-sm" data-act="fb" data-id="${p.id}">Saciedad</button>
+      <button class="btn-sm" data-act="del" data-id="${p.id}">✕</button></div></div>
+    <div id="shop-${p.id}"></div>
+    <div class="feedback-box" id="fb-${p.id}">
+      <p class="muted">¿Qué tan saciado quedaste? (1–5)</p>
+      <div class="stars" data-id="${p.id}">${[1,2,3,4,5].map((n) => `<span data-v="${n}">☆</span>`).join("")}</div>
+      <label>Costo (1-5) <input type="number" min="1" max="5" value="3" id="cost-${p.id}" style="width:70px" /></label>
+      <button class="primary" data-act="sendfb" data-id="${p.id}">Enviar</button>
+      <span class="status" id="fbstatus-${p.id}"></span></div></div>`;
+}
+function wirePlanCard(p) {
+  const card = $(`#plan-${p.id}`); let satiety = 3;
+  card.querySelector('[data-act="fb"]').addEventListener("click", () => $(`#fb-${p.id}`).classList.toggle("open"));
+  card.querySelector('[data-act="shop"]').addEventListener("click", async () => {
+    const el = $(`#shop-${p.id}`); el.innerHTML = '<p class="muted">…</p>';
+    el.innerHTML = shoppingHtml(await api(`/api/plans/${p.id}/shopping-list`));
+  });
+  card.querySelector('[data-act="del"]').addEventListener("click", async () => {
+    if (confirm("¿Eliminar?")) { await api(`/api/plans/${p.id}`, { method: "DELETE" }); openMinutas(); }
+  });
+  const starWrap = card.querySelector(".stars");
+  const paint = () => starWrap.querySelectorAll("span").forEach((s) => (s.textContent = +s.dataset.v <= satiety ? "★" : "☆"));
+  starWrap.querySelectorAll("span").forEach((s) => s.addEventListener("click", () => { satiety = +s.dataset.v; paint(); }));
+  paint();
+  card.querySelector('[data-act="sendfb"]').addEventListener("click", async () => {
+    const res = await api(`/api/plans/${p.id}/feedback`, { method: "POST", body: JSON.stringify({
+      satiety_score: satiety, cost_score: +$(`#cost-${p.id}`).value, notes: "", food_ratings: {} }) });
+    $(`#fbstatus-${p.id}`).textContent = `✓ ${Object.keys(res.updated_preferences).length} preferencias ajustadas`;
   });
 }
 
-// En la APK (file://) se requiere configurar la URL del backend antes de cargar.
-if (location.protocol === "file:" && !apiBase()) {
-  alert("Bienvenido a SCAVENGER.\n\nConfigura la URL del servidor (tu backend corriendo en el PC/servidor) para comenzar.");
-  setApiBase(); // recarga al guardar
-} else {
-  startApp();
+// ---- Catálogo (overlay) ----
+let foodsCache = [];
+async function openCatalogo() {
+  openOverlay("Catálogo", `<input id="foodSearch" type="text" placeholder="Buscar alimento, marca o categoría…" /><div id="foodsTable"></div>`);
+  if (!foodsCache.length) foodsCache = await api("/api/foods");
+  renderFoods(foodsCache);
+  $("#foodSearch").addEventListener("input", (e) => {
+    const q = e.target.value.toLowerCase();
+    renderFoods(foodsCache.filter((f) => (f.name + f.brand + f.category).toLowerCase().includes(q)));
+  });
 }
+function renderFoods(foods) {
+  const rows = foods.map((f) => {
+    const cmp = (f.prices || []).map((p) => `${p.retailer}: ${clp(p.price_per_100g)}`).join(" · ");
+    return `<tr title="${cmp}"><td>${f.name} <span class="muted">${f.brand}</span></td><td>${f.category}</td>
+      <td class="num">${num(f.kcal)}</td><td class="num"><strong>${clp(f.price_per_100g)}</strong><br><span class="shop">${f.retailer}</span></td></tr>`;
+  }).join("");
+  $("#foodsTable").innerHTML = `<table><thead><tr><th>Alimento</th><th>Cat.</th><th class="num">kcal/100g</th><th class="num">$/100g</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ===================== INIT =====================
+const serverBtn = $("#serverBtn");
+if (serverBtn) {
+  if (location.protocol === "file:") serverBtn.addEventListener("click", setApiBase);
+  else serverBtn.style.display = "none";
+}
+function startApp() {
+  loadRetailers().then(loadUsers).then(() => showScreen(0)).catch((e) => {
+    $("#calGrid").innerHTML = `<p class="hint" style="grid-column:1/8">No se pudo conectar al servidor${apiBase() ? " (" + apiBase() + ")" : ""}.</p>`;
+    console.error(e);
+  });
+}
+if (location.protocol === "file:" && !apiBase()) {
+  alert("Bienvenido a SCAVENGER.\n\nConfigura la URL del servidor para comenzar.");
+  setApiBase();
+} else { startApp(); }

@@ -99,10 +99,14 @@ def _portion_grams(food, role: str, target: dict) -> float:
 def _candidate(food, role: str, target: dict, price_per_g: float, retailer: str) -> dict:
     g = _portion_grams(food, role, target)
     scale = g / 100.0
+    pkg = float(food.package_g or 0)
     return {
         "food_id": food.id, "name": food.name, "brand": food.brand, "category": food.category,
         "role": role, "retailer": retailer, "grams": g,
         "servings": round(g / food.serving_g, 2) if food.serving_g else 0.0,
+        # Cuantos platos rinde el envase recomendado a esta porcion.
+        "package_g": pkg,
+        "platos_por_envase": int(pkg // g) if g > 0 and pkg > 0 else 0,
         "cost_clp": round(price_per_g * g, 1),
         "kcal": round(food.kcal * scale, 1), "protein_g": round(food.protein_g * scale, 1),
         "carb_g": round(food.carb_g * scale, 1), "fat_g": round(food.fat_g * scale, 1),
