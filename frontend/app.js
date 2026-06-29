@@ -209,7 +209,7 @@ async function openPlanDetail(id) {
 }
 
 // ===================== RULETA =====================
-let builderData = null, reelIdx = {}, reelLocked = {}, reelRemoved = {}, reelSort = {}, dayMeals = [];
+let builderData = null, reelIdx = {}, reelLocked = {}, reelRemoved = {}, reelSort = {}, reelOrigin = {}, dayMeals = [];
 
 async function loadReels() {
   if (!currentUserId) { $("#reels").innerHTML = '<p class="hint">Crea un perfil primero.</p>'; return; }
@@ -219,16 +219,29 @@ async function loadReels() {
       method: "POST", body: JSON.stringify({ user_id: currentUserId, meal: $("#builderMeal").value }),
     });
   } catch (e) { $("#builderStatus").textContent = "Error: " + e.message; return; }
-  reelIdx = {}; reelLocked = {}; reelRemoved = {}; reelSort = {};
-  builderData.slots.forEach((s) => { reelIdx[s.role] = 0; reelLocked[s.role] = false; reelRemoved[s.role] = false; reelSort[s.role] = "price"; });
+  reelIdx = {}; reelLocked = {}; reelRemoved = {}; reelSort = {}; reelOrigin = {};
+  builderData.slots.forEach((s) => { reelIdx[s.role] = 0; reelLocked[s.role] = false; reelRemoved[s.role] = false; reelSort[s.role] = "price"; reelOrigin[s.role] = ""; });
   $("#builderStatus").textContent = "";
   renderReels();
 }
 function sortedCandidates(slot) {
-  const arr = [...slot.candidates];
+  let arr = slot.candidates;
+  const o = reelOrigin[slot.role];                                            // 1er filtro: origen
+  if (o) { const f = arr.filter((c) => c.origin === o); if (f.length) arr = f; }
+  arr = [...arr];
   if (reelSort[slot.role] === "kcal") arr.sort((a, b) => a.kcal - b.kcal);     // densidad calórica (kcal/porción) asc
   else arr.sort((a, b) => a.cost_clp - b.cost_clp);                            // precio ($/porción) asc
   return arr;
+}
+function setOrigin(role, origin) {
+  const slot = builderData.slots.find((s) => s.role === role);
+  const curArr = sortedCandidates(slot);
+  const cur = curArr.length ? curArr[reelIdx[role] % curArr.length] : null;
+  reelOrigin[role] = origin;
+  const arr = sortedCandidates(slot);
+  const i = cur ? arr.findIndex((c) => c.food_id === cur.food_id) : -1;
+  reelIdx[role] = i >= 0 ? i : 0;
+  renderReels();
 }
 function reelSelection() {
   if (!builderData) return [];
@@ -239,18 +252,21 @@ function reelSelection() {
 function setSort(role, crit) {
   if (reelSort[role] === crit) return;
   const slot = builderData.slots.find((s) => s.role === role);
-  const cur = sortedCandidates(slot)[reelIdx[role] % slot.candidates.length]; // recordar selección
+  const curArr = sortedCandidates(slot);
+  const cur = curArr.length ? curArr[reelIdx[role] % curArr.length] : null;    // recordar selección
   reelSort[role] = crit;
-  const i = sortedCandidates(slot).findIndex((c) => c.food_id === cur.food_id);
+  const arr = sortedCandidates(slot);
+  const i = cur ? arr.findIndex((c) => c.food_id === cur.food_id) : -1;
   reelIdx[role] = i >= 0 ? i : 0;
   renderReels();
 }
 function renderReels() {
   if (!builderData) return;
   $("#reels").innerHTML = builderData.slots.map((s) => {
-    const n = s.candidates.length;
+    const hasAny = s.candidates.length;
     const removed = reelRemoved[s.role];
     const arr = sortedCandidates(s);
+    const n = arr.length;
     const c = n ? arr[reelIdx[s.role] % n] : null;
     const win = removed
       ? `<div class="window removed">Grupo quitado<br><small>toca ＋ para incluir</small></div>`
@@ -265,24 +281,33 @@ function renderReels() {
              <div class="cost">${clp(c.cost_clp)}</div>
            </div>`
         : `<div class="window empty">— sin opciones —</div>`);
-    const dis = n && !removed ? "" : "disabled";
+    const off = !hasAny || removed ? "disabled" : "";
+    const origins = [...new Set(s.candidates.map((x) => x.origin))].sort();
+    const originSel = origins.length > 1
+      ? `<select class="originsel" data-role="${s.role}" ${off}>
+           <option value="">Origen: todos</option>
+           ${origins.map((o) => `<option value="${o}" ${reelOrigin[s.role] === o ? "selected" : ""}>${o}</option>`).join("")}
+         </select>`
+      : "";
     return `<div class="reel ${reelLocked[s.role] ? "locked" : ""} ${removed ? "removed" : ""}">
       <div class="role">${s.label}
-        <button class="lockbtn" data-lock="${s.role}" ${dis}>${reelLocked[s.role] ? "🔒" : "🔓"}</button>
+        <button class="lockbtn" data-lock="${s.role}" ${off}>${reelLocked[s.role] ? "🔒" : "🔓"}</button>
         <button class="rmbtn" data-rm="${s.role}" title="Quitar/incluir grupo">${removed ? "＋" : "✕"}</button>
       </div>
+      ${originSel}
       <div class="sortrow">
-        <button class="sortbtn ${reelSort[s.role] === "price" ? "on" : ""}" data-sort="price" data-role="${s.role}" ${dis}>$/porción</button>
-        <button class="sortbtn ${reelSort[s.role] === "kcal" ? "on" : ""}" data-sort="kcal" data-role="${s.role}" ${dis}>kcal/porción</button>
+        <button class="sortbtn ${reelSort[s.role] === "price" ? "on" : ""}" data-sort="price" data-role="${s.role}" ${off}>$/porción</button>
+        <button class="sortbtn ${reelSort[s.role] === "kcal" ? "on" : ""}" data-sort="kcal" data-role="${s.role}" ${off}>kcal/porción</button>
       </div>
-      <button class="tri up" data-dir="-1" data-role="${s.role}" ${dis}></button>
+      <button class="tri up" data-dir="-1" data-role="${s.role}" ${off}></button>
       ${win}
-      <button class="tri down" data-dir="1" data-role="${s.role}" ${dis}></button>
+      <button class="tri down" data-dir="1" data-role="${s.role}" ${off}></button>
       <span class="counter">${removed ? "—" : (n ? (reelIdx[s.role] % n) + 1 : 0) + "/" + n}</span>
     </div>`;
   }).join("");
   $$("#reels .tri").forEach((b) => b.addEventListener("click", () => {
-    const role = b.dataset.role, n = builderData.slots.find((s) => s.role === role).candidates.length;
+    const role = b.dataset.role;
+    const n = sortedCandidates(builderData.slots.find((s) => s.role === role)).length;
     if (!n) return;
     reelIdx[role] = (reelIdx[role] + +b.dataset.dir + n) % n;
     renderReels();
@@ -290,6 +315,7 @@ function renderReels() {
   $$("#reels .lockbtn").forEach((b) => b.addEventListener("click", () => { reelLocked[b.dataset.lock] = !reelLocked[b.dataset.lock]; renderReels(); }));
   $$("#reels .rmbtn").forEach((b) => b.addEventListener("click", () => { reelRemoved[b.dataset.rm] = !reelRemoved[b.dataset.rm]; renderReels(); }));
   $$("#reels .sortbtn").forEach((b) => b.addEventListener("click", () => setSort(b.dataset.role, b.dataset.sort)));
+  $$("#reels .originsel").forEach((sel) => sel.addEventListener("change", () => setOrigin(sel.dataset.role, sel.value)));
   renderControl();
 }
 function renderControl() {
