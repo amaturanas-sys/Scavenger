@@ -82,3 +82,22 @@ def test_service_budget_modes_and_flags():
     # El presupuesto seleccionado puede sobrescribir al del perfil.
     custom = generate_daily_plan(db, u, budget_mode="min_cost", budget_clp=3000)
     assert custom["budget_clp"] == 3000
+
+
+def test_low_budget_fallback_minimizes_cost_not_satiety():
+    """B2: con presupuesto imposible, el último recurso minimiza costo aunque el
+    modo sea 'target' (saciedad); no debe maximizar saciedad sin techo."""
+    inputs = _inputs()
+    req = compute_requirements("M", 30, 80, 180, "moderado", "mantener")
+    tiny = 1.0  # 1 peso: imposible cumplir kcal -> fuerza el último recurso (sin tope)
+
+    target_low = optimize(inputs, req, opts=OptimizeOptions(max_budget_clp=tiny, objective="satiety"))
+    cost_low = optimize(inputs, req, opts=OptimizeOptions(max_budget_clp=tiny, objective="cost"))
+    # Comportamiento viejo del fallback: maximizar saciedad SIN techo (mucho más caro).
+    unbounded_sat = optimize(inputs, req, opts=OptimizeOptions(max_budget_clp=None, objective="satiety"))
+
+    assert target_low.feasible and cost_low.feasible
+    # Al soltar el tope, 'target' cae a minimizar costo: cuesta lo mismo que min_cost.
+    assert abs(target_low.totals["cost_clp"] - cost_low.totals["cost_clp"]) <= 1.0
+    # ...y mucho menos que maximizar saciedad sin techo (el bug que se corrige).
+    assert target_low.totals["cost_clp"] < unbounded_sat.totals["cost_clp"]
