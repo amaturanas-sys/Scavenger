@@ -64,5 +64,5 @@ def random(req: BuilderRequest, db: Session = Depends(get_db)):
 def summary(req: SummaryRequest, db: Session = Depends(get_db)):
     """Suma de una selección y su ajuste contra la meta de la comida."""
     user = _get_user(db, req.user_id)
-    target = meal_target(user_requirements(user), req.meal)
+    target = meal_target(user_requirements(user), req.meal, getattr(user, "min_protein_per_meal_g", 0.0))
     return {"meal": req.meal, "target": target, **summarize(req.items, target)}

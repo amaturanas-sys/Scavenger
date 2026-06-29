@@ -16,6 +16,9 @@ class UserBase(BaseModel):
     activity_level: str = "moderado"
     goal: str = "mantener"
     daily_budget_clp: float = Field(4000, ge=0)
+    monthly_budget_clp: float = Field(0, ge=0, description="Si > 0, manda sobre el diario (mensual/30)")
+    meals_per_day: int = Field(4, ge=1, le=8)
+    min_protein_per_meal_g: float = Field(0, ge=0, description="Proteína mínima por plato")
     diet_tags: list[str] = []
     excluded_foods: list[str] = []
     preferred_retailers: list[str] = []
@@ -34,6 +37,9 @@ class UserUpdate(BaseModel):
     activity_level: str | None = None
     goal: str | None = None
     daily_budget_clp: float | None = None
+    monthly_budget_clp: float | None = None
+    meals_per_day: int | None = None
+    min_protein_per_meal_g: float | None = None
     diet_tags: list[str] | None = None
     excluded_foods: list[str] | None = None
     preferred_retailers: list[str] | None = None

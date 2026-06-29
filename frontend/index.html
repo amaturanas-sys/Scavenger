@@ -4,16 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SCAVENGER · Meal prep costo-efectivo</title>
-  <link rel="icon" type="image/png" href="favicon.png?v=4" />
-  <link rel="apple-touch-icon" href="logo-icon.png?v=4" />
+  <link rel="icon" type="image/png" href="favicon.png?v=5" />
+  <link rel="apple-touch-icon" href="logo-icon.png?v=5" />
   <meta name="theme-color" content="#0c0c0e" />
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
   <!-- Cabecera: navegación entre pantallas (◀ logo ▶) -->
   <header class="topbar">
     <button class="navarrow" id="prevScreen" aria-label="Pantalla anterior">&#10094;</button>
-    <img class="logo" src="logo.png?v=4" alt="SCAVENGER" id="homeLogo" />
+    <img class="logo" src="logo.png?v=5" alt="SCAVENGER" id="homeLogo" />
     <button class="navarrow" id="nextScreen" aria-label="Pantalla siguiente">&#10095;</button>
   </header>
 
@@ -124,16 +124,21 @@
             </label>
           </div>
           <div class="two">
-            <label>Presupuesto diario (CLP) <input name="daily_budget_clp" type="number" value="4000" step="100" /></label>
-            <label>Dieta
-              <select name="diet_tags">
-                <option value="">Sin restricción</option>
-                <option value="vegetariano">Vegetariano</option>
-                <option value="vegano">Vegano</option>
-                <option value="sin_gluten">Sin gluten</option>
-              </select>
-            </label>
+            <label>Comidas al día <input name="meals_per_day" type="number" min="1" max="8" value="4" /></label>
+            <label>Proteína mín./plato (g) <input name="min_protein_per_meal_g" type="number" min="0" step="1" value="0" /></label>
           </div>
+          <div class="two">
+            <label>Presupuesto mensual (CLP) <input name="monthly_budget_clp" type="number" min="0" step="1000" value="0" /></label>
+            <label>Presupuesto diario (CLP) <input name="daily_budget_clp" type="number" value="4000" step="100" /></label>
+          </div>
+          <label>Dieta
+            <select name="diet_tags">
+              <option value="">Sin restricción</option>
+              <option value="vegetariano">Vegetariano</option>
+              <option value="vegano">Vegano</option>
+              <option value="sin_gluten">Sin gluten</option>
+            </select>
+          </label>
           <fieldset class="retailers-field">
             <legend>Supermercados cercanos</legend>
             <div id="retailerChecks" class="retailer-checks"></div>
@@ -167,7 +172,7 @@
     <div class="overlay-body" id="overlayBody"></div>
   </div>
 
-  <script src="config.js?v=4"></script>
-  <script src="app.js?v=4"></script>
+  <script src="config.js?v=5"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>
