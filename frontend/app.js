@@ -374,6 +374,7 @@ const dateKey = (d) => d.slice(0, 10);
 const MEAL_PRIORITY = ["desayuno", "almuerzo", "cena", "snack 1", "snack 2", "snack 3", "cena 2", "desayuno 2"];
 // Lunes=0 ... domingo=6 (igual que el backend) a partir de una fecha YYYY-MM-DD.
 function weekdayOf(k) { return (new Date(k + "T12:00:00").getDay() + 6) % 7; }
+function fmtKey(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 const PRESET_WEEKDAYS = { "L-V": [0,1,2,3,4], "finde": [5,6], "todos": [0,1,2,3,4,5,6] };
 function presetMatches(preset, wd) { return (PRESET_WEEKDAYS[preset] || PRESET_WEEKDAYS["todos"]).includes(wd); }
 function planDate(p) { return (p.payload && p.payload.date) || (p.created_at ? dateKey(p.created_at) : null); }
@@ -689,11 +690,32 @@ function renderWeekly(data) {
   $("#shopBtn").addEventListener("click", () => showShoppingForPayload(data));
 }
 async function savePlan(scope, payload) {
-  const title = prompt("Nombre de la minuta:", scope === "semanal" ? "Semana" : "Día " + new Date().toLocaleDateString("es-CL"));
+  if (scope === "semanal") return saveWeekly(payload);
+  const title = prompt("Nombre de la minuta:", "Día " + new Date().toLocaleDateString("es-CL"));
   if (title === null) return;
-  const toSave = scope === "semanal" ? { ...payload, totals: { cost_clp: payload.weekly_cost_clp, kcal: payload.requirements.kcal, satiety: 0 } } : payload;
-  await api("/api/plans", { method: "POST", body: JSON.stringify({ user_id: currentUserId, title, scope, payload: toSave }) });
+  await api("/api/plans", { method: "POST", body: JSON.stringify({ user_id: currentUserId, title, scope, payload }) });
   $("#genStatus").textContent = "✓ Guardada (mírala en el Calendario).";
+}
+// Expande una minuta semanal en 7 jornadas diarias consecutivas desde hoy, cada
+// una con su fecha (payload.date), para que se vean y se abran en el calendario.
+async function saveWeekly(payload) {
+  const days = payload.days || [];
+  if (!days.length) { $("#genStatus").textContent = "Semana vacía."; return; }
+  const start = new Date(); start.setHours(12, 0, 0, 0);
+  try {
+    for (let i = 0; i < days.length; i++) {
+      const dt = new Date(start); dt.setDate(start.getDate() + i);
+      const k = fmtKey(dt);
+      const dp = days[i].plan || {};
+      const meals = (dp.meals || []).map((m) => ({ meal: m.meal, items: m.items, subtotal: m.subtotal }));
+      await api("/api/plans", { method: "POST", body: JSON.stringify({
+        user_id: currentUserId, title: `${DOW_FULL[weekdayOf(k)]} ${k}`, scope: "diario",
+        payload: { date: k, meals, totals: dp.totals || {} } }) });
+    }
+  } catch (e) { $("#genStatus").textContent = "Error al guardar la semana: " + e.message; return; }
+  const endDt = new Date(start); endDt.setDate(start.getDate() + days.length - 1);
+  $("#genStatus").textContent = `✓ Semana guardada (${fmtKey(start)} → ${fmtKey(endDt)}). Cada día está en el calendario.`;
+  await loadCalendarData();
 }
 function shoppingHtml(d) {
   if (!d.retailers || !d.retailers.length) return '<p class="muted">Sin productos.</p>';
