@@ -227,15 +227,24 @@ def optimize(
     if not foods:
         return OptimizeResult(False, "Sin alimentos disponibles", warnings=["No hay alimentos que cumplan los filtros."])
 
-    # Etapas de relajacion progresiva ante infactibilidad.
+    # Etapas de relajacion progresiva ante infactibilidad. El presupuesto es un
+    # tope DURO ("sin pasarse") en los modos con tope, asi que se mantiene lo
+    # mas posible: primero se relajan micronutrientes/fibra/banda calorica
+    # conservando el tope, y solo como ULTIMO recurso se suelta.
+    _very_relaxed = {"micro_floor_ratio": 0.0, "fiber_floor_ratio": 0.0,
+                     "kcal_tolerance": max(opts.kcal_tolerance, 0.12),
+                     "carb_band": (0.3, 1.6), "fat_band": (0.4, 1.7)}
     relax_stages = [
         opts,
         OptimizeOptions(**{**opts.__dict__, "micro_floor_ratio": opts.micro_floor_ratio * 0.5}),
         OptimizeOptions(**{**opts.__dict__, "micro_floor_ratio": 0.0, "fiber_floor_ratio": opts.fiber_floor_ratio * 0.5}),
-        OptimizeOptions(**{**opts.__dict__, "micro_floor_ratio": 0.0, "fiber_floor_ratio": 0.0,
-                           "kcal_tolerance": max(opts.kcal_tolerance, 0.12),
-                           "carb_band": (0.3, 1.6), "fat_band": (0.4, 1.7),
-                           "max_budget_clp": None}),
+        # Nutricion muy relajada pero AUN dentro del presupuesto (respeta el tope).
+        OptimizeOptions(**{**opts.__dict__, **_very_relaxed}),
+        # Ultimo recurso: si ni asi cabe, se suelta el tope y se MINIMIZA el costo
+        # (objective="cost") para entregar la opcion mas economica posible, no una
+        # que maximice saciedad sin techo. Se marca over_budget mas abajo.
+        OptimizeOptions(**{**opts.__dict__, **_very_relaxed,
+                           "max_budget_clp": None, "objective": "cost"}),
     ]
 
     status, solution, used = "Infeasible", {}, opts
