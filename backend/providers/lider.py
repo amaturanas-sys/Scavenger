@@ -30,7 +30,7 @@ import os
 from urllib.parse import quote
 
 from .base import FoodProvider, FoodRecord
-from .vtex import BROWSER_UA, browser_headers, parse_package_grams
+from .vtex import BROWSER_UA, browser_headers, is_non_edible, parse_package_grams
 
 # Claves candidatas para cada campo (se usa la primera presente).
 _NAME_KEYS = ("displayName", "name", "productName", "title", "description")
@@ -117,7 +117,7 @@ def _map_product(raw: dict) -> dict | None:
     """Normaliza un producto del BFF de Lider al formato interno."""
     name = str(_first(raw, _NAME_KEYS))
     price = _deep_price(raw)
-    if not name or price <= 0:
+    if not name or price <= 0 or is_non_edible(name):
         return None
 
     # Disponibilidad: tolera flags como False, 0, "false"/"no" (JSON variado).
