@@ -4,16 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SCAVENGER · Meal prep costo-efectivo</title>
-  <link rel="icon" type="image/png" href="favicon.png?v=2" />
-  <link rel="apple-touch-icon" href="logo-icon.png?v=2" />
+  <link rel="icon" type="image/png" href="favicon.png?v=3" />
+  <link rel="apple-touch-icon" href="logo-icon.png?v=3" />
   <meta name="theme-color" content="#0c0c0e" />
-  <link rel="stylesheet" href="styles.css?v=2" />
+  <link rel="stylesheet" href="styles.css?v=3" />
 </head>
 <body>
   <!-- Cabecera: navegación entre pantallas (◀ logo ▶) -->
   <header class="topbar">
     <button class="navarrow" id="prevScreen" aria-label="Pantalla anterior">&#10094;</button>
-    <img class="logo" src="logo.png?v=2" alt="SCAVENGER" id="homeLogo" />
+    <img class="logo" src="logo.png?v=3" alt="SCAVENGER" id="homeLogo" />
     <button class="navarrow" id="nextScreen" aria-label="Pantalla siguiente">&#10095;</button>
   </header>
 
@@ -29,16 +29,20 @@
   </div>
 
   <main id="deck">
-    <!-- ===================== PANTALLA 0 · HOME / CALENDARIO ===================== -->
+    <!-- ===================== PANTALLA 0 · HOME / LANDING ===================== -->
     <section class="screen active" data-screen="home">
-      <div class="cal-head">
-        <button class="iconbtn" id="calPrev" aria-label="Mes anterior">&#10094;</button>
-        <h2 id="calTitle">—</h2>
-        <button class="iconbtn" id="calNext" aria-label="Mes siguiente">&#10095;</button>
-      </div>
-      <div class="cal-grid" id="calGrid"></div>
-      <div class="cal-day" id="calDay">
-        <p class="hint">Toca un día para ver sus minutas. Las que armes o generes se guardan con su fecha.</p>
+      <div class="landing">
+        <p class="welcome" id="welcome">Hola 🦝</p>
+        <p class="hint" id="welcomeSub">Arma comidas, planifica tu semana y compra al mejor precio.</p>
+        <div class="hub-grid">
+          <button class="hub-btn" data-act="ruleta"><span>🎰</span>Armar comida</button>
+          <button class="hub-btn" data-act="calendario"><span>📅</span>Calendario</button>
+          <button class="hub-btn" data-act="perfil"><span>👤</span>Perfil</button>
+          <button class="hub-btn" data-act="generar"><span>🧮</span>Generar minuta</button>
+          <button class="hub-btn" data-act="minutas"><span>📋</span>Mis minutas</button>
+          <button class="hub-btn" data-act="catalogo"><span>🏷️</span>Catálogo</button>
+          <button class="hub-btn wide" data-act="nuevo"><span>➕</span>Crear nuevo usuario</button>
+        </div>
       </div>
     </section>
 
@@ -163,7 +167,7 @@
     <div class="overlay-body" id="overlayBody"></div>
   </div>
 
-  <script src="config.js?v=2"></script>
-  <script src="app.js?v=2"></script>
+  <script src="config.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

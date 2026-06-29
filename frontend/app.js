@@ -1,5 +1,5 @@
 // SCAVENGER · frontend móvil (vanilla JS)
-// Tres pantallas (carrusel): Inicio·calendario, Ruleta, Perfil + menú secundario.
+// Landing + carrusel (Home, Ruleta, Perfil) + vistas secundarias en overlay.
 function apiBase() {
   return (localStorage.getItem("scavenger_api_base") || window.SCAVENGER_API_BASE || "").replace(/\/+$/, "");
 }
@@ -31,7 +31,7 @@ function showScreen(i) {
   screenIdx = (i + SCREENS.length) % SCREENS.length;
   $$(".screen").forEach((s) => s.classList.toggle("active", s.dataset.screen === SCREENS[screenIdx]));
   $$("#dots span").forEach((d, k) => d.classList.toggle("on", k === screenIdx));
-  if (SCREENS[screenIdx] === "home") loadCalendar();
+  if (SCREENS[screenIdx] === "home") renderLanding();
   if (SCREENS[screenIdx] === "ruleta") loadReels();
   if (SCREENS[screenIdx] === "perfil") loadRequirements();
 }
@@ -39,6 +39,29 @@ $("#prevScreen").addEventListener("click", () => showScreen(screenIdx - 1));
 $("#nextScreen").addEventListener("click", () => showScreen(screenIdx + 1));
 $("#homeLogo").addEventListener("click", () => showScreen(0));
 $$("#dots span").forEach((d) => d.addEventListener("click", () => showScreen(+d.dataset.go)));
+
+// ===================== LANDING =====================
+function renderLanding() {
+  const sel = $("#userSelect");
+  const name = sel && sel.selectedOptions.length ? sel.selectedOptions[0].textContent.split(" #")[0] : "";
+  if (currentUserId && name) {
+    $("#welcome").textContent = `Hola, ${name} 🦝`;
+    $("#welcomeSub").textContent = "Arma comidas, planifica tu semana y compra al mejor precio.";
+  } else {
+    $("#welcome").textContent = "Bienvenido a SCAVENGER 🦝";
+    $("#welcomeSub").textContent = "Crea tu perfil para recibir recomendaciones a tu medida.";
+  }
+}
+$$(".hub-btn").forEach((b) => b.addEventListener("click", () => {
+  const a = b.dataset.act;
+  if (a === "ruleta") showScreen(1);
+  else if (a === "perfil") showScreen(2);
+  else if (a === "calendario") openCalendar();
+  else if (a === "generar") openGenerar();
+  else if (a === "minutas") openMinutas();
+  else if (a === "catalogo") openCatalogo();
+  else if (a === "nuevo") newUser();
+}));
 
 // ===================== USUARIOS / PERFIL =====================
 async function loadUsers() {
@@ -74,16 +97,19 @@ async function loadRetailers() {
 function selectedRetailers() {
   return [...$$("#retailerChecks input:checked")].map((c) => c.value);
 }
+function newUser() {
+  currentUserId = null;
+  $("#userForm").reset();
+  $("#userStatus").textContent = "Nuevo perfil — completa tus datos y guarda.";
+  showScreen(2);
+  setTimeout(() => $("#userForm").name.focus(), 200);
+}
 $("#userSelect").addEventListener("change", async (e) => {
   currentUserId = parseInt(e.target.value);
   fillForm(await api(`/api/users/${currentUserId}`));
   loadRequirements();
 });
-$("#newUserBtn").addEventListener("click", () => {
-  currentUserId = null;
-  $("#userForm").reset();
-  $("#userStatus").textContent = "Nuevo perfil — completa y guarda.";
-});
+$("#newUserBtn").addEventListener("click", newUser);
 $("#userForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const f = e.target;
@@ -105,7 +131,6 @@ $("#userForm").addEventListener("submit", async (e) => {
   loadRequirements();
 });
 
-// Objetivos calculados (tarjeta superior del perfil)
 async function loadRequirements() {
   if (!currentUserId) return;
   const r = await api(`/api/users/${currentUserId}/requirements`);
@@ -116,65 +141,60 @@ async function loadRequirements() {
   $("#tEco").textContent = clp((u.daily_budget_clp || 0) * 30);
 }
 
-// ===================== HOME / CALENDARIO =====================
-let calRef = null;           // primer día del mes mostrado
-let plansByDate = {};        // "YYYY-MM-DD" -> [plans]
+// ===================== CALENDARIO (overlay) =====================
+let calRef = null, plansByDate = {};
 const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const DOW = ["L","M","M","J","V","S","D"];
+const dateKey = (d) => d.slice(0, 10);
 
-function dateKey(d) { return d.slice(0, 10); }
-async function loadCalendar() {
-  if (!currentUserId) { $("#calGrid").innerHTML = '<p class="hint" style="grid-column:1/8">Crea un perfil primero.</p>'; return; }
-  const plans = await api(`/api/plans?user_id=${currentUserId}`);
+function openCalendar() {
+  openOverlay("Calendario", `
+    <div class="cal-head"><button class="iconbtn" id="calPrev">&#10094;</button><h2 id="calTitle">—</h2><button class="iconbtn" id="calNext">&#10095;</button></div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-day" id="calDay"><p class="hint">Toca un día para ver sus minutas.</p></div>`);
+  if (!calRef) { const n = new Date(); calRef = new Date(n.getFullYear(), n.getMonth(), 1); }
+  $("#calPrev").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() - 1); renderCalendar(); });
+  $("#calNext").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() + 1); renderCalendar(); });
+  loadCalendarData().then(renderCalendar);
+}
+async function loadCalendarData() {
   plansByDate = {};
+  if (!currentUserId) return;
+  const plans = await api(`/api/plans?user_id=${currentUserId}`);
   plans.forEach((p) => {
     const k = p.created_at ? dateKey(p.created_at) : null;
     if (k) (plansByDate[k] = plansByDate[k] || []).push(p);
   });
-  if (!calRef) { const n = new Date(); calRef = new Date(n.getFullYear(), n.getMonth(), 1); }
-  renderCalendar();
 }
 function renderCalendar() {
+  if (!$("#calGrid")) return;
   const y = calRef.getFullYear(), m = calRef.getMonth();
   $("#calTitle").textContent = `${MONTHS[m]} ${y}`;
-  const first = new Date(y, m, 1);
-  let startDow = (first.getDay() + 6) % 7; // lunes=0
+  const startDow = (new Date(y, m, 1).getDay() + 6) % 7;
   const days = new Date(y, m + 1, 0).getDate();
   const todayK = dateKey(new Date().toISOString());
   let html = DOW.map((d) => `<div class="cal-dow">${d}</div>`).join("");
   for (let i = 0; i < startDow; i++) html += `<div class="cal-cell empty"></div>`;
   for (let d = 1; d <= days; d++) {
     const k = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    const has = plansByDate[k] ? "has" : "";
-    const today = k === todayK ? "today" : "";
-    html += `<div class="cal-cell ${has} ${today}" data-k="${k}" data-d="${d}">${d}</div>`;
+    html += `<div class="cal-cell ${plansByDate[k] ? "has" : ""} ${k === todayK ? "today" : ""}" data-k="${k}">${d}</div>`;
   }
   $("#calGrid").innerHTML = html;
-  $$("#calGrid .cal-cell[data-k]").forEach((c) =>
-    c.addEventListener("click", () => selectDay(c.dataset.k)));
+  $$("#calGrid .cal-cell[data-k]").forEach((c) => c.addEventListener("click", () => selectDay(c.dataset.k)));
 }
-$("#calPrev").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() - 1); renderCalendar(); });
-$("#calNext").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() + 1); renderCalendar(); });
-
 function selectDay(k) {
   $$("#calGrid .cal-cell").forEach((c) => c.classList.toggle("sel", c.dataset.k === k));
   const plans = plansByDate[k] || [];
-  if (!plans.length) {
-    $("#calDay").innerHTML = `<p class="hint">Sin minutas el ${k}. Arma una en la Ruleta 🎰 y guárdala.</p>`;
-    return;
-  }
+  if (!plans.length) { $("#calDay").innerHTML = `<p class="hint">Sin minutas el ${k}. Arma una en la Ruleta 🎰.</p>`; return; }
   $("#calDay").innerHTML = `<h3 style="font-size:15px">Minutas · ${k}</h3>` + plans.map((p) =>
-    `<div class="daycard" data-plan="${p.id}">
-       <div class="top"><strong>${p.title}</strong>
-         <span class="muted">${num(p.total_kcal)} kcal · ${clp(p.total_cost_clp)}</span></div>
-     </div>`).join("");
-  $$("#calDay .daycard").forEach((c) =>
-    c.addEventListener("click", () => openPlanDetail(+c.dataset.plan)));
+    `<div class="daycard" data-plan="${p.id}"><div class="top"><strong>${p.title}</strong>
+       <span class="muted">${num(p.total_kcal)} kcal · ${clp(p.total_cost_clp)}</span></div></div>`).join("");
+  $$("#calDay .daycard").forEach((c) => c.addEventListener("click", () => openPlanDetail(+c.dataset.plan)));
 }
 async function openPlanDetail(id) {
   const p = await api(`/api/plans/${id}`);
-  let html = `<div class="totbar"><div class="pill">${p.scope}</div>
-    <div class="pill">${num(p.total_kcal)} kcal</div><div class="pill">${clp(p.total_cost_clp)}</div></div>`;
+  let html = `<button class="btn-sm" id="backCal">&#10094; Volver al calendario</button>
+    <div class="totbar"><div class="pill">${p.scope}</div><div class="pill">${num(p.total_kcal)} kcal</div><div class="pill">${clp(p.total_cost_clp)}</div></div>`;
   (p.payload.meals || []).forEach((m) => {
     html += `<div class="meal"><h3 style="text-transform:capitalize">${m.meal}
       <span>${num((m.subtotal || {}).kcal)} kcal · ${clp((m.subtotal || {}).cost_clp)}</span></h3>
@@ -182,13 +202,14 @@ async function openPlanDetail(id) {
   });
   html += `<button class="btn-sm" id="delPlan">🗑️ Eliminar</button>`;
   openOverlay(p.title, html);
+  $("#backCal").addEventListener("click", openCalendar);
   $("#delPlan").addEventListener("click", async () => {
-    if (confirm("¿Eliminar esta minuta?")) { await api(`/api/plans/${id}`, { method: "DELETE" }); closeOverlay(); loadCalendar(); }
+    if (confirm("¿Eliminar esta minuta?")) { await api(`/api/plans/${id}`, { method: "DELETE" }); openCalendar(); }
   });
 }
 
 // ===================== RULETA =====================
-let builderData = null, reelIdx = {}, reelLocked = {}, dayMeals = [];
+let builderData = null, reelIdx = {}, reelLocked = {}, reelRemoved = {}, reelSort = {}, dayMeals = [];
 
 async function loadReels() {
   if (!currentUserId) { $("#reels").innerHTML = '<p class="hint">Crea un perfil primero.</p>'; return; }
@@ -198,40 +219,66 @@ async function loadReels() {
       method: "POST", body: JSON.stringify({ user_id: currentUserId, meal: $("#builderMeal").value }),
     });
   } catch (e) { $("#builderStatus").textContent = "Error: " + e.message; return; }
-  reelIdx = {}; reelLocked = {};
-  builderData.slots.forEach((s) => { reelIdx[s.role] = 0; reelLocked[s.role] = false; });
+  reelIdx = {}; reelLocked = {}; reelRemoved = {}; reelSort = {};
+  builderData.slots.forEach((s) => { reelIdx[s.role] = 0; reelLocked[s.role] = false; reelRemoved[s.role] = false; reelSort[s.role] = "price"; });
   $("#builderStatus").textContent = "";
   renderReels();
 }
+function sortedCandidates(slot) {
+  const arr = [...slot.candidates];
+  if (reelSort[slot.role] === "kcal") arr.sort((a, b) => a.kcal - b.kcal);     // densidad calórica (kcal/porción) asc
+  else arr.sort((a, b) => a.cost_clp - b.cost_clp);                            // precio ($/porción) asc
+  return arr;
+}
 function reelSelection() {
   if (!builderData) return [];
-  return builderData.slots.filter((s) => s.candidates.length)
-    .map((s) => s.candidates[reelIdx[s.role] % s.candidates.length]);
+  return builderData.slots
+    .filter((s) => !reelRemoved[s.role] && s.candidates.length)
+    .map((s) => { const arr = sortedCandidates(s); return arr[reelIdx[s.role] % arr.length]; });
+}
+function setSort(role, crit) {
+  if (reelSort[role] === crit) return;
+  const slot = builderData.slots.find((s) => s.role === role);
+  const cur = sortedCandidates(slot)[reelIdx[role] % slot.candidates.length]; // recordar selección
+  reelSort[role] = crit;
+  const i = sortedCandidates(slot).findIndex((c) => c.food_id === cur.food_id);
+  reelIdx[role] = i >= 0 ? i : 0;
+  renderReels();
 }
 function renderReels() {
   if (!builderData) return;
   $("#reels").innerHTML = builderData.slots.map((s) => {
     const n = s.candidates.length;
-    const c = n ? s.candidates[reelIdx[s.role] % n] : null;
-    const win = c
-      ? `<div class="window">
-           <div class="nm">${c.name}</div>
-           ${c.brand ? `<div class="brand">${c.brand}</div>` : ""}
-           <div class="gr">${num(c.grams)} g</div>
-           <div class="mc">${num(c.kcal)} kcal · P${num(c.protein_g, 0)} C${num(c.carb_g, 0)} G${num(c.fat_g, 0)}</div>
-           <span class="shop">${c.retailer}</span>
-           ${c.platos_por_envase ? `<div class="platos">≈ ${c.platos_por_envase} platos/envase</div>` : ""}
-           <div class="cost">${clp(c.cost_clp)}</div>
-         </div>`
-      : `<div class="window empty">— sin opciones —</div>`;
-    return `<div class="reel ${reelLocked[s.role] ? "locked" : ""}">
+    const removed = reelRemoved[s.role];
+    const arr = sortedCandidates(s);
+    const c = n ? arr[reelIdx[s.role] % n] : null;
+    const win = removed
+      ? `<div class="window removed">Grupo quitado<br><small>toca ＋ para incluir</small></div>`
+      : (c
+        ? `<div class="window">
+             <div class="nm">${c.name}</div>
+             ${c.brand ? `<div class="brand">${c.brand}</div>` : ""}
+             <div class="gr">${num(c.grams)} g</div>
+             <div class="mc">${num(c.kcal)} kcal · P${num(c.protein_g, 0)} C${num(c.carb_g, 0)} G${num(c.fat_g, 0)}</div>
+             <span class="shop">${c.retailer}</span>
+             ${c.platos_por_envase ? `<div class="platos">≈ ${c.platos_por_envase} platos/envase</div>` : ""}
+             <div class="cost">${clp(c.cost_clp)}</div>
+           </div>`
+        : `<div class="window empty">— sin opciones —</div>`);
+    const dis = n && !removed ? "" : "disabled";
+    return `<div class="reel ${reelLocked[s.role] ? "locked" : ""} ${removed ? "removed" : ""}">
       <div class="role">${s.label}
-        <button class="lockbtn" data-lock="${s.role}" ${n ? "" : "disabled"}>${reelLocked[s.role] ? "🔒" : "🔓"}</button>
+        <button class="lockbtn" data-lock="${s.role}" ${dis}>${reelLocked[s.role] ? "🔒" : "🔓"}</button>
+        <button class="rmbtn" data-rm="${s.role}" title="Quitar/incluir grupo">${removed ? "＋" : "✕"}</button>
       </div>
-      <button class="tri up" data-dir="-1" data-role="${s.role}" ${n ? "" : "disabled"}></button>
+      <div class="sortrow">
+        <button class="sortbtn ${reelSort[s.role] === "price" ? "on" : ""}" data-sort="price" data-role="${s.role}" ${dis}>$/porción</button>
+        <button class="sortbtn ${reelSort[s.role] === "kcal" ? "on" : ""}" data-sort="kcal" data-role="${s.role}" ${dis}>kcal/porción</button>
+      </div>
+      <button class="tri up" data-dir="-1" data-role="${s.role}" ${dis}></button>
       ${win}
-      <button class="tri down" data-dir="1" data-role="${s.role}" ${n ? "" : "disabled"}></button>
-      <span class="counter">${n ? (reelIdx[s.role] % n) + 1 : 0}/${n}</span>
+      <button class="tri down" data-dir="1" data-role="${s.role}" ${dis}></button>
+      <span class="counter">${removed ? "—" : (n ? (reelIdx[s.role] % n) + 1 : 0) + "/" + n}</span>
     </div>`;
   }).join("");
   $$("#reels .tri").forEach((b) => b.addEventListener("click", () => {
@@ -240,9 +287,9 @@ function renderReels() {
     reelIdx[role] = (reelIdx[role] + +b.dataset.dir + n) % n;
     renderReels();
   }));
-  $$("#reels .lockbtn").forEach((b) => b.addEventListener("click", () => {
-    reelLocked[b.dataset.lock] = !reelLocked[b.dataset.lock]; renderReels();
-  }));
+  $$("#reels .lockbtn").forEach((b) => b.addEventListener("click", () => { reelLocked[b.dataset.lock] = !reelLocked[b.dataset.lock]; renderReels(); }));
+  $$("#reels .rmbtn").forEach((b) => b.addEventListener("click", () => { reelRemoved[b.dataset.rm] = !reelRemoved[b.dataset.rm]; renderReels(); }));
+  $$("#reels .sortbtn").forEach((b) => b.addEventListener("click", () => setSort(b.dataset.role, b.dataset.sort)));
   renderControl();
 }
 function renderControl() {
@@ -251,7 +298,6 @@ function renderControl() {
   sel.forEach((c) => { for (const k in t) t[k] += c[k] || 0; });
   renderDonut(t, builderData.target);
   $("#priceBox").textContent = clp(t.cost_clp);
-  // platos: el producto más limitante (mínimo) rinde N platos completos.
   const platos = sel.map((c) => c.platos_por_envase).filter((x) => x > 0);
   const minP = platos.length ? Math.min(...platos) : 0;
   const pcal = t.protein_g * 4, ccal = t.carb_g * 4, gcal = t.fat_g * 9, tot = pcal + ccal + gcal || 1;
@@ -281,7 +327,7 @@ $("#builderMeal").addEventListener("change", loadReels);
 $("#spinBtn").addEventListener("click", () => {
   if (!builderData) return;
   builderData.slots.forEach((s) => {
-    if (s.candidates.length && !reelLocked[s.role]) reelIdx[s.role] = Math.floor(Math.random() * s.candidates.length);
+    if (s.candidates.length && !reelLocked[s.role] && !reelRemoved[s.role]) reelIdx[s.role] = Math.floor(Math.random() * s.candidates.length);
   });
   renderReels();
 });
@@ -319,9 +365,7 @@ function renderDayBuild() {
     <button id="saveDayBtn" class="primary">💾 Guardar minuta del día</button>
     <span id="saveDayStatus" class="status"></span>`;
   $("#dayBuild").innerHTML = html;
-  $$("#dayBuild [data-rm]").forEach((b) => b.addEventListener("click", () => {
-    dayMeals.splice(+b.dataset.rm, 1); renderDayBuild();
-  }));
+  $$("#dayBuild [data-rm]").forEach((b) => b.addEventListener("click", () => { dayMeals.splice(+b.dataset.rm, 1); renderDayBuild(); }));
   $("#saveDayBtn").addEventListener("click", saveBuiltDay);
 }
 async function saveBuiltDay() {
@@ -333,7 +377,7 @@ async function saveBuiltDay() {
   const title = prompt("Nombre de la minuta:", "Día " + new Date().toLocaleDateString("es-CL"));
   if (title === null) return;
   await api("/api/plans", { method: "POST", body: JSON.stringify({ user_id: currentUserId, title, scope: "diario", payload: { meals, totals } }) });
-  $("#saveDayStatus").textContent = "✓ Guardada.";
+  $("#saveDayStatus").textContent = "✓ Guardada (mírala en el Calendario).";
   dayMeals = []; renderDayBuild();
 }
 
@@ -420,7 +464,7 @@ async function savePlan(scope, payload) {
   if (title === null) return;
   const toSave = scope === "semanal" ? { ...payload, totals: { cost_clp: payload.weekly_cost_clp, kcal: payload.requirements.kcal, satiety: 0 } } : payload;
   await api("/api/plans", { method: "POST", body: JSON.stringify({ user_id: currentUserId, title, scope, payload: toSave }) });
-  $("#genStatus").textContent = "✓ Guardada (mírala en Inicio).";
+  $("#genStatus").textContent = "✓ Guardada (mírala en el Calendario).";
 }
 function shoppingHtml(d) {
   if (!d.retailers || !d.retailers.length) return '<p class="muted">Sin productos.</p>';
@@ -526,7 +570,7 @@ if (serverBtn) {
 }
 function startApp() {
   loadRetailers().then(loadUsers).then(() => showScreen(0)).catch((e) => {
-    $("#calGrid").innerHTML = `<p class="hint" style="grid-column:1/8">No se pudo conectar al servidor${apiBase() ? " (" + apiBase() + ")" : ""}.</p>`;
+    $("#welcomeSub").textContent = `No se pudo conectar al servidor${apiBase() ? " (" + apiBase() + ")" : ""}.`;
     console.error(e);
   });
 }
