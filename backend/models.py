@@ -120,6 +120,9 @@ class User(Base):
     preferences: Mapped[list["Preference"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    routines: Mapped[list["Routine"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Plan(Base):
@@ -207,6 +210,36 @@ class PriceCache(Base):
     # Epoch UTC (segundos) del ultimo fetch: comparacion de frescura sin lios de
     # zona horaria entre SQLite (naive) y Postgres (aware).
     fetched_epoch: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+class Routine(Base):
+    """Comida fija que se repite en el calendario segun un preset semanal.
+
+    El usuario puede dejar una comida (p.ej. el mismo desayuno) como rutina que
+    se aplica automaticamente a ciertos dias segun un preset:
+      - "L-V"   -> lunes a viernes
+      - "finde" -> sabado y domingo
+      - "todos" -> todos los dias
+    El calendario precarga la rutina en cada dia que calce con su preset, sin
+    necesidad de guardar una minuta por dia.
+    """
+
+    __tablename__ = "routines"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    # desayuno | snack 1 | almuerzo | cena | ...
+    meal: Mapped[str] = mapped_column(String, default="")
+    # L-V | finde | todos
+    preset: Mapped[str] = mapped_column(String, default="todos")
+    title: Mapped[str] = mapped_column(String, default="")
+    # Items elegidos (misma forma que los candidatos del constructor).
+    items: Mapped[list] = mapped_column(JSON, default=list)
+    # Subtotales (kcal, proteina, costo, ...) de la comida.
+    subtotal: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    user: Mapped[User] = relationship(back_populates="routines")
 
 
 class Preference(Base):

@@ -1,5 +1,5 @@
 // SCAVENGER · frontend móvil (vanilla JS)
-// Landing + carrusel (Home, Ruleta, Perfil) + vistas secundarias en overlay.
+// Landing (con calendario) + carrusel (Home, Ruleta, Perfil) + jornadas + overlays.
 function apiBase() {
   return (localStorage.getItem("scavenger_api_base") || window.SCAVENGER_API_BASE || "").replace(/\/+$/, "");
 }
@@ -22,6 +22,8 @@ async function api(path, opts = {}) {
 }
 
 let currentUserId = null;
+let currentUserObj = null;
+let reqCache = null;          // requerimientos diarios del usuario (para márgenes)
 let retailersCache = [];
 
 // ===================== CARRUSEL =====================
@@ -46,17 +48,18 @@ function renderLanding() {
   const name = sel && sel.selectedOptions.length ? sel.selectedOptions[0].textContent.split(" #")[0] : "";
   if (currentUserId && name) {
     $("#welcome").textContent = `Hola, ${name} 🦝`;
-    $("#welcomeSub").textContent = "Arma comidas, planifica tu semana y compra al mejor precio.";
+    $("#welcomeSub").textContent = "Arma tu jornada, planifica la semana y compra al mejor precio.";
   } else {
     $("#welcome").textContent = "Bienvenido a SCAVENGER 🦝";
     $("#welcomeSub").textContent = "Crea tu perfil para recibir recomendaciones a tu medida.";
   }
+  loadCalendarData().then(renderLandingCalendar);
 }
 $$(".hub-btn").forEach((b) => b.addEventListener("click", () => {
   const a = b.dataset.act;
   if (a === "ruleta") showScreen(1);
   else if (a === "perfil") showScreen(2);
-  else if (a === "calendario") openCalendar();
+  else if (a === "calendario") $("#landingCal").scrollIntoView({ behavior: "smooth", block: "start" });
   else if (a === "generar") openGenerar();
   else if (a === "minutas") openMinutas();
   else if (a === "catalogo") openCatalogo();
@@ -74,9 +77,10 @@ async function loadUsers() {
     sel.appendChild(o);
   });
   if (users.length) {
-    currentUserId = users[users.length - 1].id;
+    currentUserObj = users[users.length - 1];
+    currentUserId = currentUserObj.id;
     sel.value = currentUserId;
-    fillForm(users[users.length - 1]);
+    fillForm(currentUserObj);
   }
 }
 function fillForm(u) {
@@ -99,7 +103,7 @@ function selectedRetailers() {
   return [...$$("#retailerChecks input:checked")].map((c) => c.value);
 }
 function newUser() {
-  currentUserId = null;
+  currentUserId = null; currentUserObj = null; reqCache = null;
   $("#userForm").reset();
   $("#userStatus").textContent = "Nuevo perfil — completa tus datos y guarda.";
   showScreen(2);
@@ -107,7 +111,9 @@ function newUser() {
 }
 $("#userSelect").addEventListener("change", async (e) => {
   currentUserId = parseInt(e.target.value);
-  fillForm(await api(`/api/users/${currentUserId}`));
+  currentUserObj = await api(`/api/users/${currentUserId}`);
+  reqCache = null;
+  fillForm(currentUserObj);
   loadRequirements();
 });
 $("#newUserBtn").addEventListener("click", newUser);
@@ -128,7 +134,7 @@ $("#userForm").addEventListener("submit", async (e) => {
   const u = currentUserId
     ? await api(`/api/users/${currentUserId}`, { method: "PATCH", body: JSON.stringify(body) })
     : await api("/api/users", { method: "POST", body: JSON.stringify(body) });
-  currentUserId = u.id;
+  currentUserId = u.id; currentUserObj = u; reqCache = null;
   $("#userStatus").textContent = "✓ Guardado (#" + u.id + ")";
   await loadUsers();
   $("#userSelect").value = currentUserId;
@@ -137,196 +143,142 @@ $("#userForm").addEventListener("submit", async (e) => {
 
 async function loadRequirements() {
   if (!currentUserId) return;
-  const r = await api(`/api/users/${currentUserId}/requirements`);
-  const u = await api(`/api/users/${currentUserId}`);
+  reqCache = await api(`/api/users/${currentUserId}/requirements`);
+  if (!currentUserObj) currentUserObj = await api(`/api/users/${currentUserId}`);
+  const u = currentUserObj, r = reqCache;
   $("#tKcal").textContent = num(r.kcal) + " kcal";
   $("#tBasal").textContent = num(r.bmr) + " kcal";
   $("#tNutri").textContent = `P ${num(r.protein_g)} · C ${num(r.carb_g)} · G ${num(r.fat_g)}`;
   $("#tEco").textContent = clp(u.monthly_budget_clp > 0 ? u.monthly_budget_clp : (u.daily_budget_clp || 0) * 30);
 }
-
-// ===================== CALENDARIO (overlay) =====================
-let calRef = null, plansByDate = {};
-const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-const DOW = ["L","M","M","J","V","S","D"];
-const dateKey = (d) => d.slice(0, 10);
-
-function openCalendar() {
-  openOverlay("Calendario", `
-    <div class="cal-head"><button class="iconbtn" id="calPrev">&#10094;</button><h2 id="calTitle">—</h2><button class="iconbtn" id="calNext">&#10095;</button></div>
-    <div class="cal-grid" id="calGrid"></div>
-    <div class="cal-day" id="calDay"><p class="hint">Toca un día para ver sus minutas.</p></div>`);
-  if (!calRef) { const n = new Date(); calRef = new Date(n.getFullYear(), n.getMonth(), 1); }
-  $("#calPrev").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() - 1); renderCalendar(); });
-  $("#calNext").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() + 1); renderCalendar(); });
-  loadCalendarData().then(renderCalendar);
+// Requerimientos diarios cacheados (los carga si faltan).
+async function ensureRequirements() {
+  if (!reqCache && currentUserId) reqCache = await api(`/api/users/${currentUserId}/requirements`);
+  if (!currentUserObj && currentUserId) currentUserObj = await api(`/api/users/${currentUserId}`);
+  return reqCache;
 }
-async function loadCalendarData() {
-  plansByDate = {};
-  if (!currentUserId) return;
-  const plans = await api(`/api/plans?user_id=${currentUserId}`);
-  plans.forEach((p) => {
-    const k = p.created_at ? dateKey(p.created_at) : null;
-    if (k) (plansByDate[k] = plansByDate[k] || []).push(p);
-  });
+function dailyBudget() {
+  const u = currentUserObj || {};
+  return u.monthly_budget_clp > 0 ? u.monthly_budget_clp / 30 : (u.daily_budget_clp || 0);
 }
-function renderCalendar() {
-  if (!$("#calGrid")) return;
-  const y = calRef.getFullYear(), m = calRef.getMonth();
-  $("#calTitle").textContent = `${MONTHS[m]} ${y}`;
-  const startDow = (new Date(y, m, 1).getDay() + 6) % 7;
-  const days = new Date(y, m + 1, 0).getDate();
-  const todayK = dateKey(new Date().toISOString());
-  let html = DOW.map((d) => `<div class="cal-dow">${d}</div>`).join("");
-  for (let i = 0; i < startDow; i++) html += `<div class="cal-cell empty"></div>`;
-  for (let d = 1; d <= days; d++) {
-    const k = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    html += `<div class="cal-cell ${plansByDate[k] ? "has" : ""} ${k === todayK ? "today" : ""}" data-k="${k}">${d}</div>`;
+
+// ===================== CONSTRUCTOR DE COMIDAS (carretes reutilizables) =====================
+// Controlador de carretes: encapsula el estado por rol (índice, bloqueo,
+// quitado, orden, origen) y se renderiza en cualquier contenedor. Lo usan
+// tanto la Ruleta suelta (armado rápido) como cada comida de una jornada.
+let dayMeals = [];
+
+async function fetchBuilder(meal) {
+  return api("/api/builder/slots", { method: "POST", body: JSON.stringify({ user_id: currentUserId, meal }) });
+}
+
+function makeReelCtrl(data) {
+  const st = { idx: {}, locked: {}, removed: {}, sort: {}, origin: {} };
+  data.slots.forEach((s) => { st.idx[s.role] = 0; st.locked[s.role] = false; st.removed[s.role] = false; st.sort[s.role] = "price"; st.origin[s.role] = ""; });
+
+  function sorted(slot) {
+    let arr = slot.candidates;
+    const o = st.origin[slot.role];                                            // 1er filtro: origen
+    if (o) { const f = arr.filter((c) => c.origin === o); if (f.length) arr = f; }
+    arr = [...arr];
+    if (st.sort[slot.role] === "kcal") arr.sort((a, b) => a.kcal - b.kcal);     // densidad calórica (kcal/porción) asc
+    else arr.sort((a, b) => a.cost_clp - b.cost_clp);                           // precio ($/porción) asc
+    return arr;
   }
-  $("#calGrid").innerHTML = html;
-  $$("#calGrid .cal-cell[data-k]").forEach((c) => c.addEventListener("click", () => selectDay(c.dataset.k)));
-}
-function selectDay(k) {
-  $$("#calGrid .cal-cell").forEach((c) => c.classList.toggle("sel", c.dataset.k === k));
-  const plans = plansByDate[k] || [];
-  if (!plans.length) { $("#calDay").innerHTML = `<p class="hint">Sin minutas el ${k}. Arma una en la Ruleta 🎰.</p>`; return; }
-  $("#calDay").innerHTML = `<h3 style="font-size:15px">Minutas · ${k}</h3>` + plans.map((p) =>
-    `<div class="daycard" data-plan="${p.id}"><div class="top"><strong>${p.title}</strong>
-       <span class="muted">${num(p.total_kcal)} kcal · ${clp(p.total_cost_clp)}</span></div></div>`).join("");
-  $$("#calDay .daycard").forEach((c) => c.addEventListener("click", () => openPlanDetail(+c.dataset.plan)));
-}
-async function openPlanDetail(id) {
-  const p = await api(`/api/plans/${id}`);
-  let html = `<button class="btn-sm" id="backCal">&#10094; Volver al calendario</button>
-    <div class="totbar"><div class="pill">${p.scope}</div><div class="pill">${num(p.total_kcal)} kcal</div><div class="pill">${clp(p.total_cost_clp)}</div></div>`;
-  (p.payload.meals || []).forEach((m) => {
-    html += `<div class="meal"><h3 style="text-transform:capitalize">${m.meal}
-      <span>${num((m.subtotal || {}).kcal)} kcal · ${clp((m.subtotal || {}).cost_clp)}</span></h3>
-      <div class="muted">${(m.items || []).map((i) => `${i.name} (${num(i.grams)}g)`).join(" · ")}</div></div>`;
-  });
-  html += `<button class="btn-sm" id="delPlan">🗑️ Eliminar</button>`;
-  openOverlay(p.title, html);
-  $("#backCal").addEventListener("click", openCalendar);
-  $("#delPlan").addEventListener("click", async () => {
-    if (confirm("¿Eliminar esta minuta?")) { await api(`/api/plans/${id}`, { method: "DELETE" }); openCalendar(); }
-  });
+  function selection() {
+    return data.slots.filter((s) => !st.removed[s.role] && s.candidates.length)
+      .map((s) => { const arr = sorted(s); return arr[st.idx[s.role] % arr.length]; });
+  }
+  function totals() {
+    const t = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0, satiety_contrib: 0 };
+    selection().forEach((c) => { for (const k in t) t[k] += c[k] || 0; });
+    return t;
+  }
+  function rememberSel(role, mutate) {                                          // cambiar criterio sin perder la selección
+    const slot = data.slots.find((s) => s.role === role);
+    const curArr = sorted(slot);
+    const cur = curArr.length ? curArr[st.idx[role] % curArr.length] : null;
+    mutate();
+    const arr = sorted(slot);
+    const i = cur ? arr.findIndex((c) => c.food_id === cur.food_id) : -1;
+    st.idx[role] = i >= 0 ? i : 0;
+  }
+  function spin() {
+    data.slots.forEach((s) => { if (s.candidates.length && !st.locked[s.role] && !st.removed[s.role]) st.idx[s.role] = Math.floor(Math.random() * s.candidates.length); });
+  }
+  function render(container, onChange) {
+    container.innerHTML = data.slots.map((s) => reelHtml(s, st, sorted)).join("");
+    const redraw = () => render(container, onChange);
+    container.querySelectorAll(".tri").forEach((b) => b.addEventListener("click", () => {
+      const role = b.dataset.role, n = sorted(data.slots.find((s) => s.role === role)).length;
+      if (!n) return; st.idx[role] = (st.idx[role] + +b.dataset.dir + n) % n; redraw();
+    }));
+    container.querySelectorAll(".lockbtn").forEach((b) => b.addEventListener("click", () => { st.locked[b.dataset.lock] = !st.locked[b.dataset.lock]; redraw(); }));
+    container.querySelectorAll(".rmbtn").forEach((b) => b.addEventListener("click", () => { st.removed[b.dataset.rm] = !st.removed[b.dataset.rm]; redraw(); }));
+    container.querySelectorAll(".sortbtn").forEach((b) => b.addEventListener("click", () => { rememberSel(b.dataset.role, () => (st.sort[b.dataset.role] = b.dataset.sort)); redraw(); }));
+    container.querySelectorAll(".originsel").forEach((sel) => sel.addEventListener("change", () => { rememberSel(sel.dataset.role, () => (st.origin[sel.dataset.role] = sel.value)); redraw(); }));
+    if (onChange) onChange();
+  }
+  return { data, st, meal: data.meal, sorted, selection, totals, spin, render };
 }
 
-// ===================== RULETA =====================
-let builderData = null, reelIdx = {}, reelLocked = {}, reelRemoved = {}, reelSort = {}, reelOrigin = {}, dayMeals = [];
+function reelHtml(s, st, sorted) {
+  const hasAny = s.candidates.length, removed = st.removed[s.role];
+  const arr = sorted(s), n = arr.length, c = n ? arr[st.idx[s.role] % n] : null;
+  const win = removed
+    ? `<div class="window removed">Grupo quitado<br><small>toca ＋ para incluir</small></div>`
+    : (c
+      ? `<div class="window">
+           <div class="nm">${c.name}</div>
+           ${c.brand ? `<div class="brand">${c.brand}</div>` : ""}
+           <div class="gr">${num(c.grams)} g</div>
+           <div class="mc">${num(c.kcal)} kcal · P${num(c.protein_g, 0)} C${num(c.carb_g, 0)} G${num(c.fat_g, 0)}</div>
+           <span class="shop">${c.retailer}</span>
+           ${c.platos_por_envase ? `<div class="platos">≈ ${c.platos_por_envase} platos/envase</div>` : ""}
+           <div class="cost">${clp(c.cost_clp)}</div>
+         </div>`
+      : `<div class="window empty">— sin opciones —</div>`);
+  const off = !hasAny || removed ? "disabled" : "";
+  const origins = [...new Set(s.candidates.map((x) => x.origin))].sort();
+  const originSel = origins.length > 1
+    ? `<select class="originsel" data-role="${s.role}" ${off}>
+         <option value="">Origen: todos</option>
+         ${origins.map((o) => `<option value="${o}" ${st.origin[s.role] === o ? "selected" : ""}>${o}</option>`).join("")}
+       </select>`
+    : "";
+  return `<div class="reel ${st.locked[s.role] ? "locked" : ""} ${removed ? "removed" : ""}">
+    <div class="role">${s.label}
+      <button class="lockbtn" data-lock="${s.role}" ${off}>${st.locked[s.role] ? "🔒" : "🔓"}</button>
+      <button class="rmbtn" data-rm="${s.role}" title="Quitar/incluir grupo">${removed ? "＋" : "✕"}</button>
+    </div>
+    ${originSel}
+    <div class="sortrow">
+      <button class="sortbtn ${st.sort[s.role] === "price" ? "on" : ""}" data-sort="price" data-role="${s.role}" ${off}>$/porción</button>
+      <button class="sortbtn ${st.sort[s.role] === "kcal" ? "on" : ""}" data-sort="kcal" data-role="${s.role}" ${off}>kcal/porción</button>
+    </div>
+    <button class="tri up" data-dir="-1" data-role="${s.role}" ${off}></button>
+    ${win}
+    <button class="tri down" data-dir="1" data-role="${s.role}" ${off}></button>
+    <span class="counter">${removed ? "—" : (n ? (st.idx[s.role] % n) + 1 : 0) + "/" + n}</span>
+  </div>`;
+}
+
+// ---- Ruleta suelta (pantalla del carrusel): armado rápido ----
+let activeCtrl = null;
 
 async function loadReels() {
   if (!currentUserId) { $("#reels").innerHTML = '<p class="hint">Crea un perfil primero.</p>'; return; }
   $("#builderStatus").textContent = "Cargando…";
   try {
-    builderData = await api("/api/builder/slots", {
-      method: "POST", body: JSON.stringify({ user_id: currentUserId, meal: $("#builderMeal").value }),
-    });
+    activeCtrl = makeReelCtrl(await fetchBuilder($("#builderMeal").value));
   } catch (e) { $("#builderStatus").textContent = "Error: " + e.message; return; }
-  reelIdx = {}; reelLocked = {}; reelRemoved = {}; reelSort = {}; reelOrigin = {};
-  builderData.slots.forEach((s) => { reelIdx[s.role] = 0; reelLocked[s.role] = false; reelRemoved[s.role] = false; reelSort[s.role] = "price"; reelOrigin[s.role] = ""; });
   $("#builderStatus").textContent = "";
-  renderReels();
+  activeCtrl.render($("#reels"), renderRuletaControl);
 }
-function sortedCandidates(slot) {
-  let arr = slot.candidates;
-  const o = reelOrigin[slot.role];                                            // 1er filtro: origen
-  if (o) { const f = arr.filter((c) => c.origin === o); if (f.length) arr = f; }
-  arr = [...arr];
-  if (reelSort[slot.role] === "kcal") arr.sort((a, b) => a.kcal - b.kcal);     // densidad calórica (kcal/porción) asc
-  else arr.sort((a, b) => a.cost_clp - b.cost_clp);                            // precio ($/porción) asc
-  return arr;
-}
-function setOrigin(role, origin) {
-  const slot = builderData.slots.find((s) => s.role === role);
-  const curArr = sortedCandidates(slot);
-  const cur = curArr.length ? curArr[reelIdx[role] % curArr.length] : null;
-  reelOrigin[role] = origin;
-  const arr = sortedCandidates(slot);
-  const i = cur ? arr.findIndex((c) => c.food_id === cur.food_id) : -1;
-  reelIdx[role] = i >= 0 ? i : 0;
-  renderReels();
-}
-function reelSelection() {
-  if (!builderData) return [];
-  return builderData.slots
-    .filter((s) => !reelRemoved[s.role] && s.candidates.length)
-    .map((s) => { const arr = sortedCandidates(s); return arr[reelIdx[s.role] % arr.length]; });
-}
-function setSort(role, crit) {
-  if (reelSort[role] === crit) return;
-  const slot = builderData.slots.find((s) => s.role === role);
-  const curArr = sortedCandidates(slot);
-  const cur = curArr.length ? curArr[reelIdx[role] % curArr.length] : null;    // recordar selección
-  reelSort[role] = crit;
-  const arr = sortedCandidates(slot);
-  const i = cur ? arr.findIndex((c) => c.food_id === cur.food_id) : -1;
-  reelIdx[role] = i >= 0 ? i : 0;
-  renderReels();
-}
-function renderReels() {
-  if (!builderData) return;
-  $("#reels").innerHTML = builderData.slots.map((s) => {
-    const hasAny = s.candidates.length;
-    const removed = reelRemoved[s.role];
-    const arr = sortedCandidates(s);
-    const n = arr.length;
-    const c = n ? arr[reelIdx[s.role] % n] : null;
-    const win = removed
-      ? `<div class="window removed">Grupo quitado<br><small>toca ＋ para incluir</small></div>`
-      : (c
-        ? `<div class="window">
-             <div class="nm">${c.name}</div>
-             ${c.brand ? `<div class="brand">${c.brand}</div>` : ""}
-             <div class="gr">${num(c.grams)} g</div>
-             <div class="mc">${num(c.kcal)} kcal · P${num(c.protein_g, 0)} C${num(c.carb_g, 0)} G${num(c.fat_g, 0)}</div>
-             <span class="shop">${c.retailer}</span>
-             ${c.platos_por_envase ? `<div class="platos">≈ ${c.platos_por_envase} platos/envase</div>` : ""}
-             <div class="cost">${clp(c.cost_clp)}</div>
-           </div>`
-        : `<div class="window empty">— sin opciones —</div>`);
-    const off = !hasAny || removed ? "disabled" : "";
-    const origins = [...new Set(s.candidates.map((x) => x.origin))].sort();
-    const originSel = origins.length > 1
-      ? `<select class="originsel" data-role="${s.role}" ${off}>
-           <option value="">Origen: todos</option>
-           ${origins.map((o) => `<option value="${o}" ${reelOrigin[s.role] === o ? "selected" : ""}>${o}</option>`).join("")}
-         </select>`
-      : "";
-    return `<div class="reel ${reelLocked[s.role] ? "locked" : ""} ${removed ? "removed" : ""}">
-      <div class="role">${s.label}
-        <button class="lockbtn" data-lock="${s.role}" ${off}>${reelLocked[s.role] ? "🔒" : "🔓"}</button>
-        <button class="rmbtn" data-rm="${s.role}" title="Quitar/incluir grupo">${removed ? "＋" : "✕"}</button>
-      </div>
-      ${originSel}
-      <div class="sortrow">
-        <button class="sortbtn ${reelSort[s.role] === "price" ? "on" : ""}" data-sort="price" data-role="${s.role}" ${off}>$/porción</button>
-        <button class="sortbtn ${reelSort[s.role] === "kcal" ? "on" : ""}" data-sort="kcal" data-role="${s.role}" ${off}>kcal/porción</button>
-      </div>
-      <button class="tri up" data-dir="-1" data-role="${s.role}" ${off}></button>
-      ${win}
-      <button class="tri down" data-dir="1" data-role="${s.role}" ${off}></button>
-      <span class="counter">${removed ? "—" : (n ? (reelIdx[s.role] % n) + 1 : 0) + "/" + n}</span>
-    </div>`;
-  }).join("");
-  $$("#reels .tri").forEach((b) => b.addEventListener("click", () => {
-    const role = b.dataset.role;
-    const n = sortedCandidates(builderData.slots.find((s) => s.role === role)).length;
-    if (!n) return;
-    reelIdx[role] = (reelIdx[role] + +b.dataset.dir + n) % n;
-    renderReels();
-  }));
-  $$("#reels .lockbtn").forEach((b) => b.addEventListener("click", () => { reelLocked[b.dataset.lock] = !reelLocked[b.dataset.lock]; renderReels(); }));
-  $$("#reels .rmbtn").forEach((b) => b.addEventListener("click", () => { reelRemoved[b.dataset.rm] = !reelRemoved[b.dataset.rm]; renderReels(); }));
-  $$("#reels .sortbtn").forEach((b) => b.addEventListener("click", () => setSort(b.dataset.role, b.dataset.sort)));
-  $$("#reels .originsel").forEach((sel) => sel.addEventListener("change", () => setOrigin(sel.dataset.role, sel.value)));
-  renderControl();
-}
-function renderControl() {
-  const sel = reelSelection();
-  const t = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0 };
-  sel.forEach((c) => { for (const k in t) t[k] += c[k] || 0; });
-  renderDonut(t, builderData.target);
+function renderRuletaControl() {
+  if (!activeCtrl) return;
+  const sel = activeCtrl.selection(), t = activeCtrl.totals();
+  renderDonut($("#donut"), t, activeCtrl.data.target);
   $("#priceBox").textContent = clp(t.cost_clp);
   const platos = sel.map((c) => c.platos_por_envase).filter((x) => x > 0);
   const minP = platos.length ? Math.min(...platos) : 0;
@@ -337,7 +289,7 @@ function renderControl() {
      <span style="color:var(--g)">G ${Math.round(gcal / tot * 100)}%</span>
      ${minP ? `<br>Con una compra de cada producto preparas <strong>≈ ${minP} platos</strong>.` : ""}`;
 }
-function renderDonut(t, target) {
+function renderDonut(el, t, target) {
   const pcal = (t.protein_g || 0) * 4, ccal = (t.carb_g || 0) * 4, gcal = (t.fat_g || 0) * 9;
   const tot = pcal + ccal + gcal || 1;
   const segs = [[pcal / tot * 100, "var(--p)"], [ccal / tot * 100, "var(--c)"], [gcal / tot * 100, "var(--g)"]];
@@ -348,23 +300,18 @@ function renderDonut(t, target) {
       stroke-dasharray="${p.toFixed(2)} ${(100 - p).toFixed(2)}" stroke-dashoffset="${(25 - acc).toFixed(2)}"/>`;
     acc += p; return c;
   }).join("");
-  $("#donut").innerHTML =
+  el.innerHTML =
     `<circle cx="21" cy="21" r="15.915" fill="none" stroke="#2a2a2d" stroke-width="6"/>${arcs}
      <text x="21" y="20.5" text-anchor="middle" font-size="6">${kcalPct}%</text>
      <text x="21" y="26" text-anchor="middle" font-size="3" fill="#b9b9c2">Kcal/d</text>`;
 }
 $("#builderMeal").addEventListener("change", loadReels);
-$("#spinBtn").addEventListener("click", () => {
-  if (!builderData) return;
-  builderData.slots.forEach((s) => {
-    if (s.candidates.length && !reelLocked[s.role] && !reelRemoved[s.role]) reelIdx[s.role] = Math.floor(Math.random() * s.candidates.length);
-  });
-  renderReels();
-});
+$("#spinBtn").addEventListener("click", () => { if (!activeCtrl) return; activeCtrl.spin(); activeCtrl.render($("#reels"), renderRuletaControl); });
 $("#addMealBtn").addEventListener("click", () => {
-  const items = reelSelection();
+  if (!activeCtrl) return;
+  const items = activeCtrl.selection();
   if (!items.length) return;
-  dayMeals.push({ meal: builderData.meal, items });
+  dayMeals.push({ meal: activeCtrl.meal, items });
   renderDayBuild();
 });
 
@@ -411,6 +358,236 @@ async function saveBuiltDay() {
   dayMeals = []; renderDayBuild();
 }
 
+// ===================== CALENDARIO (en la landing) + JORNADAS =====================
+let calRef = null, plansByDate = {}, routinesAll = [];
+const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const DOW = ["L","M","M","J","V","S","D"];
+const DOW_FULL = ["lunes","martes","miércoles","jueves","viernes","sábado","domingo"];
+const dateKey = (d) => d.slice(0, 10);
+// Secuencia base de comidas para una jornada de N comidas.
+const MEAL_SEQUENCE = ["desayuno", "snack 1", "almuerzo", "snack 2", "cena", "snack 3", "cena 2", "desayuno 2"];
+// Lunes=0 ... domingo=6 (igual que el backend) a partir de una fecha YYYY-MM-DD.
+function weekdayOf(k) { return (new Date(k + "T12:00:00").getDay() + 6) % 7; }
+const PRESET_WEEKDAYS = { "L-V": [0,1,2,3,4], "finde": [5,6], "todos": [0,1,2,3,4,5,6] };
+function presetMatches(preset, wd) { return (PRESET_WEEKDAYS[preset] || PRESET_WEEKDAYS["todos"]).includes(wd); }
+function planDate(p) { return (p.payload && p.payload.date) || (p.created_at ? dateKey(p.created_at) : null); }
+
+async function loadCalendarData() {
+  plansByDate = {}; routinesAll = [];
+  if (!currentUserId) return;
+  const [plans, routines] = await Promise.all([
+    api(`/api/plans?user_id=${currentUserId}`),
+    api(`/api/routines?user_id=${currentUserId}`).catch(() => []),
+  ]);
+  plans.forEach((p) => { const k = planDate(p); if (k) (plansByDate[k] = plansByDate[k] || []).push(p); });
+  routinesAll = routines || [];
+}
+function renderLandingCalendar() {
+  if (!$("#landingCal")) return;
+  if (!calRef) { const n = new Date(); calRef = new Date(n.getFullYear(), n.getMonth(), 1); }
+  $("#landingCal").innerHTML = `
+    <div class="cal-head"><button class="iconbtn" id="calPrev">&#10094;</button>
+      <h2 id="calTitle">—</h2><button class="iconbtn" id="calNext">&#10095;</button></div>
+    <div class="cal-grid" id="calGrid"></div>
+    <p class="hint" style="text-align:center">Toca un día para armar su jornada 🦝</p>`;
+  $("#calPrev").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() - 1); renderCalendarGrid(); });
+  $("#calNext").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() + 1); renderCalendarGrid(); });
+  renderCalendarGrid();
+}
+function renderCalendarGrid() {
+  if (!$("#calGrid")) return;
+  const y = calRef.getFullYear(), m = calRef.getMonth();
+  $("#calTitle").textContent = `${MONTHS[m]} ${y}`;
+  const startDow = (new Date(y, m, 1).getDay() + 6) % 7;
+  const days = new Date(y, m + 1, 0).getDate();
+  const todayK = dateKey(new Date().toISOString());
+  let html = DOW.map((d) => `<div class="cal-dow">${d}</div>`).join("");
+  for (let i = 0; i < startDow; i++) html += `<div class="cal-cell empty"></div>`;
+  for (let d = 1; d <= days; d++) {
+    const k = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const hasPlan = !!plansByDate[k];
+    const hasRoutine = routinesAll.some((r) => presetMatches(r.preset, weekdayOf(k)));
+    const mark = hasPlan ? "has" : (hasRoutine ? "routine" : "");
+    html += `<div class="cal-cell ${mark} ${k === todayK ? "today" : ""}" data-k="${k}">${d}</div>`;
+  }
+  $("#calGrid").innerHTML = html;
+  $$("#calGrid .cal-cell[data-k]").forEach((c) => c.addEventListener("click", () => openJornada(c.dataset.k)));
+}
+
+// ---- Jornada de un día: N comidas editables, armado por ruleta, márgenes en vivo ----
+let jornada = null;   // { date, meals: [{meal, items, subtotal, routineId?}] }
+
+function defaultMeals(n) {
+  n = Math.max(1, Math.min(8, n || 4));
+  return MEAL_SEQUENCE.slice(0, n).map((m) => ({ meal: m, items: [], subtotal: {} }));
+}
+async function openJornada(k) {
+  if (!currentUserId) { alert("Crea un perfil primero."); return; }
+  await ensureRequirements();
+  // Carga una minuta ya guardada para ese día, si existe.
+  const saved = (plansByDate[k] || [])[0];
+  if (saved) {
+    const meals = (saved.payload.meals || []).map((m) => ({ meal: m.meal, items: m.items || [], subtotal: m.subtotal || mealSubtotal(m.items || []) }));
+    jornada = { date: k, meals: meals.length ? meals : defaultMeals(currentUserObj.meals_per_day), planId: saved.id };
+  } else {
+    // Jornada nueva: comidas por defecto, precargando rutinas que calcen con el día.
+    const wd = weekdayOf(k);
+    const meals = defaultMeals(currentUserObj.meals_per_day);
+    routinesAll.filter((r) => presetMatches(r.preset, wd)).forEach((r) => {
+      const slot = meals.find((m) => m.meal === r.meal && !m.items.length);
+      if (slot) { slot.items = r.items || []; slot.subtotal = r.subtotal || mealSubtotal(slot.items); slot.fromRoutine = true; }
+    });
+    jornada = { date: k, meals };
+  }
+  renderJornada();
+}
+function jornadaTotals() {
+  const t = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0, satiety: 0 };
+  jornada.meals.forEach((m) => { const s = m.subtotal && m.subtotal.kcal != null ? m.subtotal : mealSubtotal(m.items); ["kcal","protein_g","carb_g","fat_g","cost_clp","satiety"].forEach((k) => (t[k] += s[k] || 0)); });
+  for (const k in t) t[k] = Math.round(t[k] * 10) / 10;
+  return t;
+}
+// kind = "ceiling" (kcal, dinero: importa el margen para NO pasarse) |
+//        "goal"    (proteína, macros: importa CUMPLIR el requerimiento).
+// El enfoque premia alcanzar metas, no la restricción a ciegas.
+function marginRow(label, used, target, unit, kind) {
+  const left = Math.round((target - used) * 10) / 10;
+  const pct = target ? Math.min(100, Math.round(used / target * 100)) : 0;
+  let cls = "", note = "";
+  if (kind === "ceiling") {
+    cls = used > target * 1.05 ? "over" : "";
+    note = left >= 0 ? `margen ${num(left)}${unit}` : `excede ${num(-left)}${unit}`;
+  } else {
+    const reached = target && used >= target * 0.97;
+    cls = reached ? "reached" : "";
+    note = reached ? "✓ meta lograda" : `faltan ${num(Math.max(0, left))}${unit}`;
+  }
+  return `<div class="margin ${cls}">
+    <div class="m-top"><span>${label}</span><strong>${num(used)} / ${num(target)}${unit}</strong></div>
+    <div class="m-bar"><i style="width:${pct}%"></i></div>
+    <div class="m-left">${note}</div>
+  </div>`;
+}
+function renderJornada() {
+  const k = jornada.date, wd = weekdayOf(k);
+  const t = jornadaTotals(), req = reqCache || {};
+  const budget = dailyBudget();
+  let html = `<div class="jornada">
+    <div class="j-head"><h3>${DOW_FULL[wd]} · ${k}</h3>
+      <div class="j-count">Comidas: <button class="stepbtn" id="mealMinus">−</button>
+        <strong>${jornada.meals.length}</strong>
+        <button class="stepbtn" id="mealPlus">＋</button></div></div>
+    <div class="margins">
+      ${marginRow("Energía", t.kcal, req.kcal || 0, " kcal", "ceiling")}
+      ${marginRow("Proteína", t.protein_g, req.protein_g || 0, " g", "goal")}
+      ${marginRow("Carbohidratos", t.carb_g, req.carb_g || 0, " g", "goal")}
+      ${marginRow("Grasa", t.fat_g, req.fat_g || 0, " g", "goal")}
+      ${budget ? marginRow("Costo", t.cost_clp, budget, " $", "ceiling") : ""}
+    </div>
+    <div class="j-meals">`;
+  jornada.meals.forEach((m, idx) => {
+    const st = m.subtotal && m.subtotal.kcal != null ? m.subtotal : mealSubtotal(m.items);
+    const built = m.items.length;
+    html += `<div class="jmeal ${built ? "built" : "empty"}">
+      <div class="jm-head"><strong style="text-transform:capitalize">${m.meal}</strong>
+        ${m.fromRoutine ? '<span class="tag">rutina</span>' : ""}
+        <button class="btn-sm" data-rmmeal="${idx}" title="Quitar comida">✕</button></div>
+      ${built
+        ? `<div class="muted">${m.items.map((i) => `${i.name} (${num(i.grams)}g)`).join(" · ")}</div>
+           <div class="jm-sub">${num(st.kcal)} kcal · P${num(st.protein_g)} · ${clp(st.cost_clp)}</div>`
+        : `<div class="muted">Vacío — toca «Armar» para elegir alimentos.</div>`}
+      <div class="jm-actions">
+        <button class="btn-sm primary" data-build="${idx}">${built ? "Rearmar" : "🎰 Armar"}</button>
+        ${built ? `<select class="presetsel" data-fix="${idx}">
+            <option value="">Fijar rutina…</option>
+            <option value="L-V">Lunes a viernes</option>
+            <option value="finde">Fin de semana</option>
+            <option value="todos">Todos los días</option>
+          </select>` : ""}
+      </div></div>`;
+  });
+  html += `</div>
+    <div class="j-foot">
+      <button class="primary" id="saveJornada">💾 Guardar jornada</button>
+      <span id="jornadaStatus" class="status"></span>
+    </div></div>`;
+  openOverlay("Jornada", html);
+  $("#mealMinus").addEventListener("click", () => { if (jornada.meals.length > 1) { jornada.meals.pop(); renderJornada(); } });
+  $("#mealPlus").addEventListener("click", () => {
+    const next = MEAL_SEQUENCE[jornada.meals.length] || `comida ${jornada.meals.length + 1}`;
+    jornada.meals.push({ meal: next, items: [], subtotal: {} }); renderJornada();
+  });
+  $$("[data-rmmeal]").forEach((b) => b.addEventListener("click", () => { jornada.meals.splice(+b.dataset.rmmeal, 1); if (!jornada.meals.length) jornada.meals.push({ meal: "comida 1", items: [], subtotal: {} }); renderJornada(); }));
+  $$("[data-build]").forEach((b) => b.addEventListener("click", () => buildJornadaMeal(+b.dataset.build)));
+  $$(".presetsel[data-fix]").forEach((sel) => sel.addEventListener("change", () => { if (sel.value) fixRoutine(+sel.dataset.fix, sel.value); }));
+  $("#saveJornada").addEventListener("click", saveJornada);
+}
+async function buildJornadaMeal(idx) {
+  const m = jornada.meals[idx];
+  openMealBuilder(m.meal, (items) => {
+    m.items = items; m.subtotal = mealSubtotal(items); m.fromRoutine = false;
+    renderJornada();
+  });
+}
+async function fixRoutine(idx, preset) {
+  const m = jornada.meals[idx];
+  if (!m.items.length) return;
+  await api("/api/routines", { method: "POST", body: JSON.stringify({
+    user_id: currentUserId, meal: m.meal, preset, title: m.meal,
+    items: m.items, subtotal: m.subtotal && m.subtotal.kcal != null ? m.subtotal : mealSubtotal(m.items),
+  }) });
+  m.fromRoutine = true;
+  await loadCalendarData();
+  renderJornada();
+  $("#jornadaStatus").textContent = `✓ ${m.meal} quedó como rutina (${preset}).`;
+}
+async function saveJornada() {
+  const meals = jornada.meals.filter((m) => m.items.length)
+    .map((m) => ({ meal: m.meal, items: m.items, subtotal: m.subtotal && m.subtotal.kcal != null ? m.subtotal : mealSubtotal(m.items) }));
+  if (!meals.length) { $("#jornadaStatus").textContent = "Arma al menos una comida."; return; }
+  const totals = jornadaTotals();
+  const title = `Jornada ${jornada.date}`;
+  if (jornada.planId) await api(`/api/plans/${jornada.planId}`, { method: "DELETE" }).catch(() => {});
+  await api("/api/plans", { method: "POST", body: JSON.stringify({
+    user_id: currentUserId, title, scope: "diario", payload: { date: jornada.date, meals, totals } }) });
+  $("#jornadaStatus").textContent = "✓ Jornada guardada.";
+  await loadCalendarData(); renderCalendarGrid();
+  setTimeout(closeOverlay, 600);
+}
+
+// ---- Constructor de una comida en overlay secundario (ruleta) ----
+async function openMealBuilder(meal, onConfirm) {
+  openOverlay2("Armar: " + meal, '<p class="muted" id="mb2Status">Cargando carretes…</p><div id="mb2Reels" class="reels"></div>');
+  let ctrl;
+  try { ctrl = makeReelCtrl(await fetchBuilder(meal)); }
+  catch (e) { $("#mb2Status").textContent = "Error: " + e.message; return; }
+  $("#overlay2Body").innerHTML = `
+    <div class="reels" id="mb2Reels"></div>
+    <div class="mb2-control">
+      <svg class="donut" id="mb2Donut" viewBox="0 0 42 42"></svg>
+      <div class="mb2-info"><div class="pricebox" id="mb2Price">$0</div><div id="mb2Macros" class="platos"></div></div>
+    </div>
+    <div class="mb2-actions">
+      <button class="bigbtn spin" id="mb2Spin" title="Girar">&#8634;</button>
+      <button class="primary" id="mb2Confirm">✓ Confirmar comida</button>
+    </div>`;
+  const upd = () => {
+    const t = ctrl.totals();
+    renderDonut($("#mb2Donut"), t, ctrl.data.target);
+    $("#mb2Price").textContent = clp(t.cost_clp);
+    const pcal = t.protein_g * 4, ccal = t.carb_g * 4, gcal = t.fat_g * 9, tot = pcal + ccal + gcal || 1;
+    $("#mb2Macros").innerHTML = `<span style="color:var(--p)">P ${Math.round(pcal/tot*100)}%</span> · <span style="color:var(--c)">C ${Math.round(ccal/tot*100)}%</span> · <span style="color:var(--g)">G ${Math.round(gcal/tot*100)}%</span>`;
+  };
+  ctrl.render($("#mb2Reels"), upd);
+  $("#mb2Spin").addEventListener("click", () => { ctrl.spin(); ctrl.render($("#mb2Reels"), upd); });
+  $("#mb2Confirm").addEventListener("click", () => {
+    const items = ctrl.selection();
+    if (!items.length) { return; }
+    closeOverlay2();
+    onConfirm(items);
+  });
+}
+
 // ===================== MENÚ + OVERLAY =====================
 function openDrawer() { $("#drawer").classList.add("open"); $("#drawerBackdrop").classList.add("open"); }
 function closeDrawer() { $("#drawer").classList.remove("open"); $("#drawerBackdrop").classList.remove("open"); }
@@ -419,6 +596,9 @@ $("#drawerBackdrop").addEventListener("click", closeDrawer);
 function openOverlay(title, html) { $("#overlayTitle").textContent = title; $("#overlayBody").innerHTML = html; $("#overlay").classList.add("open"); }
 function closeOverlay() { $("#overlay").classList.remove("open"); }
 $("#overlayClose").addEventListener("click", closeOverlay);
+function openOverlay2(title, html) { $("#overlay2Title").textContent = title; $("#overlay2Body").innerHTML = html; $("#overlay2").classList.add("open"); }
+function closeOverlay2() { $("#overlay2").classList.remove("open"); }
+$("#overlay2Close").addEventListener("click", closeOverlay2);
 $$(".drawer-item[data-view]").forEach((b) => b.addEventListener("click", () => {
   closeDrawer();
   const v = b.dataset.view;
