@@ -57,6 +57,36 @@ def role_of(food) -> str:
     return ROLE_BY_CATEGORY.get(food.category, "aderezo")
 
 
+# Clasificacion fina por "origen": primer filtro de la ruleta (antes de ordenar
+# por kcal/precio). Derivada del nombre/categoria; heuristica, afinable.
+_ORIGIN_KEYWORDS = [
+    ("pollo", ("pollo", "pechuga", "trutro", "ala de")),
+    ("pavo", ("pavo",)),
+    ("vacuno", ("vacuno", "posta", "molida", "asiento", "lomo", "churrasco", "asado de tira", " res")),
+    ("cerdo", ("cerdo", "chuleta", "costillar", "pulpa de cerdo")),
+    ("pescado", ("atun", "atún", "jurel", "salmon", "salmón", "merluza", "reineta", "pescado", "sardina")),
+    ("huevo", ("huevo",)),
+    ("legumbres", ("lenteja", "poroto", "garbanzo", "arveja")),
+    ("lacteo", ("leche", "yogur", "yoghurt", "queso", "quesillo")),
+    ("arroz", ("arroz",)),
+    ("fideos", ("fideo", "pasta", "spaghetti", "tallarin", "tallarín", "espagueti")),
+    ("avena", ("avena",)),
+    ("pan", ("pan ", "marraqueta", "hallulla", "tortilla")),
+    ("papa", ("papa", "pure de papa")),
+    ("frutos secos", ("mani", "maní", "almendra", "nuez", "nueces")),
+    ("aceite", ("aceite", "oliva")),
+]
+
+
+def food_origin(food) -> str:
+    """Etiqueta de origen del alimento (pollo/vacuno/arroz/...) para filtrar."""
+    n = (food.name or "").lower()
+    for label, kws in _ORIGIN_KEYWORDS:
+        if any(k in n for k in kws):
+            return label
+    return food.category or "otro"
+
+
 def meal_type(meal: str) -> str:
     """Normaliza una etiqueta de comida (ej: 'snack2') a su tipo base."""
     m = (meal or "").lower()
@@ -102,7 +132,7 @@ def _candidate(food, role: str, target: dict, price_per_g: float, retailer: str)
     pkg = float(food.package_g or 0)
     return {
         "food_id": food.id, "name": food.name, "brand": food.brand, "category": food.category,
-        "role": role, "retailer": retailer, "grams": g,
+        "role": role, "origin": food_origin(food), "retailer": retailer, "grams": g,
         "servings": round(g / food.serving_g, 2) if food.serving_g else 0.0,
         # Cuantos platos rinde el envase recomendado a esta porcion.
         "package_g": pkg,
