@@ -67,6 +67,7 @@ def run_refresh(
     enrich_fn=enrich_foods,
     log=print,
     budget: int | None = None,
+    ttl_days: float | None = None,
 ) -> DataRefreshReport:
     """Refresca cada cadena de forma independiente y (opcional) la nutricion.
 
@@ -78,6 +79,11 @@ def run_refresh(
     ``budget`` es la cuota mensual compartida para proveedores *metered* (Apify);
     si es None se toma de la config. Las cadenas comparten el mismo presupuesto,
     asi que se va consumiendo en orden hasta agotarse.
+
+    ``ttl_days`` sobreescribe la frescura de la memoria de precios (`PriceCache`):
+    con 0 se ignora la memoria y se vuelve a consultar/matchear todo (re-aplica
+    el filtro de no-comestibles, sinonimos y autoaprendizaje de EAN). Si es None
+    se usa el TTL de la config.
     """
     report = DataRefreshReport()
     budget = config.APIFY_MONTHLY_BUDGET if budget is None else budget
@@ -85,7 +91,8 @@ def run_refresh(
         try:
             res = refresh_one(db, rid, limit=limit, use_cache=use_cache,
                               sleep_s=sleep_s, enabled=True, log=log,
-                              budget=budget, provider_key=config.APIFY_PROVIDER_KEY)
+                              budget=budget, provider_key=config.APIFY_PROVIDER_KEY,
+                              ttl_days=ttl_days)
             report.retailers[rid] = res.summary()
             report.ok_retailers += 1
         except (Exception, SystemExit) as exc:  # noqa: BLE001 - resiliencia del job
@@ -117,6 +124,10 @@ def main() -> None:
                         help="Cadena a refrescar (repetible). Por defecto: todas.")
     parser.add_argument("--limit", type=int, default=None, help="Maximo de alimentos a procesar.")
     parser.add_argument("--no-cache", action="store_true", help="Ignora la cache en disco.")
+    parser.add_argument("--force", action="store_true",
+                        help="Ignora la memoria de precios (TTL=0) y re-consulta/re-matchea "
+                             "todo: re-aplica filtro de no-comestibles, sinonimos y EAN. "
+                             "Gasta cuota de Apify (acotada por el presupuesto mensual).")
     parser.add_argument("--sleep", type=float, default=0.3, help="Pausa entre consultas (s).")
     parser.add_argument("--no-enrich", action="store_true",
                         help="No completar nutricion via FatSecret.")
@@ -132,6 +143,7 @@ def main() -> None:
         report = run_refresh(
             db, retailers, limit=args.limit, use_cache=not args.no_cache,
             sleep_s=args.sleep, enrich=not args.no_enrich,
+            ttl_days=0 if args.force else None,
         )
     finally:
         db.close()
