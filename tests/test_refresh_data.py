@@ -71,3 +71,22 @@ def test_report_summary_lists_each_retailer():
     rep.ok_retailers, rep.failed_retailers = 1, 1
     s = rep.summary()
     assert "jumbo" in s and "lider" in s and "con error: 1" in s
+
+
+def test_run_refresh_forwards_ttl_days_for_force():
+    """Con ttl_days=0 (force) cada cadena recibe la orden de ignorar la memoria."""
+    seen = []
+
+    def fake_refresh(db, rid, **kw):
+        seen.append((rid, kw.get("ttl_days")))
+        return _Res(f"{rid} ok")
+
+    run_refresh(None, ["jumbo", "lider"], enrich=False, ttl_days=0,
+                refresh_one=fake_refresh, log=lambda *_: None)
+    assert seen == [("jumbo", 0), ("lider", 0)]
+
+    # Por defecto (None) no fuerza: usa el TTL de la config en refresh_retailer.
+    seen.clear()
+    run_refresh(None, ["jumbo"], enrich=False,
+                refresh_one=fake_refresh, log=lambda *_: None)
+    assert seen == [("jumbo", None)]

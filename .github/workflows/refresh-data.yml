@@ -25,6 +25,11 @@ on:
         type: boolean
         required: false
         default: true
+      force:
+        description: "Forzar re-match (ignora la memoria de precios; gasta cuota Apify)"
+        type: boolean
+        required: false
+        default: false
   schedule:
     - cron: "17 8 * * 1"  # lunes 08:17 UTC (semanal)
 
@@ -67,6 +72,7 @@ jobs:
           LIMIT: ${{ github.event.inputs.limit }}
           # En schedule no hay inputs: el default efectivo es "enriquecer".
           ENRICH: ${{ github.event.inputs.enrich }}
+          FORCE: ${{ github.event.inputs.force }}
         run: |
           if [ -z "$SCAVENGER_DATABASE_URL" ]; then
             echo "::notice::SCAVENGER_DATABASE_URL no configurado; se omite el refresco. Ver docs/DATOS_REALES.md."
@@ -82,5 +88,6 @@ jobs:
           fi
           if [ -n "$LIMIT" ]; then ARGS="$ARGS --limit $LIMIT"; fi
           if [ "$ENRICH" = "false" ]; then ARGS="$ARGS --no-enrich"; fi
+          if [ "$FORCE" = "true" ]; then ARGS="$ARGS --force"; fi
           echo "Ejecutando: python -m backend.refresh_data $ARGS"
           python -m backend.refresh_data $ARGS
