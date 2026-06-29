@@ -229,13 +229,24 @@ def extract_offer(product: dict) -> dict | None:
 
 
 # --- Matching de producto contra un alimento del catalogo ----------------
-def score_match(food_name: str, food_brand: str, product: dict) -> float:
-    """Puntaje 0..1 de cuan bien un producto VTEX corresponde a un alimento."""
+def name_overlap(food_name: str, product: dict) -> float:
+    """Fraccion de los tokens del nombre del alimento cubiertos por el producto.
+
+    1.0 = el producto contiene todos los tokens del nombre buscado (con sinonimos
+    y plurales unificados). Util como senal fuerte (p.ej. para autoaprender EAN).
+    """
     fn = tokens(food_name)
-    pn = _expand_synonyms(tokens(product.get("name", "")))  # incluye sinonimos del producto
+    pn = _expand_synonyms(tokens(product.get("name", "")))
     if not fn or not pn:
         return 0.0
-    overlap = sum(1 for t in fn if t in pn) / len(fn)  # cobertura (con sinonimos/plurales)
+    return sum(1 for t in fn if t in pn) / len(fn)
+
+
+def score_match(food_name: str, food_brand: str, product: dict) -> float:
+    """Puntaje 0..1 de cuan bien un producto VTEX corresponde a un alimento."""
+    overlap = name_overlap(food_name, product)  # cobertura del nombre (con sinonimos/plurales)
+    if overlap == 0.0:
+        return 0.0
     score = overlap
     if food_brand and normalize(food_brand) in normalize(product.get("name", "") + " " + product.get("brand", "")):
         score += 0.25
@@ -244,8 +255,25 @@ def score_match(food_name: str, food_brand: str, product: dict) -> float:
     return min(score, 1.0)
 
 
-def best_match(food_name: str, food_brand: str, products: list[dict], threshold: float = 0.5) -> dict | None:
-    """Elige el producto mejor puntuado por sobre el umbral (None si ninguno)."""
+def looks_like_ean(value) -> bool:
+    """True si el valor parece un codigo de barras (8-14 digitos)."""
+    s = str(value or "").strip()
+    return s.isdigit() and 8 <= len(s) <= 14
+
+
+def best_match(food_name: str, food_brand: str, products: list[dict],
+               threshold: float = 0.5, food_ean: str = "") -> dict | None:
+    """Elige el mejor producto para un alimento.
+
+    Si el alimento tiene EAN y algun producto trae el mismo codigo de barras, es
+    un match exacto y gana de inmediato (independiente del nombre). Si no, cae al
+    puntaje por nombre/marca y exige superar el umbral.
+    """
+    if looks_like_ean(food_ean):
+        fe = str(food_ean).strip()
+        for p in products:
+            if looks_like_ean(p.get("ean")) and str(p.get("ean")).strip() == fe:
+                return p  # coincidencia exacta por codigo de barras
     best, best_score = None, 0.0
     for p in products:
         s = score_match(food_name, food_brand, p)

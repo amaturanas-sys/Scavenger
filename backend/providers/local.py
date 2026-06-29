@@ -40,6 +40,7 @@ class LocalDatasetProvider(FoodProvider):
                 name=item["name"],
                 category=item.get("category", "otro"),
                 brand=item.get("brand", ""),
+                ean=str(item.get("ean", "")),
                 retailer=default_retailer,
                 package_g=default_pkg,
                 price_clp=default_price,

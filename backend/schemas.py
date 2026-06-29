@@ -64,6 +64,7 @@ class FoodOut(BaseModel):
     name: str
     brand: str
     category: str
+    ean: str = ""
     retailer: str          # cadena mas economica
     package_g: float
     price_clp: float       # precio mas economico (envase)

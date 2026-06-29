@@ -18,9 +18,14 @@ from sqlalchemy.orm import Session
 from . import config, usage
 from .models import Food, FoodPrice, PriceCache
 from .providers import PRICE_PROVIDERS
-from .providers.vtex import best_match
+from .providers.vtex import best_match, looks_like_ean, name_overlap
 
 CACHE_DIR = config.DATA_DIR / "cache"
+# Autoaprender un EAN es una escritura dificil de revertir, asi que se exige una
+# senal fuerte: que el producto cubra TODOS los tokens del nombre del alimento
+# (cobertura 1.0). No se usa el score con bonos de marca/envase, que podria
+# inflar un match de nombre debil.
+EAN_LEARN_MIN_COVERAGE = 0.999
 
 
 @dataclass
@@ -165,12 +170,20 @@ def refresh_retailer(
             # Host bloqueado por el allowlist de egress: abortamos con guia clara.
             raise SystemExit(str(exc)) from exc
 
-        match = best_match(food.name, food.brand, products)
+        match = best_match(food.name, food.brand, products,
+                           food_ean=getattr(food, "ean", "") or "")
         _record_cache(db, retailer_id, food, match, now)  # recuerda hit o miss
         if not match or not match.get("package_g"):
             result.missed += 1
             result.misses.append(food.id)
             continue
+
+        # Autoaprende el EAN real: si el alimento aun no tiene y el match por
+        # nombre es fuerte, guarda el codigo de barras para matchear exacto la
+        # proxima vez (el catalogo se autopobla con EAN verdaderos del retail).
+        if not (getattr(food, "ean", "") or "") and looks_like_ean(match.get("ean")):
+            if name_overlap(food.name, match) >= EAN_LEARN_MIN_COVERAGE:
+                food.ean = str(match["ean"]).strip()
 
         result.matched += 1
         _upsert_price(db, food, retailer_id, match)

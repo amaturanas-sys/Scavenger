@@ -19,6 +19,7 @@ class FoodRecord:
     category: str
     brand: str = ""
     retailer: str = ""
+    ean: str = ""              # codigo de barras (opcional, honrado desde el catalogo)
     package_g: float = 1000.0
     price_clp: float = 0.0
     # Precios por cadena: [{retailer, retailer_id, price_clp, package_g}, ...]
