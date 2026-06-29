@@ -138,6 +138,26 @@ class PlanOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# ----- Rutinas (comidas fijas) -----
+class RoutineBase(BaseModel):
+    meal: str = ""
+    preset: str = Field("todos", description="L-V | finde | todos")
+    title: str = ""
+    items: list[dict[str, Any]] = []
+    subtotal: dict[str, Any] = {}
+
+
+class RoutineCreate(RoutineBase):
+    user_id: int
+
+
+class RoutineOut(RoutineBase):
+    id: int
+    user_id: int
+
+    model_config = {"from_attributes": True}
+
+
 # ----- Feedback -----
 class FeedbackRequest(BaseModel):
     satiety_score: int = Field(3, ge=1, le=5)

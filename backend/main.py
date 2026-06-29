@@ -15,7 +15,7 @@ from sqlalchemy import text
 
 from . import config
 from .database import engine
-from .routers import builder, feedback, foods, plans, users
+from .routers import builder, feedback, foods, plans, routines, users
 from .seed import init_and_seed
 
 
@@ -65,6 +65,7 @@ app.include_router(foods.router)
 app.include_router(plans.router)
 app.include_router(feedback.router)
 app.include_router(builder.router)
+app.include_router(routines.router)
 
 
 @app.get("/api/health", tags=["sistema"])
