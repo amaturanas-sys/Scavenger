@@ -37,6 +37,8 @@ class FoodRecord:
     iron_mg: float = 0.0
     potassium_mg: float = 0.0
     vitamin_c_mg: float = 0.0
+    zinc_mg: float = 0.0
+    vitamin_e_mg: float = 0.0
     tags: list = field(default_factory=list)
 
     def to_dict(self) -> dict:

@@ -58,6 +58,8 @@ class LocalDatasetProvider(FoodProvider):
                 iron_mg=float(per.get("iron_mg", 0)),
                 potassium_mg=float(per.get("potassium_mg", 0)),
                 vitamin_c_mg=float(per.get("vitamin_c_mg", 0)),
+                zinc_mg=float(per.get("zinc_mg", 0)),
+                vitamin_e_mg=float(per.get("vitamin_e_mg", 0)),
                 tags=list(item.get("tags", [])),
             ))
         return records
