@@ -5127,6 +5127,506 @@
           "package_g": 500
         }
       ]
+    },
+    {
+      "id": "mostaza",
+      "name": "Mostaza",
+      "brand": "Maggi",
+      "category": "otro",
+      "package_g": 250,
+      "serving_g": 15,
+      "max_servings_day": 2,
+      "satiety_index": 30,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 66,
+        "protein_g": 4.0,
+        "carb_g": 8.0,
+        "fat_g": 4.0,
+        "fiber_g": 3.0,
+        "sodium_mg": 1100,
+        "calcium_mg": 60,
+        "iron_mg": 1.5,
+        "potassium_mg": 150,
+        "vitamin_c_mg": 0,
+        "zinc_mg": 0.6,
+        "vitamin_e_mg": 0.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 900,
+          "package_g": 250
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1060,
+          "package_g": 250
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1140,
+          "package_g": 250
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1170,
+          "package_g": 250
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1170,
+          "package_g": 250
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1230,
+          "package_g": 250
+        }
+      ]
+    },
+    {
+      "id": "mayonesa",
+      "name": "Mayonesa",
+      "brand": "Hellmann's",
+      "category": "otro",
+      "package_g": 500,
+      "serving_g": 15,
+      "max_servings_day": 2,
+      "satiety_index": 40,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 680,
+        "protein_g": 1.0,
+        "carb_g": 2.0,
+        "fat_g": 75.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 600,
+        "calcium_mg": 8,
+        "iron_mg": 0.2,
+        "potassium_mg": 20,
+        "vitamin_c_mg": 0,
+        "zinc_mg": 0.2,
+        "vitamin_e_mg": 3.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1910,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2240,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2340,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2460,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2580,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "ketchup",
+      "name": "Ketchup",
+      "brand": "Heinz",
+      "category": "otro",
+      "package_g": 350,
+      "serving_g": 15,
+      "max_servings_day": 2,
+      "satiety_index": 30,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 100,
+        "protein_g": 1.2,
+        "carb_g": 26.0,
+        "fat_g": 0.1,
+        "fiber_g": 0.3,
+        "sodium_mg": 900,
+        "calcium_mg": 15,
+        "iron_mg": 0.5,
+        "potassium_mg": 290,
+        "vitamin_c_mg": 4.0,
+        "zinc_mg": 0.2,
+        "vitamin_e_mg": 1.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1250,
+          "package_g": 350
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1530,
+          "package_g": 350
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1620,
+          "package_g": 350
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1620,
+          "package_g": 350
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1650,
+          "package_g": 350
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1710,
+          "package_g": 350
+        }
+      ]
+    },
+    {
+      "id": "salsa_soya",
+      "name": "Salsa de soya",
+      "brand": "Kikkoman",
+      "category": "otro",
+      "package_g": 250,
+      "serving_g": 10,
+      "max_servings_day": 2,
+      "satiety_index": 20,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 53,
+        "protein_g": 8.0,
+        "carb_g": 5.0,
+        "fat_g": 0.1,
+        "fiber_g": 0.8,
+        "sodium_mg": 5600,
+        "calcium_mg": 20,
+        "iron_mg": 2.0,
+        "potassium_mg": 210,
+        "vitamin_c_mg": 0,
+        "zinc_mg": 0.5,
+        "vitamin_e_mg": 0.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1650,
+          "package_g": 250
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 2080,
+          "package_g": 250
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2130,
+          "package_g": 250
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2190,
+          "package_g": 250
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2240,
+          "package_g": 250
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2350,
+          "package_g": 250
+        }
+      ]
+    },
+    {
+      "id": "vinagre_tinto",
+      "name": "Vinagre tinto",
+      "brand": "Traverso",
+      "category": "otro",
+      "package_g": 500,
+      "serving_g": 15,
+      "max_servings_day": 2,
+      "satiety_index": 10,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 19,
+        "protein_g": 0.1,
+        "carb_g": 0.4,
+        "fat_g": 0.0,
+        "fiber_g": 0.0,
+        "sodium_mg": 8,
+        "calcium_mg": 6,
+        "iron_mg": 0.5,
+        "potassium_mg": 40,
+        "vitamin_c_mg": 0,
+        "zinc_mg": 0.0,
+        "vitamin_e_mg": 0.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 710,
+          "package_g": 500
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 890,
+          "package_g": 500
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 900,
+          "package_g": 500
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1010,
+          "package_g": 500
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1020,
+          "package_g": 500
+        }
+      ]
+    },
+    {
+      "id": "pebre",
+      "name": "Pebre",
+      "brand": "Casero",
+      "category": "otro",
+      "package_g": 200,
+      "serving_g": 30,
+      "max_servings_day": 2,
+      "satiety_index": 60,
+      "tags": [
+        "vegano",
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 45,
+        "protein_g": 1.2,
+        "carb_g": 5.0,
+        "fat_g": 1.8,
+        "fiber_g": 1.6,
+        "sodium_mg": 300,
+        "calcium_mg": 18,
+        "iron_mg": 0.7,
+        "potassium_mg": 250,
+        "vitamin_c_mg": 12.0,
+        "zinc_mg": 0.2,
+        "vitamin_e_mg": 0.6
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 960,
+          "package_g": 200
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1200,
+          "package_g": 200
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 1210,
+          "package_g": 200
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 1250,
+          "package_g": 200
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 1290,
+          "package_g": 200
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 1310,
+          "package_g": 200
+        }
+      ]
+    },
+    {
+      "id": "salsa_bbq",
+      "name": "Salsa barbacoa",
+      "brand": "Kraft",
+      "category": "otro",
+      "package_g": 350,
+      "serving_g": 15,
+      "max_servings_day": 2,
+      "satiety_index": 30,
+      "tags": [
+        "vegano"
+      ],
+      "per_100g": {
+        "kcal": 170,
+        "protein_g": 1.0,
+        "carb_g": 40.0,
+        "fat_g": 0.5,
+        "fiber_g": 0.6,
+        "sodium_mg": 1000,
+        "calcium_mg": 20,
+        "iron_mg": 0.8,
+        "potassium_mg": 300,
+        "vitamin_c_mg": 2.0,
+        "zinc_mg": 0.2,
+        "vitamin_e_mg": 0.4
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 1640,
+          "package_g": 350
+        },
+        {
+          "retailer": "Lider",
+          "retailer_id": "lider",
+          "price_clp": 1950,
+          "package_g": 350
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2100,
+          "package_g": 350
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 2150,
+          "package_g": 350
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2200,
+          "package_g": 350
+        }
+      ]
+    },
+    {
+      "id": "pesto",
+      "name": "Pesto",
+      "brand": "Carozzi",
+      "category": "otro",
+      "package_g": 190,
+      "serving_g": 20,
+      "max_servings_day": 2,
+      "satiety_index": 50,
+      "tags": [
+        "sin_gluten"
+      ],
+      "per_100g": {
+        "kcal": 450,
+        "protein_g": 5.0,
+        "carb_g": 6.0,
+        "fat_g": 45.0,
+        "fiber_g": 2.0,
+        "sodium_mg": 800,
+        "calcium_mg": 200,
+        "iron_mg": 1.5,
+        "potassium_mg": 180,
+        "vitamin_c_mg": 2.0,
+        "zinc_mg": 0.7,
+        "vitamin_e_mg": 5.0
+      },
+      "prices": [
+        {
+          "retailer": "Mayorista 10",
+          "retailer_id": "mayorista10",
+          "price_clp": 2190,
+          "package_g": 190
+        },
+        {
+          "retailer": "Santa Isabel",
+          "retailer_id": "santa_isabel",
+          "price_clp": 2830,
+          "package_g": 190
+        },
+        {
+          "retailer": "Tottus",
+          "retailer_id": "tottus",
+          "price_clp": 2870,
+          "package_g": 190
+        },
+        {
+          "retailer": "Unimarc",
+          "retailer_id": "unimarc",
+          "price_clp": 2880,
+          "package_g": 190
+        },
+        {
+          "retailer": "Jumbo",
+          "retailer_id": "jumbo",
+          "price_clp": 3090,
+          "package_g": 190
+        }
+      ]
     }
   ]
 }
