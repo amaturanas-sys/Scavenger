@@ -188,6 +188,7 @@ function makeReelCtrl(data) {
     else if (sv === "protein") arr.sort((a, b) => b.protein_g - a.protein_g);   // más proteína primero (paso 1)
     else if (sv === "carb") arr.sort((a, b) => b.carb_g - a.carb_g);            // más carbohidrato primero (paso 2)
     else if (sv === "micro") arr.sort((a, b) => (b.micro_score || 0) - (a.micro_score || 0)); // micronutrientes (paso 3)
+    else if (sv === "pref") arr.sort((a, b) => (b.pref || 0) - (a.pref || 0) || a.cost_clp - b.cost_clp); // preferencia, luego precio (paso 4)
     else arr.sort((a, b) => a.cost_clp - b.cost_clp);                           // precio ($/porción) asc
     return arr;
   }
@@ -684,7 +685,7 @@ const GUIDED_STEPS = [
   { role: "proteina", label: "Proteínas", help: "La base de proteína de cada comida del día.", sort: "protein" },
   { role: "carbohidrato", label: "Carbohidratos", help: "El acompañamiento de cada comida, con la proteína ya elegida.", sort: "carb" },
   { role: "vegetal", label: "Verduras y vitaminas", help: "Plato redondo: ordenadas por fibra y micronutrientes.", sort: "micro" },
-  { role: "aderezo", label: "Aderezos", help: "El toque final, del más económico hacia arriba.", sort: "price" },
+  { role: "aderezo", label: "Aderezos", help: "El toque final, según tus preferencias.", sort: "pref" },
 ];
 let guided = null;        // { date, meals:[{meal}], stepIdx }
 let guidedSlots = {};     // meal -> slots del constructor (cache)

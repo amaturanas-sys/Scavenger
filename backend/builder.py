@@ -17,6 +17,7 @@ import random as _random
 
 from sqlalchemy.orm import Session
 
+from .learning import get_preferences
 from .models import User
 from .services import _eligible_foods, _price_in_retailers, user_requirements
 
@@ -175,6 +176,8 @@ def _candidates_by_role(db: Session, user: User, meal: str):
     req = user_requirements(user)
     target = meal_target(req, meal, getattr(user, "min_protein_per_meal_g", 0.0))
     preferred = set(user.preferred_retailers or [])
+    # Preferencias aprendidas (peso por food_id) para ordenar p.ej. los aderezos.
+    prefs = get_preferences(db, user.id) if getattr(user, "id", None) else {}
     slots = MEAL_TEMPLATES[meal_type(meal)]["slots"]
     by_role: dict[str, list] = {r: [] for r in slots}
 
@@ -186,7 +189,9 @@ def _candidates_by_role(db: Session, user: User, meal: str):
         if priced is None:
             continue
         ppg, retailer = priced
-        by_role[r].append(_candidate(food, r, target, ppg, retailer))
+        cand = _candidate(food, r, target, ppg, retailer)
+        cand["pref"] = round(float(prefs.get(food.id, 0.0)), 3)
+        by_role[r].append(cand)
 
     for r in by_role:
         by_role[r].sort(key=lambda c: c["cost_clp"])  # de lo mas economico hacia arriba
