@@ -95,3 +95,54 @@ def test_refresh_matches_by_ean_despite_bad_name(monkeypatch):
     db.refresh(food)
     after = next((p.price_clp for p in food.prices if p.retailer_id == "jumbo"), None)
     assert after == 555  # matcheó por EAN pese al nombre sin relación
+
+
+# --- gate de autoaprendizaje reforzado (B1) ---------------------------------
+class _FoodLike:
+    def __init__(self, name, brand=""):
+        self.name = name
+        self.brand = brand
+
+
+def test_can_learn_ean_blocks_single_token_without_brand():
+    from backend.pricing import _can_learn_ean
+    m = {"name": "Salsa de Tomate Pomarola 200 g", "brand": "Pomarola", "ean": "7801234567777"}
+    # 'Tomate' (1 token, sin marca) NO debe aprender el EAN de una salsa de tomate.
+    assert _can_learn_ean(_FoodLike("Tomate"), m) is False
+
+
+def test_can_learn_ean_allows_multitoken_full_coverage():
+    from backend.pricing import _can_learn_ean
+    m = {"name": "Arroz Grado 2 Tucapel 1 Kg", "brand": "Tucapel"}
+    assert _can_learn_ean(_FoodLike("Arroz grado 2", "Tucapel"), m) is True
+
+
+def test_can_learn_ean_allows_single_token_with_brand_match():
+    from backend.pricing import _can_learn_ean
+    m = {"name": "Quinoa Real Tucapel 500 g", "brand": "Tucapel"}
+    assert _can_learn_ean(_FoodLike("Quinoa", "Tucapel"), m) is True
+
+
+def test_can_learn_ean_requires_full_coverage_even_with_brand():
+    from backend.pricing import _can_learn_ean
+    m = {"name": "Arroz Grado 2 Tucapel", "brand": "Tucapel"}
+    # 'integral' no aparece -> cobertura < 1 -> no aprende aunque la marca calce.
+    assert _can_learn_ean(_FoodLike("Arroz integral", "Tucapel"), m) is False
+
+
+def test_refresh_does_not_autolearn_single_token(monkeypatch):
+    db = _isolated_db()
+    tomate = db.query(Food).filter(Food.id == "tomate").one_or_none()
+    if tomate is None:
+        return  # catálogo sin 'tomate'; el gate ya está cubierto por los unit tests
+    assert not tomate.ean
+
+    class FakeJumbo(_FakeJumbo):
+        _product = {"name": "Salsa de Tomate Pomarola 200 g", "brand": "Pomarola",
+                    "price_clp": 690, "package_g": 200, "ean": "7801234567777",
+                    "retailer": "Jumbo", "retailer_id": "jumbo"}
+
+    monkeypatch.setitem(pricing.PRICE_PROVIDERS, "jumbo", FakeJumbo)
+    pricing.refresh_retailer(db, "jumbo", use_cache=False, sleep_s=0, ttl_days=0, log=lambda *_: None)
+    db.refresh(tomate)
+    assert not tomate.ean   # no aprendió el EAN equivocado

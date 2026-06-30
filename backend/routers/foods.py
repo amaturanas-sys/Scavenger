@@ -22,7 +22,7 @@ def _to_out(f: Food) -> FoodOut:
     ]
     max_per_100g = round(max((p.price_per_g for p in prices), default=f.price_per_g) * 100, 1)
     return FoodOut(
-        id=f.id, name=f.name, brand=f.brand, category=f.category, retailer=f.retailer,
+        id=f.id, name=f.name, brand=f.brand, category=f.category, ean=f.ean or "", retailer=f.retailer,
         package_g=f.package_g, price_clp=f.price_clp, price_per_100g=round(f.price_per_100g, 1),
         price_max_per_100g=max_per_100g, serving_g=f.serving_g, satiety_index=f.satiety_index,
         kcal=f.kcal, protein_g=f.protein_g, carb_g=f.carb_g, fat_g=f.fat_g, fiber_g=f.fiber_g,
