@@ -173,8 +173,9 @@ async function fetchBuilder(meal) {
 }
 
 function makeReelCtrl(data) {
-  const st = { idx: {}, locked: {}, removed: {}, sort: {}, origin: {} };
-  data.slots.forEach((s) => { st.idx[s.role] = 0; st.locked[s.role] = false; st.removed[s.role] = false; st.sort[s.role] = "price"; st.origin[s.role] = ""; });
+  const st = { idx: {}, locked: {}, removed: {}, sort: {}, origin: {}, grams: {}, gramsFor: {} };
+  // grams/gramsFor: override de cantidad por rol (y el food_id al que aplica).
+  data.slots.forEach((s) => { st.idx[s.role] = 0; st.locked[s.role] = false; st.removed[s.role] = false; st.sort[s.role] = "price"; st.origin[s.role] = ""; st.grams[s.role] = 0; st.gramsFor[s.role] = ""; });
 
   function sorted(slot) {
     let arr = slot.candidates;
@@ -187,7 +188,7 @@ function makeReelCtrl(data) {
   }
   function selection() {
     return data.slots.filter((s) => !st.removed[s.role] && s.candidates.length)
-      .map((s) => { const arr = sorted(s); return arr[st.idx[s.role] % arr.length]; });
+      .map((s) => { const arr = sorted(s); return scaledCandidate(st, s.role, arr[st.idx[s.role] % arr.length]); });
   }
   function totals() {
     const t = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0, satiety_contrib: 0 };
@@ -221,6 +222,15 @@ function makeReelCtrl(data) {
     container.querySelectorAll(".rmbtn").forEach((b) => b.addEventListener("click", () => { st.removed[b.dataset.rm] = !st.removed[b.dataset.rm]; redraw(); }));
     container.querySelectorAll(".sortbtn").forEach((b) => b.addEventListener("click", () => { rememberSel(b.dataset.role, () => (st.sort[b.dataset.role] = b.dataset.sort)); redraw(); }));
     container.querySelectorAll(".originsel").forEach((sel) => sel.addEventListener("change", () => { rememberSel(sel.dataset.role, () => (st.origin[sel.dataset.role] = sel.value)); redraw(); }));
+    container.querySelectorAll(".qbtn").forEach((b) => b.addEventListener("click", () => {
+      const role = b.dataset.role, slot = data.slots.find((s) => s.role === role);
+      const arr = sorted(slot), c = arr.length ? arr[st.idx[role] % arr.length] : null;
+      if (!c) return;
+      const cur = reelGrams(st, role, c);                            // pasos de 10 g, mínimo 5 g, en múltiplos de 5
+      st.grams[role] = Math.max(5, Math.round((cur + (+b.dataset.q) * 10) / 5) * 5);
+      st.gramsFor[role] = c.food_id;
+      redraw();
+    }));
     wireShowcase(container);   // vitrina móvil: agranda el carrete centrado
     if (onChange) onChange();
   }
@@ -254,16 +264,40 @@ function wireShowcase(container) {
   requestAnimationFrame(() => markCenterReel(container));
 }
 
+// Cantidad (g) elegida para el rol: override del usuario si aplica al alimento
+// mostrado; si no, la porción pre-calculada del candidato.
+function reelGrams(st, role, c) {
+  if (!c) return 0;
+  if (st.gramsFor[role] === c.food_id && st.grams[role] > 0) return st.grams[role];
+  return c.grams;
+}
+// Candidato escalado a la cantidad elegida (macros, costo, porciones y platos/envase).
+function scaledCandidate(st, role, c) {
+  if (!c) return c;
+  const g = reelGrams(st, role, c);
+  if (!c.grams || g === c.grams) return c;
+  const f = g / c.grams, r1 = (x) => Math.round((x || 0) * 10) / 10;
+  return { ...c, grams: g, servings: r1((c.servings || 0) * f),
+    kcal: r1(c.kcal * f), protein_g: r1(c.protein_g * f), carb_g: r1(c.carb_g * f),
+    fat_g: r1(c.fat_g * f), fiber_g: r1((c.fiber_g || 0) * f), cost_clp: r1(c.cost_clp * f),
+    satiety_contrib: r1((c.satiety_contrib || 0) * f),
+    platos_por_envase: (c.package_g && g > 0) ? Math.floor(c.package_g / g) : (c.platos_por_envase || 0) };
+}
+
 function reelHtml(s, st, sorted) {
   const hasAny = s.candidates.length, removed = st.removed[s.role];
-  const arr = sorted(s), n = arr.length, c = n ? arr[st.idx[s.role] % n] : null;
+  const arr = sorted(s), n = arr.length, c = n ? scaledCandidate(st, s.role, arr[st.idx[s.role] % n]) : null;
   const win = removed
     ? `<div class="window removed">Grupo quitado<br><small>toca ＋ para incluir</small></div>`
     : (c
       ? `<div class="window">
            <div class="nm">${c.name}</div>
            ${c.brand ? `<div class="brand">${c.brand}</div>` : ""}
-           <div class="gr">${num(c.grams)} g</div>
+           <div class="qty">
+             <button class="qbtn" data-q="-1" data-role="${s.role}" title="Menos cantidad">−</button>
+             <span class="qval"><strong>${num(c.grams)} g</strong><small>${num(c.servings, 1)} porc.</small></span>
+             <button class="qbtn" data-q="1" data-role="${s.role}" title="Más cantidad">＋</button>
+           </div>
            <div class="mc">${num(c.kcal)} kcal · P${num(c.protein_g, 0)} C${num(c.carb_g, 0)} G${num(c.fat_g, 0)}</div>
            <span class="shop">${c.retailer}</span>
            ${c.platos_por_envase ? `<div class="platos">≈ ${c.platos_por_envase} platos/envase</div>` : ""}
