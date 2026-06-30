@@ -376,3 +376,28 @@ body {
 .window .qval { display: flex; flex-direction: column; align-items: center; line-height: 1.05; min-width: 0; }
 .window .qval strong { font-size: 15px; font-weight: 800; white-space: nowrap; }
 .window .qval small { font-size: 9px; color: #555; white-space: nowrap; }
+
+/* ---------- botón destacado del hub (acción primaria) ---------- */
+.hub-btn.accent {
+  background: linear-gradient(180deg, #f5f6f8, #c7cad2); color: #111; border-color: #c7cad2;
+  font-weight: 800; min-height: 70px;
+}
+.hub-btn.accent:active { background: linear-gradient(180deg, #e6e7ea, #b4b7bf); }
+
+/* ---------- asistente guiado (paso a paso) ---------- */
+.guided { display: flex; flex-direction: column; gap: 4px; }
+.guided h3 { margin: 8px 0 2px; }
+.g-steps { display: flex; gap: 8px; justify-content: center; margin: 4px 0 2px; }
+.g-dot { width: 30px; height: 5px; border-radius: 3px; background: var(--panel-2); }
+.g-dot.done { background: var(--ok); }
+.g-dot.on { background: var(--accent); }
+.guided .margins { margin: 10px 0; }
+#gMeals { display: flex; flex-direction: column; gap: 12px; }
+.g-meal { background: var(--panel); border-radius: 16px; padding: 10px 8px; }
+.g-meal-head { padding: 2px 6px 0; }
+.g-meal .reels { margin-top: 4px; }
+.g-foot {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  position: sticky; bottom: 0; background: var(--bg); padding: 12px 0;
+}
+.g-foot .primary { flex: 1; }
