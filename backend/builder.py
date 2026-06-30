@@ -130,6 +130,26 @@ def _portion_grams(food, role: str, target: dict) -> float:
     return float(round(g / 5.0) * 5)  # multiplos de 5 g
 
 
+# Referencias diarias (aprox.) para puntuar la riqueza de micronutrientes de una
+# porcion: fibra y los micros del "paso 3" del armado guiado (verduras/legumbres).
+_MICRO_RDA = {
+    "fiber_g": 25.0, "vitamin_c_mg": 80.0, "vitamin_e_mg": 12.0,
+    "iron_mg": 14.0, "zinc_mg": 11.0, "calcium_mg": 800.0,
+}
+
+
+def micro_score(food, grams: float) -> float:
+    """Puntaje 0..100 de aporte de micronutrientes (fibra + vitC/E, Fe, Zn, Ca)
+    de una porcion de `grams` g: promedio del %RDA cubierto (cada uno topado al
+    100%). Sirve para ordenar las verduras/legumbres por "plato redondo"."""
+    scale = (grams or 0.0) / 100.0
+    total = 0.0
+    for attr, rda in _MICRO_RDA.items():
+        val = (getattr(food, attr, 0.0) or 0.0) * scale
+        total += min(val / rda, 1.0) if rda else 0.0
+    return round(total / len(_MICRO_RDA) * 100.0, 1)
+
+
 def _candidate(food, role: str, target: dict, price_per_g: float, retailer: str) -> dict:
     g = _portion_grams(food, role, target)
     scale = g / 100.0
@@ -145,6 +165,8 @@ def _candidate(food, role: str, target: dict, price_per_g: float, retailer: str)
         "kcal": round(food.kcal * scale, 1), "protein_g": round(food.protein_g * scale, 1),
         "carb_g": round(food.carb_g * scale, 1), "fat_g": round(food.fat_g * scale, 1),
         "fiber_g": round(food.fiber_g * scale, 1),
+        # Puntaje de micronutrientes de la porcion (para ordenar el paso 3).
+        "micro_score": micro_score(food, g),
         "satiety_contrib": round(food.satiety_index / 100.0 * g, 1),
     }
 

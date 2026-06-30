@@ -31,6 +31,7 @@ def seed_foods(db: Session, provider_name: str = "local", refresh: bool = False)
             kcal=r.kcal, protein_g=r.protein_g, carb_g=r.carb_g, fat_g=r.fat_g,
             fiber_g=r.fiber_g, sodium_mg=r.sodium_mg, calcium_mg=r.calcium_mg,
             iron_mg=r.iron_mg, potassium_mg=r.potassium_mg, vitamin_c_mg=r.vitamin_c_mg,
+            zinc_mg=r.zinc_mg, vitamin_e_mg=r.vitamin_e_mg,
             tags=r.tags,
         )
         if existing is None:

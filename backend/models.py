@@ -50,6 +50,10 @@ class Food(Base):
     iron_mg: Mapped[float] = mapped_column(Float, default=0.0)
     potassium_mg: Mapped[float] = mapped_column(Float, default=0.0)
     vitamin_c_mg: Mapped[float] = mapped_column(Float, default=0.0)
+    # Micronutrientes adicionales (paso 3 del armado guiado). Vacios por defecto;
+    # se completan al enriquecer la nutricion (FatSecret).
+    zinc_mg: Mapped[float] = mapped_column(Float, default=0.0)
+    vitamin_e_mg: Mapped[float] = mapped_column(Float, default=0.0)
 
     tags: Mapped[list] = mapped_column(JSON, default=list)
 
