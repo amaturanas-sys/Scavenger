@@ -221,9 +221,37 @@ function makeReelCtrl(data) {
     container.querySelectorAll(".rmbtn").forEach((b) => b.addEventListener("click", () => { st.removed[b.dataset.rm] = !st.removed[b.dataset.rm]; redraw(); }));
     container.querySelectorAll(".sortbtn").forEach((b) => b.addEventListener("click", () => { rememberSel(b.dataset.role, () => (st.sort[b.dataset.role] = b.dataset.sort)); redraw(); }));
     container.querySelectorAll(".originsel").forEach((sel) => sel.addEventListener("change", () => { rememberSel(sel.dataset.role, () => (st.origin[sel.dataset.role] = sel.value)); redraw(); }));
+    wireShowcase(container);   // vitrina móvil: agranda el carrete centrado
     if (onChange) onChange();
   }
   return { data, st, meal: data.meal, sorted, selection, totals, spin, render };
+}
+
+// Vitrina móvil: marca con .focus el carrete más cercano al centro del contenedor
+// (se ve más grande). Se recalcula en cada scroll y tras cada render.
+function markCenterReel(container) {
+  const reels = container.querySelectorAll(".reel");
+  if (!reels.length) return;
+  const rect = container.getBoundingClientRect();
+  if (!rect.width) return;
+  const cx = rect.left + rect.width / 2;
+  let best = null, bestDist = Infinity;
+  reels.forEach((r) => {
+    const rr = r.getBoundingClientRect();
+    const d = Math.abs(rr.left + rr.width / 2 - cx);
+    if (d < bestDist) { bestDist = d; best = r; }
+  });
+  reels.forEach((r) => r.classList.toggle("focus", r === best));
+}
+function wireShowcase(container) {
+  if (!container._showcaseWired) {
+    container._showcaseWired = true;
+    container.addEventListener("scroll", () => {
+      if (container._raf) return;
+      container._raf = requestAnimationFrame(() => { container._raf = 0; markCenterReel(container); });
+    }, { passive: true });
+  }
+  requestAnimationFrame(() => markCenterReel(container));
 }
 
 function reelHtml(s, st, sorted) {
@@ -252,7 +280,7 @@ function reelHtml(s, st, sorted) {
     : "";
   return `<div class="reel ${st.locked[s.role] ? "locked" : ""} ${removed ? "removed" : ""}">
     <div class="role">${s.label}
-      <button class="lockbtn" data-lock="${s.role}" ${off}>${st.locked[s.role] ? "🔒" : "🔓"}</button>
+      <button class="lockbtn ${st.locked[s.role] ? "on" : ""}" data-lock="${s.role}" ${off}>${st.locked[s.role] ? "Fijo" : "Libre"}</button>
       <button class="rmbtn" data-rm="${s.role}" title="Quitar/incluir grupo">${removed ? "＋" : "✕"}</button>
     </div>
     ${originSel}
@@ -343,7 +371,7 @@ function renderDayBuild() {
   });
   html += `<div class="totbar"><div class="pill">Día: <strong>${num(total.kcal)} kcal</strong></div>
     <div class="pill">Total: <strong>${clp(total.cost_clp)}</strong></div></div>
-    <button id="saveDayBtn" class="primary">💾 Guardar minuta del día</button>
+    <button id="saveDayBtn" class="primary">Guardar minuta del día</button>
     <span id="saveDayStatus" class="status"></span>`;
   $("#dayBuild").innerHTML = html;
   $$("#dayBuild [data-rm]").forEach((b) => b.addEventListener("click", () => { dayMeals.splice(+b.dataset.rm, 1); renderDayBuild(); }));
@@ -508,7 +536,7 @@ function renderJornada() {
            <div class="jm-sub">${num(st.kcal)} kcal · P${num(st.protein_g)} · ${clp(st.cost_clp)}</div>`
         : `<div class="muted">Vacío — toca «Armar» para elegir alimentos.</div>`}
       <div class="jm-actions">
-        <button class="btn-sm primary" data-build="${idx}">${built ? "Rearmar" : "🎰 Armar"}</button>
+        <button class="btn-sm primary" data-build="${idx}">${built ? "Rearmar" : "Armar"}</button>
         ${built ? `<select class="presetsel" data-fix="${idx}">
             <option value="">Fijar rutina…</option>
             <option value="L-V">Lunes a viernes</option>
@@ -519,7 +547,7 @@ function renderJornada() {
   });
   html += `</div>
     <div class="j-foot">
-      <button class="primary" id="saveJornada">💾 Guardar jornada</button>
+      <button class="primary" id="saveJornada">Guardar jornada</button>
       <span id="jornadaStatus" class="status"></span>
     </div></div>`;
   openOverlay("Jornada", html);
@@ -671,7 +699,7 @@ function renderDaily(data) {
   lastPlanPayload = data;
   let html = (data.warnings || []).length ? `<div class="warnbox">⚠ ${data.warnings.join(" ")}</div>` : "";
   html += totalsBar(data.totals, data.requirements) + data.meals.map(mealBlock).join("");
-  html += `<button id="savePlanBtn" class="primary">Guardar</button> <button id="shopBtn" class="btn-sm">🛒 Lista de compras</button>`;
+  html += `<button id="savePlanBtn" class="primary">Guardar</button> <button id="shopBtn" class="btn-sm">Lista de compras</button>`;
   $("#planResult").innerHTML = html;
   $("#savePlanBtn").addEventListener("click", () => savePlan("diario", data));
   $("#shopBtn").addEventListener("click", () => showShoppingForPayload(data));
@@ -684,7 +712,7 @@ function renderWeekly(data) {
     html += `<div class="meal"><h3 style="text-transform:capitalize">${d.day} · ${clp(d.plan.totals.cost_clp)}</h3>
       <div class="muted">${d.plan.meals.map((m) => `<strong style="text-transform:capitalize">${m.meal}</strong>: ${m.items.map((i) => i.name).join(", ") || "—"}`).join("<br>")}</div></div>`;
   });
-  html += `<button id="savePlanBtn" class="primary">Guardar</button> <button id="shopBtn" class="btn-sm">🛒 Lista</button>`;
+  html += `<button id="savePlanBtn" class="primary">Guardar</button> <button id="shopBtn" class="btn-sm">Lista</button>`;
   $("#planResult").innerHTML = html;
   $("#savePlanBtn").addEventListener("click", () => savePlan("semanal", data));
   $("#shopBtn").addEventListener("click", () => showShoppingForPayload(data));
@@ -725,7 +753,7 @@ function shoppingHtml(d) {
     const rows = r.items.map((i) => `<tr><td>${i.name}</td><td class="num">${num(i.needed_g)} g</td>
       <td class="num">${i.packages != null ? `${i.packages}×${num(i.package_g)}g` : "—"}</td>
       <td class="num">${i.packages_cost_clp != null ? clp(i.packages_cost_clp) : "—"}</td></tr>`).join("");
-    html += `<div class="meal"><h3>🛒 ${r.retailer} <span>${clp(r.subtotal_packages_clp)}</span></h3>
+    html += `<div class="meal"><h3>${r.retailer} <span>${clp(r.subtotal_packages_clp)}</span></h3>
       <table><thead><tr><th>Producto</th><th class="num">Necesario</th><th class="num">Comprar</th><th class="num">Costo</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   return html;
@@ -761,7 +789,7 @@ async function loadSatietyHistory() {
 function planCard(p) {
   return `<div class="plan-card" id="plan-${p.id}"><div class="row">
     <div><strong>${p.title}</strong> <span class="muted">${p.scope} · ${clp(p.total_cost_clp)} · ${num(p.total_kcal)} kcal</span></div>
-    <div><button class="btn-sm" data-act="shop" data-id="${p.id}">🛒</button>
+    <div><button class="btn-sm" data-act="shop" data-id="${p.id}">Lista</button>
       <button class="btn-sm" data-act="fb" data-id="${p.id}">Saciedad</button>
       <button class="btn-sm" data-act="del" data-id="${p.id}">✕</button></div></div>
     <div id="shop-${p.id}"></div>
