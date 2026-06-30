@@ -57,7 +57,8 @@ function renderLanding() {
 }
 $$(".hub-btn").forEach((b) => b.addEventListener("click", () => {
   const a = b.dataset.act;
-  if (a === "ruleta") showScreen(1);
+  if (a === "guiado") openGuided(null);
+  else if (a === "ruleta") showScreen(1);
   else if (a === "perfil") showScreen(2);
   else if (a === "calendario") $("#landingCal").scrollIntoView({ behavior: "smooth", block: "start" });
   else if (a === "generar") openGenerar();
@@ -182,7 +183,11 @@ function makeReelCtrl(data) {
     const o = st.origin[slot.role];                                            // 1er filtro: origen
     if (o) { const f = arr.filter((c) => c.origin === o); if (f.length) arr = f; }
     arr = [...arr];
-    if (st.sort[slot.role] === "kcal") arr.sort((a, b) => a.kcal - b.kcal);     // densidad calórica (kcal/porción) asc
+    const sv = st.sort[slot.role];
+    if (sv === "kcal") arr.sort((a, b) => a.kcal - b.kcal);                     // densidad calórica asc
+    else if (sv === "protein") arr.sort((a, b) => b.protein_g - a.protein_g);   // más proteína primero (paso 1)
+    else if (sv === "carb") arr.sort((a, b) => b.carb_g - a.carb_g);            // más carbohidrato primero (paso 2)
+    else if (sv === "micro") arr.sort((a, b) => (b.micro_score || 0) - (a.micro_score || 0)); // micronutrientes (paso 3)
     else arr.sort((a, b) => a.cost_clp - b.cost_clp);                           // precio ($/porción) asc
     return arr;
   }
@@ -582,9 +587,11 @@ function renderJornada() {
   html += `</div>
     <div class="j-foot">
       <button class="primary" id="saveJornada">Guardar jornada</button>
+      <button class="btn-sm" id="jGuided">Armar paso a paso</button>
       <span id="jornadaStatus" class="status"></span>
     </div></div>`;
   openOverlay("Jornada", html);
+  $("#jGuided").addEventListener("click", () => openGuided(jornada.date));
   $("#mealMinus").addEventListener("click", () => { if (jornada.meals.length > 1) { jornada.meals.pop(); renderJornada(); } });
   $("#mealPlus").addEventListener("click", () => {
     const used = new Set(jornada.meals.map((m) => m.meal));
@@ -668,6 +675,123 @@ async function openMealBuilder(meal, onConfirm) {
     closeOverlay2();
     onConfirm(items);
   });
+}
+
+// ===================== ASISTENTE GUIADO (jornada paso a paso) =====================
+// Estandariza el armado: el día se construye macro por macro a lo largo de todas
+// las comidas. La app pone el orden mental; el usuario solo elige sobre sugerencias.
+const GUIDED_STEPS = [
+  { role: "proteina", label: "Proteínas", help: "La base de proteína de cada comida del día.", sort: "protein" },
+  { role: "carbohidrato", label: "Carbohidratos", help: "El acompañamiento de cada comida, con la proteína ya elegida.", sort: "carb" },
+  { role: "vegetal", label: "Verduras y vitaminas", help: "Plato redondo: ordenadas por fibra y micronutrientes.", sort: "micro" },
+  { role: "aderezo", label: "Aderezos", help: "El toque final, del más económico hacia arriba.", sort: "price" },
+];
+let guided = null;        // { date, meals:[{meal}], stepIdx }
+let guidedSlots = {};     // meal -> slots del constructor (cache)
+let guidedCtrls = {};     // mealIdx -> controlador del reel del paso actual
+let guidedPicks = {};     // mealIdx -> { role -> item escalado elegido }
+
+async function openGuided(date) {
+  if (!currentUserId) { alert("Crea un perfil primero."); return; }
+  await ensureRequirements();
+  const meals = defaultMeals(currentUserObj.meals_per_day).map((m) => ({ meal: m.meal }));
+  guided = { date: date || null, meals, stepIdx: 0 };
+  guidedPicks = {}; guidedSlots = {};
+  meals.forEach((_, i) => (guidedPicks[i] = {}));
+  openOverlay("Armar paso a paso", '<p class="muted" id="guidedLoading">Cargando alimentos…</p>');
+  for (const m of meals) {
+    if (!guidedSlots[m.meal]) {
+      try { guidedSlots[m.meal] = await fetchBuilder(m.meal); }
+      catch (e) { guidedSlots[m.meal] = { slots: [] }; }
+    }
+  }
+  renderGuided();
+}
+
+function guidedDayTotals() {
+  const t = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0 };
+  Object.values(guidedPicks).forEach((picks) => Object.values(picks).forEach((it) => { if (it) for (const k in t) t[k] += it[k] || 0; }));
+  for (const k in t) t[k] = Math.round(t[k] * 10) / 10;
+  return t;
+}
+function guidedMarginsHtml() {
+  const t = guidedDayTotals(), req = reqCache || {}, budget = dailyBudget();
+  return marginRow("Energía", t.kcal, req.kcal || 0, " kcal", "ceiling")
+    + marginRow("Proteína", t.protein_g, req.protein_g || 0, " g", "goal")
+    + marginRow("Carbohidratos", t.carb_g, req.carb_g || 0, " g", "goal")
+    + (budget ? marginRow("Costo", t.cost_clp, budget, " $", "ceiling") : "");
+}
+function updateGuidedMargins() {
+  const box = document.querySelector(".guided .margins");
+  if (box) box.innerHTML = guidedMarginsHtml();
+}
+
+function renderGuided() {
+  const step = GUIDED_STEPS[guided.stepIdx];
+  guidedCtrls = {};
+  const html = `<div class="guided">
+    <div class="g-steps">${GUIDED_STEPS.map((s, i) => `<span class="g-dot ${i === guided.stepIdx ? "on" : ""} ${i < guided.stepIdx ? "done" : ""}"></span>`).join("")}</div>
+    <h3>Paso ${guided.stepIdx + 1}/4 · ${step.label}</h3>
+    <p class="hint">${step.help}</p>
+    <div class="margins">${guidedMarginsHtml()}</div>
+    <div id="gMeals"></div>
+    <div class="g-foot">
+      ${guided.stepIdx > 0 ? `<button class="btn-sm" id="gBack">‹ Atrás</button>` : ""}
+      <button class="primary" id="gNext">${guided.stepIdx < GUIDED_STEPS.length - 1 ? "Siguiente ›" : "Terminar y guardar"}</button>
+      <span id="gStatus" class="status"></span>
+    </div></div>`;
+  openOverlay("Armar paso a paso", html);
+  const cont = $("#gMeals");
+  guided.meals.forEach((m, idx) => {
+    const data = guidedSlots[m.meal] || { slots: [] };
+    const slot = (data.slots || []).find((s) => s.role === step.role);
+    const card = document.createElement("div");
+    card.className = "g-meal";
+    card.innerHTML = `<div class="g-meal-head"><strong style="text-transform:capitalize">${m.meal}</strong></div>`;
+    cont.appendChild(card);
+    if (!slot || !slot.candidates.length) {
+      guidedPicks[idx][step.role] = null;
+      card.insertAdjacentHTML("beforeend", `<div class="muted" style="padding:4px 2px">— esta comida no lleva ${step.label.toLowerCase()} —</div>`);
+      return;
+    }
+    const host = document.createElement("div"); host.className = "reels";
+    card.appendChild(host);
+    const ctrl = makeReelCtrl({ meal: m.meal, target: data.target, slots: [slot] });
+    ctrl.st.sort[step.role] = step.sort;   // orden sugerido del paso
+    const prev = guidedPicks[idx][step.role];
+    if (prev) {                            // restaura elección previa (al ir/volver)
+      const arr = ctrl.sorted(slot);
+      const i = arr.findIndex((c) => c.food_id === prev.food_id);
+      if (i >= 0) ctrl.st.idx[step.role] = i;
+      if (prev._grams) { ctrl.st.grams[step.role] = prev._grams; ctrl.st.gramsFor[step.role] = prev.food_id; }
+    }
+    guidedCtrls[idx] = ctrl;
+    ctrl.render(host, () => { const it = ctrl.selection()[0]; guidedPicks[idx][step.role] = it ? { ...it, _grams: it.grams } : null; updateGuidedMargins(); });
+    const it0 = ctrl.selection()[0];       // sugerencia inicial: la mejor del paso
+    guidedPicks[idx][step.role] = it0 ? { ...it0, _grams: it0.grams } : null;
+  });
+  updateGuidedMargins();
+  if ($("#gBack")) $("#gBack").addEventListener("click", () => { guided.stepIdx--; renderGuided(); });
+  $("#gNext").addEventListener("click", guidedNext);
+}
+
+async function guidedNext() {
+  if (guided.stepIdx < GUIDED_STEPS.length - 1) { guided.stepIdx++; renderGuided(); return; }
+  const meals = guided.meals.map((m, idx) => {
+    const items = Object.values(guidedPicks[idx]).filter(Boolean).map((it) => { const { _grams, ...rest } = it; return rest; });
+    return { meal: m.meal, items, subtotal: mealSubtotal(items) };
+  }).filter((m) => m.items.length);
+  if (!meals.length) { $("#gStatus").textContent = "Elige al menos un alimento."; return; }
+  const totals = { kcal: 0, protein_g: 0, carb_g: 0, fat_g: 0, cost_clp: 0, satiety: 0 };
+  meals.forEach((m) => ["kcal", "protein_g", "carb_g", "fat_g", "cost_clp", "satiety"].forEach((k) => (totals[k] += m.subtotal[k])));
+  for (const k in totals) totals[k] = Math.round(totals[k] * 10) / 10;
+  const date = guided.date || fmtKey(new Date());
+  try {
+    await api("/api/plans", { method: "POST", body: JSON.stringify({ user_id: currentUserId, title: `Jornada ${date}`, scope: "diario", payload: { date, meals, totals } }) });
+  } catch (e) { $("#gStatus").textContent = "Error al guardar: " + e.message; return; }
+  $("#gStatus").textContent = "✓ Jornada guardada.";
+  await loadCalendarData(); renderCalendarGrid();
+  setTimeout(closeOverlay, 700);
 }
 
 // ===================== MENÚ + OVERLAY =====================
