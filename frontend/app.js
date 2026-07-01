@@ -14,6 +14,8 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 const clp = (n) => "$" + Math.round(n || 0).toLocaleString("es-CL");
 const num = (n, d = 0) => (n ?? 0).toLocaleString("es-CL", { maximumFractionDigits: d });
+// Estado con color: kind = "ok" (verde) | "err" (rojo) | "" (neutro).
+function setStatus(sel, msg, kind = "") { const el = typeof sel === "string" ? $(sel) : sel; if (!el) return; el.className = "status" + (kind ? " " + kind : ""); el.textContent = msg; }
 
 async function api(path, opts = {}) {
   const res = await fetch(apiBase() + path, { headers: { "Content-Type": "application/json" }, ...opts });
@@ -136,7 +138,7 @@ $("#userForm").addEventListener("submit", async (e) => {
     ? await api(`/api/users/${currentUserId}`, { method: "PATCH", body: JSON.stringify(body) })
     : await api("/api/users", { method: "POST", body: JSON.stringify(body) });
   currentUserId = u.id; currentUserObj = u; reqCache = null;
-  $("#userStatus").textContent = "✓ Guardado (#" + u.id + ")";
+  setStatus("#userStatus", "✓ Guardado (#" + u.id + ")", "ok");
   await loadUsers();
   $("#userSelect").value = currentUserId;
   loadRequirements();
@@ -630,7 +632,7 @@ async function fixRoutine(idx, preset) {
   m.fromRoutine = true;
   await loadCalendarData();
   renderJornada();
-  $("#jornadaStatus").textContent = `✓ ${m.meal} quedó como rutina (${preset}).`;
+  setStatus("#jornadaStatus", `✓ ${m.meal} quedó como rutina (${preset}).`, "ok");
 }
 async function saveJornada() {
   const meals = jornada.meals.filter((m) => m.items.length)
@@ -648,10 +650,10 @@ async function saveJornada() {
     // quedó guardada (el calendario abre la más reciente); avisamos sin romper.
     if (oldId) await api(`/api/plans/${oldId}`, { method: "DELETE" }).catch((e) => console.warn("No se pudo borrar la jornada anterior:", e));
   } catch (e) {
-    $("#jornadaStatus").textContent = "Error al guardar: " + e.message;
+    setStatus("#jornadaStatus", "Error al guardar: " + e.message, "err");
     return;
   }
-  $("#jornadaStatus").textContent = "✓ Jornada guardada.";
+  setStatus("#jornadaStatus", "✓ Jornada guardada.", "ok");
   await loadCalendarData(); renderCalendarGrid();
   setTimeout(closeOverlay, 600);
 }
@@ -808,8 +810,8 @@ async function guidedNext() {
   const date = guided.date || fmtKey(new Date());
   try {
     await api("/api/plans", { method: "POST", body: JSON.stringify({ user_id: currentUserId, title: `Jornada ${date}`, scope: "diario", payload: { date, meals, totals } }) });
-  } catch (e) { $("#gStatus").textContent = "Error al guardar: " + e.message; return; }
-  $("#gStatus").textContent = "✓ Jornada guardada.";
+  } catch (e) { setStatus("#gStatus", "Error al guardar: " + e.message, "err"); return; }
+  setStatus("#gStatus", "✓ Jornada guardada.", "ok");
   await loadCalendarData(); renderCalendarGrid();
   setTimeout(closeOverlay, 700);
 }
@@ -859,7 +861,7 @@ async function generatePlan() {
       budget_mode: mode, budget_clp: mode === "none" ? null : +$("#budgetAmount").value }) });
     $("#genStatus").textContent = "";
     res.scope === "semanal" ? renderWeekly(res.data) : renderDaily(res.data);
-  } catch (err) { $("#genStatus").textContent = "Error: " + err.message; }
+  } catch (err) { setStatus("#genStatus", "Error: " + err.message, "err"); }
 }
 function totalsBar(t, req) {
   const pill = (l, v, tg, u) => `<div class="pill">${l}: <strong>${num(v)}${u}</strong> <span class="muted">/ ${num(tg)}${u}</span></div>`;
@@ -900,7 +902,7 @@ async function savePlan(scope, payload) {
   const title = prompt("Nombre de la minuta:", "Día " + new Date().toLocaleDateString("es-CL"));
   if (title === null) return;
   await api("/api/plans", { method: "POST", body: JSON.stringify({ user_id: currentUserId, title, scope, payload }) });
-  $("#genStatus").textContent = "✓ Guardada (mírala en el Calendario).";
+  setStatus("#genStatus", "✓ Guardada (mírala en el Calendario).", "ok");
 }
 // Expande una minuta semanal en 7 jornadas diarias consecutivas desde hoy, cada
 // una con su fecha (payload.date), para que se vean y se abran en el calendario.
