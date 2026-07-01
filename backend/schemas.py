@@ -1,6 +1,7 @@
 """Esquemas Pydantic para la API de SCAVENGER."""
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -135,6 +136,9 @@ class PlanOut(BaseModel):
     total_cost_clp: float
     total_kcal: float
     satiety_score: float
+    # Fecha de creacion: el calendario la usa como respaldo cuando la minuta no
+    # trae payload.date (p.ej. la guardada desde la ruleta).
+    created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

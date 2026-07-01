@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from . import config, usage
 from .models import Food, FoodPrice, PriceCache
 from .providers import PRICE_PROVIDERS
-from .providers.vtex import best_match, looks_like_ean, name_overlap
+from .providers.vtex import best_match, looks_like_ean, name_overlap, normalize, tokens
 
 CACHE_DIR = config.DATA_DIR / "cache"
 # Autoaprender un EAN es una escritura dificil de revertir, asi que se exige una
@@ -26,6 +26,23 @@ CACHE_DIR = config.DATA_DIR / "cache"
 # (cobertura 1.0). No se usa el score con bonos de marca/envase, que podria
 # inflar un match de nombre debil.
 EAN_LEARN_MIN_COVERAGE = 0.999
+
+
+def _can_learn_ean(food, match: dict) -> bool:
+    """¿Confiar lo suficiente para autoaprender el EAN del producto?
+
+    Exige cobertura total del nombre Y una senal extra de identidad, porque con
+    nombres de un solo token la cobertura es trivialmente 1.0 (p.ej. el alimento
+    "Tomate" calzaria con "Salsa de Tomate"). La senal extra es: el nombre tiene
+    >=2 tokens propios, o la marca del alimento aparece en el producto.
+    """
+    if name_overlap(food.name, match) < EAN_LEARN_MIN_COVERAGE:
+        return False
+    multi_token = len(tokens(food.name)) >= 2
+    brand = food.brand or ""
+    brand_ok = bool(brand) and normalize(brand) in normalize(
+        f"{match.get('name', '')} {match.get('brand', '')}")
+    return multi_token or brand_ok
 
 
 @dataclass
@@ -182,7 +199,7 @@ def refresh_retailer(
         # nombre es fuerte, guarda el codigo de barras para matchear exacto la
         # proxima vez (el catalogo se autopobla con EAN verdaderos del retail).
         if not (getattr(food, "ean", "") or "") and looks_like_ean(match.get("ean")):
-            if name_overlap(food.name, match) >= EAN_LEARN_MIN_COVERAGE:
+            if _can_learn_ean(food, match):
                 food.ean = str(match["ean"]).strip()
 
         result.matched += 1
