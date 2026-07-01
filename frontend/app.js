@@ -509,10 +509,14 @@ async function openJornada(k) {
     // Jornada nueva: comidas por defecto, precargando rutinas que calcen con el día.
     const wd = weekdayOf(k);
     const meals = defaultMeals(currentUserObj.meals_per_day);
-    routinesAll.filter((r) => presetMatches(r.preset, wd)).forEach((r) => {
-      // Calza con un slot vacío del mismo nombre; si no hay, anexa la comida para
-      // que la rutina siempre aparezca en su día (aunque sobren las comidas/día).
-      let slot = meals.find((m) => m.meal === r.meal && !m.items.length);
+    // Una sola rutina por nombre de comida (si hay varias para el mismo día,
+    // gana la última) para no crear comidas duplicadas.
+    const routineByMeal = {};
+    routinesAll.filter((r) => presetMatches(r.preset, wd)).forEach((r) => { routineByMeal[r.meal] = r; });
+    Object.values(routineByMeal).forEach((r) => {
+      // Calza con un slot del mismo nombre (vacío de preferencia); si no existe,
+      // anexa la comida para que la rutina siempre aparezca en su día.
+      let slot = meals.find((m) => m.meal === r.meal && !m.items.length) || meals.find((m) => m.meal === r.meal);
       if (!slot) { slot = { meal: r.meal, items: [], subtotal: {} }; meals.push(slot); }
       slot.items = r.items || []; slot.subtotal = r.subtotal || mealSubtotal(slot.items); slot.fromRoutine = true;
     });
@@ -530,6 +534,10 @@ function jornadaTotals() {
 //        "goal"    (proteína, macros: importa CUMPLIR el requerimiento).
 // El enfoque premia alcanzar metas, no la restricción a ciegas.
 function marginRow(label, used, target, unit, kind) {
+  if (!target) {   // sin objetivo cargado (requerimientos no disponibles): estado neutro
+    return `<div class="margin"><div class="m-top"><span>${label}</span><strong>${num(used)}${unit}</strong></div>
+      <div class="m-bar"><i style="width:0%"></i></div><div class="m-left">sin objetivo</div></div>`;
+  }
   const left = Math.round((target - used) * 10) / 10;
   const pct = target ? Math.min(100, Math.round(used / target * 100)) : 0;
   let cls = "", note = "";
@@ -596,7 +604,8 @@ function renderJornada() {
   $("#mealMinus").addEventListener("click", () => { if (jornada.meals.length > 1) { jornada.meals.pop(); renderJornada(); } });
   $("#mealPlus").addEventListener("click", () => {
     const used = new Set(jornada.meals.map((m) => m.meal));
-    const next = MEAL_PRIORITY.find((m) => !used.has(m)) || `comida ${jornada.meals.length + 1}`;
+    let next = MEAL_PRIORITY.find((m) => !used.has(m));
+    if (!next) { let n = jornada.meals.length + 1; while (used.has(`comida ${n}`)) n++; next = `comida ${n}`; }
     jornada.meals.push({ meal: next, items: [], subtotal: {} }); renderJornada();
   });
   $$("[data-rmmeal]").forEach((b) => b.addEventListener("click", () => { jornada.meals.splice(+b.dataset.rmmeal, 1); if (!jornada.meals.length) jornada.meals.push({ meal: "comida 1", items: [], subtotal: {} }); renderJornada(); }));
@@ -635,7 +644,9 @@ async function saveJornada() {
     const created = await api("/api/plans", { method: "POST", body: JSON.stringify({
       user_id: currentUserId, title, scope: "diario", payload: { date: jornada.date, meals, totals } }) });
     jornada.planId = created.id;
-    if (oldId) await api(`/api/plans/${oldId}`, { method: "DELETE" }).catch(() => {});
+    // Reemplazo: borra la jornada anterior. Si el borrado falla, la nueva ya
+    // quedó guardada (el calendario abre la más reciente); avisamos sin romper.
+    if (oldId) await api(`/api/plans/${oldId}`, { method: "DELETE" }).catch((e) => console.warn("No se pudo borrar la jornada anterior:", e));
   } catch (e) {
     $("#jornadaStatus").textContent = "Error al guardar: " + e.message;
     return;
@@ -760,16 +771,24 @@ function renderGuided() {
     const ctrl = makeReelCtrl({ meal: m.meal, target: data.target, slots: [slot] });
     ctrl.st.sort[step.role] = step.sort;   // orden sugerido del paso
     const prev = guidedPicks[idx][step.role];
+    let restored = false;
     if (prev) {                            // restaura elección previa (al ir/volver)
       const arr = ctrl.sorted(slot);
       const i = arr.findIndex((c) => c.food_id === prev.food_id);
-      if (i >= 0) ctrl.st.idx[step.role] = i;
-      if (prev._grams) { ctrl.st.grams[step.role] = prev._grams; ctrl.st.gramsFor[step.role] = prev.food_id; }
+      if (i >= 0) {
+        ctrl.st.idx[step.role] = i;
+        if (prev._grams) { ctrl.st.grams[step.role] = prev._grams; ctrl.st.gramsFor[step.role] = prev.food_id; }
+        restored = true;
+      }
     }
     guidedCtrls[idx] = ctrl;
     ctrl.render(host, () => { const it = ctrl.selection()[0]; guidedPicks[idx][step.role] = it ? { ...it, _grams: it.grams } : null; updateGuidedMargins(); });
-    const it0 = ctrl.selection()[0];       // sugerencia inicial: la mejor del paso
-    guidedPicks[idx][step.role] = it0 ? { ...it0, _grams: it0.grams } : null;
+    if (prev && !restored) {
+      guidedPicks[idx][step.role] = prev;  // no se pudo re-ubicar en el reel: NO perder la elección
+    } else {
+      const it0 = ctrl.selection()[0];     // elección inicial = la restaurada o la sugerencia del paso
+      guidedPicks[idx][step.role] = it0 ? { ...it0, _grams: it0.grams } : (prev || null);
+    }
   });
   updateGuidedMargins();
   if ($("#gBack")) $("#gBack").addEventListener("click", () => { guided.stepIdx--; renderGuided(); });
@@ -925,6 +944,7 @@ async function showShoppingForPayload(payload) {
 
 // ---- Mis minutas y saciedad (overlay) ----
 async function openMinutas() {
+  if (!currentUserId) { openOverlay("Mis minutas", '<p class="hint">Crea un perfil primero.</p>'); return; }
   openOverlay("Mis minutas", '<div id="satietyHistory"></div><div id="plansList"></div>');
   loadSatietyHistory();
   const plans = await api(`/api/plans?user_id=${currentUserId}`);
