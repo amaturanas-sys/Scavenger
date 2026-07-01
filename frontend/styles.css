@@ -50,13 +50,16 @@ body {
   border-radius: 10px; padding: 7px 10px; font-size: 13px; max-width: 50%;
 }
 .dots { display: flex; gap: 8px; }
+.dots { display: flex; gap: 2px; }
 .dots span {
-  width: 10px; height: 10px; border-radius: 50%; background: #4a4a50; cursor: pointer;
+  width: 11px; height: 11px; padding: 7px; box-sizing: content-box; background-clip: content-box;
+  border-radius: 50%; background-color: #4a4a50; cursor: pointer;
 }
-.dots span.on { background: var(--accent); }
+.dots span.on { background-color: var(--accent); }
 .iconbtn {
   background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
-  border-radius: 10px; width: 40px; height: 40px; font-size: 18px; cursor: pointer;
+  border-radius: 10px; width: 44px; height: 44px; font-size: 18px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 1;
 }
 .iconbtn:active { transform: scale(.95); }
 
@@ -132,7 +135,6 @@ label.inline select { width: auto; }
 .window .nm { font-weight: 700; font-size: 13px; line-height: 1.2;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .window .brand { font-size: 11px; color: #3a3a3a; }
-.window .gr { font-size: 18px; font-weight: 800; margin-top: 2px; }
 .window .mc { font-size: 11px; color: #444; }
 .window .cost { font-weight: 800; font-size: 14px; margin-top: auto; }
 .window .shop { font-size: 10px; color: #fff; background: #555; border-radius: 5px; padding: 1px 5px; align-self: flex-start; }
@@ -162,9 +164,11 @@ label.inline select { width: auto; }
 /* Acción primaria (agregar al día): resalta en plata para distinguir de "girar". */
 .bigbtn.add { background: linear-gradient(180deg, #f5f6f8, #aeb2bd); color: #111; }
 .pricebox {
-  grid-area: price; background: var(--danger); color: #fff; font-weight: 800; font-size: 26px;
+  /* Neutro (charcoal + plata): el precio no es una alarma. El rojo se reserva
+     para "excede presupuesto" en los márgenes. */
+  grid-area: price; background: #1c1c1f; color: var(--accent); font-weight: 800; font-size: 26px;
   text-align: center; border-radius: 14px; padding: 10px 6px; letter-spacing: 1px;
-  box-shadow: 0 2px 10px rgba(240,70,63,.4);
+  border: 1px solid var(--border); box-shadow: 0 2px 10px rgba(0,0,0,.4);
 }
 .platos { color: var(--muted); font-size: 13px; margin: 12px 4px; text-align: center; }
 .platos strong { color: var(--c); }
@@ -278,10 +282,10 @@ input[type=range] { width: 100%; }
 .reel .sortrow { display: flex; gap: 4px; }
 .sortbtn {
   background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
-  border-radius: 7px; padding: 2px 6px; font-size: 9px; cursor: pointer;
+  border-radius: 7px; padding: 5px 9px; font-size: 10px; cursor: pointer;
 }
 .sortbtn.on { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
-.rmbtn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; }
+.rmbtn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 4px 8px; }
 .reel.removed .window { opacity: .35; }
 .reel.removed { opacity: .85; }
 .window.removed { align-items: center; justify-content: center; color: #777; font-size: 12px; text-align: center; }
@@ -427,3 +431,26 @@ body {
 /* H5 — feedback con color: éxito vs error se distinguen de un vistazo. */
 .status.ok { color: var(--ok); }
 .status.err { color: var(--danger); }
+
+/* ===================== REVISIÓN 2 · grupo 4 (pulido) ===================== */
+/* M4 — estado deshabilitado consistente. */
+button:disabled, select:disabled { opacity: .4; cursor: not-allowed; }
+/* L7 — realimentación al presionar en más controles. */
+.btn-sm:active, .sortbtn:active, .drawer-item:active, .primary:active,
+.cal-cell[data-k]:active, .presetsel:active { transform: scale(.97); }
+
+/* M5 — etiqueta del tipo de margen (tope vs meta). */
+.margin .m-tag { font-size: 9px; color: var(--muted); border: 1px solid var(--border);
+  border-radius: 5px; padding: 0 5px; margin-left: 6px; text-transform: uppercase; letter-spacing: .3px; }
+
+/* M7 — marcadores del calendario más legibles + leyenda. */
+.cal-cell.has::after { width: 7px; height: 7px; background: var(--ok); box-shadow: 0 0 0 2px rgba(95,211,154,.25); }
+.cal-cell.routine::after { background: var(--accent); }
+.cal-cell.today { border-color: var(--accent); border-width: 2px; }
+.cal-legend { display: flex; gap: 14px; justify-content: center; font-size: 11px; color: var(--muted); margin-top: 8px; }
+.cal-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+.cal-legend .lg-plan { background: var(--ok); }
+.cal-legend .lg-rout { background: var(--accent); }
+
+/* L6 — botón de cerrar en el drawer. */
+.drawer-head { display: flex; align-items: center; justify-content: space-between; }

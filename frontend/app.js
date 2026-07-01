@@ -377,7 +377,7 @@ function renderDonut(el, t, target) {
   el.innerHTML =
     `<circle cx="21" cy="21" r="15.915" fill="none" stroke="#2a2a2d" stroke-width="6"/>${arcs}
      <text x="21" y="20.5" text-anchor="middle" font-size="6">${kcalPct}%</text>
-     <text x="21" y="26" text-anchor="middle" font-size="3" fill="#b9b9c2">Kcal/d</text>`;
+     <text x="21" y="26" text-anchor="middle" font-size="3.6" fill="#cfcfd6">Kcal/d</text>`;
 }
 $("#builderMeal").addEventListener("change", loadReels);
 $("#spinBtn").addEventListener("click", () => { if (!activeCtrl) return; activeCtrl.spin(); activeCtrl.render($("#reels"), renderRuletaControl); });
@@ -466,6 +466,7 @@ function renderLandingCalendar() {
     <div class="cal-head"><button class="iconbtn" id="calPrev">&#10094;</button>
       <h2 id="calTitle">—</h2><button class="iconbtn" id="calNext">&#10095;</button></div>
     <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend"><span><i class="lg-plan"></i>Con jornada</span><span><i class="lg-rout"></i>Rutina</span></div>
     <p class="hint" style="text-align:center">Toca un día para armar su jornada 🦝</p>`;
   $("#calPrev").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() - 1); renderCalendarGrid(); });
   $("#calNext").addEventListener("click", () => { calRef.setMonth(calRef.getMonth() + 1); renderCalendarGrid(); });
@@ -552,7 +553,7 @@ function marginRow(label, used, target, unit, kind) {
     note = reached ? "✓ meta lograda" : `faltan ${num(Math.max(0, left))}${unit}`;
   }
   return `<div class="margin ${cls}">
-    <div class="m-top"><span>${label}</span><strong>${num(used)} / ${num(target)}${unit}</strong></div>
+    <div class="m-top"><span>${label}<span class="m-tag">${kind === "ceiling" ? "tope" : "meta"}</span></span><strong>${num(used)} / ${num(target)}${unit}</strong></div>
     <div class="m-bar"><i style="width:${pct}%"></i></div>
     <div class="m-left">${note}</div>
   </div>`;
@@ -821,6 +822,7 @@ function openDrawer() { $("#drawer").classList.add("open"); $("#drawerBackdrop")
 function closeDrawer() { $("#drawer").classList.remove("open"); $("#drawerBackdrop").classList.remove("open"); }
 $("#menuBtn").addEventListener("click", openDrawer);
 $("#drawerBackdrop").addEventListener("click", closeDrawer);
+$("#drawerClose").addEventListener("click", closeDrawer);
 function openOverlay(title, html) { $("#overlayTitle").textContent = title; $("#overlayBody").innerHTML = html; $("#overlay").classList.add("open"); }
 function closeOverlay() { $("#overlay").classList.remove("open"); }
 $("#overlayClose").addEventListener("click", closeOverlay);
