@@ -18,7 +18,7 @@ option(ESTEPA_BUILD_GAME "Compilar el juego (requiere raylib)" ON)
 option(ESTEPA_BUILD_TESTS "Compilar los tests del nucleo" ON)
 
 if(MSVC)
-  set(ESTEPA_WARNINGS /W4)
+  set(ESTEPA_WARNINGS /W4 /utf-8) # textos del juego en UTF-8 (acentos, ñ)
 else()
   set(ESTEPA_WARNINGS -Wall -Wextra -Wpedantic)
 endif()
@@ -28,7 +28,8 @@ add_library(estepa_sim STATIC
   src/sim/noise.c
   src/sim/troop.c
   src/sim/loadout.c
-  src/sim/memory_map.c)
+  src/sim/memory_map.c
+  src/sim/champion.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)

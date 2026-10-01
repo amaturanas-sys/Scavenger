@@ -49,7 +49,8 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [ ] Estado del mundo persistente (decisiones y final elegido), integrado con el guardado.
 - [ ] Años de exilio visibles en el mundo; eventos en los que el culto toma prisioneros y rescates con relatos.
 - [ ] Afinidad u hostilidad por pueblo según la conducta del jugador.
-- [ ] Grandes guerreros: integrantes únicos con estados de integrante, enemigo, desertor o prisionero.
+- [x] Grandes guerreros: aparición por azar, historia combinada, dones y atributos de combate; integrantes o prisioneros sujetos a la moral de la tropa. Con tests.
+- [ ] Grandes guerreros en el mundo: encuentros, como enemigos en otras facciones, y con su talla y su arma visibles en el modelo.
 - [ ] Tres finales (asedio, asesinato, exilio) que modifican facciones, PNJ, asentamientos, misiones y tesoros; juego libre después del final.
 
 ## Interfaz (ver [ESTILO_VISUAL.md](ESTILO_VISUAL.md))
@@ -60,7 +61,8 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Minimapa circular tipo brújula, que gira con la vista.
 - [x] Memoria espacial: empieza negro, se ilumina al recorrer, lo frecuente brilla más y todo se olvida con el tiempo (lo familiar, más despacio). Con tests.
 - [x] Marcas de interés y de peligro.
-- [ ] Mapa grande, marcas con nombre, guardado y cobertura de todo el mundo.
+- [x] Cobertura de todo el mundo (memoria dispersa por páginas) y olvido medido en días de juego.
+- [ ] Marcas con nombre y guardado.
 
 ## Herramientas
 - **Assets 3D:** Kiln (`tools/assets/*.kiln.js`). Ver [tools/assets/README.md](../tools/assets/README.md).

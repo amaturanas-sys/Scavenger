@@ -15,6 +15,8 @@
 #include "platform.h"
 #include "raylib.h"
 #include "raymath.h"
+#include "sim/champion.h"
+#include "sim/clock.h"
 #include "sim/loadout.h"
 #include "sim/memory_map.h"
 #include "sim/troop.h"
@@ -35,7 +37,7 @@
 #define WORLD_SEED 1206u // ano de la fundacion del Imperio mongol
 #define MINIMAP_RADIUS 50
 
-static MemoryMap g_memory; // ~1,8 MB: fuera de la pila
+static MemoryMap g_memory;
 
 typedef struct {
     float yaw, pitch, dist;
@@ -77,16 +79,42 @@ static int first_with_status(const Troop *t, MemberStatus s, int skip_lieutenant
     return -1;
 }
 
+// Un encuentro con un gran guerrero: se une a la tropa o llega como prisionero.
+static int meet_champion(Troop *t, Rng *rng, MemberStatus status, char *log, size_t log_len) {
+    Champion c;
+    champion_generate(&c, rng);
+    int id = troop_add_champion(t, &c, status);
+    if (id >= 0) {
+        snprintf(log, log_len, status == STATUS_ACTIVE ? "Un gran guerrero se une: %s, %s."
+                                                       : "Capturaste a un gran guerrero: %s, %s.",
+                 c.name, c.epithet);
+    }
+    return id;
+}
+
 // Teclas de prueba para la politica del campamento (solo Fase 0).
-static void debug_camp_actions(Troop *t, Rng *rng, int *day, char *log, size_t log_len) {
+static void debug_camp_actions(Troop *t, Rng *rng, float *world_time, int *last_champion, char *log,
+                               size_t log_len) {
     static const char *names[] = { "Arslan", "Toregene", "Chilaun", "Mukhali", "Sorghaghtani", "Bo'orchu" };
+    int champ = -1;
     if (IsKeyPressed(KEY_ONE)) {
-        unsigned traits = 1u << rng_range(rng, 5);
-        troop_recruit(t, names[rng_range(rng, 6)], traits);
-        snprintf(log, log_len, "Reclutaste un nuevo guerrero.");
+        // Por azar, quien se acerca puede ser un gran guerrero.
+        if (champion_appears(rng, CHAMPION_DEFAULT_CHANCE)) {
+            champ = meet_champion(t, rng, STATUS_ACTIVE, log, log_len);
+        } else {
+            unsigned traits = 1u << rng_range(rng, 5);
+            troop_recruit(t, names[rng_range(rng, 6)], traits);
+            snprintf(log, log_len, "Reclutaste un nuevo guerrero.");
+        }
     } else if (IsKeyPressed(KEY_TWO)) {
-        troop_take_prisoner(t, "Cautivo", 0);
-        snprintf(log, log_len, "Tomaste un prisionero.");
+        if (champion_appears(rng, CHAMPION_DEFAULT_CHANCE)) {
+            champ = meet_champion(t, rng, STATUS_PRISONER, log, log_len);
+        } else {
+            troop_take_prisoner(t, "Cautivo", 0);
+            snprintf(log, log_len, "Tomaste un prisionero.");
+        }
+    } else if (IsKeyPressed(KEY_EIGHT)) {
+        champ = meet_champion(t, rng, STATUS_ACTIVE, log, log_len); // prueba: fuerza el encuentro
     } else if (IsKeyPressed(KEY_THREE)) {
         int id = first_with_status(t, STATUS_PRISONER, 0);
         if (id >= 0 && troop_execute(t, id)) snprintf(log, log_len, "Ejecutaste a un prisionero.");
@@ -103,20 +131,73 @@ static void debug_camp_actions(Troop *t, Rng *rng, int *day, char *log, size_t l
         int id = first_with_status(t, STATUS_PRISONER, 0);
         if (id >= 0 && troop_release_prisoner(t, id)) snprintf(log, log_len, "Liberaste a un prisionero.");
     } else if (IsKeyPressed(KEY_ENTER)) {
+        *world_time = (float)clock_day(*world_time) * GAME_SECONDS_PER_DAY; // salta al amanecer siguiente
+    }
+    if (champ >= 0) *last_champion = champ;
+}
+
+// Avanza los dias que correspondan al reloj de juego.
+static void advance_days(Troop *t, Rng *rng, int *day, float world_time, char *log, size_t log_len) {
+    while (*day < clock_day(world_time)) {
         DayReport r = troop_process_day(t, rng);
         (*day)++;
         if (r.rebellion) {
             const Member *m = troop_find(t, r.rebellion_leader);
             snprintf(log, log_len, "Dia %d: REBELION encabezada por %s!", *day, m ? m->name : "?");
+        } else if (r.champions_deserted) {
+            snprintf(log, log_len, "Dia %d: %d desertores, %d grandes guerreros.", *day, r.deserted,
+                     r.champions_deserted);
         } else {
             snprintf(log, log_len, "Dia %d: %d desertores.", *day, r.deserted);
         }
     }
 }
 
+static void draw_champion_card(const Troop *t, int id) {
+    const Champion *c = troop_champion(t, id);
+    const Member *m = troop_find((Troop *)t, id);
+    if (!c || !m) return;
+    const int w = 380, pad = UI_PANEL_INSET + 4, x0 = (VIRTUAL_W - w) / 2, y0 = 92;
+    const int x = x0 + pad, iw = w - 2 * pad;
+    char story[256];
+    champion_story(c, story, sizeof(story));
+    // Alto segun el contenido: titulo, historia, dones, arma (si hay) y dos lineas de atributos.
+    int h = 2 * pad + 30 + ui_text_wrapped_height(story, iw, 10) + 10 + 12 * (c->weapon >= 0 ? 4 : 3);
+    ui_panel((Rectangle){ x0, y0, w, h }, UI_METAL_GOLD);
+    int y = y0 + pad;
+    ui_text(TextFormat("%s, %s", c->name, c->epithet), x, y, 20, UI_GOLD_LIGHT);
+    ui_text(status_name(m->status), x + iw - MeasureText(status_name(m->status), 10), y + 6, 10, UI_BONE_DIM);
+    y += 24;
+    ui_divider(x, y, iw, UI_METAL_GOLD);
+    y += 6;
+    y += ui_text_wrapped(story, x, y, iw, 10, UI_BONE) + 4;
+    ui_divider(x, y, iw, UI_METAL_GOLD);
+    y += 6;
+    char gifts[160] = "";
+    for (int g = 0; g < GIFT_COUNT; g++) {
+        if (!(c->gifts & (1u << g))) continue;
+        size_t n = strlen(gifts);
+        snprintf(gifts + n, sizeof(gifts) - n, "%s%s", n ? ", " : "Dones: ", gift_name((ChampionGift)(1u << g)));
+    }
+    ui_text(gifts, x, y, 10, UI_TURQUOISE);
+    y += 12;
+    if (c->weapon >= 0) {
+        ui_text(TextFormat("Arma: %s", champion_weapon_name(c->weapon)), x, y, 10, UI_GOLD);
+        y += 12;
+    }
+    const CombatStats *s = &c->stats;
+    ui_text(TextFormat("Talla x%.2f  Rapidez x%.2f  Fuerza x%.2f  Aguante x%.2f", s->size, s->speed, s->strength,
+                       s->endurance), x, y, 10, UI_BONE_DIM);
+    y += 12;
+    ui_text(s->healing > 0.0f ? TextFormat("Puntería x%.2f  Monta x%.2f  Sanación %.0f%%", s->aim, s->riding,
+                                           s->healing * 100.0f)
+                              : TextFormat("Puntería x%.2f  Monta x%.2f", s->aim, s->riding),
+            x, y, 10, UI_BONE_DIM);
+}
+
 static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day, const char *log) {
     const int x = 4 + UI_PANEL_INSET, w = 256;
-    ui_panel((Rectangle){ 4, 4, w, 128 }, UI_METAL_GOLD);
+    ui_panel((Rectangle){ 4, 4, w, 140 }, UI_METAL_GOLD);
     ui_text("ESTEPA", x, 16, 10, UI_GOLD_LIGHT);
     ui_text(TextFormat("v%s (build %d)", ESTEPA_VERSION, ESTEPA_BUILD_CODE), x + 48, 16, 10, UI_BONE_DIM);
     ui_divider(x, 29, w - 2 * UI_PANEL_INSET, UI_METAL_GOLD);
@@ -132,12 +213,12 @@ static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day,
             rebellion > 0.0f ? UI_CARNELIAN : UI_BONE_DIM);
     ui_text(TextFormat("%s: %+d", k->name, (int)k->relation), x, 85, 10, UI_GOLD);
     ui_divider(x, 99, w - 2 * UI_PANEL_INSET, UI_METAL_GOLD);
-    ui_text(log, x, 104, 10, UI_BONE);
+    ui_text_wrapped(log, x, 104, w - 2 * UI_PANEL_INSET, 10, UI_BONE);
 
     ui_strip((Rectangle){ 0, VIRTUAL_H - 29, VIRTUAL_W, 29 }, UI_METAL_GOLD);
     ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E o clic der. camara  Rueda zoom  M marcar",
             4, VIRTUAL_H - 21, 10, UI_BONE_DIM);
-    ui_text("1 reclutar  2 prisionero  3 ejecutar prisionero  4 ejecutar miembro  5 desterrar  6 botin  7 liberar  Enter: dia",
+    ui_text("1 reclutar 2 prisionero 3 ejec. prisionero 4 ejec. miembro 5 desterrar 6 botin 7 liberar 8 gran guerrero G ficha Enter dia",
             4, VIRTUAL_H - 11, 10, UI_BONE_DIM);
 }
 
@@ -187,10 +268,12 @@ int main(int argc, char **argv) {
     rng_seed(&rng, WORLD_SEED);
     int day = 1;
     float world_time = 0.0f; // segundos de juego (avanza solo si no hay pausa)
+    int last_champion = -1;  // id del ultimo gran guerrero encontrado
+    bool show_card = false;
     memmap_init(&g_memory);
     Minimap minimap;
     minimap_init(&minimap, MINIMAP_RADIUS, 2.0f);
-    char log[96] = "Tu tropa acampa en la estepa.";
+    char log[128] = "Tu tropa acampa en la estepa.";
 
     Camera3D cam = { .up = { 0, 1, 0 }, .fovy = 55.0f, .projection = CAMERA_PERSPECTIVE };
     CameraRig rig = { .yaw = PI, .pitch = 0.38f, .dist = 11.0f };
@@ -205,8 +288,12 @@ int main(int argc, char **argv) {
         if (has_keyboard) {
             PlayerInput in = player_read_input();
             player_update(&player, &terrain, in, rig.yaw, dt);
-            debug_camp_actions(&troop, &rng, &day, log, sizeof(log));
             world_time += dt;
+            int prev_champion = last_champion;
+            debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log));
+            if (last_champion != prev_champion) show_card = true; // ficha al conocerlo
+            advance_days(&troop, &rng, &day, world_time, log, sizeof(log));
+            if (IsKeyPressed(KEY_G)) show_card = !show_card && last_champion >= 0;
             memmap_visit(&g_memory, player.pos.x, player.pos.z, dt, world_time);
             if (IsKeyPressed(KEY_M)) {
                 MarkerKind kind = IsKeyDown(KEY_LEFT_SHIFT) ? MARKER_DANGER : MARKER_INTEREST;
@@ -227,6 +314,7 @@ int main(int argc, char **argv) {
         draw_hud(&player, &troop, &overlord, day, log);
         minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
                      player.pos, rig.yaw, player.yaw, world_time);
+        if (show_card) draw_champion_card(&troop, last_champion);
         if (!has_keyboard) draw_keyboard_notice();
         EndTextureMode();
 
@@ -250,6 +338,7 @@ int main(int argc, char **argv) {
     }
 
     minimap_unload(&minimap);
+    memmap_free(&g_memory);
     camp_unload(&camp);
     terrain_unload(&terrain);
     UnloadRenderTexture(lowres);

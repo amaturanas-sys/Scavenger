@@ -1,5 +1,8 @@
 #include "ui/theme.h"
 
+#include <stdio.h>
+#include <string.h>
+
 typedef struct {
     Color base, light, dark;
 } Metal;
@@ -150,3 +153,36 @@ void ui_text_centered(const char *text, int cx, int y, int size, Color color) {
 void ui_granule(int x, int y, UiMetal metal) { granule(x, y, metal_of(metal)); }
 
 void ui_inlay(int x, int y, UiMetal metal) { inlay(x, y, metal_of(metal)); }
+
+static int wrap(const char *text, int x, int y, int width, int size, Color color, bool draw) {
+    char line[256] = "", candidate[256];
+    int lines = 0;
+    const int line_h = size + 2;
+    const char *p = text;
+    while (*p) {
+        const char *end = strchr(p, ' ');
+        size_t wlen = end ? (size_t)(end - p) : strlen(p);
+        if (line[0]) snprintf(candidate, sizeof(candidate), "%s %.*s", line, (int)wlen, p);
+        else snprintf(candidate, sizeof(candidate), "%.*s", (int)wlen, p);
+        if (line[0] && MeasureText(candidate, size) > width) {
+            if (draw) ui_text(line, x, y + lines * line_h, size, color);
+            lines++;
+            snprintf(line, sizeof(line), "%.*s", (int)wlen, p);
+        } else {
+            memcpy(line, candidate, sizeof(line));
+        }
+        p += wlen;
+        while (*p == ' ') p++;
+    }
+    if (line[0]) {
+        if (draw) ui_text(line, x, y + lines * line_h, size, color);
+        lines++;
+    }
+    return lines * line_h;
+}
+
+int ui_text_wrapped(const char *text, int x, int y, int width, int size, Color color) {
+    return wrap(text, x, y, width, size, color, true);
+}
+
+int ui_text_wrapped_height(const char *text, int width, int size) { return wrap(text, 0, 0, width, size, BLANK, false); }

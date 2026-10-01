@@ -130,7 +130,24 @@ Estas reacciones aprovechan el sistema que ya existe: la moral de cada integrant
 
 Esta afinidad se suma a las consecuencias del final elegido.
 
-**Grandes guerreros.** Hay personajes con estatus de **gran guerrero**: figuras únicas y con nombre. Según las dinámicas de moral de la tribu, cada uno puede ser:
+**Grandes guerreros.** Son figuras únicas y con nombre que **aparecen por azar**. No hay un número limitado, pero son **escasos**.
+
+Cada uno tiene una **historia** que mezcla al azar cuatro elementos:
+- **Origen:** por ejemplo, "en una caravana que cruzaba el desierto".
+- **Circunstancia del exilio:** por ejemplo, "escapó de una columna de prisioneros destinados al sacrificio".
+- **Modo de vida actual:** por ejemplo, "asalta los convoyes del imperio".
+- **Aspiración:** por ejemplo, "pagar una deuda de honor".
+
+También tienen **atributos de combate notables**, sorteados entre:
+- mayor talla;
+- más rapidez, más fuerza o más aguante;
+- un arma especial (guja, sable damasquinado, arco de cuerno, maza con cabeza de tigre, lazo con plomadas, hacha ceremonial, etc.);
+- talento para sanar;
+- puntería o monta.
+
+El primer don le da su epíteto ("Sombra Alta", "Pies de Viento", "Ojo de Halcón", etc.), y la aspiración define cómo vive la política del campamento.
+
+Según las dinámicas de moral de la tribu, cada uno puede ser:
 
 | Estado | Cómo se llega |
 |---|---|
@@ -139,7 +156,7 @@ Esta afinidad se suma a las consecuencias del final elegido.
 | **Desertor** | Se fue por moral o lealtad bajas, como cualquier integrante, pero su pérdida pesa más. Puede reaparecer en otro bando. |
 | **Prisionero** | Capturado por la tribu, o por otros, y rescatable. |
 
-**[propuesta]** Los grandes guerreros tienen rasgos más marcados y arrastran a otros integrantes: si uno deserta o encabeza una rebelión, puede llevarse a sus afines. Esto aprovecha la rebelión que ya existe, en la que un ambicioso desleal la encabeza.
+Ya implementado: si deserta un gran guerrero, la moral de toda la tropa cae, y los grandes guerreros tienden a encabezar las rebeliones. **[propuesta]** Más adelante: que al desertar se lleven a sus afines.
 
 ## Tema
 
@@ -175,7 +192,6 @@ Cómo encaja el argumento en lo que ya existe o está planeado (ver [GDD.md](GDD
 - **Destino de la madre.** El argumento no lo dice. ¿Sigue viva en el acto IV?
 - **Género del protagonista.** El texto usa "el protagonista". ¿El creador de personaje permite elegir el género? Afecta a los textos con concordancia.
 - **El culto.** ¿Tiene una deidad o un símbolo propio? Haría falta para la dirección de arte.
-- **Grandes guerreros:** ¿cuántos hay, y alguno está ligado a la historia (por ejemplo, un antiguo jinete del padre)?
 
 ## Fuentes
 

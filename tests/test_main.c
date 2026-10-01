@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../src/sim/champion.h"
+#include "../src/sim/clock.h"
 #include "../src/sim/loadout.h"
 #include "../src/sim/memory_map.h"
 #include "../src/sim/noise.h"
@@ -212,8 +214,6 @@ static void test_noise_is_deterministic_and_bounded(void) {
 }
 
 // ---------------------------------------------------------------- mapa de memoria
-static MemoryMap g_map; // ~1,8 MB: fuera de la pila
-
 static void walk(MemoryMap *m, float x, float z, float seconds, float *now) {
     for (float t = 0.0f; t < seconds; t += 0.1f) {
         *now += 0.1f;
@@ -222,64 +222,173 @@ static void walk(MemoryMap *m, float x, float z, float seconds, float *now) {
 }
 
 static void test_memmap_starts_dark_and_lights_gradually(void) {
-    memmap_init(&g_map);
+    MemoryMap m;
+    memmap_init(&m);
     float now = 0.0f;
-    CHECK(memmap_light(&g_map, 0, 0, now) == 0.0f);
-    walk(&g_map, 0, 0, 1.0f, &now);
-    float early = memmap_light(&g_map, 0, 0, now);
+    CHECK(memmap_light(&m, 0, 0, now) == 0.0f);
+    walk(&m, 0, 0, 1.0f, &now);
+    float early = memmap_light(&m, 0, 0, now);
     CHECK(early > 0.0f && early < 0.3f); // se ilumina poco a poco
-    walk(&g_map, 0, 0, 10.0f, &now);
-    CHECK(memmap_light(&g_map, 0, 0, now) > early);
-    CHECK(memmap_light(&g_map, 100.0f, 0, now) == 0.0f); // lo no visto sigue negro
+    walk(&m, 0, 0, 10.0f, &now);
+    CHECK(memmap_light(&m, 0, 0, now) > early);
+    CHECK(memmap_light(&m, 100.0f, 0, now) == 0.0f); // lo no visto sigue negro
     // El borde de la vista se memoriza menos que donde se pisa.
-    CHECK(memmap_light(&g_map, 18.0f, 0, now) < memmap_light(&g_map, 0, 0, now));
+    CHECK(memmap_light(&m, 18.0f, 0, now) < memmap_light(&m, 0, 0, now));
+    memmap_free(&m);
 }
 
 static void test_memmap_frequent_places_are_brighter(void) {
-    memmap_init(&g_map);
+    MemoryMap m;
+    memmap_init(&m);
     float now = 0.0f;
-    walk(&g_map, -200.0f, 0, 20.0f, &now);  // una pasada breve
-    walk(&g_map, 200.0f, 0, 600.0f, &now);  // diez minutos en el mismo lugar
-    float rare = memmap_light(&g_map, -200.0f, 0, now + 1.0f);
-    float frequent = memmap_light(&g_map, 200.0f, 0, now + 1.0f);
+    walk(&m, -200.0f, 0, 20.0f, &now);  // una pasada breve
+    walk(&m, 200.0f, 0, 600.0f, &now);  // diez minutos en el mismo lugar
+    float rare = memmap_light(&m, -200.0f, 0, now + 1.0f);
+    float frequent = memmap_light(&m, 200.0f, 0, now + 1.0f);
     CHECK(frequent > rare);
     CHECK(frequent > 0.6f);
-    CHECK(memmap_familiarity(&g_map, 200.0f, 0) > memmap_familiarity(&g_map, -200.0f, 0));
+    CHECK(memmap_familiarity(&m, 200.0f, 0) > memmap_familiarity(&m, -200.0f, 0));
+    memmap_free(&m);
 }
 
-static void test_memmap_fades_and_familiar_fades_slower(void) {
-    memmap_init(&g_map);
+static void test_memmap_forgets_over_days(void) {
+    MemoryMap m;
+    memmap_init(&m);
     float now = 0.0f;
-    walk(&g_map, -200.0f, 0, 20.0f, &now);
-    walk(&g_map, 200.0f, 0, 600.0f, &now);
-    float rare0 = memmap_light(&g_map, -200.0f, 0, now);
-    float freq0 = memmap_light(&g_map, 200.0f, 0, now);
-    float later = now + 900.0f; // 15 minutos sin volver
-    float rare1 = memmap_light(&g_map, -200.0f, 0, later);
-    float freq1 = memmap_light(&g_map, 200.0f, 0, later);
-    CHECK(rare1 < rare0 && freq1 < freq0); // todo se olvida
-    CHECK(freq1 / freq0 > rare1 / rare0);   // lo familiar, mas despacio
-    CHECK(memmap_light(&g_map, -200.0f, 0, now + 36000.0f) < 0.01f);
+    walk(&m, -200.0f, 0, 20.0f, &now);
+    walk(&m, 200.0f, 0, 600.0f, &now);
+    float rare0 = memmap_light(&m, -200.0f, 0, now);
+    float freq0 = memmap_light(&m, 200.0f, 0, now);
+    // Unas horas de juego apenas cambian nada: el olvido se mide en dias.
+    CHECK(memmap_light(&m, -200.0f, 0, now + GAME_SECONDS_PER_DAY * 0.1f) > rare0 * 0.95f);
+    float later = now + 3.0f * GAME_SECONDS_PER_DAY;
+    float rare1 = memmap_light(&m, -200.0f, 0, later);
+    float freq1 = memmap_light(&m, 200.0f, 0, later);
+    CHECK(rare1 < rare0 * 0.6f && freq1 < freq0); // todo se olvida
+    CHECK(freq1 / freq0 > rare1 / rare0);          // lo familiar, mas despacio
+    CHECK(memmap_light(&m, -200.0f, 0, now + 60.0f * GAME_SECONDS_PER_DAY) < 0.01f);
+    memmap_free(&m);
 }
 
 static void test_memmap_markers_toggle(void) {
-    memmap_init(&g_map);
-    CHECK(memmap_toggle_marker(&g_map, 10.0f, 5.0f, MARKER_INTEREST, 6.0f));
-    CHECK(g_map.marker_count == 1);
-    CHECK(!memmap_toggle_marker(&g_map, 12.0f, 6.0f, MARKER_INTEREST, 6.0f)); // cerca: la quita
-    CHECK(g_map.marker_count == 0);
-    for (int i = 0; i < MEMMAP_MAX_MARKERS; i++) memmap_toggle_marker(&g_map, i * 50.0f, 0, MARKER_DANGER, 6.0f);
-    CHECK(g_map.marker_count == MEMMAP_MAX_MARKERS);
-    CHECK(!memmap_toggle_marker(&g_map, 0, 900.0f, MARKER_DANGER, 6.0f)); // lleno
+    MemoryMap m;
+    memmap_init(&m);
+    CHECK(memmap_toggle_marker(&m, 10.0f, 5.0f, MARKER_INTEREST, 6.0f));
+    CHECK(m.marker_count == 1);
+    CHECK(!memmap_toggle_marker(&m, 12.0f, 6.0f, MARKER_INTEREST, 6.0f)); // cerca: la quita
+    CHECK(m.marker_count == 0);
+    for (int i = 0; i < MEMMAP_MAX_MARKERS; i++) memmap_toggle_marker(&m, i * 50.0f, 0, MARKER_DANGER, 6.0f);
+    CHECK(m.marker_count == MEMMAP_MAX_MARKERS);
+    CHECK(!memmap_toggle_marker(&m, 0, 900.0f, MARKER_DANGER, 6.0f)); // lleno
+    memmap_free(&m);
 }
 
-static void test_memmap_outside_bounds_is_safe(void) {
-    memmap_init(&g_map);
+static void test_memmap_covers_whole_world_sparsely(void) {
+    MemoryMap m;
+    memmap_init(&m);
     float now = 0.0f;
-    walk(&g_map, 5000.0f, -5000.0f, 2.0f, &now);
-    CHECK(memmap_light(&g_map, 5000.0f, -5000.0f, now) == 0.0f);
-    walk(&g_map, 760.0f, 760.0f, 2.0f, &now); // en el borde: visita parcial
-    CHECK(memmap_light(&g_map, 760.0f, 760.0f, now) > 0.0f);
+    // Muy lejos del origen y en coordenadas negativas: funciona igual.
+    walk(&m, 50000.0f, -80000.0f, 2.0f, &now);
+    walk(&m, -123456.0f, 98765.0f, 2.0f, &now);
+    CHECK(memmap_light(&m, 50000.0f, -80000.0f, now) > 0.0f);
+    CHECK(memmap_light(&m, -123456.0f, 98765.0f, now) > 0.0f);
+    CHECK(memmap_light(&m, 0, 0, now) == 0.0f);
+    // Solo se guardan las zonas visitadas (como mucho 4 paginas por visita).
+    CHECK(m.page_count >= 2 && m.page_count <= 8);
+    // Un recorrido largo agranda la tabla sin perder lo aprendido.
+    for (int i = 0; i < 200; i++) walk(&m, i * 130.0f, 0, 0.2f, &now);
+    CHECK(m.page_count > 64);
+    CHECK(memmap_light(&m, 50000.0f, -80000.0f, now) > 0.0f);
+    memmap_free(&m);
+}
+
+// ---------------------------------------------------------------- grandes guerreros
+static void test_champions_are_scarce(void) {
+    Rng r;
+    rng_seed(&r, 99);
+    int hits = 0;
+    for (int i = 0; i < 20000; i++) hits += champion_appears(&r, CHAMPION_DEFAULT_CHANCE);
+    CHECK(hits > 20000 * 0.03f && hits < 20000 * 0.05f); // ~4 %: escasos, pero sin limite
+}
+
+static void test_champion_generation_is_deterministic(void) {
+    Rng a, b;
+    rng_seed(&a, 7);
+    rng_seed(&b, 7);
+    Champion ca, cb;
+    champion_generate(&ca, &a);
+    champion_generate(&cb, &b);
+    CHECK(memcmp(&ca, &cb, sizeof(ca)) == 0);
+}
+
+static void test_champion_gifts_shape_stats(void) {
+    Rng r;
+    rng_seed(&r, 2024);
+    unsigned seen_gifts = 0;
+    int origins[8] = { 0 }, aspirations[8] = { 0 };
+    for (int i = 0; i < 400; i++) {
+        Champion c;
+        champion_generate(&c, &r);
+        int n = champion_gift_count(&c);
+        CHECK(n >= 1 && n <= 3);
+        CHECK(c.name[0] && c.epithet[0]);
+        CHECK(c.traits != 0); // la aspiracion fija un rasgo de tropa
+        seen_gifts |= c.gifts;
+        origins[c.origin]++;
+        aspirations[c.aspiration]++;
+        if (c.gifts & GIFT_TALL) CHECK(c.stats.size >= 1.2f);
+        else CHECK(c.stats.size == 1.0f);
+        if (c.gifts & GIFT_SWIFT) CHECK(c.stats.speed > 1.1f);
+        if (c.gifts & GIFT_STRONG) CHECK(c.stats.strength >= 1.3f);
+        if (c.gifts & GIFT_ENDURING) CHECK(c.stats.endurance >= 1.3f);
+        if (c.gifts & GIFT_MARKSMAN) CHECK(c.stats.aim >= 1.3f);
+        if (c.gifts & GIFT_RIDER) CHECK(c.stats.riding >= 1.3f);
+        CHECK((c.gifts & GIFT_HEALER) ? c.stats.healing > 0.0f : c.stats.healing == 0.0f);
+        CHECK((c.gifts & GIFT_WEAPON) ? champion_weapon_name(c.weapon)[0] != 0 : c.weapon == -1);
+        char story[256];
+        int len = champion_story(&c, story, sizeof(story));
+        CHECK(len > 40 && len < (int)sizeof(story));
+        CHECK(strncmp(story, "Nació ", 7) == 0);
+    }
+    CHECK(seen_gifts == (1u << GIFT_COUNT) - 1); // todos los dones aparecen
+    for (int i = 0; i < 8; i++) CHECK(origins[i] > 0 && aspirations[i] > 0);
+}
+
+static void test_champion_in_troop(void) {
+    Troop t;
+    troop_init(&t, NULL);
+    Rng r;
+    rng_seed(&r, 5);
+    Champion c;
+    champion_generate(&c, &r);
+    int a = troop_recruit(&t, "Comun", 0);
+    int g = troop_add_champion(&t, &c, STATUS_ACTIVE);
+    int p = troop_add_champion(&t, &c, STATUS_PRISONER);
+    CHECK(g > 0 && p > 0);
+    CHECK(troop_champion(&t, a) == NULL);
+    CHECK(troop_champion(&t, g) != NULL && strcmp(troop_champion(&t, g)->epithet, c.epithet) == 0);
+    CHECK(troop_find(&t, p)->status == STATUS_PRISONER);
+    CHECK(troop_add_champion(&t, &c, STATUS_DESERTED) == -1);
+}
+
+static void test_champion_desertion_weighs_on_troop(void) {
+    Troop t;
+    troop_init(&t, NULL);
+    Rng r;
+    rng_seed(&r, 11);
+    Champion c;
+    champion_generate(&c, &r);
+    int a = troop_recruit(&t, "Fiel", 0);
+    int b = troop_recruit(&t, "Fiel 2", 0);
+    int g = troop_add_champion(&t, &c, STATUS_ACTIVE);
+    troop_find(&t, a)->morale = troop_find(&t, b)->morale = 80.0f;
+    troop_find(&t, a)->loyalty = troop_find(&t, b)->loyalty = 80.0f;
+    troop_find(&t, g)->morale = troop_find(&t, g)->loyalty = 0.0f; // a punto de irse
+    DayReport rep = { 0 };
+    for (int day = 0; day < 50 && !rep.champions_deserted; day++) rep = troop_process_day(&t, &r);
+    CHECK(rep.champions_deserted == 1 && rep.deserted == 1);
+    CHECK(troop_find(&t, g)->status == STATUS_DESERTED);
+    CHECK(troop_find(&t, a)->morale == 75.0f); // su perdida pesa en los demas
 }
 
 int main(void) {
@@ -298,9 +407,14 @@ int main(void) {
     RUN(test_noise_is_deterministic_and_bounded);
     RUN(test_memmap_starts_dark_and_lights_gradually);
     RUN(test_memmap_frequent_places_are_brighter);
-    RUN(test_memmap_fades_and_familiar_fades_slower);
+    RUN(test_memmap_forgets_over_days);
     RUN(test_memmap_markers_toggle);
-    RUN(test_memmap_outside_bounds_is_safe);
+    RUN(test_memmap_covers_whole_world_sparsely);
+    RUN(test_champions_are_scarce);
+    RUN(test_champion_generation_is_deterministic);
+    RUN(test_champion_gifts_shape_stats);
+    RUN(test_champion_in_troop);
+    RUN(test_champion_desertion_weighs_on_troop);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }
