@@ -66,7 +66,9 @@ jobs:
       - name: Revisar el APK
         run: |
           BT="$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* | sort -V | tail -1)"
-          "$BT/aapt2" dump badging build-android/estepa.apk | head -20
+          "$BT/aapt2" dump badging build-android/estepa.apk | tee badging.txt | head -20
+          # Debe apuntar a una version estable (numerica) para instalarse en dispositivos reales.
+          grep -E "^targetSdkVersion:'[0-9]+'$" badging.txt
           unzip -l build-android/estepa.apk | grep -E "libestepa.so|yurt.glb"
       - uses: actions/upload-artifact@v4
         with:
