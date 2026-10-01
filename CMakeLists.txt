@@ -60,6 +60,7 @@ if(ESTEPA_BUILD_GAME)
     src/main.c
     src/platform.c
     src/game/player.c
+    src/ui/theme.c
     src/world/terrain.c
     src/world/camp.c)
 
