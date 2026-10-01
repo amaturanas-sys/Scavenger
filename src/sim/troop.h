@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 
+#include "champion.h"
 #include "rng.h"
 
 #define TROOP_MAX 64
@@ -65,6 +66,7 @@ typedef struct {
     unsigned traits;
     float morale;  // 0..100
     float loyalty; // 0..100, hacia el lider
+    int champion;  // indice en Troop.champions si es un gran guerrero, o -1
 } Member;
 
 // Reino al que la tropa rinde tributo. `stance` dice cuanto sube o baja la
@@ -81,10 +83,13 @@ typedef struct {
     int count;
     int next_id;
     Kingdom *overlord; // puede ser NULL (tropa independiente)
+    Champion champions[TROOP_MAX];
+    int champion_count;
 } Troop;
 
 typedef struct {
     int deserted;        // cuantos desertaron hoy
+    int champions_deserted; // cuantos de ellos eran grandes guerreros
     bool rebellion;      // estallo una rebelion
     int rebellion_leader; // id del instigador, o -1
 } DayReport;
@@ -94,6 +99,14 @@ void troop_init(Troop *t, Kingdom *overlord);
 // Devuelven el id del nuevo integrante, o -1 si la tropa esta llena.
 int troop_recruit(Troop *t, const char *name, unsigned traits);
 int troop_take_prisoner(Troop *t, const char *name, unsigned traits);
+
+// Suma un gran guerrero como integrante (STATUS_ACTIVE) o como prisionero
+// (STATUS_PRISONER). Despues sigue las mismas dinamicas que cualquier
+// integrante (moral, desercion, rebelion, destierro, ejecucion), pero su
+// desercion pesa en el animo de todos y tiende a encabezar las rebeliones.
+int troop_add_champion(Troop *t, const Champion *c, MemberStatus status);
+// Datos del gran guerrero con ese id de integrante, o NULL si no lo es.
+const Champion *troop_champion(const Troop *t, int id);
 
 Member *troop_find(Troop *t, int id);
 

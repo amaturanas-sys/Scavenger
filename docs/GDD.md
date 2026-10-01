@@ -31,7 +31,12 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 - **Rebelión:** riesgo de tropa cuando la moral media cae bajo 45; los ambiciosos desleales lo agravan y uno de ellos encabeza la revuelta.
 - Simulación determinista (misma semilla ⇒ mismo resultado), cubierta por tests.
 
-- **Grandes guerreros:** personajes únicos que pueden ser integrantes, enemigos, desertores o prisioneros según la moral de la tribu (ver [NARRATIVA.md](NARRATIVA.md#reputación-y-grandes-guerreros)).
+- **Grandes guerreros** (implementado — `src/sim/champion.*`): personajes únicos que **aparecen por azar** (4 % por encuentro; escasos, pero sin límite).
+  - **Historia:** mezcla azarosa de origen, circunstancia del exilio, modo de vida actual y aspiración.
+  - **Dones:** de 1 a 3 sorteados, entre mayor talla, rapidez, fuerza, aguante, arma especial, sanación, puntería y monta. Cada don se traduce en multiplicadores de combate.
+  - **Rasgo de tropa:** lo fija su aspiración. Por ejemplo, quien sueña con un clan propio es ambicioso.
+  - **En la tropa:** pueden ser integrantes o prisioneros, y siguen la moral de la tribu (desertar, rebelarse, ser desterrados). Si uno deserta, la moral de todos cae; y tienden a encabezar las rebeliones.
+  - Ver [NARRATIVA.md](NARRATIVA.md#reputación-y-grandes-guerreros).
 - **Afinidad con los pueblos del mundo:** las decisiones secundarias y la conducta del jugador mueven la hostilidad o afinidad de cada pueblo hacia la tribu.
 
 **Pendiente de definir:** consecuencias jugables de una rebelión (duelo por el liderazgo, escisión de la tropa), cómo se ganan nuevos reclutas en el mundo, economía del tributo.
@@ -40,11 +45,13 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 - **Minimapa circular** en la esquina superior derecha que gira con la vista, como una brújula: arriba es hacia donde mira el jugador, y una "N" en el aro marca el norte.
 - **Empieza negro:** el personaje no conoce el mundo. Las zonas se **iluminan poco a poco** a medida que el jugador las recorre.
 - **Frecuencia = nitidez:** cada zona acumula familiaridad. Lo recorrido a menudo brilla más, como la memoria espacial real.
-- **Olvido:** el brillo se apaga con el tiempo. Lo familiar se olvida más despacio (repetición espaciada).
+- **Olvido en días de juego:** el brillo se apaga con los días (un día de juego = 20 minutos reales; `src/sim/clock.h`). Una zona vista de pasada se borra en una o dos semanas de juego; lo familiar dura mucho más (repetición espaciada).
+- **Todo el mundo:** el minimapa siempre se centra en el jugador y muestra el mundo a su alrededor; lo no explorado aparece oscuro. La memoria se guarda por páginas que solo se crean al explorar, así que crece con lo recorrido, no con el tamaño del mundo.
+- **Días automáticos:** el reloj de juego avanza los días solo; `Enter` salta al amanecer siguiente (prueba).
 - **Marcas:** el jugador marca sitios de interés (`M`) o de peligro (`Shift+M`). Pulsar de nuevo cerca de una marca la quita. Las marcas fuera de alcance quedan en el borde, señalando su dirección.
 - Los parámetros (radio de vista, velocidad de aprendizaje y de olvido, brillo de una sola pasada) están en `memmap_default_params` y son de balance.
 
-**Pendiente:** mapa grande a pantalla completa, guardar el mapa con la partida, marcas con nombre, y un mapa que cubra todo el mundo (hoy cubre 1,5 km × 1,5 km alrededor del origen).
+**Pendiente:** guardar el mapa con la partida y marcas con nombre.
 
 ### 2. Personaje y equipo (núcleo implementado — `src/sim/loadout.*`)
 - Personaje y vestuario personalizables (fase 3).

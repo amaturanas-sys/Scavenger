@@ -47,5 +47,8 @@ void ui_inlay(int x, int y, UiMetal metal);
 // Texto con sombra de grabado.
 void ui_text(const char *text, int x, int y, int size, Color color);
 void ui_text_centered(const char *text, int cx, int y, int size, Color color);
+// Texto con salto de linea por palabras dentro de width px. Devuelve la altura usada.
+int ui_text_wrapped(const char *text, int x, int y, int width, int size, Color color);
+int ui_text_wrapped_height(const char *text, int width, int size);
 
 #endif

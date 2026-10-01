@@ -16,6 +16,8 @@ src/
     troop.*      tropa, moral, politica, reinos
     loadout.*    amuletos, tatuajes, arbol de habilidades
     memory_map.* mapa de memoria: exploracion, olvido, marcas
+    champion.*   grandes guerreros: azar, historia, dones
+    clock.h      reloj de juego (dias)
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
     camp.*       campamento, props

@@ -34,7 +34,9 @@ En Linux hacen falta las cabeceras de X11/OpenGL:
 | Cámara | Q / E, clic derecho + arrastrar, rueda | — |
 | Marcar sitio de interés / de peligro | M / Shift+M | — |
 
-Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `Enter` avanzar un día.
+Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente.
+
+Al reclutar o tomar prisioneros, a veces aparece un gran guerrero por azar.
 
 ## Android
 

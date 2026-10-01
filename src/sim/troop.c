@@ -35,6 +35,8 @@ static const ActionEffect EFFECTS[ACT_COUNT] = {
 #define REBEL_AMBITIOUS_BONUS 0.05f
 #define REBEL_AMBITIOUS_LOYALTY 30.0f
 #define REBEL_MAX 0.9f
+#define CHAMPION_DESERT_MORALE 5.0f // golpe al animo de todos cuando deserta un gran guerrero
+#define CHAMPION_REBEL_LEAD 10.0f   // los grandes guerreros tienden a encabezar la revuelta
 
 static float clampf(float v, float lo, float hi) { return v < lo ? lo : (v > hi ? hi : v); }
 
@@ -74,6 +76,7 @@ static int add_member(Troop *t, const char *name, unsigned traits, MemberStatus 
     m->role = ROLE_NONE;
     m->morale = 60.0f;
     m->loyalty = status == STATUS_PRISONER ? 10.0f : 50.0f;
+    m->champion = -1;
     return m->id;
 }
 
@@ -87,6 +90,22 @@ int troop_take_prisoner(Troop *t, const char *name, unsigned traits) {
     int id = add_member(t, name, traits, STATUS_PRISONER);
     if (id >= 0) apply_action(t, ACT_TAKE_PRISONER);
     return id;
+}
+
+int troop_add_champion(Troop *t, const Champion *c, MemberStatus status) {
+    if (status != STATUS_ACTIVE && status != STATUS_PRISONER) return -1;
+    int id = add_member(t, c->name, c->traits, status);
+    if (id < 0) return -1;
+    t->champions[t->champion_count] = *c; // hay tantos huecos como integrantes
+    troop_find(t, id)->champion = t->champion_count++;
+    apply_action(t, status == STATUS_ACTIVE ? ACT_RECRUIT : ACT_TAKE_PRISONER);
+    return id;
+}
+
+const Champion *troop_champion(const Troop *t, int id) {
+    for (int i = 0; i < t->count; i++)
+        if (t->members[i].id == id) return t->members[i].champion >= 0 ? &t->champions[t->members[i].champion] : NULL;
+    return NULL;
 }
 
 Member *troop_find(Troop *t, int id) {
@@ -178,7 +197,7 @@ float troop_rebellion_chance(const Troop *t) {
 }
 
 DayReport troop_process_day(Troop *t, Rng *rng) {
-    DayReport r = { .deserted = 0, .rebellion = false, .rebellion_leader = -1 };
+    DayReport r = { .deserted = 0, .champions_deserted = 0, .rebellion = false, .rebellion_leader = -1 };
     // La rebelion se evalua con el animo de la manana, antes de las deserciones.
     float rebel_p = troop_rebellion_chance(t);
     for (int i = 0; i < t->count; i++) {
@@ -188,7 +207,14 @@ DayReport troop_process_day(Troop *t, Rng *rng) {
             m->status = STATUS_DESERTED;
             m->role = ROLE_NONE;
             r.deserted++;
+            if (m->champion >= 0) r.champions_deserted++;
         }
+    }
+    // Perder a un gran guerrero desanima a los que se quedan.
+    for (int i = 0; i < t->count && r.champions_deserted; i++) {
+        Member *m = &t->members[i];
+        if (m->status == STATUS_ACTIVE)
+            m->morale = clampf(m->morale - CHAMPION_DESERT_MORALE * (float)r.champions_deserted, 0.0f, 100.0f);
     }
     if (rebel_p > 0.0f && rng_float(rng) < rebel_p) {
         r.rebellion = true;
@@ -197,7 +223,8 @@ DayReport troop_process_day(Troop *t, Rng *rng) {
         for (int i = 0; i < t->count; i++) {
             const Member *m = &t->members[i];
             if (m->status != STATUS_ACTIVE) continue;
-            float score = m->loyalty - ((m->traits & TRAIT_AMBITIOUS) ? 25.0f : 0.0f);
+            float score = m->loyalty - ((m->traits & TRAIT_AMBITIOUS) ? 25.0f : 0.0f) -
+                          (m->champion >= 0 ? CHAMPION_REBEL_LEAD : 0.0f);
             if (score < worst) { worst = score; r.rebellion_leader = m->id; }
         }
     }
