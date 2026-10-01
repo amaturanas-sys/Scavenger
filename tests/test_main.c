@@ -1,10 +1,12 @@
 // Tests del nucleo de simulacion. Arnes minimo, sin dependencias.
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../src/sim/champion.h"
 #include "../src/sim/clock.h"
+#include "../src/sim/inventory.h"
 #include "../src/sim/loadout.h"
 #include "../src/sim/memory_map.h"
 #include "../src/sim/noise.h"
@@ -391,6 +393,72 @@ static void test_champion_desertion_weighs_on_troop(void) {
     CHECK(troop_find(&t, a)->morale == 75.0f); // su perdida pesa en los demas
 }
 
+// ---------------------------------------------------------------- inventario de assets
+static void test_inventory_parses_and_maps_paths(void) {
+    const char *tsv =
+        "# comentario\n"
+        "id\tnombre\tetiquetas\tmedidas_m\ttris_max\testado\tnotas\n"
+        "estructura.vivienda.yurta_comun\tYurta\tfaccion:nomada\t4.5x2.6x4.5\t300\tkiln\tnota\r\n"
+        "accesorio.tatuaje.lobo\tTatuaje\tuso:equipable,formato:textura\t0.25x0.25x0\t0\tpendiente\t\n"
+        "mapa.suelo.estepa\tSuelo\tformato:textura\t4x0x4\t0\tpendiente\t\n"
+        "Mal.Id.Con.Mayusculas\tx\tx\t1x1x1\t1\tpendiente\t\n"
+        "arma.corta.sable\tSable\t\tsin-medidas\t120\trefinado\t\n";
+    Inventory inv;
+    CHECK(inventory_parse(&inv, tsv) == 4); // cabecera, comentario e id invalido fuera
+    const InvItem *suelo = inventory_find(&inv, "mapa.suelo.estepa");
+    CHECK(suelo && suelo->w == 4.0f && suelo->h == 0.0f && suelo->l == 4.0f); // "0x4" no es hexadecimal
+    const InvItem *y = inventory_find(&inv, "estructura.vivienda.yurta_comun");
+    CHECK(y && !strcmp(y->category, "estructura") && y->state == INV_KILN && !y->texture);
+    CHECK(y && !strcmp(y->name, "Yurta"));
+    CHECK(y && y->w == 4.5f && y->h == 2.6f && y->tris_max == 300);
+    char path[128];
+    inventory_path(y, path, sizeof(path));
+    CHECK(!strcmp(path, "assets/models/estructura/vivienda/yurta_comun.glb"));
+    const InvItem *t = inventory_find(&inv, "accesorio.tatuaje.lobo");
+    CHECK(t && t->texture);
+    inventory_path(t, path, sizeof(path));
+    CHECK(!strcmp(path, "assets/textures/accesorio/tatuaje/lobo.png"));
+    const InvItem *s = inventory_find(&inv, "arma.corta.sable");
+    CHECK(s && s->state == INV_REFINADO && s->w == 1.0f); // medidas invalidas: 1 m
+    CHECK(inventory_find(&inv, "no.existe.nada") == NULL);
+    inventory_free(&inv);
+}
+
+static char *read_file(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return NULL;
+    fseek(f, 0, SEEK_END);
+    long n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *buf = malloc((size_t)n + 1);
+    if (buf && fread(buf, 1, (size_t)n, f) != (size_t)n) n = 0;
+    if (buf) buf[n] = '\0';
+    fclose(f);
+    return buf;
+}
+
+// El inventario real del repo: ids unicos, categorias conocidas y medidas positivas.
+static void test_inventory_repo_file_is_valid(void) {
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    static const char *CATS[] = { "mapa", "estructura", "vehiculo", "animal", "arma", "proyectil", "escudo", "totem",
+                                  "armadura", "vestimenta", "accesorio", "asedio", "utileria", "personaje" };
+    Inventory inv;
+    CHECK(inventory_parse(&inv, text) >= 250);
+    for (int i = 0; i < inv.count; i++) {
+        const InvItem *it = &inv.items[i];
+        int known = 0;
+        for (size_t c = 0; c < sizeof(CATS) / sizeof(CATS[0]); c++) known |= !strcmp(it->category, CATS[c]);
+        CHECK(known);
+        CHECK(it->h >= 0.0f && it->w > 0.0f);
+        for (int j = i + 1; j < inv.count; j++) CHECK(strcmp(it->id, inv.items[j].id) != 0);
+    }
+    CHECK(inventory_find(&inv, "estructura.vivienda.yurta_comun") != NULL);
+    inventory_free(&inv);
+    free(text);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_banish_removes_from_active);
@@ -415,6 +483,8 @@ int main(void) {
     RUN(test_champion_gifts_shape_stats);
     RUN(test_champion_in_troop);
     RUN(test_champion_desertion_weighs_on_troop);
+    RUN(test_inventory_parses_and_maps_paths);
+    RUN(test_inventory_repo_file_is_valid);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

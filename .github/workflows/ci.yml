@@ -16,6 +16,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
             libxi-dev libgl1-mesa-dev libgl1-mesa-dri xvfb ninja-build
+      - name: Inventario de assets
+        run: |
+          python3 tools/assets/inventario.py check
+          python3 tools/assets/inventario.py doc --verificar
       - name: Configurar
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
       - name: Compilar
@@ -28,6 +32,9 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" \
             ./estepa --screenshot captura.png --frames 60
           test -s captura.png
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" \
+            ./estepa --galeria --screenshot galeria.png --frames 40
+          test -s galeria.png
       - uses: actions/upload-artifact@v4
         with:
           name: estepa-linux
@@ -35,6 +42,7 @@ jobs:
             build/estepa
             build/assets
             build/captura.png
+            build/galeria.png
 
   windows:
     name: Windows (tests + build)
@@ -69,7 +77,7 @@ jobs:
           "$BT/aapt2" dump badging build-android/estepa.apk | tee badging.txt | head -20
           # Debe apuntar a una version estable (numerica) para instalarse en dispositivos reales.
           grep -E "^targetSdkVersion:'[0-9]+'$" badging.txt
-          unzip -l build-android/estepa.apk | grep -E "libestepa.so|yurt.glb"
+          unzip -l build-android/estepa.apk | grep -E "libestepa.so|yurta_comun.glb|inventario.tsv"
       - uses: actions/upload-artifact@v4
         with:
           name: estepa-android

@@ -29,7 +29,8 @@ add_library(estepa_sim STATIC
   src/sim/troop.c
   src/sim/loadout.c
   src/sim/memory_map.c
-  src/sim/champion.c)
+  src/sim/champion.c
+  src/sim/inventory.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)
@@ -41,6 +42,7 @@ if(ESTEPA_BUILD_TESTS)
   add_executable(sim_tests tests/test_main.c)
   target_link_libraries(sim_tests PRIVATE estepa_sim)
   target_compile_options(sim_tests PRIVATE ${ESTEPA_WARNINGS})
+  target_compile_definitions(sim_tests PRIVATE ESTEPA_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
   add_test(NAME sim_tests COMMAND sim_tests)
 endif()
 
@@ -65,7 +67,8 @@ if(ESTEPA_BUILD_GAME)
     src/ui/theme.c
     src/ui/minimap.c
     src/world/terrain.c
-    src/world/camp.c)
+    src/world/camp.c
+    src/world/gallery.c)
 
   if(ANDROID)
     # Android: biblioteca compartida que carga NativeActivity (libestepa.so).

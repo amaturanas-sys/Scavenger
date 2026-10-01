@@ -4,7 +4,8 @@
 // se escala sin suavizado: es el look pixel/low-res y, a la vez, la mayor
 // optimizacion de rendimiento en moviles (9 veces menos pixeles que 1080p).
 //
-// Uso de escritorio:  estepa [--screenshot salida.png] [--frames N] [--sin-teclado]
+// Uso de escritorio:  estepa [--screenshot salida.png] [--frames N] [--sin-teclado] [--galeria]
+// --galeria muestra todos los objetos del inventario de assets (modelos o marcadores).
 // --sin-teclado simula un dispositivo Android sin teclado (prueba del aviso).
 #include <math.h>
 #include <stdio.h>
@@ -23,6 +24,7 @@
 #include "ui/minimap.h"
 #include "ui/theme.h"
 #include "world/camp.h"
+#include "world/gallery.h"
 #include "world/terrain.h"
 
 #ifndef ESTEPA_VERSION
@@ -235,10 +237,12 @@ int main(int argc, char **argv) {
     const char *shot_path = NULL;
     int shot_frames = 90;
     bool simulate_no_keyboard = false;
+    bool gallery_mode = false;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) shot_path = argv[++i];
         else if (!strcmp(argv[i], "--frames") && i + 1 < argc) shot_frames = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--sin-teclado")) simulate_no_keyboard = true;
+        else if (!strcmp(argv[i], "--galeria")) gallery_mode = true;
     }
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
@@ -255,7 +259,7 @@ int main(int argc, char **argv) {
     Terrain terrain;
     terrain_init(&terrain, WORLD_SEED);
     Camp camp;
-    camp_init(&camp, &terrain, platform_asset_path("assets/models/yurt.glb"));
+    camp_init(&camp, &terrain, platform_asset_path("assets/models/estructura/vivienda/yurta_comun.glb"));
     Player player;
     player_init(&player, &terrain);
 
@@ -274,6 +278,16 @@ int main(int argc, char **argv) {
     Minimap minimap;
     minimap_init(&minimap, MINIMAP_RADIUS, 2.0f);
     char log[128] = "Tu tropa acampa en la estepa.";
+
+    Gallery gallery = { 0 };
+    if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
+        player.pos = gallery.start;
+        player.pos.y = terrain_height(&terrain, player.pos.x, player.pos.z);
+        player.yaw = PI; // mirando a -Z, hacia las filas
+        snprintf(log, sizeof(log), "Galeria: %d objetos (%d con modelo).", gallery.count, gallery.loaded);
+    } else {
+        gallery_mode = false;
+    }
 
     Camera3D cam = { .up = { 0, 1, 0 }, .fovy = 55.0f, .projection = CAMERA_PERSPECTIVE };
     CameraRig rig = { .yaw = PI, .pitch = 0.38f, .dist = 11.0f };
@@ -309,12 +323,17 @@ int main(int argc, char **argv) {
         BeginMode3D(cam);
         terrain_draw(&terrain);
         camp_draw(&camp, (float)GetTime());
+        if (gallery_mode) gallery_draw(&gallery);
         player_draw(&player);
         EndMode3D();
-        draw_hud(&player, &troop, &overlord, day, log);
-        minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
-                     player.pos, rig.yaw, player.yaw, world_time);
-        if (show_card) draw_champion_card(&troop, last_champion);
+        if (gallery_mode) {
+            gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
+        } else {
+            draw_hud(&player, &troop, &overlord, day, log);
+            minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
+                         player.pos, rig.yaw, player.yaw, world_time);
+            if (show_card) draw_champion_card(&troop, last_champion);
+        }
         if (!has_keyboard) draw_keyboard_notice();
         EndTextureMode();
 
@@ -337,6 +356,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (gallery_mode) gallery_unload(&gallery);
     minimap_unload(&minimap);
     memmap_free(&g_memory);
     camp_unload(&camp);

@@ -4,7 +4,7 @@ Los modelos se escriben como programas JavaScript para [Kiln](https://github.com
 
 | Programa | Salida | Triángulos |
 |---|---|---|
-| `yurt.kiln.js` | `assets/models/yurt.glb` | 296 |
+| `yurta_comun.kiln.js` | `assets/models/estructura/vivienda/yurta_comun.glb` | 296 |
 
 ## Instalar Kiln (una vez)
 
@@ -18,8 +18,8 @@ node scripts/create-workspace.mjs ~/kiln-workspace --harness claude
 
 ```bash
 cd ~/kiln-workspace
-node kiln.mjs render /ruta/al/repo/tools/assets/yurt.kiln.js --render cpu \
-  --out /ruta/al/repo/assets/models/yurt.glb --views yurt_vistas.png
+node kiln.mjs render /ruta/al/repo/tools/assets/yurta_comun.kiln.js --render cpu \
+  --out /ruta/al/repo/assets/models/estructura/vivienda/yurta_comun.glb --views yurt_vistas.png
 ```
 
 `--views` genera una hoja con 6 vistas para revisar el modelo; el reporte de QA de Kiln valida la exportación y el costo de render.
