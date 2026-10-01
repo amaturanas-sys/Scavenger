@@ -20,6 +20,13 @@
 #include "world/camp.h"
 #include "world/terrain.h"
 
+#ifndef ESTEPA_VERSION
+#define ESTEPA_VERSION "dev"
+#endif
+#ifndef ESTEPA_BUILD_CODE
+#define ESTEPA_BUILD_CODE 0
+#endif
+
 #define VIRTUAL_W 640
 #define VIRTUAL_H 360
 #define WORLD_SEED 1206u // ano de la fundacion del Imperio mongol
@@ -108,7 +115,7 @@ static void draw_bar(int x, int y, int w, float value, Color fill) {
 
 static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day, const char *log) {
     DrawRectangle(4, 4, 214, 104, (Color){ 12, 10, 8, 170 });
-    DrawText("ESTEPA - Fase 0", 10, 9, 10, (Color){ 240, 220, 170, 255 });
+    DrawText(TextFormat("ESTEPA v%s (build %d)", ESTEPA_VERSION, ESTEPA_BUILD_CODE), 10, 9, 10, (Color){ 240, 220, 170, 255 });
     DrawText(TextFormat("%s  |  %d fps", stance_name(p->stance), GetFPS()), 10, 22, 10, RAYWHITE);
     DrawText(TextFormat("Dia %d  Tropa: %d  Prisioneros: %d", day, troop_count_with_status(t, STATUS_ACTIVE),
                         troop_count_with_status(t, STATUS_PRISONER)), 10, 36, 10, RAYWHITE);

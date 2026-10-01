@@ -46,6 +46,14 @@ adb install -r build-android/estepa.apk
 
 El CI publica el APK como artefacto `estepa-android`.
 
+### Actualizaciones
+Cada versión nueva **se instala encima de la anterior**, sin desinstalar y conservando los datos:
+- Todos los builds se firman con la misma clave de desarrollo (`android/estepa-dev.keystore`); el script verifica la huella del certificado (`android/dev-cert.sha256`) en cada build.
+- El `versionCode` es automático (minutos desde 1970), así que cada build supera a la anterior.
+- La versión aparece en el HUD: `ESTEPA v0.1.0 (build N)`. Para cambiar la versión legible, edita el archivo `VERSION`.
+
+La clave de desarrollo es solo para builds de prueba. Para publicar en Google Play se usará una clave de release guardada en los *secrets* de GitHub (`ESTEPA_KEYSTORE`, `ESTEPA_KEYSTORE_PASS`, `ESTEPA_KEY_ALIAS`).
+
 ## Captura automática
 
 ```bash

@@ -18,7 +18,8 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Detección de teclado en caliente: sin teclado, el juego se pausa con un aviso.
 - [x] Sin filtro `reqHardKeyboard` en Google Play (excluiría tablets con teclado Bluetooth).
 - [ ] Prueba en dispositivo real con teclado (meta: 60 fps).
-- [ ] Clave de firma fija para releases (hoy cada build de CI usa una clave de depuración nueva).
+- [x] Actualizaciones encima de la versión previa: clave de desarrollo fija (huella verificada en cada build) y `versionCode` creciente automático.
+- [ ] Clave de release para Google Play en los secrets de GitHub.
 
 ## Fase 1 — Rebanada vertical: la tropa en el mundo
 - [ ] Integrantes de la tropa como personajes en el campamento (deambulan según su función).

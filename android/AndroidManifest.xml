@@ -9,9 +9,9 @@
   y se pausa con un aviso si no hay ninguno.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.amaturanas.estepa"
-    android:versionCode="1"
-    android:versionName="0.1.0">
+    package="com.amaturanas.estepa">
+    <!-- versionCode/versionName los inyecta tools/android/build_apk.sh
+         (VERSION + minutos desde 1970): cada build supera a la anterior. -->
 
     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
     <!-- No exige pantalla tactil: habilita Chromebooks y equipos tipo PC. -->

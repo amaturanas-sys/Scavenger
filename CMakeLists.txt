@@ -4,6 +4,16 @@ project(estepa C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Version: VERSION (semver, para humanos) + codigo de build (entero que siempre
+# crece: minutos desde 1970). Android exige que el codigo aumente en cada
+# actualizacion; asi ocurre solo, en CI y en local, sin tocar nada a mano.
+file(STRINGS "${CMAKE_SOURCE_DIR}/VERSION" ESTEPA_VERSION LIMIT_COUNT 1)
+if(NOT DEFINED ESTEPA_BUILD_CODE)
+  string(TIMESTAMP _estepa_now "%s" UTC)
+  math(EXPR ESTEPA_BUILD_CODE "${_estepa_now} / 60")
+endif()
+message(STATUS "Estepa ${ESTEPA_VERSION} (build ${ESTEPA_BUILD_CODE})")
+
 option(ESTEPA_BUILD_GAME "Compilar el juego (requiere raylib)" ON)
 option(ESTEPA_BUILD_TESTS "Compilar los tests del nucleo" ON)
 
@@ -69,4 +79,6 @@ if(ESTEPA_BUILD_GAME)
   endif()
   target_link_libraries(estepa PRIVATE estepa_sim raylib)
   target_compile_options(estepa PRIVATE ${ESTEPA_WARNINGS})
+  target_compile_definitions(estepa PRIVATE
+    ESTEPA_VERSION="${ESTEPA_VERSION}" ESTEPA_BUILD_CODE=${ESTEPA_BUILD_CODE})
 endif()
