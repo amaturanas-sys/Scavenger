@@ -33,6 +33,7 @@ typedef enum {
     ROLE_GUARD,      // guardia del campamento
     ROLE_HEALER,     // curandero
     ROLE_LIEUTENANT, // lugarteniente
+    ROLE_BUILDER,    // constructor: acelera las obras en grupo
     ROLE_COUNT
 } Role;
 

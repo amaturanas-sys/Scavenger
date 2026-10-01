@@ -255,7 +255,7 @@ void kingdom_init_jade_dynasty(Kingdom *k) {
 
 const char *role_name(Role r) {
     static const char *N[ROLE_COUNT] = { "sin funcion", "explorador", "cazador", "cocinero",
-                                         "herrero", "guardia", "curandero", "lugarteniente" };
+                                         "herrero", "guardia", "curandero", "lugarteniente", "constructor" };
     return (r >= 0 && r < ROLE_COUNT) ? N[r] : "?";
 }
 

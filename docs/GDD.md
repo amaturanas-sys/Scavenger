@@ -53,6 +53,62 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 
 **Pendiente:** guardar el mapa con la partida y marcas con nombre.
 
+### Acciones (núcleo implementado — `src/sim/actions.*`, en juego `src/game/actions_game.*`)
+Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las use llega en la Fase 1). Los objetos que usan o producen son ids del [inventario de assets](INVENTARIO.md).
+
+**Manos y empuñadura.** Cada arma declara cómo se empuña (etiqueta `manos:una|dos|escudo` del inventario):
+
+| Empuñadura | Ejemplo |
+|---|---|
+| A una mano | sable |
+| Una en cada mano | sable y daga, o un arma y una antorcha |
+| A dos manos | guja, arco, ballesta (ocupa ambas manos y suelta el escudo) |
+| Arma y escudo | sable o lanza con escudo (el escudo siempre va en la izquierda) |
+| Solo escudo / desarmado | — |
+
+- **Enfundar y desenfundar:** guardar las armas libera las manos.
+- **Tomar y lanzar objetos:** para tomar un objeto hace falta una mano libre, o tener las armas enfundadas.
+
+**Acciones individuales** (una persona; tienen duración):
+
+| Acción | Requiere | Resultado |
+|---|---|---|
+| Tomar / lanzar | mano libre / un objeto en la mano | el objeto vuela con física y cae al suelo |
+| Cambiar empuñadura | — | recorre las combinaciones del equipo |
+| Enfundar / desenfundar | un arma | — |
+| Instalar fogata | — | `estructura.campamento.fogata` |
+| Instalar tienda de campaña | — | `estructura.vivienda.tienda_ligera` |
+| Cavar trinchera | pala | `estructura.defensa.trinchera` |
+| Lanzar trepa | gancho con cuerda; un muro a tiro | se engancha para escalar en un asedio (trepar: Fase 1) |
+| Lanzar lazo | lazo; un animal salvaje | intento de doma (doma: Fase 2) |
+| Encender antorcha | antorcha | luz en la mano izquierda |
+| Instalar montura | silla de montar; una montura | ensillar (monturas: Fase 2) |
+
+**Construcciones en grupo.** Requieren varias personas de la tribu. Aquí importa tener miembros hábiles:
+
+| Obra | Cuadrilla | Requiere | Rinde el doble |
+|---|---|---|---|
+| Refugio | 2–4 | — | constructor |
+| Muro de empalizada | 3–6 | — | constructor |
+| Muro de piedra | 4–8 | — | constructor |
+| Hoguera | 2–4 | — | cazador |
+| Tótem de protección | 2–4 | — | curandero |
+| Horno de cocina | 2–3 | — | cocinero |
+| Horno de fundición (bronce) | 3–5 | herrero | herrero |
+| Horno de fundición (acero) | 4–6 | herrero | herrero |
+| Torre de vigilancia | 3–6 | — | constructor |
+| Corral | 2–4 | — | cazador |
+
+- **Sin la cuadrilla mínima, o sin el oficio requerido, la obra no avanza.** Más gente que el máximo no acelera.
+- **Ritmo de cada trabajador:**
+  - 1 por persona;
+  - ×2 si tiene la función adecuada;
+  - grandes guerreros: ×1,5 con fuerza, ×1,25 con aguante y ×1,2 con talla;
+  - ×0,5 si su moral está por debajo de 30.
+- Los prisioneros no trabajan. El jugador suma una persona si está cerca de la obra.
+- Nueva función de tropa: **constructor**.
+- **Pendiente:** consumir materiales, que cada NPC camine a la obra, y los efectos de cada construcción (el calor de la hoguera, la protección del tótem, la fundición de armas y armaduras de bronce y acero).
+
 ### 2. Personaje y equipo (núcleo implementado — `src/sim/loadout.*`)
 - Personaje y vestuario personalizables (fase 3).
 - **Árbol de habilidades** con buffs **activos** (con enfriamiento) y **pasivos**.

@@ -77,6 +77,10 @@ static bool parse_line(const char *p, const char *eol, InvItem *it) {
     for (int s = 0; s < INV_ESTADO_COUNT; s++)
         if (!strcmp(state, STATE_NAMES[s])) it->state = (InvState)s;
     it->texture = strstr(tags, "formato:textura") != NULL;
+    it->hands = strstr(tags, "manos:una")      ? INV_HANDS_ONE
+                : strstr(tags, "manos:dos")    ? INV_HANDS_TWO
+                : strstr(tags, "manos:escudo") ? INV_HANDS_SHIELD
+                                               : INV_HANDS_NONE;
     return true;
 }
 

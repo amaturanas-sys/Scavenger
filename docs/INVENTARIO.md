@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**280 objetos** · 1 con modelo · 279 pendientes.
+**291 objetos** · 1 con modelo · 290 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -12,18 +12,18 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
 | [Mapa: terreno, vegetación, agua e hitos](#mapa) | 28 | 28 | 0 | 0 | 0 |
-| [Estructuras](#estructura) | 33 | 32 | 1 | 0 | 0 |
+| [Estructuras](#estructura) | 40 | 39 | 1 | 0 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 21 | 21 | 0 | 0 | 0 |
 | [Armas](#arma) | 27 | 27 | 0 | 0 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
 | [Escudos](#escudo) | 6 | 6 | 0 | 0 | 0 |
-| [Tótems](#totem) | 9 | 9 | 0 | 0 | 0 |
+| [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
 | [Armaduras (por piezas)](#armadura) | 47 | 47 | 0 | 0 | 0 |
 | [Vestimenta (personalización)](#vestimenta) | 14 | 14 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 18 | 18 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 16 | 16 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 19 | 19 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -44,6 +44,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estilo` | libre |
 | `requiere` | libre |
 | `motivo` | libre |
+| `manos` | `dos`, `escudo`, `una` |
 
 <a id="mapa"></a>
 
@@ -119,6 +120,13 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.culto.jaula_sacrificio` | Jaula de cautivos para el sacrificio | 3x2.5x3 | 200 | pendiente | `faccion:culto` `uso:interactuable` `material:hierro` | Rescates del acto III. |
 | `estructura.ruina.muro` | Muro en ruinas | 6x3x1 | 150 | pendiente | `bioma:cualquiera` `uso:decorado` `material:piedra` |  |
 | `estructura.ruina.yurta_quemada` | Yurta quemada | 4.5x1.5x4.5 | 250 | pendiente | `faccion:nomada` `acto:1` `uso:decorado` | Restos de la masacre. |
+| `estructura.campamento.refugio` | Refugio de ramas y pieles | 3x2x3 | 150 | pendiente | `faccion:nomada` `uso:habitable` `uso:construible` | Construcción en grupo. |
+| `estructura.campamento.hoguera` | Hoguera grande | 2.5x1.5x2.5 | 120 | pendiente | `faccion:nomada` `uso:interactuable` `uso:construible` | Construcción en grupo: calor y luz para todo el campamento. |
+| `estructura.campamento.horno_cocina` | Horno de cocina de barro | 1.5x1.4x1.5 | 150 | pendiente | `faccion:nomada` `uso:interactuable` `uso:construible` `material:barro` | Construcción en grupo; el cocinero acelera la obra. |
+| `estructura.campamento.horno_bronce` | Horno de fundición de bronce | 2x2.5x2 | 300 | pendiente | `uso:interactuable` `uso:construible` `material:barro` | Armas y armaduras de bronce. Requiere un herrero. |
+| `estructura.campamento.horno_acero` | Horno de fundición de acero | 2.5x3.5x2.5 | 400 | pendiente | `uso:interactuable` `uso:construible` `material:piedra` | Armas y armaduras de acero. Requiere un herrero. |
+| `estructura.defensa.trinchera` | Trinchera | 1.2x0.8x4 | 80 | pendiente | `faccion:cualquiera` `uso:cobertura` | Se cava con pala (acción individual). |
+| `estructura.defensa.muro_piedra` | Muro de piedra seca | 4x2x0.6 | 120 | pendiente | `faccion:nomada` `uso:destructible` `uso:construible` `material:piedra` | Construcción en grupo. |
 
 <a id="vehiculo"></a>
 
@@ -172,33 +180,33 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
-| `arma.corta.cuchillo` | Cuchillo de hueso y hierro | 0.05x0.3x0.03 | 60 | pendiente | `uso:equipable` |  |
-| `arma.corta.daga` | Daga | 0.05x0.4x0.03 | 80 | pendiente | `uso:equipable` |  |
-| `arma.corta.sable` | Sable curvo | 0.08x0.9x0.03 | 120 | pendiente | `uso:equipable` `faccion:nomada` |  |
-| `arma.corta.hacha_mano` | Hacha de mano | 0.15x0.6x0.04 | 100 | pendiente | `uso:equipable` |  |
-| `arma.corta.maza` | Maza | 0.1x0.7x0.1 | 100 | pendiente | `uso:equipable` |  |
-| `arma.larga.lanza` | Lanza | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` |  |
-| `arma.larga.guja` | Guja | 0.2x2.2x0.05 | 120 | pendiente | `uso:equipable` |  |
-| `arma.larga.pica` | Pica imperial | 0.1x4.5x0.1 | 80 | pendiente | `uso:equipable` `faccion:imperio` |  |
-| `arma.larga.alabarda` | Alabarda | 0.3x2.2x0.05 | 140 | pendiente | `uso:equipable` `faccion:imperio` |  |
-| `arma.larga.espada_larga` | Espada larga | 0.2x1.2x0.03 | 120 | pendiente | `uso:equipable` |  |
-| `arma.distancia.arco_compuesto` | Arco compuesto | 0.1x1.2x0.05 | 150 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:nomada` |  |
-| `arma.distancia.arco_largo` | Arco largo | 0.08x1.8x0.05 | 120 | pendiente | `uso:equipable` `requiere:proyectil` |  |
-| `arma.distancia.ballesta` | Ballesta | 0.7x0.25x0.9 | 250 | pendiente | `uso:equipable` `requiere:proyectil` |  |
-| `arma.distancia.mosquete` | Mosquete de mecha | 0.1x0.25x1.5 | 300 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:imperio` |  |
+| `arma.corta.cuchillo` | Cuchillo de hueso y hierro | 0.05x0.3x0.03 | 60 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.corta.daga` | Daga | 0.05x0.4x0.03 | 80 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.corta.sable` | Sable curvo | 0.08x0.9x0.03 | 120 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` |  |
+| `arma.corta.hacha_mano` | Hacha de mano | 0.15x0.6x0.04 | 100 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.corta.maza` | Maza | 0.1x0.7x0.1 | 100 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.larga.lanza` | Lanza | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.larga.guja` | Guja | 0.2x2.2x0.05 | 120 | pendiente | `uso:equipable` `manos:dos` |  |
+| `arma.larga.pica` | Pica imperial | 0.1x4.5x0.1 | 80 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
+| `arma.larga.alabarda` | Alabarda | 0.3x2.2x0.05 | 140 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
+| `arma.larga.espada_larga` | Espada larga | 0.2x1.2x0.03 | 120 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.distancia.arco_compuesto` | Arco compuesto | 0.1x1.2x0.05 | 150 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:nomada` `manos:dos` |  |
+| `arma.distancia.arco_largo` | Arco largo | 0.08x1.8x0.05 | 120 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
+| `arma.distancia.ballesta` | Ballesta | 0.7x0.25x0.9 | 250 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
+| `arma.distancia.mosquete` | Mosquete de mecha | 0.1x0.25x1.5 | 300 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:imperio` `manos:dos` |  |
 | `arma.distancia.canon` | Cañón de campaña | 1.5x1.2x3 | 800 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:imperio` |  |
-| `arma.distancia.honda` | Honda | 0.05x0.6x0.05 | 40 | pendiente | `uso:equipable` `requiere:proyectil` |  |
-| `arma.distancia.lazo` | Lazo | 0.5x0.1x0.5 | 80 | pendiente | `uso:equipable` `faccion:nomada` |  |
-| `arma.distancia.boleadoras` | Boleadoras | 0.4x0.1x0.4 | 60 | pendiente | `uso:equipable` |  |
-| `arma.especial.guja_hoja_ancha` | Guja de hoja ancha | 0.25x2.2x0.05 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` | Arma especial de grandes guerreros (src/sim/champion.c). |
-| `arma.especial.sable_damasquinado` | Sable de acero damasquinado | 0.08x0.95x0.03 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` | Arma especial de grandes guerreros (src/sim/champion.c). |
-| `arma.especial.arco_cuerno` | Arco compuesto de cuerno | 0.1x1.2x0.05 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` | Arma especial de grandes guerreros (src/sim/champion.c). |
-| `arma.especial.maza_tigre` | Maza de bronce con cabeza de tigre | 0.15x0.8x0.15 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` | Arma especial de grandes guerreros (src/sim/champion.c). |
-| `arma.especial.lazo_plomadas` | Lazo con plomadas | 0.5x0.1x0.5 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` | Arma especial de grandes guerreros (src/sim/champion.c). |
-| `arma.especial.hacha_ceremonial` | Hacha ceremonial | 0.3x0.9x0.04 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` | Arma especial de grandes guerreros (src/sim/champion.c). |
-| `arma.especial.lanza_doble_punta` | Lanza de caballería de doble punta | 0.1x2.8x0.1 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` | Arma especial de grandes guerreros (src/sim/champion.c). |
-| `arma.especial.ballesta_repeticion` | Ballesta de repetición | 0.6x0.35x0.9 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` | Arma especial de grandes guerreros (src/sim/champion.c). |
-| `arma.especial.espada_padre` | Espada ceremonial del padre | 0.12x1x0.04 | 500 | pendiente | `uso:equipable` `acto:3` `especial:legado` `especial:narrativo` `material:oro` | Hallada en la tumba helada; se empuña en el asalto final. |
+| `arma.distancia.honda` | Honda | 0.05x0.6x0.05 | 40 | pendiente | `uso:equipable` `requiere:proyectil` `manos:una` |  |
+| `arma.distancia.lazo` | Lazo | 0.5x0.1x0.5 | 80 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` |  |
+| `arma.distancia.boleadoras` | Boleadoras | 0.4x0.1x0.4 | 60 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.especial.guja_hoja_ancha` | Guja de hoja ancha | 0.25x2.2x0.05 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` `manos:dos` | Arma especial de grandes guerreros (src/sim/champion.c). |
+| `arma.especial.sable_damasquinado` | Sable de acero damasquinado | 0.08x0.95x0.03 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` `manos:una` | Arma especial de grandes guerreros (src/sim/champion.c). |
+| `arma.especial.arco_cuerno` | Arco compuesto de cuerno | 0.1x1.2x0.05 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` `manos:dos` | Arma especial de grandes guerreros (src/sim/champion.c). |
+| `arma.especial.maza_tigre` | Maza de bronce con cabeza de tigre | 0.15x0.8x0.15 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` `manos:una` | Arma especial de grandes guerreros (src/sim/champion.c). |
+| `arma.especial.lazo_plomadas` | Lazo con plomadas | 0.5x0.1x0.5 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` `manos:una` | Arma especial de grandes guerreros (src/sim/champion.c). |
+| `arma.especial.hacha_ceremonial` | Hacha ceremonial | 0.3x0.9x0.04 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` `manos:una` | Arma especial de grandes guerreros (src/sim/champion.c). |
+| `arma.especial.lanza_doble_punta` | Lanza de caballería de doble punta | 0.1x2.8x0.1 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` `manos:dos` | Arma especial de grandes guerreros (src/sim/champion.c). |
+| `arma.especial.ballesta_repeticion` | Ballesta de repetición | 0.6x0.35x0.9 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` `manos:dos` | Arma especial de grandes guerreros (src/sim/champion.c). |
+| `arma.especial.espada_padre` | Espada ceremonial del padre | 0.12x1x0.04 | 500 | pendiente | `uso:equipable` `acto:3` `especial:legado` `especial:narrativo` `material:oro` `manos:una` | Hallada en la tumba helada; se empuña en el asalto final. |
 
 <a id="proyectil"></a>
 
@@ -219,12 +227,12 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
-| `escudo.mano.mimbre` | Escudo redondo de mimbre | 0.6x0.6x0.08 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:madera` |  |
-| `escudo.mano.cuero` | Escudo de cuero endurecido | 0.55x0.55x0.06 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:cuero` |  |
-| `escudo.mano.umbo` | Escudo de madera con umbo | 0.8x0.8x0.1 | 100 | pendiente | `uso:equipable` `faccion:neutral` `material:madera` |  |
-| `escudo.grande.paves` | Pavés imperial | 0.7x1.5x0.15 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:madera` |  |
-| `escudo.mano.lamina` | Escudo de láminas de hierro | 0.6x0.8x0.08 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:hierro` |  |
-| `escudo.mano.culto` | Escudo ceremonial del culto | 0.7x0.9x0.08 | 200 | pendiente | `uso:equipable` `faccion:culto` `material:bronce` |  |
+| `escudo.mano.mimbre` | Escudo redondo de mimbre | 0.6x0.6x0.08 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:madera` `manos:escudo` |  |
+| `escudo.mano.cuero` | Escudo de cuero endurecido | 0.55x0.55x0.06 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:cuero` `manos:escudo` |  |
+| `escudo.mano.umbo` | Escudo de madera con umbo | 0.8x0.8x0.1 | 100 | pendiente | `uso:equipable` `faccion:neutral` `material:madera` `manos:escudo` |  |
+| `escudo.grande.paves` | Pavés imperial | 0.7x1.5x0.15 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:madera` `manos:escudo` |  |
+| `escudo.mano.lamina` | Escudo de láminas de hierro | 0.6x0.8x0.08 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:hierro` `manos:escudo` |  |
+| `escudo.mano.culto` | Escudo ceremonial del culto | 0.7x0.9x0.08 | 200 | pendiente | `uso:equipable` `faccion:culto` `material:bronce` `manos:escudo` |  |
 
 <a id="totem"></a>
 
@@ -241,6 +249,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `totem.clan.estandarte_tamga` | Estandarte con la tamga del padre | 1x3.5x0.1 | 150 | pendiente | `faccion:nomada` `especial:legado` | Signo de clan del padre. |
 | `totem.culto.idolo_culto` | Ídolo del culto | 1x3x1 | 400 | pendiente | `faccion:culto` `acto:4` `material:bronce` | Símbolo del culto: pendiente de definir por el autor. |
 | `totem.culto.craneos_culto` | Pila de cráneos del culto | 1x1.5x1 | 200 | pendiente | `faccion:culto` `uso:decorado` `material:hueso` |  |
+| `totem.proteccion.guardian` | Tótem de protección | 0.8x3.5x0.8 | 250 | pendiente | `faccion:nomada` `uso:interactuable` `uso:construible` `material:madera` | Construcción en grupo; protege el campamento (efecto pendiente de diseño). |
 
 <a id="armadura"></a>
 
@@ -365,7 +374,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.objeto.cofre` | Cofre de botín | 0.8x0.5x0.5 | 100 | pendiente | `uso:interactuable` `material:madera` |  |
 | `utileria.objeto.barril_polvora` | Barril de pólvora | 0.6x0.8x0.6 | 80 | pendiente | `faccion:imperio` `uso:destructible` |  |
 | `utileria.objeto.saco_grano` | Saco de grano | 0.5x0.6x0.4 | 60 | pendiente | `uso:recolectable` |  |
-| `utileria.objeto.antorcha` | Antorcha | 0.1x0.7x0.1 | 40 | pendiente | `uso:equipable` |  |
+| `utileria.objeto.antorcha` | Antorcha | 0.1x0.7x0.1 | 40 | pendiente | `uso:equipable` `manos:una` |  |
 | `utileria.objeto.cadenas` | Grilletes y cadenas | 0.4x0.1x0.4 | 80 | pendiente | `material:hierro` |  |
 | `utileria.objeto.yunque` | Yunque | 0.6x0.5x0.3 | 80 | pendiente | `material:hierro` |  |
 | `utileria.objeto.telar` | Telar de fieltro | 1.5x1.2x1 | 150 | pendiente | `faccion:nomada` `material:madera` |  |
@@ -376,6 +385,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.consumible.hierbas` | Hierbas curativas | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.agua` | Agua | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.pan` | Pan del imperio | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
+| `utileria.herramienta.pala` | Pala | 0.25x1.2x0.05 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Para cavar trincheras. |
+| `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
+| `utileria.objeto.lena` | Haz de leña | 0.5x0.3x0.8 | 40 | pendiente | `uso:recolectable` `material:madera` | Material de fogatas, hogueras y hornos. |
 
 <a id="personaje"></a>
 

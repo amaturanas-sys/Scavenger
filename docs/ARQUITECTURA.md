@@ -19,12 +19,15 @@ src/
     champion.*   grandes guerreros: azar, historia, dones
     clock.h      reloj de juego (dias)
     inventory.*  inventario de assets (lee assets/inventario.tsv)
+    actions.*    manos y empunadura, acciones individuales, construcciones en grupo
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
     camp.*       campamento, props
     gallery.*    galeria del inventario (--galeria)
+    props.*      objetos sueltos en el mundo (modelo o marcador)
   game/     Jugador e input
     player.*
+    actions_game.*  menu de acciones, atajos, obras en curso
   ui/       Interfaz (raylib)
     theme.*      tema de orfebreria: paneles, barras, texto
     minimap.*    minimapa circular tipo brujula

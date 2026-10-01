@@ -19,6 +19,9 @@
 
 typedef enum { INV_PENDIENTE, INV_KILN, INV_IMPORTADO, INV_REFINADO, INV_ESTADO_COUNT } InvState;
 
+// Como se empuna (etiqueta manos:una|dos|escudo). INV_HANDS_NONE: no se empuna.
+typedef enum { INV_HANDS_NONE, INV_HANDS_ONE, INV_HANDS_TWO, INV_HANDS_SHIELD } InvHands;
+
 typedef struct {
     char id[INV_ID_LEN];
     char name[96]; // UTF-8
@@ -27,6 +30,7 @@ typedef struct {
     int tris_max;
     InvState state;
     bool texture; // formato:textura (calcomania o textura, no modelo)
+    InvHands hands;
 } InvItem;
 
 typedef struct {

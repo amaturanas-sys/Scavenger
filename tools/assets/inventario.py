@@ -54,6 +54,7 @@ TAGS = {
     "estilo": None,
     "requiere": None,
     "motivo": None,
+    "manos": {"una", "dos", "escudo"},
 }
 ID_RE = re.compile(r"^[a-z0-9_]+\.[a-z0-9_]+\.[a-z0-9_]+$")
 DIMS_RE = re.compile(r"^\d+(\.\d+)?x\d+(\.\d+)?x\d+(\.\d+)?$")
