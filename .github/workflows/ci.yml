@@ -53,3 +53,22 @@ jobs:
           path: |
             build/Release/estepa.exe
             build/Release/assets
+
+  android:
+    name: Android (APK arm64)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Herramientas
+        run: sudo apt-get update && sudo apt-get install -y ninja-build zip
+      - name: Compilar y empaquetar el APK
+        run: tools/android/build_apk.sh build-android/estepa.apk
+      - name: Revisar el APK
+        run: |
+          BT="$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* | sort -V | tail -1)"
+          "$BT/aapt2" dump badging build-android/estepa.apk | head -20
+          unzip -l build-android/estepa.apk | grep -E "libestepa.so|yurt.glb"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: estepa-android
+          path: build-android/estepa.apk

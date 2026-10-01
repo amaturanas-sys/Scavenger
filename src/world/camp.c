@@ -8,7 +8,13 @@
 
 void camp_init(Camp *c, const Terrain *t, const char *yurt_path) {
     memset(c, 0, sizeof(*c));
+    // En Android los assets viven dentro del APK: FileExists() no los ve,
+    // pero LoadModel() si (raylib redirige la lectura al AssetManager).
+#if defined(__ANDROID__)
+    if (yurt_path) {
+#else
     if (yurt_path && FileExists(yurt_path)) {
+#endif
         c->yurt = LoadModel(yurt_path);
         c->yurt_loaded = c->yurt.meshCount > 0;
     }

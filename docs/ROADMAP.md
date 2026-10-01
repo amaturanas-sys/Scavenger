@@ -12,10 +12,13 @@ Enfoque: **rebanadas verticales**. Cada fase deja algo jugable y verificado, en 
 - [x] Amuletos, tatuajes y desbloqueo del árbol de habilidades, con tests.
 - [x] CI: tests + builds de Linux y Windows + captura automática del render.
 
-## Fase 0b — Android
-- [ ] Build del APK en CI (NDK + empaquetado con `NativeActivity`).
-- [ ] Controles táctiles: stick virtual, botones de acción, gesto para la cámara.
-- [ ] Prueba de rendimiento en un dispositivo de gama baja (meta: 60 fps).
+## Fase 0b — Android (misma experiencia que en PC)
+Decisión: el port de Android replica la experiencia de PC y se juega con **teclado físico** (tablets, Chromebooks); ratón o mando opcionales. **Sin controles táctiles.**
+- [x] APK arm64 generado en CI con `NativeActivity` (`tools/android/build_apk.sh`, sin Gradle).
+- [x] Detección de teclado en caliente: sin teclado, el juego se pausa con un aviso.
+- [x] Sin filtro `reqHardKeyboard` en Google Play (excluiría tablets con teclado Bluetooth).
+- [ ] Prueba en dispositivo real con teclado (meta: 60 fps).
+- [ ] Clave de firma fija para releases (hoy cada build de CI usa una clave de depuración nueva).
 
 ## Fase 1 — Rebanada vertical: la tropa en el mundo
 - [ ] Integrantes de la tropa como personajes en el campamento (deambulan según su función).

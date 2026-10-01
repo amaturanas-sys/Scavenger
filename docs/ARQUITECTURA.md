@@ -39,7 +39,8 @@ docs/       Diseño, roadmap, arquitectura
 
 ## Plataformas
 - **Windows / Linux:** CMake descarga raylib 5.5 (FetchContent) y lo enlaza estáticamente.
-- **Android (Fase 0b):** mismo código; raylib compila para `PLATFORM_ANDROID` con el NDK. Los assets se leen del APK (`asset_path()` en `main.c` ya distingue la plataforma).
+- **Android:** mismo código; con la toolchain del NDK el juego se compila como `libestepa.so` (raylib en modo Android, OpenGL ES 2) y `tools/android/build_apk.sh` lo empaqueta con `aapt2`, `zipalign` y `apksigner`, sin Gradle. Los assets van dentro del APK.
+- `src/platform.*` concentra las diferencias: rutas de assets y detección de teclado físico (`AConfiguration_getKeyboard`). El port se juega con teclado; sin teclado, el juego se pausa con un aviso.
 
 ## Testing
 - `ctest` corre `sim_tests` (13 tests, ~1000 comprobaciones).
