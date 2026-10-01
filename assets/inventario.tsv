@@ -62,6 +62,13 @@ estructura.culto.templo	Templo del culto	bioma:ciudad,faccion:culto,acto:4	24x14
 estructura.culto.jaula_sacrificio	Jaula de cautivos para el sacrificio	faccion:culto,uso:interactuable,material:hierro	3x2.5x3	200	pendiente	Rescates del acto III.
 estructura.ruina.muro	Muro en ruinas	bioma:cualquiera,uso:decorado,material:piedra	6x3x1	150	pendiente	
 estructura.ruina.yurta_quemada	Yurta quemada	faccion:nomada,acto:1,uso:decorado	4.5x1.5x4.5	250	pendiente	Restos de la masacre.
+estructura.campamento.refugio	Refugio de ramas y pieles	faccion:nomada,uso:habitable,uso:construible	3x2x3	150	pendiente	Construcción en grupo.
+estructura.campamento.hoguera	Hoguera grande	faccion:nomada,uso:interactuable,uso:construible	2.5x1.5x2.5	120	pendiente	Construcción en grupo: calor y luz para todo el campamento.
+estructura.campamento.horno_cocina	Horno de cocina de barro	faccion:nomada,uso:interactuable,uso:construible,material:barro	1.5x1.4x1.5	150	pendiente	Construcción en grupo; el cocinero acelera la obra.
+estructura.campamento.horno_bronce	Horno de fundición de bronce	uso:interactuable,uso:construible,material:barro	2x2.5x2	300	pendiente	Armas y armaduras de bronce. Requiere un herrero.
+estructura.campamento.horno_acero	Horno de fundición de acero	uso:interactuable,uso:construible,material:piedra	2.5x3.5x2.5	400	pendiente	Armas y armaduras de acero. Requiere un herrero.
+estructura.defensa.trinchera	Trinchera	faccion:cualquiera,uso:cobertura	1.2x0.8x4	80	pendiente	Se cava con pala (acción individual).
+estructura.defensa.muro_piedra	Muro de piedra seca	faccion:nomada,uso:destructible,uso:construible,material:piedra	4x2x0.6	120	pendiente	Construcción en grupo.
 vehiculo.agua.bote_remos	Bote de remos	bioma:fiordo,uso:conducible,material:madera	1.5x0.8x4	250	pendiente	
 vehiculo.agua.canoa_pieles	Canoa de pieles	bioma:fiordo,bioma:bosque,uso:conducible,material:cuero	0.9x0.6x5	200	pendiente	
 vehiculo.agua.balsa	Balsa	bioma:cualquiera,uso:conducible,material:madera	2.5x0.5x3	100	pendiente	
@@ -94,45 +101,45 @@ animal.salvaje.leopardo_nieves	Leopardo de las nieves	faccion:salvaje,bioma:glac
 animal.ave.aguila	Águila (cetrería)	rig:ave,uso:equipable	1.8x0.9x0.9	300	pendiente	Puede acompañar al jugador.
 animal.ave.halcon	Halcón (cetrería)	rig:ave,uso:equipable	1x0.5x0.5	250	pendiente	
 animal.ave.buitre	Buitre	faccion:salvaje,rig:ave	2.4x1x1	300	pendiente	
-arma.corta.cuchillo	Cuchillo de hueso y hierro	uso:equipable	0.05x0.3x0.03	60	pendiente	
-arma.corta.daga	Daga	uso:equipable	0.05x0.4x0.03	80	pendiente	
-arma.corta.sable	Sable curvo	uso:equipable,faccion:nomada	0.08x0.9x0.03	120	pendiente	
-arma.corta.hacha_mano	Hacha de mano	uso:equipable	0.15x0.6x0.04	100	pendiente	
-arma.corta.maza	Maza	uso:equipable	0.1x0.7x0.1	100	pendiente	
-arma.larga.lanza	Lanza	uso:equipable	0.1x2.4x0.1	80	pendiente	
-arma.larga.guja	Guja	uso:equipable	0.2x2.2x0.05	120	pendiente	
-arma.larga.pica	Pica imperial	uso:equipable,faccion:imperio	0.1x4.5x0.1	80	pendiente	
-arma.larga.alabarda	Alabarda	uso:equipable,faccion:imperio	0.3x2.2x0.05	140	pendiente	
-arma.larga.espada_larga	Espada larga	uso:equipable	0.2x1.2x0.03	120	pendiente	
-arma.distancia.arco_compuesto	Arco compuesto	uso:equipable,requiere:proyectil,faccion:nomada	0.1x1.2x0.05	150	pendiente	
-arma.distancia.arco_largo	Arco largo	uso:equipable,requiere:proyectil	0.08x1.8x0.05	120	pendiente	
-arma.distancia.ballesta	Ballesta	uso:equipable,requiere:proyectil	0.7x0.25x0.9	250	pendiente	
-arma.distancia.mosquete	Mosquete de mecha	uso:equipable,requiere:proyectil,faccion:imperio	0.1x0.25x1.5	300	pendiente	
+arma.corta.cuchillo	Cuchillo de hueso y hierro	uso:equipable,manos:una	0.05x0.3x0.03	60	pendiente	
+arma.corta.daga	Daga	uso:equipable,manos:una	0.05x0.4x0.03	80	pendiente	
+arma.corta.sable	Sable curvo	uso:equipable,faccion:nomada,manos:una	0.08x0.9x0.03	120	pendiente	
+arma.corta.hacha_mano	Hacha de mano	uso:equipable,manos:una	0.15x0.6x0.04	100	pendiente	
+arma.corta.maza	Maza	uso:equipable,manos:una	0.1x0.7x0.1	100	pendiente	
+arma.larga.lanza	Lanza	uso:equipable,manos:una	0.1x2.4x0.1	80	pendiente	
+arma.larga.guja	Guja	uso:equipable,manos:dos	0.2x2.2x0.05	120	pendiente	
+arma.larga.pica	Pica imperial	uso:equipable,faccion:imperio,manos:dos	0.1x4.5x0.1	80	pendiente	
+arma.larga.alabarda	Alabarda	uso:equipable,faccion:imperio,manos:dos	0.3x2.2x0.05	140	pendiente	
+arma.larga.espada_larga	Espada larga	uso:equipable,manos:una	0.2x1.2x0.03	120	pendiente	
+arma.distancia.arco_compuesto	Arco compuesto	uso:equipable,requiere:proyectil,faccion:nomada,manos:dos	0.1x1.2x0.05	150	pendiente	
+arma.distancia.arco_largo	Arco largo	uso:equipable,requiere:proyectil,manos:dos	0.08x1.8x0.05	120	pendiente	
+arma.distancia.ballesta	Ballesta	uso:equipable,requiere:proyectil,manos:dos	0.7x0.25x0.9	250	pendiente	
+arma.distancia.mosquete	Mosquete de mecha	uso:equipable,requiere:proyectil,faccion:imperio,manos:dos	0.1x0.25x1.5	300	pendiente	
 arma.distancia.canon	Cañón de campaña	uso:equipable,requiere:proyectil,faccion:imperio	1.5x1.2x3	800	pendiente	
-arma.distancia.honda	Honda	uso:equipable,requiere:proyectil	0.05x0.6x0.05	40	pendiente	
-arma.distancia.lazo	Lazo	uso:equipable,faccion:nomada	0.5x0.1x0.5	80	pendiente	
-arma.distancia.boleadoras	Boleadoras	uso:equipable	0.4x0.1x0.4	60	pendiente	
-arma.especial.guja_hoja_ancha	Guja de hoja ancha	uso:equipable,especial:gran_guerrero	0.25x2.2x0.05	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
-arma.especial.sable_damasquinado	Sable de acero damasquinado	uso:equipable,especial:gran_guerrero	0.08x0.95x0.03	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
-arma.especial.arco_cuerno	Arco compuesto de cuerno	uso:equipable,especial:gran_guerrero	0.1x1.2x0.05	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
-arma.especial.maza_tigre	Maza de bronce con cabeza de tigre	uso:equipable,especial:gran_guerrero	0.15x0.8x0.15	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
-arma.especial.lazo_plomadas	Lazo con plomadas	uso:equipable,especial:gran_guerrero	0.5x0.1x0.5	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
-arma.especial.hacha_ceremonial	Hacha ceremonial	uso:equipable,especial:gran_guerrero	0.3x0.9x0.04	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
-arma.especial.lanza_doble_punta	Lanza de caballería de doble punta	uso:equipable,especial:gran_guerrero	0.1x2.8x0.1	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
-arma.especial.ballesta_repeticion	Ballesta de repetición	uso:equipable,especial:gran_guerrero	0.6x0.35x0.9	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
-arma.especial.espada_padre	Espada ceremonial del padre	uso:equipable,acto:3,especial:legado,especial:narrativo,material:oro	0.12x1x0.04	500	pendiente	Hallada en la tumba helada; se empuña en el asalto final.
+arma.distancia.honda	Honda	uso:equipable,requiere:proyectil,manos:una	0.05x0.6x0.05	40	pendiente	
+arma.distancia.lazo	Lazo	uso:equipable,faccion:nomada,manos:una	0.5x0.1x0.5	80	pendiente	
+arma.distancia.boleadoras	Boleadoras	uso:equipable,manos:una	0.4x0.1x0.4	60	pendiente	
+arma.especial.guja_hoja_ancha	Guja de hoja ancha	uso:equipable,especial:gran_guerrero,manos:dos	0.25x2.2x0.05	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.sable_damasquinado	Sable de acero damasquinado	uso:equipable,especial:gran_guerrero,manos:una	0.08x0.95x0.03	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.arco_cuerno	Arco compuesto de cuerno	uso:equipable,especial:gran_guerrero,manos:dos	0.1x1.2x0.05	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.maza_tigre	Maza de bronce con cabeza de tigre	uso:equipable,especial:gran_guerrero,manos:una	0.15x0.8x0.15	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.lazo_plomadas	Lazo con plomadas	uso:equipable,especial:gran_guerrero,manos:una	0.5x0.1x0.5	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.hacha_ceremonial	Hacha ceremonial	uso:equipable,especial:gran_guerrero,manos:una	0.3x0.9x0.04	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.lanza_doble_punta	Lanza de caballería de doble punta	uso:equipable,especial:gran_guerrero,manos:dos	0.1x2.8x0.1	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.ballesta_repeticion	Ballesta de repetición	uso:equipable,especial:gran_guerrero,manos:dos	0.6x0.35x0.9	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.espada_padre	Espada ceremonial del padre	uso:equipable,acto:3,especial:legado,especial:narrativo,material:oro,manos:una	0.12x1x0.04	500	pendiente	Hallada en la tumba helada; se empuña en el asalto final.
 proyectil.flecha.comun	Flecha	uso:municion	0.02x0.8x0.02	20	pendiente	
 proyectil.flecha.silbadora	Flecha silbadora (señales)	uso:municion,faccion:nomada	0.03x0.8x0.03	30	pendiente	
 proyectil.virote.comun	Virote de ballesta	uso:municion	0.02x0.4x0.02	20	pendiente	
 proyectil.bala.mosquete	Bala de mosquete	uso:municion	0.02x0.02x0.02	8	pendiente	
 proyectil.bala.canon	Bala de cañón	uso:municion	0.15x0.15x0.15	20	pendiente	
 proyectil.piedra.honda	Piedra de honda	uso:municion	0.05x0.05x0.05	8	pendiente	
-escudo.mano.mimbre	Escudo redondo de mimbre	uso:equipable,faccion:nomada,material:madera	0.6x0.6x0.08	80	pendiente	
-escudo.mano.cuero	Escudo de cuero endurecido	uso:equipable,faccion:nomada,material:cuero	0.55x0.55x0.06	80	pendiente	
-escudo.mano.umbo	Escudo de madera con umbo	uso:equipable,faccion:neutral,material:madera	0.8x0.8x0.1	100	pendiente	
-escudo.grande.paves	Pavés imperial	uso:equipable,faccion:imperio,material:madera	0.7x1.5x0.15	120	pendiente	
-escudo.mano.lamina	Escudo de láminas de hierro	uso:equipable,faccion:imperio,material:hierro	0.6x0.8x0.08	120	pendiente	
-escudo.mano.culto	Escudo ceremonial del culto	uso:equipable,faccion:culto,material:bronce	0.7x0.9x0.08	200	pendiente	
+escudo.mano.mimbre	Escudo redondo de mimbre	uso:equipable,faccion:nomada,material:madera,manos:escudo	0.6x0.6x0.08	80	pendiente	
+escudo.mano.cuero	Escudo de cuero endurecido	uso:equipable,faccion:nomada,material:cuero,manos:escudo	0.55x0.55x0.06	80	pendiente	
+escudo.mano.umbo	Escudo de madera con umbo	uso:equipable,faccion:neutral,material:madera,manos:escudo	0.8x0.8x0.1	100	pendiente	
+escudo.grande.paves	Pavés imperial	uso:equipable,faccion:imperio,material:madera,manos:escudo	0.7x1.5x0.15	120	pendiente	
+escudo.mano.lamina	Escudo de láminas de hierro	uso:equipable,faccion:imperio,material:hierro,manos:escudo	0.6x0.8x0.08	120	pendiente	
+escudo.mano.culto	Escudo ceremonial del culto	uso:equipable,faccion:culto,material:bronce,manos:escudo	0.7x0.9x0.08	200	pendiente	
 totem.clan.poste_clan	Poste tótem del clan	faccion:nomada,material:madera	0.6x4x0.6	200	pendiente	
 totem.clan.lobo	Tótem del lobo	faccion:nomada,material:madera	0.6x3x0.6	250	pendiente	Bonificación de manada (pendiente de diseño).
 totem.clan.ciervo	Tótem del ciervo	faccion:nomada,material:madera	0.8x3x0.6	250	pendiente	
@@ -142,6 +149,7 @@ totem.clan.sulde	Sulde (estandarte de crines)	faccion:nomada,uso:equipable,mater
 totem.clan.estandarte_tamga	Estandarte con la tamga del padre	faccion:nomada,especial:legado	1x3.5x0.1	150	pendiente	Signo de clan del padre.
 totem.culto.idolo_culto	Ídolo del culto	faccion:culto,acto:4,material:bronce	1x3x1	400	pendiente	Símbolo del culto: pendiente de definir por el autor.
 totem.culto.craneos_culto	Pila de cráneos del culto	faccion:culto,uso:decorado,material:hueso	1x1.5x1	200	pendiente	
+totem.proteccion.guardian	Tótem de protección	faccion:nomada,uso:interactuable,uso:construible,material:madera	0.8x3.5x0.8	250	pendiente	Construcción en grupo; protege el campamento (efecto pendiente de diseño).
 armadura.casco.laminar_cuero	Casco laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.3x0.35x0.3	150	pendiente	
 armadura.cuello.laminar_cuero	Gorjal / cofia laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.35x0.2x0.35	80	pendiente	
 armadura.torso.laminar_cuero	Coraza / peto laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.5x0.6x0.35	250	pendiente	
@@ -231,7 +239,7 @@ utileria.objeto.odre	Odre de cuero	uso:recolectable,material:cuero	0.3x0.4x0.2	6
 utileria.objeto.cofre	Cofre de botín	uso:interactuable,material:madera	0.8x0.5x0.5	100	pendiente	
 utileria.objeto.barril_polvora	Barril de pólvora	faccion:imperio,uso:destructible	0.6x0.8x0.6	80	pendiente	
 utileria.objeto.saco_grano	Saco de grano	uso:recolectable	0.5x0.6x0.4	60	pendiente	
-utileria.objeto.antorcha	Antorcha	uso:equipable	0.1x0.7x0.1	40	pendiente	
+utileria.objeto.antorcha	Antorcha	uso:equipable,manos:una	0.1x0.7x0.1	40	pendiente	
 utileria.objeto.cadenas	Grilletes y cadenas	material:hierro	0.4x0.1x0.4	80	pendiente	
 utileria.objeto.yunque	Yunque	material:hierro	0.6x0.5x0.3	80	pendiente	
 utileria.objeto.telar	Telar de fieltro	faccion:nomada,material:madera	1.5x1.2x1	150	pendiente	
@@ -242,6 +250,9 @@ utileria.consumible.queso_seco	Queso seco	uso:recolectable,uso:consumible	0.2x0.
 utileria.consumible.hierbas	Hierbas curativas	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.agua	Agua	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.pan	Pan del imperio	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
+utileria.herramienta.pala	Pala	uso:equipable,manos:dos,material:hierro	0.25x1.2x0.05	60	pendiente	Para cavar trincheras.
+utileria.herramienta.gancho_trepa	Trepa (gancho con cuerda)	uso:equipable,manos:una,material:hierro	0.3x0.4x0.3	80	pendiente	Se lanza para escalar muros en los asedios.
+utileria.objeto.lena	Haz de leña	uso:recolectable,material:madera	0.5x0.3x0.8	40	pendiente	Material de fogatas, hogueras y hornos.
 personaje.base.cuerpo_nino	Cuerpo base: niño	rig:humanoide,talla:pequena	0.35x1.2x0.25	800	pendiente	Malla base modular: ropa y armadura encajan encima.
 personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.5x1.7x0.3	1200	pendiente	
 personaje.base.cuerpo_robusto	Cuerpo base: adulto robusto	rig:humanoide,talla:grande	0.6x1.85x0.35	1300	pendiente	

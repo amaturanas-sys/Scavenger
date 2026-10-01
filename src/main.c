@@ -12,12 +12,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "game/actions_game.h"
 #include "game/player.h"
 #include "platform.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "sim/champion.h"
 #include "sim/clock.h"
+#include "sim/inventory.h"
 #include "sim/loadout.h"
 #include "sim/memory_map.h"
 #include "sim/troop.h"
@@ -40,6 +42,9 @@
 #define MINIMAP_RADIUS 50
 
 static MemoryMap g_memory;
+static Inventory g_inventory; // assets/inventario.tsv: lo usan las acciones y los objetos del mundo
+static Props g_props;
+static GameActions g_actions;
 
 typedef struct {
     float yaw, pitch, dist;
@@ -197,9 +202,9 @@ static void draw_champion_card(const Troop *t, int id) {
             x, y, 10, UI_BONE_DIM);
 }
 
-static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day, const char *log) {
+static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day, const char *hands, const char *log) {
     const int x = 4 + UI_PANEL_INSET, w = 256;
-    ui_panel((Rectangle){ 4, 4, w, 140 }, UI_METAL_GOLD);
+    ui_panel((Rectangle){ 4, 4, w, 152 }, UI_METAL_GOLD);
     ui_text("ESTEPA", x, 16, 10, UI_GOLD_LIGHT);
     ui_text(TextFormat("v%s (build %d)", ESTEPA_VERSION, ESTEPA_BUILD_CODE), x + 48, 16, 10, UI_BONE_DIM);
     ui_divider(x, 29, w - 2 * UI_PANEL_INSET, UI_METAL_GOLD);
@@ -213,13 +218,16 @@ static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day,
     float rebellion = troop_rebellion_chance(t);
     ui_text(TextFormat("Rebelion %d%%", (int)(rebellion * 100)), x + 152, 65, 10,
             rebellion > 0.0f ? UI_CARNELIAN : UI_BONE_DIM);
-    ui_text(TextFormat("%s: %+d", k->name, (int)k->relation), x, 85, 10, UI_GOLD);
-    ui_divider(x, 99, w - 2 * UI_PANEL_INSET, UI_METAL_GOLD);
-    ui_text_wrapped(log, x, 104, w - 2 * UI_PANEL_INSET, 10, UI_BONE);
+    ui_text(hands, x, 85, 10, UI_TURQUOISE);
+    ui_text(TextFormat("%s: %+d", k->name, (int)k->relation), x, 97, 10, UI_GOLD);
+    ui_divider(x, 111, w - 2 * UI_PANEL_INSET, UI_METAL_GOLD);
+    ui_text_wrapped(log, x, 116, w - 2 * UI_PANEL_INSET, 10, UI_BONE);
 
-    ui_strip((Rectangle){ 0, VIRTUAL_H - 29, VIRTUAL_W, 29 }, UI_METAL_GOLD);
-    ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E o clic der. camara  Rueda zoom  M marcar",
-            4, VIRTUAL_H - 21, 10, UI_BONE_DIM);
+    ui_strip((Rectangle){ 0, VIRTUAL_H - 40, VIRTUAL_W, 40 }, UI_METAL_GOLD);
+    ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E o clic der. cámara  Rueda zoom  M marcar",
+            4, VIRTUAL_H - 32, 10, UI_BONE_DIM);
+    ui_text("Tab acciones y construcciones  X empuñadura  H enfundar  F tomar  T lanzar", 4, VIRTUAL_H - 21, 10,
+            UI_BONE);
     ui_text("1 reclutar 2 prisionero 3 ejec. prisionero 4 ejec. miembro 5 desterrar 6 botin 7 liberar 8 gran guerrero G ficha Enter dia",
             4, VIRTUAL_H - 11, 10, UI_BONE_DIM);
 }
@@ -278,6 +286,13 @@ int main(int argc, char **argv) {
     Minimap minimap;
     minimap_init(&minimap, MINIMAP_RADIUS, 2.0f);
     char log[128] = "Tu tropa acampa en la estepa.";
+    char *inv_text = LoadFileText(platform_asset_path("assets/inventario.tsv"));
+    if (inv_text) {
+        inventory_parse(&g_inventory, inv_text);
+        UnloadFileText(inv_text);
+    }
+    props_init(&g_props, &g_inventory);
+    ga_init(&g_actions, &g_inventory, &g_props, &terrain);
 
     Gallery gallery = { 0 };
     if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
@@ -300,11 +315,14 @@ int main(int argc, char **argv) {
         frame++;
         // Sin teclado el juego queda en pausa (Android: tablets sin teclado conectado).
         if (has_keyboard) {
-            PlayerInput in = player_read_input();
+            // Con el menu de acciones abierto el jugador no se mueve (las flechas eligen).
+            bool menu = ga_menu_open(&g_actions);
+            PlayerInput in = menu ? (PlayerInput){ 0 } : player_read_input();
             player_update(&player, &terrain, in, rig.yaw, dt);
             world_time += dt;
             int prev_champion = last_champion;
-            debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log));
+            if (!menu) debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log));
+            if (!gallery_mode) ga_update(&g_actions, &g_props, &terrain, &player, &troop, dt, log, sizeof(log));
             if (last_champion != prev_champion) show_card = true; // ficha al conocerlo
             advance_days(&troop, &rng, &day, world_time, log, sizeof(log));
             if (IsKeyPressed(KEY_G)) show_card = !show_card && last_champion >= 0;
@@ -325,13 +343,15 @@ int main(int argc, char **argv) {
         camp_draw(&camp, (float)GetTime());
         if (gallery_mode) gallery_draw(&gallery);
         player_draw(&player);
+        if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &player, (float)GetTime());
         EndMode3D();
         if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
         } else {
-            draw_hud(&player, &troop, &overlord, day, log);
+            draw_hud(&player, &troop, &overlord, day, ga_hands_text(&g_actions), log);
             minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
                          player.pos, rig.yaw, player.yaw, world_time);
+            ga_draw_hud(&g_actions, &troop, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
         }
         if (!has_keyboard) draw_keyboard_notice();
@@ -357,6 +377,8 @@ int main(int argc, char **argv) {
     }
 
     if (gallery_mode) gallery_unload(&gallery);
+    props_unload(&g_props);
+    inventory_free(&g_inventory);
     minimap_unload(&minimap);
     memmap_free(&g_memory);
     camp_unload(&camp);

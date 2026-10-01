@@ -34,6 +34,9 @@ En Linux hacen falta las cabeceras de X11/OpenGL:
 | Saltar | Espacio | A |
 | Cámara | Q / E, clic derecho + arrastrar, rueda | — |
 | Marcar sitio de interés / de peligro | M / Shift+M | — |
+| Menú de acciones y construcciones | Tab (flechas + Enter) | — |
+| Cambiar empuñadura / enfundar | X / H | — |
+| Tomar / lanzar objetos | F / T | — |
 
 Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente.
 

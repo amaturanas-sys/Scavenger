@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../src/sim/actions.h"
 #include "../src/sim/champion.h"
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
@@ -393,6 +394,133 @@ static void test_champion_desertion_weighs_on_troop(void) {
     CHECK(troop_find(&t, a)->morale == 75.0f); // su perdida pesa en los demas
 }
 
+// ---------------------------------------------------------------- acciones
+static InvItem make_item(const char *id, InvHands hands) {
+    InvItem it;
+    memset(&it, 0, sizeof(it));
+    snprintf(it.id, sizeof(it.id), "%s", id);
+    it.hands = hands;
+    return it;
+}
+
+static void test_hands_grips(void) {
+    InvItem sable = make_item("arma.corta.sable", INV_HANDS_ONE), daga = make_item("arma.corta.daga", INV_HANDS_ONE);
+    InvItem guja = make_item("arma.larga.guja", INV_HANDS_TWO), escudo = make_item("escudo.mano.mimbre", INV_HANDS_SHIELD);
+    InvItem roca = make_item("mapa.roca.pequena", INV_HANDS_NONE);
+    Hands h;
+    hands_init(&h);
+    CHECK(hands_grip(&h) == GRIP_EMPTY);
+    CHECK(!hands_equip(&h, &roca, HAND_RIGHT)); // no se empuna
+    CHECK(hands_equip(&h, &sable, HAND_RIGHT) && hands_grip(&h) == GRIP_ONE_HANDED);
+    CHECK(hands_equip(&h, &daga, HAND_LEFT) && hands_grip(&h) == GRIP_DUAL);
+    CHECK(hands_equip(&h, &escudo, HAND_RIGHT) && hands_grip(&h) == GRIP_WEAPON_SHIELD); // el escudo va a la izquierda
+    CHECK(!strcmp(h.left.id, "escudo.mano.mimbre") && !strcmp(h.right.id, "arma.corta.sable"));
+    CHECK(hands_equip(&h, &guja, HAND_RIGHT) && hands_grip(&h) == GRIP_TWO_HANDED);
+    CHECK(h.left.id[0] == '\0'); // a dos manos suelta el escudo
+    CHECK(hands_equip(&h, &escudo, HAND_LEFT) && hands_grip(&h) == GRIP_SHIELD); // y el escudo suelta la guja
+    CHECK(h.right.id[0] == '\0');
+}
+
+static void test_hands_sheathe_take_throw(void) {
+    InvItem sable = make_item("arma.corta.sable", INV_HANDS_ONE), escudo = make_item("escudo.mano.mimbre", INV_HANDS_SHIELD);
+    Hands h;
+    hands_init(&h);
+    CHECK(!hands_toggle_sheathe(&h)); // nada que enfundar
+    hands_equip(&h, &sable, HAND_RIGHT);
+    hands_equip(&h, &escudo, HAND_LEFT);
+    CHECK(hands_holding(&h, "arma.corta.sable"));
+    CHECK(!hands_can_take(&h)); // ambas manos ocupadas
+    CHECK(!hands_take(&h, "utileria.objeto.cofre"));
+    CHECK(hands_toggle_sheathe(&h) && h.sheathed);
+    CHECK(!hands_holding(&h, "arma.corta.sable")); // enfundada
+    CHECK(hands_take(&h, "utileria.objeto.antorcha"));
+    CHECK(!hands_take(&h, "utileria.objeto.cofre")); // ya lleva algo
+    char thrown[INV_ID_LEN];
+    CHECK(hands_throw(&h, thrown, sizeof(thrown)) && !strcmp(thrown, "utileria.objeto.antorcha"));
+    CHECK(!hands_throw(&h, thrown, sizeof(thrown)));
+    CHECK(hands_toggle_sheathe(&h) && !h.sheathed);
+    hands_equip(&h, &sable, HAND_RIGHT);
+    hands_clear(&h, HAND_LEFT);
+    CHECK(hands_can_take(&h)); // la izquierda quedo libre
+}
+
+static void test_action_catalog(void) {
+    for (int a = 0; a < ACTION_COUNT; a++) {
+        const ActionDef *d = action_def((ActionId)a);
+        CHECK(d && d->name && d->seconds > 0.0f);
+        CHECK(d->actors & ACTOR_PLAYER);
+        CHECK(d->actors & ACTOR_NPC); // todas sirven tambien a los NPCs
+    }
+    CHECK(action_def(ACTION_COUNT) == NULL);
+    CHECK(!strcmp(action_def(ACTION_THROW_LASSO)->requires, "arma.distancia.lazo"));
+    for (int b = 0; b < BUILD_COUNT; b++) {
+        const BuildDef *d = build_def((BuildId)b);
+        CHECK(d && d->work > 0.0f && d->min_workers >= 2 && d->max_workers >= d->min_workers); // siempre en grupo
+    }
+}
+
+static int add_worker(Troop *t, Role role, float morale) {
+    int id = troop_recruit(t, "Obrero", 0);
+    troop_assign_role(t, id, role);
+    troop_find(t, id)->morale = morale;
+    return id;
+}
+
+static void test_build_needs_crew_and_skills(void) {
+    Troop t;
+    troop_init(&t, NULL);
+    const BuildDef *oven = build_def(BUILD_OVEN), *furnace = build_def(BUILD_FURNACE_BRONZE);
+    add_worker(&t, ROLE_NONE, 60.0f);
+    CrewPlan p = build_plan(oven, &t, false);
+    CHECK(p.check == BUILD_FEW_WORKERS && p.rate == 0.0f); // una persona no basta
+    p = build_plan(oven, &t, true);                         // el jugador ayuda
+    CHECK(p.check == BUILD_READY && p.workers == 2 && p.rate == 2.0f);
+    add_worker(&t, ROLE_NONE, 60.0f);
+    add_worker(&t, ROLE_NONE, 60.0f);
+    p = build_plan(furnace, &t, true);
+    CHECK(p.check == BUILD_MISSING_ROLE && p.rate == 0.0f); // sin herrero no hay fundicion
+    add_worker(&t, ROLE_SMITH, 60.0f);
+    p = build_plan(furnace, &t, false);
+    CHECK(p.check == BUILD_READY && p.workers == 4 && p.rate == 5.0f); // el herrero trabaja el doble
+    // La habilidad cuenta: un cocinero acelera el horno de cocina.
+    float before = build_plan(oven, &t, false).rate;
+    add_worker(&t, ROLE_COOK, 60.0f);
+    CHECK(build_plan(oven, &t, false).rate > before);
+    // Tope de trabajadores: mas gente no acelera.
+    for (int i = 0; i < 10; i++) add_worker(&t, ROLE_NONE, 60.0f);
+    CHECK(build_plan(oven, &t, false).workers == oven->max_workers);
+}
+
+static void test_build_skill_morale_and_champions(void) {
+    Troop t;
+    troop_init(&t, NULL);
+    const BuildDef *wall = build_def(BUILD_PALISADE);
+    int sad = add_worker(&t, ROLE_NONE, 10.0f);
+    CHECK(build_worker_skill(wall, &t, troop_find(&t, sad)) == 0.5f); // desganado
+    int builder = add_worker(&t, ROLE_BUILDER, 60.0f);
+    CHECK(build_worker_skill(wall, &t, troop_find(&t, builder)) == 2.0f);
+    Champion c;
+    memset(&c, 0, sizeof(c));
+    snprintf(c.name, sizeof(c.name), "Fuerte");
+    c.gifts = GIFT_STRONG;
+    c.weapon = -1;
+    int g = troop_add_champion(&t, &c, STATUS_ACTIVE);
+    troop_find(&t, g)->morale = 60.0f;
+    CHECK(build_worker_skill(wall, &t, troop_find(&t, g)) == 1.5f);
+    int p = troop_add_champion(&t, &c, STATUS_PRISONER);
+    (void)p;
+    CHECK(build_plan(wall, &t, false).workers == 3); // los prisioneros no trabajan
+}
+
+static void test_build_advance(void) {
+    BuildProject p = { BUILD_BONFIRE, 0, 0, 0.0f, false };
+    float work = build_def(BUILD_BONFIRE)->work;
+    CHECK(!build_advance(&p, 0.0f, 10.0f) && p.progress == 0.0f); // sin cuadrilla no avanza
+    CHECK(!build_advance(&p, 2.0f, work / 4.0f) && p.progress > 0.49f && p.progress < 0.51f);
+    CHECK(build_advance(&p, 2.0f, work / 4.0f) && p.done && p.progress == 1.0f);
+    CHECK(!build_advance(&p, 2.0f, 1.0f)); // ya terminada
+}
+
 // ---------------------------------------------------------------- inventario de assets
 static void test_inventory_parses_and_maps_paths(void) {
     const char *tsv =
@@ -455,6 +583,17 @@ static void test_inventory_repo_file_is_valid(void) {
         for (int j = i + 1; j < inv.count; j++) CHECK(strcmp(it->id, inv.items[j].id) != 0);
     }
     CHECK(inventory_find(&inv, "estructura.vivienda.yurta_comun") != NULL);
+    // Todo lo que nombran las acciones existe en el inventario.
+    for (int a = 0; a < ACTION_COUNT; a++) {
+        const ActionDef *d = action_def((ActionId)a);
+        if (d->requires) CHECK(inventory_find(&inv, d->requires) != NULL);
+        if (d->produces) CHECK(inventory_find(&inv, d->produces) != NULL);
+    }
+    for (int b = 0; b < BUILD_COUNT; b++) CHECK(inventory_find(&inv, build_def((BuildId)b)->produces) != NULL);
+    CHECK(inventory_find(&inv, "arma.larga.guja")->hands == INV_HANDS_TWO);
+    CHECK(inventory_find(&inv, "arma.corta.sable")->hands == INV_HANDS_ONE);
+    CHECK(inventory_find(&inv, "escudo.grande.paves")->hands == INV_HANDS_SHIELD);
+    CHECK(inventory_find(&inv, "mapa.roca.pequena")->hands == INV_HANDS_NONE);
     inventory_free(&inv);
     free(text);
 }
@@ -483,6 +622,12 @@ int main(void) {
     RUN(test_champion_gifts_shape_stats);
     RUN(test_champion_in_troop);
     RUN(test_champion_desertion_weighs_on_troop);
+    RUN(test_hands_grips);
+    RUN(test_hands_sheathe_take_throw);
+    RUN(test_action_catalog);
+    RUN(test_build_needs_crew_and_skills);
+    RUN(test_build_skill_morale_and_champions);
+    RUN(test_build_advance);
     RUN(test_inventory_parses_and_maps_paths);
     RUN(test_inventory_repo_file_is_valid);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);

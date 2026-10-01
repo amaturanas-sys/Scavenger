@@ -30,7 +30,8 @@ add_library(estepa_sim STATIC
   src/sim/loadout.c
   src/sim/memory_map.c
   src/sim/champion.c
-  src/sim/inventory.c)
+  src/sim/inventory.c
+  src/sim/actions.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)
@@ -64,6 +65,8 @@ if(ESTEPA_BUILD_GAME)
     src/main.c
     src/platform.c
     src/game/player.c
+    src/game/actions_game.c
+    src/world/props.c
     src/ui/theme.c
     src/ui/minimap.c
     src/world/terrain.c
