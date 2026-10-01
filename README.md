@@ -8,6 +8,7 @@ RPG de mundo abierto en 3D low-res, inspirado en las tribus nómadas de la estep
 - Narrativa: [docs/NARRATIVA.md](docs/NARRATIVA.md)
 - Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Arquitectura: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
+- Inventario de assets: [docs/INVENTARIO.md](docs/INVENTARIO.md) · cómo importar modelos: [assets/models/README.md](assets/models/README.md)
 
 ## Compilar y jugar
 
@@ -63,4 +64,5 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ```bash
 ./build/estepa --screenshot captura.png --frames 60
 ./build/estepa --screenshot aviso.png --frames 60 --sin-teclado   # simula Android sin teclado
+./build/estepa --galeria                                           # galería del inventario de assets
 ```

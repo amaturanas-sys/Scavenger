@@ -18,9 +18,11 @@ src/
     memory_map.* mapa de memoria: exploracion, olvido, marcas
     champion.*   grandes guerreros: azar, historia, dones
     clock.h      reloj de juego (dias)
+    inventory.*  inventario de assets (lee assets/inventario.tsv)
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
     camp.*       campamento, props
+    gallery.*    galeria del inventario (--galeria)
   game/     Jugador e input
     player.*
   ui/       Interfaz (raylib)
@@ -28,7 +30,7 @@ src/
     minimap.*    minimapa circular tipo brujula
   main.c    Bucle principal, render low-res, HUD
 tests/      Tests del nucleo (arnes propio, sin dependencias)
-assets/     Assets de runtime (GLB, texturas, audio)
+assets/     Assets de runtime: inventario.tsv, models/<categoria>/<sub>/<nombre>.glb, textures/
 tools/      Herramientas de produccion (programas Kiln)
 docs/       Diseño, roadmap, arquitectura
 ```

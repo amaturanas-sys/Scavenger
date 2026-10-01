@@ -64,6 +64,14 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Cobertura de todo el mundo (memoria dispersa por páginas) y olvido medido en días de juego.
 - [ ] Marcas con nombre y guardado.
 
+## Inventario de assets (ver [INVENTARIO.md](INVENTARIO.md))
+- [x] Inventario de 280 objetos en 14 categorías con etiquetas, medidas, presupuesto de triángulos y estado (`assets/inventario.tsv`).
+- [x] Ruta fija por id, marcadores provisionales y reemplazo automático al importar el modelo.
+- [x] Validador y documento generado (`tools/assets/inventario.py`), comprobados en CI.
+- [x] Galería en el juego (`--galeria`) para revisar los modelos a escala.
+- [ ] Importar y refinar los modelos (text-to-cad + Kiln).
+- [ ] Usar los modelos del inventario en el mundo (NPCs, animales, armas equipadas, etc.).
+
 ## Herramientas
-- **Assets 3D:** Kiln (`tools/assets/*.kiln.js`). Ver [tools/assets/README.md](../tools/assets/README.md).
+- **Assets 3D:** inventario en `assets/inventario.tsv`; importación en [assets/models/README.md](../assets/models/README.md); Kiln (`tools/assets/*.kiln.js`) y text-to-cad para crear y refinar.
 - **Optimización:** Ghidra sobre nuestros propios builds. Ver [GHIDRA.md](GHIDRA.md).

@@ -1,0 +1,283 @@
+# Inventario de assets de ESTEPA. Fuente de verdad: edita este archivo.
+# Columnas separadas por TAB. Ver assets/models/README.md y docs/INVENTARIO.md.
+id	nombre	etiquetas	medidas_m	tris_max	estado	notas
+mapa.suelo.estepa	Suelo: Estepa	bioma:estepa,formato:textura	4x0x4	0	pendiente	Textura de suelo para los chunks del terreno (paleta del bioma).
+mapa.suelo.desierto	Suelo: Desierto	bioma:desierto,formato:textura	4x0x4	0	pendiente	Textura de suelo para los chunks del terreno (paleta del bioma).
+mapa.suelo.bosque	Suelo: Bosque de coníferas	bioma:bosque,formato:textura	4x0x4	0	pendiente	Textura de suelo para los chunks del terreno (paleta del bioma).
+mapa.suelo.fiordo	Suelo: Costa de fiordos	bioma:fiordo,formato:textura	4x0x4	0	pendiente	Textura de suelo para los chunks del terreno (paleta del bioma).
+mapa.suelo.glaciar	Suelo: Altiplano glaciar	bioma:glaciar,formato:textura	4x0x4	0	pendiente	Textura de suelo para los chunks del terreno (paleta del bioma).
+mapa.roca.pequena	Roca pequeña	bioma:cualquiera,uso:decorado,material:piedra	0.6x0.4x0.6	40	pendiente	
+mapa.roca.mediana	Roca mediana	bioma:cualquiera,uso:decorado,material:piedra	1.5x1x1.5	80	pendiente	
+mapa.roca.grande	Peñasco (escalable)	bioma:cualquiera,uso:trepable,material:piedra	4x3x4	160	pendiente	
+mapa.relieve.acantilado	Acantilado modular	bioma:fiordo,bioma:glaciar,uso:trepable,material:piedra	8x6x2	300	pendiente	
+mapa.relieve.duna	Duna	bioma:desierto,uso:decorado	20x4x10	120	pendiente	
+mapa.relieve.grieta_glaciar	Grieta de glaciar	bioma:glaciar,uso:peligro	6x3x2	150	pendiente	
+mapa.agua.oasis	Oasis	bioma:desierto,uso:recolectable	12x1x12	250	pendiente	Agua potable: clave en el desierto (acto III).
+mapa.agua.rio	Tramo de río modular	bioma:cualquiera,uso:navegable	8x0.5x8	120	pendiente	
+mapa.agua.tempano	Témpano de hielo	bioma:fiordo,uso:decorado	3x1x3	60	pendiente	
+mapa.vegetacion.hierba_alta	Hierba alta (escondite)	bioma:estepa,uso:escondite	2x1x2	40	pendiente	El jugador puede esconderse dentro.
+mapa.vegetacion.arbusto	Arbusto estepario	bioma:estepa,uso:decorado	1x0.8x1	40	pendiente	
+mapa.vegetacion.pino	Pino	bioma:bosque,uso:trepable	3x10x3	120	pendiente	
+mapa.vegetacion.alerce	Alerce	bioma:bosque,uso:trepable	3x12x3	120	pendiente	
+mapa.vegetacion.abedul	Abedul	bioma:estepa,bioma:bosque,uso:decorado	2.5x8x2.5	100	pendiente	
+mapa.vegetacion.saxaul	Saxaúl (arbusto del desierto)	bioma:desierto,uso:recolectable	2x2x2	60	pendiente	Leña en el desierto.
+mapa.vegetacion.palmera	Palmera datilera	bioma:desierto,uso:recolectable	3x7x3	100	pendiente	
+mapa.vegetacion.liquen	Liquen y musgo de tundra	bioma:glaciar,bioma:fiordo,uso:decorado	1x0.1x1	20	pendiente	
+mapa.hito.ovoo	Ovoo (túmulo de piedras chamánico)	bioma:estepa,uso:interactuable,material:piedra,especial:hito	3x2x3	120	pendiente	Punto de referencia; ofrendas.
+mapa.hito.kurgan	Kurgán (túmulo funerario)	bioma:estepa,especial:hito,especial:rastro_padre	14x3x14	200	pendiente	
+mapa.hito.tumba_helada	Tumba helada del padre	bioma:glaciar,acto:3,especial:narrativo,especial:legado	8x4x8	800	pendiente	Kurgán congelado al estilo de Pazyryk; prueba final del acto III.
+mapa.hito.campamento_abandonado	Campamento abandonado del padre	acto:3,especial:rastro_padre	10x3x10	400	pendiente	
+mapa.hito.piedra_ciervo	Piedra-ciervo	bioma:estepa,material:piedra,especial:rastro_padre	0.6x3x0.4	150	pendiente	Estela con ciervos de estilo animal.
+mapa.hito.balbal	Balbal (estatua de piedra)	bioma:estepa,material:piedra	0.6x1.8x0.5	150	pendiente	
+estructura.vivienda.yurta_comun	Yurta común	faccion:nomada,uso:habitable,material:fieltro	4.5x2.6x4.5	300	kiln	Ya existe (Kiln). Puerta hacia +X.
+estructura.vivienda.yurta_jefe	Yurta del jefe	faccion:nomada,uso:habitable,material:fieltro	7x3.4x7	600	pendiente	Más grande, con estandarte y ornamento.
+estructura.vivienda.tienda_ligera	Tienda ligera de viaje	faccion:nomada,uso:habitable,material:cuero	2.5x1.5x3	120	pendiente	
+estructura.vivienda.choza_fieltro	Choza de fieltro	faccion:nomada,uso:habitable,material:fieltro	3x2x3	150	pendiente	
+estructura.vivienda.casa_adobe	Casa de adobe	bioma:desierto,faccion:neutral,uso:habitable,material:barro	6x3.5x5	250	pendiente	
+estructura.vivienda.cabana_troncos	Cabaña de troncos	bioma:bosque,faccion:neutral,uso:habitable,material:madera	6x4x5	300	pendiente	
+estructura.vivienda.casa_larga	Casa larga de los fiordos	bioma:fiordo,faccion:neutral,uso:habitable,material:madera	6x5x18	500	pendiente	
+estructura.vivienda.refugio_nieve	Refugio excavado en la nieve	bioma:glaciar,uso:habitable	4x2x4	150	pendiente	
+estructura.vivienda.casa_campesina	Casa campesina	bioma:ciudad,faccion:imperio,uso:habitable,material:madera	6x4x7	300	pendiente	
+estructura.vivienda.casa_urbana	Casa urbana de dos plantas	bioma:ciudad,faccion:imperio,uso:habitable,material:piedra	8x7x8	500	pendiente	
+estructura.vivienda.palacio	Palacio imperial	bioma:ciudad,faccion:imperio,acto:2,especial:narrativo	40x18x30	3000	pendiente	
+estructura.campamento.fogata	Fogata	faccion:nomada,uso:interactuable	1.2x0.5x1.2	60	pendiente	Hoy es un primitivo procedural.
+estructura.campamento.corral	Corral de cuerdas y estacas	faccion:nomada,uso:decorado,material:madera	10x1.2x10	150	pendiente	
+estructura.campamento.secadero	Secadero de carne	faccion:nomada,uso:interactuable,material:madera	3x2x1	80	pendiente	
+estructura.campamento.forja	Forja portátil	faccion:nomada,uso:interactuable,material:hierro	2x1.5x2	300	pendiente	Función: herrero.
+estructura.campamento.enfermeria	Yurta enfermería	faccion:nomada,uso:interactuable,material:fieltro	4x2.6x4	350	pendiente	Función: curandero.
+estructura.campamento.jaula_prisioneros	Jaula de prisioneros	faccion:cualquiera,uso:interactuable,material:madera	3x2x3	150	pendiente	
+estructura.campamento.poste_ejecucion	Poste de castigo	faccion:cualquiera,uso:interactuable,material:madera	0.5x2.5x0.5	50	pendiente	
+estructura.campamento.empalizada	Empalizada modular	faccion:nomada,uso:destructible,material:madera	4x2.5x0.4	80	pendiente	
+estructura.campamento.atalaya	Atalaya de madera	faccion:nomada,uso:trepable,material:madera	3x6x3	200	pendiente	
+estructura.imperio.muralla	Muralla modular	bioma:ciudad,faccion:imperio,uso:trepable,material:piedra	8x8x3	200	pendiente	
+estructura.imperio.puerta	Puerta de la ciudad	bioma:ciudad,faccion:imperio,uso:destructible,material:madera	10x10x5	600	pendiente	
+estructura.imperio.torre	Torre de vigilancia	bioma:ciudad,faccion:imperio,uso:trepable,material:piedra	5x14x5	400	pendiente	
+estructura.imperio.cuartel	Cuartel	bioma:ciudad,faccion:imperio	16x6x10	600	pendiente	
+estructura.imperio.granero	Granero	bioma:ciudad,faccion:imperio,uso:interactuable	10x7x8	400	pendiente	Las cosechas marchitas (acto II).
+estructura.imperio.molino	Molino	bioma:ciudad,faccion:imperio	6x10x6	500	pendiente	
+estructura.imperio.fundicion	Fundición / taller industrial	bioma:ciudad,faccion:imperio,especial:narrativo	18x10x14	1200	pendiente	Capacidad industrial del imperio.
+estructura.imperio.cadalso	Cadalso de ejecución pública	bioma:ciudad,faccion:imperio,acto:2,especial:narrativo	6x3x6	250	pendiente	Escena de la huida del acto II.
+estructura.culto.altar	Altar del culto	bioma:ciudad,faccion:culto,acto:4,especial:narrativo,uso:destructible	12x6x12	1500	pendiente	Objetivo del asalto final.
+estructura.culto.templo	Templo del culto	bioma:ciudad,faccion:culto,acto:4	24x14x30	2500	pendiente	
+estructura.culto.jaula_sacrificio	Jaula de cautivos para el sacrificio	faccion:culto,uso:interactuable,material:hierro	3x2.5x3	200	pendiente	Rescates del acto III.
+estructura.ruina.muro	Muro en ruinas	bioma:cualquiera,uso:decorado,material:piedra	6x3x1	150	pendiente	
+estructura.ruina.yurta_quemada	Yurta quemada	faccion:nomada,acto:1,uso:decorado	4.5x1.5x4.5	250	pendiente	Restos de la masacre.
+vehiculo.agua.bote_remos	Bote de remos	bioma:fiordo,uso:conducible,material:madera	1.5x0.8x4	250	pendiente	
+vehiculo.agua.canoa_pieles	Canoa de pieles	bioma:fiordo,bioma:bosque,uso:conducible,material:cuero	0.9x0.6x5	200	pendiente	
+vehiculo.agua.balsa	Balsa	bioma:cualquiera,uso:conducible,material:madera	2.5x0.5x3	100	pendiente	
+vehiculo.agua.velero	Velero	bioma:fiordo,uso:conducible,material:madera	3x8x9	600	pendiente	
+vehiculo.agua.barco_carga	Barco de carga	bioma:fiordo,uso:conducible,faccion:neutral	6x14x20	1500	pendiente	
+vehiculo.agua.barco_guerra	Barco de guerra con cañones	bioma:fiordo,uso:conducible,faccion:imperio	8x18x28	2500	pendiente	
+vehiculo.tierra.carreta_bueyes	Yunta de bueyes con carreta	faccion:nomada,uso:conducible,material:madera	2.5x2.5x6	600	pendiente	Mueve el campamento. Los bueyes: animal.ganado.buey.
+vehiculo.tierra.kibitka	Carro con yurta montada (kibitka)	faccion:nomada,uso:conducible	4x4x6	800	pendiente	
+vehiculo.tierra.carreta_mercancias	Carreta de mercancías	faccion:neutral,uso:conducible,material:madera	2x2x4	400	pendiente	
+vehiculo.tierra.carruaje	Carruaje imperial	faccion:imperio,uso:conducible	2.2x2.8x5	900	pendiente	
+vehiculo.tierra.trineo	Trineo	bioma:glaciar,uso:conducible,material:madera	1.2x0.8x3	200	pendiente	
+animal.montura.caballo_estepario	Caballo estepario	faccion:nomada,uso:montable,rig:cuadrupedo	0.6x1.5x2.2	900	pendiente	
+animal.montura.caballo_guerra	Caballo de guerra	uso:montable,rig:cuadrupedo	0.7x1.7x2.4	1000	pendiente	Admite barda (armadura de caballo).
+animal.montura.camello_bactriano	Camello bactriano	bioma:desierto,uso:montable,rig:cuadrupedo	0.8x2.2x3	1000	pendiente	
+animal.montura.dromedario	Dromedario	bioma:desierto,uso:montable,rig:cuadrupedo	0.8x2.2x3	1000	pendiente	
+animal.montura.elefante_guerra	Elefante de guerra	uso:montable,rig:cuadrupedo,talla:gigante	2x3.2x5	1500	pendiente	Fuerza y asedio.
+animal.montura.reno	Reno de tiro	bioma:fiordo,bioma:glaciar,uso:montable,rig:cuadrupedo	0.6x1.3x2	800	pendiente	
+animal.ganado.oveja	Oveja	faccion:nomada,rig:cuadrupedo	0.4x0.8x1.1	400	pendiente	
+animal.ganado.cabra	Cabra	faccion:nomada,rig:cuadrupedo	0.4x0.8x1.1	400	pendiente	
+animal.ganado.yak	Yak	bioma:glaciar,rig:cuadrupedo	0.9x1.7x2.5	800	pendiente	
+animal.ganado.buey	Buey	rig:cuadrupedo	0.8x1.6x2.5	700	pendiente	
+animal.ganado.perro_pastor	Perro pastor (mastín)	faccion:nomada,rig:cuadrupedo	0.35x0.8x1.1	500	pendiente	
+animal.salvaje.lobo	Lobo	faccion:salvaje,rig:cuadrupedo	0.3x0.8x1.4	500	pendiente	
+animal.salvaje.tigre	Tigre	faccion:salvaje,bioma:bosque,rig:cuadrupedo	0.5x1x2.6	700	pendiente	
+animal.salvaje.oso	Oso pardo	faccion:salvaje,bioma:bosque,rig:cuadrupedo	0.9x1.3x2.2	700	pendiente	
+animal.salvaje.ciervo	Ciervo	faccion:salvaje,bioma:bosque,rig:cuadrupedo	0.5x1.9x1.8	500	pendiente	
+animal.salvaje.ibice	Íbice	faccion:salvaje,bioma:glaciar,rig:cuadrupedo	0.4x1.2x1.4	500	pendiente	
+animal.salvaje.zorro	Zorro	faccion:salvaje,rig:cuadrupedo	0.25x0.45x0.9	300	pendiente	
+animal.salvaje.leopardo_nieves	Leopardo de las nieves	faccion:salvaje,bioma:glaciar,rig:cuadrupedo	0.4x0.7x2	600	pendiente	
+animal.ave.aguila	Águila (cetrería)	rig:ave,uso:equipable	1.8x0.9x0.9	300	pendiente	Puede acompañar al jugador.
+animal.ave.halcon	Halcón (cetrería)	rig:ave,uso:equipable	1x0.5x0.5	250	pendiente	
+animal.ave.buitre	Buitre	faccion:salvaje,rig:ave	2.4x1x1	300	pendiente	
+arma.corta.cuchillo	Cuchillo de hueso y hierro	uso:equipable	0.05x0.3x0.03	60	pendiente	
+arma.corta.daga	Daga	uso:equipable	0.05x0.4x0.03	80	pendiente	
+arma.corta.sable	Sable curvo	uso:equipable,faccion:nomada	0.08x0.9x0.03	120	pendiente	
+arma.corta.hacha_mano	Hacha de mano	uso:equipable	0.15x0.6x0.04	100	pendiente	
+arma.corta.maza	Maza	uso:equipable	0.1x0.7x0.1	100	pendiente	
+arma.larga.lanza	Lanza	uso:equipable	0.1x2.4x0.1	80	pendiente	
+arma.larga.guja	Guja	uso:equipable	0.2x2.2x0.05	120	pendiente	
+arma.larga.pica	Pica imperial	uso:equipable,faccion:imperio	0.1x4.5x0.1	80	pendiente	
+arma.larga.alabarda	Alabarda	uso:equipable,faccion:imperio	0.3x2.2x0.05	140	pendiente	
+arma.larga.espada_larga	Espada larga	uso:equipable	0.2x1.2x0.03	120	pendiente	
+arma.distancia.arco_compuesto	Arco compuesto	uso:equipable,requiere:proyectil,faccion:nomada	0.1x1.2x0.05	150	pendiente	
+arma.distancia.arco_largo	Arco largo	uso:equipable,requiere:proyectil	0.08x1.8x0.05	120	pendiente	
+arma.distancia.ballesta	Ballesta	uso:equipable,requiere:proyectil	0.7x0.25x0.9	250	pendiente	
+arma.distancia.mosquete	Mosquete de mecha	uso:equipable,requiere:proyectil,faccion:imperio	0.1x0.25x1.5	300	pendiente	
+arma.distancia.canon	Cañón de campaña	uso:equipable,requiere:proyectil,faccion:imperio	1.5x1.2x3	800	pendiente	
+arma.distancia.honda	Honda	uso:equipable,requiere:proyectil	0.05x0.6x0.05	40	pendiente	
+arma.distancia.lazo	Lazo	uso:equipable,faccion:nomada	0.5x0.1x0.5	80	pendiente	
+arma.distancia.boleadoras	Boleadoras	uso:equipable	0.4x0.1x0.4	60	pendiente	
+arma.especial.guja_hoja_ancha	Guja de hoja ancha	uso:equipable,especial:gran_guerrero	0.25x2.2x0.05	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.sable_damasquinado	Sable de acero damasquinado	uso:equipable,especial:gran_guerrero	0.08x0.95x0.03	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.arco_cuerno	Arco compuesto de cuerno	uso:equipable,especial:gran_guerrero	0.1x1.2x0.05	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.maza_tigre	Maza de bronce con cabeza de tigre	uso:equipable,especial:gran_guerrero	0.15x0.8x0.15	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.lazo_plomadas	Lazo con plomadas	uso:equipable,especial:gran_guerrero	0.5x0.1x0.5	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.hacha_ceremonial	Hacha ceremonial	uso:equipable,especial:gran_guerrero	0.3x0.9x0.04	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.lanza_doble_punta	Lanza de caballería de doble punta	uso:equipable,especial:gran_guerrero	0.1x2.8x0.1	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.ballesta_repeticion	Ballesta de repetición	uso:equipable,especial:gran_guerrero	0.6x0.35x0.9	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
+arma.especial.espada_padre	Espada ceremonial del padre	uso:equipable,acto:3,especial:legado,especial:narrativo,material:oro	0.12x1x0.04	500	pendiente	Hallada en la tumba helada; se empuña en el asalto final.
+proyectil.flecha.comun	Flecha	uso:municion	0.02x0.8x0.02	20	pendiente	
+proyectil.flecha.silbadora	Flecha silbadora (señales)	uso:municion,faccion:nomada	0.03x0.8x0.03	30	pendiente	
+proyectil.virote.comun	Virote de ballesta	uso:municion	0.02x0.4x0.02	20	pendiente	
+proyectil.bala.mosquete	Bala de mosquete	uso:municion	0.02x0.02x0.02	8	pendiente	
+proyectil.bala.canon	Bala de cañón	uso:municion	0.15x0.15x0.15	20	pendiente	
+proyectil.piedra.honda	Piedra de honda	uso:municion	0.05x0.05x0.05	8	pendiente	
+escudo.mano.mimbre	Escudo redondo de mimbre	uso:equipable,faccion:nomada,material:madera	0.6x0.6x0.08	80	pendiente	
+escudo.mano.cuero	Escudo de cuero endurecido	uso:equipable,faccion:nomada,material:cuero	0.55x0.55x0.06	80	pendiente	
+escudo.mano.umbo	Escudo de madera con umbo	uso:equipable,faccion:neutral,material:madera	0.8x0.8x0.1	100	pendiente	
+escudo.grande.paves	Pavés imperial	uso:equipable,faccion:imperio,material:madera	0.7x1.5x0.15	120	pendiente	
+escudo.mano.lamina	Escudo de láminas de hierro	uso:equipable,faccion:imperio,material:hierro	0.6x0.8x0.08	120	pendiente	
+escudo.mano.culto	Escudo ceremonial del culto	uso:equipable,faccion:culto,material:bronce	0.7x0.9x0.08	200	pendiente	
+totem.clan.poste_clan	Poste tótem del clan	faccion:nomada,material:madera	0.6x4x0.6	200	pendiente	
+totem.clan.lobo	Tótem del lobo	faccion:nomada,material:madera	0.6x3x0.6	250	pendiente	Bonificación de manada (pendiente de diseño).
+totem.clan.ciervo	Tótem del ciervo	faccion:nomada,material:madera	0.8x3x0.6	250	pendiente	
+totem.clan.aguila	Tótem del águila	faccion:nomada,material:madera	1.2x3.5x0.6	250	pendiente	
+totem.clan.tigre	Tótem del tigre	faccion:nomada,material:madera	0.8x3x0.8	250	pendiente	
+totem.clan.sulde	Sulde (estandarte de crines)	faccion:nomada,uso:equipable,material:crin	0.4x3x0.4	150	pendiente	Espíritu del clan; cola de caballo.
+totem.clan.estandarte_tamga	Estandarte con la tamga del padre	faccion:nomada,especial:legado	1x3.5x0.1	150	pendiente	Signo de clan del padre.
+totem.culto.idolo_culto	Ídolo del culto	faccion:culto,acto:4,material:bronce	1x3x1	400	pendiente	Símbolo del culto: pendiente de definir por el autor.
+totem.culto.craneos_culto	Pila de cráneos del culto	faccion:culto,uso:decorado,material:hueso	1x1.5x1	200	pendiente	
+armadura.casco.laminar_cuero	Casco laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.3x0.35x0.3	150	pendiente	
+armadura.cuello.laminar_cuero	Gorjal / cofia laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.35x0.2x0.35	80	pendiente	
+armadura.torso.laminar_cuero	Coraza / peto laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.5x0.6x0.35	250	pendiente	
+armadura.hombreras.laminar_cuero	Hombreras (par) laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.6x0.2x0.3	120	pendiente	
+armadura.brazales.laminar_cuero	Brazales (par) laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.15x0.3x0.15	80	pendiente	
+armadura.guantes.laminar_cuero	Guanteletes (par) laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.12x0.2x0.15	80	pendiente	
+armadura.faldar.laminar_cuero	Faldar laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.5x0.4x0.4	120	pendiente	
+armadura.grebas.laminar_cuero	Grebas (par) laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.15x0.45x0.15	80	pendiente	
+armadura.botas.laminar_cuero	Botas (par) laminar de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.15x0.35x0.3	80	pendiente	
+armadura.casco.fieltro	Casco de fieltro acolchado	uso:equipable,rig:humanoide,faccion:nomada,material:fieltro	0.3x0.35x0.3	150	pendiente	
+armadura.cuello.fieltro	Gorjal / cofia de fieltro acolchado	uso:equipable,rig:humanoide,faccion:nomada,material:fieltro	0.35x0.2x0.35	80	pendiente	
+armadura.torso.fieltro	Coraza / peto de fieltro acolchado	uso:equipable,rig:humanoide,faccion:nomada,material:fieltro	0.5x0.6x0.35	250	pendiente	
+armadura.hombreras.fieltro	Hombreras (par) de fieltro acolchado	uso:equipable,rig:humanoide,faccion:nomada,material:fieltro	0.6x0.2x0.3	120	pendiente	
+armadura.brazales.fieltro	Brazales (par) de fieltro acolchado	uso:equipable,rig:humanoide,faccion:nomada,material:fieltro	0.15x0.3x0.15	80	pendiente	
+armadura.faldar.fieltro	Faldar de fieltro acolchado	uso:equipable,rig:humanoide,faccion:nomada,material:fieltro	0.5x0.4x0.4	120	pendiente	
+armadura.botas.fieltro	Botas (par) de fieltro acolchado	uso:equipable,rig:humanoide,faccion:nomada,material:fieltro	0.15x0.35x0.3	80	pendiente	
+armadura.casco.escamas_hierro	Casco de escamas de hierro	uso:equipable,rig:humanoide,faccion:imperio,material:hierro	0.3x0.35x0.3	150	pendiente	
+armadura.cuello.escamas_hierro	Gorjal / cofia de escamas de hierro	uso:equipable,rig:humanoide,faccion:imperio,material:hierro	0.35x0.2x0.35	80	pendiente	
+armadura.torso.escamas_hierro	Coraza / peto de escamas de hierro	uso:equipable,rig:humanoide,faccion:imperio,material:hierro	0.5x0.6x0.35	250	pendiente	
+armadura.hombreras.escamas_hierro	Hombreras (par) de escamas de hierro	uso:equipable,rig:humanoide,faccion:imperio,material:hierro	0.6x0.2x0.3	120	pendiente	
+armadura.brazales.escamas_hierro	Brazales (par) de escamas de hierro	uso:equipable,rig:humanoide,faccion:imperio,material:hierro	0.15x0.3x0.15	80	pendiente	
+armadura.guantes.escamas_hierro	Guanteletes (par) de escamas de hierro	uso:equipable,rig:humanoide,faccion:imperio,material:hierro	0.12x0.2x0.15	80	pendiente	
+armadura.faldar.escamas_hierro	Faldar de escamas de hierro	uso:equipable,rig:humanoide,faccion:imperio,material:hierro	0.5x0.4x0.4	120	pendiente	
+armadura.grebas.escamas_hierro	Grebas (par) de escamas de hierro	uso:equipable,rig:humanoide,faccion:imperio,material:hierro	0.15x0.45x0.15	80	pendiente	
+armadura.botas.escamas_hierro	Botas (par) de escamas de hierro	uso:equipable,rig:humanoide,faccion:imperio,material:hierro	0.15x0.35x0.3	80	pendiente	
+armadura.casco.malla	Casco de malla	uso:equipable,rig:humanoide,faccion:neutral,material:hierro	0.3x0.35x0.3	150	pendiente	
+armadura.cuello.malla	Gorjal / cofia de malla	uso:equipable,rig:humanoide,faccion:neutral,material:hierro	0.35x0.2x0.35	80	pendiente	
+armadura.torso.malla	Coraza / peto de malla	uso:equipable,rig:humanoide,faccion:neutral,material:hierro	0.5x0.6x0.35	250	pendiente	
+armadura.hombreras.malla	Hombreras (par) de malla	uso:equipable,rig:humanoide,faccion:neutral,material:hierro	0.6x0.2x0.3	120	pendiente	
+armadura.brazales.malla	Brazales (par) de malla	uso:equipable,rig:humanoide,faccion:neutral,material:hierro	0.15x0.3x0.15	80	pendiente	
+armadura.guantes.malla	Guanteletes (par) de malla	uso:equipable,rig:humanoide,faccion:neutral,material:hierro	0.12x0.2x0.15	80	pendiente	
+armadura.faldar.malla	Faldar de malla	uso:equipable,rig:humanoide,faccion:neutral,material:hierro	0.5x0.4x0.4	120	pendiente	
+armadura.grebas.malla	Grebas (par) de malla	uso:equipable,rig:humanoide,faccion:neutral,material:hierro	0.15x0.45x0.15	80	pendiente	
+armadura.botas.malla	Botas (par) de malla	uso:equipable,rig:humanoide,faccion:neutral,material:hierro	0.15x0.35x0.3	80	pendiente	
+armadura.casco.culto	Casco ritual del culto	uso:equipable,rig:humanoide,faccion:culto,material:bronce	0.3x0.35x0.3	150	pendiente	
+armadura.cuello.culto	Gorjal / cofia ritual del culto	uso:equipable,rig:humanoide,faccion:culto,material:bronce	0.35x0.2x0.35	80	pendiente	
+armadura.torso.culto	Coraza / peto ritual del culto	uso:equipable,rig:humanoide,faccion:culto,material:bronce	0.5x0.6x0.35	250	pendiente	
+armadura.hombreras.culto	Hombreras (par) ritual del culto	uso:equipable,rig:humanoide,faccion:culto,material:bronce	0.6x0.2x0.3	120	pendiente	
+armadura.brazales.culto	Brazales (par) ritual del culto	uso:equipable,rig:humanoide,faccion:culto,material:bronce	0.15x0.3x0.15	80	pendiente	
+armadura.guantes.culto	Guanteletes (par) ritual del culto	uso:equipable,rig:humanoide,faccion:culto,material:bronce	0.12x0.2x0.15	80	pendiente	
+armadura.faldar.culto	Faldar ritual del culto	uso:equipable,rig:humanoide,faccion:culto,material:bronce	0.5x0.4x0.4	120	pendiente	
+armadura.grebas.culto	Grebas (par) ritual del culto	uso:equipable,rig:humanoide,faccion:culto,material:bronce	0.15x0.45x0.15	80	pendiente	
+armadura.botas.culto	Botas (par) ritual del culto	uso:equipable,rig:humanoide,faccion:culto,material:bronce	0.15x0.35x0.3	80	pendiente	
+armadura.casco.mascara_culto	Máscara ritual del culto	uso:equipable,rig:humanoide,faccion:culto,material:bronce	0.25x0.3x0.2	200	pendiente	
+armadura.casco.oro_padre	Casco de oro del padre	uso:equipable,rig:humanoide,especial:legado,material:oro,acto:1	0.3x0.4x0.3	300	pendiente	Lo lleva el padre en el prólogo.
+armadura.montura.barda_cuero	Barda de cuero para caballo	uso:equipable,rig:cuadrupedo,faccion:nomada,material:cuero	0.8x1.2x2	400	pendiente	
+armadura.montura.barda_hierro	Barda de hierro para caballo	uso:equipable,rig:cuadrupedo,faccion:imperio,material:hierro	0.8x1.2x2	500	pendiente	
+vestimenta.torso.deel	Deel (caftán cruzado)	uso:equipable,rig:humanoide,faccion:nomada	0.6x1.2x0.4	300	pendiente	Personalización del personaje (Fase 3).
+vestimenta.torso.deel_invierno	Deel de invierno con piel	uso:equipable,rig:humanoide,faccion:nomada	0.7x1.3x0.5	350	pendiente	Personalización del personaje (Fase 3).
+vestimenta.cabeza.gorro_piel	Gorro de piel	uso:equipable,rig:humanoide,faccion:nomada	0.3x0.25x0.3	100	pendiente	Personalización del personaje (Fase 3).
+vestimenta.cabeza.gorro_punta	Gorro de fieltro de punta	uso:equipable,rig:humanoide,faccion:nomada	0.3x0.4x0.3	80	pendiente	Personalización del personaje (Fase 3).
+vestimenta.piernas.pantalon	Pantalón de montar	uso:equipable,rig:humanoide,faccion:nomada	0.4x0.9x0.3	150	pendiente	Personalización del personaje (Fase 3).
+vestimenta.pies.botas_fieltro	Botas de fieltro	uso:equipable,rig:humanoide,faccion:nomada	0.15x0.4x0.3	100	pendiente	Personalización del personaje (Fase 3).
+vestimenta.espalda.capa	Capa de lana	uso:equipable,rig:humanoide,faccion:nomada	0.7x1.2x0.4	200	pendiente	Personalización del personaje (Fase 3).
+vestimenta.espalda.capa_piel	Capa de piel de lobo	uso:equipable,rig:humanoide,faccion:nomada	0.8x1.2x0.5	250	pendiente	Personalización del personaje (Fase 3).
+vestimenta.cintura.cinturon	Cinturón con placa de estilo animal	uso:equipable,rig:humanoide,faccion:nomada	0.4x0.08x0.3	80	pendiente	Personalización del personaje (Fase 3).
+vestimenta.cuello.bufanda	Bufanda / velo contra la arena	uso:equipable,rig:humanoide,faccion:nomada	0.3x0.3x0.3	60	pendiente	Personalización del personaje (Fase 3).
+vestimenta.torso.tunica_campesina	Túnica campesina	uso:equipable,rig:humanoide,faccion:imperio	0.6x1.1x0.4	200	pendiente	Personalización del personaje (Fase 3).
+vestimenta.torso.uniforme_imperial	Uniforme imperial	uso:equipable,rig:humanoide,faccion:imperio	0.6x1.4x0.4	300	pendiente	Personalización del personaje (Fase 3).
+vestimenta.torso.tunica_culto	Túnica del culto	uso:equipable,rig:humanoide,faccion:culto	0.7x1.6x0.5	300	pendiente	Personalización del personaje (Fase 3).
+vestimenta.torso.harapos	Harapos de prisionero	uso:equipable,rig:humanoide,faccion:nomada	0.6x1.1x0.4	150	pendiente	Personalización del personaje (Fase 3).
+accesorio.amuleto.lobo	Amuleto del lobo	uso:equipable,material:oro,estilo:animal	0.08x0.06x0.01	80	pendiente	Placa de estilo animal; buffs en src/sim/loadout.c.
+accesorio.amuleto.ciervo	Amuleto del ciervo	uso:equipable,material:oro,estilo:animal	0.08x0.06x0.01	80	pendiente	Placa de estilo animal; buffs en src/sim/loadout.c.
+accesorio.amuleto.aguila_ibice	Amuleto del águila y el íbice	uso:equipable,material:oro,estilo:animal	0.08x0.06x0.01	80	pendiente	Placa de estilo animal; buffs en src/sim/loadout.c.
+accesorio.amuleto.tigre_dragon	Amuleto del tigre y el dragón	uso:equipable,material:oro,estilo:animal	0.08x0.06x0.01	80	pendiente	Placa de estilo animal; buffs en src/sim/loadout.c.
+accesorio.amuleto.oso	Amuleto del oso	uso:equipable,material:oro,estilo:animal	0.08x0.06x0.01	80	pendiente	Placa de estilo animal; buffs en src/sim/loadout.c.
+accesorio.amuleto.caballo	Amuleto del caballo	uso:equipable,material:oro,estilo:animal	0.08x0.06x0.01	80	pendiente	Placa de estilo animal; buffs en src/sim/loadout.c.
+accesorio.tatuaje.lobo	Tatuaje del lobo	uso:equipable,formato:textura,estilo:animal	0.25x0.25x0	0	pendiente	Calcomanía (PNG con alfa), no modelo. Permanente.
+accesorio.tatuaje.ciervo	Tatuaje del ciervo	uso:equipable,formato:textura,estilo:animal	0.25x0.25x0	0	pendiente	Calcomanía (PNG con alfa), no modelo. Permanente.
+accesorio.tatuaje.grifo	Tatuaje del grifo	uso:equipable,formato:textura,estilo:animal	0.25x0.25x0	0	pendiente	Calcomanía (PNG con alfa), no modelo. Permanente.
+accesorio.tatuaje.tamga	Tatuaje de la tamga	uso:equipable,formato:textura,estilo:animal	0.25x0.25x0	0	pendiente	Calcomanía (PNG con alfa), no modelo. Permanente.
+accesorio.tatuaje.olas	Tatuaje de olas	uso:equipable,formato:textura,estilo:animal	0.25x0.25x0	0	pendiente	Calcomanía (PNG con alfa), no modelo. Permanente.
+accesorio.arreo.silla_montar	Silla de montar	uso:equipable,faccion:nomada,material:cuero	0.5x0.3x0.6	200	pendiente	
+accesorio.arreo.brida	Brida y riendas	uso:equipable,material:cuero	0.3x0.4x0.6	100	pendiente	
+accesorio.arreo.estribos	Estribos (par)	uso:equipable,material:hierro	0.15x0.2x0.1	60	pendiente	
+accesorio.arreo.alforjas	Alforjas	uso:equipable,material:cuero	0.6x0.4x0.3	120	pendiente	
+accesorio.arreo.placa_arreo_padre	Placa de arreo de estilo animal del padre	uso:equipable,especial:rastro_padre,material:oro,estilo:animal	0.12x0.08x0.01	120	pendiente	Rastros del padre (acto III).
+accesorio.mensaje.piedra_runica	Piedra con mensaje cifrado	acto:3,especial:rastro_padre,material:piedra	0.5x0.8x0.2	120	pendiente	Mensajes en las antiguas lenguas de la estepa.
+accesorio.mensaje.tablilla	Tablilla de madera cifrada	acto:3,especial:rastro_padre,material:madera	0.2x0.3x0.02	60	pendiente	
+asedio.maquina.ariete	Ariete cubierto	faccion:imperio,acto:1,uso:conducible,uso:destructible	3x3x6	500	pendiente	La maquinaria que aplasta al padre en el prólogo.
+asedio.maquina.torre_asedio	Torre de asedio	faccion:imperio,acto:1,uso:conducible,uso:destructible	5x12x5	1000	pendiente	La maquinaria que aplasta al padre en el prólogo.
+asedio.maquina.trebuchet	Trebuchet	faccion:imperio,acto:1,uso:conducible,uso:destructible	5x10x8	900	pendiente	La maquinaria que aplasta al padre en el prólogo.
+asedio.maquina.catapulta	Catapulta	faccion:imperio,acto:1,uso:conducible,uso:destructible	3x3x4	600	pendiente	La maquinaria que aplasta al padre en el prólogo.
+asedio.maquina.mantelete	Mantelete	faccion:imperio,acto:1,uso:conducible,uso:destructible	2.5x2x0.3	100	pendiente	La maquinaria que aplasta al padre en el prólogo.
+utileria.objeto.caldero	Caldero	faccion:nomada,material:hierro	0.6x0.5x0.6	80	pendiente	
+utileria.objeto.odre	Odre de cuero	uso:recolectable,material:cuero	0.3x0.4x0.2	60	pendiente	
+utileria.objeto.cofre	Cofre de botín	uso:interactuable,material:madera	0.8x0.5x0.5	100	pendiente	
+utileria.objeto.barril_polvora	Barril de pólvora	faccion:imperio,uso:destructible	0.6x0.8x0.6	80	pendiente	
+utileria.objeto.saco_grano	Saco de grano	uso:recolectable	0.5x0.6x0.4	60	pendiente	
+utileria.objeto.antorcha	Antorcha	uso:equipable	0.1x0.7x0.1	40	pendiente	
+utileria.objeto.cadenas	Grilletes y cadenas	material:hierro	0.4x0.1x0.4	80	pendiente	
+utileria.objeto.yunque	Yunque	material:hierro	0.6x0.5x0.3	80	pendiente	
+utileria.objeto.telar	Telar de fieltro	faccion:nomada,material:madera	1.5x1.2x1	150	pendiente	
+utileria.objeto.tamboril_chaman	Tambor chamánico	faccion:nomada,material:cuero	0.5x0.1x0.5	100	pendiente	
+utileria.consumible.carne_seca	Carne seca	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
+utileria.consumible.airag	Odre de airag (leche de yegua)	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
+utileria.consumible.queso_seco	Queso seco	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
+utileria.consumible.hierbas	Hierbas curativas	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
+utileria.consumible.agua	Agua	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
+utileria.consumible.pan	Pan del imperio	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
+personaje.base.cuerpo_nino	Cuerpo base: niño	rig:humanoide,talla:pequena	0.35x1.2x0.25	800	pendiente	Malla base modular: ropa y armadura encajan encima.
+personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.5x1.7x0.3	1200	pendiente	
+personaje.base.cuerpo_robusto	Cuerpo base: adulto robusto	rig:humanoide,talla:grande	0.6x1.85x0.35	1300	pendiente	
+personaje.base.cuerpo_gigante	Cuerpo base: gigante (gran guerrero)	rig:humanoide,talla:gigante,especial:gran_guerrero	0.75x2.3x0.45	1500	pendiente	Talla x1.2–1.45 del común.
+personaje.base.cuerpo_anciano	Cuerpo base: anciano	rig:humanoide,talla:comun	0.5x1.6x0.3	1200	pendiente	
+personaje.narrativo.protagonista	Protagonista ({NOMBRE})	rig:humanoide,acto:2,especial:narrativo,uso:personalizable	0.5x1.75x0.3	2000	pendiente	Personalizable: nombre, aspecto, ropa.
+personaje.narrativo.padre	El padre (jefe de la confederación)	rig:humanoide,acto:1,especial:narrativo,faccion:nomada	0.5x1.75x0.3	2000	pendiente	Jugable en el prólogo, a caballo.
+personaje.narrativo.madre	La madre	rig:humanoide,acto:1,especial:narrativo	0.5x1.75x0.3	2000	pendiente	
+personaje.narrativo.medio_hermano	El medio-hermano	rig:humanoide,acto:2,especial:narrativo,faccion:culto	0.5x1.75x0.3	2000	pendiente	Antagonista.
+personaje.narrativo.rey	El rey (anciano)	rig:humanoide,acto:2,especial:narrativo,faccion:imperio	0.5x1.75x0.3	2000	pendiente	
+personaje.npc.pastor	Pastor	rig:humanoide,faccion:nomada,motivo:civil	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.jinete_arquero	Jinete arquero	rig:humanoide,faccion:nomada,motivo:combate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.guerrero_nomada	Guerrero nómada	rig:humanoide,faccion:nomada,motivo:combate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.chaman	Chamán	rig:humanoide,faccion:nomada,motivo:espiritual	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.curandero	Curandero	rig:humanoide,faccion:nomada,motivo:servicio	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.herrero	Herrero	rig:humanoide,faccion:nomada,motivo:servicio	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.explorador	Explorador	rig:humanoide,faccion:nomada,motivo:servicio	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.campesino	Campesino	rig:humanoide,faccion:imperio,bioma:ciudad,motivo:civil	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.obrero	Obrero de la fundición	rig:humanoide,faccion:imperio,bioma:ciudad,motivo:civil	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.burocrata	Burócrata	rig:humanoide,faccion:imperio,bioma:ciudad,motivo:civil	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.lancero	Soldado lancero	rig:humanoide,faccion:imperio,motivo:combate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.ballestero	Soldado ballestero	rig:humanoide,faccion:imperio,motivo:combate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.mosquetero	Mosquetero	rig:humanoide,faccion:imperio,motivo:combate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.artillero	Artillero	rig:humanoide,faccion:imperio,motivo:combate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.oficial	Oficial imperial	rig:humanoide,faccion:imperio,motivo:combate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.verdugo	Verdugo	rig:humanoide,faccion:imperio,motivo:castigo	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.sacerdote_culto	Sacerdote del culto	rig:humanoide,faccion:culto,motivo:espiritual	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.fanatico	Fanático del culto	rig:humanoide,faccion:culto,motivo:combate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.captor_culto	Captor del culto	rig:humanoide,faccion:culto,motivo:captura,acto:3	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.prisionero	Prisionero	rig:humanoide,faccion:cualquiera,motivo:rescate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.refugiado	Refugiado	rig:humanoide,faccion:neutral,motivo:rescate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.comerciante	Comerciante de caravana	rig:humanoide,faccion:neutral,bioma:desierto,motivo:comercio	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.nomada_desierto	Nómada del desierto	rig:humanoide,faccion:neutral,bioma:desierto,motivo:civil	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.cazador_bosque	Cazador del bosque	rig:humanoide,faccion:neutral,bioma:bosque,motivo:civil	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.pescador_fiordo	Pescador de los fiordos	rig:humanoide,faccion:neutral,bioma:fiordo,motivo:civil	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.bandido	Bandido	rig:humanoide,faccion:salvaje,motivo:combate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.mercenario	Mercenario	rig:humanoide,faccion:neutral,motivo:combate	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.nino	Niño	rig:humanoide,faccion:cualquiera,talla:pequena,motivo:civil	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.anciano	Anciano	rig:humanoide,faccion:cualquiera,motivo:civil	0.5x1.7x0.3	1500	pendiente	
