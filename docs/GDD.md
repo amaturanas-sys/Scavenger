@@ -58,7 +58,7 @@ Botes, veleros, barcos, carruajes y yunta de bueyes con carreta (transporte del 
 - Pendiente: biomas (desierto, montaña, ríos), asentamientos de los reinos, ciclo día/noche, clima.
 
 ## Narrativa
-Historia principal con protagonista de **nombre elegido por el jugador**: hijo de un jefe nómade exiliado, traicionado por su medio-hermano, que sobrevive en cinco climas bajo la filosofía *Scavengers Thrive* y regresa para liberar tanto a su pueblo como a la ciudad. Argumento completo en [NARRATIVA.md](NARRATIVA.md). Los diálogos y las escenas los define el autor.
+Historia principal con protagonista de **nombre elegido por el jugador**: hijo de un jefe nómade exiliado, traicionado por su medio-hermano, que sobrevive en cinco climas bajo la filosofía *Scavengers Thrive* y regresa a la ciudad de su infancia. El prólogo se juega con el padre, a caballo, durante la masacre. Hay **tres finales** (asedio, asesinato o exilio del medio-hermano) que cambian el mundo, y la partida continúa después. Argumento completo en [NARRATIVA.md](NARRATIVA.md). Los diálogos y las escenas los define el autor.
 
 ## Dirección de arte
 - 3D low-poly con sombreado plano, renderizado a 640×360 y escalado sin suavizado.
