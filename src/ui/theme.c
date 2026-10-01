@@ -146,3 +146,7 @@ void ui_text(const char *text, int x, int y, int size, Color color) {
 void ui_text_centered(const char *text, int cx, int y, int size, Color color) {
     ui_text(text, cx - MeasureText(text, size) / 2, y, size, color);
 }
+
+void ui_granule(int x, int y, UiMetal metal) { granule(x, y, metal_of(metal)); }
+
+void ui_inlay(int x, int y, UiMetal metal) { inlay(x, y, metal_of(metal)); }

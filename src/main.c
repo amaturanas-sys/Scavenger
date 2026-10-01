@@ -16,7 +16,9 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "sim/loadout.h"
+#include "sim/memory_map.h"
 #include "sim/troop.h"
+#include "ui/minimap.h"
 #include "ui/theme.h"
 #include "world/camp.h"
 #include "world/terrain.h"
@@ -31,6 +33,9 @@
 #define VIRTUAL_W 640
 #define VIRTUAL_H 360
 #define WORLD_SEED 1206u // ano de la fundacion del Imperio mongol
+#define MINIMAP_RADIUS 50
+
+static MemoryMap g_memory; // ~1,8 MB: fuera de la pila
 
 typedef struct {
     float yaw, pitch, dist;
@@ -130,7 +135,7 @@ static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day,
     ui_text(log, x, 104, 10, UI_BONE);
 
     ui_strip((Rectangle){ 0, VIRTUAL_H - 29, VIRTUAL_W, 29 }, UI_METAL_GOLD);
-    ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E o clic der. camara  Rueda zoom",
+    ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E o clic der. camara  Rueda zoom  M marcar",
             4, VIRTUAL_H - 21, 10, UI_BONE_DIM);
     ui_text("1 reclutar  2 prisionero  3 ejecutar prisionero  4 ejecutar miembro  5 desterrar  6 botin  7 liberar  Enter: dia",
             4, VIRTUAL_H - 11, 10, UI_BONE_DIM);
@@ -181,6 +186,10 @@ int main(int argc, char **argv) {
     Rng rng;
     rng_seed(&rng, WORLD_SEED);
     int day = 1;
+    float world_time = 0.0f; // segundos de juego (avanza solo si no hay pausa)
+    memmap_init(&g_memory);
+    Minimap minimap;
+    minimap_init(&minimap, MINIMAP_RADIUS, 2.0f);
     char log[96] = "Tu tropa acampa en la estepa.";
 
     Camera3D cam = { .up = { 0, 1, 0 }, .fovy = 55.0f, .projection = CAMERA_PERSPECTIVE };
@@ -197,6 +206,13 @@ int main(int argc, char **argv) {
             PlayerInput in = player_read_input();
             player_update(&player, &terrain, in, rig.yaw, dt);
             debug_camp_actions(&troop, &rng, &day, log, sizeof(log));
+            world_time += dt;
+            memmap_visit(&g_memory, player.pos.x, player.pos.z, dt, world_time);
+            if (IsKeyPressed(KEY_M)) {
+                MarkerKind kind = IsKeyDown(KEY_LEFT_SHIFT) ? MARKER_DANGER : MARKER_INTEREST;
+                bool placed = memmap_toggle_marker(&g_memory, player.pos.x, player.pos.z, kind, 6.0f);
+                snprintf(log, sizeof(log), placed ? "Marcaste este lugar en el mapa." : "Quitaste la marca.");
+            }
         }
         camera_update(&rig, &cam, &player, dt);
         terrain_update(&terrain, player.pos);
@@ -209,6 +225,8 @@ int main(int argc, char **argv) {
         player_draw(&player);
         EndMode3D();
         draw_hud(&player, &troop, &overlord, day, log);
+        minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
+                     player.pos, rig.yaw, player.yaw, world_time);
         if (!has_keyboard) draw_keyboard_notice();
         EndTextureMode();
 
@@ -231,6 +249,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    minimap_unload(&minimap);
     camp_unload(&camp);
     terrain_unload(&terrain);
     UnloadRenderTexture(lowres);

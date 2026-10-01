@@ -53,8 +53,14 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [ ] Tres finales (asedio, asesinato, exilio) que modifican facciones, PNJ, asentamientos, misiones y tesoros; juego libre después del final.
 
 ## Interfaz (ver [ESTILO_VISUAL.md](ESTILO_VISUAL.md))
-- [x] Tema de orfebrería: paneles, barras, separadores y texto (`src/ui/theme.*`), aplicado al HUD y al aviso de teclado.
+- [x] Tema de orfebrería: paneles, barras, separadores y texto (`src/ui/theme.*`), aplicado al HUD, al aviso de teclado y al aro del minimapa.
 - [ ] Fuente de mapa de bits propia, emblemas pixel art de bestias en combate y marcos calados para menús.
+
+## Mapa de memoria
+- [x] Minimapa circular tipo brújula, que gira con la vista.
+- [x] Memoria espacial: empieza negro, se ilumina al recorrer, lo frecuente brilla más y todo se olvida con el tiempo (lo familiar, más despacio). Con tests.
+- [x] Marcas de interés y de peligro.
+- [ ] Mapa grande, marcas con nombre, guardado y cobertura de todo el mundo.
 
 ## Herramientas
 - **Assets 3D:** Kiln (`tools/assets/*.kiln.js`). Ver [tools/assets/README.md](../tools/assets/README.md).

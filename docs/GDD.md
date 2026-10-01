@@ -36,6 +36,16 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 
 **Pendiente de definir:** consecuencias jugables de una rebelión (duelo por el liderazgo, escisión de la tropa), cómo se ganan nuevos reclutas en el mundo, economía del tributo.
 
+### Mapa de memoria y brújula (implementado — `src/sim/memory_map.*`, `src/ui/minimap.*`)
+- **Minimapa circular** en la esquina superior derecha que gira con la vista, como una brújula: arriba es hacia donde mira el jugador, y una "N" en el aro marca el norte.
+- **Empieza negro:** el personaje no conoce el mundo. Las zonas se **iluminan poco a poco** a medida que el jugador las recorre.
+- **Frecuencia = nitidez:** cada zona acumula familiaridad. Lo recorrido a menudo brilla más, como la memoria espacial real.
+- **Olvido:** el brillo se apaga con el tiempo. Lo familiar se olvida más despacio (repetición espaciada).
+- **Marcas:** el jugador marca sitios de interés (`M`) o de peligro (`Shift+M`). Pulsar de nuevo cerca de una marca la quita. Las marcas fuera de alcance quedan en el borde, señalando su dirección.
+- Los parámetros (radio de vista, velocidad de aprendizaje y de olvido, brillo de una sola pasada) están en `memmap_default_params` y son de balance.
+
+**Pendiente:** mapa grande a pantalla completa, guardar el mapa con la partida, marcas con nombre, y un mapa que cubra todo el mundo (hoy cubre 1,5 km × 1,5 km alrededor del origen).
+
 ### 2. Personaje y equipo (núcleo implementado — `src/sim/loadout.*`)
 - Personaje y vestuario personalizables (fase 3).
 - **Árbol de habilidades** con buffs **activos** (con enfriamiento) y **pasivos**.
