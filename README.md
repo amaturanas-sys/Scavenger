@@ -5,6 +5,7 @@ RPG de mundo abierto en 3D low-res, inspirado en las tribus nómadas de la estep
 **Plataformas:** Windows y Android · **Tecnología:** C11 + [raylib](https://www.raylib.com) 5.5
 
 - Diseño: [docs/GDD.md](docs/GDD.md)
+- Narrativa: [docs/NARRATIVA.md](docs/NARRATIVA.md)
 - Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Arquitectura: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
 
