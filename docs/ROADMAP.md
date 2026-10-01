@@ -47,7 +47,14 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 ## Narrativa (ver [NARRATIVA.md](NARRATIVA.md))
 - [ ] Prólogo jugable con el padre: combate a caballo en el asedio, tutorial de batalla y derrota por guion (requiere caballo y combate base).
 - [ ] Estado del mundo persistente (decisiones y final elegido), integrado con el guardado.
+- [ ] Años de exilio visibles en el mundo; eventos en los que el culto toma prisioneros y rescates con relatos.
+- [ ] Afinidad u hostilidad por pueblo según la conducta del jugador.
+- [ ] Grandes guerreros: integrantes únicos con estados de integrante, enemigo, desertor o prisionero.
 - [ ] Tres finales (asedio, asesinato, exilio) que modifican facciones, PNJ, asentamientos, misiones y tesoros; juego libre después del final.
+
+## Interfaz (ver [ESTILO_VISUAL.md](ESTILO_VISUAL.md))
+- [x] Tema de orfebrería: paneles, barras, separadores y texto (`src/ui/theme.*`), aplicado al HUD y al aviso de teclado.
+- [ ] Fuente de mapa de bits propia, emblemas pixel art de bestias en combate y marcos calados para menús.
 
 ## Herramientas
 - **Assets 3D:** Kiln (`tools/assets/*.kiln.js`). Ver [tools/assets/README.md](../tools/assets/README.md).

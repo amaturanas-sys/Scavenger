@@ -50,7 +50,17 @@
 
 ## Acto III — *Scavengers Thrive*
 
-{NOMBRE} sobrevive con las sobras de un mundo hostil y abraza la filosofía **Scavengers Thrive**. El viaje cruza tres regiones y termina en una cuarta:
+{NOMBRE} sobrevive con las sobras de un mundo hostil y abraza la filosofía **Scavengers Thrive**.
+
+**El exilio dura años.** El mundo debe dejar ver que pasa el tiempo. **[propuesta]** Algunas señales posibles:
+- asentamientos que crecen, se fortifican o quedan en ruinas;
+- campos que se secan a medida que empeora el clima;
+- personajes que envejecen o cambian de bando;
+- el propio {NOMBRE}, con cicatrices, tatuajes y equipo cada vez más curtido.
+
+**El culto se deja ver antes de entenderse.** Durante esos años, el jugador presencia **en juego** cómo las fuerzas del medio-hermano **toman prisioneros para el sacrificio**. Puede encontrar y **rescatar a personas en apuros**. Los rescatados cuentan **relatos que aluden al culto**: fragmentos, rumores y miedos que anticipan lo que el acto IV revela por completo. **[propuesta]** Los rescatados pueden sumarse a la tropa, y así se convierten en parte del ejército de parias.
+
+El viaje cruza tres regiones y termina en una cuarta:
 
 | Región | Qué forja | Tono jugable |
 |---|---|---|
@@ -76,7 +86,7 @@ Estas huellas llevan a una **tumba congelada** parecida a los kurganes del Altá
 
 1. {NOMBRE} vuelve a la ciudad de su infancia con un **ejército de parias, exiliados y guerreros forjados en los cinco climas**: la estepa, el desierto, el bosque, la costa y el altiplano.
 2. Ante las murallas sitiadas y los campos marchitos llega el **dilema moral**: los campesinos y obreros no son el enemigo, sino prisioneros del mismo tirano.
-3. La ciudad esconde un secreto: el medio-hermano ha instaurado un **culto fanático** de **sacrificios humanos en masa**, y usa el terror supersticioso para controlar a una población hambrienta.
+3. La ciudad esconde un secreto que los relatos del exilio solo insinuaban: el medio-hermano ha instaurado un **culto fanático** de **sacrificios humanos en masa**, y usa el terror supersticioso para controlar a una población hambrienta. Como el jugador ya conoce el culto por esos relatos, el camino del asedio (1) es una decisión informada, no una ignorancia.
 4. **El jugador decide cómo termina la historia.** Ver [Finales](#finales).
 
 ## Finales
@@ -110,6 +120,27 @@ El final **no termina la partida**: el jugador sigue explorando, luchando y conq
 
 Estas reacciones aprovechan el sistema que ya existe: la moral de cada integrante depende de sus **rasgos** (compasivo, sanguinario, ambicioso, devoto, leal) y la relación con los reinos de sus **valores**.
 
+## Reputación y grandes guerreros
+
+**Afinidad con los pueblos del mundo.** Las **decisiones secundarias** y la **conducta** del jugador determinan el grado de hostilidad o afinidad entre la tribu del protagonista y las demás gentes del mundo. Pesan cosas como:
+- rescatar o abandonar a quien está en apuros;
+- el trato a los prisioneros (liberarlos, retenerlos o ejecutarlos);
+- saquear o respetar asentamientos;
+- cumplir o romper acuerdos.
+
+Esta afinidad se suma a las consecuencias del final elegido.
+
+**Grandes guerreros.** Hay personajes con estatus de **gran guerrero**: figuras únicas y con nombre. Según las dinámicas de moral de la tribu, cada uno puede ser:
+
+| Estado | Cómo se llega |
+|---|---|
+| **Integrante de la tribu** | Reclutado (o rescatado, o perdonado como prisionero) y con la moral y la lealtad suficientes. |
+| **Enemigo** | Sirve a otra facción, o la conducta del jugador lo enemistó. |
+| **Desertor** | Se fue por moral o lealtad bajas, como cualquier integrante, pero su pérdida pesa más. Puede reaparecer en otro bando. |
+| **Prisionero** | Capturado por la tribu, o por otros, y rescatable. |
+
+**[propuesta]** Los grandes guerreros tienen rasgos más marcados y arrastran a otros integrantes: si uno deserta o encabeza una rebelión, puede llevarse a sus afines. Esto aprovecha la rebelión que ya existe, en la que un ambicioso desleal la encabeza.
+
 ## Tema
 
 - **Resistencia frente a conquista.** El padre perdió una guerra de conquista; su verdadero legado es resistir. {NOMBRE} hereda la resistencia y debe rechazar la tentación de convertirse en otro conquistador.
@@ -128,7 +159,10 @@ Cómo encaja el argumento en lo que ya existe o está planeado (ver [GDD.md](GDD
 | Acto III: sobrevivir y reclutar | **Tropa** (`src/sim/troop.*`): los parias y exiliados que se suman en cada clima forman el ejército del acto IV. |
 | Desierto, bosque, costa, glaciar | **Biomas** (Fase 4), **monturas** (camello en el desierto) y **vehículos** (botes y veleros en los fiordos). |
 | Bosque de coníferas | Combate de **guerrilla**: emboscadas, sigilo y la IA de detección por ruido. |
-| Rastros del padre | Objetos coleccionables (arreos, mensajes) y **amuletos** de estilo animal. |
+| Años de exilio | Mundo que cambia con el tiempo; **eventos de captura** del culto y **rescates** con relatos. |
+| Conducta del jugador | **Afinidad** por pueblo o facción (hostil ↔ afín). |
+| Grandes guerreros | Integrantes únicos de la **tropa**, sujetos a moral, deserción, prisión y rebelión. |
+| Rastros del padre | Objetos coleccionables (arreos, mensajes) y **amuletos** de estilo animal, con la estética de [ESTILO_VISUAL.md](ESTILO_VISUAL.md). |
 | Espada ceremonial | Arma única; posible **tatuaje** o amuleto de legado que desbloquea nodos del árbol. |
 | Dilema del acto IV | **Política del campamento**: tomar prisioneros, liberarlos o ejecutarlos ya tiene peso en la moral. En el asalto final, atacar a civiles hunde la moral de los compasivos y puede provocar **deserciones o una rebelión**. |
 | Culto del medio-hermano | Las ejecuciones del jugador quedan en espejo con los sacrificios del culto. **[propuesta]** Si el jugador gobierna con terror, la tropa (y quizá el final) lo compara con su medio-hermano. |
@@ -141,8 +175,7 @@ Cómo encaja el argumento en lo que ya existe o está planeado (ver [GDD.md](GDD
 - **Destino de la madre.** El argumento no lo dice. ¿Sigue viva en el acto IV?
 - **Género del protagonista.** El texto usa "el protagonista". ¿El creador de personaje permite elegir el género? Afecta a los textos con concordancia.
 - **El culto.** ¿Tiene una deidad o un símbolo propio? Haría falta para la dirección de arte.
-- **Finales:** ¿qué pasa en el camino 1 con la revelación del culto? Sin infiltración, ¿el jugador lo descubre durante el asedio, después, o nunca?
-- **Finales:** ¿hay decisiones secundarias (además de las tres principales) que también cambien el mundo, como el trato a los prisioneros o las ejecuciones durante el viaje?
+- **Grandes guerreros:** ¿cuántos hay, y alguno está ligado a la historia (por ejemplo, un antiguo jinete del padre)?
 
 ## Fuentes
 

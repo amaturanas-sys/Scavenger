@@ -17,6 +17,7 @@
 #include "raymath.h"
 #include "sim/loadout.h"
 #include "sim/troop.h"
+#include "ui/theme.h"
 #include "world/camp.h"
 #include "world/terrain.h"
 
@@ -108,32 +109,40 @@ static void debug_camp_actions(Troop *t, Rng *rng, int *day, char *log, size_t l
     }
 }
 
-static void draw_bar(int x, int y, int w, float value, Color fill) {
-    DrawRectangle(x, y, w, 5, (Color){ 30, 26, 22, 200 });
-    DrawRectangle(x, y, (int)(w * Clamp(value / 100.0f, 0.0f, 1.0f)), 5, fill);
+static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day, const char *log) {
+    const int x = 4 + UI_PANEL_INSET, w = 256;
+    ui_panel((Rectangle){ 4, 4, w, 128 }, UI_METAL_GOLD);
+    ui_text("ESTEPA", x, 16, 10, UI_GOLD_LIGHT);
+    ui_text(TextFormat("v%s (build %d)", ESTEPA_VERSION, ESTEPA_BUILD_CODE), x + 48, 16, 10, UI_BONE_DIM);
+    ui_divider(x, 29, w - 2 * UI_PANEL_INSET, UI_METAL_GOLD);
+    ui_text(TextFormat("%s  |  %d fps", stance_name(p->stance), GetFPS()), x, 34, 10, UI_BONE);
+    ui_text(TextFormat("Dia %d  Tropa: %d  Prisioneros: %d", day, troop_count_with_status(t, STATUS_ACTIVE),
+                       troop_count_with_status(t, STATUS_PRISONER)), x, 46, 10, UI_BONE);
+    ui_text("Moral", x, 59, 10, UI_BONE);
+    ui_bar(x + 46, 60, 100, troop_avg_morale(t) / 100.0f, UI_TURQUOISE, UI_METAL_GOLD);
+    ui_text("Lealtad", x, 71, 10, UI_BONE);
+    ui_bar(x + 46, 72, 100, troop_avg_loyalty(t) / 100.0f, UI_LAPIS, UI_METAL_GOLD);
+    float rebellion = troop_rebellion_chance(t);
+    ui_text(TextFormat("Rebelion %d%%", (int)(rebellion * 100)), x + 152, 65, 10,
+            rebellion > 0.0f ? UI_CARNELIAN : UI_BONE_DIM);
+    ui_text(TextFormat("%s: %+d", k->name, (int)k->relation), x, 85, 10, UI_GOLD);
+    ui_divider(x, 99, w - 2 * UI_PANEL_INSET, UI_METAL_GOLD);
+    ui_text(log, x, 104, 10, UI_BONE);
+
+    ui_strip((Rectangle){ 0, VIRTUAL_H - 29, VIRTUAL_W, 29 }, UI_METAL_GOLD);
+    ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E o clic der. camara  Rueda zoom",
+            4, VIRTUAL_H - 21, 10, UI_BONE_DIM);
+    ui_text("1 reclutar  2 prisionero  3 ejecutar prisionero  4 ejecutar miembro  5 desterrar  6 botin  7 liberar  Enter: dia",
+            4, VIRTUAL_H - 11, 10, UI_BONE_DIM);
 }
 
-static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day, const char *log) {
-    DrawRectangle(4, 4, 214, 104, (Color){ 12, 10, 8, 170 });
-    DrawText(TextFormat("ESTEPA v%s (build %d)", ESTEPA_VERSION, ESTEPA_BUILD_CODE), 10, 9, 10, (Color){ 240, 220, 170, 255 });
-    DrawText(TextFormat("%s  |  %d fps", stance_name(p->stance), GetFPS()), 10, 22, 10, RAYWHITE);
-    DrawText(TextFormat("Dia %d  Tropa: %d  Prisioneros: %d", day, troop_count_with_status(t, STATUS_ACTIVE),
-                        troop_count_with_status(t, STATUS_PRISONER)), 10, 36, 10, RAYWHITE);
-    float morale = troop_avg_morale(t), loyalty = troop_avg_loyalty(t);
-    DrawText("Moral", 10, 50, 10, RAYWHITE);
-    draw_bar(62, 53, 100, morale, (Color){ 120, 190, 90, 255 });
-    DrawText("Lealtad", 10, 62, 10, RAYWHITE);
-    draw_bar(62, 65, 100, loyalty, (Color){ 90, 150, 210, 255 });
-    DrawText(TextFormat("Rebelion: %d%%", (int)(troop_rebellion_chance(t) * 100)), 168, 50, 10,
-             troop_rebellion_chance(t) > 0.0f ? (Color){ 240, 90, 70, 255 } : RAYWHITE);
-    DrawText(TextFormat("%s: %+d", k->name, (int)k->relation), 10, 76, 10, (Color){ 230, 200, 120, 255 });
-    DrawText(log, 10, 92, 10, (Color){ 250, 240, 200, 255 });
-
-    DrawRectangle(0, VIRTUAL_H - 26, VIRTUAL_W, 26, (Color){ 12, 10, 8, 170 });
-    DrawText("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E o clic der. camara  Rueda zoom",
-             4, VIRTUAL_H - 24, 10, (Color){ 210, 200, 180, 255 });
-    DrawText("1 reclutar  2 prisionero  3 ejecutar prisionero  4 ejecutar miembro  5 desterrar  6 botin  7 liberar  Enter: dia",
-             4, VIRTUAL_H - 12, 10, (Color){ 210, 200, 180, 255 });
+static void draw_keyboard_notice(void) {
+    DrawRectangle(0, 0, VIRTUAL_W, VIRTUAL_H, (Color){ 8, 6, 5, 200 });
+    const int w = 400, h = 76;
+    ui_panel((Rectangle){ (VIRTUAL_W - w) / 2, (VIRTUAL_H - h) / 2, w, h }, UI_METAL_GOLD);
+    ui_text_centered("Conecta un teclado para jugar", VIRTUAL_W / 2, VIRTUAL_H / 2 - 18, 20, UI_GOLD_LIGHT);
+    ui_text_centered("Estepa se juega con teclado fisico (raton o mando opcionales).", VIRTUAL_W / 2,
+                     VIRTUAL_H / 2 + 8, 10, UI_BONE);
 }
 
 int main(int argc, char **argv) {
@@ -200,13 +209,7 @@ int main(int argc, char **argv) {
         player_draw(&player);
         EndMode3D();
         draw_hud(&player, &troop, &overlord, day, log);
-        if (!has_keyboard) {
-            DrawRectangle(0, 0, VIRTUAL_W, VIRTUAL_H, (Color){ 0, 0, 0, 190 });
-            const char *msg = "Conecta un teclado para jugar";
-            DrawText(msg, (VIRTUAL_W - MeasureText(msg, 20)) / 2, VIRTUAL_H / 2 - 16, 20, (Color){ 240, 220, 170, 255 });
-            const char *sub = "Estepa se juega con teclado fisico (raton o mando opcionales).";
-            DrawText(sub, (VIRTUAL_W - MeasureText(sub, 10)) / 2, VIRTUAL_H / 2 + 12, 10, RAYWHITE);
-        }
+        if (!has_keyboard) draw_keyboard_notice();
         EndTextureMode();
 
         // Escala a la ventana conservando la proporcion (con bandas si hace falta).

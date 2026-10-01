@@ -31,6 +31,9 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 - **Rebelión:** riesgo de tropa cuando la moral media cae bajo 45; los ambiciosos desleales lo agravan y uno de ellos encabeza la revuelta.
 - Simulación determinista (misma semilla ⇒ mismo resultado), cubierta por tests.
 
+- **Grandes guerreros:** personajes únicos que pueden ser integrantes, enemigos, desertores o prisioneros según la moral de la tribu (ver [NARRATIVA.md](NARRATIVA.md#reputación-y-grandes-guerreros)).
+- **Afinidad con los pueblos del mundo:** las decisiones secundarias y la conducta del jugador mueven la hostilidad o afinidad de cada pueblo hacia la tribu.
+
 **Pendiente de definir:** consecuencias jugables de una rebelión (duelo por el liderazgo, escisión de la tropa), cómo se ganan nuevos reclutas en el mundo, economía del tributo.
 
 ### 2. Personaje y equipo (núcleo implementado — `src/sim/loadout.*`)
@@ -63,6 +66,7 @@ Historia principal con protagonista de **nombre elegido por el jugador**: hijo d
 ## Dirección de arte
 - 3D low-poly con sombreado plano, renderizado a 640×360 y escalado sin suavizado.
 - Paleta terrosa de estepa; acentos saturados en objetos importantes (puertas de las yurtas, fuego, estandartes).
+- **Interfaz:** orfebrería de estilo animal (placas de oro y plata, granulado, turquesa, cuero). Ver [ESTILO_VISUAL.md](ESTILO_VISUAL.md).
 - Los modelos se generan por código con **Kiln** (`tools/assets/*.kiln.js` → GLB). Ver [ROADMAP.md](ROADMAP.md).
 
 ## Preguntas abiertas

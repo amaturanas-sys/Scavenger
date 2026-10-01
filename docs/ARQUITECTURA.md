@@ -20,6 +20,8 @@ src/
     camp.*       campamento, props
   game/     Jugador e input
     player.*
+  ui/       Interfaz (raylib)
+    theme.*      tema de orfebreria: paneles, barras, texto
   main.c    Bucle principal, render low-res, HUD
 tests/      Tests del nucleo (arnes propio, sin dependencias)
 assets/     Assets de runtime (GLB, texturas, audio)
