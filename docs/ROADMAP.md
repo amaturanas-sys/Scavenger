@@ -44,6 +44,11 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [ ] Biomas, asentamientos, tributo y diplomacia entre reinos.
 - [ ] Ciclo día/noche y clima.
 
+## Narrativa (ver [NARRATIVA.md](NARRATIVA.md))
+- [ ] Prólogo jugable con el padre: combate a caballo en el asedio, tutorial de batalla y derrota por guion (requiere caballo y combate base).
+- [ ] Estado del mundo persistente (decisiones y final elegido), integrado con el guardado.
+- [ ] Tres finales (asedio, asesinato, exilio) que modifican facciones, PNJ, asentamientos, misiones y tesoros; juego libre después del final.
+
 ## Herramientas
 - **Assets 3D:** Kiln (`tools/assets/*.kiln.js`). Ver [tools/assets/README.md](../tools/assets/README.md).
 - **Optimización:** Ghidra sobre nuestros propios builds. Ver [GHIDRA.md](GHIDRA.md).

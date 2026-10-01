@@ -23,12 +23,20 @@
 
 **[propuesta] Títulos de la estepa.** Al padre se le llamaría *kan* (o *kagan*, si encabezaba una confederación), y a la madre *katun* antes de su captura. Si los herederos de la confederación fueran prisioneros, sus nombres en la estepa quedarían prohibidos dentro de las murallas.
 
-## Acto I — La masacre (prólogo)
+## Acto I — La masacre (prólogo jugable)
+
+**El jugador controla al padre.** El juego empieza desde su perspectiva, para crear un vínculo emocional con él antes de que desaparezca. Ese vínculo es lo que da peso a la búsqueda de su rastro en el acto III.
 
 1. Durante generaciones, el pueblo nómade prosperó con el pastoreo móvil, en armonía con la ecología de la estepa central.
 2. Una comunidad sedentaria vecina, de capacidades industriales y agrícolas primitivas pero implacables, presiona cada vez más hasta que llega la **masacre**.
-3. El padre, jefe de la confederación, es aplastado por el acero y la maquinaria de asedio. Pierde rebaños, pastos y honor. Escapa de milagro y **desaparece en el exilio**.
-4. El líder invasor reclama el territorio y toma a la madre como **concubina**. De esa unión forzada nace el **medio-hermano**, que acabará siendo el verdugo de su propio linaje.
+3. **Asedio al campamento nómade.** El padre combate **a caballo**, en medio del asedio, y ahí el jugador recibe el **primer tutorial de movimientos de batalla**.
+4. **Derrota inevitable.** No importa cuántos enemigos neutralice el jugador: el acto termina siempre con el jefe aplastado por el acero y la maquinaria de asedio. Pierde rebaños, pastos y honor, escapa de milagro y **desaparece en el exilio**.
+5. El líder invasor reclama el territorio y toma a la madre como **concubina**. De esa unión forzada nace el **medio-hermano**, que acabará siendo el verdugo de su propio linaje.
+
+**Notas de diseño:**
+- El combate del prólogo no puede "ganarse": la derrota es un evento de guion que se dispara por tiempo o por fase del asedio, no al quedarse sin vida. Morir antes de ese momento reinicia el combate, no termina el prólogo.
+- **[propuesta]** El creador de personaje (nombre, aspecto) aparece al terminar el prólogo, cuando el juego salta a {NOMBRE} en el acto II.
+- **[propuesta]** Lo que el jugador haga con el padre puede dejar huella: por ejemplo, los enemigos que neutralice o los aliados que salve reaparecen como restos, rumores o sobrevivientes en el acto III.
 
 ## Acto II — La traición
 
@@ -68,10 +76,39 @@ Estas huellas llevan a una **tumba congelada** parecida a los kurganes del Altá
 
 1. {NOMBRE} vuelve a la ciudad de su infancia con un **ejército de parias, exiliados y guerreros forjados en los cinco climas**: la estepa, el desierto, el bosque, la costa y el altiplano.
 2. Ante las murallas sitiadas y los campos marchitos llega el **dilema moral**: los campesinos y obreros no son el enemigo, sino prisioneros del mismo tirano.
-3. Al **infiltrarse** en la ciudad descubre el secreto que sostiene al imperio: el medio-hermano ha instaurado un **culto fanático** de **sacrificios humanos en masa**, y usa el terror supersticioso para controlar a una población hambrienta.
-4. La revelación disipa cualquier deseo de castigo ciego.
-5. Con la espada recuperada del hielo, {NOMBRE} lidera el **asalto final**. El objetivo no es arrasar la ciudad, sino **desmantelar el altar** del medio-hermano y liberar a la vez a los cautivos de la estepa y a los oprimidos de la ciudad.
-6. **Desenlace:** un amanecer de **redención frágil, pero auténtica**.
+3. La ciudad esconde un secreto: el medio-hermano ha instaurado un **culto fanático** de **sacrificios humanos en masa**, y usa el terror supersticioso para controlar a una población hambrienta.
+4. **El jugador decide cómo termina la historia.** Ver [Finales](#finales).
+
+## Finales
+
+El final depende de las decisiones del jugador, sobre todo de cómo enfrenta al medio-hermano. Hay tres caminos:
+
+| # | Decisión | Qué implica |
+|---|---|---|
+| 1 | **Asediar el reino sin medir consecuencias** | Asalto frontal con el ejército. La venganza se impone al dilema moral: campesinos y obreros pagan el precio junto al tirano. |
+| 2 | **Infiltrarse y asesinar al medio-hermano** | {NOMBRE} entra en la ciudad, descubre el culto y lo descabeza. Fin del tirano por la espada. |
+| 3 | **Infiltrarse y exiliar al medio-hermano** | {NOMBRE} entra en la ciudad, descubre el culto y lo desmantela, pero perdona la vida a su medio-hermano y lo destierra, como su padre fue desterrado. |
+
+**El desenlace de THRIVE** (desmantelar el altar, liberar a la vez a los cautivos de la estepa y a los oprimidos de la ciudad, en una redención frágil pero auténtica) es el más cercano a los caminos de infiltración, 2 y 3.
+
+### El mundo después del final
+
+El final **no termina la partida**: el jugador sigue explorando, luchando y conquistando en un mundo que cambia según el camino elegido. Lo que cambia:
+- **Estructuras vigentes:** quién gobierna la ciudad y los territorios, qué asentamientos quedan en pie, si el culto desaparece o sobrevive.
+- **Alianzas y hostilidades:** la relación de cada facción y PNJ con el jugador (campesinos, restos del culto, pueblos de la estepa, tropa).
+- **Misiones secundarias y tesoros:** aparecen o desaparecen según el final.
+
+**[propuesta] Consecuencias de cada camino** (orientativas, pendientes de tu definición):
+
+| | 1. Asedio | 2. Asesinato | 3. Exilio |
+|---|---|---|---|
+| Ciudad | En ruinas o saqueada; el jugador la gobierna por la fuerza. | En pie; vacío de poder que alguien debe llenar. | En pie y liberada; el jugador ayuda a reconstruirla. |
+| Población sedentaria | Hostil. Surgen focos de resistencia contra el jugador. | Recelosa; se divide entre gratitud y miedo. | Aliada en su mayoría. |
+| Culto | Sus fieles huyen y se dispersan; reaparecen como enemigos por el mundo. | Sin líder, sus restos buscan un sucesor. | Disuelto, pero el medio-hermano vive en el exilio y es una amenaza latente. |
+| Tropa | Los sanguinarios celebran; los compasivos desertan. | Reacción dividida según los rasgos. | Los compasivos y devotos ganan moral; los ambiciosos lo ven como debilidad. |
+| Contenido nuevo | Misiones de represión o de contener rebeliones; botín de guerra. | Misiones de sucesión y de intriga. | Misiones de reconstrucción; posible misión para encontrar al medio-hermano en el exilio. |
+
+Estas reacciones aprovechan el sistema que ya existe: la moral de cada integrante depende de sus **rasgos** (compasivo, sanguinario, ambicioso, devoto, leal) y la relación con los reinos de sus **valores**.
 
 ## Tema
 
@@ -86,6 +123,7 @@ Cómo encaja el argumento en lo que ya existe o está planeado (ver [GDD.md](GDD
 
 | Momento | Sistema |
 |---|---|
+| Prólogo con el padre (acto I) | **Monturas** (caballo) y **combate** montado: primer tutorial de batalla. Derrota por guion, no por vida. |
 | Huida del acto II | Movimiento: correr, acechar, trepar, esconderse. Sin tropa. |
 | Acto III: sobrevivir y reclutar | **Tropa** (`src/sim/troop.*`): los parias y exiliados que se suman en cada clima forman el ejército del acto IV. |
 | Desierto, bosque, costa, glaciar | **Biomas** (Fase 4), **monturas** (camello en el desierto) y **vehículos** (botes y veleros en los fiordos). |
@@ -94,7 +132,7 @@ Cómo encaja el argumento en lo que ya existe o está planeado (ver [GDD.md](GDD
 | Espada ceremonial | Arma única; posible **tatuaje** o amuleto de legado que desbloquea nodos del árbol. |
 | Dilema del acto IV | **Política del campamento**: tomar prisioneros, liberarlos o ejecutarlos ya tiene peso en la moral. En el asalto final, atacar a civiles hunde la moral de los compasivos y puede provocar **deserciones o una rebelión**. |
 | Culto del medio-hermano | Las ejecuciones del jugador quedan en espejo con los sacrificios del culto. **[propuesta]** Si el jugador gobierna con terror, la tropa (y quizá el final) lo compara con su medio-hermano. |
-| Redención frágil | **[propuesta]** El tono del desenlace refleja la moral y la lealtad finales de la tropa, sin contradecir el final canónico. |
+| Finales | Un **estado del mundo** que guarda el camino elegido y modifica facciones, PNJ, asentamientos, misiones y tesoros. El juego continúa después del final. |
 
 ## Preguntas abiertas para el autor
 
@@ -103,7 +141,8 @@ Cómo encaja el argumento en lo que ya existe o está planeado (ver [GDD.md](GDD
 - **Destino de la madre.** El argumento no lo dice. ¿Sigue viva en el acto IV?
 - **Género del protagonista.** El texto usa "el protagonista". ¿El creador de personaje permite elegir el género? Afecta a los textos con concordancia.
 - **El culto.** ¿Tiene una deidad o un símbolo propio? Haría falta para la dirección de arte.
-- **¿Un solo final** o variaciones según las decisiones del jugador?
+- **Finales:** ¿qué pasa en el camino 1 con la revelación del culto? Sin infiltración, ¿el jugador lo descubre durante el asedio, después, o nunca?
+- **Finales:** ¿hay decisiones secundarias (además de las tres principales) que también cambien el mundo, como el trato a los prisioneros o las ejecuciones durante el viaje?
 
 ## Fuentes
 
