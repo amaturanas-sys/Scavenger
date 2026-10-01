@@ -18,8 +18,17 @@ ABI=arm64-v8a
 [ -d "$SDK" ] || { echo "Falta el Android SDK (ANDROID_SDK_ROOT)." >&2; exit 1; }
 [ -d "$NDK" ] || { echo "Falta el Android NDK (ANDROID_NDK_ROOT)." >&2; exit 1; }
 
-# Usa la plataforma y las build-tools mas recientes instaladas.
-PLATFORM_DIR="$(ls -d "$SDK"/platforms/android-* | sort -V | tail -1)"
+# Usa la plataforma ESTABLE mas reciente (las preliminares declaran un
+# CodeName en source.properties): una app que apunta a una version preliminar
+# no se puede instalar en dispositivos normales.
+PLATFORM_DIR=""
+for d in $(ls -d "$SDK"/platforms/android-* | sort -V); do
+  if ! grep -q "AndroidVersion.CodeName" "$d/source.properties" 2>/dev/null \
+     && [[ "${d##*-}" =~ ^[0-9]+$ ]]; then
+    PLATFORM_DIR="$d"
+  fi
+done
+[ -n "$PLATFORM_DIR" ] || { echo "No hay una plataforma Android estable instalada." >&2; exit 1; }
 BUILD_TOOLS="$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)"
 TARGET_API="${PLATFORM_DIR##*-}"
 echo "SDK: plataforma $TARGET_API, build-tools $(basename "$BUILD_TOOLS"), NDK $(basename "$NDK")"
