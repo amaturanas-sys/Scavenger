@@ -4,13 +4,15 @@
 // se escala sin suavizado: es el look pixel/low-res y, a la vez, la mayor
 // optimizacion de rendimiento en moviles (9 veces menos pixeles que 1080p).
 //
-// Uso de escritorio:  estepa [--screenshot salida.png] [--frames N]
+// Uso de escritorio:  estepa [--screenshot salida.png] [--frames N] [--sin-teclado]
+// --sin-teclado simula un dispositivo Android sin teclado (prueba del aviso).
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "game/player.h"
+#include "platform.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "sim/loadout.h"
@@ -25,14 +27,6 @@
 typedef struct {
     float yaw, pitch, dist;
 } CameraRig;
-
-static const char *asset_path(const char *rel) {
-#if defined(PLATFORM_ANDROID)
-    return rel; // raylib lee los assets empaquetados en el APK
-#else
-    return TextFormat("%s%s", GetApplicationDirectory(), rel);
-#endif
-}
 
 static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, float dt) {
     // Orbita: Q/E o arrastre con boton derecho; rueda para el zoom.
@@ -138,13 +132,19 @@ static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day,
 int main(int argc, char **argv) {
     const char *shot_path = NULL;
     int shot_frames = 90;
+    bool simulate_no_keyboard = false;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) shot_path = argv[++i];
         else if (!strcmp(argv[i], "--frames") && i + 1 < argc) shot_frames = atoi(argv[++i]);
+        else if (!strcmp(argv[i], "--sin-teclado")) simulate_no_keyboard = true;
     }
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+#if defined(__ANDROID__)
+    InitWindow(0, 0, "Estepa"); // pantalla completa del dispositivo
+#else
     InitWindow(VIRTUAL_W * 2, VIRTUAL_H * 2, "Estepa");
+#endif
     SetTargetFPS(60);
 
     RenderTexture2D lowres = LoadRenderTexture(VIRTUAL_W, VIRTUAL_H);
@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
     Terrain terrain;
     terrain_init(&terrain, WORLD_SEED);
     Camp camp;
-    camp_init(&camp, &terrain, asset_path("assets/models/yurt.glb"));
+    camp_init(&camp, &terrain, platform_asset_path("assets/models/yurt.glb"));
     Player player;
     player_init(&player, &terrain);
 
@@ -171,13 +171,19 @@ int main(int argc, char **argv) {
     CameraRig rig = { .yaw = PI, .pitch = 0.38f, .dist = 11.0f };
 
     int frame = 0;
+    bool has_keyboard = platform_has_keyboard() && !simulate_no_keyboard;
     while (!WindowShouldClose()) {
         float dt = fminf(GetFrameTime(), 0.05f);
-        PlayerInput in = player_read_input();
-        player_update(&player, &terrain, in, rig.yaw, dt);
+        if (frame % 30 == 0) has_keyboard = platform_has_keyboard() && !simulate_no_keyboard; // conexion en caliente
+        frame++;
+        // Sin teclado el juego queda en pausa (Android: tablets sin teclado conectado).
+        if (has_keyboard) {
+            PlayerInput in = player_read_input();
+            player_update(&player, &terrain, in, rig.yaw, dt);
+            debug_camp_actions(&troop, &rng, &day, log, sizeof(log));
+        }
         camera_update(&rig, &cam, &player, dt);
         terrain_update(&terrain, player.pos);
-        debug_camp_actions(&troop, &rng, &day, log, sizeof(log));
 
         BeginTextureMode(lowres);
         ClearBackground((Color){ 168, 196, 214, 255 }); // cielo de estepa
@@ -187,6 +193,13 @@ int main(int argc, char **argv) {
         player_draw(&player);
         EndMode3D();
         draw_hud(&player, &troop, &overlord, day, log);
+        if (!has_keyboard) {
+            DrawRectangle(0, 0, VIRTUAL_W, VIRTUAL_H, (Color){ 0, 0, 0, 190 });
+            const char *msg = "Conecta un teclado para jugar";
+            DrawText(msg, (VIRTUAL_W - MeasureText(msg, 20)) / 2, VIRTUAL_H / 2 - 16, 20, (Color){ 240, 220, 170, 255 });
+            const char *sub = "Estepa se juega con teclado fisico (raton o mando opcionales).";
+            DrawText(sub, (VIRTUAL_W - MeasureText(sub, 10)) / 2, VIRTUAL_H / 2 + 12, 10, RAYWHITE);
+        }
         EndTextureMode();
 
         // Escala a la ventana conservando la proporcion (con bandas si hace falta).
@@ -199,7 +212,7 @@ int main(int argc, char **argv) {
         DrawTexturePro(lowres.texture, src, dst, (Vector2){ 0, 0 }, 0.0f, WHITE);
         EndDrawing();
 
-        if (shot_path && ++frame >= shot_frames) {
+        if (shot_path && frame >= shot_frames) {
             Image img = LoadImageFromTexture(lowres.texture);
             ImageFlipVertical(&img);
             ExportImage(img, shot_path);

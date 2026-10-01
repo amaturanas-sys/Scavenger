@@ -34,6 +34,10 @@ endif()
 
 if(ESTEPA_BUILD_GAME)
   include(FetchContent)
+  if(ANDROID)
+    # Con la toolchain del NDK: raylib para Android (OpenGL ES 2).
+    set(PLATFORM "Android" CACHE STRING "" FORCE)
+  endif()
   set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
   set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
   FetchContent_Declare(raylib
@@ -42,16 +46,27 @@ if(ESTEPA_BUILD_GAME)
     GIT_SHALLOW TRUE)
   FetchContent_MakeAvailable(raylib)
 
-  add_executable(estepa
+  set(ESTEPA_GAME_SOURCES
     src/main.c
+    src/platform.c
     src/game/player.c
     src/world/terrain.c
     src/world/camp.c)
+
+  if(ANDROID)
+    # Android: biblioteca compartida que carga NativeActivity (libestepa.so).
+    # tools/android/build_apk.sh la empaqueta con los assets en el APK.
+    add_library(estepa SHARED ${ESTEPA_GAME_SOURCES})
+    target_include_directories(estepa PRIVATE ${ANDROID_NDK}/sources/android/native_app_glue)
+    # Mantiene el punto de entrada que busca NativeActivity.
+    target_link_options(estepa PRIVATE -u ANativeActivity_onCreate)
+  else()
+    add_executable(estepa ${ESTEPA_GAME_SOURCES})
+    # Copia los assets junto al ejecutable.
+    add_custom_command(TARGET estepa POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:estepa>/assets)
+  endif()
   target_link_libraries(estepa PRIVATE estepa_sim raylib)
   target_compile_options(estepa PRIVATE ${ESTEPA_WARNINGS})
-
-  # Copia los assets junto al ejecutable.
-  add_custom_command(TARGET estepa POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:estepa>/assets)
 endif()

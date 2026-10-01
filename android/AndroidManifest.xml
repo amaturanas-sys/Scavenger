@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ESTEPA para Android: la misma experiencia de PC, con teclado fisico
+  (tablets, Chromebooks). Sin controles tactiles.
+
+  No se usa <uses-configuration android:reqHardKeyboard="true">: ese filtro de
+  Google Play excluye a las tablets sin teclado integrado aunque el usuario
+  conecte uno por Bluetooth. En su lugar, el juego detecta el teclado en vivo
+  y se pausa con un aviso si no hay ninguno.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.amaturanas.estepa"
+    android:versionCode="1"
+    android:versionName="0.1.0">
+
+    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+    <!-- No exige pantalla tactil: habilita Chromebooks y equipos tipo PC. -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <application
+        android:label="Estepa"
+        android:hasCode="false"
+        android:extractNativeLibs="true"
+        android:isGame="true"
+        android:appCategory="game">
+        <activity
+            android:name="android.app.NativeActivity"
+            android:exported="true"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|density"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+            <meta-data android:name="android.app.lib_name" android:value="estepa" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
