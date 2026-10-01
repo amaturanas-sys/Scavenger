@@ -41,6 +41,9 @@ void ui_strip(Rectangle r, UiMetal metal);
 void ui_bar(int x, int y, int w, float value01, Color inlay, UiMetal metal);
 // Filete de granulado horizontal, para separar secciones.
 void ui_divider(int x, int y, int w, UiMetal metal);
+// Piezas sueltas: granulo de metal (2x2) y turquesa engastada (3x3, esquina en x, y).
+void ui_granule(int x, int y, UiMetal metal);
+void ui_inlay(int x, int y, UiMetal metal);
 // Texto con sombra de grabado.
 void ui_text(const char *text, int x, int y, int size, Color color);
 void ui_text_centered(const char *text, int cx, int y, int size, Color color);

@@ -27,7 +27,8 @@ endif()
 add_library(estepa_sim STATIC
   src/sim/noise.c
   src/sim/troop.c
-  src/sim/loadout.c)
+  src/sim/loadout.c
+  src/sim/memory_map.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)
@@ -61,6 +62,7 @@ if(ESTEPA_BUILD_GAME)
     src/platform.c
     src/game/player.c
     src/ui/theme.c
+    src/ui/minimap.c
     src/world/terrain.c
     src/world/camp.c)
 

@@ -41,6 +41,7 @@ Definida en `src/ui/theme.h`.
 | `ui_strip` | Franja de cuero con un filete de metal y gránulos arriba (barra de ayuda inferior). | Imágenes 1 y 4 |
 | `ui_bar` | Barra con marco de metal e incrustación **tabicada** (cloisonné): el relleno se ve como piezas de turquesa engastadas. | Imagen 1 |
 | `ui_divider` | Línea de granulado con turquesas al centro. | Imagen 1 |
+| Minimapa (`src/ui/minimap.c`) | Aro de oro con granulado y turquesas; dentro, lo recordado va del negro al cuero y al hueso, como tinta sobre piel. "N" en cornalina sobre terciopelo. | Imágenes 1 y 4 |
 | `ui_text` | Texto en color hueso con sombra de grabado. | — |
 
 Todo se dibuja con primitivas, sin texturas que cargar: es barato en Android y queda nítido al escalar.

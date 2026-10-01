@@ -15,6 +15,7 @@ src/
     noise.*      ruido de valor + fBm (terreno)
     troop.*      tropa, moral, politica, reinos
     loadout.*    amuletos, tatuajes, arbol de habilidades
+    memory_map.* mapa de memoria: exploracion, olvido, marcas
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
     camp.*       campamento, props
@@ -22,6 +23,7 @@ src/
     player.*
   ui/       Interfaz (raylib)
     theme.*      tema de orfebreria: paneles, barras, texto
+    minimap.*    minimapa circular tipo brujula
   main.c    Bucle principal, render low-res, HUD
 tests/      Tests del nucleo (arnes propio, sin dependencias)
 assets/     Assets de runtime (GLB, texturas, audio)
