@@ -1,0 +1,125 @@
+// Tropa guerrillera: integrantes, funciones delegadas, prisioneros, moral y
+// politica con el reino del que el jugador es tributario.
+//
+// Eje de diseno: lo que el jugador hace en su campamento mueve la moral de la
+// tropa (riesgo de desercion y rebelion) y la relacion con su reino.
+// Todo es logica pura (sin raylib) para poder testearla sin pantalla.
+#ifndef ESTEPA_TROOP_H
+#define ESTEPA_TROOP_H
+
+#include <stdbool.h>
+
+#include "rng.h"
+
+#define TROOP_MAX 64
+#define NAME_LEN 32
+
+typedef enum {
+    STATUS_ACTIVE,
+    STATUS_PRISONER,
+    STATUS_BANISHED,
+    STATUS_EXECUTED,
+    STATUS_DESERTED,
+} MemberStatus;
+
+// Funciones que el lider puede delegar en sus subordinados.
+typedef enum {
+    ROLE_NONE,
+    ROLE_SCOUT,      // explorador
+    ROLE_HUNTER,     // cazador
+    ROLE_COOK,       // cocinero
+    ROLE_SMITH,      // herrero
+    ROLE_GUARD,      // guardia del campamento
+    ROLE_HEALER,     // curandero
+    ROLE_LIEUTENANT, // lugarteniente
+    ROLE_COUNT
+} Role;
+
+// Rasgos (combinables como banderas): modulan como cada integrante vive
+// las decisiones del lider.
+typedef enum {
+    TRAIT_MERCIFUL = 1 << 0,     // compasivo: rechaza las ejecuciones
+    TRAIT_BLOODTHIRSTY = 1 << 1, // sanguinario: las celebra
+    TRAIT_AMBITIOUS = 1 << 2,    // ambicioso: candidato a liderar una rebelion
+    TRAIT_DEVOUT = 1 << 3,       // devoto: valora el trato a los cautivos
+    TRAIT_LOYALIST = 1 << 4,     // leal a sus camaradas
+} Trait;
+
+// Acciones del campamento con consecuencias politicas.
+typedef enum {
+    ACT_RECRUIT,
+    ACT_TAKE_PRISONER,
+    ACT_RELEASE_PRISONER,
+    ACT_BANISH,
+    ACT_EXECUTE_MEMBER,
+    ACT_EXECUTE_PRISONER,
+    ACT_SHARE_LOOT,
+    ACT_COUNT
+} CampAction;
+
+typedef struct {
+    int id;
+    char name[NAME_LEN];
+    Role role;
+    MemberStatus status;
+    unsigned traits;
+    float morale;  // 0..100
+    float loyalty; // 0..100, hacia el lider
+} Member;
+
+// Reino al que la tropa rinde tributo. `stance` dice cuanto sube o baja la
+// relacion con cada accion: un reino de mano dura aplaude las ejecuciones,
+// uno piadoso las castiga.
+typedef struct {
+    char name[NAME_LEN];
+    float relation; // -100..100
+    float stance[ACT_COUNT];
+} Kingdom;
+
+typedef struct {
+    Member members[TROOP_MAX];
+    int count;
+    int next_id;
+    Kingdom *overlord; // puede ser NULL (tropa independiente)
+} Troop;
+
+typedef struct {
+    int deserted;        // cuantos desertaron hoy
+    bool rebellion;      // estallo una rebelion
+    int rebellion_leader; // id del instigador, o -1
+} DayReport;
+
+void troop_init(Troop *t, Kingdom *overlord);
+
+// Devuelven el id del nuevo integrante, o -1 si la tropa esta llena.
+int troop_recruit(Troop *t, const char *name, unsigned traits);
+int troop_take_prisoner(Troop *t, const char *name, unsigned traits);
+
+Member *troop_find(Troop *t, int id);
+
+// Solo los integrantes activos pueden recibir funciones.
+bool troop_assign_role(Troop *t, int id, Role role);
+bool troop_banish(Troop *t, int id);
+bool troop_execute(Troop *t, int id); // integrante activo o prisionero
+bool troop_release_prisoner(Troop *t, int id);
+void troop_share_loot(Troop *t);
+
+int troop_count_with_status(const Troop *t, MemberStatus status);
+float troop_avg_morale(const Troop *t);
+float troop_avg_loyalty(const Troop *t);
+
+// Probabilidades diarias, en [0, 1].
+float troop_desertion_chance(const Member *m);
+float troop_rebellion_chance(const Troop *t);
+
+// Avanza un dia: tira deserciones y rebelion con el RNG dado.
+DayReport troop_process_day(Troop *t, Rng *rng);
+
+// Reinos de ejemplo con valores opuestos.
+void kingdom_init_iron_khanate(Kingdom *k);  // mano dura
+void kingdom_init_jade_dynasty(Kingdom *k);  // piadoso y ordenado
+
+const char *role_name(Role r);
+const char *status_name(MemberStatus s);
+
+#endif

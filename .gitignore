@@ -1,0 +1,18 @@
+# Compilacion
+build/
+build-*/
+out/
+*.o
+*.obj
+*.exe
+*.apk
+*.aab
+
+# Herramientas / editores
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Kiln: estado local del workspace de assets
+tools/assets/.kiln/

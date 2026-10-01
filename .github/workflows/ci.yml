@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  linux:
+    name: Linux (tests + build + captura)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencias
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+            libxi-dev libgl1-mesa-dev libgl1-mesa-dri xvfb ninja-build
+      - name: Configurar
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Compilar
+        run: cmake --build build
+      - name: Tests del nucleo
+        run: ctest --test-dir build --output-on-failure
+      - name: Captura del render (Xvfb, OpenGL por software)
+        run: |
+          cd build
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" \
+            ./estepa --screenshot captura.png --frames 60
+          test -s captura.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: estepa-linux
+          path: |
+            build/estepa
+            build/assets
+            build/captura.png
+
+  windows:
+    name: Windows (tests + build)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurar
+        run: cmake -S . -B build
+      - name: Compilar
+        run: cmake --build build --config Release
+      - name: Tests del nucleo
+        run: ctest --test-dir build -C Release --output-on-failure
+      - uses: actions/upload-artifact@v4
+        with:
+          name: estepa-windows
+          path: |
+            build/Release/estepa.exe
+            build/Release/assets
