@@ -6,16 +6,19 @@
 
 #include "raymath.h"
 #include "rlgl.h"
+#include "sim/clock.h"
 #include "ui/theme.h"
 
-// Equipo de prueba del jugador (Fase 0): todo lo necesario para probar las acciones.
+// Equipo de prueba del jugador (Fase 0): herramientas y armas para probar las acciones.
+// Lo forjado en los hornos se suma a traves del acopio.
 static const char *KIT[] = {
     "arma.corta.sable",          "arma.corta.daga",         "escudo.mano.mimbre",    "escudo.mano.cuero",
     "arma.larga.guja",           "arma.larga.lanza",        "arma.distancia.arco_compuesto",
     "utileria.objeto.antorcha",  "arma.distancia.lazo",     "utileria.herramienta.gancho_trepa",
     "utileria.herramienta.pala", "accesorio.arreo.silla_montar",
 };
-// Empunaduras que recorre "cambiar empunadura" (X): derecha, izquierda.
+// Empunaduras que recorre "cambiar empunadura" (X): derecha, izquierda. El sable
+// se sustituye por el mejor que haya en el acopio (acero > bronce > comun).
 static const char *PRESETS[][2] = {
     { "arma.corta.sable", "escudo.mano.mimbre" },        // arma y escudo
     { "arma.corta.sable", "arma.corta.daga" },           // una en cada mano
@@ -25,19 +28,33 @@ static const char *PRESETS[][2] = {
     { NULL, NULL },                                      // desarmado
 };
 #define PRESET_COUNT ((int)(sizeof(PRESETS) / sizeof(PRESETS[0])))
-#define REACH 2.2f        // m: alcance para tomar objetos
-#define TARGET_RANGE 14.0f // m: alcance de la trepa y el lazo
-#define HELP_RANGE 8.0f   // m: el jugador ayuda en una obra si esta cerca
+#define REACH 2.2f          // m: alcance para tomar objetos
+#define TARGET_RANGE 14.0f  // m: alcance de la trepa y el lazo
+#define SADDLE_RANGE 4.0f   // m: para ensillar o montar
+#define HELP_RANGE 8.0f     // m: el jugador ayuda en una obra si esta cerca
+#define AT_SITE 2.6f        // m: un NPC ya esta en la obra
+#define NPC_SPEED 2.6f      // m/s
+#define CAMP_RADIUS 45.0f   // m: lo construido dentro de este radio cuenta para el campamento
+#define MENU_ROWS 21        // filas visibles del menu (se desplaza)
 
-static bool has_item(const char *id) {
-    for (size_t i = 0; i < sizeof(KIT) / sizeof(KIT[0]); i++)
-        if (!strcmp(KIT[i], id)) return true;
-    return false;
-}
+static const int CAMP_YURTS = 5; // las yurtas del campamento inicial (world/camp.c)
 
+// ---------------------------------------------------------------- utilidades
 static const char *item_name(const GameActions *ga, const char *id) {
     const InvItem *it = inventory_find(ga->inv, id);
     return it ? it->name : id;
+}
+
+static bool has_item(const GameActions *ga, const char *id) {
+    for (size_t i = 0; i < sizeof(KIT) / sizeof(KIT[0]); i++)
+        if (!strcmp(KIT[i], id)) return true;
+    return stock_count(&ga->stock, id) > 0;
+}
+
+static const char *best_sable(const GameActions *ga) {
+    if (stock_count(&ga->stock, "arma.corta.sable_acero") > 0) return "arma.corta.sable_acero";
+    if (stock_count(&ga->stock, "arma.corta.sable_bronce") > 0) return "arma.corta.sable_bronce";
+    return "arma.corta.sable";
 }
 
 static void apply_preset(GameActions *ga) {
@@ -45,70 +62,139 @@ static void apply_preset(GameActions *ga) {
     hands_clear(&ga->hands, HAND_LEFT);
     ga->torch_lit = false;
     const char *r = PRESETS[ga->preset][0], *l = PRESETS[ga->preset][1];
+    if (r && !strcmp(r, "arma.corta.sable")) r = best_sable(ga);
     if (r) hands_equip(&ga->hands, inventory_find(ga->inv, r), HAND_RIGHT);
     if (l) hands_equip(&ga->hands, inventory_find(ga->inv, l), HAND_LEFT);
 }
 
 static Vector3 forward_of(float yaw) { return (Vector3){ sinf(yaw), 0.0f, cosf(yaw) }; }
 
+static Vector3 ground_at(const Terrain *t, float x, float z) { return (Vector3){ x, terrain_height(t, x, z), z }; }
+
 static Vector3 ground_ahead(const Terrain *t, const Player *p, float dist) {
     Vector3 f = forward_of(p->yaw);
-    float x = p->pos.x + f.x * dist, z = p->pos.z + f.z * dist;
-    return (Vector3){ x, terrain_height(t, x, z), z };
+    return ground_at(t, p->pos.x + f.x * dist, p->pos.z + f.z * dist);
 }
 
-void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t) {
+static float dist2d(Vector3 a, Vector3 b) { return Vector2Distance((Vector2){ a.x, a.z }, (Vector2){ b.x, b.z }); }
+
+// Esta el punto delante del jugador (dentro de ~60 grados) y a menos de range?
+static bool in_front(const Player *p, float x, float z, float range) {
+    Vector3 f = forward_of(p->yaw);
+    float dx = x - p->pos.x, dz = z - p->pos.z, d = sqrtf(dx * dx + dz * dz);
+    return d < range && (dx * f.x + dz * f.z) > d * 0.5f;
+}
+
+// Los recursos tomados van directo al acopio de la tribu.
+static bool is_resource(const char *id) {
+    return !strncmp(id, "utileria.material.", 18) || !strncmp(id, "utileria.consumible.", 20) ||
+           !strcmp(id, "utileria.objeto.lena");
+}
+
+static int count_props(const Props *props, const char *id) {
+    int n = 0;
+    for (int i = 0; i < props->count; i++)
+        if (!strcmp(props->items[i].item->id, id)) n++;
+    return n;
+}
+
+// ---------------------------------------------------------------- inicio
+static void scatter(Props *props, const Terrain *t, Rng *rng, const char *id, int n, float rmin, float rmax) {
+    for (int i = 0; i < n; i++) {
+        float a = rng_float(rng) * 6.2831853f, r = rmin + rng_float(rng) * (rmax - rmin);
+        float x = cosf(a) * r, z = sinf(a) * r;
+        props_add(props, id, ground_at(t, x, z), rng_float(rng) * 6.28f);
+    }
+}
+
+void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed) {
     memset(ga, 0, sizeof(*ga));
     ga->inv = inv;
-    ga->doing = -1;
+    rng_seed(&ga->rng, seed);
+    ga->doing = ga->target = ga->crafting = ga->mounted = -1;
     hands_init(&ga->hands);
+    stock_init(&ga->stock);
+    stock_seed_camp(&ga->stock);
     apply_preset(ga);
-    // Objetos sueltos junto a la entrada del campamento, para probar tomar y lanzar,
-    // y un tramo de empalizada para la trepa.
+
+    // Objetos sueltos para tomar y lanzar, un tramo de empalizada para la trepa,
+    // recursos para recolectar y hierba alta para esconderse.
     static const struct {
         const char *id;
         float x, z, yaw;
     } START[] = {
-        { "utileria.objeto.lena", 2.0f, 17.0f, 0.3f },   { "utileria.objeto.lena", 2.8f, 17.6f, 1.2f },
         { "utileria.objeto.odre", -2.2f, 17.4f, 0.0f },  { "utileria.objeto.cofre", -3.5f, 15.5f, 0.6f },
         { "utileria.objeto.caldero", 1.4f, 3.0f, 0.0f }, { "estructura.campamento.empalizada", 9.0f, 14.0f, 1.57f },
     };
     for (size_t i = 0; i < sizeof(START) / sizeof(START[0]); i++)
-        props_add(props, START[i].id, (Vector3){ START[i].x, terrain_height(t, START[i].x, START[i].z), START[i].z },
-                  START[i].yaw);
+        props_add(props, START[i].id, ground_at(t, START[i].x, START[i].z), START[i].yaw);
+    scatter(props, t, &ga->rng, "utileria.objeto.lena", 6, 14.0f, 30.0f);
+    scatter(props, t, &ga->rng, "utileria.material.piedra", 4, 20.0f, 40.0f);
+    scatter(props, t, &ga->rng, "utileria.material.barro", 3, 20.0f, 40.0f);
+    scatter(props, t, &ga->rng, "mapa.vegetacion.hierba_alta", 28, 18.0f, 45.0f);
+
+    // Animales en sus territorios.
+    static const struct {
+        Species sp;
+        float x, z;
+        int n;
+    } HERDS[] = {
+        { SPECIES_HORSE, 55.0f, 25.0f, 5 }, { SPECIES_DEER, -55.0f, 40.0f, 3 }, { SPECIES_WOLF, 35.0f, -65.0f, 2 },
+        { SPECIES_CAMEL, -45.0f, -50.0f, 2 }, { SPECIES_IBEX, 80.0f, -40.0f, 2 },
+    };
+    for (size_t h = 0; h < sizeof(HERDS) / sizeof(HERDS[0]); h++)
+        for (int i = 0; i < HERDS[h].n && ga->animal_count < GA_MAX_ANIMALS; i++)
+            animal_init(&ga->animals[ga->animal_count++], HERDS[h].sp, HERDS[h].x + (float)(i * 3 - 4),
+                        HERDS[h].z + (float)((i % 2) * 4 - 2));
 }
 
 bool ga_menu_open(const GameActions *ga) { return ga->menu_open; }
+bool ga_blocks_input(const GameActions *ga) { return ga->menu_open || ga->climbing; }
 
-// Un muro al frente, a tiro de trepa.
-static bool wall_ahead(const Props *props, const Player *p) {
-    Vector3 f = forward_of(p->yaw);
+float ga_speed_scale(const GameActions *ga) {
+    return ga->mounted >= 0 ? species_def(ga->animals[ga->mounted].species)->ride_speed : 1.0f;
+}
+
+// ---------------------------------------------------------------- objetivos
+static int wall_ahead(const Props *props, const Player *p) {
     for (int i = 0; i < props->count; i++) {
         const char *id = props->items[i].item->id;
         if (!strstr(id, "empalizada") && !strstr(id, "muro") && !strstr(id, "muralla")) continue;
-        Vector3 d = Vector3Subtract(props->items[i].pos, p->pos);
-        float dist = sqrtf(d.x * d.x + d.z * d.z);
-        if (dist < TARGET_RANGE && (d.x * f.x + d.z * f.z) > dist * 0.5f) return true; // dentro de ~60 grados
+        if (in_front(p, props->items[i].pos.x, props->items[i].pos.z, TARGET_RANGE)) return i;
     }
-    return false;
+    return -1;
 }
 
-static bool any_prop_in_category(const Props *props, const Player *p, const char *prefix) {
-    for (int i = 0; i < props->count; i++)
-        if (!strncmp(props->items[i].item->id, prefix, strlen(prefix)) &&
-            Vector3Distance(props->items[i].pos, p->pos) < TARGET_RANGE)
-            return true;
-    return false;
+static int animal_ahead(const GameActions *ga, const Player *p, AnimalState state, float range, bool need_front) {
+    int best = -1;
+    float best_d = range;
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *a = &ga->animals[i];
+        if (a->state != state || a->ridden) continue;
+        float d = dist2d(p->pos, (Vector3){ a->x, 0, a->z });
+        if (d < best_d && (!need_front || in_front(p, a->x, a->z, range))) {
+            best_d = d;
+            best = i;
+        }
+    }
+    return best;
 }
 
-// Comprueba requisitos y arranca una accion con duracion.
+// ---------------------------------------------------------------- acciones del jugador
 static void start_action(GameActions *ga, ActionId a, const Props *props, const Player *p, char *log, size_t len) {
     const ActionDef *d = action_def(a);
-    if (ga->doing >= 0) return;
-    if (d->requires && !has_item(d->requires)) {
+    if (ga->doing >= 0 || ga->climbing) return;
+    if (d->requires && !has_item(ga, d->requires)) {
         snprintf(log, len, "Te falta: %s.", item_name(ga, d->requires));
         return;
     }
+    const Ingredient *miss = stock_first_missing(&ga->stock, d->mats);
+    if (miss) {
+        snprintf(log, len, "Falta en el acopio: %s (%d de %d).", item_name(ga, miss->id),
+                 stock_count(&ga->stock, miss->id), miss->count);
+        return;
+    }
+    ga->target = -1;
     switch (a) {
     case ACTION_TAKE:
         if (ga->hands.carried[0]) {
@@ -137,27 +223,52 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
         }
         break;
     case ACTION_THROW_GRAPPLE:
-        if (!wall_ahead(props, p)) {
+        if (ga->mounted >= 0) {
+            snprintf(log, len, "Desmonta antes de trepar (R).");
+            return;
+        }
+        if ((ga->target = wall_ahead(props, p)) < 0) {
             snprintf(log, len, "No hay un muro a tiro de trepa delante.");
             return;
         }
         break;
     case ACTION_THROW_LASSO:
-        if (!any_prop_in_category(props, p, "animal.salvaje.")) {
-            snprintf(log, len, "No hay animales salvajes cerca.");
+        if ((ga->target = animal_ahead(ga, p, ANIMAL_WILD, TARGET_RANGE, true)) < 0) {
+            snprintf(log, len, "No hay un animal salvaje a tiro de lazo delante.");
             return;
         }
         break;
     case ACTION_SADDLE:
-        if (!any_prop_in_category(props, p, "animal.montura.")) {
-            snprintf(log, len, "No hay una montura cerca para ensillar.");
+        if ((ga->target = animal_ahead(ga, p, ANIMAL_TAMED, SADDLE_RANGE, false)) < 0) {
+            snprintf(log, len, "No hay un animal domado cerca para ensillar.");
+            return;
+        }
+        if (!species_def(ga->animals[ga->target].species)->rideable) {
+            snprintf(log, len, "Un %s no se puede montar.", species_def(ga->animals[ga->target].species)->name);
             return;
         }
         break;
     default: break;
     }
+    stock_take_all(&ga->stock, d->mats);
     ga->doing = a;
     ga->timer = 0.0f;
+}
+
+static void start_climb(GameActions *ga, const Props *props, const Terrain *t, const Player *p, int wall) {
+    const Prop *w = &props->items[wall];
+    // Del jugador al muro, por encima y al otro lado.
+    float dx = w->pos.x - p->pos.x, dz = w->pos.z - p->pos.z, d = sqrtf(dx * dx + dz * dz);
+    if (d < 0.01f) d = 0.01f;
+    dx /= d;
+    dz /= d;
+    float top = w->pos.y + w->item->h + 0.1f;
+    ga->climbing = true;
+    ga->climb_t = 0.0f;
+    ga->climb_from = p->pos;
+    ga->climb_top = (Vector3){ w->pos.x - dx * 0.5f, top, w->pos.z - dz * 0.5f };
+    ga->climb_over = (Vector3){ w->pos.x + dx * 0.5f, top, w->pos.z + dz * 0.5f };
+    ga->climb_to = ground_at(t, w->pos.x + dx * 1.5f, w->pos.z + dz * 1.5f);
 }
 
 static void finish_action(GameActions *ga, Props *props, const Terrain *t, const Player *p, char *log, size_t len) {
@@ -167,8 +278,14 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
     switch (a) {
     case ACTION_TAKE: {
         int i = props_nearest(props, p->pos, REACH, true);
-        if (i >= 0 && hands_take(&ga->hands, props->items[i].item->id)) {
-            snprintf(log, len, "Tomaste: %s.", props->items[i].item->name);
+        if (i < 0) break;
+        const InvItem *it = props->items[i].item;
+        if (is_resource(it->id)) {
+            stock_add(&ga->stock, it->id, 1);
+            snprintf(log, len, "%s al acopio (%d).", it->name, stock_count(&ga->stock, it->id));
+            props_remove(props, i);
+        } else if (hands_take(&ga->hands, it->id)) {
+            snprintf(log, len, "Tomaste: %s (T para lanzarlo).", it->name);
             props_remove(props, i);
         }
         break;
@@ -201,10 +318,24 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         snprintf(log, len, "Encendiste la antorcha (mano izquierda).");
         break;
     case ACTION_THROW_GRAPPLE:
-        snprintf(log, len, "La trepa se engancha en el muro. (Trepar: Fase 1)");
+        if (ga->target >= 0 && ga->target < props->count) {
+            start_climb(ga, props, t, p, ga->target);
+            snprintf(log, len, "La trepa se engancha: ¡a escalar!");
+        }
         break;
-    case ACTION_THROW_LASSO: snprintf(log, len, "Lanzaste el lazo."); break;
-    case ACTION_SADDLE: snprintf(log, len, "Montura instalada."); break;
+    case ACTION_THROW_LASSO: {
+        Animal *an = &ga->animals[ga->target];
+        const SpeciesDef *sd = species_def(an->species);
+        if (animal_try_tame(an, &ga->rng, 0.0f, 0.0f, 0.0f))
+            snprintf(log, len, "¡Domaste un %s! Ahora sigue a la tribu.", sd->name);
+        else
+            snprintf(log, len, "El %s se zafó del lazo y huye.", sd->name);
+        break;
+    }
+    case ACTION_SADDLE:
+        if (animal_saddle(&ga->animals[ga->target]))
+            snprintf(log, len, "Montura instalada: R para montar.");
+        break;
     default:
         if (d->produces) { // instalar fogata, tienda, cavar trinchera
             props_add(props, d->produces, ground_ahead(t, p, 2.5f), p->yaw);
@@ -215,37 +346,171 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
 }
 
 static void start_build(GameActions *ga, BuildId b, const Terrain *t, const Player *p, char *log, size_t len) {
+    const BuildDef *d = build_def(b);
     if (ga->project_count >= GA_MAX_PROJECTS) {
         snprintf(log, len, "Demasiadas obras a la vez.");
         return;
     }
+    const Ingredient *miss = stock_first_missing(&ga->stock, d->mats);
+    if (miss) {
+        snprintf(log, len, "Falta en el acopio: %s (%d de %d).", item_name(ga, miss->id),
+                 stock_count(&ga->stock, miss->id), miss->count);
+        return;
+    }
+    stock_take_all(&ga->stock, d->mats);
     Vector3 at = ground_ahead(t, p, 6.0f);
     ga->projects[ga->project_count++] = (BuildProject){ b, at.x, at.z, 0.0f, false };
-    snprintf(log, len, "Obra iniciada: %s.", build_def(b)->name);
+    snprintf(log, len, "Obra iniciada: %s. La cuadrilla va en camino.", d->name);
 }
 
-void ga_update(GameActions *ga, Props *props, const Terrain *t, const Player *p, const Troop *troop, float dt,
-               char *log, size_t log_len) {
-    // Menu de acciones.
+static void start_craft(GameActions *ga, CraftId c, const Props *props, const Troop *troop, char *log, size_t len) {
+    const CraftDef *d = craft_def(c);
+    if (ga->crafting >= 0) {
+        snprintf(log, len, "La forja está ocupada.");
+        return;
+    }
+    if (count_props(props, d->building) == 0) {
+        snprintf(log, len, "Hace falta: %s.", item_name(ga, d->building));
+        return;
+    }
+    float secs = craft_seconds(d, troop);
+    if (secs < 0.0f) {
+        snprintf(log, len, "Hace falta un %s en la tribu.", role_name(d->role));
+        return;
+    }
+    const Ingredient *miss = stock_first_missing(&ga->stock, d->mats);
+    if (miss) {
+        snprintf(log, len, "Falta en el acopio: %s (%d de %d).", item_name(ga, miss->id),
+                 stock_count(&ga->stock, miss->id), miss->count);
+        return;
+    }
+    stock_take_all(&ga->stock, d->mats);
+    ga->crafting = c;
+    ga->craft_timer = 0.0f;
+    ga->craft_total = secs;
+    snprintf(log, len, "Forjando: %s.", d->name);
+}
+
+// ---------------------------------------------------------------- NPCs
+// Mantiene un NPC por integrante activo de la tropa (los nuevos aparecen junto al fuego).
+static void sync_npcs(GameActions *ga, const Troop *troop, const Terrain *t) {
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
+        Npc *n = &ga->npcs[i];
+        if (n->member_id == troop->members[i].id) continue;
+        memset(n, 0, sizeof(*n));
+        n->member_id = troop->members[i].id;
+        float a = (float)i * 2.39996f, r = 5.5f + (float)(i % 3) * 1.5f; // espiral dorada alrededor del fuego
+        n->home = ground_at(t, cosf(a) * r, sinf(a) * r);
+        n->pos = n->home;
+        n->project = n->job = -1;
+    }
+}
+
+static bool npc_walk(Npc *n, const Terrain *t, Vector3 to, float dt) {
+    float d = dist2d(n->pos, to);
+    if (d < 0.3f) return true;
+    float step = fminf(NPC_SPEED * dt, d);
+    float dx = (to.x - n->pos.x) / d, dz = (to.z - n->pos.z) / d;
+    n->pos.x += dx * step;
+    n->pos.z += dz * step;
+    n->pos.y = terrain_height(t, n->pos.x, n->pos.z);
+    n->yaw = atan2f(dx, dz);
+    return false;
+}
+
+static Npc *npc_of(GameActions *ga, const Troop *troop, int member_id) {
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++)
+        if (ga->npcs[i].member_id == member_id) return &ga->npcs[i];
+    return NULL;
+}
+
+// Un NPC libre hace una accion individual (las mismas definiciones que el jugador).
+static bool npc_assign_job(GameActions *ga, const Troop *troop, const Terrain *t, ActionId a, Vector3 where) {
+    const ActionDef *d = action_def(a);
+    if (!(d->actors & ACTOR_NPC) || !stock_has_all(&ga->stock, d->mats)) return false;
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
+        Npc *n = &ga->npcs[i];
+        if (troop->members[i].status != STATUS_ACTIVE || n->project >= 0 || n->job >= 0) continue;
+        stock_take_all(&ga->stock, d->mats);
+        n->job = a;
+        n->job_pos = ground_at(t, where.x, where.z);
+        n->job_timer = 0.0f;
+        return true;
+    }
+    return false;
+}
+
+static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, float dt, char *log,
+                        size_t len) {
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
+        Npc *n = &ga->npcs[i];
+        const Member *m = &troop->members[i];
+        if (m->status != STATUS_ACTIVE) continue;
+        if (n->project >= 0 && n->project < ga->project_count) {
+            const BuildProject *bp = &ga->projects[n->project];
+            float ang = (float)i * 1.3f; // cada uno en su lado de la obra
+            npc_walk(n, t, (Vector3){ bp->x + cosf(ang) * 1.6f, 0, bp->z + sinf(ang) * 1.6f }, dt);
+        } else if (n->job >= 0) {
+            if (npc_walk(n, t, n->job_pos, dt)) {
+                n->job_timer += dt;
+                const ActionDef *d = action_def((ActionId)n->job);
+                if (n->job_timer >= d->seconds) {
+                    if (d->produces) props_add(props, d->produces, n->job_pos, n->yaw);
+                    snprintf(log, len, "%s terminó: %s.", m->name, d->name);
+                    n->job = -1;
+                }
+            }
+        } else {
+            npc_walk(n, t, n->home, dt);
+        }
+    }
+}
+
+// ---------------------------------------------------------------- actualizacion
+void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
+               size_t log_len) {
+    sync_npcs(ga, troop, t);
+    const int total = ACTION_COUNT + BUILD_COUNT + CRAFT_COUNT;
+
     if (IsKeyPressed(KEY_TAB)) ga->menu_open = !ga->menu_open;
+    if (IsKeyPressed(KEY_I)) ga->stock_open = !ga->stock_open;
     if (ga->menu_open) {
-        const int total = ACTION_COUNT + BUILD_COUNT;
         if (IsKeyPressed(KEY_DOWN)) ga->cursor = (ga->cursor + 1) % total;
         if (IsKeyPressed(KEY_UP)) ga->cursor = (ga->cursor + total - 1) % total;
         if (IsKeyPressed(KEY_ENTER)) {
             ga->menu_open = false;
             if (ga->cursor < ACTION_COUNT) start_action(ga, (ActionId)ga->cursor, props, p, log, log_len);
-            else start_build(ga, (BuildId)(ga->cursor - ACTION_COUNT), t, p, log, log_len);
+            else if (ga->cursor < ACTION_COUNT + BUILD_COUNT)
+                start_build(ga, (BuildId)(ga->cursor - ACTION_COUNT), t, p, log, log_len);
+            else start_craft(ga, (CraftId)(ga->cursor - ACTION_COUNT - BUILD_COUNT), props, troop, log, log_len);
         }
-    } else if (ga->doing < 0) {
-        // Atajos.
+    } else if (ga->doing < 0 && !ga->climbing) {
         if (IsKeyPressed(KEY_X)) start_action(ga, ACTION_CHANGE_GRIP, props, p, log, log_len);
         if (IsKeyPressed(KEY_H)) start_action(ga, ACTION_SHEATHE, props, p, log, log_len);
         if (IsKeyPressed(KEY_F)) start_action(ga, ACTION_TAKE, props, p, log, log_len);
         if (IsKeyPressed(KEY_T)) start_action(ga, ACTION_THROW, props, p, log, log_len);
+        if (IsKeyPressed(KEY_R)) { // montar / desmontar
+            if (ga->mounted >= 0) {
+                ga->animals[ga->mounted].ridden = false;
+                ga->mounted = -1;
+                snprintf(log, log_len, "Desmontaste.");
+            } else {
+                int a = -1;
+                for (int i = 0; i < ga->animal_count; i++)
+                    if (animal_can_ride(&ga->animals[i]) &&
+                        dist2d(p->pos, (Vector3){ ga->animals[i].x, 0, ga->animals[i].z }) < SADDLE_RANGE)
+                        a = i;
+                if (a >= 0) {
+                    ga->mounted = a;
+                    ga->animals[a].ridden = true;
+                    snprintf(log, log_len, "Montaste el %s.", species_def(ga->animals[a].species)->name);
+                } else {
+                    snprintf(log, log_len, "No hay una montura ensillada cerca (lazo + silla).");
+                }
+            }
+        }
     }
 
-    // Accion en curso.
     if (ga->doing >= 0) {
         ga->timer += dt;
         if (ga->timer >= action_def((ActionId)ga->doing)->seconds) finish_action(ga, props, t, p, log, log_len);
@@ -264,22 +529,123 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, const Player *p,
         }
     }
 
-    // Obras en grupo: la tribu trabaja; el jugador ayuda si esta cerca.
+    // Animales.
+    for (int i = 0; i < ga->animal_count; i++) animal_update(&ga->animals[i], dt, p->pos.x, p->pos.z, &ga->rng);
+
+    // Obras: cada una elige su cuadrilla (sin repetir gente) y avanza con los que ya llegaron.
+    int busy[TROOP_MAX], n_busy = 0;
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++) ga->npcs[i].project = -1;
     for (int i = 0; i < ga->project_count; i++) {
         BuildProject *bp = &ga->projects[i];
-        bool near = Vector2Distance((Vector2){ p->pos.x, p->pos.z }, (Vector2){ bp->x, bp->z }) < HELP_RANGE;
-        CrewPlan plan = build_plan(build_def(bp->def), troop, near);
-        if (build_advance(bp, plan.rate, dt)) {
-            const BuildDef *d = build_def(bp->def);
-            props_add(props, d->produces, (Vector3){ bp->x, terrain_height(t, bp->x, bp->z), bp->z }, 0.0f);
+        const BuildDef *d = build_def(bp->def);
+        Vector3 site = { bp->x, 0, bp->z };
+        bool player_near = dist2d(p->pos, site) < HELP_RANGE;
+        CrewPlan plan = build_plan_excluding(d, troop, player_near, busy, n_busy);
+        bool present[TROOP_MAX + 1] = { false };
+        ga->crew_present[i] = 0;
+        ga->crew_size[i] = plan.check == BUILD_READY ? plan.workers : 0;
+        for (int k = 0; plan.check == BUILD_READY && k < plan.workers; k++) {
+            if (plan.ids[k] < 0) {
+                present[k] = player_near;
+            } else {
+                Npc *n = npc_of(ga, troop, plan.ids[k]);
+                if (!n || n->job >= 0) continue;
+                n->project = i;
+                busy[n_busy++] = plan.ids[k];
+                present[k] = dist2d(n->pos, site) < AT_SITE;
+            }
+            ga->crew_present[i] += present[k];
+        }
+        if (build_advance(bp, build_rate_present(d, &plan, present), dt)) {
+            props_add(props, d->produces, ground_at(t, bp->x, bp->z), 0.0f);
             snprintf(log, log_len, "Obra terminada: %s.", d->name);
-            ga->projects[i--] = ga->projects[--ga->project_count];
+            ga->projects[i] = ga->projects[--ga->project_count];
+            ga->crew_present[i] = ga->crew_present[ga->project_count];
+            ga->crew_size[i] = ga->crew_size[ga->project_count];
+            i--;
+        }
+    }
+    update_npcs(ga, props, t, troop, dt, log, log_len);
+
+    // Forja.
+    if (ga->crafting >= 0) {
+        ga->craft_timer += dt;
+        if (ga->craft_timer >= ga->craft_total) {
+            const CraftDef *c = craft_def((CraftId)ga->crafting);
+            stock_add(&ga->stock, c->produces, 1);
+            snprintf(log, log_len, "Forjado: %s (al acopio; X para empuñar).", c->name);
+            ga->crafting = -1;
         }
     }
 }
 
-// Objeto empunado: caja con las medidas del inventario, en coordenadas locales del jugador
-// (+Z adelante, +X a la izquierda).
+void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p) {
+    // Trepar: subir por la cuerda, pasar por encima del muro y bajar del otro lado.
+    if (ga->climbing) {
+        const float up = 1.6f, over = 0.6f, down = 0.4f;
+        ga->climb_t += GetFrameTime();
+        float c = ga->climb_t;
+        if (c < up) p->pos = Vector3Lerp(ga->climb_from, ga->climb_top, c / up);
+        else if (c < up + over) p->pos = Vector3Lerp(ga->climb_top, ga->climb_over, (c - up) / over);
+        else if (c < up + over + down) p->pos = Vector3Lerp(ga->climb_over, ga->climb_to, (c - up - over) / down);
+        else {
+            p->pos = ga->climb_to;
+            ga->climbing = false;
+        }
+        p->vy = 0.0f;
+        p->grounded = !ga->climbing;
+    }
+    // Montado: el animal va debajo del jugador.
+    if (ga->mounted >= 0) {
+        Animal *a = &ga->animals[ga->mounted];
+        a->x = p->pos.x;
+        a->z = p->pos.z;
+        a->yaw = p->yaw;
+    }
+    // Esconderse: acechando dentro de la hierba alta no se hace ruido.
+    ga->hidden = false;
+    if (p->sneaking && ga->mounted < 0) {
+        for (int i = 0; i < props->count; i++)
+            if (!strcmp(props->items[i].item->id, "mapa.vegetacion.hierba_alta") &&
+                dist2d(p->pos, props->items[i].pos) < 1.3f) {
+                ga->hidden = true;
+                p->noise = 0.0f;
+                break;
+            }
+    }
+    (void)t;
+}
+
+// ---------------------------------------------------------------- dia nuevo
+void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day,
+                char *log, size_t log_len) {
+    // Comida y recoleccion.
+    UpkeepReport up = economy_daily_upkeep(&ga->stock, troop);
+    // Efectos de lo construido en el campamento.
+    const char *ids[PROPS_MAX + 8];
+    int n = 0;
+    for (int i = 0; i < CAMP_YURTS; i++) ids[n++] = "estructura.vivienda.yurta_comun";
+    for (int i = 0; i < props->count; i++)
+        if (dist2d(props->items[i].pos, (Vector3){ 0, 0, 0 }) < CAMP_RADIUS) ids[n++] = props->items[i].item->id;
+    CampEffects fx = camp_effects(ids, n);
+    troop_adjust_morale(troop, fx.morale_per_day);
+    troop->rebellion_scale = fx.rebellion_scale;
+    if (fx.reveal_radius > 0.0f) // la torre deja ver los alrededores
+        for (int i = 0; i < props->count; i++)
+            if (!strcmp(props->items[i].item->id, "estructura.campamento.atalaya"))
+                memmap_reveal(mem, props->items[i].pos.x, props->items[i].pos.z, fx.reveal_radius, 30.0f, now);
+    // Trabajos de los NPCs: una fogata si no hay ninguna, una tienda si faltan techos.
+    int active = troop_count_with_status(troop, STATUS_ACTIVE);
+    float a = (float)day * 1.7f;
+    if (count_props(props, "estructura.campamento.fogata") == 0)
+        npc_assign_job(ga, troop, t, ACTION_PLACE_FIRE, (Vector3){ cosf(a) * 12.0f, 0, sinf(a) * 12.0f });
+    if (fx.shelters < active)
+        npc_assign_job(ga, troop, t, ACTION_PLACE_TENT, (Vector3){ cosf(a + 1.0f) * 16.0f, 0, sinf(a + 1.0f) * 16.0f });
+    snprintf(log, log_len, "Día %d: comieron %d%s, recolectaron %d. Ánimo del campamento %+.0f.", day, up.eaten,
+             up.hungry ? TextFormat(" (%d sin ración)", up.hungry) : "", up.gathered, fx.morale_per_day);
+}
+
+// ---------------------------------------------------------------- dibujo
 static void draw_held(const InvItem *it, Vector3 local, bool shield) {
     if (!it) return;
     Vector3 size = shield ? (Vector3){ it->w, it->h, fmaxf(it->l, 0.06f) }
@@ -289,22 +655,62 @@ static void draw_held(const InvItem *it, Vector3 local, bool shield) {
     DrawCubeWiresV(c, size, (Color){ 60, 55, 50, 255 });
 }
 
-void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Player *p, float time) {
+static Color role_color(Role r) {
+    switch (r) {
+    case ROLE_HUNTER: return (Color){ 110, 140, 70, 255 };
+    case ROLE_COOK: return (Color){ 200, 150, 80, 255 };
+    case ROLE_SMITH: return (Color){ 90, 90, 100, 255 };
+    case ROLE_HEALER: return (Color){ 230, 230, 220, 255 };
+    case ROLE_SCOUT: return (Color){ 70, 110, 150, 255 };
+    case ROLE_LIEUTENANT: return (Color){ 160, 50, 40, 255 };
+    case ROLE_BUILDER: return (Color){ 150, 110, 60, 255 };
+    default: return (Color){ 140, 120, 100, 255 };
+    }
+}
+
+void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time) {
     props_draw(props);
     for (int i = 0; i < ga->project_count; i++) {
         const BuildProject *bp = &ga->projects[i];
         const InvItem *it = inventory_find(ga->inv, build_def(bp->def)->produces);
-        if (it) props_draw_item(props, it, (Vector3){ bp->x, terrain_height(t, bp->x, bp->z), bp->z }, 0.0f, bp->progress);
+        if (it) props_draw_item(props, it, ground_at(t, bp->x, bp->z), 0.0f, bp->progress);
+    }
+
+    // Integrantes de la tribu: capsulas del color de su funcion; los grandes guerreros, a su talla.
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
+        const Member *m = &troop->members[i];
+        const Npc *n = &ga->npcs[i];
+        if (m->status != STATUS_ACTIVE || n->member_id != m->id) continue;
+        float s = m->champion >= 0 ? troop->champions[m->champion].stats.size : 1.0f;
+        bool working = n->project >= 0 && n->project < ga->project_count &&
+                       dist2d(n->pos, (Vector3){ ga->projects[n->project].x, 0, ga->projects[n->project].z }) < AT_SITE;
+        float bob = working || (n->job >= 0 && n->job_timer > 0.0f) ? fabsf(sinf(time * 6.0f + (float)i)) * 0.15f : 0.0f;
+        Vector3 base = { n->pos.x, n->pos.y + bob, n->pos.z };
+        DrawCapsule((Vector3){ base.x, base.y + 0.3f * s, base.z }, (Vector3){ base.x, base.y + 1.35f * s, base.z },
+                    0.26f * s, 6, 4, role_color(m->role));
+        if (m->champion >= 0) DrawSphere((Vector3){ base.x, base.y + 1.85f * s, base.z }, 0.08f, UI_GOLD);
+    }
+
+    // Animales: modelo del inventario o marcador; los domados llevan una cinta turquesa, los ensillados la silla.
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *a = &ga->animals[i];
+        const InvItem *it = inventory_find(ga->inv, species_def(a->species)->model);
+        if (!it) continue;
+        Vector3 pos = ground_at(t, a->x, a->z);
+        // El modelo mira a +X (Kiln); el animal avanza segun yaw (0 = +Z).
+        props_draw_item(props, it, pos, a->yaw - PI / 2.0f, 1.0f);
+        if (a->state != ANIMAL_WILD) DrawCube((Vector3){ pos.x, pos.y + it->h + 0.1f, pos.z }, 0.12f, 0.12f, 0.12f, UI_TURQUOISE);
+        if (a->state == ANIMAL_SADDLED) DrawCube((Vector3){ pos.x, pos.y + it->h * 0.75f, pos.z }, 0.5f, 0.15f, 0.6f, (Color){ 120, 70, 40, 255 });
     }
 
     // Lo que el jugador tiene en las manos.
     rlPushMatrix();
-    rlTranslatef(p->pos.x, p->pos.y, p->pos.z);
+    rlTranslatef(p->pos.x, p->pos.y + p->draw_lift, p->pos.z);
     rlRotatef(p->yaw * RAD2DEG, 0, 1, 0);
     const Hands *h = &ga->hands;
     const InvItem *r = h->right.id[0] ? inventory_find(ga->inv, h->right.id) : NULL;
     const InvItem *l = h->left.id[0] ? inventory_find(ga->inv, h->left.id) : NULL;
-    if (h->sheathed) { // a la cintura y a la espalda
+    if (h->sheathed) {
         draw_held(r, (Vector3){ -0.32f, 0.35f, -0.1f }, false);
         draw_held(l, (Vector3){ 0.0f, 0.6f, -0.3f }, l && l->hands == INV_HANDS_SHIELD);
     } else if (h->right.kind == INV_HANDS_TWO) {
@@ -312,12 +718,12 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Player
     } else {
         draw_held(r, (Vector3){ -0.45f, 0.75f, 0.2f }, false);
         draw_held(l, (Vector3){ 0.5f, 0.7f, 0.3f }, l && l->hands == INV_HANDS_SHIELD);
-        if (ga->torch_lit && l) { // llama de la antorcha
+        if (ga->torch_lit && l) {
             float flick = 0.8f + 0.2f * sinf(time * 17.0f);
             DrawSphere((Vector3){ 0.5f, 0.7f + l->h + 0.08f, 0.3f }, 0.11f * flick, (Color){ 250, 160, 50, 255 });
         }
     }
-    if (h->carried[0]) { // objeto tomado: sobre los brazos
+    if (h->carried[0]) {
         const InvItem *c = inventory_find(ga->inv, h->carried);
         if (c) {
             Vector3 size = { fmaxf(c->l, 0.1f), fmaxf(c->h, 0.1f), fmaxf(c->w, 0.1f) };
@@ -326,34 +732,61 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Player
         }
     }
     rlPopMatrix();
+    // La cuerda de la trepa mientras se escala.
+    if (ga->climbing) DrawLine3D(ga->climb_top, (Vector3){ p->pos.x, p->pos.y + 1.2f, p->pos.z }, (Color){ 140, 110, 70, 255 });
 }
 
 const char *ga_hands_text(const GameActions *ga) {
-    static char buf[96];
+    static char buf[128];
     const Hands *h = &ga->hands;
-    snprintf(buf, sizeof(buf), "Empuñe: %s%s%s%s", grip_name(hands_grip(h)), h->sheathed ? " (enfundado)" : "",
-             ga->torch_lit ? ", antorcha" : "", h->carried[0] ? ", lleva algo" : "");
+    snprintf(buf, sizeof(buf), "Empuñe: %s%s%s%s%s%s", grip_name(hands_grip(h)), h->sheathed ? " (enfundado)" : "",
+             ga->torch_lit ? ", antorcha" : "", h->carried[0] ? ", lleva algo" : "",
+             ga->mounted >= 0 ? " · montado" : "", ga->hidden ? " · OCULTO" : "");
     return buf;
 }
 
-static void draw_menu(const GameActions *ga, const Troop *troop, int width) {
-    const int w = 460, h = 312, x0 = (width - w) / 2, y0 = 22, pad = UI_PANEL_INSET + 3;
+// Lista de materiales con lo que hay en el acopio (rojo si falta). Devuelve la altura usada.
+static int draw_materials(const GameActions *ga, const Ingredient *mats, int x, int y, int w) {
+    if (!mats[0].id) return 0;
+    int dy = 0;
+    ui_text("Materiales:", x, y, 10, UI_BONE_DIM);
+    dy += 12;
+    for (const Ingredient *m = mats; m->id; m++) {
+        int have = stock_count(&ga->stock, m->id);
+        dy += ui_text_wrapped(TextFormat("  %s: %d / %d", item_name(ga, m->id), have, m->count), x, y + dy, w, 10,
+                              have >= m->count ? UI_BONE : UI_CARNELIAN);
+    }
+    return dy;
+}
+
+static const char *menu_name(int i) {
+    if (i < ACTION_COUNT) return action_def((ActionId)i)->name;
+    if (i < ACTION_COUNT + BUILD_COUNT) return build_def((BuildId)(i - ACTION_COUNT))->name;
+    return craft_def((CraftId)(i - ACTION_COUNT - BUILD_COUNT))->name;
+}
+
+static void draw_menu(const GameActions *ga, const Props *props, const Troop *troop, int width) {
+    const int w = 470, h = 316, x0 = (width - w) / 2, y0 = 20, pad = UI_PANEL_INSET + 3;
     const int list_x = x0 + pad, list_w = 200, desc_x = list_x + list_w + 10, desc_w = w - 2 * pad - list_w - 10;
+    const int total = ACTION_COUNT + BUILD_COUNT + CRAFT_COUNT;
     ui_panel((Rectangle){ (float)x0, (float)y0, (float)w, (float)h }, UI_METAL_GOLD);
     ui_text("Acciones", list_x, y0 + pad, 10, UI_GOLD_LIGHT);
     ui_text("Flechas: elegir · Enter: hacer · Tab: cerrar", desc_x, y0 + pad, 10, UI_BONE_DIM);
+    // Lista con desplazamiento: el cursor siempre visible.
+    int first = ga->cursor - MENU_ROWS / 2;
+    if (first > total - MENU_ROWS) first = total - MENU_ROWS;
+    if (first < 0) first = 0;
     int y = y0 + pad + 14;
-    for (int i = 0; i < ACTION_COUNT + BUILD_COUNT; i++) {
-        if (i == 0 || i == ACTION_COUNT) {
-            ui_text(i == 0 ? "UNA PERSONA" : "CONSTRUCCIONES EN GRUPO", list_x, y, 10, UI_TURQUOISE);
+    for (int i = first; i < total && i < first + MENU_ROWS; i++) {
+        if (i == 0 || i == ACTION_COUNT || i == ACTION_COUNT + BUILD_COUNT || i == first) {
+            const char *sec = i < ACTION_COUNT ? "UNA PERSONA" : i < ACTION_COUNT + BUILD_COUNT ? "CONSTRUCCIONES EN GRUPO" : "FORJA";
+            ui_text(sec, list_x, y, 10, UI_TURQUOISE);
             y += 12;
         }
-        const char *name = i < ACTION_COUNT ? action_def((ActionId)i)->name : build_def((BuildId)(i - ACTION_COUNT))->name;
         if (i == ga->cursor) DrawRectangle(list_x - 2, y - 1, list_w, 11, (Color){ 26, 110, 116, 200 });
-        ui_text(name, list_x + 4, y, 10, i == ga->cursor ? UI_BONE : UI_BONE_DIM);
+        ui_text(menu_name(i), list_x + 4, y, 10, i == ga->cursor ? UI_BONE : UI_BONE_DIM);
         y += 11;
     }
-    // Detalle del elemento elegido.
     int dy = y0 + pad + 26;
     if (ga->cursor < ACTION_COUNT) {
         const ActionDef *d = action_def((ActionId)ga->cursor);
@@ -362,14 +795,16 @@ static void draw_menu(const GameActions *ga, const Troop *troop, int width) {
         dy += ui_text_wrapped(d->desc, desc_x, dy, desc_w, 10, UI_BONE) + 6;
         ui_text(TextFormat("Duración: %.1f s", d->seconds), desc_x, dy, 10, UI_BONE_DIM);
         dy += 12;
-        if (d->requires) {
-            const InvItem *it = inventory_find(ga->inv, d->requires);
-            dy += ui_text_wrapped(TextFormat("Requiere: %s", it ? it->name : d->requires), desc_x, dy, desc_w, 10,
-                                  has_item(d->requires) ? UI_BONE_DIM : UI_CARNELIAN);
+        if (d->requires)
+            dy += ui_text_wrapped(TextFormat("Requiere: %s", item_name(ga, d->requires)), desc_x, dy, desc_w, 10,
+                                  has_item(ga, d->requires) ? UI_BONE_DIM : UI_CARNELIAN);
+        if (d->target) {
+            ui_text(TextFormat("Sobre: %s", d->target), desc_x, dy, 10, UI_BONE_DIM);
+            dy += 12;
         }
-        if (d->target) ui_text(TextFormat("Sobre: %s", d->target), desc_x, dy, 10, UI_BONE_DIM);
+        draw_materials(ga, d->mats, desc_x, dy + 4, desc_w);
         ui_text("También la pueden hacer los NPCs.", desc_x, y0 + h - pad - 10, 10, UI_BONE_DIM);
-    } else {
+    } else if (ga->cursor < ACTION_COUNT + BUILD_COUNT) {
         const BuildDef *d = build_def((BuildId)(ga->cursor - ACTION_COUNT));
         CrewPlan plan = build_plan(d, troop, true);
         ui_text(d->name, desc_x, dy, 10, UI_GOLD_LIGHT);
@@ -384,7 +819,7 @@ static void draw_menu(const GameActions *ga, const Troop *troop, int width) {
             ui_text(TextFormat("Rinde el doble: %s", role_name(d->skilled_role)), desc_x, dy, 10, UI_BONE_DIM);
             dy += 12;
         }
-        dy += ui_text_wrapped(TextFormat("Materiales: %s", d->materials), desc_x, dy, desc_w, 10, UI_BONE_DIM) + 6;
+        dy += draw_materials(ga, d->mats, desc_x, dy, desc_w) + 6;
         ui_divider(desc_x, dy, desc_w, UI_METAL_GOLD);
         dy += 6;
         if (plan.check == BUILD_READY) {
@@ -392,32 +827,66 @@ static void draw_menu(const GameActions *ga, const Troop *troop, int width) {
             dy += 12;
             ui_text(TextFormat("Tiempo estimado: %.0f s de juego", d->work / plan.rate), desc_x, dy, 10, UI_TURQUOISE);
         } else {
-            dy += ui_text_wrapped(TextFormat("No se puede: %s", build_check_text(d, plan.check)), desc_x, dy, desc_w,
-                                  10, UI_CARNELIAN);
+            ui_text_wrapped(TextFormat("No se puede: %s", build_check_text(d, plan.check)), desc_x, dy, desc_w, 10,
+                            UI_CARNELIAN);
         }
         ui_text("Se levanta 6 m delante de ti.", desc_x, y0 + h - pad - 10, 10, UI_BONE_DIM);
+    } else {
+        const CraftDef *d = craft_def((CraftId)(ga->cursor - ACTION_COUNT - BUILD_COUNT));
+        float secs = craft_seconds(d, troop);
+        bool has_oven = count_props(props, d->building) > 0;
+        ui_text(d->name, desc_x, dy, 10, UI_GOLD_LIGHT);
+        dy += 14;
+        dy += ui_text_wrapped(TextFormat("En: %s", item_name(ga, d->building)), desc_x, dy, desc_w, 10,
+                              has_oven ? UI_BONE : UI_CARNELIAN);
+        ui_text(TextFormat("Artesano: %s", role_name(d->role)), desc_x, dy, 10, secs >= 0.0f ? UI_BONE : UI_CARNELIAN);
+        dy += 12;
+        dy += draw_materials(ga, d->mats, desc_x, dy, desc_w) + 6;
+        if (secs >= 0.0f) ui_text(TextFormat("Tiempo: %.0f s de juego", secs), desc_x, dy, 10, UI_TURQUOISE);
+        ui_text("Lo forjado va al acopio.", desc_x, y0 + h - pad - 10, 10, UI_BONE_DIM);
     }
 }
 
-void ga_draw_hud(const GameActions *ga, const Troop *troop, int width, int height) {
-    // Accion en curso.
+static void draw_stock(const GameActions *ga, int width) {
+    int rows = 0;
+    for (int i = 0; i < ga->stock.n; i++) rows += ga->stock.e[i].count > 0;
+    const int w = 250, h = 2 * UI_PANEL_INSET + 18 + 11 * rows, x0 = width - w - 6, y0 = 130;
+    ui_panel((Rectangle){ (float)x0, (float)y0, (float)w, (float)h }, UI_METAL_SILVER);
+    int x = x0 + UI_PANEL_INSET + 2, y = y0 + UI_PANEL_INSET + 2;
+    ui_text("Acopio de la tribu (I)", x, y, 10, UI_GOLD_LIGHT);
+    y += 14;
+    for (int i = 0; i < ga->stock.n; i++) {
+        if (ga->stock.e[i].count <= 0) continue;
+        ui_text(TextFormat("%3d  %s", ga->stock.e[i].count, item_name(ga, ga->stock.e[i].id)), x, y, 10, UI_BONE);
+        y += 11;
+    }
+}
+
+void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, int width, int height) {
     if (ga->doing >= 0) {
         const ActionDef *d = action_def((ActionId)ga->doing);
         int w = 160, x = (width - w) / 2, y = height - 64;
         ui_text_centered(TextFormat("%s...", d->name), width / 2, y - 12, 10, UI_BONE);
         ui_bar(x, y, w, ga->timer / d->seconds, UI_TURQUOISE, UI_METAL_GOLD);
     }
-    // Obras en curso.
-    if (ga->project_count > 0) {
-        int x = width - 236, y = 128, w = 230, h = 20 + 12 * ga->project_count;
+    int lines = ga->project_count + (ga->crafting >= 0);
+    if (lines > 0 && !ga->stock_open) {
+        int x = width - 236, y = 128, w = 230, h = 20 + 12 * lines;
         ui_panel((Rectangle){ (float)x, (float)y, (float)w, (float)h + UI_PANEL_INSET }, UI_METAL_SILVER);
-        for (int i = 0; i < ga->project_count; i++) {
+        int ty = y + UI_PANEL_INSET;
+        for (int i = 0; i < ga->project_count; i++, ty += 12) {
             const BuildProject *bp = &ga->projects[i];
             const BuildDef *d = build_def(bp->def);
-            CrewPlan plan = build_plan(d, troop, false);
-            Color c = plan.check == BUILD_READY ? UI_BONE : UI_CARNELIAN;
-            ui_text(TextFormat("%s %d%%", d->name, (int)(bp->progress * 100.0f)), x + UI_PANEL_INSET, y + UI_PANEL_INSET + 12 * i, 10, c);
+            bool stalled = ga->crew_size[i] == 0;
+            const char *crew = stalled ? "sin cuadrilla" : TextFormat("%d/%d", ga->crew_present[i], ga->crew_size[i]);
+            ui_text(TextFormat("%s %d%% · %s", d->name, (int)(bp->progress * 100.0f), crew), x + UI_PANEL_INSET, ty,
+                    10, stalled ? UI_CARNELIAN : UI_BONE);
         }
+        if (ga->crafting >= 0)
+            ui_text(TextFormat("Forja: %s %d%%", craft_def((CraftId)ga->crafting)->name,
+                               (int)(100.0f * ga->craft_timer / ga->craft_total)),
+                    x + UI_PANEL_INSET, ty, 10, UI_GOLD);
     }
-    if (ga->menu_open) draw_menu(ga, troop, width);
+    if (ga->stock_open) draw_stock(ga, width);
+    if (ga->menu_open) draw_menu(ga, props, troop, width);
 }

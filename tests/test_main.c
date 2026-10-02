@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include "../src/sim/actions.h"
+#include "../src/sim/animals.h"
+#include "../src/sim/economy.h"
 #include "../src/sim/champion.h"
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
@@ -521,6 +523,131 @@ static void test_build_advance(void) {
     CHECK(!build_advance(&p, 2.0f, 1.0f)); // ya terminada
 }
 
+// ---------------------------------------------------------------- economia
+static void test_stockpile(void) {
+    Stockpile s;
+    stock_init(&s);
+    CHECK(stock_count(&s, "utileria.material.piedra") == 0);
+    CHECK(stock_add(&s, "utileria.material.piedra", 5) && stock_add(&s, "utileria.material.piedra", 2));
+    CHECK(stock_count(&s, "utileria.material.piedra") == 7);
+    CHECK(!stock_take(&s, "utileria.material.piedra", 8) && stock_count(&s, "utileria.material.piedra") == 7);
+    const Ingredient need[] = { { "utileria.material.piedra", 4 }, { "utileria.material.barro", 2 }, { NULL, 0 } };
+    CHECK(!stock_has_all(&s, need));
+    CHECK(!strcmp(stock_first_missing(&s, need)->id, "utileria.material.barro"));
+    CHECK(!stock_take_all(&s, need) && stock_count(&s, "utileria.material.piedra") == 7); // todo o nada
+    stock_add(&s, "utileria.material.barro", 2);
+    CHECK(stock_take_all(&s, need) && stock_count(&s, "utileria.material.piedra") == 3 &&
+          stock_count(&s, "utileria.material.barro") == 0);
+}
+
+static void test_daily_upkeep_food_and_gathering(void) {
+    Troop t;
+    troop_init(&t, NULL);
+    Stockpile s;
+    stock_init(&s);
+    for (int i = 0; i < 3; i++) troop_recruit(&t, "Comun", 0);
+    int hunter = troop_recruit(&t, "Cazador", 0);
+    troop_assign_role(&t, hunter, ROLE_HUNTER);
+    // Sin comida: el cazador trae 3, comen 4 -> uno se queda sin racion.
+    float before = troop_avg_morale(&t);
+    UpkeepReport r = economy_daily_upkeep(&s, &t);
+    CHECK(r.eaten == 3 && r.hungry == 1);
+    CHECK(troop_avg_morale(&t) < before); // el hambre baja la moral
+    CHECK(stock_count(&s, "utileria.objeto.lena") == 3); // los que no tienen funcion recolectan
+    CHECK(stock_count(&s, "utileria.material.pieles") == 1);
+    // Con cocinero se come menos.
+    stock_add(&s, FOOD_ID, 20);
+    int cook = troop_recruit(&t, "Cocinero", 0);
+    troop_assign_role(&t, cook, ROLE_COOK);
+    int food = stock_count(&s, FOOD_ID);
+    r = economy_daily_upkeep(&s, &t);
+    CHECK(r.hungry == 0 && r.eaten == 5 - 5 / 3);
+    CHECK(stock_count(&s, FOOD_ID) == food + 3 - r.eaten);
+}
+
+static void test_camp_effects(void) {
+    const char *none[] = { "estructura.vivienda.yurta_comun" };
+    CampEffects e = camp_effects(none, 1);
+    CHECK(e.morale_per_day == 0.0f && e.rebellion_scale == 1.0f && e.shelters == 4 && e.reveal_radius == 0.0f);
+    const char *all[] = { "estructura.campamento.hoguera", "estructura.campamento.horno_cocina",
+                          "totem.proteccion.guardian", "estructura.campamento.atalaya",
+                          "estructura.campamento.fogata", "estructura.campamento.fogata", "estructura.campamento.fogata",
+                          "estructura.campamento.refugio" };
+    e = camp_effects(all, 8);
+    CHECK(e.morale_per_day == 3.0f + 2.0f + 2.0f); // hoguera + horno + fogatas (tope 2)
+    CHECK(e.rebellion_scale == 0.5f && e.reveal_radius > 0.0f && e.shelters == 1);
+    // El totem baja el riesgo de rebelion de la tropa.
+    Troop t;
+    troop_init(&t, NULL);
+    for (int i = 0; i < 4; i++) troop_find(&t, troop_recruit(&t, "Triste", TRAIT_AMBITIOUS))->morale = 10.0f;
+    float p = troop_rebellion_chance(&t);
+    t.rebellion_scale = e.rebellion_scale;
+    CHECK(p > 0.0f && troop_rebellion_chance(&t) < p);
+}
+
+static void test_crafting(void) {
+    Troop t;
+    troop_init(&t, NULL);
+    const CraftDef *c = craft_def(CRAFT_SABLE_BRONZE);
+    CHECK(craft_seconds(c, &t) < 0.0f); // sin herrero no se forja
+    troop_assign_role(&t, troop_recruit(&t, "Herrero", 0), ROLE_SMITH);
+    CHECK(craft_seconds(c, &t) == c->work);
+    troop_assign_role(&t, troop_recruit(&t, "Herrero 2", 0), ROLE_SMITH);
+    CHECK(craft_seconds(c, &t) == c->work / 2.0f);
+    for (int i = 0; i < CRAFT_COUNT; i++) CHECK(craft_def((CraftId)i)->mats[0].id != NULL);
+}
+
+static void test_build_materials_and_crew_presence(void) {
+    for (int b = 0; b < BUILD_COUNT; b++) CHECK(build_def((BuildId)b)->mats[0].id != NULL); // toda obra cuesta algo
+    Troop t;
+    troop_init(&t, NULL);
+    int a = add_worker(&t, ROLE_NONE, 60.0f), b = add_worker(&t, ROLE_BUILDER, 60.0f);
+    add_worker(&t, ROLE_NONE, 60.0f);
+    const BuildDef *wall = build_def(BUILD_PALISADE);
+    CrewPlan plan = build_plan(wall, &t, false);
+    CHECK(plan.check == BUILD_READY && plan.workers == 3 && plan.ids[0] == b); // el constructor primero
+    bool present[TROOP_MAX + 1] = { true, true, false };
+    CHECK(build_rate_present(wall, &plan, present) == 0.0f); // faltan manos en la obra: espera
+    present[2] = true;
+    CHECK(build_rate_present(wall, &plan, present) == plan.rate);
+    // Un integrante ocupado en otra obra no cuenta.
+    int busy[] = { a };
+    CHECK(build_plan_excluding(wall, &t, false, busy, 1).check == BUILD_FEW_WORKERS);
+    CHECK(build_plan_excluding(wall, &t, true, busy, 1).ids[2] == -1); // el jugador completa la cuadrilla
+}
+
+// ---------------------------------------------------------------- animales
+static void test_animals_flee_and_wander(void) {
+    Rng r;
+    rng_seed(&r, 3);
+    Animal a;
+    animal_init(&a, SPECIES_DEER, 0, 0);
+    for (int i = 0; i < 100; i++) animal_update(&a, 0.1f, 1000.0f, 1000.0f, &r); // jugador lejos: deambula
+    CHECK(!a.fleeing && sqrtf(a.x * a.x + a.z * a.z) < 20.0f);
+    float before = sqrtf((a.x - 3) * (a.x - 3) + a.z * a.z);
+    for (int i = 0; i < 10; i++) animal_update(&a, 0.1f, 3.0f, 0.0f, &r); // jugador encima: huye
+    CHECK(a.fleeing && sqrtf((a.x - 3) * (a.x - 3) + a.z * a.z) > before);
+}
+
+static void test_animals_tame_saddle_ride(void) {
+    Rng r;
+    rng_seed(&r, 9);
+    Animal deer, horse;
+    animal_init(&deer, SPECIES_DEER, 0, 0);
+    animal_init(&horse, SPECIES_HORSE, 0, 0);
+    CHECK(!animal_saddle(&horse)); // salvaje: no se ensilla
+    int tries = 0;
+    while (!animal_try_tame(&horse, &r, 0.0f, 50.0f, 60.0f) && tries < 100) tries++;
+    CHECK(horse.state == ANIMAL_TAMED && horse.home_x == 50.0f && tries < 100);
+    CHECK(!animal_try_tame(&horse, &r, 1.0f, 0, 0)); // ya domado
+    CHECK(!animal_can_ride(&horse) && animal_saddle(&horse) && animal_can_ride(&horse));
+    CHECK(animal_try_tame(&deer, &r, 1.0f, 0, 0) && !animal_saddle(&deer)); // un ciervo no se monta
+    // Domado: sigue al jugador cercano.
+    for (int i = 0; i < 50; i++) animal_update(&horse, 0.1f, 10.0f, 0.0f, &r);
+    CHECK(fabsf(horse.x - 10.0f) < 6.0f);
+    CHECK(species_def(SPECIES_HORSE)->ride_speed > 1.0f);
+}
+
 // ---------------------------------------------------------------- inventario de assets
 static void test_inventory_parses_and_maps_paths(void) {
     const char *tsv =
@@ -589,7 +716,23 @@ static void test_inventory_repo_file_is_valid(void) {
         if (d->requires) CHECK(inventory_find(&inv, d->requires) != NULL);
         if (d->produces) CHECK(inventory_find(&inv, d->produces) != NULL);
     }
-    for (int b = 0; b < BUILD_COUNT; b++) CHECK(inventory_find(&inv, build_def((BuildId)b)->produces) != NULL);
+    for (int b = 0; b < BUILD_COUNT; b++) {
+        const BuildDef *d = build_def((BuildId)b);
+        CHECK(inventory_find(&inv, d->produces) != NULL);
+        for (const Ingredient *m = d->mats; m->id; m++) CHECK(inventory_find(&inv, m->id) != NULL);
+    }
+    for (int a = 0; a < ACTION_COUNT; a++)
+        for (const Ingredient *m = action_def((ActionId)a)->mats; m->id; m++) CHECK(inventory_find(&inv, m->id) != NULL);
+    for (int c = 0; c < CRAFT_COUNT; c++) {
+        const CraftDef *d = craft_def((CraftId)c);
+        CHECK(inventory_find(&inv, d->produces) != NULL && inventory_find(&inv, d->building) != NULL);
+        for (const Ingredient *m = d->mats; m->id; m++) CHECK(inventory_find(&inv, m->id) != NULL);
+    }
+    for (int sp = 0; sp < SPECIES_COUNT; sp++) CHECK(inventory_find(&inv, species_def((Species)sp)->model) != NULL);
+    Stockpile seed;
+    stock_init(&seed);
+    stock_seed_camp(&seed);
+    for (int i = 0; i < seed.n; i++) CHECK(inventory_find(&inv, seed.e[i].id) != NULL);
     CHECK(inventory_find(&inv, "arma.larga.guja")->hands == INV_HANDS_TWO);
     CHECK(inventory_find(&inv, "arma.corta.sable")->hands == INV_HANDS_ONE);
     CHECK(inventory_find(&inv, "escudo.grande.paves")->hands == INV_HANDS_SHIELD);
@@ -628,6 +771,13 @@ int main(void) {
     RUN(test_build_needs_crew_and_skills);
     RUN(test_build_skill_morale_and_champions);
     RUN(test_build_advance);
+    RUN(test_stockpile);
+    RUN(test_daily_upkeep_food_and_gathering);
+    RUN(test_camp_effects);
+    RUN(test_crafting);
+    RUN(test_build_materials_and_crew_presence);
+    RUN(test_animals_flee_and_wander);
+    RUN(test_animals_tame_saddle_ride);
     RUN(test_inventory_parses_and_maps_paths);
     RUN(test_inventory_repo_file_is_valid);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);

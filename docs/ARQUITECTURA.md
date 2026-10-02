@@ -20,6 +20,8 @@ src/
     clock.h      reloj de juego (dias)
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
+    economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
+    animals.*    animales: deambular, huir, doma, montura
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
     camp.*       campamento, props

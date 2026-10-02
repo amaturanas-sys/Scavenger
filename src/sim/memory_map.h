@@ -59,6 +59,10 @@ void memmap_free(MemoryMap *m);
 // El jugador esta en (x, z) durante dt segundos; now = tiempo de juego (s).
 void memmap_visit(MemoryMap *m, float x, float z, float dt, float now);
 
+// Revela de golpe un circulo (p. ej., lo que se ve desde una torre de vigilancia)
+// como si se hubiera recorrido durante `seconds`.
+void memmap_reveal(MemoryMap *m, float x, float z, float radius, float seconds, float now);
+
 // Brillo recordado en (x, z) en el instante now, [0, 1]. Lo no visitado: 0.
 float memmap_light(const MemoryMap *m, float x, float z, float now);
 float memmap_familiarity(const MemoryMap *m, float x, float z);

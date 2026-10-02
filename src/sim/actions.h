@@ -18,6 +18,7 @@
 
 #include <stdbool.h>
 
+#include "economy.h"
 #include "inventory.h"
 #include "troop.h"
 
@@ -87,6 +88,7 @@ typedef struct {
     const char *requires; // id de inventario que hay que tener a mano, o NULL
     const char *produces; // id de inventario que queda en el mundo, o NULL
     const char *target;   // a que se aplica ("muro", "animal salvaje"...), o NULL
+    Ingredient mats[MAT_MAX]; // lo que consume del acopio
 } ActionDef;
 
 const ActionDef *action_def(ActionId a);
@@ -114,7 +116,7 @@ typedef struct {
     int max_workers;       // mas gente no acelera (se estorban)
     Role required_role;    // sin alguien con esta funcion no se puede (ROLE_NONE: nadie en especial)
     Role skilled_role;     // quien tiene esta funcion trabaja el doble
-    const char *materials; // UTF-8, informativo por ahora
+    Ingredient mats[MAT_MAX]; // lo que consume del acopio al empezar
 } BuildDef;
 
 const BuildDef *build_def(BuildId b);
@@ -124,12 +126,20 @@ typedef enum { BUILD_READY, BUILD_FEW_WORKERS, BUILD_MISSING_ROLE } BuildCheck;
 typedef struct {
     BuildCheck check;
     int workers; // cuantos trabajarian (incluido el jugador si ayuda)
-    float rate;  // trabajo por segundo; 0 si no se puede
+    float rate;  // trabajo por segundo si todos estan en la obra; 0 si no se puede
+    // La cuadrilla elegida, de mas a menos habil: id del integrante (-1 = el jugador) y su aporte.
+    int ids[TROOP_MAX + 1];
+    float skills[TROOP_MAX + 1];
 } CrewPlan;
 
 // Arma la cuadrilla con los integrantes activos mas habiles. player_helps:
 // el jugador trabaja tambien (cuenta como un trabajador comun).
 CrewPlan build_plan(const BuildDef *def, const Troop *t, bool player_helps);
+// Igual, pero sin contar a los integrantes ocupados en otra obra (ids en busy).
+CrewPlan build_plan_excluding(const BuildDef *def, const Troop *t, bool player_helps, const int *busy, int n_busy);
+// Ritmo real con la parte de la cuadrilla que ya llego a la obra (present[i] para plan->ids[i]).
+// Si los presentes no alcanzan el minimo, la obra espera (0).
+float build_rate_present(const BuildDef *def, const CrewPlan *plan, const bool *present);
 // Aporte de un integrante a una obra (1 = trabajador comun).
 float build_worker_skill(const BuildDef *def, const Troop *t, const Member *m);
 const char *build_check_text(const BuildDef *def, BuildCheck c);

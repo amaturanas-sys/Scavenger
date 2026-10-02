@@ -144,17 +144,20 @@ static void debug_camp_actions(Troop *t, Rng *rng, float *world_time, int *last_
 }
 
 // Avanza los dias que correspondan al reloj de juego.
-static void advance_days(Troop *t, Rng *rng, int *day, float world_time, char *log, size_t log_len) {
+static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const Terrain *terrain, char *log,
+                         size_t log_len) {
     while (*day < clock_day(world_time)) {
         DayReport r = troop_process_day(t, rng);
         (*day)++;
+        // Comida, recoleccion, efectos del campamento y trabajos de los NPCs.
+        ga_new_day(&g_actions, &g_props, terrain, t, &g_memory, world_time, *day, log, log_len);
         if (r.rebellion) {
             const Member *m = troop_find(t, r.rebellion_leader);
             snprintf(log, log_len, "Dia %d: REBELION encabezada por %s!", *day, m ? m->name : "?");
         } else if (r.champions_deserted) {
             snprintf(log, log_len, "Dia %d: %d desertores, %d grandes guerreros.", *day, r.deserted,
                      r.champions_deserted);
-        } else {
+        } else if (r.deserted) {
             snprintf(log, log_len, "Dia %d: %d desertores.", *day, r.deserted);
         }
     }
@@ -226,7 +229,7 @@ static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day,
     ui_strip((Rectangle){ 0, VIRTUAL_H - 40, VIRTUAL_W, 40 }, UI_METAL_GOLD);
     ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E o clic der. cámara  Rueda zoom  M marcar",
             4, VIRTUAL_H - 32, 10, UI_BONE_DIM);
-    ui_text("Tab acciones y construcciones  X empuñadura  H enfundar  F tomar  T lanzar", 4, VIRTUAL_H - 21, 10,
+    ui_text("Tab acciones, obras y forja  X empuñadura  H enfundar  F tomar  T lanzar  R montar  I acopio", 4, VIRTUAL_H - 21, 10,
             UI_BONE);
     ui_text("1 reclutar 2 prisionero 3 ejec. prisionero 4 ejec. miembro 5 desterrar 6 botin 7 liberar 8 gran guerrero G ficha Enter dia",
             4, VIRTUAL_H - 11, 10, UI_BONE_DIM);
@@ -292,7 +295,7 @@ int main(int argc, char **argv) {
         UnloadFileText(inv_text);
     }
     props_init(&g_props, &g_inventory);
-    ga_init(&g_actions, &g_inventory, &g_props, &terrain);
+    ga_init(&g_actions, &g_inventory, &g_props, &terrain, WORLD_SEED);
 
     Gallery gallery = { 0 };
     if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
@@ -317,14 +320,17 @@ int main(int argc, char **argv) {
         if (has_keyboard) {
             // Con el menu de acciones abierto el jugador no se mueve (las flechas eligen).
             bool menu = ga_menu_open(&g_actions);
-            PlayerInput in = menu ? (PlayerInput){ 0 } : player_read_input();
-            player_update(&player, &terrain, in, rig.yaw, dt);
+            PlayerInput in = ga_blocks_input(&g_actions) ? (PlayerInput){ 0 } : player_read_input();
+            player.speed_scale = ga_speed_scale(&g_actions);
+            player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
+            if (!g_actions.climbing) player_update(&player, &terrain, in, rig.yaw, dt);
             world_time += dt;
             int prev_champion = last_champion;
             if (!menu) debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log));
             if (!gallery_mode) ga_update(&g_actions, &g_props, &terrain, &player, &troop, dt, log, sizeof(log));
+            if (!gallery_mode) ga_after_player(&g_actions, &g_props, &terrain, &player);
             if (last_champion != prev_champion) show_card = true; // ficha al conocerlo
-            advance_days(&troop, &rng, &day, world_time, log, sizeof(log));
+            advance_days(&troop, &rng, &day, world_time, &terrain, log, sizeof(log));
             if (IsKeyPressed(KEY_G)) show_card = !show_card && last_champion >= 0;
             memmap_visit(&g_memory, player.pos.x, player.pos.z, dt, world_time);
             if (IsKeyPressed(KEY_M)) {
@@ -343,7 +349,7 @@ int main(int argc, char **argv) {
         camp_draw(&camp, (float)GetTime());
         if (gallery_mode) gallery_draw(&gallery);
         player_draw(&player);
-        if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &player, (float)GetTime());
+        if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
         EndMode3D();
         if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
@@ -351,7 +357,7 @@ int main(int argc, char **argv) {
             draw_hud(&player, &troop, &overlord, day, ga_hands_text(&g_actions), log);
             minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
                          player.pos, rig.yaw, player.yaw, world_time);
-            ga_draw_hud(&g_actions, &troop, VIRTUAL_W, VIRTUAL_H);
+            ga_draw_hud(&g_actions, &g_props, &troop, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
         }
         if (!has_keyboard) draw_keyboard_notice();

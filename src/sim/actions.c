@@ -99,9 +99,11 @@ static const ActionDef ACTIONS[ACTION_COUNT] = {
     [ACTION_SHEATHE] = { "Enfundar / desenfundar", "Guardar las armas libera las manos.",
                          ACTOR_PLAYER | ACTOR_NPC, 0.6f, NULL, NULL, NULL },
     [ACTION_PLACE_FIRE] = { "Instalar fogata", "Una fogata pequeña para una persona o dos.",
-                            ACTOR_PLAYER | ACTOR_NPC, 4.0f, NULL, "estructura.campamento.fogata", NULL },
+                            ACTOR_PLAYER | ACTOR_NPC, 4.0f, NULL, "estructura.campamento.fogata", NULL,
+                            { { "utileria.objeto.lena", 2 }, { NULL, 0 } } },
     [ACTION_PLACE_TENT] = { "Instalar tienda", "Tienda ligera de viaje.", ACTOR_PLAYER | ACTOR_NPC, 8.0f, NULL,
-                            "estructura.vivienda.tienda_ligera", NULL },
+                            "estructura.vivienda.tienda_ligera", NULL,
+                            { { "utileria.material.pieles", 2 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } } },
     [ACTION_DIG_TRENCH] = { "Cavar trinchera", "Cobertura contra flechas y cargas. Requiere pala.",
                             ACTOR_PLAYER | ACTOR_NPC, 12.0f, "utileria.herramienta.pala",
                             "estructura.defensa.trinchera", NULL },
@@ -120,25 +122,25 @@ const ActionDef *action_def(ActionId a) { return a >= 0 && a < ACTION_COUNT ? &A
 // ---------------------------------------------------------------- construcciones en grupo
 static const BuildDef BUILDS[BUILD_COUNT] = {
     [BUILD_SHELTER] = { "Refugio", "estructura.campamento.refugio", 900.0f, 2, 4, ROLE_NONE, ROLE_BUILDER,
-                        "ramas, pieles, cuerda" },
-    [BUILD_PALISADE] = { "Muro de empalizada", "estructura.campamento.empalizada", 1200.0f, 3, 6, ROLE_NONE,
-                         ROLE_BUILDER, "troncos, cuerda" },
-    [BUILD_STONE_WALL] = { "Muro de piedra", "estructura.defensa.muro_piedra", 2400.0f, 4, 8, ROLE_NONE,
-                           ROLE_BUILDER, "piedras" },
+        { { "utileria.material.troncos", 4 }, { "utileria.material.pieles", 3 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } } },
+    [BUILD_PALISADE] = { "Muro de empalizada", "estructura.campamento.empalizada", 1200.0f, 3, 6, ROLE_NONE, ROLE_BUILDER,
+        { { "utileria.material.troncos", 8 }, { "utileria.material.cuerda", 2 }, { NULL, 0 } } },
+    [BUILD_STONE_WALL] = { "Muro de piedra", "estructura.defensa.muro_piedra", 2400.0f, 4, 8, ROLE_NONE, ROLE_BUILDER,
+        { { "utileria.material.piedra", 12 }, { NULL, 0 } } },
     [BUILD_BONFIRE] = { "Hoguera", "estructura.campamento.hoguera", 300.0f, 2, 4, ROLE_NONE, ROLE_HUNTER,
-                        "leña" },
+        { { "utileria.objeto.lena", 6 }, { NULL, 0 } } },
     [BUILD_TOTEM] = { "Tótem de protección", "totem.proteccion.guardian", 900.0f, 2, 4, ROLE_NONE, ROLE_HEALER,
-                      "tronco, pigmentos, crines" },
+        { { "utileria.material.troncos", 2 }, { "utileria.material.pieles", 1 }, { NULL, 0 } } },
     [BUILD_OVEN] = { "Horno de cocina", "estructura.campamento.horno_cocina", 600.0f, 2, 3, ROLE_NONE, ROLE_COOK,
-                     "barro, piedras" },
-    [BUILD_FURNACE_BRONZE] = { "Horno de fundición (bronce)", "estructura.campamento.horno_bronce", 1800.0f, 3, 5,
-                               ROLE_SMITH, ROLE_SMITH, "barro, piedras, carbón, cobre y estaño" },
-    [BUILD_FURNACE_STEEL] = { "Horno de fundición (acero)", "estructura.campamento.horno_acero", 3000.0f, 4, 6,
-                              ROLE_SMITH, ROLE_SMITH, "piedra refractaria, fuelles, carbón, hierro" },
-    [BUILD_WATCHTOWER] = { "Torre de vigilancia", "estructura.campamento.atalaya", 1500.0f, 3, 6, ROLE_NONE,
-                           ROLE_BUILDER, "troncos, cuerda" },
+        { { "utileria.material.barro", 6 }, { "utileria.material.piedra", 4 }, { NULL, 0 } } },
+    [BUILD_FURNACE_BRONZE] = { "Horno de fundición (bronce)", "estructura.campamento.horno_bronce", 1800.0f, 3, 5, ROLE_SMITH, ROLE_SMITH,
+        { { "utileria.material.barro", 8 }, { "utileria.material.piedra", 6 }, { "utileria.material.carbon", 4 }, { NULL, 0 } } },
+    [BUILD_FURNACE_STEEL] = { "Horno de fundición (acero)", "estructura.campamento.horno_acero", 3000.0f, 4, 6, ROLE_SMITH, ROLE_SMITH,
+        { { "utileria.material.piedra", 14 }, { "utileria.material.carbon", 8 }, { "utileria.material.hierro", 2 }, { NULL, 0 } } },
+    [BUILD_WATCHTOWER] = { "Torre de vigilancia", "estructura.campamento.atalaya", 1500.0f, 3, 6, ROLE_NONE, ROLE_BUILDER,
+        { { "utileria.material.troncos", 12 }, { "utileria.material.cuerda", 3 }, { NULL, 0 } } },
     [BUILD_CORRAL] = { "Corral", "estructura.campamento.corral", 600.0f, 2, 4, ROLE_NONE, ROLE_HUNTER,
-                       "estacas, cuerda" },
+        { { "utileria.material.troncos", 6 }, { "utileria.material.cuerda", 3 }, { NULL, 0 } } },
 };
 
 const BuildDef *build_def(BuildId b) { return b >= 0 && b < BUILD_COUNT ? &BUILDS[b] : NULL; }
@@ -158,31 +160,61 @@ float build_worker_skill(const BuildDef *def, const Troop *t, const Member *m) {
     return s;
 }
 
-CrewPlan build_plan(const BuildDef *def, const Troop *t, bool player_helps) {
-    CrewPlan plan = { BUILD_READY, 0, 0.0f };
-    float skills[TROOP_MAX + 1];
+static bool is_busy(int id, const int *busy, int n_busy) {
+    for (int i = 0; i < n_busy; i++)
+        if (busy[i] == id) return true;
+    return false;
+}
+
+CrewPlan build_plan_excluding(const BuildDef *def, const Troop *t, bool player_helps, const int *busy, int n_busy) {
+    CrewPlan plan;
+    memset(&plan, 0, sizeof(plan));
+    plan.check = BUILD_READY;
     int n = 0;
     bool has_required = def->required_role == ROLE_NONE;
     for (int i = 0; i < t->count; i++) {
         const Member *m = &t->members[i];
-        if (m->status != STATUS_ACTIVE) continue;
+        if (m->status != STATUS_ACTIVE || is_busy(m->id, busy, n_busy)) continue;
         if (m->role == def->required_role) has_required = true;
-        skills[n++] = build_worker_skill(def, t, m);
+        plan.ids[n] = m->id;
+        plan.skills[n++] = build_worker_skill(def, t, m);
     }
-    if (player_helps) skills[n++] = 1.0f;
+    if (player_helps) {
+        plan.ids[n] = -1;
+        plan.skills[n++] = 1.0f;
+    }
     // Los mas habiles primero (insercion: n es pequeno).
     for (int i = 1; i < n; i++)
-        for (int j = i; j > 0 && skills[j] > skills[j - 1]; j--) {
-            float tmp = skills[j];
-            skills[j] = skills[j - 1];
-            skills[j - 1] = tmp;
+        for (int j = i; j > 0 && plan.skills[j] > plan.skills[j - 1]; j--) {
+            float ts = plan.skills[j];
+            int ti = plan.ids[j];
+            plan.skills[j] = plan.skills[j - 1];
+            plan.ids[j] = plan.ids[j - 1];
+            plan.skills[j - 1] = ts;
+            plan.ids[j - 1] = ti;
         }
     plan.workers = n < def->max_workers ? n : def->max_workers;
     if (!has_required) plan.check = BUILD_MISSING_ROLE;
     else if (plan.workers < def->min_workers) plan.check = BUILD_FEW_WORKERS;
     if (plan.check != BUILD_READY) return plan;
-    for (int i = 0; i < plan.workers; i++) plan.rate += skills[i];
+    for (int i = 0; i < plan.workers; i++) plan.rate += plan.skills[i];
     return plan;
+}
+
+CrewPlan build_plan(const BuildDef *def, const Troop *t, bool player_helps) {
+    return build_plan_excluding(def, t, player_helps, NULL, 0);
+}
+
+float build_rate_present(const BuildDef *def, const CrewPlan *plan, const bool *present) {
+    if (plan->check != BUILD_READY) return 0.0f;
+    float rate = 0.0f;
+    int n = 0;
+    for (int i = 0; i < plan->workers; i++)
+        if (present[i]) {
+            rate += plan->skills[i];
+            n++;
+        }
+    return n >= def->min_workers ? rate : 0.0f;
 }
 
 const char *build_check_text(const BuildDef *def, BuildCheck c) {

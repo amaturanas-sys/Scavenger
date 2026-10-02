@@ -38,6 +38,7 @@ void player_init(Player *p, const Terrain *t) {
     p->pos.y = terrain_height(t, p->pos.x, p->pos.z);
     p->yaw = PI; // mirando hacia el campamento
     p->grounded = true;
+    p->speed_scale = 1.0f;
 }
 
 void player_update(Player *p, const Terrain *t, PlayerInput in, float cam_yaw, float dt) {
@@ -52,6 +53,7 @@ void player_update(Player *p, const Terrain *t, PlayerInput in, float cam_yaw, f
     if (in.run && p->moving) p->sneaking = false;
     p->stance = p->sneaking ? STANCE_SNEAK : (in.run && p->moving ? STANCE_RUN : STANCE_WALK);
     float speed = p->stance == STANCE_SNEAK ? SNEAK_SPEED : (p->stance == STANCE_RUN ? RUN_SPEED : WALK_SPEED);
+    speed *= p->speed_scale > 0.0f ? p->speed_scale : 1.0f;
 
     if (p->moving) {
         // Adelante = direccion a la que mira la camara (proyectada al suelo).
@@ -89,11 +91,12 @@ void player_draw(const Player *p) {
     // Placeholder hasta tener el modelo del personaje (ver docs/ROADMAP.md).
     float h = p->sneaking ? 1.1f : 1.7f;
     Color body = p->stance == STANCE_SNEAK ? (Color){ 70, 80, 70, 255 } : (Color){ 150, 52, 40, 255 };
-    Vector3 base = { p->pos.x, p->pos.y + 0.35f, p->pos.z };
-    Vector3 top = { p->pos.x, p->pos.y + h - 0.35f, p->pos.z };
+    float y = p->pos.y + p->draw_lift;
+    Vector3 base = { p->pos.x, y + 0.35f, p->pos.z };
+    Vector3 top = { p->pos.x, y + h - 0.35f, p->pos.z };
     DrawCapsule(base, top, 0.35f, 6, 3, body);
     // Nariz: indica hacia donde mira.
-    Vector3 nose = { p->pos.x + sinf(p->yaw) * 0.4f, p->pos.y + h - 0.35f, p->pos.z + cosf(p->yaw) * 0.4f };
+    Vector3 nose = { p->pos.x + sinf(p->yaw) * 0.4f, y + h - 0.35f, p->pos.z + cosf(p->yaw) * 0.4f };
     DrawCube(nose, 0.15f, 0.15f, 0.15f, (Color){ 230, 200, 160, 255 });
 }
 

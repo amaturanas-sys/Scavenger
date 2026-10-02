@@ -129,6 +129,13 @@ void memmap_visit(MemoryMap *m, float x, float z, float dt, float now) {
     }
 }
 
+void memmap_reveal(MemoryMap *m, float x, float z, float radius, float seconds, float now) {
+    float saved = m->params.sight_radius;
+    m->params.sight_radius = radius;
+    memmap_visit(m, x, z, seconds, now);
+    m->params.sight_radius = saved;
+}
+
 float memmap_light(const MemoryMap *m, float x, float z, float now) {
     const MemoryCell *c = find_cell(m, x, z);
     return c ? decayed(&m->params, c, now) : 0.0f;

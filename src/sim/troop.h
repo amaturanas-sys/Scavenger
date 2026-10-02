@@ -86,6 +86,7 @@ typedef struct {
     Kingdom *overlord; // puede ser NULL (tropa independiente)
     Champion champions[TROOP_MAX];
     int champion_count;
+    float rebellion_scale; // efectos del campamento (p. ej. el totem de proteccion la reduce); 1 por defecto
 } Troop;
 
 typedef struct {
@@ -117,6 +118,8 @@ bool troop_banish(Troop *t, int id);
 bool troop_execute(Troop *t, int id); // integrante activo o prisionero
 bool troop_release_prisoner(Troop *t, int id);
 void troop_share_loot(Troop *t);
+// Suma (o resta) animo a todos los integrantes activos (comida, comodidades del campamento...).
+void troop_adjust_morale(Troop *t, float delta);
 
 int troop_count_with_status(const Troop *t, MemberStatus status);
 float troop_avg_morale(const Troop *t);

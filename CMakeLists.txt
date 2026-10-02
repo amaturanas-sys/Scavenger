@@ -31,7 +31,9 @@ add_library(estepa_sim STATIC
   src/sim/memory_map.c
   src/sim/champion.c
   src/sim/inventory.c
-  src/sim/actions.c)
+  src/sim/actions.c
+  src/sim/economy.c
+  src/sim/animals.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)
