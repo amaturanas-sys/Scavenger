@@ -63,6 +63,7 @@ void troop_init(Troop *t, Kingdom *overlord) {
     memset(t, 0, sizeof(*t));
     t->next_id = 1;
     t->overlord = overlord;
+    t->rebellion_scale = 1.0f;
 }
 
 static int add_member(Troop *t, const char *name, unsigned traits, MemberStatus status) {
@@ -153,6 +154,12 @@ bool troop_release_prisoner(Troop *t, int id) {
 
 void troop_share_loot(Troop *t) { apply_action(t, ACT_SHARE_LOOT); }
 
+void troop_adjust_morale(Troop *t, float delta) {
+    for (int i = 0; i < t->count; i++)
+        if (t->members[i].status == STATUS_ACTIVE)
+            t->members[i].morale = clampf(t->members[i].morale + delta, 0.0f, 100.0f);
+}
+
 int troop_count_with_status(const Troop *t, MemberStatus status) {
     int n = 0;
     for (int i = 0; i < t->count; i++)
@@ -193,7 +200,7 @@ float troop_rebellion_chance(const Troop *t) {
         if (m->status == STATUS_ACTIVE && (m->traits & TRAIT_AMBITIOUS) && m->loyalty < REBEL_AMBITIOUS_LOYALTY)
             p += REBEL_AMBITIOUS_BONUS;
     }
-    return clampf(p, 0.0f, REBEL_MAX);
+    return clampf(p * t->rebellion_scale, 0.0f, REBEL_MAX);
 }
 
 DayReport troop_process_day(Troop *t, Rng *rng) {

@@ -19,6 +19,8 @@ typedef struct {
     bool moving;
     Stance stance;
     float noise;      // 0..1: cuanto ruido hace (lo escuchara la IA de sigilo)
+    float speed_scale; // multiplica la velocidad (montado: la de la montura); 1 por defecto
+    float draw_lift;   // m: altura extra al dibujar (montado, sobre el lomo)
 } Player;
 
 typedef struct {

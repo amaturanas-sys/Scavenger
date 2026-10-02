@@ -107,7 +107,49 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - ×0,5 si su moral está por debajo de 30.
 - Los prisioneros no trabajan. El jugador suma una persona si está cerca de la obra.
 - Nueva función de tropa: **constructor**.
-- **Pendiente:** consumir materiales, que cada NPC camine a la obra, y los efectos de cada construcción (el calor de la hoguera, la protección del tótem, la fundición de armas y armaduras de bronce y acero).
+- **La cuadrilla camina a la obra:** cada obra elige a sus trabajadores, sin repetir gente entre obras. La obra solo avanza con los que ya llegaron, y espera mientras no se junte el mínimo. El panel muestra cuántos hay en la obra (p. ej. «3/4»).
+
+### Campamento: acopio, comida y efectos (implementado — `src/sim/economy.*`)
+- **Acopio de la tribu:** materiales y comida compartidos.
+  - Materiales: leña, troncos, piedra, barro, pieles, cuerda, carbón y minerales de cobre, estaño y hierro.
+  - Las acciones y las obras consumen sus materiales al empezar. Si falta algo, se avisa qué y cuánto.
+  - Los recursos que el jugador toma del suelo (`F`) van directo al acopio.
+  - `I` muestra el acopio.
+- **Recolección diaria por función:**
+
+  | Función | Trae al acopio cada día |
+  |---|---|
+  | Sin función | leña y troncos |
+  | Cazador | carne seca y pieles |
+  | Explorador | piedra y barro |
+  | Herrero | carbón |
+  | Constructor | cuerda |
+
+- **Comida:** cada integrante come una ración por día. Con cocinero se ahorra una ración cada tres bocas. Si falta comida, la moral de todos cae.
+- **Efectos diarios de lo construido** (dentro de 45 m del campamento):
+  - Hoguera: +3 de moral.
+  - Fogatas: +1 cada una, hasta +2.
+  - Horno de cocina: +2 de moral.
+  - Tótem de protección: el riesgo de rebelión baja a la mitad.
+  - Torre de vigilancia: revela 80 m del mapa de memoria cada día.
+  - Refugios, tiendas y yurtas: dan techo.
+- **Los NPCs actúan solos:** usan las mismas acciones que el jugador. Si no hay fogata, un integrante libre instala una; si faltan techos, otro instala una tienda.
+- **Forja:**
+
+  | Horno | Se forja |
+  |---|---|
+  | Bronce | sable, lanza y casco |
+  | Acero | sable, coraza de escamas y escudo de láminas |
+
+  - Hace falta el horno construido, un herrero y los materiales. Varios herreros forjan más rápido.
+  - Lo forjado va al acopio. El jugador empuña el mejor sable que haya (acero, luego bronce, luego común).
+
+### Animales, trepar y esconderse (implementado — `src/sim/animals.*`)
+- **Animales del mundo:** caballos, camellos, ciervos, lobos e íbices deambulan por su territorio y huyen del jugador si se acerca demasiado.
+- **Lazo:** intento de doma con una probabilidad propia de cada especie. Si lo logra, el animal sigue a la tribu; si falla, se escapa.
+- **Silla y montura:** la silla instala la montura en un animal domado y montable (caballo o camello). `R` monta y desmonta. Montado, el jugador va más rápido: caballo ×2,4, camello ×1,7.
+- **Trepa:** se lanza a un muro (empalizada, muro o muralla) que esté delante. El jugador sube por la cuerda, pasa por encima y baja del otro lado.
+- **Esconderse:** acechando dentro de la hierba alta, el jugador queda oculto y no hace ruido (el HUD lo indica).
 
 ### 2. Personaje y equipo (núcleo implementado — `src/sim/loadout.*`)
 - Personaje y vestuario personalizables (fase 3).

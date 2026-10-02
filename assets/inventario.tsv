@@ -128,6 +128,9 @@ arma.especial.hacha_ceremonial	Hacha ceremonial	uso:equipable,especial:gran_guer
 arma.especial.lanza_doble_punta	Lanza de caballería de doble punta	uso:equipable,especial:gran_guerrero,manos:dos	0.1x2.8x0.1	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
 arma.especial.ballesta_repeticion	Ballesta de repetición	uso:equipable,especial:gran_guerrero,manos:dos	0.6x0.35x0.9	300	pendiente	Arma especial de grandes guerreros (src/sim/champion.c).
 arma.especial.espada_padre	Espada ceremonial del padre	uso:equipable,acto:3,especial:legado,especial:narrativo,material:oro,manos:una	0.12x1x0.04	500	pendiente	Hallada en la tumba helada; se empuña en el asalto final.
+arma.corta.sable_bronce	Sable de bronce	uso:equipable,manos:una,material:bronce	0.08x0.9x0.03	120	pendiente	Se forja en el horno de bronce.
+arma.corta.sable_acero	Sable de acero	uso:equipable,manos:una,material:hierro	0.08x0.95x0.03	120	pendiente	Se forja en el horno de acero.
+arma.larga.lanza_bronce	Lanza de punta de bronce	uso:equipable,manos:una,material:bronce	0.1x2.4x0.1	80	pendiente	Se forja en el horno de bronce.
 proyectil.flecha.comun	Flecha	uso:municion	0.02x0.8x0.02	20	pendiente	
 proyectil.flecha.silbadora	Flecha silbadora (señales)	uso:municion,faccion:nomada	0.03x0.8x0.03	30	pendiente	
 proyectil.virote.comun	Virote de ballesta	uso:municion	0.02x0.4x0.02	20	pendiente	
@@ -197,6 +200,7 @@ armadura.casco.mascara_culto	Máscara ritual del culto	uso:equipable,rig:humanoi
 armadura.casco.oro_padre	Casco de oro del padre	uso:equipable,rig:humanoide,especial:legado,material:oro,acto:1	0.3x0.4x0.3	300	pendiente	Lo lleva el padre en el prólogo.
 armadura.montura.barda_cuero	Barda de cuero para caballo	uso:equipable,rig:cuadrupedo,faccion:nomada,material:cuero	0.8x1.2x2	400	pendiente	
 armadura.montura.barda_hierro	Barda de hierro para caballo	uso:equipable,rig:cuadrupedo,faccion:imperio,material:hierro	0.8x1.2x2	500	pendiente	
+armadura.casco.bronce	Casco de bronce	uso:equipable,rig:humanoide,material:bronce	0.3x0.35x0.3	150	pendiente	Se forja en el horno de bronce.
 vestimenta.torso.deel	Deel (caftán cruzado)	uso:equipable,rig:humanoide,faccion:nomada	0.6x1.2x0.4	300	pendiente	Personalización del personaje (Fase 3).
 vestimenta.torso.deel_invierno	Deel de invierno con piel	uso:equipable,rig:humanoide,faccion:nomada	0.7x1.3x0.5	350	pendiente	Personalización del personaje (Fase 3).
 vestimenta.cabeza.gorro_piel	Gorro de piel	uso:equipable,rig:humanoide,faccion:nomada	0.3x0.25x0.3	100	pendiente	Personalización del personaje (Fase 3).
@@ -253,6 +257,15 @@ utileria.consumible.pan	Pan del imperio	uso:recolectable,uso:consumible	0.2x0.15
 utileria.herramienta.pala	Pala	uso:equipable,manos:dos,material:hierro	0.25x1.2x0.05	60	pendiente	Para cavar trincheras.
 utileria.herramienta.gancho_trepa	Trepa (gancho con cuerda)	uso:equipable,manos:una,material:hierro	0.3x0.4x0.3	80	pendiente	Se lanza para escalar muros en los asedios.
 utileria.objeto.lena	Haz de leña	uso:recolectable,material:madera	0.5x0.3x0.8	40	pendiente	Material de fogatas, hogueras y hornos.
+utileria.material.troncos	Troncos	uso:recolectable,uso:material,material:madera	0.4x0.4x2	40	pendiente	Material del acopio de la tribu.
+utileria.material.piedra	Piedras	uso:recolectable,uso:material,material:piedra	0.5x0.4x0.5	30	pendiente	Material del acopio de la tribu.
+utileria.material.barro	Barro (adobe)	uso:recolectable,uso:material,material:barro	0.4x0.3x0.4	30	pendiente	Material del acopio de la tribu.
+utileria.material.pieles	Pieles curtidas	uso:recolectable,uso:material,material:cuero	0.6x0.2x0.8	40	pendiente	Material del acopio de la tribu.
+utileria.material.cuerda	Rollo de cuerda	uso:recolectable,uso:material	0.3x0.15x0.3	40	pendiente	Material del acopio de la tribu.
+utileria.material.carbon	Carbón vegetal	uso:recolectable,uso:material	0.4x0.3x0.4	30	pendiente	Material del acopio de la tribu.
+utileria.material.cobre	Mineral de cobre	uso:recolectable,uso:material,material:cobre	0.25x0.2x0.25	30	pendiente	Material del acopio de la tribu.
+utileria.material.estano	Mineral de estaño	uso:recolectable,uso:material,material:estaño	0.25x0.2x0.25	30	pendiente	Material del acopio de la tribu.
+utileria.material.hierro	Mineral de hierro	uso:recolectable,uso:material,material:hierro	0.25x0.2x0.25	30	pendiente	Material del acopio de la tribu.
 personaje.base.cuerpo_nino	Cuerpo base: niño	rig:humanoide,talla:pequena	0.35x1.2x0.25	800	pendiente	Malla base modular: ropa y armadura encajan encima.
 personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.5x1.7x0.3	1200	pendiente	
 personaje.base.cuerpo_robusto	Cuerpo base: adulto robusto	rig:humanoide,talla:grande	0.6x1.85x0.35	1300	pendiente	

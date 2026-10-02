@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**291 objetos** · 1 con modelo · 290 pendientes.
+**304 objetos** · 1 con modelo · 303 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -15,15 +15,15 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Estructuras](#estructura) | 40 | 39 | 1 | 0 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 21 | 21 | 0 | 0 | 0 |
-| [Armas](#arma) | 27 | 27 | 0 | 0 | 0 |
+| [Armas](#arma) | 30 | 30 | 0 | 0 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
 | [Escudos](#escudo) | 6 | 6 | 0 | 0 | 0 |
 | [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
-| [Armaduras (por piezas)](#armadura) | 47 | 47 | 0 | 0 | 0 |
+| [Armaduras (por piezas)](#armadura) | 48 | 48 | 0 | 0 | 0 |
 | [Vestimenta (personalización)](#vestimenta) | 14 | 14 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 18 | 18 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 19 | 19 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 28 | 28 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -207,6 +207,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `arma.especial.lanza_doble_punta` | Lanza de caballería de doble punta | 0.1x2.8x0.1 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` `manos:dos` | Arma especial de grandes guerreros (src/sim/champion.c). |
 | `arma.especial.ballesta_repeticion` | Ballesta de repetición | 0.6x0.35x0.9 | 300 | pendiente | `uso:equipable` `especial:gran_guerrero` `manos:dos` | Arma especial de grandes guerreros (src/sim/champion.c). |
 | `arma.especial.espada_padre` | Espada ceremonial del padre | 0.12x1x0.04 | 500 | pendiente | `uso:equipable` `acto:3` `especial:legado` `especial:narrativo` `material:oro` `manos:una` | Hallada en la tumba helada; se empuña en el asalto final. |
+| `arma.corta.sable_bronce` | Sable de bronce | 0.08x0.9x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:bronce` | Se forja en el horno de bronce. |
+| `arma.corta.sable_acero` | Sable de acero | 0.08x0.95x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se forja en el horno de acero. |
+| `arma.larga.lanza_bronce` | Lanza de punta de bronce | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` `material:bronce` | Se forja en el horno de bronce. |
 
 <a id="proyectil"></a>
 
@@ -304,6 +307,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `armadura.casco.oro_padre` | Casco de oro del padre | 0.3x0.4x0.3 | 300 | pendiente | `uso:equipable` `rig:humanoide` `especial:legado` `material:oro` `acto:1` | Lo lleva el padre en el prólogo. |
 | `armadura.montura.barda_cuero` | Barda de cuero para caballo | 0.8x1.2x2 | 400 | pendiente | `uso:equipable` `rig:cuadrupedo` `faccion:nomada` `material:cuero` |  |
 | `armadura.montura.barda_hierro` | Barda de hierro para caballo | 0.8x1.2x2 | 500 | pendiente | `uso:equipable` `rig:cuadrupedo` `faccion:imperio` `material:hierro` |  |
+| `armadura.casco.bronce` | Casco de bronce | 0.3x0.35x0.3 | 150 | pendiente | `uso:equipable` `rig:humanoide` `material:bronce` | Se forja en el horno de bronce. |
 
 <a id="vestimenta"></a>
 
@@ -388,6 +392,15 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.herramienta.pala` | Pala | 0.25x1.2x0.05 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Para cavar trincheras. |
 | `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
 | `utileria.objeto.lena` | Haz de leña | 0.5x0.3x0.8 | 40 | pendiente | `uso:recolectable` `material:madera` | Material de fogatas, hogueras y hornos. |
+| `utileria.material.troncos` | Troncos | 0.4x0.4x2 | 40 | pendiente | `uso:recolectable` `uso:material` `material:madera` | Material del acopio de la tribu. |
+| `utileria.material.piedra` | Piedras | 0.5x0.4x0.5 | 30 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Material del acopio de la tribu. |
+| `utileria.material.barro` | Barro (adobe) | 0.4x0.3x0.4 | 30 | pendiente | `uso:recolectable` `uso:material` `material:barro` | Material del acopio de la tribu. |
+| `utileria.material.pieles` | Pieles curtidas | 0.6x0.2x0.8 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Material del acopio de la tribu. |
+| `utileria.material.cuerda` | Rollo de cuerda | 0.3x0.15x0.3 | 40 | pendiente | `uso:recolectable` `uso:material` | Material del acopio de la tribu. |
+| `utileria.material.carbon` | Carbón vegetal | 0.4x0.3x0.4 | 30 | pendiente | `uso:recolectable` `uso:material` | Material del acopio de la tribu. |
+| `utileria.material.cobre` | Mineral de cobre | 0.25x0.2x0.25 | 30 | pendiente | `uso:recolectable` `uso:material` `material:cobre` | Material del acopio de la tribu. |
+| `utileria.material.estano` | Mineral de estaño | 0.25x0.2x0.25 | 30 | pendiente | `uso:recolectable` `uso:material` `material:estaño` | Material del acopio de la tribu. |
+| `utileria.material.hierro` | Mineral de hierro | 0.25x0.2x0.25 | 30 | pendiente | `uso:recolectable` `uso:material` `material:hierro` | Material del acopio de la tribu. |
 
 <a id="personaje"></a>
 

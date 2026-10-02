@@ -1,7 +1,13 @@
-// Acciones en el juego: conecta el nucleo (sim/actions) con el jugador, el
-// mundo y la interfaz. Menu de acciones (Tab), atajos (X empunadura,
-// H enfundar, F tomar/soltar, T lanzar), acciones con duracion y obras en
-// grupo que la tribu levanta mientras el juego corre.
+// Acciones y vida del campamento en el juego. Conecta el nucleo (sim/actions,
+// sim/economy, sim/animals) con el jugador, el mundo y la interfaz:
+//  - menu de acciones (Tab), atajos (X empunadura, H enfundar, F tomar,
+//    T lanzar, R montar, I acopio) y acciones con duracion;
+//  - acopio de la tribu: materiales, comida, recoleccion diaria;
+//  - obras en grupo: los NPCs elegidos caminan a la obra y trabajan alli;
+//  - NPCs que hacen acciones individuales (instalar una fogata o una tienda);
+//  - animales: deambulan, huyen, se doman con el lazo, se ensillan y se montan;
+//  - trepar muros con la trepa, esconderse en la hierba alta;
+//  - forja en los hornos y efectos diarios de las construcciones.
 #ifndef ESTEPA_ACTIONS_GAME_H
 #define ESTEPA_ACTIONS_GAME_H
 
@@ -10,35 +16,73 @@
 
 #include "game/player.h"
 #include "sim/actions.h"
+#include "sim/animals.h"
+#include "sim/economy.h"
+#include "sim/memory_map.h"
 #include "world/props.h"
 #include "world/terrain.h"
 
 #define GA_MAX_PROJECTS 8
+#define GA_MAX_ANIMALS 24
+
+typedef struct {
+    int member_id;     // integrante de la tropa (0 = libre)
+    Vector3 pos, home;
+    float yaw;
+    int project;       // obra a la que va, o -1
+    int job;           // accion individual (ActionId) que esta haciendo, o -1
+    Vector3 job_pos;
+    float job_timer;
+} Npc;
 
 typedef struct {
     const Inventory *inv;
+    Rng rng;
+    // Manos y equipo.
     Hands hands;
-    int preset;       // empunadura actual del equipo de prueba
+    int preset;
     bool torch_lit;
-    // Accion en curso (con duracion).
-    int doing;        // ActionId, o -1
+    // Accion en curso.
+    int doing;          // ActionId, o -1
     float timer;
-    // Menu de acciones.
-    bool menu_open;
-    int cursor;       // 0..ACTION_COUNT-1 acciones; luego BUILD_COUNT obras
-    // Obras en grupo.
+    int target;         // animal o muro objetivo, o -1
+    // Interfaz.
+    bool menu_open, stock_open;
+    int cursor;
+    // Campamento.
+    Stockpile stock;
     BuildProject projects[GA_MAX_PROJECTS];
     int project_count;
+    int crew_present[GA_MAX_PROJECTS], crew_size[GA_MAX_PROJECTS];
+    int crafting;       // CraftId en la forja, o -1
+    float craft_timer, craft_total;
+    Npc npcs[TROOP_MAX];
+    // Animales.
+    Animal animals[GA_MAX_ANIMALS];
+    int animal_count;
+    int mounted;        // animal montado, o -1
+    // Trepar.
+    bool climbing;
+    float climb_t;
+    Vector3 climb_from, climb_top, climb_over, climb_to;
+    bool hidden;
 } GameActions;
 
-void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t);
-// true si el menu esta abierto (el jugador no se mueve mientras tanto).
+void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);
+// El jugador no controla el movimiento (menu abierto o trepando).
+bool ga_blocks_input(const GameActions *ga);
 bool ga_menu_open(const GameActions *ga);
-void ga_update(GameActions *ga, Props *props, const Terrain *t, const Player *p, const Troop *troop, float dt,
-               char *log, size_t log_len);
-void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Player *p, float time);
-// Linea de empunadura para el HUD.
+// Multiplicador de velocidad del jugador (montado: el de la montura).
+float ga_speed_scale(const GameActions *ga);
+void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
+               size_t log_len);
+// Despues de mover al jugador: trepar, montura, escondite.
+void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p);
+// Un dia nuevo: comida y recoleccion, efectos de las construcciones, trabajos de los NPCs.
+void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day,
+                char *log, size_t log_len);
+void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time);
 const char *ga_hands_text(const GameActions *ga);
-void ga_draw_hud(const GameActions *ga, const Troop *troop, int width, int height);
+void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, int width, int height);
 
 #endif

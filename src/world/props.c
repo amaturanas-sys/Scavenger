@@ -69,6 +69,15 @@ static Model *cached_model(Props *p, const InvItem *item) {
     return p->cache[slot].loaded ? &p->cache[slot].model : NULL;
 }
 
+// Color del marcador segun la categoria del inventario (igual que en la galeria).
+static Color category_color(const char *cat) {
+    if (!strcmp(cat, "mapa")) return (Color){ 120, 140, 80, 255 };
+    if (!strcmp(cat, "animal")) return (Color){ 160, 115, 75, 255 };
+    if (!strcmp(cat, "utileria")) return (Color){ 165, 135, 100, 255 };
+    if (!strcmp(cat, "totem")) return (Color){ 125, 75, 45, 255 };
+    return (Color){ 190, 160, 120, 255 };
+}
+
 void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, float grow) {
     Model *m = cached_model(p, item);
     if (m && grow >= 1.0f) {
@@ -77,7 +86,7 @@ void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, floa
     }
     // Marcador: caja con las medidas del inventario (largo en X local, ancho en Z), girada con yaw.
     float h = (item->texture || item->h <= 0.0f ? 0.03f : item->h) * fmaxf(grow, 0.05f);
-    Color c = grow < 1.0f ? (Color){ 150, 120, 80, 255 } : (Color){ 190, 160, 120, 255 };
+    Color c = grow < 1.0f ? (Color){ 150, 120, 80, 255 } : category_color(item->category);
     rlPushMatrix();
     rlTranslatef(pos.x, pos.y, pos.z);
     rlRotatef(yaw * RAD2DEG, 0, 1, 0);

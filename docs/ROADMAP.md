@@ -27,7 +27,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [ ] Órdenes de escuadra en campo: seguir, mantener posición, atacar.
 - [ ] Combate cuerpo a cuerpo base: agarre, derribo, combo de 3 golpes; arma corta y larga.
 - [ ] IA enemiga con detección por vista y ruido (usa el "ruido" del jugador).
-- [ ] Esconderse y trepar.
+- [x] Esconderse (hierba alta) y trepar muros con la trepa.
 - [ ] Consecuencias de la rebelión y de la deserción.
 - [ ] Guardado y carga.
 
@@ -69,12 +69,13 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Acciones individuales para el jugador y los NPCs: fogata, tienda, trinchera, trepa, lazo, antorcha, montura.
 - [x] Construcciones en grupo con cuadrilla mínima, oficios y habilidad (función, dones, moral). Con tests.
 - [x] En juego: menú de acciones (Tab), atajos (X, H, F, T), barra de progreso, obras que avanzan con la tribu.
-- [ ] NPCs que ejecutan acciones por su cuenta y caminan a las obras.
-- [ ] Materiales, inventario de objetos del jugador y efectos de cada construcción.
-- [ ] Trepar con la trepa, doma con el lazo y monturas (dependen de las Fases 1 y 2).
+- [x] NPCs que caminan a las obras e instalan fogatas y tiendas por su cuenta.
+- [x] Acopio de materiales y comida, recolección diaria por función, efectos de cada construcción y forja de bronce y acero.
+- [x] Animales: deambular y huir, doma con el lazo, ensillar y montar.
+- [ ] Trepar árboles y rocas sin trepa, y combate montado (Fase 2).
 
 ## Inventario de assets (ver [INVENTARIO.md](INVENTARIO.md))
-- [x] Inventario de 291 objetos en 14 categorías con etiquetas, medidas, presupuesto de triángulos y estado (`assets/inventario.tsv`).
+- [x] Inventario de 304 objetos en 14 categorías con etiquetas, medidas, presupuesto de triángulos y estado (`assets/inventario.tsv`).
 - [x] Ruta fija por id, marcadores provisionales y reemplazo automático al importar el modelo.
 - [x] Validador y documento generado (`tools/assets/inventario.py`), comprobados en CI.
 - [x] Galería en el juego (`--galeria`) para revisar los modelos a escala.
