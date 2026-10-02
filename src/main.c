@@ -5,7 +5,9 @@
 // optimizacion de rendimiento en moviles (9 veces menos pixeles que 1080p).
 //
 // Uso de escritorio:  estepa [--screenshot salida.png] [--frames N] [--sin-teclado] [--galeria]
+//                     [--dia N] [--minuto M]
 // --galeria muestra todos los objetos del inventario de assets (modelos o marcadores).
+// --dia y --minuto ponen el reloj (minutos desde el amanecer), p. ej. para ver la noche.
 // --sin-teclado simula un dispositivo Android sin teclado (prueba del aviso).
 #include <math.h>
 #include <stdio.h>
@@ -27,6 +29,7 @@
 #include "ui/theme.h"
 #include "world/camp.h"
 #include "world/gallery.h"
+#include "world/sky.h"
 #include "world/terrain.h"
 
 #ifndef ESTEPA_VERSION
@@ -139,6 +142,8 @@ static void debug_camp_actions(Troop *t, Rng *rng, float *world_time, int *last_
         if (id >= 0 && troop_release_prisoner(t, id)) snprintf(log, log_len, "Liberaste a un prisionero.");
     } else if (IsKeyPressed(KEY_ENTER)) {
         *world_time = (float)clock_day(*world_time) * GAME_SECONDS_PER_DAY; // salta al amanecer siguiente
+    } else if (IsKeyPressed(KEY_N)) {
+        *world_time += 120.0f; // adelanta dos minutos (para ver el ocaso y la noche)
     }
     if (champ >= 0) *last_champion = champ;
 }
@@ -205,15 +210,38 @@ static void draw_champion_card(const Troop *t, int id) {
             x, y, 10, UI_BONE_DIM);
 }
 
-static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day, const char *hands, const char *log) {
+// "Dia 3 · primavera · noche (8 min)": los minutos que faltan para el cambio de luz.
+static const char *clock_text(float world_time) {
+    int day = clock_day(world_time);
+    float x = clock_seconds_into_day(world_time), light = clock_daylight_seconds(day);
+    float left = x < light ? light - x : GAME_SECONDS_PER_DAY - x;
+    return TextFormat("Día %d · %s · %s (%d min)", day, season_name(clock_season(day)),
+                      phase_name(clock_phase(world_time)), (int)ceilf(left / 60.0f));
+}
+
+// Barra del ciclo bajo el minimapa: oro la luz, lapislazuli la noche; la marca es la hora.
+static void draw_clock_bar(int cx, int y, int w, float world_time) {
+    int day = clock_day(world_time), x0 = cx - w / 2;
+    int lw = (int)(w * clock_daylight_fraction(day) + 0.5f);
+    DrawRectangle(x0 - 1, y - 1, w + 2, 6, UI_LEATHER_CRACK);
+    DrawRectangle(x0, y, lw, 4, UI_GOLD);
+    DrawRectangle(x0 + lw, y, w - lw, 4, UI_LAPIS);
+    int mx = x0 + (int)(w * clock_seconds_into_day(world_time) / GAME_SECONDS_PER_DAY);
+    DrawRectangle(mx - 1, y - 2, 3, 8, clock_is_night(world_time) ? UI_BONE : UI_CARNELIAN);
+}
+
+static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, float world_time, const char *hands,
+                     const char *log) {
     const int x = 4 + UI_PANEL_INSET, w = 256;
     ui_panel((Rectangle){ 4, 4, w, 152 }, UI_METAL_GOLD);
     ui_text("ESTEPA", x, 16, 10, UI_GOLD_LIGHT);
-    ui_text(TextFormat("v%s (build %d)", ESTEPA_VERSION, ESTEPA_BUILD_CODE), x + 48, 16, 10, UI_BONE_DIM);
+    ui_text(TextFormat("v%s (build %d) · %d fps", ESTEPA_VERSION, ESTEPA_BUILD_CODE, GetFPS()), x + 48, 16, 10,
+            UI_BONE_DIM);
     ui_divider(x, 29, w - 2 * UI_PANEL_INSET, UI_METAL_GOLD);
-    ui_text(TextFormat("%s  |  %d fps", stance_name(p->stance), GetFPS()), x, 34, 10, UI_BONE);
-    ui_text(TextFormat("Dia %d  Tropa: %d  Prisioneros: %d", day, troop_count_with_status(t, STATUS_ACTIVE),
-                       troop_count_with_status(t, STATUS_PRISONER)), x, 46, 10, UI_BONE);
+    ui_text(clock_text(world_time), x, 34, 10, clock_is_night(world_time) ? UI_BONE_DIM : UI_GOLD_LIGHT);
+    ui_text(TextFormat("%s · Tropa: %d · Prisioneros: %d", stance_name(p->stance),
+                       troop_count_with_status(t, STATUS_ACTIVE), troop_count_with_status(t, STATUS_PRISONER)),
+            x, 46, 10, UI_BONE);
     ui_text("Moral", x, 59, 10, UI_BONE);
     ui_bar(x + 46, 60, 100, troop_avg_morale(t) / 100.0f, UI_TURQUOISE, UI_METAL_GOLD);
     ui_text("Lealtad", x, 71, 10, UI_BONE);
@@ -231,7 +259,7 @@ static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, int day,
             4, VIRTUAL_H - 32, 10, UI_BONE_DIM);
     ui_text("Tab acciones, obras y forja  X empuñadura  H enfundar  F tomar  T lanzar  R montar  I acopio", 4, VIRTUAL_H - 21, 10,
             UI_BONE);
-    ui_text("1 reclutar 2 prisionero 3 ejec. prisionero 4 ejec. miembro 5 desterrar 6 botin 7 liberar 8 gran guerrero G ficha Enter dia",
+    ui_text("1 reclutar 2 cautivo 3 ejec. cautivo 4 ejec. miembro 5 desterrar 6 botín 7 liberar 8 guerrero G ficha Enter día N hora",
             4, VIRTUAL_H - 11, 10, UI_BONE_DIM);
 }
 
@@ -249,11 +277,15 @@ int main(int argc, char **argv) {
     int shot_frames = 90;
     bool simulate_no_keyboard = false;
     bool gallery_mode = false;
+    int start_day = 1;
+    float start_minute = 4.0f; // la partida empieza a media manana
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) shot_path = argv[++i];
         else if (!strcmp(argv[i], "--frames") && i + 1 < argc) shot_frames = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--sin-teclado")) simulate_no_keyboard = true;
         else if (!strcmp(argv[i], "--galeria")) gallery_mode = true;
+        else if (!strcmp(argv[i], "--dia") && i + 1 < argc) start_day = atoi(argv[++i]);
+        else if (!strcmp(argv[i], "--minuto") && i + 1 < argc) start_minute = (float)atof(argv[++i]);
     }
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
@@ -281,8 +313,12 @@ int main(int argc, char **argv) {
     seed_troop(&troop);
     Rng rng;
     rng_seed(&rng, WORLD_SEED);
-    int day = 1;
-    float world_time = 0.0f; // segundos de juego (avanza solo si no hay pausa)
+    // Segundos de juego (avanza solo si no hay pausa). Cada dia empieza al amanecer.
+    float world_time = (float)(start_day > 1 ? start_day - 1 : 0) * GAME_SECONDS_PER_DAY +
+                       fmaxf(0.0f, fminf(start_minute * 60.0f, GAME_SECONDS_PER_DAY - 1.0f));
+    int day = clock_day(world_time);
+    Sky sky;
+    sky_init(&sky, WORLD_SEED);
     int last_champion = -1;  // id del ultimo gran guerrero encontrado
     bool show_card = false;
     memmap_init(&g_memory);
@@ -343,7 +379,7 @@ int main(int argc, char **argv) {
         terrain_update(&terrain, player.pos);
 
         BeginTextureMode(lowres);
-        ClearBackground((Color){ 168, 196, 214, 255 }); // cielo de estepa
+        ClearBackground(sky_clear_color());
         BeginMode3D(cam);
         terrain_draw(&terrain);
         camp_draw(&camp, (float)GetTime());
@@ -351,12 +387,27 @@ int main(int argc, char **argv) {
         if (gallery_mode || !ga_draw_player(&g_actions, &g_props, &player, (float)GetTime())) player_draw(&player);
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
         EndMode3D();
+        if (!gallery_mode) { // la galeria se ve siempre de dia
+            // Noche: se oscurece todo y se suman las estrellas, las llamas y el brillo de los fuegos.
+            sky_apply_tint(world_time, VIRTUAL_W, VIRTUAL_H);
+            BeginMode3D(cam);
+            sky_draw_stars(&sky, cam, world_time);
+            camp_draw_flame(&camp, (float)GetTime());
+            EndMode3D();
+            Vector3 light_pos[SKY_MAX_LIGHTS];
+            float light_radius[SKY_MAX_LIGHTS];
+            light_pos[0] = (Vector3){ camp.fire.x, camp.fire.y + 0.4f, camp.fire.z };
+            light_radius[0] = 9.0f;
+            int lights = 1 + ga_lights(&g_actions, &g_props, &player, light_pos + 1, light_radius + 1, SKY_MAX_LIGHTS - 1);
+            sky_draw_lights(cam, light_pos, light_radius, lights, world_time, (float)GetTime(), VIRTUAL_W, VIRTUAL_H);
+        }
         if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
         } else {
-            draw_hud(&player, &troop, &overlord, day, ga_hands_text(&g_actions), log);
+            draw_hud(&player, &troop, &overlord, world_time, ga_hands_text(&g_actions), log);
             minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
                          player.pos, rig.yaw, player.yaw, world_time);
+            draw_clock_bar(VIRTUAL_W - MINIMAP_RADIUS - 10, 2 * MINIMAP_RADIUS + 19, 2 * MINIMAP_RADIUS - 8, world_time);
             ga_draw_hud(&g_actions, &g_props, &troop, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
         }

@@ -42,7 +42,8 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 
 ## Fase 4 — Mundo y reinos
 - [ ] Biomas, asentamientos, tributo y diplomacia entre reinos.
-- [ ] Ciclo día/noche y clima.
+- [x] Ciclo día/noche de 30 minutos con estaciones (noches de 10 a 20 minutos).
+- [ ] Clima.
 
 ## Narrativa (ver [NARRATIVA.md](NARRATIVA.md))
 - [ ] Prólogo jugable con el padre: combate a caballo en el asedio, tutorial de batalla y derrota por guion (requiere caballo y combate base).
@@ -79,6 +80,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Ruta fija por id, marcadores provisionales y reemplazo automático al importar el modelo.
 - [x] Validador y documento generado (`tools/assets/inventario.py`), comprobados en CI.
 - [x] Galería en el juego (`--galeria`) para revisar los modelos a escala.
+- [x] Activar text-to-cad (skill CAD en `.claude/skills/cad`, `tools/assets/cad.py`).
 - [ ] Importar y refinar los modelos (text-to-cad + Kiln).
 - [ ] Usar los modelos del inventario en el mundo (NPCs, animales, armas equipadas, etc.).
 

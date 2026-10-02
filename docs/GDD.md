@@ -45,13 +45,24 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 - **Minimapa circular** en la esquina superior derecha que gira con la vista, como una brújula: arriba es hacia donde mira el jugador, y una "N" en el aro marca el norte.
 - **Empieza negro:** el personaje no conoce el mundo. Las zonas se **iluminan poco a poco** a medida que el jugador las recorre.
 - **Frecuencia = nitidez:** cada zona acumula familiaridad. Lo recorrido a menudo brilla más, como la memoria espacial real.
-- **Olvido en días de juego:** el brillo se apaga con los días (un día de juego = 20 minutos reales; `src/sim/clock.h`). Una zona vista de pasada se borra en una o dos semanas de juego; lo familiar dura mucho más (repetición espaciada).
+- **Olvido en días de juego:** el brillo se apaga con los días (un día de juego = 30 minutos reales; `src/sim/clock.h`). Una zona vista de pasada se borra en una o dos semanas de juego; lo familiar dura mucho más (repetición espaciada).
 - **Todo el mundo:** el minimapa siempre se centra en el jugador y muestra el mundo a su alrededor; lo no explorado aparece oscuro. La memoria se guarda por páginas que solo se crean al explorar, así que crece con lo recorrido, no con el tamaño del mundo.
-- **Días automáticos:** el reloj de juego avanza los días solo; `Enter` salta al amanecer siguiente (prueba).
+- **Días automáticos:** el reloj de juego avanza los días solo; `Enter` salta al amanecer siguiente y `N` adelanta dos minutos (prueba).
 - **Marcas:** el jugador marca sitios de interés (`M`) o de peligro (`Shift+M`). Pulsar de nuevo cerca de una marca la quita. Las marcas fuera de alcance quedan en el borde, señalando su dirección.
 - Los parámetros (radio de vista, velocidad de aprendizaje y de olvido, brillo de una sola pasada) están en `memmap_default_params` y son de balance.
 
 **Pendiente:** guardar el mapa con la partida y marcas con nombre.
+
+### Día, noche y estaciones (implementado — `src/sim/clock.*`, `src/world/sky.*`)
+- **Ciclo de 30 minutos reales** (día + noche). Cada día de juego empieza al amanecer.
+- **Estaciones:** primavera, verano, otoño e invierno, de 7 días cada una (año de 28 días). La partida empieza el primer día de la primavera.
+- **Duración de la luz según la estación:** en pleno invierno la noche alcanza **20 minutos** y el día 10; en pleno verano, al revés. En los equinoccios (mitad de la primavera y del otoño) son 15 y 15. El cambio es gradual día a día.
+- **Alba y ocaso:** penumbra de 90 segundos de juego con luz cálida; el sol bajo también entibia los colores.
+- **La noche se ve:** la escena se oscurece y azulea, aparecen las estrellas y los fuegos alumbran a su alrededor (fogata del campamento, fogatas, hogueras, hornos y la antorcha encendida en la mano).
+- **HUD:** el panel dice el día, la estación, la fase y los minutos que faltan para el próximo cambio; bajo el minimapa, una barra muestra el reparto de luz (oro) y noche (lapislázuli) con la hora actual.
+- **Prueba:** `./build/estepa --dia 25 --minuto 14` arranca en una noche de pleno invierno.
+
+**Pendiente:** efectos jugables de la noche (visión y sigilo, fieras, frío), clima y temperatura por estación.
 
 ### Acciones (núcleo implementado — `src/sim/actions.*`, en juego `src/game/actions_game.*`)
 Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las use llega en la Fase 1). Los objetos que usan o producen son ids del [inventario de assets](INVENTARIO.md).
@@ -173,7 +184,7 @@ Botes, veleros, barcos, carruajes y yunta de bueyes con carreta (transporte del 
 ### 6. Mundo
 - Estepa procedural por chunks con streaming alrededor del jugador (implementado).
 - Campamento inicial con yurtas y fogata (implementado).
-- Pendiente: biomas (desierto, montaña, ríos), asentamientos de los reinos, ciclo día/noche, clima.
+- Pendiente: biomas (desierto, montaña, ríos), asentamientos de los reinos, clima.
 
 ## Narrativa
 Historia principal con protagonista de **nombre elegido por el jugador**: hijo de un jefe nómade exiliado, traicionado por su medio-hermano, que sobrevive en cinco climas bajo la filosofía *Scavengers Thrive* y regresa a la ciudad de su infancia. El prólogo se juega con el padre, a caballo, durante la masacre. Hay **tres finales** (asedio, asesinato o exilio del medio-hermano) que cambian el mundo, y la partida continúa después. Argumento completo en [NARRATIVA.md](NARRATIVA.md). Los diálogos y las escenas los define el autor.

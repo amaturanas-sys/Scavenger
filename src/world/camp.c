@@ -51,6 +51,12 @@ static void draw_fallback_yurt(Vector3 p) {
     DrawCylinder((Vector3){ p.x, p.y + 1.7f, p.z }, 0.45f, 2.35f, 0.9f, 10, (Color){ 216, 208, 189, 255 });
 }
 
+void camp_draw_flame(const Camp *c, float time) {
+    float flick = 0.85f + 0.15f * sinf(time * 13.0f) * sinf(time * 7.3f);
+    DrawCylinder((Vector3){ c->fire.x, c->fire.y + 0.1f, c->fire.z }, 0.0f, 0.45f, 0.9f * flick, 5, (Color){ 240, 140, 40, 255 });
+    DrawCylinder((Vector3){ c->fire.x, c->fire.y + 0.1f, c->fire.z }, 0.0f, 0.25f, 0.6f * flick, 5, (Color){ 255, 220, 90, 255 });
+}
+
 void camp_draw(const Camp *c, float time) {
     for (int i = 0; i < c->yurt_count; i++) {
         if (c->yurt_loaded)
@@ -59,15 +65,13 @@ void camp_draw(const Camp *c, float time) {
             draw_fallback_yurt(c->yurts[i]);
     }
 
-    // Fogata: piedras + llama que titila.
+    // Fogata: piedras + llama.
     for (int i = 0; i < 6; i++) {
         float a = i * PI / 3.0f;
         DrawCube((Vector3){ c->fire.x + cosf(a) * 0.8f, c->fire.y + 0.12f, c->fire.z + sinf(a) * 0.8f },
                  0.35f, 0.25f, 0.35f, (Color){ 110, 106, 100, 255 });
     }
-    float flick = 0.85f + 0.15f * sinf(time * 13.0f) * sinf(time * 7.3f);
-    DrawCylinder((Vector3){ c->fire.x, c->fire.y + 0.1f, c->fire.z }, 0.0f, 0.45f, 0.9f * flick, 5, (Color){ 240, 140, 40, 255 });
-    DrawCylinder((Vector3){ c->fire.x, c->fire.y + 0.1f, c->fire.z }, 0.0f, 0.25f, 0.6f * flick, 5, (Color){ 255, 220, 90, 255 });
+    camp_draw_flame(c, time);
 
     // Arboles low-poly: tronco + copa conica.
     for (int i = 0; i < c->tree_count; i++) {

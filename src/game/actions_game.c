@@ -746,6 +746,29 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
     if (ga->climbing) DrawLine3D(ga->climb_top, (Vector3){ p->pos.x, p->pos.y + 1.2f, p->pos.z }, (Color){ 140, 110, 70, 255 });
 }
 
+int ga_lights(const GameActions *ga, const Props *props, const Player *p, Vector3 *pos, float *radius, int max) {
+    static const struct { const char *id; float radius, height; } emitters[] = {
+        { "estructura.campamento.fogata", 9.0f, 0.4f },      { "estructura.campamento.hoguera", 16.0f, 0.8f },
+        { "estructura.campamento.horno_cocina", 4.0f, 0.6f }, { "estructura.campamento.horno_bronce", 7.0f, 1.0f },
+        { "estructura.campamento.horno_acero", 8.0f, 1.0f },
+    };
+    int n = 0;
+    for (int i = 0; i < props->count && n < max; i++) {
+        const Prop *pr = &props->items[i];
+        for (size_t e = 0; e < sizeof(emitters) / sizeof(emitters[0]); e++) {
+            if (strcmp(pr->item->id, emitters[e].id) != 0) continue;
+            pos[n] = (Vector3){ pr->pos.x, pr->pos.y + emitters[e].height, pr->pos.z };
+            radius[n++] = emitters[e].radius;
+            break;
+        }
+    }
+    if (ga->torch_lit && !ga->hands.sheathed && n < max) {
+        pos[n] = (Vector3){ p->pos.x, p->pos.y + p->draw_lift + 1.6f, p->pos.z };
+        radius[n++] = 6.0f;
+    }
+    return n;
+}
+
 bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) {
     const InvItem *body = inventory_find(ga->inv, "personaje.narrativo.protagonista");
     if (!body || !props_has_model(props, body)) return false;
