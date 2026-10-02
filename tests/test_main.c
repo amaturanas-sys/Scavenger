@@ -276,6 +276,58 @@ static void test_memmap_forgets_over_days(void) {
     memmap_free(&m);
 }
 
+static void test_clock_seasonal_day_night(void) {
+    // Ciclo completo de 30 minutos; dia y noche suman siempre el ciclo.
+    CHECK(GAME_SECONDS_PER_DAY == 1800.0f);
+    for (int d = 1; d <= 2 * DAYS_PER_YEAR; d++) {
+        float light = clock_daylight_seconds(d), night = clock_night_seconds(d);
+        CHECK(fabsf(light + night - GAME_SECONDS_PER_DAY) < 0.01f);
+        CHECK(light >= 600.0f - 0.5f && light <= 1200.0f + 0.5f);
+    }
+    // Estaciones: primavera, verano, otono, invierno; el ano se repite.
+    CHECK(clock_season(1) == SEASON_SPRING);
+    CHECK(clock_season(1 + DAYS_PER_SEASON) == SEASON_SUMMER);
+    CHECK(clock_season(1 + 2 * DAYS_PER_SEASON) == SEASON_AUTUMN);
+    CHECK(clock_season(1 + 3 * DAYS_PER_SEASON) == SEASON_WINTER);
+    CHECK(clock_season(1 + DAYS_PER_YEAR) == SEASON_SPRING);
+    CHECK(clock_day_of_season(DAYS_PER_SEASON) == DAYS_PER_SEASON && clock_day_of_season(DAYS_PER_SEASON + 1) == 1);
+    // Pleno verano: 20 min de dia y 10 de noche. Pleno invierno: al reves.
+    int mid_summer = 1 + DAYS_PER_SEASON + DAYS_PER_SEASON / 2;
+    int mid_winter = 1 + 3 * DAYS_PER_SEASON + DAYS_PER_SEASON / 2;
+    CHECK(clock_season(mid_summer) == SEASON_SUMMER && clock_season(mid_winter) == SEASON_WINTER);
+    CHECK(fabsf(clock_daylight_seconds(mid_summer) - 1200.0f) < 1.0f);
+    CHECK(fabsf(clock_night_seconds(mid_winter) - 1200.0f) < 1.0f);
+    // Equinoccios (mitad de primavera y de otono): parejo.
+    int mid_spring = 1 + DAYS_PER_SEASON / 2, mid_autumn = 1 + 2 * DAYS_PER_SEASON + DAYS_PER_SEASON / 2;
+    CHECK(fabsf(clock_daylight_seconds(mid_spring) - 900.0f) < 60.0f);
+    CHECK(fabsf(clock_daylight_seconds(mid_autumn) - 900.0f) < 60.0f);
+    // El verano es mas largo de dia que la primavera, y la primavera que el invierno.
+    CHECK(clock_daylight_seconds(mid_summer) > clock_daylight_seconds(mid_spring));
+    CHECK(clock_daylight_seconds(mid_spring) > clock_daylight_seconds(mid_winter));
+
+    // Dentro de un dia de invierno: amanece al empezar, mediodia a 5 min, noche cerrada despues.
+    float t0 = (float)(mid_winter - 1) * GAME_SECONDS_PER_DAY, dl = clock_daylight_seconds(mid_winter);
+    CHECK(clock_day(t0 + 1.0f) == mid_winter);
+    CHECK(clock_phase(t0 + 1.0f) == PHASE_DAWN);
+    CHECK(clock_phase(t0 + dl * 0.5f) == PHASE_DAY && clock_light(t0 + dl * 0.5f) == 1.0f);
+    CHECK(fabsf(clock_sun_height(t0 + dl * 0.5f) - 1.0f) < 1e-3f);
+    CHECK(clock_phase(t0 + dl) == PHASE_DUSK && fabsf(clock_light(t0 + dl) - 0.5f) < 1e-3f);
+    float midnight = t0 + dl + 0.5f * (GAME_SECONDS_PER_DAY - dl);
+    CHECK(clock_phase(midnight) == PHASE_NIGHT && clock_light(midnight) == 0.0f && clock_is_night(midnight));
+    CHECK(fabsf(clock_sun_height(midnight) + 1.0f) < 1e-3f);
+    CHECK(clock_phase(t0 + GAME_SECONDS_PER_DAY - 1.0f) == PHASE_DAWN); // antes del alba siguiente
+    CHECK(!clock_is_night(t0 + dl * 0.5f));
+    // La luz es continua: sin saltos bruscos de un segundo al siguiente.
+    float prev = clock_light(t0);
+    for (float t = t0 + 1.0f; t < t0 + 2.0f * GAME_SECONDS_PER_DAY; t += 1.0f) {
+        float l = clock_light(t);
+        CHECK(fabsf(l - prev) < 0.05f);
+        prev = l;
+    }
+    CHECK(fabsf(clock_phase_progress(t0 + dl * 0.25f) - 0.25f) < 1e-3f);
+    CHECK(!strcmp(season_name(SEASON_AUTUMN), "otoño") && !strcmp(phase_name(PHASE_DAY), "día"));
+}
+
 static void test_memmap_markers_toggle(void) {
     MemoryMap m;
     memmap_init(&m);
@@ -867,6 +919,7 @@ int main(void) {
     RUN(test_anim_index_states);
     RUN(test_anim_index_names_exist);
     RUN(test_inventory_repo_file_is_valid);
+    RUN(test_clock_seasonal_day_night);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

@@ -25,6 +25,8 @@ typedef struct {
 
 void camp_init(Camp *c, const Terrain *t, const char *yurt_path);
 void camp_draw(const Camp *c, float time);
+// Solo la llama (la luz de la noche la vuelve a dibujar sin oscurecer).
+void camp_draw_flame(const Camp *c, float time);
 void camp_unload(Camp *c);
 
 #endif

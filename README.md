@@ -41,7 +41,7 @@ En Linux hacen falta las cabeceras de X11/OpenGL:
 | Acopio de la tribu | I | — |
 | Esconderse | acechar (C) dentro de la hierba alta | — |
 
-Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente.
+Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente · `N` adelantar dos minutos.
 
 Al reclutar o tomar prisioneros, a veces aparece un gran guerrero por azar.
 
@@ -71,4 +71,5 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --screenshot captura.png --frames 60
 ./build/estepa --screenshot aviso.png --frames 60 --sin-teclado   # simula Android sin teclado
 ./build/estepa --galeria                                           # galería del inventario de assets
+./build/estepa --dia 25 --minuto 14                                # noche de pleno invierno
 ```

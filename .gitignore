@@ -17,3 +17,7 @@ out/
 # Kiln: estado local del workspace de assets
 tools/assets/.kiln/
 __pycache__/
+
+# text-to-cad (cadgen): entorno local y fotos de revision
+.venv-cad
+build/cad/

@@ -89,4 +89,8 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time);
 const char *ga_hands_text(const GameActions *ga);
 void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, int width, int height);
 
+// Fuentes de luz para la noche (fogatas, hogueras, hornos y la antorcha encendida).
+// Llena pos y radius (metros de alcance); devuelve cuantas hay.
+int ga_lights(const GameActions *ga, const Props *props, const Player *p, Vector3 *pos, float *radius, int max);
+
 #endif

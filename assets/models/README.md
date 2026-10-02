@@ -61,8 +61,9 @@ python3 tools/assets/animaciones.py check   # comprueba los GLB importados
 
 ## Refinado: text-to-cad y Kiln
 
-- **text-to-cad** ([earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad)):
-  - Su **CAD Viewer** abre GLB para revisarlos y medirlos contra las medidas del inventario.
+- **text-to-cad** ([earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad)), **activado** en `.claude/skills/cad`:
+  - `python3 tools/assets/cad.py foto <id>` saca fotos del GLB (iso, frente, costado, arriba) en `build/cad/`.
+  - `python3 tools/assets/cad.py visor` abre el **CAD Viewer** para revisar y medir contra las medidas del inventario.
   - `cadgen` sirve para las piezas de superficie dura (ballestas, cañones, maquinaria de asedio, placas de armadura); exporta GLB con `cadgen glb build`.
 - **Kiln** ([matthew-kissinger/kiln](https://github.com/matthew-kissinger/kiln)):
   - Reescribe o ajusta el modelo como programa low-poly (`tools/assets/*.kiln.js`).

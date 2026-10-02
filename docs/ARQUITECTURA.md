@@ -17,7 +17,7 @@ src/
     loadout.*    amuletos, tatuajes, arbol de habilidades
     memory_map.* mapa de memoria: exploracion, olvido, marcas
     champion.*   grandes guerreros: azar, historia, dones
-    clock.h      reloj de juego (dias)
+    clock.*      reloj de juego: dias de 30 min, estaciones, luz y noche
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
@@ -27,6 +27,7 @@ src/
     terrain.*    chunks con streaming, altura consultable
     camp.*       campamento, props
     gallery.*    galeria del inventario (--galeria)
+    sky.*        cielo, tinte de noche, estrellas y brillo de los fuegos
     props.*      objetos sueltos en el mundo (modelo o marcador)
   game/     Jugador e input
     player.*
@@ -37,7 +38,8 @@ src/
   main.c    Bucle principal, render low-res, HUD
 tests/      Tests del nucleo (arnes propio, sin dependencias)
 assets/     Assets de runtime: inventario.tsv, animaciones.tsv, models/<categoria>/<sub>/<nombre>.glb, textures/
-tools/      Herramientas de produccion (programas Kiln)
+tools/      Herramientas de produccion (programas Kiln, validadores, text-to-cad)
+.claude/skills/cad/  Skill CAD de text-to-cad (MIT, earthtojake/text-to-cad)
 docs/       Diseño, roadmap, arquitectura
 ```
 

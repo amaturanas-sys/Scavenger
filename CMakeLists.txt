@@ -28,6 +28,7 @@ add_library(estepa_sim STATIC
   src/sim/noise.c
   src/sim/troop.c
   src/sim/loadout.c
+  src/sim/clock.c
   src/sim/memory_map.c
   src/sim/champion.c
   src/sim/inventory.c
@@ -74,7 +75,8 @@ if(ESTEPA_BUILD_GAME)
     src/ui/minimap.c
     src/world/terrain.c
     src/world/camp.c
-    src/world/gallery.c)
+    src/world/gallery.c
+    src/world/sky.c)
 
   if(ANDROID)
     # Android: biblioteca compartida que carga NativeActivity (libestepa.so).
