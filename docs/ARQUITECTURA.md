@@ -22,6 +22,7 @@ src/
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
     animals.*    animales: deambular, huir, doma, montura
+    anim_index.* que clip de animacion corresponde a cada estado
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
     camp.*       campamento, props
@@ -35,7 +36,7 @@ src/
     minimap.*    minimapa circular tipo brujula
   main.c    Bucle principal, render low-res, HUD
 tests/      Tests del nucleo (arnes propio, sin dependencias)
-assets/     Assets de runtime: inventario.tsv, models/<categoria>/<sub>/<nombre>.glb, textures/
+assets/     Assets de runtime: inventario.tsv, animaciones.tsv, models/<categoria>/<sub>/<nombre>.glb, textures/
 tools/      Herramientas de produccion (programas Kiln)
 docs/       Diseño, roadmap, arquitectura
 ```

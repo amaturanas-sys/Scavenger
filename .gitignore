@@ -16,3 +16,4 @@ out/
 
 # Kiln: estado local del workspace de assets
 tools/assets/.kiln/
+__pycache__/

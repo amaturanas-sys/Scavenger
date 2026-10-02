@@ -34,8 +34,16 @@ static void move_towards(Animal *a, float tx, float tz, float speed, float dt) {
     a->yaw = atan2f(dx, dz);
 }
 
+static void update_inner(Animal *a, float dt, float px, float pz, Rng *rng);
+
 void animal_update(Animal *a, float dt, float px, float pz, Rng *rng) {
-    if (a->ridden) return; // lo mueve el jinete
+    if (a->ridden) return; // lo mueve el jinete (y fija su velocidad)
+    float x0 = a->x, z0 = a->z;
+    update_inner(a, dt, px, pz, rng);
+    a->speed = dt > 0.0f ? sqrtf((a->x - x0) * (a->x - x0) + (a->z - z0) * (a->z - z0)) / dt : 0.0f;
+}
+
+static void update_inner(Animal *a, float dt, float px, float pz, Rng *rng) {
     const SpeciesDef *d = &SPECIES[a->species];
     float dx = a->x - px, dz = a->z - pz, dist = sqrtf(dx * dx + dz * dz);
     if (a->state == ANIMAL_WILD && dist < d->flee_dist) {

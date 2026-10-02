@@ -41,6 +41,24 @@ El CI valida el inventario y falla si un archivo no corresponde a ningún id o s
 | Personajes y animales | Deben estar riggeados (`rig:humanoide`, `rig:cuadrupedo` o `rig:ave`). La ropa y la armadura se ajustan a los cuerpos base (`personaje.base.*`). |
 | Nombres | Solo minúsculas, dígitos y `_`. El nombre del archivo es la última parte del id. |
 
+## Animaciones
+
+Los personajes, los animales y los objetos con mecanismo (vehículos, máquinas de asedio, puertas) traen sus animaciones dentro del mismo GLB. El índice [docs/ANIMACIONES.md](../../docs/ANIMACIONES.md), que sale de [`assets/animaciones.tsv`](../animaciones.tsv), dice qué clips necesita cada modelo.
+
+| Aspecto | Regla |
+|---|---|
+| Nombre de cada clip | **Exactamente** el de la columna `clip` (p. ej. `caminar`, `galopar`, `construir`). El juego los busca por nombre. |
+| Velocidad | **30 fps**. Los clips con `bucle: si` deben cerrar el ciclo: el último fotograma enlaza con el primero. |
+| Esqueleto compartido | Todos los cuerpos humanos usan el mismo esqueleto, y todos los cuadrúpedos el suyo. La ropa, la armadura y las bardas se pesan (skinning) a ese esqueleto y no llevan clips propios. |
+| Raíz | Los clips no desplazan la raíz: el juego mueve al personaje. El clip anima en el sitio. |
+| Sin un clip | El juego usa `idle`. Un modelo `importado` o `refinado` sin sus clips obligatorios falla en CI. |
+
+Para ver qué clips necesita un modelo:
+```bash
+python3 tools/assets/animaciones.py modelo animal.montura.caballo_estepario
+python3 tools/assets/animaciones.py check   # comprueba los GLB importados
+```
+
 ## Refinado: text-to-cad y Kiln
 
 - **text-to-cad** ([earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad)):

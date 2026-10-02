@@ -348,7 +348,7 @@ int main(int argc, char **argv) {
         terrain_draw(&terrain);
         camp_draw(&camp, (float)GetTime());
         if (gallery_mode) gallery_draw(&gallery);
-        player_draw(&player);
+        if (gallery_mode || !ga_draw_player(&g_actions, &g_props, &player, (float)GetTime())) player_draw(&player);
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
         EndMode3D();
         if (gallery_mode) {

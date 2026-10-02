@@ -14,8 +14,10 @@ void props_init(Props *p, const Inventory *inv) {
 }
 
 void props_unload(Props *p) {
-    for (int i = 0; i < p->cached; i++)
+    for (int i = 0; i < p->cached; i++) {
+        if (p->cache[i].anims) UnloadModelAnimations(p->cache[i].anims, p->cache[i].anim_count);
         if (p->cache[i].loaded) UnloadModel(p->cache[i].model);
+    }
     p->cached = 0;
     p->count = 0;
 }
@@ -49,10 +51,17 @@ int props_nearest(const Props *p, Vector3 from, float radius, bool takeable_only
     return best;
 }
 
+// Indice en la cache del id (cargando el modelo y sus clips una sola vez), o -1.
+static int cache_slot(Props *p, const InvItem *item) {
+    for (int i = 0; i < p->cached; i++)
+        if (p->cache[i].item == item) return i;
+    return -1;
+}
+
 // Modelo del id, cargado una sola vez. NULL si todavia no fue importado.
 static Model *cached_model(Props *p, const InvItem *item) {
-    for (int i = 0; i < p->cached; i++)
-        if (p->cache[i].item == item) return p->cache[i].loaded ? &p->cache[i].model : NULL;
+    int found = cache_slot(p, item);
+    if (found >= 0) return p->cache[found].loaded ? &p->cache[found].model : NULL;
     if (p->cached >= MODEL_CACHE_MAX) return NULL;
     char path[128];
     inventory_path(item, path, sizeof(path));
@@ -60,13 +69,36 @@ static Model *cached_model(Props *p, const InvItem *item) {
     int slot = p->cached++;
     p->cache[slot].item = item;
     p->cache[slot].loaded = false;
+    p->cache[slot].anims = NULL;
+    p->cache[slot].anim_count = 0;
 #if !defined(__ANDROID__)
     if (item->texture || !FileExists(full)) return NULL; // en Android los assets viven en el APK
 #endif
     if (item->texture) return NULL;
     p->cache[slot].model = LoadModel(full);
     p->cache[slot].loaded = p->cache[slot].model.meshCount > 0;
+    if (p->cache[slot].loaded) p->cache[slot].anims = LoadModelAnimations(full, &p->cache[slot].anim_count);
     return p->cache[slot].loaded ? &p->cache[slot].model : NULL;
+}
+
+bool props_has_model(Props *p, const InvItem *item) { return item && cached_model(p, item) != NULL; }
+
+void props_draw_item_anim(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time) {
+    Model *m = cached_model(p, item);
+    int slot = cache_slot(p, item);
+    if (m && slot >= 0 && p->cache[slot].anim_count > 0) {
+        ModelAnimation *anims = p->cache[slot].anims, *chosen = NULL, *idle = NULL;
+        for (int i = 0; i < p->cache[slot].anim_count; i++) {
+            if (!strcmp(anims[i].name, clip)) chosen = &anims[i];
+            if (!strcmp(anims[i].name, "idle")) idle = &anims[i];
+        }
+        if (!chosen) chosen = idle ? idle : &anims[0];
+        if (chosen->frameCount > 0) {
+            int frame = (int)(time * 30.0f) % chosen->frameCount; // los GLB se exportan a 30 fps
+            UpdateModelAnimation(*m, *chosen, frame);
+        }
+    }
+    props_draw_item(p, item, pos, yaw, 1.0f);
 }
 
 // Color del marcador segun la categoria del inventario (igual que en la galeria).
