@@ -26,6 +26,8 @@ typedef struct {
         const InvItem *item;
         Model model;
         bool loaded;
+        ModelAnimation *anims; // clips del GLB (indice: assets/animaciones.tsv)
+        int anim_count;
     } cache[MODEL_CACHE_MAX];
     int cached;
 } Props;
@@ -44,5 +46,10 @@ bool props_takeable(const InvItem *item);
 // grow en [0, 1] escala la altura (obras a medio construir).
 void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, float grow);
 void props_draw(Props *p);
+// true si el id ya tiene modelo importado.
+bool props_has_model(Props *p, const InvItem *item);
+// Dibuja con el clip de animacion pedido (por nombre); si el modelo no lo trae,
+// usa "idle"; si no hay modelo, el marcador. time: segundos (el clip se repite).
+void props_draw_item_anim(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time);
 
 #endif

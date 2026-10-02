@@ -38,6 +38,7 @@ typedef struct {
     float timer;          // hasta elegir otro destino
     bool fleeing;
     bool ridden;
+    float speed;          // m/s en el ultimo paso (para elegir la animacion)
 } Animal;
 
 const SpeciesDef *species_def(Species s);

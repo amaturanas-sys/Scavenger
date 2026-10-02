@@ -82,6 +82,13 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [ ] Importar y refinar los modelos (text-to-cad + Kiln).
 - [ ] Usar los modelos del inventario en el mundo (NPCs, animales, armas equipadas, etc.).
 
+## Animaciones (ver [ANIMACIONES.md](ANIMACIONES.md))
+- [x] Índice de clips por esqueleto (humanoide, cuadrúpedo, ave, mecanismo) y qué modelos los necesitan (`assets/animaciones.tsv`).
+- [x] Validador y documento generado (`tools/assets/animaciones.py`); comprueba los nombres de los clips dentro de los GLB importados. En CI.
+- [x] El juego elige el clip según el estado (`src/sim/anim_index.*`, con tests) y lo reproduce en cuanto el modelo exista (jugador, NPCs, animales).
+- [ ] Importar los modelos animados (cuerpos base, protagonista, monturas, fauna).
+- [ ] Mezcla entre clips y capas (parte superior del cuerpo para empuñar mientras se camina).
+
 ## Herramientas
 - **Assets 3D:** inventario en `assets/inventario.tsv`; importación en [assets/models/README.md](../assets/models/README.md); Kiln (`tools/assets/*.kiln.js`) y text-to-cad para crear y refinar.
 - **Optimización:** Ghidra sobre nuestros propios builds. Ver [GHIDRA.md](GHIDRA.md).

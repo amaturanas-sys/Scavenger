@@ -1,0 +1,93 @@
+# Índice de animaciones de ESTEPA: clips por tipo de esqueleto (rig) y a qué modelos se aplican.
+# Columnas separadas por TAB. aplica: * (todos los modelos del rig), prefijos de id, id:<id exacto> o etiquetas clave:valor, separados por comas.
+rig	clip	descripcion	bucle	aplica	prioridad	acciones
+humanoide	idle	De pie, respirando.	si	*	obligatoria	quieto
+humanoide	caminar	Caminar.	si	*	obligatoria	moverse
+humanoide	correr	Correr.	si	*	obligatoria	moverse+Shift
+humanoide	acechar	Agachado, avance sigiloso.	si	*	obligatoria	acechar (C)
+humanoide	acechar_idle	Agachado, quieto (escondido en la hierba).	si	*	obligatoria	esconderse
+humanoide	saltar	Impulso del salto.	no	*	obligatoria	saltar
+humanoide	caer	En el aire, cayendo.	si	*	obligatoria	saltar
+humanoide	aterrizar	Contacto con el suelo.	no	*	obligatoria	saltar
+humanoide	trepar_cuerda	Subir por la cuerda de la trepa.	si	*	obligatoria	lanzar trepa
+humanoide	trepar_cima	Pasar por encima del muro y bajar.	no	*	obligatoria	lanzar trepa
+humanoide	nadar	Nadar.	si	*	opcional	
+humanoide	montar_subir	Subir a la montura.	no	*	obligatoria	montar (R)
+humanoide	montar_bajar	Bajar de la montura.	no	*	obligatoria	montar (R)
+humanoide	jinete_idle	Sentado en la montura, quieto.	si	*	obligatoria	montado
+humanoide	jinete_paso	Jinete al paso.	si	*	obligatoria	montado
+humanoide	jinete_galope	Jinete al galope.	si	*	obligatoria	montado
+humanoide	jinete_arco	Disparar con arco a caballo.	no	*	opcional	combate montado
+humanoide	tomar	Agacharse y recoger un objeto.	no	*	obligatoria	tomar (F)
+humanoide	llevar	Caminar llevando un objeto en brazos.	si	*	obligatoria	tomar (F)
+humanoide	lanzar	Arrojar el objeto que se lleva.	no	*	obligatoria	lanzar (T)
+humanoide	empunar_una	Postura con arma a una mano.	si	*	obligatoria	empuñadura
+humanoide	empunar_doble	Postura con un arma en cada mano.	si	*	obligatoria	empuñadura
+humanoide	empunar_dos_manos	Postura con arma a dos manos.	si	*	obligatoria	empuñadura
+humanoide	empunar_escudo	Postura con arma y escudo.	si	*	obligatoria	empuñadura
+humanoide	empunar_arco	Postura con arco o ballesta.	si	*	obligatoria	empuñadura
+humanoide	cambiar_empunadura	Cambiar de arma.	no	*	obligatoria	cambiar empuñadura (X)
+humanoide	enfundar	Guardar las armas.	no	*	obligatoria	enfundar (H)
+humanoide	desenfundar	Sacar las armas.	no	*	obligatoria	enfundar (H)
+humanoide	agacharse_trabajar	Agachado trabajando en el suelo (fogata, tienda).	si	*	obligatoria	instalar fogata, instalar tienda
+humanoide	cavar	Cavar con pala.	si	*	obligatoria	cavar trinchera
+humanoide	lanzar_trepa	Voltear y lanzar el gancho con cuerda.	no	*	obligatoria	lanzar trepa
+humanoide	lanzar_lazo	Voltear y lanzar el lazo.	no	*	obligatoria	lanzar lazo
+humanoide	forcejear_lazo	Tirar del lazo con el animal atrapado.	si	*	obligatoria	lanzar lazo
+humanoide	encender	Encender una antorcha o un fuego.	no	*	obligatoria	encender antorcha
+humanoide	ensillar	Colocar la silla en el lomo.	no	*	obligatoria	instalar montura
+humanoide	construir	Martillar, levantar y atar (obras en grupo).	si	*	obligatoria	construcciones en grupo
+humanoide	forjar	Martillar en el yunque.	si	*	obligatoria	forja
+humanoide	cocinar	Remover el caldero.	si	*	opcional	cocinero
+humanoide	curar	Atender a un herido.	si	*	opcional	curandero
+humanoide	ataque_una_1	Combo a una mano, golpe 1.	no	*	obligatoria	combate
+humanoide	ataque_una_2	Combo a una mano, golpe 2.	no	*	obligatoria	combate
+humanoide	ataque_una_3	Combo a una mano, golpe 3 (remate).	no	*	obligatoria	combate
+humanoide	ataque_dos_1	Combo a dos manos, golpe 1.	no	*	obligatoria	combate
+humanoide	ataque_dos_2	Combo a dos manos, golpe 2.	no	*	obligatoria	combate
+humanoide	ataque_dos_3	Combo a dos manos, golpe 3.	no	*	obligatoria	combate
+humanoide	estocada_lanza	Estocada con lanza.	no	*	obligatoria	combate
+humanoide	bloquear	Cubrirse con el escudo o el arma.	si	*	obligatoria	combate
+humanoide	agarre	Agarrar al rival (grappling).	no	*	obligatoria	combate
+humanoide	derribo	Derribar al rival agarrado.	no	*	obligatoria	combate
+humanoide	proyeccion	Proyectar al rival por encima.	no	*	obligatoria	combate
+humanoide	disparar_arco	Tensar y soltar.	no	*	obligatoria	combate a distancia
+humanoide	disparar_ballesta	Disparar la ballesta.	no	*	obligatoria	combate a distancia
+humanoide	recargar_ballesta	Recargar la ballesta.	no	*	obligatoria	combate a distancia
+humanoide	disparar_mosquete	Disparar el mosquete.	no	*	opcional	combate a distancia
+humanoide	recargar_mosquete	Recargar el mosquete.	no	*	opcional	combate a distancia
+humanoide	recibir_golpe	Reacción al golpe.	no	*	obligatoria	combate
+humanoide	morir	Caer muerto.	no	*	obligatoria	combate
+humanoide	hablar	Gesticular al hablar.	si	*	obligatoria	diálogos
+humanoide	celebrar	Celebrar (botín, victoria).	no	*	opcional	repartir botín
+humanoide	protestar	Protestar (moral baja, rebelión).	si	*	opcional	rebelión
+humanoide	atado	Prisionero atado.	si	motivo:rescate,id:personaje.npc.prisionero	opcional	prisioneros
+cuadrupedo	idle	Quieto.	si	*	obligatoria	quieto
+cuadrupedo	pastar	Comer del suelo.	si	animal.montura.,animal.ganado.,animal.salvaje.ciervo,animal.salvaje.ibice	obligatoria	deambular
+cuadrupedo	caminar	Al paso.	si	*	obligatoria	deambular
+cuadrupedo	trotar	Al trote.	si	*	obligatoria	seguir a la tribu
+cuadrupedo	galopar	Al galope / huir.	si	*	obligatoria	huir, montado
+cuadrupedo	saltar	Salto.	no	*	opcional	
+cuadrupedo	encabritarse	Resistirse (encabritarse, sacudirse).	no	*	obligatoria	lanzar lazo
+cuadrupedo	forcejear_lazo	Atrapado por el lazo, tirando.	si	*	obligatoria	lanzar lazo
+cuadrupedo	montado_idle	Con jinete, quieto.	si	uso:montable	obligatoria	montado
+cuadrupedo	tirar_carga	Tirando de una carreta o un trineo.	si	animal.ganado.buey,animal.montura.reno,animal.ganado.yak,animal.montura.caballo_estepario	opcional	vehículos
+cuadrupedo	atacar	Ataque.	no	animal.salvaje.lobo,animal.salvaje.tigre,animal.salvaje.oso,animal.salvaje.leopardo_nieves,animal.ganado.perro_pastor,animal.montura.elefante_guerra	obligatoria	combate
+cuadrupedo	aullar	Aullar.	no	animal.salvaje.lobo	opcional	
+cuadrupedo	echarse	Tumbarse a descansar.	si	*	opcional	descanso
+cuadrupedo	recibir_golpe	Reacción al golpe.	no	*	obligatoria	combate
+cuadrupedo	morir	Caer muerto.	no	*	obligatoria	combate
+ave	posado	Posado, quieto.	si	*	obligatoria	
+ave	despegar	Despegar.	no	*	obligatoria	
+ave	volar	Aleteo.	si	*	obligatoria	
+ave	planear	Planear.	si	*	obligatoria	
+ave	aterrizar	Aterrizar (en el brazo, en el suelo).	no	*	obligatoria	
+ave	atacar_picado	Caer en picado sobre la presa.	no	animal.ave.aguila,animal.ave.halcon	opcional	
+mecanismo	rodar	Ruedas girando.	si	vehiculo.tierra.,asedio.maquina.ariete,asedio.maquina.torre_asedio	obligatoria	vehículos
+mecanismo	remar	Remos.	si	vehiculo.agua.bote_remos,vehiculo.agua.canoa_pieles	obligatoria	vehículos
+mecanismo	vela	Vela al viento.	si	vehiculo.agua.velero,vehiculo.agua.barco_carga,vehiculo.agua.barco_guerra	obligatoria	vehículos
+mecanismo	disparar	Disparo de la máquina.	no	asedio.maquina.trebuchet,asedio.maquina.catapulta,arma.distancia.canon	obligatoria	asedio
+mecanismo	golpear	Golpe del ariete.	no	asedio.maquina.ariete	obligatoria	asedio
+mecanismo	abrir	Abrirse.	no	estructura.imperio.puerta,utileria.objeto.cofre,estructura.campamento.jaula_prisioneros,estructura.culto.jaula_sacrificio	obligatoria	interactuar
+mecanismo	cerrar	Cerrarse.	no	estructura.imperio.puerta,utileria.objeto.cofre,estructura.campamento.jaula_prisioneros,estructura.culto.jaula_sacrificio	obligatoria	interactuar
+mecanismo	ondear	Ondear al viento.	si	totem.clan.sulde,totem.clan.estandarte_tamga	opcional	

@@ -8,7 +8,7 @@ RPG de mundo abierto en 3D low-res, inspirado en las tribus nómadas de la estep
 - Narrativa: [docs/NARRATIVA.md](docs/NARRATIVA.md)
 - Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Arquitectura: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
-- Inventario de assets: [docs/INVENTARIO.md](docs/INVENTARIO.md) · cómo importar modelos: [assets/models/README.md](assets/models/README.md)
+- Inventario de assets: [docs/INVENTARIO.md](docs/INVENTARIO.md) · animaciones: [docs/ANIMACIONES.md](docs/ANIMACIONES.md) · cómo importar modelos: [assets/models/README.md](assets/models/README.md)
 
 ## Compilar y jugar
 

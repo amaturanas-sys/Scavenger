@@ -31,6 +31,7 @@ typedef struct {
     float yaw;
     int project;       // obra a la que va, o -1
     int job;           // accion individual (ActionId) que esta haciendo, o -1
+    bool moving;
     Vector3 job_pos;
     float job_timer;
 } Npc;
@@ -82,6 +83,9 @@ void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p)
 void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day,
                 char *log, size_t log_len);
 void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time);
+// Dibuja al jugador con el modelo del protagonista y su animacion, si ya fue
+// importado. Devuelve false si no (el juego dibuja el marcador de siempre).
+bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time);
 const char *ga_hands_text(const GameActions *ga);
 void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, int width, int height);
 

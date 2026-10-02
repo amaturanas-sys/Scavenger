@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "../src/sim/actions.h"
+#include "../src/sim/anim_index.h"
 #include "../src/sim/animals.h"
 #include "../src/sim/economy.h"
 #include "../src/sim/champion.h"
@@ -741,6 +742,90 @@ static void test_inventory_repo_file_is_valid(void) {
     free(text);
 }
 
+// ---------------------------------------------------------------- indice de animaciones
+// true si el clip (rig, nombre) esta en assets/animaciones.tsv.
+static bool clip_indexed(const char *text, const char *rig, const char *clip) {
+    char needle[96];
+    snprintf(needle, sizeof(needle), "\n%s\t%s\t", rig, clip);
+    return strstr(text, needle) != NULL;
+}
+
+static void test_anim_index_states(void) {
+    HumanoidState s;
+    memset(&s, 0, sizeof(s));
+    s.doing = s.building = -1;
+    s.grounded = true;
+    CHECK(!strcmp(anim_humanoid(&s), "idle"));
+    s.grip = GRIP_WEAPON_SHIELD;
+    CHECK(!strcmp(anim_humanoid(&s), "empunar_escudo"));
+    s.sheathed = true;
+    CHECK(!strcmp(anim_humanoid(&s), "idle"));
+    s.moving = true;
+    CHECK(!strcmp(anim_humanoid(&s), "caminar"));
+    s.running = true;
+    CHECK(!strcmp(anim_humanoid(&s), "correr"));
+    s.carrying = true;
+    CHECK(!strcmp(anim_humanoid(&s), "llevar"));
+    s.doing = ACTION_DIG_TRENCH;
+    CHECK(!strcmp(anim_humanoid(&s), "cavar")); // la accion manda sobre el movimiento
+    s.mounted = true;
+    s.mount_speed = 10.0f;
+    CHECK(!strcmp(anim_humanoid(&s), "jinete_galope"));
+    s.climbing = true;
+    CHECK(!strcmp(anim_humanoid(&s), "trepar_cuerda"));
+    memset(&s, 0, sizeof(s));
+    s.doing = -1;
+    s.grounded = true;
+    s.building = BUILD_BONFIRE;
+    CHECK(!strcmp(anim_humanoid(&s), "construir"));
+    s.hidden = true;
+    CHECK(!strcmp(anim_humanoid(&s), "acechar_idle"));
+
+    Animal a;
+    animal_init(&a, SPECIES_HORSE, 0, 0);
+    CHECK(!strcmp(anim_quadruped(&a), "pastar"));
+    a.speed = 1.0f;
+    CHECK(!strcmp(anim_quadruped(&a), "caminar"));
+    a.fleeing = true;
+    CHECK(!strcmp(anim_quadruped(&a), "galopar"));
+    a.ridden = true;
+    a.speed = 0.0f;
+    CHECK(!strcmp(anim_quadruped(&a), "montado_idle"));
+}
+
+// Todo clip que el juego puede pedir existe en el indice, con el rig correcto.
+static void test_anim_index_names_exist(void) {
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/animaciones.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    for (int a = 0; a < ACTION_COUNT; a++) CHECK(clip_indexed(text, "humanoide", anim_for_action((ActionId)a)));
+    for (int g = 0; g <= GRIP_SHIELD; g++) CHECK(clip_indexed(text, "humanoide", anim_grip((Grip)g, false)));
+    // Recorre todas las combinaciones de banderas del estado humano.
+    for (int bits = 0; bits < (1 << 10); bits++) {
+        HumanoidState s;
+        memset(&s, 0, sizeof(s));
+        s.moving = bits & 1, s.running = bits & 2, s.sneaking = bits & 4, s.grounded = bits & 8;
+        s.hidden = bits & 16, s.climbing = bits & 32, s.climb_top = bits & 64, s.mounted = bits & 128;
+        s.carrying = bits & 256, s.forging = bits & 512;
+        s.mount_speed = (float)(bits % 3) * 4.0f;
+        s.doing = (bits % 5 == 0) ? ACTION_SADDLE : -1;
+        s.building = (bits % 7 == 0) ? BUILD_OVEN : -1;
+        s.grip = (Grip)(bits % 6);
+        CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
+    }
+    for (int sp = 0; sp < SPECIES_COUNT; sp++) {
+        Animal a;
+        animal_init(&a, (Species)sp, 0, 0);
+        for (int k = 0; k < 12; k++) {
+            a.speed = (float)k;
+            a.fleeing = k == 11;
+            a.ridden = k >= 9 && k < 11;
+            CHECK(clip_indexed(text, "cuadrupedo", anim_quadruped(&a)));
+        }
+    }
+    free(text);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_banish_removes_from_active);
@@ -779,6 +864,8 @@ int main(void) {
     RUN(test_animals_flee_and_wander);
     RUN(test_animals_tame_saddle_ride);
     RUN(test_inventory_parses_and_maps_paths);
+    RUN(test_anim_index_states);
+    RUN(test_anim_index_names_exist);
     RUN(test_inventory_repo_file_is_valid);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;

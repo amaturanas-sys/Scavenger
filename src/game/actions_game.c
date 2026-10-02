@@ -6,6 +6,7 @@
 
 #include "raymath.h"
 #include "rlgl.h"
+#include "sim/anim_index.h"
 #include "sim/clock.h"
 #include "ui/theme.h"
 
@@ -408,6 +409,7 @@ static void sync_npcs(GameActions *ga, const Troop *troop, const Terrain *t) {
 
 static bool npc_walk(Npc *n, const Terrain *t, Vector3 to, float dt) {
     float d = dist2d(n->pos, to);
+    n->moving = d >= 0.3f;
     if (d < 0.3f) return true;
     float step = fminf(NPC_SPEED * dt, d);
     float dx = (to.x - n->pos.x) / d, dz = (to.z - n->pos.z) / d;
@@ -685,6 +687,14 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         bool working = n->project >= 0 && n->project < ga->project_count &&
                        dist2d(n->pos, (Vector3){ ga->projects[n->project].x, 0, ga->projects[n->project].z }) < AT_SITE;
         float bob = working || (n->job >= 0 && n->job_timer > 0.0f) ? fabsf(sinf(time * 6.0f + (float)i)) * 0.15f : 0.0f;
+        const InvItem *body = inventory_find(ga->inv, s >= 1.2f ? "personaje.base.cuerpo_gigante" : "personaje.base.cuerpo_comun");
+        if (body && props_has_model(props, body)) { // modelo importado: con su animacion (assets/animaciones.tsv)
+            HumanoidState hs = { .moving = n->moving, .grounded = true, .doing = -1, .building = -1 };
+            if (working) hs.building = ga->projects[n->project].def;
+            if (n->job >= 0 && !n->moving) hs.doing = n->job;
+            props_draw_item_anim(props, body, n->pos, n->yaw - PI / 2.0f, anim_humanoid(&hs), time + (float)i);
+            continue;
+        }
         Vector3 base = { n->pos.x, n->pos.y + bob, n->pos.z };
         DrawCapsule((Vector3){ base.x, base.y + 0.3f * s, base.z }, (Vector3){ base.x, base.y + 1.35f * s, base.z },
                     0.26f * s, 6, 4, role_color(m->role));
@@ -698,7 +708,7 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         if (!it) continue;
         Vector3 pos = ground_at(t, a->x, a->z);
         // El modelo mira a +X (Kiln); el animal avanza segun yaw (0 = +Z).
-        props_draw_item(props, it, pos, a->yaw - PI / 2.0f, 1.0f);
+        props_draw_item_anim(props, it, pos, a->yaw - PI / 2.0f, anim_quadruped(a), time + (float)i * 0.37f);
         if (a->state != ANIMAL_WILD) DrawCube((Vector3){ pos.x, pos.y + it->h + 0.1f, pos.z }, 0.12f, 0.12f, 0.12f, UI_TURQUOISE);
         if (a->state == ANIMAL_SADDLED) DrawCube((Vector3){ pos.x, pos.y + it->h * 0.75f, pos.z }, 0.5f, 0.15f, 0.6f, (Color){ 120, 70, 40, 255 });
     }
@@ -734,6 +744,21 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
     rlPopMatrix();
     // La cuerda de la trepa mientras se escala.
     if (ga->climbing) DrawLine3D(ga->climb_top, (Vector3){ p->pos.x, p->pos.y + 1.2f, p->pos.z }, (Color){ 140, 110, 70, 255 });
+}
+
+bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) {
+    const InvItem *body = inventory_find(ga->inv, "personaje.narrativo.protagonista");
+    if (!body || !props_has_model(props, body)) return false;
+    HumanoidState hs = {
+        .moving = p->moving, .running = p->stance == STANCE_RUN, .sneaking = p->sneaking, .grounded = p->grounded,
+        .hidden = ga->hidden, .climbing = ga->climbing, .climb_top = ga->climbing && ga->climb_t > 1.6f,
+        .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = ga->hands.sheathed,
+        .grip = hands_grip(&ga->hands), .doing = ga->doing, .building = -1,
+    };
+    if (hs.mounted) hs.mount_speed = p->moving ? (p->stance == STANCE_RUN ? 8.5f : 4.0f) * ga_speed_scale(ga) : 0.0f;
+    Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
+    props_draw_item_anim(props, body, pos, p->yaw - PI / 2.0f, anim_humanoid(&hs), time);
+    return true;
 }
 
 const char *ga_hands_text(const GameActions *ga) {
