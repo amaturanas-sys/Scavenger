@@ -224,6 +224,20 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
 - **Aparición:** por bioma (estepa, desierto, frío de alta montaña), a 70–110 m del jugador y nunca junto al campamento. Hay unos 16 animales salvajes alrededor; de noche, el doble de cazadores. Los que quedan lejos desaparecen.
 - **Caza y despiece:** golpes y proyectiles hieren por zonas de fiera (cada especie con su talla; las aves, en el aire). Con `K` junto a un cadáver se despieza: carne fresca y pieles (menos si otros se lo comieron).
 - **Ganado:** sigue al jugador que camina cerca (pastoreo) y se queda donde lo dejas. `K` ordeña la cabra una vez al día; `Mayús+K` sacrifica (carne y piel).
+- **Acuáticos y anfibios:**
+  - El cocodrilo espera medio sumergido junto a la orilla. Embosca a quien se acerca (personas o presas), pero no se aleja más de 9 m de su guarida.
+  - La tortuga marina es una presa lenta en tierra: huye hacia el agua, donde los cazadores que no nadan no la alcanzan.
+  - Solo nadan las especies acuáticas y las aves. El resto se queda en la orilla.
+- **Pequeños y venenosos:**
+  - La víbora, el escorpión (desierto) y la araña muerden si te acercas a pocos metros y no persiguen lejos de su guarida.
+  - Su mordedura deja **veneno**: quita vida poco a poco, y mientras dura no se recupera. Las hierbas (`B`) lo cortan a la mitad. El HUD dice «envenenado».
+- **Enjambres** (`src/sim/swarms.*`; cada celda de 40 m del mundo tiene siempre el mismo enjambre):
+  - **Peces:** bancos que nadan bajo la superficie de los lagos (bajo el hielo no se ven) y huyen de quien se mete en el agua. Se pescan con un golpe hacia el agua (la lanza acierta más) o con una flecha que cae entre ellos, y dan carne fresca.
+  - **Abejas:** tranquilas alrededor de su colmena salvo que la golpees o metas la mano sin humo. Con la antorcha encendida, el humo las calma y `K` toma la miel (una vez al día). De noche están en la colmena.
+  - **Avispas:** se enfadan con solo acercarte a menos de 4 m del avispero. Pican más fuerte y con más veneno.
+  - **Mosquitos:** junto al agua, con calor, al atardecer y de noche. Encuentran a quien pase cerca; el fuego de la antorcha los espanta.
+  - **Moscas:** zumban sobre los cadáveres sin despiezar.
+  - Bajo el agua honda, los insectos te pierden.
 - **Comida:** la tribu come primero la carne fresca y la leche, y después la carne seca. Lo fresco que sobra al final del día se seca (la mitad de la carne) o se cuaja en queso (la mitad de la leche).
 
 ### Trepar y esconderse (implementado — `src/game/actions_game.*`)

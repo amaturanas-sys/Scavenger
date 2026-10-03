@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
     float start_minute = 4.0f; // la partida empieza a media manana
     bool start_pos = false;
     const char *start_trap = NULL, *start_enemies = NULL;
-    bool start_wounds = false, start_aim = false;
+    bool start_wounds = false, start_aim = false, start_lake = false;
     float start_x = 0.0f, start_z = 0.0f;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) shot_path = argv[++i];
@@ -325,6 +325,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--enemigos") && i + 1 < argc) start_enemies = argv[++i];
         else if (!strcmp(argv[i], "--heridas")) start_wounds = true;
         else if (!strcmp(argv[i], "--apuntar")) start_aim = true;
+        else if (!strcmp(argv[i], "--lago")) start_lake = true;
         else if (!strcmp(argv[i], "--pos") && i + 2 < argc) {
             start_pos = true;
             start_x = (float)atof(argv[++i]);
@@ -387,6 +388,25 @@ int main(int argc, char **argv) {
     hz_init(&g_hazards, WORLD_SEED);
     cb_init(&g_combat, WORLD_SEED);
     g_hazards.body = &g_combat.player; // caidas y congelacion hieren
+    if (start_lake && !gallery_mode) { // prueba: en la orilla del lago mas cercano, mirando al agua
+        for (float r = 20.0f; r < 400.0f; r += 6.0f) {
+            bool found = false;
+            for (int k = 0; k < 24 && !found; k++) {
+                float a = (float)k * PI / 12.0f, x = cosf(a) * r, z = sinf(a) * r;
+                if (terrain.look.water_level < terrain_height(&terrain, x, z) + 2.0f) continue;
+                for (float back = 0.0f; back < r; back += 1.0f) { // hacia el campamento, hasta la orilla
+                    float bx = cosf(a) * (r - back), bz = sinf(a) * (r - back);
+                    if (terrain.look.water_level < terrain_height(&terrain, bx, bz) - 0.1f) {
+                        player.pos = (Vector3){ bx, terrain_height(&terrain, bx, bz), bz };
+                        player.yaw = atan2f(cosf(a), sinf(a));
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (found) break;
+        }
+    }
 
     Gallery gallery = { 0 };
     if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
@@ -400,6 +420,7 @@ int main(int argc, char **argv) {
 
     Camera3D cam = { .up = { 0, 1, 0 }, .fovy = 55.0f, .projection = CAMERA_PERSPECTIVE };
     CameraRig rig = { .yaw = PI, .pitch = 0.38f, .dist = 11.0f };
+    if (start_lake) rig.yaw = player.yaw; // mirando al agua
 
     int frame = 0;
     bool has_keyboard = platform_has_keyboard() && !simulate_no_keyboard;
@@ -445,7 +466,7 @@ int main(int argc, char **argv) {
                           !menu && !hz_blocks_input(&g_hazards), clock_is_night(world_time), g_climate.temp_mean < 0.0f,
                           rig.yaw, rig.pitch, dt, log, sizeof(log));
             if (!gallery_mode)
-                fg_update(&g_actions, &g_combat, &player, &troop, &terrain, &g_memory, world_time, clock_is_night(world_time),
+                fg_update(&g_actions, &g_combat, &player, &troop, &terrain, &g_memory, world_time, g_climate.temperature,
                           !menu && !hz_blocks_input(&g_hazards), dt, log, sizeof(log));
             if (start_aim && !gallery_mode) { // prueba: arco tenso, para ver la curva de la mira
                 snprintf(g_actions.hands.right.id, sizeof(g_actions.hands.right.id), "arma.distancia.arco_compuesto");

@@ -116,11 +116,17 @@ void health_update(Health *h, Rng *rng, float dt, bool resting, float healer) {
     } else {
         h->blood = fminf(1.0f, h->blood + dt / (resting ? 200.0f : 600.0f));
     }
-    // Vida: se recupera sin sangrado y con sangre suficiente, hasta lo que permiten las heridas.
+    // Veneno: quita vida poco a poco (la mitad en unos 14 s) y frena la recuperacion.
+    if (h->venom > 0.0f) {
+        float d = fminf(h->venom, h->venom * 0.05f * dt + 0.05f * dt);
+        h->venom -= d;
+        h->hp -= d;
+    }
+    // Vida: se recupera sin sangrado ni veneno, con sangre suficiente, hasta lo que permiten las heridas.
     float burden = 0.0f;
     for (int i = 0; i < h->wound_count; i++) burden += h->wounds[i].severity;
     float cap = h->hp_max * clampf(1.0f - burden * 0.25f, 0.3f, 1.0f);
-    if (bleed == 0.0f && h->blood > 0.5f && h->hp < cap)
+    if (bleed == 0.0f && h->venom < 1.0f && h->blood > 0.5f && h->hp < cap)
         h->hp = fminf(cap, h->hp + h->hp_max * dt / (resting ? 120.0f : 400.0f));
     // Cicatrizacion: tratadas y en reposo, mas rapido; las fracturas solo entablilladas.
     for (int i = 0; i < h->wound_count; i++) {
@@ -134,8 +140,15 @@ void health_update(Health *h, Rng *rng, float dt, bool resting, float healer) {
     update_state(h);
 }
 
+void health_poison(Health *h, float amount) {
+    if (!h->dead && amount > 0.0f) h->venom += amount;
+}
+
+bool health_poisoned(const Health *h) { return h->venom >= 1.0f; }
+
 int health_treat(Health *h) {
     int n = 0;
+    if (h->venom >= 1.0f) h->venom *= 0.5f, n++; // las hierbas cortan el veneno
     for (int i = 0; i < h->wound_count; i++) {
         Wound *w = &h->wounds[i];
         bool needs = w->bleeding || (w->kind == WOUND_FRACTURE && !w->treated) || (!w->treated && w->severity >= 0.3f);
@@ -180,7 +193,7 @@ int health_untreated(const Health *h) {
         const Wound *w = &h->wounds[i];
         n += w->bleeding || (w->kind == WOUND_FRACTURE && !w->treated) || (!w->treated && w->severity >= 0.3f);
     }
-    return n;
+    return n + (h->venom >= 2.0f);
 }
 
 static float limb_penalty(const Health *h, BodyPart a, BodyPart b, float fracture, float other) {
@@ -246,6 +259,7 @@ int wound_describe(const Wound *w, bool beast, char *out, int len) {
 const char *health_state_name(const Health *h) {
     if (h->dead) return "muerto";
     if (h->down) return "abatido";
+    if (h->venom >= 1.0f) return "envenenado";
     int worst = health_worst(h);
     if (h->hp < 0.35f * h->hp_max || (worst >= 0 && h->wounds[worst].severity >= 0.6f)) return "malherido";
     if (h->wound_count > 0 || h->hp < 0.9f * h->hp_max) return "herido";

@@ -183,7 +183,12 @@ static void player_attack(Combat *cb, Player *p, GameActions *ga, const Terrain 
         fg_hurt(ga, an, dmg, w.wound, PART_RANDOM, 0, log, len);
         return;
     }
-    if (!best) return;
+    if (!best) {
+        // Nada a quien golpear: un nido que se enfada o un pez en el agua.
+        if (fg_poke_nest(ga, p->pos, w.reach)) snprintf(log, len, "¡Golpeaste el nido! Ahí vienen...");
+        else fg_fish(ga, t, p->pos, p->yaw, w.reach, w.spear, log, len);
+        return;
+    }
     const EnemyDef *def = enemy_def(best->kind);
     float dmg = combat_damage(w.damage, 1.0f, health_attack_scale(&cb->player), false, &cb->rng);
     float absorbed = 0.0f;
@@ -235,7 +240,7 @@ static void enemy_strike(Combat *cb, Enemy *e, Player *p, GameActions *ga, Troop
 }
 
 void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int kind, int id, Vector3 from, float dmg,
-                     WoundKind wound, const char *who, char *log, size_t len) {
+                     WoundKind wound, float venom, const char *who, char *log, size_t len) {
     char name[48];
     lower_name(who, name, sizeof(name));
     if (kind == 0) { // el jugador: el escudo y la armadura cuentan
@@ -245,16 +250,20 @@ void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int k
         float absorbed = 0.0f;
         bool broke = false;
         int wi = combat_apply_hit(&cb->player, &cb->armor, &cb->rng, dmg, wound, PART_RANDOM, false, &absorbed, &broke);
+        // El veneno entra si la mordedura paso la armadura.
+        if (!blocked && wi >= 0) health_poison(&cb->player, venom);
         cb->hit_anim = 0.3f;
         char d[128];
         if (blocked) snprintf(log, len, "Paras el ataque del %s con el escudo.", name);
+        else if (wi >= 0 && venom > 0.0f) snprintf(log, len, "¡Te muerde un %s: veneno! Véndate con hierbas (B).", name);
         else describe_hit(&cb->player, wi, absorbed, broke, d, sizeof(d)), snprintf(log, len, "Te ataca un %s: %s.", name, d);
         return;
     }
     if (kind == 1) {
         Member *m = troop_find(troop, id);
         if (!m || m->status != STATUS_ACTIVE || m->health.down) return;
-        combat_apply_hit(&m->health, &m->armor, &cb->rng, dmg, wound, PART_RANDOM, false, NULL, NULL);
+        if (combat_apply_hit(&m->health, &m->armor, &cb->rng, dmg, wound, PART_RANDOM, false, NULL, NULL) >= 0)
+            health_poison(&m->health, venom);
         for (int i = 0; i < troop->count && i < TROOP_MAX; i++)
             if (ga->npcs[i].member_id == m->id) ga->npcs[i].hurt_anim = 0.3f;
         if (m->health.down) snprintf(log, len, "¡Un %s derriba a %s! Acércate y pulsa B.", name, m->name);
@@ -432,8 +441,10 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             s->p.pos.y = ground;
             s->stuck = true;
             s->life = 0.0f;
-            if (t->look.water_level > terrain_height(t, s->p.pos.x, s->p.pos.z) + 0.25f && !hazard_ice_walkable(t->look.ice))
-                s->p.alive = false; // al agua
+            if (t->look.water_level > terrain_height(t, s->p.pos.x, s->p.pos.z) + 0.25f && !hazard_ice_walkable(t->look.ice)) {
+                s->p.alive = false; // al agua (quiza atraviese un pez)
+                if (s->owner == 0) fg_shot_water(ga, t, to_vec(s->p.pos), log, len);
+            }
         } else if (s->life > SHOT_LIFE) {
             s->p.alive = false;
         }

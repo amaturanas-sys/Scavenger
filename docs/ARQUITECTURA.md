@@ -28,7 +28,8 @@ src/
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
-    animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado
+    animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado, anfibios
+    swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
     anim_index.* que clip de animacion corresponde a cada estado
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable

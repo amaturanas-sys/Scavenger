@@ -3,7 +3,7 @@
 > Generado por `tools/assets/animaciones.py doc` a partir de [`assets/animaciones.tsv`](../assets/animaciones.tsv)
 > y del [inventario](INVENTARIO.md). No editar a mano.
 
-**96 clips** en 4 tipos de esqueleto · **94 modelos animados**.
+**96 clips** en 4 tipos de esqueleto · **96 modelos animados**.
 
 ## Cómo se nombran y se usan
 
@@ -89,11 +89,11 @@
 | Clip | Bucle | Prioridad | Descripción | Lo usa | Se aplica a |
 |---|---|---|---|---|---|
 | `idle` | si | obligatoria | Quieto. | quieto | todos |
-| `pastar` | si | obligatoria | Comer del suelo. | deambular | `animal.montura.`, `animal.ganado.`, `animal.salvaje.ciervo`, `animal.salvaje.ibice`, `animal.salvaje.antilope`, `animal.salvaje.reno`, `animal.salvaje.gacela`, `animal.salvaje.liebre`, `animal.salvaje.jabali` |
+| `pastar` | si | obligatoria | Comer del suelo. | deambular | `animal.montura.`, `animal.ganado.`, `animal.salvaje.ciervo`, `animal.salvaje.ibice`, `animal.salvaje.antilope`, `animal.salvaje.reno`, `animal.salvaje.gacela`, `animal.salvaje.liebre`, `animal.salvaje.jabali`, `animal.acuatico.tortuga_marina` |
 | `caminar` | si | obligatoria | Al paso. | deambular | todos |
 | `trotar` | si | obligatoria | Al trote. | seguir a la tribu | todos |
 | `galopar` | si | obligatoria | Al galope / huir. | huir, montado | todos |
-| `acechar` | si | obligatoria | Agazapado, avance lento hacia la presa. | acecho de cazadores solitarios | `animal.salvaje.lobo`, `animal.salvaje.perro_salvaje`, `animal.salvaje.tigre`, `animal.salvaje.puma`, `animal.salvaje.oso`, `animal.salvaje.hiena`, `animal.salvaje.coyote` |
+| `acechar` | si | obligatoria | Agazapado, avance lento hacia la presa. | acecho de cazadores solitarios | `animal.salvaje.lobo`, `animal.salvaje.perro_salvaje`, `animal.salvaje.tigre`, `animal.salvaje.puma`, `animal.salvaje.oso`, `animal.salvaje.hiena`, `animal.salvaje.coyote`, `animal.acuatico.cocodrilo` |
 | `saltar` | no | opcional | Salto. |  | todos |
 | `encabritarse` | no | obligatoria | Resistirse (encabritarse, sacudirse). | lanzar lazo | todos |
 | `forcejear_lazo` | si | obligatoria | Atrapado por el lazo, tirando. | lanzar lazo | todos |
@@ -102,7 +102,7 @@
 | `atacar` | no | obligatoria | Ataque (mordisco, zarpazo, coz, cornada, embestida). | combate | todos |
 | `aullar` | no | opcional | Aullar. |  | `animal.salvaje.lobo`, `animal.salvaje.perro_salvaje`, `animal.salvaje.coyote`, `animal.salvaje.hiena` |
 | `echarse` | si | opcional | Tumbarse a descansar. | descanso | todos |
-| `comer_presa` | si | obligatoria | Comer de una presa abatida. | cazar | `animal.salvaje.lobo`, `animal.salvaje.perro_salvaje`, `animal.salvaje.tigre`, `animal.salvaje.puma`, `animal.salvaje.oso`, `animal.salvaje.hiena`, `animal.salvaje.coyote` |
+| `comer_presa` | si | obligatoria | Comer de una presa abatida. | cazar | `animal.salvaje.lobo`, `animal.salvaje.perro_salvaje`, `animal.salvaje.tigre`, `animal.salvaje.puma`, `animal.salvaje.oso`, `animal.salvaje.hiena`, `animal.salvaje.coyote`, `animal.acuatico.cocodrilo` |
 | `recibir_golpe` | no | obligatoria | Reacción al golpe. | combate | todos |
 | `morir` | no | obligatoria | Caer muerto. | combate | todos |
 
@@ -204,6 +204,8 @@
 | `animal.salvaje.reno` (Reno salvaje) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
 | `animal.salvaje.gacela` (Gacela) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
 | `animal.salvaje.liebre` (Liebre) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.acuatico.cocodrilo` (Cocodrilo) | cuadrupedo | 11 | 2 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, echarse, comer_presa, recibir_golpe, morir |
+| `animal.acuatico.tortuga_marina` (Tortuga marina) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
 | `animal.ave.aguila` (Águila (cetrería)) | ave | 7 | 0 | posado, despegar, volar, planear, aterrizar, atacar_picado, morir |
 | `animal.ave.halcon` (Halcón (cetrería)) | ave | 7 | 0 | posado, despegar, volar, planear, aterrizar, atacar_picado, morir |
 | `animal.ave.buitre` (Buitre) | ave | 6 | 0 | posado, despegar, volar, planear, aterrizar, morir |
