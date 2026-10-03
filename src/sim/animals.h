@@ -6,7 +6,11 @@
 //    se doman peleando hasta debilitarlos, con el lazo y dandoles de comer;
 //  - hostiles (oso, hiena, coyote, jabali): atacan siempre, no se doman;
 //  - presas salvajes (antilope, reno, gacela, ciervo, liebre, ibice): se cazan;
-//  - ganado (cabra, becerro): se pastorea, da leche, carne y piel.
+//  - ganado (cabra, becerro): se pastorea, da leche, carne y piel;
+//  - acuaticos y anfibios: el cocodrilo embosca desde el agua (no se aleja de su
+//    orilla); la tortuga marina huye al agua, donde los de tierra no la alcanzan;
+//  - pequeños venenosos (vibora, escorpion, araña): muerden si te acercas y
+//    dejan veneno (src/sim/health.h); no persiguen lejos de su guarida.
 //
 // Relaciones entre animales:
 //  - sociales: pastan en grupo y se mantienen juntos; los cazadores sociales
@@ -56,13 +60,20 @@ typedef enum {
     // Ganado.
     SPECIES_GOAT,
     SPECIES_CALF,
+    // Acuaticos y anfibios.
+    SPECIES_CROCODILE, // hostil: embosca desde el agua
+    SPECIES_TURTLE,    // presa: huye al agua
+    // Pequeños y venenosos (hostiles si los pisas).
+    SPECIES_SNAKE,
+    SPECIES_SCORPION,
+    SPECIES_SPIDER,
     SPECIES_COUNT
 } Species;
 
 typedef enum { CLASS_MOUNT, CLASS_TAMEABLE, CLASS_HOSTILE, CLASS_PREY, CLASS_LIVESTOCK } AnimalClass;
 
 // Donde vive (para que aparezca): estepa, desierto, frio (alto, cerca de la nieve).
-enum { HAB_STEPPE = 1, HAB_DESERT = 2, HAB_COLD = 4 };
+enum { HAB_STEPPE = 1, HAB_DESERT = 2, HAB_COLD = 4, HAB_WATER = 8 }; // agua: orillas de los lagos
 
 typedef struct {
     const char *name;  // UTF-8
@@ -85,6 +96,9 @@ typedef struct {
     int group_min, group_max;
     int habitat;       // HAB_*
     float rarity;      // peso al elegir que aparece (mayor, mas comun)
+    bool aquatic;      // nada: entra al agua (y alli no lo alcanzan los de tierra)
+    float venom;       // veneno por mordedura o picadura (vida que quita poco a poco)
+    float leash;       // m: no persigue mas alla de esto desde su guarida (0: sin limite)
 } SpeciesDef;
 
 typedef enum {
@@ -157,6 +171,9 @@ typedef struct {
     bool player_moving; // pastorear: el ganado sigue al jugador que camina cerca
     float camp_x, camp_z;
     bool night;
+    // Profundidad del agua en (x, z) (<= 0 en seco); NULL: no hay agua.
+    float (*water_depth)(void *ud, float x, float z);
+    void *water_ud;
 } FaunaCtx;
 
 typedef enum {
@@ -173,6 +190,7 @@ typedef struct {
     int other;  // a quien (animal o persona)
     float damage;
     WoundKind wound;
+    float venom;
 } FaunaEvent;
 
 #define FAUNA_EVENTS_MAX 32

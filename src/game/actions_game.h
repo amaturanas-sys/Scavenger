@@ -20,11 +20,13 @@
 #include "sim/animals.h"
 #include "sim/economy.h"
 #include "sim/memory_map.h"
+#include "sim/swarms.h"
 #include "world/props.h"
 #include "world/terrain.h"
 
 #define GA_MAX_PROJECTS 8
 #define GA_MAX_ANIMALS 64
+#define GA_MAX_SWARMS 24
 
 typedef struct {
     int member_id;     // integrante de la tropa (0 = libre)
@@ -69,6 +71,8 @@ typedef struct {
     int mounted;        // animal montado, o -1
     int next_group;     // id del proximo grupo (manada, rebaño)
     float fauna_timer, reveal_timer;
+    Swarm swarms[GA_MAX_SWARMS]; // peces, abejas, avispas, mosquitos, moscas
+    float swarm_timer, sting_timer;
     // Trepar.
     bool climbing;
     float climb_t;

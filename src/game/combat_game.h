@@ -95,6 +95,6 @@ void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player 
                     size_t len);
 // Un animal ataca a una persona: kind 0 el jugador, 1 el integrante id, 2 el enemigo id (indice).
 void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int kind, int id, Vector3 from, float dmg,
-                     WoundKind wound, const char *who, char *log, size_t len);
+                     WoundKind wound, float venom, const char *who, char *log, size_t len);
 
 #endif

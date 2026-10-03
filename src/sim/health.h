@@ -5,8 +5,11 @@
 // tiene tipo (corte, golpe, fractura, mordida, congelacion), zona del cuerpo
 // y gravedad. Cada zona recibe el daño de forma distinta: el cuello y la
 // cabeza son letales, el torso aguanta, un antebrazo poco (part_damage_scale).
-// Las heridas abiertas sangran hasta que se vendan; la sangre que falta tumba (abatido) y, si se acaba, mata. Las heridas sanan con el tiempo,
-// mas rapido tratadas y en reposo; las fracturas solo sanan entablilladas.
+// Las heridas abiertas sangran hasta que se vendan; la sangre que falta tumba
+// (abatido) y, si se acaba, mata. Las heridas sanan con el tiempo, mas rapido
+// tratadas y en reposo; las fracturas solo sanan entablilladas. El veneno
+// (serpientes, escorpiones, arañas, avispas) quita vida poco a poco; las
+// hierbas lo cortan a la mitad.
 // Las heridas de piernas frenan, las de brazos debilitan los golpes.
 #ifndef ESTEPA_HEALTH_H
 #define ESTEPA_HEALTH_H
@@ -55,6 +58,7 @@ typedef struct {
     bool down; // abatido: no puede moverse ni pelear
     bool dead;
     bool beast; // fiera: nombres de zonas de animal
+    float venom; // veneno en el cuerpo: la vida que todavia va a quitar
 } Health;
 
 void health_init(Health *h, float hp_max);
@@ -78,6 +82,9 @@ int health_hit(Health *h, Rng *rng, float damage, WoundKind kind, int part);
 void health_update(Health *h, Rng *rng, float dt, bool resting, float healer);
 // Venda las heridas que sangran y entablilla fracturas. Devuelve cuantas trato.
 int health_treat(Health *h);
+// Veneno de una picadura o mordedura (puntos de vida que quitara poco a poco).
+void health_poison(Health *h, float amount);
+bool health_poisoned(const Health *h);
 // Un dia de descanso en el campamento (con curandero, mas).
 void health_daily(Health *h, float healer);
 // Revive a alguien abatido (no muerto): queda con poca vida y sangre.

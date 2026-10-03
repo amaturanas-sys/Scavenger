@@ -7,6 +7,7 @@
 #include "raymath.h"
 #include "rlgl.h"
 #include "sim/anim_index.h"
+#include "sim/clock.h"
 #include "sim/hazards.h"
 #include "ui/theme.h"
 
@@ -31,6 +32,7 @@ static char g_hint[96];
 
 static float adist(const Animal *a, Vector3 p) { return Vector2Distance((Vector2){ a->x, a->z }, (Vector2){ p.x, p.z }); }
 static bool alive(const Animal *a) { return a->used && a->state != ANIMAL_DEAD; }
+static float dist_xz(float ax, float az, float bx, float bz) { return sqrtf((ax - bx) * (ax - bx) + (az - bz) * (az - bz)); }
 
 static const char *lower(const char *name, char *buf, size_t len) {
     snprintf(buf, len, "%s", name);
@@ -40,6 +42,13 @@ static const char *lower(const char *name, char *buf, size_t len) {
 
 static bool deep_water(const Terrain *t, float x, float z) {
     return t->look.water_level > terrain_height(t, x, z) + 0.6f && !hazard_ice_walkable(t->look.ice);
+}
+
+// Profundidad del agua (para la fauna y los peces); helado, se camina por encima.
+static float water_depth_cb(void *ud, float x, float z) {
+    const Terrain *t = ud;
+    if (hazard_ice_walkable(t->look.ice)) return 0.0f;
+    return t->look.water_level - terrain_height(t, x, z);
 }
 
 static int free_slot(GameActions *ga) {
@@ -85,12 +94,13 @@ void fg_init(GameActions *ga, const Terrain *t) {
         { SPECIES_DONKEY, -45.0f, -50.0f }, { SPECIES_WOLF, 70.0f, -85.0f },    { SPECIES_BOAR, -85.0f, -25.0f },
     };
     for (size_t i = 0; i < sizeof(START) / sizeof(START[0]); i++) {
-        if (deep_water(t, START[i].x, START[i].z)) continue;
+        if (deep_water(t, START[i].x, START[i].z) && !species_def(START[i].sp)->aquatic) continue;
         fg_spawn_group(ga, START[i].sp, START[i].x, START[i].z);
     }
 }
 
 static int habitat_at(const Terrain *t, float x, float z) {
+    if (deep_water(t, x, z)) return HAB_WATER;
     if (biome_desert(t->seed, x, z) > 0.5f) return HAB_DESERT;
     if (terrain_height(t, x, z) > t->look.snowline - 30.0f) return HAB_COLD;
     return HAB_STEPPE;
@@ -134,7 +144,7 @@ static void populate(GameActions *ga, const Player *p, const Terrain *t, bool ni
     for (int tries = 0; tries < 6; tries++) {
         float ang = rng_float(&ga->rng) * 2.0f * PI, r = SPAWN_MIN + rng_float(&ga->rng) * (SPAWN_MAX - SPAWN_MIN);
         float x = p->pos.x + cosf(ang) * r, z = p->pos.z + sinf(ang) * r;
-        if (sqrtf(x * x + z * z) < CAMP_CLEAR || deep_water(t, x, z)) continue;
+        if (sqrtf(x * x + z * z) < CAMP_CLEAR) continue;
         int s = pick_species(ga, habitat_at(t, x, z), night);
         if (s >= 0) fg_spawn_group(ga, (Species)s, x, z);
         return;
@@ -239,6 +249,171 @@ int fg_threat_near(const GameActions *ga, Vector3 pos, float range, float *dist)
     return best;
 }
 
+// ------------------------------------------------------------------ enjambres
+#define SWARM_CELL 40.0f
+#define SWARM_RANGE 3       // celdas alrededor del jugador
+#define SWARM_FAR 160.0f
+#define HIVE_RANGE 2.5f
+
+static uint32_t cell_hash(unsigned seed, int cx, int cz) {
+    uint32_t h = seed * 0x9E3779B1u ^ (uint32_t)cx * 0x85EBCA77u ^ (uint32_t)cz * 0xC2B2AE3Du;
+    h ^= h >> 15, h *= 0x2C1B3C6Du, h ^= h >> 12;
+    return h;
+}
+
+static Swarm *new_swarm(GameActions *ga) {
+    for (int i = 0; i < GA_MAX_SWARMS; i++)
+        if (!ga->swarms[i].used) return &ga->swarms[i];
+    return NULL;
+}
+
+static bool cell_taken(const GameActions *ga, int cx, int cz) {
+    for (int i = 0; i < GA_MAX_SWARMS; i++)
+        if (ga->swarms[i].used && ga->swarms[i].kind != SWARM_FLIES && ga->swarms[i].cell_x == cx && ga->swarms[i].cell_z == cz)
+            return true;
+    return false;
+}
+
+// Cada celda del mundo tiene (o no) su enjambre, siempre el mismo: peces y mosquitos en
+// el agua, colmenas y avisperos en tierra (no en el desierto ni en la nieve).
+static void seed_cell(GameActions *ga, const Terrain *t, int cx, int cz) {
+    if (cell_taken(ga, cx, cz)) return;
+    uint32_t h = cell_hash(t->seed, cx, cz);
+    float r = (float)(h & 0xFFFF) / 65536.0f;
+    float x = ((float)cx + 0.2f + 0.6f * (float)((h >> 16) & 0xFF) / 255.0f) * SWARM_CELL;
+    float z = ((float)cz + 0.2f + 0.6f * (float)((h >> 24) & 0xFF) / 255.0f) * SWARM_CELL;
+    if (sqrtf(x * x + z * z) < 30.0f) return; // no en el campamento
+    SwarmKind k;
+    float y;
+    if (deep_water(t, x, z) && water_depth_cb((void *)t, x, z) > 1.0f) {
+        if (r < 0.55f) k = SWARM_FISH;
+        else if (r < 0.8f) k = SWARM_MOSQUITOES;
+        else return;
+        y = t->look.water_level;
+        if (k == SWARM_MOSQUITOES) y += 0.2f;
+    } else {
+        if (deep_water(t, x, z) || biome_desert(t->seed, x, z) > 0.5f || terrain_height(t, x, z) > t->look.snowline - 30.0f) return;
+        if (r < 0.12f) k = SWARM_BEES;
+        else if (r < 0.2f) k = SWARM_WASPS;
+        else return;
+        y = terrain_height(t, x, z);
+    }
+    Swarm *s = new_swarm(ga);
+    if (!s) return;
+    swarm_init(s, k, x, y, z, &ga->rng);
+    s->cell_x = cx, s->cell_z = cz;
+}
+
+static void flies_on_corpses(GameActions *ga, const Terrain *t) {
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *a = &ga->animals[i];
+        if (!a->used || a->state != ANIMAL_DEAD || a->butchered || a->corpse < 20.0f) continue;
+        bool has = false;
+        for (int k = 0; k < GA_MAX_SWARMS && !has; k++) {
+            const Swarm *s = &ga->swarms[k];
+            has = s->used && s->kind == SWARM_FLIES && fabsf(s->hx - a->x) < 1.0f && fabsf(s->hz - a->z) < 1.0f;
+        }
+        if (has) continue;
+        Swarm *s = new_swarm(ga);
+        if (!s) return;
+        swarm_init(s, SWARM_FLIES, a->x, terrain_height(t, a->x, a->z), a->z, &ga->rng);
+        s->cell_x = i; // el cadaver del que viven
+    }
+}
+
+static void update_swarms(GameActions *ga, Combat *cb, const Player *p, const Terrain *t, float now, float temp, float dt,
+                          char *log, size_t len) {
+    ga->swarm_timer += dt;
+    ga->sting_timer = fmaxf(0.0f, ga->sting_timer - dt);
+    if (ga->swarm_timer > 3.0f) {
+        ga->swarm_timer = 0.0f;
+        for (int i = 0; i < GA_MAX_SWARMS; i++) { // lejos, o sin su cadaver: fuera
+            Swarm *s = &ga->swarms[i];
+            if (!s->used) continue;
+            float d = dist_xz(s->hx, s->hz, p->pos.x, p->pos.z);
+            bool corpse_gone = s->kind == SWARM_FLIES && (s->cell_x >= ga->animal_count || !ga->animals[s->cell_x].used ||
+                                                          ga->animals[s->cell_x].state != ANIMAL_DEAD);
+            if (d > SWARM_FAR || corpse_gone || (s->kind == SWARM_FISH && swarm_alive(s) == 0)) s->used = false;
+        }
+        int pcx = (int)floorf(p->pos.x / SWARM_CELL), pcz = (int)floorf(p->pos.z / SWARM_CELL);
+        for (int dz = -SWARM_RANGE; dz <= SWARM_RANGE; dz++)
+            for (int dx = -SWARM_RANGE; dx <= SWARM_RANGE; dx++) seed_cell(ga, t, pcx + dx, pcz + dz);
+        flies_on_corpses(ga, t);
+    }
+    DayPhase ph = clock_phase(now);
+    float ground = terrain_height(t, p->pos.x, p->pos.z);
+    SwarmCtx c = { p->pos.x, p->pos.y, p->pos.z, cb->player.down, ga->torch_lit && !ga->hands.sheathed,
+                   t->look.water_level > ground + 1.3f && !hazard_ice_walkable(t->look.ice), temp,
+                   ph == PHASE_NIGHT, ph == PHASE_DUSK || ph == PHASE_DAWN, water_depth_cb, (void *)t };
+    for (int i = 0; i < GA_MAX_SWARMS; i++) {
+        Swarm *s = &ga->swarms[i];
+        if (!s->used) continue;
+        if (s->kind == SWARM_FISH && hazard_ice_walkable(t->look.ice)) continue; // bajo el hielo
+        if (s->kind == SWARM_FISH) s->hy = t->look.water_level;                  // el nivel cambia con la estacion
+        SwarmHit hit = swarm_update(s, &c, &ga->rng, dt);
+        if (!hit.stings) continue;
+        cb->player.hp -= hit.damage;
+        health_poison(&cb->player, hit.venom);
+        if (ga->sting_timer <= 0.0f) {
+            char who[48];
+            const char *tip = s->kind == SWARM_MOSQUITOES ? " (el fuego los espanta)"
+                                                          : " ¡Corre, métete al agua o usa humo!";
+            snprintf(log, len, "Te pican: %s.%s", lower(swarm_def(s->kind)->name, who, sizeof(who)), tip);
+            ga->sting_timer = 4.0f;
+        }
+    }
+}
+
+bool fg_fish(GameActions *ga, const Terrain *t, Vector3 pos, float yaw, float reach, bool spear, char *log, size_t len) {
+    if (hazard_ice_walkable(t->look.ice)) return false;
+    Vector3 at = { pos.x + sinf(yaw) * reach * 0.8f, t->look.water_level - 0.3f, pos.z + cosf(yaw) * reach * 0.8f };
+    for (int i = 0; i < GA_MAX_SWARMS; i++) {
+        Swarm *s = &ga->swarms[i];
+        if (!s->used || s->kind != SWARM_FISH || dist_xz(s->cx, s->cz, at.x, at.z) > 4.0f) continue;
+        if (rng_float(&ga->rng) > (spear ? 0.7f : 0.3f)) {
+            snprintf(log, len, "Los peces se escapan entre tus piernas.");
+            return true;
+        }
+        if (swarm_catch(s, at.x, at.y, at.z, spear ? 1.4f : 1.0f, 1)) {
+            stock_add(&ga->stock, FRESH_MEAT_ID, 1);
+            snprintf(log, len, "¡Pescaste un pez! (+1 carne fresca)");
+            return true;
+        }
+    }
+    return false;
+}
+
+bool fg_shot_water(GameActions *ga, const Terrain *t, Vector3 at, char *log, size_t len) {
+    for (int i = 0; i < GA_MAX_SWARMS; i++) {
+        Swarm *s = &ga->swarms[i];
+        if (!s->used || s->kind != SWARM_FISH || dist_xz(s->cx, s->cz, at.x, at.z) > 4.0f) continue;
+        if (swarm_catch(s, at.x, t->look.water_level - 0.3f, at.z, 1.2f, 1)) {
+            stock_add(&ga->stock, FRESH_MEAT_ID, 1);
+            snprintf(log, len, "¡La flecha atraviesa un pez! (+1 carne fresca)");
+            return true;
+        }
+    }
+    return false;
+}
+
+bool fg_poke_nest(GameActions *ga, Vector3 pos, float reach) {
+    for (int i = 0; i < GA_MAX_SWARMS; i++) {
+        Swarm *s = &ga->swarms[i];
+        if (!s->used || !swarm_def(s->kind)->nest || dist_xz(s->hx, s->hz, pos.x, pos.z) > reach + 0.5f) continue;
+        swarm_provoke(s);
+        return true;
+    }
+    return false;
+}
+
+static Swarm *hive_near(GameActions *ga, const Player *p) {
+    for (int i = 0; i < GA_MAX_SWARMS; i++) {
+        Swarm *s = &ga->swarms[i];
+        if (s->used && s->kind == SWARM_BEES && dist_xz(s->hx, s->hz, p->pos.x, p->pos.z) < HIVE_RANGE) return s;
+    }
+    return NULL;
+}
+
 // ------------------------------------------------------------------ interaccion (K)
 static int nearest_interactable(const GameActions *ga, const Player *p, int *what) {
     // what: 1 atado (dar de comer), 2 cadaver (despiezar), 3 ganado (ordeñar / sacrificar)
@@ -269,6 +444,23 @@ static void butcher(GameActions *ga, Animal *a, char *log, size_t len, const cha
 }
 
 static void interact(GameActions *ga, const Player *p, bool shift, char *log, size_t len) {
+    Swarm *hive = hive_near(ga, p);
+    if (hive) { // la miel: con humo, las abejas se calman
+        if (ga->torch_lit && !ga->hands.sheathed) {
+            swarm_smoke(hive);
+            if (hive->honey_taken) {
+                snprintf(log, len, "Esta colmena ya no tiene miel hoy.");
+            } else {
+                hive->honey_taken = true;
+                stock_add(&ga->stock, "utileria.consumible.miel", 2);
+                snprintf(log, len, "El humo calma a las abejas: tomas miel (+2).");
+            }
+        } else {
+            swarm_provoke(hive);
+            snprintf(log, len, "¡Las abejas defienden la colmena! Hace falta humo (antorcha encendida).");
+        }
+        return;
+    }
     int what = 0, i = nearest_interactable(ga, p, &what);
     if (i < 0) {
         snprintf(log, len, "No hay ningún animal con el que hacer algo aquí.");
@@ -304,9 +496,14 @@ static void interact(GameActions *ga, const Player *p, bool shift, char *log, si
     }
 }
 
-static void update_hint(const GameActions *ga, const Player *p) {
+static void update_hint(GameActions *ga, const Player *p) {
     int what = 0, i = nearest_interactable(ga, p, &what);
     g_hint[0] = '\0';
+    if (hive_near(ga, p)) {
+        snprintf(g_hint, sizeof(g_hint), ga->torch_lit ? "K: tomar miel (el humo calma a las abejas)"
+                                                       : "Colmena: enciende la antorcha (humo) antes de tomar la miel");
+        return;
+    }
     if (i < 0) return;
     char who[48];
     lower(species_def(ga->animals[i].species)->name, who, sizeof(who));
@@ -319,7 +516,8 @@ static void update_hint(const GameActions *ga, const Player *p) {
 
 // ------------------------------------------------------------------ actualizacion
 void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terrain *t, MemoryMap *mem, float now,
-               bool night, bool input_ok, float dt, char *log, size_t len) {
+               float temp, bool input_ok, float dt, char *log, size_t len) {
+    bool night = clock_is_night(now);
     // Las personas que ven los animales.
     FaunaHuman hu[MAX_HUMANS];
     int n = 0;
@@ -339,7 +537,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
         g_refs[n++] = (HumanRef){ 2, e };
     }
     g_ref_count = n;
-    FaunaCtx ctx = { hu, n, p->pos.x, p->pos.z, p->moving && ga->mounted < 0, 0.0f, 0.0f, night };
+    FaunaCtx ctx = { hu, n, p->pos.x, p->pos.z, p->moving && ga->mounted < 0, 0.0f, 0.0f, night, water_depth_cb, (void *)t };
 
     float ox[GA_MAX_ANIMALS], oz[GA_MAX_ANIMALS];
     for (int i = 0; i < ga->animal_count; i++) ox[i] = ga->animals[i].x, oz[i] = ga->animals[i].z;
@@ -348,7 +546,8 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
     // Al agua no entran (salvo las aves): se quedan en la orilla.
     for (int i = 0; i < ga->animal_count; i++) {
         Animal *a = &ga->animals[i];
-        if (!a->used || a->ridden || species_def(a->species)->flier || !deep_water(t, a->x, a->z)) continue;
+        const SpeciesDef *sd = species_def(a->species);
+        if (!a->used || a->ridden || sd->flier || sd->aquatic || !deep_water(t, a->x, a->z)) continue;
         a->x = ox[i], a->z = oz[i];
         a->tx = a->home_x, a->tz = a->home_z;
         a->timer = 0.0f;
@@ -364,8 +563,8 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
             if (f->other < 0 || f->other >= g_ref_count) break;
             const HumanRef *r = &g_refs[f->other];
             Vector3 from = { a->x, terrain_height(t, a->x, a->z), a->z };
-            cb_beast_strike(cb, p, ga, troop, r->kind, r->id, from, f->damage, f->wound, species_def(a->species)->name, log,
-                            len);
+            cb_beast_strike(cb, p, ga, troop, r->kind, r->id, from, f->damage, f->wound, f->venom,
+                            species_def(a->species)->name, log, len);
             break;
         }
         case FEV_KILL: {
@@ -410,6 +609,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
         if (a->used && a->state == ANIMAL_DEAD && ((a->butchered && a->corpse > 4.0f) || a->corpse > CORPSE_KEEP)) a->used = false;
     }
     populate(ga, p, t, night, dt);
+    update_swarms(ga, cb, p, t, now, temp, dt, log, len);
 
     if (input_ok && ga->mounted < 0 && IsKeyPressed(KEY_K))
         interact(ga, p, IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT), log, len);
@@ -417,6 +617,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
 }
 
 void fg_new_day(GameActions *ga) {
+    for (int i = 0; i < GA_MAX_SWARMS; i++) ga->swarms[i].honey_taken = false;
     for (int i = 0; i < ga->animal_count; i++)
         if (alive(&ga->animals[i])) {
             animal_new_day(&ga->animals[i]);
@@ -440,13 +641,25 @@ static Color animal_color(const Animal *a) {
     return c;
 }
 
+static void draw_swarm(const Swarm *s, Props *props, const InvItem *nest, const Terrain *t, float time);
+
 void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float time) {
+    for (int i = 0; i < GA_MAX_SWARMS; i++) {
+        const Swarm *s = &ga->swarms[i];
+        if (!s->used) continue;
+        const char *nest = swarm_def(s->kind)->nest;
+        draw_swarm(s, props, nest ? inventory_find(ga->inv, nest) : NULL, t, time);
+    }
     for (int i = 0; i < ga->animal_count; i++) {
         const Animal *a = &ga->animals[i];
         if (!a->used) continue;
         const SpeciesDef *d = species_def(a->species);
         const InvItem *it = inventory_find(ga->inv, d->model);
         Vector3 pos = { a->x, terrain_height(t, a->x, a->z), a->z };
+        // En el agua, los anfibios flotan: solo asoma el lomo (el cocodrilo, los ojos).
+        float depth = water_depth_cb((void *)t, a->x, a->z);
+        if (d->aquatic && depth > 0.3f && a->state != ANIMAL_DEAD)
+            pos.y = t->look.water_level - (a->species == SPECIES_CROCODILE && a->mode != MODE_CHASE ? 0.42f : 0.25f);
         float top = it ? it->h : d->size * 0.6f;
         if (it && props_has_model(props, it)) {
             // El modelo mira a +X (Kiln); el animal avanza segun yaw (0 = +Z).
@@ -486,6 +699,43 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
         }
         if (a->state == ANIMAL_WILD && a->weakened && d->cls == CLASS_TAMEABLE) // debil: se puede atar
             DrawCube((Vector3){ pos.x, y + 0.15f, pos.z }, 0.1f, 0.1f, 0.1f, UI_GOLD);
+    }
+}
+
+static void draw_swarm(const Swarm *s, Props *props, const InvItem *nest, const Terrain *t, float time) {
+    if (s->kind == SWARM_FISH && hazard_ice_walkable(t->look.ice)) return;
+    if (nest) { // colmena o avispero, colgando de un poste
+        Vector3 at = { s->hx, s->hy, s->hz };
+        if (props_has_model(props, nest)) {
+            props_draw_item(props, nest, at, 0.0f, 1.0f);
+        } else {
+            DrawCylinderEx(at, (Vector3){ at.x, at.y + 1.2f, at.z }, 0.05f, 0.05f, 4, (Color){ 96, 72, 48, 255 });
+            Color c = s->kind == SWARM_BEES ? (Color){ 196, 160, 92, 255 } : (Color){ 150, 140, 120, 255 };
+            DrawSphere((Vector3){ at.x, at.y + 1.35f, at.z }, 0.22f, c);
+        }
+    }
+    if (!s->active && s->kind != SWARM_FISH) return;
+    Color c;
+    float sz;
+    switch (s->kind) {
+    case SWARM_FISH: c = (Color){ 34, 44, 52, 255 }, sz = 0.0f; break; // lomos oscuros
+    case SWARM_BEES: c = s->anger > 0.0f ? (Color){ 250, 200, 40, 255 } : (Color){ 220, 180, 60, 255 }, sz = 0.07f; break;
+    case SWARM_WASPS: c = (Color){ 230, 150, 30, 255 }, sz = 0.07f; break;
+    case SWARM_MOSQUITOES: c = (Color){ 40, 36, 32, 255 }, sz = 0.05f; break;
+    default: c = (Color){ 20, 20, 24, 255 }, sz = 0.05f; break;
+    }
+    for (int i = 0; i < s->n; i++) {
+        const SwarmBody *b = &s->b[i];
+        if (!b->alive) continue;
+        if (s->kind == SWARM_FISH) { // un pez: alargado en la direccion en que nada
+            float v = sqrtf(b->vx * b->vx + b->vz * b->vz);
+            float dx = v > 0.01f ? b->vx / v : 1.0f, dz = v > 0.01f ? b->vz / v : 0.0f;
+            float wig = sinf(time * 9.0f + (float)i) * 0.04f;
+            DrawCapsule((Vector3){ b->x - dx * 0.15f + dz * wig, b->y, b->z - dz * 0.15f - dx * wig },
+                        (Vector3){ b->x + dx * 0.15f, b->y, b->z + dz * 0.15f }, 0.07f, 4, 2, c);
+        } else {
+            DrawCube((Vector3){ b->x, b->y, b->z }, sz, sz, sz, c);
+        }
     }
 }
 

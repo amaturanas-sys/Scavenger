@@ -114,6 +114,18 @@ animal.salvaje.reno	Reno salvaje	faccion:salvaje,bioma:glaciar,rig:cuadrupedo	0.
 animal.salvaje.gacela	Gacela	faccion:salvaje,bioma:desierto,rig:cuadrupedo	0.3x0.9x1.2	500	pendiente	Presa: la más rápida.
 animal.salvaje.liebre	Liebre	faccion:salvaje,rig:cuadrupedo	0.15x0.3x0.5	200	pendiente	Presa solitaria; caza de halcón.
 animal.ave.cuervo	Cuervo	faccion:salvaje,rig:ave,uso:equipable	0.9x0.4x0.5	200	pendiente	Domado, explora: revela el mapa.
+animal.acuatico.cocodrilo	Cocodrilo	faccion:salvaje,rig:cuadrupedo	0.6x0.5x3.5	700	pendiente	Embosca desde el agua; no se aleja de su orilla.
+animal.acuatico.tortuga_marina	Tortuga marina	faccion:salvaje,rig:cuadrupedo	0.9x0.4x1	400	pendiente	Presa lenta en tierra; huye al agua.
+animal.acuatico.peces	Pez (banco)	faccion:salvaje,rig:ninguno	0.08x0.1x0.35	60	pendiente	Bancos en los lagos; se pescan con lanza o flecha.
+animal.salvaje.vibora	Víbora	faccion:salvaje,rig:ninguno	0.06x0.06x1	150	pendiente	Muerde si te acercas: veneno.
+animal.salvaje.escorpion	Escorpión	faccion:salvaje,bioma:desierto,rig:ninguno	0.1x0.05x0.2	100	pendiente	Pica si te acercas: veneno.
+animal.salvaje.arana	Araña	faccion:salvaje,rig:ninguno	0.12x0.05x0.15	100	pendiente	Muerde si te acercas: veneno leve.
+animal.insecto.abejas	Abeja (enjambre)	faccion:salvaje,rig:ninguno	0.02x0.02x0.02	20	pendiente	Defienden la colmena; el humo las calma.
+animal.insecto.colmena	Colmena silvestre	faccion:salvaje,uso:interactuable	0.4x0.5x0.4	80	pendiente	Con la antorcha (humo) se toma la miel.
+animal.insecto.avispas	Avispa (enjambre)	faccion:salvaje,rig:ninguno	0.02x0.02x0.03	20	pendiente	Atacan a quien se acerca al nido.
+animal.insecto.avispero	Avispero	faccion:salvaje	0.3x0.4x0.3	80	pendiente	
+animal.insecto.mosquitos	Mosquito (nube)	faccion:salvaje,rig:ninguno	0.01x0.01x0.01	10	pendiente	Junto al agua, con calor, al atardecer y de noche.
+animal.insecto.moscas	Mosca (nube)	faccion:salvaje,rig:ninguno	0.01x0.01x0.01	10	pendiente	Sobre los cadáveres.
 arma.corta.cuchillo	Cuchillo de hueso y hierro	uso:equipable,manos:una	0.05x0.3x0.03	60	pendiente	
 arma.corta.daga	Daga	uso:equipable,manos:una	0.05x0.4x0.03	80	pendiente	
 arma.corta.sable	Sable curvo	uso:equipable,faccion:nomada,manos:una	0.08x0.9x0.03	120	pendiente	
@@ -269,6 +281,7 @@ utileria.consumible.agua	Agua	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pe
 utileria.consumible.pan	Pan del imperio	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.carne_fresca	Carne fresca	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	De la caza o el sacrificio; se come antes que la seca.
 utileria.consumible.leche	Leche	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	Del ordeño diario del ganado.
+utileria.consumible.miel	Miel silvestre	uso:recolectable,uso:consumible	0.15x0.15x0.15	40	pendiente	De las colmenas, con humo.
 utileria.herramienta.pala	Pala	uso:equipable,manos:dos,material:hierro	0.25x1.2x0.05	60	pendiente	Para cavar trincheras.
 utileria.herramienta.gancho_trepa	Trepa (gancho con cuerda)	uso:equipable,manos:una,material:hierro	0.3x0.4x0.3	80	pendiente	Se lanza para escalar muros en los asedios.
 utileria.objeto.lena	Haz de leña	uso:recolectable,material:madera	0.5x0.3x0.8	40	pendiente	Material de fogatas, hogueras y hornos.

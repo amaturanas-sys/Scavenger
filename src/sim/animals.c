@@ -6,30 +6,35 @@
 // clang-format off
 static const SpeciesDef SPECIES[SPECIES_COUNT] = {
     //                 nombre               modelo                                clase            vel   paso  talla  vida  daño alc.  cd    herida         sentido lazo  montable ride  social flier defiende caza carne piel leche grupo   habitat                         rareza
-    [SPECIES_HORSE]    = { "Caballo estepario", "animal.montura.caballo_estepario", CLASS_MOUNT,     7.0f, 1.3f, 2.2f, 120.0f,  8.0f, 1.6f, 1.4f, WOUND_BRUISE, 30.0f, 0.45f, true,  2.4f, true,  false, false, 0.0f,  6, 2, 0, 3, 6, HAB_STEPPE,                      1.0f },
-    [SPECIES_MULE]     = { "Mula",              "animal.montura.mula",              CLASS_MOUNT,     5.5f, 1.2f, 2.0f, 100.0f,  7.0f, 1.5f, 1.4f, WOUND_BRUISE, 25.0f, 0.60f, true,  1.8f, true,  false, false, 0.0f,  5, 1, 0, 2, 4, HAB_STEPPE | HAB_DESERT,         0.5f },
-    [SPECIES_DONKEY]   = { "Burro",             "animal.montura.burro",             CLASS_MOUNT,     5.0f, 1.1f, 1.6f,  80.0f,  6.0f, 1.4f, 1.4f, WOUND_BRUISE, 25.0f, 0.70f, true,  1.5f, true,  false, false, 0.0f,  4, 1, 0, 2, 4, HAB_DESERT | HAB_STEPPE,         0.6f },
-    [SPECIES_OX]       = { "Buey",              "animal.ganado.buey",               CLASS_MOUNT,     4.0f, 1.0f, 2.5f, 160.0f, 14.0f, 1.8f, 1.6f, WOUND_CUT,    25.0f, 0.50f, true,  1.3f, true,  false, true,  0.0f, 10, 3, 0, 2, 5, HAB_STEPPE | HAB_COLD,           0.6f },
-    [SPECIES_CAMEL]    = { "Camello bactriano", "animal.montura.camello_bactriano", CLASS_MOUNT,     4.5f, 1.0f, 3.0f, 140.0f,  8.0f, 1.6f, 1.5f, WOUND_BITE,   28.0f, 0.55f, true,  1.7f, true,  false, false, 0.0f,  8, 2, 0, 2, 4, HAB_DESERT,                      1.0f },
-    [SPECIES_ELEPHANT] = { "Elefante",          "animal.montura.elefante_guerra",   CLASS_MOUNT,     4.0f, 1.0f, 5.0f, 400.0f, 30.0f, 2.6f, 2.0f, WOUND_BRUISE, 30.0f, 0.35f, true,  1.6f, true,  false, true,  0.0f, 25, 4, 0, 2, 4, HAB_STEPPE,                      0.15f },
-    [SPECIES_WOLF]     = { "Lobo",              "animal.salvaje.lobo",              CLASS_TAMEABLE,  7.5f, 1.3f, 1.4f,  45.0f, 10.0f, 1.4f, 1.0f, WOUND_BITE,   35.0f, 0.0f,  false, 1.0f, true,  false, false, 2.3f,  2, 1, 0, 3, 6, HAB_STEPPE | HAB_COLD,           0.8f },
-    [SPECIES_DOG]      = { "Perro asilvestrado","animal.salvaje.perro_salvaje",     CLASS_TAMEABLE,  7.0f, 1.3f, 1.1f,  38.0f,  8.0f, 1.3f, 1.0f, WOUND_BITE,   30.0f, 0.0f,  false, 1.0f, true,  false, false, 1.7f,  1, 1, 0, 3, 5, HAB_STEPPE | HAB_DESERT,         0.5f },
-    [SPECIES_TIGER]    = { "Tigre",             "animal.salvaje.tigre",             CLASS_TAMEABLE,  8.0f, 1.2f, 2.6f, 140.0f, 24.0f, 1.8f, 1.3f, WOUND_CUT,    35.0f, 0.0f,  false, 1.0f, false, false, false, 3.0f,  6, 2, 0, 1, 1, HAB_STEPPE,                      0.15f },
-    [SPECIES_PUMA]     = { "Puma",              "animal.salvaje.puma",              CLASS_TAMEABLE,  8.5f, 1.2f, 1.9f,  70.0f, 15.0f, 1.6f, 1.1f, WOUND_CUT,    32.0f, 0.0f,  false, 1.0f, false, false, false, 2.2f,  3, 1, 0, 1, 1, HAB_STEPPE | HAB_COLD,           0.3f },
-    [SPECIES_FALCON]   = { "Halcón",            "animal.ave.halcon",                CLASS_TAMEABLE, 16.0f, 3.0f, 0.5f,  15.0f,  4.0f, 1.0f, 1.2f, WOUND_CUT,    60.0f, 0.0f,  false, 1.0f, false, true,  false, 0.6f,  0, 0, 0, 1, 1, HAB_STEPPE | HAB_DESERT,         0.4f },
-    [SPECIES_RAVEN]    = { "Cuervo",            "animal.ave.cuervo",                CLASS_TAMEABLE, 10.0f, 2.5f, 0.5f,  10.0f,  2.0f, 1.0f, 1.2f, WOUND_CUT,    40.0f, 0.0f,  false, 1.0f, true,  true,  false, 0.0f,  0, 0, 0, 2, 4, HAB_COLD | HAB_STEPPE,           0.5f },
-    [SPECIES_BEAR]     = { "Oso pardo",         "animal.salvaje.oso",               CLASS_HOSTILE,   6.5f, 1.0f, 2.2f, 180.0f, 26.0f, 1.8f, 1.5f, WOUND_CUT,    25.0f, 0.0f,  false, 1.0f, false, false, true,  2.2f,  8, 3, 0, 1, 1, HAB_STEPPE | HAB_COLD,           0.3f },
-    [SPECIES_HYENA]    = { "Hiena",             "animal.salvaje.hiena",             CLASS_HOSTILE,   7.0f, 1.3f, 1.3f,  50.0f, 12.0f, 1.4f, 1.1f, WOUND_BITE,   35.0f, 0.0f,  false, 1.0f, true,  false, false, 2.2f,  1, 1, 0, 3, 6, HAB_DESERT,                      0.6f },
-    [SPECIES_COYOTE]   = { "Coyote",            "animal.salvaje.coyote",            CLASS_HOSTILE,   7.5f, 1.4f, 1.1f,  30.0f,  7.0f, 1.3f, 1.0f, WOUND_BITE,   30.0f, 0.0f,  false, 1.0f, true,  false, false, 1.2f,  1, 1, 0, 2, 4, HAB_STEPPE | HAB_DESERT,         0.6f },
-    [SPECIES_BOAR]     = { "Jabalí",            "animal.salvaje.jabali",            CLASS_HOSTILE,   6.5f, 1.2f, 1.4f,  70.0f, 14.0f, 1.3f, 1.3f, WOUND_CUT,    18.0f, 0.0f,  false, 1.0f, true,  false, true,  0.0f,  4, 1, 0, 2, 5, HAB_STEPPE,                      0.6f },
-    [SPECIES_ANTELOPE] = { "Antílope saiga",    "animal.salvaje.antilope",          CLASS_PREY,      9.0f, 1.2f, 1.6f,  50.0f,  0.0f, 1.2f, 1.5f, WOUND_BRUISE, 40.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  3, 1, 0, 4, 8, HAB_STEPPE,                      1.0f },
-    [SPECIES_REINDEER] = { "Reno salvaje",      "animal.salvaje.reno",              CLASS_PREY,      7.5f, 1.2f, 2.0f,  70.0f,  0.0f, 1.4f, 1.5f, WOUND_BRUISE, 35.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  5, 2, 0, 4, 8, HAB_COLD,                        1.0f },
-    [SPECIES_GAZELLE]  = { "Gacela",            "animal.salvaje.gacela",            CLASS_PREY,      9.5f, 1.3f, 1.2f,  35.0f,  0.0f, 1.2f, 1.5f, WOUND_BRUISE, 45.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  2, 1, 0, 4, 8, HAB_DESERT,                      1.0f },
-    [SPECIES_DEER]     = { "Ciervo",            "animal.salvaje.ciervo",            CLASS_PREY,      8.0f, 1.2f, 1.8f,  60.0f,  0.0f, 1.4f, 1.5f, WOUND_BRUISE, 40.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  4, 2, 0, 3, 5, HAB_STEPPE,                      0.8f },
-    [SPECIES_HARE]     = { "Liebre",            "animal.salvaje.liebre",            CLASS_PREY,      9.0f, 1.5f, 0.5f,   8.0f,  0.0f, 0.6f, 1.0f, WOUND_BRUISE, 20.0f, 0.0f,  false, 1.0f, false, false, false, 0.0f,  1, 1, 0, 1, 2, HAB_STEPPE | HAB_DESERT | HAB_COLD, 1.0f },
-    [SPECIES_IBEX]     = { "Íbice",             "animal.salvaje.ibice",             CLASS_PREY,      6.5f, 1.2f, 1.4f,  45.0f,  0.0f, 1.2f, 1.5f, WOUND_BRUISE, 35.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  3, 1, 0, 2, 4, HAB_COLD,                        0.8f },
-    [SPECIES_GOAT]     = { "Cabra",             "animal.ganado.cabra",              CLASS_LIVESTOCK, 5.0f, 1.0f, 1.1f,  30.0f,  3.0f, 1.0f, 1.4f, WOUND_BRUISE, 25.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  2, 1, 1, 3, 6, HAB_STEPPE,                      0.0f },
-    [SPECIES_CALF]     = { "Becerro",           "animal.ganado.becerro",            CLASS_LIVESTOCK, 4.5f, 1.0f, 1.4f,  45.0f,  0.0f, 1.0f, 1.4f, WOUND_BRUISE, 25.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  4, 1, 0, 2, 4, HAB_STEPPE,                      0.0f },
+    [SPECIES_HORSE]    = { "Caballo estepario", "animal.montura.caballo_estepario", CLASS_MOUNT,     7.0f, 1.3f, 2.2f, 120.0f,  8.0f, 1.6f, 1.4f, WOUND_BRUISE, 30.0f, 0.45f, true,  2.4f, true,  false, false, 0.0f,  6, 2, 0, 3, 6, HAB_STEPPE,                      1.0f, false, 0.0f, 0.0f },
+    [SPECIES_MULE]     = { "Mula",              "animal.montura.mula",              CLASS_MOUNT,     5.5f, 1.2f, 2.0f, 100.0f,  7.0f, 1.5f, 1.4f, WOUND_BRUISE, 25.0f, 0.60f, true,  1.8f, true,  false, false, 0.0f,  5, 1, 0, 2, 4, HAB_STEPPE | HAB_DESERT,         0.5f, false, 0.0f, 0.0f },
+    [SPECIES_DONKEY]   = { "Burro",             "animal.montura.burro",             CLASS_MOUNT,     5.0f, 1.1f, 1.6f,  80.0f,  6.0f, 1.4f, 1.4f, WOUND_BRUISE, 25.0f, 0.70f, true,  1.5f, true,  false, false, 0.0f,  4, 1, 0, 2, 4, HAB_DESERT | HAB_STEPPE,         0.6f, false, 0.0f, 0.0f },
+    [SPECIES_OX]       = { "Buey",              "animal.ganado.buey",               CLASS_MOUNT,     4.0f, 1.0f, 2.5f, 160.0f, 14.0f, 1.8f, 1.6f, WOUND_CUT,    25.0f, 0.50f, true,  1.3f, true,  false, true,  0.0f, 10, 3, 0, 2, 5, HAB_STEPPE | HAB_COLD,           0.6f, false, 0.0f, 0.0f },
+    [SPECIES_CAMEL]    = { "Camello bactriano", "animal.montura.camello_bactriano", CLASS_MOUNT,     4.5f, 1.0f, 3.0f, 140.0f,  8.0f, 1.6f, 1.5f, WOUND_BITE,   28.0f, 0.55f, true,  1.7f, true,  false, false, 0.0f,  8, 2, 0, 2, 4, HAB_DESERT,                      1.0f, false, 0.0f, 0.0f },
+    [SPECIES_ELEPHANT] = { "Elefante",          "animal.montura.elefante_guerra",   CLASS_MOUNT,     4.0f, 1.0f, 5.0f, 400.0f, 30.0f, 2.6f, 2.0f, WOUND_BRUISE, 30.0f, 0.35f, true,  1.6f, true,  false, true,  0.0f, 25, 4, 0, 2, 4, HAB_STEPPE,                      0.15f, false, 0.0f, 0.0f },
+    [SPECIES_WOLF]     = { "Lobo",              "animal.salvaje.lobo",              CLASS_TAMEABLE,  7.5f, 1.3f, 1.4f,  45.0f, 10.0f, 1.4f, 1.0f, WOUND_BITE,   35.0f, 0.0f,  false, 1.0f, true,  false, false, 2.3f,  2, 1, 0, 3, 6, HAB_STEPPE | HAB_COLD,           0.8f, false, 0.0f, 0.0f },
+    [SPECIES_DOG]      = { "Perro asilvestrado","animal.salvaje.perro_salvaje",     CLASS_TAMEABLE,  7.0f, 1.3f, 1.1f,  38.0f,  8.0f, 1.3f, 1.0f, WOUND_BITE,   30.0f, 0.0f,  false, 1.0f, true,  false, false, 1.7f,  1, 1, 0, 3, 5, HAB_STEPPE | HAB_DESERT,         0.5f, false, 0.0f, 0.0f },
+    [SPECIES_TIGER]    = { "Tigre",             "animal.salvaje.tigre",             CLASS_TAMEABLE,  8.0f, 1.2f, 2.6f, 140.0f, 24.0f, 1.8f, 1.3f, WOUND_CUT,    35.0f, 0.0f,  false, 1.0f, false, false, false, 3.0f,  6, 2, 0, 1, 1, HAB_STEPPE,                      0.15f, false, 0.0f, 0.0f },
+    [SPECIES_PUMA]     = { "Puma",              "animal.salvaje.puma",              CLASS_TAMEABLE,  8.5f, 1.2f, 1.9f,  70.0f, 15.0f, 1.6f, 1.1f, WOUND_CUT,    32.0f, 0.0f,  false, 1.0f, false, false, false, 2.2f,  3, 1, 0, 1, 1, HAB_STEPPE | HAB_COLD,           0.3f, false, 0.0f, 0.0f },
+    [SPECIES_FALCON]   = { "Halcón",            "animal.ave.halcon",                CLASS_TAMEABLE, 16.0f, 3.0f, 0.5f,  15.0f,  4.0f, 1.0f, 1.2f, WOUND_CUT,    60.0f, 0.0f,  false, 1.0f, false, true,  false, 0.6f,  0, 0, 0, 1, 1, HAB_STEPPE | HAB_DESERT,         0.4f, false, 0.0f, 0.0f },
+    [SPECIES_RAVEN]    = { "Cuervo",            "animal.ave.cuervo",                CLASS_TAMEABLE, 10.0f, 2.5f, 0.5f,  10.0f,  2.0f, 1.0f, 1.2f, WOUND_CUT,    40.0f, 0.0f,  false, 1.0f, true,  true,  false, 0.0f,  0, 0, 0, 2, 4, HAB_COLD | HAB_STEPPE,           0.5f, false, 0.0f, 0.0f },
+    [SPECIES_BEAR]     = { "Oso pardo",         "animal.salvaje.oso",               CLASS_HOSTILE,   6.5f, 1.0f, 2.2f, 180.0f, 26.0f, 1.8f, 1.5f, WOUND_CUT,    25.0f, 0.0f,  false, 1.0f, false, false, true,  2.2f,  8, 3, 0, 1, 1, HAB_STEPPE | HAB_COLD,           0.3f, false, 0.0f, 0.0f },
+    [SPECIES_HYENA]    = { "Hiena",             "animal.salvaje.hiena",             CLASS_HOSTILE,   7.0f, 1.3f, 1.3f,  50.0f, 12.0f, 1.4f, 1.1f, WOUND_BITE,   35.0f, 0.0f,  false, 1.0f, true,  false, false, 2.2f,  1, 1, 0, 3, 6, HAB_DESERT,                      0.6f, false, 0.0f, 0.0f },
+    [SPECIES_COYOTE]   = { "Coyote",            "animal.salvaje.coyote",            CLASS_HOSTILE,   7.5f, 1.4f, 1.1f,  30.0f,  7.0f, 1.3f, 1.0f, WOUND_BITE,   30.0f, 0.0f,  false, 1.0f, true,  false, false, 1.2f,  1, 1, 0, 2, 4, HAB_STEPPE | HAB_DESERT,         0.6f, false, 0.0f, 0.0f },
+    [SPECIES_BOAR]     = { "Jabalí",            "animal.salvaje.jabali",            CLASS_HOSTILE,   6.5f, 1.2f, 1.4f,  70.0f, 14.0f, 1.3f, 1.3f, WOUND_CUT,    18.0f, 0.0f,  false, 1.0f, true,  false, true,  0.0f,  4, 1, 0, 2, 5, HAB_STEPPE,                      0.6f, false, 0.0f, 0.0f },
+    [SPECIES_ANTELOPE] = { "Antílope saiga",    "animal.salvaje.antilope",          CLASS_PREY,      9.0f, 1.2f, 1.6f,  50.0f,  0.0f, 1.2f, 1.5f, WOUND_BRUISE, 40.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  3, 1, 0, 4, 8, HAB_STEPPE,                      1.0f, false, 0.0f, 0.0f },
+    [SPECIES_REINDEER] = { "Reno salvaje",      "animal.salvaje.reno",              CLASS_PREY,      7.5f, 1.2f, 2.0f,  70.0f,  0.0f, 1.4f, 1.5f, WOUND_BRUISE, 35.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  5, 2, 0, 4, 8, HAB_COLD,                        1.0f, false, 0.0f, 0.0f },
+    [SPECIES_GAZELLE]  = { "Gacela",            "animal.salvaje.gacela",            CLASS_PREY,      9.5f, 1.3f, 1.2f,  35.0f,  0.0f, 1.2f, 1.5f, WOUND_BRUISE, 45.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  2, 1, 0, 4, 8, HAB_DESERT,                      1.0f, false, 0.0f, 0.0f },
+    [SPECIES_DEER]     = { "Ciervo",            "animal.salvaje.ciervo",            CLASS_PREY,      8.0f, 1.2f, 1.8f,  60.0f,  0.0f, 1.4f, 1.5f, WOUND_BRUISE, 40.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  4, 2, 0, 3, 5, HAB_STEPPE,                      0.8f, false, 0.0f, 0.0f },
+    [SPECIES_HARE]     = { "Liebre",            "animal.salvaje.liebre",            CLASS_PREY,      9.0f, 1.5f, 0.5f,   8.0f,  0.0f, 0.6f, 1.0f, WOUND_BRUISE, 20.0f, 0.0f,  false, 1.0f, false, false, false, 0.0f,  1, 1, 0, 1, 2, HAB_STEPPE | HAB_DESERT | HAB_COLD, 1.0f, false, 0.0f, 0.0f },
+    [SPECIES_IBEX]     = { "Íbice",             "animal.salvaje.ibice",             CLASS_PREY,      6.5f, 1.2f, 1.4f,  45.0f,  0.0f, 1.2f, 1.5f, WOUND_BRUISE, 35.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  3, 1, 0, 2, 4, HAB_COLD,                        0.8f, false, 0.0f, 0.0f },
+    [SPECIES_GOAT]     = { "Cabra",             "animal.ganado.cabra",              CLASS_LIVESTOCK, 5.0f, 1.0f, 1.1f,  30.0f,  3.0f, 1.0f, 1.4f, WOUND_BRUISE, 25.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  2, 1, 1, 3, 6, HAB_STEPPE,                      0.0f, false, 0.0f, 0.0f },
+    [SPECIES_CALF]     = { "Becerro",           "animal.ganado.becerro",            CLASS_LIVESTOCK, 4.5f, 1.0f, 1.4f,  45.0f,  0.0f, 1.0f, 1.4f, WOUND_BRUISE, 25.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  4, 1, 0, 2, 4, HAB_STEPPE,                      0.0f, false, 0.0f, 0.0f },
+    [SPECIES_CROCODILE]= { "Cocodrilo",         "animal.acuatico.cocodrilo",        CLASS_HOSTILE,   6.0f, 0.8f, 3.5f, 160.0f, 28.0f, 1.8f, 1.8f, WOUND_BITE,   12.0f, 0.0f,  false, 1.0f, false, false, true,  2.4f, 10, 3, 0, 1, 1, HAB_WATER,                       0.5f, true,  0.0f,  9.0f },
+    [SPECIES_TURTLE]   = { "Tortuga marina",    "animal.acuatico.tortuga_marina",        CLASS_PREY,      1.6f, 0.4f, 1.0f,  40.0f,  0.0f, 0.8f, 1.5f, WOUND_BITE,   12.0f, 0.0f,  false, 1.0f, false, false, false, 0.0f,  3, 1, 0, 1, 2, HAB_WATER,                       0.8f, true,  0.0f,  0.0f },
+    [SPECIES_SNAKE]    = { "Víbora",            "animal.salvaje.vibora",            CLASS_HOSTILE,   3.0f, 0.5f, 1.0f,   6.0f,  3.0f, 0.9f, 1.5f, WOUND_BITE,    3.5f, 0.0f,  false, 1.0f, false, false, true,  0.0f,  0, 0, 0, 1, 1, HAB_STEPPE | HAB_DESERT,         0.7f, false, 22.0f, 4.0f },
+    [SPECIES_SCORPION] = { "Escorpión",         "animal.salvaje.escorpion",         CLASS_HOSTILE,   1.5f, 0.3f, 0.2f,   3.0f,  1.0f, 0.5f, 1.3f, WOUND_CUT,     2.5f, 0.0f,  false, 1.0f, false, false, true,  0.0f,  0, 0, 0, 1, 1, HAB_DESERT,                      0.8f, false, 15.0f, 3.0f },
+    [SPECIES_SPIDER]   = { "Araña",             "animal.salvaje.arana",             CLASS_HOSTILE,   1.2f, 0.3f, 0.15f,  2.0f,  0.5f, 0.5f, 1.5f, WOUND_BITE,    2.0f, 0.0f,  false, 1.0f, false, false, true,  0.0f,  0, 0, 0, 1, 1, HAB_STEPPE | HAB_DESERT | HAB_COLD, 0.5f, false, 8.0f,  2.5f },
 };
 // clang-format on
 
@@ -111,7 +116,7 @@ static void move_away(Animal *a, float fx, float fz, float speed, float dt) {
 
 static void push(FaunaEvents *ev, FaunaEventKind k, int animal, int other, float dmg, WoundKind w) {
     if (!ev || ev->n >= FAUNA_EVENTS_MAX) return;
-    ev->ev[ev->n++] = (FaunaEvent){ k, animal, other, dmg, w };
+    ev->ev[ev->n++] = (FaunaEvent){ k, animal, other, dmg, w, 0.0f };
 }
 
 static void clear_target(Animal *a) {
@@ -130,6 +135,15 @@ static void die(Animal *a, bool by_human) {
 }
 
 // A la carrera: cansado, corre menos (hasta la mitad).
+static float water_at(const FaunaCtx *c, float x, float z) {
+    return c && c->water_depth ? c->water_depth(c->water_ud, x, z) : 0.0f;
+}
+
+// En el agua: a salvo de los que no nadan.
+static bool safe_in_water(const Animal *prey, const Animal *hunter, const FaunaCtx *c) {
+    return SPECIES[prey->species].aquatic && !SPECIES[hunter->species].aquatic && water_at(c, prey->x, prey->z) > 0.5f;
+}
+
 static float run_speed(const Animal *a) {
     return SPECIES[a->species].speed * health_speed_scale(&a->h) * (0.5f + 0.5f * a->stamina);
 }
@@ -215,7 +229,7 @@ static bool prey_threat(const Animal *a, int i, const Animal *all, int n, const 
         const Animal *p = &all[k];
         if (k == i || !alive(p) || p->state != ANIMAL_WILD) continue;
         const SpeciesDef *pd = &SPECIES[p->species];
-        if (pd->hunt_max < d->size || pd->hunt_max <= 0.0f) continue;
+        if (pd->hunt_max < d->size || pd->hunt_max <= 0.0f || safe_in_water(a, p, c)) continue;
         // Un cazador que acecha cuesta mas notarlo; uno que corre hacia ti, menos.
         float notice = d->sense * notice_scale * (p->mode == MODE_STALK ? 0.35f : p->mode == MODE_CHASE ? 1.3f : 0.7f);
         float dd = adist(a, p);
@@ -242,6 +256,19 @@ static void alarm_group(Animal *all, int n, int i, float fx, float fz, FaunaEven
         spread = true;
     }
     if (spread) push(ev, FEV_PREY_ALARM, i, -1, 0.0f, WOUND_BRUISE);
+}
+
+// Un anfibio huye hacia el agua mas honda (lejos de la amenaza si puede).
+static void flee_to_water(Animal *a, const FaunaCtx *c, float dt) {
+    float best = -1e9f, bx = a->x, bz = a->z;
+    float ax = a->x - a->flee_x, az = a->z - a->flee_z, al = sqrtf(ax * ax + az * az);
+    for (int k = 0; k < 8; k++) {
+        float ang = (float)k * 0.785398f, dx = cosf(ang), dz = sinf(ang);
+        float score = water_at(c, a->x + dx * 6.0f, a->z + dz * 6.0f) * 3.0f;
+        if (al > 0.01f) score += (dx * ax + dz * az) / al; // mejor lejos de la amenaza
+        if (score > best) best = score, bx = a->x + dx * 6.0f, bz = a->z + dz * 6.0f;
+    }
+    move_towards(a, bx, bz, run_speed(a), dt);
 }
 
 // Lleva un animal social de vuelta a su grupo (el centro de los suyos cercanos).
@@ -288,13 +315,15 @@ static void pick_target(Animal *a, int i, Animal *all, int n, const FaunaCtx *c)
     if (a->state == ANIMAL_WILD) {
         float dh;
         int h = nearest_human(c, a->x, a->z, human_aggro(d), true, &dh);
-        if (h >= 0) best = dh, a->tkind = TGT_HUMAN, a->target = h;
+        if (h >= 0 && (d->leash <= 0.0f || dist_xz(c->humans[h].x, c->humans[h].z, a->home_x, a->home_z) <= d->leash))
+            best = dh, a->tkind = TGT_HUMAN, a->target = h;
     }
     if (d->hunt_max > 0.0f && (a->hunger > 0.5f || a->state != ANIMAL_WILD)) {
         for (int k = 0; k < n; k++) {
             const Animal *p = &all[k];
             if (k == i || !alive(p) || p->ridden || !species_is_prey(p->species)) continue;
-            if (SPECIES[p->species].size > d->hunt_max) continue;
+            if (SPECIES[p->species].size > d->hunt_max || safe_in_water(p, a, c)) continue;
+            if (d->leash > 0.0f && dist_xz(p->x, p->z, a->home_x, a->home_z) > d->leash) continue;
             if (a->state != ANIMAL_WILD && (p->state != ANIMAL_WILD || p->species != SPECIES_HARE)) continue;
             float dd = adist(a, p);
             if (dd < d->sense && dd < best) best = dd, a->tkind = TGT_ANIMAL, a->target = k;
@@ -318,11 +347,14 @@ static void strike(Animal *a, int i, Animal *all, int n, Rng *rng, FaunaEvents *
     a->cooldown = d->cooldown;
     a->attack_anim = 0.4f;
     float dmg = fmaxf(1.0f, d->damage * scale) * (0.8f + 0.4f * rng_float(rng)) * health_attack_scale(&a->h);
+    float venom = scale >= 1.0f ? d->venom : 0.0f;
     if (a->tkind == TGT_HUMAN) {
         push(ev, FEV_BITE_HUMAN, i, a->target, dmg, w);
+        if (ev && ev->n > 0) ev->ev[ev->n - 1].venom = venom;
         return;
     }
     int t = a->target;
+    health_poison(&all[t].h, venom);
     animal_hurt(all, n, t, rng, dmg, w, PART_RANDOM, false, -1);
     all[t].alert = fmaxf(all[t].alert, 4.0f);
     all[t].flee_x = a->x, all[t].flee_z = a->z;
@@ -430,7 +462,8 @@ static void update_wild(Animal *a, int i, Animal *all, int n, const FaunaCtx *c,
         if (a->alert > 0.0f) {
             a->mode = MODE_FLEE;
             a->fleeing = true;
-            move_away(a, a->flee_x, a->flee_z, run_speed(a), dt);
+            if (d->aquatic && c->water_depth) flee_to_water(a, c, dt);
+            else move_away(a, a->flee_x, a->flee_z, run_speed(a), dt);
             return;
         }
         a->mode = MODE_GRAZE;
@@ -473,13 +506,19 @@ static void update_wild(Animal *a, int i, Animal *all, int n, const FaunaCtx *c,
         }
     }
     if (!target_valid(a, all, n, c, d->sense)) clear_target(a);
+    if (a->tkind != TGT_NONE && d->leash > 0.0f) { // no se aleja de su guarida
+        float tx, tz;
+        target_pos(a, all, c, &tx, &tz);
+        if (dist_xz(tx, tz, a->home_x, a->home_z) > d->leash * 1.3f) clear_target(a), a->timer = 0.0f;
+    }
     if (a->tkind == TGT_NONE) pick_target(a, i, all, n, c);
     if (a->tkind != TGT_NONE) {
         hunt(a, i, all, n, c, rng, dt, ev);
         return;
     }
     a->mode = MODE_GRAZE;
-    if (!keep_with_group(a, i, all, n, dt)) wander(a, rng, d->flier ? 30.0f : WANDER_RADIUS, dt);
+    float radius = d->leash > 0.0f ? d->leash * 0.5f : d->flier ? 30.0f : WANDER_RADIUS;
+    if (!keep_with_group(a, i, all, n, dt)) wander(a, rng, radius, dt);
     start_rivalry(a, i, all, n);
 }
 
@@ -626,7 +665,7 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
 
 void animal_update(Animal *a, float dt, float px, float pz, Rng *rng) {
     FaunaHuman h = { px, pz, false, false, false };
-    FaunaCtx c = { &h, 1, px, pz, false, 0.0f, 0.0f, false };
+    FaunaCtx c = { &h, 1, px, pz, false, 0.0f, 0.0f, false, NULL, NULL };
     fauna_update(a, 1, &c, rng, dt, NULL);
 }
 
@@ -722,6 +761,14 @@ void animal_body(const Animal *a, BodyPose *b) {
         b->seg[PART_UPPER_ARM_R] = (BodySeg){ { -0.05f, y0 + 0.12f, 0 }, { -0.45f, y0 + 0.12f, 0 }, 0.04f };
         return;
     }
+    if (a->species == SPECIES_SNAKE) { // larga, a ras de suelo, en zigzag
+        for (int k = 0; k < 4; k++) {
+            float z0 = 0.5f - 0.25f * (float)k, z1 = z0 - 0.25f, x0 = (k % 2 ? 0.05f : -0.05f);
+            b->seg[PART_THORAX + k] = (BodySeg){ { x0, 0.04f, z0 }, { -x0, 0.04f, z1 }, 0.035f };
+        }
+        b->seg[PART_HEAD] = (BodySeg){ { 0, 0.05f, 0.5f }, { 0, 0.05f, 0.56f }, 0.045f };
+        return;
+    }
     if (a->state == ANIMAL_DEAD) { // tendido de lado
         b->seg[PART_THORAX] = (BodySeg){ { 0, 0.2f * s, -0.4f * s }, { 0, 0.2f * s, 0.4f * s }, 0.2f * s };
         b->seg[PART_HEAD] = (BodySeg){ { 0, 0.12f * s, 0.6f * s }, { 0, 0.12f * s, 0.75f * s }, 0.12f * s };
@@ -736,4 +783,16 @@ void animal_body(const Animal *a, BodyPose *b) {
     b->seg[PART_FOREARM_R] = (BodySeg){ { -0.12f * s, 0.4f * s, 0.35f * s }, { -0.12f * s, 0.02f, 0.35f * s }, 0.05f * s };
     b->seg[PART_SHIN_L] = (BodySeg){ { 0.12f * s, 0.4f * s, -0.35f * s }, { 0.12f * s, 0.02f, -0.35f * s }, 0.05f * s };
     b->seg[PART_SHIN_R] = (BodySeg){ { -0.12f * s, 0.4f * s, -0.35f * s }, { -0.12f * s, 0.02f, -0.35f * s }, 0.05f * s };
+    // Reptiles y bichos: cuerpo bajo, pegado al suelo (y ancho).
+    bool low = a->species == SPECIES_CROCODILE || a->species == SPECIES_TURTLE || a->species == SPECIES_SCORPION ||
+               a->species == SPECIES_SPIDER;
+    if (!low) return;
+    float k = a->species == SPECIES_TURTLE ? 0.45f : 0.3f;
+    for (int i = 0; i < PART_COUNT; i++) {
+        BodySeg *g = &b->seg[i];
+        if (g->radius <= 0.0f) continue;
+        g->a.y *= k, g->b.y *= k;
+        g->a.x *= 1.8f, g->b.x *= 1.8f; // patas abiertas
+        g->radius *= i == PART_THORAX || i == PART_ABDOMEN ? (a->species == SPECIES_TURTLE ? 1.6f : 0.8f) : 0.7f;
+    }
 }

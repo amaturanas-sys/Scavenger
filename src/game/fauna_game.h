@@ -6,7 +6,10 @@
 //  - el cuervo domado explora (revela el mapa) y el halcon caza liebres;
 //  - K: dar de comer a un animal atado (domarlo), despiezar un cadaver, ordeñar
 //    el ganado (Mayús+K: sacrificarlo);
-//  - el ganado (cabras, becerros) sigue al jugador que camina cerca: pastoreo.
+//  - el ganado (cabras, becerros) sigue al jugador que camina cerca: pastoreo;
+//  - enjambres (src/sim/swarms.h): bancos de peces en los lagos (se pescan con un
+//    golpe o una flecha), colmenas (miel con humo) y avisperos, mosquitos junto al
+//    agua al anochecer y moscas sobre los cadaveres; las picaduras envenenan.
 #ifndef ESTEPA_FAUNA_GAME_H
 #define ESTEPA_FAUNA_GAME_H
 
@@ -23,8 +26,9 @@ void fg_init(GameActions *ga, const Terrain *t);
 int fg_spawn_group(GameActions *ga, Species s, float x, float z);
 // Prueba: aparece un grupo por nombre ("lobos" o el final del id: "tigre", "jabali"...).
 bool fg_spawn_named(GameActions *ga, const char *what, const Player *p, float dist, char *log, size_t len);
+// temp: °C ahora (los insectos y mosquitos dependen del calor); la noche y el atardecer salen de now.
 void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terrain *t, MemoryMap *mem, float now,
-               bool night, bool input_ok, float dt, char *log, size_t len);
+               float temp, bool input_ok, float dt, char *log, size_t len);
 void fg_new_day(GameActions *ga);
 
 // Para el combate: el animal al alcance de un golpe delante de pos (o -1).
@@ -33,6 +37,12 @@ int fg_melee_target(const GameActions *ga, const Terrain *t, Vector3 pos, float 
 int fg_raycast(const GameActions *ga, const Terrain *t, V3 a, V3 d, float *tt, int *part);
 // Herir un animal. attacker: 0 jugador, >0 id del integrante, -1 otro. Escribe el registro si lo hirio el jugador.
 void fg_hurt(GameActions *ga, int idx, float dmg, WoundKind w, int part, int attacker, char *log, size_t len);
+// Pescar con un golpe delante (lanza: mas facil). true si habia peces (pescara o no).
+bool fg_fish(GameActions *ga, const Terrain *t, Vector3 pos, float yaw, float reach, bool spear, char *log, size_t len);
+// Un proyectil que cae al agua en at puede atravesar un pez.
+bool fg_shot_water(GameActions *ga, const Terrain *t, Vector3 at, char *log, size_t len);
+// Un golpe a un nido (colmena, avispero) a menos de reach: se enfadan. true si habia uno.
+bool fg_poke_nest(GameActions *ga, Vector3 pos, float reach);
 // Animal hostil (salvaje que ataca o puede atacar) mas cercano a pos, o -1.
 int fg_threat_near(const GameActions *ga, Vector3 pos, float range, float *dist);
 

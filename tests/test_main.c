@@ -22,6 +22,7 @@
 #include "../src/sim/memory_map.h"
 #include "../src/sim/noise.h"
 #include "../src/sim/rng.h"
+#include "../src/sim/swarms.h"
 #include "../src/sim/troop.h"
 
 static int g_failed = 0, g_checks = 0;
@@ -1190,7 +1191,7 @@ static void test_animals_flee_and_wander(void) {
     Animal herd[3];
     for (int i = 0; i < 3; i++) animal_init(&herd[i], SPECIES_DEER, (float)i * 2.0f, 0), herd[i].group = 7;
     FaunaHuman hu = { 5.0f, 0.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 5.0f, 0.0f, false, 100.0f, 100.0f, false };
+    FaunaCtx c = { &hu, 1, 5.0f, 0.0f, false, 100.0f, 100.0f, false, NULL, NULL };
     animal_hurt(herd, 3, 2, &r, 10.0f, WOUND_CUT, PART_THORAX, true, 0);
     CHECK(herd[2].fear_humans > 0.0f && herd[0].fear_humans > 0.0f && herd[1].fear_humans > 0.0f);
     float before = an_dist(&herd[0], 5.0f, 0.0f);
@@ -1241,7 +1242,7 @@ static void test_animals_tame_predator(void) {
     Animal w2 = w;
     FaunaEvents ev = { .n = 0 };
     FaunaHuman hu = { 50.0f, 50.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 50.0f, 50.0f, false, 0, 0, false };
+    FaunaCtx c = { &hu, 1, 50.0f, 50.0f, false, 0, 0, false, NULL, NULL };
     for (int i = 0; i < 650 && w2.state == ANIMAL_BOUND; i++) fauna_update(&w2, 1, &c, &r, 0.1f, &ev);
     CHECK(w2.state == ANIMAL_WILD && ev.n > 0 && ev.ev[ev.n - 1].kind == FEV_BREAK_FREE);
     // Con carne: de la tribu.
@@ -1250,7 +1251,7 @@ static void test_animals_tame_predator(void) {
     Animal pack[1] = { w };
     pack[0].x = 0, pack[0].z = 0;
     FaunaHuman people[2] = { { 0.0f, 0.0f, false, false, false }, { 6.0f, 0.0f, false, false, true } };
-    FaunaCtx c2 = { people, 2, 0.0f, 0.0f, false, 0, 0, false };
+    FaunaCtx c2 = { people, 2, 0.0f, 0.0f, false, 0, 0, false, NULL, NULL };
     ev.n = 0;
     bool bit_enemy = false;
     for (int i = 0; i < 60; i++) {
@@ -1272,7 +1273,7 @@ static void test_animals_pack_hunt(void) {
     }
     for (int i = 3; i < 7; i++) animal_init(&a[i], SPECIES_DEER, (float)(i - 3) * 2.0f, 3.0f), a[i].group = 2;
     FaunaHuman hu = { 500.0f, 500.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL };
     bool shared = false, alarmed = false, killed = false, ate = false;
     for (int step = 0; step < 1800 && !(killed && ate); step++) {
         FaunaEvents ev = { .n = 0 };
@@ -1298,7 +1299,7 @@ static void test_animals_stalk_and_rivals(void) {
     Rng r;
     rng_seed(&r, 13);
     FaunaHuman hu = { 500.0f, 500.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL };
     Animal a[2];
     animal_init(&a[0], SPECIES_TIGER, 0, 0);
     animal_init(&a[1], SPECIES_DEER, 25.0f, 0);
@@ -1334,7 +1335,7 @@ static void test_animals_flee_only_critical(void) {
     Rng r;
     rng_seed(&r, 17);
     FaunaHuman hu = { 3.0f, 0.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 3.0f, 0.0f, false, 50, 50, false };
+    FaunaCtx c = { &hu, 1, 3.0f, 0.0f, false, 50, 50, false, NULL, NULL };
     Animal w;
     animal_init(&w, SPECIES_BEAR, 0, 0);
     animal_hurt(&w, 1, 0, &r, 60.0f, WOUND_CUT, PART_THORAX, true, 0);
@@ -1372,7 +1373,7 @@ static void test_animals_livestock(void) {
     CHECK(g[0].state == ANIMAL_TAMED && g[1].state == ANIMAL_TAMED); // de la tribu desde el principio
     // El pastor camina cerca: lo siguen; se para: se quedan donde estan.
     FaunaHuman hu = { 4.0f, 0.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 4.0f, 0.0f, true, 0, 0, false };
+    FaunaCtx c = { &hu, 1, 4.0f, 0.0f, true, 0, 0, false, NULL, NULL };
     for (int i = 0; i < 300; i++) {
         hu.x = c.px = 4.0f + (float)i * 0.1f; // 1 m/s
         fauna_update(g, 2, &c, &r, 0.1f, NULL);
@@ -1415,6 +1416,141 @@ static void test_animals_body(void) {
     f.alt = 6.0f;
     animal_body(&f, &b);
     CHECK(body_raycast(&b, (V3){ 5, 6.1f, 0.0f }, (V3){ -10, 0, 0 }, 1.0f, &t) >= 0); // un ave, en el aire
+}
+
+
+// Agua para las pruebas: un lago de 3 m de hondo donde x < 0; seco donde x >= 0.
+static float test_lake(void *ud, float x, float z) {
+    (void)ud, (void)z;
+    return x < 0.0f ? 3.0f : -1.0f;
+}
+
+// Veneno: quita vida poco a poco, frena la recuperacion y las hierbas lo cortan.
+static void test_health_venom(void) {
+    Rng r;
+    rng_seed(&r, 2);
+    Health h;
+    health_init(&h, 100.0f);
+    health_poison(&h, 20.0f);
+    CHECK(health_poisoned(&h) && !strcmp(health_state_name(&h), "envenenado") && health_untreated(&h) == 1);
+    for (int i = 0; i < 100; i++) health_update(&h, &r, 0.1f, false, 0.0f); // 10 s
+    CHECK(h.hp < 95.0f && h.hp > 80.0f && h.venom < 15.0f);
+    float before = h.venom;
+    CHECK(health_treat(&h) >= 1 && h.venom < before * 0.6f);
+    for (int i = 0; i < 1200; i++) health_update(&h, &r, 0.1f, false, 0.0f);
+    CHECK(!health_poisoned(&h) && h.hp > 80.0f); // se pasa y vuelve a sanar
+}
+
+// Acuaticos y venenosos: el cocodrilo no se aleja de su orilla; la tortuga se salva
+// en el agua; la vibora muerde con veneno pero no persigue.
+static void test_animals_water_and_venom(void) {
+    Rng r;
+    rng_seed(&r, 31);
+    FaunaHuman hu = { 6.0f, 0.0f, false, false, false };
+    FaunaCtx c = { &hu, 1, 6.0f, 0.0f, false, 100, 100, false, test_lake, NULL };
+    Animal croc;
+    animal_init(&croc, SPECIES_CROCODILE, -2.0f, 0.0f); // en el agua, junto a la orilla
+    FaunaEvents ev = { .n = 0 };
+    bool bit = false;
+    for (int i = 0; i < 60; i++) {
+        fauna_update(&croc, 1, &c, &r, 0.1f, &ev);
+        for (int k = 0; k < ev.n; k++) bit |= ev.ev[k].kind == FEV_BITE_HUMAN;
+        ev.n = 0;
+    }
+    CHECK(bit); // embosca a quien se acerca a la orilla
+    hu.x = c.px = 30.0f; // lejos de su guarida: no lo persigue
+    for (int i = 0; i < 100; i++) fauna_update(&croc, 1, &c, &r, 0.1f, NULL);
+    CHECK(croc.tkind == TGT_NONE && an_dist(&croc, croc.home_x, croc.home_z) < 12.0f);
+    // Tortuga en el agua: el lobo no la caza; en tierra, si.
+    Animal a[2];
+    animal_init(&a[0], SPECIES_WOLF, 4.0f, 0.0f);
+    animal_init(&a[1], SPECIES_TURTLE, -3.0f, 0.0f);
+    a[0].hunger = 1.0f;
+    hu.x = c.px = 500.0f;
+    for (int i = 0; i < 5; i++) fauna_update(a, 2, &c, &r, 0.1f, NULL);
+    CHECK(a[0].tkind == TGT_NONE);
+    animal_init(&a[1], SPECIES_TURTLE, 10.0f, 0.0f);
+    a[1].alert = 3.0f, a[1].flee_x = 4.0f, a[1].flee_z = 0.0f; // asustada en tierra: huye hacia el agua
+    for (int i = 0; i < 5; i++) fauna_update(a, 2, &c, &r, 0.1f, NULL);
+    CHECK(a[0].tkind == TGT_ANIMAL && a[0].target == 1);
+    // Vibora: muerde con veneno si te acercas, y no te sigue lejos.
+    Animal v;
+    animal_init(&v, SPECIES_SNAKE, 20.0f, 0.0f);
+    hu.x = c.px = 21.5f;
+    float venom = 0.0f;
+    for (int i = 0; i < 30; i++) {
+        fauna_update(&v, 1, &c, &r, 0.1f, &ev);
+        for (int k = 0; k < ev.n; k++) venom += ev.ev[k].kind == FEV_BITE_HUMAN ? ev.ev[k].venom : 0.0f;
+        ev.n = 0;
+    }
+    CHECK(venom >= species_def(SPECIES_SNAKE)->venom);
+    hu.x = c.px = 40.0f;
+    for (int i = 0; i < 100; i++) fauna_update(&v, 1, &c, &r, 0.1f, NULL);
+    CHECK(an_dist(&v, 20.0f, 0.0f) < 6.0f);
+}
+
+// Enjambres: abejas que defienden la colmena, humo, agua; mosquitos con calor al
+// anochecer; peces que huyen, no salen del agua y se pescan.
+static void test_swarms(void) {
+    Rng r;
+    rng_seed(&r, 8);
+    SwarmCtx c = { 30.0f, 0.0f, 0.0f, false, false, false, 22.0f, false, false, test_lake, NULL };
+    Swarm bees;
+    swarm_init(&bees, SWARM_BEES, 20.0f, 0.0f, 0.0f, &r);
+    for (int i = 0; i < 50; i++) swarm_update(&bees, &c, &r, 0.1f);
+    CHECK(bees.anger == 0.0f); // de lejos, tranquilas
+    swarm_provoke(&bees);      // golpeaste la colmena
+    int stings = 0;
+    for (int i = 0; i < 100; i++) {
+        c.px = 22.0f + (float)i * 0.02f;
+        stings += swarm_update(&bees, &c, &r, 0.1f).stings;
+    }
+    CHECK(stings >= 3);
+    c.torch = true; // humo: se calman
+    swarm_update(&bees, &c, &r, 0.1f);
+    CHECK(bees.anger == 0.0f && bees.calm > 0.0f);
+    c.torch = false;
+    for (int i = 0; i < 200; i++) swarm_update(&bees, &c, &r, 0.1f); // pasa el humo
+    swarm_provoke(&bees);
+    c.submerged = true; // bajo el agua te pierden
+    swarm_update(&bees, &c, &r, 0.1f);
+    CHECK(bees.anger == 0.0f);
+    c.submerged = false;
+    c.night = true; // de noche, en la colmena
+    swarm_update(&bees, &c, &r, 0.1f);
+    CHECK(!bees.active);
+    // Avispas: acercarse al nido basta.
+    Swarm w;
+    swarm_init(&w, SWARM_WASPS, 0.0f, 0.0f, 50.0f, &r);
+    c.night = false, c.px = 1.0f, c.pz = 52.0f;
+    swarm_update(&w, &c, &r, 0.1f);
+    CHECK(w.anger > 0.0f);
+    // Mosquitos: con calor al atardecer, no a mediodia ni con frio.
+    Swarm m;
+    swarm_init(&m, SWARM_MOSQUITOES, -2.0f, 0.2f, 0.0f, &r);
+    c.px = 1.0f, c.pz = 0.0f;
+    swarm_update(&m, &c, &r, 0.1f);
+    CHECK(!m.active);
+    c.dusk = true;
+    swarm_update(&m, &c, &r, 0.1f);
+    CHECK(m.active && m.anger > 0.0f);
+    c.temp = 5.0f;
+    swarm_update(&m, &c, &r, 0.1f);
+    CHECK(!m.active);
+    // Peces: bajo la superficie, dentro del lago; huyen; se pescan.
+    Swarm f;
+    swarm_init(&f, SWARM_FISH, -6.0f, 0.0f, 0.0f, &r);
+    c.px = 50.0f, c.pz = 50.0f;
+    for (int i = 0; i < 300; i++) swarm_update(&f, &c, &r, 0.1f);
+    bool under = true;
+    for (int i = 0; i < f.n; i++) under &= f.b[i].y < 0.0f && f.b[i].y > -3.0f;
+    CHECK(under && f.cx < 0.0f);
+    float cx = f.cx;
+    c.px = f.cx + 2.0f, c.pz = f.cz;
+    for (int i = 0; i < 10; i++) swarm_update(&f, &c, &r, 0.1f);
+    CHECK(f.cx < cx); // se alejan de quien se mete
+    int alive = swarm_alive(&f);
+    CHECK(swarm_catch(&f, f.b[0].x, f.b[0].y, f.b[0].z, 0.5f, 1) == 1 && swarm_alive(&f) == alive - 1);
 }
 
 // ---------------------------------------------------------------- inventario de assets
@@ -1650,6 +1786,9 @@ int main(void) {
     RUN(test_animals_flee_only_critical);
     RUN(test_animals_livestock);
     RUN(test_animals_body);
+    RUN(test_health_venom);
+    RUN(test_animals_water_and_venom);
+    RUN(test_swarms);
     RUN(test_inventory_parses_and_maps_paths);
     RUN(test_anim_index_states);
     RUN(test_anim_index_names_exist);
