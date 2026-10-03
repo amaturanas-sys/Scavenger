@@ -24,6 +24,7 @@
 #include "../src/sim/rng.h"
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
+#include "../src/sim/melee.h"
 #include "../src/sim/troop.h"
 
 static int g_failed = 0, g_checks = 0;
@@ -1642,6 +1643,114 @@ static void test_weather_hazards_random(void) {
     CHECK(armor_absorb(&a, PART_THORAX, &k, false, 20.0f, &r, &broke) > 15.0f);
 }
 
+
+// Cuerpo a cuerpo: escudos, patadas, agarres, ganchos, combos y manos.
+static void test_melee_moves(void) {
+    Rng r;
+    rng_seed(&r, 77);
+    Fighter att = { .strength = 1.0f, .health = 1.0f, .armed = true, .facing = 1.0f };
+    Fighter guard = { .shield = true, .blocking = true, .strength = 1.0f, .health = 1.0f, .armed = true, .facing = 1.0f };
+    Fighter open = { .strength = 1.0f, .health = 1.0f, .armed = true, .facing = 1.0f };
+    int blocked = 0, knocked_kick = 0, knocked_run = 0, heavy_stagger = 0;
+    float heavy_dmg = 0.0f;
+    for (int i = 0; i < 400; i++) {
+        blocked += melee_resolve(MOVE_LIGHT, &att, &guard, "arma.corta.sable", 1, &r).blocked;
+        MeleeResult h = melee_resolve(MOVE_HEAVY, &att, &guard, "arma.corta.sable", 1, &r);
+        heavy_stagger += h.staggered && h.blocked;
+        heavy_dmg += h.damage;
+        knocked_kick += melee_resolve(MOVE_KICK, &att, &guard, "", 1, &r).knocked_down;
+        knocked_run += melee_resolve(MOVE_RUN_KICK, &att, &guard, "", 1, &r).knocked_down;
+    }
+    CHECK(blocked > 300);                     // el escudo para casi todos los golpes ligeros
+    CHECK(heavy_stagger == 400 && heavy_dmg > 0.0f); // el pesado rompe la guardia y algo pasa
+    CHECK(knocked_kick == 0);                 // una patada contra el escudo no tumba...
+    CHECK(knocked_run > 250);                 // ...con inercia, si
+    // De espaldas, el escudo no sirve.
+    Fighter back = guard;
+    back.facing = -1.0f;
+    CHECK(!melee_resolve(MOVE_LIGHT, &att, &back, "arma.corta.sable", 1, &r).blocked);
+    // En el suelo, mas daño.
+    Fighter down = open;
+    down.down = true;
+    CHECK(melee_resolve(MOVE_KICK, &att, &down, "", 1, &r).damage > melee_resolve(MOVE_KICK, &att, &open, "", 1, &r).damage);
+    // Escudo: golpe y carga solo con escudo; escudo contra escudo, los dos se tambalean.
+    CHECK(!melee_resolve(MOVE_SHIELD_BASH, &att, &open, "", 1, &r).landed);
+    MeleeResult bash = melee_resolve(MOVE_SHIELD_BASH, &guard, &guard, "", 1, &r);
+    CHECK(bash.landed && bash.blocked && bash.attacker_staggered && bash.staggered);
+    int charge_down = 0;
+    for (int i = 0; i < 200; i++) charge_down += melee_resolve(MOVE_SHIELD_CHARGE, &guard, &open, "", 1, &r).knocked_down;
+    CHECK(charge_down > 80);
+    // Agarre: del escudo (lo arranca), del brazo armado (desarma y tumba), de una extremidad (llave).
+    Fighter strong = att;
+    strong.strength = 3.0f;
+    MeleeResult g = melee_resolve(MOVE_GRAPPLE, &strong, &guard, "", 1, &r);
+    CHECK(g.grab == GRAB_SHIELD && g.shield_dropped);
+    Fighter swinging = open;
+    swinging.attacking = true;
+    g = melee_resolve(MOVE_GRAPPLE, &strong, &swinging, "", 1, &r);
+    CHECK(g.grab == GRAB_WEAPON_ARM && g.disarmed && g.knocked_down);
+    g = melee_resolve(MOVE_GRAPPLE, &strong, &open, "", 1, &r);
+    CHECK(g.grab == GRAB_LIMB && g.knocked_down);
+    Fighter weak = att;
+    weak.strength = 0.2f;
+    g = melee_resolve(MOVE_GRAPPLE, &weak, &strong, "", 1, &r);
+    CHECK(!g.landed && g.attacker_staggered); // se zafa: el que agarra queda expuesto
+    // Gancho: solo armas con gancho; hace soltar el escudo.
+    CHECK(weapon_can_hook("arma.corta.hacha") && weapon_can_hook("arma.larga.guja") && !weapon_can_hook("arma.corta.sable"));
+    CHECK(!melee_resolve(MOVE_HOOK, &att, &guard, "arma.corta.sable", 1, &r).landed);
+    int dropped = 0;
+    for (int i = 0; i < 100; i++) dropped += melee_resolve(MOVE_HOOK, &att, &guard, "arma.larga.guja", 1, &r).shield_dropped;
+    CHECK(dropped > 50);
+    // Combos: el remate pega mas; las armas cortas encadenan mas rapido; el remate largo puede tumbar.
+    CHECK(melee_combo_scale(3) > melee_combo_scale(2) && melee_combo_scale(2) > melee_combo_scale(1));
+    CHECK(melee_combo_cooldown("arma.corta.daga", 1.0f, 1) < melee_combo_cooldown("arma.larga.lanza", 1.0f, 1));
+    int finisher = 0;
+    for (int i = 0; i < 300; i++) finisher += melee_resolve(MOVE_LIGHT, &att, &open, "arma.larga.lanza", 3, &r).knocked_down;
+    CHECK(finisher > 30 && weapon_is_short("arma.corta.daga") && weapon_is_long("arma.larga.lanza"));
+    // La armadura pesada cuesta mas tumbarla.
+    Fighter heavy_armor = open;
+    heavy_armor.weight = 60.0f;
+    int k_light = 0, k_heavy = 0;
+    for (int i = 0; i < 400; i++) {
+        k_light += melee_resolve(MOVE_KICK, &att, &open, "", 1, &r).knocked_down;
+        k_heavy += melee_resolve(MOVE_KICK, &att, &heavy_armor, "", 1, &r).knocked_down;
+    }
+    CHECK(k_heavy < k_light);
+}
+
+static char *read_file(const char *path);
+
+static void test_hands_swap_and_dual(void) {
+    Inventory inv;
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    inventory_parse(&inv, text);
+    Hands h;
+    hands_init(&h);
+    hands_equip(&h, inventory_find(&inv, "arma.corta.sable"), HAND_RIGHT);
+    CHECK(hands_swap(&h) && !strcmp(h.left.id, "arma.corta.sable") && !h.right.id[0]); // a la izquierda
+    bool off = false;
+    CHECK(!strcmp(hands_attack_weapon(&h, 1, &off), "arma.corta.sable") && off); // con la mano torpe
+    CHECK(hands_swap(&h) && !strcmp(h.right.id, "arma.corta.sable"));
+    // Dos armas: el combo alterna derecha, izquierda, derecha.
+    hands_equip(&h, inventory_find(&inv, "arma.corta.daga"), HAND_LEFT);
+    CHECK(!strcmp(hands_attack_weapon(&h, 1, &off), "arma.corta.sable") && !off);
+    CHECK(!strcmp(hands_attack_weapon(&h, 2, &off), "arma.corta.daga") && off);
+    CHECK(hands_swap(&h) && !strcmp(h.right.id, "arma.corta.daga"));
+    // Con escudo o a dos manos no se cambia.
+    hands_clear(&h, HAND_LEFT);
+    hands_equip(&h, inventory_find(&inv, "escudo.mano.mimbre"), HAND_LEFT);
+    CHECK(!hands_swap(&h));
+    hands_clear(&h, HAND_LEFT), hands_clear(&h, HAND_RIGHT);
+    hands_equip(&h, inventory_find(&inv, "arma.larga.guja"), HAND_RIGHT);
+    CHECK(!hands_swap(&h));
+    // Enfundadas: a puño limpio.
+    h.sheathed = true;
+    CHECK(!hands_attack_weapon(&h, 1, NULL)[0]);
+    free(text);
+}
+
 // ---------------------------------------------------------------- inventario de assets
 static void test_inventory_parses_and_maps_paths(void) {
     const char *tsv =
@@ -1809,6 +1918,9 @@ static void test_anim_index_names_exist(void) {
         s.limping = bits & 1, s.blocking = bits & 2, s.attacking = bits % 4, s.spear = bits & 4;
         s.hit = bits % 11 == 0, s.down = bits % 13 == 0, s.dead = bits % 17 == 0, s.ranged = bits % 4;
         CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
+        // Cuerpo a cuerpo: cada movimiento, derribado, cambiar de mano.
+        s.move = bits % (MOVE_COUNT + 1), s.knocked = bits % 19 == 0, s.swapping = bits % 23 == 0;
+        CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
     }
     for (int sp = 0; sp < SPECIES_COUNT; sp++) {
         Animal a;
@@ -1880,6 +1992,8 @@ int main(void) {
     RUN(test_swarms);
     RUN(test_fire_spread_and_rain);
     RUN(test_weather_hazards_random);
+    RUN(test_melee_moves);
+    RUN(test_hands_swap_and_dual);
     RUN(test_inventory_parses_and_maps_paths);
     RUN(test_anim_index_states);
     RUN(test_anim_index_names_exist);

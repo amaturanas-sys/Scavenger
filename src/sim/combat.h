@@ -31,6 +31,9 @@ typedef struct {
     float flee_at; // huye con menos de esta fraccion de vida (0: nunca)
     const char *ranged;    // arma a distancia (src/sim/ballistics.h), o NULL
     const char *armor[4];  // piezas de armadura que lleva (ids del inventario)
+    const char *weapon;    // arma de mano (src/sim/melee.h la usa para golpes, combos y ganchos)
+    const char *shield;    // escudo que puede llevar (o NULL)
+    float shield_chance;   // probabilidad de llevarlo
 } EnemyDef;
 
 const EnemyDef *enemy_def(EnemyKind k);

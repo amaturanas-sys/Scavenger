@@ -24,14 +24,15 @@ WeaponStats weapon_stats(const char *id) {
 const EnemyDef *enemy_def(EnemyKind k) {
     static const EnemyDef defs[ENEMY_COUNT] = {
         [ENEMY_BANDIT] = { "Bandido", "personaje.npc.bandido", false, 70.0f, 12.0f, 1.6f, 1.2f, 4.2f, 22.0f, WOUND_CUT, 0.2f,
-                           NULL, { "armadura.torso.fieltro", "armadura.casco.fieltro" } },
+                           NULL, { "armadura.torso.fieltro", "armadura.casco.fieltro" }, "arma.corta.sable", "escudo.mano.mimbre", 0.5f },
         [ENEMY_FANATIC] = { "Fanático del culto", "personaje.npc.fanatico", false, 80.0f, 15.0f, 1.7f, 1.1f, 4.5f, 26.0f,
-                            WOUND_CUT, 0.0f, NULL, { "armadura.torso.culto", "armadura.casco.mascara_culto" } },
+                            WOUND_CUT, 0.0f, NULL, { "armadura.torso.culto", "armadura.casco.mascara_culto" }, "arma.corta.hacha", NULL, 0.0f },
         [ENEMY_CAPTOR] = { "Captor del culto", "personaje.npc.captor_culto", false, 90.0f, 10.0f, 1.6f, 1.3f, 4.0f, 24.0f,
                            WOUND_BRUISE, 0.15f, NULL,
-                           { "armadura.torso.culto", "armadura.faldar.culto", "armadura.grebas.culto", "armadura.casco.culto" } },
+                           { "armadura.torso.culto", "armadura.faldar.culto", "armadura.grebas.culto", "armadura.casco.culto" },
+                           "arma.corta.maza", "escudo.mano.cuero", 0.7f },
         [ENEMY_ARCHER] = { "Arquero bandido", "personaje.npc.bandido", false, 60.0f, 7.0f, 1.3f, 1.0f, 4.4f, 34.0f,
-                           WOUND_CUT, 0.3f, "arma.distancia.arco_compuesto", { "armadura.casco.fieltro" } },
+                           WOUND_CUT, 0.3f, "arma.distancia.arco_compuesto", { "armadura.casco.fieltro" }, "arma.corta.daga", NULL, 0.0f },
     };
     return &defs[(unsigned)k < ENEMY_COUNT ? k : 0];
 }

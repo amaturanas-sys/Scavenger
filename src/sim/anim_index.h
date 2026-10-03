@@ -34,6 +34,9 @@ typedef struct {
     bool blocking;    // cubriendose con el escudo
     bool limping;     // herido en las piernas: cojea al caminar
     int ranged;       // apuntando: 0 no, 1 arco u honda, 2 ballesta, 3 mosquete
+    int move;         // movimiento cuerpo a cuerpo en curso: 0 ninguno, MeleeMove + 1 (src/sim/melee.h)
+    bool knocked;     // derribado: en el suelo un momento (patada, llave, carga)
+    bool swapping;    // pasando el arma a la otra mano
 } HumanoidState;
 
 // Clip para un humano (jugador o NPC) segun lo que esta haciendo.

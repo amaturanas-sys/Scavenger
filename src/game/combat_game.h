@@ -2,7 +2,10 @@
 // src/sim/combat.h con el jugador, la tribu, los enemigos y la interfaz:
 //  - salud del jugador: vida, sangre y heridas; abatido, lo levanta la escolta
 //    o despierta en el campamento;
-//  - golpear (V o clic izquierdo) con el arma empunada; cubrirse (Z);
+//  - cuerpo a cuerpo (src/sim/melee.h): V golpe y combos (mantener: pesado),
+//    J o clic derecho patada (corriendo: con inercia), Z cubrirse (con escudo:
+//    Z + V golpe de escudo; corriendo + Z carga), U agarre y llave, O enganchar el
+//    escudo enemigo con el arma; los enemigos y la escolta usan lo mismo;
 //  - armas a distancia: mantener V (o clic) para tensar y soltar para disparar;
 //    la camara alza o baja la mira y se ve la curva que hara el proyectil;
 //    L junto a un fuego enciende la flecha: quema al que alcanza y prende el pasto,
@@ -46,6 +49,12 @@ typedef struct {
     float timer, cooldown, attack_anim, hit_anim, corpse, shown, reload;
     int target; // 0 jugador, >0 id del integrante, -1 nadie
     Armor armor;
+    // Cuerpo a cuerpo (src/sim/melee.h).
+    bool shield, armed;       // lleva escudo; tiene su arma (se la pueden arrancar)
+    bool blocking;
+    float block_timer, stagger, knock; // cubriendose; desequilibrado; en el suelo
+    int move, combo;          // movimiento en curso (MeleeMove + 1) y paso del combo
+    float move_anim;
 } Enemy;
 
 typedef struct {
@@ -76,6 +85,14 @@ typedef struct {
     float draw, reload, aim_pitch;
     bool arrow_lit;       // la proxima flecha sale encendida (L junto a un fuego)
     float arrow_lit_timer;
+    // Cuerpo a cuerpo del jugador (src/sim/melee.h).
+    float v_hold;         // s con V apretada (golpe pesado)
+    float combo_timer;    // ventana para encadenar el combo
+    int move;             // movimiento en curso (MeleeMove + 1)
+    float move_anim;
+    float stagger, knock; // desequilibrado; derribado
+    float charge_timer;   // carga con escudo en curso
+    bool charge_hit;
 } Combat;
 
 void cb_init(Combat *cb, unsigned seed);
@@ -83,8 +100,8 @@ bool cb_blocks_input(const Combat *cb); // abatido
 float cb_speed_scale(const Combat *cb);
 // input_ok: el jugador puede atacar/vendar (sin menu ni minijuego). night/winter: cambian lo que aparece.
 // cam_yaw / cam_pitch: la camara (la mira de las armas a distancia).
-void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, const Terrain *t, Vector3 camp_fire, bool input_ok,
-               bool night, bool winter, float cam_yaw, float cam_pitch, float dt, char *log, size_t log_len);
+void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *props, const Terrain *t, Vector3 camp_fire,
+               bool input_ok, bool night, bool winter, float cam_yaw, float cam_pitch, float dt, char *log, size_t log_len);
 // Cada amanecer: el jugador descansa como la tribu (con curandero, mejor) y se reparan las armaduras.
 void cb_new_day(Combat *cb, Troop *troop);
 // Enemigos, proyectiles, la curva de la mira y el cuerpo del jugador (sin modelo). Dentro de BeginMode3D.

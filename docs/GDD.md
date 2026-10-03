@@ -118,12 +118,33 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 - **Efectos:** heridas en las piernas frenan (y se cojea), en los brazos debilitan los golpes; poca sangre afecta a todo.
 - **Curar:** las heridas sanan con el tiempo, más rápido vendadas y en reposo; las fracturas solo sanan entablilladas. `B` venda con **hierbas curativas** del acopio (a uno mismo o a un compañero cercano; a uno abatido lo levanta). El **curandero** del campamento atiende al jugador cuando está cerca y, cada amanecer, trata y cura a toda la tribu; los grandes guerreros aguantan más (vida según talla y aguante).
 - **El jugador no muere:** abatido, su escolta lo levanta y lo venda; si está solo, despierta en el campamento (moral −5, pierde lo que cargaba). Los compañeros sí mueren (luto: moral −6).
-- **Combate cuerpo a cuerpo:** `V` o clic izquierdo golpea con el arma empuñada (daño, alcance y cadencia por arma: dagas rápidas, mazas que rompen huesos, lanzas de largo alcance; bronce, acero y armas especiales cortan más). `Z` cubre con el escudo de frente (o con el arma, peor).
+- **Combate cuerpo a cuerpo** (`src/sim/melee.*`). Las mismas reglas valen para el jugador, la escolta y los enemigos:
+  - **Golpes y combos:** `V` (o clic izquierdo) golpea con el arma empuñada. El daño, el alcance y la cadencia dependen del arma: dagas rápidas, mazas que rompen huesos, lanzas de largo alcance; el bronce, el acero y las armas especiales cortan más. Tres golpes seguidos encadenan un **combo** (el tercero remata). Las armas cortas encadenan más rápido; con las largas (lanza, espada, guja) el remate puede tumbar.
+  - **Golpe pesado:** mantener `V` medio segundo. Más daño, desequilibra y rompe la guardia del escudo (algo de daño pasa).
+  - **Escudo:** `Z` cubre de frente (para casi todos los golpes ligeros; sin escudo, se para peor con el arma). `Z` + `V` da un **golpe de escudo** que aturde (escudo contra escudo, los dos se tambalean). Corriendo + `Z` es la **carga con escudo**, que arrolla y puede tumbar.
+  - **Patada:** `J` o clic derecho. Aparta y desequilibra; contra un escudo en guardia solo le quita la guardia. **A la carrera, con inercia**, tumba incluso al que se cubre con escudo.
+  - **Agarre y llave:** `U`. Agarra lo que el rival ofrece:
+    - el escudo con el que se cubre (se lo arranca);
+    - el brazo con el que golpea (lo desarma y lo tumba);
+    - una extremidad (lo tumba con una llave).
+    Es un pulso de fuerza, vida y peso de la armadura. Si falla, el que agarra queda expuesto.
+  - **Gancho:** `O`, con un arma con gancho (hacha, guja, alabarda). Engancha el escudo enemigo y se lo hace soltar.
+  - **En el suelo** (derribado unos 2,5 s) no se cubre ni ataca, y recibe más daño. **Desequilibrado**, no se puede cubrir. La armadura pesada cuesta más de tumbar.
+  - **Lo que sueltan los enemigos** (escudos, armas) queda en el suelo. Si te lo arrancan a ti, `X` vuelve a empuñar.
+- **Armas de mano:**
+  - `H` enfunda y desenfunda; `X` cambia de empuñadura.
+  - `Mayús+X` pasa el arma a la otra mano. Con el escudo o un arma a dos manos no se puede. Con la izquierda sola se golpea peor.
+  - Con un arma en cada mano, el combo alterna derecha e izquierda.
+- **IA:** los bandidos y los captores llevan escudo a veces y se cubren cuando vas a golpear. Contra tu escudo en guardia patean (a la carrera si vienen corriendo), agarran o enganchan (los fanáticos llevan hacha). Si estás en el suelo, rematan. La escolta pelea igual (los grandes guerreros, con guja).
 - **Enemigos:** bandidos, arqueros, fanáticos y captores del culto. Ven al jugador según la distancia (acechando cuesta más), persiguen, golpean y huyen malheridos (los fanáticos nunca). Lejos del campamento aparecen bandidos o el culto de día. Se desangran también. Las fieras (lobos, osos, hienas...) son fauna: ver «Fauna».
 - **Escolta:** pelea a tu lado y puede caer herida.
 - **Peligros que hieren:** caer al hielo golpea, un socavón de nieve puede romper una pierna y la hipotermia congela manos y pies.
 - **HUD:** vida y sangre bajo el calor; `P` abre el panel de heridas (tuyas y de la tribu); barras de vida sobre enemigos y compañeros heridos.
-- **Animación:** clips nuevos `abatido`, `cojear` y `vendar`; se usan `ataque_*`, `estocada_lanza`, `bloquear`, `recibir_golpe` y `morir`.
+- **Animación:**
+  - Clips nuevos de salud: `abatido`, `cojear` y `vendar`.
+  - Clips nuevos cuerpo a cuerpo: `ataque_pesado`, `patada`, `patada_carrera`, `golpe_escudo`, `carga_escudo`, `enganchar_escudo`, `derribado` y `cambiar_mano`.
+  - Se usan además `ataque_*`, `estocada_lanza`, `bloquear`, `agarre`, `recibir_golpe` y `morir`.
+  - Sin modelos, el cuerpo articulado muestra la patada, el agarre y el escudo.
 - **Prueba:** `9` hace aparecer bandidos delante (`Shift+9` lobos, `Ctrl+9` culto); `--enemigos bandidos|culto|arqueros|lobos|<animal>` (p. ej. `tigre`, `jabali`) y `--heridas` al arrancar.
 
 **Pendiente:** combate montado, captores que se llevan prisioneros, botín de los enemigos.

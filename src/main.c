@@ -472,7 +472,7 @@ int main(int argc, char **argv) {
                 hz_update(&g_hazards, &g_climate, &terrain, &player, &g_actions, &g_props, &troop, camp.fire, world_time,
                           dt, log, sizeof(log));
             if (!gallery_mode)
-                cb_update(&g_combat, &player, &g_actions, &troop, &terrain, camp.fire,
+                cb_update(&g_combat, &player, &g_actions, &troop, &g_props, &terrain, camp.fire,
                           !menu && !hz_blocks_input(&g_hazards), clock_is_night(world_time), g_climate.temp_mean < 0.0f,
                           rig.yaw, rig.pitch, dt, log, sizeof(log));
             if (!gallery_mode)

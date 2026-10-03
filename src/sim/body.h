@@ -33,6 +33,9 @@ typedef struct {
     bool aiming;      // brazos al frente (arco)
     bool down;        // tendido en el suelo
     float scale;      // talla (1 = 1.7 m)
+    float kick;       // [0, 1] patada: la pierna derecha arriba y adelante
+    float grab;       // [0, 1] agarre: los dos brazos al frente
+    float guard;      // [0, 1] escudo en alto (cubrirse) o empujando (golpe de escudo)
 } BodyPoseParams;
 
 void body_pose(BodyPose *out, const BodyPoseParams *p);

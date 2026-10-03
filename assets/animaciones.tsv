@@ -51,6 +51,14 @@ humanoide	bloquear	Cubrirse con el escudo o el arma.	si	*	obligatoria	combate
 humanoide	agarre	Agarrar al rival (grappling).	no	*	obligatoria	combate
 humanoide	derribo	Derribar al rival agarrado.	no	*	obligatoria	combate
 humanoide	proyeccion	Proyectar al rival por encima.	no	*	obligatoria	combate
+humanoide	ataque_pesado	Golpe pesado: carga y descarga (rompe la guardia).	no	*	obligatoria	combate cuerpo a cuerpo
+humanoide	patada	Patada frontal (aparta, desequilibra).	no	*	obligatoria	combate cuerpo a cuerpo
+humanoide	patada_carrera	Patada a la carrera, con inercia (tumba aun con escudo).	no	*	obligatoria	combate cuerpo a cuerpo
+humanoide	golpe_escudo	Empujón con el escudo (aturde).	no	*	obligatoria	combate cuerpo a cuerpo
+humanoide	carga_escudo	Carga a la carrera tras el escudo.	no	*	obligatoria	combate cuerpo a cuerpo
+humanoide	enganchar_escudo	Enganchar el escudo enemigo con el arma y tirar.	no	*	obligatoria	combate cuerpo a cuerpo
+humanoide	derribado	Derribado: en el suelo un momento y levantarse.	no	*	obligatoria	combate cuerpo a cuerpo
+humanoide	cambiar_mano	Pasar el arma a la otra mano.	no	*	obligatoria	combate cuerpo a cuerpo
 humanoide	disparar_arco	Tensar y soltar.	no	*	obligatoria	combate a distancia
 humanoide	disparar_ballesta	Disparar la ballesta.	no	*	obligatoria	combate a distancia
 humanoide	recargar_ballesta	Recargar la ballesta.	no	*	obligatoria	combate a distancia

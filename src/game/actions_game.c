@@ -10,6 +10,7 @@
 #include "rlgl.h"
 #include "sim/anim_index.h"
 #include "sim/body.h"
+#include "sim/melee.h"
 #include "sim/clock.h"
 #include "world/body_draw.h"
 #include "ui/theme.h"
@@ -479,6 +480,7 @@ static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const T
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
                size_t log_len) {
     sync_npcs(ga, troop, t);
+    ga->swap_anim = fmaxf(0.0f, ga->swap_anim - dt);
     const int total = ACTION_COUNT + BUILD_COUNT + CRAFT_COUNT;
 
     if (IsKeyPressed(KEY_TAB)) ga->menu_open = !ga->menu_open;
@@ -494,7 +496,12 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             else start_craft(ga, (CraftId)(ga->cursor - ACTION_COUNT - BUILD_COUNT), props, troop, log, log_len);
         }
     } else if (ga->doing < 0 && !ga->climbing) {
-        if (IsKeyPressed(KEY_X)) start_action(ga, ACTION_CHANGE_GRIP, props, p, log, log_len);
+        if (IsKeyPressed(KEY_X) && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) { // cambiar de mano
+            snprintf(log, log_len, hands_swap(&ga->hands) ? "Pasas el arma a la otra mano: %s."
+                                                         : "No se puede: el escudo va en el brazo izquierdo y las armas a dos manos, en las dos (%s).",
+                     grip_name(hands_grip(&ga->hands)));
+            ga->swap_anim = 0.5f;
+        } else if (IsKeyPressed(KEY_X)) start_action(ga, ACTION_CHANGE_GRIP, props, p, log, log_len);
         if (IsKeyPressed(KEY_H)) start_action(ga, ACTION_SHEATHE, props, p, log, log_len);
         if (IsKeyPressed(KEY_F)) start_action(ga, ACTION_TAKE, props, p, log, log_len);
         if (IsKeyPressed(KEY_T)) start_action(ga, ACTION_THROW, props, p, log, log_len);
@@ -699,7 +706,9 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
             HumanoidState hs = { .moving = n->moving, .grounded = true, .doing = -1, .building = -1 };
             hs.down = m->health.down;
             hs.hit = n->hurt_anim > 0.0f;
-            hs.attacking = n->fight_anim > 0.0f ? 1 + i % 3 : 0;
+            hs.attacking = n->fight_anim > 0.0f ? 1 + n->combo % 3 : 0;
+            hs.move = n->move_anim > 0.0f ? n->move : 0;
+            hs.knocked = n->knock > 0.0f;
             hs.limping = health_speed_scale(&m->health) < 0.85f;
             if (working) hs.building = ga->projects[n->project].def;
             if (n->job >= 0 && !n->moving) hs.doing = n->job;
@@ -708,8 +717,11 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         }
         // Sin modelo: cuerpo articulado (src/sim/body.h), del color de su funcion y con su armadura.
         Vector3 base = { n->pos.x, n->pos.y + bob, n->pos.z };
+        bool kicking = n->move_anim > 0.0f && (n->move == MOVE_KICK + 1 || n->move == MOVE_RUN_KICK + 1);
         BodyPoseParams bp = { .walk_phase = time * 9.0f + (float)i, .walk = n->moving ? 1.0f : 0.0f,
-                              .attack = n->fight_anim / 0.4f, .down = m->health.down, .scale = s };
+                              .attack = kicking ? 0.0f : n->fight_anim / 0.4f, .down = m->health.down || n->knock > 0.0f,
+                              .scale = s, .kick = kicking ? n->move_anim / 0.45f : 0.0f,
+                              .grab = n->move_anim > 0.0f && n->move == MOVE_GRAPPLE + 1 ? n->move_anim / 0.45f : 0.0f };
         if (working || (n->job >= 0 && n->job_timer > 0.0f)) bp.attack = 0.5f + 0.5f * sinf(time * 6.0f + (float)i);
         BodyPose pose;
         body_pose(&pose, &bp);
@@ -785,7 +797,8 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) 
         .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = ga->hands.sheathed,
         .grip = hands_grip(&ga->hands), .doing = ga->doing, .building = -1,
         .down = ga->pl_down, .hit = ga->pl_hit, .attacking = ga->pl_attacking, .spear = ga->pl_spear,
-        .blocking = ga->pl_blocking, .limping = ga->pl_limping, .ranged = ga->pl_ranged,
+        .blocking = ga->pl_blocking, .limping = ga->pl_limping, .ranged = ga->pl_ranged, .move = ga->pl_move,
+        .knocked = ga->pl_knocked, .swapping = ga->swap_anim > 0.0f,
     };
     if (hs.mounted) hs.mount_speed = p->moving ? (p->stance == STANCE_RUN ? 8.5f : 4.0f) * ga_speed_scale(ga) : 0.0f;
     Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
