@@ -158,3 +158,14 @@ bool memmap_toggle_marker(MemoryMap *m, float x, float z, MarkerKind kind, float
     m->markers[m->marker_count++] = (MapMarker){ x, z, kind };
     return true;
 }
+
+const MemoryPage *memmap_page_slot(const MemoryMap *m, int i) {
+    return i >= 0 && i < m->capacity ? m->slots[i] : NULL;
+}
+
+bool memmap_restore_page(MemoryMap *m, const MemoryPage *page) {
+    MemoryPage *p = get_page(m, page->px, page->pz);
+    if (!p) return false;
+    *p = *page;
+    return true;
+}

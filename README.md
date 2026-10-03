@@ -24,6 +24,12 @@ ctest --test-dir build      # tests del nucleo
 En Linux hacen falta las cabeceras de X11/OpenGL:
 `sudo apt install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev`
 
+## Menú y partidas
+
+Al abrir el juego aparece el **menú de entrada**: nueva partida, cargar partida, instructivo y salir. `Esc` en la partida la pausa: continuar, guardar, cargar, instructivo, volver al título. Hay tres huecos de guardado, cada uno con su minifoto, la fecha en que se guardó, el día de juego y la tribu. `F1` muestra los controles sin salir de la partida.
+
+Las partidas se guardan en `saves/` junto al ejecutable (en Android, en el almacenamiento interno de la app). Pruebas: `--menu`, `--instructivo`, `--huecos` abren el menú; `--autoguardar N` guarda en el hueco N al terminar una captura; `--cargar N` carga el hueco N al empezar.
+
 ## Controles (Fase 0)
 
 | Acción | Teclado | Mando |
@@ -45,7 +51,7 @@ Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisi
 
 Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañero atrapado para rescatarlo · `J K L U I O` en el minijuego de rescate.
 
-Combate y salud: `V` o clic izquierdo golpear (tres seguidos: combo; mantener: golpe pesado; con arco u honda: mantener para tensar y soltar para disparar; la cámara alza la mira) · `J` o clic derecho patada (corriendo: con inercia) · `Z` cubrirse (con escudo: `Z`+`V` golpe de escudo, corriendo + `Z` carga) · `U` agarre y llave · `O` enganchar el escudo enemigo (hacha, guja, alabarda) · `Mayús+X` cambiar el arma de mano · `B` vendar (a ti o a un compañero cercano) · `L` encender la flecha junto a un fuego · `P` heridas y armadura · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros).
+Combate y salud: `V` o clic izquierdo golpear (tres seguidos: combo; mantener: golpe pesado; con arco u honda: mantener para tensar y soltar para disparar; la cámara alza la mira) · `J` o botón central del ratón patada (corriendo: con inercia) · `Z` cubrirse (con escudo: `Z`+`V` golpe de escudo, corriendo + `Z` carga) · `U` agarre y llave · `O` enganchar el escudo enemigo (hacha, guja, alabarda) · `Mayús+X` cambiar el arma de mano · `B` vendar (a ti o a un compañero cercano) · `L` encender la flecha junto a un fuego · `P` heridas y armadura · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros).
 
 Fauna: lazo (menú) para domar monturas o atar un depredador debilitado · `K` dar de comer al atado, despiezar un cadáver u ordeñar · `Mayús+K` sacrificar ganado · caminar cerca del ganado lo pastorea · golpear hacia el agua (o una flecha) pesca · `K` en una colmena con la antorcha encendida: miel. Prueba: `--lago` arranca en la orilla de un lago.
 

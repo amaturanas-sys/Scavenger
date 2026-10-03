@@ -3,7 +3,7 @@
 //  - salud del jugador: vida, sangre y heridas; abatido, lo levanta la escolta
 //    o despierta en el campamento;
 //  - cuerpo a cuerpo (src/sim/melee.h): V golpe y combos (mantener: pesado),
-//    J o clic derecho patada (corriendo: con inercia), Z cubrirse (con escudo:
+//    J o botón central patada (corriendo: con inercia), Z cubrirse (con escudo:
 //    Z + V golpe de escudo; corriendo + Z carga), U agarre y llave, O enganchar el
 //    escudo enemigo con el arma; los enemigos y la escolta usan lo mismo;
 //  - armas a distancia: mantener V (o clic) para tensar y soltar para disparar;

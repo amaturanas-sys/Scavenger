@@ -55,6 +55,10 @@ typedef struct {
 MemoryParams memmap_default_params(void);
 void memmap_init(MemoryMap *m);
 void memmap_free(MemoryMap *m);
+// Guardado: recorrer las paginas (i en [0, capacity), NULL si el hueco esta vacio) y
+// restaurar una pagina leida (la crea si no existe).
+const MemoryPage *memmap_page_slot(const MemoryMap *m, int i);
+bool memmap_restore_page(MemoryMap *m, const MemoryPage *page);
 
 // El jugador esta en (x, z) durante dt segundos; now = tiempo de juego (s).
 void memmap_visit(MemoryMap *m, float x, float z, float dt, float now);
