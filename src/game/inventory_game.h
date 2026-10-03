@@ -30,6 +30,35 @@ float ig_carried_kg(const GameActions *ga);
 float ig_speed_scale(const GameActions *ga); // la carga frena
 // Suma de los amuletos colgados.
 float ig_stat(const GameActions *ga, Stat s);
+// ---------------------------------------------------------------- reparaciones
+typedef struct {
+    bool worn;      // puesta (si no, en un contenedor a mano)
+    int slot;       // hueco de armadura
+    Bag *bag;       // contenedor (si no esta puesta)
+    int bag_slot;
+    char id[INV_ID_LEN];
+    float cond;     // estado [0, 1]
+    int material;   // ArmorMaterial
+} RepairItem;
+
+// Las piezas gastadas a mano: las que llevas puestas y las de tus contenedores cercanos.
+int ig_repair_list(GameActions *ga, const Props *props, const Player *p, RepairItem *out, int max);
+// Que falta para reparar (NULL si se puede). Escribe el motivo en why.
+bool ig_can_repair(GameActions *ga, const Props *props, const Player *p, const Troop *troop, const RepairItem *it, char *why,
+                   size_t len);
+bool ig_repair(GameActions *ga, const Props *props, const Player *p, const Troop *troop, const RepairItem *it, char *log,
+               size_t len);
+// Ingredientes: ¿hay todo a mano (encima, cerca o en el campamento)? Devuelve el primero que falta.
+const Ingredient *ig_first_missing(GameActions *ga, const Props *props, const Player *p, const Ingredient *mats);
+void ig_use_all(GameActions *ga, const Props *props, const Player *p, const Ingredient *mats);
+
+// ---------------------------------------------------------------- botin
+// Deja una bolsa de botin en pos con esos objetos. false si no habia hueco.
+bool ig_drop_loot(GameActions *ga, Vector3 pos, const LootItem *items, int n);
+// Recoge la bolsa de botin mas cercana (a menos de 2.5 m): lo que no cabe se queda en ella.
+bool ig_take_loot(GameActions *ga, const Props *props, const Player *p, char *log, size_t len);
+void ig_draw_world(const GameActions *ga, const Terrain *t, float time);
+
 void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool input_ok, char *log, size_t len);
 void ig_draw(const GameActions *ga, const Combat *cb, const Props *props, const Player *p, int w, int h);
 

@@ -297,6 +297,47 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - la monta da velocidad montado;
   - el carisma sube el ánimo de la tribu cada día.
 
+### Fabricar y reparar (implementado — `src/sim/economy.*`, en juego `src/game/actions_game.c` y `src/game/inventory_game.*`)
+- **El menú Tab tiene cuatro pestañas:** Acciones, Obras, Fabricar y Reparar (A/D o flechas laterales para cambiar). Cada receta muestra sus ingredientes con lo que tienes a mano (encima, en las alforjas o la carreta cercanas, o en el acopio si estás en el campamento) y marca lo que falta.
+- **A mano, sin taller, lo hace el jugador:**
+  - flechas: leña, plumas y pedernal (5 por tanda);
+  - virotes: leña y hueso (4);
+  - piedras de honda (8);
+  - cuerda de tendones;
+  - ungüento: hierbas y miel (cierra las heridas, corta el veneno y devuelve algo de vida al vendar con B);
+  - coraza laminar de cuero (pieles y cuerda) y botas de fieltro (pieles).
+- **Forjado:** las armas y armaduras de metal piden su horno y un herrero, y las hace la tribu.
+- **Ingredientes recolectables:**
+  - matas de hierbas y pedernal en el campo (F; Mayús+F recoge todo lo cercano);
+  - plumas de las aves, hueso y tendones del resto de animales al despiezarlos (K);
+  - miel de las colmenas.
+- **Reparar:** la pestaña lista las piezas gastadas que llevas puestas y las de tus contenedores cercanos, con su estado.
+  - El fieltro y el cuero se remiendan con pieles (y cuerda), en cualquier sitio.
+  - El bronce, el hierro y el acero piden herrero, su horno en el campamento y metal con carbón.
+  - Cada reparación devuelve parte del estado (60 % el cuero, 80 % el metal).
+
+### Combate montado y botín (implementado — `src/sim/combat.*`, en juego `src/game/combat_game.*`)
+- **A caballo solo se golpea con el arma** (V; mantener: golpe pesado). Patadas, agarres, ganchos y cargas con escudo son a pie.
+- **El golpe montado:**
+  - llega 0,9 m más lejos;
+  - suma la inercia del galope: ×1 parado, hasta ×1,8 a 12 m/s;
+  - con lanza por encima de 6 m/s, un golpe que no se para derriba el 60 % de las veces.
+- **Arrollar:** al galope el caballo arrolla al que esté delante y lo tumba. Otro jinete solo cae el 30 % de las veces.
+- **Contra el jinete:**
+  - la montura suma 80 kg contra los derribos;
+  - el 35 % de los golpes que pasan los recibe el caballo;
+  - un derribo tira al jinete del caballo.
+- **A distancia montado:** la velocidad dispersa el tiro; la monta (amuleto del caballo) lo corrige.
+- **Jinetes bandidos:** rápidos, con sable y cuero.
+  - Aparecen en grupo o acompañando a los bandidos.
+  - Derribados, caen del caballo, que queda suelto y se puede domar con el lazo.
+- **Botín:** cada enemigo abatido deja una bolsa en el suelo. Contiene:
+  - a veces su arma y su escudo (si aún los tenía);
+  - flechas y su arco (arqueros), cuerda (captores), hierbas y ungüento (culto), carne seca;
+  - rara vez un amuleto;
+  - la mitad de sus piezas de armadura no rotas, con su desgaste.
+- **Recoger el botín:** F junto a la bolsa guarda lo que quepa; el resto se queda en ella. Las bolsas desaparecen a los 15 minutos.
+
 ### Fauna (implementado — `src/sim/animals.*`, en juego `src/game/fauna_game.*`)
 - **Cinco clases de animales:**
   - **Monturas** (caballo, mula, burro, buey, camello, elefante): presas que se doman con el lazo (probabilidad propia de cada especie) y se montan con silla. Montado vas más rápido: caballo ×2,4, mula ×1,8, camello ×1,7, elefante ×1,6, burro ×1,5, buey ×1,3.

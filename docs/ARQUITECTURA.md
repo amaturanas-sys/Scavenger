@@ -21,13 +21,13 @@ src/
     climate.*    clima: temperatura, tiempo, nieve, lagos, glaciares
     hazards.*    frio, barro, hielo, socavones, desierto, minijuego (QTE)
     health.*     vida, sangre y heridas (jugador, tribu, enemigos)
-    combat.*     armas, enemigos y reglas de cada golpe
+    combat.*     armas, enemigos (y jinetes), reglas de cada golpe, botin, inercia montada
     body.*       cuerpo humano articulado por zonas (dibujo e impactos)
     armor.*      armadura por piezas: materiales, cobertura, durabilidad
     ballistics.* armas a distancia y trayectoria de proyectiles
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
-    economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
+    economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja, fabricar a mano, reparar
     animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado, anfibios
     swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
     fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
@@ -47,12 +47,12 @@ src/
     player.*
     actions_game.*  menu de acciones, atajos, obras en curso
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates
-    combat_game.*   combate, enemigos, vendajes, salud de la tribu y del jugador
+    combat_game.*   combate (a pie y montado), enemigos, botin, vendajes, salud de la tribu y del jugador
     fauna_game.*    fauna en el mundo: aparicion por bioma, ataques, K (comer, despiezar, ordeñar)
     disasters_game.* fuego, rayos, lluvia torrencial, fogatas apagadas por la lluvia
     save_game.*     partidas guardadas: tres huecos versionados con minifoto y fecha
     title_menu.*    menu de entrada y de pausa, huecos, instructivo (arte en assets/ui/)
-    inventory_game.* inventario (I) y equipo (P): contenedores a mano, armadura, amuletos
+    inventory_game.* inventario (I) y equipo (P): contenedores a mano, armadura, amuletos, reparar, bolsas de botin
   ui/       Interfaz (raylib)
     theme.*      tema de orfebreria: paneles, barras, texto
     minimap.*    minimapa circular tipo brujula

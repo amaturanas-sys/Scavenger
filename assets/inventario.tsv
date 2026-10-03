@@ -16,6 +16,7 @@ mapa.agua.oasis	Oasis	bioma:desierto,uso:recolectable	12x1x12	250	pendiente	Agua
 mapa.agua.rio	Tramo de río modular	bioma:cualquiera,uso:navegable	8x0.5x8	120	pendiente	
 mapa.agua.tempano	Témpano de hielo	bioma:fiordo,uso:decorado	3x1x3	60	pendiente	
 mapa.vegetacion.hierba_alta	Hierba alta (escondite)	bioma:estepa,uso:escondite	2x1x2	40	pendiente	El jugador puede esconderse dentro.
+mapa.vegetacion.mata_hierbas	Mata de hierbas curativas	bioma:estepa,uso:recolectable	0.8x0.6x0.8	80	pendiente	F para recoger hierbas curativas.
 mapa.vegetacion.arbusto	Arbusto estepario	bioma:estepa,uso:decorado	1x0.8x1	40	pendiente	
 mapa.vegetacion.pino	Pino	bioma:bosque,uso:trepable	3x10x3	120	pendiente	
 mapa.vegetacion.alerce	Alerce	bioma:bosque,uso:trepable	3x12x3	120	pendiente	
@@ -284,6 +285,7 @@ utileria.consumible.pan	Pan del imperio	uso:recolectable,uso:consumible	0.2x0.15
 utileria.consumible.carne_fresca	Carne fresca	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	De la caza o el sacrificio; se come antes que la seca.
 utileria.consumible.leche	Leche	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	Del ordeño diario del ganado.
 utileria.consumible.miel	Miel silvestre	uso:recolectable,uso:consumible	0.15x0.15x0.15	40	pendiente	De las colmenas, con humo.
+utileria.consumible.unguento	Ungüento de hierbas y miel	uso:recolectable,uso:consumible	0.1x0.1x0.1	30	pendiente	Cura más que las hierbas: corta el veneno y cierra las heridas.
 utileria.herramienta.pala	Pala	uso:equipable,manos:dos,material:hierro	0.25x1.2x0.05	60	pendiente	Para cavar trincheras.
 utileria.herramienta.gancho_trepa	Trepa (gancho con cuerda)	uso:equipable,manos:una,material:hierro	0.3x0.4x0.3	80	pendiente	Se lanza para escalar muros en los asedios.
 utileria.objeto.lena	Haz de leña	uso:recolectable,material:madera	0.5x0.3x0.8	40	pendiente	Material de fogatas, hogueras y hornos.
@@ -296,6 +298,10 @@ utileria.material.carbon	Carbón vegetal	uso:recolectable,uso:material	0.4x0.3x0
 utileria.material.cobre	Mineral de cobre	uso:recolectable,uso:material,material:cobre	0.25x0.2x0.25	30	pendiente	Material del acopio de la tribu.
 utileria.material.estano	Mineral de estaño	uso:recolectable,uso:material,material:estaño	0.25x0.2x0.25	30	pendiente	Material del acopio de la tribu.
 utileria.material.hierro	Mineral de hierro	uso:recolectable,uso:material,material:hierro	0.25x0.2x0.25	30	pendiente	Material del acopio de la tribu.
+utileria.material.plumas	Plumas	uso:recolectable,uso:material	0.2x0.05x0.3	20	pendiente	De las aves cazadas: para emplumar flechas.
+utileria.material.hueso	Huesos	uso:recolectable,uso:material,material:hueso	0.3x0.1x0.3	30	pendiente	Del despiece: puntas de virote.
+utileria.material.tendones	Tendones	uso:recolectable,uso:material	0.2x0.05x0.3	20	pendiente	Del despiece: cuerda.
+utileria.material.pedernal	Pedernal	uso:recolectable,uso:material,material:piedra	0.15x0.1x0.15	30	pendiente	Se recoge en la estepa: puntas de flecha.
 personaje.base.cuerpo_nino	Cuerpo base: niño	rig:humanoide,talla:pequena	0.35x1.2x0.25	800	pendiente	Malla base modular: ropa y armadura encajan encima.
 personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.5x1.7x0.3	1200	pendiente	
 personaje.base.cuerpo_robusto	Cuerpo base: adulto robusto	rig:humanoide,talla:grande	0.6x1.85x0.35	1300	pendiente	

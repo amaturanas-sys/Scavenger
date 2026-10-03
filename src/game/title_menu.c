@@ -36,7 +36,9 @@ static const HelpPage PAGES[] = {
         "",
         "Tu personaje no muere: abatido, tu escolta te levanta o despiertas en el campamento. Tus compañeros sí pueden morir." } },
     { "La tribu y el campamento", 6,
-      { "Tab: acciones, obras en grupo y forja · I: acopio de la tribu",
+      { "Tab: acciones, obras, fabricar y reparar (A/D cambia de pestaña) · I: inventario",
+        "Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.",
+        "Reparar: el cuero y el fieltro con pieles; el bronce y el hierro, herrero, horno y metal.",
         "Y: dos integrantes te escoltan · G: ficha del gran guerrero",
         "La tribu come carne fresca y leche antes que la seca; con hambre baja la moral.",
         "Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.",
@@ -51,7 +53,9 @@ static const HelpPage PAGES[] = {
         "O engancha el escudo enemigo con hacha, guja o alabarda",
         "X cambiar empuñadura · Mayús+X pasar el arma de mano · H enfundar",
         "",
-        "B venda heridas con hierbas · P equipo y heridas · I inventario",
+        "B venda heridas con hierbas (o ungüento) · P equipo y heridas · I inventario",
+        "A caballo: V golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo.",
+        "Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se queda).",
         "Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales." } },
     { "Arcos, flechas y armaduras", 5,
       { "Arco, ballesta u honda: mantén V para tensar y suelta para disparar. La cámara alza la mira: la curva amarilla muestra dónde caerá; la caída depende del peso del proyectil y de la potencia del arma.",
@@ -330,7 +334,7 @@ void menu_draw_controls(int x, int y, int w, int h) {
     static const char *cols[2][9] = {
         { "WASD mover · Shift correr", "C acechar · Espacio saltar", "Q/E cámara · M marcar", "V golpe (mantener: pesado)",
           "J patada · Z cubrirse", "U agarre · O gancho", "B vendar · P equipo", "L encender flecha", "X/H empuñar/enfundar" },
-        { "Tab acciones y forja", "I inventario · Y escolta", "F tomar · T lanzar", "R montar · K animal", "G ficha · M mapa",
+        { "Tab acciones/fabricar", "I inventario · Y escolta", "F tomar/botín · T lanzar", "R montar · K animal", "G ficha · M mapa",
           "Mayús+X cambiar de mano", "Esc menú: guardar/cargar", "F1 cerrar esta ayuda", "" },
     };
     ui_text("Controles", x + UI_PANEL_INSET + 2, y + UI_PANEL_INSET, 10, UI_GOLD_LIGHT);

@@ -84,6 +84,17 @@ int fg_spawn_group(GameActions *ga, Species s, float x, float z) {
     return made;
 }
 
+int fg_spawn_one(GameActions *ga, Species s, float x, float z, float yaw) {
+    int i = free_slot(ga);
+    if (i < 0) return -1;
+    Animal *a = &ga->animals[i];
+    animal_init(a, s, x, z);
+    a->home_x = x, a->home_z = z;
+    a->group = -1;
+    a->yaw = yaw;
+    return i;
+}
+
 void fg_init(GameActions *ga, const Terrain *t) {
     ga->next_group = 1;
     // Ganado del campamento y manadas en los alrededores.
@@ -440,6 +451,14 @@ static void butcher(GameActions *ga, const Player *p, Animal *a, char *log, size
     if (!animal_butcher(a, &meat, &hide)) return;
     // A lo que lleves encima (o a lo que tengas cerca); lo que no cabe se queda.
     int kept = ig_store(ga, NULL, p, FRESH_MEAT_ID, meat, 1.0f) + ig_store(ga, NULL, p, HIDE_ID, hide, 1.0f);
+    // Para fabricar: plumas de las aves; huesos y tendones de los grandes.
+    const SpeciesDef *sd = species_def(a->species);
+    if (sd->flier) ig_store(ga, NULL, p, "utileria.material.plumas", 3, 1.0f);
+    else if (sd->size >= 1.0f) {
+        int k = sd->size >= 2.0f ? 2 : 1;
+        ig_store(ga, NULL, p, "utileria.material.hueso", k, 1.0f);
+        ig_store(ga, NULL, p, "utileria.material.tendones", k, 1.0f);
+    }
     char who[48];
     snprintf(log, len, "%s %s: +%d carne fresca, +%d pieles%s", how, lower(species_def(a->species)->name, who, sizeof(who)),
              meat, hide, kept < meat + hide ? TextFormat(" (no te cabe todo: %d se quedan)", meat + hide - kept) : ".");

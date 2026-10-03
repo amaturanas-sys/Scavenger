@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**334 objetos** · 1 con modelo · 333 pendientes.
+**340 objetos** · 1 con modelo · 339 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -11,7 +11,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
-| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 28 | 28 | 0 | 0 | 0 |
+| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 29 | 29 | 0 | 0 | 0 |
 | [Estructuras](#estructura) | 42 | 41 | 1 | 0 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 46 | 46 | 0 | 0 | 0 |
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 14 | 14 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 18 | 18 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 31 | 31 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 36 | 36 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -67,6 +67,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.agua.rio` | Tramo de río modular | 8x0.5x8 | 120 | pendiente | `bioma:cualquiera` `uso:navegable` |  |
 | `mapa.agua.tempano` | Témpano de hielo | 3x1x3 | 60 | pendiente | `bioma:fiordo` `uso:decorado` |  |
 | `mapa.vegetacion.hierba_alta` | Hierba alta (escondite) | 2x1x2 | 40 | pendiente | `bioma:estepa` `uso:escondite` | El jugador puede esconderse dentro. |
+| `mapa.vegetacion.mata_hierbas` | Mata de hierbas curativas | 0.8x0.6x0.8 | 80 | pendiente | `bioma:estepa` `uso:recolectable` | F para recoger hierbas curativas. |
 | `mapa.vegetacion.arbusto` | Arbusto estepario | 1x0.8x1 | 40 | pendiente | `bioma:estepa` `uso:decorado` |  |
 | `mapa.vegetacion.pino` | Pino | 3x10x3 | 120 | pendiente | `bioma:bosque` `uso:trepable` |  |
 | `mapa.vegetacion.alerce` | Alerce | 3x12x3 | 120 | pendiente | `bioma:bosque` `uso:trepable` |  |
@@ -419,6 +420,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.consumible.carne_fresca` | Carne fresca | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | De la caza o el sacrificio; se come antes que la seca. |
 | `utileria.consumible.leche` | Leche | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | Del ordeño diario del ganado. |
 | `utileria.consumible.miel` | Miel silvestre | 0.15x0.15x0.15 | 40 | pendiente | `uso:recolectable` `uso:consumible` | De las colmenas, con humo. |
+| `utileria.consumible.unguento` | Ungüento de hierbas y miel | 0.1x0.1x0.1 | 30 | pendiente | `uso:recolectable` `uso:consumible` | Cura más que las hierbas: corta el veneno y cierra las heridas. |
 | `utileria.herramienta.pala` | Pala | 0.25x1.2x0.05 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Para cavar trincheras. |
 | `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
 | `utileria.objeto.lena` | Haz de leña | 0.5x0.3x0.8 | 40 | pendiente | `uso:recolectable` `material:madera` | Material de fogatas, hogueras y hornos. |
@@ -431,6 +433,10 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.material.cobre` | Mineral de cobre | 0.25x0.2x0.25 | 30 | pendiente | `uso:recolectable` `uso:material` `material:cobre` | Material del acopio de la tribu. |
 | `utileria.material.estano` | Mineral de estaño | 0.25x0.2x0.25 | 30 | pendiente | `uso:recolectable` `uso:material` `material:estaño` | Material del acopio de la tribu. |
 | `utileria.material.hierro` | Mineral de hierro | 0.25x0.2x0.25 | 30 | pendiente | `uso:recolectable` `uso:material` `material:hierro` | Material del acopio de la tribu. |
+| `utileria.material.plumas` | Plumas | 0.2x0.05x0.3 | 20 | pendiente | `uso:recolectable` `uso:material` | De las aves cazadas: para emplumar flechas. |
+| `utileria.material.hueso` | Huesos | 0.3x0.1x0.3 | 30 | pendiente | `uso:recolectable` `uso:material` `material:hueso` | Del despiece: puntas de virote. |
+| `utileria.material.tendones` | Tendones | 0.2x0.05x0.3 | 20 | pendiente | `uso:recolectable` `uso:material` | Del despiece: cuerda. |
+| `utileria.material.pedernal` | Pedernal | 0.15x0.1x0.15 | 30 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Se recoge en la estepa: puntas de flecha. |
 
 <a id="personaje"></a>
 

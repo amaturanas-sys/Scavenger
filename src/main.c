@@ -345,6 +345,8 @@ int main(int argc, char **argv) {
     bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
     MenuScreen start_menu_screen = MENU_TITLE;
     int start_save = -1, start_load = -1;
+    int start_tab = -1;   // prueba: menu Tab abierto en esa pestaña
+    bool start_loot = false; // prueba: bolsas de botin delante
     bool start_inv = false, start_equip = false; // pruebas: guardar al final en ese hueco / cargar al empezar
     float start_x = 0.0f, start_z = 0.0f;
     for (int i = 1; i < argc; i++) {
@@ -362,6 +364,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--incendio")) start_fire = true;
         else if (!strcmp(argv[i], "--menu")) start_menu = true;
         else if (!strcmp(argv[i], "--inventario")) start_inv = true;
+        else if (!strcmp(argv[i], "--pestana") && i + 1 < argc) start_tab = atoi(argv[++i]);
+        else if (!strcmp(argv[i], "--botin")) start_loot = true;
         else if (!strcmp(argv[i], "--equipo")) start_equip = true;
         else if (!strcmp(argv[i], "--autoguardar") && i + 1 < argc) start_save = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--cargar") && i + 1 < argc) start_load = atoi(argv[++i]) - 1;
@@ -524,6 +528,19 @@ int main(int argc, char **argv) {
             g_actions.equip_open = start_equip;
             start_inv = start_equip = false;
         }
+        if (start_tab >= 0 && frame == 3) { // prueba: menu Tab (0 acciones, 1 obras, 2 fabricar, 3 reparar)
+            g_actions.menu_open = true;
+            g_actions.menu_tab = start_tab;
+            start_tab = -1;
+        }
+        if (start_loot && frame == 3) { // prueba: un par de bolsas de botin delante del jugador
+            LootItem a[] = { { "arma.corta.sable", 1, 0.6f }, { "proyectil.flecha.comun", 6, 1.0f }, { "armadura.casco.laminar_cuero", 1, 0.4f } };
+            LootItem b[] = { { "utileria.consumible.carne_seca", 2, 1.0f }, { "accesorio.amuleto.caballo", 1, 1.0f } };
+            float fx = sinf(player.yaw), fz = cosf(player.yaw);
+            ig_drop_loot(&g_actions, (Vector3){ player.pos.x + fx * 3.0f, player.pos.y, player.pos.z + fz * 3.0f }, a, 3);
+            ig_drop_loot(&g_actions, (Vector3){ player.pos.x + fx * 4.5f + fz * 1.5f, player.pos.y, player.pos.z + fz * 4.5f - fx * 1.5f }, b, 2);
+            start_loot = false;
+        }
         if (start_load >= 0 && frame == 2) { // prueba: cargar un hueco al empezar
             if (save_read(start_load, &gs, err, sizeof(err))) snprintf(log, sizeof(log), "Partida cargada (hueco %d).", start_load + 1);
             else snprintf(log, sizeof(log), "%s", err);
@@ -543,6 +560,7 @@ int main(int argc, char **argv) {
             world_time += dt;
             int prev_champion = last_champion;
             if (!menu) debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log));
+            g_actions.player_armor = &g_combat.armor; // para reparar lo que llevas puesto
             if (!gallery_mode) ga_update(&g_actions, &g_props, &terrain, &player, &troop, dt, log, sizeof(log));
             if (!gallery_mode) ga_after_player(&g_actions, &g_props, &terrain, &player);
             if (start_trap && frame == 3 && !gallery_mode) { // prueba: la tribu ya esta ubicada
@@ -626,6 +644,7 @@ int main(int argc, char **argv) {
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
         if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());
+        if (!gallery_mode) ig_draw_world(&g_actions, &terrain, (float)GetTime());
         if (!gallery_mode) dz_draw_world(&g_dz, &terrain, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
         if (!gallery_mode) hz_draw_world(&g_hazards, &terrain, &g_actions, &troop, (float)GetTime());
@@ -656,7 +675,7 @@ int main(int argc, char **argv) {
                          player.pos, rig.yaw, player.yaw, world_time);
             draw_clock_bar(VIRTUAL_W - MINIMAP_RADIUS - 10, 2 * MINIMAP_RADIUS + 19, 2 * MINIMAP_RADIUS - 8, world_time);
             draw_weather_text(VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 27, &climate);
-            ga_draw_hud(&g_actions, &g_props, &troop, VIRTUAL_W, VIRTUAL_H);
+            ga_draw_hud(&g_actions, &g_props, &troop, &player, VIRTUAL_W, VIRTUAL_H);
             hz_draw_hud(&g_hazards, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 40, VIRTUAL_W, VIRTUAL_H);
             cb_draw_hud(&g_combat, &g_actions, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 63, VIRTUAL_W, VIRTUAL_H);
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);

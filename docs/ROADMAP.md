@@ -83,7 +83,9 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Cuerpo a cuerpo para todos: combos con armas cortas y largas, golpe pesado, patada y patada con inercia, escudo (bloqueo, golpe, carga), agarre y llave, gancho al escudo; enfundar, empuñar y cambiar de mano.
 - [x] Clima con azar: incendios forestales en verano, rayos que queman árboles y estructuras, derrumbes por lluvia torrencial sin mantenimiento; la lluvia apaga todo fuego. Flechas encendidas.
 - [x] Animales acuáticos y anfibios (peces, cocodrilos, tortugas), venenosos (víbora, escorpión, araña) con veneno, e insectos en enjambre (abejas con miel, avispas, mosquitos, moscas).
-- [ ] Trepar árboles y rocas sin trepa, y combate montado (Fase 2).
+- [x] Menú de fabricar (a mano y forja) con ingredientes recolectables, y reparación de armaduras por material.
+- [x] Combate montado (golpe con inercia, lanza que derriba, arrollar, la montura recibe golpes, derribo que desmonta), jinetes bandidos y botín de los enemigos.
+- [ ] Trepar árboles y rocas sin trepa (Fase 2).
 
 ## Inventario de assets (ver [INVENTARIO.md](INVENTARIO.md))
 - [x] Inventario de 304 objetos en 14 categorías con etiquetas, medidas, presupuesto de triángulos y estado (`assets/inventario.tsv`).
