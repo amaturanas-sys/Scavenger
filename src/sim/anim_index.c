@@ -1,5 +1,7 @@
 #include "sim/anim_index.h"
 
+#include "sim/melee.h"
+
 const char *anim_for_action(ActionId a) {
     switch (a) {
     case ACTION_TAKE: return "tomar";
@@ -33,11 +35,13 @@ const char *anim_humanoid(const HumanoidState *s) {
     // De mayor a menor prioridad: lo que el cuerpo no puede dejar de hacer primero.
     if (s->dead) return "morir";
     if (s->down) return "abatido";
+    if (s->knocked) return "derribado";
     if (s->hit) return "recibir_golpe";
     if (s->climbing) return s->climb_top ? "trepar_cima" : "trepar_cuerda";
     if (s->mounted) return s->mount_speed > 6.0f ? "jinete_galope" : s->mount_speed > 0.3f ? "jinete_paso" : "jinete_idle";
     if (!s->grounded) return "caer";
     if (s->doing >= 0) return anim_for_action((ActionId)s->doing);
+    if (s->move > 1 && s->move <= MOVE_COUNT) return move_def((MeleeMove)(s->move - 1))->clip; // patada, escudo, agarre...
     if (s->attacking > 0) {
         static const char *one[] = { "ataque_una_1", "ataque_una_2", "ataque_una_3" };
         static const char *two[] = { "ataque_dos_1", "ataque_dos_2", "ataque_dos_3" };
@@ -45,6 +49,7 @@ const char *anim_humanoid(const HumanoidState *s) {
         if (s->spear) return "estocada_lanza";
         return s->grip == GRIP_TWO_HANDED ? two[k] : one[k];
     }
+    if (s->swapping) return "cambiar_mano";
     if (s->ranged) return s->ranged == 2 ? "disparar_ballesta" : s->ranged == 3 ? "disparar_mosquete" : "disparar_arco";
     if (s->blocking) return "bloquear";
     if (s->hidden) return "acechar_idle";

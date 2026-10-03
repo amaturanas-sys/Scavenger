@@ -1,0 +1,98 @@
+// Combate cuerpo a cuerpo (C puro): golpes, combos, patadas, escudos, agarres y
+// ganchos. Las mismas reglas valen para el jugador, la tribu y los enemigos.
+//  - golpe ligero (V) y combos: tres golpes seguidos en la ventana; con armas
+//    cortas (daga, cuchillo, sable) los combos son mas rapidos; con largas (lanza,
+//    espada, guja) llegan mas lejos y el remate puede tumbar;
+//  - golpe pesado (mantener V): mas daño y rompe la guardia del escudo;
+//  - patada: aparta y desequilibra; a la carrera (con inercia) tumba incluso a
+//    quien se cubre con escudo;
+//  - escudo: bloquear (Z, de frente), golpe de escudo (Z + V: aturde), carga
+//    (corriendo + Z: embiste y puede tumbar);
+//  - agarre: del escudo (se lo arranca), del brazo armado (lo desarma) o de una
+//    extremidad, y lo tumba con una llave; si falla, el que agarra queda expuesto;
+//  - gancho: un arma con gancho (hacha, guja, alabarda) engancha el escudo enemigo
+//    y se lo hace soltar.
+// Quien esta en el suelo no se cubre y recibe mas daño hasta que se levanta.
+#ifndef ESTEPA_MELEE_H
+#define ESTEPA_MELEE_H
+
+#include <stdbool.h>
+
+#include "actions.h"
+#include "combat.h"
+#include "rng.h"
+
+typedef enum {
+    MOVE_LIGHT,        // golpe (y combo)
+    MOVE_HEAVY,        // golpe pesado
+    MOVE_KICK,         // patada
+    MOVE_RUN_KICK,     // patada con inercia (a la carrera)
+    MOVE_SHIELD_BASH,  // golpe de escudo
+    MOVE_SHIELD_CHARGE,// carga con escudo
+    MOVE_GRAPPLE,      // agarre y llave
+    MOVE_HOOK,         // enganchar el escudo
+    MOVE_COUNT
+} MeleeMove;
+
+typedef struct {
+    const char *name;   // UTF-8
+    const char *clip;   // animacion (assets/animaciones.tsv)
+    float reach;        // m (los golpes usan el alcance del arma)
+    float damage;       // daño base (los golpes usan el del arma)
+    float recovery;     // s hasta poder hacer otra cosa
+    WoundKind wound;
+} MoveDef;
+
+// Quien pelea, visto por las reglas.
+typedef struct {
+    bool shield;     // lleva escudo (y no lo solto)
+    bool blocking;   // se cubre
+    bool down;       // en el suelo
+    bool staggered;  // desequilibrado: no se puede cubrir
+    bool attacking;  // en mitad de un golpe (se le puede agarrar el brazo)
+    bool armed;      // tiene arma en la mano
+    float facing;    // coseno entre su frente y la direccion al rival (1 de frente)
+    float strength;  // fuerza (1 normal; grandes guerreros, mas)
+    float weight;    // kg de armadura (pesa: cuesta mas tumbarlo)
+    float health;    // [0, 1] vida restante (herido, se resiste peor)
+} Fighter;
+
+typedef enum { GRAB_NONE, GRAB_SHIELD, GRAB_WEAPON_ARM, GRAB_LIMB } GrabTarget;
+
+typedef struct {
+    bool landed;         // el movimiento conecto
+    bool blocked;        // lo paro el escudo (o el arma)
+    float damage;        // daño que pasa (antes de la armadura)
+    WoundKind wound;
+    bool knocked_down;   // al suelo
+    bool staggered;      // desequilibrado un momento (sin guardia)
+    bool shield_dropped; // solto el escudo
+    bool disarmed;       // solto el arma
+    bool attacker_staggered; // fallo el agarre o choco con otro escudo
+    GrabTarget grab;
+} MeleeResult;
+
+const MoveDef *move_def(MeleeMove m);
+// ¿El arma puede enganchar un escudo? (hacha, guja, alabarda, gancho)
+bool weapon_can_hook(const char *inv_id);
+// Arma corta (combos rapidos) o larga (alcance, remate que tumba).
+bool weapon_is_short(const char *inv_id);
+bool weapon_is_long(const char *inv_id);
+// Escala de daño del paso del combo (1, 2, 3...) y tiempo hasta el siguiente golpe.
+float melee_combo_scale(int step);
+float melee_combo_cooldown(const char *inv_id, float base, int step);
+#define COMBO_WINDOW 0.9f // s para encadenar el siguiente golpe
+
+// Resuelve un movimiento de att contra def. weapon: el arma usada en los golpes.
+MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, const char *weapon, int combo_step,
+                          Rng *rng);
+
+// Manos: pasar el arma a la otra mano (no con escudo ni a dos manos).
+bool hands_swap(Hands *h);
+// El arma con la que se golpea en este paso del combo (con dos armas, alterna).
+const char *hands_attack_weapon(const Hands *h, int combo_step, bool *off_hand);
+
+#define KNOCKDOWN_SECONDS 2.5f
+#define STAGGER_SECONDS 1.1f
+
+#endif

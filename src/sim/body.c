@@ -30,6 +30,14 @@ void body_pose(BodyPose *out, const BodyPoseParams *p) {
         arm_l = 1.5f, fore_l = 0.0f;
         arm_r = 1.5f, fore_r = 2.7f;
     }
+    if (p->guard > 0.0f) { // escudo: el brazo izquierdo al frente, el antebrazo cruzado
+        arm_l = arm_l + (1.2f - arm_l) * p->guard;
+        fore_l = 0.35f * p->guard;
+    }
+    if (p->grab > 0.0f) { // agarre: los dos brazos al frente, a la altura del pecho
+        arm_l = arm_l + (1.45f - arm_l) * p->grab, arm_r = arm_r + (1.45f - arm_r) * p->grab;
+        fore_l = fore_r = 0.2f;
+    }
     V3 sh_l = v3(0.22f, 1.40f, 0), sh_r = v3(-0.22f, 1.40f, 0);
     V3 el_l = limb(sh_l, 0.30f, arm_l), el_r = limb(sh_r, 0.30f, arm_r);
     s[PART_UPPER_ARM_L] = (BodySeg){ sh_l, el_l, 0.055f };
@@ -38,7 +46,9 @@ void body_pose(BodyPose *out, const BodyPoseParams *p) {
     s[PART_FOREARM_R] = (BodySeg){ el_r, limb(el_r, 0.28f, arm_r + fore_r), 0.05f };
     // Piernas: el muslo avanza y la rodilla se dobla cuando la pierna va atras.
     float leg_l = 0.45f * sw, leg_r = -0.45f * sw;
+    if (p->kick > 0.0f) leg_r = leg_r + (1.5f - leg_r) * p->kick, leg_l *= 1.0f - p->kick; // patada al frente
     float knee_l = -fmaxf(0.0f, -leg_l) * 1.2f, knee_r = -fmaxf(0.0f, -leg_r) * 1.2f;
+    if (p->kick > 0.0f) knee_r = -0.2f * p->kick; // la pierna estirada al golpear
     V3 hip_l = v3(0.10f, 0.88f, 0), hip_r = v3(-0.10f, 0.88f, 0);
     V3 kn_l = limb(hip_l, 0.43f, leg_l), kn_r = limb(hip_r, 0.43f, leg_r);
     s[PART_THIGH_L] = (BodySeg){ hip_l, kn_l, 0.075f };

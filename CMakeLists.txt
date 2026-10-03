@@ -44,6 +44,7 @@ add_library(estepa_sim STATIC
   src/sim/animals.c
   src/sim/swarms.c
   src/sim/fire.c
+  src/sim/melee.c
   src/sim/anim_index.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
