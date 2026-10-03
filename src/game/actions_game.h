@@ -20,6 +20,8 @@
 #include "sim/animals.h"
 #include "sim/economy.h"
 #include "sim/memory_map.h"
+#include "sim/loadout.h"
+#include "sim/storage.h"
 #include "sim/swarms.h"
 #include "world/props.h"
 #include "world/terrain.h"
@@ -27,6 +29,7 @@
 #define GA_MAX_PROJECTS 8
 #define GA_MAX_ANIMALS 64
 #define GA_MAX_SWARMS 24
+#define GA_PACKS 4 // monturas con alforjas
 
 typedef struct {
     int member_id;     // integrante de la tropa (0 = libre)
@@ -82,6 +85,17 @@ typedef struct {
     bool fire_near;     // hay un fuego al lado del jugador (para encender una flecha)
     Vector3 ignite_at[8]; // donde cayeron flechas encendidas este paso
     int ignite_n;
+    // Lo que se lleva (src/game/inventory_game.c): bolsillos, mochila, alforjas, carreta,
+    // y la armeria del campamento (el equipo que se deja alli; lo demas va al acopio).
+    Bag pockets, backpack, cart, armory;
+    Bag packs[GA_PACKS];
+    int pack_animal[GA_PACKS]; // animal que lleva cada alforja, o -1
+    // Amuletos colgados (src/sim/loadout.h) y sus ids del inventario.
+    Loadout loadout;
+    char amulet_id[AMULET_SLOTS][INV_ID_LEN];
+    // Menus de inventario y de equipo.
+    bool inv_open, equip_open;
+    int inv_pane, inv_cont[2], inv_cursor[2], equip_cursor;
     // Trepar.
     bool climbing;
     float climb_t;

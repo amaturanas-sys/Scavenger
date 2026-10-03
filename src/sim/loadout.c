@@ -94,3 +94,46 @@ bool charm_add_buff(Charm *c, const char *buff_id, BuffKind kind, Stat stat, flo
     b->mods[stat] = value;
     return true;
 }
+
+const char *stat_name(Stat s) {
+    static const char *names[STAT_COUNT] = { "aguante", "agarre", "sigilo", "puntería", "carisma", "monta" };
+    return (unsigned)s < STAT_COUNT ? names[s] : "?";
+}
+
+bool amulet_charm(const char *inv_id, Charm *out) {
+    static const struct {
+        const char *id;
+        Stat a;
+        float va;
+        Stat b;
+        float vb;
+    } AMULETS[] = {
+        { "accesorio.amuleto.lobo", STAT_STEALTH, 0.30f, STAT_GRAPPLE_POWER, 0.10f },
+        { "accesorio.amuleto.ciervo", STAT_STAMINA_REGEN, 0.30f, STAT_RIDING, 0.10f },
+        { "accesorio.amuleto.aguila_ibice", STAT_ARCHERY, 0.35f, STAT_STEALTH, 0.05f },
+        { "accesorio.amuleto.tigre_dragon", STAT_GRAPPLE_POWER, 0.35f, STAT_CHARISMA, 0.05f },
+        { "accesorio.amuleto.oso", STAT_STAMINA_REGEN, 0.20f, STAT_GRAPPLE_POWER, 0.20f },
+        { "accesorio.amuleto.caballo", STAT_RIDING, 0.35f, STAT_CHARISMA, 0.10f },
+    };
+    for (size_t i = 0; i < sizeof(AMULETS) / sizeof(AMULETS[0]); i++) {
+        if (strcmp(inv_id, AMULETS[i].id) != 0) continue;
+        const char *short_id = strrchr(inv_id, '.') + 1;
+        *out = charm_make(short_id);
+        charm_add_buff(out, "a", BUFF_PASSIVE, AMULETS[i].a, AMULETS[i].va);
+        charm_add_buff(out, "b", BUFF_PASSIVE, AMULETS[i].b, AMULETS[i].vb);
+        return true;
+    }
+    return false;
+}
+
+int charm_describe(const Charm *c, char *out, int len) {
+    int n = 0;
+    out[0] = '\0';
+    for (int b = 0; b < c->buff_count; b++)
+        for (int s = 0; s < STAT_COUNT; s++) {
+            float v = c->buffs[b].mods[s];
+            if (v == 0.0f || n >= len) continue;
+            n += snprintf(out + n, (size_t)(len - n), "%s%s %+d %%", n ? ", " : "", stat_name((Stat)s), (int)(v * 100.0f + (v > 0 ? 0.5f : -0.5f)));
+        }
+    return n;
+}

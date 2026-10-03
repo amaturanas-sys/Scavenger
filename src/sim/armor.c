@@ -63,6 +63,12 @@ bool armor_equip(Armor *a, const char *inv_id) {
     return true;
 }
 
+int armor_slot_for(const char *inv_id) {
+    ArmorSlot s;
+    ArmorPiece pc;
+    return inv_id && parse(inv_id, &s, &pc) ? (int)s : -1;
+}
+
 void armor_unequip(Armor *a, ArmorSlot s) {
     if ((unsigned)s < SLOT_COUNT) memset(&a->slot[s], 0, sizeof(a->slot[s]));
 }

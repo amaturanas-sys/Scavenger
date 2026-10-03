@@ -51,7 +51,7 @@ static const HelpPage PAGES[] = {
         "O engancha el escudo enemigo con hacha, guja o alabarda",
         "X cambiar empuñadura · Mayús+X pasar el arma de mano · H enfundar",
         "",
-        "B venda heridas con hierbas · P panel de heridas y armadura",
+        "B venda heridas con hierbas · P equipo y heridas · I inventario",
         "Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales." } },
     { "Arcos, flechas y armaduras", 5,
       { "Arco, ballesta u honda: mantén V para tensar y suelta para disparar. La cámara alza la mira: la curva amarilla muestra dónde caerá; la caída depende del peso del proyectil y de la potencia del arma.",
@@ -329,8 +329,8 @@ void menu_draw_controls(int x, int y, int w, int h) {
     ui_panel((Rectangle){ (float)x, (float)y, (float)w, (float)h }, UI_METAL_GOLD);
     static const char *cols[2][9] = {
         { "WASD mover · Shift correr", "C acechar · Espacio saltar", "Q/E cámara · M marcar", "V golpe (mantener: pesado)",
-          "J patada · Z cubrirse", "U agarre · O gancho", "B vendar · P salud", "L encender flecha", "X/H empuñar/enfundar" },
-        { "Tab acciones y forja", "I acopio · Y escolta", "F tomar · T lanzar", "R montar · K animal", "G ficha · M mapa",
+          "J patada · Z cubrirse", "U agarre · O gancho", "B vendar · P equipo", "L encender flecha", "X/H empuñar/enfundar" },
+        { "Tab acciones y forja", "I inventario · Y escolta", "F tomar · T lanzar", "R montar · K animal", "G ficha · M mapa",
           "Mayús+X cambiar de mano", "Esc menú: guardar/cargar", "F1 cerrar esta ayuda", "" },
     };
     ui_text("Controles", x + UI_PANEL_INSET + 2, y + UI_PANEL_INSET, 10, UI_GOLD_LIGHT);
