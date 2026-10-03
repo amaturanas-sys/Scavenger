@@ -693,12 +693,21 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         const InvItem *body = inventory_find(ga->inv, s >= 1.2f ? "personaje.base.cuerpo_gigante" : "personaje.base.cuerpo_comun");
         if (body && props_has_model(props, body)) { // modelo importado: con su animacion (assets/animaciones.tsv)
             HumanoidState hs = { .moving = n->moving, .grounded = true, .doing = -1, .building = -1 };
+            hs.down = m->health.down;
+            hs.hit = n->hurt_anim > 0.0f;
+            hs.attacking = n->fight_anim > 0.0f ? 1 + i % 3 : 0;
+            hs.limping = health_speed_scale(&m->health) < 0.85f;
             if (working) hs.building = ga->projects[n->project].def;
             if (n->job >= 0 && !n->moving) hs.doing = n->job;
             props_draw_item_anim(props, body, n->pos, n->yaw - PI / 2.0f, anim_humanoid(&hs), time + (float)i);
             continue;
         }
         Vector3 base = { n->pos.x, n->pos.y + bob, n->pos.z };
+        if (m->health.down) { // abatido: tendido en el suelo
+            DrawCapsule((Vector3){ base.x - 0.6f * s, base.y + 0.25f, base.z }, (Vector3){ base.x + 0.6f * s, base.y + 0.25f, base.z },
+                        0.24f * s, 6, 4, role_color(m->role));
+            continue;
+        }
         DrawCapsule((Vector3){ base.x, base.y + 0.3f * s, base.z }, (Vector3){ base.x, base.y + 1.35f * s, base.z },
                     0.26f * s, 6, 4, role_color(m->role));
         if (m->champion >= 0) DrawSphere((Vector3){ base.x, base.y + 1.85f * s, base.z }, 0.08f, UI_GOLD);
@@ -780,6 +789,8 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) 
         .hidden = ga->hidden, .climbing = ga->climbing, .climb_top = ga->climbing && ga->climb_t > 1.6f,
         .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = ga->hands.sheathed,
         .grip = hands_grip(&ga->hands), .doing = ga->doing, .building = -1,
+        .down = ga->pl_down, .hit = ga->pl_hit, .attacking = ga->pl_attacking, .spear = ga->pl_spear,
+        .blocking = ga->pl_blocking, .limping = ga->pl_limping,
     };
     if (hs.mounted) hs.mount_speed = p->moving ? (p->stance == STANCE_RUN ? 8.5f : 4.0f) * ga_speed_scale(ga) : 0.0f;
     Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
@@ -901,7 +912,7 @@ static void draw_menu(const GameActions *ga, const Props *props, const Troop *tr
 static void draw_stock(const GameActions *ga, int width) {
     int rows = 0;
     for (int i = 0; i < ga->stock.n; i++) rows += ga->stock.e[i].count > 0;
-    const int w = 250, h = 2 * UI_PANEL_INSET + 18 + 11 * rows, x0 = width - w - 6, y0 = 162;
+    const int w = 250, h = 2 * UI_PANEL_INSET + 18 + 11 * rows, x0 = width - w - 6, y0 = 188;
     ui_panel((Rectangle){ (float)x0, (float)y0, (float)w, (float)h }, UI_METAL_SILVER);
     int x = x0 + UI_PANEL_INSET + 2, y = y0 + UI_PANEL_INSET + 2;
     ui_text("Acopio de la tribu (I)", x, y, 10, UI_GOLD_LIGHT);

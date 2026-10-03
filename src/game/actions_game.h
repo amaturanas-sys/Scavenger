@@ -35,6 +35,9 @@ typedef struct {
     Vector3 job_pos;
     float job_timer;
     bool escort;       // acompana al jugador (src/game/hazards_game.c lo mueve)
+    bool fighting;     // peleando (src/game/combat_game.c lo mueve)
+    float fight_anim;  // segundos que quedan del golpe en curso
+    float hurt_anim;   // segundos que quedan de la reaccion a un golpe
 } Npc;
 
 typedef struct {
@@ -68,6 +71,9 @@ typedef struct {
     float climb_t;
     Vector3 climb_from, climb_top, climb_over, climb_to;
     bool hidden;
+    // Estado de combate y salud del jugador para la animacion (lo pone src/game/combat_game.c).
+    bool pl_down, pl_hit, pl_blocking, pl_limping, pl_spear;
+    int pl_attacking;
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);

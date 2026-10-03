@@ -10,6 +10,7 @@
 #include <stdbool.h>
 
 #include "champion.h"
+#include "health.h"
 #include "rng.h"
 
 #define TROOP_MAX 64
@@ -69,6 +70,7 @@ typedef struct {
     float morale;  // 0..100
     float loyalty; // 0..100, hacia el lider
     int champion;  // indice en Troop.champions si es un gran guerrero, o -1
+    Health health; // vida, sangre y heridas (src/sim/health.h)
 } Member;
 
 // Reino al que la tropa rinde tributo. `stance` dice cuanto sube o baja la
@@ -124,6 +126,8 @@ bool troop_mourn(Troop *t, int id, float morale_loss);
 void troop_share_loot(Troop *t);
 // Suma (o resta) animo a todos los integrantes activos (comida, comodidades del campamento...).
 void troop_adjust_morale(Troop *t, float delta);
+// Habilidad de curar de la tropa [0, 1]: curandero (0.5) o el mejor gran guerrero sanador.
+float troop_healer_skill(const Troop *t);
 
 int troop_count_with_status(const Troop *t, MemberStatus status);
 float troop_avg_morale(const Troop *t);

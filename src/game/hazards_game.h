@@ -62,6 +62,8 @@ typedef struct {
     // Escolta.
     bool escort_on;
     float ice_roll; // acumulador para las tiradas de rotura
+    Health *body;    // salud del jugador (src/game/combat_game.c): caidas y congelacion hieren
+    float frost_timer;
 } Hazards;
 
 void hz_init(Hazards *hz, unsigned seed);

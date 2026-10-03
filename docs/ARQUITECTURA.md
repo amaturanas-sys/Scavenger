@@ -20,6 +20,8 @@ src/
     clock.*      reloj de juego: dias de 30 min, estaciones, luz y noche
     climate.*    clima: temperatura, tiempo, nieve, lagos, glaciares
     hazards.*    frio, barro, hielo, socavones, desierto, minijuego (QTE)
+    health.*     vida, sangre y heridas (jugador, tribu, enemigos)
+    combat.*     armas, enemigos y reglas de cada golpe
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
@@ -36,6 +38,7 @@ src/
     player.*
     actions_game.*  menu de acciones, atajos, obras en curso
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates
+    combat_game.*   combate, enemigos, vendajes, salud de la tribu y del jugador
   ui/       Interfaz (raylib)
     theme.*      tema de orfebreria: paneles, barras, texto
     minimap.*    minimapa circular tipo brujula

@@ -31,6 +31,8 @@ add_library(estepa_sim STATIC
   src/sim/clock.c
   src/sim/climate.c
   src/sim/hazards.c
+  src/sim/health.c
+  src/sim/combat.c
   src/sim/memory_map.c
   src/sim/champion.c
   src/sim/inventory.c
@@ -73,6 +75,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/player.c
     src/game/actions_game.c
     src/game/hazards_game.c
+    src/game/combat_game.c
     src/world/props.c
     src/ui/theme.c
     src/ui/minimap.c

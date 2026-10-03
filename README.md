@@ -45,6 +45,8 @@ Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisi
 
 Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañero atrapado para rescatarlo · `J K L U I O` en el minijuego de rescate.
 
+Combate y salud: `V` o clic izquierdo golpear · `Z` cubrirse · `B` vendar (a ti o a un compañero cercano) · `P` panel de heridas · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto).
+
 Al reclutar o tomar prisioneros, a veces aparece un gran guerrero por azar.
 
 ## Android
@@ -76,4 +78,5 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --dia 25 --minuto 14                                # noche de pleno invierno
 ./build/estepa --dia 23 --pos -340 -130                            # glaciares en invierno
 ./build/estepa --dia 25 --pos -148 -12 --trampa rescate            # minijuego: sacar a un compañero del hielo
+./build/estepa --pos 60 40 --enemigos bandidos --heridas            # combate y heridas
 ```

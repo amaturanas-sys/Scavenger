@@ -26,6 +26,13 @@ typedef struct {
     int doing;        // ActionId en curso, o -1
     int building;     // BuildId en el que trabaja, o -1
     bool forging;
+    // Combate y salud.
+    bool dead, down;  // muerto / abatido en el suelo
+    bool hit;         // acaba de recibir un golpe
+    int attacking;    // golpe en curso: 0 ninguno, 1..3 la serie de golpes
+    bool spear;       // arma larga de asta (estocada)
+    bool blocking;    // cubriendose con el escudo
+    bool limping;     // herido en las piernas: cojea al caminar
 } HumanoidState;
 
 // Clip para un humano (jugador o NPC) segun lo que esta haciendo.
@@ -34,6 +41,8 @@ const char *anim_humanoid(const HumanoidState *s);
 const char *anim_for_action(ActionId a);
 // Clip de un cuadrupedo segun su estado.
 const char *anim_quadruped(const Animal *a);
+// Clip de una fiera en pelea (lobos y otros depredadores enemigos).
+const char *anim_quadruped_fight(float speed, bool attacking, bool hit, bool dead);
 // Postura de reposo segun la empunadura.
 const char *anim_grip(Grip g, bool sheathed);
 

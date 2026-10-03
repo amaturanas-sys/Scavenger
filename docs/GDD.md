@@ -90,7 +90,24 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 - **Escolta (Y):** dos integrantes libres te acompañan. También pueden romper el hielo o caer en un socavón: entonces corre el tiempo (unos 40–60 s) y hay que acercarse y pulsar **F** para sacarlos con el minijuego (si falla, se puede reintentar con menos tiempo). Salvarlo sube la moral (+3); si no llegas, muere (moral −6). Si caes tú con la escolta cerca, te tienden la lanza: la serie es más corta y con más margen.
 - **Prueba:** `--trampa hielo|nieve|arena|rescate` arranca en cada caso (p. ej. `--dia 25 --pos -148 -12 --trampa rescate`; arena: `--dia 12 --pos 352 20 --trampa arena`).
 
-**Pendiente:** heridas y salud, ropa y abrigo como equipo, que los NPCs del campamento también sufran el frío individualmente, animales que caen al hielo.
+**Pendiente:** ropa y abrigo como equipo, que los NPCs del campamento también sufran el frío individualmente, animales que caen al hielo.
+
+### Salud, heridas y combate (implementado — `src/sim/health.*`, `src/sim/combat.*`, `src/game/combat_game.*`)
+- **Para todos:** el jugador, cada integrante de la tribu y cada enemigo (personas y fieras) tienen **vida, sangre y heridas**.
+- **Heridas:** corte, golpe, fractura, mordida y congelación, en una parte del cuerpo (cabeza, torso, brazos, piernas; el torso recibe más) y con gravedad leve, moderada o grave. La misma herida sin tratar empeora en vez de duplicarse; un golpe fuerte en un brazo o una pierna lo rompe.
+- **Sangrado:** cortes y mordidas sangran hasta vendarlos (los leves coagulan solos). Sin sangre se cae **abatido** y, si se acaba, se muere.
+- **Efectos:** heridas en las piernas frenan (y se cojea), en los brazos debilitan los golpes; poca sangre afecta a todo.
+- **Curar:** las heridas sanan con el tiempo, más rápido vendadas y en reposo; las fracturas solo sanan entablilladas. `B` venda con **hierbas curativas** del acopio (a uno mismo o a un compañero cercano; a uno abatido lo levanta). El **curandero** del campamento atiende al jugador cuando está cerca y, cada amanecer, trata y cura a toda la tribu; los grandes guerreros aguantan más (vida según talla y aguante).
+- **El jugador no muere:** abatido, su escolta lo levanta y lo venda; si está solo, despierta en el campamento (moral −5, pierde lo que cargaba). Los compañeros sí mueren (luto: moral −6).
+- **Combate cuerpo a cuerpo:** `V` o clic izquierdo golpea con el arma empuñada (daño, alcance y cadencia por arma: dagas rápidas, mazas que rompen huesos, lanzas de largo alcance; bronce, acero y armas especiales cortan más). `Z` cubre con el escudo de frente (o con el arma, peor).
+- **Enemigos:** bandidos, fanáticos y captores del culto, y lobos. Ven al jugador según la distancia (acechando cuesta más), persiguen, golpean y huyen malheridos (los fanáticos nunca). Lejos del campamento aparecen bandidos o el culto de día y manadas de lobos de noche y en invierno. Se desangran también.
+- **Escolta:** pelea a tu lado y puede caer herida.
+- **Peligros que hieren:** caer al hielo golpea, un socavón de nieve puede romper una pierna y la hipotermia congela manos y pies.
+- **HUD:** vida y sangre bajo el calor; `P` abre el panel de heridas (tuyas y de la tribu); barras de vida sobre enemigos y compañeros heridos.
+- **Animación:** clips nuevos `abatido`, `cojear` y `vendar`; se usan `ataque_*`, `estocada_lanza`, `bloquear`, `recibir_golpe` y `morir`.
+- **Prueba:** `9` hace aparecer bandidos delante (`Shift+9` lobos, `Ctrl+9` culto); `--enemigos bandidos|culto|lobos` y `--heridas` al arrancar.
+
+**Pendiente:** armas a distancia (arco, ballesta), combate montado, captores que se llevan prisioneros, botín de los enemigos, armadura que reduzca el daño.
 
 ### Acciones (núcleo implementado — `src/sim/actions.*`, en juego `src/game/actions_game.*`)
 Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las use llega en la Fase 1). Los objetos que usan o producen son ids del [inventario de assets](INVENTARIO.md).
