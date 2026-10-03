@@ -8,7 +8,7 @@
 #include "sim/inventory.h"
 
 #define PROPS_MAX 128
-#define MODEL_CACHE_MAX 64
+#define MODEL_CACHE_MAX 128
 
 typedef struct {
     const InvItem *item;
@@ -28,11 +28,18 @@ typedef struct {
         bool loaded;
         ModelAnimation *anims; // clips del GLB (indice: assets/animaciones.tsv)
         int anim_count;
+        int variant; // -1: modelo base; si no, la estacion de "<nombre>@<estacion>.glb"
     } cache[MODEL_CACHE_MAX];
     int cached;
+    int season; // estacion actual (Season): elige la variante estacional si existe
 } Props;
 
 void props_init(Props *p, const Inventory *inv);
+// Estacion actual. Un modelo puede traer variantes por estacion junto al base:
+// yurta_comun@invierno.glb (nevada), arbusto@otono.glb... Si no hay, se usa el base.
+void props_set_season(Props *p, int season);
+// Sufijo de archivo de cada estacion (ASCII): primavera, verano, otono, invierno.
+const char *props_season_suffix(int season);
 void props_unload(Props *p);
 // Agrega un objeto por id. Devuelve su indice, o -1 si el id no existe o no hay lugar.
 int props_add(Props *p, const char *id, Vector3 pos, float yaw);

@@ -24,7 +24,8 @@ typedef struct {
 } Camp;
 
 void camp_init(Camp *c, const Terrain *t, const char *yurt_path);
-void camp_draw(const Camp *c, float time);
+// snow en [0, 1]: nieve sobre los techos de las yurtas y las copas.
+void camp_draw(const Camp *c, float time, float snow);
 // Solo la llama (la luz de la noche la vuelve a dibujar sin oscurecer).
 void camp_draw_flame(const Camp *c, float time);
 void camp_unload(Camp *c);

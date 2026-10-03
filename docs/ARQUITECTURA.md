@@ -18,6 +18,7 @@ src/
     memory_map.* mapa de memoria: exploracion, olvido, marcas
     champion.*   grandes guerreros: azar, historia, dones
     clock.*      reloj de juego: dias de 30 min, estaciones, luz y noche
+    climate.*    clima: temperatura, tiempo, nieve, lagos, glaciares
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
@@ -28,6 +29,7 @@ src/
     camp.*       campamento, props
     gallery.*    galeria del inventario (--galeria)
     sky.*        cielo, tinte de noche, estrellas y brillo de los fuegos
+    weather.*    lluvia, nieve, ventisca, relampagos y bruma
     props.*      objetos sueltos en el mundo (modelo o marcador)
   game/     Jugador e input
     player.*

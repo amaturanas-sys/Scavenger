@@ -62,7 +62,21 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 - **HUD:** el panel dice el día, la estación, la fase y los minutos que faltan para el próximo cambio; bajo el minimapa, una barra muestra el reparto de luz (oro) y noche (lapislázuli) con la hora actual.
 - **Prueba:** `./build/estepa --dia 25 --minuto 14` arranca en una noche de pleno invierno.
 
-**Pendiente:** efectos jugables de la noche (visión y sigilo, fieras, frío), clima y temperatura por estación.
+**Pendiente:** efectos jugables de la noche (visión y sigilo, fieras, frío).
+
+### Clima y estaciones (implementado — `src/sim/climate.*`, `src/world/terrain.*`, `src/world/weather.*`)
+Todo sale de una función pura del instante y la semilla (`climate_at`): igual en cada máquina, sin estado que guardar.
+- **Temperatura continental:** de unos −18 °C a mitad del invierno a +24 °C a mitad del verano; sube de día y baja de noche. La partida empieza al final del invierno: el deshielo llega hacia el día 5.
+- **Tiempo atmosférico** en bloques de 7,5 minutos con transición suave: despejado, nublado, lluvia, tormenta eléctrica, nevada y ventisca. Cada estación tiene sus probabilidades (verano seco con tormentas, otoño lluvioso, nevadas en invierno) y con helada la precipitación es nieve. El tiempo tiende a durar más de un bloque.
+- **Suelo según la estación:** pasto verde al final de la primavera, seco y amarillo al final del verano, ocre en otoño y dormido con helada. La lluvia lo oscurece y embarra. La nieve lo cubre en manchas que crecen hasta tapar todo en invierno; cuesta más en las pendientes. Las yurtas y las copas de los árboles se nevan.
+- **Lagos:** ocupan las hondonadas más bajas (7 % del terreno bajo su nivel base, siempre debajo del campamento). Crecen hasta 3 m con el deshielo de primavera y las lluvias y bajan al final del verano, dejando a la vista el lecho seco y una orilla de barro. En invierno se congelan.
+- **Cordilleras y glaciares:** lejos del campamento se levantan crestas de hasta ~60 m. La nieve permanente baja en invierno (glaciares extensos) y sube en verano (solo las cumbres).
+- **Atmósfera:** lluvia y nieve como partículas ancladas al mundo, ventisca casi horizontal que blanquea la vista, relámpagos en las tormentas, cielo gris y luz apagada con nubes; las nubes tapan las estrellas.
+- **HUD:** bajo la barra del ciclo, el tiempo y la temperatura (p. ej. «nevada · −12 °C»).
+- **Modelos por estación:** un modelo puede traer variantes junto al base (`yurta_comun@invierno.glb`, `@primavera`, `@verano`, `@otono`); el juego usa la de la estación si existe.
+- **Prueba:** `--dia N --minuto M` elige el momento y `--pos X Z` el lugar (p. ej. `--dia 23 --pos -340 -130`: glaciares en invierno; `--dia 7 --pos -112 -2`: un lago crecido).
+
+**Pendiente:** efectos jugables del clima (frío y abrigo, barro que frena, cruzar lagos helados, vadear, cosechas y pasto para el ganado), ríos.
 
 ### Acciones (núcleo implementado — `src/sim/actions.*`, en juego `src/game/actions_game.*`)
 Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las use llega en la Fase 1). Los objetos que usan o producen son ids del [inventario de assets](INVENTARIO.md).

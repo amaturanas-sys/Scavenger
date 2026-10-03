@@ -11,6 +11,14 @@
 void props_init(Props *p, const Inventory *inv) {
     memset(p, 0, sizeof(*p));
     p->inv = inv;
+    p->season = -1;
+}
+
+void props_set_season(Props *p, int season) { p->season = season; }
+
+const char *props_season_suffix(int season) {
+    static const char *names[] = { "primavera", "verano", "otono", "invierno" };
+    return season >= 0 && season < 4 ? names[season] : NULL;
 }
 
 void props_unload(Props *p) {
@@ -51,34 +59,57 @@ int props_nearest(const Props *p, Vector3 from, float radius, bool takeable_only
     return best;
 }
 
-// Indice en la cache del id (cargando el modelo y sus clips una sola vez), o -1.
-static int cache_slot(Props *p, const InvItem *item) {
+// Indice en la cache del id y la variante (cargando el modelo y sus clips una sola vez), o -1.
+static int load_slot(Props *p, const InvItem *item, int variant) {
     for (int i = 0; i < p->cached; i++)
-        if (p->cache[i].item == item) return i;
-    return -1;
+        if (p->cache[i].item == item && p->cache[i].variant == variant) return i;
+    if (p->cached >= MODEL_CACHE_MAX) return -1;
+    char path[160];
+    inventory_path(item, path, sizeof(path));
+    if (variant >= 0) { // "dir/nombre.glb" -> "dir/nombre@invierno.glb"
+        char *dot = strrchr(path, '.');
+        if (!dot) return -1;
+        char ext[8];
+        snprintf(ext, sizeof(ext), "%s", dot);
+        snprintf(dot, sizeof(path) - (size_t)(dot - path), "@%s%s", props_season_suffix(variant), ext);
+    }
+    const char *full = platform_asset_path(path);
+    int slot = p->cached++;
+    p->cache[slot].item = item;
+    p->cache[slot].variant = variant;
+    p->cache[slot].loaded = false;
+    p->cache[slot].anims = NULL;
+    p->cache[slot].anim_count = 0;
+    if (item->texture) return slot;
+#if defined(__ANDROID__)
+    if (variant >= 0) { // en Android los assets viven en el APK: FileExists no los ve
+        int size = 0;
+        unsigned char *data = LoadFileData(full, &size);
+        if (!data) return slot;
+        UnloadFileData(data);
+    }
+#else
+    if (!FileExists(full)) return slot;
+#endif
+    p->cache[slot].model = LoadModel(full);
+    p->cache[slot].loaded = p->cache[slot].model.meshCount > 0;
+    if (p->cache[slot].loaded) p->cache[slot].anims = LoadModelAnimations(full, &p->cache[slot].anim_count);
+    return slot;
+}
+
+// Entrada de cache a usar: la variante de la estacion si existe, si no el modelo base.
+static int cache_slot(Props *p, const InvItem *item) {
+    if (props_season_suffix(p->season)) {
+        int v = load_slot(p, item, p->season);
+        if (v >= 0 && p->cache[v].loaded) return v;
+    }
+    return load_slot(p, item, -1);
 }
 
 // Modelo del id, cargado una sola vez. NULL si todavia no fue importado.
 static Model *cached_model(Props *p, const InvItem *item) {
-    int found = cache_slot(p, item);
-    if (found >= 0) return p->cache[found].loaded ? &p->cache[found].model : NULL;
-    if (p->cached >= MODEL_CACHE_MAX) return NULL;
-    char path[128];
-    inventory_path(item, path, sizeof(path));
-    const char *full = platform_asset_path(path);
-    int slot = p->cached++;
-    p->cache[slot].item = item;
-    p->cache[slot].loaded = false;
-    p->cache[slot].anims = NULL;
-    p->cache[slot].anim_count = 0;
-#if !defined(__ANDROID__)
-    if (item->texture || !FileExists(full)) return NULL; // en Android los assets viven en el APK
-#endif
-    if (item->texture) return NULL;
-    p->cache[slot].model = LoadModel(full);
-    p->cache[slot].loaded = p->cache[slot].model.meshCount > 0;
-    if (p->cache[slot].loaded) p->cache[slot].anims = LoadModelAnimations(full, &p->cache[slot].anim_count);
-    return p->cache[slot].loaded ? &p->cache[slot].model : NULL;
+    int slot = cache_slot(p, item);
+    return slot >= 0 && p->cache[slot].loaded ? &p->cache[slot].model : NULL;
 }
 
 bool props_has_model(Props *p, const InvItem *item) { return item && cached_model(p, item) != NULL; }
