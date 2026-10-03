@@ -41,6 +41,18 @@ El CI valida el inventario y falla si un archivo no corresponde a ningún id o s
 | Personajes y animales | Deben estar riggeados (`rig:humanoide`, `rig:cuadrupedo` o `rig:ave`). La ropa y la armadura se ajustan a los cuerpos base (`personaje.base.*`). |
 | Nombres | Solo minúsculas, dígitos y `_`. El nombre del archivo es la última parte del id. |
 
+## Variantes por estación
+
+Un modelo puede traer variantes estacionales junto al base, con el sufijo `@estacion`:
+
+| Archivo | Cuándo se usa |
+|---|---|
+| `yurta_comun.glb` | Siempre que no haya variante para la estación |
+| `yurta_comun@invierno.glb` | En invierno (p. ej. techo nevado) |
+| `arbusto@otono.glb` | En otoño (hojas ocres) |
+
+Estaciones válidas: `primavera`, `verano`, `otono`, `invierno` (sin tilde en el nombre del archivo). Las variantes no van en el inventario; el validador comprueba que el modelo base exista. El suelo, el agua, la nieve y los glaciares ya cambian solos con la estación.
+
 ## Animaciones
 
 Los personajes, los animales y los objetos con mecanismo (vehículos, máquinas de asedio, puertas) traen sus animaciones dentro del mismo GLB. El índice [docs/ANIMACIONES.md](../../docs/ANIMACIONES.md), que sale de [`assets/animaciones.tsv`](../animaciones.tsv), dice qué clips necesita cada modelo.

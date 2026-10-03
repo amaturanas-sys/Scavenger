@@ -5,9 +5,10 @@
 // optimizacion de rendimiento en moviles (9 veces menos pixeles que 1080p).
 //
 // Uso de escritorio:  estepa [--screenshot salida.png] [--frames N] [--sin-teclado] [--galeria]
-//                     [--dia N] [--minuto M]
+//                     [--dia N] [--minuto M] [--pos X Z]
 // --galeria muestra todos los objetos del inventario de assets (modelos o marcadores).
 // --dia y --minuto ponen el reloj (minutos desde el amanecer), p. ej. para ver la noche.
+// --pos lleva al jugador a otro lugar del mundo (p. ej. a la cordillera).
 // --sin-teclado simula un dispositivo Android sin teclado (prueba del aviso).
 #include <math.h>
 #include <stdio.h>
@@ -20,6 +21,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "sim/champion.h"
+#include "sim/climate.h"
 #include "sim/clock.h"
 #include "sim/inventory.h"
 #include "sim/loadout.h"
@@ -30,6 +32,7 @@
 #include "world/camp.h"
 #include "world/gallery.h"
 #include "world/sky.h"
+#include "world/weather.h"
 #include "world/terrain.h"
 
 #ifndef ESTEPA_VERSION
@@ -230,6 +233,13 @@ static void draw_clock_bar(int cx, int y, int w, float world_time) {
     DrawRectangle(mx - 1, y - 2, 3, 8, clock_is_night(world_time) ? UI_BONE : UI_CARNELIAN);
 }
 
+// Tiempo y temperatura bajo el minimapa, alineados a la derecha.
+static void draw_weather_text(int right, int y, const Climate *c) {
+    const char *txt = TextFormat("%s · %d °C", weather_name(c->weather), (int)lroundf(c->temperature));
+    Color col = c->snow > 0.3f || c->rain > 0.3f ? UI_TURQUOISE : UI_BONE;
+    ui_text(txt, right - MeasureText(txt, 10), y, 10, col);
+}
+
 static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, float world_time, const char *hands,
                      const char *log) {
     const int x = 4 + UI_PANEL_INSET, w = 256;
@@ -279,6 +289,8 @@ int main(int argc, char **argv) {
     bool gallery_mode = false;
     int start_day = 1;
     float start_minute = 4.0f; // la partida empieza a media manana
+    bool start_pos = false;
+    float start_x = 0.0f, start_z = 0.0f;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) shot_path = argv[++i];
         else if (!strcmp(argv[i], "--frames") && i + 1 < argc) shot_frames = atoi(argv[++i]);
@@ -286,6 +298,11 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--galeria")) gallery_mode = true;
         else if (!strcmp(argv[i], "--dia") && i + 1 < argc) start_day = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--minuto") && i + 1 < argc) start_minute = (float)atof(argv[++i]);
+        else if (!strcmp(argv[i], "--pos") && i + 2 < argc) {
+            start_pos = true;
+            start_x = (float)atof(argv[++i]);
+            start_z = (float)atof(argv[++i]);
+        }
     }
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
@@ -319,6 +336,11 @@ int main(int argc, char **argv) {
     int day = clock_day(world_time);
     Sky sky;
     sky_init(&sky, WORLD_SEED);
+    WeatherFx weather;
+    weather_init(&weather, WORLD_SEED);
+    if (start_pos) {
+        player.pos = (Vector3){ start_x, terrain_height(&terrain, start_x, start_z), start_z };
+    }
     int last_champion = -1;  // id del ultimo gran guerrero encontrado
     bool show_card = false;
     memmap_init(&g_memory);
@@ -377,22 +399,37 @@ int main(int argc, char **argv) {
         }
         camera_update(&rig, &cam, &player, dt);
         terrain_update(&terrain, player.pos);
+        // Clima: estacion, tiempo, nieve, lagos y glaciares (la galeria se ve siempre igual).
+        Climate climate = climate_at(world_time, WORLD_SEED);
+        if (gallery_mode) climate = (Climate){ .clouds = 0.1f, .temperature = 20.0f };
+        if (!gallery_mode) {
+            TerrainLook look = {
+                .greenness = climate.greenness, .autumn = climate.autumn, .snow_cover = climate.snow_cover,
+                .wetness = climate.wetness, .snowline = terrain.plain + climate.snowline,
+                .water_level = terrain.lake_base + climate.water_level, .ice = climate.ice,
+            };
+            terrain_set_look(&terrain, &look);
+            props_set_season(&g_props, clock_season(clock_day(world_time)));
+            weather_update(&weather, &climate, dt);
+        }
 
         BeginTextureMode(lowres);
-        ClearBackground(sky_clear_color());
+        ClearBackground(sky_clear_color(climate.clouds));
         BeginMode3D(cam);
         terrain_draw(&terrain);
-        camp_draw(&camp, (float)GetTime());
+        camp_draw(&camp, (float)GetTime(), climate.snow_cover);
         if (gallery_mode) gallery_draw(&gallery);
         if (gallery_mode || !ga_draw_player(&g_actions, &g_props, &player, (float)GetTime())) player_draw(&player);
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
+        if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
         EndMode3D();
         if (!gallery_mode) { // la galeria se ve siempre de dia
             // Noche: se oscurece todo y se suman las estrellas, las llamas y el brillo de los fuegos.
-            sky_apply_tint(world_time, VIRTUAL_W, VIRTUAL_H);
+            sky_apply_tint(world_time, climate.clouds, VIRTUAL_W, VIRTUAL_H);
             BeginMode3D(cam);
-            sky_draw_stars(&sky, cam, world_time);
+            sky_draw_stars(&sky, cam, world_time, climate.clouds);
             camp_draw_flame(&camp, (float)GetTime());
+            weather_draw(&weather, &climate, cam, (float)GetTime(), clock_light(world_time));
             EndMode3D();
             Vector3 light_pos[SKY_MAX_LIGHTS];
             float light_radius[SKY_MAX_LIGHTS];
@@ -400,6 +437,7 @@ int main(int argc, char **argv) {
             light_radius[0] = 9.0f;
             int lights = 1 + ga_lights(&g_actions, &g_props, &player, light_pos + 1, light_radius + 1, SKY_MAX_LIGHTS - 1);
             sky_draw_lights(cam, light_pos, light_radius, lights, world_time, (float)GetTime(), VIRTUAL_W, VIRTUAL_H);
+            weather_draw_screen(&weather, &climate, VIRTUAL_W, VIRTUAL_H);
         }
         if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
@@ -408,6 +446,7 @@ int main(int argc, char **argv) {
             minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
                          player.pos, rig.yaw, player.yaw, world_time);
             draw_clock_bar(VIRTUAL_W - MINIMAP_RADIUS - 10, 2 * MINIMAP_RADIUS + 19, 2 * MINIMAP_RADIUS - 8, world_time);
+            draw_weather_text(VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 27, &climate);
             ga_draw_hud(&g_actions, &g_props, &troop, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
         }

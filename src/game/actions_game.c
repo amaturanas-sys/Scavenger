@@ -898,7 +898,7 @@ static void draw_menu(const GameActions *ga, const Props *props, const Troop *tr
 static void draw_stock(const GameActions *ga, int width) {
     int rows = 0;
     for (int i = 0; i < ga->stock.n; i++) rows += ga->stock.e[i].count > 0;
-    const int w = 250, h = 2 * UI_PANEL_INSET + 18 + 11 * rows, x0 = width - w - 6, y0 = 130;
+    const int w = 250, h = 2 * UI_PANEL_INSET + 18 + 11 * rows, x0 = width - w - 6, y0 = 142;
     ui_panel((Rectangle){ (float)x0, (float)y0, (float)w, (float)h }, UI_METAL_SILVER);
     int x = x0 + UI_PANEL_INSET + 2, y = y0 + UI_PANEL_INSET + 2;
     ui_text("Acopio de la tribu (I)", x, y, 10, UI_GOLD_LIGHT);

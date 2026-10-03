@@ -18,14 +18,15 @@ typedef struct {
 } Sky;
 
 void sky_init(Sky *s, unsigned seed);
-// Color de fondo (antes de multiplicar por el tinte).
-Color sky_clear_color(void);
-// Tinte de la escena para el instante t (segundos de juego). Blanco a pleno dia.
-Color sky_tint(float t);
+// Color de fondo (antes de multiplicar por el tinte). clouds en [0, 1]: cielo gris.
+Color sky_clear_color(float clouds);
+// Tinte de la escena para el instante t (segundos de juego). Blanco a pleno dia
+// despejado; las nubes lo apagan.
+Color sky_tint(float t, float clouds);
 // Oscurece la escena ya dibujada (llamar fuera de BeginMode3D).
-void sky_apply_tint(float t, int w, int h);
-// Estrellas (con prueba de profundidad: el terreno las tapa). Dentro de BeginMode3D.
-void sky_draw_stars(const Sky *s, Camera3D cam, float t);
+void sky_apply_tint(float t, float clouds, int w, int h);
+// Estrellas (con prueba de profundidad: el terreno las tapa). Las nubes las ocultan.
+void sky_draw_stars(const Sky *s, Camera3D cam, float t, float clouds);
 // Brillo de las luces (fuera de BeginMode3D). radius en metros.
 void sky_draw_lights(Camera3D cam, const Vector3 *pos, const float *radius, int n, float t, float time, int w,
                      int h);

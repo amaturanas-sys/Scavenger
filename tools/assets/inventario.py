@@ -83,6 +83,10 @@ def load():
     return items, errors
 
 
+# Variantes estacionales de un modelo (sufijo del archivo; ver src/world/props.c).
+SEASONS = ("primavera", "verano", "otono", "invierno")
+
+
 def path_of(it):
     rel = it["id"].replace(".", "/")
     if "formato:textura" in it["tags"]:
@@ -129,6 +133,15 @@ def validate(items):
             for name in files:
                 if name.endswith(ext) or name.endswith(".gltf"):
                     rel = os.path.normpath(os.path.relpath(os.path.join(dirpath, name), ROOT))
+                    stem, dot, extension = rel.rpartition(".")
+                    if "@" in os.path.basename(stem):
+                        # Variante estacional: nombre@estacion.glb junto al modelo base.
+                        base, _, season = stem.rpartition("@")
+                        if season not in SEASONS:
+                            errors.append(f"{rel}: estacion '{season}' (validas: {', '.join(SEASONS)})")
+                        elif base + dot + extension not in known:
+                            errors.append(f"{rel}: variante de un id que no esta en el inventario")
+                        continue
                     if rel not in known:
                         errors.append(f"{rel}: no corresponde a ningun id del inventario")
     return errors, warnings

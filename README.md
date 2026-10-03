@@ -72,4 +72,5 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --screenshot aviso.png --frames 60 --sin-teclado   # simula Android sin teclado
 ./build/estepa --galeria                                           # galería del inventario de assets
 ./build/estepa --dia 25 --minuto 14                                # noche de pleno invierno
+./build/estepa --dia 23 --pos -340 -130                            # glaciares en invierno
 ```

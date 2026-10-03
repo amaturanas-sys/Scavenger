@@ -9,6 +9,7 @@
 #include "../src/sim/animals.h"
 #include "../src/sim/economy.h"
 #include "../src/sim/champion.h"
+#include "../src/sim/climate.h"
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
 #include "../src/sim/loadout.h"
@@ -326,6 +327,63 @@ static void test_clock_seasonal_day_night(void) {
     }
     CHECK(fabsf(clock_phase_progress(t0 + dl * 0.25f) - 0.25f) < 1e-3f);
     CHECK(!strcmp(season_name(SEASON_AUTUMN), "otoño") && !strcmp(phase_name(PHASE_DAY), "día"));
+}
+
+static float day_time(int day, float minute) { return (float)(day - 1) * GAME_SECONDS_PER_DAY + minute * 60.0f; }
+
+static void test_climate_seasons_and_weather(void) {
+    const uint32_t seed = 1206u;
+    int mid_spring = 1 + DAYS_PER_SEASON / 2, mid_summer = mid_spring + DAYS_PER_SEASON;
+    int mid_autumn = mid_summer + DAYS_PER_SEASON, mid_winter = mid_autumn + DAYS_PER_SEASON;
+    int late_summer = 2 * DAYS_PER_SEASON; // ultimo dia del verano
+    // Determinista: misma semilla, mismo clima.
+    Climate a = climate_at(12345.0f, seed), b = climate_at(12345.0f, seed);
+    CHECK(a.weather == b.weather && a.snow_cover == b.snow_cover && a.water_level == b.water_level);
+
+    Climate sp = climate_at(day_time(mid_spring, 5), seed), su = climate_at(day_time(mid_summer, 5), seed);
+    Climate au = climate_at(day_time(mid_autumn, 5), seed), wi = climate_at(day_time(mid_winter, 5), seed);
+    Climate ls = climate_at(day_time(late_summer, 5), seed);
+    // Temperatura: calor en verano, helada en invierno.
+    CHECK(su.temp_mean > 18.0f && wi.temp_mean < -12.0f);
+    // Nieve en el suelo todo el invierno; nada en pleno verano.
+    CHECK(wi.snow_cover > 0.95f && su.snow_cover < 0.01f);
+    // Lagos congelados en invierno, agua libre en verano; crecida de deshielo en primavera.
+    CHECK(wi.ice > 0.9f && su.ice == 0.0f);
+    CHECK(climate_at(day_time(mid_spring + 2, 5), seed).water_level > ls.water_level + 2.0f);
+    // Glaciares: la nieve permanente baja en invierno.
+    CHECK(su.snowline - wi.snowline > 20.0f);
+    // Vegetacion: verde en primavera, seca al final del verano, ocre solo en otono.
+    CHECK(climate_at(day_time(DAYS_PER_SEASON, 5), seed).greenness > ls.greenness + 0.3f); // fin de la primavera
+    CHECK(au.autumn > 0.5f && sp.autumn == 0.0f && su.autumn < 0.2f);
+
+    // Tiempo por estacion, sobre varios anos de bloques.
+    int counts[SEASON_COUNT][WEATHER_COUNT] = { { 0 } };
+    const int blocks = (int)(4.0f * DAYS_PER_YEAR * GAME_SECONDS_PER_DAY / WEATHER_BLOCK_SECONDS);
+    for (int bl = 0; bl < blocks; bl++) {
+        int day = clock_day(((float)bl + 0.5f) * WEATHER_BLOCK_SECONDS);
+        counts[clock_season(day)][climate_block_weather(bl, seed)]++;
+    }
+    CHECK(counts[SEASON_WINTER][WEATHER_RAIN] + counts[SEASON_WINTER][WEATHER_STORM] == 0); // en invierno no llueve
+    CHECK(counts[SEASON_WINTER][WEATHER_SNOW] + counts[SEASON_WINTER][WEATHER_BLIZZARD] > 0);
+    CHECK(counts[SEASON_SUMMER][WEATHER_SNOW] + counts[SEASON_SUMMER][WEATHER_BLIZZARD] == 0);
+    CHECK(counts[SEASON_SUMMER][WEATHER_STORM] > 0 && counts[SEASON_AUTUMN][WEATHER_RAIN] > 0);
+    for (int s = 0; s < SEASON_COUNT; s++) CHECK(counts[s][WEATHER_CLEAR] > 0);
+    // Con lluvia o nieve fuertes, el cielo esta cubierto.
+    for (int bl = 0; bl < blocks; bl += 7) {
+        Climate c = climate_at(((float)bl + 0.2f) * WEATHER_BLOCK_SECONDS, seed);
+        if (c.rain > 0.4f || c.snow > 0.4f) CHECK(c.clouds > 0.6f);
+        CHECK(c.snow_cover >= 0.0f && c.snow_cover <= 1.0f && c.wetness >= 0.0f && c.wetness <= 1.0f);
+    }
+    // Transiciones suaves: sin saltos de un segundo al siguiente.
+    float prev_clouds = climate_at(0.0f, seed).clouds, prev_level = climate_at(0.0f, seed).water_level;
+    for (float t = 1.0f; t < 3.0f * GAME_SECONDS_PER_DAY; t += 1.0f) {
+        Climate c = climate_at(t, seed);
+        CHECK(fabsf(c.clouds - prev_clouds) < 0.05f);
+        CHECK(fabsf(c.water_level - prev_level) < 0.05f);
+        prev_clouds = c.clouds;
+        prev_level = c.water_level;
+    }
+    CHECK(!strcmp(weather_name(WEATHER_BLIZZARD), "ventisca"));
 }
 
 static void test_memmap_markers_toggle(void) {
@@ -920,6 +978,7 @@ int main(void) {
     RUN(test_anim_index_names_exist);
     RUN(test_inventory_repo_file_is_valid);
     RUN(test_clock_seasonal_day_night);
+    RUN(test_climate_seasons_and_weather);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

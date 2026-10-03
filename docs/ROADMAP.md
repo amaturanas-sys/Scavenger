@@ -43,7 +43,8 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 ## Fase 4 — Mundo y reinos
 - [ ] Biomas, asentamientos, tributo y diplomacia entre reinos.
 - [x] Ciclo día/noche de 30 minutos con estaciones (noches de 10 a 20 minutos).
-- [ ] Clima.
+- [x] Clima: estaciones en el suelo, lagos que crecen y se hielan, glaciares, lluvia, nieve, ventisca y tormentas.
+- [ ] Efectos jugables del clima (frío, barro, hielo) y ríos.
 
 ## Narrativa (ver [NARRATIVA.md](NARRATIVA.md))
 - [ ] Prólogo jugable con el padre: combate a caballo en el asedio, tutorial de batalla y derrota por guion (requiere caballo y combate base).

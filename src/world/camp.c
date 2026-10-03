@@ -39,7 +39,9 @@ void camp_init(Camp *c, const Terrain *t, const char *yurt_path) {
         float x = (rng_float(&rng) * 2.0f - 1.0f) * 110.0f;
         float z = (rng_float(&rng) * 2.0f - 1.0f) * 110.0f;
         if (x * x + z * z < 30.0f * 30.0f) continue;
-        c->trees[c->tree_count] = (Vector3){ x, terrain_height(t, x, z), z };
+        float h = terrain_height(t, x, z);
+        if (h < t->lake_base + TERRAIN_LAKE_FLOOD + 0.2f) continue; // ni en los lagos ni en su orilla de crecida
+        c->trees[c->tree_count] = (Vector3){ x, h, z };
         c->tree_h[c->tree_count] = 3.0f + rng_float(&rng) * 3.0f;
         c->tree_count++;
     }
@@ -57,12 +59,16 @@ void camp_draw_flame(const Camp *c, float time) {
     DrawCylinder((Vector3){ c->fire.x, c->fire.y + 0.1f, c->fire.z }, 0.0f, 0.25f, 0.6f * flick, 5, (Color){ 255, 220, 90, 255 });
 }
 
-void camp_draw(const Camp *c, float time) {
+void camp_draw(const Camp *c, float time, float snow) {
     for (int i = 0; i < c->yurt_count; i++) {
         if (c->yurt_loaded)
             DrawModelEx(c->yurt, c->yurts[i], (Vector3){ 0, 1, 0 }, c->yurt_rot[i], (Vector3){ 1, 1, 1 }, WHITE);
         else
             draw_fallback_yurt(c->yurts[i]);
+        if (snow > 0.3f) { // nieve sobre el techo
+            Vector3 p = c->yurts[i];
+            DrawCylinder((Vector3){ p.x, p.y + 1.72f, p.z }, 0.5f, 2.4f, 0.92f, 10, (Color){ 238, 241, 246, 255 });
+        }
     }
 
     // Fogata: piedras + llama.
@@ -79,6 +85,8 @@ void camp_draw(const Camp *c, float time) {
         float h = c->tree_h[i];
         DrawCylinder(b, 0.18f, 0.25f, h * 0.35f, 5, (Color){ 96, 70, 46, 255 });
         DrawCylinder((Vector3){ b.x, b.y + h * 0.3f, b.z }, 0.0f, h * 0.32f, h * 0.75f, 6, (Color){ 74, 104, 60, 255 });
+        if (snow > 0.3f) // la nieve se posa en la mitad alta de la copa
+            DrawCylinder((Vector3){ b.x, b.y + h * 0.66f, b.z }, 0.0f, h * 0.17f, h * 0.4f, 6, (Color){ 236, 240, 245, 255 });
     }
 }
 

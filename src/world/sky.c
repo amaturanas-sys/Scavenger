@@ -17,14 +17,17 @@ void sky_init(Sky *s, unsigned seed) {
     }
 }
 
-Color sky_clear_color(void) { return (Color){ 168, 196, 214, 255 }; } // cielo de estepa
-
 static Color mix(Color a, Color b, float k) {
     return (Color){ (unsigned char)Lerp(a.r, b.r, k), (unsigned char)Lerp(a.g, b.g, k), (unsigned char)Lerp(a.b, b.b, k),
                     255 };
 }
 
-Color sky_tint(float t) {
+// Cielo de estepa; con nubes, gris plomizo.
+Color sky_clear_color(float clouds) {
+    return mix((Color){ 168, 196, 214, 255 }, (Color){ 150, 156, 162, 255 }, Clamp((clouds - 0.2f) / 0.8f, 0.0f, 1.0f));
+}
+
+static Color day_tint(float t) {
     const Color night = { 38, 48, 92, 255 }, warm = { 255, 168, 122, 255 }, day = { 255, 255, 255, 255 };
     float light = clock_light(t);
     Color base = mix(night, day, light);
@@ -37,16 +40,23 @@ Color sky_tint(float t) {
     return mix(base, tinted, glow);
 }
 
-void sky_apply_tint(float t, int w, int h) {
-    Color c = sky_tint(t);
+Color sky_tint(float t, float clouds) {
+    // Las nubes apagan la luz del dia y el calor del ocaso.
+    Color c = day_tint(t);
+    float k = 1.0f - 0.32f * Clamp((clouds - 0.2f) / 0.8f, 0.0f, 1.0f);
+    return (Color){ (unsigned char)(c.r * k), (unsigned char)(c.g * k), (unsigned char)(c.b * k), 255 };
+}
+
+void sky_apply_tint(float t, float clouds, int w, int h) {
+    Color c = sky_tint(t, clouds);
     if (c.r == 255 && c.g == 255 && c.b == 255) return;
     BeginBlendMode(BLEND_MULTIPLIED);
     DrawRectangle(0, 0, w, h, c);
     EndBlendMode();
 }
 
-void sky_draw_stars(const Sky *s, Camera3D cam, float t) {
-    float dark = 1.0f - clock_light(t);
+void sky_draw_stars(const Sky *s, Camera3D cam, float t, float clouds) {
+    float dark = (1.0f - clock_light(t)) * Clamp(1.0f - clouds * 1.2f, 0.0f, 1.0f);
     if (dark <= 0.05f) return;
     for (int i = 0; i < SKY_STARS; i++) {
         Vector3 p = Vector3Add(cam.position, Vector3Scale(s->stars[i], 600.0f));
