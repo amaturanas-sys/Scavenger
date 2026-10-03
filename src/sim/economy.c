@@ -57,6 +57,9 @@ void stock_seed_camp(Stockpile *s) {
         { FOOD_ID, 12 },
         { "utileria.objeto.lena", 10 },
         { "utileria.consumible.hierbas", 4 }, // para vendar heridas
+        { "proyectil.flecha.comun", 24 },     // municion de arco, ballesta y honda
+        { "proyectil.virote.comun", 10 },
+        { "proyectil.piedra.honda", 15 },
         { "utileria.material.troncos", 16 },
         { "utileria.material.piedra", 10 },
         { "utileria.material.barro", 8 },

@@ -23,14 +23,29 @@ WeaponStats weapon_stats(const char *id) {
 
 const EnemyDef *enemy_def(EnemyKind k) {
     static const EnemyDef defs[ENEMY_COUNT] = {
-        [ENEMY_BANDIT] = { "Bandido", "personaje.npc.bandido", false, 70.0f, 12.0f, 1.6f, 1.2f, 4.2f, 22.0f, WOUND_CUT, 0.2f },
+        [ENEMY_BANDIT] = { "Bandido", "personaje.npc.bandido", false, 70.0f, 12.0f, 1.6f, 1.2f, 4.2f, 22.0f, WOUND_CUT, 0.2f,
+                           NULL, { "armadura.torso.fieltro", "armadura.casco.fieltro" } },
         [ENEMY_FANATIC] = { "Fanático del culto", "personaje.npc.fanatico", false, 80.0f, 15.0f, 1.7f, 1.1f, 4.5f, 26.0f,
-                            WOUND_CUT, 0.0f },
+                            WOUND_CUT, 0.0f, NULL, { "armadura.torso.culto", "armadura.casco.mascara_culto" } },
         [ENEMY_CAPTOR] = { "Captor del culto", "personaje.npc.captor_culto", false, 90.0f, 10.0f, 1.6f, 1.3f, 4.0f, 24.0f,
-                           WOUND_BRUISE, 0.15f },
+                           WOUND_BRUISE, 0.15f, NULL,
+                           { "armadura.torso.culto", "armadura.faldar.culto", "armadura.grebas.culto", "armadura.casco.culto" } },
+        [ENEMY_ARCHER] = { "Arquero bandido", "personaje.npc.bandido", false, 60.0f, 7.0f, 1.3f, 1.0f, 4.4f, 34.0f,
+                           WOUND_CUT, 0.3f, "arma.distancia.arco_compuesto", { "armadura.casco.fieltro" } },
         [ENEMY_WOLF] = { "Lobo", "animal.salvaje.lobo", true, 45.0f, 10.0f, 1.4f, 1.0f, 7.0f, 30.0f, WOUND_BITE, 0.35f },
     };
     return &defs[(unsigned)k < ENEMY_COUNT ? k : 0];
+}
+
+int combat_apply_hit(Health *h, Armor *a, Rng *rng, float damage, WoundKind kind, int part, bool projectile,
+                     float *absorbed, bool *broke) {
+    int zone = part == PART_RANDOM ? health_pick_part(rng) : part;
+    float left = damage;
+    if (broke) *broke = false;
+    if (a) left = armor_absorb(a, (BodyPart)zone, &kind, projectile, damage, rng, broke);
+    if (absorbed) *absorbed = damage - left;
+    if (left < 0.5f) return -1; // la armadura lo paro
+    return health_hit(h, rng, left, kind, zone);
 }
 
 float combat_block_chance(bool shield, float facing) {

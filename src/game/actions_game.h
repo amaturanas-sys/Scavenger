@@ -73,7 +73,7 @@ typedef struct {
     bool hidden;
     // Estado de combate y salud del jugador para la animacion (lo pone src/game/combat_game.c).
     bool pl_down, pl_hit, pl_blocking, pl_limping, pl_spear;
-    int pl_attacking;
+    int pl_attacking, pl_ranged;
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);

@@ -5,6 +5,7 @@
 
 #include <stdbool.h>
 
+#include "armor.h"
 #include "health.h"
 #include "rng.h"
 
@@ -19,7 +20,7 @@ typedef struct {
 // Estadisticas del arma por id del inventario ("" o NULL: a puño limpio).
 WeaponStats weapon_stats(const char *inv_id);
 
-typedef enum { ENEMY_BANDIT, ENEMY_FANATIC, ENEMY_CAPTOR, ENEMY_WOLF, ENEMY_COUNT } EnemyKind;
+typedef enum { ENEMY_BANDIT, ENEMY_FANATIC, ENEMY_CAPTOR, ENEMY_ARCHER, ENEMY_WOLF, ENEMY_COUNT } EnemyKind;
 
 typedef struct {
     const char *name;  // UTF-8
@@ -28,6 +29,8 @@ typedef struct {
     float hp, damage, reach, cooldown, speed, sight;
     WoundKind wound;
     float flee_at; // huye con menos de esta fraccion de vida (0: nunca)
+    const char *ranged;    // arma a distancia (src/sim/ballistics.h), o NULL
+    const char *armor[4];  // piezas de armadura que lleva (ids del inventario)
 } EnemyDef;
 
 const EnemyDef *enemy_def(EnemyKind k);
@@ -38,5 +41,11 @@ float combat_block_chance(bool shield, float facing);
 // Daño final de un golpe: base x fuerza del atacante x estado de sus brazos, con
 // una variacion de +-20 %. Si se para con el escudo, queda el 15 %.
 float combat_damage(float base, float strength, float attack_scale, bool blocked, Rng *rng);
+
+// Un impacto completo: elige la zona (si part = PART_RANDOM), pasa por la armadura
+// (a puede ser NULL) y hiere. Devuelve el indice de la herida o -1 (parado del todo).
+// absorbed: daño que paro la armadura; broke: si una pieza se rompio.
+int combat_apply_hit(Health *h, Armor *a, Rng *rng, float damage, WoundKind kind, int part, bool projectile,
+                     float *absorbed, bool *broke);
 
 #endif

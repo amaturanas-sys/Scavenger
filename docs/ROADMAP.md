@@ -46,7 +46,8 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Clima: estaciones en el suelo, lagos que crecen y se hielan, glaciares, lluvia, nieve, ventisca y tormentas.
 - [x] Efectos jugables del clima: frío y calor corporal, leña, barro, vadeo, lagos helados que se rompen, socavones (nieve y arena movediza), minijuego de rescate y escolta.
 - [x] Salud y heridas para jugador, tribu y enemigos; combate cuerpo a cuerpo; enemigos (bandidos, culto, lobos); vendajes y curandero.
-- [ ] Ríos; abrigo como equipo; armas a distancia; armadura.
+- [x] Zonas del cuerpo con daño distinto; cuerpo articulado simple; armas a distancia con trayectoria balística; armadura por piezas con material y durabilidad.
+- [ ] Ríos; abrigo como equipo; combate montado.
 
 ## Narrativa (ver [NARRATIVA.md](NARRATIVA.md))
 - [ ] Prólogo jugable con el padre: combate a caballo en el asedio, tutorial de batalla y derrota por guion (requiere caballo y combate base).

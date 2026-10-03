@@ -13,6 +13,9 @@
 #include "../src/sim/hazards.h"
 #include "../src/sim/health.h"
 #include "../src/sim/combat.h"
+#include "../src/sim/armor.h"
+#include "../src/sim/ballistics.h"
+#include "../src/sim/body.h"
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
 #include "../src/sim/loadout.h"
@@ -473,33 +476,35 @@ static void test_hazards_qte(void) {
     CHECK(q.state == QTE_LOST && !qte_press(&q, q.keys[q.pos]));
 }
 
+static bool is_limb_part(int p) { return part_is_arm((BodyPart)p) || part_is_leg((BodyPart)p); }
+
 static void test_health_wounds_bleeding_healing(void) {
     Rng rng;
     rng_seed(&rng, 42u);
     Health h;
     health_init(&h, 100.0f);
     CHECK(!strcmp(health_state_name(&h), "sano") && health_speed_scale(&h) == 1.0f);
-    // Un corte serio en la pierna: sangra, frena y resta vida.
-    int w = health_hit(&h, &rng, 30.0f, WOUND_CUT, PART_LEG_L);
-    CHECK(w >= 0 && h.wounds[w].bleeding && h.hp == 70.0f && health_bleeding(&h));
-    CHECK(health_speed_scale(&h) < 1.0f && health_attack_scale(&h) == 1.0f);
+    // Un corte serio en el muslo: sangra (femoral), frena y resta vida segun la zona.
+    int w = health_hit(&h, &rng, 30.0f, WOUND_CUT, PART_THIGH_L);
+    CHECK(w >= 0 && h.wounds[w].bleeding && fabsf(h.hp - (100.0f - 30.0f * part_damage_scale(PART_THIGH_L))) < 0.01f);
+    CHECK(health_bleeding(&h) && health_speed_scale(&h) < 1.0f && health_attack_scale(&h) == 1.0f);
     char desc[96];
-    wound_describe(&h.wounds[w], desc, sizeof(desc));
-    CHECK(strstr(desc, "Corte en la pierna izquierda") && strstr(desc, "sangra"));
+    wound_describe(&h.wounds[w], false, desc, sizeof(desc));
+    CHECK(strstr(desc, "Corte en el muslo izquierdo") && strstr(desc, "sangra"));
     // Sin vendar, la sangre se va.
     float blood0 = h.blood;
     for (int i = 0; i < 60; i++) health_update(&h, &rng, 1.0f, false, 0.0f);
     CHECK(h.blood < blood0);
     // Vendar detiene el sangrado; en reposo la sangre y la vida vuelven y la herida cierra.
     CHECK(health_treat(&h) == 1 && !health_bleeding(&h) && h.wounds[w].treated);
-    float blood1 = h.blood;
+    float blood1 = h.blood, hp1 = h.hp;
     for (int i = 0; i < 1200 && h.wound_count; i++) health_update(&h, &rng, 1.0f, true, 0.5f);
-    CHECK(h.wound_count == 0 && h.blood > blood1 && h.hp > 70.0f);
+    CHECK(h.wound_count == 0 && h.blood > blood1 && h.hp > hp1);
 
-    // Un golpe fuerte en un brazo lo rompe; la fractura no sana sin entablillar.
+    // Un golpe fuerte en el antebrazo lo rompe; la fractura no sana sin entablillar.
     Health f;
     health_init(&f, 100.0f);
-    int fr = health_hit(&f, &rng, 40.0f, WOUND_BRUISE, PART_ARM_R);
+    int fr = health_hit(&f, &rng, 60.0f, WOUND_BRUISE, PART_FOREARM_R);
     CHECK(f.wounds[fr].kind == WOUND_FRACTURE && health_attack_scale(&f) < 0.7f);
     float sev = f.wounds[fr].severity;
     for (int i = 0; i < 600; i++) health_update(&f, &rng, 1.0f, true, 0.0f);
@@ -509,36 +514,60 @@ static void test_health_wounds_bleeding_healing(void) {
     health_daily(&f, 0.5f);              // el curandero la entablilla
     CHECK(f.wounds[0].treated && f.wounds[0].severity < sev);
 
+    // Zonas: el mismo golpe pesa distinto segun donde cae.
+    CHECK(part_damage_scale(PART_NECK) > part_damage_scale(PART_HEAD));
+    CHECK(part_damage_scale(PART_HEAD) > part_damage_scale(PART_THORAX));
+    CHECK(part_damage_scale(PART_THORAX) > part_damage_scale(PART_THIGH_L));
+    CHECK(part_damage_scale(PART_UPPER_ARM_L) > part_damage_scale(PART_FOREARM_L));
+    CHECK(part_bleed_scale(PART_NECK) > part_bleed_scale(PART_FOREARM_R));
+    Health hn, ha;
+    health_init(&hn, 100.0f);
+    health_init(&ha, 100.0f);
+    health_hit(&hn, &rng, 20.0f, WOUND_CUT, PART_NECK);
+    health_hit(&ha, &rng, 20.0f, WOUND_CUT, PART_FOREARM_L);
+    CHECK(hn.hp < ha.hp - 25.0f && hn.wounds[0].severity > ha.wounds[0].severity);
+    for (int i = 0; i < 20; i++) health_update(&hn, &rng, 1.0f, false, 0.0f), health_update(&ha, &rng, 1.0f, false, 0.0f);
+    CHECK(hn.blood < ha.blood); // el cuello sangra mucho mas
+    CHECK(part_is_arm(PART_FOREARM_R) && part_is_leg(PART_SHIN_L) && !part_is_arm(PART_NECK));
+    for (int i = 0; i < 20; i++) CHECK(is_limb_part(health_random_limb(&rng)));
+
     // La misma herida sin tratar empeora en vez de duplicarse.
     Health g;
     health_init(&g, 100.0f);
-    health_hit(&g, &rng, 10.0f, WOUND_BITE, PART_TORSO);
-    health_hit(&g, &rng, 10.0f, WOUND_BITE, PART_TORSO);
+    health_hit(&g, &rng, 10.0f, WOUND_BITE, PART_THORAX);
+    health_hit(&g, &rng, 10.0f, WOUND_BITE, PART_THORAX);
     CHECK(g.wound_count == 1 && g.wounds[0].severity > 0.18f);
+    // Fieras: las mismas zonas con nombres de animal.
+    Health b;
+    health_init_beast(&b, 60.0f);
+    int bw = health_hit(&b, &rng, 10.0f, WOUND_CUT, PART_SHIN_R);
+    wound_describe(&b.wounds[bw], b.beast, desc, sizeof(desc));
+    CHECK(strstr(desc, "pata trasera derecha") != NULL);
 
     // Abatido al quedarse sin vida; muerto si se desangra.
     Health d;
     health_init(&d, 50.0f);
-    health_hit(&d, &rng, 55.0f, WOUND_CUT, PART_TORSO);
+    health_hit(&d, &rng, 50.0f, WOUND_CUT, PART_THORAX);
     CHECK(d.down && !d.dead && health_speed_scale(&d) == 0.0f && !strcmp(health_state_name(&d), "abatido"));
     for (int i = 0; i < 2000 && !d.dead; i++) health_update(&d, &rng, 1.0f, false, 0.0f);
     CHECK(d.dead && !strcmp(health_state_name(&d), "muerto"));
     // Revivir a un abatido que no murio.
     Health r;
     health_init(&r, 100.0f);
-    health_hit(&r, &rng, 101.0f, WOUND_BRUISE, PART_TORSO);
+    health_hit(&r, &rng, 90.0f, WOUND_BRUISE, PART_THORAX);
     CHECK(r.down && !r.dead);
     health_revive(&r);
     CHECK(!r.down && r.hp > 25.0f);
-    // Las partes al azar caen sobre todo en el torso.
-    int torso = 0;
+    // Las zonas al azar caen sobre todo en el tronco.
+    int trunk = 0;
     for (int i = 0; i < 400; i++) {
         Health x;
         health_init(&x, 100.0f);
         int k = health_hit(&x, &rng, 5.0f, WOUND_BRUISE, PART_RANDOM);
-        torso += x.wounds[k].part == PART_TORSO;
+        BodyPart pp = x.wounds[k].part;
+        trunk += pp == PART_THORAX || pp == PART_ABDOMEN || pp == PART_PELVIS;
     }
-    CHECK(torso > 120 && torso < 200);
+    CHECK(trunk > 140 && trunk < 240);
 }
 
 static void test_troop_health_daily(void) {
@@ -555,11 +584,11 @@ static void test_troop_health_daily(void) {
     CHECK(troop_healer_skill(&t) == 0.5f);
     Member *m = troop_find(&t, a);
     CHECK(m->health.hp_max == 100.0f && !m->health.down);
-    health_hit(&m->health, &rng, 35.0f, WOUND_CUT, PART_ARM_L);
+    health_hit(&m->health, &rng, 40.0f, WOUND_CUT, PART_UPPER_ARM_L);
     CHECK(health_bleeding(&m->health));
     troop_process_day(&t, &rng);
     m = troop_find(&t, a);
-    CHECK(!health_bleeding(&m->health) && m->health.hp > 65.0f); // el curandero lo vendo
+    CHECK(!health_bleeding(&m->health) && m->health.hp > 70.0f); // el curandero lo vendo
     // Un gran guerrero aguanta mas.
     Champion c;
     champion_generate(&c, &rng);
@@ -592,6 +621,181 @@ static void test_combat_weapons_and_enemies(void) {
         CHECK(combat_damage(20.0f, 1.0f, 1.0f, true, &rng) <= 24.0f * 0.15f);
         CHECK(combat_damage(20.0f, 1.0f, 0.5f, false, &rng) <= 12.0f); // brazo herido: golpea menos
     }
+}
+
+static void test_body_zones_raycast(void) {
+    BodyPose b;
+    BodyPoseParams pp = { .scale = 1.0f };
+    body_pose(&b, &pp);
+    // Un rayo horizontal de frente (desde +Z hacia -Z) a cada altura da en su zona.
+    struct { float y, x; int part; } shots[] = {
+        { 1.64f, 0.0f, PART_HEAD },        { 1.49f, 0.0f, PART_NECK },        { 1.30f, 0.0f, PART_THORAX },
+        { 1.06f, 0.0f, PART_ABDOMEN },     { 0.90f, 0.0f, PART_PELVIS },      { 1.25f, 0.22f, PART_UPPER_ARM_L },
+        { 0.95f, 0.24f, PART_FOREARM_L },  { 0.65f, 0.10f, PART_THIGH_L },    { 0.25f, -0.10f, PART_SHIN_R },
+    };
+    for (size_t i = 0; i < sizeof(shots) / sizeof(shots[0]); i++) {
+        float t = 0.0f;
+        int hit = body_raycast(&b, (V3){ shots[i].x, shots[i].y, 5.0f }, (V3){ 0, 0, -10.0f }, 1.0f, &t);
+        CHECK(hit == shots[i].part);
+        CHECK(t > 0.4f && t < 0.5f); // el cuerpo esta en z ~ 0
+    }
+    // Por encima de la cabeza o al costado no da en nada.
+    CHECK(body_raycast(&b, (V3){ 0, 2.0f, 5.0f }, (V3){ 0, 0, -10.0f }, 1.0f, NULL) == -1);
+    CHECK(body_raycast(&b, (V3){ 1.0f, 1.3f, 5.0f }, (V3){ 0, 0, -10.0f }, 1.0f, NULL) == -1);
+    // Un rayo corto que no llega tampoco.
+    CHECK(body_raycast(&b, (V3){ 0, 1.3f, 5.0f }, (V3){ 0, 0, -1.0f }, 1.0f, NULL) == -1);
+    // Tendido: a la altura del pecho de pie no hay nada; a ras de suelo, si.
+    BodyPoseParams down = { .down = true, .scale = 1.0f };
+    BodyPose d;
+    body_pose(&d, &down);
+    CHECK(body_raycast(&d, (V3){ 0, 1.3f, 5.0f }, (V3){ 0, 0, -10.0f }, 1.0f, NULL) == -1);
+    CHECK(body_raycast(&d, (V3){ 0, 3.0f, 0.0f }, (V3){ 0, -5.0f, 0 }, 1.0f, NULL) >= 0);
+    // Andar mueve las piernas; golpear sube el brazo derecho.
+    BodyPoseParams walk = { .walk = 1.0f, .walk_phase = 1.57f, .scale = 1.0f };
+    BodyPose w;
+    body_pose(&w, &walk);
+    CHECK(w.seg[PART_SHIN_L].b.z > 0.2f && w.seg[PART_SHIN_R].b.z < -0.1f);
+    BodyPoseParams atk = { .attack = 1.0f, .scale = 1.0f };
+    BodyPose a;
+    body_pose(&a, &atk);
+    CHECK(a.seg[PART_FOREARM_R].b.y > b.seg[PART_FOREARM_R].b.y + 0.5f);
+    // Mundo <-> local: un punto delante del cuerpo queda en +Z local.
+    V3 l = body_to_local((V3){ 10.0f + sinf(0.7f) * 2.0f, 1.0f, 5.0f + cosf(0.7f) * 2.0f }, (V3){ 10, 0, 5 }, 0.7f);
+    CHECK(fabsf(l.z - 2.0f) < 1e-3f && fabsf(l.x) < 1e-3f && fabsf(l.y - 1.0f) < 1e-3f);
+    V3 back = body_to_world(l, (V3){ 10, 0, 5 }, 0.7f);
+    CHECK(fabsf(back.x - (10.0f + sinf(0.7f) * 2.0f)) < 1e-3f);
+}
+
+static void test_armor_pieces_materials(void) {
+    Rng rng;
+    rng_seed(&rng, 3u);
+    Armor a;
+    memset(&a, 0, sizeof(a));
+    CHECK(!armor_equip(&a, "arma.corta.sable") && !armor_equip(&a, "armadura.montura.barda_cuero"));
+    CHECK(armor_equip(&a, "armadura.casco.escamas_hierro") && a.slot[SLOT_HELMET].material == MAT_IRON);
+    CHECK(armor_equip(&a, "armadura.torso.fieltro") && a.slot[SLOT_TORSO].material == MAT_FELT);
+    CHECK(armor_equip(&a, "armadura.grebas.culto") && a.slot[SLOT_GREAVES].material == MAT_BRONZE);
+    CHECK(armor_equip(&a, "armadura.cuello.malla") && a.slot[SLOT_NECK].mail);
+    // Solo protege las zonas que cubre.
+    CHECK(armor_protection(&a, PART_HEAD) > 0.4f && armor_protection(&a, PART_FOREARM_L) == 0.0f);
+    CHECK(armor_protection(&a, PART_HEAD) > armor_protection(&a, PART_THORAX)); // hierro > fieltro
+    // Un golpe en el casco de hierro: llega mucho menos, y el corte llega como golpe.
+    float total = 0.0f;
+    int bruised = 0;
+    for (int i = 0; i < 100; i++) {
+        Armor fresh;
+        memset(&fresh, 0, sizeof(fresh));
+        armor_equip(&fresh, "armadura.casco.escamas_hierro");
+        WoundKind k = WOUND_CUT;
+        total += armor_absorb(&fresh, PART_HEAD, &k, false, 20.0f, &rng, NULL);
+        bruised += k == WOUND_BRUISE;
+    }
+    CHECK(total / 100.0f < 11.0f && bruised > 60);
+    // Sin pieza en la zona: pasa todo.
+    WoundKind k = WOUND_CUT;
+    CHECK(armor_absorb(&a, PART_FOREARM_R, &k, false, 20.0f, &rng, NULL) == 20.0f && k == WOUND_CUT);
+    // Durabilidad: los golpes la gastan y al final se rompe; rota no protege.
+    Armor w;
+    memset(&w, 0, sizeof(w));
+    armor_equip(&w, "armadura.casco.fieltro");
+    bool broke = false;
+    for (int i = 0; i < 200 && !broke; i++) {
+        WoundKind kk = WOUND_CUT;
+        armor_absorb(&w, PART_HEAD, &kk, false, 25.0f, &rng, &broke);
+    }
+    CHECK(broke && w.slot[SLOT_HELMET].durability == 0.0f && armor_protection(&w, PART_HEAD) == 0.0f);
+    armor_repair(&w, 0.5f);
+    CHECK(w.slot[SLOT_HELMET].durability == 30.0f && armor_protection(&w, PART_HEAD) > 0.0f);
+    // El hierro dura mas que el fieltro con los mismos golpes.
+    Armor fe, fl;
+    memset(&fe, 0, sizeof(fe));
+    memset(&fl, 0, sizeof(fl));
+    armor_equip(&fe, "armadura.torso.escamas_hierro");
+    armor_equip(&fl, "armadura.torso.fieltro");
+    for (int i = 0; i < 6; i++) {
+        WoundKind k1 = WOUND_CUT, k2 = WOUND_CUT;
+        rng_seed(&rng, 100u + (unsigned)i);
+        armor_absorb(&fe, PART_THORAX, &k1, false, 20.0f, &rng, NULL);
+        rng_seed(&rng, 100u + (unsigned)i);
+        armor_absorb(&fl, PART_THORAX, &k2, false, 20.0f, &rng, NULL);
+    }
+    CHECK(fe.slot[SLOT_TORSO].durability / fe.slot[SLOT_TORSO].durability_max >
+          fl.slot[SLOT_TORSO].durability / fl.slot[SLOT_TORSO].durability_max);
+    // La malla para menos las flechas que el filo.
+    CHECK(armor_speed_scale(&a) < 1.0f && armor_speed_scale(&a) > 0.6f);
+    // Impacto completo con armadura: menos vida perdida que sin ella.
+    Health h1, h2;
+    health_init(&h1, 100.0f);
+    health_init(&h2, 100.0f);
+    Armor full;
+    memset(&full, 0, sizeof(full));
+    armor_equip(&full, "armadura.torso.escamas_hierro");
+    float absorbed = 0.0f;
+    float lost1 = 0.0f, lost2 = 0.0f;
+    for (int i = 0; i < 20; i++) {
+        float hp1 = h1.hp, hp2 = h2.hp;
+        combat_apply_hit(&h1, &full, &rng, 10.0f, WOUND_CUT, PART_THORAX, false, &absorbed, NULL);
+        combat_apply_hit(&h2, NULL, &rng, 10.0f, WOUND_CUT, PART_THORAX, false, NULL, NULL);
+        lost1 += hp1 - h1.hp, lost2 += hp2 - h2.hp;
+        armor_repair(&full, 1.0f);
+    }
+    CHECK(lost1 < lost2 * 0.7f);
+}
+
+static void test_ballistics_trajectories(void) {
+    const RangedDef *bow = ranged_def("arma.distancia.arco_compuesto");
+    const RangedDef *xbow = ranged_def("arma.distancia.ballesta");
+    const RangedDef *sling = ranged_def("arma.distancia.honda");
+    CHECK(bow && xbow && sling && !ranged_def("arma.corta.sable") && !ranged_def(""));
+    // v = sqrt(2E/m): mas potencia, mas rapido; mas masa, mas lento.
+    float vb = ranged_muzzle_speed(bow, 1.0f), vx = ranged_muzzle_speed(xbow, 1.0f), vs = ranged_muzzle_speed(sling, 1.0f);
+    CHECK(fabsf(vb - sqrtf(2.0f * 75.0f / 0.030f)) < 0.01f);
+    CHECK(vx < vb && vs < vx);                                   // el virote pesa el doble
+    CHECK(ranged_muzzle_speed(bow, 0.3f) < vb * 0.6f);            // poco tenso, poca velocidad
+    CHECK(ranged_muzzle_speed(xbow, 0.0f) == vx);                 // la ballesta no se tensa a mano
+    // Curva: un tiro horizontal cae con la distancia, y mas cuanto mas lento.
+    V3 pts[400];
+    int n = ballistic_trace(PROJ_ARROW, (V3){ 0, 1.5f, 0 }, 0.0f, 0.0f, vb, 0.02f, -50.0f, pts, 400);
+    CHECK(n > 10);
+    float drop30 = 0.0f, drop60 = 0.0f;
+    for (int i = 1; i < n; i++) {
+        if (pts[i - 1].z < 30.0f && pts[i].z >= 30.0f) drop30 = 1.5f - pts[i].y;
+        if (pts[i - 1].z < 60.0f && pts[i].z >= 60.0f) drop60 = 1.5f - pts[i].y;
+    }
+    CHECK(drop30 > 0.5f && drop60 > drop30 * 3.0f);
+    // La resistencia del aire frena: llega con menos energia de la que salio.
+    Projectile p;
+    projectile_launch(&p, PROJ_ARROW, (V3){ 0, 1.5f, 0 }, 0.0f, 0.05f, vb);
+    float e0 = projectile_energy(&p), d0 = projectile_damage(&p);
+    for (int i = 0; i < 100; i++) projectile_step(&p, 0.01f);
+    CHECK(projectile_energy(&p) < e0 && projectile_damage(&p) < d0);
+    CHECK(d0 > 20.0f && d0 < 35.0f); // una flecha tensa hiere como un sable
+    // El mosquete pega mucho mas fuerte.
+    Projectile m;
+    projectile_launch(&m, PROJ_BALL, (V3){ 0, 0, 0 }, 0.0f, 0.0f, ranged_muzzle_speed(ranged_def("arma.distancia.mosquete"), 1));
+    CHECK(projectile_damage(&m) > 100.0f);
+    // A igual velocidad, el proyectil pesado conserva mas su velocidad.
+    Projectile light, heavy;
+    projectile_launch(&light, PROJ_ARROW, (V3){ 0, 0, 0 }, 0.0f, 0.0f, 60.0f);
+    projectile_launch(&heavy, PROJ_BOLT, (V3){ 0, 0, 0 }, 0.0f, 0.0f, 60.0f);
+    for (int i = 0; i < 100; i++) projectile_step(&light, 0.01f), projectile_step(&heavy, 0.01f);
+    CHECK(heavy.vel.z > light.vel.z);
+    // Puntería balistica: el angulo resuelto da en el blanco.
+    V3 from = { 0, 1.5f, 0 }, target = { 20.0f, 1.2f, 30.0f };
+    float pitch = 0.0f;
+    CHECK(ballistic_solve(PROJ_ARROW, from, target, vb, &pitch));
+    float yaw = atan2f(target.x - from.x, target.z - from.z);
+    Projectile s;
+    projectile_launch(&s, PROJ_ARROW, from, yaw, pitch, vb);
+    float best = 1e9f, dist_t = sqrtf(20.0f * 20.0f + 30.0f * 30.0f);
+    for (int i = 0; i < 400; i++) {
+        projectile_step(&s, 0.005f);
+        float dd = sqrtf(s.pos.x * s.pos.x + s.pos.z * s.pos.z);
+        if (fabsf(dd - dist_t) < 0.5f) best = fminf(best, fabsf(s.pos.y - target.y));
+    }
+    CHECK(best < 0.3f);
+    // Fuera de alcance no hay solucion.
+    CHECK(!ballistic_solve(PROJ_STONE, from, (V3){ 0, 0, 2000.0f }, vs, &pitch));
 }
 
 static void test_memmap_markers_toggle(void) {
@@ -1132,7 +1336,7 @@ static void test_anim_index_names_exist(void) {
         CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
         // Combate y salud.
         s.limping = bits & 1, s.blocking = bits & 2, s.attacking = bits % 4, s.spear = bits & 4;
-        s.hit = bits % 11 == 0, s.down = bits % 13 == 0, s.dead = bits % 17 == 0;
+        s.hit = bits % 11 == 0, s.down = bits % 13 == 0, s.dead = bits % 17 == 0, s.ranged = bits % 4;
         CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
     }
     for (int sp = 0; sp < SPECIES_COUNT; sp++) {
@@ -1198,6 +1402,9 @@ int main(void) {
     RUN(test_health_wounds_bleeding_healing);
     RUN(test_troop_health_daily);
     RUN(test_combat_weapons_and_enemies);
+    RUN(test_body_zones_raycast);
+    RUN(test_armor_pieces_materials);
+    RUN(test_ballistics_trajectories);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

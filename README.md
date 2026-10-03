@@ -45,7 +45,7 @@ Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisi
 
 Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañero atrapado para rescatarlo · `J K L U I O` en el minijuego de rescate.
 
-Combate y salud: `V` o clic izquierdo golpear · `Z` cubrirse · `B` vendar (a ti o a un compañero cercano) · `P` panel de heridas · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto).
+Combate y salud: `V` o clic izquierdo golpear (con arco u honda: mantener para tensar y soltar para disparar; la cámara alza la mira) · `Z` cubrirse · `B` vendar (a ti o a un compañero cercano) · `P` heridas y armadura · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros).
 
 Al reclutar o tomar prisioneros, a veces aparece un gran guerrero por azar.
 

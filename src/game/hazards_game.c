@@ -145,7 +145,7 @@ static void resolve_self(Hazards *hz, bool won, Player *p, GameActions *ga, cons
     char lost[48];
     // Las caidas dejan marcas: golpes contra el hielo, una pierna torcida en el socavon.
     if (hz->trap == TRAP_ICE && !won) hurt(hz, 12.0f, WOUND_BRUISE, PART_RANDOM);
-    if (hz->trap == TRAP_SNOW) hurt(hz, won ? 6.0f : 34.0f, WOUND_BRUISE, rng_range(&hz->rng, 2) ? PART_LEG_L : PART_LEG_R);
+    if (hz->trap == TRAP_SNOW) hurt(hz, won ? 6.0f : 34.0f, WOUND_BRUISE, rng_range(&hz->rng, 2) ? PART_SHIN_L : PART_SHIN_R);
     switch (hz->trap) {
     case TRAP_ICE:
         hz->warmth.wet = 1.0f;
@@ -455,7 +455,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
         hz->frost_timer += dt;
         if (hz->frost_timer > 10.0f) {
             hz->frost_timer = 0.0f;
-            hurt(hz, 5.0f, WOUND_FROSTBITE, PART_ARM_L + rng_range(&hz->rng, 4));
+            hurt(hz, 5.0f, WOUND_FROSTBITE, health_random_limb(&hz->rng));
         }
         hz->faint_timer += dt;
         if (hz->faint_timer > FAINT_SECONDS) {

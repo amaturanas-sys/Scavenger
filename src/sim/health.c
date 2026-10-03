@@ -9,18 +9,47 @@ void health_init(Health *h, float hp_max) {
     *h = (Health){ .hp = hp_max, .hp_max = hp_max, .blood = 1.0f };
 }
 
+void health_init_beast(Health *h, float hp_max) {
+    health_init(h, hp_max);
+    h->beast = true;
+}
+
+// Daño por zona: cuello y cabeza letales; el torso y el vientre, mucho; las
+// extremidades, menos (y cuanto mas lejos del cuerpo, menos).
+float part_damage_scale(BodyPart p) {
+    static const float k[PART_COUNT] = { 1.8f, 2.2f, 1.15f, 1.25f, 1.0f, 0.7f, 0.55f, 0.7f, 0.55f, 0.85f, 0.6f, 0.85f, 0.6f };
+    return (unsigned)p < PART_COUNT ? k[p] : 1.0f;
+}
+
+// Sangrado por zona: el cuello (yugular), el vientre y el muslo (femoral) sangran mas.
+float part_bleed_scale(BodyPart p) {
+    static const float k[PART_COUNT] = { 1.2f, 2.5f, 1.0f, 1.5f, 1.1f, 0.9f, 0.8f, 0.9f, 0.8f, 1.4f, 0.8f, 1.4f, 0.8f };
+    return (unsigned)p < PART_COUNT ? k[p] : 1.0f;
+}
+
+bool part_is_arm(BodyPart p) { return p >= PART_UPPER_ARM_L && p <= PART_FOREARM_R; }
+bool part_is_leg(BodyPart p) { return p >= PART_THIGH_L && p <= PART_SHIN_R; }
+
 static BodyPart random_part(Rng *rng) {
-    // Pesos: cabeza 6, torso 40, brazos 14 y 14, piernas 13 y 13.
-    static const int weight[PART_COUNT] = { 6, 40, 14, 14, 13, 13 };
+    // Pesos (suman 100): cabeza 7, cuello 3, torax 22, abdomen 14, pelvis 8,
+    // brazos 7+6 por lado, muslos 6, piernas 4.
+    static const int weight[PART_COUNT] = { 7, 3, 22, 14, 8, 7, 6, 7, 6, 6, 4, 6, 4 };
     int r = rng_range(rng, 100);
     for (int p = 0; p < PART_COUNT; p++) {
         if (r < weight[p]) return (BodyPart)p;
         r -= weight[p];
     }
-    return PART_TORSO;
+    return PART_THORAX;
 }
 
-static bool is_limb(BodyPart p) { return p >= PART_ARM_L; }
+int health_pick_part(Rng *rng) { return random_part(rng); }
+
+int health_random_limb(Rng *rng) {
+    static const BodyPart limbs[] = { PART_FOREARM_L, PART_FOREARM_R, PART_SHIN_L, PART_SHIN_R };
+    return limbs[rng_range(rng, 4)];
+}
+
+static bool is_limb(BodyPart p) { return part_is_arm(p) || part_is_leg(p); }
 
 static void update_state(Health *h) {
     if (h->dead) return;
@@ -35,9 +64,10 @@ static void update_state(Health *h) {
 
 int health_hit(Health *h, Rng *rng, float damage, WoundKind kind, int part) {
     if (h->dead || damage <= 0.0f) return -1;
+    BodyPart bp = part == PART_RANDOM ? random_part(rng) : (BodyPart)part;
+    damage *= part_damage_scale(bp);
     h->hp -= damage;
     float sev = clampf(damage / h->hp_max * 1.8f, 0.05f, 1.0f);
-    BodyPart bp = part == PART_RANDOM ? random_part(rng) : (BodyPart)part;
     if (kind == WOUND_BRUISE && sev > 0.55f && is_limb(bp)) kind = WOUND_FRACTURE; // un golpe fuerte rompe el hueso
     bool bleeds = ((kind == WOUND_CUT || kind == WOUND_BITE) && sev >= 0.15f) || (kind == WOUND_FRACTURE && sev > 0.8f);
     // La misma herida sin tratar empeora en vez de duplicarse.
@@ -78,7 +108,7 @@ void health_update(Health *h, Rng *rng, float dt, bool resting, float healer) {
             w->bleeding = false;
             continue;
         }
-        bleed += w->severity * 0.004f;
+        bleed += w->severity * 0.004f * part_bleed_scale(w->part);
     }
     if (bleed > 0.0f) {
         h->blood -= bleed * dt;
@@ -165,14 +195,15 @@ static float limb_penalty(const Health *h, BodyPart a, BodyPart b, float fractur
 
 float health_speed_scale(const Health *h) {
     if (h->down || h->dead) return 0.0f;
-    float p = limb_penalty(h, PART_LEG_L, PART_LEG_R, 0.7f, 0.35f);
+    float p = limb_penalty(h, PART_THIGH_L, PART_THIGH_R, 0.7f, 0.35f) + limb_penalty(h, PART_SHIN_L, PART_SHIN_R, 0.6f, 0.3f);
     if (h->blood < 0.7f) p += 0.7f - h->blood;
     return clampf(1.0f - p, 0.25f, 1.0f);
 }
 
 float health_attack_scale(const Health *h) {
     if (h->down || h->dead) return 0.0f;
-    float p = limb_penalty(h, PART_ARM_L, PART_ARM_R, 0.7f, 0.35f) + limb_penalty(h, PART_HEAD, PART_HEAD, 0.2f, 0.2f);
+    float p = limb_penalty(h, PART_UPPER_ARM_L, PART_UPPER_ARM_R, 0.6f, 0.3f) +
+              limb_penalty(h, PART_FOREARM_L, PART_FOREARM_R, 0.7f, 0.35f) + limb_penalty(h, PART_HEAD, PART_HEAD, 0.2f, 0.2f);
     if (h->blood < 0.7f) p += 0.7f - h->blood;
     return clampf(1.0f - p, 0.3f, 1.0f);
 }
@@ -189,16 +220,25 @@ const char *wound_name(WoundKind k) {
     return (unsigned)k < WOUND_COUNT ? names[k] : "?";
 }
 
-const char *part_name(BodyPart p) {
-    static const char *names[PART_COUNT] = { "la cabeza", "el torso", "el brazo izquierdo", "el brazo derecho",
-                                             "la pierna izquierda", "la pierna derecha" };
-    return (unsigned)p < PART_COUNT ? names[p] : "?";
+const char *part_name(BodyPart p, bool beast) {
+    static const char *human[PART_COUNT] = {
+        "la cabeza",         "el cuello",           "el tórax",          "el abdomen",           "la pelvis",
+        "el brazo izquierdo", "el antebrazo izquierdo", "el brazo derecho", "el antebrazo derecho",
+        "el muslo izquierdo", "la pierna izquierda",  "el muslo derecho",  "la pierna derecha",
+    };
+    static const char *animal[PART_COUNT] = {
+        "la cabeza",       "el cuello",          "el pecho",         "el vientre",          "la grupa",
+        "la paleta izquierda", "la pata delantera izquierda", "la paleta derecha", "la pata delantera derecha",
+        "el anca izquierda", "la pata trasera izquierda", "el anca derecha", "la pata trasera derecha",
+    };
+    if ((unsigned)p >= PART_COUNT) return "?";
+    return beast ? animal[p] : human[p];
 }
 
 const char *severity_name(float s) { return s < 0.3f ? "leve" : s < 0.6f ? "moderada" : "grave"; }
 
-int wound_describe(const Wound *w, char *out, int len) {
-    return snprintf(out, (size_t)len, "%s en %s (%s%s%s)", wound_name(w->kind), part_name(w->part),
+int wound_describe(const Wound *w, bool beast, char *out, int len) {
+    return snprintf(out, (size_t)len, "%s en %s (%s%s%s)", wound_name(w->kind), part_name(w->part, beast),
                     severity_name(w->severity), w->bleeding ? ", sangra" : "",
                     w->treated ? (w->kind == WOUND_FRACTURE ? ", entablillada" : ", vendada") : "");
 }

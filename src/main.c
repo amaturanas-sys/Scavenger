@@ -10,7 +10,8 @@
 // --dia y --minuto ponen el reloj (minutos desde el amanecer), p. ej. para ver la noche.
 // --pos lleva al jugador a otro lugar del mundo (p. ej. a la cordillera).
 // --trampa arranca en un peligro con su minijuego (prueba).
-// --enemigos bandidos|culto|lobos los pone delante; --heridas hiere al jugador y a la tribu (pruebas).
+// --enemigos bandidos|culto|lobos|arqueros los pone delante; --heridas hiere al jugador y a la tribu;
+// --apuntar empuña el arco tenso (pruebas).
 // --sin-teclado simula un dispositivo Android sin teclado (prueba del aviso).
 #include <math.h>
 #include <stdio.h>
@@ -283,7 +284,7 @@ static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, float wo
     ui_text_wrapped(log, x, 116, w - 2 * UI_PANEL_INSET, 10, UI_BONE);
 
     ui_strip((Rectangle){ 0, VIRTUAL_H - 40, VIRTUAL_W, 40 }, UI_METAL_GOLD);
-    ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E cámara  M marcar  V golpear  Z cubrirse  B vendar  P salud",
+    ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E cámara  M marcar  V atacar  Z cubrirse  B vendar  P salud",
             4, VIRTUAL_H - 32, 10, UI_BONE_DIM);
     ui_text("Tab acciones, obras y forja  X empuñadura  H enfundar  F tomar  T lanzar  R montar  I acopio  Y escolta", 4, VIRTUAL_H - 21, 10,
             UI_BONE);
@@ -309,7 +310,7 @@ int main(int argc, char **argv) {
     float start_minute = 4.0f; // la partida empieza a media manana
     bool start_pos = false;
     const char *start_trap = NULL, *start_enemies = NULL;
-    bool start_wounds = false;
+    bool start_wounds = false, start_aim = false;
     float start_x = 0.0f, start_z = 0.0f;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) shot_path = argv[++i];
@@ -321,6 +322,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--trampa") && i + 1 < argc) start_trap = argv[++i];
         else if (!strcmp(argv[i], "--enemigos") && i + 1 < argc) start_enemies = argv[++i];
         else if (!strcmp(argv[i], "--heridas")) start_wounds = true;
+        else if (!strcmp(argv[i], "--apuntar")) start_aim = true;
         else if (!strcmp(argv[i], "--pos") && i + 2 < argc) {
             start_pos = true;
             start_x = (float)atof(argv[++i]);
@@ -425,10 +427,10 @@ int main(int argc, char **argv) {
                 start_enemies = NULL;
             }
             if (start_wounds && frame == 3 && !gallery_mode) { // prueba: heridas a la vista
-                health_hit(&g_combat.player, &rng, 28.0f, WOUND_CUT, PART_LEG_L);
-                health_hit(&g_combat.player, &rng, 14.0f, WOUND_BRUISE, PART_ARM_R);
+                health_hit(&g_combat.player, &rng, 28.0f, WOUND_CUT, PART_THIGH_L);
+                health_hit(&g_combat.player, &rng, 14.0f, WOUND_BRUISE, PART_FOREARM_R);
                 for (int i = 0; i < 2 && i < troop.count; i++)
-                    health_hit(&troop.members[i].health, &rng, i ? 110.0f : 30.0f, WOUND_BITE, PART_TORSO);
+                    health_hit(&troop.members[i].health, &rng, i ? 110.0f : 30.0f, WOUND_BITE, PART_ABDOMEN);
                 g_combat.show_panel = true;
                 start_wounds = false;
             }
@@ -438,7 +440,17 @@ int main(int argc, char **argv) {
             if (!gallery_mode)
                 cb_update(&g_combat, &player, &g_actions, &troop, &terrain, camp.fire,
                           !menu && !hz_blocks_input(&g_hazards), clock_is_night(world_time), g_climate.temp_mean < 0.0f,
-                          dt, log, sizeof(log));
+                          rig.yaw, rig.pitch, dt, log, sizeof(log));
+            if (start_aim && !gallery_mode) { // prueba: arco tenso, para ver la curva de la mira
+                snprintf(g_actions.hands.right.id, sizeof(g_actions.hands.right.id), "arma.distancia.arco_compuesto");
+                g_actions.hands.right.kind = INV_HANDS_TWO;
+                g_actions.hands.left.id[0] = '\0';
+                g_actions.hands.sheathed = false;
+                g_combat.aiming = true;
+                g_combat.draw = 0.8f;
+                g_combat.aim_pitch = 0.12f;
+                player.yaw = rig.yaw;
+            }
             if (last_champion != prev_champion) show_card = true; // ficha al conocerlo
             advance_days(&troop, &rng, &day, world_time, &terrain, log, sizeof(log));
             if (IsKeyPressed(KEY_G)) show_card = !show_card && last_champion >= 0;
@@ -468,8 +480,8 @@ int main(int argc, char **argv) {
         camp_draw(&camp, (float)GetTime(), climate.snow_cover);
         if (gallery_mode) gallery_draw(&gallery);
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
-        if (!player_model && !g_combat.player.down) player_draw(&player);
-        if (!gallery_mode) cb_draw_world(&g_combat, &g_props, &g_actions, &player, player_model, (float)GetTime());
+        if (gallery_mode) player_draw(&player);
+        else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
         if (!gallery_mode) hz_draw_world(&g_hazards, &terrain, &g_actions, &troop, (float)GetTime());

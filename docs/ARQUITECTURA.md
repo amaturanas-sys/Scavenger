@@ -22,6 +22,9 @@ src/
     hazards.*    frio, barro, hielo, socavones, desierto, minijuego (QTE)
     health.*     vida, sangre y heridas (jugador, tribu, enemigos)
     combat.*     armas, enemigos y reglas de cada golpe
+    body.*       cuerpo humano articulado por zonas (dibujo e impactos)
+    armor.*      armadura por piezas: materiales, cobertura, durabilidad
+    ballistics.* armas a distancia y trayectoria de proyectiles
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
@@ -33,6 +36,7 @@ src/
     gallery.*    galeria del inventario (--galeria)
     sky.*        cielo, tinte de noche, estrellas y brillo de los fuegos
     weather.*    lluvia, nieve, ventisca, relampagos y bruma
+    body_draw.*  dibuja el cuerpo articulado con su armadura
     props.*      objetos sueltos en el mundo (modelo o marcador)
   game/     Jugador e input
     player.*
