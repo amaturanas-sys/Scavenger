@@ -76,7 +76,21 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 - **Modelos por estación:** un modelo puede traer variantes junto al base (`yurta_comun@invierno.glb`, `@primavera`, `@verano`, `@otono`); el juego usa la de la estación si existe.
 - **Prueba:** `--dia N --minuto M` elige el momento y `--pos X Z` el lugar (p. ej. `--dia 23 --pos -340 -130`: glaciares en invierno; `--dia 7 --pos -112 -2`: un lago crecido).
 
-**Pendiente:** efectos jugables del clima (frío y abrigo, barro que frena, cruzar lagos helados, vadear, cosechas y pasto para el ganado), ríos.
+**Pendiente:** cosechas y pasto para el ganado según la estación, ríos.
+
+### Peligros del clima y del terreno (implementado — `src/sim/hazards.*`, `src/game/hazards_game.*`)
+- **Frío:** el jugador tiene **calor corporal** (barra bajo el minimapa: abrigado, fresco, frío, helado, hipotermia). Lo baja la sensación térmica: temperatura + abrigo de pieles − viento − ropa mojada. Lo sube estar junto a un fuego (fogata del campamento, fogatas, hogueras, hornos); las yurtas cortan el viento y la antorcha da algo de calor. La lluvia empapa y el fuego seca. Con frío el cuerpo se entumece (más lento) y con **hipotermia** el jugador se desmaya: la tribu lo lleva junto al fuego (moral −3). Una noche de pleno invierno a la intemperie congela en unos minutos.
+- **Leña:** en las noches heladas cada fuego del campamento gasta leña del acopio (el doble con frío extremo). Si falta, la tribu pasa frío (moral −4).
+- **Barro:** la lluvia y el deshielo frenan la marcha en suelo blando (hasta −40 %); no en la arena ni bajo la nieve.
+- **Agua:** sin hielo, los lagos se vadean (más lento, la ropa se moja) o se nadan.
+- **Lagos helados:** con el lago congelado se camina sobre el hielo, pero la capa puede romperse: más riesgo corriendo, a caballo y con hielo recién formado. El agujero queda abierto hasta el día siguiente.
+- **Desierto:** regiones de dunas lejos del campamento (arena dorada, sin barro, casi sin nieve).
+- **Socavones ocultos:** cada día aparecen en sitios al azar distintos: **socavones de nieve** en los glaciares y **arena movediza** en el desierto. No se ven; al acercarse solo una pista sutil (un cerco de grietas o de arena húmeda). Pisarlo atrapa.
+- **Minijuego de rescate (coordinación mano-ojo):** al caer, el juego pide una serie de teclas (J K L U I O) que hay que pulsar en orden y a tiempo; cada acierto acorta el tiempo de la siguiente y los errores (o las demoras) se cuentan. Ganar: sales (empapado si fue el hielo). Perder: sales a duras penas, helado, y se hunde lo que cargabas o tu arma.
+- **Escolta (Y):** dos integrantes libres te acompañan. También pueden romper el hielo o caer en un socavón: entonces corre el tiempo (unos 40–60 s) y hay que acercarse y pulsar **F** para sacarlos con el minijuego (si falla, se puede reintentar con menos tiempo). Salvarlo sube la moral (+3); si no llegas, muere (moral −6). Si caes tú con la escolta cerca, te tienden la lanza: la serie es más corta y con más margen.
+- **Prueba:** `--trampa hielo|nieve|arena|rescate` arranca en cada caso (p. ej. `--dia 25 --pos -148 -12 --trampa rescate`; arena: `--dia 12 --pos 352 20 --trampa arena`).
+
+**Pendiente:** heridas y salud, ropa y abrigo como equipo, que los NPCs del campamento también sufran el frío individualmente, animales que caen al hielo.
 
 ### Acciones (núcleo implementado — `src/sim/actions.*`, en juego `src/game/actions_game.*`)
 Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las use llega en la Fase 1). Los objetos que usan o producen son ids del [inventario de assets](INVENTARIO.md).

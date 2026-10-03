@@ -432,7 +432,7 @@ static bool npc_assign_job(GameActions *ga, const Troop *troop, const Terrain *t
     if (!(d->actors & ACTOR_NPC) || !stock_has_all(&ga->stock, d->mats)) return false;
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
         Npc *n = &ga->npcs[i];
-        if (troop->members[i].status != STATUS_ACTIVE || n->project >= 0 || n->job >= 0) continue;
+        if (troop->members[i].status != STATUS_ACTIVE || n->project >= 0 || n->job >= 0 || n->escort) continue;
         stock_take_all(&ga->stock, d->mats);
         n->job = a;
         n->job_pos = ground_at(t, where.x, where.z);
@@ -447,7 +447,7 @@ static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const T
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
         Npc *n = &ga->npcs[i];
         const Member *m = &troop->members[i];
-        if (m->status != STATUS_ACTIVE) continue;
+        if (m->status != STATUS_ACTIVE || n->escort) continue;
         if (n->project >= 0 && n->project < ga->project_count) {
             const BuildProject *bp = &ga->projects[n->project];
             float ang = (float)i * 1.3f; // cada uno en su lado de la obra
@@ -536,7 +536,10 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
 
     // Obras: cada una elige su cuadrilla (sin repetir gente) y avanza con los que ya llegaron.
     int busy[TROOP_MAX], n_busy = 0;
-    for (int i = 0; i < troop->count && i < TROOP_MAX; i++) ga->npcs[i].project = -1;
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
+        ga->npcs[i].project = -1;
+        if (ga->npcs[i].escort) busy[n_busy++] = ga->npcs[i].member_id; // la escolta no trabaja en obras
+    }
     for (int i = 0; i < ga->project_count; i++) {
         BuildProject *bp = &ga->projects[i];
         const BuildDef *d = build_def(bp->def);
@@ -898,7 +901,7 @@ static void draw_menu(const GameActions *ga, const Props *props, const Troop *tr
 static void draw_stock(const GameActions *ga, int width) {
     int rows = 0;
     for (int i = 0; i < ga->stock.n; i++) rows += ga->stock.e[i].count > 0;
-    const int w = 250, h = 2 * UI_PANEL_INSET + 18 + 11 * rows, x0 = width - w - 6, y0 = 142;
+    const int w = 250, h = 2 * UI_PANEL_INSET + 18 + 11 * rows, x0 = width - w - 6, y0 = 162;
     ui_panel((Rectangle){ (float)x0, (float)y0, (float)w, (float)h }, UI_METAL_SILVER);
     int x = x0 + UI_PANEL_INSET + 2, y = y0 + UI_PANEL_INSET + 2;
     ui_text("Acopio de la tribu (I)", x, y, 10, UI_GOLD_LIGHT);

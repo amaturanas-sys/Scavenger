@@ -144,6 +144,15 @@ bool troop_execute(Troop *t, int id) {
     return true;
 }
 
+bool troop_mourn(Troop *t, int id, float morale_loss) {
+    Member *m = troop_find(t, id);
+    if (!m || m->status != STATUS_ACTIVE) return false;
+    m->status = STATUS_DEAD;
+    m->role = ROLE_NONE;
+    troop_adjust_morale(t, -morale_loss);
+    return true;
+}
+
 bool troop_release_prisoner(Troop *t, int id) {
     Member *m = troop_find(t, id);
     if (!m || m->status != STATUS_PRISONER) return false;
@@ -273,6 +282,7 @@ const char *status_name(MemberStatus s) {
     case STATUS_BANISHED: return "desterrado";
     case STATUS_EXECUTED: return "ejecutado";
     case STATUS_DESERTED: return "desertor";
+    case STATUS_DEAD: return "muerto";
     }
     return "?";
 }

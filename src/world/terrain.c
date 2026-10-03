@@ -4,8 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../sim/hazards.h"
 #include "../sim/noise.h"
 #include "raymath.h"
+
+#define TRI_ATTRS 5 // por triangulo: altura, pendiente, luz, mancha, desierto
 
 // Campamento inicial en el origen: el terreno se aplana a su alrededor.
 #define CAMP_FLAT_INNER 18.0f
@@ -21,11 +24,17 @@ float terrain_height(const Terrain *t, float x, float z) {
     float bumps = fbm2d(x * 0.04f, z * 0.04f, t->seed + 17u, 3) * 1.2f; // ondulacion fina
     float h = hills + bumps;
     float d = sqrtf(x * x + z * z);
+    // Desierto: llanuras de dunas (las colinas se suavizan y aparecen crestas de arena).
+    float desert = biome_desert(t->seed, x, z);
+    if (desert > 0.0f) {
+        float dunes = (1.0f - fabsf(noise2d(x * 0.03f + z * 0.012f, z * 0.02f, t->seed + 505u))) * 2.4f;
+        h = h * (1.0f - 0.6f * desert) + dunes * desert;
+    }
     // Cordilleras lejos del campamento: crestas que guardan nieve y glaciares.
     float region = smoothstepf(0.05f, 0.45f, fbm2d(x * 0.0016f, z * 0.0016f, t->seed + 101u, 3));
     if (region > 0.0f) {
         float ridge = 1.0f - fabsf(fbm2d(x * 0.005f, z * 0.005f, t->seed + 202u, 4));
-        h += region * ridge * ridge * 58.0f * smoothstepf(150.0f, 320.0f, d);
+        h += region * ridge * ridge * 58.0f * smoothstepf(150.0f, 320.0f, d) * (1.0f - desert);
     }
     float k = smoothstepf(CAMP_FLAT_INNER, CAMP_FLAT_OUTER, d);
     float base = fbm2d(0.0f, 0.0f, t->seed, 5) * 16.0f; // altura del llano del campamento
@@ -43,7 +52,8 @@ static Color mixc(Color a, Color b, float k) {
 // Paleta de estepa segun la estacion: pasto verde, seco, ocre o dormido; tierra
 // y roca en las pendientes; barro con lluvia; nieve, hielo y glaciares.
 // h: altura relativa al llano; patch en [0, 1]: manchas (nieve a medio cubrir).
-static Color ground_color(const TerrainLook *L, float lake_base, float h, float h_abs, float slope, float patch) {
+static Color ground_color(const TerrainLook *L, float lake_base, float h, float h_abs, float slope, float patch,
+                          float desert) {
     const Color green = { 112, 150, 70, 255 }, dry = { 188, 168, 106, 255 }, ochre = { 172, 124, 68, 255 };
     const Color dormant = { 140, 128, 98, 255 }, dirt = { 140, 110, 76, 255 }, rock = { 120, 116, 108, 255 };
     const Color snow = { 226, 232, 240, 255 }, glacier = { 196, 218, 236, 255 }, mud = { 112, 96, 72, 255 };
@@ -59,9 +69,14 @@ static Color ground_color(const TerrainLook *L, float lake_base, float h, float 
     // Orillas: el lecho que el agua dejo al bajar, y el barro junto al agua.
     float above_water = h_abs - L->water_level;
     if (h_abs < lake_base + TERRAIN_LAKE_FLOOD && above_water > 0.0f) c = above_water < 0.4f ? mud : mixc(c, lakebed, 0.7f);
-    if (!bare) c = mixc(c, mud, L->wetness * 0.35f); // suelo mojado
-    // Nieve: cubre el llano segun la estacion (en manchas a medio cubrir); menos en lo empinado.
-    float cover = L->snow_cover * (slope > 0.75f ? 0.55f : 1.0f);
+    if (!bare) c = mixc(c, mud, L->wetness * 0.35f * (1.0f - desert)); // suelo mojado (la arena no se embarra)
+    // Desierto: arena dorada, con vetas segun la mancha.
+    if (desert > 0.0f) {
+        const Color sand = { 214, 188, 134, 255 }, sand_dark = { 190, 160, 108, 255 };
+        c = mixc(c, mixc(sand, sand_dark, patch * 0.8f), Clamp(desert * 1.4f, 0.0f, 1.0f));
+    }
+    // Nieve: cubre el llano segun la estacion (en manchas a medio cubrir); menos en lo empinado y en la arena.
+    float cover = L->snow_cover * (slope > 0.75f ? 0.55f : 1.0f) * (1.0f - 0.6f * desert);
     if (patch < cover * 1.15f - 0.05f) c = snow;
     // Glaciares y nieve permanente en las cumbres; una franja de manchas por debajo.
     float above = h_abs - L->snowline;
@@ -79,8 +94,8 @@ static void paint_chunk(const Terrain *t, Chunk *ch, bool upload) {
     Mesh *mesh = &ch->model.meshes[0];
     const int tris = mesh->triangleCount;
     for (int i = 0; i < tris; i++) {
-        const float *a = &ch->tri[i * 4];
-        Color col = shade(ground_color(&t->look, t->lake_base, a[0] - t->plain, a[0], a[1], a[3]), a[2]);
+        const float *a = &ch->tri[i * TRI_ATTRS];
+        Color col = shade(ground_color(&t->look, t->lake_base, a[0] - t->plain, a[0], a[1], a[3], a[4]), a[2]);
         for (int k = 0; k < 3; k++) {
             unsigned char *dst = &mesh->colors[(i * 3 + k) * 4];
             dst[0] = col.r;
@@ -100,7 +115,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
     mesh.vertices = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
     mesh.normals = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
     mesh.colors = MemAlloc(mesh.vertexCount * 4 * sizeof(unsigned char));
-    float *attr = MemAlloc(tris * 4 * sizeof(float));
+    float *attr = MemAlloc(tris * TRI_ATTRS * sizeof(float));
 
     const float cell = CHUNK_SIZE / CHUNK_CELLS;
     const float ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
@@ -125,10 +140,12 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
                 float light = 0.55f + 0.45f * fmaxf(0.0f, Vector3DotProduct(n, sun));
                 float cx_ = (a.x + b.x + c.x) / 3.0f, cz_ = (a.z + b.z + c.z) / 3.0f;
                 int ti = v / 3;
-                attr[ti * 4 + 0] = hmid;
-                attr[ti * 4 + 1] = slope;
-                attr[ti * 4 + 2] = light;
-                attr[ti * 4 + 3] = 0.5f + 0.5f * fbm2d(cx_ * 0.08f, cz_ * 0.08f, t->seed + 303u, 2); // manchas
+                float *at = &attr[ti * TRI_ATTRS];
+                at[0] = hmid;
+                at[1] = slope;
+                at[2] = light;
+                at[3] = 0.5f + 0.5f * fbm2d(cx_ * 0.08f, cz_ * 0.08f, t->seed + 303u, 2); // manchas
+                at[4] = biome_desert(t->seed, cx_, cz_);
                 Vector3 tri[3] = { a, b, c };
                 for (int k = 0; k < 3; k++, v++) {
                     mesh.vertices[v * 3 + 0] = tri[k].x;

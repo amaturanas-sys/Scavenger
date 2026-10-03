@@ -34,6 +34,7 @@ typedef struct {
     bool moving;
     Vector3 job_pos;
     float job_timer;
+    bool escort;       // acompana al jugador (src/game/hazards_game.c lo mueve)
 } Npc;
 
 typedef struct {

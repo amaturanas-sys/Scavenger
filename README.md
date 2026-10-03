@@ -43,6 +43,8 @@ En Linux hacen falta las cabeceras de X11/OpenGL:
 
 Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente · `N` adelantar dos minutos.
 
+Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañero atrapado para rescatarlo · `J K L U I O` en el minijuego de rescate.
+
 Al reclutar o tomar prisioneros, a veces aparece un gran guerrero por azar.
 
 ## Android
@@ -73,4 +75,5 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --galeria                                           # galería del inventario de assets
 ./build/estepa --dia 25 --minuto 14                                # noche de pleno invierno
 ./build/estepa --dia 23 --pos -340 -130                            # glaciares en invierno
+./build/estepa --dia 25 --pos -148 -12 --trampa rescate            # minijuego: sacar a un compañero del hielo
 ```
