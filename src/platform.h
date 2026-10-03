@@ -16,4 +16,8 @@ const char *platform_asset_path(const char *rel);
 // conectar o desconectar un teclado, sin reiniciar la actividad).
 bool platform_has_keyboard(void);
 
+// Carpeta de las partidas guardadas (existe al volver). En escritorio, "saves"
+// junto al ejecutable; en Android, el almacenamiento interno de la app.
+const char *platform_save_dir(void);
+
 #endif

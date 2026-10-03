@@ -48,6 +48,8 @@ src/
     combat_game.*   combate, enemigos, vendajes, salud de la tribu y del jugador
     fauna_game.*    fauna en el mundo: aparicion por bioma, ataques, K (comer, despiezar, ordeñar)
     disasters_game.* fuego, rayos, lluvia torrencial, fogatas apagadas por la lluvia
+    save_game.*     partidas guardadas: tres huecos versionados con minifoto y fecha
+    title_menu.*    menu de entrada y de pausa, huecos, instructivo (arte en assets/ui/)
   ui/       Interfaz (raylib)
     theme.*      tema de orfebreria: paneles, barras, texto
     minimap.*    minimapa circular tipo brujula

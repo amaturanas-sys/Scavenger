@@ -22,6 +22,8 @@
 #include "game/combat_game.h"
 #include "game/disasters_game.h"
 #include "game/fauna_game.h"
+#include "game/save_game.h"
+#include "game/title_menu.h"
 #include "game/hazards_game.h"
 #include "game/player.h"
 #include "platform.h"
@@ -264,37 +266,61 @@ static void draw_weather_text(int right, int y, const Climate *c) {
     ui_text(txt, right - MeasureText(txt, 10), y, 10, col);
 }
 
-static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, float world_time, const char *hands,
-                     const char *log) {
-    const int x = 4 + UI_PANEL_INSET, w = 256;
-    ui_panel((Rectangle){ 4, 4, w, 152 }, UI_METAL_GOLD);
-    ui_text("ESTEPA", x, 16, 10, UI_GOLD_LIGHT);
-    ui_text(TextFormat("v%s (build %d) · %d fps", ESTEPA_VERSION, ESTEPA_BUILD_CODE, GetFPS()), x + 48, 16, 10,
-            UI_BONE_DIM);
-    ui_divider(x, 29, w - 2 * UI_PANEL_INSET, UI_METAL_GOLD);
-    ui_text(clock_text(world_time), x, 34, 10, clock_is_night(world_time) ? UI_BONE_DIM : UI_GOLD_LIGHT);
-    ui_text(TextFormat("%s · Tropa: %d · Prisioneros: %d", stance_name(p->stance),
-                       troop_count_with_status(t, STATUS_ACTIVE), troop_count_with_status(t, STATUS_PRISONER)),
-            x, 46, 10, UI_BONE);
-    ui_text("Moral", x, 59, 10, UI_BONE);
-    ui_bar(x + 46, 60, 100, troop_avg_morale(t) / 100.0f, UI_TURQUOISE, UI_METAL_GOLD);
-    ui_text("Lealtad", x, 71, 10, UI_BONE);
-    ui_bar(x + 46, 72, 100, troop_avg_loyalty(t) / 100.0f, UI_LAPIS, UI_METAL_GOLD);
+// HUD limpio: arriba a la izquierda, lo esencial (hora, tribu, animo, manos); el registro
+// abajo, solo mientras es reciente; los controles, con F1.
+static void draw_hud(const Troop *t, float world_time, const char *hands, const char *log, float log_age) {
+    const int x = 4 + 8, w = 236;
+    DrawRectangle(4, 4, w, 46, (Color){ 20, 14, 10, 170 });
+    DrawRectangleLines(4, 4, w, 46, Fade(UI_GOLD_DARK, 0.9f));
+    ui_text(clock_text(world_time), x, 8, 10, clock_is_night(world_time) ? UI_BONE_DIM : UI_GOLD_LIGHT);
+    ui_text(TextFormat("Tropa %d", troop_count_with_status(t, STATUS_ACTIVE)), x, 22, 10, UI_BONE);
+    int prisoners = troop_count_with_status(t, STATUS_PRISONER);
+    if (prisoners) ui_text(TextFormat("· %d cautivo%s", prisoners, prisoners == 1 ? "" : "s"), x + 46, 22, 10, UI_BONE_DIM);
+    // Animo (turquesa) y lealtad (lapislazuli), dos barras cortas.
+    ui_bar(x + 128, 23, 46, troop_avg_morale(t) / 100.0f, UI_TURQUOISE, UI_METAL_GOLD);
+    ui_bar(x + 178, 23, 46, troop_avg_loyalty(t) / 100.0f, UI_LAPIS, UI_METAL_GOLD);
+    ui_text(hands, x, 36, 10, UI_TURQUOISE);
     float rebellion = troop_rebellion_chance(t);
-    ui_text(TextFormat("Rebelion %d%%", (int)(rebellion * 100)), x + 152, 65, 10,
-            rebellion > 0.0f ? UI_CARNELIAN : UI_BONE_DIM);
-    ui_text(hands, x, 85, 10, UI_TURQUOISE);
-    ui_text(TextFormat("%s: %+d", k->name, (int)k->relation), x, 97, 10, UI_GOLD);
-    ui_divider(x, 111, w - 2 * UI_PANEL_INSET, UI_METAL_GOLD);
-    ui_text_wrapped(log, x, 116, w - 2 * UI_PANEL_INSET, 10, UI_BONE);
+    if (rebellion > 0.0f) ui_text(TextFormat("Riesgo de rebelión %d%%", (int)(rebellion * 100)), x, 54, 10, UI_CARNELIAN);
+    // Registro: abajo a la izquierda, se desvanece a los 8 s.
+    if (log[0] && log_age < 8.0f) {
+        float a = log_age < 6.0f ? 1.0f : (8.0f - log_age) / 2.0f;
+        int lw = MeasureText(log, 10);
+        if (lw > VIRTUAL_W - 180) lw = VIRTUAL_W - 180;
+        DrawRectangle(4, VIRTUAL_H - 22, lw + 14, 18, Fade((Color){ 20, 14, 10, 255 }, 0.7f * a));
+        DrawRectangle(4, VIRTUAL_H - 22, 2, 18, Fade(UI_GOLD, a));
+        BeginScissorMode(4, VIRTUAL_H - 22, lw + 14, 18);
+        ui_text(log, 11, VIRTUAL_H - 18, 10, Fade(UI_BONE, a));
+        EndScissorMode();
+    }
+    const char *hint = "F1 controles · Esc menú";
+    ui_text(hint, VIRTUAL_W - 8 - MeasureText(hint, 10), VIRTUAL_H - 16, 10, Fade(UI_BONE_DIM, 0.8f));
+}
 
-    ui_strip((Rectangle){ 0, VIRTUAL_H - 40, VIRTUAL_W, 40 }, UI_METAL_GOLD);
-    ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E cámara  M marcar  V atacar  Z cubrirse  B vendar  P salud",
-            4, VIRTUAL_H - 32, 10, UI_BONE_DIM);
-    ui_text("Tab acciones, obras y forja  X empuñadura  H enfundar  F tomar  T lanzar  R montar  I acopio  Y escolta", 4, VIRTUAL_H - 21, 10,
-            UI_BONE);
-    ui_text("1 reclutar 2 cautivo 3/4 ejecutar 5 desterrar 6 botín 7 liberar 8 guerrero G ficha Enter día N hora 9 enemigos",
-            4, VIRTUAL_H - 11, 10, UI_BONE_DIM);
+// Una partida nueva: la tribu inicial en el campamento, a media mañana del dia pedido.
+static void game_new(GameState *g, Terrain *terrain, int start_day, float start_minute, char *log, size_t len) {
+    player_init(g->player, terrain);
+    kingdom_init_iron_khanate(g->overlord);
+    troop_init(g->troop, g->overlord);
+    seed_troop(g->troop);
+    rng_seed(g->rng, WORLD_SEED);
+    *g->world_time = (float)(start_day > 1 ? start_day - 1 : 0) * GAME_SECONDS_PER_DAY +
+                     fmaxf(0.0f, fminf(start_minute * 60.0f, GAME_SECONDS_PER_DAY - 1.0f));
+    *g->day = clock_day(*g->world_time);
+    *g->last_champion = -1;
+    *g->cam_yaw = PI;
+    memmap_free(g->mem);
+    memmap_init(g->mem);
+    g->props->count = 0; // los modelos cargados se conservan
+    // El clima primero: los animales iniciales miran donde hay agua.
+    g_climate = climate_at(*g->world_time, WORLD_SEED);
+    apply_climate_look(terrain, &g_climate);
+    ga_init(g->ga, g->inv, g->props, terrain, WORLD_SEED);
+    hz_init(g->hz, WORLD_SEED);
+    cb_init(g->cb, WORLD_SEED);
+    dz_init(g->dz, WORLD_SEED);
+    g->hz->body = &g->cb->player; // caidas y congelacion hieren
+    snprintf(log, len, "Tu tropa acampa en la estepa.");
 }
 
 static void draw_keyboard_notice(void) {
@@ -315,7 +341,9 @@ int main(int argc, char **argv) {
     float start_minute = 4.0f; // la partida empieza a media manana
     bool start_pos = false;
     const char *start_trap = NULL, *start_enemies = NULL;
-    bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false;
+    bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
+    MenuScreen start_menu_screen = MENU_TITLE;
+    int start_save = -1, start_load = -1; // pruebas: guardar al final en ese hueco / cargar al empezar
     float start_x = 0.0f, start_z = 0.0f;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) shot_path = argv[++i];
@@ -330,6 +358,11 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--apuntar")) start_aim = true;
         else if (!strcmp(argv[i], "--lago")) start_lake = true;
         else if (!strcmp(argv[i], "--incendio")) start_fire = true;
+        else if (!strcmp(argv[i], "--menu")) start_menu = true;
+        else if (!strcmp(argv[i], "--autoguardar") && i + 1 < argc) start_save = atoi(argv[++i]) - 1;
+        else if (!strcmp(argv[i], "--cargar") && i + 1 < argc) start_load = atoi(argv[++i]) - 1;
+        else if (!strcmp(argv[i], "--instructivo")) start_menu = true, start_menu_screen = MENU_HELP;
+        else if (!strcmp(argv[i], "--huecos")) start_menu = true, start_menu_screen = MENU_LOAD;
         else if (!strcmp(argv[i], "--pos") && i + 2 < argc) {
             start_pos = true;
             start_x = (float)atof(argv[++i]);
@@ -356,43 +389,34 @@ int main(int argc, char **argv) {
     player_init(&player, &terrain);
 
     Kingdom overlord;
-    kingdom_init_iron_khanate(&overlord);
     Troop troop;
-    troop_init(&troop, &overlord);
-    seed_troop(&troop);
     Rng rng;
-    rng_seed(&rng, WORLD_SEED);
-    // Segundos de juego (avanza solo si no hay pausa). Cada dia empieza al amanecer.
-    float world_time = (float)(start_day > 1 ? start_day - 1 : 0) * GAME_SECONDS_PER_DAY +
-                       fmaxf(0.0f, fminf(start_minute * 60.0f, GAME_SECONDS_PER_DAY - 1.0f));
-    int day = clock_day(world_time);
+    float world_time = 0.0f;
+    int day = 1;
     Sky sky;
     sky_init(&sky, WORLD_SEED);
     WeatherFx weather;
     weather_init(&weather, WORLD_SEED);
-    if (start_pos) {
-        player.pos = (Vector3){ start_x, terrain_height(&terrain, start_x, start_z), start_z };
-    }
     int last_champion = -1;  // id del ultimo gran guerrero encontrado
     bool show_card = false;
     memmap_init(&g_memory);
     Minimap minimap;
     minimap_init(&minimap, MINIMAP_RADIUS, 2.0f);
-    char log[128] = "Tu tropa acampa en la estepa.";
+    char log[128] = "";
     char *inv_text = LoadFileText(platform_asset_path("assets/inventario.tsv"));
     if (inv_text) {
         inventory_parse(&g_inventory, inv_text);
         UnloadFileText(inv_text);
     }
     props_init(&g_props, &g_inventory);
-    // El clima primero: los animales iniciales miran donde hay agua.
-    g_climate = climate_at(world_time, WORLD_SEED);
-    if (!gallery_mode) apply_climate_look(&terrain, &g_climate);
-    ga_init(&g_actions, &g_inventory, &g_props, &terrain, WORLD_SEED);
-    hz_init(&g_hazards, WORLD_SEED);
-    cb_init(&g_combat, WORLD_SEED);
-    dz_init(&g_dz, WORLD_SEED);
-    g_hazards.body = &g_combat.player; // caidas y congelacion hieren
+    CameraRig rig = { .yaw = PI, .pitch = 0.38f, .dist = 11.0f };
+    GameState gs = { &world_time, &day, &last_champion, &rig.yaw, &rng, &player, &overlord, &troop, &g_actions,
+                     &g_props, &g_combat, &g_hazards, &g_dz, &g_memory, &g_inventory };
+    game_new(&gs, &terrain, start_day, start_minute, log, sizeof(log));
+    if (gallery_mode) world_time = 4.0f * 60.0f;
+    if (start_pos) {
+        player.pos = (Vector3){ start_x, terrain_height(&terrain, start_x, start_z), start_z };
+    }
     if (start_lake && !gallery_mode) { // prueba: en la orilla del lago mas cercano, mirando al agua
         for (float r = 20.0f; r < 400.0f; r += 6.0f) {
             bool found = false;
@@ -424,17 +448,81 @@ int main(int argc, char **argv) {
     }
 
     Camera3D cam = { .up = { 0, 1, 0 }, .fovy = 55.0f, .projection = CAMERA_PERSPECTIVE };
-    CameraRig rig = { .yaw = PI, .pitch = 0.38f, .dist = 11.0f };
     if (start_lake) rig.yaw = player.yaw; // mirando al agua
+
+    // Menu de entrada: al arrancar normalmente; las pruebas (--screenshot, --galeria...) van
+    // directo a la partida salvo que pidan el menu (--menu, --instructivo, --huecos).
+    TitleMenu menu;
+    menu_init(&menu);
+    bool in_game = gallery_mode || (shot_path && !start_menu);
+    if (!in_game) menu_open(&menu, MENU_TITLE);
+    if (start_menu && start_menu_screen != MENU_TITLE) menu_open(&menu, start_menu_screen);
+    bool show_controls = false, quit = false;
+    char last_log[128] = "";
+    float log_age = 99.0f;
+    Image pause_shot = { 0 }; // la partida al pausar (minifoto de la partida guardada)
+    char err[120];
 
     int frame = 0;
     bool has_keyboard = platform_has_keyboard() && !simulate_no_keyboard;
-    while (!WindowShouldClose()) {
+    SetExitKey(KEY_NULL); // Esc abre el menu
+    while (!WindowShouldClose() && !quit) {
         float dt = fminf(GetFrameTime(), 0.05f);
         if (frame % 30 == 0) has_keyboard = platform_has_keyboard() && !simulate_no_keyboard; // conexion en caliente
         frame++;
-        // Sin teclado el juego queda en pausa (Android: tablets sin teclado conectado).
-        if (has_keyboard) {
+        // Esc en la partida: pausa (antes, una foto para la partida guardada).
+        if (in_game && !gallery_mode && !menu_visible(&menu) && IsKeyPressed(KEY_ESCAPE)) {
+            if (ga_menu_open(&g_actions)) {
+                g_actions.menu_open = false;
+            } else {
+                if (pause_shot.data) UnloadImage(pause_shot);
+                pause_shot = LoadImageFromTexture(lowres.texture);
+                ImageFlipVertical(&pause_shot);
+                menu_open(&menu, MENU_PAUSE);
+            }
+        } else if (menu_visible(&menu) && has_keyboard) {
+            switch (menu_update(&menu, dt)) {
+            case MENU_NEW_GAME:
+                game_new(&gs, &terrain, 1, 4.0f, log, sizeof(log));
+                in_game = true;
+                menu.screen = MENU_HIDDEN;
+                break;
+            case MENU_CONTINUE: menu.screen = MENU_HIDDEN; break;
+            case MENU_LOAD_SLOT:
+                if (save_read(menu.slot, &gs, err, sizeof(err))) {
+                    in_game = true;
+                    menu.screen = MENU_HIDDEN;
+                    snprintf(log, sizeof(log), "Partida cargada (hueco %d).", menu.slot + 1);
+                } else {
+                    menu_message(&menu, err);
+                }
+                break;
+            case MENU_SAVE_SLOT:
+                if (save_write(menu.slot, &gs, pause_shot, err, sizeof(err))) {
+                    menu_open(&menu, MENU_SAVE);
+                    menu_message(&menu, TextFormat("Partida guardada en el hueco %d.", menu.cursor + 1));
+                } else {
+                    menu_message(&menu, err);
+                }
+                break;
+            case MENU_TO_TITLE:
+                in_game = false;
+                menu_open(&menu, MENU_TITLE);
+                break;
+            case MENU_QUIT: quit = true; break;
+            default: break;
+            }
+        }
+        if (in_game && IsKeyPressed(KEY_F1)) show_controls = !show_controls;
+        if (start_load >= 0 && frame == 2) { // prueba: cargar un hueco al empezar
+            if (save_read(start_load, &gs, err, sizeof(err))) snprintf(log, sizeof(log), "Partida cargada (hueco %d).", start_load + 1);
+            else snprintf(log, sizeof(log), "%s", err);
+            start_load = -1;
+        }
+        if (strcmp(log, last_log) != 0) snprintf(last_log, sizeof(last_log), "%s", log), log_age = 0.0f;
+        log_age += dt;
+        // Sin teclado el juego queda en pausa (Android: tablets sin teclado conectado); con el menu, tambien.
+        if (has_keyboard && in_game && !menu_visible(&menu)) {
             // Con el menu de acciones abierto el jugador no se mueve (las flechas eligen).
             bool menu = ga_menu_open(&g_actions);
             bool blocked = ga_blocks_input(&g_actions) || hz_blocks_input(&g_hazards) || cb_blocks_input(&g_combat);
@@ -515,6 +603,7 @@ int main(int argc, char **argv) {
 
         BeginTextureMode(lowres);
         ClearBackground(sky_clear_color(climate.clouds));
+        if (in_game) {
         BeginMode3D(cam);
         terrain_draw(&terrain);
         camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out, g_dz.tree_burn);
@@ -548,8 +637,8 @@ int main(int argc, char **argv) {
         }
         if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
-        } else {
-            draw_hud(&player, &troop, &overlord, world_time, ga_hands_text(&g_actions), log);
+        } else if (!menu_visible(&menu)) {
+            draw_hud(&troop, world_time, ga_hands_text(&g_actions), log, log_age);
             minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
                          player.pos, rig.yaw, player.yaw, world_time);
             draw_clock_bar(VIRTUAL_W - MINIMAP_RADIUS - 10, 2 * MINIMAP_RADIUS + 19, 2 * MINIMAP_RADIUS - 8, world_time);
@@ -559,7 +648,13 @@ int main(int argc, char **argv) {
             cb_draw_hud(&g_combat, &g_actions, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 63, VIRTUAL_W, VIRTUAL_H);
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
+            if (show_controls) menu_draw_controls(VIRTUAL_W / 2 - 200, 90, 400, 140);
         }
+        }
+        menu_draw(&menu, in_game,
+                  TextFormat("v%s (build %d) · %d fps%s", ESTEPA_VERSION, ESTEPA_BUILD_CODE, GetFPS(),
+                             in_game ? TextFormat(" · %s: %+d", overlord.name, (int)overlord.relation) : ""),
+                  VIRTUAL_W, VIRTUAL_H);
         if (!has_keyboard) draw_keyboard_notice();
         EndTextureMode();
 
@@ -573,6 +668,13 @@ int main(int argc, char **argv) {
         DrawTexturePro(lowres.texture, src, dst, (Vector2){ 0, 0 }, 0.0f, WHITE);
         EndDrawing();
 
+        if (start_save >= 0 && frame >= shot_frames) { // prueba: guardar con la foto del ultimo cuadro
+            Image shot = LoadImageFromTexture(lowres.texture);
+            ImageFlipVertical(&shot);
+            if (!save_write(start_save, &gs, shot, err, sizeof(err))) TraceLog(LOG_WARNING, "%s", err);
+            UnloadImage(shot);
+            start_save = -1;
+        }
         if (shot_path && frame >= shot_frames) {
             Image img = LoadImageFromTexture(lowres.texture);
             ImageFlipVertical(&img);
@@ -582,6 +684,8 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (pause_shot.data) UnloadImage(pause_shot);
+    menu_unload(&menu);
     if (gallery_mode) gallery_unload(&gallery);
     props_unload(&g_props);
     inventory_free(&g_inventory);

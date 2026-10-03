@@ -22,6 +22,24 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 
 ## Sistemas
 
+### 0. Menú de entrada, partidas guardadas e interfaz (implementado — `src/game/title_menu.*`, `src/game/save_game.*`)
+- **Menú de entrada:**
+  - Opciones: nueva partida, cargar partida, instructivo y salir.
+  - El fondo son estelas de piedra en la estepa. Encima, el **ciervo de oro con astas de cabezas de ave**.
+  - Los bordes son frisos de triángulos escalonados y espirales, con turquesas engastadas en las esquinas, como la orfebrería escita.
+  - Las láminas (lobo enroscado, tigre, grifo y ciervo, águila e íbice, reno de plata) ilustran el instructivo y los huecos vacíos.
+- **Pausa** (`Esc`): continuar, guardar, cargar, instructivo, salir al título o del juego. La partida queda congelada y oscurecida detrás.
+- **Partidas guardadas:**
+  - Tres huecos. Cada uno muestra una **minifoto** de la partida al pausar, la **fecha** real, el día de juego con la estación y la hora, y la tribu.
+  - Sobrescribir pide confirmar.
+  - Se guarda todo: jugador, tribu y grandes guerreros, acopio, obras, animales, enemigos, fuego, objetos del mundo con su mantenimiento y el mapa recorrido con sus marcas.
+  - El archivo es versionado: una partida de otra versión del juego no se carga, se avisa. Se escribe aparte y se renombra, así nunca queda a medias.
+- **Instructivo:** seis láminas con los controles y las reglas: la estepa, la tribu, cuerpo a cuerpo, armas a distancia y armadura, fauna y clima.
+- **HUD limpio:**
+  - Arriba a la izquierda, solo lo esencial: hora y estación, tribu, barras de ánimo y lealtad, y lo que se empuña. El riesgo de rebelión aparece solo si existe.
+  - El registro de sucesos va abajo y se desvanece a los 8 s.
+  - Los controles se ven con `F1`. La versión, los fps y la relación con el reino están en la pausa.
+
 ### 1. Tropa y política (implementado en Fase 0 — `src/sim/troop.*`)
 - **Integrantes** con moral (0-100), lealtad al líder (0-100), una **función delegada** (explorador, cazador, cocinero, herrero, guardia, curandero, lugarteniente) y **rasgos** (compasivo, sanguinario, ambicioso, devoto, leal).
 - **Acciones del campamento:** reclutar, tomar prisioneros, liberar prisioneros, desterrar, ejecutar (integrante o prisionero), repartir botín.
@@ -122,7 +140,7 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
   - **Golpes y combos:** `V` (o clic izquierdo) golpea con el arma empuñada. El daño, el alcance y la cadencia dependen del arma: dagas rápidas, mazas que rompen huesos, lanzas de largo alcance; el bronce, el acero y las armas especiales cortan más. Tres golpes seguidos encadenan un **combo** (el tercero remata). Las armas cortas encadenan más rápido; con las largas (lanza, espada, guja) el remate puede tumbar.
   - **Golpe pesado:** mantener `V` medio segundo. Más daño, desequilibra y rompe la guardia del escudo (algo de daño pasa).
   - **Escudo:** `Z` cubre de frente (para casi todos los golpes ligeros; sin escudo, se para peor con el arma). `Z` + `V` da un **golpe de escudo** que aturde (escudo contra escudo, los dos se tambalean). Corriendo + `Z` es la **carga con escudo**, que arrolla y puede tumbar.
-  - **Patada:** `J` o clic derecho. Aparta y desequilibra; contra un escudo en guardia solo le quita la guardia. **A la carrera, con inercia**, tumba incluso al que se cubre con escudo.
+  - **Patada:** `J` o botón central del ratón. Aparta y desequilibra; contra un escudo en guardia solo le quita la guardia. **A la carrera, con inercia**, tumba incluso al que se cubre con escudo.
   - **Agarre y llave:** `U`. Agarra lo que el rival ofrece:
     - el escudo con el que se cubre (se lo arranca);
     - el brazo con el que golpea (lo desarma y lo tumba);
@@ -314,7 +332,7 @@ Historia principal con protagonista de **nombre elegido por el jugador**: hijo d
 ## Dirección de arte
 - 3D low-poly con sombreado plano, renderizado a 640×360 y escalado sin suavizado.
 - Paleta terrosa de estepa; acentos saturados en objetos importantes (puertas de las yurtas, fuego, estandartes).
-- **Interfaz:** orfebrería de estilo animal (placas de oro y plata, granulado, turquesa, cuero). Ver [ESTILO_VISUAL.md](ESTILO_VISUAL.md).
+- **Interfaz:** orfebrería de estilo animal (placas de oro y plata, granulado, turquesa, cuero). Ver [ESTILO_VISUAL.md](ESTILO_VISUAL.md). El arte del menú (`assets/ui/`) parte de las imágenes de referencia: estelas, placas de oro y plata con ciervos, grifos, tigres y lobos. Se reduce a la resolución y la paleta del juego.
 - **Animaciones:** cada modelo animado tiene su lista de clips en [ANIMACIONES.md](ANIMACIONES.md); el juego elige el clip según lo que hace el personaje o el animal.
 - **Inventario de assets:** todos los modelos del juego están listados en [INVENTARIO.md](INVENTARIO.md), con id, medidas, presupuesto y estado.
 - Los modelos se generan por código con **Kiln** (`tools/assets/*.kiln.js` → GLB). Ver [ROADMAP.md](ROADMAP.md).

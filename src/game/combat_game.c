@@ -1070,7 +1070,7 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
     }
 }
 
-// Las teclas del cuerpo a cuerpo: V golpe (mantener: pesado), J o clic derecho patada, Z cubrirse
+// Las teclas del cuerpo a cuerpo: V golpe (mantener: pesado), J o botón central patada, Z cubrirse
 // (con escudo: Z + V golpe de escudo, corriendo + Z carga), U agarre, O gancho al escudo.
 static void player_melee_input(Combat *cb, Player *p, GameActions *ga, const Terrain *t, Props *props, bool can_fight,
                                float dt, char *log, size_t len) {
@@ -1108,7 +1108,7 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, const Ter
         player_move(cb, p, ga, t, props, MOVE_SHIELD_BASH, log, len);
         return;
     }
-    if (IsKeyPressed(KEY_J) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+    if (IsKeyPressed(KEY_J) || IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE)) { // el derecho gira la camara
         player_move(cb, p, ga, t, props, running ? MOVE_RUN_KICK : MOVE_KICK, log, len);
         return;
     }
