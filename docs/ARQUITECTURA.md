@@ -19,6 +19,7 @@ src/
     champion.*   grandes guerreros: azar, historia, dones
     clock.*      reloj de juego: dias de 30 min, estaciones, luz y noche
     climate.*    clima: temperatura, tiempo, nieve, lagos, glaciares
+    hazards.*    frio, barro, hielo, socavones, desierto, minijuego (QTE)
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
@@ -34,6 +35,7 @@ src/
   game/     Jugador e input
     player.*
     actions_game.*  menu de acciones, atajos, obras en curso
+    hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates
   ui/       Interfaz (raylib)
     theme.*      tema de orfebreria: paneles, barras, texto
     minimap.*    minimapa circular tipo brujula

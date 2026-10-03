@@ -44,7 +44,8 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [ ] Biomas, asentamientos, tributo y diplomacia entre reinos.
 - [x] Ciclo día/noche de 30 minutos con estaciones (noches de 10 a 20 minutos).
 - [x] Clima: estaciones en el suelo, lagos que crecen y se hielan, glaciares, lluvia, nieve, ventisca y tormentas.
-- [ ] Efectos jugables del clima (frío, barro, hielo) y ríos.
+- [x] Efectos jugables del clima: frío y calor corporal, leña, barro, vadeo, lagos helados que se rompen, socavones (nieve y arena movediza), minijuego de rescate y escolta.
+- [ ] Ríos; salud y heridas; abrigo como equipo.
 
 ## Narrativa (ver [NARRATIVA.md](NARRATIVA.md))
 - [ ] Prólogo jugable con el padre: combate a caballo en el asedio, tutorial de batalla y derrota por guion (requiere caballo y combate base).

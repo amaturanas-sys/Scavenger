@@ -33,7 +33,7 @@ typedef struct {
     bool loaded;
     int cx, cz;
     Model model;
-    float *tri; // por triangulo: altura media, pendiente, luz, mancha (para recolorear)
+    float *tri; // por triangulo: altura media, pendiente, luz, mancha, desierto (para recolorear)
 } Chunk;
 
 typedef struct {

@@ -10,6 +10,7 @@
 #include "../src/sim/economy.h"
 #include "../src/sim/champion.h"
 #include "../src/sim/climate.h"
+#include "../src/sim/hazards.h"
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
 #include "../src/sim/loadout.h"
@@ -384,6 +385,90 @@ static void test_climate_seasons_and_weather(void) {
         prev_level = c.water_level;
     }
     CHECK(!strcmp(weather_name(WEATHER_BLIZZARD), "ventisca"));
+}
+
+static void test_hazards_cold_mud_ice(void) {
+    // Frio: a -18 con viento se pierde calor; junto al fuego se recupera.
+    Warmth w = { .heat = 100.0f, .wet = 0.0f };
+    float feels = hazard_feels_like(-18.0f, 0.5f, 0.0f, 10.0f, 0.0f);
+    CHECK(feels < -10.0f);
+    float t = 0.0f;
+    while (w.heat > 0.0f && t < 3600.0f) {
+        warmth_update(&w, feels, 0.0f, false, 1.0f);
+        t += 1.0f;
+    }
+    CHECK(t > 120.0f && t < 600.0f); // entre 2 y 10 minutos a la intemperie
+    CHECK(warmth_level(&w) == COLD_HYPOTHERMIA && warmth_speed_scale(&w) < 0.65f);
+    float warm = hazard_feels_like(-18.0f, 0.5f, 0.0f, 10.0f, 30.0f);
+    for (int i = 0; i < 120; i++) warmth_update(&w, warm, 0.0f, true, 1.0f);
+    CHECK(w.heat > 45.0f && warmth_speed_scale(&w) == 1.0f);
+    // Mojarse enfria: la misma temperatura se siente peor.
+    CHECK(hazard_feels_like(2.0f, 0.2f, 1.0f, 10.0f, 0.0f) < hazard_feels_like(2.0f, 0.2f, 0.0f, 10.0f, 0.0f) - 9.0f);
+    Warmth rain = { 80.0f, 0.0f };
+    for (int i = 0; i < 60; i++) warmth_update(&rain, 15.0f, 1.0f, false, 1.0f);
+    CHECK(rain.wet > 0.9f);
+    for (int i = 0; i < 30; i++) warmth_update(&rain, 15.0f, 0.0f, true, 1.0f);
+    CHECK(rain.wet < 0.1f); // el fuego seca
+    CHECK(!strcmp(cold_name(COLD_COLD), "frío"));
+
+    // Barro: frena con suelo mojado, no bajo la nieve.
+    CHECK(hazard_mud_scale(0.0f, 0.0f) == 1.0f);
+    CHECK(hazard_mud_scale(1.0f, 0.0f) < 0.65f && hazard_mud_scale(1.0f, 1.0f) == 1.0f);
+
+    // Hielo: no aguanta si no esta congelado; correr y montar rompen mas.
+    CHECK(!hazard_ice_walkable(0.3f) && hazard_ice_break_chance(0.3f, 0.0f, 1.0f) == 1.0f);
+    float walk = hazard_ice_break_chance(1.0f, 4.0f, 1.0f), run = hazard_ice_break_chance(1.0f, 7.5f, 1.0f);
+    float ride = hazard_ice_break_chance(1.0f, 4.0f, 2.5f), thin = hazard_ice_break_chance(0.55f, 4.0f, 1.0f);
+    CHECK(walk > 0.0f && walk < 0.01f && run > walk * 2.0f && ride > walk * 2.0f && thin > walk * 3.0f);
+    CHECK(hazard_ice_break_chance(1.0f, 0.0f, 1.0f) < walk); // quieto, menos riesgo
+}
+
+static void test_hazards_sinkholes_and_desert(void) {
+    const uint32_t seed = 1206u;
+    // El desierto nunca toca el campamento, pero existe lejos.
+    CHECK(biome_desert(seed, 0, 0) == 0.0f && biome_desert(seed, 150.0f, 100.0f) == 0.0f);
+    int desert = 0;
+    for (float x = -800; x <= 800; x += 40)
+        for (float z = -800; z <= 800; z += 40) desert += biome_desert(seed, x, z) > 0.6f;
+    CHECK(desert > 20);
+    // Socavones: deterministas, dentro de su celda, y cambian de un dia al siguiente.
+    int found = 0, moved = 0;
+    for (int cx = -10; cx < 10; cx++)
+        for (int cz = -10; cz < 10; cz++) {
+            Sinkhole a, b, c;
+            bool ha = hazard_sinkhole_cell(seed, 3, cx, cz, &a), hb = hazard_sinkhole_cell(seed, 3, cx, cz, &b);
+            CHECK(ha == hb);
+            if (!ha) continue;
+            found++;
+            CHECK(a.x == b.x && a.z == b.z && a.radius >= 1.8f && a.radius <= 3.2f);
+            CHECK(a.x > cx * SINK_CELL && a.x < (cx + 1) * SINK_CELL && a.z > cz * SINK_CELL && a.z < (cz + 1) * SINK_CELL);
+            if (!hazard_sinkhole_cell(seed, 4, cx, cz, &c) || fabsf(c.x - a.x) > 0.5f) moved++;
+        }
+    CHECK(found > 400 * SINK_CHANCE * 0.6f && found < 400 * SINK_CHANCE * 1.4f);
+    CHECK(moved > found * 3 / 4);
+    CHECK(!strcmp(sink_name(SINK_QUICKSAND), "arena movediza"));
+}
+
+static void test_hazards_qte(void) {
+    Rng rng;
+    rng_seed(&rng, 77u);
+    Qte q;
+    qte_start(&q, &rng, 7, 1.2f, 2);
+    CHECK(q.state == QTE_RUNNING && q.len == 7);
+    for (int i = 1; i < q.len; i++) CHECK(q.keys[i] != q.keys[i - 1] && q.keys[i] >= 0 && q.keys[i] < QTE_KEYS);
+    // Acertar todo a tiempo gana.
+    for (int i = 0; i < 7; i++) {
+        qte_update(&q, 0.5f);
+        CHECK(qte_press(&q, q.keys[q.pos]));
+    }
+    CHECK(q.state == QTE_WON && qte_progress(&q) == 1.0f && q.per_key < 1.2f);
+    // Errores y demoras: con mas de max_mistakes se pierde.
+    qte_start(&q, &rng, 7, 1.2f, 2);
+    CHECK(!qte_press(&q, (q.keys[0] + 1) % QTE_KEYS) && q.mistakes == 1 && q.pos == 0);
+    qte_update(&q, 1.3f); // se acabo el tiempo de la tecla
+    CHECK(q.mistakes == 2 && q.state == QTE_RUNNING);
+    qte_press(&q, (q.keys[0] + 1) % QTE_KEYS);
+    CHECK(q.state == QTE_LOST && !qte_press(&q, q.keys[q.pos]));
 }
 
 static void test_memmap_markers_toggle(void) {
@@ -979,6 +1064,9 @@ int main(void) {
     RUN(test_inventory_repo_file_is_valid);
     RUN(test_clock_seasonal_day_night);
     RUN(test_climate_seasons_and_weather);
+    RUN(test_hazards_cold_mud_ice);
+    RUN(test_hazards_sinkholes_and_desert);
+    RUN(test_hazards_qte);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

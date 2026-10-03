@@ -5,10 +5,11 @@
 // optimizacion de rendimiento en moviles (9 veces menos pixeles que 1080p).
 //
 // Uso de escritorio:  estepa [--screenshot salida.png] [--frames N] [--sin-teclado] [--galeria]
-//                     [--dia N] [--minuto M] [--pos X Z]
+//                     [--dia N] [--minuto M] [--pos X Z] [--trampa hielo|nieve|arena|rescate]
 // --galeria muestra todos los objetos del inventario de assets (modelos o marcadores).
 // --dia y --minuto ponen el reloj (minutos desde el amanecer), p. ej. para ver la noche.
 // --pos lleva al jugador a otro lugar del mundo (p. ej. a la cordillera).
+// --trampa arranca en un peligro con su minijuego (prueba).
 // --sin-teclado simula un dispositivo Android sin teclado (prueba del aviso).
 #include <math.h>
 #include <stdio.h>
@@ -16,6 +17,7 @@
 #include <string.h>
 
 #include "game/actions_game.h"
+#include "game/hazards_game.h"
 #include "game/player.h"
 #include "platform.h"
 #include "raylib.h"
@@ -51,6 +53,8 @@ static MemoryMap g_memory;
 static Inventory g_inventory; // assets/inventario.tsv: lo usan las acciones y los objetos del mundo
 static Props g_props;
 static GameActions g_actions;
+static Hazards g_hazards;   // frio, barro, hielo, socavones y rescates
+static Climate g_climate;   // clima del cuadro anterior (lo usan los peligros)
 
 typedef struct {
     float yaw, pitch, dist;
@@ -159,6 +163,7 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
         (*day)++;
         // Comida, recoleccion, efectos del campamento y trabajos de los NPCs.
         ga_new_day(&g_actions, &g_props, terrain, t, &g_memory, world_time, *day, log, log_len);
+        hz_new_day(&g_hazards, &g_climate, &g_actions, &g_props, t, log, log_len); // las noches heladas gastan lena
         if (r.rebellion) {
             const Member *m = troop_find(t, r.rebellion_leader);
             snprintf(log, log_len, "Dia %d: REBELION encabezada por %s!", *day, m ? m->name : "?");
@@ -169,6 +174,15 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
             snprintf(log, log_len, "Dia %d: %d desertores.", *day, r.deserted);
         }
     }
+}
+
+// El aspecto del suelo, el agua y los glaciares sigue al clima.
+static void apply_climate_look(Terrain *terrain, const Climate *c) {
+    TerrainLook look = {
+        .greenness = c->greenness, .autumn = c->autumn, .snow_cover = c->snow_cover, .wetness = c->wetness,
+        .snowline = terrain->plain + c->snowline, .water_level = terrain->lake_base + c->water_level, .ice = c->ice,
+    };
+    terrain_set_look(terrain, &look);
 }
 
 static void draw_champion_card(const Troop *t, int id) {
@@ -267,7 +281,7 @@ static void draw_hud(const Player *p, const Troop *t, const Kingdom *k, float wo
     ui_strip((Rectangle){ 0, VIRTUAL_H - 40, VIRTUAL_W, 40 }, UI_METAL_GOLD);
     ui_text("WASD mover  Shift correr  C acechar  Espacio saltar  Q/E o clic der. cámara  Rueda zoom  M marcar",
             4, VIRTUAL_H - 32, 10, UI_BONE_DIM);
-    ui_text("Tab acciones, obras y forja  X empuñadura  H enfundar  F tomar  T lanzar  R montar  I acopio", 4, VIRTUAL_H - 21, 10,
+    ui_text("Tab acciones, obras y forja  X empuñadura  H enfundar  F tomar  T lanzar  R montar  I acopio  Y escolta", 4, VIRTUAL_H - 21, 10,
             UI_BONE);
     ui_text("1 reclutar 2 cautivo 3 ejec. cautivo 4 ejec. miembro 5 desterrar 6 botín 7 liberar 8 guerrero G ficha Enter día N hora",
             4, VIRTUAL_H - 11, 10, UI_BONE_DIM);
@@ -290,6 +304,7 @@ int main(int argc, char **argv) {
     int start_day = 1;
     float start_minute = 4.0f; // la partida empieza a media manana
     bool start_pos = false;
+    const char *start_trap = NULL;
     float start_x = 0.0f, start_z = 0.0f;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) shot_path = argv[++i];
@@ -298,6 +313,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--galeria")) gallery_mode = true;
         else if (!strcmp(argv[i], "--dia") && i + 1 < argc) start_day = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--minuto") && i + 1 < argc) start_minute = (float)atof(argv[++i]);
+        else if (!strcmp(argv[i], "--trampa") && i + 1 < argc) start_trap = argv[++i];
         else if (!strcmp(argv[i], "--pos") && i + 2 < argc) {
             start_pos = true;
             start_x = (float)atof(argv[++i]);
@@ -354,6 +370,9 @@ int main(int argc, char **argv) {
     }
     props_init(&g_props, &g_inventory);
     ga_init(&g_actions, &g_inventory, &g_props, &terrain, WORLD_SEED);
+    hz_init(&g_hazards, WORLD_SEED);
+    g_climate = climate_at(world_time, WORLD_SEED);
+    if (!gallery_mode) apply_climate_look(&terrain, &g_climate);
 
     Gallery gallery = { 0 };
     if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
@@ -378,8 +397,9 @@ int main(int argc, char **argv) {
         if (has_keyboard) {
             // Con el menu de acciones abierto el jugador no se mueve (las flechas eligen).
             bool menu = ga_menu_open(&g_actions);
-            PlayerInput in = ga_blocks_input(&g_actions) ? (PlayerInput){ 0 } : player_read_input();
-            player.speed_scale = ga_speed_scale(&g_actions);
+            bool blocked = ga_blocks_input(&g_actions) || hz_blocks_input(&g_hazards);
+            PlayerInput in = blocked ? (PlayerInput){ 0 } : player_read_input();
+            player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards);
             player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
             if (!g_actions.climbing) player_update(&player, &terrain, in, rig.yaw, dt);
             world_time += dt;
@@ -387,6 +407,13 @@ int main(int argc, char **argv) {
             if (!menu) debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log));
             if (!gallery_mode) ga_update(&g_actions, &g_props, &terrain, &player, &troop, dt, log, sizeof(log));
             if (!gallery_mode) ga_after_player(&g_actions, &g_props, &terrain, &player);
+            if (start_trap && frame == 3 && !gallery_mode) { // prueba: la tribu ya esta ubicada
+                hz_force(&g_hazards, start_trap, &player, &g_actions, &troop, &terrain);
+                start_trap = NULL;
+            }
+            if (!gallery_mode)
+                hz_update(&g_hazards, &g_climate, &terrain, &player, &g_actions, &g_props, &troop, camp.fire, world_time,
+                          dt, log, sizeof(log));
             if (last_champion != prev_champion) show_card = true; // ficha al conocerlo
             advance_days(&troop, &rng, &day, world_time, &terrain, log, sizeof(log));
             if (IsKeyPressed(KEY_G)) show_card = !show_card && last_champion >= 0;
@@ -403,15 +430,11 @@ int main(int argc, char **argv) {
         Climate climate = climate_at(world_time, WORLD_SEED);
         if (gallery_mode) climate = (Climate){ .clouds = 0.1f, .temperature = 20.0f };
         if (!gallery_mode) {
-            TerrainLook look = {
-                .greenness = climate.greenness, .autumn = climate.autumn, .snow_cover = climate.snow_cover,
-                .wetness = climate.wetness, .snowline = terrain.plain + climate.snowline,
-                .water_level = terrain.lake_base + climate.water_level, .ice = climate.ice,
-            };
-            terrain_set_look(&terrain, &look);
+            apply_climate_look(&terrain, &climate);
             props_set_season(&g_props, clock_season(clock_day(world_time)));
             weather_update(&weather, &climate, dt);
         }
+        g_climate = climate;
 
         BeginTextureMode(lowres);
         ClearBackground(sky_clear_color(climate.clouds));
@@ -422,6 +445,7 @@ int main(int argc, char **argv) {
         if (gallery_mode || !ga_draw_player(&g_actions, &g_props, &player, (float)GetTime())) player_draw(&player);
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
+        if (!gallery_mode) hz_draw_world(&g_hazards, &terrain, &g_actions, &troop, (float)GetTime());
         EndMode3D();
         if (!gallery_mode) { // la galeria se ve siempre de dia
             // Noche: se oscurece todo y se suman las estrellas, las llamas y el brillo de los fuegos.
@@ -448,6 +472,7 @@ int main(int argc, char **argv) {
             draw_clock_bar(VIRTUAL_W - MINIMAP_RADIUS - 10, 2 * MINIMAP_RADIUS + 19, 2 * MINIMAP_RADIUS - 8, world_time);
             draw_weather_text(VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 27, &climate);
             ga_draw_hud(&g_actions, &g_props, &troop, VIRTUAL_W, VIRTUAL_H);
+            hz_draw_hud(&g_hazards, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 40, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
         }
         if (!has_keyboard) draw_keyboard_notice();

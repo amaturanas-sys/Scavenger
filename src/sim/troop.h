@@ -21,6 +21,7 @@ typedef enum {
     STATUS_BANISHED,
     STATUS_EXECUTED,
     STATUS_DESERTED,
+    STATUS_DEAD, // murio (accidente, frio, combate)
 } MemberStatus;
 
 // Funciones que el lider puede delegar en sus subordinados.
@@ -117,6 +118,9 @@ bool troop_assign_role(Troop *t, int id, Role role);
 bool troop_banish(Troop *t, int id);
 bool troop_execute(Troop *t, int id); // integrante activo o prisionero
 bool troop_release_prisoner(Troop *t, int id);
+// Un integrante activo muere (accidente, frio...): sale de la tropa y el resto
+// lo llora (baja la moral de todos). Devuelve false si no estaba activo.
+bool troop_mourn(Troop *t, int id, float morale_loss);
 void troop_share_loot(Troop *t);
 // Suma (o resta) animo a todos los integrantes activos (comida, comodidades del campamento...).
 void troop_adjust_morale(Troop *t, float delta);
