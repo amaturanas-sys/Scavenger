@@ -24,6 +24,8 @@
 void fg_init(GameActions *ga, const Terrain *t);
 // Un grupo de la especie en (x, z); devuelve cuantos aparecieron.
 int fg_spawn_group(GameActions *ga, Species s, float x, float z);
+// Un solo animal salvaje (el caballo que deja un jinete derribado). Devuelve su indice o -1.
+int fg_spawn_one(GameActions *ga, Species s, float x, float z, float yaw);
 // Prueba: aparece un grupo por nombre ("lobos" o el final del id: "tigre", "jabali"...).
 bool fg_spawn_named(GameActions *ga, const char *what, const Player *p, float dist, char *log, size_t len);
 // temp: °C ahora (los insectos y mosquitos dependen del calor); la noche y el atardecer salen de now.

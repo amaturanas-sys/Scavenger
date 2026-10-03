@@ -29,6 +29,11 @@
 #define EYE_HEIGHT 1.45f      // de donde sale el disparo
 #define ARROW_LIT_SECONDS 25.0f // lo que dura encendida una flecha antes de dispararla
 #define FIRE_ARROW_BURN 7.0f  // daño de quemadura extra de una flecha encendida
+#define MOUNT_REACH 0.9f      // a caballo se llega mas lejos
+#define MOUNT_WEIGHT 80.0f    // kg que suma la montura contra derribos
+#define GALLOP_SPEED 6.0f     // m/s: por encima, la lanza derriba y se arrolla
+#define RIDER_LIFT 1.1f       // altura del jinete sobre el suelo
+#define LOOT_MAX 16
 
 static float dist2(Vector3 a, Vector3 b) { return Vector2Distance((Vector2){ a.x, a.z }, (Vector2){ b.x, b.z }); }
 static V3 to_v3(Vector3 v) { return (V3){ v.x, v.y, v.z }; }
@@ -88,6 +93,7 @@ static Enemy *spawn_enemy(Combat *cb, EnemyKind kind, Vector3 pos, const Terrain
         if (def->beast) health_init_beast(&e->h, def->hp);
         else health_init(&e->h, def->hp);
         e->armed = true;
+        e->mounted = def->mounted;
         e->shield = def->shield && rng_float(&cb->rng) < def->shield_chance;
         // Su armadura: la primera pieza siempre, las demas a veces.
         for (int k = 0; k < 4; k++)
@@ -100,7 +106,7 @@ static Enemy *spawn_enemy(Combat *cb, EnemyKind kind, Vector3 pos, const Terrain
 void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
                     size_t len) {
     // Fieras: las pone la fauna (src/game/fauna_game.c).
-    if (strcmp(what, "bandidos") && strcmp(what, "culto") && strcmp(what, "arqueros") &&
+    if (strcmp(what, "bandidos") && strcmp(what, "culto") && strcmp(what, "arqueros") && strcmp(what, "jinetes") &&
         fg_spawn_named(ga, what, p, dist, log, len))
         return;
     float ang = rng_float(&cb->rng) * 2.0f * PI;
@@ -117,10 +123,15 @@ void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player 
         n = 2;
         kinds[0] = kinds[1] = ENEMY_ARCHER;
         snprintf(log, len, "¡Arqueros! Busca cubrirte o acércate rápido.");
+    } else if (!strcmp(what, "jinetes")) {
+        n = 2 + rng_range(&cb->rng, 2);
+        for (int i = 0; i < n; i++) kinds[i] = ENEMY_RIDER;
+        snprintf(log, len, "¡Jinetes bandidos al galope! Derríbalos del caballo.");
     } else {
         n = 2 + rng_range(&cb->rng, 2);
         for (int i = 0; i < n; i++) kinds[i] = ENEMY_BANDIT;
         if (rng_float(&cb->rng) < 0.6f) kinds[n++] = ENEMY_ARCHER; // a veces con un arquero detras
+        else if (rng_float(&cb->rng) < 0.5f) kinds[n++] = ENEMY_RIDER; // o un jinete
         snprintf(log, len, "¡Bandidos! Vienen a por tu botín.");
     }
     for (int i = 0; i < n; i++) {
@@ -143,7 +154,11 @@ static void natural_spawns(Combat *cb, GameActions *ga, const Player *p, const T
     for (int i = 0; i < CB_MAX_ENEMIES; i++) alive += cb->enemies[i].used && cb->enemies[i].state != EN_DEAD;
     if (alive > 6) return;
     float r = rng_float(&cb->rng);
-    if (!night && r < 0.12f) cb_spawn_group(cb, ga, rng_float(&cb->rng) < 0.3f ? "culto" : "bandidos", p, t, 35.0f, log, len);
+    if (!night && r < 0.12f) {
+        float k = rng_float(&cb->rng);
+        cb_spawn_group(cb, ga, k < 0.25f ? "culto" : k < 0.4f ? "jinetes" : "bandidos", p, t, k < 0.4f && k >= 0.25f ? 60.0f : 35.0f,
+                       log, len);
+    }
 }
 
 // ------------------------------------------------------------------- golpes
@@ -189,7 +204,7 @@ static Fighter fighter_player(const Combat *cb, const Player *p, const GameActio
     f.armed = hands_attack_weapon(&ga->hands, 1, NULL)[0] != '\0';
     f.facing = facing_to(p->pos, p->yaw, from);
     f.strength = 1.0f;
-    f.weight = armor_kg(&cb->armor);
+    f.weight = armor_kg(&cb->armor) + (ga->mounted >= 0 ? MOUNT_WEIGHT : 0.0f);
     f.health = fmaxf(0.0f, cb->player.hp / cb->player.hp_max);
     return f;
 }
@@ -209,7 +224,7 @@ static Fighter fighter_enemy(const Enemy *e, Vector3 from) {
     // Fuerza: su daño frente al de su arma (un bandido curtido pega mas con el mismo sable).
     float wd = weapon_stats(def->weapon).damage;
     f.strength = wd > 0.0f ? def->damage / wd : 1.0f;
-    f.weight = armor_kg(&e->armor);
+    f.weight = armor_kg(&e->armor) + (e->mounted ? MOUNT_WEIGHT : 0.0f);
     f.health = fmaxf(0.0f, e->h.hp / e->h.hp_max);
     return f;
 }
@@ -276,6 +291,13 @@ static void hit_enemy(Combat *cb, Enemy *e, MeleeMove m, const MeleeResult *r, P
     if (r->landed) e->hit_anim = 0.3f, e->shown = 6.0f;
     if (r->staggered) e->stagger = STAGGER_SECONDS, e->blocking = false;
     if (r->knocked_down) e->knock = KNOCKDOWN_SECONDS, e->blocking = false;
+    bool unhorsed = false;
+    if (r->knocked_down && e->mounted) { // derribado: cae del caballo, que queda suelto
+        e->mounted = false;
+        e->kind = ENEMY_BANDIT;
+        unhorsed = true;
+        if (cb->loose_n < 4) cb->loose_yaw[cb->loose_n] = e->yaw, cb->loose_horse[cb->loose_n++] = e->pos;
+    }
     if (r->shield_dropped && e->shield) e->shield = false, drop_item(props, def->shield, e->pos);
     if (r->disarmed && e->armed) e->armed = false, drop_item(props, def->weapon, e->pos);
     if (e->target < 0 && attacker == 0) e->target = 0; // ahora sabe donde estas
@@ -283,7 +305,8 @@ static void hit_enemy(Combat *cb, Enemy *e, MeleeMove m, const MeleeResult *r, P
     if (attacker != 0 || !log) return;
     char who[48], d[128];
     lower_name(def->name, who, sizeof(who));
-    if (e->state == EN_DEAD) snprintf(log, len, "Abatiste al %s.", who);
+    if (e->state == EN_DEAD) snprintf(log, len, "Abatiste al %s: deja botín (F para recogerlo).", who);
+    else if (unhorsed) snprintf(log, len, "%s: ¡derribas al %s del caballo!", move_verb(m), who);
     else if (r->attacker_staggered && m == MOVE_GRAPPLE) snprintf(log, len, "El %s se zafa del agarre: ¡quedas expuesto!", who);
     else if (!r->landed && m == MOVE_HOOK) snprintf(log, len, "Tu arma no tiene gancho (hacha, guja o alabarda).");
     else if (!r->landed) snprintf(log, len, "Sin escudo no puedes hacer eso.");
@@ -309,6 +332,8 @@ static void hit_player(Combat *cb, GameActions *ga, MeleeMove m, const MeleeResu
     if (r->landed) cb->hit_anim = 0.3f;
     if (r->staggered) cb->stagger = STAGGER_SECONDS;
     if (r->knocked_down) cb->knock = KNOCKDOWN_SECONDS, cb->charge_timer = 0.0f;
+    bool unhorsed = r->knocked_down && ga->mounted >= 0;
+    if (unhorsed) ga->animals[ga->mounted].ridden = false, ga->mounted = -1; // te tira del caballo
     // Lo que se suelta queda en la mano de la tribu: X para volver a empuñar.
     if (r->shield_dropped && player_has_shield(ga)) hands_clear(&ga->hands, HAND_LEFT);
     if (r->disarmed && ga->hands.right.id[0]) hands_clear(&ga->hands, HAND_RIGHT);
@@ -316,6 +341,7 @@ static void hit_player(Combat *cb, GameActions *ga, MeleeMove m, const MeleeResu
     lower_name(who, name, sizeof(name));
     if (r->shield_dropped) snprintf(log, len, "¡El %s te arranca el escudo! (X para volver a empuñar)", name);
     else if (r->disarmed) snprintf(log, len, "¡El %s te desarma con una llave! (X para volver a empuñar)", name);
+    else if (unhorsed) snprintf(log, len, "%s del %s: ¡te tira del caballo!", move_verb(m), name);
     else if (r->knocked_down) snprintf(log, len, "%s del %s: ¡te derriba!", move_verb(m), name);
     else if (r->blocked && r->staggered) snprintf(log, len, "%s del %s contra tu escudo: pierdes la guardia.", move_verb(m), name);
     else if (r->blocked) snprintf(log, len, "Paras el golpe del %s.", name);
@@ -362,6 +388,9 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     WeaponStats w = weapon_stats(weapon);
     const MoveDef *md = move_def(m);
     float reach = md->reach > 0.0f ? md->reach : w.reach;
+    bool riding = ga->mounted >= 0;
+    float momentum = riding ? mounted_momentum(cb->pl_speed) : 1.0f; // la inercia del galope
+    if (riding) reach += MOUNT_REACH;
     cb->attack_cd = m == MOVE_LIGHT ? melee_combo_cooldown(weapon, w.cooldown, step) : m == MOVE_HEAVY ? w.cooldown * 1.6f
                                                                                                      : md->recovery;
     cb->combo_timer = m == MOVE_LIGHT ? cb->attack_cd + COMBO_WINDOW : 0.0f;
@@ -376,7 +405,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     int an = m == MOVE_GRAPPLE || m == MOVE_HOOK || m == MOVE_SHIELD_BASH ? -1 : fg_melee_target(ga, t, p->pos, p->yaw, reach, &ad);
     if (an >= 0 && (!e || ad < ed)) {
         float base = m == MOVE_LIGHT || m == MOVE_HEAVY ? w.damage * (m == MOVE_HEAVY ? 1.8f : melee_combo_scale(step)) : md->damage;
-        float dmg = combat_damage(base, off ? 0.8f : 1.0f, health_attack_scale(&cb->player), false, &cb->rng);
+        float dmg = combat_damage(base, (off ? 0.8f : 1.0f) * momentum, health_attack_scale(&cb->player), false, &cb->rng);
         fg_hurt(ga, an, dmg, m == MOVE_LIGHT || m == MOVE_HEAVY ? w.wound : WOUND_BRUISE, PART_RANDOM, 0, log, len);
         return;
     }
@@ -390,7 +419,11 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
     me.strength *= health_attack_scale(&cb->player) * (off ? 0.8f : 1.0f);
     if (m == MOVE_GRAPPLE) me.strength *= 1.0f + ig_stat(ga, STAT_GRAPPLE_POWER); // amuletos del tigre y del oso
+    me.strength *= momentum;
     MeleeResult r = melee_resolve(m, &me, &foe, weapon, step, &cb->rng);
+    // La lanza al galope: el que la recibe (sin pararla) suele caer.
+    if (riding && w.spear && cb->pl_speed > GALLOP_SPEED && r.landed && !r.blocked && rng_float(&cb->rng) < 0.6f)
+        r.knocked_down = true;
     if (r.attacker_staggered) cb->stagger = STAGGER_SECONDS;
     hit_enemy(cb, e, m, &r, props, 0, log, len);
 }
@@ -416,10 +449,20 @@ static void enemy_melee(Combat *cb, Enemy *e, Player *p, GameActions *ga, Troop 
     }
     const char *weapon = enemy_weapon(e);
     MeleeMove mv = ai_choose(&cb->rng, &me, &foe, weapon, e->speed > 3.5f, dist);
+    if (e->mounted && mv != MOVE_LIGHT && mv != MOVE_HEAVY) mv = MOVE_HEAVY; // a caballo: solo el arma
     if ((mv == MOVE_SHIELD_BASH && !e->shield) || (mv == MOVE_HOOK && !weapon_can_hook(weapon))) mv = MOVE_HEAVY;
     if (mv == MOVE_LIGHT) e->combo = e->combo % 3 + 1;
-    me.strength *= health_attack_scale(&e->h);
+    me.strength *= health_attack_scale(&e->h) * (e->mounted ? mounted_momentum(e->speed) : 1.0f);
     MeleeResult r = melee_resolve(mv, &me, &foe, weapon, mv == MOVE_LIGHT ? e->combo : 1, &cb->rng);
+    // Montado: a veces el golpe se lo lleva el caballo.
+    if (!m && ga->mounted >= 0 && r.damage > 0.5f && !r.blocked && rng_float(&cb->rng) < 0.35f) {
+        fg_hurt(ga, ga->mounted, r.damage, r.wound, PART_RANDOM, -1, NULL, 0);
+        char who[48];
+        snprintf(log, len, "El golpe del %s alcanza a tu montura.", lower_name(def->name, who, sizeof(who)));
+        e->cooldown = def->cooldown;
+        e->attack_anim = 0.45f;
+        return;
+    }
     WeaponStats w = weapon_stats(weapon);
     e->cooldown = mv == MOVE_LIGHT ? fmaxf(def->cooldown * 0.8f, melee_combo_cooldown(weapon, def->cooldown, e->combo))
                   : mv == MOVE_HEAVY ? def->cooldown * 1.6f
@@ -553,7 +596,7 @@ static void pose_player(BodyPose *b, const Combat *cb, const Player *p, float ti
 }
 
 static void pose_enemy(BodyPose *b, const Enemy *e, float time, int i) {
-    BodyPoseParams pp = { .walk_phase = time * 9.0f + (float)i, .walk = e->speed > 0.2f ? 1.0f : 0.0f,
+    BodyPoseParams pp = { .walk_phase = time * 9.0f + (float)i, .walk = e->speed > 0.2f && !e->mounted ? 1.0f : 0.0f,
                           .attack = e->attack_anim / 0.45f, .aiming = enemy_def(e->kind)->ranged && e->target >= 0 && e->speed < 0.2f,
                           .down = e->state == EN_DEAD || e->knock > 0.0f, .scale = 1.0f };
     pose_move(&pp, e->move, e->move_anim, e->blocking);
@@ -738,6 +781,9 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
         ig_use(ga, props, p, ammo, 1);
         // Punteria (amuleto del aguila): menos dispersion.
         float steady = 1.0f - 0.6f * fminf(1.0f, ig_stat(ga, STAT_ARCHERY));
+        // A caballo, la carrera dispersa el tiro; la monta (amuletos) lo corrige.
+        if (ga->mounted >= 0)
+            steady *= 1.0f + fminf(cb->pl_speed, 12.0f) / 6.0f * (1.0f - 0.6f * fminf(1.0f, ig_stat(ga, STAT_RIDING)));
         fire(cb, rd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0, cb->arrow_lit, steady);
         cb->arrow_lit = false;
         cb->reload = rd->reload;
@@ -748,6 +794,24 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
 }
 
 // --------------------------------------------------------------- enemigos
+// Al caer, el enemigo deja una bolsa con lo suyo: arma, escudo, flechas, plata, comida
+// (src/sim/combat.c) y a veces piezas de su armadura, con el estado en que quedaron.
+static void drop_loot(Combat *cb, GameActions *ga, Enemy *e, const Player *p, char *log, size_t len) {
+    e->loot_dropped = true;
+    LootItem items[LOOT_MAX];
+    int n = enemy_loot(e->kind, e->armed, e->shield, &cb->rng, items, LOOT_MAX);
+    for (int s = 0; s < SLOT_COUNT && n < LOOT_MAX; s++) {
+        const ArmorPiece *a = &e->armor.slot[s];
+        if (!a->id[0] || a->durability <= 0.0f || rng_float(&cb->rng) >= 0.5f) continue;
+        items[n++] = (LootItem){ a->id, 1, a->durability_max > 0.0f ? a->durability / a->durability_max : 1.0f };
+    }
+    if (n <= 0 || !ig_drop_loot(ga, e->pos, items, n)) return;
+    if (!log[0] && dist2(e->pos, p->pos) < 30.0f) {
+        char who[48];
+        snprintf(log, len, "El %s deja botín (F para recogerlo).", lower_name(enemy_def(e->kind)->name, who, sizeof(who)));
+    }
+}
+
 static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *props, const Terrain *t, bool night,
                            float dt, char *log, size_t len) {
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
@@ -762,6 +826,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         e->knock = fmaxf(0.0f, e->knock - dt);
         e->move_anim = fmaxf(0.0f, e->move_anim - dt);
         e->block_timer = fmaxf(0.0f, e->block_timer - dt);
+        if (e->state == EN_DEAD && !e->loot_dropped) drop_loot(cb, ga, e, p, log, len);
         if (e->state == EN_DEAD) {
             e->corpse -= dt;
             if (e->corpse <= 0.0f) e->used = false;
@@ -1001,19 +1066,27 @@ static void bandage(Combat *cb, GameActions *ga, Troop *troop, const Props *prop
         snprintf(log, len, herbs ? "Levantas y vendas a %s." : "Levantas a %s, pero sin hierbas sigue sangrando.", m->name);
         return;
     }
-    if (!herbs) {
+    if (!herbs && ig_count(ga, props, p, "utileria.consumible.unguento") <= 0) {
         snprintf(log, len, "No llevas hierbas curativas (I: inventario).");
         return;
     }
-    // 2) Tus propias heridas.
-    if (health_untreated(&cb->player) > 0) {
+    // 2) Tus propias heridas: con ungüento (si llevas), mejor que con hierbas.
+    if (health_untreated(&cb->player) > 0 && ig_count(ga, props, p, "utileria.consumible.unguento") > 0) {
+        ig_use(ga, props, p, "utileria.consumible.unguento", 1);
+        health_treat(&cb->player);
+        cb->player.venom = 0.0f;
+        cb->player.hp = fminf(cb->player.hp_max, cb->player.hp + cb->player.hp_max * 0.2f);
+        snprintf(log, len, "Te untas el ungüento: cierra las heridas y corta el veneno.");
+        return;
+    }
+    if (health_untreated(&cb->player) > 0 && herbs) {
         ig_use(ga, props, p, HERBS_ID, 1);
         int n = health_treat(&cb->player);
         snprintf(log, len, "Te vendas %d herida%s con hierbas curativas.", n, n == 1 ? "" : "s");
         return;
     }
     // 3) Un companero herido cerca.
-    if (npc_near(ga, troop, p, 3.0f, false, &m)) {
+    if (herbs && npc_near(ga, troop, p, 3.0f, false, &m)) {
         ig_use(ga, props, p, HERBS_ID, 1);
         health_treat(&m->health);
         snprintf(log, len, "Vendas las heridas de %s.", m->name);
@@ -1092,8 +1165,15 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, const Ter
         return;
     }
     bool ready = cb->attack_cd <= 0.0f;
+    bool riding = ga->mounted >= 0;
+    // A caballo solo se golpea con el arma (V); patadas, agarres, ganchos y cargas, a pie.
+    if (riding && ready && (IsKeyPressed(KEY_J) || IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE) || IsKeyPressed(KEY_U) ||
+                            IsKeyPressed(KEY_O) || (cb->blocking && v_press))) {
+        snprintf(log, len, "A caballo no: solo golpe (V) y golpe pesado (mantener V).");
+        return;
+    }
     // Carga con escudo: corriendo, Z; arrolla al primero que encuentra delante.
-    if (ready && shield && running && IsKeyPressed(KEY_Z) && cb->charge_timer <= 0.0f) {
+    if (ready && !riding && shield && running && IsKeyPressed(KEY_Z) && cb->charge_timer <= 0.0f) {
         cb->charge_timer = 0.7f;
         cb->charge_hit = false;
         cb->move = MOVE_SHIELD_CHARGE + 1;
@@ -1142,6 +1222,25 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, const Ter
     }
 }
 
+// Al galope, el caballo arrolla al que este delante (salvo otro jinete, que aguanta mejor).
+static void trample(Combat *cb, Player *p, GameActions *ga, Props *props, char *log, size_t len) {
+    float d;
+    Enemy *e = enemy_in_front(cb, p->pos, p->yaw, 1.8f, &d);
+    if (!e || e->knock > 0.0f) return;
+    float k = mounted_momentum(cb->pl_speed);
+    MeleeResult r = { .landed = true, .damage = 10.0f * k, .wound = WOUND_BRUISE };
+    r.knocked_down = !e->mounted || rng_float(&cb->rng) < 0.3f;
+    r.staggered = !r.knocked_down;
+    char who[48];
+    lower_name(enemy_def(e->kind)->name, who, sizeof(who));
+    hit_enemy(cb, e, MOVE_RUN_KICK, &r, props, 0, NULL, 0);
+    if (e->state == EN_DEAD) snprintf(log, len, "Arrollas al %s con el caballo: queda en el suelo. Deja botín (F).", who);
+    else snprintf(log, len, "¡Arrollas al %s con el caballo!", who);
+    if (e->target < 0) e->target = 0;
+    cb->trample_cd = 1.2f;
+    (void)ga;
+}
+
 void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *props, const Terrain *t, Vector3 camp_fire,
                bool input_ok, bool night, bool winter, float cam_yaw, float cam_pitch, float dt, char *log, size_t log_len) {
     float time = (float)GetTime();
@@ -1154,6 +1253,17 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     cb->stagger = fmaxf(0.0f, cb->stagger - dt);
     if (cb->knock > 0.0f && (cb->knock -= dt) <= 0.0f && !cb->player.down) snprintf(log, log_len, "Te levantas.");
     cb->knock = fmaxf(0.0f, cb->knock);
+    // Velocidad real (para la inercia a caballo); un salto grande es un viaje, no una carrera.
+    float moved = dist2(p->pos, cb->last_pos);
+    cb->pl_speed = dt > 0.0f && moved < 5.0f ? Lerp(cb->pl_speed, moved / dt, fminf(1.0f, dt * 8.0f)) : 0.0f;
+    cb->last_pos = p->pos;
+    cb->trample_cd = fmaxf(0.0f, cb->trample_cd - dt);
+    if (ga->mounted >= 0 && cb->pl_speed > GALLOP_SPEED && cb->trample_cd <= 0.0f && !cb->player.down) trample(cb, p, ga, props, log, log_len);
+    for (int i = 0; i < cb->loose_n; i++) { // los caballos de los jinetes derribados quedan sueltos
+        Vector3 h = cb->loose_horse[i];
+        fg_spawn_one(ga, SPECIES_HORSE, h.x + sinf(cb->loose_yaw[i]) * 2.0f, h.z + cosf(cb->loose_yaw[i]) * 2.0f, cb->loose_yaw[i]);
+    }
+    cb->loose_n = 0;
     bool can_act = input_ok && !cb->player.down && !ga->climbing && cb->knock <= 0.0f;
     const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);
     cb->blocking = can_act && IsKeyDown(KEY_Z) && !ga->hands.sheathed && !rd && cb->stagger <= 0.0f;
@@ -1168,11 +1278,12 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     if (rd) player_ranged(cb, p, ga, props, rd, can_act, cam_yaw, cam_pitch, dt, log, log_len);
     else {
         cb->aiming = false;
-        player_melee_input(cb, p, ga, t, props, can_act && cb->stagger <= 0.0f && ga->mounted < 0, dt, log, log_len);
+        player_melee_input(cb, p, ga, t, props, can_act && cb->stagger <= 0.0f, dt, log, log_len);
     }
     if (input_ok && IsKeyPressed(KEY_B)) bandage(cb, ga, troop, props, p, log, log_len);
     if (input_ok && IsKeyPressed(KEY_NINE)) { // prueba: enemigos delante
-        const char *what = IsKeyDown(KEY_LEFT_SHIFT) ? "lobos" : IsKeyDown(KEY_LEFT_CONTROL) ? "culto"
+        bool sh = IsKeyDown(KEY_LEFT_SHIFT), ct = IsKeyDown(KEY_LEFT_CONTROL);
+        const char *what = sh && ct ? "jinetes" : sh ? "lobos" : ct ? "culto"
                            : IsKeyDown(KEY_LEFT_ALT)                                         ? "arqueros"
                                                                                              : "bandidos";
         cb_spawn_group(cb, ga, what, p, t, 14.0f, log, log_len);
@@ -1208,8 +1319,32 @@ static BodyColors enemy_colors(EnemyKind k, bool hit) {
     if (k == ENEMY_FANATIC) c.cloth = (Color){ 96, 22, 32, 255 };
     else if (k == ENEMY_CAPTOR) c.cloth = (Color){ 60, 18, 30, 255 };
     else if (k == ENEMY_ARCHER) c.cloth = (Color){ 104, 98, 66, 255 };
+    else if (k == ENEMY_RIDER) c.cloth = (Color){ 52, 66, 92, 255 };
     if (hit) c.cloth = (Color){ 236, 226, 214, 255 };
     return c;
+}
+
+// El caballo del jinete enemigo: cuerpo, cuello, cabeza y patas que trotan.
+static void draw_enemy_horse(Vector3 pos, float yaw, float speed, float time, bool hit) {
+    Color hide = hit ? (Color){ 220, 200, 180, 255 } : (Color){ 96, 64, 40, 255 };
+    Color dark = { 48, 32, 22, 255 };
+    Vector3 f = { sinf(yaw), 0, cosf(yaw) }, r = { cosf(yaw), 0, -sinf(yaw) };
+    float y = pos.y + 1.05f;
+    Vector3 back = { pos.x - f.x * 0.75f, y, pos.z - f.z * 0.75f }, front = { pos.x + f.x * 0.7f, y + 0.05f, pos.z + f.z * 0.7f };
+    DrawCapsule(back, front, 0.32f, 6, 4, hide);
+    Vector3 neck = { pos.x + f.x * 1.15f, y + 0.55f, pos.z + f.z * 1.15f };
+    DrawCylinderEx(front, neck, 0.2f, 0.14f, 5, hide);
+    DrawCapsule(neck, (Vector3){ neck.x + f.x * 0.45f, neck.y - 0.2f, neck.z + f.z * 0.45f }, 0.12f, 5, 3, hide);
+    DrawCylinderEx((Vector3){ back.x - f.x * 0.2f, y + 0.1f, back.z - f.z * 0.2f }, (Vector3){ back.x - f.x * 0.5f, y - 0.5f, back.z - f.z * 0.5f },
+                   0.06f, 0.03f, 4, dark); // cola
+    float gait = speed > 0.2f ? time * (4.0f + speed) : 0.0f;
+    for (int k = 0; k < 4; k++) {
+        float side = k % 2 ? 0.2f : -0.2f, along = k < 2 ? 0.6f : -0.6f;
+        float swing = sinf(gait + (float)k * 1.7f) * (speed > 0.2f ? 0.35f : 0.0f);
+        Vector3 hip = { pos.x + f.x * along + r.x * side, y - 0.1f, pos.z + f.z * along + r.z * side };
+        Vector3 hoof = { hip.x + f.x * swing, pos.y + 0.05f, hip.z + f.z * swing };
+        DrawCylinderEx(hip, hoof, 0.08f, 0.05f, 4, hide);
+    }
 }
 
 static void draw_shot(const Shot *s) {
@@ -1244,8 +1379,14 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         const InvItem *it = inventory_find(ga->inv, def->model);
         if (!it) continue;
         bool dead = e->state == EN_DEAD;
+        Vector3 at = e->pos;
+        if (e->mounted && !dead) { // a caballo: el jinete va encima
+            draw_enemy_horse(e->pos, e->yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
+            at.y += RIDER_LIFT;
+        }
         if (props_has_model(props, it)) {
             HumanoidState hs = { .moving = e->speed > 0.2f, .running = e->speed > 3.5f, .grounded = true, .doing = -1,
+                                 .mounted = e->mounted && !dead,
                                  .building = -1, .dead = dead, .hit = e->hit_anim > 0.0f,
                                  .attacking = e->attack_anim > 0.0f && !def->ranged ? 1 + i % 3 : 0,
                                  .ranged = def->ranged && e->target >= 0 && e->speed < 0.2f ? 1 : 0,
@@ -1255,14 +1396,14 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
             const char *clip = anim_humanoid(&hs);
             // Muerto: el clip se queda en su ultimo tramo en vez de repetirse.
             float tt = dead ? fminf(CORPSE_SECONDS - e->corpse, 1.2f) : time + (float)i * 0.31f;
-            props_draw_item_anim(props, it, e->pos, e->yaw - PI / 2.0f, clip, tt);
+            props_draw_item_anim(props, it, at, e->yaw - PI / 2.0f, clip, tt);
             continue;
         }
         // Sin modelo: cuerpo articulado con su armadura (y su escudo).
         BodyPose b;
         pose_enemy(&b, e, time, i);
-        body_draw(&b, e->pos, e->yaw, enemy_colors(e->kind, e->hit_anim > 0.0f), &e->armor);
-        if (e->shield && !dead) draw_shield_on(&b, e->pos, e->yaw, (Color){ 168, 134, 84, 255 });
+        body_draw(&b, at, e->yaw, enemy_colors(e->kind, e->hit_anim > 0.0f), &e->armor);
+        if (e->shield && !dead) draw_shield_on(&b, at, e->yaw, (Color){ 168, 134, 84, 255 });
     }
     for (int i = 0; i < CB_MAX_SHOTS; i++)
         if (cb->shots[i].p.alive) draw_shot(&cb->shots[i]);

@@ -18,7 +18,13 @@
 //  - enemigos (bandidos, arqueros, fanaticos y captores del culto) con su salud,
 //    deteccion, persecucion, huida y heridas; la escolta pelea a tu lado;
 //  - salud de todos los integrantes de la tribu: sangran, sanan, mueren;
-//  - golpes y flechas tambien contra los animales (src/game/fauna_game.c).
+//  - golpes y flechas tambien contra los animales (src/game/fauna_game.c);
+//  - combate montado: a caballo solo golpe y golpe pesado, con mas alcance y la
+//    inercia del galope (la lanza derriba); al galope se arrolla a quien este
+//    delante; los golpes enemigos a veces dan a la montura y un derribo te tira;
+//    a distancia, la velocidad dispersa el tiro (la monta lo corrige);
+//  - jinetes bandidos: derribados pierden el caballo (queda suelto);
+//  - botin: los enemigos abatidos dejan una bolsa (F) con lo suyo.
 #ifndef ESTEPA_COMBAT_GAME_H
 #define ESTEPA_COMBAT_GAME_H
 
@@ -55,6 +61,8 @@ typedef struct {
     float block_timer, stagger, knock; // cubriendose; desequilibrado; en el suelo
     int move, combo;          // movimiento en curso (MeleeMove + 1) y paso del combo
     float move_anim;
+    bool mounted;      // a caballo (jinete): derribado, pierde el caballo
+    bool loot_dropped; // ya dejo su botin al caer
 } Enemy;
 
 typedef struct {
@@ -94,6 +102,13 @@ typedef struct {
     float stagger, knock; // desequilibrado; derribado
     float charge_timer;   // carga con escudo en curso
     bool charge_hit;
+    // Combate montado.
+    Vector3 last_pos;     // para la velocidad real del jugador
+    float pl_speed;       // m/s
+    float trample_cd;     // arrollar al galope
+    Vector3 loose_horse[4]; // caballos de jinetes derribados (los suelta la fauna)
+    float loose_yaw[4];
+    int loose_n;
 } Combat;
 
 void cb_init(Combat *cb, unsigned seed);

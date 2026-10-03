@@ -79,20 +79,43 @@ typedef enum {
     CRAFT_SABLE_STEEL,
     CRAFT_SCALE_ARMOR_STEEL,
     CRAFT_SHIELD_IRON,
+    // A mano, en cualquier sitio, con lo que se recolecta.
+    CRAFT_ARROWS,
+    CRAFT_BOLTS,
+    CRAFT_SLING_STONES,
+    CRAFT_ROPE,
+    CRAFT_OINTMENT,
+    CRAFT_LEATHER_CUIRASS,
+    CRAFT_FELT_BOOTS,
     CRAFT_COUNT
 } CraftId;
 
 typedef struct {
     const char *name;     // UTF-8
     const char *produces; // id de inventario
-    const char *building; // horno necesario (id de inventario)
-    Role role;            // quien forja
+    const char *building; // horno necesario (id de inventario), o NULL: a mano, en cualquier sitio
+    Role role;            // quien lo hace (ROLE_NONE: el propio jugador)
     Ingredient mats[MAT_MAX];
     float work;           // segundos de juego para un artesano
+    int amount;           // cuantos salen (0 = 1)
 } CraftDef;
 
 const CraftDef *craft_def(CraftId c);
 // Segundos que tarda con los artesanos activos de la tribu (0 artesanos: no se puede, devuelve -1).
+// Lo que se hace a mano (ROLE_NONE) lo hace el jugador: siempre se puede.
 float craft_seconds(const CraftDef *c, const Troop *t);
+bool craft_by_hand(const CraftDef *c);
+
+// ---------------------------------------------------------------- reparaciones
+// Lo que cuesta reparar una pieza de armadura segun su material (src/sim/armor.h):
+// fieltro y cuero, a mano con pieles; bronce, hierro, acero y oro, en el horno y con herrero.
+typedef struct {
+    Ingredient mats[MAT_MAX];
+    const char *building; // horno necesario, o NULL
+    Role role;            // artesano necesario (ROLE_NONE: cualquiera)
+    float restore;        // cuanto devuelve (fraccion de la durabilidad)
+} RepairDef;
+
+const RepairDef *repair_def(int material);
 
 #endif

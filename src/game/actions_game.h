@@ -30,6 +30,7 @@
 #define GA_MAX_ANIMALS 64
 #define GA_MAX_SWARMS 24
 #define GA_PACKS 4 // monturas con alforjas
+#define GA_LOOT 8  // bolsas de botin en el suelo
 
 typedef struct {
     int member_id;     // integrante de la tropa (0 = libre)
@@ -96,6 +97,14 @@ typedef struct {
     // Menus de inventario y de equipo.
     bool inv_open, equip_open;
     int inv_pane, inv_cont[2], inv_cursor[2], equip_cursor;
+    // Menu de acciones (Tab) por pestañas: acciones, obras, fabricar, reparar.
+    int menu_tab, tab_cursor[4];
+    bool take_all; // F con Mayus: tomar todo lo de alrededor
+    // Botin que dejan los enemigos al caer (F para recogerlo).
+    Bag loot[GA_LOOT];
+    Vector3 loot_pos[GA_LOOT];
+    float loot_age[GA_LOOT]; // s en el suelo; < 0: hueco libre
+    Armor *player_armor; // la armadura que lleva el jugador (la pone main cada cuadro; no se guarda)
     // Trepar.
     bool climbing;
     float climb_t;
@@ -125,7 +134,7 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
 // importado. Devuelve false si no (el juego dibuja el marcador de siempre).
 bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time);
 const char *ga_hands_text(const GameActions *ga);
-void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, int width, int height);
+void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, const Player *p, int width, int height);
 
 // Fuentes de luz para la noche (fogatas, hogueras, hornos y la antorcha encendida).
 // Llena pos y radius (metros de alcance); devuelve cuantas hay.

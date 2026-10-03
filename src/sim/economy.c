@@ -179,11 +179,44 @@ static const CraftDef CRAFTS[CRAFT_COUNT] = {
     [CRAFT_SHIELD_IRON] = { "Escudo de láminas de hierro", "escudo.mano.lamina", STEEL, ROLE_SMITH,
                             { { "utileria.material.hierro", 2 }, { "utileria.material.carbon", 2 },
                               { "utileria.material.troncos", 1 }, { NULL, 0 } }, 150.0f },
+    // A mano: con lo que da la estepa (leña, pedernal, plumas y huesos de la caza, hierbas, miel).
+    [CRAFT_ARROWS] = { "Flechas (5)", "proyectil.flecha.comun", NULL, ROLE_NONE,
+                       { { "utileria.objeto.lena", 1 }, { "utileria.material.plumas", 1 }, { "utileria.material.pedernal", 1 },
+                         { NULL, 0 } }, 20.0f, 5 },
+    [CRAFT_BOLTS] = { "Virotes (4)", "proyectil.virote.comun", NULL, ROLE_NONE,
+                      { { "utileria.objeto.lena", 1 }, { "utileria.material.hueso", 1 }, { NULL, 0 } }, 20.0f, 4 },
+    [CRAFT_SLING_STONES] = { "Piedras de honda (8)", "proyectil.piedra.honda", NULL, ROLE_NONE,
+                             { { "utileria.material.piedra", 1 }, { NULL, 0 } }, 10.0f, 8 },
+    [CRAFT_ROPE] = { "Cuerda de tendones", "utileria.material.cuerda", NULL, ROLE_NONE,
+                     { { "utileria.material.tendones", 2 }, { NULL, 0 } }, 25.0f, 1 },
+    [CRAFT_OINTMENT] = { "Ungüento de hierbas y miel", "utileria.consumible.unguento", NULL, ROLE_NONE,
+                         { { "utileria.consumible.hierbas", 2 }, { "utileria.consumible.miel", 1 }, { NULL, 0 } }, 15.0f, 1 },
+    [CRAFT_LEATHER_CUIRASS] = { "Coraza laminar de cuero", "armadura.torso.laminar_cuero", NULL, ROLE_NONE,
+                                { { "utileria.material.pieles", 3 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } }, 90.0f, 1 },
+    [CRAFT_FELT_BOOTS] = { "Botas de fieltro", "armadura.botas.fieltro", NULL, ROLE_NONE,
+                           { { "utileria.material.pieles", 2 }, { NULL, 0 } }, 45.0f, 1 },
 };
+
+bool craft_by_hand(const CraftDef *c) { return c->role == ROLE_NONE; }
+
+// Mismo orden que ArmorMaterial: fieltro, cuero, bronce, hierro, acero, oro.
+static const RepairDef REPAIRS[] = {
+    { { { "utileria.material.pieles", 1 }, { NULL, 0 } }, NULL, ROLE_NONE, 0.6f },
+    { { { "utileria.material.pieles", 1 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } }, NULL, ROLE_NONE, 0.6f },
+    { { { "utileria.material.cobre", 1 }, { "utileria.material.carbon", 1 }, { NULL, 0 } }, BRONZE, ROLE_SMITH, 0.8f },
+    { { { "utileria.material.hierro", 1 }, { "utileria.material.carbon", 1 }, { NULL, 0 } }, STEEL, ROLE_SMITH, 0.8f },
+    { { { "utileria.material.hierro", 1 }, { "utileria.material.carbon", 2 }, { NULL, 0 } }, STEEL, ROLE_SMITH, 0.8f },
+    { { { "utileria.material.carbon", 1 }, { NULL, 0 } }, BRONZE, ROLE_SMITH, 0.8f },
+};
+
+const RepairDef *repair_def(int material) {
+    return &REPAIRS[material >= 0 && material < (int)(sizeof(REPAIRS) / sizeof(REPAIRS[0])) ? material : 0];
+}
 
 const CraftDef *craft_def(CraftId c) { return c >= 0 && c < CRAFT_COUNT ? &CRAFTS[c] : NULL; }
 
 float craft_seconds(const CraftDef *c, const Troop *t) {
+    if (c->role == ROLE_NONE) return c->work; // a mano: lo hace el jugador
     int artisans = 0;
     for (int i = 0; i < t->count; i++)
         if (t->members[i].status == STATUS_ACTIVE && t->members[i].role == c->role) artisans++;

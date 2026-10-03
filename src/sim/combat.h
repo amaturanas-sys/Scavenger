@@ -20,7 +20,7 @@ typedef struct {
 // Estadisticas del arma por id del inventario ("" o NULL: a puño limpio).
 WeaponStats weapon_stats(const char *inv_id);
 
-typedef enum { ENEMY_BANDIT, ENEMY_FANATIC, ENEMY_CAPTOR, ENEMY_ARCHER, ENEMY_COUNT } EnemyKind;
+typedef enum { ENEMY_BANDIT, ENEMY_FANATIC, ENEMY_CAPTOR, ENEMY_ARCHER, ENEMY_RIDER, ENEMY_COUNT } EnemyKind;
 
 typedef struct {
     const char *name;  // UTF-8
@@ -34,9 +34,22 @@ typedef struct {
     const char *weapon;    // arma de mano (src/sim/melee.h la usa para golpes, combos y ganchos)
     const char *shield;    // escudo que puede llevar (o NULL)
     float shield_chance;   // probabilidad de llevarlo
+    bool mounted;          // a caballo: rapido, pega desde arriba, cuesta tumbarlo (y si cae, pierde el caballo)
 } EnemyDef;
 
 const EnemyDef *enemy_def(EnemyKind k);
+
+// Botin: lo que deja un enemigo al caer (ademas de las piezas de su armadura, que pone el juego).
+typedef struct {
+    const char *id;
+    int count;
+    float condition; // estado de una pieza de equipo [0, 1]
+} LootItem;
+
+// armed: aun tiene su arma; shield: aun tiene su escudo. Devuelve cuantos objetos escribio.
+int enemy_loot(EnemyKind k, bool armed, bool shield, Rng *rng, LootItem *out, int max);
+// Bono de un golpe a caballo segun la velocidad (m/s): 1 parado, hasta 1.8 al galope.
+float mounted_momentum(float speed);
 
 // Probabilidad de parar un golpe con escudo segun de donde viene
 // (facing: coseno entre el frente del defensor y la direccion al atacante).

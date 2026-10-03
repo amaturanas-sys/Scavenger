@@ -1,5 +1,6 @@
 #include "combat.h"
 
+#include <math.h>
 #include <string.h>
 
 WeaponStats weapon_stats(const char *id) {
@@ -26,15 +27,59 @@ const EnemyDef *enemy_def(EnemyKind k) {
         [ENEMY_BANDIT] = { "Bandido", "personaje.npc.bandido", false, 70.0f, 12.0f, 1.6f, 1.2f, 4.2f, 22.0f, WOUND_CUT, 0.2f,
                            NULL, { "armadura.torso.fieltro", "armadura.casco.fieltro" }, "arma.corta.sable", "escudo.mano.mimbre", 0.5f },
         [ENEMY_FANATIC] = { "Fanático del culto", "personaje.npc.fanatico", false, 80.0f, 15.0f, 1.7f, 1.1f, 4.5f, 26.0f,
-                            WOUND_CUT, 0.0f, NULL, { "armadura.torso.culto", "armadura.casco.mascara_culto" }, "arma.corta.hacha", NULL, 0.0f },
+                            WOUND_CUT, 0.0f, NULL, { "armadura.torso.culto", "armadura.casco.mascara_culto" }, "arma.corta.hacha_mano", NULL, 0.0f },
         [ENEMY_CAPTOR] = { "Captor del culto", "personaje.npc.captor_culto", false, 90.0f, 10.0f, 1.6f, 1.3f, 4.0f, 24.0f,
                            WOUND_BRUISE, 0.15f, NULL,
                            { "armadura.torso.culto", "armadura.faldar.culto", "armadura.grebas.culto", "armadura.casco.culto" },
                            "arma.corta.maza", "escudo.mano.cuero", 0.7f },
         [ENEMY_ARCHER] = { "Arquero bandido", "personaje.npc.bandido", false, 60.0f, 7.0f, 1.3f, 1.0f, 4.4f, 34.0f,
                            WOUND_CUT, 0.3f, "arma.distancia.arco_compuesto", { "armadura.casco.fieltro" }, "arma.corta.daga", NULL, 0.0f },
+        [ENEMY_RIDER] = { "Jinete bandido", "personaje.npc.bandido", false, 75.0f, 14.0f, 2.0f, 1.1f, 8.5f, 40.0f, WOUND_CUT, 0.25f,
+                          NULL, { "armadura.torso.laminar_cuero", "armadura.casco.laminar_cuero" }, "arma.corta.sable", NULL, 0.0f,
+                          true },
     };
     return &defs[(unsigned)k < ENEMY_COUNT ? k : 0];
+}
+
+float mounted_momentum(float speed) { return 1.0f + fminf(fmaxf(speed, 0.0f), 12.0f) / 15.0f; }
+
+static void add(LootItem *out, int *n, int max, const char *id, int count, float cond) {
+    if (*n < max && count > 0) out[(*n)++] = (LootItem){ id, count, cond };
+}
+
+int enemy_loot(EnemyKind k, bool armed, bool shield, Rng *rng, LootItem *out, int max) {
+    const EnemyDef *d = enemy_def(k);
+    int n = 0;
+    float wear = 0.4f + 0.5f * rng_float(rng); // lo que llevaba, usado
+    if (armed && d->weapon && rng_float(rng) < 0.7f) add(out, &n, max, d->weapon, 1, wear);
+    if (shield && d->shield && rng_float(rng) < 0.6f) add(out, &n, max, d->shield, 1, 0.3f + 0.6f * rng_float(rng));
+    switch (k) {
+    case ENEMY_BANDIT:
+        if (rng_float(rng) < 0.5f) add(out, &n, max, "utileria.consumible.carne_seca", 1 + rng_range(rng, 2), 1.0f);
+        if (rng_float(rng) < 0.3f) add(out, &n, max, "utileria.consumible.hierbas", 1, 1.0f);
+        if (rng_float(rng) < 0.06f) add(out, &n, max, "accesorio.amuleto.lobo", 1, 1.0f);
+        break;
+    case ENEMY_FANATIC:
+        if (rng_float(rng) < 0.5f) add(out, &n, max, "utileria.consumible.hierbas", 2, 1.0f);
+        if (rng_float(rng) < 0.15f) add(out, &n, max, "accesorio.amuleto.tigre_dragon", 1, 1.0f);
+        if (rng_float(rng) < 0.1f) add(out, &n, max, "utileria.consumible.unguento", 1, 1.0f);
+        break;
+    case ENEMY_CAPTOR:
+        if (rng_float(rng) < 0.7f) add(out, &n, max, "utileria.material.cuerda", 1 + rng_range(rng, 2), 1.0f);
+        if (rng_float(rng) < 0.08f) add(out, &n, max, "accesorio.amuleto.oso", 1, 1.0f);
+        break;
+    case ENEMY_ARCHER:
+        if (rng_float(rng) < 0.5f) add(out, &n, max, d->ranged, 1, wear);
+        if (rng_float(rng) < 0.9f) add(out, &n, max, "proyectil.flecha.comun", 3 + rng_range(rng, 7), 1.0f);
+        if (rng_float(rng) < 0.08f) add(out, &n, max, "accesorio.amuleto.aguila_ibice", 1, 1.0f);
+        break;
+    case ENEMY_RIDER:
+        if (rng_float(rng) < 0.6f) add(out, &n, max, "utileria.consumible.carne_seca", 2, 1.0f);
+        if (rng_float(rng) < 0.15f) add(out, &n, max, "accesorio.amuleto.caballo", 1, 1.0f);
+        break;
+    default: break;
+    }
+    return n;
 }
 
 int combat_apply_hit(Health *h, Armor *a, Rng *rng, float damage, WoundKind kind, int part, bool projectile,

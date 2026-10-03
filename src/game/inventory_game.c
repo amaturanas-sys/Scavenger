@@ -20,6 +20,7 @@ void ig_init(GameActions *ga, Props *props, const Terrain *t) {
     bag_init(&ga->cart, BAG_CART, 0.0f);
     bag_init(&ga->armory, BAG_CAMP, 0.0f);
     for (int i = 0; i < GA_PACKS; i++) ga->pack_animal[i] = -1;
+    for (int i = 0; i < GA_LOOT; i++) ga->loot_age[i] = -1.0f;
     loadout_init(&ga->loadout);
     memset(ga->amulet_id, 0, sizeof(ga->amulet_id));
     const Inventory *inv = ga->inv;
@@ -287,6 +288,168 @@ static void equip_amulet(GameActions *ga, const Props *props, const Player *p, i
     if (!remove) snprintf(log, len, "No tienes a mano otro amuleto.");
 }
 
+// ------------------------------------------------------------------ reparaciones
+const Ingredient *ig_first_missing(GameActions *ga, const Props *props, const Player *p, const Ingredient *mats) {
+    for (const Ingredient *m = mats; m->id; m++)
+        if (ig_count(ga, props, p, m->id) < m->count) return m;
+    return NULL;
+}
+
+void ig_use_all(GameActions *ga, const Props *props, const Player *p, const Ingredient *mats) {
+    for (const Ingredient *m = mats; m->id; m++) ig_use(ga, props, p, m->id, m->count);
+}
+
+static int material_of(const char *id) {
+    Armor tmp;
+    memset(&tmp, 0, sizeof(tmp));
+    int s = armor_slot_for(id);
+    if (s < 0 || !armor_equip(&tmp, id)) return 0;
+    return (int)tmp.slot[s].material;
+}
+
+int ig_repair_list(GameActions *ga, const Props *props, const Player *p, RepairItem *out, int max) {
+    int n = 0;
+    if (ga->player_armor)
+        for (int s = 0; s < SLOT_COUNT && n < max; s++) {
+            const ArmorPiece *pc = &ga->player_armor->slot[s];
+            if (!pc->id[0] || pc->durability >= pc->durability_max * 0.999f) continue;
+            RepairItem *r = &out[n++];
+            memset(r, 0, sizeof(*r));
+            r->worn = true, r->slot = s, r->cond = pc->durability / pc->durability_max, r->material = (int)pc->material;
+            snprintf(r->id, sizeof(r->id), "%s", pc->id);
+        }
+    Cont c[10];
+    int nc = containers(ga, props, p, c);
+    for (int k = 0; k < nc && n < max; k++) {
+        Bag *b = c[k].type == C_BAG ? c[k].bag : &ga->armory;
+        for (int i = 0; i < b->n && n < max; i++) {
+            if (b->s[i].condition >= 0.999f || armor_slot_for(b->s[i].id) < 0) continue;
+            RepairItem *r = &out[n++];
+            memset(r, 0, sizeof(*r));
+            r->bag = b, r->bag_slot = i, r->cond = b->s[i].condition, r->slot = armor_slot_for(b->s[i].id);
+            r->material = material_of(b->s[i].id);
+            snprintf(r->id, sizeof(r->id), "%s", b->s[i].id);
+        }
+    }
+    return n;
+}
+
+static bool has_role(const Troop *t, Role r) {
+    for (int i = 0; i < t->count; i++)
+        if (t->members[i].status == STATUS_ACTIVE && t->members[i].role == r && !t->members[i].health.down) return true;
+    return false;
+}
+
+static bool building_near(const Props *props, const char *id, const Player *p) {
+    for (int i = 0; props && i < props->count; i++)
+        if (!strcmp(props->items[i].item->id, id) && dist_xz(p->pos, props->items[i].pos.x, props->items[i].pos.z) < CAMP_STORE_RADIUS)
+            return true;
+    return false;
+}
+
+bool ig_can_repair(GameActions *ga, const Props *props, const Player *p, const Troop *troop, const RepairItem *it, char *why,
+                   size_t len) {
+    const RepairDef *d = repair_def(it->material);
+    if (d->building && !building_near(props, d->building, p)) {
+        snprintf(why, len, "Hace falta: %s (cerca).", item_name(ga, d->building));
+        return false;
+    }
+    if (d->role != ROLE_NONE && !has_role(troop, d->role)) {
+        snprintf(why, len, "Hace falta un %s en la tribu.", role_name(d->role));
+        return false;
+    }
+    const Ingredient *miss = ig_first_missing(ga, props, p, d->mats);
+    if (miss) {
+        snprintf(why, len, "Falta: %s (%d de %d).", item_name(ga, miss->id), ig_count(ga, props, p, miss->id), miss->count);
+        return false;
+    }
+    why[0] = '\0';
+    return true;
+}
+
+bool ig_repair(GameActions *ga, const Props *props, const Player *p, const Troop *troop, const RepairItem *it, char *log,
+               size_t len) {
+    char why[128];
+    if (!ig_can_repair(ga, props, p, troop, it, why, sizeof(why))) {
+        snprintf(log, len, "No se puede reparar: %s", why);
+        return false;
+    }
+    const RepairDef *d = repair_def(it->material);
+    ig_use_all(ga, props, p, d->mats);
+    float cond = fminf(1.0f, it->cond + d->restore);
+    if (it->worn && ga->player_armor) {
+        ArmorPiece *pc = &ga->player_armor->slot[it->slot];
+        pc->durability = pc->durability_max * cond;
+    } else if (it->bag) { // los materiales pueden haber movido los huecos: se busca la pieza otra vez
+        for (int i = 0; i < it->bag->n; i++)
+            if (!strcmp(it->bag->s[i].id, it->id) && fabsf(it->bag->s[i].condition - it->cond) < 1e-4f) {
+                it->bag->s[i].condition = cond;
+                break;
+            }
+    }
+    snprintf(log, len, "Reparas: %s (%d %% -> %d %%).", item_name(ga, it->id), (int)(it->cond * 100), (int)(cond * 100));
+    return true;
+}
+
+// ------------------------------------------------------------------ botin
+#define LOOT_RANGE 2.5f
+#define LOOT_SECONDS 900.0f // media jornada en el suelo
+
+bool ig_drop_loot(GameActions *ga, Vector3 pos, const LootItem *items, int n) {
+    if (n <= 0) return false;
+    int k = -1;
+    for (int i = 0; i < GA_LOOT && k < 0; i++)
+        if (ga->loot_age[i] < 0.0f) k = i;
+    if (k < 0) { // sin hueco: se pisa la bolsa mas vieja
+        k = 0;
+        for (int i = 1; i < GA_LOOT; i++)
+            if (ga->loot_age[i] > ga->loot_age[k]) k = i;
+    }
+    bag_init(&ga->loot[k], BAG_CAMP, 0.0f);
+    for (int i = 0; i < n; i++) bag_add(&ga->loot[k], ga->inv, items[i].id, items[i].count, items[i].condition);
+    if (!ga->loot[k].n) return false;
+    ga->loot_pos[k] = pos;
+    ga->loot_age[k] = 0.0f;
+    return true;
+}
+
+bool ig_take_loot(GameActions *ga, const Props *props, const Player *p, char *log, size_t len) {
+    int k = -1;
+    float bd = LOOT_RANGE;
+    for (int i = 0; i < GA_LOOT; i++) {
+        float d = ga->loot_age[i] >= 0.0f ? dist_xz(p->pos, ga->loot_pos[i].x, ga->loot_pos[i].z) : 1e9f;
+        if (d < bd) bd = d, k = i;
+    }
+    if (k < 0) return false;
+    Bag *b = &ga->loot[k];
+    int taken = 0;
+    char first[96] = "";
+    for (int i = b->n - 1; i >= 0; i--) {
+        BagSlot s = b->s[i];
+        int got = ig_store(ga, props, p, s.id, s.count, s.condition);
+        if (got > 0 && !first[0]) snprintf(first, sizeof(first), "%s", item_name(ga, s.id));
+        taken += got;
+        bag_remove_slot(b, i, got);
+    }
+    if (!b->n) ga->loot_age[k] = -1.0f;
+    if (taken) snprintf(log, len, "Recoges el botín: %s%s%s", first, taken > 1 ? TextFormat(" y %d más", taken - 1) : "",
+                        b->n ? " (lo demás no te cabe)." : ".");
+    else snprintf(log, len, "No te cabe nada del botín (I: inventario).");
+    return true;
+}
+
+void ig_draw_world(const GameActions *ga, const Terrain *t, float time) {
+    for (int i = 0; i < GA_LOOT; i++) {
+        if (ga->loot_age[i] < 0.0f) continue;
+        Vector3 p = ga->loot_pos[i];
+        p.y = terrain_height(t, p.x, p.z);
+        float bob = 0.04f * sinf(time * 3.0f + (float)i);
+        DrawSphere((Vector3){ p.x, p.y + 0.18f, p.z }, 0.22f, (Color){ 120, 86, 52, 255 }); // el saco
+        DrawCylinder((Vector3){ p.x, p.y + 0.36f, p.z }, 0.05f, 0.09f, 0.1f, 5, (Color){ 90, 62, 38, 255 });
+        DrawCube((Vector3){ p.x, p.y + 0.62f + bob, p.z }, 0.1f, 0.1f, 0.1f, UI_GOLD); // una marca para verlo de lejos
+    }
+}
+
 // ------------------------------------------------------------------ actualizacion
 static void sync_packs(GameActions *ga, char *log, size_t len) {
     for (int k = 0; k < GA_PACKS; k++) { // las alforjas de una montura que ya no esta
@@ -313,6 +476,8 @@ static void sync_packs(GameActions *ga, char *log, size_t len) {
 
 void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool input_ok, char *log, size_t len) {
     sync_packs(ga, log, len);
+    for (int i = 0; i < GA_LOOT; i++) // el botin no se queda para siempre
+        if (ga->loot_age[i] >= 0.0f && (ga->loot_age[i] += GetFrameTime()) > LOOT_SECONDS) ga->loot_age[i] = -1.0f;
     if (input_ok && IsKeyPressed(KEY_I) && !ga->equip_open) ga->inv_open = !ga->inv_open;
     if (input_ok && IsKeyPressed(KEY_P) && !ga->inv_open) ga->equip_open = !ga->equip_open;
     if ((ga->inv_open || ga->equip_open) && IsKeyPressed(KEY_ESCAPE)) ga->inv_open = ga->equip_open = false;

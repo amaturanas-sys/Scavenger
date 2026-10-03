@@ -1911,8 +1911,22 @@ static void test_inventory_repo_file_is_valid(void) {
         for (const Ingredient *m = action_def((ActionId)a)->mats; m->id; m++) CHECK(inventory_find(&inv, m->id) != NULL);
     for (int c = 0; c < CRAFT_COUNT; c++) {
         const CraftDef *d = craft_def((CraftId)c);
-        CHECK(inventory_find(&inv, d->produces) != NULL && inventory_find(&inv, d->building) != NULL);
+        CHECK(inventory_find(&inv, d->produces) != NULL && (craft_by_hand(d) || inventory_find(&inv, d->building) != NULL));
         for (const Ingredient *m = d->mats; m->id; m++) CHECK(inventory_find(&inv, m->id) != NULL);
+    }
+    for (int mat = 0; mat < MAT_COUNT; mat++) { // reparaciones: materiales y horno existen
+        const RepairDef *r = repair_def(mat);
+        CHECK(!r->building || inventory_find(&inv, r->building) != NULL);
+        for (const Ingredient *m = r->mats; m->id; m++) CHECK(inventory_find(&inv, m->id) != NULL);
+    }
+    { // el botin de los enemigos: todo existe en el inventario
+        Rng lr;
+        rng_seed(&lr, 3u);
+        for (int i = 0; i < 300; i++) {
+            LootItem it[16];
+            int n = enemy_loot((EnemyKind)(i % ENEMY_COUNT), true, true, &lr, it, 16);
+            for (int j = 0; j < n; j++) CHECK(inventory_find(&inv, it[j].id) != NULL);
+        }
     }
     for (int sp = 0; sp < SPECIES_COUNT; sp++) CHECK(inventory_find(&inv, species_def((Species)sp)->model) != NULL);
     Stockpile seed;
@@ -2026,8 +2040,53 @@ static void test_anim_index_names_exist(void) {
     free(text);
 }
 
+static void test_hand_crafting_and_repairs(void) {
+    // A mano, sin taller: flechas por tandas, cuerda, ungüento, coraza de cuero.
+    const CraftDef *ar = craft_def(CRAFT_ARROWS);
+    CHECK(craft_by_hand(ar) && ar->amount == 5);
+    CHECK(craft_by_hand(craft_def(CRAFT_ROPE)) && craft_by_hand(craft_def(CRAFT_OINTMENT)));
+    CHECK(!craft_by_hand(craft_def(CRAFT_SABLE_BRONZE)));
+    Troop t;
+    troop_init(&t, NULL);
+    CHECK(craft_seconds(ar, &t) == ar->work); // lo hace el jugador: no hace falta oficio
+    // Reparar: el cuero con pieles; el bronce y el hierro piden herrero y su horno.
+    for (int m = 0; m < MAT_COUNT; m++) CHECK(repair_def(m) && repair_def(m)->mats[0].id && repair_def(m)->restore > 0.0f);
+    CHECK(repair_def(MAT_LEATHER)->role == ROLE_NONE && repair_def(MAT_IRON)->role == ROLE_SMITH);
+    CHECK(repair_def(MAT_IRON)->building != NULL && repair_def(-1) == repair_def(MAT_FELT)); // fuera de rango: fieltro
+}
+
+static void test_enemy_loot_and_mounted_momentum(void) {
+    Rng rng;
+    rng_seed(&rng, 41u);
+    int weapons = 0, total = 0;
+    for (int i = 0; i < 400; i++) {
+        EnemyKind k = (EnemyKind)(i % ENEMY_COUNT);
+        LootItem it[16];
+        bool armed = i % 3 != 0;
+        int n = enemy_loot(k, armed, true, &rng, it, 16);
+        CHECK(n >= 0 && n <= 16);
+        total += n;
+        for (int j = 0; j < n; j++) {
+            CHECK(it[j].id && it[j].id[0] && it[j].count > 0 && it[j].condition > 0.0f && it[j].condition <= 1.0f);
+            bool weapon = enemy_def(k)->weapon && !strcmp(it[j].id, enemy_def(k)->weapon);
+            CHECK(armed || !weapon); // desarmado no deja el arma que ya solto
+            weapons += weapon;
+        }
+    }
+    CHECK(weapons > 50 && total > 400);
+    LootItem one[1];
+    CHECK(enemy_loot(ENEMY_ARCHER, true, false, &rng, one, 1) <= 1); // respeta el maximo
+    // Jinete: a caballo, rapido; la inercia crece con la velocidad y tiene techo.
+    CHECK(enemy_def(ENEMY_RIDER)->mounted && !enemy_def(ENEMY_BANDIT)->mounted);
+    CHECK(enemy_def(ENEMY_RIDER)->speed > enemy_def(ENEMY_BANDIT)->speed);
+    CHECK(mounted_momentum(0.0f) == 1.0f && mounted_momentum(6.0f) > 1.3f && mounted_momentum(100.0f) <= 1.81f);
+    CHECK(mounted_momentum(-3.0f) == 1.0f);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
+    RUN(test_hand_crafting_and_repairs);
+    RUN(test_enemy_loot_and_mounted_momentum);
     RUN(test_banish_removes_from_active);
     RUN(test_execution_hits_morale_by_trait);
     RUN(test_kingdom_reacts_to_its_values);
