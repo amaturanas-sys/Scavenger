@@ -91,6 +91,7 @@ if(ESTEPA_BUILD_GAME)
     src/world/props.c
     src/ui/theme.c
     src/ui/minimap.c
+    src/ui/icons.c
     src/world/terrain.c
     src/world/camp.c
     src/world/gallery.c

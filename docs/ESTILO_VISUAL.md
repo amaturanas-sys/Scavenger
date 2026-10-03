@@ -44,12 +44,38 @@ Definida en `src/ui/theme.h`.
 | Minimapa (`src/ui/minimap.c`) | Aro de oro con granulado y turquesas; dentro, lo recordado va del negro al cuero y al hueso, como tinta sobre piel. "N" en cornalina sobre terciopelo. | Imágenes 1 y 4 |
 | `ui_text` | Texto en color hueso con sombra de grabado. | — |
 
-Todo se dibuja con primitivas, sin texturas que cargar: es barato en Android y queda nítido al escalar.
+Los paneles se dibujan con primitivas, sin texturas que cargar: es barato en Android y queda nítido al escalar. Los iconos son la excepción: salen de un atlas pequeño que puedes pintar.
+
+## Iconos
+
+Los botones de los menús son **iconos**: siluetas blancas con un contorno oscuro de 1 px que el juego tiñe según el estado del botón.
+
+- **Oro:** normal.
+- **Oro claro sobre turquesa:** elegido.
+- **Hueso:** con el puntero encima.
+- **Gris:** no se puede usar todavía.
+
+El nombre del botón aparece en la **leyenda**: una franja discreta en la base de la pantalla, con el nombre en oro claro y un detalle en hueso apagado. Sale al pasar el ratón (o el dedo) por encima, o al elegir el botón con el teclado. Si hay las dos cosas, manda el puntero.
+
+| Archivo | Para qué |
+|---|---|
+| [`assets/ui/iconos.png`](../assets/ui/iconos.png) | El atlas: celdas de 32x32 en 16 columnas. **Edítalo a mano**: blanco = silueta, transparente = fondo. |
+| [`assets/ui/iconos_guia.png`](../assets/ui/iconos_guia.png) | Copia ×4 con el índice y el nombre de cada celda, para pintar. |
+| [`assets/ui/iconos.tsv`](../assets/ui/iconos.tsv) | Qué icono va en qué celda. El juego lo lee al arrancar: para mover un icono de celda, cambia aquí su índice. |
+| [`tools/assets/iconos.py`](../tools/assets/iconos.py) | Dibuja las siluetas originales. No pisa el atlas si ya existe, salvo con `--forzar`. |
+
+```bash
+python3 tools/assets/iconos.py generar [--forzar]   # dibuja el atlas
+python3 tools/assets/iconos.py guia                 # regenera la guía y el TSV
+python3 tools/assets/iconos.py check                # el juego y el atlas nombran los mismos iconos
+```
+
+En el juego, los iconos de 32 y 64 px se ven nítidos (filtro de punto). Los de 16 px usan el promedio de la celda (mipmaps). Los objetos del inventario toman su icono por su id, en `icon_for_item` (`src/ui/icons.c`). Por ejemplo, todo lo que contenga `sable` usa la silueta del sable.
 
 ## Pendiente
 
 - **Fuente propia** de mapa de bits, con trazo de grabado, que sustituya a la fuente por defecto de raylib.
 - **Emblemas pixel art** de bestias en combate para cabeceras y facciones (tigre y dragón, águila e íbice, ciervo). Son assets dibujados a mano; no se generan con código.
 - **Marcos calados** para menús grandes: siluetas de animales recortadas en el marco, con el fondo visible a través.
-- **Iconos de objetos**: amuletos y arreos con el mismo lenguaje (los arreos del padre del acto III son literalmente estas piezas).
+- **Iconos propios** para cada amuleto y arreo, con el mismo lenguaje (los arreos del padre del acto III son literalmente estas piezas). Hoy comparten una silueta por tipo.
 - Texturas del mundo (cuero de yurtas, arreos de caballo) coherentes con esta paleta.

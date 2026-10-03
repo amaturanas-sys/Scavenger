@@ -14,6 +14,7 @@
 #include "sim/melee.h"
 #include "sim/clock.h"
 #include "world/body_draw.h"
+#include "ui/icons.h"
 #include "ui/theme.h"
 
 // Equipo de prueba del jugador (Fase 0): herramientas y armas para probar las acciones.
@@ -524,6 +525,40 @@ static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const T
     }
 }
 
+// ---------------------------------------------------------------- menu Tab: disposicion
+// Lo comparten el dibujo y el raton. Pantalla virtual de 640x360.
+#define TAB_W 520
+#define TAB_H 312
+#define TAB_X ((640 - TAB_W) / 2)
+#define TAB_Y 14
+#define TAB_PAD (UI_PANEL_INSET + 3)
+#define GRID_COLS 6
+#define GRID_ROWS 6
+#define TILE 36
+#define TILE_GAP 4
+
+static const IconId TAB_ICONS[4] = { ICON_ACCIONES, ICON_OBRAS, ICON_FABRICAR, ICON_REPARAR };
+static const IconId ACTION_ICONS[ACTION_COUNT] = { ICON_TOMAR,   ICON_LANZAR,   ICON_EMPUNAR, ICON_ENFUNDAR,
+                                                   ICON_FOGATA,  ICON_TIENDA,   ICON_TRINCHERA, ICON_TREPA,
+                                                   ICON_LAZO,    ICON_ANTORCHA, ICON_ENSILLAR };
+static const IconId BUILD_ICONS[BUILD_COUNT] = { ICON_REFUGIO, ICON_OBRAS, ICON_MURO_PIEDRA, ICON_HOGUERA, ICON_TOTEM,
+                                                 ICON_HORNO,   ICON_FUNDICION, ICON_FUNDICION, ICON_TORRE, ICON_CORRAL };
+
+static Rectangle tab_rect(int t) {
+    return (Rectangle){ (float)(TAB_X + TAB_PAD + t * 32), (float)(TAB_Y + TAB_PAD), 28, 28 };
+}
+
+static int grid_first_row(int cur) {
+    int row = cur / GRID_COLS;
+    return row >= GRID_ROWS ? row - GRID_ROWS + 1 : 0; // el elegido siempre a la vista
+}
+
+static Rectangle grid_rect(int i, int first_row) {
+    int c = i % GRID_COLS, r = i / GRID_COLS - first_row;
+    return (Rectangle){ (float)(TAB_X + TAB_PAD + c * (TILE + TILE_GAP)), (float)(TAB_Y + TAB_PAD + 38 + r * (TILE + TILE_GAP)),
+                        TILE, TILE };
+}
+
 // ---------------------------------------------------------------- actualizacion
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
                size_t log_len) {
@@ -532,19 +567,33 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     bool other_menu = ga->inv_open || ga->equip_open; // inventario o equipo abiertos
     if (IsKeyPressed(KEY_TAB) && !other_menu) ga->menu_open = !ga->menu_open;
     if (ga->menu_open) {
-        // Pestañas: acciones, obras, fabricar, reparar.
-        if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) ga->menu_tab = (ga->menu_tab + 1) % 4;
-        if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) ga->menu_tab = (ga->menu_tab + 3) % 4;
+        // Pestañas (acciones, obras, fabricar, reparar): Q/E, Re Pág/Av Pág o un clic en su icono.
+        if (IsKeyPressed(KEY_E) || IsKeyPressed(KEY_PAGE_DOWN)) ga->menu_tab = (ga->menu_tab + 1) % 4;
+        if (IsKeyPressed(KEY_Q) || IsKeyPressed(KEY_PAGE_UP)) ga->menu_tab = (ga->menu_tab + 3) % 4;
+        for (int tb = 0; tb < 4; tb++)
+            if (ui_click(tab_rect(tb))) ga->menu_tab = tb;
         RepairItem rep[24];
         int nrep = ga->menu_tab == 3 ? ig_repair_list(ga, props, p, rep, 24) : 0;
         int total = ga->menu_tab == 0 ? ACTION_COUNT : ga->menu_tab == 1 ? BUILD_COUNT : ga->menu_tab == 2 ? CRAFT_COUNT : nrep;
         int *cur = &ga->tab_cursor[ga->menu_tab];
-        if (total > 0) {
-            if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) *cur = (*cur + 1) % total;
-            if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) *cur = (*cur + total - 1) % total;
+        bool activate = IsKeyPressed(KEY_ENTER);
+        if (total > 0) { // la cuadricula: flechas (o WASD) y el raton
+            if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) *cur = (*cur + 1) % total;
+            if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) *cur = (*cur + total - 1) % total;
+            if ((IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) && *cur + GRID_COLS < total) *cur += GRID_COLS;
+            if ((IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) && *cur >= GRID_COLS) *cur -= GRID_COLS;
             if (*cur >= total) *cur = total - 1;
+            int first = grid_first_row(*cur);
+            for (int i = first * GRID_COLS; i < total && i < (first + GRID_ROWS) * GRID_COLS; i++) {
+                Rectangle r = grid_rect(i, first);
+                if (ui_pointer_moved() && ui_hover(r)) *cur = i;
+                if (ui_click(r)) { // un clic elige; otro sobre el elegido, lo hace
+                    if (*cur == i) activate = true;
+                    *cur = i;
+                }
+            }
         }
-        if (IsKeyPressed(KEY_ENTER) && total > 0) {
+        if (activate && total > 0) {
             if (ga->menu_tab != 3) ga->menu_open = false;
             switch (ga->menu_tab) {
             case 0: start_action(ga, (ActionId)*cur, props, p, log, log_len); break;
@@ -880,160 +929,171 @@ const char *ga_hands_text(const GameActions *ga) {
     return buf;
 }
 
-// Lista de materiales con lo que hay a mano (rojo si falta). Devuelve la altura usada.
+// Ingredientes como iconos con lo que hay a mano / lo que hace falta (rojo si falta).
+// Devuelve la altura usada; el nombre de cada uno sale en la leyenda al pasar por encima.
 static int draw_materials(const GameActions *ga, const Props *props, const Player *p, const Ingredient *mats, bool at_hand,
                           int x, int y, int w) {
     if (!mats[0].id) return 0;
-    int dy = 0;
-    ui_text(at_hand ? "Ingredientes (a mano):" : "Materiales (acopio):", x, y, 10, UI_BONE_DIM);
-    dy += 12;
+    int cx = x, cy = y;
     for (const Ingredient *m = mats; m->id; m++) {
         int have = at_hand ? ig_count((GameActions *)ga, props, p, m->id) : stock_count(&ga->stock, m->id);
-        dy += ui_text_wrapped(TextFormat("  %s: %d / %d", item_name(ga, m->id), have, m->count), x, y + dy, w, 10,
-                              have >= m->count ? UI_BONE : UI_CARNELIAN);
+        const char *txt = TextFormat("%d/%d", have, m->count);
+        int cw = 20 + MeasureText(txt, 10) + 8;
+        if (cx + cw > x + w) cx = x, cy += 20;
+        Rectangle r = { (float)cx, (float)cy, 18, 18 };
+        bool ok = have >= m->count;
+        DrawRectangleRec(r, ok ? UI_LEATHER : (Color){ 70, 24, 18, 236 });
+        DrawRectangleLinesEx(r, 1, ok ? UI_GOLD_DARK : UI_CARNELIAN);
+        ui_icon(icon_for_item(m->id), r.x + 1, r.y + 1, 16, ok ? UI_GOLD : UI_CARNELIAN);
+        ui_text(txt, cx + 21, cy + 4, 10, ok ? UI_BONE : UI_CARNELIAN);
+        if (ui_hover((Rectangle){ r.x, r.y, (float)cw, 18 }))
+            ui_legend(item_name(ga, m->id), TextFormat("tienes %d %s, hacen falta %d", have, at_hand ? "a mano" : "en el acopio", m->count));
+        cx += cw;
     }
-    return dy;
+    return cy - y + 22;
+}
+
+// Un dato con su icono (tiempo, cuadrilla, artesano...). Devuelve el ancho usado.
+static int chip(IconId icon, const char *text, int x, int y, Color c) {
+    ui_icon(icon, (float)x, (float)y, 16, c);
+    ui_text(text, x + 19, y + 4, 10, c);
+    return 19 + MeasureText(text, 10) + 10;
 }
 
 static const char *TAB_NAMES[4] = { "Acciones", "Obras", "Fabricar", "Reparar" };
 
 static void draw_menu(const GameActions *ga, const Props *props, const Troop *troop, const Player *p, int width) {
-    const int w = 500, h = 316, x0 = (width - w) / 2, y0 = 20, pad = UI_PANEL_INSET + 3;
-    const int list_x = x0 + pad, list_w = 210, desc_x = list_x + list_w + 10, desc_w = w - 2 * pad - list_w - 10;
+    (void)width;
+    const int x0 = TAB_X, y0 = TAB_Y, w = TAB_W, h = TAB_H, pad = TAB_PAD;
+    const int grid_w = GRID_COLS * (TILE + TILE_GAP), desc_x = x0 + pad + grid_w + 10, desc_w = w - 2 * pad - grid_w - 10;
     ui_panel((Rectangle){ (float)x0, (float)y0, (float)w, (float)h }, UI_METAL_GOLD);
-    // Pestañas.
-    int tx = list_x;
+    // Pestañas: solo iconos; su nombre en la leyenda y en grande el de la abierta.
     for (int t = 0; t < 4; t++) {
-        int tw = MeasureText(TAB_NAMES[t], 10) + 16;
-        bool sel = t == ga->menu_tab;
-        DrawRectangle(tx, y0 + pad - 2, tw, 14, sel ? Fade(UI_TURQ_DARK, 0.95f) : Fade(UI_LEATHER_CRACK, 0.8f));
-        DrawRectangleLines(tx, y0 + pad - 2, tw, 14, sel ? UI_GOLD : UI_GOLD_DARK);
-        ui_text(TAB_NAMES[t], tx + 8, y0 + pad, 10, sel ? UI_GOLD_LIGHT : UI_BONE_DIM);
-        tx += tw + 4;
+        Rectangle r = tab_rect(t);
+        if (ui_tile(r, TAB_ICONS[t], t == ga->menu_tab, true)) ui_legend(TAB_NAMES[t], "Q / E cambia de pestaña");
     }
-    ui_text("Izq/Der pestaña · Arriba/Abajo · Enter · Tab cerrar", x0 + w - pad - MeasureText("Izq/Der pestaña · Arriba/Abajo · Enter · Tab cerrar", 10),
-            y0 + h - pad - 10, 10, UI_BONE_DIM);
-    ui_divider(list_x, y0 + pad + 16, w - 2 * pad, UI_METAL_GOLD);
+    ui_text(TAB_NAMES[ga->menu_tab], x0 + pad + 4 * 32 + 6, y0 + pad + 6, 20, UI_GOLD_LIGHT);
+    ui_divider(x0 + pad, y0 + pad + 32, w - 2 * pad, UI_METAL_GOLD);
     RepairItem rep[24];
     int nrep = ga->menu_tab == 3 ? ig_repair_list((GameActions *)ga, props, p, rep, 24) : 0;
     int total = ga->menu_tab == 0 ? ACTION_COUNT : ga->menu_tab == 1 ? BUILD_COUNT : ga->menu_tab == 2 ? CRAFT_COUNT : nrep;
     int cur = ga->tab_cursor[ga->menu_tab];
     if (cur >= total) cur = total ? total - 1 : 0;
-    // Lista con desplazamiento: el cursor siempre visible.
-    int first = cur - MENU_ROWS / 2;
-    if (first > total - MENU_ROWS) first = total - MENU_ROWS;
-    if (first < 0) first = 0;
-    int y = y0 + pad + 24;
-    if (!total) ui_text(ga->menu_tab == 3 ? "Nada gastado a mano." : "(vacío)", list_x + 4, y, 10, UI_BONE_DIM);
-    for (int i = first; i < total && i < first + MENU_ROWS; i++) {
-        const char *name;
-        Color col = UI_BONE_DIM;
-        if (ga->menu_tab == 0) name = action_def((ActionId)i)->name;
-        else if (ga->menu_tab == 1) name = build_def((BuildId)i)->name;
+    if (!total) {
+        ui_icon(ICON_OK, (float)(x0 + pad + 8), (float)(y0 + pad + 46), 32, UI_BONE_DIM);
+        ui_legend_default(ga->menu_tab == 3 ? "Nada que reparar" : "Vacío", ga->menu_tab == 3 ? "Ninguna pieza gastada a mano" : "");
+        return;
+    }
+    // La cuadricula de botones.
+    int first = grid_first_row(cur);
+    for (int i = first * GRID_COLS; i < total && i < (first + GRID_ROWS) * GRID_COLS; i++) {
+        Rectangle r = grid_rect(i, first);
+        IconId icon;
+        bool enabled = true;
+        if (ga->menu_tab == 0) icon = ACTION_ICONS[i];
+        else if (ga->menu_tab == 1) icon = BUILD_ICONS[i], enabled = build_plan(build_def((BuildId)i), troop, true).check == BUILD_READY;
         else if (ga->menu_tab == 2) {
             const CraftDef *d = craft_def((CraftId)i);
-            name = d->name;
-            if (craft_by_hand(d)) col = UI_TURQ_LIGHT; // a mano, en cualquier sitio
+            icon = icon_for_item(d->produces);
+            enabled = !ig_first_missing((GameActions *)ga, props, p, d->mats) && craft_seconds(d, troop) >= 0.0f;
         } else {
-            name = TextFormat("%s %d%%", item_name(ga, rep[i].id), (int)(rep[i].cond * 100));
+            icon = icon_for_item(rep[i].id);
+            enabled = ig_can_repair((GameActions *)ga, props, p, troop, &rep[i], NULL, 0);
         }
-        if (i == cur) DrawRectangle(list_x - 2, y - 1, list_w, 11, (Color){ 26, 110, 116, 200 });
-        BeginScissorMode(list_x, y - 1, list_w - 4, 12);
-        ui_text(name, list_x + 4, y, 10, i == cur ? UI_BONE : col);
-        EndScissorMode();
-        y += 11;
+        ui_tile(r, icon, i == cur, enabled);
+        if (ga->menu_tab == 2) {
+            const CraftDef *d = craft_def((CraftId)i);
+            if (d->amount > 1) ui_tile_badge(r, TextFormat("x%d", d->amount), UI_BONE);
+            if (craft_by_hand(d)) DrawCircle((int)r.x + 5, (int)r.y + 5, 2, UI_TURQUOISE); // a mano, en cualquier sitio
+        } else if (ga->menu_tab == 3) {
+            ui_tile_bar(r, rep[i].cond, rep[i].cond < 0.3f ? UI_CARNELIAN : UI_GOLD);
+        }
     }
-    if (!total) return;
-    int dy = y0 + pad + 24;
+    if (total > (first + GRID_ROWS) * GRID_COLS || first > 0) // hay mas filas
+        ui_text(TextFormat("%d/%d", cur + 1, total), x0 + pad, y0 + h - pad - 10, 10, UI_BONE_DIM);
+    // Detalle del elegido: icono grande, nombre e iconos de lo que pide.
+    Rectangle big = { (float)desc_x, (float)(y0 + pad + 38), 68, 68 };
+    int tx = desc_x + 76, dy = y0 + pad + 40;
     switch (ga->menu_tab) {
     case 0: {
         const ActionDef *d = action_def((ActionId)cur);
-        ui_text(d->name, desc_x, dy, 10, UI_GOLD_LIGHT);
-        dy += 14;
-        dy += ui_text_wrapped(d->desc, desc_x, dy, desc_w, 10, UI_BONE) + 6;
-        ui_text(TextFormat("Duración: %.1f s", d->seconds), desc_x, dy, 10, UI_BONE_DIM);
-        dy += 12;
-        if (d->requires)
-            dy += ui_text_wrapped(TextFormat("Requiere: %s", item_name(ga, d->requires)), desc_x, dy, desc_w, 10,
-                                  has_item(ga, d->requires) ? UI_BONE_DIM : UI_CARNELIAN);
-        if (d->target) {
-            ui_text(TextFormat("Sobre: %s", d->target), desc_x, dy, 10, UI_BONE_DIM);
-            dy += 12;
+        ui_tile(big, ACTION_ICONS[cur], true, true);
+        ui_text_wrapped(d->name, tx, dy, desc_w - 76, 10, UI_GOLD_LIGHT);
+        chip(ICON_TIEMPO, TextFormat("%.1f s", d->seconds), tx, dy + 26, UI_BONE_DIM);
+        int my = (int)(big.y + big.height) + 8;
+        if (d->requires) {
+            bool has = has_item(ga, d->requires);
+            Rectangle rq = { (float)desc_x, (float)my, 18, 18 };
+            ui_icon(icon_for_item(d->requires), rq.x + 1, rq.y + 1, 16, has ? UI_GOLD : UI_CARNELIAN);
+            ui_icon(has ? ICON_OK : ICON_FALTA, rq.x + 20, rq.y + 1, 16, has ? UI_TURQUOISE : UI_CARNELIAN);
+            if (ui_hover((Rectangle){ rq.x, rq.y, 40, 18 })) ui_legend(TextFormat("Requiere: %s", item_name(ga, d->requires)), has ? "lo tienes" : "no lo tienes a mano");
+            my += 22;
         }
-        draw_materials(ga, props, p, d->mats, false, desc_x, dy + 4, desc_w);
+        draw_materials(ga, props, p, d->mats, false, desc_x, my, desc_w);
+        ui_legend_default(d->name, d->desc);
         break;
     }
     case 1: {
         const BuildDef *d = build_def((BuildId)cur);
         CrewPlan plan = build_plan(d, troop, true);
-        ui_text(d->name, desc_x, dy, 10, UI_GOLD_LIGHT);
-        dy += 14;
-        ui_text(TextFormat("Cuadrilla: %d a %d personas", d->min_workers, d->max_workers), desc_x, dy, 10, UI_BONE);
-        dy += 12;
-        if (d->required_role != ROLE_NONE) {
-            ui_text(TextFormat("Requiere: %s", role_name(d->required_role)), desc_x, dy, 10, UI_BONE);
-            dy += 12;
-        }
-        if (d->skilled_role != ROLE_NONE) {
-            ui_text(TextFormat("Rinde el doble: %s", role_name(d->skilled_role)), desc_x, dy, 10, UI_BONE_DIM);
-            dy += 12;
-        }
-        dy += draw_materials(ga, props, p, d->mats, false, desc_x, dy, desc_w) + 6;
-        ui_divider(desc_x, dy, desc_w, UI_METAL_GOLD);
-        dy += 6;
-        if (plan.check == BUILD_READY) {
-            ui_text(TextFormat("Tu tribu: %d trabajarían", plan.workers), desc_x, dy, 10, UI_TURQUOISE);
-            dy += 12;
-            ui_text(TextFormat("Tiempo estimado: %.0f s de juego", d->work / plan.rate), desc_x, dy, 10, UI_TURQUOISE);
-        } else {
-            ui_text_wrapped(TextFormat("No se puede: %s", build_check_text(d, plan.check)), desc_x, dy, desc_w, 10, UI_CARNELIAN);
-        }
-        ui_text("Se levanta 6 m delante de ti.", desc_x, y0 + h - pad - 24, 10, UI_BONE_DIM);
+        bool ok = plan.check == BUILD_READY;
+        ui_tile(big, BUILD_ICONS[cur], true, ok);
+        ui_text_wrapped(d->name, tx, dy, desc_w - 76, 10, UI_GOLD_LIGHT);
+        chip(ICON_TRIBU, TextFormat("%d-%d", d->min_workers, d->max_workers), tx, dy + 26, UI_BONE_DIM);
+        if (ok) chip(ICON_TIEMPO, TextFormat("%.0f s", d->work / plan.rate), tx, dy + 44, UI_TURQUOISE);
+        int my = (int)(big.y + big.height) + 8;
+        if (d->required_role != ROLE_NONE) chip(ICON_PERSONA, role_name(d->required_role), desc_x, my, ok ? UI_BONE : UI_CARNELIAN), my += 20;
+        my += draw_materials(ga, props, p, d->mats, false, desc_x, my, desc_w);
+        ui_icon(ok ? ICON_OK : ICON_FALTA, (float)desc_x, (float)my + 4, 16, ok ? UI_TURQUOISE : UI_CARNELIAN);
+        if (!ok) ui_text_wrapped(build_check_text(d, plan.check), desc_x + 20, my + 6, desc_w - 20, 10, UI_CARNELIAN);
+        ui_legend_default(d->name, ok ? TextFormat("Cuadrilla de %d · se levanta 6 m delante de ti", plan.workers)
+                              : build_check_text(d, plan.check));
         break;
     }
     case 2: {
         const CraftDef *d = craft_def((CraftId)cur);
         float secs = craft_seconds(d, troop);
-        ui_text(d->name, desc_x, dy, 10, UI_GOLD_LIGHT);
-        dy += 14;
-        if (d->building) {
-            bool has_oven = count_props(props, d->building) > 0;
-            dy += ui_text_wrapped(TextFormat("En: %s", item_name(ga, d->building)), desc_x, dy, desc_w, 10, has_oven ? UI_BONE : UI_CARNELIAN);
-            ui_text(TextFormat("Artesano: %s", role_name(d->role)), desc_x, dy, 10, secs >= 0.0f ? UI_BONE : UI_CARNELIAN);
-            dy += 12;
+        const Ingredient *miss = ig_first_missing((GameActions *)ga, props, p, d->mats);
+        ui_tile(big, icon_for_item(d->produces), true, !miss && secs >= 0.0f);
+        if (d->amount > 1) ui_tile_badge(big, TextFormat("x%d", d->amount), UI_BONE);
+        ui_text_wrapped(d->name, tx, dy, desc_w - 76, 10, UI_GOLD_LIGHT);
+        if (secs >= 0.0f) chip(ICON_TIEMPO, TextFormat("%.0f s", secs), tx, dy + 26, UI_BONE_DIM);
+        int my = (int)(big.y + big.height) + 8;
+        if (d->building) { // horno y artesano
+            bool oven = count_props(props, d->building) > 0;
+            int cw = chip(icon_for_item(d->building), oven ? "" : "falta", desc_x, my, oven ? UI_GOLD : UI_CARNELIAN);
+            chip(ICON_PERSONA, role_name(d->role), desc_x + cw, my, secs >= 0.0f ? UI_BONE : UI_CARNELIAN);
+            if (ui_hover((Rectangle){ (float)desc_x, (float)my, (float)desc_w, 18 })) ui_legend(item_name(ga, d->building), TextFormat("y un %s en la tribu", role_name(d->role)));
+            my += 22;
         } else {
-            ui_text("A mano, en cualquier sitio.", desc_x, dy, 10, UI_TURQ_LIGHT);
-            dy += 12;
+            chip(ICON_ACCIONES, "a mano", desc_x, my, UI_TURQ_LIGHT);
+            my += 22;
         }
+        draw_materials(ga, props, p, d->mats, true, desc_x, my, desc_w);
         const InvItem *out = inventory_find(ga->inv, d->produces);
-        dy += ui_text_wrapped(TextFormat("Da: %d x %s", d->amount > 0 ? d->amount : 1, out ? out->name : d->produces), desc_x, dy,
-                              desc_w, 10, UI_BONE);
-        dy += draw_materials(ga, props, p, d->mats, true, desc_x, dy + 4, desc_w) + 10;
-        if (secs >= 0.0f) ui_text(TextFormat("Tiempo: %.0f s de juego", secs), desc_x, dy, 10, UI_TURQUOISE);
-        ui_text("Lo hecho va a la mochila (o al acopio).", desc_x, y0 + h - pad - 24, 10, UI_BONE_DIM);
+        ui_legend_default(d->name, TextFormat("da %d x %s · va a la mochila (o al acopio)", d->amount > 0 ? d->amount : 1, out ? out->name : d->produces));
         break;
     }
     default: {
         const RepairItem *r = &rep[cur];
         const RepairDef *d = repair_def(r->material);
-        ui_text(item_name(ga, r->id), desc_x, dy, 10, UI_GOLD_LIGHT);
-        dy += 14;
-        ui_text(TextFormat("%s · estado %d %% -> %d %%", r->worn ? "Puesta" : "Guardada", (int)(r->cond * 100),
-                           (int)(fminf(1.0f, r->cond + d->restore) * 100)),
-                desc_x, dy, 10, UI_BONE);
-        dy += 12;
-        if (d->building) {
-            ui_text(TextFormat("En: %s", item_name(ga, d->building)), desc_x, dy, 10, UI_BONE_DIM);
-            dy += 12;
-        }
-        if (d->role != ROLE_NONE) {
-            ui_text(TextFormat("Con: %s", role_name(d->role)), desc_x, dy, 10, UI_BONE_DIM);
-            dy += 12;
-        }
-        dy += draw_materials(ga, props, p, d->mats, true, desc_x, dy + 4, desc_w) + 10;
         char why[128];
         bool ok = ig_can_repair((GameActions *)ga, props, p, troop, r, why, sizeof(why));
-        ui_text_wrapped(ok ? "Enter: reparar." : why, desc_x, dy, desc_w, 10, ok ? UI_TURQUOISE : UI_CARNELIAN);
+        ui_tile(big, icon_for_item(r->id), true, ok);
+        ui_tile_bar(big, r->cond, UI_GOLD);
+        ui_text_wrapped(item_name(ga, r->id), tx, dy, desc_w - 76, 10, UI_GOLD_LIGHT);
+        chip(ICON_COBERTURA, TextFormat("%d%% > %d%%", (int)(r->cond * 100), (int)(fminf(1.0f, r->cond + d->restore) * 100)), tx, dy + 26,
+             UI_BONE);
+        int my = (int)(big.y + big.height) + 8;
+        if (d->building || d->role != ROLE_NONE) {
+            int cw = d->building ? chip(icon_for_item(d->building), "", desc_x, my, UI_GOLD) : 0;
+            if (d->role != ROLE_NONE) chip(ICON_PERSONA, role_name(d->role), desc_x + cw, my, UI_BONE);
+            my += 22;
+        }
+        my += draw_materials(ga, props, p, d->mats, true, desc_x, my, desc_w);
+        ui_icon(ok ? ICON_OK : ICON_FALTA, (float)desc_x, (float)my + 4, 16, ok ? UI_TURQUOISE : UI_CARNELIAN);
+        if (!ok) ui_text_wrapped(why, desc_x + 20, my + 6, desc_w - 20, 10, UI_CARNELIAN);
+        ui_legend_default(item_name(ga, r->id), ok ? TextFormat("%s · Enter o clic otra vez: reparar", r->worn ? "puesta" : "guardada") : why);
         break;
     }
     }

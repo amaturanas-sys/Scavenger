@@ -1,0 +1,65 @@
+celda	columna	fila	nombre	uso
+0	0	0	fieltro_blanco	Paredes de yurta, fieltro claro
+1	1	0	fieltro_crema	Techos de yurta, fieltro envejecido
+2	2	0	fieltro_gris	Fieltro gris, armaduras de fieltro
+3	3	0	fieltro_oscuro	Fieltro oscuro, chamanes
+4	4	0	fieltro_rojo	Fieltro rojo, adornos y deel
+5	5	0	fieltro_azul	Fieltro azul, deel
+6	6	0	fieltro_ocre	Fieltro ocre, pastores
+7	7	0	madera_pintada	Puertas de yurta, madera pintada
+8	0	1	cuero_claro	Cuero curtido claro, odres
+9	1	1	cuero	Cuero, armaduras laminares, arreos
+10	2	1	cuero_oscuro	Cuero viejo (paleta: cuero)
+11	3	1	piel_pardo	Pieles con pelo, oso, jabali
+12	4	1	piel_blanca	Pieles de invierno, leopardo de las nieves
+13	5	1	lana	Lana de oveja
+14	6	1	cuerda	Cuerdas, cinchas, crin trenzada
+15	7	1	fuego	Fuego y brasas
+16	0	2	madera_clara	Madera nueva, astas, mangos
+17	1	2	madera	Madera, armazones, ruedas
+18	2	2	madera_oscura	Madera vieja o tratada
+19	3	2	corteza	Corteza de troncos y pinos
+20	4	2	abedul	Corteza de abedul
+21	5	2	mimbre	Mimbre trenzado, cestos, escudo de mimbre
+22	6	2	hierba_seca	Paja, techos de paja, hierba seca
+23	7	2	carbon	Carbon, madera quemada, hollin
+24	0	3	bronce	Bronce
+25	1	3	cobre	Cobre
+26	2	3	hierro	Hierro forjado
+27	3	3	acero	Acero, hojas pulidas
+28	4	3	oro	Oro (paleta)
+29	5	3	plata	Plata, estano (paleta)
+30	6	3	hielo	Hielo, glaciar, tempanos
+31	7	3	hierro_oxidado	Hierro oxidado, culto
+32	0	4	turquesa	Turquesa (paleta)
+33	1	4	cornalina	Cornalina (paleta)
+34	2	4	lapislazuli	Lapislazuli (paleta)
+35	3	4	hueso	Hueso, craneos (paleta)
+36	4	4	cuerno	Cuerno, astas, pezunas
+37	5	4	piedra	Piedra gris, rocas, muros
+38	6	4	piedra_oscura	Piedra oscura, basalto
+39	7	4	arenisca	Arenisca, arena, dunas
+40	0	5	adobe	Adobe y barro
+41	1	5	carne	Carne fresca
+42	2	5	teja	Tejas de barro cocido
+43	3	5	tela_roja	Tela roja
+44	4	5	tela_azul	Tela azul, uniformes
+45	5	5	tela_ocre	Tela ocre
+46	6	5	tela_lino	Lino crudo, tunicas
+47	7	5	tela_negra	Tela negra, culto
+48	0	6	piel_clara	Piel humana clara
+49	1	6	piel_media	Piel humana media
+50	2	6	piel_morena	Piel humana morena
+51	3	6	cabello	Cabello y barba
+52	4	6	pelaje_bayo	Caballo bayo
+53	5	6	pelaje_castano	Caballo castano, ganado
+54	6	6	pelaje_negro	Pelaje negro, cuervo, yak
+55	7	6	pelaje_tordo	Pelaje gris, lobo, burro
+56	0	7	pelaje_leonado	Camello, felinos, antilopes
+57	1	7	pelaje_tigre	Tigre (rayas)
+58	2	7	plumas	Plumas de rapaz
+59	3	7	escamas	Escamas: reptiles, peces
+60	4	7	hierba	Hierba verde de la estepa
+61	5	7	hojas	Hojas y agujas de coniferas
+62	6	7	agua	Agua
+63	7	7	nieve	Nieve

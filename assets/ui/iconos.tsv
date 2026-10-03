@@ -1,0 +1,104 @@
+# Iconos de los menus: celda del atlas assets/ui/iconos.png (32x32, 16 columnas).
+# El juego lo lee al arrancar: si mueves un icono de celda, cambia aqui su indice.
+indice	nombre	columna	fila	descripcion
+0	nueva	0	0	Nueva partida: un caballo al galope
+1	cargar	1	0	Cargar partida: rollo abierto
+2	guardar	2	0	Guardar partida: arcon
+3	instructivo	3	0	Instructivo: libro abierto
+4	salir	4	0	Salir: puerta con flecha
+5	continuar	5	0	Continuar: punta de flecha
+6	titulo	6	0	Volver al titulo: estela de piedra
+7	acciones	7	0	Acciones: mano abierta
+8	obras	8	0	Obras en grupo: empalizada
+9	fabricar	9	0	Fabricar: martillo y yunque
+10	reparar	10	0	Reparar: aguja e hilo
+11	tomar	11	0	Tomar: mano que agarra
+12	lanzar	12	0	Lanzar: piedra en arco
+13	empunar	13	0	Cambiar empuñadura: espada y flechas
+14	enfundar	14	0	Enfundar: vaina
+15	fogata	15	0	Fogata
+16	tienda	0	1	Tienda de campaña
+17	trinchera	1	1	Cavar trinchera: pala
+18	trepa	2	1	Trepa: gancho con cuerda
+19	lazo	3	1	Lazo
+20	antorcha	4	1	Antorcha
+21	ensillar	5	1	Ensillar: silla de montar
+22	refugio	6	1	Refugio
+23	muro_piedra	7	1	Muro de piedra
+24	hoguera	8	1	Hoguera grande
+25	totem	9	1	Totem
+26	horno	10	1	Horno
+27	fundicion	11	1	Horno de fundición
+28	torre	12	1	Torre de vigía
+29	corral	13	1	Corral
+30	bolsillo	14	1	Bolsillos: saquito
+31	mochila	15	1	Mochila
+32	alforjas	0	2	Alforjas de la montura
+33	carreta	1	2	Carreta de la tribu
+34	campamento	2	2	Acopio y armería del campamento
+35	botin	3	2	Bolsa de botín
+36	casco	4	2	Casco
+37	cuello	5	2	Gorjal
+38	torso	6	2	Coraza
+39	hombreras	7	2	Hombreras
+40	brazales	8	2	Brazales
+41	guantes	9	2	Guanteletes
+42	faldar	10	2	Faldar
+43	grebas	11	2	Grebas
+44	botas	12	2	Botas
+45	amuleto	13	2	Amuleto
+46	tatuaje	14	2	Tatuaje: espiral
+47	sable	15	2	Sable
+48	daga	0	3	Daga o cuchillo
+49	hacha	1	3	Hacha
+50	maza	2	3	Maza
+51	lanza	3	3	Lanza
+52	guja	4	3	Guja o alabarda
+53	espada	5	3	Espada larga
+54	arco	6	3	Arco
+55	ballesta	7	3	Ballesta
+56	honda	8	3	Honda
+57	mosquete	9	3	Mosquete o cañón
+58	escudo	10	3	Escudo redondo
+59	paves	11	3	Escudo grande
+60	flecha	12	3	Flechas
+61	virote	13	3	Virotes
+62	piedras_honda	14	3	Piedras de honda
+63	bala	15	3	Balas
+64	lena	0	4	Leña
+65	piedra	1	4	Piedra
+66	pieles	2	4	Pieles
+67	plumas	3	4	Plumas
+68	hueso	4	4	Hueso
+69	tendones	5	4	Tendones
+70	pedernal	6	4	Pedernal
+71	cuerda	7	4	Cuerda
+72	mineral	8	4	Mineral
+73	lingote	9	4	Metal: lingote
+74	carbon	10	4	Carbón
+75	carne	11	4	Carne fresca
+76	carne_seca	12	4	Carne seca
+77	hierbas	13	4	Hierbas curativas
+78	miel	14	4	Miel: olla
+79	leche	15	4	Leche: jarra
+80	unguento	0	5	Ungüento
+81	agua	1	5	Odre de agua
+82	herramienta	2	5	Herramienta
+83	mensaje	3	5	Mensaje
+84	bulto	4	5	Objeto o bulto
+85	estructura	5	5	Estructura
+86	animal	6	5	Animal
+87	persona	7	5	Persona
+88	corte	8	5	Contra el corte
+89	golpe	9	5	Contra el golpe
+90	punta	10	5	Contra la punta
+91	cobertura	11	5	Cobertura
+92	vida	12	5	Vida
+93	sangre	13	5	Sangre
+94	veneno	14	5	Veneno
+95	peso	15	5	Peso
+96	tiempo	0	6	Tiempo
+97	ok	1	6	Se puede
+98	falta	2	6	Falta algo
+99	tribu	3	6	La tribu
+100	velocidad	4	6	Velocidad

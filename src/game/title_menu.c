@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "ui/icons.h"
 #include "ui/theme.h"
 
 static const char *PLATE_FILES[MENU_PLATES] = {
@@ -14,6 +15,13 @@ static const char *PLATE_FILES[MENU_PLATES] = {
 };
 
 static const char *TITLE_ITEMS[] = { "Nueva partida", "Cargar partida", "Instructivo", "Salir" };
+static const IconId TITLE_ICONS[] = { ICON_NUEVA, ICON_CARGAR, ICON_INSTRUCTIVO, ICON_SALIR };
+static const char *TITLE_HINTS[] = { "Una tribu nueva en la estepa", "Las partidas guardadas, con su foto y su fecha",
+                                     "Controles y reglas del juego", "Cerrar el juego" };
+static const IconId PAUSE_ICONS[] = { ICON_CONTINUAR, ICON_GUARDAR, ICON_CARGAR, ICON_INSTRUCTIVO, ICON_TITULO, ICON_SALIR };
+static const char *PAUSE_HINTS[] = { "Volver al juego (Esc)", "En uno de los tres huecos, con una foto de este momento",
+                                     "Volver a una partida guardada", "Controles y reglas del juego",
+                                     "Dejar la partida (lo no guardado se pierde)", "Cerrar el juego" };
 static const char *PAUSE_ITEMS[] = { "Continuar", "Guardar partida", "Cargar partida", "Instructivo", "Salir al título",
                                      "Salir del juego" };
 #define TITLE_COUNT 4
@@ -33,10 +41,11 @@ static const HelpPage PAGES[] = {
         "WASD mover · Shift correr · C acechar (en la hierba alta te ocultas)",
         "Espacio saltar · Q/E girar la cámara · M marcar el mapa",
         "Esc menú (guardar, cargar) · F1 controles en el juego",
+        "Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.",
         "",
         "Tu personaje no muere: abatido, tu escolta te levanta o despiertas en el campamento. Tus compañeros sí pueden morir." } },
     { "La tribu y el campamento", 6,
-      { "Tab: acciones, obras, fabricar y reparar (A/D cambia de pestaña) · I: inventario",
+      { "Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario",
         "Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.",
         "Reparar: el cuero y el fieltro con pieles; el bronce y el hierro, herrero, horno y metal.",
         "Y: dos integrantes te escoltan · G: ficha del gran guerrero",
@@ -138,15 +147,49 @@ static int item_count(const TitleMenu *m) {
     }
 }
 
+// ------------------------------------------------------------------ disposicion (dibujo y raton)
+static Rectangle item_rect(const TitleMenu *m, int i, int n) {
+    const int s = 44, gap = 12, total = n * s + (n - 1) * gap;
+    int y = m->screen == MENU_TITLE ? 214 : 150;
+    return (Rectangle){ (float)((m->w - total) / 2 + i * (s + gap)), (float)y, (float)s, (float)s };
+}
+
+static Rectangle slot_rect(const TitleMenu *m, int s) {
+    const int pw = 380, ph = 84;
+    return (Rectangle){ (float)((m->w - pw) / 2), (float)(56 + s * (ph + 6)), (float)pw, (float)ph };
+}
+
+// Botones del instructivo: pagina anterior, volver, pagina siguiente.
+static Rectangle help_rect(const TitleMenu *m, int k) {
+    return (Rectangle){ (float)(m->w / 2 - 50 + k * 36), (float)(m->h - 60), 28, 28 };
+}
+
 MenuAction menu_update(TitleMenu *m, float dt) {
     m->time += dt;
     m->message_timer = fmaxf(0.0f, m->message_timer - dt);
     if (m->screen == MENU_HIDDEN) return MENU_NONE;
     int n = item_count(m);
-    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) m->cursor = (m->cursor + 1) % n, m->slot = -1;
-    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) m->cursor = (m->cursor + n - 1) % n, m->slot = -1;
+    bool row = m->screen == MENU_TITLE || m->screen == MENU_PAUSE; // los botones van en fila
+    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S) || (row && (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D))))
+        m->cursor = (m->cursor + 1) % n, m->slot = -1;
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W) || (row && (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A))))
+        m->cursor = (m->cursor + n - 1) % n, m->slot = -1;
     bool enter = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE);
     bool back = IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE);
+    // Raton o dedo: pasar por encima elige; pulsar, entra.
+    if (m->w > 0 && (row || m->screen == MENU_LOAD || m->screen == MENU_SAVE)) {
+        for (int i = 0; i < n; i++) {
+            Rectangle r = row ? item_rect(m, i, n) : slot_rect(m, i);
+            if (ui_pointer_moved() && ui_hover(r) && m->cursor != i) m->cursor = i, m->slot = -1;
+            if (ui_click(r)) m->cursor = i, enter = true;
+        }
+    }
+    bool page_prev = false, page_next = false;
+    if (m->w > 0 && m->screen == MENU_HELP) {
+        page_prev = ui_click(help_rect(m, 0));
+        back = back || ui_click(help_rect(m, 1));
+        page_next = ui_click(help_rect(m, 2));
+    }
     switch (m->screen) {
     case MENU_TITLE:
         if (!enter) return MENU_NONE;
@@ -193,8 +236,8 @@ MenuAction menu_update(TitleMenu *m, float dt) {
         return MENU_SAVE_SLOT;
     }
     case MENU_HELP:
-        if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D) || enter) m->page = (m->page + 1) % PAGE_COUNT;
-        if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) m->page = (m->page + PAGE_COUNT - 1) % PAGE_COUNT;
+        if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D) || enter || page_next) m->page = (m->page + 1) % PAGE_COUNT;
+        if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A) || page_prev) m->page = (m->page + PAGE_COUNT - 1) % PAGE_COUNT;
         if (back) {
             MenuScreen to = m->back;
             menu_open(m, to);
@@ -268,46 +311,53 @@ static void draw_plate_fill(Texture2D t, Rectangle r) {
     DrawTexturePro(t, src, r, (Vector2){ 0, 0 }, 0.0f, WHITE);
 }
 
-static void draw_items(const TitleMenu *m, const char **items, int n, int cx, int y) {
-    const int w = 190, row = 22;
-    ui_panel((Rectangle){ (float)(cx - w / 2), (float)y, (float)w, (float)(n * row + 2 * UI_PANEL_INSET) }, UI_METAL_GOLD);
+// Fila de botones de icono; el elegido (teclado o raton) dice su nombre en la leyenda.
+static void draw_items(const TitleMenu *m, const char **items, const IconId *icons, const char **hints, int n) {
     for (int i = 0; i < n; i++) {
-        int ty = y + UI_PANEL_INSET + i * row + 5;
+        Rectangle r = item_rect(m, i, n);
         bool sel = i == m->cursor;
-        if (sel) {
-            DrawRectangle(cx - w / 2 + UI_PANEL_INSET, ty - 4, w - 2 * UI_PANEL_INSET, row - 2, Fade(UI_TURQ_DARK, 0.85f));
-            DrawCircle(cx - w / 2 + UI_PANEL_INSET + 8, ty + 5, 3, UI_TURQUOISE);
+        if (sel) { // un brillo de turquesa bajo el elegido
+            float k = 0.5f + 0.5f * sinf(m->time * 3.0f);
+            DrawRectangle((int)r.x + 6, (int)(r.y + r.height) + 4, (int)r.width - 12, 2, Fade(UI_TURQUOISE, 0.5f + 0.5f * k));
         }
-        ui_text_centered(items[i], cx, ty, 10, sel ? UI_GOLD_LIGHT : UI_BONE_DIM);
+        ui_tile(r, icons[i], sel, true);
+        if (sel) ui_legend_default(items[i], hints[i]);
     }
 }
 
+// Tres huecos: la minifoto manda; al lado, solo la fecha y el dia. El resto, en la leyenda.
 static void draw_slots(TitleMenu *m, int w, int h) {
     bool saving = m->screen == MENU_SAVE;
-    ui_text_centered(saving ? "Guardar partida" : "Cargar partida", w / 2, 26, 20, UI_GOLD_LIGHT);
-    const int pw = 380, ph = 84, x = (w - pw) / 2;
+    ui_icon(saving ? ICON_GUARDAR : ICON_CARGAR, (float)(w / 2 - 16), 14, 32, UI_GOLD_LIGHT);
     for (int s = 0; s < SAVE_SLOTS; s++) {
         const SaveInfo *si = &m->slots[s];
-        int y = 56 + s * (ph + 6);
+        Rectangle r = slot_rect(m, s);
+        int x = (int)r.x, y = (int)r.y, ph = (int)r.height;
         bool sel = s == m->cursor;
-        ui_panel((Rectangle){ (float)x, (float)y, (float)pw, (float)ph }, sel ? UI_METAL_GOLD : UI_METAL_SILVER);
+        ui_panel(r, sel ? UI_METAL_GOLD : UI_METAL_SILVER);
         Rectangle th = { (float)(x + UI_PANEL_INSET + 2), (float)(y + UI_PANEL_INSET), 110, (float)(ph - 2 * UI_PANEL_INSET) };
         if (si->used && si->thumb.id) draw_plate_fill(si->thumb, th);
         else draw_plate_fill(m->plates[(s + 2) % MENU_PLATES], th); // hueco vacio: una lamina
-        int tx = (int)(th.x + th.width + 12), ty = y + UI_PANEL_INSET + 2;
-        ui_text(TextFormat("Hueco %d", s + 1), tx, ty, 10, sel ? UI_GOLD_LIGHT : UI_GOLD);
+        int tx = (int)(th.x + th.width + 12), ty = y + UI_PANEL_INSET + 6;
+        ui_text(TextFormat("%d", s + 1), (int)(r.x + r.width) - UI_PANEL_INSET - 12, ty, 20, sel ? UI_GOLD_LIGHT : UI_GOLD_DARK);
         if (!si->used) {
-            ui_text("Vacío", tx, ty + 16, 10, UI_BONE_DIM);
-            continue;
+            ui_icon(ICON_FALTA, (float)tx, (float)ty + 8, 16, UI_BONE_DIM);
+        } else {
+            ui_text(save_date_text(si->saved_at), tx, ty, 10, sel ? UI_BONE : UI_BONE_DIM);
+            ui_icon(ICON_TIEMPO, (float)tx, (float)ty + 18, 16, UI_GOLD);
+            ui_text(TextFormat("%d", si->day), tx + 20, ty + 21, 10, UI_BONE);
+            ui_icon(si->compatible ? ICON_TRIBU : ICON_FALTA, (float)tx + 60, (float)ty + 18, 16, si->compatible ? UI_TURQUOISE : UI_CARNELIAN);
+            if (si->compatible) ui_text(TextFormat("%d", si->tribe), tx + 80, ty + 21, 10, UI_BONE);
         }
-        ui_text(save_date_text(si->saved_at), tx, ty + 16, 10, UI_BONE);
-        ui_text(TextFormat("Día %d · %s", si->day, si->place), tx, ty + 30, 10, UI_BONE_DIM);
-        ui_text(si->compatible ? TextFormat("Tribu: %d", si->tribe) : "Otra versión del juego", tx, ty + 44, 10,
-                si->compatible ? UI_TURQUOISE : UI_CARNELIAN);
-        if (sel) DrawRectangleLinesEx((Rectangle){ (float)x + 3, (float)y + 3, (float)pw - 6, (float)ph - 6 }, 1, UI_TURQUOISE);
+        if (sel) {
+            DrawRectangleLinesEx((Rectangle){ r.x + 3, r.y + 3, r.width - 6, r.height - 6 }, 1, UI_TURQUOISE);
+            const char *what = TextFormat("%s el hueco %d", saving ? "Guardar en" : "Cargar", s + 1);
+            if (!si->used) ui_legend_default(what, saving ? "Vacío" : "Vacío: no hay partida");
+            else if (!si->compatible) ui_legend_default(what, "Partida de otra versión del juego");
+            else ui_legend_default(what, TextFormat("Día %d · %s · tribu de %d", si->day, si->place, si->tribe));
+        }
     }
-    ui_text_centered(saving ? "Flechas: elegir · Enter: guardar · Esc: volver" : "Flechas: elegir · Enter: cargar · Esc: volver",
-                     w / 2, h - 30, 10, UI_BONE_DIM);
+    (void)h;
 }
 
 static void draw_help(const TitleMenu *m, int w, int h) {
@@ -326,7 +376,17 @@ static void draw_help(const TitleMenu *m, int w, int h) {
         if (pg->lines[i][0]) y += ui_text_wrapped(pg->lines[i], 210, y, w - 260, 10, UI_BONE);
         else y += 8;
     }
-    ui_text_centered("A/D o flechas: página · Esc: volver", w / 2, h - 30, 10, UI_BONE_DIM);
+    // Pagina anterior, volver y siguiente.
+    static const char *names[3] = { "Página anterior", "Volver", "Página siguiente" };
+    for (int k = 0; k < 3; k++) {
+        Rectangle r = help_rect(m, k);
+        bool hover = ui_tile(r, k == 1 ? ICON_TITULO : ICON_CONTINUAR, false, true);
+        if (k == 0) { // la flecha de la izquierda, en espejo, encima del boton
+            DrawRectangle((int)r.x + 1, (int)r.y + 1, (int)r.width - 2, (int)r.height - 2, hover ? (Color){ 70, 50, 34, 236 } : UI_LEATHER);
+            ui_icon_ex(ICON_CONTINUAR, r.x + 6, r.y + 6, 16, hover ? UI_BONE : UI_GOLD, true);
+        }
+        if (hover) ui_legend(names[k], k == 1 ? "Esc" : "A / D o flechas");
+    }
 }
 
 void menu_draw_controls(int x, int y, int w, int h) {
@@ -345,6 +405,7 @@ void menu_draw_controls(int x, int y, int w, int h) {
 
 void menu_draw(TitleMenu *m, bool in_game, const char *version, int w, int h) {
     if (m->screen == MENU_HIDDEN) return;
+    m->w = w, m->h = h;
     // Fondo: las estelas en la estepa (o la partida oscurecida, en la pausa).
     if (in_game) {
         DrawRectangle(0, 0, w, h, (Color){ 10, 7, 5, 190 });
@@ -371,10 +432,9 @@ void menu_draw(TitleMenu *m, bool in_game, const char *version, int w, int h) {
         int ty = title ? 160 : 118;
         ui_text_centered(title ? "ESTEPA" : "Pausa", w / 2, ty, title ? 40 : 20, UI_GOLD_LIGHT);
         if (title) ui_text_centered("La tribu de las estelas", w / 2, ty + 40, 10, UI_BONE_DIM);
-        if (title) draw_items(m, TITLE_ITEMS, TITLE_COUNT, w / 2, ty + 58);
-        else draw_items(m, PAUSE_ITEMS, PAUSE_COUNT, w / 2, ty + 28);
+        if (title) draw_items(m, TITLE_ITEMS, TITLE_ICONS, TITLE_HINTS, TITLE_COUNT);
+        else draw_items(m, PAUSE_ITEMS, PAUSE_ICONS, PAUSE_HINTS, PAUSE_COUNT);
         if (version) ui_text(version, 16, h - 26, 10, UI_BONE_DIM);
-        ui_text("Flechas y Enter", w - 16 - MeasureText("Flechas y Enter", 10), h - 26, 10, UI_BONE_DIM);
         break;
     }
     case MENU_LOAD:
