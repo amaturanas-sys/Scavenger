@@ -83,6 +83,7 @@ typedef struct {
     Shot shots[CB_MAX_SHOTS];
     bool aiming;
     float draw, reload, aim_pitch;
+    int ammo_shown;       // municion a mano del arma a distancia (para el HUD)
     bool arrow_lit;       // la proxima flecha sale encendida (L junto a un fuego)
     float arrow_lit_timer;
     // Cuerpo a cuerpo del jugador (src/sim/melee.h).

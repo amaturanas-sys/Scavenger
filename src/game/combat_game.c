@@ -1,6 +1,7 @@
 #include "combat_game.h"
 
 #include "game/fauna_game.h"
+#include "game/inventory_game.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -388,6 +389,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     }
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
     me.strength *= health_attack_scale(&cb->player) * (off ? 0.8f : 1.0f);
+    if (m == MOVE_GRAPPLE) me.strength *= 1.0f + ig_stat(ga, STAT_GRAPPLE_POWER); // amuletos del tigre y del oso
     MeleeResult r = melee_resolve(m, &me, &foe, weapon, step, &cb->rng);
     if (r.attacker_staggered) cb->stagger = STAGGER_SECONDS;
     hit_enemy(cb, e, m, &r, props, 0, log, len);
@@ -490,10 +492,11 @@ static Shot *new_shot(Combat *cb) {
     return NULL;
 }
 
-static void fire(Combat *cb, const RangedDef *rd, Vector3 from, float yaw, float pitch, float charge, int owner, bool burning) {
+static void fire(Combat *cb, const RangedDef *rd, Vector3 from, float yaw, float pitch, float charge, int owner, bool burning,
+                 float steady) {
     Shot *s = new_shot(cb);
     if (!s) return;
-    float spread = rd->spread * (1.5f - 0.5f * charge); // poco tenso, menos preciso
+    float spread = rd->spread * (1.5f - 0.5f * charge) * steady; // poco tenso, menos preciso
     yaw += (rng_float(&cb->rng) - 0.5f) * 2.0f * spread;
     pitch += (rng_float(&cb->rng) - 0.5f) * 2.0f * spread;
     memset(s, 0, sizeof(*s));
@@ -704,8 +707,8 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
     }
 }
 
-static void player_ranged(Combat *cb, Player *p, GameActions *ga, const RangedDef *rd, bool can_act, float cam_yaw,
-                          float cam_pitch, float dt, char *log, size_t len) {
+static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *props, const RangedDef *rd, bool can_act,
+                          float cam_yaw, float cam_pitch, float dt, char *log, size_t len) {
     const char *ammo = projectile_def(rd->projectile)->ammo;
     bool held = IsKeyDown(KEY_V) || IsMouseButtonDown(MOUSE_BUTTON_LEFT);
     bool released = IsKeyReleased(KEY_V) || IsMouseButtonReleased(MOUSE_BUTTON_LEFT);
@@ -716,22 +719,26 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const RangedDe
         cb->draw = 0.0f;
         return;
     }
-    if (pressed && stock_count(&ga->stock, ammo) <= 0) {
+    int ammo_left = ig_count(ga, props, p, ammo); // lo que llevas encima (o tienes a mano)
+    cb->ammo_shown = ammo_left;
+    if (pressed && ammo_left <= 0) {
         char what[32];
-        snprintf(log, len, "No te quedan %ss en el acopio.", lower_name(projectile_def(rd->projectile)->name, what, sizeof(what)));
+        snprintf(log, len, "No te quedan %ss a mano (I: inventario).", lower_name(projectile_def(rd->projectile)->name, what, sizeof(what)));
         return;
     }
-    cb->aiming = held && cb->reload <= 0.0f && stock_count(&ga->stock, ammo) > 0;
+    cb->aiming = held && cb->reload <= 0.0f && ammo_left > 0;
     if (cb->aiming) {
         p->yaw = cam_yaw; // apunta hacia donde mira la camara
         cb->draw += dt;
     }
     // Arco y honda: se tensa y se suelta; ballesta y mosquete: disparan al pulsar.
     bool shoot = rd->draw_time > 0.0f ? (released && cb->draw > 0.05f) : (cb->aiming && pressed);
-    if (shoot && cb->reload <= 0.0f && stock_count(&ga->stock, ammo) > 0) {
+    if (shoot && cb->reload <= 0.0f && ammo_left > 0) {
         float charge = rd->draw_time > 0.0f ? fminf(1.0f, cb->draw / rd->draw_time) : 1.0f;
-        stock_take(&ga->stock, ammo, 1);
-        fire(cb, rd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0, cb->arrow_lit);
+        ig_use(ga, props, p, ammo, 1);
+        // Punteria (amuleto del aguila): menos dispersion.
+        float steady = 1.0f - 0.6f * fminf(1.0f, ig_stat(ga, STAT_ARCHERY));
+        fire(cb, rd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0, cb->arrow_lit, steady);
         cb->arrow_lit = false;
         cb->reload = rd->reload;
         cb->draw = 0.0f;
@@ -775,7 +782,8 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             continue;
         }
         // Objetivo: el mas cercano que vea (al acechar cuesta mas verte; los lobos ven de noche).
-        float sight = def->sight * (p->sneaking ? 0.45f : 1.0f) * (night && !def->beast ? 0.7f : 1.0f);
+        float sight = def->sight * (p->sneaking ? 0.45f : 1.0f) * (night && !def->beast ? 0.7f : 1.0f) *
+                      (1.0f - 0.5f * ig_stat(ga, STAT_STEALTH)); // el amuleto del lobo: cuesta mas verte
         Vector3 tpos = { 0 };
         float best = 1e9f;
         int target = -1;
@@ -816,7 +824,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
                     if (ballistic_solve(rd->projectile, to_v3(from), to_v3(aim), ranged_muzzle_speed(rd, 1.0f), &pitch)) {
                         float err = 0.015f + best * 0.0008f; // a mayor distancia, peor punteria
                         fire(cb, rd, from, e->yaw + (rng_float(&cb->rng) - 0.5f) * err * 2.0f, pitch + (rng_float(&cb->rng) - 0.5f) * err,
-                             1.0f, -(1 + i), false);
+                             1.0f, -(1 + i), false, 1.0f);
                         e->reload = rd->reload + 1.4f + rng_float(&cb->rng);
                         e->attack_anim = 0.3f;
                     }
@@ -980,13 +988,13 @@ static Npc *npc_near(GameActions *ga, Troop *troop, const Player *p, float range
     return NULL;
 }
 
-static void bandage(Combat *cb, GameActions *ga, Troop *troop, const Player *p, char *log, size_t len) {
-    bool herbs = stock_count(&ga->stock, HERBS_ID) > 0;
+static void bandage(Combat *cb, GameActions *ga, Troop *troop, const Props *props, const Player *p, char *log, size_t len) {
+    bool herbs = ig_count(ga, props, p, HERBS_ID) > 0; // las hierbas que llevas (o el acopio, en el campamento)
     Member *m = NULL;
     // 1) Un companero abatido cerca: levantarlo (y vendarlo si hay hierbas).
     if (npc_near(ga, troop, p, 3.0f, true, &m)) {
         if (herbs) {
-            stock_take(&ga->stock, HERBS_ID, 1);
+            ig_use(ga, props, p, HERBS_ID, 1);
             health_treat(&m->health);
         }
         health_revive(&m->health);
@@ -994,19 +1002,19 @@ static void bandage(Combat *cb, GameActions *ga, Troop *troop, const Player *p, 
         return;
     }
     if (!herbs) {
-        snprintf(log, len, "No quedan hierbas curativas en el acopio.");
+        snprintf(log, len, "No llevas hierbas curativas (I: inventario).");
         return;
     }
     // 2) Tus propias heridas.
     if (health_untreated(&cb->player) > 0) {
-        stock_take(&ga->stock, HERBS_ID, 1);
+        ig_use(ga, props, p, HERBS_ID, 1);
         int n = health_treat(&cb->player);
         snprintf(log, len, "Te vendas %d herida%s con hierbas curativas.", n, n == 1 ? "" : "s");
         return;
     }
     // 3) Un companero herido cerca.
     if (npc_near(ga, troop, p, 3.0f, false, &m)) {
-        stock_take(&ga->stock, HERBS_ID, 1);
+        ig_use(ga, props, p, HERBS_ID, 1);
         health_treat(&m->health);
         snprintf(log, len, "Vendas las heridas de %s.", m->name);
         return;
@@ -1026,7 +1034,8 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
                           float dt, char *log, size_t len) {
     bool at_camp = dist2(p->pos, camp_fire) < CAMP_RADIUS;
     float healer = at_camp ? troop_healer_skill(troop) : 0.0f;
-    health_update(&cb->player, &cb->rng, dt, !p->moving, healer);
+    // Aguante (amuletos del ciervo y del oso): se sana como si alguien atendiera.
+    health_update(&cb->player, &cb->rng, dt, !p->moving, healer + ig_stat(ga, STAT_STAMINA_REGEN));
     // El jugador no muere: desangrado queda abatido hasta que lo socorran.
     if (cb->player.dead) {
         cb->player.dead = false;
@@ -1145,7 +1154,6 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     cb->stagger = fmaxf(0.0f, cb->stagger - dt);
     if (cb->knock > 0.0f && (cb->knock -= dt) <= 0.0f && !cb->player.down) snprintf(log, log_len, "Te levantas.");
     cb->knock = fmaxf(0.0f, cb->knock);
-    if (IsKeyPressed(KEY_P)) cb->show_panel = !cb->show_panel;
     bool can_act = input_ok && !cb->player.down && !ga->climbing && cb->knock <= 0.0f;
     const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);
     cb->blocking = can_act && IsKeyDown(KEY_Z) && !ga->hands.sheathed && !rd && cb->stagger <= 0.0f;
@@ -1157,12 +1165,12 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
             snprintf(log, log_len, ga->raining ? "La lluvia apaga la flecha." : "La flecha encendida se apagó.");
         }
     }
-    if (rd) player_ranged(cb, p, ga, rd, can_act, cam_yaw, cam_pitch, dt, log, log_len);
+    if (rd) player_ranged(cb, p, ga, props, rd, can_act, cam_yaw, cam_pitch, dt, log, log_len);
     else {
         cb->aiming = false;
         player_melee_input(cb, p, ga, t, props, can_act && cb->stagger <= 0.0f && ga->mounted < 0, dt, log, log_len);
     }
-    if (input_ok && IsKeyPressed(KEY_B)) bandage(cb, ga, troop, p, log, log_len);
+    if (input_ok && IsKeyPressed(KEY_B)) bandage(cb, ga, troop, props, p, log, log_len);
     if (input_ok && IsKeyPressed(KEY_NINE)) { // prueba: enemigos delante
         const char *what = IsKeyDown(KEY_LEFT_SHIFT) ? "lobos" : IsKeyDown(KEY_LEFT_CONTROL) ? "culto"
                            : IsKeyDown(KEY_LEFT_ALT)                                         ? "arqueros"
@@ -1311,6 +1319,7 @@ void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop
 }
 
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h) {
+    (void)troop;
     const Health *ph = &cb->player;
     const char *txt = TextFormat("%s%s", health_state_name(ph), health_bleeding(ph) ? " · sangra" : "");
     Color col = health_bleeding(ph) || ph->down ? UI_CARNELIAN : ph->wound_count ? UI_GOLD : UI_BONE;
@@ -1326,7 +1335,7 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
         const char *fire = cb->arrow_lit                   ? TextFormat(" · ENCENDIDA (%.0f s)", cb->arrow_lit_timer)
                            : ga->fire_near && !ga->raining && rd->projectile <= PROJ_BOLT ? " · L: encender"
                                                                                            : "";
-        const char *line = TextFormat("%s · %ss: %d%s%s", wi ? wi->name : "Arma", pd->name, stock_count(&ga->stock, pd->ammo),
+        const char *line = TextFormat("%s · %ss: %d%s%s", wi ? wi->name : "Arma", pd->name, cb->ammo_shown,
                                       cb->reload > 0.0f ? " · recargando" : "", fire);
         int lw = MeasureText(line, 10);
         ui_text(line, w / 2 - lw / 2, h - 58, 10, UI_BONE);
@@ -1334,40 +1343,6 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
             ui_bar(w / 2 - 50, h - 47, 100, fminf(1.0f, cb->draw / rd->draw_time), UI_GOLD, UI_METAL_GOLD);
     }
 
-    if (cb->show_panel) { // heridas y armadura propias, heridas de la tribu
-        const int pw = 340, x0 = 8, y0 = 162;
-        char lines[18][112];
-        int n = 0;
-        snprintf(lines[n++], sizeof(lines[0]), "Tú: %s (vida %d/%d, sangre %d%%)", health_state_name(ph),
-                 (int)fmaxf(0.0f, ph->hp), (int)ph->hp_max, (int)(ph->blood * 100));
-        for (int i = 0; i < ph->wound_count && n < 6; i++) {
-            char d[96];
-            wound_describe(&ph->wounds[i], false, d, sizeof(d));
-            snprintf(lines[n++], sizeof(lines[0]), "  %s", d);
-        }
-        for (int s = 0; s < SLOT_COUNT && n < 11; s++) {
-            const ArmorPiece *pc = &cb->armor.slot[s];
-            if (!pc->id[0]) continue;
-            const InvItem *it = inventory_find(ga->inv, pc->id);
-            snprintf(lines[n++], sizeof(lines[0]), "  [%s] %s %d%%%s", slot_name((ArmorSlot)s), it ? it->name : pc->id,
-                     (int)(100.0f * pc->durability / pc->durability_max), pc->durability <= 0.0f ? " (rota)" : "");
-        }
-        for (int k = 0; k < troop->count && n < 17; k++) {
-            const Member *m = &troop->members[k];
-            if (m->status != STATUS_ACTIVE || (m->health.wound_count == 0 && !m->health.down)) continue;
-            int worst = health_worst(&m->health);
-            char d[96] = "";
-            if (worst >= 0) wound_describe(&m->health.wounds[worst], false, d, sizeof(d));
-            snprintf(lines[n++], sizeof(lines[0]), "%s: %s%s%s", m->name, health_state_name(&m->health), d[0] ? " · " : "", d);
-        }
-        int ph_h = 2 * UI_PANEL_INSET + 30 + 11 * n;
-        ui_panel((Rectangle){ (float)x0, (float)y0, (float)pw, (float)ph_h }, UI_METAL_SILVER);
-        int x = x0 + UI_PANEL_INSET + 2, yy = y0 + UI_PANEL_INSET + 2;
-        ui_text(TextFormat("Salud y armadura (P)  ·  B vendar  ·  hierbas: %d", stock_count(&ga->stock, HERBS_ID)), x, yy, 10,
-                UI_GOLD_LIGHT);
-        yy += 14;
-        for (int i = 0; i < n; i++, yy += 11) ui_text(lines[i], x, yy, 10, i == 0 ? UI_BONE : UI_BONE_DIM);
-    }
     if (ph->down) {
         DrawRectangle(0, 0, w, h, (Color){ 60, 0, 0, 90 });
         ui_text_centered("Estás abatido", w / 2, h / 2 - 30, 20, UI_CARNELIAN);

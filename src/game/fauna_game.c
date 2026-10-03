@@ -1,5 +1,7 @@
 #include "game/fauna_game.h"
 
+#include "game/inventory_game.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -375,8 +377,8 @@ bool fg_fish(GameActions *ga, const Terrain *t, Vector3 pos, float yaw, float re
             return true;
         }
         if (swarm_catch(s, at.x, at.y, at.z, spear ? 1.4f : 1.0f, 1)) {
-            stock_add(&ga->stock, FRESH_MEAT_ID, 1);
-            snprintf(log, len, "¡Pescaste un pez! (+1 carne fresca)");
+            bool kept = ig_store(ga, NULL, &(Player){ .pos = pos }, FRESH_MEAT_ID, 1, 1.0f) == 1;
+            snprintf(log, len, kept ? "¡Pescaste un pez! (+1 carne fresca)" : "¡Pescaste un pez! Pero no te cabe: lo sueltas.");
             return true;
         }
     }
@@ -388,7 +390,7 @@ bool fg_shot_water(GameActions *ga, const Terrain *t, Vector3 at, char *log, siz
         Swarm *s = &ga->swarms[i];
         if (!s->used || s->kind != SWARM_FISH || dist_xz(s->cx, s->cz, at.x, at.z) > 4.0f) continue;
         if (swarm_catch(s, at.x, t->look.water_level - 0.3f, at.z, 1.2f, 1)) {
-            stock_add(&ga->stock, FRESH_MEAT_ID, 1);
+            ig_store(ga, NULL, &(Player){ .pos = at }, FRESH_MEAT_ID, 1, 1.0f);
             snprintf(log, len, "¡La flecha atraviesa un pez! (+1 carne fresca)");
             return true;
         }
@@ -433,14 +435,14 @@ static int nearest_interactable(const GameActions *ga, const Player *p, int *wha
     return best;
 }
 
-static void butcher(GameActions *ga, Animal *a, char *log, size_t len, const char *how) {
+static void butcher(GameActions *ga, const Player *p, Animal *a, char *log, size_t len, const char *how) {
     int meat = 0, hide = 0;
     if (!animal_butcher(a, &meat, &hide)) return;
-    if (meat) stock_add(&ga->stock, FRESH_MEAT_ID, meat);
-    if (hide) stock_add(&ga->stock, HIDE_ID, hide);
+    // A lo que lleves encima (o a lo que tengas cerca); lo que no cabe se queda.
+    int kept = ig_store(ga, NULL, p, FRESH_MEAT_ID, meat, 1.0f) + ig_store(ga, NULL, p, HIDE_ID, hide, 1.0f);
     char who[48];
-    snprintf(log, len, "%s %s: +%d carne fresca, +%d pieles.", how, lower(species_def(a->species)->name, who, sizeof(who)),
-             meat, hide);
+    snprintf(log, len, "%s %s: +%d carne fresca, +%d pieles%s", how, lower(species_def(a->species)->name, who, sizeof(who)),
+             meat, hide, kept < meat + hide ? TextFormat(" (no te cabe todo: %d se quedan)", meat + hide - kept) : ".");
 }
 
 static void interact(GameActions *ga, const Player *p, bool shift, char *log, size_t len) {
@@ -452,7 +454,7 @@ static void interact(GameActions *ga, const Player *p, bool shift, char *log, si
                 snprintf(log, len, "Esta colmena ya no tiene miel hoy.");
             } else {
                 hive->honey_taken = true;
-                stock_add(&ga->stock, "utileria.consumible.miel", 2);
+                ig_store(ga, NULL, p, "utileria.consumible.miel", 2, 1.0f);
                 snprintf(log, len, "El humo calma a las abejas: tomas miel (+2).");
             }
         } else {
@@ -470,24 +472,24 @@ static void interact(GameActions *ga, const Player *p, bool shift, char *log, si
     char who[48];
     lower(species_def(a->species)->name, who, sizeof(who));
     if (what == 1) {
-        const char *food = stock_count(&ga->stock, FRESH_MEAT_ID) > 0 ? FRESH_MEAT_ID
-                           : stock_count(&ga->stock, FOOD_ID) > 0    ? FOOD_ID
-                                                                     : NULL;
+        const char *food = ig_count(ga, NULL, p, FRESH_MEAT_ID) > 0 ? FRESH_MEAT_ID
+                           : ig_count(ga, NULL, p, FOOD_ID) > 0    ? FOOD_ID
+                                                                   : NULL;
         if (!food) {
-            snprintf(log, len, "Necesitas carne en el acopio para darle de comer al %s.", who);
+            snprintf(log, len, "Necesitas llevar carne para darle de comer al %s.", who);
             return;
         }
-        stock_take(&ga->stock, food, 1);
+        ig_use(ga, NULL, p, food, 1);
         animal_feed(a, 0.0f, 0.0f);
         snprintf(log, len, "Le das carne al %s: ¡ahora es de la tribu y te defenderá!", who);
     } else if (what == 2) {
-        butcher(ga, a, log, len, "Despiezas");
+        butcher(ga, p, a, log, len, "Despiezas");
     } else if (shift) {
-        if (animal_slaughter(a)) butcher(ga, a, log, len, "Sacrificas");
+        if (animal_slaughter(a)) butcher(ga, p, a, log, len, "Sacrificas");
     } else {
         int milk = animal_milk(a);
         if (milk > 0) {
-            stock_add(&ga->stock, MILK_ID, milk);
+            ig_store(ga, NULL, p, MILK_ID, milk, 1.0f);
             snprintf(log, len, "Ordeñas la %s: +%d leche.", who, milk);
         } else {
             snprintf(log, len, species_def(a->species)->milk > 0 ? "Ya ordeñaste hoy a este animal."
@@ -573,7 +575,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
             if (a->state == ANIMAL_TAMED || a->state == ANIMAL_SADDLED) {
                 char msg[96];
                 snprintf(msg, sizeof(msg), "Tu %s caza: %s.", who, other);
-                butcher(ga, v, log, len, msg);
+                butcher(ga, p, v, log, len, msg);
             } else if (adist(a, p->pos) < 45.0f) {
                 snprintf(log, len, "Cerca de ti, un cazador (%s) abate a su presa (%s).", who, other);
             }

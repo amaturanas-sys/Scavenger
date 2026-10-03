@@ -78,6 +78,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Acopio de materiales y comida, recolección diaria por función, efectos de cada construcción y forja de bronce y acero.
 - [x] Animales: deambular y huir, doma con el lazo, ensillar y montar.
 - [x] Fauna: 24 especies en 5 clases (monturas, depredadores domables, hostiles, presas, ganado); manadas, acecho, rivalidad y huida; caza, despiece, ordeño y pastoreo.
+- [x] Inventario por contenedores (bolsillos, mochila, alforjas, carreta, acopio y armería) con peso y estado; menú de equipo con armadura por piezas y amuletos.
 - [x] Menú de entrada (nueva partida, cargar con minifoto y fecha, instructivo), pausa con guardar y cargar, HUD limpio (F1 controles).
 - [x] Cuerpo a cuerpo para todos: combos con armas cortas y largas, golpe pesado, patada y patada con inercia, escudo (bloqueo, golpe, carga), agarre y llave, gancho al escudo; enfundar, empuñar y cambiar de mano.
 - [x] Clima con azar: incendios forestales en verano, rayos que queman árboles y estructuras, derrumbes por lluvia torrencial sin mantenimiento; la lluvia apaga todo fuego. Flechas encendidas.

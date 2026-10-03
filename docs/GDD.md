@@ -267,6 +267,36 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - Hace falta el horno construido, un herrero y los materiales. Varios herreros forjan más rápido.
   - Lo forjado va al acopio. El jugador empuña el mejor sable que haya (acero, luego bronce, luego común).
 
+### Inventario, equipo y amuletos (implementado — `src/sim/storage.*`, `src/sim/loadout.*`, `src/game/inventory_game.*`)
+- **Contenedores:** cada uno con peso máximo, huecos y talla máxima de objeto.
+  - **Bolsillos:** 2 kg, solo lo pequeño.
+  - **Mochila:** 25 kg; un tronco no entra.
+  - **Alforjas:** las tiene cada montura ensillada, según la especie: caballo 50 kg, mula 80, burro 60, buey 90, camello 120, elefante 200. Se usan montado o a menos de 8 m.
+  - **Carreta de la tribu:** 400 kg, junto al campamento; se usa a menos de 5 m.
+  - **Acopio y armería del campamento:** dentro del campamento. Los materiales y la comida van al acopio; las armas, escudos, armaduras y amuletos, a la armería.
+- **Peso:** cada objeto pesa según su tipo, sus medidas y su material. Con más de 20 kg encima se anda más lento (hasta la mitad).
+- **Las piezas de equipo guardan su estado** (gastadas o rotas) y no se apilan con las nuevas; al sacar se usa primero lo gastado.
+- **Lo que se gasta en el campo sale de lo que llevas** (o tienes cerca): flechas, virotes y piedras, hierbas para vendar, carne para domar. Lo que se consigue (caza, pesca, leche, miel) va a la mochila, a los bolsillos o a lo que haya cerca; lo que no cabe se queda. Al salir llevas munición, hierbas, algo de carne seca y dos amuletos.
+- **`I` inventario:** dos columnas. Izquierda y derecha eligen la columna, `A`/`D` el contenedor, arriba y abajo el objeto. `Enter` pasa uno al otro lado; `Mayús+Enter`, todos. Muestra el peso, los huecos, el estado de cada pieza y cuánto llevas encima.
+- **`P` equipo:** una figura con las nueve piezas de armadura coloreadas por material y su desgaste.
+  - Por pieza: protección contra corte, golpe y flechas, cobertura, estado y cuánto frena.
+  - `Enter` pone o cambia una pieza que tengas a mano; la que llevabas va a la mochila, o donde quepa. `Supr` la quita.
+  - **Tres amuletos**, cada uno con sus efectos:
+    - lobo: sigilo y agarre;
+    - ciervo: aguante y monta;
+    - águila e íbice: puntería;
+    - tigre y dragón: agarre;
+    - oso: aguante y agarre;
+    - caballo: monta y carisma.
+  - Al lado, la vida, la sangre, el veneno y las heridas.
+- **Efecto de los amuletos:**
+  - el sigilo hace que los enemigos te vean de más cerca;
+  - la puntería reduce la dispersión;
+  - el agarre da fuerza a las llaves;
+  - el aguante sana más rápido;
+  - la monta da velocidad montado;
+  - el carisma sube el ánimo de la tribu cada día.
+
 ### Fauna (implementado — `src/sim/animals.*`, en juego `src/game/fauna_game.*`)
 - **Cinco clases de animales:**
   - **Monturas** (caballo, mula, burro, buey, camello, elefante): presas que se doman con el lazo (probabilidad propia de cada especie) y se montan con silla. Montado vas más rápido: caballo ×2,4, mula ×1,8, camello ×1,7, elefante ×1,6, burro ×1,5, buey ×1,3.
