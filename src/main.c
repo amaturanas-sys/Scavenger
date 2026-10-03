@@ -20,6 +20,7 @@
 
 #include "game/actions_game.h"
 #include "game/combat_game.h"
+#include "game/disasters_game.h"
 #include "game/fauna_game.h"
 #include "game/hazards_game.h"
 #include "game/player.h"
@@ -59,6 +60,7 @@ static Props g_props;
 static GameActions g_actions;
 static Hazards g_hazards;   // frio, barro, hielo, socavones y rescates
 static Combat g_combat;     // salud, heridas, enemigos y combate
+static Disasters g_dz; // fuego, rayos y lluvia torrencial
 static Climate g_climate;   // clima del cuadro anterior (lo usan los peligros)
 
 typedef struct {
@@ -171,6 +173,7 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
         hz_new_day(&g_hazards, &g_climate, &g_actions, &g_props, t, log, log_len); // las noches heladas gastan lena
         cb_new_day(&g_combat, t); // el jugador tambien descansa y sana
         fg_new_day(&g_actions);   // el ganado se vuelve a ordeñar
+        dz_new_day(&g_dz, &g_props, &g_actions, t, g_climate.wetness > 0.4f, log, log_len); // desgaste y reparaciones
         if (r.rebellion) {
             const Member *m = troop_find(t, r.rebellion_leader);
             snprintf(log, log_len, "Dia %d: REBELION encabezada por %s!", *day, m ? m->name : "?");
@@ -312,7 +315,7 @@ int main(int argc, char **argv) {
     float start_minute = 4.0f; // la partida empieza a media manana
     bool start_pos = false;
     const char *start_trap = NULL, *start_enemies = NULL;
-    bool start_wounds = false, start_aim = false, start_lake = false;
+    bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false;
     float start_x = 0.0f, start_z = 0.0f;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) shot_path = argv[++i];
@@ -326,6 +329,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--heridas")) start_wounds = true;
         else if (!strcmp(argv[i], "--apuntar")) start_aim = true;
         else if (!strcmp(argv[i], "--lago")) start_lake = true;
+        else if (!strcmp(argv[i], "--incendio")) start_fire = true;
         else if (!strcmp(argv[i], "--pos") && i + 2 < argc) {
             start_pos = true;
             start_x = (float)atof(argv[++i]);
@@ -387,6 +391,7 @@ int main(int argc, char **argv) {
     ga_init(&g_actions, &g_inventory, &g_props, &terrain, WORLD_SEED);
     hz_init(&g_hazards, WORLD_SEED);
     cb_init(&g_combat, WORLD_SEED);
+    dz_init(&g_dz, WORLD_SEED);
     g_hazards.body = &g_combat.player; // caidas y congelacion hieren
     if (start_lake && !gallery_mode) { // prueba: en la orilla del lago mas cercano, mirando al agua
         for (float r = 20.0f; r < 400.0f; r += 6.0f) {
@@ -450,6 +455,11 @@ int main(int argc, char **argv) {
                 cb_spawn_group(&g_combat, &g_actions, start_enemies, &player, &terrain, 7.0f, log, sizeof(log));
                 start_enemies = NULL;
             }
+            if (start_fire && frame == 3 && !gallery_mode) { // prueba: fuego en el pasto, 12 m delante
+                float fx = player.pos.x + sinf(player.yaw) * 12.0f, fz = player.pos.z + cosf(player.yaw) * 12.0f;
+                fire_ignite_hot(&g_dz.fire, fx, fz, FUEL_GRASS, -1, 1.0f);
+                start_fire = false;
+            }
             if (start_wounds && frame == 3 && !gallery_mode) { // prueba: heridas a la vista
                 health_hit(&g_combat.player, &rng, 28.0f, WOUND_CUT, PART_THIGH_L);
                 health_hit(&g_combat.player, &rng, 14.0f, WOUND_BRUISE, PART_FOREARM_R);
@@ -468,6 +478,9 @@ int main(int argc, char **argv) {
             if (!gallery_mode)
                 fg_update(&g_actions, &g_combat, &player, &troop, &terrain, &g_memory, world_time, g_climate.temperature,
                           !menu && !hz_blocks_input(&g_hazards), dt, log, sizeof(log));
+            if (!gallery_mode)
+                dz_update(&g_dz, &g_climate, &camp, &g_actions, &g_props, &troop, &g_combat, &player, &terrain, world_time,
+                          dt, log, sizeof(log));
             if (start_aim && !gallery_mode) { // prueba: arco tenso, para ver la curva de la mira
                 snprintf(g_actions.hands.right.id, sizeof(g_actions.hands.right.id), "arma.distancia.arco_compuesto");
                 g_actions.hands.right.kind = INV_HANDS_TWO;
@@ -504,13 +517,14 @@ int main(int argc, char **argv) {
         ClearBackground(sky_clear_color(climate.clouds));
         BeginMode3D(cam);
         terrain_draw(&terrain);
-        camp_draw(&camp, (float)GetTime(), climate.snow_cover);
+        camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out, g_dz.tree_burn);
         if (gallery_mode) gallery_draw(&gallery);
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
         if (gallery_mode) player_draw(&player);
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
         if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());
+        if (!gallery_mode) dz_draw_world(&g_dz, &terrain, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
         if (!gallery_mode) hz_draw_world(&g_hazards, &terrain, &g_actions, &troop, (float)GetTime());
         EndMode3D();
@@ -519,13 +533,13 @@ int main(int argc, char **argv) {
             sky_apply_tint(world_time, climate.clouds, VIRTUAL_W, VIRTUAL_H);
             BeginMode3D(cam);
             sky_draw_stars(&sky, cam, world_time, climate.clouds);
-            camp_draw_flame(&camp, (float)GetTime());
+            if (!g_actions.fires_out) camp_draw_flame(&camp, (float)GetTime());
             weather_draw(&weather, &climate, cam, (float)GetTime(), clock_light(world_time));
             EndMode3D();
             Vector3 light_pos[SKY_MAX_LIGHTS];
             float light_radius[SKY_MAX_LIGHTS];
             light_pos[0] = (Vector3){ camp.fire.x, camp.fire.y + 0.4f, camp.fire.z };
-            light_radius[0] = 9.0f;
+            light_radius[0] = g_actions.fires_out ? 0.0f : 9.0f; // la lluvia apaga la fogata
             int lights = 1 + ga_lights(&g_actions, &g_props, &player, light_pos + 1, light_radius + 1, SKY_MAX_LIGHTS - 1);
             sky_draw_lights(cam, light_pos, light_radius, lights, world_time, (float)GetTime(), VIRTUAL_W, VIRTUAL_H);
             weather_draw_screen(&weather, &climate, VIRTUAL_W, VIRTUAL_H);

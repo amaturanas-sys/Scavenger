@@ -33,7 +33,7 @@ void props_unload(Props *p) {
 int props_add(Props *p, const char *id, Vector3 pos, float yaw) {
     const InvItem *it = p->inv ? inventory_find(p->inv, id) : NULL;
     if (!it || p->count >= PROPS_MAX) return -1;
-    p->items[p->count] = (Prop){ it, pos, yaw, false, { 0, 0, 0 } };
+    p->items[p->count] = (Prop){ it, pos, yaw, false, { 0, 0, 0 }, 1.0f };
     return p->count++;
 }
 

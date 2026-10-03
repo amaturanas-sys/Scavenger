@@ -73,6 +73,12 @@ typedef struct {
     float fauna_timer, reveal_timer;
     Swarm swarms[GA_MAX_SWARMS]; // peces, abejas, avispas, mosquitos, moscas
     float swarm_timer, sting_timer;
+    // Fuego y lluvia (los pone src/game/disasters_game.c).
+    bool fires_out;     // la lluvia apago las fogatas y los hornos
+    bool raining;       // llueve: no se enciende nada
+    bool fire_near;     // hay un fuego al lado del jugador (para encender una flecha)
+    Vector3 ignite_at[8]; // donde cayeron flechas encendidas este paso
+    int ignite_n;
     // Trepar.
     bool climbing;
     float climb_t;

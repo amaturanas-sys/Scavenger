@@ -62,6 +62,8 @@ estructura.culto.templo	Templo del culto	bioma:ciudad,faccion:culto,acto:4	24x14
 estructura.culto.jaula_sacrificio	Jaula de cautivos para el sacrificio	faccion:culto,uso:interactuable,material:hierro	3x2.5x3	200	pendiente	Rescates del acto III.
 estructura.ruina.muro	Muro en ruinas	bioma:cualquiera,uso:decorado,material:piedra	6x3x1	150	pendiente	
 estructura.ruina.yurta_quemada	Yurta quemada	faccion:nomada,acto:1,uso:decorado	4.5x1.5x4.5	250	pendiente	Restos de la masacre.
+estructura.ruina.escombros	Escombros	bioma:cualquiera,uso:decorado	3x0.8x3	80	pendiente	Lo que deja la lluvia torrencial de una estructura sin mantenimiento.
+estructura.ruina.cenizas	Cenizas de una estructura	bioma:cualquiera,uso:decorado	3x0.5x3	80	pendiente	Lo que deja el fuego.
 estructura.campamento.refugio	Refugio de ramas y pieles	faccion:nomada,uso:habitable,uso:construible	3x2x3	150	pendiente	Construcción en grupo.
 estructura.campamento.hoguera	Hoguera grande	faccion:nomada,uso:interactuable,uso:construible	2.5x1.5x2.5	120	pendiente	Construcción en grupo: calor y luz para todo el campamento.
 estructura.campamento.horno_cocina	Horno de cocina de barro	faccion:nomada,uso:interactuable,uso:construible,material:barro	1.5x1.4x1.5	150	pendiente	Construcción en grupo; el cocinero acelera la obra.

@@ -18,7 +18,7 @@
 
 #include "rng.h"
 
-typedef enum { WOUND_CUT, WOUND_BRUISE, WOUND_FRACTURE, WOUND_BITE, WOUND_FROSTBITE, WOUND_COUNT } WoundKind;
+typedef enum { WOUND_CUT, WOUND_BRUISE, WOUND_FRACTURE, WOUND_BITE, WOUND_FROSTBITE, WOUND_BURN, WOUND_COUNT } WoundKind;
 
 // Zonas del cuerpo humano (src/sim/body.h les da forma); las fieras usan las
 // mismas con otros nombres (antebrazos = patas delanteras, piernas = traseras).

@@ -59,7 +59,7 @@ void camp_draw_flame(const Camp *c, float time) {
     DrawCylinder((Vector3){ c->fire.x, c->fire.y + 0.1f, c->fire.z }, 0.0f, 0.25f, 0.6f * flick, 5, (Color){ 255, 220, 90, 255 });
 }
 
-void camp_draw(const Camp *c, float time, float snow) {
+void camp_draw(const Camp *c, float time, float snow, bool fire_lit, const float *tree_burn) {
     for (int i = 0; i < c->yurt_count; i++) {
         if (c->yurt_loaded)
             DrawModelEx(c->yurt, c->yurts[i], (Vector3){ 0, 1, 0 }, c->yurt_rot[i], (Vector3){ 1, 1, 1 }, WHITE);
@@ -77,12 +77,22 @@ void camp_draw(const Camp *c, float time, float snow) {
         DrawCube((Vector3){ c->fire.x + cosf(a) * 0.8f, c->fire.y + 0.12f, c->fire.z + sinf(a) * 0.8f },
                  0.35f, 0.25f, 0.35f, (Color){ 110, 106, 100, 255 });
     }
-    camp_draw_flame(c, time);
+    if (fire_lit) camp_draw_flame(c, time);
 
-    // Arboles low-poly: tronco + copa conica.
+    // Arboles low-poly: tronco + copa conica (quemados: negros; calcinados, sin copa).
     for (int i = 0; i < c->tree_count; i++) {
         Vector3 b = c->trees[i];
         float h = c->tree_h[i];
+        float burn = tree_burn ? tree_burn[i] : 0.0f;
+        if (burn >= 1.0f) {
+            DrawCylinder(b, 0.1f, 0.2f, h * 0.6f, 5, (Color){ 34, 30, 28, 255 });
+            continue;
+        }
+        if (burn > 0.0f) {
+            DrawCylinder(b, 0.15f, 0.25f, h * 0.35f, 5, (Color){ 44, 36, 30, 255 });
+            DrawCylinder((Vector3){ b.x, b.y + h * 0.3f, b.z }, 0.0f, h * 0.22f, h * 0.6f, 6, (Color){ 52, 50, 40, 255 });
+            continue;
+        }
         DrawCylinder(b, 0.18f, 0.25f, h * 0.35f, 5, (Color){ 96, 70, 46, 255 });
         DrawCylinder((Vector3){ b.x, b.y + h * 0.3f, b.z }, 0.0f, h * 0.32f, h * 0.75f, 6, (Color){ 74, 104, 60, 255 });
         if (snow > 0.3f) // la nieve se posa en la mitad alta de la copa

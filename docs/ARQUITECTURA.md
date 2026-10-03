@@ -30,6 +30,7 @@ src/
     economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
     animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado, anfibios
     swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
+    fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
     anim_index.* que clip de animacion corresponde a cada estado
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
@@ -45,6 +46,7 @@ src/
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates
     combat_game.*   combate, enemigos, vendajes, salud de la tribu y del jugador
     fauna_game.*    fauna en el mundo: aparicion por bioma, ataques, K (comer, despiezar, ordeñar)
+    disasters_game.* fuego, rayos, lluvia torrencial, fogatas apagadas por la lluvia
   ui/       Interfaz (raylib)
     theme.*      tema de orfebreria: paneles, barras, texto
     minimap.*    minimapa circular tipo brujula

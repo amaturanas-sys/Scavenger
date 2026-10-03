@@ -45,7 +45,7 @@ Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisi
 
 Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañero atrapado para rescatarlo · `J K L U I O` en el minijuego de rescate.
 
-Combate y salud: `V` o clic izquierdo golpear (con arco u honda: mantener para tensar y soltar para disparar; la cámara alza la mira) · `Z` cubrirse · `B` vendar (a ti o a un compañero cercano) · `P` heridas y armadura · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros).
+Combate y salud: `V` o clic izquierdo golpear (con arco u honda: mantener para tensar y soltar para disparar; la cámara alza la mira) · `Z` cubrirse · `B` vendar (a ti o a un compañero cercano) · `L` encender la flecha junto a un fuego · `P` heridas y armadura · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros).
 
 Fauna: lazo (menú) para domar monturas o atar un depredador debilitado · `K` dar de comer al atado, despiezar un cadáver u ordeñar · `Mayús+K` sacrificar ganado · caminar cerca del ganado lo pastorea · golpear hacia el agua (o una flecha) pesca · `K` en una colmena con la antorcha encendida: miel. Prueba: `--lago` arranca en la orilla de un lago.
 

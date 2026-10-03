@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**332 objetos** · 1 con modelo · 331 pendientes.
+**334 objetos** · 1 con modelo · 333 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -12,7 +12,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
 | [Mapa: terreno, vegetación, agua e hitos](#mapa) | 28 | 28 | 0 | 0 | 0 |
-| [Estructuras](#estructura) | 40 | 39 | 1 | 0 | 0 |
+| [Estructuras](#estructura) | 42 | 41 | 1 | 0 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 46 | 46 | 0 | 0 | 0 |
 | [Armas](#arma) | 30 | 30 | 0 | 0 | 0 |
@@ -120,6 +120,8 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.culto.jaula_sacrificio` | Jaula de cautivos para el sacrificio | 3x2.5x3 | 200 | pendiente | `faccion:culto` `uso:interactuable` `material:hierro` | Rescates del acto III. |
 | `estructura.ruina.muro` | Muro en ruinas | 6x3x1 | 150 | pendiente | `bioma:cualquiera` `uso:decorado` `material:piedra` |  |
 | `estructura.ruina.yurta_quemada` | Yurta quemada | 4.5x1.5x4.5 | 250 | pendiente | `faccion:nomada` `acto:1` `uso:decorado` | Restos de la masacre. |
+| `estructura.ruina.escombros` | Escombros | 3x0.8x3 | 80 | pendiente | `bioma:cualquiera` `uso:decorado` | Lo que deja la lluvia torrencial de una estructura sin mantenimiento. |
+| `estructura.ruina.cenizas` | Cenizas de una estructura | 3x0.5x3 | 80 | pendiente | `bioma:cualquiera` `uso:decorado` | Lo que deja el fuego. |
 | `estructura.campamento.refugio` | Refugio de ramas y pieles | 3x2x3 | 150 | pendiente | `faccion:nomada` `uso:habitable` `uso:construible` | Construcción en grupo. |
 | `estructura.campamento.hoguera` | Hoguera grande | 2.5x1.5x2.5 | 120 | pendiente | `faccion:nomada` `uso:interactuable` `uso:construible` | Construcción en grupo: calor y luz para todo el campamento. |
 | `estructura.campamento.horno_cocina` | Horno de cocina de barro | 1.5x1.4x1.5 | 150 | pendiente | `faccion:nomada` `uso:interactuable` `uso:construible` `material:barro` | Construcción en grupo; el cocinero acelera la obra. |

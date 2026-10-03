@@ -760,7 +760,7 @@ int ga_lights(const GameActions *ga, const Props *props, const Player *p, Vector
         { "estructura.campamento.horno_acero", 8.0f, 1.0f },
     };
     int n = 0;
-    for (int i = 0; i < props->count && n < max; i++) {
+    for (int i = 0; i < props->count && n < max && !ga->fires_out; i++) { // la lluvia apaga los fuegos
         const Prop *pr = &props->items[i];
         for (size_t e = 0; e < sizeof(emitters) / sizeof(emitters[0]); e++) {
             if (strcmp(pr->item->id, emitters[e].id) != 0) continue;
