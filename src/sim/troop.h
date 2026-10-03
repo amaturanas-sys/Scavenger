@@ -10,6 +10,7 @@
 #include <stdbool.h>
 
 #include "champion.h"
+#include "armor.h"
 #include "health.h"
 #include "rng.h"
 
@@ -71,6 +72,8 @@ typedef struct {
     float loyalty; // 0..100, hacia el lider
     int champion;  // indice en Troop.champions si es un gran guerrero, o -1
     Health health; // vida, sangre y heridas (src/sim/health.h)
+    Armor armor;   // piezas de armadura que lleva (src/sim/armor.h)
+    bool outfitted; // ya recibio su equipo inicial
 } Member;
 
 // Reino al que la tropa rinde tributo. `stance` dice cuanto sube o baja la

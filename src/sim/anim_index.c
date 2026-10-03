@@ -45,6 +45,7 @@ const char *anim_humanoid(const HumanoidState *s) {
         if (s->spear) return "estocada_lanza";
         return s->grip == GRIP_TWO_HANDED ? two[k] : one[k];
     }
+    if (s->ranged) return s->ranged == 2 ? "disparar_ballesta" : s->ranged == 3 ? "disparar_mosquete" : "disparar_arco";
     if (s->blocking) return "bloquear";
     if (s->hidden) return "acechar_idle";
     if (s->moving) {

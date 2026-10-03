@@ -7,7 +7,9 @@
 #include "raymath.h"
 #include "rlgl.h"
 #include "sim/anim_index.h"
+#include "sim/body.h"
 #include "sim/clock.h"
+#include "world/body_draw.h"
 #include "ui/theme.h"
 
 // Equipo de prueba del jugador (Fase 0): herramientas y armas para probar las acciones.
@@ -16,7 +18,7 @@ static const char *KIT[] = {
     "arma.corta.sable",          "arma.corta.daga",         "escudo.mano.mimbre",    "escudo.mano.cuero",
     "arma.larga.guja",           "arma.larga.lanza",        "arma.distancia.arco_compuesto",
     "utileria.objeto.antorcha",  "arma.distancia.lazo",     "utileria.herramienta.gancho_trepa",
-    "utileria.herramienta.pala", "accesorio.arreo.silla_montar",
+    "utileria.herramienta.pala", "accesorio.arreo.silla_montar", "arma.distancia.ballesta", "arma.distancia.honda",
 };
 // Empunaduras que recorre "cambiar empunadura" (X): derecha, izquierda. El sable
 // se sustituye por el mejor que haya en el acopio (acero > bronce > comun).
@@ -25,6 +27,8 @@ static const char *PRESETS[][2] = {
     { "arma.corta.sable", "arma.corta.daga" },           // una en cada mano
     { "arma.larga.guja", NULL },                         // a dos manos
     { "arma.distancia.arco_compuesto", NULL },           // arco (dos manos)
+    { "arma.distancia.ballesta", NULL },                 // ballesta
+    { "arma.distancia.honda", NULL },                    // honda
     { "arma.larga.lanza", "escudo.mano.cuero" },         // lanza y escudo
     { NULL, NULL },                                      // desarmado
 };
@@ -702,14 +706,17 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
             props_draw_item_anim(props, body, n->pos, n->yaw - PI / 2.0f, anim_humanoid(&hs), time + (float)i);
             continue;
         }
+        // Sin modelo: cuerpo articulado (src/sim/body.h), del color de su funcion y con su armadura.
         Vector3 base = { n->pos.x, n->pos.y + bob, n->pos.z };
-        if (m->health.down) { // abatido: tendido en el suelo
-            DrawCapsule((Vector3){ base.x - 0.6f * s, base.y + 0.25f, base.z }, (Vector3){ base.x + 0.6f * s, base.y + 0.25f, base.z },
-                        0.24f * s, 6, 4, role_color(m->role));
-            continue;
-        }
-        DrawCapsule((Vector3){ base.x, base.y + 0.3f * s, base.z }, (Vector3){ base.x, base.y + 1.35f * s, base.z },
-                    0.26f * s, 6, 4, role_color(m->role));
+        BodyPoseParams bp = { .walk_phase = time * 9.0f + (float)i, .walk = n->moving ? 1.0f : 0.0f,
+                              .attack = n->fight_anim / 0.4f, .down = m->health.down, .scale = s };
+        if (working || (n->job >= 0 && n->job_timer > 0.0f)) bp.attack = 0.5f + 0.5f * sinf(time * 6.0f + (float)i);
+        BodyPose pose;
+        body_pose(&pose, &bp);
+        BodyColors bc = { { 200, 160, 120, 255 }, role_color(m->role), { 84, 64, 46, 255 } };
+        if (n->hurt_anim > 0.0f) bc.cloth = (Color){ 236, 226, 214, 255 };
+        body_draw(&pose, base, n->yaw, bc, &m->armor);
+        if (m->health.down) continue;
         if (m->champion >= 0) DrawSphere((Vector3){ base.x, base.y + 1.85f * s, base.z }, 0.08f, UI_GOLD);
     }
 
@@ -790,7 +797,7 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) 
         .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = ga->hands.sheathed,
         .grip = hands_grip(&ga->hands), .doing = ga->doing, .building = -1,
         .down = ga->pl_down, .hit = ga->pl_hit, .attacking = ga->pl_attacking, .spear = ga->pl_spear,
-        .blocking = ga->pl_blocking, .limping = ga->pl_limping,
+        .blocking = ga->pl_blocking, .limping = ga->pl_limping, .ranged = ga->pl_ranged,
     };
     if (hs.mounted) hs.mount_speed = p->moving ? (p->stance == STANCE_RUN ? 8.5f : 4.0f) * ga_speed_scale(ga) : 0.0f;
     Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };

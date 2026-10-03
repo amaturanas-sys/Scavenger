@@ -33,6 +33,7 @@ typedef struct {
     bool spear;       // arma larga de asta (estocada)
     bool blocking;    // cubriendose con el escudo
     bool limping;     // herido en las piernas: cojea al caminar
+    int ranged;       // apuntando: 0 no, 1 arco u honda, 2 ballesta, 3 mosquete
 } HumanoidState;
 
 // Clip para un humano (jugador o NPC) segun lo que esta haciendo.

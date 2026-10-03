@@ -2,9 +2,10 @@
 // la tribu, los NPCs y los enemigos (personas y fieras).
 //
 // Cada cuerpo tiene vida (puntos), sangre y una lista de heridas. Una herida
-// tiene tipo (corte, golpe, fractura, mordida, congelacion), parte del cuerpo
-// y gravedad. Las heridas abiertas sangran hasta que se vendan; la sangre que
-// falta tumba (abatido) y, si se acaba, mata. Las heridas sanan con el tiempo,
+// tiene tipo (corte, golpe, fractura, mordida, congelacion), zona del cuerpo
+// y gravedad. Cada zona recibe el daño de forma distinta: el cuello y la
+// cabeza son letales, el torso aguanta, un antebrazo poco (part_damage_scale).
+// Las heridas abiertas sangran hasta que se vendan; la sangre que falta tumba (abatido) y, si se acaba, mata. Las heridas sanan con el tiempo,
 // mas rapido tratadas y en reposo; las fracturas solo sanan entablilladas.
 // Las heridas de piernas frenan, las de brazos debilitan los golpes.
 #ifndef ESTEPA_HEALTH_H
@@ -16,7 +17,24 @@
 
 typedef enum { WOUND_CUT, WOUND_BRUISE, WOUND_FRACTURE, WOUND_BITE, WOUND_FROSTBITE, WOUND_COUNT } WoundKind;
 
-typedef enum { PART_HEAD, PART_TORSO, PART_ARM_L, PART_ARM_R, PART_LEG_L, PART_LEG_R, PART_COUNT } BodyPart;
+// Zonas del cuerpo humano (src/sim/body.h les da forma); las fieras usan las
+// mismas con otros nombres (antebrazos = patas delanteras, piernas = traseras).
+typedef enum {
+    PART_HEAD,
+    PART_NECK,
+    PART_THORAX,
+    PART_ABDOMEN,
+    PART_PELVIS,
+    PART_UPPER_ARM_L, // brazo (del hombro al codo)
+    PART_FOREARM_L,   // antebrazo y mano
+    PART_UPPER_ARM_R,
+    PART_FOREARM_R,
+    PART_THIGH_L, // muslo
+    PART_SHIN_L,  // pierna (de la rodilla al pie)
+    PART_THIGH_R,
+    PART_SHIN_R,
+    PART_COUNT
+} BodyPart;
 
 #define WOUNDS_MAX 8
 #define PART_RANDOM (-1)
@@ -36,11 +54,24 @@ typedef struct {
     int wound_count;
     bool down; // abatido: no puede moverse ni pelear
     bool dead;
+    bool beast; // fiera: nombres de zonas de animal
 } Health;
 
 void health_init(Health *h, float hp_max);
-// Recibe un golpe: resta vida y abre una herida (part = PART_RANDOM elige al azar,
-// el torso es lo mas probable). Devuelve el indice de la herida, o -1 si no abrio ninguna.
+void health_init_beast(Health *h, float hp_max);
+
+// Cuanto multiplica el daño un impacto en cada zona, y cuanto sangra.
+float part_damage_scale(BodyPart p);
+float part_bleed_scale(BodyPart p);
+bool part_is_arm(BodyPart p);
+bool part_is_leg(BodyPart p);
+// Una extremidad al azar (congelacion, caidas).
+int health_random_limb(Rng *rng);
+// Una zona al azar con los pesos de un golpe cuerpo a cuerpo (el tronco, lo mas probable).
+int health_pick_part(Rng *rng);
+// Recibe un golpe: resta vida (segun la zona) y abre una herida (part = PART_RANDOM
+// elige al azar; el torso es lo mas probable). damage es el daño antes de la zona.
+// Devuelve el indice de la herida, o -1 si no abrio ninguna.
 int health_hit(Health *h, Rng *rng, float damage, WoundKind kind, int part);
 // Avanza el tiempo: sangrado, coagulacion de cortes leves, regeneracion y cicatrizacion.
 // resting: quieto o durmiendo (sana mas rapido). healer: habilidad de quien atiende [0, 1].
@@ -61,10 +92,10 @@ float health_attack_scale(const Health *h); // brazos y sangre
 int health_worst(const Health *h);
 
 const char *wound_name(WoundKind k);  // UTF-8
-const char *part_name(BodyPart p);    // UTF-8
+const char *part_name(BodyPart p, bool beast); // UTF-8
 const char *severity_name(float s);   // leve / moderada / grave
-// "Corte en el brazo izquierdo (grave, sangra)"
-int wound_describe(const Wound *w, char *out, int len);
+// "Corte en el antebrazo izquierdo (grave, sangra)"
+int wound_describe(const Wound *w, bool beast, char *out, int len);
 // "sano", "herido", "malherido", "abatido", "muerto"
 const char *health_state_name(const Health *h);
 
