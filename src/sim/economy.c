@@ -115,10 +115,20 @@ UpkeepReport economy_daily_upkeep(Stockpile *s, Troop *t) {
     }
     // Comida: con cocinero, una racion menos cada 3 bocas (no se acumula).
     int need = mouths - (cooks ? mouths / 3 : 0);
-    int have = stock_count(s, FOOD_ID);
-    r.eaten = have < need ? have : need;
-    stock_take(s, FOOD_ID, r.eaten);
+    // Primero lo que no aguanta: carne fresca y leche; despues la carne seca.
+    static const char *const FOODS[] = { FRESH_MEAT_ID, MILK_ID, FOOD_ID };
+    for (int f = 0; f < 3 && r.eaten < need; f++) {
+        int have = stock_count(s, FOODS[f]), take = have < need - r.eaten ? have : need - r.eaten;
+        stock_take(s, FOODS[f], take);
+        r.eaten += take;
+    }
     r.hungry = need - r.eaten;
+    // Lo fresco que sobra: la mitad de la carne se seca, la leche se cuaja en queso; el resto se pierde.
+    int fresh = stock_count(s, FRESH_MEAT_ID), milk = stock_count(s, MILK_ID);
+    stock_take(s, FRESH_MEAT_ID, fresh);
+    stock_take(s, MILK_ID, milk);
+    stock_add(s, FOOD_ID, fresh / 2);
+    stock_add(s, "utileria.consumible.queso_seco", milk / 2);
     // Los que no comen: reparto simple, el hambre pesa en el animo de todos.
     if (r.hungry > 0) troop_adjust_morale(t, HUNGER_MORALE * (float)r.hungry / (float)(mouths ? mouths : 1));
     return r;

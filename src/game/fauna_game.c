@@ -1,0 +1,509 @@
+#include "game/fauna_game.h"
+
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "raymath.h"
+#include "rlgl.h"
+#include "sim/anim_index.h"
+#include "sim/hazards.h"
+#include "ui/theme.h"
+
+#define POP_TARGET 16        // animales salvajes vivos alrededor del jugador
+#define POP_RADIUS 150.0f
+#define SPAWN_MIN 70.0f
+#define SPAWN_MAX 110.0f
+#define DESPAWN_DIST 190.0f
+#define CAMP_CLEAR 50.0f     // no aparecen salvajes tan cerca del campamento
+#define INTERACT_RANGE 3.0f
+#define CORPSE_KEEP 300.0f   // s que se queda un cadaver entero
+#define MAX_HUMANS (1 + TROOP_MAX + CB_MAX_ENEMIES)
+
+// Personas de la ultima actualizacion: quienes son (para aplicar los ataques).
+typedef struct {
+    int kind; // 0 jugador, 1 integrante, 2 enemigo
+    int id;   // id del integrante o indice del enemigo
+} HumanRef;
+static HumanRef g_refs[MAX_HUMANS];
+static int g_ref_count;
+static char g_hint[96];
+
+static float adist(const Animal *a, Vector3 p) { return Vector2Distance((Vector2){ a->x, a->z }, (Vector2){ p.x, p.z }); }
+static bool alive(const Animal *a) { return a->used && a->state != ANIMAL_DEAD; }
+
+static const char *lower(const char *name, char *buf, size_t len) {
+    snprintf(buf, len, "%s", name);
+    if (buf[0] >= 'A' && buf[0] <= 'Z') buf[0] = (char)(buf[0] - 'A' + 'a');
+    return buf;
+}
+
+static bool deep_water(const Terrain *t, float x, float z) {
+    return t->look.water_level > terrain_height(t, x, z) + 0.6f && !hazard_ice_walkable(t->look.ice);
+}
+
+static int free_slot(GameActions *ga) {
+    for (int i = 0; i < GA_MAX_ANIMALS; i++) {
+        if (ga->animals[i].used) continue;
+        if (i >= ga->animal_count) ga->animal_count = i + 1;
+        return i;
+    }
+    return -1;
+}
+
+// ------------------------------------------------------------------ aparicion
+int fg_spawn_group(GameActions *ga, Species s, float x, float z) {
+    const SpeciesDef *d = species_def(s);
+    int n = d->group_min + rng_range(&ga->rng, d->group_max - d->group_min + 1);
+    int group = d->social ? ga->next_group++ : -1;
+    int made = 0;
+    for (int k = 0; k < n; k++) {
+        int i = free_slot(ga);
+        if (i < 0) break;
+        float ang = rng_float(&ga->rng) * 2.0f * PI, r = k == 0 ? 0.0f : 1.5f + rng_float(&ga->rng) * 3.5f;
+        Animal *a = &ga->animals[i];
+        animal_init(a, s, x + cosf(ang) * r, z + sinf(ang) * r);
+        a->home_x = x, a->home_z = z;
+        a->group = group;
+        a->yaw = rng_float(&ga->rng) * 2.0f * PI;
+        a->hunger = rng_float(&ga->rng) * 0.6f;
+        a->rival_timer = -rng_float(&ga->rng) * 40.0f;
+        made++;
+    }
+    return made;
+}
+
+void fg_init(GameActions *ga, const Terrain *t) {
+    ga->next_group = 1;
+    // Ganado del campamento y manadas en los alrededores.
+    static const struct {
+        Species sp;
+        float x, z;
+    } START[] = {
+        { SPECIES_GOAT, -20.0f, 12.0f },     { SPECIES_CALF, -24.0f, 6.0f },     { SPECIES_HORSE, 55.0f, 25.0f },
+        { SPECIES_DEER, -55.0f, 40.0f },     { SPECIES_ANTELOPE, 75.0f, 70.0f }, { SPECIES_HARE, 28.0f, 34.0f },
+        { SPECIES_DONKEY, -45.0f, -50.0f }, { SPECIES_WOLF, 70.0f, -85.0f },    { SPECIES_BOAR, -85.0f, -25.0f },
+    };
+    for (size_t i = 0; i < sizeof(START) / sizeof(START[0]); i++) {
+        if (deep_water(t, START[i].x, START[i].z)) continue;
+        fg_spawn_group(ga, START[i].sp, START[i].x, START[i].z);
+    }
+}
+
+static int habitat_at(const Terrain *t, float x, float z) {
+    if (biome_desert(t->seed, x, z) > 0.5f) return HAB_DESERT;
+    if (terrain_height(t, x, z) > t->look.snowline - 30.0f) return HAB_COLD;
+    return HAB_STEPPE;
+}
+
+static int pick_species(GameActions *ga, int hab, bool night) {
+    float w[SPECIES_COUNT], total = 0.0f;
+    for (int s = 0; s < SPECIES_COUNT; s++) {
+        const SpeciesDef *d = species_def((Species)s);
+        w[s] = (d->habitat & hab) && d->cls != CLASS_LIVESTOCK ? d->rarity : 0.0f;
+        if (night && (d->hunt_max > 0.0f || d->cls == CLASS_HOSTILE)) w[s] *= 2.5f; // la noche es de los cazadores
+        total += w[s];
+    }
+    if (total <= 0.0f) return -1;
+    float r = rng_float(&ga->rng) * total;
+    for (int s = 0; s < SPECIES_COUNT; s++) {
+        if (r < w[s]) return s;
+        r -= w[s];
+    }
+    return SPECIES_HARE;
+}
+
+static void populate(GameActions *ga, const Player *p, const Terrain *t, bool night, float dt) {
+    ga->fauna_timer += dt;
+    if (ga->fauna_timer < 8.0f) return;
+    ga->fauna_timer = 0.0f;
+    int wild = 0;
+    for (int i = 0; i < ga->animal_count; i++) {
+        Animal *a = &ga->animals[i];
+        if (!a->used) continue;
+        float d = adist(a, p->pos);
+        // Lejos: los salvajes se van (los de la tribu, nunca).
+        if (d > DESPAWN_DIST && (a->state == ANIMAL_WILD || a->state == ANIMAL_DEAD) && i != ga->mounted) {
+            a->used = false;
+            continue;
+        }
+        if (a->state == ANIMAL_WILD && d < POP_RADIUS) wild++;
+    }
+    while (ga->animal_count > 0 && !ga->animals[ga->animal_count - 1].used) ga->animal_count--;
+    if (wild >= POP_TARGET) return;
+    for (int tries = 0; tries < 6; tries++) {
+        float ang = rng_float(&ga->rng) * 2.0f * PI, r = SPAWN_MIN + rng_float(&ga->rng) * (SPAWN_MAX - SPAWN_MIN);
+        float x = p->pos.x + cosf(ang) * r, z = p->pos.z + sinf(ang) * r;
+        if (sqrtf(x * x + z * z) < CAMP_CLEAR || deep_water(t, x, z)) continue;
+        int s = pick_species(ga, habitat_at(t, x, z), night);
+        if (s >= 0) fg_spawn_group(ga, (Species)s, x, z);
+        return;
+    }
+}
+
+bool fg_spawn_named(GameActions *ga, const char *what, const Player *p, float dist, char *log, size_t len) {
+    int s = !strcmp(what, "lobos") ? SPECIES_WOLF : species_find(what);
+    if (s < 0) {
+        // Tambien en plural ("tigres", "jabalies").
+        char buf[48];
+        snprintf(buf, sizeof(buf), "%s", what);
+        size_t l = strlen(buf);
+        if (l > 3 && !strcmp(buf + l - 2, "es")) buf[l - 2] = '\0', s = species_find(buf);
+        if (s < 0 && l > 2 && buf[l - 1] == 's') buf[l - 1] = '\0', s = species_find(buf);
+        if (s < 0) return false;
+    }
+    float ang = p->yaw + (rng_float(&ga->rng) - 0.5f) * 0.6f;
+    fg_spawn_group(ga, (Species)s, p->pos.x + sinf(ang) * dist, p->pos.z + cosf(ang) * dist);
+    snprintf(log, len, "Aparecen cerca: %s.", species_def((Species)s)->name);
+    return true;
+}
+
+// ------------------------------------------------------------------ combate
+static float animal_ground(const Animal *a, const Terrain *t) { return terrain_height(t, a->x, a->z); }
+
+int fg_melee_target(const GameActions *ga, const Terrain *t, Vector3 pos, float yaw, float reach, float *dist) {
+    Vector3 fwd = { sinf(yaw), 0, cosf(yaw) };
+    int best = -1;
+    float best_d = 1e9f;
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *a = &ga->animals[i];
+        if (!alive(a) || a->ridden || (species_def(a->species)->flier && a->alt > 2.5f)) continue;
+        if (fabsf(animal_ground(a, t) - pos.y) > 3.0f) continue;
+        float d = adist(a, pos) - species_def(a->species)->size * 0.3f;
+        Vector3 to = Vector3Normalize((Vector3){ a->x - pos.x, 0, a->z - pos.z });
+        if (d < reach + 0.6f && d < best_d && (d < 0.8f || Vector3DotProduct(fwd, to) > 0.3f)) best_d = d, best = i;
+    }
+    if (dist) *dist = best_d;
+    return best;
+}
+
+int fg_raycast(const GameActions *ga, const Terrain *t, V3 a, V3 d, float *tt, int *part) {
+    int best = -1;
+    float best_t = 2.0f;
+    Vector3 mid = { a.x + d.x * 0.5f, a.y, a.z + d.z * 0.5f };
+    float reach = sqrtf(d.x * d.x + d.z * d.z) * 0.5f + 3.5f;
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *an = &ga->animals[i];
+        if (!alive(an) || an->ridden || adist(an, mid) > reach) continue;
+        BodyPose b;
+        animal_body(an, &b);
+        V3 pos = { an->x, animal_ground(an, t), an->z };
+        float tr;
+        int hp = body_raycast(&b, body_to_local(a, pos, an->yaw), body_dir_to_local(d, an->yaw), 1.0f, &tr);
+        if (hp >= 0 && tr < best_t) best_t = tr, best = i, *part = hp;
+    }
+    if (tt) *tt = best_t;
+    return best;
+}
+
+static int human_index_of(int attacker) {
+    for (int h = 0; h < g_ref_count; h++) {
+        if (attacker == 0 && g_refs[h].kind == 0) return h;
+        if (attacker > 0 && g_refs[h].kind == 1 && g_refs[h].id == attacker) return h;
+    }
+    return -1;
+}
+
+void fg_hurt(GameActions *ga, int idx, float dmg, WoundKind w, int part, int attacker, char *log, size_t len) {
+    Animal *a = &ga->animals[idx];
+    if (!alive(a)) return;
+    const SpeciesDef *d = species_def(a->species);
+    bool was_strong = !a->weakened;
+    int wi = animal_hurt(ga->animals, ga->animal_count, idx, &ga->rng, dmg, w, part, attacker >= 0, human_index_of(attacker));
+    if (attacker != 0 || !log) return;
+    char who[48], dsc[96];
+    lower(d->name, who, sizeof(who));
+    if (a->state == ANIMAL_DEAD) {
+        snprintf(log, len, "Abatiste: %s. K para despiezarlo.", who);
+    } else if (d->cls == CLASS_TAMEABLE && a->weakened && was_strong && a->state == ANIMAL_WILD) {
+        snprintf(log, len, "El %s está débil: ¡lánzale el lazo (menú) y dale carne!", who);
+    } else if (wi >= 0) {
+        wound_describe(&a->h.wounds[wi], true, dsc, sizeof(dsc));
+        if (dsc[0] >= 'A' && dsc[0] <= 'Z') dsc[0] = (char)(dsc[0] - 'A' + 'a');
+        snprintf(log, len, "Hieres al %s: %s.", who, dsc);
+    }
+}
+
+int fg_threat_near(const GameActions *ga, Vector3 pos, float range, float *dist) {
+    int best = -1;
+    float bd = range;
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *a = &ga->animals[i];
+        if (!alive(a) || a->state != ANIMAL_WILD || (species_def(a->species)->flier && a->alt > 2.5f)) continue;
+        AnimalClass c = species_def(a->species)->cls;
+        if (c != CLASS_HOSTILE && c != CLASS_TAMEABLE && a->tkind != TGT_HUMAN) continue;
+        float d = adist(a, pos);
+        if (d < bd) bd = d, best = i;
+    }
+    if (dist) *dist = bd;
+    return best;
+}
+
+// ------------------------------------------------------------------ interaccion (K)
+static int nearest_interactable(const GameActions *ga, const Player *p, int *what) {
+    // what: 1 atado (dar de comer), 2 cadaver (despiezar), 3 ganado (ordeñar / sacrificar)
+    int best = -1;
+    float bd = INTERACT_RANGE;
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *a = &ga->animals[i];
+        if (!a->used || a->ridden || (species_def(a->species)->flier && a->alt > 2.0f && a->state != ANIMAL_DEAD)) continue;
+        int w = a->state == ANIMAL_BOUND                                                              ? 1
+                : a->state == ANIMAL_DEAD && !a->butchered                                             ? 2
+                : a->state == ANIMAL_TAMED && species_def(a->species)->cls == CLASS_LIVESTOCK ? 3
+                                                                                                       : 0;
+        if (!w) continue;
+        float d = adist(a, p->pos) - species_def(a->species)->size * 0.3f;
+        if (d < bd) bd = d, best = i, *what = w;
+    }
+    return best;
+}
+
+static void butcher(GameActions *ga, Animal *a, char *log, size_t len, const char *how) {
+    int meat = 0, hide = 0;
+    if (!animal_butcher(a, &meat, &hide)) return;
+    if (meat) stock_add(&ga->stock, FRESH_MEAT_ID, meat);
+    if (hide) stock_add(&ga->stock, HIDE_ID, hide);
+    char who[48];
+    snprintf(log, len, "%s %s: +%d carne fresca, +%d pieles.", how, lower(species_def(a->species)->name, who, sizeof(who)),
+             meat, hide);
+}
+
+static void interact(GameActions *ga, const Player *p, bool shift, char *log, size_t len) {
+    int what = 0, i = nearest_interactable(ga, p, &what);
+    if (i < 0) {
+        snprintf(log, len, "No hay ningún animal con el que hacer algo aquí.");
+        return;
+    }
+    Animal *a = &ga->animals[i];
+    char who[48];
+    lower(species_def(a->species)->name, who, sizeof(who));
+    if (what == 1) {
+        const char *food = stock_count(&ga->stock, FRESH_MEAT_ID) > 0 ? FRESH_MEAT_ID
+                           : stock_count(&ga->stock, FOOD_ID) > 0    ? FOOD_ID
+                                                                     : NULL;
+        if (!food) {
+            snprintf(log, len, "Necesitas carne en el acopio para darle de comer al %s.", who);
+            return;
+        }
+        stock_take(&ga->stock, food, 1);
+        animal_feed(a, 0.0f, 0.0f);
+        snprintf(log, len, "Le das carne al %s: ¡ahora es de la tribu y te defenderá!", who);
+    } else if (what == 2) {
+        butcher(ga, a, log, len, "Despiezas");
+    } else if (shift) {
+        if (animal_slaughter(a)) butcher(ga, a, log, len, "Sacrificas");
+    } else {
+        int milk = animal_milk(a);
+        if (milk > 0) {
+            stock_add(&ga->stock, MILK_ID, milk);
+            snprintf(log, len, "Ordeñas la %s: +%d leche.", who, milk);
+        } else {
+            snprintf(log, len, species_def(a->species)->milk > 0 ? "Ya ordeñaste hoy a este animal."
+                                                                 : "Este animal no da leche (Mayús+K: sacrificar).");
+        }
+    }
+}
+
+static void update_hint(const GameActions *ga, const Player *p) {
+    int what = 0, i = nearest_interactable(ga, p, &what);
+    g_hint[0] = '\0';
+    if (i < 0) return;
+    char who[48];
+    lower(species_def(ga->animals[i].species)->name, who, sizeof(who));
+    if (what == 1) snprintf(g_hint, sizeof(g_hint), "K: dar de comer al %s atado (%.0f s)", who, ga->animals[i].bound_timer);
+    else if (what == 2) snprintf(g_hint, sizeof(g_hint), "K: despiezar (%s)", who);
+    else if (species_def(ga->animals[i].species)->milk > 0 && !ga->animals[i].milked)
+        snprintf(g_hint, sizeof(g_hint), "K: ordeñar · Mayús+K: sacrificar (%s)", who);
+    else snprintf(g_hint, sizeof(g_hint), "Mayús+K: sacrificar (%s)", who);
+}
+
+// ------------------------------------------------------------------ actualizacion
+void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terrain *t, MemoryMap *mem, float now,
+               bool night, bool input_ok, float dt, char *log, size_t len) {
+    // Las personas que ven los animales.
+    FaunaHuman hu[MAX_HUMANS];
+    int n = 0;
+    hu[n] = (FaunaHuman){ p->pos.x, p->pos.z, cb->player.down, p->sneaking || ga->hidden, false };
+    g_refs[n++] = (HumanRef){ 0, 0 };
+    for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
+        const Member *m = &troop->members[k];
+        const Npc *np = &ga->npcs[k];
+        if (m->status != STATUS_ACTIVE || np->member_id != m->id) continue;
+        hu[n] = (FaunaHuman){ np->pos.x, np->pos.z, m->health.down, false, false };
+        g_refs[n++] = (HumanRef){ 1, m->id };
+    }
+    for (int e = 0; e < CB_MAX_ENEMIES; e++) {
+        const Enemy *en = &cb->enemies[e];
+        if (!en->used || en->state == EN_DEAD) continue;
+        hu[n] = (FaunaHuman){ en->pos.x, en->pos.z, false, false, true };
+        g_refs[n++] = (HumanRef){ 2, e };
+    }
+    g_ref_count = n;
+    FaunaCtx ctx = { hu, n, p->pos.x, p->pos.z, p->moving && ga->mounted < 0, 0.0f, 0.0f, night };
+
+    float ox[GA_MAX_ANIMALS], oz[GA_MAX_ANIMALS];
+    for (int i = 0; i < ga->animal_count; i++) ox[i] = ga->animals[i].x, oz[i] = ga->animals[i].z;
+    FaunaEvents ev = { .n = 0 };
+    fauna_update(ga->animals, ga->animal_count, &ctx, &ga->rng, dt, &ev);
+    // Al agua no entran (salvo las aves): se quedan en la orilla.
+    for (int i = 0; i < ga->animal_count; i++) {
+        Animal *a = &ga->animals[i];
+        if (!a->used || a->ridden || species_def(a->species)->flier || !deep_water(t, a->x, a->z)) continue;
+        a->x = ox[i], a->z = oz[i];
+        a->tx = a->home_x, a->tz = a->home_z;
+        a->timer = 0.0f;
+    }
+
+    for (int e = 0; e < ev.n; e++) {
+        const FaunaEvent *f = &ev.ev[e];
+        Animal *a = &ga->animals[f->animal];
+        char who[48], other[48];
+        lower(species_def(a->species)->name, who, sizeof(who));
+        switch (f->kind) {
+        case FEV_BITE_HUMAN: {
+            if (f->other < 0 || f->other >= g_ref_count) break;
+            const HumanRef *r = &g_refs[f->other];
+            Vector3 from = { a->x, terrain_height(t, a->x, a->z), a->z };
+            cb_beast_strike(cb, p, ga, troop, r->kind, r->id, from, f->damage, f->wound, species_def(a->species)->name, log,
+                            len);
+            break;
+        }
+        case FEV_KILL: {
+            Animal *v = &ga->animals[f->other];
+            lower(species_def(v->species)->name, other, sizeof(other));
+            if (a->state == ANIMAL_TAMED || a->state == ANIMAL_SADDLED) {
+                char msg[96];
+                snprintf(msg, sizeof(msg), "Tu %s caza: %s.", who, other);
+                butcher(ga, v, log, len, msg);
+            } else if (adist(a, p->pos) < 45.0f) {
+                snprintf(log, len, "Cerca de ti, un cazador (%s) abate a su presa (%s).", who, other);
+            }
+            break;
+        }
+        case FEV_RIVAL_WON:
+            if (adist(a, p->pos) < 45.0f) snprintf(log, len, "Rivales (%s) pelean por el territorio: el perdedor se retira.", who);
+            break;
+        case FEV_BREAK_FREE:
+            if (adist(a, p->pos) < 60.0f) snprintf(log, len, "Se soltó del lazo sin comer: %s. ¡Cuidado!", who);
+            break;
+        default: break;
+        }
+    }
+
+    // La montura cayo.
+    if (ga->mounted >= 0 && !alive(&ga->animals[ga->mounted])) {
+        ga->mounted = -1;
+        snprintf(log, len, "¡Tu montura cayó! Sigues a pie.");
+    }
+    // El cuervo domado explora: revela el mapa por donde vuela.
+    ga->reveal_timer += dt;
+    if (ga->reveal_timer > 2.0f) {
+        ga->reveal_timer = 0.0f;
+        for (int i = 0; i < ga->animal_count; i++) {
+            const Animal *a = &ga->animals[i];
+            if (alive(a) && a->species == SPECIES_RAVEN && a->state == ANIMAL_TAMED) memmap_reveal(mem, a->x, a->z, 26.0f, 40.0f, now);
+        }
+    }
+    // Cadaveres: despiezados se retiran enseguida; enteros, al rato.
+    for (int i = 0; i < ga->animal_count; i++) {
+        Animal *a = &ga->animals[i];
+        if (a->used && a->state == ANIMAL_DEAD && ((a->butchered && a->corpse > 4.0f) || a->corpse > CORPSE_KEEP)) a->used = false;
+    }
+    populate(ga, p, t, night, dt);
+
+    if (input_ok && ga->mounted < 0 && IsKeyPressed(KEY_K))
+        interact(ga, p, IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT), log, len);
+    update_hint(ga, p);
+}
+
+void fg_new_day(GameActions *ga) {
+    for (int i = 0; i < ga->animal_count; i++)
+        if (alive(&ga->animals[i])) {
+            animal_new_day(&ga->animals[i]);
+            if (ga->animals[i].state != ANIMAL_WILD) health_daily(&ga->animals[i].h, 0.0f); // los de la tribu sanan
+        }
+}
+
+// ------------------------------------------------------------------ dibujo
+static Color animal_color(const Animal *a) {
+    static const Color by_class[] = {
+        [CLASS_MOUNT] = { 128, 92, 60, 255 },   [CLASS_TAMEABLE] = { 118, 110, 100, 255 },
+        [CLASS_HOSTILE] = { 84, 62, 46, 255 },  [CLASS_PREY] = { 176, 140, 96, 255 },
+        [CLASS_LIVESTOCK] = { 214, 204, 184, 255 },
+    };
+    Color c = by_class[species_def(a->species)->cls];
+    if (a->species == SPECIES_TIGER) c = (Color){ 214, 128, 44, 255 };
+    if (a->species == SPECIES_RAVEN) c = (Color){ 30, 30, 36, 255 };
+    if (a->species == SPECIES_ELEPHANT) c = (Color){ 120, 118, 116, 255 };
+    if (a->hit_anim > 0.0f) c = (Color){ 240, 230, 220, 255 };
+    if (a->state == ANIMAL_DEAD) c = ColorBrightness(c, a->butchered ? -0.6f : -0.3f);
+    return c;
+}
+
+void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float time) {
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *a = &ga->animals[i];
+        if (!a->used) continue;
+        const SpeciesDef *d = species_def(a->species);
+        const InvItem *it = inventory_find(ga->inv, d->model);
+        Vector3 pos = { a->x, terrain_height(t, a->x, a->z), a->z };
+        float top = it ? it->h : d->size * 0.6f;
+        if (it && props_has_model(props, it)) {
+            // El modelo mira a +X (Kiln); el animal avanza segun yaw (0 = +Z).
+            float tt = a->state == ANIMAL_DEAD ? fminf(a->corpse, 1.2f) : time + (float)i * 0.37f;
+            Vector3 at = { pos.x, pos.y + a->alt, pos.z };
+            props_draw_item_anim(props, it, at, a->yaw - PI / 2.0f, anim_animal(a), tt);
+        } else {
+            // Sin modelo: el mismo cuerpo de capsulas que reciben los impactos.
+            BodyPose b;
+            animal_body(a, &b);
+            Color c = animal_color(a);
+            for (int s = 0; s < PART_COUNT; s++) {
+                const BodySeg *sg = &b.seg[s];
+                if (sg->radius <= 0.0f) continue;
+                V3 wa = body_to_world(sg->a, (V3){ pos.x, pos.y, pos.z }, a->yaw);
+                V3 wb = body_to_world(sg->b, (V3){ pos.x, pos.y, pos.z }, a->yaw);
+                Color sc = s == PART_HEAD ? ColorBrightness(c, -0.15f) : c;
+                DrawCapsule((Vector3){ wa.x, wa.y, wa.z }, (Vector3){ wb.x, wb.y, wb.z }, sg->radius, 5, 2, sc);
+            }
+            if (a->attack_anim > 0.0f && a->state != ANIMAL_DEAD) { // el golpe: un destello hacia delante
+                Vector3 f = { sinf(a->yaw), 0, cosf(a->yaw) };
+                float y = pos.y + a->alt + d->size * 0.3f;
+                DrawLine3D((Vector3){ pos.x, y, pos.z }, (Vector3){ pos.x + f.x * d->reach, y, pos.z + f.z * d->reach },
+                           (Color){ 240, 230, 200, 255 });
+            }
+        }
+        if (a->state == ANIMAL_DEAD) continue;
+        float y = pos.y + a->alt + top;
+        if (a->state != ANIMAL_WILD) DrawCube((Vector3){ pos.x, y + 0.1f, pos.z }, 0.12f, 0.12f, 0.12f, UI_TURQUOISE);
+        if (a->state == ANIMAL_SADDLED)
+            DrawCube((Vector3){ pos.x, pos.y + top * 0.75f, pos.z }, 0.5f, 0.15f, 0.6f, (Color){ 120, 70, 40, 255 });
+        if (a->state == ANIMAL_BOUND) { // la cuerda del lazo, a una estaca
+            Vector3 stake = { pos.x + 1.2f, pos.y, pos.z + 1.2f };
+            DrawCylinderEx(stake, (Vector3){ stake.x, stake.y + 0.5f, stake.z }, 0.04f, 0.04f, 4, (Color){ 110, 80, 50, 255 });
+            DrawLine3D((Vector3){ stake.x, stake.y + 0.45f, stake.z }, (Vector3){ pos.x, pos.y + top * 0.7f, pos.z },
+                       (Color){ 200, 170, 110, 255 });
+        }
+        if (a->state == ANIMAL_WILD && a->weakened && d->cls == CLASS_TAMEABLE) // debil: se puede atar
+            DrawCube((Vector3){ pos.x, y + 0.15f, pos.z }, 0.1f, 0.1f, 0.1f, UI_GOLD);
+    }
+}
+
+void fg_draw_overlay(const GameActions *ga, const Terrain *t, Camera3D cam, int w, int h) {
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *a = &ga->animals[i];
+        if (!alive(a) || a->h.hp >= a->h.hp_max * 0.98f) continue;
+        Vector3 pos = { a->x, terrain_height(t, a->x, a->z) + a->alt + species_def(a->species)->size * 0.55f + 0.3f, a->z };
+        Vector3 to = Vector3Subtract(pos, cam.position);
+        if (Vector3DotProduct(to, Vector3Subtract(cam.target, cam.position)) <= 0.0f || Vector3Length(to) > 30.0f) continue;
+        Vector2 s = GetWorldToScreenEx(pos, cam, w, h);
+        float frac = Clamp(a->h.hp / a->h.hp_max, 0.0f, 1.0f);
+        DrawRectangle((int)s.x - 12, (int)s.y - 2, 24, 4, UI_LEATHER_CRACK);
+        DrawRectangle((int)s.x - 11, (int)s.y - 1, (int)(22 * frac), 2, a->state == ANIMAL_WILD ? UI_GOLD : UI_TURQUOISE);
+    }
+}
+
+void fg_draw_hud(const GameActions *ga, int w, int h) {
+    (void)ga;
+    if (g_hint[0]) ui_text_centered(g_hint, w / 2, h - 84, 10, UI_TURQUOISE);
+}

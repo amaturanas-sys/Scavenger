@@ -10,9 +10,10 @@
 //    impactan en la zona que tocan;
 //  - vendar (B) con hierbas curativas: a uno mismo o a un companero cercano;
 //    el curandero del campamento atiende al jugador cuando esta cerca;
-//  - enemigos (bandidos, fanaticos y captores del culto, lobos) con su salud,
+//  - enemigos (bandidos, arqueros, fanaticos y captores del culto) con su salud,
 //    deteccion, persecucion, huida y heridas; la escolta pelea a tu lado;
-//  - salud de todos los integrantes de la tribu: sangran, sanan, mueren.
+//  - salud de todos los integrantes de la tribu: sangran, sanan, mueren;
+//  - golpes y flechas tambien contra los animales (src/game/fauna_game.c).
 #ifndef ESTEPA_COMBAT_GAME_H
 #define ESTEPA_COMBAT_GAME_H
 
@@ -88,7 +89,12 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
 void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop, Camera3D cam, int w, int h);
 // Vida del jugador (bajo el calor), panel de heridas (P) y aviso de abatido.
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h);
-// Prueba: hace aparecer enemigos cerca del jugador ("bandidos", "culto", "lobos").
-void cb_spawn_group(Combat *cb, const char *what, const Player *p, const Terrain *t, float dist, char *log, size_t len);
+// Prueba: hace aparecer enemigos cerca del jugador ("bandidos", "culto", "arqueros"),
+// o fieras por nombre ("lobos", "tigre", "jabali"...).
+void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
+                    size_t len);
+// Un animal ataca a una persona: kind 0 el jugador, 1 el integrante id, 2 el enemigo id (indice).
+void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int kind, int id, Vector3 from, float dmg,
+                     WoundKind wound, const char *who, char *log, size_t len);
 
 #endif

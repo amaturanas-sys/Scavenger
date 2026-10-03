@@ -28,7 +28,7 @@ src/
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja
-    animals.*    animales: deambular, huir, doma, montura
+    animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado
     anim_index.* que clip de animacion corresponde a cada estado
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
@@ -43,6 +43,7 @@ src/
     actions_game.*  menu de acciones, atajos, obras en curso
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates
     combat_game.*   combate, enemigos, vendajes, salud de la tribu y del jugador
+    fauna_game.*    fauna en el mundo: aparicion por bioma, ataques, K (comer, despiezar, ordeñar)
   ui/       Interfaz (raylib)
     theme.*      tema de orfebreria: paneles, barras, texto
     minimap.*    minimapa circular tipo brujula

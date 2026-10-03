@@ -20,6 +20,7 @@
 
 #include "game/actions_game.h"
 #include "game/combat_game.h"
+#include "game/fauna_game.h"
 #include "game/hazards_game.h"
 #include "game/player.h"
 #include "platform.h"
@@ -169,6 +170,7 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
         ga_new_day(&g_actions, &g_props, terrain, t, &g_memory, world_time, *day, log, log_len);
         hz_new_day(&g_hazards, &g_climate, &g_actions, &g_props, t, log, log_len); // las noches heladas gastan lena
         cb_new_day(&g_combat, t); // el jugador tambien descansa y sana
+        fg_new_day(&g_actions);   // el ganado se vuelve a ordeñar
         if (r.rebellion) {
             const Member *m = troop_find(t, r.rebellion_leader);
             snprintf(log, log_len, "Dia %d: REBELION encabezada por %s!", *day, m ? m->name : "?");
@@ -378,12 +380,13 @@ int main(int argc, char **argv) {
         UnloadFileText(inv_text);
     }
     props_init(&g_props, &g_inventory);
+    // El clima primero: los animales iniciales miran donde hay agua.
+    g_climate = climate_at(world_time, WORLD_SEED);
+    if (!gallery_mode) apply_climate_look(&terrain, &g_climate);
     ga_init(&g_actions, &g_inventory, &g_props, &terrain, WORLD_SEED);
     hz_init(&g_hazards, WORLD_SEED);
     cb_init(&g_combat, WORLD_SEED);
     g_hazards.body = &g_combat.player; // caidas y congelacion hieren
-    g_climate = climate_at(world_time, WORLD_SEED);
-    if (!gallery_mode) apply_climate_look(&terrain, &g_climate);
 
     Gallery gallery = { 0 };
     if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
@@ -423,7 +426,7 @@ int main(int argc, char **argv) {
                 start_trap = NULL;
             }
             if (start_enemies && frame == 3 && !gallery_mode) {
-                cb_spawn_group(&g_combat, start_enemies, &player, &terrain, 7.0f, log, sizeof(log));
+                cb_spawn_group(&g_combat, &g_actions, start_enemies, &player, &terrain, 7.0f, log, sizeof(log));
                 start_enemies = NULL;
             }
             if (start_wounds && frame == 3 && !gallery_mode) { // prueba: heridas a la vista
@@ -441,6 +444,9 @@ int main(int argc, char **argv) {
                 cb_update(&g_combat, &player, &g_actions, &troop, &terrain, camp.fire,
                           !menu && !hz_blocks_input(&g_hazards), clock_is_night(world_time), g_climate.temp_mean < 0.0f,
                           rig.yaw, rig.pitch, dt, log, sizeof(log));
+            if (!gallery_mode)
+                fg_update(&g_actions, &g_combat, &player, &troop, &terrain, &g_memory, world_time, clock_is_night(world_time),
+                          !menu && !hz_blocks_input(&g_hazards), dt, log, sizeof(log));
             if (start_aim && !gallery_mode) { // prueba: arco tenso, para ver la curva de la mira
                 snprintf(g_actions.hands.right.id, sizeof(g_actions.hands.right.id), "arma.distancia.arco_compuesto");
                 g_actions.hands.right.kind = INV_HANDS_TWO;
@@ -483,6 +489,7 @@ int main(int argc, char **argv) {
         if (gallery_mode) player_draw(&player);
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
+        if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
         if (!gallery_mode) hz_draw_world(&g_hazards, &terrain, &g_actions, &troop, (float)GetTime());
         EndMode3D();
@@ -502,6 +509,7 @@ int main(int argc, char **argv) {
             sky_draw_lights(cam, light_pos, light_radius, lights, world_time, (float)GetTime(), VIRTUAL_W, VIRTUAL_H);
             weather_draw_screen(&weather, &climate, VIRTUAL_W, VIRTUAL_H);
             cb_draw_overlay(&g_combat, &g_actions, &troop, cam, VIRTUAL_W, VIRTUAL_H);
+            fg_draw_overlay(&g_actions, &terrain, cam, VIRTUAL_W, VIRTUAL_H);
         }
         if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
@@ -514,6 +522,7 @@ int main(int argc, char **argv) {
             ga_draw_hud(&g_actions, &g_props, &troop, VIRTUAL_W, VIRTUAL_H);
             hz_draw_hud(&g_hazards, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 40, VIRTUAL_W, VIRTUAL_H);
             cb_draw_hud(&g_combat, &g_actions, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 63, VIRTUAL_W, VIRTUAL_H);
+            fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
         }
         if (!has_keyboard) draw_keyboard_notice();

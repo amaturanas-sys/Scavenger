@@ -42,6 +42,10 @@ const char *anim_humanoid(const HumanoidState *s);
 const char *anim_for_action(ActionId a);
 // Clip de un cuadrupedo segun su estado.
 const char *anim_quadruped(const Animal *a);
+// Clip de un ave (rig "ave"): posada, en vuelo, en picado.
+const char *anim_bird(const Animal *a);
+// El clip de cualquier animal (cuadrupedo o ave segun la especie).
+const char *anim_animal(const Animal *a);
 // Clip de una fiera en pelea (lobos y otros depredadores enemigos).
 const char *anim_quadruped_fight(float speed, bool attacking, bool hit, bool dead);
 // Postura de reposo segun la empunadura.

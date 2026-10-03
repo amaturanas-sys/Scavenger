@@ -1,5 +1,7 @@
 #include "combat_game.h"
 
+#include "game/fauna_game.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -87,17 +89,18 @@ static Enemy *spawn_enemy(Combat *cb, EnemyKind kind, Vector3 pos, const Terrain
     return NULL;
 }
 
-void cb_spawn_group(Combat *cb, const char *what, const Player *p, const Terrain *t, float dist, char *log, size_t len) {
+void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
+                    size_t len) {
+    // Fieras: las pone la fauna (src/game/fauna_game.c).
+    if (strcmp(what, "bandidos") && strcmp(what, "culto") && strcmp(what, "arqueros") &&
+        fg_spawn_named(ga, what, p, dist, log, len))
+        return;
     float ang = rng_float(&cb->rng) * 2.0f * PI;
     if (dist < 25.0f) ang = p->yaw + (rng_float(&cb->rng) - 0.5f) * 0.8f; // pruebas: delante del jugador
     Vector3 c = { p->pos.x + sinf(ang) * dist, 0, p->pos.z + cosf(ang) * dist };
     EnemyKind kinds[5];
     int n = 0;
-    if (!strcmp(what, "lobos")) {
-        n = 2 + rng_range(&cb->rng, 3);
-        for (int i = 0; i < n; i++) kinds[i] = ENEMY_WOLF;
-        snprintf(log, len, "Una manada de lobos te rodea.");
-    } else if (!strcmp(what, "culto")) {
+    if (!strcmp(what, "culto")) {
         n = 3;
         kinds[0] = kinds[1] = ENEMY_FANATIC;
         kinds[2] = ENEMY_CAPTOR;
@@ -121,8 +124,8 @@ void cb_spawn_group(Combat *cb, const char *what, const Player *p, const Terrain
     }
 }
 
-// Lejos del campamento aparecen bandidos o el culto de dia, y lobos de noche y en invierno.
-static void natural_spawns(Combat *cb, const Player *p, const Terrain *t, Vector3 camp_fire, bool night, bool winter,
+// Lejos del campamento aparecen bandidos o el culto de dia (las fieras, src/game/fauna_game.c).
+static void natural_spawns(Combat *cb, GameActions *ga, const Player *p, const Terrain *t, Vector3 camp_fire, bool night,
                            float dt, char *log, size_t len) {
     cb->spawn_timer += dt;
     if (cb->spawn_timer < 60.0f) return;
@@ -132,11 +135,7 @@ static void natural_spawns(Combat *cb, const Player *p, const Terrain *t, Vector
     for (int i = 0; i < CB_MAX_ENEMIES; i++) alive += cb->enemies[i].used && cb->enemies[i].state != EN_DEAD;
     if (alive > 6) return;
     float r = rng_float(&cb->rng);
-    if (night || winter) {
-        if (r < 0.22f) cb_spawn_group(cb, "lobos", p, t, 35.0f, log, len);
-    } else if (r < 0.12f) {
-        cb_spawn_group(cb, rng_float(&cb->rng) < 0.3f ? "culto" : "bandidos", p, t, 35.0f, log, len);
-    }
+    if (!night && r < 0.12f) cb_spawn_group(cb, ga, rng_float(&cb->rng) < 0.3f ? "culto" : "bandidos", p, t, 35.0f, log, len);
 }
 
 // ------------------------------------------------------------------- golpes
@@ -158,7 +157,7 @@ static void enemy_down_check(Enemy *e) {
     }
 }
 
-static void player_attack(Combat *cb, Player *p, GameActions *ga, char *log, size_t len) {
+static void player_attack(Combat *cb, Player *p, GameActions *ga, const Terrain *t, char *log, size_t len) {
     const char *weapon = ga->hands.sheathed ? "" : ga->hands.right.id;
     WeaponStats w = weapon_stats(weapon);
     cb->attack_cd = w.cooldown;
@@ -175,6 +174,14 @@ static void player_attack(Combat *cb, Player *p, GameActions *ga, char *log, siz
         float d = dist2(p->pos, e->pos);
         Vector3 to = Vector3Normalize((Vector3){ e->pos.x - p->pos.x, 0, e->pos.z - p->pos.z });
         if (d < best_d && (d < 0.8f || Vector3DotProduct(fwd, to) > 0.3f)) best_d = d, best = e;
+    }
+    // Un animal mas cerca que el enemigo: el golpe es para el.
+    float ad;
+    int an = fg_melee_target(ga, t, p->pos, p->yaw, w.reach, &ad);
+    if (an >= 0 && ad < best_d) {
+        float dmg = combat_damage(w.damage, 1.0f, health_attack_scale(&cb->player), false, &cb->rng);
+        fg_hurt(ga, an, dmg, w.wound, PART_RANDOM, 0, log, len);
+        return;
     }
     if (!best) return;
     const EnemyDef *def = enemy_def(best->kind);
@@ -225,6 +232,44 @@ static void enemy_strike(Combat *cb, Enemy *e, Player *p, GameActions *ga, Troop
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++)
         if (ga->npcs[i].member_id == m->id) ga->npcs[i].hurt_anim = 0.3f;
     if (m->health.down) snprintf(log, len, "¡%s cae herido! Acércate y pulsa B para levantarlo.", m->name);
+}
+
+void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int kind, int id, Vector3 from, float dmg,
+                     WoundKind wound, const char *who, char *log, size_t len) {
+    char name[48];
+    lower_name(who, name, sizeof(name));
+    if (kind == 0) { // el jugador: el escudo y la armadura cuentan
+        if (cb->player.down) return;
+        bool blocked = player_blocks(cb, p, ga, from);
+        if (blocked) dmg *= 0.15f;
+        float absorbed = 0.0f;
+        bool broke = false;
+        int wi = combat_apply_hit(&cb->player, &cb->armor, &cb->rng, dmg, wound, PART_RANDOM, false, &absorbed, &broke);
+        cb->hit_anim = 0.3f;
+        char d[128];
+        if (blocked) snprintf(log, len, "Paras el ataque del %s con el escudo.", name);
+        else describe_hit(&cb->player, wi, absorbed, broke, d, sizeof(d)), snprintf(log, len, "Te ataca un %s: %s.", name, d);
+        return;
+    }
+    if (kind == 1) {
+        Member *m = troop_find(troop, id);
+        if (!m || m->status != STATUS_ACTIVE || m->health.down) return;
+        combat_apply_hit(&m->health, &m->armor, &cb->rng, dmg, wound, PART_RANDOM, false, NULL, NULL);
+        for (int i = 0; i < troop->count && i < TROOP_MAX; i++)
+            if (ga->npcs[i].member_id == m->id) ga->npcs[i].hurt_anim = 0.3f;
+        if (m->health.down) snprintf(log, len, "¡Un %s derriba a %s! Acércate y pulsa B.", name, m->name);
+        return;
+    }
+    if (id < 0 || id >= CB_MAX_ENEMIES || !cb->enemies[id].used || cb->enemies[id].state == EN_DEAD) return;
+    Enemy *e = &cb->enemies[id];
+    combat_apply_hit(&e->h, &e->armor, &cb->rng, dmg, wound, PART_RANDOM, false, NULL, NULL);
+    e->hit_anim = 0.3f;
+    e->shown = 6.0f;
+    enemy_down_check(e);
+    if (e->state == EN_DEAD && dist2(e->pos, p->pos) < 40.0f) {
+        char en[48];
+        snprintf(log, len, "Un %s abate a un %s.", name, lower_name(enemy_def(e->kind)->name, en, sizeof(en)));
+    }
 }
 
 // ------------------------------------------------------------------- disparos
@@ -279,23 +324,6 @@ static void pose_member(BodyPose *b, const Npc *n, const Member *m, const Troop 
     body_pose(b, &pp);
 }
 
-// Una fiera: un cuerpo horizontal aproximado (cabeza delante, patas abajo).
-static int beast_hit(Vector3 pos, float yaw, V3 a, V3 d, float *t_out, Rng *rng) {
-    V3 la = body_to_local(a, to_v3(pos), yaw), ld = body_dir_to_local(d, yaw);
-    // Capsula del tronco a 0.55 m del suelo, de la grupa (z -0.5) a la cabeza (z +0.6).
-    BodyPose b;
-    memset(&b, 0, sizeof(b));
-    b.seg[PART_HEAD] = (BodySeg){ { 0, 0.65f, 0.55f }, { 0, 0.65f, 0.7f }, 0.13f };
-    b.seg[PART_THORAX] = (BodySeg){ { 0, 0.55f, 0.1f }, { 0, 0.55f, 0.4f }, 0.2f };
-    b.seg[PART_ABDOMEN] = (BodySeg){ { 0, 0.55f, -0.3f }, { 0, 0.55f, 0.1f }, 0.18f };
-    b.seg[PART_FOREARM_L] = (BodySeg){ { 0.12f, 0.4f, 0.35f }, { 0.12f, 0.02f, 0.35f }, 0.05f };
-    b.seg[PART_FOREARM_R] = (BodySeg){ { -0.12f, 0.4f, 0.35f }, { -0.12f, 0.02f, 0.35f }, 0.05f };
-    b.seg[PART_SHIN_L] = (BodySeg){ { 0.12f, 0.4f, -0.35f }, { 0.12f, 0.02f, -0.35f }, 0.05f };
-    b.seg[PART_SHIN_R] = (BodySeg){ { -0.12f, 0.4f, -0.35f }, { -0.12f, 0.02f, -0.35f }, 0.05f };
-    (void)rng;
-    return body_raycast(&b, la, ld, 1.0f, t_out);
-}
-
 static void shot_hits_player(Combat *cb, Shot *s, int part, Player *p, const GameActions *ga, char *log, size_t len) {
     const ProjectileDef *pd = projectile_def(s->p.kind);
     float dmg = projectile_damage(&s->p);
@@ -325,7 +353,7 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
         Vector3 mid = { (a.x + s->p.pos.x) * 0.5f, (a.y + s->p.pos.y) * 0.5f, (a.z + s->p.pos.z) * 0.5f };
         float reach = sqrtf(d.x * d.x + d.y * d.y + d.z * d.z) * 0.5f + 2.5f;
         float best_t = 2.0f;
-        int kind = -1, idx = -1, part = -1; // kind: 0 jugador, 1 integrante, 2 enemigo
+        int kind = -1, idx = -1, part = -1; // kind: 0 jugador, 1 integrante, 2 enemigo, 3 animal
         // Jugador.
         if (s->owner != 0 && dist2(mid, p->pos) < reach) {
             BodyPose b;
@@ -350,15 +378,16 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             const Enemy *e = &cb->enemies[i];
             if (!e->used || e->state == EN_DEAD || s->owner == -(1 + i) || dist2(mid, e->pos) > reach) continue;
             float tt;
-            int hp;
-            if (enemy_def(e->kind)->beast) {
-                hp = beast_hit(e->pos, e->yaw, a, d, &tt, &cb->rng);
-            } else {
-                BodyPose b;
-                pose_enemy(&b, e, time, i);
-                hp = body_raycast(&b, body_to_local(a, to_v3(e->pos), e->yaw), body_dir_to_local(d, e->yaw), 1.0f, &tt);
-            }
+            BodyPose b;
+            pose_enemy(&b, e, time, i);
+            int hp = body_raycast(&b, body_to_local(a, to_v3(e->pos), e->yaw), body_dir_to_local(d, e->yaw), 1.0f, &tt);
             if (hp >= 0 && tt < best_t) best_t = tt, kind = 2, idx = i, part = hp;
+        }
+        // Animales.
+        {
+            float tt;
+            int ap = -1, ai = fg_raycast(ga, t, a, d, &tt, &ap);
+            if (ai >= 0 && tt < best_t) best_t = tt, kind = 3, idx = ai, part = ap;
         }
         if (kind >= 0) {
             // Retrocede hasta el punto del impacto para el daño (la energia de ese instante).
@@ -373,6 +402,9 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
                 char what[32];
                 snprintf(log, len, "Una %s alcanza a %s en %s.", lower_name(pd->name, what, sizeof(what)), m->name,
                          part_name((BodyPart)part, false));
+            } else if (kind == 3) {
+                int owner = s->owner > 0 ? s->owner : s->owner == 0 ? 0 : -1;
+                fg_hurt(ga, idx, projectile_damage(&s->p), pd->wound, part, owner, s->owner == 0 ? log : NULL, len);
             } else {
                 Enemy *e = &cb->enemies[idx];
                 float absorbed = 0.0f;
@@ -589,6 +621,32 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, const P
             float d = fminf(dist2(n->pos, e->pos), dist2(p->pos, e->pos));
             if (d < best_d) best_d = d, best = e;
         }
+        // Tambien las fieras que amenazan.
+        float ad;
+        int an = fg_threat_near(ga, n->pos, best_d, &ad);
+        if (an >= 0 && (!best || ad < dist2(n->pos, best->pos))) {
+            const Animal *a = &ga->animals[an];
+            Vector3 apos = { a->x, n->pos.y, a->z };
+            float d = dist2(n->pos, apos);
+            n->fighting = true;
+            n->yaw = atan2f(apos.x - n->pos.x, apos.z - n->pos.z);
+            n->moving = d > 1.6f;
+            if (n->moving) {
+                float speed = 5.0f * health_speed_scale(&m->health) * armor_speed_scale(&m->armor);
+                float step = fminf(speed * dt, d - 1.5f);
+                n->pos.x += (apos.x - n->pos.x) / d * step;
+                n->pos.z += (apos.z - n->pos.z) / d * step;
+                n->pos.y = surface_y(t, n->pos.x, n->pos.z);
+            } else if (cb->comp_cd[k] <= 0.0f) {
+                const Champion *c = troop_champion(troop, m->id);
+                float dmg = combat_damage(COMPANION_DAMAGE, c ? c->stats.strength : 1.0f, health_attack_scale(&m->health),
+                                          false, &cb->rng);
+                fg_hurt(ga, an, dmg, WOUND_CUT, PART_RANDOM, m->id, NULL, 0);
+                cb->comp_cd[k] = COMPANION_COOLDOWN;
+                n->fight_anim = 0.4f;
+            }
+            continue;
+        }
         if (!best) continue;
         n->fighting = true;
         float d = dist2(n->pos, best->pos);
@@ -737,16 +795,17 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, const Terra
     else {
         cb->aiming = false;
         if (can_act && cb->attack_cd <= 0.0f && (IsKeyPressed(KEY_V) || IsMouseButtonPressed(MOUSE_BUTTON_LEFT)))
-            player_attack(cb, p, ga, log, log_len);
+            player_attack(cb, p, ga, t, log, log_len);
     }
     if (input_ok && IsKeyPressed(KEY_B)) bandage(cb, ga, troop, p, log, log_len);
     if (input_ok && IsKeyPressed(KEY_NINE)) { // prueba: enemigos delante
         const char *what = IsKeyDown(KEY_LEFT_SHIFT) ? "lobos" : IsKeyDown(KEY_LEFT_CONTROL) ? "culto"
                            : IsKeyDown(KEY_LEFT_ALT)                                         ? "arqueros"
                                                                                              : "bandidos";
-        cb_spawn_group(cb, what, p, t, 14.0f, log, log_len);
+        cb_spawn_group(cb, ga, what, p, t, 14.0f, log, log_len);
     }
-    natural_spawns(cb, p, t, camp_fire, night, winter, dt, log, log_len);
+    natural_spawns(cb, ga, p, t, camp_fire, night, dt, log, log_len);
+    (void)winter;
     update_enemies(cb, p, ga, troop, t, night, dt, log, log_len);
     update_shots(cb, p, ga, troop, t, time, dt, log, log_len);
     update_companions(cb, ga, troop, p, t, dt, log, log_len);
@@ -805,38 +864,21 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         if (!it) continue;
         bool dead = e->state == EN_DEAD;
         if (props_has_model(props, it)) {
-            const char *clip;
-            if (def->beast) {
-                clip = anim_quadruped_fight(e->speed, e->attack_anim > 0.0f, e->hit_anim > 0.0f, dead);
-            } else {
-                HumanoidState hs = { .moving = e->speed > 0.2f, .running = e->speed > 3.5f, .grounded = true, .doing = -1,
-                                     .building = -1, .dead = dead, .hit = e->hit_anim > 0.0f,
-                                     .attacking = e->attack_anim > 0.0f && !def->ranged ? 1 + i % 3 : 0,
-                                     .ranged = def->ranged && e->target >= 0 && e->speed < 0.2f ? 1 : 0,
-                                     .limping = health_speed_scale(&e->h) < 0.85f, .grip = GRIP_ONE_HANDED };
-                clip = anim_humanoid(&hs);
-            }
+            HumanoidState hs = { .moving = e->speed > 0.2f, .running = e->speed > 3.5f, .grounded = true, .doing = -1,
+                                 .building = -1, .dead = dead, .hit = e->hit_anim > 0.0f,
+                                 .attacking = e->attack_anim > 0.0f && !def->ranged ? 1 + i % 3 : 0,
+                                 .ranged = def->ranged && e->target >= 0 && e->speed < 0.2f ? 1 : 0,
+                                 .limping = health_speed_scale(&e->h) < 0.85f, .grip = GRIP_ONE_HANDED };
+            const char *clip = anim_humanoid(&hs);
             // Muerto: el clip se queda en su ultimo tramo en vez de repetirse.
             float tt = dead ? fminf(CORPSE_SECONDS - e->corpse, 1.2f) : time + (float)i * 0.31f;
             props_draw_item_anim(props, it, e->pos, e->yaw - PI / 2.0f, clip, tt);
             continue;
         }
-        if (!def->beast) { // cuerpo articulado con su armadura
-            BodyPose b;
-            pose_enemy(&b, e, time, i);
-            body_draw(&b, e->pos, e->yaw, enemy_colors(e->kind, e->hit_anim > 0.0f), &e->armor);
-            continue;
-        }
-        // Fiera: marcador de cuerpo horizontal (tendido si cayo).
-        Color c = e->hit_anim > 0.0f ? (Color){ 230, 220, 210, 255 } : (Color){ 120, 110, 100, 255 };
-        rlPushMatrix();
-        rlTranslatef(e->pos.x, e->pos.y, e->pos.z);
-        rlRotatef(e->yaw * RAD2DEG, 0, 1, 0);
-        if (dead) DrawCube((Vector3){ 0, 0.15f, 0 }, 0.6f, 0.3f, 1.1f, ColorBrightness(c, -0.3f));
-        else DrawCube((Vector3){ 0, 0.45f, 0 }, 0.35f, 0.6f, 1.1f, c);
-        if (!dead && e->attack_anim > 0.0f) // el golpe: un destello hacia adelante
-            DrawCube((Vector3){ 0, 0.5f, def->reach * 0.6f }, 0.08f, 0.08f, def->reach * 0.7f, (Color){ 240, 230, 200, 255 });
-        rlPopMatrix();
+        // Sin modelo: cuerpo articulado con su armadura.
+        BodyPose b;
+        pose_enemy(&b, e, time, i);
+        body_draw(&b, e->pos, e->yaw, enemy_colors(e->kind, e->hit_anim > 0.0f), &e->armor);
     }
     for (int i = 0; i < CB_MAX_SHOTS; i++)
         if (cb->shots[i].p.alive) draw_shot(&cb->shots[i]);
@@ -879,7 +921,7 @@ void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
         const Enemy *e = &cb->enemies[i];
         if (!e->used || e->state == EN_DEAD || (e->shown <= 0.0f && e->target < 0)) continue;
-        bar_at(cam, e->pos, enemy_def(e->kind)->beast ? 1.1f : 2.0f, e->h.hp / e->h.hp_max, UI_CARNELIAN, w, h);
+        bar_at(cam, e->pos, 2.0f, e->h.hp / e->h.hp_max, UI_CARNELIAN, w, h);
     }
     for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
         const Member *m = &troop->members[k];

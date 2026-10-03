@@ -79,6 +79,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/actions_game.c
     src/game/hazards_game.c
     src/game/combat_game.c
+    src/game/fauna_game.c
     src/world/props.c
     src/ui/theme.c
     src/ui/minimap.c

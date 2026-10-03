@@ -72,10 +72,28 @@ const char *anim_quadruped_fight(float speed, bool attacking, bool hit, bool dea
 }
 
 const char *anim_quadruped(const Animal *a) {
+    const SpeciesDef *d = species_def(a->species);
+    if (a->state == ANIMAL_DEAD) return "morir";
+    if (a->hit_anim > 0.0f) return "recibir_golpe";
+    if (a->attack_anim > 0.0f) return "atacar";
+    if (a->state == ANIMAL_BOUND) return "forcejear_lazo";
     if (a->ridden) return a->speed > 6.0f ? "galopar" : a->speed > 0.3f ? "caminar" : "montado_idle";
+    if (a->mode == MODE_STALK) return "acechar";
     if (a->fleeing || a->speed > 4.5f) return "galopar";
     if (a->speed > 2.0f) return "trotar";
     if (a->speed > 0.2f) return "caminar";
-    // Quieto: los herbivoros pastan, el resto espera.
-    return a->species == SPECIES_WOLF ? ANIM_IDLE : "pastar";
+    if (a->mode == MODE_EAT) return "comer_presa";
+    // Quieto: los herbivoros pastan, los cazadores esperan.
+    return d->hunt_max > 0.0f || d->cls == CLASS_HOSTILE ? ANIM_IDLE : "pastar";
 }
+
+const char *anim_bird(const Animal *a) {
+    if (a->state == ANIMAL_DEAD) return "morir";
+    if (a->attack_anim > 0.0f || (a->mode == MODE_CHASE && a->alt < 3.0f)) return "atacar_picado";
+    if (a->alt < 0.4f) return a->speed > 0.3f ? "aterrizar" : "posado";
+    if (a->alt < 2.0f) return "despegar";
+    // En el aire: aletea al ir deprisa (y a ratos); si no, planea.
+    return a->speed > 6.0f || ((int)(a->clock / 3.0f) % 3 == 0) ? "volar" : "planear";
+}
+
+const char *anim_animal(const Animal *a) { return species_def(a->species)->flier ? anim_bird(a) : anim_quadruped(a); }

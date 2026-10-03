@@ -109,7 +109,7 @@ static const ActionDef ACTIONS[ACTION_COUNT] = {
                             "estructura.defensa.trinchera", NULL },
     [ACTION_THROW_GRAPPLE] = { "Lanzar trepa", "Gancho con cuerda para escalar muros en un asedio.",
                                ACTOR_PLAYER | ACTOR_NPC, 1.2f, "utileria.herramienta.gancho_trepa", NULL, "muro" },
-    [ACTION_THROW_LASSO] = { "Lanzar lazo", "Atrapar un animal salvaje para intentar domarlo.",
+    [ACTION_THROW_LASSO] = { "Lanzar lazo", "Atrapar un animal salvaje: una montura queda domada; un depredador debilitado queda atado hasta que le des carne (K).",
                              ACTOR_PLAYER | ACTOR_NPC, 1.0f, "arma.distancia.lazo", NULL, "animal salvaje" },
     [ACTION_LIGHT_TORCH] = { "Encender antorcha", "Luz en la noche; ahuyenta fieras.", ACTOR_PLAYER | ACTOR_NPC,
                              1.5f, "utileria.objeto.antorcha", NULL, NULL },

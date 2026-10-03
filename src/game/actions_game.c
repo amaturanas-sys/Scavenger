@@ -1,5 +1,7 @@
 #include "game/actions_game.h"
 
+#include "game/fauna_game.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -138,19 +140,8 @@ void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain 
     scatter(props, t, &ga->rng, "utileria.material.barro", 3, 20.0f, 40.0f);
     scatter(props, t, &ga->rng, "mapa.vegetacion.hierba_alta", 28, 18.0f, 45.0f);
 
-    // Animales en sus territorios.
-    static const struct {
-        Species sp;
-        float x, z;
-        int n;
-    } HERDS[] = {
-        { SPECIES_HORSE, 55.0f, 25.0f, 5 }, { SPECIES_DEER, -55.0f, 40.0f, 3 }, { SPECIES_WOLF, 35.0f, -65.0f, 2 },
-        { SPECIES_CAMEL, -45.0f, -50.0f, 2 }, { SPECIES_IBEX, 80.0f, -40.0f, 2 },
-    };
-    for (size_t h = 0; h < sizeof(HERDS) / sizeof(HERDS[0]); h++)
-        for (int i = 0; i < HERDS[h].n && ga->animal_count < GA_MAX_ANIMALS; i++)
-            animal_init(&ga->animals[ga->animal_count++], HERDS[h].sp, HERDS[h].x + (float)(i * 3 - 4),
-                        HERDS[h].z + (float)((i % 2) * 4 - 2));
+    // Animales: el ganado del campamento y manadas en los alrededores.
+    fg_init(ga, t);
 }
 
 bool ga_menu_open(const GameActions *ga) { return ga->menu_open; }
@@ -175,7 +166,7 @@ static int animal_ahead(const GameActions *ga, const Player *p, AnimalState stat
     float best_d = range;
     for (int i = 0; i < ga->animal_count; i++) {
         const Animal *a = &ga->animals[i];
-        if (a->state != state || a->ridden) continue;
+        if (!a->used || a->state != state || a->ridden) continue;
         float d = dist2d(p->pos, (Vector3){ a->x, 0, a->z });
         if (d < best_d && (!need_front || in_front(p, a->x, a->z, range))) {
             best_d = d;
@@ -330,11 +321,23 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         break;
     case ACTION_THROW_LASSO: {
         Animal *an = &ga->animals[ga->target];
+        if (!an->used) break;
         const SpeciesDef *sd = species_def(an->species);
-        if (animal_try_tame(an, &ga->rng, 0.0f, 0.0f, 0.0f))
-            snprintf(log, len, "¡Domaste un %s! Ahora sigue a la tribu.", sd->name);
-        else
-            snprintf(log, len, "El %s se zafó del lazo y huye.", sd->name);
+        char who[48];
+        snprintf(who, sizeof(who), "%s", sd->name);
+        if (who[0] >= 'A' && who[0] <= 'Z') who[0] = (char)(who[0] - 'A' + 'a');
+        switch (animal_lasso(an, &ga->rng, ga->mounted >= 0 ? 0.1f : 0.0f, 0.0f, 0.0f)) {
+        case TAME_OK:
+            if (an->state == ANIMAL_BOUND)
+                snprintf(log, len, "¡Atrapaste al %s con el lazo! Dale carne (K) antes de que se suelte.", who);
+            else
+                snprintf(log, len, "¡Domaste: %s! Ahora sigue a la tribu%s.", who, sd->rideable ? " (silla para montarlo)" : "");
+            break;
+        case TAME_TOO_STRONG: snprintf(log, len, "El %s está demasiado entero: debilítalo peleando antes del lazo.", who); break;
+        case TAME_NEVER: snprintf(log, len, "Un animal así no se doma (%s): solo se caza.", who); break;
+        case TAME_ALREADY: snprintf(log, len, "Ya es de la tribu."); break;
+        default: snprintf(log, len, "El %s se zafó del lazo.", who); break;
+        }
         break;
     }
     case ACTION_SADDLE:
@@ -503,7 +506,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             } else {
                 int a = -1;
                 for (int i = 0; i < ga->animal_count; i++)
-                    if (animal_can_ride(&ga->animals[i]) &&
+                    if (animal_can_ride(&ga->animals[i]) && !ga->animals[i].h.down &&
                         dist2d(p->pos, (Vector3){ ga->animals[i].x, 0, ga->animals[i].z }) < SADDLE_RANGE)
                         a = i;
                 if (a >= 0) {
@@ -534,9 +537,6 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             pr->flying = false;
         }
     }
-
-    // Animales.
-    for (int i = 0; i < ga->animal_count; i++) animal_update(&ga->animals[i], dt, p->pos.x, p->pos.z, &ga->rng);
 
     // Obras: cada una elige su cuadrilla (sin repetir gente) y avanza con los que ya llegaron.
     int busy[TROOP_MAX], n_busy = 0;
@@ -718,18 +718,6 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         body_draw(&pose, base, n->yaw, bc, &m->armor);
         if (m->health.down) continue;
         if (m->champion >= 0) DrawSphere((Vector3){ base.x, base.y + 1.85f * s, base.z }, 0.08f, UI_GOLD);
-    }
-
-    // Animales: modelo del inventario o marcador; los domados llevan una cinta turquesa, los ensillados la silla.
-    for (int i = 0; i < ga->animal_count; i++) {
-        const Animal *a = &ga->animals[i];
-        const InvItem *it = inventory_find(ga->inv, species_def(a->species)->model);
-        if (!it) continue;
-        Vector3 pos = ground_at(t, a->x, a->z);
-        // El modelo mira a +X (Kiln); el animal avanza segun yaw (0 = +Z).
-        props_draw_item_anim(props, it, pos, a->yaw - PI / 2.0f, anim_quadruped(a), time + (float)i * 0.37f);
-        if (a->state != ANIMAL_WILD) DrawCube((Vector3){ pos.x, pos.y + it->h + 0.1f, pos.z }, 0.12f, 0.12f, 0.12f, UI_TURQUOISE);
-        if (a->state == ANIMAL_SADDLED) DrawCube((Vector3){ pos.x, pos.y + it->h * 0.75f, pos.z }, 0.5f, 0.15f, 0.6f, (Color){ 120, 70, 40, 255 });
     }
 
     // Lo que el jugador tiene en las manos.
