@@ -1,6 +1,7 @@
 #include "game/actions_game.h"
 
 #include "game/fauna_game.h"
+#include "game/inventory_game.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -143,13 +144,18 @@ void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain 
 
     // Animales: el ganado del campamento y manadas en los alrededores.
     fg_init(ga, t);
+    // Lo que se lleva encima, la carreta y la armeria (src/game/inventory_game.c).
+    ig_init(ga, props, t);
 }
 
 bool ga_menu_open(const GameActions *ga) { return ga->menu_open; }
-bool ga_blocks_input(const GameActions *ga) { return ga->menu_open || ga->climbing; }
+bool ga_blocks_input(const GameActions *ga) { return ga->menu_open || ga->climbing || ga->inv_open || ga->equip_open; }
 
 float ga_speed_scale(const GameActions *ga) {
-    return ga->mounted >= 0 ? species_def(ga->animals[ga->mounted].species)->ride_speed : 1.0f;
+    // Montado, la montura (y el amuleto del caballo); a pie, cuanto pesa lo que llevas.
+    if (ga->mounted >= 0)
+        return species_def(ga->animals[ga->mounted].species)->ride_speed * (1.0f + 0.5f * ig_stat(ga, STAT_RIDING));
+    return ig_speed_scale(ga);
 }
 
 // ---------------------------------------------------------------- objetivos
@@ -483,8 +489,8 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     ga->swap_anim = fmaxf(0.0f, ga->swap_anim - dt);
     const int total = ACTION_COUNT + BUILD_COUNT + CRAFT_COUNT;
 
-    if (IsKeyPressed(KEY_TAB)) ga->menu_open = !ga->menu_open;
-    if (IsKeyPressed(KEY_I)) ga->stock_open = !ga->stock_open;
+    bool other_menu = ga->inv_open || ga->equip_open; // inventario o equipo abiertos
+    if (IsKeyPressed(KEY_TAB) && !other_menu) ga->menu_open = !ga->menu_open;
     if (ga->menu_open) {
         if (IsKeyPressed(KEY_DOWN)) ga->cursor = (ga->cursor + 1) % total;
         if (IsKeyPressed(KEY_UP)) ga->cursor = (ga->cursor + total - 1) % total;
@@ -495,7 +501,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
                 start_build(ga, (BuildId)(ga->cursor - ACTION_COUNT), t, p, log, log_len);
             else start_craft(ga, (CraftId)(ga->cursor - ACTION_COUNT - BUILD_COUNT), props, troop, log, log_len);
         }
-    } else if (ga->doing < 0 && !ga->climbing) {
+    } else if (ga->doing < 0 && !ga->climbing && !other_menu) {
         if (IsKeyPressed(KEY_X) && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) { // cambiar de mano
             snprintf(log, log_len, hands_swap(&ga->hands) ? "Pasas el arma a la otra mano: %s."
                                                          : "No se puede: el escudo va en el brazo izquierdo y las armas a dos manos, en las dos (%s).",
@@ -657,6 +663,9 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
         npc_assign_job(ga, troop, t, ACTION_PLACE_FIRE, (Vector3){ cosf(a) * 12.0f, 0, sinf(a) * 12.0f });
     if (fx.shelters < active)
         npc_assign_job(ga, troop, t, ACTION_PLACE_TENT, (Vector3){ cosf(a + 1.0f) * 16.0f, 0, sinf(a + 1.0f) * 16.0f });
+    // Carisma de los amuletos: la tribu confia mas en quien los lleva.
+    float charisma = ig_stat(ga, STAT_CHARISMA);
+    if (charisma > 0.0f) troop_adjust_morale(troop, charisma * 10.0f);
     snprintf(log, log_len, "Día %d: comieron %d%s, recolectaron %d. Ánimo del campamento %+.0f.", day, up.eaten,
              up.hungry ? TextFormat(" (%d sin ración)", up.hungry) : "", up.gathered, fx.morale_per_day);
 }
@@ -917,21 +926,6 @@ static void draw_menu(const GameActions *ga, const Props *props, const Troop *tr
     }
 }
 
-static void draw_stock(const GameActions *ga, int width) {
-    int rows = 0;
-    for (int i = 0; i < ga->stock.n; i++) rows += ga->stock.e[i].count > 0;
-    const int w = 250, h = 2 * UI_PANEL_INSET + 18 + 11 * rows, x0 = width - w - 6, y0 = 188;
-    ui_panel((Rectangle){ (float)x0, (float)y0, (float)w, (float)h }, UI_METAL_SILVER);
-    int x = x0 + UI_PANEL_INSET + 2, y = y0 + UI_PANEL_INSET + 2;
-    ui_text("Acopio de la tribu (I)", x, y, 10, UI_GOLD_LIGHT);
-    y += 14;
-    for (int i = 0; i < ga->stock.n; i++) {
-        if (ga->stock.e[i].count <= 0) continue;
-        ui_text(TextFormat("%3d  %s", ga->stock.e[i].count, item_name(ga, ga->stock.e[i].id)), x, y, 10, UI_BONE);
-        y += 11;
-    }
-}
-
 void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, int width, int height) {
     if (ga->doing >= 0) {
         const ActionDef *d = action_def((ActionId)ga->doing);
@@ -957,6 +951,5 @@ void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, 
                                (int)(100.0f * ga->craft_timer / ga->craft_total)),
                     x + UI_PANEL_INSET, ty, 10, UI_GOLD);
     }
-    if (ga->stock_open) draw_stock(ga, width);
     if (ga->menu_open) draw_menu(ga, props, troop, width);
 }

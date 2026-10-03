@@ -22,6 +22,7 @@
 #include "game/combat_game.h"
 #include "game/disasters_game.h"
 #include "game/fauna_game.h"
+#include "game/inventory_game.h"
 #include "game/save_game.h"
 #include "game/title_menu.h"
 #include "game/hazards_game.h"
@@ -343,7 +344,8 @@ int main(int argc, char **argv) {
     const char *start_trap = NULL, *start_enemies = NULL;
     bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
     MenuScreen start_menu_screen = MENU_TITLE;
-    int start_save = -1, start_load = -1; // pruebas: guardar al final en ese hueco / cargar al empezar
+    int start_save = -1, start_load = -1;
+    bool start_inv = false, start_equip = false; // pruebas: guardar al final en ese hueco / cargar al empezar
     float start_x = 0.0f, start_z = 0.0f;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) shot_path = argv[++i];
@@ -359,6 +361,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--lago")) start_lake = true;
         else if (!strcmp(argv[i], "--incendio")) start_fire = true;
         else if (!strcmp(argv[i], "--menu")) start_menu = true;
+        else if (!strcmp(argv[i], "--inventario")) start_inv = true;
+        else if (!strcmp(argv[i], "--equipo")) start_equip = true;
         else if (!strcmp(argv[i], "--autoguardar") && i + 1 < argc) start_save = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--cargar") && i + 1 < argc) start_load = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--instructivo")) start_menu = true, start_menu_screen = MENU_HELP;
@@ -471,7 +475,7 @@ int main(int argc, char **argv) {
         if (frame % 30 == 0) has_keyboard = platform_has_keyboard() && !simulate_no_keyboard; // conexion en caliente
         frame++;
         // Esc en la partida: pausa (antes, una foto para la partida guardada).
-        if (in_game && !gallery_mode && !menu_visible(&menu) && IsKeyPressed(KEY_ESCAPE)) {
+        if (in_game && !gallery_mode && !menu_visible(&menu) && !ig_blocks_input(&g_actions) && IsKeyPressed(KEY_ESCAPE)) {
             if (ga_menu_open(&g_actions)) {
                 g_actions.menu_open = false;
             } else {
@@ -514,6 +518,12 @@ int main(int argc, char **argv) {
             }
         }
         if (in_game && IsKeyPressed(KEY_F1)) show_controls = !show_controls;
+        if ((start_inv || start_equip) && frame == 3) { // prueba: menus de inventario y equipo
+            g_actions.inv_open = start_inv;
+            g_actions.inv_cont[1] = 99; // a la derecha, el ultimo a mano (el acopio, en el campamento)
+            g_actions.equip_open = start_equip;
+            start_inv = start_equip = false;
+        }
         if (start_load >= 0 && frame == 2) { // prueba: cargar un hueco al empezar
             if (save_read(start_load, &gs, err, sizeof(err))) snprintf(log, sizeof(log), "Partida cargada (hueco %d).", start_load + 1);
             else snprintf(log, sizeof(log), "%s", err);
@@ -553,19 +563,22 @@ int main(int argc, char **argv) {
                 health_hit(&g_combat.player, &rng, 14.0f, WOUND_BRUISE, PART_FOREARM_R);
                 for (int i = 0; i < 2 && i < troop.count; i++)
                     health_hit(&troop.members[i].health, &rng, i ? 110.0f : 30.0f, WOUND_BITE, PART_ABDOMEN);
-                g_combat.show_panel = true;
+                g_actions.equip_open = true;
                 start_wounds = false;
             }
             if (!gallery_mode)
                 hz_update(&g_hazards, &g_climate, &terrain, &player, &g_actions, &g_props, &troop, camp.fire, world_time,
                           dt, log, sizeof(log));
             if (!gallery_mode)
+                ig_update(&g_actions, &g_combat, &g_props, &player, !menu && !hz_blocks_input(&g_hazards), log, sizeof(log));
+            if (!gallery_mode)
                 cb_update(&g_combat, &player, &g_actions, &troop, &g_props, &terrain, camp.fire,
-                          !menu && !hz_blocks_input(&g_hazards), clock_is_night(world_time), g_climate.temp_mean < 0.0f,
+                          !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), clock_is_night(world_time),
+                          g_climate.temp_mean < 0.0f,
                           rig.yaw, rig.pitch, dt, log, sizeof(log));
             if (!gallery_mode)
                 fg_update(&g_actions, &g_combat, &player, &troop, &terrain, &g_memory, world_time, g_climate.temperature,
-                          !menu && !hz_blocks_input(&g_hazards), dt, log, sizeof(log));
+                          !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             if (!gallery_mode)
                 dz_update(&g_dz, &g_climate, &camp, &g_actions, &g_props, &troop, &g_combat, &player, &terrain, world_time,
                           dt, log, sizeof(log));
@@ -647,6 +660,7 @@ int main(int argc, char **argv) {
             hz_draw_hud(&g_hazards, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 40, VIRTUAL_W, VIRTUAL_H);
             cb_draw_hud(&g_combat, &g_actions, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 63, VIRTUAL_W, VIRTUAL_H);
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
+            ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
             if (show_controls) menu_draw_controls(VIRTUAL_W / 2 - 200, 90, 400, 140);
         }

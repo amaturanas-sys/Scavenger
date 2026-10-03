@@ -25,6 +25,7 @@
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
 #include "../src/sim/melee.h"
+#include "../src/sim/storage.h"
 #include "../src/sim/troop.h"
 
 static int g_failed = 0, g_checks = 0;
@@ -1751,6 +1752,88 @@ static void test_hands_swap_and_dual(void) {
     free(text);
 }
 
+
+// Contenedores: bolsillos, mochila, alforjas; peso, talla y estado de las piezas.
+static char *read_file(const char *path);
+
+static void test_storage_bags(void) {
+    Inventory inv;
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    inventory_parse(&inv, text);
+    Bag pockets, pack, mule, camp;
+    bag_init(&pockets, BAG_POCKETS, 0.0f);
+    bag_init(&pack, BAG_BACKPACK, 0.0f);
+    bag_init(&mule, BAG_MOUNT, mount_capacity_kg(SPECIES_MULE));
+    bag_init(&camp, BAG_CAMP, 0.0f);
+    CHECK(mule.cap_kg > pack.cap_kg && pack.cap_kg > pockets.cap_kg);
+    CHECK(mount_capacity_kg(SPECIES_ELEPHANT) > mount_capacity_kg(SPECIES_HORSE));
+    // En los bolsillos solo lo pequeño.
+    CHECK(bag_add(&pockets, &inv, "utileria.consumible.hierbas", 2, 1.0f) == 2);
+    CHECK(bag_add(&pockets, &inv, "arma.corta.sable", 1, 1.0f) == 0);
+    CHECK(bag_add(&pack, &inv, "arma.corta.sable", 1, 1.0f) == 1);
+    // Lo que no es transportable no entra en ninguno.
+    CHECK(!item_storable(inventory_find(&inv, "estructura.vivienda.yurta_comun")));
+    CHECK(bag_add(&camp, &inv, "estructura.vivienda.yurta_comun", 1, 1.0f) == 0);
+    // Peso: la mochila se llena de troncos (15 kg c/u): cabe uno.
+    CHECK(item_kg(inventory_find(&inv, "utileria.material.troncos")) > item_kg(inventory_find(&inv, "proyectil.flecha.comun")));
+    CHECK(bag_add(&pack, &inv, "utileria.material.troncos", 1, 1.0f) == 0); // un tronco no entra en la mochila
+    int stones = bag_add(&pack, &inv, "utileria.material.piedra", 5, 1.0f);  // 10 kg cada piedra
+    CHECK(stones > 0 && stones < 5 && bag_kg(&pack, &inv) <= pack.cap_kg);
+    bag_take(&pack, "utileria.material.piedra", stones, NULL);
+    CHECK(bag_add(&mule, &inv, "utileria.material.troncos", 9, 1.0f) == 5); // la mula, cinco (80 kg)
+    bag_take(&mule, "utileria.material.troncos", 5, NULL);
+    // Lo apilable se junta; el equipo gastado va aparte y sale primero.
+    int slots = pack.n;
+    CHECK(bag_add(&pack, &inv, "proyectil.flecha.comun", 10, 1.0f) == 10 && bag_add(&pack, &inv, "proyectil.flecha.comun", 5, 1.0f) == 5);
+    CHECK(pack.n == slots + 1 && bag_count(&pack, "proyectil.flecha.comun") == 15);
+    CHECK(bag_add(&mule, &inv, "armadura.casco.fieltro", 1, 1.0f) == 1 && bag_add(&mule, &inv, "armadura.casco.fieltro", 1, 0.4f) == 1);
+    CHECK(mule.n == 2);
+    float cond = 1.0f;
+    CHECK(bag_take(&mule, "armadura.casco.fieltro", 1, &cond) == 1 && cond < 0.5f);
+    // Mover de un contenedor a otro conserva el estado.
+    bag_add(&pack, &inv, "armadura.casco.fieltro", 1, 0.3f);
+    int k = -1;
+    for (int i = 0; i < pack.n; i++)
+        if (!strcmp(pack.s[i].id, "armadura.casco.fieltro")) k = i;
+    CHECK(k >= 0 && bag_move_slot(&pack, k, &mule, &inv, 1) == 1);
+    CHECK(bag_count(&pack, "armadura.casco.fieltro") == 0 && bag_count(&mule, "armadura.casco.fieltro") == 2);
+    bool worn = false;
+    for (int i = 0; i < mule.n; i++) worn |= mule.s[i].condition < 0.35f;
+    CHECK(worn);
+    // Cargado de mas, se anda mas lento.
+    CHECK(bag_speed_scale(10.0f, 20.0f) == 1.0f && bag_speed_scale(40.0f, 20.0f) < 1.0f && bag_speed_scale(400.0f, 20.0f) >= 0.5f);
+    CHECK(armor_slot_for("armadura.grebas.malla") == SLOT_GREAVES && armor_slot_for("arma.corta.sable") < 0);
+    inventory_free(&inv);
+    free(text);
+}
+
+// Amuletos: cada uno con sus efectos; colgados, suman.
+static void test_amulets(void) {
+    Charm c;
+    CHECK(amulet_charm("accesorio.amuleto.lobo", &c) && c.buff_count == 2);
+    CHECK(!amulet_charm("accesorio.amuleto.inexistente", &c) && !amulet_charm("arma.corta.sable", &c));
+    Loadout l;
+    loadout_init(&l);
+    CHECK(loadout_stat(&l, STAT_STEALTH) == 0.0f);
+    amulet_charm("accesorio.amuleto.lobo", &c);
+    CHECK(loadout_equip_amulet(&l, 0, &c));
+    CHECK(loadout_stat(&l, STAT_STEALTH) > 0.25f);
+    amulet_charm("accesorio.amuleto.aguila_ibice", &c);
+    loadout_equip_amulet(&l, 1, &c);
+    CHECK(loadout_stat(&l, STAT_STEALTH) > 0.3f && loadout_stat(&l, STAT_ARCHERY) > 0.3f);
+    char d[96];
+    CHECK(charm_describe(&c, d, sizeof(d)) > 0 && strstr(d, "puntería"));
+    CHECK(loadout_unequip_amulet(&l, 0) && loadout_stat(&l, STAT_STEALTH) < 0.1f);
+    const char *ids[] = { "lobo", "ciervo", "aguila_ibice", "tigre_dragon", "oso", "caballo" };
+    for (int i = 0; i < 6; i++) {
+        char id[64];
+        snprintf(id, sizeof(id), "accesorio.amuleto.%s", ids[i]);
+        CHECK(amulet_charm(id, &c));
+    }
+}
+
 // ---------------------------------------------------------------- inventario de assets
 static void test_inventory_parses_and_maps_paths(void) {
     const char *tsv =
@@ -1994,6 +2077,8 @@ int main(void) {
     RUN(test_weather_hazards_random);
     RUN(test_melee_moves);
     RUN(test_hands_swap_and_dual);
+    RUN(test_storage_bags);
+    RUN(test_amulets);
     RUN(test_inventory_parses_and_maps_paths);
     RUN(test_anim_index_states);
     RUN(test_anim_index_names_exist);

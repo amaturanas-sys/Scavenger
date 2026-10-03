@@ -56,6 +56,8 @@ typedef struct {
 // Equipa una pieza por id del inventario ("armadura.<tipo>.<material>"). false si no es armadura.
 bool armor_equip(Armor *a, const char *inv_id);
 void armor_unequip(Armor *a, ArmorSlot s);
+// Hueco de una pieza por su id ("armadura.casco.*" -> SLOT_HELMET), o -1.
+int armor_slot_for(const char *inv_id);
 // Lo que queda de un impacto en una zona tras la armadura. kind puede cambiar:
 // un corte que la armadura para casi entero llega como golpe. broke: si alguna pieza se rompio.
 float armor_absorb(Armor *a, BodyPart part, WoundKind *kind, bool projectile, float damage, Rng *rng, bool *broke);

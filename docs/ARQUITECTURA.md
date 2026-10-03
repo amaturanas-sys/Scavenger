@@ -32,6 +32,8 @@ src/
     swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
     fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, cambiar de mano
+    storage.*    contenedores: bolsillos, mochila, alforjas, carreta, acopio; peso y estado de las piezas
+    loadout.*    amuletos (y tatuajes) con sus efectos
     anim_index.* que clip de animacion corresponde a cada estado
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
@@ -50,6 +52,7 @@ src/
     disasters_game.* fuego, rayos, lluvia torrencial, fogatas apagadas por la lluvia
     save_game.*     partidas guardadas: tres huecos versionados con minifoto y fecha
     title_menu.*    menu de entrada y de pausa, huecos, instructivo (arte en assets/ui/)
+    inventory_game.* inventario (I) y equipo (P): contenedores a mano, armadura, amuletos
   ui/       Interfaz (raylib)
     theme.*      tema de orfebreria: paneles, barras, texto
     minimap.*    minimapa circular tipo brujula

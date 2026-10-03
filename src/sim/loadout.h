@@ -69,6 +69,13 @@ int loadout_active_buffs(const Loadout *l, const Buff **out, int max);
 
 bool skill_unlocked(const Loadout *l, const SkillNode *node);
 
+// Los amuletos del inventario (accesorio.amuleto.*): sus buffs pasivos.
+// false si el id no es un amuleto conocido.
+bool amulet_charm(const char *inv_id, Charm *out);
+// "sigilo +30 %, agarre +10 %" (UTF-8)
+int charm_describe(const Charm *c, char *out, int len);
+const char *stat_name(Stat s); // UTF-8
+
 // Ayudante para armar charms en codigo y tests.
 Charm charm_make(const char *id);
 bool charm_add_buff(Charm *c, const char *buff_id, BuffKind kind, Stat stat, float value);
