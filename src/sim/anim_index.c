@@ -31,14 +31,26 @@ const char *anim_grip(Grip g, bool sheathed) {
 
 const char *anim_humanoid(const HumanoidState *s) {
     // De mayor a menor prioridad: lo que el cuerpo no puede dejar de hacer primero.
+    if (s->dead) return "morir";
+    if (s->down) return "abatido";
+    if (s->hit) return "recibir_golpe";
     if (s->climbing) return s->climb_top ? "trepar_cima" : "trepar_cuerda";
     if (s->mounted) return s->mount_speed > 6.0f ? "jinete_galope" : s->mount_speed > 0.3f ? "jinete_paso" : "jinete_idle";
     if (!s->grounded) return "caer";
     if (s->doing >= 0) return anim_for_action((ActionId)s->doing);
+    if (s->attacking > 0) {
+        static const char *one[] = { "ataque_una_1", "ataque_una_2", "ataque_una_3" };
+        static const char *two[] = { "ataque_dos_1", "ataque_dos_2", "ataque_dos_3" };
+        int k = (s->attacking - 1) % 3;
+        if (s->spear) return "estocada_lanza";
+        return s->grip == GRIP_TWO_HANDED ? two[k] : one[k];
+    }
+    if (s->blocking) return "bloquear";
     if (s->hidden) return "acechar_idle";
     if (s->moving) {
         if (s->carrying) return "llevar";
         if (s->sneaking) return "acechar";
+        if (s->limping) return "cojear";
         return s->running ? "correr" : "caminar";
     }
     if (s->forging) return "forjar";
@@ -46,6 +58,16 @@ const char *anim_humanoid(const HumanoidState *s) {
     if (s->carrying) return "llevar";
     if (s->sneaking) return "acechar_idle";
     return anim_grip(s->grip, s->sheathed);
+}
+
+const char *anim_quadruped_fight(float speed, bool attacking, bool hit, bool dead) {
+    if (dead) return "morir";
+    if (hit) return "recibir_golpe";
+    if (attacking) return "atacar";
+    if (speed > 4.5f) return "galopar";
+    if (speed > 2.0f) return "trotar";
+    if (speed > 0.2f) return "caminar";
+    return ANIM_IDLE;
 }
 
 const char *anim_quadruped(const Animal *a) {

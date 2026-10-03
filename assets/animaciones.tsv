@@ -58,6 +58,9 @@ humanoide	disparar_mosquete	Disparar el mosquete.	no	*	opcional	combate a distan
 humanoide	recargar_mosquete	Recargar el mosquete.	no	*	opcional	combate a distancia
 humanoide	recibir_golpe	Reacción al golpe.	no	*	obligatoria	combate
 humanoide	morir	Caer muerto.	no	*	obligatoria	combate
+humanoide	abatido	En el suelo, herido sin poder levantarse (respira, se queja).	si	*	obligatoria	salud
+humanoide	cojear	Caminar cojeando por una herida en la pierna.	si	*	obligatoria	salud
+humanoide	vendar	Vendar una herida (propia o ajena).	no	*	opcional	salud
 humanoide	hablar	Gesticular al hablar.	si	*	obligatoria	diálogos
 humanoide	celebrar	Celebrar (botín, victoria).	no	*	opcional	repartir botín
 humanoide	protestar	Protestar (moral baja, rebelión).	si	*	opcional	rebelión

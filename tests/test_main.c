@@ -11,6 +11,8 @@
 #include "../src/sim/champion.h"
 #include "../src/sim/climate.h"
 #include "../src/sim/hazards.h"
+#include "../src/sim/health.h"
+#include "../src/sim/combat.h"
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
 #include "../src/sim/loadout.h"
@@ -469,6 +471,127 @@ static void test_hazards_qte(void) {
     CHECK(q.mistakes == 2 && q.state == QTE_RUNNING);
     qte_press(&q, (q.keys[0] + 1) % QTE_KEYS);
     CHECK(q.state == QTE_LOST && !qte_press(&q, q.keys[q.pos]));
+}
+
+static void test_health_wounds_bleeding_healing(void) {
+    Rng rng;
+    rng_seed(&rng, 42u);
+    Health h;
+    health_init(&h, 100.0f);
+    CHECK(!strcmp(health_state_name(&h), "sano") && health_speed_scale(&h) == 1.0f);
+    // Un corte serio en la pierna: sangra, frena y resta vida.
+    int w = health_hit(&h, &rng, 30.0f, WOUND_CUT, PART_LEG_L);
+    CHECK(w >= 0 && h.wounds[w].bleeding && h.hp == 70.0f && health_bleeding(&h));
+    CHECK(health_speed_scale(&h) < 1.0f && health_attack_scale(&h) == 1.0f);
+    char desc[96];
+    wound_describe(&h.wounds[w], desc, sizeof(desc));
+    CHECK(strstr(desc, "Corte en la pierna izquierda") && strstr(desc, "sangra"));
+    // Sin vendar, la sangre se va.
+    float blood0 = h.blood;
+    for (int i = 0; i < 60; i++) health_update(&h, &rng, 1.0f, false, 0.0f);
+    CHECK(h.blood < blood0);
+    // Vendar detiene el sangrado; en reposo la sangre y la vida vuelven y la herida cierra.
+    CHECK(health_treat(&h) == 1 && !health_bleeding(&h) && h.wounds[w].treated);
+    float blood1 = h.blood;
+    for (int i = 0; i < 1200 && h.wound_count; i++) health_update(&h, &rng, 1.0f, true, 0.5f);
+    CHECK(h.wound_count == 0 && h.blood > blood1 && h.hp > 70.0f);
+
+    // Un golpe fuerte en un brazo lo rompe; la fractura no sana sin entablillar.
+    Health f;
+    health_init(&f, 100.0f);
+    int fr = health_hit(&f, &rng, 40.0f, WOUND_BRUISE, PART_ARM_R);
+    CHECK(f.wounds[fr].kind == WOUND_FRACTURE && health_attack_scale(&f) < 0.7f);
+    float sev = f.wounds[fr].severity;
+    for (int i = 0; i < 600; i++) health_update(&f, &rng, 1.0f, true, 0.0f);
+    CHECK(f.wound_count == 1 && f.wounds[0].severity == sev);
+    health_daily(&f, 0.0f);
+    CHECK(f.wounds[0].severity == sev); // ni con un dia de descanso
+    health_daily(&f, 0.5f);              // el curandero la entablilla
+    CHECK(f.wounds[0].treated && f.wounds[0].severity < sev);
+
+    // La misma herida sin tratar empeora en vez de duplicarse.
+    Health g;
+    health_init(&g, 100.0f);
+    health_hit(&g, &rng, 10.0f, WOUND_BITE, PART_TORSO);
+    health_hit(&g, &rng, 10.0f, WOUND_BITE, PART_TORSO);
+    CHECK(g.wound_count == 1 && g.wounds[0].severity > 0.18f);
+
+    // Abatido al quedarse sin vida; muerto si se desangra.
+    Health d;
+    health_init(&d, 50.0f);
+    health_hit(&d, &rng, 55.0f, WOUND_CUT, PART_TORSO);
+    CHECK(d.down && !d.dead && health_speed_scale(&d) == 0.0f && !strcmp(health_state_name(&d), "abatido"));
+    for (int i = 0; i < 2000 && !d.dead; i++) health_update(&d, &rng, 1.0f, false, 0.0f);
+    CHECK(d.dead && !strcmp(health_state_name(&d), "muerto"));
+    // Revivir a un abatido que no murio.
+    Health r;
+    health_init(&r, 100.0f);
+    health_hit(&r, &rng, 101.0f, WOUND_BRUISE, PART_TORSO);
+    CHECK(r.down && !r.dead);
+    health_revive(&r);
+    CHECK(!r.down && r.hp > 25.0f);
+    // Las partes al azar caen sobre todo en el torso.
+    int torso = 0;
+    for (int i = 0; i < 400; i++) {
+        Health x;
+        health_init(&x, 100.0f);
+        int k = health_hit(&x, &rng, 5.0f, WOUND_BRUISE, PART_RANDOM);
+        torso += x.wounds[k].part == PART_TORSO;
+    }
+    CHECK(torso > 120 && torso < 200);
+}
+
+static void test_troop_health_daily(void) {
+    Kingdom k;
+    kingdom_init_iron_khanate(&k);
+    Troop t;
+    troop_init(&t, &k);
+    int a = troop_recruit(&t, "Herido", 0);
+    int healer = troop_recruit(&t, "Curandera", 0);
+    Rng rng;
+    rng_seed(&rng, 9u);
+    CHECK(troop_healer_skill(&t) == 0.0f);
+    troop_assign_role(&t, healer, ROLE_HEALER);
+    CHECK(troop_healer_skill(&t) == 0.5f);
+    Member *m = troop_find(&t, a);
+    CHECK(m->health.hp_max == 100.0f && !m->health.down);
+    health_hit(&m->health, &rng, 35.0f, WOUND_CUT, PART_ARM_L);
+    CHECK(health_bleeding(&m->health));
+    troop_process_day(&t, &rng);
+    m = troop_find(&t, a);
+    CHECK(!health_bleeding(&m->health) && m->health.hp > 65.0f); // el curandero lo vendo
+    // Un gran guerrero aguanta mas.
+    Champion c;
+    champion_generate(&c, &rng);
+    int ch = troop_add_champion(&t, &c, STATUS_ACTIVE);
+    CHECK(fabsf(troop_find(&t, ch)->health.hp_max - 100.0f * c.stats.size * c.stats.endurance) < 0.01f);
+}
+
+static void test_combat_weapons_and_enemies(void) {
+    WeaponStats fist = weapon_stats(""), sable = weapon_stats("arma.corta.sable");
+    WeaponStats steel = weapon_stats("arma.corta.sable_acero"), spear = weapon_stats("arma.larga.lanza");
+    WeaponStats bow = weapon_stats("arma.distancia.arco_compuesto"), mace = weapon_stats("arma.corta.maza");
+    CHECK(fist.wound == WOUND_BRUISE && fist.damage < sable.damage && steel.damage > sable.damage);
+    CHECK(spear.spear && spear.reach > sable.reach && mace.wound == WOUND_BRUISE && bow.damage == fist.damage);
+    CHECK(weapon_stats("utileria.objeto.antorcha").damage == fist.damage);
+    // Enemigos: todos con modelo del inventario; los fanaticos no huyen; el lobo muerde y corre mas.
+    for (int k = 0; k < ENEMY_COUNT; k++) {
+        const EnemyDef *d = enemy_def((EnemyKind)k);
+        CHECK(d->hp > 0 && d->damage > 0 && d->model && d->model[0]);
+    }
+    CHECK(enemy_def(ENEMY_FANATIC)->flee_at == 0.0f && enemy_def(ENEMY_WOLF)->beast);
+    CHECK(enemy_def(ENEMY_WOLF)->wound == WOUND_BITE && enemy_def(ENEMY_WOLF)->speed > enemy_def(ENEMY_BANDIT)->speed);
+    // Escudo: solo de frente.
+    CHECK(combat_block_chance(true, 0.9f) > 0.5f && combat_block_chance(true, -0.5f) == 0.0f);
+    CHECK(combat_block_chance(false, 1.0f) == 0.0f);
+    Rng rng;
+    rng_seed(&rng, 5u);
+    for (int i = 0; i < 50; i++) {
+        float d = combat_damage(20.0f, 1.0f, 1.0f, false, &rng);
+        CHECK(d >= 16.0f && d <= 24.0f);
+        CHECK(combat_damage(20.0f, 1.0f, 1.0f, true, &rng) <= 24.0f * 0.15f);
+        CHECK(combat_damage(20.0f, 1.0f, 0.5f, false, &rng) <= 12.0f); // brazo herido: golpea menos
+    }
 }
 
 static void test_memmap_markers_toggle(void) {
@@ -1007,6 +1130,10 @@ static void test_anim_index_names_exist(void) {
         s.building = (bits % 7 == 0) ? BUILD_OVEN : -1;
         s.grip = (Grip)(bits % 6);
         CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
+        // Combate y salud.
+        s.limping = bits & 1, s.blocking = bits & 2, s.attacking = bits % 4, s.spear = bits & 4;
+        s.hit = bits % 11 == 0, s.down = bits % 13 == 0, s.dead = bits % 17 == 0;
+        CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
     }
     for (int sp = 0; sp < SPECIES_COUNT; sp++) {
         Animal a;
@@ -1016,6 +1143,7 @@ static void test_anim_index_names_exist(void) {
             a.fleeing = k == 11;
             a.ridden = k >= 9 && k < 11;
             CHECK(clip_indexed(text, "cuadrupedo", anim_quadruped(&a)));
+            CHECK(clip_indexed(text, "cuadrupedo", anim_quadruped_fight((float)k, k == 3, k == 5, k == 7)));
         }
     }
     free(text);
@@ -1067,6 +1195,9 @@ int main(void) {
     RUN(test_hazards_cold_mud_ice);
     RUN(test_hazards_sinkholes_and_desert);
     RUN(test_hazards_qte);
+    RUN(test_health_wounds_bleeding_healing);
+    RUN(test_troop_health_daily);
+    RUN(test_combat_weapons_and_enemies);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

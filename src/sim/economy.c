@@ -56,6 +56,7 @@ void stock_seed_camp(Stockpile *s) {
     static const Ingredient START[] = {
         { FOOD_ID, 12 },
         { "utileria.objeto.lena", 10 },
+        { "utileria.consumible.hierbas", 4 }, // para vendar heridas
         { "utileria.material.troncos", 16 },
         { "utileria.material.piedra", 10 },
         { "utileria.material.barro", 8 },

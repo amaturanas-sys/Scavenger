@@ -1,5 +1,6 @@
 #include "troop.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -78,6 +79,7 @@ static int add_member(Troop *t, const char *name, unsigned traits, MemberStatus 
     m->morale = 60.0f;
     m->loyalty = status == STATUS_PRISONER ? 10.0f : 50.0f;
     m->champion = -1;
+    health_init(&m->health, 100.0f);
     return m->id;
 }
 
@@ -98,7 +100,10 @@ int troop_add_champion(Troop *t, const Champion *c, MemberStatus status) {
     int id = add_member(t, c->name, c->traits, status);
     if (id < 0) return -1;
     t->champions[t->champion_count] = *c; // hay tantos huecos como integrantes
-    troop_find(t, id)->champion = t->champion_count++;
+    Member *m = troop_find(t, id);
+    m->champion = t->champion_count++;
+    // Los grandes guerreros aguantan mas: vida segun su talla y su aguante.
+    health_init(&m->health, 100.0f * c->stats.size * c->stats.endurance);
     apply_action(t, status == STATUS_ACTIVE ? ACT_RECRUIT : ACT_TAKE_PRISONER);
     return id;
 }
@@ -212,6 +217,17 @@ float troop_rebellion_chance(const Troop *t) {
     return clampf(p * t->rebellion_scale, 0.0f, REBEL_MAX);
 }
 
+float troop_healer_skill(const Troop *t) {
+    float best = 0.0f;
+    for (int i = 0; i < t->count; i++) {
+        const Member *m = &t->members[i];
+        if (m->status != STATUS_ACTIVE || m->health.down) continue;
+        if (m->role == ROLE_HEALER) best = fmaxf(best, 0.5f);
+        if (m->champion >= 0) best = fmaxf(best, t->champions[m->champion].stats.healing);
+    }
+    return fminf(best, 1.0f);
+}
+
 DayReport troop_process_day(Troop *t, Rng *rng) {
     DayReport r = { .deserted = 0, .champions_deserted = 0, .rebellion = false, .rebellion_leader = -1 };
     // La rebelion se evalua con el animo de la manana, antes de las deserciones.
@@ -243,6 +259,12 @@ DayReport troop_process_day(Troop *t, Rng *rng) {
                           (m->champion >= 0 ? CHAMPION_REBEL_LEAD : 0.0f);
             if (score < worst) { worst = score; r.rebellion_leader = m->id; }
         }
+    }
+    // Un dia de descanso: las heridas sanan (con curandero, se tratan y sanan mas).
+    float healer = troop_healer_skill(t);
+    for (int i = 0; i < t->count; i++) {
+        Member *m = &t->members[i];
+        if (m->status == STATUS_ACTIVE || m->status == STATUS_PRISONER) health_daily(&m->health, healer);
     }
     return r;
 }

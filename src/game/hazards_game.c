@@ -136,9 +136,16 @@ static void climb_out(Hazards *hz, Player *p, const Terrain *t, float away) {
     p->grounded = true;
 }
 
+static void hurt(Hazards *hz, float dmg, WoundKind kind, int part) {
+    if (hz->body) health_hit(hz->body, &hz->rng, dmg, kind, part);
+}
+
 static void resolve_self(Hazards *hz, bool won, Player *p, GameActions *ga, const Terrain *t, int day, char *log,
                          size_t len) {
     char lost[48];
+    // Las caidas dejan marcas: golpes contra el hielo, una pierna torcida en el socavon.
+    if (hz->trap == TRAP_ICE && !won) hurt(hz, 12.0f, WOUND_BRUISE, PART_RANDOM);
+    if (hz->trap == TRAP_SNOW) hurt(hz, won ? 6.0f : 34.0f, WOUND_BRUISE, rng_range(&hz->rng, 2) ? PART_LEG_L : PART_LEG_R);
     switch (hz->trap) {
     case TRAP_ICE:
         hz->warmth.wet = 1.0f;
@@ -264,6 +271,7 @@ static void update_escort(Hazards *hz, GameActions *ga, Troop *troop, const Terr
             continue;
         }
         int slot = k++;
+        if (troop->members[i].health.down || n->fighting) continue; // abatido o peleando: no sigue al jugador
         if (n->member_id == hz->victim) { // atrapado: no se mueve, hundido
             float ground = terrain_height(t, n->pos.x, n->pos.z);
             n->pos.y = (hz->victim_trap == TRAP_ICE ? t->look.water_level : ground) - 1.0f;
@@ -442,8 +450,13 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
     warmth_update(&hz->warmth, hz->feels, c->rain, hz->fire > 5.0f, dt);
     if (hz->trap == TRAP_ICE) hz->warmth.heat = fmaxf(0.0f, hz->warmth.heat - 1.5f * dt); // el agua helada quema
 
-    // Hipotermia: tras unos segundos, desmayo; la tribu lo lleva al fuego.
+    // Hipotermia: congela manos y pies; tras unos segundos, desmayo y la tribu lo lleva al fuego.
     if (warmth_level(&hz->warmth) == COLD_HYPOTHERMIA && hz->trap == TRAP_NONE) {
+        hz->frost_timer += dt;
+        if (hz->frost_timer > 10.0f) {
+            hz->frost_timer = 0.0f;
+            hurt(hz, 5.0f, WOUND_FROSTBITE, PART_ARM_L + rng_range(&hz->rng, 4));
+        }
         hz->faint_timer += dt;
         if (hz->faint_timer > FAINT_SECONDS) {
             dismount(ga);
