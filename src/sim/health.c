@@ -229,7 +229,7 @@ int health_worst(const Health *h) {
 }
 
 const char *wound_name(WoundKind k) {
-    static const char *names[WOUND_COUNT] = { "Corte", "Golpe", "Fractura", "Mordida", "Congelación" };
+    static const char *names[WOUND_COUNT] = { "Corte", "Golpe", "Fractura", "Mordida", "Congelación", "Quemadura" };
     return (unsigned)k < WOUND_COUNT ? names[k] : "?";
 }
 

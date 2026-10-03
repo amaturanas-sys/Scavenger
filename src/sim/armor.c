@@ -80,6 +80,7 @@ static float piece_prot(const ArmorPiece *pc, WoundKind kind, bool projectile) {
 float armor_absorb(Armor *a, BodyPart part, WoundKind *kind, bool projectile, float damage, Rng *rng, bool *broke) {
     if (broke) *broke = false;
     if (kind && *kind == WOUND_FROSTBITE) return damage; // el frio no se para con placas
+    if (kind && *kind == WOUND_BURN) return damage * 0.85f; // el fuego pasa casi todo
     // La pieza que mejor cubre esa zona (si el impacto le da: cobertura).
     ArmorPiece *best = NULL;
     float best_prot = 0.0f;

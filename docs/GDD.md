@@ -92,6 +92,25 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 
 **Pendiente:** ropa y abrigo como equipo, que los NPCs del campamento también sufran el frío individualmente, animales que caen al hielo.
 
+### Fuego, rayos y lluvia torrencial (implementado — `src/sim/fire.*`, `src/game/disasters_game.*`)
+- **Fuego:**
+  - Arde en focos que queman pasto (unos 10 s), árboles (40 s) o estructuras (55 s).
+  - Un foco caliente prende puntos vecinos con combustible: más lejos y más fácil a favor del viento, y con calor y suelo seco. El pasto mojado o nevado casi no arde; el suelo pisado del campamento, el agua y el desierto pelado, nada.
+  - Lo quemado deja **tierra calcinada** que no vuelve a arder en 3 días. Los árboles quedan chamuscados o calcinados; las estructuras, reducidas a cenizas.
+  - Pisar el fuego quema (heridas de **quemadura**, que no sangran y casi no para la armadura). Los animales también se queman.
+- **Incendios forestales:** solo en verano, con calor, el pasto seco y sin lluvia; empiezan a 60–140 m del jugador. Si llegan al campamento, avisa.
+- **Rayos:** en las tormentas cae uno cada unos 20 s, hasta 120 m del jugador. Lo alto los atrae: un árbol o una estructura a menos de 25 m de donde iba a caer. El árbol queda chamuscado; la estructura se daña (puede arder hasta los cimientos) y quizá prende. Hiere a quien esté a menos de 4 m.
+- **Mantenimiento y lluvia torrencial:**
+  - Las estructuras se desgastan cada día (más si llovió).
+  - La tribu repara cada día las peores con troncos del acopio: cada constructor, dos; el resto entre todos, una.
+  - Con lluvia torrencial (tormenta), las descuidadas (condición < 35 %) pueden **derrumbarse** y quedan escombros. El registro avisa cuántas están en riesgo.
+- **La lluvia apaga todo fuego:** incendios, la antorcha, las fogatas y los hornos (dejan de dar luz y calor hasta que escampa y la tribu los vuelve a encender), y las flechas encendidas, en la mano o en vuelo.
+- **Flechas encendidas** (`L` junto a un fuego, con flechas o virotes):
+  - La flecha arde 25 s.
+  - Al alcanzar a alguien suma una quemadura.
+  - Donde cae prende el pasto, los árboles o las estructuras.
+- **Prueba:** `--incendio` prende el pasto 12 m delante (en verano y seco se propaga).
+
 ### Salud, heridas y combate (implementado — `src/sim/health.*`, `src/sim/combat.*`, `src/game/combat_game.*`)
 - **Para todos:** el jugador, cada integrante de la tribu y cada enemigo (personas y fieras) tienen **vida, sangre y heridas**.
 - **Heridas:** corte, golpe, fractura, mordida y congelación, en una parte del cuerpo (cabeza, torso, brazos, piernas; el torso recibe más) y con gravedad leve, moderada o grave. La misma herida sin tratar empeora en vez de duplicarse; un golpe fuerte en un brazo o una pierna lo rompe.

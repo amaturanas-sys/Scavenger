@@ -23,6 +23,7 @@
 #include "../src/sim/noise.h"
 #include "../src/sim/rng.h"
 #include "../src/sim/swarms.h"
+#include "../src/sim/fire.h"
 #include "../src/sim/troop.h"
 
 static int g_failed = 0, g_checks = 0;
@@ -1553,6 +1554,94 @@ static void test_swarms(void) {
     CHECK(swarm_catch(&f, f.b[0].x, f.b[0].y, f.b[0].z, 0.5f, 1) == 1 && swarm_alive(&f) == alive - 1);
 }
 
+
+// Fuego de prueba: pasto en todas partes salvo donde x > 50 (un rio); un arbol en (0, 10).
+static FuelKind test_fuel(void *ud, float x, float z, int *ref) {
+    (void)ud;
+    *ref = -1;
+    if (x > 50.0f) return FUEL_NONE;
+    if (fabsf(x) < 1.5f && fabsf(z - 10.0f) < 1.5f) return *ref = 0, FUEL_TREE;
+    return FUEL_GRASS;
+}
+
+static void test_fire_spread_and_rain(void) {
+    FireField f;
+    fire_init(&f, 4);
+    FireEnv dry = { test_fuel, NULL, 1.0f, 0.0f, 6.0f, 0.0f }; // seco, viento hacia +x
+    CHECK(fire_ignite(&f, 0.0f, 0.0f, FUEL_GRASS, -1));
+    CHECK(!fire_ignite(&f, 0.5f, 0.0f, FUEL_GRASS, -1)); // ya arde ahi
+    FireEvent ev[64];
+    bool burned_out = false;
+    for (int i = 0; i < 300; i++) { // 30 s
+        int n = fire_update(&f, &dry, 0.1f, ev, 64);
+        for (int k = 0; k < n; k++) burned_out |= ev[k].kind == FIRE_EV_BURNED_OUT;
+    }
+    CHECK(fire_count(&f) > 5 && burned_out); // se propago y lo primero ya se consumio
+    // A favor del viento llega mas lejos.
+    float max_x = -1e9f, min_x = 1e9f;
+    for (int i = 0; i < FIRE_MAX; i++)
+        if (f.cells[i].used) max_x = fmaxf(max_x, f.cells[i].x), min_x = fminf(min_x, f.cells[i].x);
+    CHECK(max_x > -min_x);
+    CHECK(fire_scorched(&f, 0.0f, 0.0f) && !fire_ignite(&f, 0.0f, 0.0f, FUEL_GRASS, -1)); // lo calcinado no vuelve a arder
+    CHECK(fire_heat_at(&f, max_x, 0.0f, 3.0f) > 0.0f);
+    // La lluvia lo apaga todo.
+    FireEnv rain = dry;
+    rain.rain = 0.5f;
+    bool out = false;
+    for (int i = 0; i < 200; i++) {
+        int n = fire_update(&f, &rain, 0.1f, ev, 64);
+        for (int k = 0; k < n; k++) out |= ev[k].kind == FIRE_EV_EXTINGUISHED;
+    }
+    CHECK(fire_count(&f) == 0 && out);
+    // Mojado o verde no se propaga.
+    FireField g;
+    fire_init(&g, 5);
+    FireEnv wet = { test_fuel, NULL, fire_dryness(0.9f, 0.8f, 0.0f, 15.0f), 0.0f, 0.0f, 0.0f };
+    fire_ignite(&g, -20.0f, -20.0f, FUEL_GRASS, -1);
+    for (int i = 0; i < 300; i++) fire_update(&g, &wet, 0.1f, NULL, 0);
+    CHECK(fire_count(&g) <= 1);
+    CHECK(fire_dryness(0.1f, 0.0f, 0.0f, 30.0f) > 0.8f && fire_dryness(0.1f, 0.0f, 1.0f, 30.0f) == 0.0f);
+    // Un arbol tarda mas en consumirse que el pasto; un rayo lo prende ya caliente.
+    FireField h;
+    fire_init(&h, 6);
+    CHECK(fire_ignite_hot(&h, 0.0f, 10.0f, FUEL_TREE, 0, 1.0f) && fire_burning(&h, FUEL_TREE, 0));
+    CHECK(!fire_ignite(&h, 0.0f, 10.0f, FUEL_TREE, 0));
+}
+
+static void test_weather_hazards_random(void) {
+    Rng r;
+    rng_seed(&r, 12);
+    // Incendios solo en verano, con pasto seco y sin lluvia.
+    int summer = 0, winter = 0, wet = 0;
+    for (int i = 0; i < 20000; i++) {
+        summer += fire_wildfire_roll(true, 1.0f, 0.0f, 1.0f, &r);
+        winter += fire_wildfire_roll(false, 1.0f, 0.0f, 1.0f, &r);
+        wet += fire_wildfire_roll(true, 1.0f, 0.5f, 1.0f, &r);
+    }
+    CHECK(summer > 5 && winter == 0 && wet == 0);
+    // Rayos solo en tormenta.
+    int storm = 0, calm = 0;
+    for (int i = 0; i < 1000; i++) storm += fire_lightning_roll(1.0f, 1.0f, &r), calm += fire_lightning_roll(0.0f, 1.0f, &r);
+    CHECK(storm > 20 && calm == 0);
+    CHECK(fire_lightning_ignite_chance(1.0f, 0.0f) > fire_lightning_ignite_chance(0.0f, 1.0f));
+    // Derrumbes: solo con lluvia torrencial y estructuras descuidadas.
+    CHECK(structure_collapse_chance(0.1f, 1.0f, 1.0f) > 0.0f);
+    CHECK(structure_collapse_chance(0.9f, 1.0f, 1.0f) == 0.0f && structure_collapse_chance(0.1f, 0.5f, 1.0f) == 0.0f);
+    CHECK(structure_collapse_chance(0.0f, 1.0f, 1.0f) > structure_collapse_chance(0.3f, 1.0f, 1.0f));
+    CHECK(structure_daily_wear(true) > structure_daily_wear(false));
+    // Quemaduras: no sangran y la armadura de metal casi no las para.
+    Health hh;
+    health_init(&hh, 100.0f);
+    int w = health_hit(&hh, &r, 30.0f, WOUND_BURN, PART_THORAX);
+    CHECK(w >= 0 && hh.wounds[w].kind == WOUND_BURN && !hh.wounds[w].bleeding && !strcmp(wound_name(WOUND_BURN), "Quemadura"));
+    Armor a;
+    memset(&a, 0, sizeof(a));
+    CHECK(armor_equip(&a, "armadura.torso.escamas_hierro"));
+    WoundKind k = WOUND_BURN;
+    bool broke;
+    CHECK(armor_absorb(&a, PART_THORAX, &k, false, 20.0f, &r, &broke) > 15.0f);
+}
+
 // ---------------------------------------------------------------- inventario de assets
 static void test_inventory_parses_and_maps_paths(void) {
     const char *tsv =
@@ -1789,6 +1878,8 @@ int main(void) {
     RUN(test_health_venom);
     RUN(test_animals_water_and_venom);
     RUN(test_swarms);
+    RUN(test_fire_spread_and_rain);
+    RUN(test_weather_hazards_random);
     RUN(test_inventory_parses_and_maps_paths);
     RUN(test_anim_index_states);
     RUN(test_anim_index_names_exist);

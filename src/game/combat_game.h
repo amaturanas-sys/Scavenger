@@ -5,6 +5,8 @@
 //  - golpear (V o clic izquierdo) con el arma empunada; cubrirse (Z);
 //  - armas a distancia: mantener V (o clic) para tensar y soltar para disparar;
 //    la camara alza o baja la mira y se ve la curva que hara el proyectil;
+//    L junto a un fuego enciende la flecha: quema al que alcanza y prende el pasto,
+//    los arboles y las estructuras donde cae (la lluvia la apaga);
 //  - armadura por piezas en todos los humanos (src/sim/armor.h);
 //  - cuerpo humano articulado por zonas (src/sim/body.h): los proyectiles
 //    impactan en la zona que tocan;
@@ -52,6 +54,7 @@ typedef struct {
     float life; // segundos en vuelo o clavado
     bool stuck; // clavado en el suelo
     V3 dir;     // direccion al clavarse (para dibujarlo)
+    bool burning; // flecha encendida: quema y prende lo que toca
 } Shot;
 
 typedef struct {
@@ -71,6 +74,8 @@ typedef struct {
     Shot shots[CB_MAX_SHOTS];
     bool aiming;
     float draw, reload, aim_pitch;
+    bool arrow_lit;       // la proxima flecha sale encendida (L junto a un fuego)
+    float arrow_lit_timer;
 } Combat;
 
 void cb_init(Combat *cb, unsigned seed);

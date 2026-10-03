@@ -43,6 +43,7 @@ add_library(estepa_sim STATIC
   src/sim/economy.c
   src/sim/animals.c
   src/sim/swarms.c
+  src/sim/fire.c
   src/sim/anim_index.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
@@ -81,6 +82,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/hazards_game.c
     src/game/combat_game.c
     src/game/fauna_game.c
+    src/game/disasters_game.c
     src/world/props.c
     src/ui/theme.c
     src/ui/minimap.c

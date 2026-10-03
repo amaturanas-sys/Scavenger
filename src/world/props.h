@@ -16,6 +16,7 @@ typedef struct {
     float yaw;
     bool flying;  // lanzado, en el aire
     Vector3 vel;
+    float condition; // estructuras: mantenimiento [0, 1] (src/game/disasters_game.c)
 } Prop;
 
 typedef struct {

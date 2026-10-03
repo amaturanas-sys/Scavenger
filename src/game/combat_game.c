@@ -25,6 +25,8 @@
 #define SHOT_LIFE 8.0f        // segundos de vuelo como maximo
 #define STUCK_SECONDS 20.0f   // una flecha clavada se ve un rato
 #define EYE_HEIGHT 1.45f      // de donde sale el disparo
+#define ARROW_LIT_SECONDS 25.0f // lo que dura encendida una flecha antes de dispararla
+#define FIRE_ARROW_BURN 7.0f  // daño de quemadura extra de una flecha encendida
 
 static float dist2(Vector3 a, Vector3 b) { return Vector2Distance((Vector2){ a.x, a.z }, (Vector2){ b.x, b.z }); }
 static V3 to_v3(Vector3 v) { return (V3){ v.x, v.y, v.z }; }
@@ -288,7 +290,7 @@ static Shot *new_shot(Combat *cb) {
     return NULL;
 }
 
-static void fire(Combat *cb, const RangedDef *rd, Vector3 from, float yaw, float pitch, float charge, int owner) {
+static void fire(Combat *cb, const RangedDef *rd, Vector3 from, float yaw, float pitch, float charge, int owner, bool burning) {
     Shot *s = new_shot(cb);
     if (!s) return;
     float spread = rd->spread * (1.5f - 0.5f * charge); // poco tenso, menos preciso
@@ -297,6 +299,24 @@ static void fire(Combat *cb, const RangedDef *rd, Vector3 from, float yaw, float
     memset(s, 0, sizeof(*s));
     projectile_launch(&s->p, rd->projectile, to_v3(from), yaw, pitch, ranged_muzzle_speed(rd, charge));
     s->owner = owner;
+    s->burning = burning;
+}
+
+// L: encender la flecha en un fuego cercano.
+static void light_arrow(Combat *cb, const GameActions *ga, const RangedDef *rd, char *log, size_t len) {
+    if (rd->projectile != PROJ_ARROW && rd->projectile != PROJ_BOLT) {
+        snprintf(log, len, "Solo las flechas y los virotes se encienden.");
+    } else if (cb->arrow_lit) {
+        snprintf(log, len, "La flecha ya arde: ¡dispara!");
+    } else if (ga->raining) {
+        snprintf(log, len, "Con esta lluvia la flecha no prende.");
+    } else if (!ga->fire_near) {
+        snprintf(log, len, "Acércate a un fuego (fogata, hoguera o algo que arda) para encender la flecha.");
+    } else {
+        cb->arrow_lit = true;
+        cb->arrow_lit_timer = ARROW_LIT_SECONDS;
+        snprintf(log, len, "Flecha encendida: dispara antes de que se apague.");
+    }
 }
 
 static Vector3 aim_origin(Vector3 pos, float yaw) {
@@ -354,8 +374,10 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
         s->life += dt;
         if (s->stuck) {
             if (s->life > STUCK_SECONDS) s->p.alive = false;
+            if (s->life > 6.0f) s->burning = false; // se consume
             continue;
         }
+        if (s->burning && ga->raining && rng_float(&cb->rng) < dt * 3.0f) s->burning = false; // la lluvia la apaga
         V3 a = s->p.pos;
         projectile_step(&s->p, dt);
         V3 d = { s->p.pos.x - a.x, s->p.pos.y - a.y, s->p.pos.z - a.z };
@@ -402,6 +424,12 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             // Retrocede hasta el punto del impacto para el daño (la energia de ese instante).
             s->p.alive = false;
             const ProjectileDef *pd = projectile_def(s->p.kind);
+            if (s->burning) { // la flecha encendida tambien quema
+                if (kind == 0) health_hit(&cb->player, &cb->rng, FIRE_ARROW_BURN, WOUND_BURN, part);
+                else if (kind == 1) health_hit(&troop->members[idx].health, &cb->rng, FIRE_ARROW_BURN, WOUND_BURN, part);
+                else if (kind == 2) health_hit(&cb->enemies[idx].h, &cb->rng, FIRE_ARROW_BURN, WOUND_BURN, part);
+                else fg_hurt(ga, idx, FIRE_ARROW_BURN, WOUND_BURN, part, -1, NULL, 0);
+            }
             if (kind == 0) {
                 shot_hits_player(cb, s, part, p, ga, log, len);
             } else if (kind == 1) {
@@ -441,6 +469,7 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             s->p.pos.y = ground;
             s->stuck = true;
             s->life = 0.0f;
+            if (s->burning && ga->ignite_n < 8) ga->ignite_at[ga->ignite_n++] = to_vec(s->p.pos); // prende donde cae
             if (t->look.water_level > terrain_height(t, s->p.pos.x, s->p.pos.z) + 0.25f && !hazard_ice_walkable(t->look.ice)) {
                 s->p.alive = false; // al agua (quiza atraviese un pez)
                 if (s->owner == 0) fg_shot_water(ga, t, to_vec(s->p.pos), log, len);
@@ -478,7 +507,8 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const RangedDe
     if (shoot && cb->reload <= 0.0f && stock_count(&ga->stock, ammo) > 0) {
         float charge = rd->draw_time > 0.0f ? fminf(1.0f, cb->draw / rd->draw_time) : 1.0f;
         stock_take(&ga->stock, ammo, 1);
-        fire(cb, rd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0);
+        fire(cb, rd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0, cb->arrow_lit);
+        cb->arrow_lit = false;
         cb->reload = rd->reload;
         cb->draw = 0.0f;
         cb->aiming = false;
@@ -553,7 +583,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
                     if (ballistic_solve(rd->projectile, to_v3(from), to_v3(aim), ranged_muzzle_speed(rd, 1.0f), &pitch)) {
                         float err = 0.015f + best * 0.0008f; // a mayor distancia, peor punteria
                         fire(cb, rd, from, e->yaw + (rng_float(&cb->rng) - 0.5f) * err * 2.0f, pitch + (rng_float(&cb->rng) - 0.5f) * err,
-                             1.0f, -(1 + i));
+                             1.0f, -(1 + i), false);
                         e->reload = rd->reload + 1.4f + rng_float(&cb->rng);
                         e->attack_anim = 0.3f;
                     }
@@ -802,6 +832,14 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, const Terra
     bool can_act = input_ok && !cb->player.down && !ga->climbing;
     const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);
     cb->blocking = can_act && IsKeyDown(KEY_Z) && !ga->hands.sheathed && !rd;
+    if (rd && can_act && IsKeyPressed(KEY_L)) light_arrow(cb, ga, rd, log, log_len);
+    if (cb->arrow_lit) {
+        cb->arrow_lit_timer -= dt;
+        if (ga->raining || cb->arrow_lit_timer <= 0.0f || !rd) {
+            cb->arrow_lit = false;
+            snprintf(log, log_len, ga->raining ? "La lluvia apaga la flecha." : "La flecha encendida se apagó.");
+        }
+    }
     if (rd) player_ranged(cb, p, ga, rd, can_act, cam_yaw, cam_pitch, dt, log, log_len);
     else {
         cb->aiming = false;
@@ -862,6 +900,12 @@ static void draw_shot(const Shot *s) {
     if (s->stuck) tip = (Vector3){ tip.x + d.x / l * 0.2f, tip.y + d.y / l * 0.2f, tip.z + d.z / l * 0.2f };
     Vector3 tail = { tip.x - d.x / l * len, tip.y - d.y / l * len, tip.z - d.z / l * len };
     DrawCylinderEx(tail, tip, 0.012f, 0.012f, 4, (Color){ 140, 104, 64, 255 });
+    if (s->burning) { // la punta arde
+        Vector3 f = Vector3Lerp(tail, tip, 0.85f);
+        float k = 0.07f + 0.02f * sinf((float)GetTime() * 25.0f + s->life);
+        DrawSphere(f, k * 1.5f, (Color){ 240, 120, 30, 220 });
+        DrawSphere(f, k, (Color){ 255, 220, 90, 255 });
+    }
     DrawCylinderEx(tail, Vector3Lerp(tail, tip, 0.15f), 0.03f, 0.012f, 4, (Color){ 220, 214, 200, 255 }); // plumas
 }
 
@@ -957,8 +1001,11 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
     if (rd) {
         const InvItem *wi = inventory_find(ga->inv, rd->weapon);
         const ProjectileDef *pd = projectile_def(rd->projectile);
-        const char *line = TextFormat("%s · %ss: %d%s", wi ? wi->name : "Arma", pd->name, stock_count(&ga->stock, pd->ammo),
-                                      cb->reload > 0.0f ? " · recargando" : "");
+        const char *fire = cb->arrow_lit                   ? TextFormat(" · ENCENDIDA (%.0f s)", cb->arrow_lit_timer)
+                           : ga->fire_near && !ga->raining && rd->projectile <= PROJ_BOLT ? " · L: encender"
+                                                                                           : "";
+        const char *line = TextFormat("%s · %ss: %d%s%s", wi ? wi->name : "Arma", pd->name, stock_count(&ga->stock, pd->ammo),
+                                      cb->reload > 0.0f ? " · recargando" : "", fire);
         int lw = MeasureText(line, 10);
         ui_text(line, w / 2 - lw / 2, h - 58, 10, UI_BONE);
         if (cb->aiming && rd->draw_time > 0.0f)

@@ -442,7 +442,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
     }
 
     // Frio: sensacion termica y calor corporal.
-    hz->fire = fire_warmth(props, camp_fire, p->pos);
+    hz->fire = ga->fires_out ? 0.0f : fire_warmth(props, camp_fire, p->pos); // apagados por la lluvia, no calientan
     float shelter = dist2(p->pos, camp_fire) < 14.0f ? 6.0f : 0.0f; // las yurtas cortan el viento
     float torch = ga->torch_lit && !ga->hands.sheathed ? 4.0f : 0.0f;
     float wind = c->wind * (shelter > 0.0f ? 0.5f : 1.0f);
