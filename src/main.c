@@ -38,6 +38,7 @@
 #include "sim/memory_map.h"
 #include "sim/troop.h"
 #include "ui/minimap.h"
+#include "ui/icons.h"
 #include "ui/theme.h"
 #include "world/camp.h"
 #include "world/gallery.h"
@@ -269,7 +270,7 @@ static void draw_weather_text(int right, int y, const Climate *c) {
 
 // HUD limpio: arriba a la izquierda, lo esencial (hora, tribu, animo, manos); el registro
 // abajo, solo mientras es reciente; los controles, con F1.
-static void draw_hud(const Troop *t, float world_time, const char *hands, const char *log, float log_age) {
+static void draw_hud(const Troop *t, float world_time, const char *hands, const char *log, float log_age, bool menu) {
     const int x = 4 + 8, w = 236;
     DrawRectangle(4, 4, w, 46, (Color){ 20, 14, 10, 170 });
     DrawRectangleLines(4, 4, w, 46, Fade(UI_GOLD_DARK, 0.9f));
@@ -288,12 +289,15 @@ static void draw_hud(const Troop *t, float world_time, const char *hands, const 
         float a = log_age < 6.0f ? 1.0f : (8.0f - log_age) / 2.0f;
         int lw = MeasureText(log, 10);
         if (lw > VIRTUAL_W - 180) lw = VIRTUAL_W - 180;
-        DrawRectangle(4, VIRTUAL_H - 22, lw + 14, 18, Fade((Color){ 20, 14, 10, 255 }, 0.7f * a));
-        DrawRectangle(4, VIRTUAL_H - 22, 2, 18, Fade(UI_GOLD, a));
-        BeginScissorMode(4, VIRTUAL_H - 22, lw + 14, 18);
-        ui_text(log, 11, VIRTUAL_H - 18, 10, Fade(UI_BONE, a));
+        // Con un menu abierto, la leyenda ocupa la base: el registro sube encima de ella.
+        int ly = menu ? VIRTUAL_H - 40 : VIRTUAL_H - 22, lx = menu ? (VIRTUAL_W - lw - 14) / 2 : 4;
+        DrawRectangle(lx, ly, lw + 14, 18, Fade((Color){ 20, 14, 10, 255 }, 0.7f * a));
+        DrawRectangle(lx, ly, 2, 18, Fade(UI_GOLD, a));
+        BeginScissorMode(lx, ly, lw + 14, 18);
+        ui_text(log, lx + 7, ly + 4, 10, Fade(UI_BONE, a));
         EndScissorMode();
     }
+    if (menu) return;
     const char *hint = "F1 controles · Esc menú";
     ui_text(hint, VIRTUAL_W - 8 - MeasureText(hint, 10), VIRTUAL_H - 16, 10, Fade(UI_BONE_DIM, 0.8f));
 }
@@ -345,6 +349,7 @@ int main(int argc, char **argv) {
     bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
     MenuScreen start_menu_screen = MENU_TITLE;
     int start_save = -1, start_load = -1;
+    int start_pause = 0;  // prueba: 1 pausa, 2 guardar, 3 controles (F1), sobre la partida
     int start_tab = -1;   // prueba: menu Tab abierto en esa pestaña
     bool start_loot = false; // prueba: bolsas de botin delante
     bool start_inv = false, start_equip = false; // pruebas: guardar al final en ese hueco / cargar al empezar
@@ -366,6 +371,9 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--inventario")) start_inv = true;
         else if (!strcmp(argv[i], "--pestana") && i + 1 < argc) start_tab = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--botin")) start_loot = true;
+        else if (!strcmp(argv[i], "--pausa")) start_pause = 1;
+        else if (!strcmp(argv[i], "--guardar")) start_pause = 2;
+        else if (!strcmp(argv[i], "--controles")) start_pause = 3;
         else if (!strcmp(argv[i], "--equipo")) start_equip = true;
         else if (!strcmp(argv[i], "--autoguardar") && i + 1 < argc) start_save = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--cargar") && i + 1 < argc) start_load = atoi(argv[++i]) - 1;
@@ -462,6 +470,7 @@ int main(int argc, char **argv) {
     // directo a la partida salvo que pidan el menu (--menu, --instructivo, --huecos).
     TitleMenu menu;
     menu_init(&menu);
+    icons_load();
     bool in_game = gallery_mode || (shot_path && !start_menu);
     if (!in_game) menu_open(&menu, MENU_TITLE);
     if (start_menu && start_menu_screen != MENU_TITLE) menu_open(&menu, start_menu_screen);
@@ -476,8 +485,26 @@ int main(int argc, char **argv) {
     SetExitKey(KEY_NULL); // Esc abre el menu
     while (!WindowShouldClose() && !quit) {
         float dt = fminf(GetFrameTime(), 0.05f);
+        { // el puntero (raton o dedo) en la pantalla virtual de 640x360
+            float sw = (float)GetScreenWidth(), sh = (float)GetScreenHeight();
+            float k = fminf(sw / VIRTUAL_W, sh / VIRTUAL_H);
+            Vector2 m = GetMousePosition(), d = GetMouseDelta();
+            Vector2 v = { (m.x - (sw - VIRTUAL_W * k) * 0.5f) / k, (m.y - (sh - VIRTUAL_H * k) * 0.5f) / k };
+            ui_pointer_frame(v, d.x != 0.0f || d.y != 0.0f, IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
+        }
         if (frame % 30 == 0) has_keyboard = platform_has_keyboard() && !simulate_no_keyboard; // conexion en caliente
         frame++;
+        if (start_pause && frame == 10 && in_game) { // prueba: la pausa (o guardar) sobre la partida
+            if (start_pause == 3) {
+                show_controls = true;
+            } else {
+                pause_shot = LoadImageFromTexture(lowres.texture);
+                ImageFlipVertical(&pause_shot);
+                menu_open(&menu, MENU_PAUSE);
+                if (start_pause == 2) menu_open(&menu, MENU_SAVE);
+            }
+            start_pause = 0;
+        }
         // Esc en la partida: pausa (antes, una foto para la partida guardada).
         if (in_game && !gallery_mode && !menu_visible(&menu) && !ig_blocks_input(&g_actions) && IsKeyPressed(KEY_ESCAPE)) {
             if (ga_menu_open(&g_actions)) {
@@ -670,7 +697,8 @@ int main(int argc, char **argv) {
         if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
         } else if (!menu_visible(&menu)) {
-            draw_hud(&troop, world_time, ga_hands_text(&g_actions), log, log_age);
+            draw_hud(&troop, world_time, ga_hands_text(&g_actions), log, log_age,
+                     g_actions.menu_open || g_actions.inv_open || g_actions.equip_open);
             minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
                          player.pos, rig.yaw, player.yaw, world_time);
             draw_clock_bar(VIRTUAL_W - MINIMAP_RADIUS - 10, 2 * MINIMAP_RADIUS + 19, 2 * MINIMAP_RADIUS - 8, world_time);
@@ -688,6 +716,7 @@ int main(int argc, char **argv) {
                   TextFormat("v%s (build %d) · %d fps%s", ESTEPA_VERSION, ESTEPA_BUILD_CODE, GetFPS(),
                              in_game ? TextFormat(" · %s: %+d", overlord.name, (int)overlord.relation) : ""),
                   VIRTUAL_W, VIRTUAL_H);
+        ui_legend_draw(VIRTUAL_W, VIRTUAL_H); // la leyenda de lo que esta bajo el puntero
         if (!has_keyboard) draw_keyboard_notice();
         EndTextureMode();
 
@@ -718,6 +747,7 @@ int main(int argc, char **argv) {
     }
 
     if (pause_shot.data) UnloadImage(pause_shot);
+    icons_unload();
     menu_unload(&menu);
     if (gallery_mode) gallery_unload(&gallery);
     props_unload(&g_props);

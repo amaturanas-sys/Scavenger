@@ -8,6 +8,7 @@ RPG de mundo abierto en 3D low-res, inspirado en las tribus nómadas de la estep
 - Narrativa: [docs/NARRATIVA.md](docs/NARRATIVA.md)
 - Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Arquitectura: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
+- Capturas de todas las pantallas: [docs/CAPTURAS.md](docs/CAPTURAS.md)
 - Inventario de assets: [docs/INVENTARIO.md](docs/INVENTARIO.md) · animaciones: [docs/ANIMACIONES.md](docs/ANIMACIONES.md) · cómo importar modelos: [assets/models/README.md](assets/models/README.md)
 
 ## Compilar y jugar
@@ -40,7 +41,7 @@ Las partidas se guardan en `saves/` junto al ejecutable (en Android, en el almac
 | Saltar | Espacio | A |
 | Cámara | Q / E, clic derecho + arrastrar, rueda | — |
 | Marcar sitio de interés / de peligro | M / Shift+M | — |
-| Menú de acciones, obras, fabricar y reparar | Tab (flechas + Enter; A/D o ←/→ cambia de pestaña) | — |
+| Menú de acciones, obras, fabricar y reparar | Tab (flechas + Enter; Q/E cambia de pestaña) | — |
 | Cambiar empuñadura / enfundar | X / H | — |
 | Tomar / lanzar objetos, recoger botín | F (Mayús+F: todo lo cercano) / T | — |
 | Montar / desmontar | R | — |
@@ -50,6 +51,8 @@ Las partidas se guardan en `saves/` junto al ejecutable (en Android, en el almac
 Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente · `N` adelantar dos minutos.
 
 Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañero atrapado para rescatarlo · `J K L U I O` en el minijuego de rescate.
+
+Menús: son **iconos**. Pasa el ratón por encima (o elige con las flechas) y su nombre aparece en la leyenda de la base de la pantalla; un clic elige y otro clic (o Enter) lo usa. En el inventario, `Q`/`E` cambia de contenedor y por el borde de la cuadrícula se pasa a la otra columna. En el equipo, el clic derecho (o `Supr`) quita la pieza.
 
 Combate y salud: `V` o clic izquierdo golpear (tres seguidos: combo; mantener: golpe pesado; con arco u honda: mantener para tensar y soltar para disparar; la cámara alza la mira) · `J` o botón central del ratón patada (corriendo: con inercia) · `Z` cubrirse (con escudo: `Z`+`V` golpe de escudo, corriendo + `Z` carga) · `U` agarre y llave · `O` enganchar el escudo enemigo (hacha, guja, alabarda) · `Mayús+X` cambiar el arma de mano · `B` vendar (a ti o a un compañero cercano) · `L` encender la flecha junto a un fuego · `P` equipo (armadura, amuletos y heridas) · `I` inventario · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
 

@@ -37,6 +37,7 @@ typedef struct {
     // Arte.
     Texture2D background, emblem, plates[MENU_PLATES];
     float time;
+    int w, h; // tamaño de la ultima pantalla dibujada (para el raton)
 } TitleMenu;
 
 void menu_init(TitleMenu *m);

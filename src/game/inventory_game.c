@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "raymath.h"
+#include "ui/icons.h"
 #include "ui/theme.h"
 
 #define CART_ID "vehiculo.tierra.carreta_bueyes"
@@ -55,6 +56,7 @@ typedef struct {
     ContType type;
     Bag *bag;
     char label[64];
+    IconId icon;
 } Cont;
 
 static bool near_cart(const Props *props, const Player *p) {
@@ -75,16 +77,16 @@ static bool pack_near(const GameActions *ga, int k, const Player *p) {
 
 static int containers(GameActions *ga, const Props *props, const Player *p, Cont out[10]) {
     int n = 0;
-    out[n++] = (Cont){ C_BAG, &ga->pockets, "Bolsillos" };
-    out[n++] = (Cont){ C_BAG, &ga->backpack, "Mochila" };
+    out[n++] = (Cont){ C_BAG, &ga->pockets, "Bolsillos", ICON_BOLSILLO };
+    out[n++] = (Cont){ C_BAG, &ga->backpack, "Mochila", ICON_MOCHILA };
     for (int k = 0; k < GA_PACKS; k++) {
         if (!pack_near(ga, k, p)) continue;
-        out[n] = (Cont){ C_BAG, &ga->packs[k], "" };
+        out[n] = (Cont){ C_BAG, &ga->packs[k], "", ICON_ALFORJAS };
         snprintf(out[n].label, sizeof(out[n].label), "Alforjas (%s)", species_def(ga->animals[ga->pack_animal[k]].species)->name);
         n++;
     }
-    if (near_cart(props, p)) out[n++] = (Cont){ C_BAG, &ga->cart, "Carreta de la tribu" };
-    if (near_camp(p)) out[n++] = (Cont){ C_CAMP, NULL, "Acopio y armería del campamento" };
+    if (near_cart(props, p)) out[n++] = (Cont){ C_BAG, &ga->cart, "Carreta de la tribu", ICON_CARRETA };
+    if (near_camp(p)) out[n++] = (Cont){ C_CAMP, NULL, "Acopio y armería del campamento", ICON_CAMPAMENTO };
     return n;
 }
 
@@ -363,7 +365,7 @@ bool ig_can_repair(GameActions *ga, const Props *props, const Player *p, const T
         snprintf(why, len, "Falta: %s (%d de %d).", item_name(ga, miss->id), ig_count(ga, props, p, miss->id), miss->count);
         return false;
     }
-    why[0] = '\0';
+    if (why && len) why[0] = '\0';
     return true;
 }
 
@@ -474,6 +476,42 @@ static void sync_packs(GameActions *ga, char *log, size_t len) {
     }
 }
 
+// ------------------------------------------------------------------ disposicion (dibujo y raton)
+#define PANE_W 300
+#define PANE_H 296
+#define PANE_Y 12
+#define INV_COLS 8
+#define INV_ROWS 6
+#define INV_TILE 32
+#define INV_GAP 3
+
+static int pane_x(int k) { return 14 + k * (PANE_W + 12); }
+
+static Rectangle cont_tab_rect(int k, int c) {
+    return (Rectangle){ (float)(pane_x(k) + UI_PANEL_INSET + 2 + c * 28), (float)(PANE_Y + UI_PANEL_INSET), 24, 24 };
+}
+
+static int inv_first_row(int cur) {
+    int row = cur / INV_COLS;
+    return row >= INV_ROWS ? row - INV_ROWS + 1 : 0;
+}
+
+static Rectangle inv_tile_rect(int k, int i, int first_row) {
+    int c = i % INV_COLS, r = i / INV_COLS - first_row;
+    return (Rectangle){ (float)(pane_x(k) + UI_PANEL_INSET + 2 + c * (INV_TILE + INV_GAP)),
+                        (float)(PANE_Y + UI_PANEL_INSET + 46 + r * (INV_TILE + INV_GAP)), INV_TILE, INV_TILE };
+}
+
+// Equipo: los nueve huecos alrededor de la figura y los tres amuletos debajo.
+#define FIG_X 170
+static Rectangle equip_rect(int i) {
+    static const int pos[SLOT_COUNT][2] = {
+        { -84, 44 }, { 52, 64 }, { 52, 104 }, { -84, 84 }, { -84, 124 }, { 52, 144 }, { -84, 164 }, { 52, 184 }, { -16, 222 },
+    };
+    if (i < SLOT_COUNT) return (Rectangle){ (float)(FIG_X + pos[i][0]), (float)pos[i][1], 32, 32 };
+    return (Rectangle){ (float)(FIG_X - 58 + (i - SLOT_COUNT) * 42), 278, 32, 32 };
+}
+
 void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool input_ok, char *log, size_t len) {
     sync_packs(ga, log, len);
     for (int i = 0; i < GA_LOOT; i++) // el botin no se queda para siempre
@@ -485,22 +523,46 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
     int nc = containers(ga, props, p, conts);
     if (ga->inv_open) {
         int *pane = &ga->inv_pane;
-        if (IsKeyPressed(KEY_LEFT)) *pane = 0;
-        if (IsKeyPressed(KEY_RIGHT)) *pane = 1;
-        int *cont = &ga->inv_cont[*pane];
-        if (IsKeyPressed(KEY_A)) *cont = (*cont + nc - 1) % nc, ga->inv_cursor[*pane] = 0;
-        if (IsKeyPressed(KEY_D)) *cont = (*cont + 1) % nc, ga->inv_cursor[*pane] = 0;
-        for (int k = 0; k < 2; k++) // si un contenedor quedo lejos, el ultimo a mano
+        for (int k = 0; k < 2; k++) { // si un contenedor quedo lejos, el ultimo a mano
             if (ga->inv_cont[k] >= nc) ga->inv_cont[k] = k ? nc - 1 : 0;
+            for (int c = 0; c < nc; c++)
+                if (ui_click(cont_tab_rect(k, c))) ga->inv_cont[k] = c, ga->inv_cursor[k] = 0, *pane = k;
+        }
+        int *cont = &ga->inv_cont[*pane];
+        // Q/E: contenedor de la columna activa.
+        if (IsKeyPressed(KEY_Q)) *cont = (*cont + nc - 1) % nc, ga->inv_cursor[*pane] = 0;
+        if (IsKeyPressed(KEY_E)) *cont = (*cont + 1) % nc, ga->inv_cursor[*pane] = 0;
         Row rows[64];
         int nr = rows_of(ga, &conts[*cont], rows, 64);
         int *cur = &ga->inv_cursor[*pane];
-        if (IsKeyPressed(KEY_DOWN) && nr) *cur = (*cur + 1) % nr;
-        if (IsKeyPressed(KEY_UP) && nr) *cur = (*cur + nr - 1) % nr;
         if (*cur >= nr) *cur = nr ? nr - 1 : 0;
-        if (IsKeyPressed(KEY_ENTER) && nr) {
+        // Flechas (o WASD) por la cuadricula; por el borde se pasa a la otra columna.
+        bool right = IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D), left = IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A);
+        if (right && (nr == 0 || *cur % INV_COLS == INV_COLS - 1 || *cur == nr - 1) && *pane == 0) *pane = 1;
+        else if (left && (nr == 0 || *cur % INV_COLS == 0) && *pane == 1) *pane = 0;
+        else if (right && *cur + 1 < nr) (*cur)++;
+        else if (left && *cur > 0) (*cur)--;
+        if ((IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) && *cur + INV_COLS < nr) *cur += INV_COLS;
+        if ((IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) && *cur >= INV_COLS) *cur -= INV_COLS;
+        bool all = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+        bool move = IsKeyPressed(KEY_ENTER);
+        for (int k = 0; k < 2; k++) { // raton: pasar elige, un clic sobre lo elegido lo pasa
+            Row rk[64];
+            int nk = rows_of(ga, &conts[ga->inv_cont[k]], rk, 64), first = inv_first_row(ga->inv_cursor[k]);
+            for (int i = first * INV_COLS; i < nk && i < (first + INV_ROWS) * INV_COLS; i++) {
+                Rectangle r = inv_tile_rect(k, i, first);
+                if (ui_pointer_moved() && ui_hover(r)) *pane = k, ga->inv_cursor[k] = i;
+                if (ui_click(r)) {
+                    if (*pane == k && ga->inv_cursor[k] == i) move = true;
+                    *pane = k, ga->inv_cursor[k] = i;
+                }
+            }
+        }
+        cont = &ga->inv_cont[*pane];
+        cur = &ga->inv_cursor[*pane];
+        nr = rows_of(ga, &conts[*cont], rows, 64);
+        if (move && nr && *cur < nr) {
             const Cont *to = &conts[ga->inv_cont[1 - *pane]];
-            bool all = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
             int moved = move_row(ga, &conts[*cont], &rows[*cur], to, all ? rows[*cur].count : 1);
             if (moved) snprintf(log, len, "%d x %s a: %s.", moved, item_name(ga, rows[*cur].id), to->label);
             else snprintf(log, len, "No cabe en %s (peso, talla o huecos).", to->label);
@@ -508,9 +570,20 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
     }
     if (ga->equip_open) {
         const int total = SLOT_COUNT + AMULET_SLOTS;
-        if (IsKeyPressed(KEY_DOWN)) ga->equip_cursor = (ga->equip_cursor + 1) % total;
-        if (IsKeyPressed(KEY_UP)) ga->equip_cursor = (ga->equip_cursor + total - 1) % total;
+        if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_S) || IsKeyPressed(KEY_D))
+            ga->equip_cursor = (ga->equip_cursor + 1) % total;
+        if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_W) || IsKeyPressed(KEY_A))
+            ga->equip_cursor = (ga->equip_cursor + total - 1) % total;
         bool put = IsKeyPressed(KEY_ENTER), take = IsKeyPressed(KEY_BACKSPACE) || IsKeyPressed(KEY_DELETE);
+        for (int i = 0; i < total; i++) { // raton: pasar elige; clic sobre lo elegido cambia; clic derecho quita
+            Rectangle r = equip_rect(i);
+            if (ui_pointer_moved() && ui_hover(r)) ga->equip_cursor = i;
+            if (ui_click(r)) {
+                if (ga->equip_cursor == i) put = true;
+                ga->equip_cursor = i;
+            }
+            if (ui_hover(r) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) ga->equip_cursor = i, take = true;
+        }
         if (put || take) {
             if (ga->equip_cursor < SLOT_COUNT) equip_armor(ga, cb, props, p, ga->equip_cursor, take, log, len);
             else equip_amulet(ga, props, p, ga->equip_cursor - SLOT_COUNT, take, log, len);
@@ -527,149 +600,203 @@ static Color mat_color(const ArmorPiece *pc) {
     return pc->id[0] ? mats[pc->material] : (Color){ 60, 50, 42, 255 };
 }
 
-static void draw_cont(const GameActions *ga, const Cont *c, int x, int y, int w, int h, int cursor, bool active) {
-    ui_panel((Rectangle){ (float)x, (float)y, (float)w, (float)h }, active ? UI_METAL_GOLD : UI_METAL_SILVER);
-    int ix = x + UI_PANEL_INSET + 2, iw = w - 2 * UI_PANEL_INSET - 4;
-    ui_text(c->label, ix, y + UI_PANEL_INSET, 10, active ? UI_GOLD_LIGHT : UI_BONE);
-    if (c->type == C_BAG) {
-        float kg = bag_kg(c->bag, ga->inv);
-        const char *cap = TextFormat("%.1f / %.0f kg · %d/%d", kg, c->bag->cap_kg, c->bag->n, c->bag->slots);
-        ui_text(cap, ix + iw - MeasureText(cap, 10), y + UI_PANEL_INSET, 10, kg > c->bag->cap_kg * 0.9f ? UI_CARNELIAN : UI_BONE_DIM);
-        ui_bar(ix, y + UI_PANEL_INSET + 13, iw, kg / c->bag->cap_kg, UI_TURQUOISE, UI_METAL_SILVER);
+static void draw_pane(const GameActions *ga, const Cont *conts, int nc, int k) {
+    bool active = ga->inv_pane == k;
+    int x = pane_x(k), y = PANE_Y;
+    int c = ga->inv_cont[k] < nc ? ga->inv_cont[k] : 0, cursor = ga->inv_cursor[k];
+    const Cont *ct = &conts[c];
+    ui_panel((Rectangle){ (float)x, (float)y, PANE_W, PANE_H }, active ? UI_METAL_GOLD : UI_METAL_SILVER);
+    // Contenedores a mano: un icono cada uno (Q/E o clic).
+    for (int i = 0; i < nc; i++) {
+        Rectangle r = cont_tab_rect(k, i);
+        if (ui_tile(r, conts[i].icon, i == c, true)) ui_legend(conts[i].label, "Q / E o clic: cambiar de contenedor");
+    }
+    int ix = x + UI_PANEL_INSET + 2, iw = PANE_W - 2 * UI_PANEL_INSET - 4, hy = y + UI_PANEL_INSET + 30;
+    if (ct->type == C_BAG) { // peso y huecos
+        float kg = bag_kg(ct->bag, ga->inv);
+        bool full = kg > ct->bag->cap_kg * 0.9f;
+        ui_icon(ICON_PESO, (float)ix, (float)hy - 4, 16, full ? UI_CARNELIAN : UI_GOLD);
+        ui_bar(ix + 20, hy + 2, iw - 92, kg / ct->bag->cap_kg, UI_TURQUOISE, UI_METAL_SILVER);
+        const char *cap = TextFormat("%.1f/%.0f", kg, ct->bag->cap_kg);
+        ui_text(cap, ix + iw - MeasureText(cap, 10), hy, 10, full ? UI_CARNELIAN : UI_BONE_DIM);
+        if (ui_hover((Rectangle){ (float)ix, (float)hy - 4, (float)iw, 14 }))
+            ui_legend(ct->label, TextFormat("%.1f de %.0f kg · %d de %d huecos", kg, ct->bag->cap_kg, ct->bag->n, ct->bag->slots));
+    } else {
+        ui_text(ct->label, ix, hy, 10, UI_BONE_DIM);
     }
     Row rows[64];
-    int n = rows_of(ga, c, rows, 64);
-    const int row_h = 11, top = y + UI_PANEL_INSET + 24, visible = (h - 2 * UI_PANEL_INSET - 26) / row_h;
-    int first = cursor - visible / 2;
-    if (first > n - visible) first = n - visible;
-    if (first < 0) first = 0;
-    if (!n) ui_text("(vacío)", ix, top, 10, UI_BONE_DIM);
-    for (int i = first; i < n && i < first + visible; i++) {
-        int ry = top + (i - first) * row_h;
+    int n = rows_of(ga, ct, rows, 64);
+    if (!n) ui_icon(ICON_BOTIN, (float)ix + 4, (float)(y + UI_PANEL_INSET + 52), 32, (Color){ 120, 108, 92, 140 });
+    int first = inv_first_row(cursor);
+    for (int i = first * INV_COLS; i < n && i < (first + INV_ROWS) * INV_COLS; i++) {
+        Rectangle r = inv_tile_rect(k, i, first);
         bool sel = active && i == cursor;
-        if (sel) DrawRectangle(ix - 2, ry - 1, iw + 4, row_h, Fade(UI_TURQ_DARK, 0.9f));
-        const InvItem *it = inventory_find(ga->inv, rows[i].id);
-        ui_text(TextFormat("%3d  %s", rows[i].count, it ? it->name : rows[i].id), ix, ry, 10, sel ? UI_BONE : UI_BONE_DIM);
-        if (item_is_gear(rows[i].id) && rows[i].cond < 0.999f) { // estado de la pieza
-            DrawRectangle(ix + iw - 30, ry + 3, 28, 4, UI_LEATHER_CRACK);
-            DrawRectangle(ix + iw - 30, ry + 3, (int)(28 * rows[i].cond), 4, rows[i].cond < 0.3f ? UI_CARNELIAN : UI_GOLD);
-        } else {
-            const char *kg = TextFormat("%.1f", item_kg(it) * (float)rows[i].count);
-            ui_text(kg, ix + iw - MeasureText(kg, 10), ry, 10, UI_BONE_DIM);
+        bool hover = ui_tile(r, icon_for_item(rows[i].id), sel, true);
+        if (rows[i].count > 1) ui_tile_badge(r, TextFormat("%d", rows[i].count), UI_BONE);
+        bool gear = item_is_gear(rows[i].id);
+        if (gear && rows[i].cond < 0.999f) ui_tile_bar(r, rows[i].cond, rows[i].cond < 0.3f ? UI_CARNELIAN : UI_GOLD);
+        if (hover || sel) {
+            const InvItem *it = inventory_find(ga->inv, rows[i].id);
+            const char *d = TextFormat("%d · %.1f kg%s · Enter o clic: pasar (Mayús: todo)", rows[i].count, item_kg(it) * (float)rows[i].count,
+                                       gear ? TextFormat(" · estado %d %%", (int)(rows[i].cond * 100)) : "");
+            if (hover) ui_legend(it ? it->name : rows[i].id, d);
+            else ui_legend_default(it ? it->name : rows[i].id, d);
         }
     }
+    if (n > (first + INV_ROWS) * INV_COLS || first > 0) ui_text(TextFormat("%d/%d", cursor + 1, n), ix, y + PANE_H - UI_PANEL_INSET - 10, 10, UI_BONE_DIM);
 }
 
 static void draw_inventory(const GameActions *ga, const Props *props, const Player *p, int w, int h) {
     Cont conts[10];
     int nc = containers((GameActions *)ga, props, p, conts);
     DrawRectangle(0, 0, w, h, (Color){ 10, 7, 5, 150 });
-    const int pw = 300, ph = h - 70, y = 16;
-    for (int k = 0; k < 2; k++) {
-        int c = ga->inv_cont[k] < nc ? ga->inv_cont[k] : 0;
-        draw_cont(ga, &conts[c], 14 + k * (pw + 12), y, pw, ph, ga->inv_cursor[k], ga->inv_pane == k);
-    }
-    // Detalle de lo elegido y teclas.
-    int c = ga->inv_cont[ga->inv_pane] < nc ? ga->inv_cont[ga->inv_pane] : 0;
-    Row rows[64];
-    int nr = rows_of(ga, &conts[c], rows, 64), cur = ga->inv_cursor[ga->inv_pane];
-    ui_strip((Rectangle){ 0, (float)(h - 48), (float)w, 48 }, UI_METAL_GOLD);
-    if (nr && cur < nr) {
-        const InvItem *it = inventory_find(ga->inv, rows[cur].id);
-        ui_text(TextFormat("%s · %.2f kg c/u%s", it ? it->name : rows[cur].id, item_kg(it),
-                           item_is_gear(rows[cur].id) ? TextFormat(" · estado %d %%", (int)(rows[cur].cond * 100)) : ""),
-                10, h - 40, 10, UI_GOLD_LIGHT);
-    }
-    ui_text(TextFormat("Llevas encima %.1f kg%s", ig_carried_kg(ga), ig_carried_kg(ga) > CARRY_LIMIT ? " (pesado: andas más lento)" : ""),
-            10, h - 27, 10, ig_carried_kg(ga) > CARRY_LIMIT ? UI_CARNELIAN : UI_BONE_DIM);
-    const char *k2 = "Izq/Der columna · A/D contenedor · Arriba/Abajo · Enter pasar 1 · Mayús+Enter todos · I cerrar";
-    ui_text(k2, w - 10 - MeasureText(k2, 10), h - 14, 10, UI_BONE_DIM);
+    for (int k = 0; k < 2; k++) draw_pane(ga, conts, nc, k);
+    // Entre las columnas: hacia donde pasa lo elegido.
+    ui_icon_ex(ICON_CONTINUAR, (float)(pane_x(1) - 12), (float)(PANE_Y + PANE_H / 2 - 8), 16, UI_TURQUOISE, ga->inv_pane == 1);
+    // Lo que llevas encima (frena si pesa).
+    float kg = ig_carried_kg(ga);
+    bool heavy = kg > CARRY_LIMIT;
+    Rectangle wr = { 14, (float)(PANE_Y + PANE_H + 4), 90, 18 };
+    ui_icon(ICON_PERSONA, wr.x, wr.y + 1, 16, UI_GOLD);
+    ui_text(TextFormat("%.1f kg", kg), (int)wr.x + 20, (int)wr.y + 5, 10, heavy ? UI_CARNELIAN : UI_BONE);
+    if (heavy) ui_icon(ICON_VELOCIDAD, wr.x + 70, wr.y + 1, 16, UI_CARNELIAN);
+    if (ui_hover(wr)) ui_legend("Llevas encima", heavy ? TextFormat("%.1f kg: pesado, andas más lento (más de %.0f kg)", kg, CARRY_LIMIT)
+                                                    : TextFormat("%.1f kg (hasta %.0f sin frenarte)", kg, CARRY_LIMIT));
+    ui_legend_default("Inventario", "Flechas: elegir · Q/E: contenedor · Enter: pasar · I: cerrar");
 }
 
 static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h) {
     DrawRectangle(0, 0, w, h, (Color){ 10, 7, 5, 150 });
-    ui_panel((Rectangle){ 10, 10, (float)(w - 20), (float)(h - 20) }, UI_METAL_GOLD);
-    ui_text("Equipo", 26, 24, 20, UI_GOLD_LIGHT);
-    ui_text("Arriba/Abajo elegir · Enter poner o cambiar · Supr quitar · P cerrar", 120, 30, 10, UI_BONE_DIM);
-    // La figura: un guerrero esquematico con sus piezas coloreadas por material.
-    const int fx = 150, fy = 70;
+    ui_panel((Rectangle){ 10, 10, (float)(w - 20), (float)(h - 34) }, UI_METAL_GOLD);
     const ArmorPiece *s = cb->armor.slot;
-    DrawCircle(fx, fy + 12, 11, mat_color(&s[SLOT_HELMET]));                                     // cabeza
-    DrawRectangle(fx - 5, fy + 23, 10, 7, mat_color(&s[SLOT_NECK]));                              // cuello
-    DrawRectangle(fx - 18, fy + 30, 36, 42, mat_color(&s[SLOT_TORSO]));                           // torso
-    DrawRectangle(fx - 30, fy + 30, 12, 22, mat_color(&s[SLOT_SHOULDERS]));                       // hombros
+    // La figura: un guerrero esquematico con sus piezas coloreadas por material.
+    const int fx = FIG_X, fy = 56;
+    DrawCircle(fx, fy + 12, 11, mat_color(&s[SLOT_HELMET]));
+    DrawRectangle(fx - 5, fy + 23, 10, 7, mat_color(&s[SLOT_NECK]));
+    DrawRectangle(fx - 18, fy + 30, 36, 42, mat_color(&s[SLOT_TORSO]));
+    DrawRectangle(fx - 30, fy + 30, 12, 22, mat_color(&s[SLOT_SHOULDERS]));
     DrawRectangle(fx + 18, fy + 30, 12, 22, mat_color(&s[SLOT_SHOULDERS]));
-    DrawRectangle(fx - 32, fy + 52, 10, 22, mat_color(&s[SLOT_BRACERS]));                         // antebrazos
+    DrawRectangle(fx - 32, fy + 52, 10, 22, mat_color(&s[SLOT_BRACERS]));
     DrawRectangle(fx + 22, fy + 52, 10, 22, mat_color(&s[SLOT_BRACERS]));
-    DrawRectangle(fx - 33, fy + 74, 12, 8, mat_color(&s[SLOT_GLOVES]));                           // manos
+    DrawRectangle(fx - 33, fy + 74, 12, 8, mat_color(&s[SLOT_GLOVES]));
     DrawRectangle(fx + 21, fy + 74, 12, 8, mat_color(&s[SLOT_GLOVES]));
-    DrawRectangle(fx - 18, fy + 72, 36, 16, mat_color(&s[SLOT_SKIRT]));                           // faldar
-    DrawRectangle(fx - 16, fy + 88, 13, 32, mat_color(&s[SLOT_GREAVES]));                         // piernas
-    DrawRectangle(fx + 3, fy + 88, 13, 32, mat_color(&s[SLOT_GREAVES]));
-    DrawRectangle(fx - 17, fy + 120, 15, 9, mat_color(&s[SLOT_BOOTS]));                           // pies
-    DrawRectangle(fx + 2, fy + 120, 15, 9, mat_color(&s[SLOT_BOOTS]));
-    // Lista de huecos.
-    int lx = 250, ly = 60;
+    DrawRectangle(fx - 18, fy + 72, 36, 16, mat_color(&s[SLOT_SKIRT]));
+    DrawRectangle(fx - 16, fy + 88, 13, 60, mat_color(&s[SLOT_GREAVES]));
+    DrawRectangle(fx + 3, fy + 88, 13, 60, mat_color(&s[SLOT_GREAVES]));
+    DrawRectangle(fx - 17, fy + 148, 15, 9, mat_color(&s[SLOT_BOOTS]));
+    DrawRectangle(fx + 2, fy + 148, 15, 9, mat_color(&s[SLOT_BOOTS]));
+    ui_divider(fx - 70, 266, 140, UI_METAL_GOLD);
+    // Los huecos: el icono del hueco; puesto, teñido del material.
     for (int i = 0; i < SLOT_COUNT + AMULET_SLOTS; i++) {
-        int ry = ly + i * 14 + (i >= SLOT_COUNT ? 8 : 0);
-        bool sel = i == ga->equip_cursor;
-        if (i == SLOT_COUNT) ui_divider(lx, ry - 7, 340, UI_METAL_GOLD);
-        if (sel) DrawRectangle(lx - 4, ry - 2, 344, 13, Fade(UI_TURQ_DARK, 0.9f));
+        Rectangle r = equip_rect(i);
+        bool sel = i == ga->equip_cursor, hover;
         if (i < SLOT_COUNT) {
             const ArmorPiece *pc = &s[i];
-            const InvItem *it = pc->id[0] ? inventory_find(ga->inv, pc->id) : NULL;
-            char sn[32];
-            snprintf(sn, sizeof(sn), "%s", slot_name((ArmorSlot)i));
-            if (sn[0] >= 'a' && sn[0] <= 'z') sn[0] = (char)(sn[0] - 'a' + 'A');
-            ui_text(sn, lx, ry, 10, sel ? UI_GOLD_LIGHT : UI_GOLD);
-            ui_text(it ? it->name : (pc->id[0] ? pc->id : "(nada)"), lx + 80, ry, 10, sel ? UI_BONE : UI_BONE_DIM);
+            hover = ui_tile(r, icon_for_slot(i), sel, pc->id[0] != '\0');
             if (pc->id[0]) {
+                DrawRectangle((int)r.x + 2, (int)r.y + 2, 4, 4, mat_color(pc)); // el material, en la esquina
                 float f = pc->durability / pc->durability_max;
-                DrawRectangle(lx + 300, ry + 3, 36, 5, UI_LEATHER_CRACK);
-                DrawRectangle(lx + 300, ry + 3, (int)(36 * f), 5, f < 0.3f ? UI_CARNELIAN : mat_color(pc));
+                ui_tile_bar(r, f, f < 0.3f ? UI_CARNELIAN : UI_GOLD);
+            }
+            if (hover || sel) {
+                const InvItem *it = pc->id[0] ? inventory_find(ga->inv, pc->id) : NULL;
+                char sn[32];
+                snprintf(sn, sizeof(sn), "%s", slot_name((ArmorSlot)i));
+                if (sn[0] >= 'a' && sn[0] <= 'z') sn[0] = (char)(sn[0] - 'a' + 'A');
+                const char *title = it ? it->name : sn;
+                const char *d = pc->id[0] ? TextFormat("%s · Enter: cambiar · Supr o clic derecho: quitar", sn) : "vacío · Enter: ponerte una pieza a mano";
+                if (hover) ui_legend(title, d);
+                else ui_legend_default(title, d);
             }
         } else {
             const char *id = ga->amulet_id[i - SLOT_COUNT];
-            ui_text(TextFormat("Amuleto %d", i - SLOT_COUNT + 1), lx, ry, 10, sel ? UI_GOLD_LIGHT : UI_GOLD);
-            ui_text(id[0] ? item_name(ga, id) : "(nada)", lx + 80, ry, 10, sel ? UI_BONE : UI_BONE_DIM);
+            hover = ui_tile(r, id[0] ? icon_for_item(id) : ICON_AMULETO, sel, id[0] != '\0');
+            if (hover || sel) {
+                Charm c;
+                char d[96] = "";
+                if (id[0] && amulet_charm(id, &c)) charm_describe(&c, d, sizeof(d));
+                const char *title = id[0] ? item_name(ga, id) : TextFormat("Amuleto %d", i - SLOT_COUNT + 1);
+                const char *det = id[0] ? d : "vacío · Enter: colgarte uno de los que lleves";
+                if (hover) ui_legend(title, det);
+                else ui_legend_default(title, det);
+            }
         }
     }
-    // Detalle del hueco elegido.
-    int dy = ly + (SLOT_COUNT + AMULET_SLOTS) * 14 + 16;
-    ui_divider(26, dy - 6, w - 52, UI_METAL_GOLD);
+    // Detalle del hueco elegido: icono grande y cifras con iconos.
+    const int dx = 330, dw = w - dx - 26;
+    int dy = 28;
+    Rectangle big = { (float)dx, (float)dy, 68, 68 };
+    int tx = dx + 78;
     if (ga->equip_cursor < SLOT_COUNT) {
         const ArmorPiece *pc = &s[ga->equip_cursor];
+        ui_tile(big, icon_for_slot(ga->equip_cursor), true, pc->id[0] != '\0');
         if (pc->id[0]) {
             const MaterialDef *m = material_def(pc->material);
-            ui_text(TextFormat("%s · contra corte %d %% · golpe %d %% · flechas %d %% · cubre %d %% · estado %d %%",
-                               material_def(pc->material)->name, (int)(m->vs_cut * 100), (int)(m->vs_blunt * 100),
-                               (int)(m->vs_pierce * 100 * (pc->mail ? 0.7f : 1.0f)), (int)(pc->coverage * 100),
-                               (int)(100.0f * pc->durability / pc->durability_max)),
-                    26, dy, 10, UI_BONE);
+            const InvItem *it = inventory_find(ga->inv, pc->id);
+            ui_text_wrapped(it ? it->name : pc->id, tx, dy + 2, dw - 78, 10, UI_GOLD_LIGHT);
+            ui_text(m->name, tx, dy + 28, 10, mat_color(pc));
+            float f = pc->durability / pc->durability_max;
+            ui_bar(tx, dy + 46, dw - 78, f, f < 0.3f ? UI_CARNELIAN : UI_GOLD, UI_METAL_SILVER);
+            struct { IconId icon; int pct; const char *name; } st[4] = {
+                { ICON_CORTE, (int)(m->vs_cut * 100), "Contra el corte" },
+                { ICON_GOLPE, (int)(m->vs_blunt * 100), "Contra el golpe" },
+                { ICON_PUNTA, (int)(m->vs_pierce * 100 * (pc->mail ? 0.7f : 1.0f)), "Contra flechas y puntas" },
+                { ICON_COBERTURA, (int)(pc->coverage * 100), "Cubre su zona" },
+            };
+            for (int k = 0; k < 4; k++) {
+                int cx = dx + (k % 2) * 130, cy = dy + 80 + (k / 2) * 22;
+                ui_icon(st[k].icon, (float)cx, (float)cy, 16, UI_GOLD);
+                ui_text(TextFormat("%d %%", st[k].pct), cx + 20, cy + 4, 10, UI_BONE);
+                if (ui_hover((Rectangle){ (float)cx, (float)cy, 120, 18 })) ui_legend(st[k].name, TextFormat("%d %%", st[k].pct));
+            }
         } else {
-            ui_text("Hueco vacío: Enter para ponerte una pieza que tengas a mano.", 26, dy, 10, UI_BONE_DIM);
+            ui_text("Vacío", tx, dy + 2, 10, UI_BONE_DIM);
         }
     } else {
         Charm c;
         const char *id = ga->amulet_id[ga->equip_cursor - SLOT_COUNT];
-        char d[96] = "";
-        if (id[0] && amulet_charm(id, &c)) charm_describe(&c, d, sizeof(d));
-        ui_text(id[0] ? TextFormat("Efecto: %s", d) : "Sin amuleto: Enter para colgarte uno de los que lleves.", 26, dy, 10,
-                id[0] ? UI_TURQUOISE : UI_BONE_DIM);
+        ui_tile(big, id[0] ? icon_for_item(id) : ICON_AMULETO, true, id[0] != '\0');
+        if (id[0] && amulet_charm(id, &c)) {
+            char d[96];
+            charm_describe(&c, d, sizeof(d));
+            ui_text_wrapped(item_name(ga, id), tx, dy + 2, dw - 78, 10, UI_GOLD_LIGHT);
+            ui_text_wrapped(d, dx, dy + 80, dw, 10, UI_TURQUOISE);
+        } else {
+            ui_text("Vacío", tx, dy + 2, 10, UI_BONE_DIM);
+        }
     }
-    // Heridas.
+    // Salud y heridas, con iconos.
     const Health *ph = &cb->player;
-    ui_text(TextFormat("%s · vida %d/%d · sangre %d %%%s", health_state_name(ph), (int)fmaxf(0, ph->hp), (int)ph->hp_max,
-                       (int)(ph->blood * 100), ph->venom >= 1.0f ? " · veneno" : ""),
-            26, dy + 16, 10, health_bleeding(ph) ? UI_CARNELIAN : UI_BONE);
-    for (int i = 0; i < ph->wound_count && i < 4; i++) {
-        char d[96];
-        wound_describe(&ph->wounds[i], false, d, sizeof(d));
-        ui_text(d, 26 + (i % 2) * 290, dy + 30 + (i / 2) * 12, 10, UI_BONE_DIM);
+    int hy = 160;
+    ui_divider(dx, hy - 8, dw, UI_METAL_GOLD);
+    int cx = dx;
+    ui_icon(ICON_VIDA, (float)cx, (float)hy, 16, UI_CARNELIAN);
+    ui_text(TextFormat("%d/%d", (int)fmaxf(0, ph->hp), (int)ph->hp_max), cx + 20, hy + 4, 10, UI_BONE);
+    if (ui_hover((Rectangle){ (float)cx, (float)hy, 80, 18 })) ui_legend("Vida", health_state_name(ph));
+    cx += 86;
+    ui_icon(ICON_SANGRE, (float)cx, (float)hy, 16, health_bleeding(ph) ? UI_CARNELIAN : UI_GOLD);
+    ui_text(TextFormat("%d %%", (int)(ph->blood * 100)), cx + 20, hy + 4, 10, health_bleeding(ph) ? UI_CARNELIAN : UI_BONE);
+    if (ui_hover((Rectangle){ (float)cx, (float)hy, 70, 18 })) ui_legend("Sangre", health_bleeding(ph) ? "sangras: véndate (B)" : "no sangras");
+    cx += 76;
+    if (ph->venom >= 1.0f) {
+        ui_icon(ICON_VENENO, (float)cx, (float)hy, 16, UI_CARNELIAN);
+        if (ui_hover((Rectangle){ (float)cx, (float)hy, 18, 18 })) ui_legend("Envenenado", "el ungüento corta el veneno (B)");
+        cx += 24;
     }
-    // Totales.
     float speed = armor_speed_scale(&cb->armor);
-    ui_text(TextFormat("La armadura frena un %d %%", (int)((1.0f - speed) * 100.0f + 0.5f)), 60, fy + 140, 10, UI_BONE_DIM);
+    ui_icon(ICON_VELOCIDAD, (float)cx, (float)hy, 16, UI_BONE_DIM);
+    ui_text(TextFormat("-%d %%", (int)((1.0f - speed) * 100.0f + 0.5f)), cx + 20, hy + 4, 10, UI_BONE_DIM);
+    if (ui_hover((Rectangle){ (float)cx, (float)hy, 70, 18 })) ui_legend("La armadura frena", TextFormat("un %d %%", (int)((1.0f - speed) * 100.0f + 0.5f)));
+    for (int i = 0; i < ph->wound_count && i < 6; i++) { // las heridas: un icono por herida; el detalle, al pasar
+        Rectangle r = { (float)(dx + i * 22), (float)(hy + 26), 18, 18 };
+        DrawRectangleRec(r, (Color){ 70, 24, 18, 236 });
+        ui_icon(ICON_SANGRE, r.x + 1, r.y + 1, 16, ph->wounds[i].treated ? UI_BONE_DIM : UI_CARNELIAN);
+        if (ui_hover(r)) {
+            char d[96];
+            wound_describe(&ph->wounds[i], false, d, sizeof(d));
+            ui_legend("Herida", d);
+        }
+    }
 }
 
 void ig_draw(const GameActions *ga, const Combat *cb, const Props *props, const Player *p, int w, int h) {
