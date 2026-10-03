@@ -9,6 +9,7 @@ RPG de mundo abierto en 3D low-res, inspirado en las tribus nómadas de la estep
 - Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Arquitectura: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
 - Capturas de todas las pantallas: [docs/CAPTURAS.md](docs/CAPTURAS.md)
+- Modelos editables en Nomad Sculpt (un GLB por objeto) y atlas de materiales para pintar: [arte/nomad/](arte/nomad/README.md) · iconos de los menús: [assets/ui/iconos.png](assets/ui/iconos.png) (ver [ESTILO_VISUAL.md](docs/ESTILO_VISUAL.md#iconos))
 - Inventario de assets: [docs/INVENTARIO.md](docs/INVENTARIO.md) · animaciones: [docs/ANIMACIONES.md](docs/ANIMACIONES.md) · cómo importar modelos: [assets/models/README.md](assets/models/README.md)
 
 ## Compilar y jugar

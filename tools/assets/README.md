@@ -45,3 +45,21 @@ python3 tools/assets/cad.py visor                                 # CAD Viewer s
 cadgen respeta el +Y arriba de los GLB. Como en el juego el frente de un objeto es +X, la cámara `right` muestra **el frente** (la puerta de la yurta, el rostro de un personaje) y `front` muestra su costado.
 
 Para actualizar el skill: copiar de nuevo `skills/cad` del repositorio de text-to-cad a `.claude/skills/cad` (sin la carpeta `agents/`).
+
+# Inventario editable en Nomad Sculpt (`nomad.py`)
+
+`nomad.py` genera en [`arte/nomad/`](../../arte/nomad/README.md) un modelo de partida (blockout low-poly en GLB) para cada id del inventario, todos mapeados sobre un único atlas de materiales pintable a mano. Solo usa Python 3 y Pillow. No escribe nada en `assets/models/` ni en `assets/textures/`.
+
+```bash
+python3 tools/assets/nomad.py atlas [--forzar]             # atlas_materiales.png (solo si falta), guía ×4 y TSV de celdas
+python3 tools/assets/nomad.py modelos [--forzar] [prefijo]  # un GLB por id en arte/nomad/modelos/ (solo los que faltan)
+python3 tools/assets/nomad.py indice                       # INVENTARIO_MODELOS.md e inventario_modelos.tsv
+python3 tools/assets/nomad.py hoja [prefijo]               # hojas de miniaturas hoja_modelos_*.png (render con Pillow)
+python3 tools/assets/nomad.py verificar                    # relee cada GLB: cabecera, JSON, accessors, tris_max, medidas ±5 %, origen
+python3 tools/assets/nomad.py todo [--forzar]              # atlas + modelos + indice
+```
+
+- **No sobrescribe** el atlas ni un `.glb` existente sin `--forzar`: son archivos para pintar y esculpir. `prefijo` limita a los ids que empiezan así (p. ej. `animal.montura`).
+- `--sin-colores` genera los GLB sin `COLOR_0`.
+- Ejes como el marcador del juego (`src/world/props.c`): largo en X (+X es el frente), alto en Y, ancho en Z. Origen en el suelo; con etiqueta `manos:*`, en el punto de agarre.
+- Las formas salen de familias por categoría y palabras del nombre (humanoide, cuadrúpedo, ave, yurta, casas, barcos, carros, armas, armaduras por pieza…). Si una forma no cabe en `tris_max`, baja el detalle y, como último recurso, usa una caja.
