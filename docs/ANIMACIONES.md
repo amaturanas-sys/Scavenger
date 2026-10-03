@@ -3,7 +3,7 @@
 > Generado por `tools/assets/animaciones.py doc` a partir de [`assets/animaciones.tsv`](../assets/animaciones.tsv)
 > y del [inventario](INVENTARIO.md). No editar a mano.
 
-**93 clips** en 4 tipos de esqueleto · **81 modelos animados**.
+**96 clips** en 4 tipos de esqueleto · **94 modelos animados**.
 
 ## Cómo se nombran y se usan
 
@@ -89,18 +89,20 @@
 | Clip | Bucle | Prioridad | Descripción | Lo usa | Se aplica a |
 |---|---|---|---|---|---|
 | `idle` | si | obligatoria | Quieto. | quieto | todos |
-| `pastar` | si | obligatoria | Comer del suelo. | deambular | `animal.montura.`, `animal.ganado.`, `animal.salvaje.ciervo`, `animal.salvaje.ibice` |
+| `pastar` | si | obligatoria | Comer del suelo. | deambular | `animal.montura.`, `animal.ganado.`, `animal.salvaje.ciervo`, `animal.salvaje.ibice`, `animal.salvaje.antilope`, `animal.salvaje.reno`, `animal.salvaje.gacela`, `animal.salvaje.liebre`, `animal.salvaje.jabali` |
 | `caminar` | si | obligatoria | Al paso. | deambular | todos |
 | `trotar` | si | obligatoria | Al trote. | seguir a la tribu | todos |
 | `galopar` | si | obligatoria | Al galope / huir. | huir, montado | todos |
+| `acechar` | si | obligatoria | Agazapado, avance lento hacia la presa. | acecho de cazadores solitarios | `animal.salvaje.lobo`, `animal.salvaje.perro_salvaje`, `animal.salvaje.tigre`, `animal.salvaje.puma`, `animal.salvaje.oso`, `animal.salvaje.hiena`, `animal.salvaje.coyote` |
 | `saltar` | no | opcional | Salto. |  | todos |
 | `encabritarse` | no | obligatoria | Resistirse (encabritarse, sacudirse). | lanzar lazo | todos |
 | `forcejear_lazo` | si | obligatoria | Atrapado por el lazo, tirando. | lanzar lazo | todos |
 | `montado_idle` | si | obligatoria | Con jinete, quieto. | montado | `uso:montable` |
 | `tirar_carga` | si | opcional | Tirando de una carreta o un trineo. | vehículos | `animal.ganado.buey`, `animal.montura.reno`, `animal.ganado.yak`, `animal.montura.caballo_estepario` |
-| `atacar` | no | obligatoria | Ataque. | combate | `animal.salvaje.lobo`, `animal.salvaje.tigre`, `animal.salvaje.oso`, `animal.salvaje.leopardo_nieves`, `animal.ganado.perro_pastor`, `animal.montura.elefante_guerra` |
-| `aullar` | no | opcional | Aullar. |  | `animal.salvaje.lobo` |
+| `atacar` | no | obligatoria | Ataque (mordisco, zarpazo, coz, cornada, embestida). | combate | todos |
+| `aullar` | no | opcional | Aullar. |  | `animal.salvaje.lobo`, `animal.salvaje.perro_salvaje`, `animal.salvaje.coyote`, `animal.salvaje.hiena` |
 | `echarse` | si | opcional | Tumbarse a descansar. | descanso | todos |
+| `comer_presa` | si | obligatoria | Comer de una presa abatida. | cazar | `animal.salvaje.lobo`, `animal.salvaje.perro_salvaje`, `animal.salvaje.tigre`, `animal.salvaje.puma`, `animal.salvaje.oso`, `animal.salvaje.hiena`, `animal.salvaje.coyote` |
 | `recibir_golpe` | no | obligatoria | Reacción al golpe. | combate | todos |
 | `morir` | no | obligatoria | Caer muerto. | combate | todos |
 
@@ -113,7 +115,8 @@
 | `volar` | si | obligatoria | Aleteo. |  | todos |
 | `planear` | si | obligatoria | Planear. |  | todos |
 | `aterrizar` | no | obligatoria | Aterrizar (en el brazo, en el suelo). |  | todos |
-| `atacar_picado` | no | opcional | Caer en picado sobre la presa. |  | `animal.ave.aguila`, `animal.ave.halcon` |
+| `atacar_picado` | no | obligatoria | Caer en picado sobre la presa. | combate | `animal.ave.aguila`, `animal.ave.halcon`, `animal.ave.cuervo` |
+| `morir` | no | obligatoria | Caer abatida. | combate | todos |
 
 ## Mecanismo (vehículos, asedio, puertas)
 
@@ -171,27 +174,40 @@
 | `personaje.npc.mercenario` (Mercenario) | humanoide | 54 | 9 | idle, caminar, correr, acechar, acechar_idle, saltar, caer, aterrizar, trepar_cuerda, trepar_cima, nadar, montar_subir, montar_bajar, jinete_idle, jinete_paso, jinete_galope, jinete_arco, tomar, llevar, lanzar, empunar_una, empunar_doble, empunar_dos_manos, empunar_escudo, empunar_arco, cambiar_empunadura, enfundar, desenfundar, agacharse_trabajar, cavar, lanzar_trepa, lanzar_lazo, forcejear_lazo, encender, ensillar, construir, forjar, cocinar, curar, ataque_una_1, ataque_una_2, ataque_una_3, ataque_dos_1, ataque_dos_2, ataque_dos_3, estocada_lanza, bloquear, agarre, derribo, proyeccion, disparar_arco, disparar_ballesta, recargar_ballesta, disparar_mosquete, recargar_mosquete, recibir_golpe, morir, abatido, cojear, vendar, hablar, celebrar, protestar |
 | `personaje.npc.nino` (Niño) | humanoide | 54 | 9 | idle, caminar, correr, acechar, acechar_idle, saltar, caer, aterrizar, trepar_cuerda, trepar_cima, nadar, montar_subir, montar_bajar, jinete_idle, jinete_paso, jinete_galope, jinete_arco, tomar, llevar, lanzar, empunar_una, empunar_doble, empunar_dos_manos, empunar_escudo, empunar_arco, cambiar_empunadura, enfundar, desenfundar, agacharse_trabajar, cavar, lanzar_trepa, lanzar_lazo, forcejear_lazo, encender, ensillar, construir, forjar, cocinar, curar, ataque_una_1, ataque_una_2, ataque_una_3, ataque_dos_1, ataque_dos_2, ataque_dos_3, estocada_lanza, bloquear, agarre, derribo, proyeccion, disparar_arco, disparar_ballesta, recargar_ballesta, disparar_mosquete, recargar_mosquete, recibir_golpe, morir, abatido, cojear, vendar, hablar, celebrar, protestar |
 | `personaje.npc.anciano` (Anciano) | humanoide | 54 | 9 | idle, caminar, correr, acechar, acechar_idle, saltar, caer, aterrizar, trepar_cuerda, trepar_cima, nadar, montar_subir, montar_bajar, jinete_idle, jinete_paso, jinete_galope, jinete_arco, tomar, llevar, lanzar, empunar_una, empunar_doble, empunar_dos_manos, empunar_escudo, empunar_arco, cambiar_empunadura, enfundar, desenfundar, agacharse_trabajar, cavar, lanzar_trepa, lanzar_lazo, forcejear_lazo, encender, ensillar, construir, forjar, cocinar, curar, ataque_una_1, ataque_una_2, ataque_una_3, ataque_dos_1, ataque_dos_2, ataque_dos_3, estocada_lanza, bloquear, agarre, derribo, proyeccion, disparar_arco, disparar_ballesta, recargar_ballesta, disparar_mosquete, recargar_mosquete, recibir_golpe, morir, abatido, cojear, vendar, hablar, celebrar, protestar |
-| `animal.montura.caballo_estepario` (Caballo estepario) | cuadrupedo | 10 | 3 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, tirar_carga, echarse, recibir_golpe, morir |
-| `animal.montura.caballo_guerra` (Caballo de guerra) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, echarse, recibir_golpe, morir |
-| `animal.montura.camello_bactriano` (Camello bactriano) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, echarse, recibir_golpe, morir |
-| `animal.montura.dromedario` (Dromedario) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, echarse, recibir_golpe, morir |
+| `animal.montura.caballo_estepario` (Caballo estepario) | cuadrupedo | 11 | 3 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, tirar_carga, atacar, echarse, recibir_golpe, morir |
+| `animal.montura.caballo_guerra` (Caballo de guerra) | cuadrupedo | 11 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, atacar, echarse, recibir_golpe, morir |
+| `animal.montura.camello_bactriano` (Camello bactriano) | cuadrupedo | 11 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, atacar, echarse, recibir_golpe, morir |
+| `animal.montura.dromedario` (Dromedario) | cuadrupedo | 11 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, atacar, echarse, recibir_golpe, morir |
 | `animal.montura.elefante_guerra` (Elefante de guerra) | cuadrupedo | 11 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, atacar, echarse, recibir_golpe, morir |
-| `animal.montura.reno` (Reno de tiro) | cuadrupedo | 10 | 3 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, tirar_carga, echarse, recibir_golpe, morir |
-| `animal.ganado.oveja` (Oveja) | cuadrupedo | 9 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, echarse, recibir_golpe, morir |
-| `animal.ganado.cabra` (Cabra) | cuadrupedo | 9 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, echarse, recibir_golpe, morir |
-| `animal.ganado.yak` (Yak) | cuadrupedo | 9 | 3 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, tirar_carga, echarse, recibir_golpe, morir |
-| `animal.ganado.buey` (Buey) | cuadrupedo | 9 | 3 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, tirar_carga, echarse, recibir_golpe, morir |
+| `animal.montura.reno` (Reno de tiro) | cuadrupedo | 11 | 3 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, tirar_carga, atacar, echarse, recibir_golpe, morir |
+| `animal.ganado.oveja` (Oveja) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.ganado.cabra` (Cabra) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.ganado.yak` (Yak) | cuadrupedo | 10 | 3 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, tirar_carga, atacar, echarse, recibir_golpe, morir |
+| `animal.ganado.buey` (Buey) | cuadrupedo | 10 | 3 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, tirar_carga, atacar, echarse, recibir_golpe, morir |
 | `animal.ganado.perro_pastor` (Perro pastor (mastín)) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
-| `animal.salvaje.lobo` (Lobo) | cuadrupedo | 9 | 3 | idle, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, aullar, echarse, recibir_golpe, morir |
-| `animal.salvaje.tigre` (Tigre) | cuadrupedo | 9 | 2 | idle, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
-| `animal.salvaje.oso` (Oso pardo) | cuadrupedo | 9 | 2 | idle, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
-| `animal.salvaje.ciervo` (Ciervo) | cuadrupedo | 9 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, echarse, recibir_golpe, morir |
-| `animal.salvaje.ibice` (Íbice) | cuadrupedo | 9 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, echarse, recibir_golpe, morir |
-| `animal.salvaje.zorro` (Zorro) | cuadrupedo | 8 | 2 | idle, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, echarse, recibir_golpe, morir |
+| `animal.salvaje.lobo` (Lobo) | cuadrupedo | 11 | 3 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, aullar, echarse, comer_presa, recibir_golpe, morir |
+| `animal.salvaje.tigre` (Tigre) | cuadrupedo | 11 | 2 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, echarse, comer_presa, recibir_golpe, morir |
+| `animal.salvaje.oso` (Oso pardo) | cuadrupedo | 11 | 2 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, echarse, comer_presa, recibir_golpe, morir |
+| `animal.salvaje.ciervo` (Ciervo) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.salvaje.ibice` (Íbice) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.salvaje.zorro` (Zorro) | cuadrupedo | 9 | 2 | idle, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
 | `animal.salvaje.leopardo_nieves` (Leopardo de las nieves) | cuadrupedo | 9 | 2 | idle, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
-| `animal.ave.aguila` (Águila (cetrería)) | ave | 5 | 1 | posado, despegar, volar, planear, aterrizar, atacar_picado |
-| `animal.ave.halcon` (Halcón (cetrería)) | ave | 5 | 1 | posado, despegar, volar, planear, aterrizar, atacar_picado |
-| `animal.ave.buitre` (Buitre) | ave | 5 | 0 | posado, despegar, volar, planear, aterrizar |
+| `animal.montura.mula` (Mula) | cuadrupedo | 11 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, atacar, echarse, recibir_golpe, morir |
+| `animal.montura.burro` (Burro) | cuadrupedo | 11 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, atacar, echarse, recibir_golpe, morir |
+| `animal.ganado.becerro` (Becerro) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.salvaje.perro_salvaje` (Perro asilvestrado) | cuadrupedo | 11 | 3 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, aullar, echarse, comer_presa, recibir_golpe, morir |
+| `animal.salvaje.puma` (Puma) | cuadrupedo | 11 | 2 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, echarse, comer_presa, recibir_golpe, morir |
+| `animal.salvaje.hiena` (Hiena) | cuadrupedo | 11 | 3 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, aullar, echarse, comer_presa, recibir_golpe, morir |
+| `animal.salvaje.coyote` (Coyote) | cuadrupedo | 11 | 3 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, aullar, echarse, comer_presa, recibir_golpe, morir |
+| `animal.salvaje.jabali` (Jabalí) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.salvaje.antilope` (Antílope saiga) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.salvaje.reno` (Reno salvaje) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.salvaje.gacela` (Gacela) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.salvaje.liebre` (Liebre) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
+| `animal.ave.aguila` (Águila (cetrería)) | ave | 7 | 0 | posado, despegar, volar, planear, aterrizar, atacar_picado, morir |
+| `animal.ave.halcon` (Halcón (cetrería)) | ave | 7 | 0 | posado, despegar, volar, planear, aterrizar, atacar_picado, morir |
+| `animal.ave.buitre` (Buitre) | ave | 6 | 0 | posado, despegar, volar, planear, aterrizar, morir |
+| `animal.ave.cuervo` (Cuervo) | ave | 7 | 0 | posado, despegar, volar, planear, aterrizar, atacar_picado, morir |
 | `vehiculo.tierra.carreta_bueyes` (Yunta de bueyes con carreta) | mecanismo | 1 | 0 | rodar |
 | `vehiculo.tierra.kibitka` (Carro con yurta montada (kibitka)) | mecanismo | 1 | 0 | rodar |
 | `vehiculo.tierra.carreta_mercancias` (Carreta de mercancías) | mecanismo | 1 | 0 | rodar |

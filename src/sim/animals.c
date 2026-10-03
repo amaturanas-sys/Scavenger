@@ -3,80 +3,677 @@
 #include <math.h>
 #include <string.h>
 
+// clang-format off
 static const SpeciesDef SPECIES[SPECIES_COUNT] = {
-    [SPECIES_HORSE] = { "Caballo estepario", "animal.montura.caballo_estepario", 7.0f, 14.0f, 0.45f, true, 2.4f },
-    [SPECIES_CAMEL] = { "Camello bactriano", "animal.montura.camello_bactriano", 4.5f, 10.0f, 0.55f, true, 1.7f },
-    [SPECIES_DEER] = { "Ciervo", "animal.salvaje.ciervo", 8.0f, 18.0f, 0.25f, false, 1.0f },
-    [SPECIES_WOLF] = { "Lobo", "animal.salvaje.lobo", 7.5f, 12.0f, 0.12f, false, 1.0f },
-    [SPECIES_IBEX] = { "Íbice", "animal.salvaje.ibice", 6.5f, 16.0f, 0.2f, false, 1.0f },
+    //                 nombre               modelo                                clase            vel   paso  talla  vida  daño alc.  cd    herida         sentido lazo  montable ride  social flier defiende caza carne piel leche grupo   habitat                         rareza
+    [SPECIES_HORSE]    = { "Caballo estepario", "animal.montura.caballo_estepario", CLASS_MOUNT,     7.0f, 1.3f, 2.2f, 120.0f,  8.0f, 1.6f, 1.4f, WOUND_BRUISE, 30.0f, 0.45f, true,  2.4f, true,  false, false, 0.0f,  6, 2, 0, 3, 6, HAB_STEPPE,                      1.0f },
+    [SPECIES_MULE]     = { "Mula",              "animal.montura.mula",              CLASS_MOUNT,     5.5f, 1.2f, 2.0f, 100.0f,  7.0f, 1.5f, 1.4f, WOUND_BRUISE, 25.0f, 0.60f, true,  1.8f, true,  false, false, 0.0f,  5, 1, 0, 2, 4, HAB_STEPPE | HAB_DESERT,         0.5f },
+    [SPECIES_DONKEY]   = { "Burro",             "animal.montura.burro",             CLASS_MOUNT,     5.0f, 1.1f, 1.6f,  80.0f,  6.0f, 1.4f, 1.4f, WOUND_BRUISE, 25.0f, 0.70f, true,  1.5f, true,  false, false, 0.0f,  4, 1, 0, 2, 4, HAB_DESERT | HAB_STEPPE,         0.6f },
+    [SPECIES_OX]       = { "Buey",              "animal.ganado.buey",               CLASS_MOUNT,     4.0f, 1.0f, 2.5f, 160.0f, 14.0f, 1.8f, 1.6f, WOUND_CUT,    25.0f, 0.50f, true,  1.3f, true,  false, true,  0.0f, 10, 3, 0, 2, 5, HAB_STEPPE | HAB_COLD,           0.6f },
+    [SPECIES_CAMEL]    = { "Camello bactriano", "animal.montura.camello_bactriano", CLASS_MOUNT,     4.5f, 1.0f, 3.0f, 140.0f,  8.0f, 1.6f, 1.5f, WOUND_BITE,   28.0f, 0.55f, true,  1.7f, true,  false, false, 0.0f,  8, 2, 0, 2, 4, HAB_DESERT,                      1.0f },
+    [SPECIES_ELEPHANT] = { "Elefante",          "animal.montura.elefante_guerra",   CLASS_MOUNT,     4.0f, 1.0f, 5.0f, 400.0f, 30.0f, 2.6f, 2.0f, WOUND_BRUISE, 30.0f, 0.35f, true,  1.6f, true,  false, true,  0.0f, 25, 4, 0, 2, 4, HAB_STEPPE,                      0.15f },
+    [SPECIES_WOLF]     = { "Lobo",              "animal.salvaje.lobo",              CLASS_TAMEABLE,  7.5f, 1.3f, 1.4f,  45.0f, 10.0f, 1.4f, 1.0f, WOUND_BITE,   35.0f, 0.0f,  false, 1.0f, true,  false, false, 2.3f,  2, 1, 0, 3, 6, HAB_STEPPE | HAB_COLD,           0.8f },
+    [SPECIES_DOG]      = { "Perro asilvestrado","animal.salvaje.perro_salvaje",     CLASS_TAMEABLE,  7.0f, 1.3f, 1.1f,  38.0f,  8.0f, 1.3f, 1.0f, WOUND_BITE,   30.0f, 0.0f,  false, 1.0f, true,  false, false, 1.7f,  1, 1, 0, 3, 5, HAB_STEPPE | HAB_DESERT,         0.5f },
+    [SPECIES_TIGER]    = { "Tigre",             "animal.salvaje.tigre",             CLASS_TAMEABLE,  8.0f, 1.2f, 2.6f, 140.0f, 24.0f, 1.8f, 1.3f, WOUND_CUT,    35.0f, 0.0f,  false, 1.0f, false, false, false, 3.0f,  6, 2, 0, 1, 1, HAB_STEPPE,                      0.15f },
+    [SPECIES_PUMA]     = { "Puma",              "animal.salvaje.puma",              CLASS_TAMEABLE,  8.5f, 1.2f, 1.9f,  70.0f, 15.0f, 1.6f, 1.1f, WOUND_CUT,    32.0f, 0.0f,  false, 1.0f, false, false, false, 2.2f,  3, 1, 0, 1, 1, HAB_STEPPE | HAB_COLD,           0.3f },
+    [SPECIES_FALCON]   = { "Halcón",            "animal.ave.halcon",                CLASS_TAMEABLE, 16.0f, 3.0f, 0.5f,  15.0f,  4.0f, 1.0f, 1.2f, WOUND_CUT,    60.0f, 0.0f,  false, 1.0f, false, true,  false, 0.6f,  0, 0, 0, 1, 1, HAB_STEPPE | HAB_DESERT,         0.4f },
+    [SPECIES_RAVEN]    = { "Cuervo",            "animal.ave.cuervo",                CLASS_TAMEABLE, 10.0f, 2.5f, 0.5f,  10.0f,  2.0f, 1.0f, 1.2f, WOUND_CUT,    40.0f, 0.0f,  false, 1.0f, true,  true,  false, 0.0f,  0, 0, 0, 2, 4, HAB_COLD | HAB_STEPPE,           0.5f },
+    [SPECIES_BEAR]     = { "Oso pardo",         "animal.salvaje.oso",               CLASS_HOSTILE,   6.5f, 1.0f, 2.2f, 180.0f, 26.0f, 1.8f, 1.5f, WOUND_CUT,    25.0f, 0.0f,  false, 1.0f, false, false, true,  2.2f,  8, 3, 0, 1, 1, HAB_STEPPE | HAB_COLD,           0.3f },
+    [SPECIES_HYENA]    = { "Hiena",             "animal.salvaje.hiena",             CLASS_HOSTILE,   7.0f, 1.3f, 1.3f,  50.0f, 12.0f, 1.4f, 1.1f, WOUND_BITE,   35.0f, 0.0f,  false, 1.0f, true,  false, false, 2.2f,  1, 1, 0, 3, 6, HAB_DESERT,                      0.6f },
+    [SPECIES_COYOTE]   = { "Coyote",            "animal.salvaje.coyote",            CLASS_HOSTILE,   7.5f, 1.4f, 1.1f,  30.0f,  7.0f, 1.3f, 1.0f, WOUND_BITE,   30.0f, 0.0f,  false, 1.0f, true,  false, false, 1.2f,  1, 1, 0, 2, 4, HAB_STEPPE | HAB_DESERT,         0.6f },
+    [SPECIES_BOAR]     = { "Jabalí",            "animal.salvaje.jabali",            CLASS_HOSTILE,   6.5f, 1.2f, 1.4f,  70.0f, 14.0f, 1.3f, 1.3f, WOUND_CUT,    18.0f, 0.0f,  false, 1.0f, true,  false, true,  0.0f,  4, 1, 0, 2, 5, HAB_STEPPE,                      0.6f },
+    [SPECIES_ANTELOPE] = { "Antílope saiga",    "animal.salvaje.antilope",          CLASS_PREY,      9.0f, 1.2f, 1.6f,  50.0f,  0.0f, 1.2f, 1.5f, WOUND_BRUISE, 40.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  3, 1, 0, 4, 8, HAB_STEPPE,                      1.0f },
+    [SPECIES_REINDEER] = { "Reno salvaje",      "animal.salvaje.reno",              CLASS_PREY,      7.5f, 1.2f, 2.0f,  70.0f,  0.0f, 1.4f, 1.5f, WOUND_BRUISE, 35.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  5, 2, 0, 4, 8, HAB_COLD,                        1.0f },
+    [SPECIES_GAZELLE]  = { "Gacela",            "animal.salvaje.gacela",            CLASS_PREY,      9.5f, 1.3f, 1.2f,  35.0f,  0.0f, 1.2f, 1.5f, WOUND_BRUISE, 45.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  2, 1, 0, 4, 8, HAB_DESERT,                      1.0f },
+    [SPECIES_DEER]     = { "Ciervo",            "animal.salvaje.ciervo",            CLASS_PREY,      8.0f, 1.2f, 1.8f,  60.0f,  0.0f, 1.4f, 1.5f, WOUND_BRUISE, 40.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  4, 2, 0, 3, 5, HAB_STEPPE,                      0.8f },
+    [SPECIES_HARE]     = { "Liebre",            "animal.salvaje.liebre",            CLASS_PREY,      9.0f, 1.5f, 0.5f,   8.0f,  0.0f, 0.6f, 1.0f, WOUND_BRUISE, 20.0f, 0.0f,  false, 1.0f, false, false, false, 0.0f,  1, 1, 0, 1, 2, HAB_STEPPE | HAB_DESERT | HAB_COLD, 1.0f },
+    [SPECIES_IBEX]     = { "Íbice",             "animal.salvaje.ibice",             CLASS_PREY,      6.5f, 1.2f, 1.4f,  45.0f,  0.0f, 1.2f, 1.5f, WOUND_BRUISE, 35.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  3, 1, 0, 2, 4, HAB_COLD,                        0.8f },
+    [SPECIES_GOAT]     = { "Cabra",             "animal.ganado.cabra",              CLASS_LIVESTOCK, 5.0f, 1.0f, 1.1f,  30.0f,  3.0f, 1.0f, 1.4f, WOUND_BRUISE, 25.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  2, 1, 1, 3, 6, HAB_STEPPE,                      0.0f },
+    [SPECIES_CALF]     = { "Becerro",           "animal.ganado.becerro",            CLASS_LIVESTOCK, 4.5f, 1.0f, 1.4f,  45.0f,  0.0f, 1.0f, 1.4f, WOUND_BRUISE, 25.0f, 0.0f,  false, 1.0f, true,  false, false, 0.0f,  4, 1, 0, 2, 4, HAB_STEPPE,                      0.0f },
 };
+// clang-format on
 
 #define WANDER_RADIUS 18.0f
-#define WALK_SPEED 1.2f
 #define FOLLOW_GAP 4.0f
+#define FOLLOW_RANGE 30.0f   // m: los domados siguen al jugador si esta a menos
+#define HERD_RANGE 10.0f     // m: el ganado sigue al jugador que camina cerca
+#define HERD_LOSE 18.0f      // m: si el pastor se aleja, el rebaño se queda
+#define GROUP_SPREAD 9.0f    // m: un animal social vuelve con su grupo si se aleja
+#define FEAR_SECONDS 60.0f   // s: una presa herida por personas les teme
+#define ALARM_RADIUS 25.0f   // m: hasta donde se contagia la alarma en un grupo
+#define CRITICAL 0.2f        // vida: depredadores y hostiles huyen por debajo
+#define WEAK 0.4f            // vida: un depredador domable se puede atar
+#define BOUND_SECONDS 60.0f  // s: atado sin comer, se suelta
+#define EAT_SECONDS 25.0f    // s: un cazador come su presa
+#define RIVAL_SECONDS 6.0f   // s: dura una pelea de rivales
+#define RIVAL_RANGE 20.0f    // m: territorio de un solitario
+#define STALK_POUNCE 7.0f    // m: el acecho termina en un salto
+#define HUNGER_RATE (1.0f / 420.0f)
 
 const SpeciesDef *species_def(Species s) { return s >= 0 && s < SPECIES_COUNT ? &SPECIES[s] : NULL; }
 
+bool species_is_prey(Species s) {
+    AnimalClass c = SPECIES[s].cls;
+    return c == CLASS_MOUNT || c == CLASS_PREY || c == CLASS_LIVESTOCK;
+}
+
+int species_find(const char *name) {
+    if (!name || !name[0]) return -1;
+    for (int s = 0; s < SPECIES_COUNT; s++) {
+        const char *dot = strrchr(SPECIES[s].model, '.');
+        if ((dot && !strcmp(dot + 1, name)) || !strcmp(SPECIES[s].model, name)) return s;
+    }
+    return -1;
+}
+
 void animal_init(Animal *a, Species s, float x, float z) {
     memset(a, 0, sizeof(*a));
+    const SpeciesDef *d = &SPECIES[s];
+    a->used = true;
     a->species = s;
-    a->state = ANIMAL_WILD;
+    a->state = d->cls == CLASS_LIVESTOCK ? ANIMAL_TAMED : ANIMAL_WILD;
+    a->mode = MODE_GRAZE;
     a->x = a->home_x = a->tx = x;
     a->z = a->home_z = a->tz = z;
+    a->group = -1;
+    a->tkind = TGT_NONE;
+    a->target = -1;
+    a->alt = d->flier ? 8.0f : 0.0f;
+    a->hunger = 0.3f;
+    a->stamina = 1.0f;
+    health_init_beast(&a->h, d->hp);
 }
+
+// ------------------------------------------------------------------ utilidades
+static float dist_xz(float ax, float az, float bx, float bz) {
+    float dx = ax - bx, dz = az - bz;
+    return sqrtf(dx * dx + dz * dz);
+}
+
+static float adist(const Animal *a, const Animal *b) { return dist_xz(a->x, a->z, b->x, b->z); }
+
+static bool alive(const Animal *a) { return a->used && a->state != ANIMAL_DEAD; }
 
 static void move_towards(Animal *a, float tx, float tz, float speed, float dt) {
     float dx = tx - a->x, dz = tz - a->z, d = sqrtf(dx * dx + dz * dz);
-    if (d < 0.05f) return;
+    if (d < 0.05f || speed <= 0.0f) return;
     float step = fminf(speed * dt, d);
     a->x += dx / d * step;
     a->z += dz / d * step;
     a->yaw = atan2f(dx, dz);
 }
 
-static void update_inner(Animal *a, float dt, float px, float pz, Rng *rng);
-
-void animal_update(Animal *a, float dt, float px, float pz, Rng *rng) {
-    if (a->ridden) return; // lo mueve el jinete (y fija su velocidad)
-    float x0 = a->x, z0 = a->z;
-    update_inner(a, dt, px, pz, rng);
-    a->speed = dt > 0.0f ? sqrtf((a->x - x0) * (a->x - x0) + (a->z - z0) * (a->z - z0)) / dt : 0.0f;
+static void move_away(Animal *a, float fx, float fz, float speed, float dt) {
+    float dx = a->x - fx, dz = a->z - fz, d = sqrtf(dx * dx + dz * dz);
+    if (d < 0.01f) dx = 1.0f, dz = 0.0f, d = 1.0f;
+    move_towards(a, a->x + dx / d * 5.0f, a->z + dz / d * 5.0f, speed, dt);
 }
 
-static void update_inner(Animal *a, float dt, float px, float pz, Rng *rng) {
-    const SpeciesDef *d = &SPECIES[a->species];
-    float dx = a->x - px, dz = a->z - pz, dist = sqrtf(dx * dx + dz * dz);
-    if (a->state == ANIMAL_WILD && dist < d->flee_dist) {
-        // Huye en direccion contraria al jugador.
-        a->fleeing = true;
-        float inv = dist > 0.01f ? 1.0f / dist : 1.0f;
-        move_towards(a, a->x + dx * inv * 5.0f, a->z + dz * inv * 5.0f, d->speed, dt);
-        return;
-    }
+static void push(FaunaEvents *ev, FaunaEventKind k, int animal, int other, float dmg, WoundKind w) {
+    if (!ev || ev->n >= FAUNA_EVENTS_MAX) return;
+    ev->ev[ev->n++] = (FaunaEvent){ k, animal, other, dmg, w };
+}
+
+static void clear_target(Animal *a) {
+    a->tkind = TGT_NONE;
+    a->target = -1;
+}
+
+static void die(Animal *a, bool by_human) {
+    a->state = ANIMAL_DEAD;
+    a->mode = MODE_GRAZE;
+    a->corpse = 0.0f;
+    a->speed = 0.0f;
     a->fleeing = false;
-    if (a->state != ANIMAL_WILD && dist > FOLLOW_GAP && dist < 30.0f) {
-        // Domado: sigue al jugador si esta cerca; si no, pasta en el campamento.
-        move_towards(a, px - dx / dist * FOLLOW_GAP, pz - dz / dist * FOLLOW_GAP, d->speed * 0.6f, dt);
-        return;
-    }
-    // Deambular por su territorio.
+    a->killed_by_human = by_human;
+    clear_target(a);
+}
+
+// A la carrera: cansado, corre menos (hasta la mitad).
+static float run_speed(const Animal *a) {
+    return SPECIES[a->species].speed * health_speed_scale(&a->h) * (0.5f + 0.5f * a->stamina);
+}
+
+// Cuanto cansa correr: las presas se agotan antes que una manada; un solitario solo aguanta un salto corto.
+static float tire_rate(const SpeciesDef *d) {
+    if (d->hunt_max <= 0.0f && d->cls != CLASS_HOSTILE) return 1.0f / 14.0f;
+    return d->social ? 1.0f / 40.0f : 1.0f / 9.0f;
+}
+
+// Elige un destino al azar en su territorio; los que pastan a veces se quedan quietos.
+static void wander(Animal *a, Rng *rng, float radius, float dt) {
+    const SpeciesDef *d = &SPECIES[a->species];
     a->timer -= dt;
     if (a->timer <= 0.0f) {
-        float ang = rng_float(rng) * 6.2831853f, r = rng_float(rng) * WANDER_RADIUS;
-        a->tx = a->home_x + cosf(ang) * r;
-        a->tz = a->home_z + sinf(ang) * r;
+        if (!d->flier && rng_float(rng) < 0.4f) {
+            a->tx = a->x; // pastar en el sitio
+            a->tz = a->z;
+        } else {
+            float ang = rng_float(rng) * 6.2831853f, r = rng_float(rng) * radius;
+            a->tx = a->home_x + cosf(ang) * r;
+            a->tz = a->home_z + sinf(ang) * r;
+        }
         a->timer = 4.0f + rng_float(rng) * 6.0f;
     }
-    move_towards(a, a->tx, a->tz, WALK_SPEED, dt);
+    move_towards(a, a->tx, a->tz, d->walk, dt);
+}
+
+static int nearest_human(const FaunaCtx *c, float x, float z, float range, bool sneak_aware, float *out_d) {
+    int best = -1;
+    float bd = range;
+    for (int h = 0; h < c->human_count; h++) {
+        const FaunaHuman *hu = &c->humans[h];
+        if (hu->down) continue;
+        float d = dist_xz(x, z, hu->x, hu->z);
+        float lim = sneak_aware && hu->sneaking ? range * 0.45f : range;
+        if (d < lim && d < bd) bd = d, best = h;
+    }
+    if (out_d) *out_d = bd;
+    return best;
+}
+
+// ------------------------------------------------------------------ daño
+int animal_hurt(Animal *a, int n, int idx, Rng *rng, float damage, WoundKind kind, int part, bool by_human,
+                int attacker_human) {
+    if (idx < 0 || idx >= n || !alive(&a[idx])) return -1;
+    Animal *t = &a[idx];
+    const SpeciesDef *d = &SPECIES[t->species];
+    int w = health_hit(&t->h, rng, damage, kind, part);
+    t->hit_anim = 0.3f;
+    if (t->h.down || t->h.dead) {
+        if (t->ridden) t->ridden = false;
+        die(t, by_human);
+        return w;
+    }
+    t->weakened = t->h.hp < WEAK * t->h.hp_max;
+    if (!by_human || t->state != ANIMAL_WILD) return w;
+    if (species_is_prey(t->species) && !d->defends) {
+        // Presa herida por una persona: le teme, y todo su grupo con ella.
+        t->fear_humans = FEAR_SECONDS;
+        t->alert = 8.0f;
+        for (int i = 0; i < n; i++)
+            if (i != idx && alive(&a[i]) && a[i].state == ANIMAL_WILD && t->group >= 0 && a[i].group == t->group &&
+                adist(&a[i], t) < ALARM_RADIUS)
+                a[i].fear_humans = FEAR_SECONDS, a[i].alert = 8.0f;
+    } else if (attacker_human >= 0) {
+        // Cazadores, hostiles y los que se defienden: se vuelven contra quien los hirio.
+        t->tkind = TGT_HUMAN;
+        t->target = attacker_human;
+        t->mode = MODE_CHASE;
+    }
+    return w;
+}
+
+// ------------------------------------------------------------------ presas
+// Busca la amenaza que nota una presa (un cazador, o personas si les teme).
+static bool prey_threat(const Animal *a, int i, const Animal *all, int n, const FaunaCtx *c, float *fx, float *fz) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    float best = 1e9f;
+    bool found = false;
+    float notice_scale = c->night ? 0.75f : 1.0f;
+    for (int k = 0; k < n; k++) {
+        const Animal *p = &all[k];
+        if (k == i || !alive(p) || p->state != ANIMAL_WILD) continue;
+        const SpeciesDef *pd = &SPECIES[p->species];
+        if (pd->hunt_max < d->size || pd->hunt_max <= 0.0f) continue;
+        // Un cazador que acecha cuesta mas notarlo; uno que corre hacia ti, menos.
+        float notice = d->sense * notice_scale * (p->mode == MODE_STALK ? 0.35f : p->mode == MODE_CHASE ? 1.3f : 0.7f);
+        float dd = adist(a, p);
+        if (dd < notice && dd < best) best = dd, *fx = p->x, *fz = p->z, found = true;
+    }
+    if (a->fear_humans > 0.0f && a->state == ANIMAL_WILD) {
+        float dh;
+        int h = nearest_human(c, a->x, a->z, 40.0f, false, &dh);
+        if (h >= 0 && dh < best) *fx = c->humans[h].x, *fz = c->humans[h].z, found = true;
+    }
+    return found;
+}
+
+static void alarm_group(Animal *all, int n, int i, float fx, float fz, FaunaEvents *ev) {
+    Animal *a = &all[i];
+    bool spread = false;
+    for (int k = 0; k < n; k++) {
+        Animal *o = &all[k];
+        if (k == i || !alive(o) || a->group < 0 || o->group != a->group || o->alert > 0.0f) continue;
+        if (adist(a, o) > ALARM_RADIUS) continue;
+        o->alert = 6.0f;
+        o->flee_x = fx;
+        o->flee_z = fz;
+        spread = true;
+    }
+    if (spread) push(ev, FEV_PREY_ALARM, i, -1, 0.0f, WOUND_BRUISE);
+}
+
+// Lleva un animal social de vuelta a su grupo (el centro de los suyos cercanos).
+static bool keep_with_group(Animal *a, int i, const Animal *all, int n, float dt) {
+    if (a->group < 0) return false;
+    float cx = 0.0f, cz = 0.0f;
+    int cnt = 0;
+    for (int k = 0; k < n; k++) {
+        const Animal *o = &all[k];
+        if (k == i || !alive(o) || o->group != a->group || adist(a, o) > 60.0f) continue;
+        cx += o->x, cz += o->z, cnt++;
+    }
+    if (!cnt) return false;
+    cx /= (float)cnt, cz /= (float)cnt;
+    if (dist_xz(a->x, a->z, cx, cz) < GROUP_SPREAD) return false;
+    move_towards(a, cx, cz, SPECIES[a->species].walk * 1.8f, dt);
+    return true;
+}
+
+// ------------------------------------------------------------------ cazadores
+static bool target_valid(const Animal *a, const Animal *all, int n, const FaunaCtx *c, float range) {
+    if (a->tkind == TGT_ANIMAL) {
+        if (a->target < 0 || a->target >= n || !alive(&all[a->target]) || all[a->target].ridden) return false;
+        return adist(a, &all[a->target]) < range * 1.6f;
+    }
+    if (a->tkind == TGT_HUMAN) {
+        if (a->target < 0 || a->target >= c->human_count || c->humans[a->target].down) return false;
+        return dist_xz(a->x, a->z, c->humans[a->target].x, c->humans[a->target].z) < range * 1.6f;
+    }
+    return false;
+}
+
+static void target_pos(const Animal *a, const Animal *all, const FaunaCtx *c, float *x, float *z) {
+    if (a->tkind == TGT_ANIMAL) *x = all[a->target].x, *z = all[a->target].z;
+    else *x = c->humans[a->target].x, *z = c->humans[a->target].z;
+}
+
+static float human_aggro(const SpeciesDef *d) { return d->flier ? 10.0f : d->sense; }
+
+// Elige objetivo: personas cerca (si es hostil o salvaje) o una presa si tiene hambre.
+static void pick_target(Animal *a, int i, Animal *all, int n, const FaunaCtx *c) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    float best = 1e9f;
+    if (a->state == ANIMAL_WILD) {
+        float dh;
+        int h = nearest_human(c, a->x, a->z, human_aggro(d), true, &dh);
+        if (h >= 0) best = dh, a->tkind = TGT_HUMAN, a->target = h;
+    }
+    if (d->hunt_max > 0.0f && (a->hunger > 0.5f || a->state != ANIMAL_WILD)) {
+        for (int k = 0; k < n; k++) {
+            const Animal *p = &all[k];
+            if (k == i || !alive(p) || p->ridden || !species_is_prey(p->species)) continue;
+            if (SPECIES[p->species].size > d->hunt_max) continue;
+            if (a->state != ANIMAL_WILD && (p->state != ANIMAL_WILD || p->species != SPECIES_HARE)) continue;
+            float dd = adist(a, p);
+            if (dd < d->sense && dd < best) best = dd, a->tkind = TGT_ANIMAL, a->target = k;
+        }
+    }
+    // Manada: si un compañero ya tiene presa, la comparten.
+    if (a->tkind == TGT_NONE && d->social && a->group >= 0) {
+        for (int k = 0; k < n; k++) {
+            const Animal *o = &all[k];
+            if (k == i || !alive(o) || o->group != a->group || o->tkind == TGT_NONE || adist(a, o) > 30.0f) continue;
+            if (o->tkind == TGT_ANIMAL && (o->target < 0 || !alive(&all[o->target]))) continue;
+            a->tkind = o->tkind;
+            a->target = o->target;
+            break;
+        }
+    }
+}
+
+static void strike(Animal *a, int i, Animal *all, int n, Rng *rng, FaunaEvents *ev, float scale, WoundKind w) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    a->cooldown = d->cooldown;
+    a->attack_anim = 0.4f;
+    float dmg = fmaxf(1.0f, d->damage * scale) * (0.8f + 0.4f * rng_float(rng)) * health_attack_scale(&a->h);
+    if (a->tkind == TGT_HUMAN) {
+        push(ev, FEV_BITE_HUMAN, i, a->target, dmg, w);
+        return;
+    }
+    int t = a->target;
+    animal_hurt(all, n, t, rng, dmg, w, PART_RANDOM, false, -1);
+    all[t].alert = fmaxf(all[t].alert, 4.0f);
+    all[t].flee_x = a->x, all[t].flee_z = a->z;
+    if (all[t].state == ANIMAL_DEAD) {
+        push(ev, FEV_KILL, i, t, 0.0f, w);
+        a->mode = MODE_EAT;
+        a->timer = EAT_SECONDS;
+        a->hunger = 0.0f;
+        // La manada come con el.
+        for (int k = 0; k < n; k++)
+            if (k != i && alive(&all[k]) && a->group >= 0 && all[k].group == a->group && all[k].tkind == TGT_ANIMAL &&
+                all[k].target == t)
+                all[k].mode = MODE_EAT, all[k].timer = EAT_SECONDS, all[k].hunger = 0.0f;
+    }
+}
+
+static void hunt(Animal *a, int i, Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, FaunaEvents *ev) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    float tx, tz;
+    target_pos(a, all, c, &tx, &tz);
+    float dist = dist_xz(a->x, a->z, tx, tz);
+    float reach = d->reach + (a->tkind == TGT_ANIMAL ? SPECIES[all[a->target].species].size * 0.3f : 0.3f);
+    bool unaware = a->tkind == TGT_ANIMAL && all[a->target].alert <= 0.0f;
+    if (!d->social && unaware && dist > STALK_POUNCE) {
+        // Acecho: despacio, sin que lo noten, hasta saltar de cerca.
+        a->mode = MODE_STALK;
+        move_towards(a, tx, tz, run_speed(a) * 0.28f, dt);
+        return;
+    }
+    a->mode = MODE_CHASE;
+    if (dist > reach * 0.9f) {
+        float gx = tx, gz = tz;
+        if (d->social && dist > 4.0f) { // la manada rodea: cada uno por su lado
+            float ang = (float)(i % 5) * 1.25f;
+            gx += cosf(ang) * 2.5f, gz += sinf(ang) * 2.5f;
+        }
+        move_towards(a, gx, gz, run_speed(a), dt);
+        if (dist > 0.01f) a->yaw = atan2f(tx - a->x, tz - a->z);
+    }
+    if (dist <= reach && a->cooldown <= 0.0f && (!d->flier || a->alt < 2.5f)) strike(a, i, all, n, rng, ev, 1.0f, d->wound);
+}
+
+// ------------------------------------------------------------------ rivales
+static void start_rivalry(Animal *a, int i, Animal *all, int n) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    if (d->social || d->flier || a->state != ANIMAL_WILD || a->rival_timer > -20.0f) return; // descansa entre peleas
+    for (int k = 0; k < n; k++) {
+        Animal *o = &all[k];
+        if (k == i || !alive(o) || o->species != a->species || o->state != ANIMAL_WILD || o->mode != MODE_GRAZE) continue;
+        if (o->rival_timer > -20.0f || adist(a, o) > RIVAL_RANGE) continue;
+        a->mode = o->mode = MODE_RIVAL;
+        a->tkind = o->tkind = TGT_ANIMAL;
+        a->target = k;
+        o->target = i;
+        a->rival_timer = o->rival_timer = RIVAL_SECONDS;
+        return;
+    }
+}
+
+static void rivalry(Animal *a, int i, Animal *all, int n, Rng *rng, float dt, FaunaEvents *ev) {
+    Animal *o = a->target >= 0 && a->target < n ? &all[a->target] : NULL;
+    if (!o || !alive(o) || o->mode != MODE_RIVAL) {
+        a->mode = MODE_GRAZE;
+        clear_target(a);
+        return;
+    }
+    if (a->rival_timer <= 0.0f) {
+        if (i > a->target) return; // decide el de menor indice
+        // Pierde el que quedo peor: se va lejos del ganador.
+        Animal *loser = a->h.hp / a->h.hp_max < o->h.hp / o->h.hp_max ? a : o, *winner = loser == a ? o : a;
+        float dx = loser->x - winner->x, dz = loser->z - winner->z, l = sqrtf(dx * dx + dz * dz);
+        if (l < 0.01f) dx = 1.0f, dz = 0.0f, l = 1.0f;
+        loser->home_x = winner->x + dx / l * 50.0f;
+        loser->home_z = winner->z + dz / l * 50.0f;
+        loser->alert = 10.0f;
+        loser->flee_x = winner->x, loser->flee_z = winner->z;
+        a->mode = o->mode = MODE_GRAZE;
+        clear_target(a), clear_target(o);
+        push(ev, FEV_RIVAL_WON, (int)(winner - all), (int)(loser - all), 0.0f, WOUND_BRUISE);
+        return;
+    }
+    const SpeciesDef *d = &SPECIES[a->species];
+    float dist = adist(a, o);
+    if (dist > d->reach) move_towards(a, o->x, o->z, run_speed(a) * 0.6f, dt);
+    else a->yaw = atan2f(o->x - a->x, o->z - a->z);
+    // Golpes de advertencia: hieren poco.
+    if (dist <= d->reach + 0.2f && a->cooldown <= 0.0f) strike(a, i, all, n, rng, ev, 0.25f, WOUND_BRUISE);
+}
+
+// ------------------------------------------------------------------ actualizacion
+static void update_wild(Animal *a, int i, Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, FaunaEvents *ev) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    bool critical = a->h.hp < CRITICAL * a->h.hp_max;
+    a->fleeing = false;
+
+    // Presas (y monturas salvajes): huyen de lo que notan, salvo las que se defienden.
+    bool defending = d->defends && a->tkind == TGT_HUMAN && target_valid(a, all, n, c, d->sense);
+    if (species_is_prey(a->species) && !defending) {
+        float fx, fz;
+        if (prey_threat(a, i, all, n, c, &fx, &fz)) {
+            if (a->alert <= 0.0f) alarm_group(all, n, i, fx, fz, ev);
+            a->alert = fmaxf(a->alert, 5.0f);
+            a->flee_x = fx, a->flee_z = fz;
+        }
+        if (a->alert > 0.0f) {
+            a->mode = MODE_FLEE;
+            a->fleeing = true;
+            move_away(a, a->flee_x, a->flee_z, run_speed(a), dt);
+            return;
+        }
+        a->mode = MODE_GRAZE;
+        clear_target(a);
+        if (!keep_with_group(a, i, all, n, dt)) wander(a, rng, WANDER_RADIUS, dt);
+        start_rivalry(a, i, all, n);
+        return;
+    }
+
+    // Cazadores, hostiles y defensores.
+    if (critical && d->cls != CLASS_MOUNT && d->cls != CLASS_LIVESTOCK) {
+        // Vida critica: ahora si, huye.
+        if (a->tkind != TGT_NONE && target_valid(a, all, n, c, 1e6f)) target_pos(a, all, c, &a->flee_x, &a->flee_z);
+        a->mode = MODE_FLEE;
+        a->fleeing = true;
+        move_away(a, a->flee_x, a->flee_z, run_speed(a), dt);
+        return;
+    }
+    if (a->alert > 0.0f && a->mode != MODE_CHASE) { // perdio una pelea de rivales
+        a->fleeing = true;
+        move_away(a, a->flee_x, a->flee_z, run_speed(a), dt);
+        return;
+    }
+    if (a->mode == MODE_RIVAL) {
+        rivalry(a, i, all, n, rng, dt, ev);
+        return;
+    }
+    if (a->mode == MODE_EAT) {
+        a->timer -= dt;
+        // Si alguien se acerca mientras come, lo defiende.
+        float dh;
+        int h = nearest_human(c, a->x, a->z, human_aggro(d) * 0.5f, true, &dh);
+        if (h >= 0) {
+            a->tkind = TGT_HUMAN, a->target = h, a->mode = MODE_CHASE;
+        } else {
+            if (a->tkind == TGT_ANIMAL && a->target >= 0 && a->target < n && all[a->target].used)
+                all[a->target].eaten = fminf(1.0f, all[a->target].eaten + dt / 60.0f);
+            if (a->timer <= 0.0f) a->mode = MODE_GRAZE, clear_target(a);
+            return;
+        }
+    }
+    if (!target_valid(a, all, n, c, d->sense)) clear_target(a);
+    if (a->tkind == TGT_NONE) pick_target(a, i, all, n, c);
+    if (a->tkind != TGT_NONE) {
+        hunt(a, i, all, n, c, rng, dt, ev);
+        return;
+    }
+    a->mode = MODE_GRAZE;
+    if (!keep_with_group(a, i, all, n, dt)) wander(a, rng, d->flier ? 30.0f : WANDER_RADIUS, dt);
+    start_rivalry(a, i, all, n);
+}
+
+static void update_tamed(Animal *a, int i, Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, FaunaEvents *ev) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    a->fleeing = false;
+    // Las presas domadas (monturas, ganado) tambien huyen de los cazadores.
+    if (species_is_prey(a->species) && !d->defends) {
+        float fx, fz;
+        if (prey_threat(a, i, all, n, c, &fx, &fz)) a->alert = fmaxf(a->alert, 4.0f), a->flee_x = fx, a->flee_z = fz;
+        if (a->alert > 0.0f) {
+            a->mode = MODE_FLEE;
+            a->fleeing = true;
+            move_away(a, a->flee_x, a->flee_z, run_speed(a), dt);
+            return;
+        }
+    }
+    float dp = dist_xz(a->x, a->z, c->px, c->pz);
+    // Cazadores domados: defienden al jugador de las fieras y cazan liebres a su lado.
+    if (d->hunt_max > 0.0f) {
+        if (!target_valid(a, all, n, c, 14.0f) || (a->tkind == TGT_HUMAN && !c->humans[a->target].enemy)) clear_target(a);
+        if (a->tkind == TGT_NONE && dp < 25.0f) {
+            float best = 14.0f;
+            for (int h = 0; h < c->human_count; h++) { // enemigos de la tribu cerca del jugador
+                const FaunaHuman *hu = &c->humans[h];
+                float dd = dist_xz(hu->x, hu->z, c->px, c->pz);
+                if (hu->enemy && !hu->down && dd < best) best = dd, a->tkind = TGT_HUMAN, a->target = h;
+            }
+            for (int k = 0; k < n; k++) {
+                const Animal *o = &all[k];
+                if (k == i || !alive(o) || o->state != ANIMAL_WILD) continue;
+                const SpeciesDef *od = &SPECIES[o->species];
+                bool threat = od->cls == CLASS_HOSTILE || od->cls == CLASS_TAMEABLE;
+                bool game = od->size <= d->hunt_max && species_is_prey(o->species) && o->species == SPECIES_HARE;
+                if (!threat && !game) continue;
+                float dd = dist_xz(o->x, o->z, c->px, c->pz);
+                if (dd < best) best = dd, a->tkind = TGT_ANIMAL, a->target = k;
+            }
+        }
+        if (a->tkind != TGT_NONE && d->damage > 0.0f) {
+            hunt(a, i, all, n, c, rng, dt, ev);
+            if (a->mode == MODE_EAT) a->mode = MODE_FOLLOW, clear_target(a); // la presa es para la tribu
+            return;
+        }
+    }
+    // Cuervo domado: vuela en circulos por delante del jugador (explora).
+    if (a->species == SPECIES_RAVEN) {
+        float ang = a->clock * 0.35f;
+        move_towards(a, c->px + cosf(ang) * 22.0f, c->pz + sinf(ang) * 22.0f, d->speed, dt);
+        a->mode = MODE_FOLLOW;
+        return;
+    }
+    // Ganado: pastoreo. Sigue al jugador que camina cerca; si se aleja, se queda donde lo dejo.
+    if (d->cls == CLASS_LIVESTOCK) {
+        if (a->mode == MODE_FOLLOW && (dp > HERD_LOSE || !c->player_moving)) {
+            a->mode = MODE_GRAZE;
+            a->home_x = a->tx = a->x;
+            a->home_z = a->tz = a->z;
+        }
+        if (dp < HERD_RANGE && c->player_moving) a->mode = MODE_FOLLOW;
+        if (a->mode == MODE_FOLLOW) {
+            float gap = 3.0f + (float)(i % 4);
+            if (dp > gap) {
+                float ang = (float)i * 2.4f; // cada uno a un lado: rebaño suelto
+                move_towards(a, c->px + cosf(ang) * gap * 0.6f, c->pz + sinf(ang) * gap * 0.6f, d->walk * 2.8f, dt);
+            }
+            return;
+        }
+        if (!keep_with_group(a, i, all, n, dt)) wander(a, rng, 10.0f, dt);
+        return;
+    }
+    // Domados: siguen al jugador si esta cerca; si no, pastan en el campamento.
+    if (dp > FOLLOW_GAP && dp < FOLLOW_RANGE) {
+        a->mode = MODE_FOLLOW;
+        float dx = a->x - c->px, dz = a->z - c->pz;
+        move_towards(a, c->px + dx / dp * FOLLOW_GAP, c->pz + dz / dp * FOLLOW_GAP, d->speed * 0.6f, dt);
+        return;
+    }
+    a->mode = MODE_GRAZE;
+    if (dp >= FOLLOW_RANGE) wander(a, rng, WANDER_RADIUS, dt);
+}
+
+static void update_bird_alt(Animal *a, float dt) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    if (!d->flier) return;
+    float want;
+    if (a->state == ANIMAL_DEAD) want = 0.0f;
+    else if (a->state == ANIMAL_BOUND) want = 0.3f;
+    else if (a->mode == MODE_CHASE || a->mode == MODE_EAT) want = a->mode == MODE_EAT ? 0.2f : 1.2f; // en picado
+    else if (a->state != ANIMAL_WILD) want = a->species == SPECIES_RAVEN ? 12.0f : 4.0f;
+    else want = 9.0f + 3.0f * sinf(a->clock * 0.5f);
+    float rate = a->mode == MODE_CHASE ? 9.0f : 4.0f;
+    a->alt += fmaxf(-rate * dt, fminf(rate * dt, want - a->alt));
+}
+
+void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, FaunaEvents *ev) {
+    for (int i = 0; i < n; i++) {
+        Animal *a = &all[i];
+        if (!a->used) continue;
+        a->clock += dt;
+        a->cooldown = fmaxf(0.0f, a->cooldown - dt);
+        a->attack_anim = fmaxf(0.0f, a->attack_anim - dt);
+        a->hit_anim = fmaxf(0.0f, a->hit_anim - dt);
+        a->alert = fmaxf(0.0f, a->alert - dt);
+        a->fear_humans = fmaxf(0.0f, a->fear_humans - dt);
+        a->rival_timer -= dt;
+        if (a->rival_timer < -1000.0f) a->rival_timer = -1000.0f;
+        if (a->state == ANIMAL_DEAD) {
+            a->corpse += dt;
+            update_bird_alt(a, dt);
+            continue;
+        }
+        health_update(&a->h, rng, dt, a->mode == MODE_GRAZE, 0.0f);
+        if (a->h.down || a->h.dead) {
+            a->ridden = false;
+            die(a, false);
+            continue;
+        }
+        a->weakened = a->h.hp < WEAK * a->h.hp_max;
+        a->hunger += dt * HUNGER_RATE;
+        if (a->ridden) continue; // lo mueve el jinete (y fija su velocidad)
+        const SpeciesDef *d = &SPECIES[a->species];
+        float x0 = a->x, z0 = a->z;
+        switch (a->state) {
+        case ANIMAL_BOUND:
+            a->mode = MODE_GRAZE;
+            a->bound_timer -= dt;
+            a->yaw += sinf(a->clock * 7.0f) * dt * 2.0f; // forcejea
+            if (a->bound_timer <= 0.0f) {
+                a->state = ANIMAL_WILD;
+                push(ev, FEV_BREAK_FREE, i, -1, 0.0f, WOUND_BRUISE);
+            }
+            break;
+        case ANIMAL_TAMED:
+        case ANIMAL_SADDLED: update_tamed(a, i, all, n, c, rng, dt, ev); break;
+        default: update_wild(a, i, all, n, c, rng, dt, ev); break;
+        }
+        a->speed = dt > 0.0f ? dist_xz(a->x, a->z, x0, z0) / dt : 0.0f;
+        if (a->speed > d->walk * 2.5f) a->stamina = fmaxf(0.0f, a->stamina - tire_rate(d) * dt);
+        else a->stamina = fminf(1.0f, a->stamina + dt / 20.0f);
+        update_bird_alt(a, dt);
+    }
+}
+
+void animal_update(Animal *a, float dt, float px, float pz, Rng *rng) {
+    FaunaHuman h = { px, pz, false, false, false };
+    FaunaCtx c = { &h, 1, px, pz, false, 0.0f, 0.0f, false };
+    fauna_update(a, 1, &c, rng, dt, NULL);
+}
+
+// ------------------------------------------------------------------ tribu
+TameResult animal_lasso(Animal *a, Rng *rng, float bonus, float camp_x, float camp_z) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    if (!alive(a)) return TAME_NEVER;
+    if (a->state != ANIMAL_WILD) return TAME_ALREADY;
+    if (d->cls == CLASS_HOSTILE || d->cls == CLASS_PREY) return TAME_NEVER;
+    if (d->cls == CLASS_TAMEABLE) {
+        // Depredador: solo se deja atar si esta debilitado.
+        if (a->h.hp >= WEAK * a->h.hp_max) return TAME_TOO_STRONG;
+        if (rng_float(rng) >= 0.75f + bonus) return TAME_FAILED;
+        a->state = ANIMAL_BOUND;
+        a->bound_timer = BOUND_SECONDS;
+        health_treat(&a->h); // atado y quieto deja de sangrar
+        a->fleeing = false;
+        clear_target(a);
+        return TAME_OK;
+    }
+    if (rng_float(rng) >= d->tame_chance + bonus) {
+        a->alert = 6.0f; // se asusta y huye un rato
+        return TAME_FAILED;
+    }
+    a->state = ANIMAL_TAMED;
+    a->fleeing = false;
+    a->alert = a->fear_humans = 0.0f;
+    a->home_x = a->tx = camp_x; // su territorio pasa a ser el campamento
+    a->home_z = a->tz = camp_z;
+    a->group = -1;
+    return TAME_OK;
 }
 
 bool animal_try_tame(Animal *a, Rng *rng, float bonus, float camp_x, float camp_z) {
-    if (a->state != ANIMAL_WILD) return false;
-    if (rng_float(rng) >= SPECIES[a->species].tame_chance + bonus) return false;
+    return animal_lasso(a, rng, bonus, camp_x, camp_z) == TAME_OK;
+}
+
+bool animal_feed(Animal *a, float camp_x, float camp_z) {
+    if (a->state != ANIMAL_BOUND) return false;
     a->state = ANIMAL_TAMED;
-    a->fleeing = false;
-    a->home_x = a->tx = camp_x; // su territorio pasa a ser el campamento
+    a->mode = MODE_FOLLOW;
+    a->hunger = 0.0f;
+    a->group = -1;
+    a->alert = a->fear_humans = 0.0f;
+    a->home_x = a->tx = camp_x;
     a->home_z = a->tz = camp_z;
+    clear_target(a);
     return true;
 }
 
@@ -86,4 +683,57 @@ bool animal_saddle(Animal *a) {
     return true;
 }
 
-bool animal_can_ride(const Animal *a) { return a->state == ANIMAL_SADDLED; }
+bool animal_can_ride(const Animal *a) { return a->used && a->state == ANIMAL_SADDLED; }
+
+int animal_milk(Animal *a) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    if (!alive(a) || a->state == ANIMAL_WILD || a->state == ANIMAL_BOUND || d->milk <= 0 || a->milked) return 0;
+    a->milked = true;
+    return d->milk;
+}
+
+bool animal_slaughter(Animal *a) {
+    if (!alive(a) || a->ridden || SPECIES[a->species].cls != CLASS_LIVESTOCK || a->state != ANIMAL_TAMED) return false;
+    die(a, true);
+    return true;
+}
+
+bool animal_butcher(Animal *a, int *meat, int *hide) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    if (!a->used || a->state != ANIMAL_DEAD || a->butchered) return false;
+    a->butchered = true;
+    if (meat) *meat = (int)floorf((float)d->meat * (1.0f - a->eaten) + 0.5f);
+    if (hide) *hide = a->eaten < 0.5f ? d->hide : 0;
+    return true;
+}
+
+void animal_new_day(Animal *a) { a->milked = false; }
+
+// ------------------------------------------------------------------ cuerpo
+void animal_body(const Animal *a, BodyPose *b) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    memset(b, 0, sizeof(*b));
+    float s = d->size / 1.3f; // las medidas de abajo, para una fiera de 1.3 m
+    float y0 = d->flier ? a->alt : 0.0f;
+    if (d->flier) { // un ave: cuerpo y cabeza
+        b->seg[PART_THORAX] = (BodySeg){ { 0, y0 + 0.1f, -0.15f }, { 0, y0 + 0.1f, 0.1f }, 0.09f };
+        b->seg[PART_HEAD] = (BodySeg){ { 0, y0 + 0.15f, 0.15f }, { 0, y0 + 0.15f, 0.2f }, 0.05f };
+        b->seg[PART_UPPER_ARM_L] = (BodySeg){ { 0.05f, y0 + 0.12f, 0 }, { 0.45f, y0 + 0.12f, 0 }, 0.04f };
+        b->seg[PART_UPPER_ARM_R] = (BodySeg){ { -0.05f, y0 + 0.12f, 0 }, { -0.45f, y0 + 0.12f, 0 }, 0.04f };
+        return;
+    }
+    if (a->state == ANIMAL_DEAD) { // tendido de lado
+        b->seg[PART_THORAX] = (BodySeg){ { 0, 0.2f * s, -0.4f * s }, { 0, 0.2f * s, 0.4f * s }, 0.2f * s };
+        b->seg[PART_HEAD] = (BodySeg){ { 0, 0.12f * s, 0.6f * s }, { 0, 0.12f * s, 0.75f * s }, 0.12f * s };
+        return;
+    }
+    b->seg[PART_HEAD] = (BodySeg){ { 0, 0.65f * s, 0.55f * s }, { 0, 0.65f * s, 0.7f * s }, 0.13f * s };
+    b->seg[PART_NECK] = (BodySeg){ { 0, 0.58f * s, 0.42f * s }, { 0, 0.63f * s, 0.52f * s }, 0.09f * s };
+    b->seg[PART_THORAX] = (BodySeg){ { 0, 0.55f * s, 0.1f * s }, { 0, 0.55f * s, 0.4f * s }, 0.2f * s };
+    b->seg[PART_ABDOMEN] = (BodySeg){ { 0, 0.55f * s, -0.3f * s }, { 0, 0.55f * s, 0.1f * s }, 0.18f * s };
+    b->seg[PART_PELVIS] = (BodySeg){ { 0, 0.55f * s, -0.5f * s }, { 0, 0.55f * s, -0.32f * s }, 0.17f * s };
+    b->seg[PART_FOREARM_L] = (BodySeg){ { 0.12f * s, 0.4f * s, 0.35f * s }, { 0.12f * s, 0.02f, 0.35f * s }, 0.05f * s };
+    b->seg[PART_FOREARM_R] = (BodySeg){ { -0.12f * s, 0.4f * s, 0.35f * s }, { -0.12f * s, 0.02f, 0.35f * s }, 0.05f * s };
+    b->seg[PART_SHIN_L] = (BodySeg){ { 0.12f * s, 0.4f * s, -0.35f * s }, { 0.12f * s, 0.02f, -0.35f * s }, 0.05f * s };
+    b->seg[PART_SHIN_R] = (BodySeg){ { -0.12f * s, 0.4f * s, -0.35f * s }, { -0.12f * s, 0.02f, -0.35f * s }, 0.05f * s };
+}

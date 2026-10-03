@@ -32,7 +32,6 @@ const EnemyDef *enemy_def(EnemyKind k) {
                            { "armadura.torso.culto", "armadura.faldar.culto", "armadura.grebas.culto", "armadura.casco.culto" } },
         [ENEMY_ARCHER] = { "Arquero bandido", "personaje.npc.bandido", false, 60.0f, 7.0f, 1.3f, 1.0f, 4.4f, 34.0f,
                            WOUND_CUT, 0.3f, "arma.distancia.arco_compuesto", { "armadura.casco.fieltro" } },
-        [ENEMY_WOLF] = { "Lobo", "animal.salvaje.lobo", true, 45.0f, 10.0f, 1.4f, 1.0f, 7.0f, 30.0f, WOUND_BITE, 0.35f },
     };
     return &defs[(unsigned)k < ENEMY_COUNT ? k : 0];
 }

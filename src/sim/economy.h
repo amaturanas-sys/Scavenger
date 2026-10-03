@@ -44,6 +44,9 @@ void stock_seed_camp(Stockpile *s);
 
 // ---------------------------------------------------------------- dia a dia
 #define FOOD_ID "utileria.consumible.carne_seca"
+#define FRESH_MEAT_ID "utileria.consumible.carne_fresca" // caza y sacrificio
+#define MILK_ID "utileria.consumible.leche"              // ordeño
+#define HIDE_ID "utileria.material.pieles"
 
 typedef struct {
     int gathered; // unidades recolectadas hoy
@@ -51,7 +54,8 @@ typedef struct {
     int hungry;   // integrantes sin racion
 } UpkeepReport;
 
-// Recoleccion por funcion y comida: cada integrante activo come una racion;
+// Recoleccion por funcion y comida: cada integrante activo come una racion
+// (carne fresca y leche antes que carne seca; lo fresco que sobra se seca o se pierde);
 // un cocinero alarga la comida (cada 3 bocas, una racion menos). Si falta
 // comida, la moral de todos cae.
 UpkeepReport economy_daily_upkeep(Stockpile *s, Troop *t);

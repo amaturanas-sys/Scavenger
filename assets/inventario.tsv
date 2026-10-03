@@ -101,6 +101,19 @@ animal.salvaje.leopardo_nieves	Leopardo de las nieves	faccion:salvaje,bioma:glac
 animal.ave.aguila	Águila (cetrería)	rig:ave,uso:equipable	1.8x0.9x0.9	300	pendiente	Puede acompañar al jugador.
 animal.ave.halcon	Halcón (cetrería)	rig:ave,uso:equipable	1x0.5x0.5	250	pendiente	
 animal.ave.buitre	Buitre	faccion:salvaje,rig:ave	2.4x1x1	300	pendiente	
+animal.montura.mula	Mula	uso:montable,rig:cuadrupedo	0.6x1.5x2	800	pendiente	Montura de carga: resiste el desierto.
+animal.montura.burro	Burro	bioma:desierto,uso:montable,rig:cuadrupedo	0.5x1.2x1.6	700	pendiente	
+animal.ganado.becerro	Becerro	faccion:nomada,rig:cuadrupedo	0.4x1x1.4	500	pendiente	Se pastorea; carne y piel al sacrificarlo.
+animal.salvaje.perro_salvaje	Perro asilvestrado	faccion:salvaje,rig:cuadrupedo	0.3x0.7x1.1	500	pendiente	Caza en jauría; domable (pelea, lazo y comida).
+animal.salvaje.puma	Puma	faccion:salvaje,rig:cuadrupedo	0.4x0.8x1.9	600	pendiente	Cazador solitario: acecha.
+animal.salvaje.hiena	Hiena	faccion:salvaje,bioma:desierto,rig:cuadrupedo	0.35x0.85x1.3	500	pendiente	Siempre hostil; en clan.
+animal.salvaje.coyote	Coyote	faccion:salvaje,rig:cuadrupedo	0.3x0.6x1.1	400	pendiente	Siempre hostil; en pareja o grupo.
+animal.salvaje.jabali	Jabalí	faccion:salvaje,rig:cuadrupedo	0.45x0.9x1.4	500	pendiente	Siempre hostil; embiste.
+animal.salvaje.antilope	Antílope saiga	faccion:salvaje,bioma:estepa,rig:cuadrupedo	0.35x0.8x1.3	500	pendiente	Presa: manadas.
+animal.salvaje.reno	Reno salvaje	faccion:salvaje,bioma:glaciar,rig:cuadrupedo	0.6x1.3x2	600	pendiente	Presa: manadas del frío.
+animal.salvaje.gacela	Gacela	faccion:salvaje,bioma:desierto,rig:cuadrupedo	0.3x0.9x1.2	500	pendiente	Presa: la más rápida.
+animal.salvaje.liebre	Liebre	faccion:salvaje,rig:cuadrupedo	0.15x0.3x0.5	200	pendiente	Presa solitaria; caza de halcón.
+animal.ave.cuervo	Cuervo	faccion:salvaje,rig:ave,uso:equipable	0.9x0.4x0.5	200	pendiente	Domado, explora: revela el mapa.
 arma.corta.cuchillo	Cuchillo de hueso y hierro	uso:equipable,manos:una	0.05x0.3x0.03	60	pendiente	
 arma.corta.daga	Daga	uso:equipable,manos:una	0.05x0.4x0.03	80	pendiente	
 arma.corta.sable	Sable curvo	uso:equipable,faccion:nomada,manos:una	0.08x0.9x0.03	120	pendiente	
@@ -254,6 +267,8 @@ utileria.consumible.queso_seco	Queso seco	uso:recolectable,uso:consumible	0.2x0.
 utileria.consumible.hierbas	Hierbas curativas	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.agua	Agua	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.pan	Pan del imperio	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
+utileria.consumible.carne_fresca	Carne fresca	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	De la caza o el sacrificio; se come antes que la seca.
+utileria.consumible.leche	Leche	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	Del ordeño diario del ganado.
 utileria.herramienta.pala	Pala	uso:equipable,manos:dos,material:hierro	0.25x1.2x0.05	60	pendiente	Para cavar trincheras.
 utileria.herramienta.gancho_trepa	Trepa (gancho con cuerda)	uso:equipable,manos:una,material:hierro	0.3x0.4x0.3	80	pendiente	Se lanza para escalar muros en los asedios.
 utileria.objeto.lena	Haz de leña	uso:recolectable,material:madera	0.5x0.3x0.8	40	pendiente	Material de fogatas, hogueras y hornos.

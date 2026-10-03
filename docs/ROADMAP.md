@@ -45,7 +45,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Ciclo día/noche de 30 minutos con estaciones (noches de 10 a 20 minutos).
 - [x] Clima: estaciones en el suelo, lagos que crecen y se hielan, glaciares, lluvia, nieve, ventisca y tormentas.
 - [x] Efectos jugables del clima: frío y calor corporal, leña, barro, vadeo, lagos helados que se rompen, socavones (nieve y arena movediza), minijuego de rescate y escolta.
-- [x] Salud y heridas para jugador, tribu y enemigos; combate cuerpo a cuerpo; enemigos (bandidos, culto, lobos); vendajes y curandero.
+- [x] Salud y heridas para jugador, tribu y enemigos; combate cuerpo a cuerpo; enemigos (bandidos, culto, arqueros); vendajes y curandero.
 - [x] Zonas del cuerpo con daño distinto; cuerpo articulado simple; armas a distancia con trayectoria balística; armadura por piezas con material y durabilidad.
 - [ ] Ríos; abrigo como equipo; combate montado.
 
@@ -77,6 +77,8 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] NPCs que caminan a las obras e instalan fogatas y tiendas por su cuenta.
 - [x] Acopio de materiales y comida, recolección diaria por función, efectos de cada construcción y forja de bronce y acero.
 - [x] Animales: deambular y huir, doma con el lazo, ensillar y montar.
+- [x] Fauna: 24 especies en 5 clases (monturas, depredadores domables, hostiles, presas, ganado); manadas, acecho, rivalidad y huida; caza, despiece, ordeño y pastoreo.
+- [ ] Animales acuáticos y anfibios (peces, cocodrilos, tortugas, serpientes) e insectos en enjambre.
 - [ ] Trepar árboles y rocas sin trepa, y combate montado (Fase 2).
 
 ## Inventario de assets (ver [INVENTARIO.md](INVENTARIO.md))

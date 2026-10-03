@@ -100,12 +100,12 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 - **Curar:** las heridas sanan con el tiempo, más rápido vendadas y en reposo; las fracturas solo sanan entablilladas. `B` venda con **hierbas curativas** del acopio (a uno mismo o a un compañero cercano; a uno abatido lo levanta). El **curandero** del campamento atiende al jugador cuando está cerca y, cada amanecer, trata y cura a toda la tribu; los grandes guerreros aguantan más (vida según talla y aguante).
 - **El jugador no muere:** abatido, su escolta lo levanta y lo venda; si está solo, despierta en el campamento (moral −5, pierde lo que cargaba). Los compañeros sí mueren (luto: moral −6).
 - **Combate cuerpo a cuerpo:** `V` o clic izquierdo golpea con el arma empuñada (daño, alcance y cadencia por arma: dagas rápidas, mazas que rompen huesos, lanzas de largo alcance; bronce, acero y armas especiales cortan más). `Z` cubre con el escudo de frente (o con el arma, peor).
-- **Enemigos:** bandidos, fanáticos y captores del culto, y lobos. Ven al jugador según la distancia (acechando cuesta más), persiguen, golpean y huyen malheridos (los fanáticos nunca). Lejos del campamento aparecen bandidos o el culto de día y manadas de lobos de noche y en invierno. Se desangran también.
+- **Enemigos:** bandidos, arqueros, fanáticos y captores del culto. Ven al jugador según la distancia (acechando cuesta más), persiguen, golpean y huyen malheridos (los fanáticos nunca). Lejos del campamento aparecen bandidos o el culto de día. Se desangran también. Las fieras (lobos, osos, hienas...) son fauna: ver «Fauna».
 - **Escolta:** pelea a tu lado y puede caer herida.
 - **Peligros que hieren:** caer al hielo golpea, un socavón de nieve puede romper una pierna y la hipotermia congela manos y pies.
 - **HUD:** vida y sangre bajo el calor; `P` abre el panel de heridas (tuyas y de la tribu); barras de vida sobre enemigos y compañeros heridos.
 - **Animación:** clips nuevos `abatido`, `cojear` y `vendar`; se usan `ataque_*`, `estocada_lanza`, `bloquear`, `recibir_golpe` y `morir`.
-- **Prueba:** `9` hace aparecer bandidos delante (`Shift+9` lobos, `Ctrl+9` culto); `--enemigos bandidos|culto|lobos` y `--heridas` al arrancar.
+- **Prueba:** `9` hace aparecer bandidos delante (`Shift+9` lobos, `Ctrl+9` culto); `--enemigos bandidos|culto|arqueros|lobos|<animal>` (p. ej. `tigre`, `jabali`) y `--heridas` al arrancar.
 
 **Pendiente:** combate montado, captores que se llevan prisioneros, botín de los enemigos.
 
@@ -209,10 +209,24 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - Hace falta el horno construido, un herrero y los materiales. Varios herreros forjan más rápido.
   - Lo forjado va al acopio. El jugador empuña el mejor sable que haya (acero, luego bronce, luego común).
 
-### Animales, trepar y esconderse (implementado — `src/sim/animals.*`)
-- **Animales del mundo:** caballos, camellos, ciervos, lobos e íbices deambulan por su territorio y huyen del jugador si se acerca demasiado.
-- **Lazo:** intento de doma con una probabilidad propia de cada especie. Si lo logra, el animal sigue a la tribu; si falla, se escapa.
-- **Silla y montura:** la silla instala la montura en un animal domado y montable (caballo o camello). `R` monta y desmonta. Montado, el jugador va más rápido: caballo ×2,4, camello ×1,7.
+### Fauna (implementado — `src/sim/animals.*`, en juego `src/game/fauna_game.*`)
+- **Cinco clases de animales:**
+  - **Monturas** (caballo, mula, burro, buey, camello, elefante): presas que se doman con el lazo (probabilidad propia de cada especie) y se montan con silla. Montado vas más rápido: caballo ×2,4, mula ×1,8, camello ×1,7, elefante ×1,6, burro ×1,5, buey ×1,3.
+  - **Depredadores domables** (lobo, perro asilvestrado, tigre, puma, halcón, cuervo): hostiles. Se doman peleando hasta debilitarlos (menos del 40 % de vida; una marca dorada lo indica), echándoles el lazo (quedan atados a una estaca y dejan de sangrar) y dándoles carne con `K` antes de 60 s. Si no comen, se sueltan. Domados, defienden al jugador de fieras y enemigos. El halcón caza liebres para la tribu; el cuervo vuela en círculos y revela el mapa.
+  - **Siempre hostiles** (oso, hiena, coyote, jabalí): atacan a las personas que ven y no se doman.
+  - **Presas salvajes** (antílope saiga, reno, gacela, ciervo, liebre, íbice): se cazan y no se doman.
+  - **Ganado** (cabra, becerro): de la tribu desde el principio.
+- **Relaciones entre animales:**
+  - **Sociales** (manadas, rebaños, jaurías, clanes): pastan juntos y vuelven al grupo si se alejan. Los cazadores sociales comparten la presa, la rodean y la cansan: correr agota (la presa se cansa antes que la manada). Después comen juntos del cadáver.
+  - **Solitarios** (tigre, puma, oso, liebre): los cazadores acechan despacio y saltan de cerca; acechando, la presa los nota a un tercio de la distancia. Dos adultos de la misma especie en el mismo territorio pelean con golpes de advertencia; el que queda peor se va lejos (rivalidad).
+  - **Huida:** las presas huyen de los cazadores que notan (de noche notan menos) y la alarma se contagia a su grupo. De las personas solo huyen si les hicieron daño, a ellas o a su grupo (durante 60 s). Depredadores y hostiles no huyen: contraatacan a quien los hiere y solo escapan con la vida crítica (menos del 20 %). Bueyes y elefantes heridos embisten en vez de huir.
+  - Los animales atacan a cualquier persona: jugador, tribu y enemigos. La armadura y las zonas del cuerpo cuentan igual que en el combate. Nadie entra al agua profunda salvo las aves.
+- **Aparición:** por bioma (estepa, desierto, frío de alta montaña), a 70–110 m del jugador y nunca junto al campamento. Hay unos 16 animales salvajes alrededor; de noche, el doble de cazadores. Los que quedan lejos desaparecen.
+- **Caza y despiece:** golpes y proyectiles hieren por zonas de fiera (cada especie con su talla; las aves, en el aire). Con `K` junto a un cadáver se despieza: carne fresca y pieles (menos si otros se lo comieron).
+- **Ganado:** sigue al jugador que camina cerca (pastoreo) y se queda donde lo dejas. `K` ordeña la cabra una vez al día; `Mayús+K` sacrifica (carne y piel).
+- **Comida:** la tribu come primero la carne fresca y la leche, y después la carne seca. Lo fresco que sobra al final del día se seca (la mitad de la carne) o se cuaja en queso (la mitad de la leche).
+
+### Trepar y esconderse (implementado — `src/game/actions_game.*`)
 - **Trepa:** se lanza a un muro (empalizada, muro o muralla) que esté delante. El jugador sube por la cuerda, pasa por encima y baja del otro lado.
 - **Esconderse:** acechando dentro de la hierba alta, el jugador queda oculto y no hace ruido (el HUD lo indica).
 

@@ -66,18 +66,20 @@ humanoide	celebrar	Celebrar (botín, victoria).	no	*	opcional	repartir botín
 humanoide	protestar	Protestar (moral baja, rebelión).	si	*	opcional	rebelión
 humanoide	atado	Prisionero atado.	si	motivo:rescate,id:personaje.npc.prisionero	opcional	prisioneros
 cuadrupedo	idle	Quieto.	si	*	obligatoria	quieto
-cuadrupedo	pastar	Comer del suelo.	si	animal.montura.,animal.ganado.,animal.salvaje.ciervo,animal.salvaje.ibice	obligatoria	deambular
+cuadrupedo	pastar	Comer del suelo.	si	animal.montura.,animal.ganado.,animal.salvaje.ciervo,animal.salvaje.ibice,animal.salvaje.antilope,animal.salvaje.reno,animal.salvaje.gacela,animal.salvaje.liebre,animal.salvaje.jabali	obligatoria	deambular
 cuadrupedo	caminar	Al paso.	si	*	obligatoria	deambular
 cuadrupedo	trotar	Al trote.	si	*	obligatoria	seguir a la tribu
 cuadrupedo	galopar	Al galope / huir.	si	*	obligatoria	huir, montado
+cuadrupedo	acechar	Agazapado, avance lento hacia la presa.	si	animal.salvaje.lobo,animal.salvaje.perro_salvaje,animal.salvaje.tigre,animal.salvaje.puma,animal.salvaje.oso,animal.salvaje.hiena,animal.salvaje.coyote	obligatoria	acecho de cazadores solitarios
 cuadrupedo	saltar	Salto.	no	*	opcional	
 cuadrupedo	encabritarse	Resistirse (encabritarse, sacudirse).	no	*	obligatoria	lanzar lazo
 cuadrupedo	forcejear_lazo	Atrapado por el lazo, tirando.	si	*	obligatoria	lanzar lazo
 cuadrupedo	montado_idle	Con jinete, quieto.	si	uso:montable	obligatoria	montado
 cuadrupedo	tirar_carga	Tirando de una carreta o un trineo.	si	animal.ganado.buey,animal.montura.reno,animal.ganado.yak,animal.montura.caballo_estepario	opcional	vehículos
-cuadrupedo	atacar	Ataque.	no	animal.salvaje.lobo,animal.salvaje.tigre,animal.salvaje.oso,animal.salvaje.leopardo_nieves,animal.ganado.perro_pastor,animal.montura.elefante_guerra	obligatoria	combate
-cuadrupedo	aullar	Aullar.	no	animal.salvaje.lobo	opcional	
+cuadrupedo	atacar	Ataque (mordisco, zarpazo, coz, cornada, embestida).	no	*	obligatoria	combate
+cuadrupedo	aullar	Aullar.	no	animal.salvaje.lobo,animal.salvaje.perro_salvaje,animal.salvaje.coyote,animal.salvaje.hiena	opcional	
 cuadrupedo	echarse	Tumbarse a descansar.	si	*	opcional	descanso
+cuadrupedo	comer_presa	Comer de una presa abatida.	si	animal.salvaje.lobo,animal.salvaje.perro_salvaje,animal.salvaje.tigre,animal.salvaje.puma,animal.salvaje.oso,animal.salvaje.hiena,animal.salvaje.coyote	obligatoria	cazar
 cuadrupedo	recibir_golpe	Reacción al golpe.	no	*	obligatoria	combate
 cuadrupedo	morir	Caer muerto.	no	*	obligatoria	combate
 ave	posado	Posado, quieto.	si	*	obligatoria	
@@ -85,7 +87,8 @@ ave	despegar	Despegar.	no	*	obligatoria
 ave	volar	Aleteo.	si	*	obligatoria	
 ave	planear	Planear.	si	*	obligatoria	
 ave	aterrizar	Aterrizar (en el brazo, en el suelo).	no	*	obligatoria	
-ave	atacar_picado	Caer en picado sobre la presa.	no	animal.ave.aguila,animal.ave.halcon	opcional	
+ave	atacar_picado	Caer en picado sobre la presa.	no	animal.ave.aguila,animal.ave.halcon,animal.ave.cuervo	obligatoria	combate
+ave	morir	Caer abatida.	no	*	obligatoria	combate
 mecanismo	rodar	Ruedas girando.	si	vehiculo.tierra.,asedio.maquina.ariete,asedio.maquina.torre_asedio	obligatoria	vehículos
 mecanismo	remar	Remos.	si	vehiculo.agua.bote_remos,vehiculo.agua.canoa_pieles	obligatoria	vehículos
 mecanismo	vela	Vela al viento.	si	vehiculo.agua.velero,vehiculo.agua.barco_carga,vehiculo.agua.barco_guerra	obligatoria	vehículos

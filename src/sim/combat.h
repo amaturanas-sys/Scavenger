@@ -20,12 +20,12 @@ typedef struct {
 // Estadisticas del arma por id del inventario ("" o NULL: a puño limpio).
 WeaponStats weapon_stats(const char *inv_id);
 
-typedef enum { ENEMY_BANDIT, ENEMY_FANATIC, ENEMY_CAPTOR, ENEMY_ARCHER, ENEMY_WOLF, ENEMY_COUNT } EnemyKind;
+typedef enum { ENEMY_BANDIT, ENEMY_FANATIC, ENEMY_CAPTOR, ENEMY_ARCHER, ENEMY_COUNT } EnemyKind;
 
 typedef struct {
     const char *name;  // UTF-8
     const char *model; // id del inventario
-    bool beast;        // fiera (cuadrupedo) o persona
+    bool beast;        // fiera (las fieras viven en src/sim/animals.h; hoy, siempre false)
     float hp, damage, reach, cooldown, speed, sight;
     WoundKind wound;
     float flee_at; // huye con menos de esta fraccion de vida (0: nunca)

@@ -603,13 +603,12 @@ static void test_combat_weapons_and_enemies(void) {
     CHECK(fist.wound == WOUND_BRUISE && fist.damage < sable.damage && steel.damage > sable.damage);
     CHECK(spear.spear && spear.reach > sable.reach && mace.wound == WOUND_BRUISE && bow.damage == fist.damage);
     CHECK(weapon_stats("utileria.objeto.antorcha").damage == fist.damage);
-    // Enemigos: todos con modelo del inventario; los fanaticos no huyen; el lobo muerde y corre mas.
+    // Enemigos: todos con modelo del inventario; los fanaticos no huyen (las fieras son fauna: src/sim/animals.h).
     for (int k = 0; k < ENEMY_COUNT; k++) {
         const EnemyDef *d = enemy_def((EnemyKind)k);
         CHECK(d->hp > 0 && d->damage > 0 && d->model && d->model[0]);
     }
-    CHECK(enemy_def(ENEMY_FANATIC)->flee_at == 0.0f && enemy_def(ENEMY_WOLF)->beast);
-    CHECK(enemy_def(ENEMY_WOLF)->wound == WOUND_BITE && enemy_def(ENEMY_WOLF)->speed > enemy_def(ENEMY_BANDIT)->speed);
+    CHECK(enemy_def(ENEMY_FANATIC)->flee_at == 0.0f && !enemy_def(ENEMY_BANDIT)->beast);
     // Escudo: solo de frente.
     CHECK(combat_block_chance(true, 0.9f) > 0.5f && combat_block_chance(true, -0.5f) == 0.0f);
     CHECK(combat_block_chance(false, 1.0f) == 0.0f);
@@ -1086,6 +1085,14 @@ static void test_daily_upkeep_food_and_gathering(void) {
     r = economy_daily_upkeep(&s, &t);
     CHECK(r.hungry == 0 && r.eaten == 5 - 5 / 3);
     CHECK(stock_count(&s, FOOD_ID) == food + 3 - r.eaten);
+    // La carne fresca y la leche se comen antes; lo fresco que sobra se seca o se cuaja.
+    int dried = stock_count(&s, FOOD_ID), cheese = stock_count(&s, "utileria.consumible.queso_seco");
+    stock_add(&s, FRESH_MEAT_ID, 6);
+    stock_add(&s, MILK_ID, 4);
+    r = economy_daily_upkeep(&s, &t); // comen 4: carne fresca; sobran 2 de carne y 4 de leche
+    CHECK(r.eaten == 4 && stock_count(&s, FRESH_MEAT_ID) == 0 && stock_count(&s, MILK_ID) == 0);
+    CHECK(stock_count(&s, FOOD_ID) == dried + 3 + 1);
+    CHECK(stock_count(&s, "utileria.consumible.queso_seco") == cheese + 2);
 }
 
 static void test_camp_effects(void) {
@@ -1140,6 +1147,35 @@ static void test_build_materials_and_crew_presence(void) {
 }
 
 // ---------------------------------------------------------------- animales
+static float an_dist(const Animal *a, float x, float z) { return sqrtf((a->x - x) * (a->x - x) + (a->z - z) * (a->z - z)); }
+
+// Las clases: quien se monta, quien se doma peleando, quien nunca, quien se caza, quien se pastorea.
+static void test_animals_classes(void) {
+    const Species mounts[] = { SPECIES_HORSE, SPECIES_MULE, SPECIES_DONKEY, SPECIES_OX, SPECIES_CAMEL, SPECIES_ELEPHANT };
+    const Species tame[] = { SPECIES_WOLF, SPECIES_DOG, SPECIES_TIGER, SPECIES_PUMA, SPECIES_FALCON, SPECIES_RAVEN };
+    const Species hostile[] = { SPECIES_BEAR, SPECIES_HYENA, SPECIES_COYOTE, SPECIES_BOAR };
+    const Species prey[] = { SPECIES_ANTELOPE, SPECIES_REINDEER, SPECIES_GAZELLE, SPECIES_DEER, SPECIES_HARE };
+    for (int i = 0; i < 6; i++) {
+        const SpeciesDef *d = species_def(mounts[i]);
+        CHECK(d->cls == CLASS_MOUNT && d->rideable && d->ride_speed > 1.0f && d->tame_chance > 0.0f);
+        CHECK(species_def(tame[i])->cls == CLASS_TAMEABLE && !species_def(tame[i])->rideable);
+    }
+    for (int i = 0; i < 4; i++) CHECK(species_def(hostile[i])->cls == CLASS_HOSTILE && species_def(hostile[i])->damage > 0);
+    for (int i = 0; i < 5; i++)
+        CHECK(species_def(prey[i])->cls == CLASS_PREY && species_is_prey(prey[i]) && species_def(prey[i])->meat > 0);
+    CHECK(species_def(SPECIES_GOAT)->cls == CLASS_LIVESTOCK && species_def(SPECIES_GOAT)->milk > 0);
+    CHECK(species_def(SPECIES_CALF)->cls == CLASS_LIVESTOCK && species_def(SPECIES_CALF)->meat > 0);
+    CHECK(species_def(SPECIES_FALCON)->flier && species_def(SPECIES_RAVEN)->flier && !species_def(SPECIES_WOLF)->flier);
+    // Sociales y solitarios.
+    CHECK(species_def(SPECIES_WOLF)->social && species_def(SPECIES_HYENA)->social && species_def(SPECIES_DEER)->social);
+    CHECK(!species_def(SPECIES_TIGER)->social && !species_def(SPECIES_PUMA)->social && !species_def(SPECIES_BEAR)->social);
+    CHECK(species_find("lobo") == SPECIES_WOLF && species_find("jabali") == SPECIES_BOAR && species_find("nada") < 0);
+    for (int s = 0; s < SPECIES_COUNT; s++) {
+        const SpeciesDef *d = species_def((Species)s);
+        CHECK(d->hp > 0 && d->speed > d->walk && d->group_min >= 1 && d->group_max >= d->group_min && d->habitat);
+    }
+}
+
 static void test_animals_flee_and_wander(void) {
     Rng r;
     rng_seed(&r, 3);
@@ -1147,9 +1183,19 @@ static void test_animals_flee_and_wander(void) {
     animal_init(&a, SPECIES_DEER, 0, 0);
     for (int i = 0; i < 100; i++) animal_update(&a, 0.1f, 1000.0f, 1000.0f, &r); // jugador lejos: deambula
     CHECK(!a.fleeing && sqrtf(a.x * a.x + a.z * a.z) < 20.0f);
-    float before = sqrtf((a.x - 3) * (a.x - 3) + a.z * a.z);
-    for (int i = 0; i < 10; i++) animal_update(&a, 0.1f, 3.0f, 0.0f, &r); // jugador encima: huye
-    CHECK(a.fleeing && sqrtf((a.x - 3) * (a.x - 3) + a.z * a.z) > before);
+    // Una persona cerca que no le hizo nada: no huye.
+    for (int i = 0; i < 10; i++) animal_update(&a, 0.1f, a.x + 3.0f, a.z, &r);
+    CHECK(!a.fleeing);
+    // Herida por una persona: huye de ella, y su grupo tambien.
+    Animal herd[3];
+    for (int i = 0; i < 3; i++) animal_init(&herd[i], SPECIES_DEER, (float)i * 2.0f, 0), herd[i].group = 7;
+    FaunaHuman hu = { 5.0f, 0.0f, false, false, false };
+    FaunaCtx c = { &hu, 1, 5.0f, 0.0f, false, 100.0f, 100.0f, false };
+    animal_hurt(herd, 3, 2, &r, 10.0f, WOUND_CUT, PART_THORAX, true, 0);
+    CHECK(herd[2].fear_humans > 0.0f && herd[0].fear_humans > 0.0f && herd[1].fear_humans > 0.0f);
+    float before = an_dist(&herd[0], 5.0f, 0.0f);
+    for (int i = 0; i < 20; i++) fauna_update(herd, 3, &c, &r, 0.1f, NULL);
+    CHECK(herd[0].fleeing && herd[2].fleeing && an_dist(&herd[0], 5.0f, 0.0f) > before);
 }
 
 static void test_animals_tame_saddle_ride(void) {
@@ -1162,13 +1208,213 @@ static void test_animals_tame_saddle_ride(void) {
     int tries = 0;
     while (!animal_try_tame(&horse, &r, 0.0f, 50.0f, 60.0f) && tries < 100) tries++;
     CHECK(horse.state == ANIMAL_TAMED && horse.home_x == 50.0f && tries < 100);
-    CHECK(!animal_try_tame(&horse, &r, 1.0f, 0, 0)); // ya domado
+    CHECK(animal_lasso(&horse, &r, 1.0f, 0, 0) == TAME_ALREADY);
     CHECK(!animal_can_ride(&horse) && animal_saddle(&horse) && animal_can_ride(&horse));
-    CHECK(animal_try_tame(&deer, &r, 1.0f, 0, 0) && !animal_saddle(&deer)); // un ciervo no se monta
+    CHECK(animal_lasso(&deer, &r, 1.0f, 0, 0) == TAME_NEVER && deer.state == ANIMAL_WILD); // presa: no se doma
+    Animal bear;
+    animal_init(&bear, SPECIES_BEAR, 0, 0);
+    bear.h.hp = 1.0f;
+    CHECK(animal_lasso(&bear, &r, 1.0f, 0, 0) == TAME_NEVER); // hostil: nunca, ni debilitado
+    // Todas las monturas se doman con el lazo y se ensillan.
+    for (int s = SPECIES_HORSE; s <= SPECIES_ELEPHANT; s++) {
+        Animal m;
+        animal_init(&m, (Species)s, 0, 0);
+        CHECK(animal_lasso(&m, &r, 1.0f, 0, 0) == TAME_OK && animal_saddle(&m) && animal_can_ride(&m));
+    }
     // Domado: sigue al jugador cercano.
     for (int i = 0; i < 50; i++) animal_update(&horse, 0.1f, 10.0f, 0.0f, &r);
     CHECK(fabsf(horse.x - 10.0f) < 6.0f);
-    CHECK(species_def(SPECIES_HORSE)->ride_speed > 1.0f);
+}
+
+// Depredador domable: pelear hasta debilitarlo, lazo, darle de comer.
+static void test_animals_tame_predator(void) {
+    Rng r;
+    rng_seed(&r, 21);
+    Animal w;
+    animal_init(&w, SPECIES_WOLF, 0, 0);
+    CHECK(animal_lasso(&w, &r, 1.0f, 0, 0) == TAME_TOO_STRONG);
+    animal_hurt(&w, 1, 0, &r, 30.0f, WOUND_CUT, PART_ABDOMEN, true, 0);
+    CHECK(w.weakened && w.state == ANIMAL_WILD);
+    CHECK(!animal_feed(&w, 0, 0)); // suelto no se le da de comer
+    CHECK(animal_lasso(&w, &r, 1.0f, 0, 0) == TAME_OK && w.state == ANIMAL_BOUND);
+    // Sin comer, se suelta.
+    Animal w2 = w;
+    FaunaEvents ev = { .n = 0 };
+    FaunaHuman hu = { 50.0f, 50.0f, false, false, false };
+    FaunaCtx c = { &hu, 1, 50.0f, 50.0f, false, 0, 0, false };
+    for (int i = 0; i < 650 && w2.state == ANIMAL_BOUND; i++) fauna_update(&w2, 1, &c, &r, 0.1f, &ev);
+    CHECK(w2.state == ANIMAL_WILD && ev.n > 0 && ev.ev[ev.n - 1].kind == FEV_BREAK_FREE);
+    // Con carne: de la tribu.
+    CHECK(animal_feed(&w, 0, 0) && w.state == ANIMAL_TAMED);
+    // Domado, defiende al jugador: va a por un enemigo de la tribu y lo ataca.
+    Animal pack[1] = { w };
+    pack[0].x = 0, pack[0].z = 0;
+    FaunaHuman people[2] = { { 0.0f, 0.0f, false, false, false }, { 6.0f, 0.0f, false, false, true } };
+    FaunaCtx c2 = { people, 2, 0.0f, 0.0f, false, 0, 0, false };
+    ev.n = 0;
+    bool bit_enemy = false;
+    for (int i = 0; i < 60; i++) {
+        fauna_update(pack, 1, &c2, &r, 0.1f, &ev);
+        for (int k = 0; k < ev.n; k++) bit_enemy |= ev.ev[k].kind == FEV_BITE_HUMAN && ev.ev[k].other == 1;
+        ev.n = 0;
+    }
+    CHECK(bit_enemy);
+}
+
+// Sociales: la manada comparte la presa y la caza; la presa nota al cazador y su grupo huye.
+static void test_animals_pack_hunt(void) {
+    Rng r;
+    rng_seed(&r, 5);
+    Animal a[7];
+    for (int i = 0; i < 3; i++) {
+        animal_init(&a[i], SPECIES_WOLF, -25.0f + (float)i, 0.0f);
+        a[i].group = 1, a[i].hunger = 1.0f;
+    }
+    for (int i = 3; i < 7; i++) animal_init(&a[i], SPECIES_DEER, (float)(i - 3) * 2.0f, 3.0f), a[i].group = 2;
+    FaunaHuman hu = { 500.0f, 500.0f, false, false, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false };
+    bool shared = false, alarmed = false, killed = false, ate = false;
+    for (int step = 0; step < 1800 && !(killed && ate); step++) {
+        FaunaEvents ev = { .n = 0 };
+        fauna_update(a, 7, &c, &r, 0.1f, &ev);
+        if (a[0].tkind == TGT_ANIMAL && a[1].tkind == TGT_ANIMAL && a[0].target == a[1].target && a[0].target >= 3)
+            shared = true;
+        for (int i = 3; i < 7; i++) alarmed |= a[i].fleeing;
+        for (int k = 0; k < ev.n; k++) killed |= ev.ev[k].kind == FEV_KILL;
+        for (int i = 0; i < 3; i++) ate |= a[i].mode == MODE_EAT;
+    }
+    CHECK(shared && alarmed && killed && ate);
+    // Una presa no huye de un cazador que no la amenaza (demasiado chico para ella).
+    Animal b[2];
+    animal_init(&b[0], SPECIES_FALCON, 0, 0);
+    animal_init(&b[1], SPECIES_ELEPHANT, 5, 0);
+    b[0].hunger = 1.0f;
+    for (int i = 0; i < 20; i++) fauna_update(b, 2, &c, &r, 0.1f, NULL);
+    CHECK(!b[1].fleeing);
+}
+
+// Solitarios: acecho sin ser notado y rivalidad dentro de la especie.
+static void test_animals_stalk_and_rivals(void) {
+    Rng r;
+    rng_seed(&r, 13);
+    FaunaHuman hu = { 500.0f, 500.0f, false, false, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false };
+    Animal a[2];
+    animal_init(&a[0], SPECIES_TIGER, 0, 0);
+    animal_init(&a[1], SPECIES_DEER, 25.0f, 0);
+    a[0].hunger = 1.0f;
+    for (int i = 0; i < 10; i++) fauna_update(a, 2, &c, &r, 0.1f, NULL);
+    CHECK(a[0].mode == MODE_STALK && a[0].tkind == TGT_ANIMAL && a[0].target == 1);
+    CHECK(a[1].alert <= 0.0f && !a[1].fleeing); // no lo nota mientras acecha
+    CHECK(a[0].speed < species_def(SPECIES_TIGER)->speed * 0.5f);
+    // Rivales: dos pumas sin hambre en el mismo territorio pelean; el perdedor se va.
+    Animal p[2];
+    animal_init(&p[0], SPECIES_PUMA, 0, 0);
+    animal_init(&p[1], SPECIES_PUMA, 8.0f, 0);
+    p[0].hunger = p[1].hunger = 0.0f;
+    p[0].rival_timer = p[1].rival_timer = -100.0f;
+    p[1].h.hp = 50.0f; // el segundo, ya tocado: pierde
+    bool rival = false, won = false;
+    for (int i = 0; i < 200 && !won; i++) {
+        FaunaEvents ev = { .n = 0 };
+        fauna_update(p, 2, &c, &r, 0.1f, &ev);
+        rival |= p[0].mode == MODE_RIVAL && p[1].mode == MODE_RIVAL;
+        for (int k = 0; k < ev.n; k++)
+            if (ev.ev[k].kind == FEV_RIVAL_WON) {
+                won = true;
+                CHECK(ev.ev[k].animal == 0 && ev.ev[k].other == 1);
+            }
+    }
+    CHECK(rival && won && an_dist(&p[1], p[1].home_x, p[1].home_z) > 20.0f && p[1].alert > 0.0f);
+    CHECK(p[0].h.hp > 0.0f && p[1].h.hp > 0.0f); // los golpes de advertencia no matan
+}
+
+// Cazadores y hostiles: no huyen (contraatacan) salvo con la vida critica.
+static void test_animals_flee_only_critical(void) {
+    Rng r;
+    rng_seed(&r, 17);
+    FaunaHuman hu = { 3.0f, 0.0f, false, false, false };
+    FaunaCtx c = { &hu, 1, 3.0f, 0.0f, false, 50, 50, false };
+    Animal w;
+    animal_init(&w, SPECIES_BEAR, 0, 0);
+    animal_hurt(&w, 1, 0, &r, 60.0f, WOUND_CUT, PART_THORAX, true, 0);
+    for (int i = 0; i < 5; i++) fauna_update(&w, 1, &c, &r, 0.1f, NULL);
+    CHECK(!w.fleeing && w.tkind == TGT_HUMAN);
+    w.h.hp = w.h.hp_max * 0.1f;
+    for (int i = 0; i < 5; i++) fauna_update(&w, 1, &c, &r, 0.1f, NULL);
+    CHECK(w.fleeing && w.mode == MODE_FLEE);
+    // Los hostiles atacan a las personas que ven.
+    Animal h;
+    animal_init(&h, SPECIES_HYENA, 0, 0);
+    FaunaEvents ev = { .n = 0 };
+    bool bit = false;
+    for (int i = 0; i < 40; i++) {
+        fauna_update(&h, 1, &c, &r, 0.1f, &ev);
+        for (int k = 0; k < ev.n; k++) bit |= ev.ev[k].kind == FEV_BITE_HUMAN && ev.ev[k].damage > 0.0f;
+        ev.n = 0;
+    }
+    CHECK(bit);
+    // Una presa que se defiende (buey) embiste a quien la hirio en vez de huir.
+    Animal ox;
+    animal_init(&ox, SPECIES_OX, 0, 0);
+    animal_hurt(&ox, 1, 0, &r, 20.0f, WOUND_CUT, PART_THORAX, true, 0);
+    for (int i = 0; i < 5; i++) fauna_update(&ox, 1, &c, &r, 0.1f, NULL);
+    CHECK(!ox.fleeing && ox.tkind == TGT_HUMAN);
+}
+
+// Ganado: pastoreo, leche, sacrificio y despiece.
+static void test_animals_livestock(void) {
+    Rng r;
+    rng_seed(&r, 4);
+    Animal g[2];
+    animal_init(&g[0], SPECIES_GOAT, 0, 0);
+    animal_init(&g[1], SPECIES_CALF, 2, 0);
+    CHECK(g[0].state == ANIMAL_TAMED && g[1].state == ANIMAL_TAMED); // de la tribu desde el principio
+    // El pastor camina cerca: lo siguen; se para: se quedan donde estan.
+    FaunaHuman hu = { 4.0f, 0.0f, false, false, false };
+    FaunaCtx c = { &hu, 1, 4.0f, 0.0f, true, 0, 0, false };
+    for (int i = 0; i < 300; i++) {
+        hu.x = c.px = 4.0f + (float)i * 0.1f; // 1 m/s
+        fauna_update(g, 2, &c, &r, 0.1f, NULL);
+    }
+    CHECK(g[0].mode == MODE_FOLLOW && g[0].x > 20.0f && g[1].x > 20.0f);
+    c.player_moving = false;
+    fauna_update(g, 2, &c, &r, 0.1f, NULL);
+    CHECK(g[0].mode == MODE_GRAZE && g[0].home_x > 20.0f);
+    // Leche: una vez al dia; el becerro no da.
+    CHECK(animal_milk(&g[0]) > 0 && animal_milk(&g[0]) == 0 && animal_milk(&g[1]) == 0);
+    animal_new_day(&g[0]);
+    CHECK(animal_milk(&g[0]) > 0);
+    // Sacrificio: carne y piel; despiezar solo una vez.
+    int meat = 0, hide = 0;
+    CHECK(!animal_butcher(&g[1], &meat, &hide)); // vivo, no
+    CHECK(animal_slaughter(&g[1]) && g[1].state == ANIMAL_DEAD);
+    CHECK(animal_butcher(&g[1], &meat, &hide) && meat == species_def(SPECIES_CALF)->meat && hide > 0);
+    CHECK(!animal_butcher(&g[1], &meat, &hide));
+    Animal deer;
+    animal_init(&deer, SPECIES_DEER, 0, 0);
+    CHECK(!animal_slaughter(&deer)); // la caza se abate, no se sacrifica
+    animal_hurt(&deer, 1, 0, &r, 500.0f, WOUND_CUT, PART_NECK, true, 0);
+    CHECK(deer.state == ANIMAL_DEAD && deer.killed_by_human);
+    deer.eaten = 0.75f; // se lo comieron los lobos: queda poco
+    CHECK(animal_butcher(&deer, &meat, &hide) && meat < species_def(SPECIES_DEER)->meat && hide == 0);
+}
+
+// Cuerpo de los animales: los proyectiles impactan en zonas de fiera, a la altura de su talla.
+static void test_animals_body(void) {
+    Animal h, hare, f;
+    animal_init(&h, SPECIES_HORSE, 0, 0);
+    animal_init(&hare, SPECIES_HARE, 0, 0);
+    animal_init(&f, SPECIES_FALCON, 0, 0);
+    BodyPose b;
+    float t;
+    animal_body(&h, &b);
+    CHECK(body_raycast(&b, (V3){ 5, 0.95f, 0.3f }, (V3){ -10, 0, 0 }, 1.0f, &t) == PART_THORAX);
+    animal_body(&hare, &b);
+    CHECK(body_raycast(&b, (V3){ 5, 0.95f, 0.0f }, (V3){ -10, 0, 0 }, 1.0f, &t) < 0); // por encima de una liebre
+    f.alt = 6.0f;
+    animal_body(&f, &b);
+    CHECK(body_raycast(&b, (V3){ 5, 6.1f, 0.0f }, (V3){ -10, 0, 0 }, 1.0f, &t) >= 0); // un ave, en el aire
 }
 
 // ---------------------------------------------------------------- inventario de assets
@@ -1342,11 +1588,18 @@ static void test_anim_index_names_exist(void) {
     for (int sp = 0; sp < SPECIES_COUNT; sp++) {
         Animal a;
         animal_init(&a, (Species)sp, 0, 0);
-        for (int k = 0; k < 12; k++) {
-            a.speed = (float)k;
+        const char *rig = species_def((Species)sp)->flier ? "ave" : "cuadrupedo";
+        for (int k = 0; k < 24; k++) {
+            a.speed = (float)(k % 12);
             a.fleeing = k == 11;
             a.ridden = k >= 9 && k < 11;
-            CHECK(clip_indexed(text, "cuadrupedo", anim_quadruped(&a)));
+            a.mode = (AnimalMode)(k % 7);
+            a.alt = (float)(k % 5) * 1.5f;
+            a.attack_anim = k == 13 ? 0.2f : 0.0f;
+            a.hit_anim = k == 14 ? 0.2f : 0.0f;
+            a.state = k == 15 ? ANIMAL_BOUND : k == 16 ? ANIMAL_DEAD : ANIMAL_WILD;
+            a.clock = (float)k;
+            CHECK(clip_indexed(text, rig, anim_animal(&a)));
             CHECK(clip_indexed(text, "cuadrupedo", anim_quadruped_fight((float)k, k == 3, k == 5, k == 7)));
         }
     }
@@ -1388,8 +1641,15 @@ int main(void) {
     RUN(test_camp_effects);
     RUN(test_crafting);
     RUN(test_build_materials_and_crew_presence);
+    RUN(test_animals_classes);
     RUN(test_animals_flee_and_wander);
     RUN(test_animals_tame_saddle_ride);
+    RUN(test_animals_tame_predator);
+    RUN(test_animals_pack_hunt);
+    RUN(test_animals_stalk_and_rivals);
+    RUN(test_animals_flee_only_critical);
+    RUN(test_animals_livestock);
+    RUN(test_animals_body);
     RUN(test_inventory_parses_and_maps_paths);
     RUN(test_anim_index_states);
     RUN(test_anim_index_names_exist);

@@ -5,7 +5,8 @@
 //  - acopio de la tribu: materiales, comida, recoleccion diaria;
 //  - obras en grupo: los NPCs elegidos caminan a la obra y trabajan alli;
 //  - NPCs que hacen acciones individuales (instalar una fogata o una tienda);
-//  - animales: deambulan, huyen, se doman con el lazo, se ensillan y se montan;
+//  - animales: se doman con el lazo, se ensillan y se montan (la fauna, en
+//    src/game/fauna_game.c);
 //  - trepar muros con la trepa, esconderse en la hierba alta;
 //  - forja en los hornos y efectos diarios de las construcciones.
 #ifndef ESTEPA_ACTIONS_GAME_H
@@ -23,7 +24,7 @@
 #include "world/terrain.h"
 
 #define GA_MAX_PROJECTS 8
-#define GA_MAX_ANIMALS 24
+#define GA_MAX_ANIMALS 64
 
 typedef struct {
     int member_id;     // integrante de la tropa (0 = libre)
@@ -63,9 +64,11 @@ typedef struct {
     float craft_timer, craft_total;
     Npc npcs[TROOP_MAX];
     // Animales.
-    Animal animals[GA_MAX_ANIMALS];
-    int animal_count;
+    Animal animals[GA_MAX_ANIMALS]; // huecos libres: used = false
+    int animal_count;   // hasta donde hay animales en el arreglo
     int mounted;        // animal montado, o -1
+    int next_group;     // id del proximo grupo (manada, rebaño)
+    float fauna_timer, reveal_timer;
     // Trepar.
     bool climbing;
     float climb_t;

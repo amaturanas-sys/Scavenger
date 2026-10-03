@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**304 objetos** · 1 con modelo · 303 pendientes.
+**319 objetos** · 1 con modelo · 318 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -14,7 +14,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Mapa: terreno, vegetación, agua e hitos](#mapa) | 28 | 28 | 0 | 0 | 0 |
 | [Estructuras](#estructura) | 40 | 39 | 1 | 0 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
-| [Animales](#animal) | 21 | 21 | 0 | 0 | 0 |
+| [Animales](#animal) | 34 | 34 | 0 | 0 | 0 |
 | [Armas](#arma) | 30 | 30 | 0 | 0 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
 | [Escudos](#escudo) | 6 | 6 | 0 | 0 | 0 |
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 14 | 14 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 18 | 18 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 28 | 28 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 30 | 30 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -173,6 +173,19 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `animal.ave.aguila` | Águila (cetrería) | 1.8x0.9x0.9 | 300 | pendiente | `rig:ave` `uso:equipable` | Puede acompañar al jugador. |
 | `animal.ave.halcon` | Halcón (cetrería) | 1x0.5x0.5 | 250 | pendiente | `rig:ave` `uso:equipable` |  |
 | `animal.ave.buitre` | Buitre | 2.4x1x1 | 300 | pendiente | `faccion:salvaje` `rig:ave` |  |
+| `animal.montura.mula` | Mula | 0.6x1.5x2 | 800 | pendiente | `uso:montable` `rig:cuadrupedo` | Montura de carga: resiste el desierto. |
+| `animal.montura.burro` | Burro | 0.5x1.2x1.6 | 700 | pendiente | `bioma:desierto` `uso:montable` `rig:cuadrupedo` |  |
+| `animal.ganado.becerro` | Becerro | 0.4x1x1.4 | 500 | pendiente | `faccion:nomada` `rig:cuadrupedo` | Se pastorea; carne y piel al sacrificarlo. |
+| `animal.salvaje.perro_salvaje` | Perro asilvestrado | 0.3x0.7x1.1 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Caza en jauría; domable (pelea, lazo y comida). |
+| `animal.salvaje.puma` | Puma | 0.4x0.8x1.9 | 600 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Cazador solitario: acecha. |
+| `animal.salvaje.hiena` | Hiena | 0.35x0.85x1.3 | 500 | pendiente | `faccion:salvaje` `bioma:desierto` `rig:cuadrupedo` | Siempre hostil; en clan. |
+| `animal.salvaje.coyote` | Coyote | 0.3x0.6x1.1 | 400 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Siempre hostil; en pareja o grupo. |
+| `animal.salvaje.jabali` | Jabalí | 0.45x0.9x1.4 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Siempre hostil; embiste. |
+| `animal.salvaje.antilope` | Antílope saiga | 0.35x0.8x1.3 | 500 | pendiente | `faccion:salvaje` `bioma:estepa` `rig:cuadrupedo` | Presa: manadas. |
+| `animal.salvaje.reno` | Reno salvaje | 0.6x1.3x2 | 600 | pendiente | `faccion:salvaje` `bioma:glaciar` `rig:cuadrupedo` | Presa: manadas del frío. |
+| `animal.salvaje.gacela` | Gacela | 0.3x0.9x1.2 | 500 | pendiente | `faccion:salvaje` `bioma:desierto` `rig:cuadrupedo` | Presa: la más rápida. |
+| `animal.salvaje.liebre` | Liebre | 0.15x0.3x0.5 | 200 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Presa solitaria; caza de halcón. |
+| `animal.ave.cuervo` | Cuervo | 0.9x0.4x0.5 | 200 | pendiente | `faccion:salvaje` `rig:ave` `uso:equipable` | Domado, explora: revela el mapa. |
 
 <a id="arma"></a>
 
@@ -389,6 +402,8 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.consumible.hierbas` | Hierbas curativas | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.agua` | Agua | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.pan` | Pan del imperio | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
+| `utileria.consumible.carne_fresca` | Carne fresca | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | De la caza o el sacrificio; se come antes que la seca. |
+| `utileria.consumible.leche` | Leche | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | Del ordeño diario del ganado. |
 | `utileria.herramienta.pala` | Pala | 0.25x1.2x0.05 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Para cavar trincheras. |
 | `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
 | `utileria.objeto.lena` | Haz de leña | 0.5x0.3x0.8 | 40 | pendiente | `uso:recolectable` `material:madera` | Material de fogatas, hogueras y hornos. |
