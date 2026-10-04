@@ -478,7 +478,7 @@ void cg_update(GameActions *ga, Troop *troop, Props *props, const Player *p, int
         ga->dlg.cursor = 0;
         ga->dlg.open = true;
     }
-    if (!ga->dlg.open || ga->talk_mode < CG_ROOT) return;
+    if (!ga->dlg.open || ga->talk_mode < CG_ROOT || ga->talk_mode >= 200) return; // los >= 200: src/game/travel_game.c
     if (ga->talk_mode != CG_FOUND && camp_of_guardian(ga, ga->talk_member) < 0) { // ya no es guardian
         dlg_close(&ga->dlg);
         return;

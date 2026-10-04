@@ -8,6 +8,7 @@
 #define ESTEPA_TROOP_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "champion.h"
 #include "armor.h"
@@ -82,6 +83,8 @@ typedef struct {
     int camp;       // campamento donde vive (src/sim/camps.h), o -1 si va con el jugador sin hogar
     int pack;       // su mochila (PackSize de src/sim/storage.h): mas grande, mas carga y mas lento
     Bag bag;        // lo que lleva en ella
+    uint64_t known; // sitios que conoce (src/sim/travel.h: campamentos y marcas del mapa)
+    int journey;    // viaje en curso + 1 (0: ninguno); mientras, no esta en ningun lado a la vista
 } Member;
 
 // Reino al que la tropa rinde tributo. `stance` dice cuanto sube o baja la

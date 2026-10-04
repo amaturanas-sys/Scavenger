@@ -108,6 +108,14 @@ Campamentos:
 
 Pruebas: `--hablar guardian`, `--fundar`.
 
+Órdenes a la escolta (`Mayús+Y`):
+- **Despachar:** marcas quiénes salen y eliges el destino: un campamento o un sitio marcado en el mapa (`M`). Al menos uno tiene que conocerlo (haber estado allí). Cuantos más lo conozcan, menos riesgo; también influyen la distancia, el tamaño del grupo y la noche.
+- **El viaje:** parten a pie o a caballo, como iban contigo, y se pierden en el horizonte. Aparecen en el destino al llegar, pero solo sabes cómo les fue cuando vas allí: si hubo un percance, algunos llegan heridos y otros no llegan.
+- **Mensajero:** lleva el pedido a un campamento que conozca y vuelve con refuerzos (la gente libre de allí, no el guardián). Tarda la ida y la vuelta hasta donde estés.
+- **La gente aprende los sitios** por donde pasa y conoce su campamento.
+
+Pruebas: `--ordenes`, `--despachar`.
+
 Tatuajes, joyas y nivel:
 - **Nivel:** subes peleando, cazando, fabricando, construyendo y domando.
 - **Tatuajes:** `F` junto al druida (Ulagan, en el campamento).

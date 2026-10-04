@@ -921,8 +921,41 @@ WASD mover · Shift correr	WASD move · Shift run
 WASD mover · Shift correr · C acechar (en la hierba alta te ocultas)	WASD move · Shift run · C sneak (tall grass hides you)
 X cambiar empuñadura · Mayús+X pasar el arma de mano · H enfundar	X change grip · Shift+X switch weapon hand · H sheathe
 X/H empuñar/enfundar	X/H grip/sheathe
-Y: dos integrantes te escoltan · G: ficha del gran guerrero	Y: two members escort you · G: great warrior sheet
+Y: dos integrantes te escoltan · Mayús+Y: despachar o mandar un mensajero · G: ficha	Y: two members escort you · Shift+Y: dispatch or send a messenger · G: card
 Z cubrirse · con escudo: Z + V golpe de escudo · corriendo + Z: carga	Z guard · with shield: Z + V shield bash · running + Z: charge
+# --- src/game/travel_game.c
+%.0f m · ida y vuelta ~%.0f s · %d libres allí	%.0f m · round trip ~%.0f s · %d free there
+%.0f m · ~%.0f s · lo conocen %d de %d · riesgo %d%%	%.0f m · ~%.0f s · %d of %d know it · risk %d%%
+%d elegidos	%d chosen
+%d parten hacia %s y se pierden en el horizonte.	%d set out for %s and vanish over the horizon.
+%d refuerzos	%d reinforcements
+%s parte con el mensaje hacia %s: volverá con %d más.	%s leaves with the message for %s: will return with %d more.
+A un campamento o a un sitio marcado en el mapa	To a camp or a site marked on the map
+A un campamento: vuelve con refuerzos (ida y vuelta)	To a camp: returns with reinforcements (round trip)
+Cerrar	Close
+Despachar	Dispatch
+Elegir destino	Choose destination
+En %s te enteras: llegaron %d de %d (%d heridos).	At %s you learn: %d of %d arrived (%d wounded).
+En %s: los %d despachados llegaron bien.	At %s: the %d dispatched arrived safely.
+Llegan los refuerzos: %d (%d heridos); %d se quedaron en el camino.	Reinforcements arrive: %d (%d wounded); %d fell along the way.
+Mandar un mensajero	Send a messenger
+Nadie volvió con los refuerzos: el camino se los llevó.	No one came back with the reinforcements: the road took them.
+No hay campamentos ni sitios marcados (M marca un sitio en el mapa).	There are no camps or marked sites (M marks a site on the map).
+Sitio de peligro %d	Danger site %d
+Sitio marcado %d	Marked site %d
+Te siguen %d. Hay %d partidas de camino. Despacha a quien conozca el destino: si nadie lo conoce, se pierden.	%d follow you. %d parties are on the road. Dispatch someone who knows the destination: if nobody does, they get lost.
+Tu mensajero a %s no vuelve. Algo le pasó en el camino.	Your messenger to %s does not return. Something happened on the road.
+Ya hay demasiadas partidas de camino.	Too many parties are already on the road.
+ninguno de ellos ha estado allí	none of them has been there
+no conoce ese campamento	doesn't know that camp
+se queda · clic: va	stays · click: goes
+va · clic: se queda	goes · click: stays
+¿A qué campamento va? El guardián mandará a los que estén libres.	Which camp? The guardian will send whoever is free.
+¿Adónde? Solo se puede ir donde alguno haya estado. Cuantos más lo conozcan, menos riesgo.	Where to? Only places someone has been. The more who know it, the less risk.
+¿Cuántos refuerzos pides?	How many reinforcements do you ask for?
+¿Quién lleva el mensaje? Tiene que conocer el campamento.	Who carries the message? They must know the camp.
+¿Quiénes van? Marca a los que salen y luego elige el destino.	Who goes? Mark those leaving, then choose the destination.
+Órdenes a la escolta	Escort orders
 # --- src/main.c
 Arma: %s	Weapon: %s
 Capturaste a un gran guerrero: %s, %s.	You captured a great warrior: %s, %s.

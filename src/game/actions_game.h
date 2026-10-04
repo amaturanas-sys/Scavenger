@@ -25,6 +25,7 @@
 #include "sim/jewelry.h"
 #include "sim/loadout.h"
 #include "sim/talents.h"
+#include "sim/travel.h"
 #include "sim/storage.h"
 #include "sim/swarms.h"
 #include "world/props.h"
@@ -55,6 +56,8 @@ typedef struct {
     int move, combo;   // movimiento cuerpo a cuerpo en curso (MeleeMove + 1) y paso del combo
     float move_anim;
     int home_camp;     // campamento de su casa + 1 (0: sin calcular)
+    float leave_t;     // despachado: s que lleva alejandose hacia el horizonte (luego desaparece)
+    Vector3 leave_dir;
 } Npc;
 
 typedef struct {
@@ -116,6 +119,9 @@ typedef struct {
     Dialog dlg;
     int talk_mode, talk_member, talk_a, talk_b, talk_c;
     int equip_tab, jewel_cursor, tattoo_cursor; // menu de equipo: armadura, joyas, tatuajes
+    // Viajes fuera de la vista (src/game/travel_game.c): despachos, mensajeros y refuerzos.
+    Journey journeys[JOURNEYS_MAX];
+    int travel_pick[JOURNEY_PEOPLE], travel_npick; // los elegidos para despachar
     // Menus de inventario y de equipo.
     bool inv_open, equip_open;
     int inv_pane, inv_cont[2], inv_cursor[2], equip_cursor;

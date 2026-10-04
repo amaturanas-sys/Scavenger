@@ -239,7 +239,7 @@ static void toggle_escort(Hazards *hz, GameActions *ga, const Troop *troop, cons
         float best_d = reach;
         for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
             const Npc *n = &ga->npcs[i];
-            if (troop->members[i].status != STATUS_ACTIVE || n->escort || n->project >= 0 || n->job >= 0) continue;
+            if (troop->members[i].status != STATUS_ACTIVE || n->escort || n->project >= 0 || n->job >= 0 || troop->members[i].journey > 0) continue;
             float d = dist2(n->pos, p->pos);
             if (d < best_d) best_d = d, best = i;
         }
@@ -344,7 +344,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
     bool roll = hz->ice_roll >= 0.5f; // tiradas de riesgo dos veces por segundo
     if (roll) hz->ice_roll = 0.0f;
 
-    if (IsKeyPressed(KEY_Y) && hz->trap == TRAP_NONE) toggle_escort(hz, ga, troop, p, 60.0f, log, log_len);
+    if (IsKeyPressed(KEY_Y) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT) && hz->trap == TRAP_NONE) toggle_escort(hz, ga, troop, p, 60.0f, log, log_len);
     update_escort(hz, ga, troop, t, p, day, dt, roll, log, log_len);
 
     // Minijuego en curso.

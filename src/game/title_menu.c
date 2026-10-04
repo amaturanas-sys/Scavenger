@@ -52,7 +52,7 @@ static const HelpPage PAGES[] = {
       { N_("Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario"),
         N_("Una tienda o un refugio lejos de los demás campamentos funda uno nuevo: nombra guardián a alguien de tu escolta."),
         N_("F junto al guardián: obras, escolta, reclutar, capacitar en un oficio, estado y disolver el campamento."),
-        N_("Y: dos integrantes te escoltan · G: ficha del gran guerrero"),
+        N_("Y: dos integrantes te escoltan · Mayús+Y: despachar o mandar un mensajero · G: ficha"),
         N_("La tribu come carne fresca y leche antes que la seca; con hambre baja la moral."),
         N_("Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba."),
         "",
