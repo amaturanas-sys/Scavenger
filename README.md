@@ -80,6 +80,22 @@ Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.
 
+Campamentos:
+- **Fundar:** al levantar una tienda (`Tab`, «Instalar tienda») o un refugio lejos (más de 70 m) de los demás campamentos, nace uno nuevo. Hay que nombrar guardián a alguien de la escolta, que se queda a administrarlo.
+- **Lo propio de cada campamento:** su acopio y su gente. Las obras las levantan los del lugar; fuera de todo campamento, la escolta.
+- **El guardián (`F` junto a él):**
+  - ordenar obras con el acopio del campamento;
+  - elegir quién sale de escolta;
+  - reclutar gente nueva: alguien sale a buscarla con comida;
+  - capacitar en un oficio: soldado, herrero, druida, orfebre, pastor, cazador o explorador;
+  - ver el estado (gente, tareas, acopio);
+  - disolver el campamento.
+- **Tareas:** gastan recursos y ocupan gente. Avanzan más rápido con más gente sin tarea (hasta ×2) y mucho más con un maestro del oficio (+60 % cada uno).
+- **Disolver:** se queman las estructuras (y las yurtas del campamento inicial). Lo del acopio se carga en la carreta y en las alforjas que estén cerca; lo que no cabe se pierde. La gente sigue al jugador.
+- **El campamento inicial:** su guardián es el lugarteniente.
+
+Pruebas: `--hablar guardian`, `--fundar`.
+
 Tatuajes, joyas y nivel:
 - **Nivel:** subes peleando, cazando, fabricando, construyendo y domando.
 - **Tatuajes:** `F` junto al druida (Ulagan, en el campamento).

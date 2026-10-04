@@ -78,6 +78,7 @@ typedef struct {
     Health health; // vida, sangre y heridas (src/sim/health.h)
     Armor armor;   // piezas de armadura que lleva (src/sim/armor.h)
     bool outfitted; // ya recibio su equipo inicial
+    int camp;       // campamento donde vive (src/sim/camps.h), o -1 si va con el jugador sin hogar
 } Member;
 
 // Reino al que la tropa rinde tributo. `stance` dice cuanto sube o baja la

@@ -2,6 +2,7 @@
 
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
+#include "game/camp_game.h"
 #include "game/gems_game.h"
 #include "game/talents_game.h"
 
@@ -61,12 +62,12 @@ static const char *item_name(const GameActions *ga, const char *id) {
 static bool has_item(const GameActions *ga, const char *id) {
     for (size_t i = 0; i < sizeof(KIT) / sizeof(KIT[0]); i++)
         if (!strcmp(KIT[i], id)) return true;
-    return stock_count(&ga->stock, id) > 0;
+    return stock_count(ga_stock_c(ga), id) > 0;
 }
 
 static const char *best_sable(const GameActions *ga) {
-    if (stock_count(&ga->stock, "arma.corta.sable_acero") > 0) return "arma.corta.sable_acero";
-    if (stock_count(&ga->stock, "arma.corta.sable_bronce") > 0) return "arma.corta.sable_bronce";
+    if (stock_count(ga_stock_c(ga), "arma.corta.sable_acero") > 0) return "arma.corta.sable_acero";
+    if (stock_count(ga_stock_c(ga), "arma.corta.sable_bronce") > 0) return "arma.corta.sable_bronce";
     return "arma.corta.sable";
 }
 
@@ -134,8 +135,12 @@ void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain 
     rng_seed(&ga->rng, seed);
     ga->doing = ga->target = ga->crafting = ga->mounted = -1;
     hands_init(&ga->hands);
-    stock_init(&ga->stock);
-    stock_seed_camp(&ga->stock);
+    camps_init(ga->camps, CAMPS_MAX);
+    camp_found(ga->camps, CAMPS_MAX, 0.0f, 0.0f, 1); // el campamento con el que empieza la tribu
+    snprintf(ga->camps[0].name, CAMP_NAME_LEN, "%s", T("Campamento de las estelas"));
+    stock_seed_camp(&ga->camps[0].stock);
+    ga->here = 0;
+    ga->burn_camp = ga->burn_next = -1;
     apply_preset(ga);
 
     // Objetos sueltos para tomar y lanzar, un tramo de empalizada para la trepa,
@@ -165,6 +170,24 @@ void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain 
 }
 
 bool ga_menu_open(const GameActions *ga) { return ga->menu_open; }
+
+Stockpile *ga_stock_at(GameActions *ga, float x, float z) {
+    static Stockpile none; // sin campamentos: un acopio vacio (lo que se deje ahi se pierde)
+    int k = camp_at(ga->camps, CAMPS_MAX, x, z);
+    if (k < 0) k = camp_nearest(ga->camps, CAMPS_MAX, x, z, NULL);
+    if (k < 0) {
+        stock_init(&none);
+        return &none;
+    }
+    return &ga->camps[k].stock;
+}
+
+Stockpile *ga_stock(GameActions *ga) {
+    if (ga->here >= 0 && ga->camps[ga->here].used) return &ga->camps[ga->here].stock;
+    return ga_stock_at(ga, ga->player_pos.x, ga->player_pos.z);
+}
+
+const Stockpile *ga_stock_c(const GameActions *ga) { return ga_stock((GameActions *)ga); }
 bool ga_blocks_input(const GameActions *ga) { return ga->menu_open || ga->climbing || ga->inv_open || ga->equip_open || ga->dlg.open; }
 
 float ga_speed_scale(const GameActions *ga) {
@@ -207,10 +230,10 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
         snprintf(log, len, T("Te falta: %s."), item_name(ga, d->requires));
         return;
     }
-    const Ingredient *miss = stock_first_missing(&ga->stock, d->mats);
+    const Ingredient *miss = stock_first_missing(ga_stock(ga), d->mats);
     if (miss) {
         snprintf(log, len, T("Falta en el acopio: %s (%d de %d)."), item_name(ga, miss->id),
-                 stock_count(&ga->stock, miss->id), miss->count);
+                 stock_count(ga_stock_c(ga), miss->id), miss->count);
         return;
     }
     ga->target = -1;
@@ -281,7 +304,7 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
         break;
     default: break;
     }
-    stock_take_all(&ga->stock, d->mats);
+    stock_take_all(ga_stock(ga), d->mats);
     ga->doing = a;
     ga->timer = 0.0f;
 }
@@ -409,8 +432,10 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
     case ACTION_PAN: gems_pan(ga, props, p, log, len); break;
     default:
         if (d->produces) { // instalar fogata, tienda, cavar trinchera
-            props_add(props, d->produces, ground_ahead(t, p, 2.5f), p->yaw);
+            Vector3 at = ground_ahead(t, p, 2.5f);
+            props_add(props, d->produces, at, p->yaw);
             snprintf(log, len, T("Hecho: %s."), item_name(ga, d->produces));
+            if (a == ACTION_PLACE_TENT) cg_basic_structure(ga, at.x, at.z); // lejos de todo: un campamento nuevo
         }
         if (a == ACTION_DIG_TRENCH) gems_dig(ga, props, p, log, len); // a veces sale algo de la tierra
         break;
@@ -423,16 +448,51 @@ static void start_build(GameActions *ga, BuildId b, const Terrain *t, const Play
         snprintf(log, len, "%s", T("Demasiadas obras a la vez."));
         return;
     }
-    const Ingredient *miss = stock_first_missing(&ga->stock, d->mats);
+    const Ingredient *miss = stock_first_missing(ga_stock(ga), d->mats);
     if (miss) {
         snprintf(log, len, T("Falta en el acopio: %s (%d de %d)."), item_name(ga, miss->id),
-                 stock_count(&ga->stock, miss->id), miss->count);
+                 stock_count(ga_stock_c(ga), miss->id), miss->count);
         return;
     }
-    stock_take_all(&ga->stock, d->mats);
+    stock_take_all(ga_stock(ga), d->mats);
     Vector3 at = ground_ahead(t, p, 6.0f);
     ga->projects[ga->project_count++] = (BuildProject){ b, at.x, at.z, 0.0f, false };
     snprintf(log, len, T("Obra iniciada: %s. La cuadrilla va en camino."), T(d->name));
+}
+
+bool ga_order_build(GameActions *ga, BuildId b, int camp, const Props *props, char *log, size_t len) {
+    const BuildDef *d = build_def(b);
+    if (camp < 0 || camp >= CAMPS_MAX || !ga->camps[camp].used) return false;
+    if (ga->project_count >= GA_MAX_PROJECTS) {
+        snprintf(log, len, "%s", T("Demasiadas obras a la vez."));
+        return false;
+    }
+    Stockpile *st = &ga->camps[camp].stock;
+    const Ingredient *miss = stock_first_missing(st, d->mats);
+    if (miss) {
+        snprintf(log, len, T("Falta en el acopio: %s (%d de %d)."), item_name(ga, miss->id), stock_count(st, miss->id), miss->count);
+        return false;
+    }
+    // Un sitio libre en el campamento: en anillos alrededor del fuego.
+    const CampSite *c = &ga->camps[camp];
+    float bx = c->x + 14.0f, bz = c->z;
+    for (int tries = 0; tries < 48; tries++) {
+        float ang = (float)tries * 2.39996f, r = 12.0f + (float)(tries / 8) * 4.0f;
+        float x = c->x + cosf(ang) * r, z = c->z + sinf(ang) * r;
+        bool free = true;
+        for (int i = 0; i < props->count && free; i++)
+            if (dist2d(props->items[i].pos, (Vector3){ x, 0, z }) < 5.0f) free = false;
+        for (int i = 0; i < ga->project_count && free; i++)
+            if (dist2d((Vector3){ ga->projects[i].x, 0, ga->projects[i].z }, (Vector3){ x, 0, z }) < 6.0f) free = false;
+        if (free) {
+            bx = x, bz = z;
+            break;
+        }
+    }
+    stock_take_all(st, d->mats);
+    ga->projects[ga->project_count++] = (BuildProject){ b, bx, bz, 0.0f, false };
+    snprintf(log, len, T("Obra iniciada: %s. La cuadrilla va en camino."), T(d->name));
+    return true;
 }
 
 static void start_craft(GameActions *ga, CraftId c, const Props *props, const Player *p, const Troop *troop, char *log,
@@ -469,13 +529,23 @@ static void start_craft(GameActions *ga, CraftId c, const Props *props, const Pl
 static void sync_npcs(GameActions *ga, const Troop *troop, const Terrain *t) {
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
         Npc *n = &ga->npcs[i];
-        if (n->member_id == troop->members[i].id) continue;
-        memset(n, 0, sizeof(*n));
-        n->member_id = troop->members[i].id;
-        float a = (float)i * 2.39996f, r = 5.5f + (float)(i % 3) * 1.5f; // espiral dorada alrededor del fuego
-        n->home = ground_at(t, cosf(a) * r, sinf(a) * r);
-        n->pos = n->home;
-        n->project = n->job = -1;
+        const Member *m = &troop->members[i];
+        bool fresh = n->member_id != m->id;
+        if (fresh) {
+            memset(n, 0, sizeof(*n));
+            n->member_id = m->id;
+            n->project = n->job = -1;
+        }
+        // La casa: en espiral dorada alrededor del fuego de su campamento.
+        int camp = m->camp >= 0 && m->camp < CAMPS_MAX && ga->camps[m->camp].used ? m->camp : -1;
+        if (fresh || n->home_camp != camp + 1) {
+            const CampSite *c = camp >= 0 ? &ga->camps[camp] : NULL;
+            float a = (float)i * 2.39996f, r = 5.5f + (float)(i % 3) * 1.5f;
+            float cx = c ? c->x : n->pos.x, cz = c ? c->z : n->pos.z;
+            n->home = ground_at(t, cx + cosf(a) * r, cz + sinf(a) * r);
+            if (fresh) n->pos = n->home;
+            n->home_camp = camp + 1;
+        }
     }
 }
 
@@ -501,11 +571,11 @@ static Npc *npc_of(GameActions *ga, const Troop *troop, int member_id) {
 // Un NPC libre hace una accion individual (las mismas definiciones que el jugador).
 static bool npc_assign_job(GameActions *ga, const Troop *troop, const Terrain *t, ActionId a, Vector3 where) {
     const ActionDef *d = action_def(a);
-    if (!(d->actors & ACTOR_NPC) || !stock_has_all(&ga->stock, d->mats)) return false;
+    if (!(d->actors & ACTOR_NPC) || !stock_has_all(ga_stock(ga), d->mats)) return false;
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
         Npc *n = &ga->npcs[i];
         if (troop->members[i].status != STATUS_ACTIVE || n->project >= 0 || n->job >= 0 || n->escort) continue;
-        stock_take_all(&ga->stock, d->mats);
+        stock_take_all(ga_stock(ga), d->mats);
         n->job = a;
         n->job_pos = ground_at(t, where.x, where.z);
         n->job_timer = 0.0f;
@@ -578,6 +648,8 @@ static Rectangle grid_rect(int i, int first_row) {
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
                size_t log_len) {
     ga->terrain = t;
+    ga->here = camp_at(ga->camps, CAMPS_MAX, p->pos.x, p->pos.z);
+    ga->player_pos = p->pos; // fuera de todo campamento: el acopio del mas cercano
     sync_npcs(ga, troop, t);
     ga->swap_anim = fmaxf(0.0f, ga->swap_anim - dt);
     bool other_menu = ga->inv_open || ga->equip_open || ga->dlg.open; // inventario, equipo o un dialogo
@@ -626,7 +698,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             ga->swap_anim = 0.5f;
         } else if (IsKeyPressed(KEY_X)) start_action(ga, ACTION_CHANGE_GRIP, props, p, log, log_len);
         if (IsKeyPressed(KEY_H)) start_action(ga, ACTION_SHEATHE, props, p, log, log_len);
-        if (IsKeyPressed(KEY_F) && !tg_try_talk(ga, troop, p, log, log_len)) // F: hablar (druida, orfebre) o tomar
+        if (IsKeyPressed(KEY_F) && !cg_try_talk(ga, troop, p) && !tg_try_talk(ga, troop, p, log, log_len)) // F: hablar o tomar
             start_action(ga, ACTION_TAKE, props, p, log, log_len);
         if (IsKeyPressed(KEY_T)) start_action(ga, ACTION_THROW, props, p, log, log_len);
         if (IsKeyPressed(KEY_R)) { // montar / desmontar
@@ -680,7 +752,26 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
         const BuildDef *d = build_def(bp->def);
         Vector3 site = { bp->x, 0, bp->z };
         bool player_near = dist2d(p->pos, site) < HELP_RANGE;
-        CrewPlan plan = build_plan_excluding(d, troop, player_near, busy, n_busy);
+        // Trabajan los del campamento de la obra (los que estan ocupados en tareas, no); fuera de todo
+        // campamento (fundando uno), la escolta que este cerca.
+        int site_camp = camp_at(ga->camps, CAMPS_MAX, bp->x, bp->z);
+        int excl[TROOP_MAX * 2], n_excl = 0;
+        for (int k = 0; k < n_busy; k++)
+            if (site_camp >= 0) excl[n_excl++] = busy[k];
+        for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
+            const Member *m = &troop->members[k];
+            const Npc *nk = &ga->npcs[k];
+            bool ok = site_camp >= 0 ? m->camp == site_camp && !nk->escort && !camp_member_busy(&ga->camps[site_camp], m->id)
+                                     : nk->escort && dist2d(nk->pos, site) < 40.0f;
+            if (!ok) excl[n_excl++] = m->id;
+        }
+        for (int k = 0; site_camp < 0 && k < n_busy; k++) { // ya en otra obra
+            bool esc = false;
+            for (int j = 0; j < troop->count && j < TROOP_MAX; j++)
+                if (ga->npcs[j].member_id == busy[k] && ga->npcs[j].escort) esc = true;
+            if (!esc) excl[n_excl++] = busy[k];
+        }
+        CrewPlan plan = build_plan_excluding(d, troop, player_near, excl, n_excl);
         bool present[TROOP_MAX + 1] = { false };
         ga->crew_present[i] = 0;
         ga->crew_size[i] = plan.check == BUILD_READY ? plan.workers : 0;
@@ -692,13 +783,14 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
                 if (!n || n->job >= 0) continue;
                 n->project = i;
                 busy[n_busy++] = plan.ids[k];
-                present[k] = dist2d(n->pos, site) < AT_SITE;
+                present[k] = dist2d(n->pos, site) < (n->escort ? 12.0f : AT_SITE); // la escolta trabaja a tu lado
             }
             ga->crew_present[i] += present[k];
         }
         if (build_advance(bp, build_rate_present(d, &plan, present), dt)) {
             props_add(props, d->produces, ground_at(t, bp->x, bp->z), 0.0f);
             snprintf(log, log_len, T("Obra terminada: %s."), T(d->name));
+            if (bp->def == BUILD_SHELTER) cg_basic_structure(ga, bp->x, bp->z);
             tg_xp(ga, XP_BUILD, log, log_len);
             ga->projects[i] = ga->projects[--ga->project_count];
             ga->crew_present[i] = ga->crew_present[ga->project_count];
@@ -716,7 +808,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             int n = c->amount > 0 ? c->amount : 1;
             // A lo que llevas (o al acopio, si no cabe).
             int kept = ig_store(ga, props, p, c->produces, n, 1.0f);
-            if (kept < n) stock_add(&ga->stock, c->produces, n - kept);
+            if (kept < n) stock_add(ga_stock(ga), c->produces, n - kept);
             snprintf(log, log_len, "%s: %s%s.", craft_by_hand(c) ? T("Hecho") : T("Forjado"), T(c->name),
                      kept < n ? T(" (lo que no cabe, al acopio)") : "");
             tg_xp(ga, XP_CRAFT, log, log_len);
@@ -765,8 +857,28 @@ void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p)
 // ---------------------------------------------------------------- dia nuevo
 void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day,
                 char *log, size_t log_len) {
-    // Comida y recoleccion.
-    UpkeepReport up = economy_daily_upkeep(&ga->stock, troop);
+    // Comida y recoleccion: cada campamento con su gente y su acopio; la escolta (y quien no
+    // tiene casa) come de lo del campamento mas cercano al jugador.
+    UpkeepReport up = { 0, 0, 0 };
+    int near_camp = camp_nearest(ga->camps, CAMPS_MAX, ga->player_pos.x, ga->player_pos.z, NULL);
+    static Troop sub; // grande: fuera de la pila
+    for (int k = 0; k < CAMPS_MAX; k++) {
+        if (!ga->camps[k].used) continue;
+        int idx[TROOP_MAX];
+        sub = *troop;
+        sub.count = 0;
+        for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
+            const Member *m = &troop->members[i];
+            int home = ga->npcs[i].escort || m->camp < 0 || !ga->camps[m->camp].used ? near_camp : m->camp;
+            if (home != k) continue;
+            idx[sub.count] = i;
+            sub.members[sub.count++] = *m;
+        }
+        if (!sub.count) continue;
+        UpkeepReport r = economy_daily_upkeep(&ga->camps[k].stock, &sub);
+        for (int j = 0; j < sub.count; j++) troop->members[idx[j]].morale = sub.members[j].morale; // el hambre baja el animo
+        up.eaten += r.eaten, up.hungry += r.hungry, up.gathered += r.gathered;
+    }
     // Efectos de lo construido en el campamento.
     const char *ids[PROPS_MAX + 8];
     int n = 0;
@@ -955,7 +1067,7 @@ static int draw_materials(const GameActions *ga, const Props *props, const Playe
     if (!mats[0].id) return 0;
     int cx = x, cy = y;
     for (const Ingredient *m = mats; m->id; m++) {
-        int have = at_hand ? ig_count((GameActions *)ga, props, p, m->id) : stock_count(&ga->stock, m->id);
+        int have = at_hand ? ig_count((GameActions *)ga, props, p, m->id) : stock_count(ga_stock_c(ga), m->id);
         const char *txt = TextFormat("%d/%d", have, m->count);
         int cw = 20 + MeasureText(txt, 10) + 8;
         if (cx + cw > x + w) cx = x, cy += 20;
