@@ -59,6 +59,7 @@ int enemy_loot(EnemyKind k, bool armed, bool shield, Rng *rng, LootItem *out, in
         if (rng_float(rng) < 0.5f) add(out, &n, max, "utileria.consumible.carne_seca", 1 + rng_range(rng, 2), 1.0f);
         if (rng_float(rng) < 0.3f) add(out, &n, max, "utileria.consumible.hierbas", 1, 1.0f);
         if (rng_float(rng) < 0.06f) add(out, &n, max, "accesorio.amuleto.lobo", 1, 1.0f);
+        if (rng_float(rng) < 0.25f) add(out, &n, max, "utileria.material.seda", 1, 1.0f); // de las caravanas que asaltan
         break;
     case ENEMY_FANATIC:
         if (rng_float(rng) < 0.5f) add(out, &n, max, "utileria.consumible.hierbas", 2, 1.0f);
@@ -77,6 +78,7 @@ int enemy_loot(EnemyKind k, bool armed, bool shield, Rng *rng, LootItem *out, in
     case ENEMY_RIDER:
         if (rng_float(rng) < 0.6f) add(out, &n, max, "utileria.consumible.carne_seca", 2, 1.0f);
         if (rng_float(rng) < 0.15f) add(out, &n, max, "accesorio.amuleto.caballo", 1, 1.0f);
+        if (rng_float(rng) < 0.3f) add(out, &n, max, "utileria.material.seda", 1 + rng_range(rng, 2), 1.0f);
         break;
     default: break;
     }

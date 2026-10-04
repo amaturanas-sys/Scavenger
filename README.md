@@ -116,6 +116,16 @@ Pruebas: `--hablar guardian`, `--fundar`.
 
 Pruebas: `--ordenes`, `--despachar`.
 
+Ropa y clima:
+- **`P`, pestaña Ropa:** cinco capas (cabeza, cuello y cara, cuerpo, capa o abrigo, pies). Cada prenda abriga, da sombra contra el sol, frena la lluvia y algunas pesan.
+- **Frío:** pieles y abrigos de oso, reno, lobo, tigre, puma, hiena o lana de cabra, gorros de piel y botas de piel de reno.
+- **Sol y calor:** sombrero de ala ancha, pañuelo del desierto, túnica de seda blanca y manto blanco. El desierto quema de día (hasta +11°) y hiela de noche. Con calor te sofocas (más lento); con golpe de calor te desmayas y la tribu te lleva a la sombra. La sombra de las yurtas y el agua refrescan.
+- **Escarmiento:** las pieles de depredador espantan. Al verte de cerca, el enemigo puede echarse atrás, y herido huye antes (los fanáticos casi no se inmutan).
+- **Fabricar (`Tab`, a mano):** con las pieles del despiece (los depredadores, el reno y la cabra dan su piel), la lana de cabra (los pastores esquilan cada día) y la seda del botín de bandidos y jinetes.
+- **La tribu se cambia sola** según el tiempo, con la ropa de su mochila y, en su campamento, la del acopio. Sin ropa adecuada pasa frío o calor (un copo o un sol sobre la cabeza) y baja la moral.
+
+Prueba: `--ropa`.
+
 Tatuajes, joyas y nivel:
 - **Nivel:** subes peleando, cazando, fabricando, construyendo y domando.
 - **Tatuajes:** `F` junto al druida (Ulagan, en el campamento).

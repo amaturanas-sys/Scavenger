@@ -366,6 +366,15 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - la escolta sin casa se queda en el próximo campamento que se funde (o en el campamento del guardián al dejar de escoltar).
 - **Comida:** cada campamento alimenta a su gente con su acopio. La escolta come del campamento más cercano al jugador.
 
+### Ropa y clima (implementado — `src/sim/apparel.*`, en juego `src/game/apparel_game.*`)
+- **Capas:** cabeza, cuello y cara, cuerpo, capa o abrigo, pies. Cada prenda tiene abrigo (grados de sensación térmica), sombra [0, 1], protección de lluvia [0, 1], peso (frena) y escarmiento.
+- **Sensación térmica** = temperatura del lugar + abrigo + refugio y fuego − viento (el abrigo corta hasta la mitad) − ropa mojada + sol × (1 − sombra) × 9.
+- **Sol:** fuerte con el sol alto y sin nubes, más en el desierto. El desierto suma hasta +11° a mediodía y resta hasta −7° de noche.
+- **Calor** (`HeatStress`, como el frío al revés): sube por encima de 27° de sensación térmica; baja a la sombra (yurtas), en el agua o mojado. Acalorado, sofocado (frena), agotado y golpe de calor (desmayo: la tribu lo lleva a la sombra). También da más sed (para el agua).
+- **Escarmiento** (pieles de lobo, oso, tigre, puma, hiena; hasta 50 %): el enemigo que ve de cerca a quien las lleva tira una vez y puede retroceder unos segundos; herido, huye antes. Los fanáticos, al 30 %.
+- **Materiales:** el despiece da la piel de la especie (`species_pelt`) además de pieles curtidas; los pastores esquilan las cabras del campamento cada día; la seda sale del botín de bandidos y jinetes. 20 recetas a mano.
+- **NPCs:** cada 4 s eligen prenda por capa (`garment_pick`: lo que falta de abrigo, la sombra si hay sol, el peso) entre lo puesto, su mochila y el acopio de su campamento. Si con su ropa la sensación térmica queda bajo 2° o sobre 33°, pasan frío o calor (aviso sobre la cabeza) y baja su moral.
+
 ### Órdenes a la escolta: despachar y mensajeros (implementado — `src/sim/travel.*`, en juego `src/game/travel_game.*`)
 - **Despachar (`Mayús+Y`):** a un campamento o a un sitio marcado en el mapa. Al menos uno de los despachados tiene que conocer el destino (`Member.known`: un bit por sitio; se aprende al pasar a menos de 35 m).
 - **Riesgo de un percance** (`journey_risk`):

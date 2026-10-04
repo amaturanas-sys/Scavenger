@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**371 objetos** · 1 con modelo · 370 pendientes.
+**395 objetos** · 1 con modelo · 394 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -20,10 +20,10 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Escudos](#escudo) | 6 | 6 | 0 | 0 | 0 |
 | [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
 | [Armaduras (por piezas)](#armadura) | 48 | 48 | 0 | 0 | 0 |
-| [Vestimenta (personalización)](#vestimenta) | 14 | 14 | 0 | 0 | 0 |
+| [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 51 | 51 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 60 | 60 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -358,6 +358,21 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `vestimenta.torso.uniforme_imperial` | Uniforme imperial | 0.6x1.4x0.4 | 300 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` | Personalización del personaje (Fase 3). |
 | `vestimenta.torso.tunica_culto` | Túnica del culto | 0.7x1.6x0.5 | 300 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` | Personalización del personaje (Fase 3). |
 | `vestimenta.torso.harapos` | Harapos de prisionero | 0.6x1.1x0.4 | 150 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` | Personalización del personaje (Fase 3). |
+| `vestimenta.cabeza.sombrero` | Sombrero de ala ancha | 0.45x0.15x0.45 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` | Da sombra: contra el sol y el calor. |
+| `vestimenta.cabeza.gorro_lobo` | Gorro de cabeza de lobo | 0.3x0.3x0.35 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | Abriga y escarmienta: el enemigo se lo piensa. |
+| `vestimenta.cuello.panuelo_desierto` | Pañuelo del desierto | 0.3x0.2x0.3 | 60 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:seda` | Cubre cara y cuello del sol y la arena. |
+| `vestimenta.cuello.bufanda_piel` | Bufanda de piel de zorro | 0.3x0.2x0.3 | 60 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | De piel de coyote. |
+| `vestimenta.torso.tunica_seda` | Túnica de seda blanca | 0.6x1.2x0.35 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:seda` | Fresca y blanca: refleja el sol. |
+| `vestimenta.torso.tunica_lana` | Túnica de lana | 0.6x1.2x0.4 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:lana` |  |
+| `vestimenta.espalda.abrigo_oso` | Abrigo de piel de oso | 0.9x1.3x0.6 | 300 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | El más abrigado; pesa. Escarmienta mucho. |
+| `vestimenta.espalda.abrigo_tigre` | Abrigo de piel de tigre | 0.9x1.3x0.5 | 300 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | Escarmienta más que ninguno. |
+| `vestimenta.espalda.capa_puma` | Capa de piel de puma | 0.8x1.2x0.5 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | Escarmienta. |
+| `vestimenta.espalda.capa_hiena` | Capa de piel de hiena | 0.8x1.2x0.5 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | Escarmienta un poco. |
+| `vestimenta.espalda.abrigo_reno` | Abrigo de piel de reno | 0.9x1.3x0.6 | 300 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | Muy abrigado. |
+| `vestimenta.espalda.abrigo_cabra` | Abrigo de lana de cabra | 0.9x1.3x0.6 | 300 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:lana` |  |
+| `vestimenta.espalda.manto_blanco` | Manto blanco del desierto | 0.8x1.3x0.4 | 220 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:seda` | Sombra para todo el cuerpo. |
+| `vestimenta.pies.botas_piel` | Botas de piel de reno | 0.15x0.4x0.3 | 100 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | Abrigan y no se mojan. |
+| `vestimenta.pies.sandalias` | Sandalias de cuero | 0.12x0.08x0.28 | 60 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | Frescas. |
 
 <a id="accesorio"></a>
 
@@ -468,6 +483,15 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.mochila.pequena` | Mochila pequeña | 0.35x0.4x0.2 | 80 | pendiente | `uso:equipable` `material:cuero` | 15 kg, 12 huecos; no frena. |
 | `utileria.mochila.mediana` | Mochila mediana | 0.4x0.55x0.25 | 100 | pendiente | `uso:equipable` `material:cuero` | 25 kg, 18 huecos; frena un poco. |
 | `utileria.mochila.grande` | Mochila grande | 0.5x0.75x0.3 | 120 | pendiente | `uso:equipable` `material:cuero` | 40 kg, 28 huecos; frena (se puede dejar en el suelo para pelear). |
+| `utileria.piel.lobo` | Piel de lobo | 0.6x0.1x1.0 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Del despiece. Capas y gorros que escarmientan. |
+| `utileria.piel.oso` | Piel de oso | 0.9x0.15x1.4 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Del despiece. |
+| `utileria.piel.tigre` | Piel de tigre | 0.8x0.1x1.3 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Del despiece. |
+| `utileria.piel.puma` | Piel de puma | 0.7x0.1x1.1 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Del despiece. |
+| `utileria.piel.hiena` | Piel de hiena | 0.6x0.1x1.0 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Del despiece. |
+| `utileria.piel.coyote` | Piel de coyote | 0.5x0.1x0.8 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Del despiece. |
+| `utileria.piel.reno` | Piel de reno | 0.8x0.15x1.2 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Del despiece: abrigos y botas. |
+| `utileria.piel.cabra` | Lana de cabra | 0.5x0.2x0.5 | 40 | pendiente | `uso:recolectable` `uso:material` `material:lana` | De las cabras (despiece y esquila de los pastores): fieltro, lana. |
+| `utileria.material.seda` | Seda | 0.4x0.1x0.3 | 30 | pendiente | `uso:recolectable` `uso:material` `material:seda` | De las caravanas del imperio (botín). |
 
 <a id="personaje"></a>
 

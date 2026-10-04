@@ -71,8 +71,6 @@ Caldero	Cauldron
 Campamento abandonado del padre	Father's abandoned camp
 Campesino	Peasant
 Canoa de pieles	Hide canoe
-Capa de lana	Wool cloak
-Capa de piel de lobo	Wolf fur cloak
 Carbón vegetal	Charcoal
 Carne fresca	Fresh meat
 Carne seca	Dried meat
@@ -120,7 +118,6 @@ Cuerpo base: niño	Base body: child
 Curandero	Healer
 Daga	Dagger
 Deel (caftán cruzado)	Deel (wrap caftan)
-Deel de invierno con piel	Fur winter deel
 Dromedario	Dromedary
 Duna	Dune
 El medio-hermano	The half-brother
@@ -153,8 +150,6 @@ Gorjal / cofia de fieltro acolchado	Padded felt gorget
 Gorjal / cofia de malla	Mail coif
 Gorjal / cofia laminar de cuero	Leather lamellar gorget
 Gorjal / cofia ritual del culto	Cult ritual gorget
-Gorro de fieltro de punta	Pointed felt hat
-Gorro de piel	Fur hat
 Granate	Garnet
 Granero	Granary
 Grebas (par) de escamas de hierro	Iron scale greaves (pair)
@@ -198,6 +193,7 @@ Jaula de prisioneros	Prisoner cage
 Jinete arquero	Horse archer
 Kurgán (túmulo funerario)	Kurgan (burial mound)
 La madre	The mother
+Lana de cabra	Goat wool
 Lanza	Spear
 Lanza de caballería de doble punta	Double-tipped cavalry lance
 Lapislázuli	Lapis lazuli
@@ -255,6 +251,13 @@ Piedra con mensaje cifrado	Stone with coded message
 Piedra de honda	Sling stone
 Piedra-ciervo	Deer stone
 Piedras	Stones
+Piel de coyote	Coyote pelt
+Piel de hiena	Hyena pelt
+Piel de lobo	Wolf pelt
+Piel de oso	Bear pelt
+Piel de puma	Puma pelt
+Piel de reno	Reindeer pelt
+Piel de tigre	Tiger pelt
 Pieles curtidas	Tanned hides
 Pila de cráneos del culto	Cult skull pile
 Pino	Pine
@@ -280,6 +283,7 @@ Sacerdote del culto	Cult priest
 Saco de grano	Sack of grain
 Saxaúl (arbusto del desierto)	Saxaul (desert shrub)
 Secadero de carne	Meat drying rack
+Seda	Silk
 Silla de montar	Saddle
 Soldado ballestero	Crossbow soldier
 Soldado lancero	Spear soldier
@@ -418,6 +422,8 @@ tienes %d %s, hacen falta %d	you have %d %s, %d needed
 y un %s en la tribu	and a %s in the tribe
 ¡Atrapaste al %s con el lazo! Dale carne (K) antes de que se suelte.	You lassoed the %s! Feed it meat (K) before it breaks free.
 ¡Domaste: %s! Ahora sigue a la tribu%s.	Tamed: %s! It now follows the tribe%s.
+# --- src/game/apparel_game.c
+%s se pone: %s.	%s puts on: %s.
 # --- src/game/camp_game.c
 %s aprende %s: 	%s learns %s: 
 %s empieza a aprender el oficio de %s.	%s starts learning the %s trade.
@@ -503,6 +509,7 @@ Con esta lluvia la flecha no prende.	The arrow won't light in this rain.
 Despiertas en el campamento: te encontraron malherido (moral -5).	You wake in camp: they found you badly hurt (morale -5).
 El %s deja botín (F para recogerlo).	The %s drops loot (F to pick up).
 El %s para tu %s%s.	The %s blocks your %s%s.
+El %s se espanta ante las pieles de fiera y retrocede.	The %s is frightened by the beast pelts and backs off.
 El %s se zafa del agarre: ¡quedas expuesto!	The %s breaks the hold: you're exposed!
 El golpe del %s alcanza a tu montura.	The %s's blow hits your mount.
 Escudo contra escudo: los dos os tambaleáis.	Shield against shield: you both stagger.
@@ -614,6 +621,7 @@ Sacrificas	You slaughter
 Se soltó del lazo sin comer: %s. ¡Cuidado!	Broke free of the lasso unfed: %s. Careful!
 Te pican: %s.%s	Stung by: %s.%s
 Tu %s caza: %s.	Your %s hunts: %s.
+Una es %s.	One is a %s.
 Ya ordeñaste hoy a este animal.	You already milked this animal today.
 ¡La flecha atraviesa un pez! (+1 carne fresca)	Your arrow spears a fish! (+1 fresh meat)
 ¡Las abejas defienden la colmena! Hace falta humo (antorcha encendida).	The bees defend the hive! You need smoke (lit torch).
@@ -637,6 +645,7 @@ Solo coral quebradizo, sin valor	Only brittle, worthless coral
  · hielo	 · ice
  · mojado	 · wet
  · nadando	 · swimming
+ · sol fuerte	 · strong sun
  · vadeando	 · wading
 %s %s te tiende la lanza.	%s %s holds out a spear to you.
 %s %s. La tribu está de luto (moral -6).	%s %s. The tribe mourns (morale -6).
@@ -654,6 +663,7 @@ Tardaste en salir del socavón: el frío te caló.	You took too long in the sink
 Te acompañan %s (Y: volver).	%s go with you (Y: send back).
 Te arrastraste fuera de la arena movediza.	You crawled out of the quicksand.
 Te desmayaste de frío; la tribu te llevó junto al fuego (moral -3).	You fainted from cold; the tribe carried you to the fire (morale -3).
+Te desmayaste por el calor; la tribu te llevó a la sombra (moral -3). Cúbrete del sol y bebe.	You fainted from the heat; the tribe carried you into the shade (morale -3). Cover up from the sun and drink.
 Tiras de %s: ¡no lo sueltes!	You pull %s: don't let go!
 Trepaste fuera del socavón.	You climbed out of the sinkhole.
 Un compañero	A companion
@@ -680,8 +690,12 @@ tu compañero	your companion
 # --- src/game/inventory_game.c
  (lo demás no te cabe).	 (the rest won't fit).
  y %d más	 and %d more
+ · escarmiento %d %%	 · dread %d %%
  · estado %d %%	 · condition %d %%
+ · frena %d %%	 · slows %d %%
+ · lluvia %d %%	 · rain %d %%
  · pídeselo a un druida	 · ask a druid
+ · sombra %d %%	 · shade %d %%
  · tatuado	 · tattooed
 %.1f de %.0f kg · %d de %d huecos	%.1f of %.0f kg · %d of %d slots
 %.1f kg	%.1f kg
@@ -689,6 +703,7 @@ tu compañero	your companion
 %.1f kg: pesado, andas más lento (más de %.0f kg)	%.1f kg: heavy, you walk slower (over %.0f kg)
 %d · %.1f kg%s · Enter o clic: pasar (Mayús: todo)	%d · %.1f kg%s · Enter or click: move (Shift: all)
 %s · Enter: cambiar · Supr o clic derecho: quitar	%s · Enter: change · Del or right-click: remove
+%s · Enter: cambiar · Supr: quitar	%s · Enter: change · Del: remove
 %s · Supr: quitar	%s · Del: remove
 %s · nivel %d%s	%s · level %d%s
 Acopio y armería del campamento	Camp store and armory
@@ -699,6 +714,7 @@ Cambias de mochila: ahora llevas la %s.	You switch backpacks: now carrying the %
 Cargas tu mochila en el lomo del %s.	You load your backpack on the %s's back.
 Cargas tu mochila en la carreta (G junto a ella para recogerla).	You load your backpack on the cart (G next to it to take it back).
 Carreta de la tribu	Tribe wagon
+Con frío, pieles y abrigos; con sol y calor, sombrero, pañuelo y seda blanca. Las pieles de depredador espantan al enemigo.	In the cold, furs and coats; in sun and heat, a hat, a scarf and white silk. Predator pelts frighten the enemy.
 Contra el corte	Against cuts
 Contra el golpe	Against blows
 Contra flechas y puntas	Against arrows and points
@@ -720,14 +736,17 @@ No cabe en %s (peso, talla o huecos).	Won't fit in %s (weight, size or slots).
 No hay sitio donde dejar la pieza que llevas.	No room to put the piece you wear.
 No hay sitio donde guardar la joya.	There's no room to store the jewel.
 No hay sitio donde guardar la pieza.	No room to store the piece.
+No hay sitio donde guardar la prenda.	There is no room to keep the garment.
 No llevas mochila.	You have no backpack.
 No se puede reparar: %s	Can't repair: %s
 No te cabe nada del botín (I: inventario).	None of the loot fits (I: inventory).
 No tienes a mano otra pieza para %s.	No other piece at hand for %s.
+No tienes a mano ropa para: %s.	You have no clothing at hand for: %s.
 No tienes a mano una joya para: %s.	You have no jewel at hand for: %s.
 Q / E o clic: cambiar de contenedor	Q / E or click: change container
 Recoges el botín: %s%s%s	You pick up the loot: %s%s%s
 Reparas: %s (%d %% -> %d %%).	Repaired: %s (%d %% -> %d %%).
+Ropa	Clothing
 Sangre	Blood
 Se perdieron las alforjas de una montura.	A mount's saddlebags were lost.
 Sin encantar no hace nada: llévasela a un druida.	Unenchanted it does nothing: take it to a druid.
@@ -736,6 +755,7 @@ Tatuajes	Tattoos
 Te cuelgas la %s.	You shoulder the %s.
 Te pones: %s (%d %%).	You put on: %s (%d %%).
 Te pones: %s (%s).	You put on: %s (%s).
+Te pones: %s.	You put on: %s.
 Te quitas: %s.	You take off: %s.
 Tu mochila (dejada aquí)	Your backpack (left here)
 Tu mochila quedó en el suelo, lejos de aquí.	Your backpack was left on the ground, far from here.
@@ -744,12 +764,18 @@ Tu mochila va en un animal de carga: acércate a él.	Your backpack is on a pack
 Un tatuaje es para siempre: la zona del cuerpo cambia a qué va el bonus. El tercer grado se bifurca: elegir una rama cierra la otra.	A tattoo is forever: the body zone changes what the bonus goes to. The third tier branches: choosing one branch closes the other.
 Un tatuaje no se puede quitar.	A tattoo can't be removed.
 Vida	Health
+abriga %+.0f°	warmth %+.0f°
+abrigo %+.0f°	warmth %+.0f°
 el ungüento corta el veneno (B)	salve stops the poison (B)
+escarmiento %d %%	dread %d %%
+lluvia %d %%	rain %d %%
 no sangras	not bleeding
 sangras: véndate (B)	bleeding: bind it (B)
 sin efecto	no effect
 sin tatuar	untattooed
+sombra %d %%	shade %d %%
 un %d %%	by %d %%
+vacío · Enter: ponerte ropa que tengas a mano	empty · Enter: put on clothing you have at hand
 vacío · Enter: ponerte una joya que tengas a mano	empty · Enter: wear a jewel you have at hand
 vacío · Enter: ponerte una pieza a mano	empty · Enter: wear a piece at hand
 # --- src/game/player.c
@@ -836,10 +862,12 @@ Cerrar el juego	Close the game
 Clima y peligros	Weather and hazards
 Combate cuerpo a cuerpo	Melee combat
 Continuar	Continue
+Contra el frío, pieles y abrigos: oso, reno, lobo, tigre, cabra. Contra el sol, sombrero, pañuelo del desierto, túnica de seda blanca y manto blanco.	Against the cold, furs and coats: bear, reindeer, wolf, tiger, goat. Against the sun, a hat, a desert scarf, a white silk tunic and a white mantle.
 Controles	Controls
 Controles y reglas del juego	Controls and game rules
 Dejar la partida (lo no guardado se pierde)	Leave the game (unsaved progress is lost)
 Día %d · %s · tribu de %d	Day %d · %s · tribe of %d
+El desierto quema de día y hiela de noche. Con calor te sofocas: busca sombra (las yurtas) o el agua; con golpe de calor te desmayas.	The desert burns by day and freezes by night. Heat overwhelms you: seek shade (the yurts) or water; with heatstroke you faint.
 El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Cold drains your warmth: seek fire and yurts; wet clothes chill you.
 En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
 En verano el pasto seco arde: los incendios corren con el viento.	In summer dry grass burns: wildfires run with the wind.
@@ -874,9 +902,11 @@ La estepa	The steppe
 La lluvia apaga todo fuego: antorchas, fogatas, hornos y flechas.	Rain puts out every fire: torches, campfires, furnaces and arrows.
 La moral y la lealtad deciden si la tribu se rebela.	Morale and loyalty decide whether the tribe rebels.
 La tribu come carne fresca y leche antes que la seca; con hambre baja la moral.	The tribe eats fresh meat and milk before dried food; hunger lowers morale.
+La tribu se cambia sola según el tiempo con la ropa de su mochila y del acopio; sin ropa adecuada pasa frío o calor y baja la moral.	The tribe changes clothes on its own with the weather, from their packs and the stockpile; without suitable clothing they suffer cold or heat and morale drops.
 La tribu y el campamento	The tribe and the camp
 Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.	Structures wear out: the tribe repairs them with logs every day. Without upkeep, torrential rain brings them down.
 Las partidas guardadas, con su foto y su fecha	Saved games, with their picture and date
+Las pieles de depredador (lobo, oso, tigre, puma, hiena) dan escarmiento: el enemigo se espanta o huye antes.	Predator pelts (wolf, bear, tiger, puma, hyena) give dread: the enemy is frightened or flees sooner.
 Lobos, perros, tigres, pumas, halcones y cuervos: debilítalos peleando, échales el lazo y dales carne (K) para domarlos.	Wolves, dogs, tigers, pumas, falcons and crows: weaken them in a fight, lasso them and feed them meat (K) to tame them.
 Los animales de la tribu comen: los herbívoros pastan solos si hay pasto; con nieve, forraje (F corta hierba alta). Los carnívoros, carne o cazan. K les da de comer; los pastores lo hacen en el campamento.	The tribe's animals eat: herbivores graze on their own if there's grass; in snow, fodder (F cuts tall grass). Carnivores eat meat or hunt. K feeds them; herders do it in camp.
 Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se queda).	Fallen enemies drop a loot bag: F picks it up (what doesn't fit stays).
@@ -888,6 +918,7 @@ Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta 
 Nueva partida	New game
 O engancha el escudo enemigo con hacha, guja o alabarda	O hooks the enemy shield with an axe, glaive or halberd
 Osos, hienas, coyotes y jabalíes: siempre hostiles.	Bears, hyenas, coyotes and boars: always hostile.
+P equipo, pestaña Ropa: cabeza, cuello y cara, cuerpo, capa o abrigo y pies. Cada prenda abriga, da sombra o frena la lluvia.	P equipment, Clothing tab: head, neck and face, body, cloak or coat, and feet. Each garment gives warmth, shade or keeps the rain off.
 Partida de otra versión del juego	Save from another game version
 Pausa	Pause
 Piedras: rompe rocas a golpes, F en los corales del lago, cava trincheras o criba en la orilla (Tab).	Gems: break rocks with blows, F at lake corals, dig trenches or pan on the shore (Tab).
@@ -897,9 +928,11 @@ Q/E cámara · M marcar	Q/E camera · M mark
 R montar · K animal	R ride · K animal
 Reclutar, liberar o ejecutar prisioneros cambia la relación con el reino.	Recruiting, freeing or executing prisoners changes your standing with the kingdom.
 Reparar: el cuero y el fieltro con pieles; el bronce y el hierro, herrero, horno y metal.	Repair: leather and felt with hides; bronze and iron need a smith, a furnace and metal.
+Ropa y calor	Clothing and heat
 Salir	Quit
 Salir al título	Back to title
 Salir del juego	Quit game
+Se fabrican a mano (Tab, Fabricar) con las pieles del despiece, la lana de las cabras (los pastores las esquilan) y la seda del botín.	Made by hand (Tab, Craft) from butchered pelts, goat wool (herders shear the goats) and looted silk.
 Serpientes, escorpiones, arañas y avispas envenenan: véndate (B).	Snakes, scorpions, spiders and wasps are venomous: bandage yourself (B).
 Socavones de nieve y arena movediza aparecen cada día en otro lugar.	Snow sinkholes and quicksand appear somewhere new every day.
 Subes de nivel peleando, cazando, fabricando, construyendo y domando.	You level up by fighting, hunting, crafting, building and taming.
@@ -1068,6 +1101,17 @@ Tigre	Tiger
 Tortuga marina	Sea turtle
 Víbora	Viper
 Íbice	Ibex
+# --- src/sim/apparel.c
+a gusto	comfortable
+acalorado	warm
+agotado por el calor	heat exhaustion
+cabeza	head
+capa o abrigo	cloak or coat
+cuello y cara	neck and face
+cuerpo	body
+golpe de calor	heatstroke
+pies	feet
+sofocado	overheated
 # --- src/sim/armor.c
 acero	steel
 botas	boots
@@ -1177,18 +1221,38 @@ Captor del culto	Cult captor
 Fanático del culto	Cult fanatic
 Jinete bandido	Bandit rider
 # --- src/sim/economy.c
+Abrigo de lana de cabra	Goat wool coat
+Abrigo de piel de oso	Bear fur coat
+Abrigo de piel de reno	Reindeer fur coat
+Abrigo de piel de tigre	Tiger fur coat
 Botas de fieltro	Felt boots
+Botas de piel de reno	Reindeer fur boots
+Bufanda de piel de zorro	Fox fur scarf
+Capa de lana	Wool cloak
+Capa de piel de hiena	Hyena fur cloak
+Capa de piel de lobo	Wolf fur cloak
+Capa de piel de puma	Puma fur cloak
 Casco de bronce	Bronze helmet
 Coraza de escamas de acero	Steel scale cuirass
 Coraza laminar de cuero	Lamellar leather cuirass
 Cuerda de tendones	Sinew rope
+Deel de invierno con piel	Fur winter deel
 Escudo de láminas de hierro	Iron-plated shield
 Flechas (5)	Arrows (5)
+Gorro de cabeza de lobo	Wolf head hat
+Gorro de fieltro de punta	Pointed felt hat
+Gorro de piel	Fur hat
 Lanza de punta de bronce	Bronze-tipped spear
 Lingote de bronce	Bronze ingot
+Manto blanco del desierto	White desert mantle
+Pañuelo del desierto	Desert scarf
 Piedras de honda (8)	Sling stones (8)
 Sable de acero	Steel sabre
 Sable de bronce	Bronze sabre
+Sandalias de cuero	Leather sandals
+Sombrero de ala ancha	Wide-brimmed hat
+Túnica de lana	Wool tunic
+Túnica de seda blanca	White silk tunic
 Ungüento de hierbas y miel	Herb and honey ointment
 Virotes (4)	Bolts (4)
 # --- src/sim/hazards.c
@@ -1357,7 +1421,6 @@ Ya elegiste la otra rama de ese motivo.	You already chose the other branch of th
 Ya llevas ese tatuaje.	You already have that tattoo.
 brazo derecho	right arm
 brazo izquierdo	left arm
-cabeza	head
 cuello	neck
 espalda	back
 manos	hands

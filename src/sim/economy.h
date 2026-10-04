@@ -88,6 +88,27 @@ typedef enum {
     CRAFT_LEATHER_CUIRASS,
     CRAFT_FELT_BOOTS,
     CRAFT_BRONZE_INGOT, // el bronce de las joyas
+    // Ropa (src/sim/apparel.h): a mano, con pieles, lana y seda.
+    CRAFT_FUR_HAT,
+    CRAFT_FELT_HAT,
+    CRAFT_SUN_HAT,
+    CRAFT_WOLF_HAT,
+    CRAFT_DESERT_SCARF,
+    CRAFT_FUR_SCARF,
+    CRAFT_SILK_TUNIC,
+    CRAFT_WOOL_TUNIC,
+    CRAFT_WINTER_DEEL,
+    CRAFT_WOOL_CLOAK,
+    CRAFT_WOLF_CLOAK,
+    CRAFT_BEAR_COAT,
+    CRAFT_TIGER_COAT,
+    CRAFT_PUMA_CLOAK,
+    CRAFT_HYENA_CLOAK,
+    CRAFT_REINDEER_COAT,
+    CRAFT_GOAT_COAT,
+    CRAFT_WHITE_MANTLE,
+    CRAFT_FUR_BOOTS,
+    CRAFT_SANDALS,
     CRAFT_COUNT
 } CraftId;
 

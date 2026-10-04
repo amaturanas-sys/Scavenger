@@ -9,7 +9,6 @@
 #include "ui/theme.h"
 #include "sim/lang.h"
 
-#define CLOTHING 12.0f       // abrigo de pieles (grados de sensacion termica)
 #define FAINT_SECONDS 25.0f  // en hipotermia, hasta desmayarse
 #define HOLE_RADIUS 1.4f
 #define RESCUE_RANGE 3.0f
@@ -25,6 +24,7 @@ void hz_init(Hazards *hz, unsigned seed) {
     rng_seed(&hz->rng, seed ^ 0x4A2Du);
     hz->warmth.heat = WARMTH_MAX;
     hz->mud = 1.0f;
+    hz->outfit_speed = 1.0f;
     hz->used_day = -1;
     hz->hole_day = -1;
 }
@@ -32,7 +32,7 @@ void hz_init(Hazards *hz, unsigned seed) {
 bool hz_blocks_input(const Hazards *hz) { return hz->trap != TRAP_NONE || hz->qte.state == QTE_RUNNING; }
 
 float hz_speed_scale(const Hazards *hz) {
-    float s = hz->mud * warmth_speed_scale(&hz->warmth);
+    float s = hz->mud * warmth_speed_scale(&hz->warmth) * heat_speed_scale(&hz->heat) * (hz->outfit_speed > 0.0f ? hz->outfit_speed : 1.0f);
     if (hz->swimming) s *= 0.4f;
     else if (hz->wading) s *= 0.55f;
     return s;
@@ -442,13 +442,19 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
         }
     }
 
-    // Frio: sensacion termica y calor corporal.
+    // Frio y calor: sensacion termica con la ropa que lleva, el sol y el fuego.
     hz->fire = ga->fires_out ? 0.0f : fire_warmth(props, camp_fire, p->pos); // apagados por la lluvia, no calientan
     float shelter = dist2(p->pos, camp_fire) < 14.0f ? 6.0f : 0.0f; // las yurtas cortan el viento
     float torch = ga->torch_lit && !ga->hands.sheathed ? 4.0f : 0.0f;
     float wind = c->wind * (shelter > 0.0f ? 0.5f : 1.0f);
-    hz->feels = hazard_feels_like(c->temperature, wind, hz->warmth.wet, CLOTHING + shelter + torch, hz->fire);
-    warmth_update(&hz->warmth, hz->feels, c->rain, hz->fire > 5.0f, dt);
+    float sun_h = clock_sun_height(world_time);
+    hz->temp_here = local_temperature(c->temperature, sun_h, desert);
+    bool shade_here = shelter > 0.0f || hz->wading || hz->swimming; // a la sombra de las yurtas o en el agua
+    hz->sun = shade_here ? 0.0f : sun_strength(sun_h, c->clouds, desert);
+    hz->feels = apparel_feels_like(hz->temp_here, wind, hz->warmth.wet, hz->sun, &ga->outfit, shelter + torch, hz->fire);
+    hz->outfit_speed = outfit_speed_scale(&ga->outfit);
+    warmth_update(&hz->warmth, hz->feels, c->rain * apparel_wet_scale(&ga->outfit), hz->fire > 5.0f, dt);
+    heat_update(&hz->heat, hz->feels, hz->warmth.wet, shade_here, dt);
     if (ga->warmth_boost > 0.0f) { // el calor del ambar
         hz->warmth.heat = fminf(100.0f, hz->warmth.heat + ga->warmth_boost);
         ga->warmth_boost = 0.0f;
@@ -475,6 +481,21 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
         }
     } else {
         hz->faint_timer = 0.0f;
+    }
+    // Golpe de calor: tras unos segundos, desmayo y la tribu lo lleva a la sombra del campamento.
+    if (heat_level(&hz->heat) == HEAT_STROKE && hz->trap == TRAP_NONE) {
+        hz->heat_faint += dt;
+        if (hz->heat_faint > FAINT_SECONDS) {
+            dismount(ga);
+            p->pos = (Vector3){ camp_fire.x - 3.0f, terrain_height(t, camp_fire.x - 3.0f, camp_fire.z), camp_fire.z };
+            p->vy = 0.0f;
+            hz->heat.load = 40.0f;
+            hz->heat_faint = 0.0f;
+            troop_adjust_morale(troop, -3.0f);
+            snprintf(log, log_len, "%s", T("Te desmayaste por el calor; la tribu te llevó a la sombra (moral -3). Cúbrete del sol y bebe."));
+        }
+    } else {
+        hz->heat_faint = 0.0f;
     }
 }
 
@@ -590,10 +611,14 @@ void hz_draw_hud(const Hazards *hz, const Troop *troop, int right_x, int y, int 
     // Calor corporal y terreno, alineados a la derecha bajo el minimapa.
     const char *ground = hz->on_ice ? T(" · hielo") : hz->swimming ? T(" · nadando") : hz->wading ? T(" · vadeando")
                          : hz->mud < 0.9f ? T(" · barro") : "";
-    const char *txt = TextFormat("%s%s%s", cold_name(warmth_level(&hz->warmth)), hz->warmth.wet > 0.3f ? T(" · mojado") : "",
-                                 ground);
-    ui_text(txt, right_x - MeasureText(txt, 10), y, 10, heat_color(&hz->warmth));
-    ui_bar(right_x - 92, y + 12, 92, hz->warmth.heat / WARMTH_MAX, heat_color(&hz->warmth), UI_METAL_SILVER);
+    // Con calor se muestra el sofoco en lugar del frio (los dos no pasan a la vez).
+    bool hot = hz->heat.load > 25.0f && warmth_level(&hz->warmth) == COLD_WARM;
+    Color col = hot ? (hz->heat.load > 75.0f ? UI_CARNELIAN : UI_GOLD_LIGHT) : heat_color(&hz->warmth);
+    const char *state = hot ? heat_name(heat_level(&hz->heat)) : cold_name(warmth_level(&hz->warmth));
+    const char *txt = TextFormat("%d° · %s%s%s%s", (int)roundf(hz->temp_here), state, hz->sun > 0.5f && hz->temp_here > 20.0f ? T(" · sol fuerte") : "",
+                                 hz->warmth.wet > 0.3f ? T(" · mojado") : "", ground);
+    ui_text(txt, right_x - MeasureText(txt, 10), y, 10, col);
+    ui_bar(right_x - 92, y + 12, 92, hot ? hz->heat.load / HEAT_MAX : hz->warmth.heat / WARMTH_MAX, col, UI_METAL_SILVER);
 
     if (hz->victim && !(hz->qte_rescue && hz->qte.state == QTE_RUNNING)) {
         const Member *m = troop_find((Troop *)troop, hz->victim);

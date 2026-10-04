@@ -12,6 +12,7 @@
 #include "raymath.h"
 #include "rlgl.h"
 #include "sim/anim_index.h"
+#include "sim/apparel.h"
 #include "sim/clock.h"
 #include "sim/hazards.h"
 #include "ui/icons.h"
@@ -457,7 +458,10 @@ static void butcher(GameActions *ga, const Player *p, Animal *a, char *log, size
     int meat = 0, hide = 0;
     if (!animal_butcher(a, &meat, &hide)) return;
     // A lo que lleves encima (o a lo que tengas cerca); lo que no cabe se queda.
-    int kept = ig_store(ga, NULL, p, FRESH_MEAT_ID, meat, 1.0f) + ig_store(ga, NULL, p, HIDE_ID, hide, 1.0f);
+    // Los depredadores, el reno y la cabra dan su piel (ropa: src/sim/apparel.h); el resto, pieles curtidas.
+    const char *pelt = hide > 0 ? species_pelt(a->species) : NULL;
+    int kept = ig_store(ga, NULL, p, FRESH_MEAT_ID, meat, 1.0f) + ig_store(ga, NULL, p, HIDE_ID, pelt ? hide - 1 : hide, 1.0f);
+    if (pelt) kept += ig_store(ga, NULL, p, pelt, 1, 1.0f);
     // Para fabricar: plumas de las aves; huesos y tendones de los grandes.
     const SpeciesDef *sd = species_def(a->species);
     if (sd->flier) ig_store(ga, NULL, p, "utileria.material.plumas", 3, 1.0f);
@@ -469,6 +473,10 @@ static void butcher(GameActions *ga, const Player *p, Animal *a, char *log, size
     char who[48];
     snprintf(log, len, T("%s %s: +%d carne fresca, +%d pieles%s"), how, lower(T(species_def(a->species)->name), who, sizeof(who)),
              meat, hide, kept < meat + hide ? TextFormat(T(" (no te cabe todo: %d se quedan)"), meat + hide - kept) : ".");
+    if (pelt) {
+        size_t used = strlen(log);
+        if (used + 2 < len) snprintf(log + used, len - used, " %s", TextFormat(T("Una es %s."), lower(inventory_find(ga->inv, pelt) ? T(inventory_find(ga->inv, pelt)->name) : pelt, who, sizeof(who))));
+    }
 }
 
 static void interact(GameActions *ga, const Player *p, bool shift, char *log, size_t len) {
@@ -653,6 +661,23 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
                 bool meat = species_eats_meat(a->species);
                 const char *food = meat ? (stock_count(&c->stock, FRESH_MEAT_ID) > 0 ? FRESH_MEAT_ID : FOOD_ID) : FODDER_ID;
                 if (stock_take(&c->stock, food, 1)) animal_feed_tamed(a, meat);
+            }
+        }
+    }
+    // Cada dia los pastores esquilan las cabras de su campamento: lana para fieltro y abrigos.
+    static int shear_day = -1;
+    if (clock_day(now) != shear_day) {
+        bool first = shear_day < 0;
+        shear_day = clock_day(now);
+        for (int k = 0; k < CAMPS_MAX && !first; k++) {
+            CampSite *c = &ga->camps[k];
+            bool herder = false;
+            for (int m = 0; c->used && m < troop->count; m++)
+                herder |= troop->members[m].status == STATUS_ACTIVE && troop->members[m].camp == k && troop->members[m].role == ROLE_HERDER;
+            for (int i = 0; herder && i < ga->animal_count; i++) {
+                const Animal *a = &ga->animals[i];
+                if (alive(a) && a->species == SPECIES_GOAT && a->state == ANIMAL_TAMED && adist(a, (Vector3){ c->x, 0, c->z }) < CAMP_RADIUS_M)
+                    stock_add(&c->stock, "utileria.piel.cabra", 1);
             }
         }
     }

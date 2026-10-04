@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include "champion.h"
+#include "apparel.h"
 #include "armor.h"
 #include "storage.h"
 #include "health.h"
@@ -85,6 +86,7 @@ typedef struct {
     Bag bag;        // lo que lleva en ella
     uint64_t known; // sitios que conoce (src/sim/travel.h: campamentos y marcas del mapa)
     int journey;    // viaje en curso + 1 (0: ninguno); mientras, no esta en ningun lado a la vista
+    Outfit outfit;  // la ropa que lleva (src/sim/apparel.h): la cambia segun el tiempo
 } Member;
 
 // Reino al que la tropa rinde tributo. `stance` dice cuanto sube o baja la

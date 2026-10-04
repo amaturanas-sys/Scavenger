@@ -4,6 +4,7 @@
 #define ESTEPA_BODY_DRAW_H
 
 #include "raylib.h"
+#include "sim/apparel.h"
 #include "sim/armor.h"
 #include "sim/body.h"
 
@@ -12,6 +13,9 @@ typedef struct {
 } BodyColors;
 
 void body_draw(const BodyPose *b, Vector3 pos, float yaw, BodyColors c, const Armor *armor);
+// La ropa encima (src/sim/apparel.h): tunica, capa o abrigo, gorro o sombrero, pañuelo y botas.
+// Despues de body_draw, con la misma pose.
+void body_draw_outfit(const BodyPose *b, Vector3 pos, float yaw, const Outfit *o);
 // Color de un material de armadura (gastado se oscurece; roto, gris).
 Color armor_color(const ArmorPiece *pc);
 
