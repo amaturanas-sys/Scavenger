@@ -21,6 +21,7 @@
 #include "sim/economy.h"
 #include "sim/memory_map.h"
 #include "game/dialog.h"
+#include "sim/camps.h"
 #include "sim/jewelry.h"
 #include "sim/loadout.h"
 #include "sim/talents.h"
@@ -51,6 +52,7 @@ typedef struct {
     float stagger, knock; // desequilibrado; derribado (src/sim/melee.h)
     int move, combo;   // movimiento cuerpo a cuerpo en curso (MeleeMove + 1) y paso del combo
     float move_anim;
+    int home_camp;     // campamento de su casa + 1 (0: sin calcular)
 } Npc;
 
 typedef struct {
@@ -67,8 +69,14 @@ typedef struct {
     // Interfaz.
     bool menu_open, stock_open;
     int cursor;
-    // Campamento.
-    Stockpile stock;
+    // Campamentos (src/sim/camps.h): cada uno con su acopio y su guardian. El 0 es el
+    // campamento con el que empieza la tribu. ga_stock() da el acopio de donde esta el jugador.
+    CampSite camps[CAMPS_MAX];
+    int here;           // campamento donde esta el jugador, o -1
+    Vector3 player_pos; // donde esta el jugador (lo pone ga_update)
+    bool found_pending; // se levanto una estructura basica lejos de todo: fundar campamento
+    float found_x, found_z;
+    int burn_camp, burn_next; // disolviendo: campamento que arde y la proxima estructura a prender (-1: nada)
     BuildProject projects[GA_MAX_PROJECTS];
     int project_count;
     int crew_present[GA_MAX_PROJECTS], crew_size[GA_MAX_PROJECTS];
@@ -129,6 +137,12 @@ typedef struct {
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);
+// El acopio del campamento donde esta el jugador (o del mas cercano; uno vacio si no queda ninguno).
+Stockpile *ga_stock(GameActions *ga);
+const Stockpile *ga_stock_c(const GameActions *ga);
+Stockpile *ga_stock_at(GameActions *ga, float x, float z);
+// El guardian ordena una obra en su campamento (con su acopio), en un sitio libre.
+bool ga_order_build(GameActions *ga, BuildId b, int camp, const Props *props, char *log, size_t len);
 // El jugador no controla el movimiento (menu abierto o trepando).
 bool ga_blocks_input(const GameActions *ga);
 bool ga_menu_open(const GameActions *ga);

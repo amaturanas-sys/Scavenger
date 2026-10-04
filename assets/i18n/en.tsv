@@ -340,6 +340,7 @@ Zorro	Fox
 , antorcha	, torch
 , lleva algo	, carrying
 Acciones	Actions
+Campamento de las estelas	Camp of the Stelae
 Cuadrilla de %d · se levanta 6 m delante de ti	Crew of %d · built 6 m ahead of you
 Demasiadas obras a la vez.	Too many works at once.
 Desenfundaste.	You draw your weapons.
@@ -413,6 +414,58 @@ tienes %d %s, hacen falta %d	you have %d %s, %d needed
 y un %s en la tribu	and a %s in the tribe
 ¡Atrapaste al %s con el lazo! Dale carne (K) antes de que se suelte.	You lassoed the %s! Feed it meat (K) before it breaks free.
 ¡Domaste: %s! Ahora sigue a la tribu%s.	Tamed: %s! It now follows the tribe%s.
+# --- src/game/camp_game.c
+%s aprende %s: 	%s learns %s: 
+%s empieza a aprender el oficio de %s.	%s starts learning the %s trade.
+%s sale a buscar gente nueva para %s.	%s sets out to find new people for %s.
+%s vuelve con %s: se une a %s.	%s returns with %s, who joins %s.
+%s ya es %s (%s).	%s is now a %s (%s).
+%s · %.0f s · maestros: %d	%s · %.0f s · masters: %d
+%s, guardián de %s	%s, keeper of %s
+Acopio: 	Store: 
+Adiós	Farewell
+Alguien sin tarea puede salir a buscar gente por los campamentos de la estepa. Lleva: %s. Tarda unos %.0f s.	Someone without a task can go looking for people across the steppe camps. Takes: %s. Lasts about %.0f s.
+Aquí podría nacer un campamento, pero no tienes escolta para nombrar un guardián (Y).	A camp could be born here, but you have no escort to name a keeper (Y).
+Aquí puede nacer un campamento. Hace falta un guardián que lo administre: ¿a quién de tu escolta nombras?	A camp can be born here. It needs a keeper to run it: whom from your escort do you name?
+Campamento %d	Camp %d
+Capacitar	Train
+Construir	Build
+Disolver	Dissolve
+Disolver el campamento	Dissolve the camp
+El campamento está en orden. Somos %d (%d sin tarea) y hay %d tareas en marcha. ¿Qué ordenas?	The camp is in order. We are %d (%d idle) with %d tasks under way. Your orders?
+Enseñar un oficio a alguien sin tarea	Teach a trade to someone idle
+Escolta	Escort
+Estado	Status
+Gente, tareas y acopio	People, tasks and store
+Gente: %d. 	People: %d. 
+Irá %s	%s will go
+La tribu	The tribe
+Listo	Done
+Mandar a alguien a buscar gente nueva	Send someone to find new people
+Nace %s. %s queda de guardián: háblale (F) para administrarlo.	%s is born. %s stays as keeper: talk to them (F) to run it.
+No fundar	Don't found
+No hay nadie sin tarea	Nobody is idle
+No se puede deshacer	It can't be undone
+Nombrar guardián a %s (se queda aquí)	Name %s keeper (stays here)
+Que salga a reclutar	Send out to recruit
+Quién sale contigo del campamento	Who leaves the camp with you
+Reclutando: 	Recruiting: 
+Reclutar	Recruit
+Se disuelve %s: arden las estructuras y se pierde todo el acopio (%d cosas): no había carreta ni alforjas cerca.	%s is dissolved: the structures burn and the whole store is lost (%d things): no cart or saddlebags nearby.
+Se disuelve %s: arden las estructuras; cargan %d cosas, se pierden %d.	%s is dissolved: the structures burn; %d things loaded, %d lost.
+Se queman las estructuras y la gente te sigue	The structures burn and the people follow you
+Una obra con el acopio de este campamento	A work using this camp's store
+Volver	Back
+Volvió sin nadie: la tribu está llena.	Came back alone: the tribe is full.
+nada	nothing
+ocupado en una tarea	busy with a task
+te sigue · clic: que se quede	follows you · click: stay
+¿A quién capacitamos? Mientras aprende no hace otra cosa.	Whom shall we train? While learning they do nothing else.
+¿Disolvemos el campamento? No hay carreta cerca: solo se llevará lo que quepa en las alforjas. El resto arderá.	Dissolve the camp? There's no cart nearby: only what fits in the saddlebags goes. The rest will burn.
+¿Disolvemos el campamento? Quemaremos las estructuras, cargaremos en la carreta lo que quepa y te seguiremos.	Dissolve the camp? We'll burn the structures, load what fits in the cart and follow you.
+¿Quién sale contigo? Los marcados ya te siguen. La escolta no trabaja en las obras.	Who comes with you? The marked ones already follow you. The escort doesn't work on builds.
+¿Qué levantamos? La cuadrilla sale de la gente sin tarea de este campamento.	What shall we raise? The crew comes from this camp's idle people.
+¿Qué oficio aprende %s? Un maestro del oficio en el campamento lo acelera mucho.	Which trade does %s learn? A master of the trade in camp speeds it up a lot.
 # --- src/game/combat_game.c
  (la armadura amortigua)	 (armor softens it)
  con el arma	 with the weapon
@@ -711,7 +764,6 @@ sep	Sep
 %s: %s	%s: %s
 %s: espera %.0f s.	%s: wait %.0f s.
 %s: ¿dónde? La zona cambia a qué va el bonus y cuánto pesa.	%s: where? The zone changes what the bonus goes to and how much it weighs.
-Adiós	Farewell
 Anillo, brazalete, collar, aretes o hebilla	Ring, bracelet, necklace, earrings or buckle
 Con metal y una piedra te hago una joya. Sin encantar no hace nada: eso es cosa del druida.	With metal and a gem I'll make you a jewel. Unenchanted it does nothing: that's the druid's craft.
 Efecto pasivo	Passive effect
@@ -728,7 +780,6 @@ Pasivo o activo, según su piedra (hierbas y miel)	Passive or active, by its gem
 Tatuar, para siempre	Tattoo, forever
 Tatuarme	Tattoo me
 Va a tu mochila (o donde quepa)	Goes to your pack (or wherever it fits)
-Volver	Back
 Ya lo llevas	You already have it
 espera %.0f s	wait %.0f s
 tienes %d, hacen falta %d · %s o %s	you have %d, %d needed · %s or %s
@@ -771,6 +822,7 @@ Esc menú (guardar, cargar) · F1 controles en el juego	Esc menu (save, load) ·
 Esc menú: guardar/cargar	Esc menu: save/load
 Ese hueco tiene una partida: Enter otra vez para sobrescribirla.	That slot has a save: Enter again to overwrite it.
 Espacio saltar · Q/E girar la cámara · M marcar el mapa	Space jump · Q/E turn camera · M mark the map
+F junto al guardián: obras, escolta, reclutar, capacitar en un oficio, estado y disolver el campamento.	F next to the keeper: builds, escort, recruiting, training a trade, status and dissolving the camp.
 F tomar/botín · T lanzar	F take/loot · T throw
 F1 cerrar esta ayuda	F1 close this help
 F2, F3, F4: habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)	F2, F3, F4: active abilities · P gear: armour, jewels and tattoos (Q/E)
@@ -830,6 +882,7 @@ Tatuajes y joyas	Tattoos and jewels
 Tu personaje no muere: abatido, tu escolta te levanta o despiertas en el campamento. Tus compañeros sí pueden morir.	Your character never dies: when downed, your escort lifts you or you wake up at camp. Your companions can die.
 U agarre y llave: arrancas el escudo, desarmas o tumbas	U grapple and lock: rip the shield away, disarm or throw down
 U agarre · O gancho	U grapple · O hook
+Una tienda o un refugio lejos de los demás campamentos funda uno nuevo: nombra guardián a alguien de tu escolta.	A tent or shelter far from other camps founds a new one: name someone from your escort its keeper.
 Una tribu nueva en la estepa	A new tribe on the steppe
 V golpe (mantener: pesado)	V strike (hold: heavy)
 V golpe; tres seguidos: combo · mantener V: golpe pesado (rompe guardias)	V strike; three in a row: combo · hold V: heavy blow (breaks guards)

@@ -19,6 +19,7 @@
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
 #include "../src/sim/loadout.h"
+#include "../src/sim/camps.h"
 #include "../src/sim/jewelry.h"
 #include "../src/sim/lang.h"
 #include "../src/sim/talents.h"
@@ -2204,12 +2205,45 @@ static void test_lang_table(void) {
     lang_free();
 }
 
+static void test_camps_found_tasks_and_rates(void) {
+    CampSite c[CAMPS_MAX];
+    camps_init(c, CAMPS_MAX);
+    CHECK(camps_count(c, CAMPS_MAX) == 0 && camp_at(c, CAMPS_MAX, 0, 0) < 0);
+    int a = camp_found(c, CAMPS_MAX, 0.0f, 0.0f, 1);
+    CHECK(a == 0 && c[0].guardian == -1 && camp_at(c, CAMPS_MAX, 10.0f, 5.0f) == 0);
+    CHECK(camp_found(c, CAMPS_MAX, 30.0f, 0.0f, 1) < 0); // demasiado cerca de otro
+    int b = camp_found(c, CAMPS_MAX, 200.0f, 0.0f, 2);
+    CHECK(b == 1 && camps_count(c, CAMPS_MAX) == 2);
+    float d;
+    CHECK(camp_nearest(c, CAMPS_MAX, 150.0f, 0.0f, &d) == 1 && d < 60.0f);
+    CHECK(camp_at(c, CAMPS_MAX, 100.0f, 0.0f) < 0); // entre los dos: fuera de ambos
+    // Oficios que se enseñan: cuestan algo y tardan; los del fuego, mas.
+    int trainable = 0;
+    for (int r = 0; r < ROLE_COUNT; r++) {
+        if (!role_trainable((Role)r)) continue;
+        trainable++;
+        CHECK(train_work((Role)r) > 0.0f && train_cost((Role)r)[0].id != NULL);
+    }
+    CHECK(trainable == 7 && train_work(ROLE_SMITH) > train_work(ROLE_HERDER) && !role_trainable(ROLE_LIEUTENANT));
+    CHECK(recruit_cost()[0].id && recruit_work() > 0.0f);
+    // Mas manos, mas rapido (con tope); un maestro, mucho mas.
+    CHECK(task_rate(0, 0) == 1.0f && task_rate(2, 0) > task_rate(1, 0) && task_rate(20, 0) <= 2.0f && task_rate(0, 1) > task_rate(2, 0));
+    CHECK(camp_add_task(&c[0], TASK_TRAIN, 7, ROLE_DRUID) && !camp_add_task(&c[0], TASK_RECRUIT, 7, ROLE_NONE)); // ya ocupado
+    CHECK(camp_member_busy(&c[0], 7) && !camp_member_busy(&c[0], 8));
+    CHECK(camp_add_task(&c[0], TASK_RECRUIT, 8, ROLE_NONE));
+    CampTask done[CAMP_TASKS];
+    float rates[CAMP_TASKS] = { 1.0f, 100.0f };
+    CHECK(camp_tick(&c[0], 3.0f, rates, done, CAMP_TASKS) == 1 && done[0].kind == TASK_RECRUIT && c[0].ntask == 1);
+    CHECK(camp_tick(&c[0], train_work(ROLE_DRUID), NULL, done, CAMP_TASKS) == 1 && done[0].role == ROLE_DRUID && c[0].ntask == 0);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
     RUN(test_tattoo_tree_is_permanent_and_branches);
     RUN(test_jewelry_crafted_and_enchanted);
     RUN(test_lang_table);
+    RUN(test_camps_found_tasks_and_rates);
     RUN(test_hand_crafting_and_repairs);
     RUN(test_enemy_loot_and_mounted_momentum);
     RUN(test_banish_removes_from_active);

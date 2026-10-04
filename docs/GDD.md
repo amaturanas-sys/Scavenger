@@ -316,6 +316,31 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - El bronce, el hierro y el acero piden herrero, su horno en el campamento y metal con carbón.
   - Cada reparación devuelve parte del estado (60 % el cuero, 80 % el metal).
 
+### Campamentos y guardián (implementado — `src/sim/camps.*`, en juego `src/game/camp_game.*`)
+- **Fundar:** un campamento nace al levantar una estructura básica (tienda o refugio) a más de 70 m de los demás. La escolta nombra a un guardián, que se queda.
+- **Cada campamento tiene:**
+  - su acopio (en el juego, el del campamento donde está el jugador);
+  - su gente (`Member.camp`: cada NPC vive alrededor del fuego de su campamento);
+  - sus tareas.
+- **Obras:** las levantan los del campamento que no tienen tarea ni van de escolta. Si la obra está fuera de todo campamento, trabaja la escolta cercana.
+- **Guardián (diálogo con opciones en iconos):**
+  - construir: la obra se ubica sola en un sitio libre del campamento;
+  - escolta: quién sale con el jugador; los marcados ya lo siguen;
+  - reclutar: alguien sin tarea sale con carne seca y vuelve con un integrante nuevo;
+  - capacitar: un oficio para alguien sin tarea, con su coste y tiempo (soldado, herrero, druida, orfebre, pastor, cazador, explorador);
+  - estado;
+  - disolver.
+- **Recursos humanos:**
+  - quien se capacita o recluta queda ocupado y no trabaja en obras ni sale de escolta;
+  - la gente ociosa del campamento acelera las tareas (+25 % cada uno, hasta ×2);
+  - cada maestro del oficio suma +60 %.
+- **Disolver:**
+  - las estructuras arden y quedan cenizas;
+  - el acopio se carga en la carreta y en las alforjas cercanas, y lo que no cabe se pierde;
+  - la gente queda sin casa y sigue al jugador;
+  - la escolta sin casa se queda en el próximo campamento que se funde (o en el campamento del guardián al dejar de escoltar).
+- **Comida:** cada campamento alimenta a su gente con su acopio. La escolta come del campamento más cercano al jugador.
+
 ### Nivel, tatuajes y joyas (implementado — `src/sim/talents.*`, `src/sim/jewelry.*`, en juego `src/game/talents_game.*`, `src/game/gems_game.*`)
 - **Nivel (1 a 20):** la experiencia sale de pelear, cazar, fabricar, construir y domar. Cada nivel pide más que el anterior.
 - **Tatuajes, permanentes:** los hace un druida de la tribu (`F` junto a él).

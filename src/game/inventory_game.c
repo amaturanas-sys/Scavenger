@@ -71,7 +71,7 @@ static bool near_cart(const Props *props, const Player *p) {
     return false;
 }
 
-static bool near_camp(const Player *p) { return dist_xz(p->pos, 0.0f, 0.0f) < CAMP_STORE_RADIUS; }
+static bool near_camp(const GameActions *ga, const Player *p) { return camp_at(ga->camps, CAMPS_MAX, p->pos.x, p->pos.z) >= 0; }
 
 static bool pack_near(const GameActions *ga, int k, const Player *p) {
     int a = ga->pack_animal[k];
@@ -95,7 +95,7 @@ static int containers(GameActions *ga, const Props *props, const Player *p, Cont
         out[n++] = (Cont){ C_BAG, &ga->cart, "", ICON_CARRETA };
         snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s", T("Carreta de la tribu"));
     }
-    if (near_camp(p)) {
+    if (near_camp(ga, p)) {
         out[n++] = (Cont){ C_CAMP, NULL, "", ICON_CAMPAMENTO };
         snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s", T("Acopio y armería del campamento"));
     }
@@ -106,7 +106,7 @@ int ig_count(const GameActions *ga, const Props *props, const Player *p, const c
     Cont c[10];
     int n = containers((GameActions *)ga, props, p, c), total = 0;
     for (int i = 0; i < n; i++)
-        total += c[i].type == C_BAG ? bag_count(c[i].bag, id) : stock_count(&ga->stock, id) + bag_count(&ga->armory, id);
+        total += c[i].type == C_BAG ? bag_count(c[i].bag, id) : stock_count(ga_stock_c(ga), id) + bag_count(&ga->armory, id);
     return total;
 }
 
@@ -117,8 +117,8 @@ int ig_use(GameActions *ga, const Props *props, const Player *p, const char *id,
         if (c[i].type == C_BAG) {
             used += bag_take(c[i].bag, id, n - used, NULL);
         } else {
-            int have = stock_count(&ga->stock, id), t = have < n - used ? have : n - used;
-            if (t > 0) stock_take(&ga->stock, id, t), used += t;
+            int have = stock_count(ga_stock_c(ga), id), t = have < n - used ? have : n - used;
+            if (t > 0) stock_take(ga_stock(ga), id, t), used += t;
             if (used < n) used += bag_take(&ga->armory, id, n - used, NULL);
         }
     }
@@ -128,7 +128,7 @@ int ig_use(GameActions *ga, const Props *props, const Player *p, const char *id,
 static int put_into(GameActions *ga, const Cont *to, const char *id, int n, float cond, unsigned short var) {
     if (to->type == C_CAMP) {
         if (item_is_gear(id) || !strncmp(id, "accesorio.", 10)) return bag_add_var(&ga->armory, ga->inv, id, n, cond, var);
-        stock_add(&ga->stock, id, n);
+        stock_add(ga_stock(ga), id, n);
         return n;
     }
     return bag_add_var(to->bag, ga->inv, id, n, cond, var);
@@ -186,15 +186,15 @@ static int rows_of(const GameActions *ga, const Cont *c, Row *rows, int max) {
     }
     for (int i = 0; i < ga->armory.n && n < max; i++)
         rows[n++] = (Row){ ga->armory.s[i].id, ga->armory.s[i].count, ga->armory.s[i].condition, 2, i, ga->armory.s[i].var };
-    for (int i = 0; i < ga->stock.n && n < max; i++)
-        if (ga->stock.e[i].count > 0) rows[n++] = (Row){ ga->stock.e[i].id, ga->stock.e[i].count, 1.0f, 1, i, 0 };
+    for (int i = 0; i < ga_stock_c(ga)->n && n < max; i++)
+        if (ga_stock_c(ga)->e[i].count > 0) rows[n++] = (Row){ ga_stock_c(ga)->e[i].id, ga_stock_c(ga)->e[i].count, 1.0f, 1, i, 0 };
     return n;
 }
 
 static void remove_row(GameActions *ga, const Cont *c, const Row *r, int n) {
     if (r->src == 0) bag_remove_slot(c->bag, r->idx, n);
     else if (r->src == 2) bag_remove_slot(&ga->armory, r->idx, n);
-    else stock_take(&ga->stock, r->id, n);
+    else stock_take(ga_stock(ga), r->id, n);
 }
 
 static int move_row(GameActions *ga, const Cont *from, const Row *r, const Cont *to, int n) {

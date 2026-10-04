@@ -270,14 +270,15 @@ void dz_new_day(Disasters *dz, Props *props, GameActions *ga, const Troop *troop
     int repairs = builders * 2 + (active > 0);
     int fixed = 0;
     for (int k = 0; k < repairs; k++) {
-        if (stock_count(&ga->stock, "utileria.material.troncos") <= 0) break;
         int worst = -1;
         for (int i = 0; i < props->count; i++)
             if (is_structure(&props->items[i]) && props->items[i].condition < 0.8f &&
                 (worst < 0 || props->items[i].condition < props->items[worst].condition))
                 worst = i;
         if (worst < 0) break;
-        stock_take(&ga->stock, "utileria.material.troncos", 1);
+        // Los troncos salen del acopio del campamento de esa estructura.
+        Stockpile *st = ga_stock_at(ga, props->items[worst].pos.x, props->items[worst].pos.z);
+        if (!stock_take(st, "utileria.material.troncos", 1)) break;
         props->items[worst].condition = fminf(1.0f, props->items[worst].condition + 0.5f);
         fixed++;
     }

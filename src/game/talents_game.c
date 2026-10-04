@@ -472,6 +472,7 @@ void tg_update(GameActions *ga, Combat *cb, Troop *troop, Props *props, const Pl
         ga->ab_timer[a] = fmaxf(0.0f, ga->ab_timer[a] - dt);
         ga->ab_cd[a] = fmaxf(0.0f, ga->ab_cd[a] - dt);
     }
+    if (ga->dlg.open && ga->talk_mode >= 100) return; // un dialogo del campamento (src/game/camp_game.c)
     if (ga->dlg.open) {
         const Member *m = talk_member(ga, troop);
         bool near = false;

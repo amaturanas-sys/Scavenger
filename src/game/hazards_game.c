@@ -279,10 +279,10 @@ static void update_escort(Hazards *hz, GameActions *ga, Troop *troop, const Terr
             n->moving = false;
             continue;
         }
-        // Detras del jugador, uno a cada lado.
-        float side = slot == 0 ? 1.3f : -1.3f;
-        Vector3 to = { p->pos.x - sinf(p->yaw) * 2.2f + cosf(p->yaw) * side, 0.0f,
-                       p->pos.z - cosf(p->yaw) * 2.2f - sinf(p->yaw) * side };
+        // Detras del jugador, de a dos por fila.
+        float side = slot % 2 == 0 ? 1.3f : -1.3f, back = 2.2f + (float)(slot / 2) * 1.8f;
+        Vector3 to = { p->pos.x - sinf(p->yaw) * back + cosf(p->yaw) * side, 0.0f,
+                       p->pos.z - cosf(p->yaw) * back - sinf(p->yaw) * side };
         float d = dist2(n->pos, to);
         n->moving = d > 0.6f;
         float speed = 0.0f;
@@ -490,12 +490,12 @@ void hz_new_day(Hazards *hz, const Climate *c, GameActions *ga, const Props *pro
         else if (!strcmp(id, "estructura.campamento.hoguera")) fires += 2;
     }
     int need = fires * (c->temp_mean < -10.0f ? 2 : 1);
-    int have = stock_count(&ga->stock, FIRE_WOOD_ID);
+    int have = stock_count(&ga->camps[0].stock, FIRE_WOOD_ID);
     if (have >= need) {
-        stock_take(&ga->stock, FIRE_WOOD_ID, need);
+        stock_take(&ga->camps[0].stock, FIRE_WOOD_ID, need);
         return;
     }
-    if (have > 0) stock_take(&ga->stock, FIRE_WOOD_ID, have);
+    if (have > 0) stock_take(&ga->camps[0].stock, FIRE_WOOD_ID, have);
     troop_adjust_morale(troop, -4.0f);
     snprintf(log, log_len, T("Noche helada: faltó leña (%d de %d). La tribu pasó frío (moral -4)."), have, need);
 }

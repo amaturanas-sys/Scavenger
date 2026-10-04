@@ -25,6 +25,7 @@
 #include "game/inventory_game.h"
 #include "game/save_game.h"
 #include "game/settings.h"
+#include "game/camp_game.h"
 #include "game/talents_game.h"
 #include "game/title_menu.h"
 #include "game/hazards_game.h"
@@ -379,7 +380,10 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--inventario")) start_inv = true;
         else if (!strcmp(argv[i], "--pestana") && i + 1 < argc) start_tab = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--botin")) start_loot = true;
-        else if (!strcmp(argv[i], "--hablar") && i + 1 < argc) start_talk = !strcmp(argv[++i], "orfebre") ? 2 : 1;
+        else if (!strcmp(argv[i], "--hablar") && i + 1 < argc) {
+            i++;
+            start_talk = !strcmp(argv[i], "orfebre") ? 2 : !strcmp(argv[i], "guardian") ? 3 : 1;
+        } else if (!strcmp(argv[i], "--fundar")) start_talk = 4;
         else if (!strcmp(argv[i], "--joyas")) start_equip = true, start_equip_tab = 1;
         else if (!strcmp(argv[i], "--tatuajes")) start_equip = true, start_equip_tab = 2;
         else if (!strcmp(argv[i], "--pausa")) start_pause = 1;
@@ -572,6 +576,21 @@ int main(int argc, char **argv) {
             g_actions.equip_tab = start_equip_tab;
             start_equip_tab = -1;
         }
+        if (start_talk == 4 && frame == 6) { // prueba: con dos de escolta, lejos, y una tienda: fundar un campamento
+            for (int k = 1; k <= 2 && k < troop.count; k++) g_actions.npcs[k].escort = true;
+            player.pos = (Vector3){ 120.0f, terrain_height(&terrain, 120.0f, 40.0f), 40.0f };
+            cg_basic_structure(&g_actions, 122.0f, 40.0f);
+            start_talk = 0;
+        }
+        if (start_talk == 3 && frame == 6) { // prueba: hablando con el guardian del campamento inicial
+            for (int k = 0; k < troop.count && k < TROOP_MAX; k++)
+                if (troop.members[k].id == g_actions.camps[0].guardian) {
+                    Vector3 at = g_actions.npcs[k].pos;
+                    player.pos = (Vector3){ at.x + 1.5f, terrain_height(&terrain, at.x + 1.5f, at.z), at.z };
+                }
+            cg_try_talk(&g_actions, &troop, &player);
+            start_talk = 0;
+        }
         if (start_talk && frame == 6) { // prueba: al lado del druida (u orfebre), hablando
             Role want = start_talk == 2 ? ROLE_GOLDSMITH : ROLE_DRUID;
             for (int k = 0; k < troop.count && k < TROOP_MAX; k++)
@@ -644,6 +663,19 @@ int main(int argc, char **argv) {
             if (!gallery_mode)
                 ig_update(&g_actions, &g_combat, &g_props, &player, !menu && !hz_blocks_input(&g_hazards) && !g_actions.dlg.open, log,
                           sizeof(log));
+            if (!gallery_mode) cg_update(&g_actions, &troop, &g_props, &player, day, dt, log, sizeof(log));
+            if (!g_actions.camps[0].used && camp.yurt_count) { // el campamento inicial se disolvio: sus yurtas arden
+                for (int i = 0; i < camp.yurt_count; i++) {
+                    bool ruin = false;
+                    for (int k = 0; k < g_props.count; k++)
+                        if (!strcmp(g_props.items[k].item->id, "estructura.ruina.yurta_quemada") &&
+                            Vector3Distance(g_props.items[k].pos, camp.yurts[i]) < 1.0f)
+                            ruin = true;
+                    if (!ruin) props_add(&g_props, "estructura.ruina.yurta_quemada", camp.yurts[i], camp.yurt_rot[i] * DEG2RAD);
+                    if (g_actions.ignite_n < 8) g_actions.ignite_at[g_actions.ignite_n++] = camp.yurts[i];
+                }
+                camp.yurt_count = 0;
+            }
             if (!gallery_mode)
                 tg_update(&g_actions, &g_combat, &troop, &g_props, &player,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
@@ -703,7 +735,7 @@ int main(int argc, char **argv) {
         if (in_game) {
         BeginMode3D(cam);
         terrain_draw(&terrain);
-        camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out, g_dz.tree_burn);
+        camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used, g_dz.tree_burn);
         if (gallery_mode) gallery_draw(&gallery);
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
         if (gallery_mode) player_draw(&player);
