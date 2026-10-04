@@ -104,6 +104,14 @@ static const HelpPage PAGES[] = {
         N_("Los rayos caen sobre lo alto durante las tormentas."),
         N_("La lluvia apaga todo fuego: antorchas, fogatas, hornos y flechas."),
         N_("Serpientes, escorpiones, arañas y avispas envenenan: véndate (B).") } },
+    { N_("Ropa y calor"), 3,
+      { N_("P equipo, pestaña Ropa: cabeza, cuello y cara, cuerpo, capa o abrigo y pies. Cada prenda abriga, da sombra o frena la lluvia."),
+        N_("Contra el frío, pieles y abrigos: oso, reno, lobo, tigre, cabra. Contra el sol, sombrero, pañuelo del desierto, túnica de seda blanca y manto blanco."),
+        N_("El desierto quema de día y hiela de noche. Con calor te sofocas: busca sombra (las yurtas) o el agua; con golpe de calor te desmayas."),
+        N_("Las pieles de depredador (lobo, oso, tigre, puma, hiena) dan escarmiento: el enemigo se espanta o huye antes."),
+        "",
+        N_("Se fabrican a mano (Tab, Fabricar) con las pieles del despiece, la lana de las cabras (los pastores las esquilan) y la seda del botín."),
+        N_("La tribu se cambia sola según el tiempo con la ropa de su mochila y del acopio; sin ropa adecuada pasa frío o calor y baja la moral.") } },
 };
 #define PAGE_COUNT ((int)(sizeof(PAGES) / sizeof(PAGES[0])))
 

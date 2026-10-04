@@ -13,6 +13,7 @@
 #include "../src/sim/hazards.h"
 #include "../src/sim/health.h"
 #include "../src/sim/combat.h"
+#include "../src/sim/apparel.h"
 #include "../src/sim/armor.h"
 #include "../src/sim/ballistics.h"
 #include "../src/sim/body.h"
@@ -2284,6 +2285,87 @@ static void test_backpacks_and_feeding(void) {
     CHECK(starved);
 }
 
+static void test_apparel_and_climate(void) {
+    // Prendas por capa: poner una devuelve la que habia.
+    Outfit o;
+    outfit_clear(&o);
+    int deel = garment_find("vestimenta.torso.deel"), silk = garment_find("vestimenta.torso.tunica_seda");
+    int bear = garment_find("vestimenta.espalda.abrigo_oso"), hat = garment_find("vestimenta.cabeza.sombrero");
+    int fur_hat = garment_find("vestimenta.cabeza.gorro_piel"), scarf = garment_find("vestimenta.cuello.panuelo_desierto");
+    CHECK(deel >= 0 && silk >= 0 && bear >= 0 && hat >= 0 && fur_hat >= 0 && scarf >= 0 && garment_find("arma.corta.sable") < 0);
+    CHECK(outfit_wear(&o, deel) == -1 && outfit_wear(&o, silk) == deel && o.g[WEAR_BODY] == silk);
+    CHECK(outfit_warmth(&o) == garment(silk)->warmth);
+    // La sombra se combina sin pasar de 1; el escarmiento tiene tope.
+    outfit_wear(&o, hat);
+    outfit_wear(&o, scarf);
+    float shade = outfit_shade(&o);
+    CHECK(shade > garment(hat)->shade && shade < 1.0f);
+    Outfit fierce;
+    outfit_clear(&fierce);
+    outfit_wear(&fierce, garment_find("vestimenta.espalda.abrigo_tigre"));
+    outfit_wear(&fierce, garment_find("vestimenta.cabeza.gorro_lobo"));
+    outfit_wear(&fierce, garment_find("vestimenta.cuello.bufanda_piel"));
+    CHECK(outfit_dread(&fierce) > 0.4f && outfit_dread(&fierce) <= 0.5f && outfit_dread(&o) == 0.0f);
+    CHECK(outfit_speed_scale(&fierce) < 1.0f && outfit_speed_scale(&o) == 1.0f);
+    // Las pieles de los depredadores (y del reno y la cabra) tienen nombre; las demas, curtidas.
+    CHECK(!strcmp(species_pelt(SPECIES_WOLF), "utileria.piel.lobo") && !strcmp(species_pelt(SPECIES_BEAR), "utileria.piel.oso"));
+    CHECK(species_pelt(SPECIES_HARE) == NULL && species_pelt(SPECIES_GOAT) != NULL);
+    // El desierto quema de dia y hiela de noche.
+    CHECK(local_temperature(25.0f, 1.0f, 1.0f) > local_temperature(25.0f, 1.0f, 0.0f) + 8.0f);
+    CHECK(local_temperature(5.0f, -1.0f, 1.0f) < local_temperature(5.0f, -1.0f, 0.0f) - 5.0f);
+    CHECK(sun_strength(1.0f, 0.0f, 1.0f) > sun_strength(1.0f, 1.0f, 1.0f) && sun_strength(-0.5f, 0.0f, 1.0f) == 0.0f);
+    // Al sol del desierto, la seda blanca y el sombrero refrescan; el deel y el abrigo de oso sofocan.
+    Outfit heavy;
+    outfit_clear(&heavy);
+    outfit_wear(&heavy, deel);
+    outfit_wear(&heavy, bear);
+    float sun = sun_strength(1.0f, 0.0f, 1.0f), hot_temp = local_temperature(28.0f, 1.0f, 1.0f);
+    float cool = apparel_feels_like(hot_temp, 0.1f, 0.0f, sun, &o, 0.0f, 0.0f);
+    float stifling = apparel_feels_like(hot_temp, 0.1f, 0.0f, sun, &heavy, 0.0f, 0.0f);
+    CHECK(cool < stifling - 15.0f);
+    // En el frio, al reves; la ropa de lluvia moja menos.
+    CHECK(apparel_feels_like(-15.0f, 0.6f, 0.0f, 0.0f, &heavy, 0.0f, 0.0f) > apparel_feels_like(-15.0f, 0.6f, 0.0f, 0.0f, &o, 0.0f, 0.0f) + 15.0f);
+    CHECK(apparel_wet_scale(&heavy) < apparel_wet_scale(&o) && apparel_wet_scale(NULL) == 1.0f);
+    // Calor: sube al sol y baja a la sombra; con golpe de calor se va mas lento y da mas sed.
+    HeatStress h = { 0.0f };
+    for (int i = 0; i < 1200; i++) heat_update(&h, stifling, 0.0f, false, 0.5f);
+    CHECK(heat_level(&h) == HEAT_STROKE && heat_speed_scale(&h) < 0.7f && heat_thirst_scale(&h) > 2.0f);
+    for (int i = 0; i < 240; i++) heat_update(&h, 20.0f, 0.0f, true, 0.5f);
+    CHECK(heat_level(&h) == HEAT_FINE && heat_speed_scale(&h) == 1.0f);
+    HeatStress dry = { 60.0f }, wet = { 60.0f };
+    heat_update(&dry, 38.0f, 0.0f, false, 10.0f);
+    heat_update(&wet, 38.0f, 1.0f, false, 10.0f);
+    CHECK(wet.load < dry.load);
+    // Los NPCs eligen: con frio, el abrigo de oso; con sol fuerte, el sombrero y nada de abrigo.
+    int cloaks[3] = { garment_find("vestimenta.espalda.capa"), bear, garment_find("vestimenta.espalda.manto_blanco") };
+    float cold_need = comfort_need(-20.0f, 0.5f, 0.0f), hot_need = comfort_need(36.0f, 0.1f, 1.0f);
+    CHECK(cold_need > 20.0f && hot_need < 0.0f);
+    CHECK(garment_pick(WEAR_CLOAK, cold_need, 0.0f, cloaks, 3) == 1);
+    CHECK(garment_pick(WEAR_CLOAK, hot_need, 1.0f, cloaks, 3) == 2); // el manto blanco da sombra
+    int hats[2] = { fur_hat, hat };
+    CHECK(garment_pick(WEAR_HEAD, hot_need, 1.0f, hats, 2) == 1 && garment_pick(WEAR_HEAD, cold_need, 0.0f, hats, 2) == 0);
+    int only_bear[1] = { bear };
+    CHECK(garment_pick(WEAR_CLOAK, hot_need, 1.0f, only_bear, 1) == -1); // mejor nada que el abrigo
+    CHECK(garment_pick(WEAR_HEAD, cold_need, 0.0f, only_bear, 1) == -1); // no es de esa capa
+    // Toda la ropa existe en el inventario y se fabrica (o ya existia) con materiales que existen.
+    Inventory inv;
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    inventory_parse(&inv, text);
+    for (int i = 0; i < garment_count(); i++) CHECK(inventory_find(&inv, garment(i)->id) != NULL);
+    int clothing = 0;
+    for (int c = 0; c < CRAFT_COUNT; c++) {
+        const CraftDef *d = craft_def((CraftId)c);
+        if (garment_find(d->produces) < 0) continue;
+        clothing++;
+        CHECK(craft_by_hand(d));
+        for (const Ingredient *m = d->mats; m->id; m++) CHECK(inventory_find(&inv, m->id) != NULL);
+    }
+    CHECK(clothing >= 18);
+    inventory_free(&inv);
+}
+
 static void test_travel_dispatch_and_messengers(void) {
     // Riesgo: sin nadie que conozca el destino, casi seguro se pierden.
     CHECK(journey_risk(300.0f, 0.0f, 3, false) >= 0.89f);
@@ -2334,6 +2416,7 @@ int main(void) {
     RUN(test_camps_found_tasks_and_rates);
     RUN(test_backpacks_and_feeding);
     RUN(test_travel_dispatch_and_messengers);
+    RUN(test_apparel_and_climate);
     RUN(test_hand_crafting_and_repairs);
     RUN(test_enemy_loot_and_mounted_momentum);
     RUN(test_banish_removes_from_active);

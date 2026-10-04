@@ -82,6 +82,10 @@ static int add_member(Troop *t, const char *name, unsigned traits, MemberStatus 
     m->loyalty = status == STATUS_PRISONER ? 10.0f : 50.0f;
     m->champion = -1;
     health_init(&m->health, 100.0f);
+    // Lo puesto: deel y botas de fieltro (los prisioneros, harapos).
+    outfit_clear(&m->outfit);
+    outfit_wear(&m->outfit, garment_find(status == STATUS_PRISONER ? "vestimenta.torso.harapos" : "vestimenta.torso.deel"));
+    outfit_wear(&m->outfit, garment_find("vestimenta.pies.botas_fieltro"));
     return m->id;
 }
 

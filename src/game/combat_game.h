@@ -63,6 +63,7 @@ typedef struct {
     float move_anim;
     bool mounted;      // a caballo (jinete): derribado, pierde el caballo
     bool loot_dropped; // ya dejo su botin al caer
+    bool awed;         // ya tiro el escarmiento al ver a su objetivo (pieles de depredador)
 } Enemy;
 
 typedef struct {

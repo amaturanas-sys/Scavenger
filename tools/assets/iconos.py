@@ -1131,6 +1131,56 @@ def _(p):
     p.thick(84, 26, 84, 114, 4, K)
 
 
+@icon("frio", "Frio: copo de nieve")
+def _(p):
+    for deg in (0, 60, 120):
+        a = math.radians(deg)
+        dx, dy = math.cos(a) * 54, math.sin(a) * 54
+        p.thick(64 - dx, 64 - dy, 64 + dx, 64 + dy, 9)
+        for sgn in (-1, 1):
+            ex, ey = 64 + sgn * dx * 0.62, 64 + sgn * dy * 0.62
+            for b in (-35, 35):
+                bb = math.radians(deg + b + (0 if sgn > 0 else 180))
+                p.thick(ex, ey, ex + math.cos(bb) * 20, ey + math.sin(bb) * 20, 6)
+
+
+@icon("sol", "Calor: sol")
+def _(p):
+    p.ell(64, 64, 28)
+    for i in range(8):
+        a = math.radians(i * 45)
+        p.thick(64 + math.cos(a) * 38, 64 + math.sin(a) * 38, 64 + math.cos(a) * 58, 64 + math.sin(a) * 58, 9)
+
+
+@icon("ropa", "Ropa: tunica")
+def _(p):
+    p.poly([(44, 14), (84, 14), (122, 40), (106, 62), (92, 52), (96, 118), (32, 118), (36, 52), (22, 62), (6, 40)])
+    p.poly([(52, 14), (64, 34), (76, 14)], c=K)
+
+
+@icon("sombrero", "Sombrero o gorro")
+def _(p):
+    p.d.ellipse((6, 76, 122, 100), fill=W)
+    p.rect(36, 34, 92, 86, r=14)
+    p.rect(36, 66, 92, 74, K)
+
+
+@icon("capa", "Capa o abrigo")
+def _(p):
+    p.poly([(46, 12), (82, 12), (90, 30), (118, 118), (10, 118), (38, 30)])
+    p.ell(64, 22, 9, c=K)
+    p.thick(64, 34, 64, 112, 4, K)
+
+
+@icon("escarmiento", "Escarmiento: colmillos")
+def _(p):
+    p.d.chord((10, 10, 118, 80), 0, 180, fill=W)
+    for x in (34, 94):
+        p.poly([(x - 14, 46), (x + 14, 46), (x, 118)])
+    for x in (52, 64, 76):
+        p.poly([(x - 6, 46), (x + 6, 46), (x, 70)])
+
+
 # ------------------------------------------------------------------ atlas
 def render(fn):
     pen = Pen()

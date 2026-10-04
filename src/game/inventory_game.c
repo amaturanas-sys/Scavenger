@@ -249,7 +249,9 @@ static int candidates(GameActions *ga, const Props *props, const Player *p, int 
         Row rows[64];
         int k = rows_of(ga, &conts[c], rows, 64);
         for (int i = 0; i < k && n < max; i++) {
-            bool fits = s >= 0 ? armor_slot_for(rows[i].id) == s : jewel_fits(rows[i].id, (JewelSlot)(-s - 1));
+            int g = s <= -100 ? garment_find(rows[i].id) : -1; // ropa: s = -100 - capa
+            bool fits = s >= 0 ? armor_slot_for(rows[i].id) == s : s <= -100 ? g >= 0 && garment(g)->slot == (WearSlot)(-s - 100)
+                                                                             : jewel_fits(rows[i].id, (JewelSlot)(-s - 1));
             if (!fits) continue;
             out[n] = rows[i];
             cont_of[n++] = c;
@@ -307,6 +309,36 @@ static void equip_armor(GameActions *ga, Combat *cb, const Props *props, const P
     armor_equip(&cb->armor, id);
     cur->durability = cur->durability_max * cond;
     snprintf(log, len, T("Te pones: %s (%d %%)."), item_name(ga, id), (int)(cond * 100.0f));
+}
+
+// Ropa: Enter pone (o cambia por la siguiente que haya a mano); quitar la guarda.
+static void equip_garment(GameActions *ga, const Props *props, const Player *p, int slot, bool remove, char *log, size_t len) {
+    signed char *cur = &ga->outfit.g[slot];
+    Cont conts[CONT_MAX];
+    int nc = containers(ga, props, p, conts);
+    Row cand[16];
+    int cont_of[16];
+    int n = remove ? 0 : candidates(ga, props, p, -100 - slot, conts, nc, cand, cont_of, 16);
+    if (!remove && !n) {
+        snprintf(log, len, T("No tienes a mano ropa para: %s."), wear_slot_name((WearSlot)slot));
+        return;
+    }
+    if (*cur >= 0) { // quitar la que hay
+        const char *id = garment(*cur)->id;
+        if (ig_store(ga, props, p, id, 1, 1.0f) != 1) {
+            snprintf(log, len, "%s", T("No hay sitio donde guardar la prenda."));
+            return;
+        }
+        snprintf(log, len, T("Te quitas: %s."), item_name(ga, id));
+        *cur = -1;
+        if (remove) return;
+        n = candidates(ga, props, p, -100 - slot, conts, nc, cand, cont_of, 16); // las filas cambiaron
+        if (!n) return;
+    }
+    int g = garment_find(cand[0].id);
+    remove_row(ga, &conts[cont_of[0]], &cand[0], 1);
+    *cur = (signed char)g;
+    snprintf(log, len, T("Te pones: %s."), item_name(ga, garment(g)->id));
 }
 
 // Joyas: Enter pone (o cambia por la siguiente que haya a mano); quitar la guarda.
@@ -649,7 +681,7 @@ static Rectangle inv_tile_rect(int k, int i, int first_row) {
 // (cuatro anillos, dos brazaletes, collar, aretes y hebilla) y tatuajes (las ocho
 // zonas del cuerpo y, a la derecha, el arbol de los cinco motivos).
 #define FIG_X 170
-#define EQUIP_TABS 3
+#define EQUIP_TABS 4
 static Rectangle equip_tab_rect(int t) { return (Rectangle){ (float)(26 + t * 32), 20, 28, 28 }; }
 
 static Rectangle equip_rect(int i) {
@@ -666,6 +698,11 @@ static Rectangle jewel_rect(int i) {
     return (Rectangle){ (float)(FIG_X + pos[i][0]), (float)pos[i][1], 32, 32 };
 }
 
+static Rectangle wear_rect(int i) {
+    static const int pos[WEAR_COUNT][2] = { { 52, 56 }, { -84, 76 }, { 52, 116 }, { -84, 136 }, { -16, 234 } };
+    return (Rectangle){ (float)(FIG_X + pos[i][0]), (float)pos[i][1], 32, 32 };
+}
+
 static Rectangle zone_rect(int z) {
     static const int pos[TZ_COUNT][2] = { { -84, 56 }, { 52, 76 }, { 52, 116 }, { -84, 96 }, { -84, 136 }, { 52, 156 }, { -84, 176 }, { 52, 196 } };
     return (Rectangle){ (float)(FIG_X + pos[z][0]), (float)pos[z][1], 32, 32 };
@@ -678,10 +715,16 @@ static Rectangle node_rect(int i) {
     return (Rectangle){ (float)(338 + n->motif * 54), (float)(70 + row * 46), 32, 32 };
 }
 
-static int equip_count(const GameActions *ga) { return ga->equip_tab == 0 ? SLOT_COUNT : ga->equip_tab == 1 ? JS_COUNT : TATTOO_NODES; }
-static int *equip_cur(GameActions *ga) { return ga->equip_tab == 0 ? &ga->equip_cursor : ga->equip_tab == 1 ? &ga->jewel_cursor : &ga->tattoo_cursor; }
+// Pestañas: 0 armadura, 1 ropa, 2 joyas, 3 tatuajes.
+enum { TAB_ARMOR, TAB_WEAR, TAB_JEWELS, TAB_TATTOOS };
+static int equip_count(const GameActions *ga) {
+    return ga->equip_tab == TAB_ARMOR ? SLOT_COUNT : ga->equip_tab == TAB_WEAR ? WEAR_COUNT : ga->equip_tab == TAB_JEWELS ? JS_COUNT : TATTOO_NODES;
+}
+static int *equip_cur(GameActions *ga) {
+    return ga->equip_tab == TAB_ARMOR ? &ga->equip_cursor : ga->equip_tab == TAB_WEAR ? &ga->wear_cursor : ga->equip_tab == TAB_JEWELS ? &ga->jewel_cursor : &ga->tattoo_cursor;
+}
 static Rectangle equip_item_rect(const GameActions *ga, int i) {
-    return ga->equip_tab == 0 ? equip_rect(i) : ga->equip_tab == 1 ? jewel_rect(i) : node_rect(i);
+    return ga->equip_tab == TAB_ARMOR ? equip_rect(i) : ga->equip_tab == TAB_WEAR ? wear_rect(i) : ga->equip_tab == TAB_JEWELS ? jewel_rect(i) : node_rect(i);
 }
 
 void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool input_ok, char *log, size_t len) {
@@ -765,8 +808,9 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
             if (ui_hover(r) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) *cur = i, take = true;
         }
         if (put || take) { // los tatuajes no se ponen ni se quitan aqui: los hace el druida, para siempre
-            if (ga->equip_tab == 0) equip_armor(ga, cb, props, p, *cur, take, log, len);
-            else if (ga->equip_tab == 1) equip_jewel(ga, props, p, *cur, take, log, len);
+            if (ga->equip_tab == TAB_ARMOR) equip_armor(ga, cb, props, p, *cur, take, log, len);
+            else if (ga->equip_tab == TAB_WEAR) equip_garment(ga, props, p, *cur, take, log, len);
+            else if (ga->equip_tab == TAB_JEWELS) equip_jewel(ga, props, p, *cur, take, log, len);
             else snprintf(log, len, "%s", take ? T("Un tatuaje no se puede quitar.") : T("Los tatuajes los hace un druida: háblale (F)."));
         }
     }
@@ -913,6 +957,89 @@ static void draw_jewel_tab(const GameActions *ga, int w, int h) {
     }
 }
 
+static IconId wear_slot_icon(int s) {
+    static const IconId I[WEAR_COUNT] = { ICON_SOMBRERO, ICON_CUELLO, ICON_ROPA, ICON_CAPA, ICON_BOTAS };
+    return s >= 0 && s < WEAR_COUNT ? I[s] : ICON_ROPA;
+}
+
+// "abriga +7° · sombra 35 % · lluvia 30 % · escarmiento 15 %"
+static void garment_text(const GarmentDef *g, char *out, size_t len) {
+    int n = snprintf(out, len, T("abriga %+.0f°"), g->warmth);
+    if (g->shade > 0.0f && n < (int)len) n += snprintf(out + n, len - n, T(" · sombra %d %%"), (int)(g->shade * 100.0f + 0.5f));
+    if (g->rain > 0.0f && n < (int)len) n += snprintf(out + n, len - n, T(" · lluvia %d %%"), (int)(g->rain * 100.0f + 0.5f));
+    if (g->dread > 0.0f && n < (int)len) n += snprintf(out + n, len - n, T(" · escarmiento %d %%"), (int)(g->dread * 100.0f + 0.5f));
+    if (g->weight > 0.0f && n < (int)len) snprintf(out + n, len - n, T(" · frena %d %%"), (int)(g->weight * 100.0f + 0.5f));
+}
+
+static void draw_wear_tab(const GameActions *ga, int w, int h) {
+    (void)h;
+    // La figura con la ropa puesta encima de la armadura.
+    const int fx = FIG_X, fy = 68;
+    const GarmentDef *gw;
+    if ((gw = garment(ga->outfit.g[WEAR_CLOAK]))) {
+        Color c = { gw->r, gw->g, gw->b, 255 };
+        DrawRectangle(fx - 26, fy + 28, 52, 80, c);
+        DrawRectangleLines(fx - 26, fy + 28, 52, 80, UI_LEATHER_CRACK);
+    }
+    if ((gw = garment(ga->outfit.g[WEAR_BODY]))) DrawRectangle(fx - 16, fy + 30, 32, 58, (Color){ gw->r, gw->g, gw->b, 255 });
+    if ((gw = garment(ga->outfit.g[WEAR_FACE]))) DrawRectangle(fx - 7, fy + 21, 14, 9, (Color){ gw->r, gw->g, gw->b, 255 });
+    if ((gw = garment(ga->outfit.g[WEAR_HEAD]))) {
+        Color c = { gw->r, gw->g, gw->b, 255 };
+        if (gw->shade >= 0.4f) DrawRectangle(fx - 20, fy + 4, 40, 4, c);
+        DrawRectangle(fx - 10, fy - 4, 20, 10, c);
+    }
+    if ((gw = garment(ga->outfit.g[WEAR_FEET]))) {
+        Color c = { gw->r, gw->g, gw->b, 255 };
+        DrawRectangle(fx - 17, fy + 140, 15, 17, c);
+        DrawRectangle(fx + 2, fy + 140, 15, 17, c);
+    }
+    for (int i = 0; i < WEAR_COUNT; i++) {
+        const GarmentDef *g = garment(ga->outfit.g[i]);
+        Rectangle r = wear_rect(i);
+        bool sel = i == ga->wear_cursor;
+        bool hover = ui_tile(r, g ? icon_for_item(g->id) : wear_slot_icon(i), sel, g != NULL);
+        if (g) DrawRectangle((int)r.x + 2, (int)r.y + 2, 4, 4, (Color){ g->r, g->g, g->b, 255 });
+        if (hover || sel) {
+            char d[160] = "";
+            if (g) garment_text(g, d, sizeof(d));
+            char sn[40];
+            snprintf(sn, sizeof(sn), "%s", wear_slot_name((WearSlot)i));
+            if (sn[0] >= 'a' && sn[0] <= 'z') sn[0] = (char)(sn[0] - 'a' + 'A');
+            const char *title = g ? item_name(ga, g->id) : sn;
+            const char *det = g ? TextFormat(T("%s · Enter: cambiar · Supr: quitar"), d) : T("vacío · Enter: ponerte ropa que tengas a mano");
+            if (hover) ui_legend(title, det);
+            else ui_legend_default(title, det);
+        }
+    }
+    // Detalle de la prenda elegida.
+    const int dx = 330, dw = w - dx - 26;
+    const GarmentDef *g = garment(ga->outfit.g[ga->wear_cursor]);
+    Rectangle big = { (float)dx, 60, 68, 68 };
+    ui_tile(big, g ? icon_for_item(g->id) : wear_slot_icon(ga->wear_cursor), true, g != NULL);
+    int tx = dx + 78;
+    if (!g) {
+        ui_text(wear_slot_name((WearSlot)ga->wear_cursor), tx, 62, 10, UI_BONE_DIM);
+    } else {
+        ui_text_wrapped(item_name(ga, g->id), tx, 62, dw - 78, 10, UI_GOLD_LIGHT);
+        char d[160];
+        garment_text(g, d, sizeof(d));
+        ui_text_wrapped(d, dx, 140, dw, 10, UI_TURQUOISE);
+    }
+    // Todo lo puesto: abrigo, sombra, lluvia y escarmiento, con iconos.
+    int y = 196;
+    ui_divider(dx, y - 8, dw, UI_METAL_GOLD);
+    ui_icon(ICON_FRIO, (float)dx, (float)y, 16, UI_TURQ_LIGHT);
+    ui_text(TextFormat(T("abrigo %+.0f°"), outfit_warmth(&ga->outfit)), dx + 20, y + 4, 10, UI_BONE);
+    ui_icon(ICON_SOL, (float)dx + 120, (float)y, 16, UI_GOLD_LIGHT);
+    ui_text(TextFormat(T("sombra %d %%"), (int)(outfit_shade(&ga->outfit) * 100.0f + 0.5f)), dx + 140, y + 4, 10, UI_BONE);
+    ui_icon(ICON_AGUA, (float)dx, (float)y + 20, 16, UI_TURQUOISE);
+    ui_text(TextFormat(T("lluvia %d %%"), (int)(outfit_rain(&ga->outfit) * 100.0f + 0.5f)), dx + 20, y + 24, 10, UI_BONE);
+    ui_icon(ICON_ESCARMIENTO, (float)dx + 120, (float)y + 20, 16, UI_CARNELIAN);
+    ui_text(TextFormat(T("escarmiento %d %%"), (int)(outfit_dread(&ga->outfit) * 100.0f + 0.5f)), dx + 140, y + 24, 10, UI_BONE);
+    ui_text_wrapped(T("Con frío, pieles y abrigos; con sol y calor, sombrero, pañuelo y seda blanca. Las pieles de depredador espantan al enemigo."),
+                    dx, 244, dw, 10, UI_BONE_DIM);
+}
+
 static void draw_tattoo_tab(const GameActions *ga, int w, int h) {
     (void)h;
     // El cuerpo: lo tatuado en cada zona (para siempre).
@@ -996,16 +1123,20 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
     DrawRectangle(fx - 17, fy + 148, 15, 9, mat_color(&s[SLOT_BOOTS]));
     DrawRectangle(fx + 2, fy + 148, 15, 9, mat_color(&s[SLOT_BOOTS]));
     // Pestañas: armadura, joyas, tatuajes.
-    static const IconId TAB_ICON[EQUIP_TABS] = { ICON_TORSO, ICON_ANILLO, ICON_TATUAJE };
-    static const char *TAB_NAME[EQUIP_TABS] = { N_("Armadura"), N_("Joyas"), N_("Tatuajes") };
+    static const IconId TAB_ICON[EQUIP_TABS] = { ICON_TORSO, ICON_ROPA, ICON_ANILLO, ICON_TATUAJE };
+    static const char *TAB_NAME[EQUIP_TABS] = { N_("Armadura"), N_("Ropa"), N_("Joyas"), N_("Tatuajes") };
     for (int t = 0; t < EQUIP_TABS; t++)
         if (ui_tile(equip_tab_rect(t), TAB_ICON[t], t == ga->equip_tab, true)) ui_legend(T(TAB_NAME[t]), T("Q / E cambia de pestaña"));
     ui_text(T(TAB_NAME[ga->equip_tab]), 26 + EQUIP_TABS * 32 + 6, 26, 20, UI_GOLD_LIGHT);
-    if (ga->equip_tab == 1) {
+    if (ga->equip_tab == TAB_WEAR) {
+        draw_wear_tab(ga, w, h);
+        return;
+    }
+    if (ga->equip_tab == TAB_JEWELS) {
         draw_jewel_tab(ga, w, h);
         return;
     }
-    if (ga->equip_tab == 2) {
+    if (ga->equip_tab == TAB_TATTOOS) {
         draw_tattoo_tab(ga, w, h);
         return;
     }

@@ -1,8 +1,10 @@
 // Peligros del clima en el juego (src/sim/hazards.h): conecta el nucleo con el
 // jugador, la tribu, el terreno y la interfaz.
 //  - frio: calor corporal del jugador (fuego, refugio, antorcha, viento, ropa
-//    mojada); con hipotermia se desmaya y la tribu lo lleva al fuego; las noches
-//    heladas gastan lena del acopio;
+//    mojada y la ropa que lleva); con hipotermia se desmaya y la tribu lo lleva al
+//    fuego; las noches heladas gastan lena del acopio;
+//  - calor: el sol (mas en el desierto) recalienta; la ropa clara y el sombrero dan
+//    sombra; con golpe de calor se desmaya y la tribu lo lleva a la sombra;
 //  - barro: frena en suelo mojado; vadear y nadar en lagos sin hielo;
 //  - lagos helados: se cruzan, pero la capa puede romperse;
 //  - socavones ocultos (nieve en glaciares, arena movediza en el desierto) que
@@ -17,6 +19,7 @@
 
 #include "game/actions_game.h"
 #include "game/player.h"
+#include "sim/apparel.h"
 #include "sim/climate.h"
 #include "sim/hazards.h"
 #include "sim/troop.h"
@@ -35,6 +38,12 @@ typedef struct {
     float faint_timer; // segundos en hipotermia
     float feels;       // sensacion termica actual
     float fire;        // calor del fuego cercano (grados)
+    // Calor y sol (src/sim/apparel.h): la ropa da sombra o abriga.
+    HeatStress heat;
+    float sun;          // fuerza del sol donde esta el jugador [0, 1] (sin contar la sombra de la ropa)
+    float temp_here;    // temperatura del lugar (el desierto quema de dia y hiela de noche)
+    float heat_faint;   // segundos con golpe de calor, hasta desmayarse
+    float outfit_speed; // lo que frena la ropa
     // Terreno bajo los pies.
     bool on_ice, wading, swimming;
     float mud;   // multiplicador por barro

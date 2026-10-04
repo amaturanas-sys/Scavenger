@@ -1,5 +1,6 @@
 #include "combat_game.h"
 
+#include "game/apparel_game.h"
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
 #include "game/gems_game.h"
@@ -874,7 +875,20 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         float speed = 0.0f;
         Vector3 goal = e->pos;
         const RangedDef *rd = ranged_def(def->ranged);
-        if (target >= 0 && def->flee_at > 0.0f && e->h.hp < def->flee_at * e->h.hp_max) e->state = EN_FLEE, e->timer = 8.0f;
+        // Escarmiento: las pieles de depredador espantan. Al ver de cerca a quien las lleva puede
+        // echarse atras un rato, y herido huye antes (los fanaticos del culto casi no se inmutan).
+        float dread = target >= 0 ? ag_dread(ga, troop, target) * (e->kind == ENEMY_FANATIC ? 0.3f : 1.0f) : 0.0f;
+        if (target < 0 || best > 12.0f) e->awed = e->awed && target >= 0;
+        else if (!e->awed) {
+            e->awed = true;
+            if (dread > 0.0f && rng_float(&cb->rng) < dread * 0.8f) {
+                e->state = EN_FLEE, e->timer = 4.0f + 6.0f * dread;
+                char who[48];
+                if (!log[0])
+                    snprintf(log, len, T("El %s se espanta ante las pieles de fiera y retrocede."), lower_name(T(def->name), who, sizeof(who)));
+            }
+        }
+        if (target >= 0 && def->flee_at > 0.0f && e->h.hp < (def->flee_at + 0.6f * dread) * e->h.hp_max) e->state = EN_FLEE, e->timer = 8.0f;
         if (e->state == EN_FLEE) {
             if (e->timer <= 0.0f) e->state = EN_WANDER;
             Vector3 from = target >= 0 ? tpos : p->pos;
@@ -1429,6 +1443,7 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         if (cb->hit_anim > 0.0f) c.cloth = (Color){ 240, 230, 220, 255 };
         Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
         body_draw(&b, pos, p->yaw, c, &cb->armor);
+        body_draw_outfit(&b, pos, p->yaw, &ga->outfit);
         if (player_has_shield(ga)) draw_shield_on(&b, pos, p->yaw, (Color){ 150, 112, 70, 255 });
     }
     // La mira: la curva que hara el proyectil con la tension actual.

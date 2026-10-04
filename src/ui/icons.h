@@ -142,6 +142,12 @@ typedef enum {
     ICON_BLOQUEADO,
     ICON_DIALOGO,
     ICON_MAPA,
+    ICON_FRIO,
+    ICON_SOL,
+    ICON_ROPA,
+    ICON_SOMBRERO,
+    ICON_CAPA,
+    ICON_ESCARMIENTO,
     ICON_COUNT
 } IconId;
 

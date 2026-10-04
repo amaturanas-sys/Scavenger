@@ -131,3 +131,9 @@ indice	nombre	columna	fila	descripcion
 127	bloqueado	15	7	Bloqueado: candado
 128	dialogo	0	8	Hablar
 129	mapa	1	8	Mapa
+130	frio	2	8	Frio: copo de nieve
+131	sol	3	8	Calor: sol
+132	ropa	4	8	Ropa: tunica
+133	sombrero	5	8	Sombrero o gorro
+134	capa	6	8	Capa o abrigo
+135	escarmiento	7	8	Escarmiento: colmillos

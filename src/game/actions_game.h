@@ -18,6 +18,7 @@
 #include "game/player.h"
 #include "sim/actions.h"
 #include "sim/animals.h"
+#include "sim/apparel.h"
 #include "sim/economy.h"
 #include "sim/memory_map.h"
 #include "game/dialog.h"
@@ -58,6 +59,7 @@ typedef struct {
     int home_camp;     // campamento de su casa + 1 (0: sin calcular)
     float leave_t;     // despachado: s que lleva alejandose hacia el horizonte (luego desaparece)
     Vector3 leave_dir;
+    signed char comfort; // con su ropa: -1 pasa frio, 1 pasa calor, 0 a gusto (src/game/apparel_game.c)
 } Npc;
 
 typedef struct {
@@ -113,6 +115,9 @@ typedef struct {
     Progress prog;
     TattooBody tattoos;
     Jewelry jewels;
+    Outfit outfit;   // la ropa (src/sim/apparel.h): abriga, da sombra, escarmienta
+    int wear_cursor; // hueco elegido en la pestaña de ropa
+    float dress_t;   // reloj de los NPCs que se cambian de ropa (src/game/apparel_game.c)
     float ab_timer[ABIL_COUNT], ab_cd[ABIL_COUNT], ab_pot[ABIL_COUNT];
     float warmth_boost; // calor que devuelve una habilidad (lo consume src/game/hazards_game.c)
     // Dialogo con el druida o el orfebre (y luego el guardian del campamento).

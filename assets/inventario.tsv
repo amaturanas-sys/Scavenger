@@ -372,3 +372,27 @@ utileria.consumible.forraje	Forraje	uso:recolectable,uso:consumible,material:fib
 utileria.mochila.pequena	Mochila pequeña	uso:equipable,material:cuero	0.35x0.4x0.2	80	pendiente	15 kg, 12 huecos; no frena.
 utileria.mochila.mediana	Mochila mediana	uso:equipable,material:cuero	0.4x0.55x0.25	100	pendiente	25 kg, 18 huecos; frena un poco.
 utileria.mochila.grande	Mochila grande	uso:equipable,material:cuero	0.5x0.75x0.3	120	pendiente	40 kg, 28 huecos; frena (se puede dejar en el suelo para pelear).
+vestimenta.cabeza.sombrero	Sombrero de ala ancha	uso:equipable,rig:humanoide,faccion:nomada,material:fieltro	0.45x0.15x0.45	80	pendiente	Da sombra: contra el sol y el calor.
+vestimenta.cabeza.gorro_lobo	Gorro de cabeza de lobo	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.3x0.3x0.35	120	pendiente	Abriga y escarmienta: el enemigo se lo piensa.
+vestimenta.cuello.panuelo_desierto	Pañuelo del desierto	uso:equipable,rig:humanoide,faccion:nomada,material:seda	0.3x0.2x0.3	60	pendiente	Cubre cara y cuello del sol y la arena.
+vestimenta.cuello.bufanda_piel	Bufanda de piel de zorro	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.3x0.2x0.3	60	pendiente	De piel de coyote.
+vestimenta.torso.tunica_seda	Túnica de seda blanca	uso:equipable,rig:humanoide,faccion:nomada,material:seda	0.6x1.2x0.35	250	pendiente	Fresca y blanca: refleja el sol.
+vestimenta.torso.tunica_lana	Túnica de lana	uso:equipable,rig:humanoide,faccion:nomada,material:lana	0.6x1.2x0.4	250	pendiente	
+vestimenta.espalda.abrigo_oso	Abrigo de piel de oso	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.9x1.3x0.6	300	pendiente	El más abrigado; pesa. Escarmienta mucho.
+vestimenta.espalda.abrigo_tigre	Abrigo de piel de tigre	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.9x1.3x0.5	300	pendiente	Escarmienta más que ninguno.
+vestimenta.espalda.capa_puma	Capa de piel de puma	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.8x1.2x0.5	250	pendiente	Escarmienta.
+vestimenta.espalda.capa_hiena	Capa de piel de hiena	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.8x1.2x0.5	250	pendiente	Escarmienta un poco.
+vestimenta.espalda.abrigo_reno	Abrigo de piel de reno	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.9x1.3x0.6	300	pendiente	Muy abrigado.
+vestimenta.espalda.abrigo_cabra	Abrigo de lana de cabra	uso:equipable,rig:humanoide,faccion:nomada,material:lana	0.9x1.3x0.6	300	pendiente	
+vestimenta.espalda.manto_blanco	Manto blanco del desierto	uso:equipable,rig:humanoide,faccion:nomada,material:seda	0.8x1.3x0.4	220	pendiente	Sombra para todo el cuerpo.
+vestimenta.pies.botas_piel	Botas de piel de reno	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.15x0.4x0.3	100	pendiente	Abrigan y no se mojan.
+vestimenta.pies.sandalias	Sandalias de cuero	uso:equipable,rig:humanoide,faccion:nomada,material:cuero	0.12x0.08x0.28	60	pendiente	Frescas.
+utileria.piel.lobo	Piel de lobo	uso:recolectable,uso:material,material:cuero	0.6x0.1x1.0	40	pendiente	Del despiece. Capas y gorros que escarmientan.
+utileria.piel.oso	Piel de oso	uso:recolectable,uso:material,material:cuero	0.9x0.15x1.4	40	pendiente	Del despiece.
+utileria.piel.tigre	Piel de tigre	uso:recolectable,uso:material,material:cuero	0.8x0.1x1.3	40	pendiente	Del despiece.
+utileria.piel.puma	Piel de puma	uso:recolectable,uso:material,material:cuero	0.7x0.1x1.1	40	pendiente	Del despiece.
+utileria.piel.hiena	Piel de hiena	uso:recolectable,uso:material,material:cuero	0.6x0.1x1.0	40	pendiente	Del despiece.
+utileria.piel.coyote	Piel de coyote	uso:recolectable,uso:material,material:cuero	0.5x0.1x0.8	40	pendiente	Del despiece.
+utileria.piel.reno	Piel de reno	uso:recolectable,uso:material,material:cuero	0.8x0.15x1.2	40	pendiente	Del despiece: abrigos y botas.
+utileria.piel.cabra	Lana de cabra	uso:recolectable,uso:material,material:lana	0.5x0.2x0.5	40	pendiente	De las cabras (despiece y esquila de los pastores): fieltro, lana.
+utileria.material.seda	Seda	uso:recolectable,uso:material,material:seda	0.4x0.1x0.3	30	pendiente	De las caravanas del imperio (botín).

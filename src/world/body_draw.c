@@ -45,3 +45,58 @@ void body_draw(const BodyPose *b, Vector3 pos, float yaw, BodyColors c, const Ar
         }
     }
 }
+
+static Color garment_color(const GarmentDef *g) { return (Color){ g->r, g->g, g->b, 255 }; }
+
+void body_draw_outfit(const BodyPose *b, Vector3 pos, float yaw, const Outfit *o) {
+    if (!o) return;
+    const BodySeg *head = &b->seg[PART_HEAD], *thorax = &b->seg[PART_THORAX], *pelvis = &b->seg[PART_PELVIS];
+    const GarmentDef *g;
+    if ((g = garment(o->g[WEAR_BODY]))) { // tunica o deel: el tronco y los brazos, algo mas gruesos
+        static const int parts[] = { PART_THORAX, PART_ABDOMEN, PART_PELVIS }; // los brazos siguen del color de su funcion
+        for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); i++) {
+            const BodySeg *s = &b->seg[parts[i]];
+            DrawCapsule(world(s->a, pos, yaw), world(s->b, pos, yaw), s->radius * 1.12f, 6, 3, garment_color(g));
+        }
+    }
+    if ((g = garment(o->g[WEAR_CLOAK]))) { // capa o abrigo: por la espalda, de los hombros a las rodillas
+        float back = thorax->radius * 0.9f;
+        V3 top = { thorax->b.x, thorax->b.y, thorax->b.z - back };
+        const BodySeg *thigh = &b->seg[PART_THIGH_L];
+        V3 low = { pelvis->a.x, (thigh->a.y + thigh->b.y) * 0.5f, pelvis->a.z - back };
+        float r = thorax->radius * (g->warmth > 8.0f ? 1.05f : 0.85f);
+        DrawCapsule(world(top, pos, yaw), world(low, pos, yaw), r, 6, 3, garment_color(g));
+        DrawSphere(world((V3){ thorax->b.x, thorax->b.y, thorax->b.z - back * 0.5f }, pos, yaw), r * 1.1f, garment_color(g));
+    }
+    Vector3 hc = world((V3){ (head->a.x + head->b.x) * 0.5f, (head->a.y + head->b.y) * 0.5f, (head->a.z + head->b.z) * 0.5f }, pos, yaw);
+    float hr = head->radius;
+    if ((g = garment(o->g[WEAR_FACE]))) // pañuelo o bufanda: el cuello y la boca
+        DrawCapsule(world(b->seg[PART_NECK].a, pos, yaw), world(b->seg[PART_NECK].b, pos, yaw), b->seg[PART_NECK].radius * 1.5f, 6, 3,
+                    garment_color(g));
+    if ((g = garment(o->g[WEAR_HEAD]))) {
+        Vector3 top = { hc.x, hc.y + hr * 0.55f, hc.z };
+        if (g->shade >= 0.4f) { // sombrero de ala ancha
+            DrawCylinder((Vector3){ top.x, top.y - hr * 0.1f, top.z }, hr * 2.0f, hr * 2.0f, hr * 0.12f, 10, garment_color(g));
+            DrawCylinder(top, hr * 0.8f, hr * 0.9f, hr * 0.7f, 8, garment_color(g));
+        } else if (g->warmth < 3.0f) { // gorro de punta
+            DrawCylinder((Vector3){ top.x, top.y - hr * 0.2f, top.z }, 0.0f, hr * 1.05f, hr * 1.4f, 8, garment_color(g));
+        } else { // de piel (con orejas si es de lobo)
+            DrawSphere(top, hr * 0.95f, garment_color(g));
+            if (g->dread > 0.0f) {
+                for (int side = -1; side <= 1; side += 2) {
+                    Vector3 ear = world((V3){ (head->a.x + head->b.x) * 0.5f + 0.06f * (float)side, (head->a.y + head->b.y) * 0.5f + hr * 1.3f,
+                                              (head->a.z + head->b.z) * 0.5f }, pos, yaw);
+                    DrawCylinder(ear, 0.0f, hr * 0.35f, hr * 0.5f, 4, garment_color(g));
+                }
+            }
+        }
+    }
+    if ((g = garment(o->g[WEAR_FEET]))) { // botas o sandalias: el final de la pierna
+        static const int legs[] = { PART_SHIN_L, PART_SHIN_R };
+        for (int i = 0; i < 2; i++) {
+            const BodySeg *s = &b->seg[legs[i]];
+            Vector3 a = world(s->a, pos, yaw), e = world(s->b, pos, yaw);
+            DrawCapsule(Vector3Lerp(a, e, g->warmth > 3.5f ? 0.45f : 0.8f), e, s->radius * 1.3f, 6, 3, garment_color(g));
+        }
+    }
+}

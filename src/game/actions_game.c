@@ -139,6 +139,18 @@ void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain 
     camp_found(ga->camps, CAMPS_MAX, 0.0f, 0.0f, 1); // el campamento con el que empieza la tribu
     snprintf(ga->camps[0].name, CAMP_NAME_LEN, "%s", T("Campamento de las estelas"));
     stock_seed_camp(&ga->camps[0].stock);
+    // Ropa de repuesto en el acopio: la gente se cambia segun el tiempo (src/game/apparel_game.c).
+    static const struct { const char *id; int n; } WARDROBE[] = {
+        { "vestimenta.espalda.capa", 3 }, { "vestimenta.torso.deel_invierno", 2 }, { "vestimenta.espalda.abrigo_cabra", 2 },
+        { "vestimenta.cabeza.gorro_piel", 3 }, { "vestimenta.cabeza.sombrero", 2 }, { "vestimenta.torso.tunica_seda", 1 },
+        { "vestimenta.cuello.panuelo_desierto", 2 }, { "vestimenta.pies.sandalias", 2 }, { "vestimenta.pies.botas_piel", 1 },
+    };
+    for (size_t i = 0; i < sizeof(WARDROBE) / sizeof(WARDROBE[0]); i++) stock_add(&ga->camps[0].stock, WARDROBE[i].id, WARDROBE[i].n);
+    // Lo que lleva puesto el jugador al empezar.
+    outfit_clear(&ga->outfit);
+    static const char *const START_WEAR[] = { "vestimenta.torso.deel", "vestimenta.cabeza.gorro_piel", "vestimenta.pies.botas_fieltro",
+                                              "vestimenta.espalda.capa" };
+    for (size_t i = 0; i < sizeof(START_WEAR) / sizeof(START_WEAR[0]); i++) outfit_wear(&ga->outfit, garment_find(START_WEAR[i]));
     ga->here = 0;
     ga->burn_camp = ga->burn_next = -1;
     apply_preset(ga);
@@ -976,6 +988,7 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         BodyColors bc = { { 200, 160, 120, 255 }, role_color(m->role), { 84, 64, 46, 255 } };
         if (n->hurt_anim > 0.0f) bc.cloth = (Color){ 236, 226, 214, 255 };
         body_draw(&pose, base, n->yaw, bc, &m->armor);
+        body_draw_outfit(&pose, base, n->yaw, &m->outfit);
         if (m->health.down) continue;
         if (m->champion >= 0) DrawSphere((Vector3){ base.x, base.y + 1.85f * s, base.z }, 0.08f, UI_GOLD);
     }

@@ -28,6 +28,7 @@
 #include "game/camp_game.h"
 #include "game/talents_game.h"
 #include "game/travel_game.h"
+#include "game/apparel_game.h"
 #include "game/title_menu.h"
 #include "game/hazards_game.h"
 #include "game/player.h"
@@ -362,11 +363,12 @@ int main(int argc, char **argv) {
     const char *start_trap = NULL, *start_enemies = NULL;
     bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
     MenuScreen start_menu_screen = MENU_TITLE;
+    int start_help_page = 0; // prueba: --pagina N del instructivo
     int start_save = -1, start_load = -1;
     int start_pause = 0;  // prueba: 1 pausa, 2 guardar, 3 controles (F1), sobre la partida
     int start_tab = -1;
     int start_talk = 0;      // prueba: 1 hablar con el druida, 2 con el orfebre
-    int start_equip_tab = -1; // prueba: pestaña del equipo (1 joyas, 2 tatuajes)   // prueba: menu Tab abierto en esa pestaña
+    int start_equip_tab = -1; // prueba: pestaña del equipo (1 ropa, 2 joyas, 3 tatuajes)   // prueba: menu Tab abierto en esa pestaña
     bool start_loot = false; // prueba: bolsas de botin delante
     bool start_inv = false, start_equip = false; // pruebas: guardar al final en ese hueco / cargar al empezar
     float start_x = 0.0f, start_z = 0.0f;
@@ -393,8 +395,9 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[i], "--fundar")) start_talk = 4;
         else if (!strcmp(argv[i], "--ordenes")) start_talk = 5;
         else if (!strcmp(argv[i], "--despachar")) start_talk = 6;
-        else if (!strcmp(argv[i], "--joyas")) start_equip = true, start_equip_tab = 1;
-        else if (!strcmp(argv[i], "--tatuajes")) start_equip = true, start_equip_tab = 2;
+        else if (!strcmp(argv[i], "--ropa")) start_equip = true, start_equip_tab = 1;
+        else if (!strcmp(argv[i], "--joyas")) start_equip = true, start_equip_tab = 2;
+        else if (!strcmp(argv[i], "--tatuajes")) start_equip = true, start_equip_tab = 3;
         else if (!strcmp(argv[i], "--pausa")) start_pause = 1;
         else if (!strcmp(argv[i], "--guardar")) start_pause = 2;
         else if (!strcmp(argv[i], "--controles")) start_pause = 3;
@@ -402,6 +405,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--autoguardar") && i + 1 < argc) start_save = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--cargar") && i + 1 < argc) start_load = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--instructivo")) start_menu = true, start_menu_screen = MENU_HELP;
+        else if (!strcmp(argv[i], "--pagina") && i + 1 < argc) start_menu = true, start_menu_screen = MENU_HELP, start_help_page = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--huecos")) start_menu = true, start_menu_screen = MENU_LOAD;
         else if (!strcmp(argv[i], "--pos") && i + 2 < argc) {
             start_pos = true;
@@ -499,6 +503,7 @@ int main(int argc, char **argv) {
     bool in_game = gallery_mode || (shot_path && !start_menu);
     if (!in_game) menu_open(&menu, MENU_TITLE);
     if (start_menu && start_menu_screen != MENU_TITLE) menu_open(&menu, start_menu_screen);
+    if (start_help_page > 0) menu.page = start_help_page;
     bool show_controls = false, quit = false;
     char last_log[128] = "";
     float log_age = 99.0f;
@@ -687,6 +692,7 @@ int main(int argc, char **argv) {
             if (!gallery_mode)
                 trv_update(&g_actions, &troop, &g_memory, &player, &terrain, clock_is_night(world_time),
                            !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
+            if (!gallery_mode) ag_update(&g_actions, &troop, &g_climate, g_hazards.seed, world_time, dt, log, sizeof(log));
             if (!g_actions.camps[0].used && camp.yurt_count) { // el campamento inicial se disolvio: sus yurtas arden
                 for (int i = 0; i < camp.yurt_count; i++) {
                     bool ruin = false;
@@ -789,6 +795,7 @@ int main(int argc, char **argv) {
             weather_draw_screen(&weather, &climate, VIRTUAL_W, VIRTUAL_H);
             cb_draw_overlay(&g_combat, &g_actions, &troop, cam, VIRTUAL_W, VIRTUAL_H);
             fg_draw_overlay(&g_actions, &terrain, cam, VIRTUAL_W, VIRTUAL_H);
+            ag_draw_overlay(&g_actions, &troop, cam, VIRTUAL_W, VIRTUAL_H);
         }
         if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
