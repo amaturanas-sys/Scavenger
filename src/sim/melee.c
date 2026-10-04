@@ -1,17 +1,18 @@
 #include "sim/melee.h"
+#include "sim/lang.h"
 
 #include <math.h>
 #include <string.h>
 
 static const MoveDef MOVES[MOVE_COUNT] = {
-    [MOVE_LIGHT] = { "Golpe", "ataque_una_1", 0.0f, 0.0f, 0.0f, WOUND_CUT },
-    [MOVE_HEAVY] = { "Golpe pesado", "ataque_pesado", 0.0f, 0.0f, 1.3f, WOUND_CUT },
-    [MOVE_KICK] = { "Patada", "patada", 1.3f, 5.0f, 0.7f, WOUND_BRUISE },
-    [MOVE_RUN_KICK] = { "Patada a la carrera", "patada_carrera", 1.6f, 8.0f, 1.1f, WOUND_BRUISE },
-    [MOVE_SHIELD_BASH] = { "Golpe de escudo", "golpe_escudo", 1.2f, 4.0f, 0.8f, WOUND_BRUISE },
-    [MOVE_SHIELD_CHARGE] = { "Carga con escudo", "carga_escudo", 1.6f, 7.0f, 1.2f, WOUND_BRUISE },
-    [MOVE_GRAPPLE] = { "Agarre", "agarre", 1.1f, 6.0f, 1.2f, WOUND_BRUISE },
-    [MOVE_HOOK] = { "Gancho al escudo", "enganchar_escudo", 0.0f, 0.0f, 0.9f, WOUND_CUT },
+    [MOVE_LIGHT] = { N_("Golpe"), "ataque_una_1", 0.0f, 0.0f, 0.0f, WOUND_CUT },
+    [MOVE_HEAVY] = { N_("Golpe pesado"), "ataque_pesado", 0.0f, 0.0f, 1.3f, WOUND_CUT },
+    [MOVE_KICK] = { N_("Patada"), "patada", 1.3f, 5.0f, 0.7f, WOUND_BRUISE },
+    [MOVE_RUN_KICK] = { N_("Patada a la carrera"), "patada_carrera", 1.6f, 8.0f, 1.1f, WOUND_BRUISE },
+    [MOVE_SHIELD_BASH] = { N_("Golpe de escudo"), "golpe_escudo", 1.2f, 4.0f, 0.8f, WOUND_BRUISE },
+    [MOVE_SHIELD_CHARGE] = { N_("Carga con escudo"), "carga_escudo", 1.6f, 7.0f, 1.2f, WOUND_BRUISE },
+    [MOVE_GRAPPLE] = { N_("Agarre"), "agarre", 1.1f, 6.0f, 1.2f, WOUND_BRUISE },
+    [MOVE_HOOK] = { N_("Gancho al escudo"), "enganchar_escudo", 0.0f, 0.0f, 0.9f, WOUND_CUT },
 };
 
 const MoveDef *move_def(MeleeMove m) { return &MOVES[(unsigned)m < MOVE_COUNT ? m : 0]; }

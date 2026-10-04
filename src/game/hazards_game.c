@@ -7,6 +7,7 @@
 #include "raymath.h"
 #include "sim/clock.h"
 #include "ui/theme.h"
+#include "sim/lang.h"
 
 #define CLOTHING 12.0f       // abrigo de pieles (grados de sensacion termica)
 #define FAINT_SECONDS 25.0f  // en hipotermia, hasta desmayarse
@@ -85,11 +86,11 @@ static void dismount(GameActions *ga) {
 static void lose_gear(GameActions *ga, char *what, size_t len) {
     what[0] = '\0';
     if (ga->hands.carried[0]) {
-        snprintf(what, len, "lo que cargabas");
+        snprintf(what, len, "%s", T("lo que cargabas"));
         ga->hands.carried[0] = '\0';
     }
     if (ga->hands.right.id[0] && !ga->hands.sheathed) {
-        snprintf(what, len, what[0] ? "lo que cargabas y tu arma" : "tu arma");
+        snprintf(what, len, "%s", what[0] ? T("lo que cargabas y tu arma") : T("tu arma"));
         memset(&ga->hands.right, 0, sizeof(ga->hands.right));
     }
 }
@@ -118,10 +119,10 @@ static void start_self_trap(Hazards *hz, TrapKind kind, Player *p, GameActions *
     if (hz->helper) keys -= 2, per += 0.25f, miss++;
     qte_start(&hz->qte, &hz->rng, keys, per, miss);
     const Member *h = hz->helper ? troop_find((Troop *)troop, hz->helper) : NULL;
-    const char *what = kind == TRAP_ICE ? "¡El hielo se rompió bajo tus pies!"
-                       : kind == TRAP_SNOW ? "¡Caíste en un socavón de nieve!"
-                                           : "¡Arena movediza! Te hundes.";
-    if (h) snprintf(log, len, "%s %s te tiende la lanza.", what, h->name);
+    const char *what = kind == TRAP_ICE ? T("¡El hielo se rompió bajo tus pies!")
+                       : kind == TRAP_SNOW ? T("¡Caíste en un socavón de nieve!")
+                                           : T("¡Arena movediza! Te hundes.");
+    if (h) snprintf(log, len, T("%s %s te tiende la lanza."), what, h->name);
     else snprintf(log, len, "%s", what);
 }
 
@@ -151,25 +152,25 @@ static void resolve_self(Hazards *hz, bool won, Player *p, GameActions *ga, cons
         hz->warmth.wet = 1.0f;
         if (won) {
             hz->warmth.heat = fmaxf(0.0f, hz->warmth.heat - 20.0f);
-            snprintf(log, len, "Saliste del agua helada. Estás empapado: busca un fuego.");
+            snprintf(log, len, "%s", T("Saliste del agua helada. Estás empapado: busca un fuego."));
         } else {
             hz->warmth.heat = fminf(hz->warmth.heat, 5.0f);
             lose_gear(ga, lost, sizeof(lost));
-            snprintf(log, len, "Saliste a duras penas, helado%s%s.", lost[0] ? "; se hundió " : "", lost);
+            snprintf(log, len, T("Saliste a duras penas, helado%s%s."), lost[0] ? T("; se hundió ") : "", lost);
         }
         climb_out(hz, p, t, 2.6f);
         break;
     case TRAP_SNOW:
         hz->warmth.heat = fmaxf(0.0f, hz->warmth.heat - (won ? 8.0f : 30.0f));
-        snprintf(log, len, won ? "Trepaste fuera del socavón." : "Tardaste en salir del socavón: el frío te caló.");
+        snprintf(log, len, "%s", won ? T("Trepaste fuera del socavón.") : T("Tardaste en salir del socavón: el frío te caló."));
         climb_out(hz, p, t, 4.5f);
         break;
     case TRAP_QUICKSAND:
         if (won) {
-            snprintf(log, len, "Te arrastraste fuera de la arena movediza.");
+            snprintf(log, len, "%s", T("Te arrastraste fuera de la arena movediza."));
         } else {
             lose_gear(ga, lost, sizeof(lost));
-            snprintf(log, len, "Escapaste de la arena%s%s.", lost[0] ? ", pero se tragó " : "", lost);
+            snprintf(log, len, T("Escapaste de la arena%s%s."), lost[0] ? T(", pero se tragó ") : "", lost);
         }
         climb_out(hz, p, t, 4.5f);
         break;
@@ -189,7 +190,7 @@ static void start_rescue(Hazards *hz, const Troop *troop, char *log, size_t len)
     int keys = hz->victim_trap == TRAP_QUICKSAND ? 9 : 8;
     qte_start(&hz->qte, &hz->rng, keys, 1.1f, 2);
     const Member *m = troop_find((Troop *)troop, hz->victim);
-    snprintf(log, len, "Tiras de %s: ¡no lo sueltes!", m ? m->name : "tu compañero");
+    snprintf(log, len, T("Tiras de %s: ¡no lo sueltes!"), m ? m->name : T("tu compañero"));
 }
 
 static void resolve_rescue(Hazards *hz, bool won, GameActions *ga, Troop *troop, const Terrain *t, const Player *p,
@@ -198,7 +199,7 @@ static void resolve_rescue(Hazards *hz, bool won, GameActions *ga, Troop *troop,
     Member *m = troop_find(troop, hz->victim);
     if (!won) {
         hz->victim_timer = fmaxf(1.0f, hz->victim_timer - 10.0f);
-        snprintf(log, len, "Se te escapa %s de las manos. ¡Inténtalo otra vez (F)!", m ? m->name : "");
+        snprintf(log, len, T("Se te escapa %s de las manos. ¡Inténtalo otra vez (F)!"), m ? m->name : "");
         return;
     }
     Npc *n = npc_for(ga, troop, hz->victim);
@@ -207,7 +208,7 @@ static void resolve_rescue(Hazards *hz, bool won, GameActions *ga, Troop *troop,
         n->pos.y = fmaxf(terrain_height(t, n->pos.x, n->pos.z), t->look.water_level);
     }
     troop_adjust_morale(troop, 3.0f);
-    snprintf(log, len, "¡Salvaste a %s! La tribu lo celebra (moral +3).", m ? m->name : "tu compañero");
+    snprintf(log, len, T("¡Salvaste a %s! La tribu lo celebra (moral +3)."), m ? m->name : T("tu compañero"));
     hz->victim = 0;
 }
 
@@ -217,8 +218,8 @@ static void victim_trapped(Hazards *hz, const Troop *troop, int member_id, TrapK
     hz->victim_trap = kind;
     hz->victim_timer = kind == TRAP_ICE ? 45.0f : kind == TRAP_QUICKSAND ? 40.0f : 60.0f;
     const Member *m = troop_find((Troop *)troop, member_id);
-    const char *where = kind == TRAP_ICE ? "cayó al agua helada" : kind == TRAP_SNOW ? "cayó en un socavón" : "se hunde en la arena";
-    snprintf(log, len, "¡%s %s! Acércate y pulsa F.", m ? m->name : "Un compañero", where);
+    const char *where = kind == TRAP_ICE ? T("cayó al agua helada") : kind == TRAP_SNOW ? T("cayó en un socavón") : T("se hunde en la arena");
+    snprintf(log, len, T("¡%s %s! Acércate y pulsa F."), m ? m->name : T("Un compañero"), where);
 }
 
 // -------------------------------------------------------------------- escolta
@@ -228,7 +229,7 @@ static void toggle_escort(Hazards *hz, GameActions *ga, const Troop *troop, cons
         for (int i = 0; i < TROOP_MAX; i++)
             if (ga->npcs[i].member_id != hz->victim) ga->npcs[i].escort = false;
         hz->escort_on = false;
-        snprintf(log, len, "La escolta vuelve al campamento.");
+        snprintf(log, len, "%s", T("La escolta vuelve al campamento."));
         return;
     }
     char names[64] = "";
@@ -245,12 +246,12 @@ static void toggle_escort(Hazards *hz, GameActions *ga, const Troop *troop, cons
         if (best < 0) break;
         ga->npcs[best].escort = true;
         size_t l = strlen(names);
-        snprintf(names + l, sizeof(names) - l, "%s%s", picked ? " y " : "", troop->members[best].name);
+        snprintf(names + l, sizeof(names) - l, "%s%s", picked ? T(" y ") : "", troop->members[best].name);
         picked++;
     }
     hz->escort_on = picked > 0;
-    if (picked) snprintf(log, len, "Te acompañan %s (Y: volver).", names);
-    else snprintf(log, len, "No hay nadie libre cerca para acompañarte.");
+    if (picked) snprintf(log, len, T("Te acompañan %s (Y: volver)."), names);
+    else snprintf(log, len, "%s", T("No hay nadie libre cerca para acompañarte."));
 }
 
 static float surface_y(const Terrain *t, float x, float z) {
@@ -364,10 +365,10 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
         if (!hz->qte_rescue || hz->qte.state != QTE_RUNNING) hz->victim_timer -= dt;
         if (hz->victim_timer <= 0.0f || !vn) {
             Member *m = troop_find(troop, hz->victim);
-            const char *how = hz->victim_trap == TRAP_ICE ? "se ahogó bajo el hielo"
-                              : hz->victim_trap == TRAP_SNOW ? "murió de frío en el socavón"
-                                                             : "desapareció en la arena";
-            if (m) snprintf(log, log_len, "%s %s. La tribu está de luto (moral -6).", m->name, how);
+            const char *how = hz->victim_trap == TRAP_ICE ? T("se ahogó bajo el hielo")
+                              : hz->victim_trap == TRAP_SNOW ? T("murió de frío en el socavón")
+                                                             : T("desapareció en la arena");
+            if (m) snprintf(log, log_len, T("%s %s. La tribu está de luto (moral -6)."), m->name, how);
             troop_mourn(troop, hz->victim, 6.0f);
             if (vn) vn->escort = false;
             hz->victim = 0;
@@ -466,7 +467,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
             hz->warmth.wet = 0.0f;
             hz->faint_timer = 0.0f;
             troop_adjust_morale(troop, -3.0f);
-            snprintf(log, log_len, "Te desmayaste de frío; la tribu te llevó junto al fuego (moral -3).");
+            snprintf(log, log_len, "%s", T("Te desmayaste de frío; la tribu te llevó junto al fuego (moral -3)."));
         }
     } else {
         hz->faint_timer = 0.0f;
@@ -492,7 +493,7 @@ void hz_new_day(Hazards *hz, const Climate *c, GameActions *ga, const Props *pro
     }
     if (have > 0) stock_take(&ga->stock, FIRE_WOOD_ID, have);
     troop_adjust_morale(troop, -4.0f);
-    snprintf(log, log_len, "Noche helada: faltó leña (%d de %d). La tribu pasó frío (moral -4).", have, need);
+    snprintf(log, log_len, T("Noche helada: faltó leña (%d de %d). La tribu pasó frío (moral -4)."), have, need);
 }
 
 // ------------------------------------------------------------------ dibujo
@@ -556,11 +557,11 @@ static void draw_qte(const Hazards *hz, const Troop *troop, int width, int heigh
     char title[96];
     if (hz->qte_rescue) {
         const Member *m = troop_find((Troop *)troop, hz->victim);
-        snprintf(title, sizeof(title), "¡Saca a %s!", m ? m->name : "tu compañero");
+        snprintf(title, sizeof(title), T("¡Saca a %s!"), m ? m->name : T("tu compañero"));
     } else {
-        snprintf(title, sizeof(title), "%s", hz->trap == TRAP_ICE ? "¡El hielo se rompió!"
-                                             : hz->trap == TRAP_SNOW ? "¡Socavón de nieve!"
-                                                                     : "¡Arena movediza!");
+        snprintf(title, sizeof(title), "%s", hz->trap == TRAP_ICE ? T("¡El hielo se rompió!")
+                                             : hz->trap == TRAP_SNOW ? T("¡Socavón de nieve!")
+                                                                     : T("¡Arena movediza!"));
     }
     ui_text_centered(title, width / 2, y0 + 12, 20, UI_GOLD_LIGHT);
     // Las teclas de la serie: hechas en oro, la actual en turquesa, el resto apagadas.
@@ -577,22 +578,22 @@ static void draw_qte(const Hazards *hz, const Troop *troop, int width, int heigh
     float frac = q->per_key > 0.0f ? q->time_left / q->per_key : 0.0f;
     ui_bar(x0 + 20, y0 + 72, w - 40, frac, frac < 0.35f ? UI_CARNELIAN : UI_TURQUOISE, UI_METAL_GOLD);
     char foot[96];
-    snprintf(foot, sizeof(foot), "Pulsa las teclas en orden  ·  errores %d/%d", q->mistakes, q->max_mistakes);
+    snprintf(foot, sizeof(foot), T("Pulsa las teclas en orden  ·  errores %d/%d"), q->mistakes, q->max_mistakes);
     ui_text_centered(foot, width / 2, y0 + 84, 10, UI_BONE);
 }
 
 void hz_draw_hud(const Hazards *hz, const Troop *troop, int right_x, int y, int width, int height) {
     // Calor corporal y terreno, alineados a la derecha bajo el minimapa.
-    const char *ground = hz->on_ice ? " · hielo" : hz->swimming ? " · nadando" : hz->wading ? " · vadeando"
-                         : hz->mud < 0.9f ? " · barro" : "";
-    const char *txt = TextFormat("%s%s%s", cold_name(warmth_level(&hz->warmth)), hz->warmth.wet > 0.3f ? " · mojado" : "",
+    const char *ground = hz->on_ice ? T(" · hielo") : hz->swimming ? T(" · nadando") : hz->wading ? T(" · vadeando")
+                         : hz->mud < 0.9f ? T(" · barro") : "";
+    const char *txt = TextFormat("%s%s%s", cold_name(warmth_level(&hz->warmth)), hz->warmth.wet > 0.3f ? T(" · mojado") : "",
                                  ground);
     ui_text(txt, right_x - MeasureText(txt, 10), y, 10, heat_color(&hz->warmth));
     ui_bar(right_x - 92, y + 12, 92, hz->warmth.heat / WARMTH_MAX, heat_color(&hz->warmth), UI_METAL_SILVER);
 
     if (hz->victim && !(hz->qte_rescue && hz->qte.state == QTE_RUNNING)) {
         const Member *m = troop_find((Troop *)troop, hz->victim);
-        const char *msg = TextFormat("¡%s está atrapado! Acércate y pulsa F (%d s)", m ? m->name : "Un compañero",
+        const char *msg = TextFormat(T("¡%s está atrapado! Acércate y pulsa F (%d s)"), m ? m->name : T("Un compañero"),
                                      (int)ceilf(hz->victim_timer));
         int w = MeasureText(msg, 10) + 24;
         ui_strip((Rectangle){ (float)(width - w) / 2, 168, (float)w, 20 }, UI_METAL_GOLD);

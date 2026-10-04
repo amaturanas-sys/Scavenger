@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "sim/lang.h"
 #include "ui/icons.h"
 #include "ui/theme.h"
 
@@ -14,18 +15,20 @@ static const char *PLATE_FILES[MENU_PLATES] = {
     "assets/ui/lamina_tigre_dragon.png",
 };
 
-static const char *TITLE_ITEMS[] = { "Nueva partida", "Cargar partida", "Instructivo", "Salir" };
-static const IconId TITLE_ICONS[] = { ICON_NUEVA, ICON_CARGAR, ICON_INSTRUCTIVO, ICON_SALIR };
-static const char *TITLE_HINTS[] = { "Una tribu nueva en la estepa", "Las partidas guardadas, con su foto y su fecha",
-                                     "Controles y reglas del juego", "Cerrar el juego" };
-static const IconId PAUSE_ICONS[] = { ICON_CONTINUAR, ICON_GUARDAR, ICON_CARGAR, ICON_INSTRUCTIVO, ICON_TITULO, ICON_SALIR };
-static const char *PAUSE_HINTS[] = { "Volver al juego (Esc)", "En uno de los tres huecos, con una foto de este momento",
-                                     "Volver a una partida guardada", "Controles y reglas del juego",
-                                     "Dejar la partida (lo no guardado se pierde)", "Cerrar el juego" };
-static const char *PAUSE_ITEMS[] = { "Continuar", "Guardar partida", "Cargar partida", "Instructivo", "Salir al título",
-                                     "Salir del juego" };
-#define TITLE_COUNT 4
-#define PAUSE_COUNT 6
+static const char *TITLE_ITEMS[] = { N_("Nueva partida"), N_("Cargar partida"), N_("Instructivo"), N_("Idioma"), N_("Salir") };
+static const IconId TITLE_ICONS[] = { ICON_NUEVA, ICON_CARGAR, ICON_INSTRUCTIVO, ICON_IDIOMA, ICON_SALIR };
+static const char *TITLE_HINTS[] = { N_("Una tribu nueva en la estepa"), N_("Las partidas guardadas, con su foto y su fecha"),
+                                     N_("Controles y reglas del juego"), NULL, N_("Cerrar el juego") };
+static const IconId PAUSE_ICONS[] = { ICON_CONTINUAR, ICON_GUARDAR, ICON_CARGAR, ICON_INSTRUCTIVO, ICON_TITULO, ICON_IDIOMA, ICON_SALIR };
+static const char *PAUSE_HINTS[] = { N_("Volver al juego (Esc)"), N_("En uno de los tres huecos, con una foto de este momento"),
+                                     N_("Volver a una partida guardada"), N_("Controles y reglas del juego"),
+                                     N_("Dejar la partida (lo no guardado se pierde)"), NULL, N_("Cerrar el juego") };
+static const char *PAUSE_ITEMS[] = { N_("Continuar"), N_("Guardar partida"), N_("Cargar partida"), N_("Instructivo"), N_("Salir al título"),
+                                     N_("Idioma"), N_("Salir del juego") };
+#define TITLE_COUNT 5
+#define PAUSE_COUNT 7
+#define TITLE_LANG 3 // el boton del idioma (sin pista: dice el idioma actual)
+#define PAUSE_LANG 5
 
 // Laminas del instructivo: un titulo, la lamina que la ilustra y sus lineas.
 typedef struct {
@@ -35,60 +38,60 @@ typedef struct {
 } HelpPage;
 
 static const HelpPage PAGES[] = {
-    { "La estepa", 0,
-      { "Guías una tropa nómada por la estepa: caza, construye, pelea y sobrevive a las estaciones. Un día dura 30 minutos; en invierno las noches son largas.",
+    { N_("La estepa"), 0,
+      { N_("Guías una tropa nómada por la estepa: caza, construye, pelea y sobrevive a las estaciones. Un día dura 30 minutos; en invierno las noches son largas."),
         "",
-        "WASD mover · Shift correr · C acechar (en la hierba alta te ocultas)",
-        "Espacio saltar · Q/E girar la cámara · M marcar el mapa",
-        "Esc menú (guardar, cargar) · F1 controles en el juego",
-        "Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.",
+        N_("WASD mover · Shift correr · C acechar (en la hierba alta te ocultas)"),
+        N_("Espacio saltar · Q/E girar la cámara · M marcar el mapa"),
+        N_("Esc menú (guardar, cargar) · F1 controles en el juego"),
+        N_("Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos."),
         "",
-        "Tu personaje no muere: abatido, tu escolta te levanta o despiertas en el campamento. Tus compañeros sí pueden morir." } },
-    { "La tribu y el campamento", 6,
-      { "Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario",
-        "Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.",
-        "Reparar: el cuero y el fieltro con pieles; el bronce y el hierro, herrero, horno y metal.",
-        "Y: dos integrantes te escoltan · G: ficha del gran guerrero",
-        "La tribu come carne fresca y leche antes que la seca; con hambre baja la moral.",
-        "Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.",
+        N_("Tu personaje no muere: abatido, tu escolta te levanta o despiertas en el campamento. Tus compañeros sí pueden morir.") } },
+    { N_("La tribu y el campamento"), 6,
+      { N_("Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario"),
+        N_("Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno."),
+        N_("Reparar: el cuero y el fieltro con pieles; el bronce y el hierro, herrero, horno y metal."),
+        N_("Y: dos integrantes te escoltan · G: ficha del gran guerrero"),
+        N_("La tribu come carne fresca y leche antes que la seca; con hambre baja la moral."),
+        N_("Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba."),
         "",
-        "La moral y la lealtad deciden si la tribu se rebela.",
-        "Reclutar, liberar o ejecutar prisioneros cambia la relación con el reino." } },
-    { "Combate cuerpo a cuerpo", 1,
-      { "V golpe; tres seguidos: combo · mantener V: golpe pesado (rompe guardias)",
-        "J o botón central: patada · corriendo: patada con inercia (tumba aun con escudo)",
-        "Z cubrirse · con escudo: Z + V golpe de escudo · corriendo + Z: carga",
-        "U agarre y llave: arrancas el escudo, desarmas o tumbas",
-        "O engancha el escudo enemigo con hacha, guja o alabarda",
-        "X cambiar empuñadura · Mayús+X pasar el arma de mano · H enfundar",
+        N_("La moral y la lealtad deciden si la tribu se rebela."),
+        N_("Reclutar, liberar o ejecutar prisioneros cambia la relación con el reino.") } },
+    { N_("Combate cuerpo a cuerpo"), 1,
+      { N_("V golpe; tres seguidos: combo · mantener V: golpe pesado (rompe guardias)"),
+        N_("J o botón central: patada · corriendo: patada con inercia (tumba aun con escudo)"),
+        N_("Z cubrirse · con escudo: Z + V golpe de escudo · corriendo + Z: carga"),
+        N_("U agarre y llave: arrancas el escudo, desarmas o tumbas"),
+        N_("O engancha el escudo enemigo con hacha, guja o alabarda"),
+        N_("X cambiar empuñadura · Mayús+X pasar el arma de mano · H enfundar"),
         "",
-        "B venda heridas con hierbas (o ungüento) · P equipo y heridas · I inventario",
-        "A caballo: V golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo.",
-        "Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se queda).",
-        "Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales." } },
-    { "Arcos, flechas y armaduras", 5,
-      { "Arco, ballesta u honda: mantén V para tensar y suelta para disparar. La cámara alza la mira: la curva amarilla muestra dónde caerá; la caída depende del peso del proyectil y de la potencia del arma.",
-        "L junto a un fuego enciende la flecha: quema y prende lo que toca.",
+        N_("B venda heridas con hierbas (o ungüento) · P equipo y heridas · I inventario"),
+        N_("A caballo: V golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo."),
+        N_("Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se queda)."),
+        N_("Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales.") } },
+    { N_("Arcos, flechas y armaduras"), 5,
+      { N_("Arco, ballesta u honda: mantén V para tensar y suelta para disparar. La cámara alza la mira: la curva amarilla muestra dónde caerá; la caída depende del peso del proyectil y de la potencia del arma."),
+        N_("L junto a un fuego enciende la flecha: quema y prende lo que toca."),
         "",
-        "La armadura va por piezas (casco, gorjal, coraza, hombreras, brazales, guantes, faldar, grebas, botas). Cada material para distinto el corte, el golpe y la flecha, y se gasta con los impactos." } },
-    { "Fauna y caza", 4,
-      { "Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta y desmonta.",
-        "Lobos, perros, tigres, pumas, halcones y cuervos: debilítalos peleando, échales el lazo y dales carne (K) para domarlos.",
-        "Osos, hienas, coyotes y jabalíes: siempre hostiles.",
-        "K despieza un cadáver, ordeña la cabra · Mayús+K sacrifica el ganado.",
-        "Camina cerca del ganado para llevarlo (pastoreo).",
-        "Golpea hacia el agua o tira una flecha para pescar.",
-        "Abejas: con la antorcha encendida, el humo las calma y K toma la miel." } },
-    { "Clima y peligros", 3,
-      { "El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.",
-        "Los lagos helados se cruzan, pero el hielo puede romperse.",
-        "Socavones de nieve y arena movediza aparecen cada día en otro lugar.",
-        "Al caer: pulsa la serie de teclas (J K L U I O) a tiempo.",
+        N_("La armadura va por piezas (casco, gorjal, coraza, hombreras, brazales, guantes, faldar, grebas, botas). Cada material para distinto el corte, el golpe y la flecha, y se gasta con los impactos.") } },
+    { N_("Fauna y caza"), 4,
+      { N_("Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta y desmonta."),
+        N_("Lobos, perros, tigres, pumas, halcones y cuervos: debilítalos peleando, échales el lazo y dales carne (K) para domarlos."),
+        N_("Osos, hienas, coyotes y jabalíes: siempre hostiles."),
+        N_("K despieza un cadáver, ordeña la cabra · Mayús+K sacrifica el ganado."),
+        N_("Camina cerca del ganado para llevarlo (pastoreo)."),
+        N_("Golpea hacia el agua o tira una flecha para pescar."),
+        N_("Abejas: con la antorcha encendida, el humo las calma y K toma la miel.") } },
+    { N_("Clima y peligros"), 3,
+      { N_("El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría."),
+        N_("Los lagos helados se cruzan, pero el hielo puede romperse."),
+        N_("Socavones de nieve y arena movediza aparecen cada día en otro lugar."),
+        N_("Al caer: pulsa la serie de teclas (J K L U I O) a tiempo."),
         "",
-        "En verano el pasto seco arde: los incendios corren con el viento.",
-        "Los rayos caen sobre lo alto durante las tormentas.",
-        "La lluvia apaga todo fuego: antorchas, fogatas, hornos y flechas.",
-        "Serpientes, escorpiones, arañas y avispas envenenan: véndate (B)." } },
+        N_("En verano el pasto seco arde: los incendios corren con el viento."),
+        N_("Los rayos caen sobre lo alto durante las tormentas."),
+        N_("La lluvia apaga todo fuego: antorchas, fogatas, hornos y flechas."),
+        N_("Serpientes, escorpiones, arañas y avispas envenenan: véndate (B).") } },
 };
 #define PAGE_COUNT ((int)(sizeof(PAGES) / sizeof(PAGES[0])))
 
@@ -194,6 +197,7 @@ MenuAction menu_update(TitleMenu *m, float dt) {
     case MENU_TITLE:
         if (!enter) return MENU_NONE;
         if (m->cursor == 0) return MENU_NEW_GAME;
+        if (m->cursor == TITLE_LANG) return MENU_LANG;
         if (m->cursor == 1) menu_open(m, MENU_LOAD);
         else if (m->cursor == 2) menu_open(m, MENU_HELP);
         else return MENU_QUIT;
@@ -207,6 +211,7 @@ MenuAction menu_update(TitleMenu *m, float dt) {
         case 2: menu_open(m, MENU_LOAD); return MENU_NONE;
         case 3: menu_open(m, MENU_HELP); return MENU_NONE;
         case 4: return MENU_TO_TITLE;
+        case PAUSE_LANG: return MENU_LANG;
         default: return MENU_QUIT;
         }
     case MENU_LOAD:
@@ -221,15 +226,15 @@ MenuAction menu_update(TitleMenu *m, float dt) {
         if (!enter) return MENU_NONE;
         const SaveInfo *si = &m->slots[m->cursor];
         if (m->screen == MENU_LOAD) {
-            if (!si->used) menu_message(m, "Ese hueco está vacío.");
-            else if (!si->compatible) menu_message(m, "Esa partida es de otra versión del juego.");
+            if (!si->used) menu_message(m, T("Ese hueco está vacío."));
+            else if (!si->compatible) menu_message(m, T("Esa partida es de otra versión del juego."));
             else return m->slot = m->cursor, MENU_LOAD_SLOT;
             return MENU_NONE;
         }
         // Guardar: sobre un hueco ocupado hay que confirmar (segundo Enter).
         if (si->used && m->slot != m->cursor) {
             m->slot = m->cursor;
-            menu_message(m, "Ese hueco tiene una partida: Enter otra vez para sobrescribirla.");
+            menu_message(m, T("Ese hueco tiene una partida: Enter otra vez para sobrescribirla."));
             return MENU_NONE;
         }
         m->slot = m->cursor;
@@ -321,7 +326,12 @@ static void draw_items(const TitleMenu *m, const char **items, const IconId *ico
             DrawRectangle((int)r.x + 6, (int)(r.y + r.height) + 4, (int)r.width - 12, 2, Fade(UI_TURQUOISE, 0.5f + 0.5f * k));
         }
         ui_tile(r, icons[i], sel, true);
-        if (sel) ui_legend_default(items[i], hints[i]);
+        if (icons[i] == ICON_IDIOMA) { // el codigo del idioma, en la esquina
+            ui_tile_badge(r, lang_code(lang_get()), UI_TURQ_LIGHT);
+            if (sel) ui_legend_default(T("Idioma"), TextFormat("%s -> %s", lang_name(lang_get()), lang_name((Lang)((lang_get() + 1) % LANG_COUNT))));
+        } else if (sel) {
+            ui_legend_default(T(items[i]), T(hints[i]));
+        }
     }
 }
 
@@ -351,10 +361,10 @@ static void draw_slots(TitleMenu *m, int w, int h) {
         }
         if (sel) {
             DrawRectangleLinesEx((Rectangle){ r.x + 3, r.y + 3, r.width - 6, r.height - 6 }, 1, UI_TURQUOISE);
-            const char *what = TextFormat("%s el hueco %d", saving ? "Guardar en" : "Cargar", s + 1);
-            if (!si->used) ui_legend_default(what, saving ? "Vacío" : "Vacío: no hay partida");
-            else if (!si->compatible) ui_legend_default(what, "Partida de otra versión del juego");
-            else ui_legend_default(what, TextFormat("Día %d · %s · tribu de %d", si->day, si->place, si->tribe));
+            const char *what = TextFormat(T("%s el hueco %d"), saving ? T("Guardar en") : T("Cargar"), s + 1);
+            if (!si->used) ui_legend_default(what, saving ? T("Vacío") : T("Vacío: no hay partida"));
+            else if (!si->compatible) ui_legend_default(what, T("Partida de otra versión del juego"));
+            else ui_legend_default(what, TextFormat(T("Día %d · %s · tribu de %d"), si->day, si->place, si->tribe));
         }
     }
     (void)h;
@@ -363,7 +373,7 @@ static void draw_slots(TitleMenu *m, int w, int h) {
 static void draw_help(const TitleMenu *m, int w, int h) {
     const HelpPage *pg = &PAGES[m->page];
     ui_panel((Rectangle){ 20, 24, (float)(w - 40), (float)(h - 56) }, UI_METAL_GOLD);
-    ui_text(pg->title, 40, 40, 20, UI_GOLD_LIGHT);
+    ui_text(T(pg->title), 40, 40, 20, UI_GOLD_LIGHT);
     ui_text(TextFormat("%d / %d", m->page + 1, PAGE_COUNT), w - 80, 46, 10, UI_BONE_DIM);
     ui_divider(40, 64, w - 80, UI_METAL_GOLD);
     // La lamina entera, centrada en su marco (sin deformarla).
@@ -373,11 +383,11 @@ static void draw_help(const TitleMenu *m, int w, int h) {
     draw_plate(pl, (Rectangle){ 44 + (150 - pw) / 2, 80 + (200 - ph) / 2, pw, ph });
     int y = 80;
     for (int i = 0; i < 12 && pg->lines[i]; i++) {
-        if (pg->lines[i][0]) y += ui_text_wrapped(pg->lines[i], 210, y, w - 260, 10, UI_BONE);
+        if (pg->lines[i][0]) y += ui_text_wrapped(T(pg->lines[i]), 210, y, w - 260, 10, UI_BONE);
         else y += 8;
     }
     // Pagina anterior, volver y siguiente.
-    static const char *names[3] = { "Página anterior", "Volver", "Página siguiente" };
+    static const char *names[3] = { N_("Página anterior"), N_("Volver"), N_("Página siguiente") };
     for (int k = 0; k < 3; k++) {
         Rectangle r = help_rect(m, k);
         bool hover = ui_tile(r, k == 1 ? ICON_TITULO : ICON_CONTINUAR, false, true);
@@ -385,22 +395,22 @@ static void draw_help(const TitleMenu *m, int w, int h) {
             DrawRectangle((int)r.x + 1, (int)r.y + 1, (int)r.width - 2, (int)r.height - 2, hover ? (Color){ 70, 50, 34, 236 } : UI_LEATHER);
             ui_icon_ex(ICON_CONTINUAR, r.x + 6, r.y + 6, 16, hover ? UI_BONE : UI_GOLD, true);
         }
-        if (hover) ui_legend(names[k], k == 1 ? "Esc" : "A / D o flechas");
+        if (hover) ui_legend(T(names[k]), k == 1 ? "Esc" : T("A / D o flechas"));
     }
 }
 
 void menu_draw_controls(int x, int y, int w, int h) {
     ui_panel((Rectangle){ (float)x, (float)y, (float)w, (float)h }, UI_METAL_GOLD);
     static const char *cols[2][9] = {
-        { "WASD mover · Shift correr", "C acechar · Espacio saltar", "Q/E cámara · M marcar", "V golpe (mantener: pesado)",
-          "J patada · Z cubrirse", "U agarre · O gancho", "B vendar · P equipo", "L encender flecha", "X/H empuñar/enfundar" },
-        { "Tab acciones/fabricar", "I inventario · Y escolta", "F tomar/botín · T lanzar", "R montar · K animal", "G ficha · M mapa",
-          "Mayús+X cambiar de mano", "Esc menú: guardar/cargar", "F1 cerrar esta ayuda", "" },
+        { N_("WASD mover · Shift correr"), N_("C acechar · Espacio saltar"), N_("Q/E cámara · M marcar"), N_("V golpe (mantener: pesado)"),
+          N_("J patada · Z cubrirse"), N_("U agarre · O gancho"), N_("B vendar · P equipo"), N_("L encender flecha"), N_("X/H empuñar/enfundar") },
+        { N_("Tab acciones/fabricar"), N_("I inventario · Y escolta"), N_("F tomar/botín · T lanzar"), N_("R montar · K animal"), N_("G ficha · M mapa"),
+          N_("Mayús+X cambiar de mano"), N_("Esc menú: guardar/cargar"), N_("F1 cerrar esta ayuda"), "" },
     };
-    ui_text("Controles", x + UI_PANEL_INSET + 2, y + UI_PANEL_INSET, 10, UI_GOLD_LIGHT);
+    ui_text(T("Controles"), x + UI_PANEL_INSET + 2, y + UI_PANEL_INSET, 10, UI_GOLD_LIGHT);
     for (int c = 0; c < 2; c++)
         for (int i = 0; i < 9; i++)
-            ui_text(cols[c][i], x + UI_PANEL_INSET + 2 + c * (w / 2), y + UI_PANEL_INSET + 16 + i * 12, 10, UI_BONE);
+            ui_text(T(cols[c][i]), x + UI_PANEL_INSET + 2 + c * (w / 2), y + UI_PANEL_INSET + 16 + i * 12, 10, UI_BONE);
 }
 
 void menu_draw(TitleMenu *m, bool in_game, const char *version, int w, int h) {
@@ -429,9 +439,10 @@ void menu_draw(TitleMenu *m, bool in_game, const char *version, int w, int h) {
             DrawTexturePro(m->emblem, (Rectangle){ 0, 0, (float)m->emblem.width, (float)m->emblem.height },
                            (Rectangle){ w / 2.0f - ew / 2.0f, title ? 18.0f : 16.0f, ew, eh }, (Vector2){ 0, 0 }, 0.0f, tint);
         }
-        int ty = title ? 160 : 118;
-        ui_text_centered(title ? "ESTEPA" : "Pausa", w / 2, ty, title ? 40 : 20, UI_GOLD_LIGHT);
-        if (title) ui_text_centered("La tribu de las estelas", w / 2, ty + 40, 10, UI_BONE_DIM);
+        int ty = title ? 156 : 118;
+        // El nombre del juego no se traduce.
+        ui_text_centered(title ? GAME_TITLE : T("Pausa"), w / 2, ty, title ? 30 : 20, UI_GOLD_LIGHT);
+        if (title) ui_text_centered(GAME_SUBTITLE, w / 2, ty + 32, 10, UI_TURQ_LIGHT);
         if (title) draw_items(m, TITLE_ITEMS, TITLE_ICONS, TITLE_HINTS, TITLE_COUNT);
         else draw_items(m, PAUSE_ITEMS, PAUSE_ICONS, PAUSE_HINTS, PAUSE_COUNT);
         if (version) ui_text(version, 16, h - 26, 10, UI_BONE_DIM);

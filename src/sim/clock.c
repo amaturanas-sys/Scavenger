@@ -1,4 +1,5 @@
 #include "clock.h"
+#include "sim/lang.h"
 
 #include <math.h>
 
@@ -20,8 +21,8 @@ Season clock_season(int day) { return (Season)(day_of_year(day) / DAYS_PER_SEASO
 int clock_day_of_season(int day) { return day_of_year(day) % DAYS_PER_SEASON + 1; }
 
 const char *season_name(Season s) {
-    static const char *names[SEASON_COUNT] = { "primavera", "verano", "otoño", "invierno" };
-    return (unsigned)s < SEASON_COUNT ? names[s] : "?";
+    static const char *names[SEASON_COUNT] = { N_("primavera"), N_("verano"), N_("otoño"), N_("invierno") };
+    return (unsigned)s < SEASON_COUNT ? T(names[s]) : "?";
 }
 
 float clock_daylight_fraction(int day) {
@@ -58,8 +59,8 @@ DayPhase clock_phase(float t) {
 }
 
 const char *phase_name(DayPhase p) {
-    static const char *names[] = { "alba", "día", "ocaso", "noche" };
-    return (unsigned)p <= PHASE_NIGHT ? names[p] : "?";
+    static const char *names[] = { N_("alba"), N_("día"), N_("ocaso"), N_("noche") };
+    return (unsigned)p <= PHASE_NIGHT ? T(names[p]) : "?";
 }
 
 float clock_sun_height(float t) {

@@ -1,4 +1,6 @@
-# ESTEPA (título provisional)
+# SCAVENGERS THRIVE - THEY COME FROM THE STEPPES
+
+*(nombre interno del proyecto: `estepa`)*
 
 RPG de mundo abierto en 3D low-res, inspirado en las tribus nómadas de la estepa (hunos, mongoles), con elementos de *Outward* y *Freedom Fighters*. Lideras una tropa guerrillera: acampas, reclutas, delegas, juzgas, y cada decisión pesa en la moral de los tuyos y en tu relación con el reino al que rindes tributo.
 
@@ -25,6 +27,21 @@ ctest --test-dir build      # tests del nucleo
 
 En Linux hacen falta las cabeceras de X11/OpenGL:
 `sudo apt install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev`
+
+## Idioma / Language
+
+Toda la interfaz está en **español o inglés**. Se cambia con el botón del globo (Idioma / Language) en el menú de entrada o en la pausa, y se recuerda entre partidas (`saves/ajustes.txt`).
+
+*The whole interface is available in **Spanish or English**: use the globe button (Idioma / Language) on the title or pause menu. The choice is remembered.*
+
+- En el código, cada texto visible se escribe en español dentro de `T("...")` (o `N_("...")` en tablas que se traducen al mostrarse): [src/sim/lang.h](src/sim/lang.h).
+- Las traducciones están en [assets/i18n/en.tsv](assets/i18n/en.tsv): español, tabulador, inglés. Los nombres de los objetos salen del inventario.
+- Flujo de trabajo:
+  ```bash
+  python3 tools/assets/i18n.py extraer   # añade los textos nuevos (sin traducir) y quita los que ya no se usan
+  python3 tools/assets/i18n.py faltan    # lista lo que falta traducir
+  python3 tools/assets/i18n.py check     # el CI falla si falta una traduccion o si un %d/%s no coincide
+  ```
 
 ## Menú y partidas
 

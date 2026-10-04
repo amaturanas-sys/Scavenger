@@ -37,6 +37,10 @@ typedef enum {
     ROLE_HEALER,     // curandero
     ROLE_LIEUTENANT, // lugarteniente
     ROLE_BUILDER,    // constructor: acelera las obras en grupo
+    ROLE_SOLDIER,    // soldado: escolta y defensa
+    ROLE_DRUID,      // druida: tatua y encanta joyas
+    ROLE_GOLDSMITH,  // orfebre: hace joyas con metal y piedras
+    ROLE_HERDER,     // pastor: cuida y alimenta el ganado
     ROLE_COUNT
 } Role;
 

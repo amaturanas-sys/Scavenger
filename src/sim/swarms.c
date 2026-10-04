@@ -1,4 +1,5 @@
 #include "sim/swarms.h"
+#include "sim/lang.h"
 
 #include <math.h>
 #include <string.h>
@@ -6,11 +7,11 @@
 // clang-format off
 static const SwarmDef DEFS[SWARM_KIND_COUNT] = {
     //                    nombre                   modelo                         nido                          radio vel   daño venen. cd    provoca enfado correa n
-    [SWARM_FISH]       = { "Banco de peces",        "animal.acuatico.peces",        NULL,                         1.6f, 3.0f, 0.0f, 0.0f, 0.0f, 0.0f,  0.0f,  0.0f, 10 },
-    [SWARM_BEES]       = { "Enjambre de abejas",    "animal.insecto.abejas",        "animal.insecto.colmena",     2.2f, 4.0f, 0.5f, 1.0f, 0.6f, 1.5f, 25.0f, 30.0f, 14 },
-    [SWARM_WASPS]      = { "Avispas",               "animal.insecto.avispas",       "animal.insecto.avispero",    1.6f, 5.0f, 1.0f, 2.5f, 0.5f, 4.0f, 18.0f, 25.0f, 10 },
-    [SWARM_MOSQUITOES] = { "Mosquitos",             "animal.insecto.mosquitos",     NULL,                         1.4f, 2.2f, 0.0f, 0.3f, 1.5f, 0.0f,  3.0f, 25.0f, 14 },
-    [SWARM_FLIES]      = { "Moscas",                "animal.insecto.moscas",        NULL,                         0.9f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,  0.0f,  0.0f, 10 },
+    [SWARM_FISH]       = { N_("Banco de peces"),        "animal.acuatico.peces",        NULL,                         1.6f, 3.0f, 0.0f, 0.0f, 0.0f, 0.0f,  0.0f,  0.0f, 10 },
+    [SWARM_BEES]       = { N_("Enjambre de abejas"),    "animal.insecto.abejas",        "animal.insecto.colmena",     2.2f, 4.0f, 0.5f, 1.0f, 0.6f, 1.5f, 25.0f, 30.0f, 14 },
+    [SWARM_WASPS]      = { N_("Avispas"),               "animal.insecto.avispas",       "animal.insecto.avispero",    1.6f, 5.0f, 1.0f, 2.5f, 0.5f, 4.0f, 18.0f, 25.0f, 10 },
+    [SWARM_MOSQUITOES] = { N_("Mosquitos"),             "animal.insecto.mosquitos",     NULL,                         1.4f, 2.2f, 0.0f, 0.3f, 1.5f, 0.0f,  3.0f, 25.0f, 14 },
+    [SWARM_FLIES]      = { N_("Moscas"),                "animal.insecto.moscas",        NULL,                         0.9f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,  0.0f,  0.0f, 10 },
 };
 // clang-format on
 

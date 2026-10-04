@@ -19,6 +19,9 @@
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
 #include "../src/sim/loadout.h"
+#include "../src/sim/jewelry.h"
+#include "../src/sim/lang.h"
+#include "../src/sim/talents.h"
 #include "../src/sim/memory_map.h"
 #include "../src/sim/noise.h"
 #include "../src/sim/rng.h"
@@ -2083,8 +2086,130 @@ static void test_enemy_loot_and_mounted_momentum(void) {
     CHECK(mounted_momentum(-3.0f) == 1.0f);
 }
 
+static char *read_file(const char *path);
+
+static void test_progress_levels(void) {
+    Progress p;
+    progress_init(&p);
+    CHECK(p.level == 1 && p.xp == 0.0f);
+    CHECK(progress_add(&p, xp_to_next(1) - 1.0f) == 0 && p.level == 1);
+    CHECK(progress_add(&p, 2.0f) == 1 && p.level == 2);
+    CHECK(xp_to_next(5) > xp_to_next(2)); // cada nivel cuesta mas
+    CHECK(progress_add(&p, 1e9f) > 0 && p.level == LEVEL_MAX && p.xp == 0.0f);
+    CHECK(progress_add(&p, 100.0f) == 0); // tope
+    for (int s = 0; s < XP_SOURCE_COUNT; s++) CHECK(xp_reward((XpSource)s) > 0.0f);
+}
+
+static void test_tattoo_tree_is_permanent_and_branches(void) {
+    TattooBody b;
+    tattoo_body_init(&b);
+    CHECK(tattoo_count(&b) == 0);
+    // Cada motivo: grados 1, 2 y dos ramas del 3.
+    for (int m = 0; m < MOTIF_COUNT; m++) {
+        int tiers[4] = { 0 };
+        for (int i = 0; i < TATTOO_NODES; i++)
+            if ((int)tattoo_node(i)->motif == m) tiers[tattoo_node(i)->tier]++;
+        CHECK(tiers[1] == 1 && tiers[2] == 1 && tiers[3] == 2);
+    }
+    int w1 = 0, w2 = 1, w3a = 2, w3b = 3; // lobo
+    CHECK(tattoo_node(w1)->motif == MOTIF_WOLF && tattoo_node(w3b)->branch == 2);
+    CHECK(tattoo_can(&b, w2, TZ_LEGS, 10) == TAT_NEEDS_PREV); // primero el grado 1
+    CHECK(tattoo_apply(&b, w1, TZ_LEGS, 1) == TAT_OK);
+    CHECK(tattoo_apply(&b, w1, TZ_ARM_R, 1) == TAT_HAVE_IT);
+    CHECK(tattoo_can(&b, w2, TZ_LEGS, 10) == TAT_ZONE_TAKEN); // la zona ya esta tatuada
+    CHECK(tattoo_can(&b, w2, TZ_BACK, 2) == TAT_LEVEL);
+    CHECK(tattoo_apply(&b, w2, TZ_BACK, 3) == TAT_OK);
+    CHECK(tattoo_apply(&b, w3a, TZ_ARM_R, 6) == TAT_OK);
+    CHECK(tattoo_can(&b, w3b, TZ_HEAD, 20) == TAT_OTHER_BRANCH); // la otra rama queda cerrada
+    CHECK(tattoo_count(&b) == 3);
+    // La zona cambia el bonus: el sigilo pesa mas en las piernas que en la espalda.
+    float legs[STAT_COUNT] = { 0 }, chest[STAT_COUNT] = { 0 };
+    tattoo_effect(w1, TZ_LEGS, legs, NULL);
+    tattoo_effect(w1, TZ_CHEST, chest, NULL);
+    CHECK(legs[STAT_STEALTH] > chest[STAT_STEALTH]);
+    CHECK(legs[STAT_SPEED] > 0.0f && chest[STAT_HEALTH] > 0.0f); // y cada zona suma lo suyo
+    CHECK(tattoo_stat(&b, STAT_STEALTH) > 0.3f);
+    float pot = 0.0f, mods[STAT_COUNT] = { 0 };
+    CHECK(tattoo_effect(w3a, TZ_ARM_R, mods, &pot) == ABIL_HOWL && pot >= 1.0f);
+    char d[160];
+    CHECK(tattoo_describe(w1, TZ_LEGS, d, sizeof(d)) > 0 && strstr(d, "sigilo"));
+    for (int t = 1; t <= 3; t++) CHECK(tattoo_ink(t)[0].id != NULL);
+    for (int a = 1; a < ABIL_COUNT; a++) CHECK(ability_def((AbilityId)a)->cooldown > 0.0f);
+}
+
+static void test_jewelry_crafted_and_enchanted(void) {
+    JewelType t;
+    JewelMetal m;
+    CHECK(jewel_parse("accesorio.anillo.oro", &t, &m) && t == JT_RING && m == METAL_GOLD);
+    CHECK(!jewel_parse("accesorio.amuleto.lobo", &t, &m) && !jewel_parse("arma.corta.sable", NULL, NULL));
+    CHECK(!strcmp(jewel_id(JT_BUCKLE, METAL_SILVER), "accesorio.hebilla.plata"));
+    for (int g = 1; g < GEM_COUNT; g++) CHECK((int)gem_from_id(gem_id((Gem)g)) == g && gem_active((Gem)g) != ABIL_NONE);
+    unsigned short v = jewel_var(GEM_JADE, ENCH_ACTIVE);
+    CHECK(jewel_gem(v) == GEM_JADE && jewel_enchant(v) == ENCH_ACTIVE);
+    // Sin encantar no hace nada; encantada, el oro rinde mas que el bronce.
+    float mods[STAT_COUNT] = { 0 };
+    CHECK(jewel_effect("accesorio.collar.oro", jewel_var(GEM_LAPIS, ENCH_NONE), mods, NULL) == ABIL_NONE && mods[STAT_PERCEPTION] == 0.0f);
+    float gold[STAT_COUNT] = { 0 }, bronze[STAT_COUNT] = { 0 };
+    jewel_effect("accesorio.collar.oro", jewel_var(GEM_LAPIS, ENCH_PASSIVE), gold, NULL);
+    jewel_effect("accesorio.collar.bronce", jewel_var(GEM_LAPIS, ENCH_PASSIVE), bronze, NULL);
+    CHECK(gold[STAT_PERCEPTION] > bronze[STAT_PERCEPTION] && bronze[STAT_PERCEPTION] > 0.0f);
+    float pot = 0.0f;
+    CHECK(jewel_effect("accesorio.anillo.plata", v, mods, &pot) == ABIL_SHADOW && pot > 0.0f);
+    // Huecos: cuatro anillos, dos brazaletes; los colgantes de animales van al collar.
+    CHECK(jewel_fits("accesorio.anillo.oro", JS_RING_R2) && !jewel_fits("accesorio.anillo.oro", JS_NECKLACE));
+    CHECK(jewel_fits("accesorio.amuleto.lobo", JS_NECKLACE) && !jewel_fits("accesorio.amuleto.lobo", JS_BUCKLE));
+    Jewelry j;
+    memset(&j, 0, sizeof(j));
+    snprintf(j.slot[JS_RING_L1].id, INV_ID_LEN, "accesorio.anillo.bronce");
+    j.slot[JS_RING_L1].var = jewel_var(GEM_CARNELIAN, ENCH_PASSIVE);
+    snprintf(j.slot[JS_NECKLACE].id, INV_ID_LEN, "accesorio.amuleto.lobo");
+    CHECK(jewelry_stat(&j, STAT_MELEE) > 0.0f && jewelry_stat(&j, STAT_STEALTH) > 0.25f);
+    // Las joyas con piedras distintas no se apilan en la mochila.
+    Inventory inv;
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    inventory_parse(&inv, text);
+    Bag bag;
+    bag_init(&bag, BAG_BACKPACK, 25.0f);
+    CHECK(bag_add_var(&bag, &inv, "accesorio.anillo.oro", 1, 1.0f, jewel_var(GEM_JADE, ENCH_NONE)) == 1);
+    CHECK(bag_add_var(&bag, &inv, "accesorio.anillo.oro", 1, 1.0f, jewel_var(GEM_PEARL, ENCH_NONE)) == 1);
+    CHECK(bag.n == 2);
+    CHECK(bag_add_var(&bag, &inv, "accesorio.anillo.oro", 1, 1.0f, jewel_var(GEM_JADE, ENCH_NONE)) == 1 && bag.n == 2);
+    for (int g = 1; g < GEM_COUNT; g++) CHECK(inventory_find(&inv, gem_id((Gem)g)) != NULL);
+    for (int a = 0; a < JT_COUNT; a++)
+        for (int b = 0; b < METAL_COUNT; b++) CHECK(inventory_find(&inv, jewel_id((JewelType)a, (JewelMetal)b)) != NULL);
+    for (int b = 0; b < METAL_COUNT; b++) CHECK(inventory_find(&inv, metal_id((JewelMetal)b)) != NULL);
+    inventory_free(&inv);
+    free(text);
+    // Las piedras: los corales dan mas que el rio.
+    Rng rng;
+    rng_seed(&rng, 9u);
+    int coral = 0, river = 0;
+    for (int i = 0; i < 2000; i++) {
+        coral += gem_roll(GEMSRC_CORAL, &rng) != GEM_NONE;
+        river += gem_roll(GEMSRC_RIVER, &rng) != GEM_NONE;
+    }
+    CHECK(coral > river && river > 0);
+}
+
+static void test_lang_table(void) {
+    CHECK(lang_get() == LANG_ES && !strcmp(T("Vacío"), "Vacío"));
+    CHECK(lang_load(LANG_EN, "# comentario\nVacío\tEmpty\nDía %d\tDay %d\nDos\\nlineas\tTwo\\nlines\n") == 3);
+    lang_set(LANG_EN);
+    CHECK(!strcmp(T("Vacío"), "Empty") && !strcmp(T("Día %d"), "Day %d") && !strcmp(T("Dos\nlineas"), "Two\nlines"));
+    CHECK(!strcmp(T("Sin traducir"), "Sin traducir")); // si falta, el español
+    lang_set(LANG_ES);
+    CHECK(!strcmp(T("Vacío"), "Vacío"));
+    lang_free();
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
+    RUN(test_progress_levels);
+    RUN(test_tattoo_tree_is_permanent_and_branches);
+    RUN(test_jewelry_crafted_and_enchanted);
+    RUN(test_lang_table);
     RUN(test_hand_crafting_and_repairs);
     RUN(test_enemy_loot_and_mounted_momentum);
     RUN(test_banish_removes_from_active);

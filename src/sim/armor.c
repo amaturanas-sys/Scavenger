@@ -1,16 +1,17 @@
 #include "armor.h"
+#include "lang.h"
 
 #include <stdio.h>
 #include <string.h>
 
 const MaterialDef *material_def(ArmorMaterial m) {
     static const MaterialDef defs[MAT_COUNT] = {
-        [MAT_FELT] = { "fieltro", 0.25f, 0.30f, 0.20f, 60.0f, 0.6f, 0.01f },
-        [MAT_LEATHER] = { "cuero laminar", 0.40f, 0.25f, 0.30f, 90.0f, 0.8f, 0.02f },
-        [MAT_BRONZE] = { "bronce", 0.55f, 0.30f, 0.45f, 140.0f, 1.2f, 0.05f },
-        [MAT_IRON] = { "hierro", 0.65f, 0.30f, 0.50f, 180.0f, 1.4f, 0.06f },
-        [MAT_STEEL] = { "acero", 0.75f, 0.35f, 0.60f, 240.0f, 1.7f, 0.06f },
-        [MAT_GOLD] = { "oro", 0.45f, 0.20f, 0.35f, 80.0f, 0.7f, 0.07f },
+        [MAT_FELT] = { N_("fieltro"), 0.25f, 0.30f, 0.20f, 60.0f, 0.6f, 0.01f },
+        [MAT_LEATHER] = { N_("cuero laminar"), 0.40f, 0.25f, 0.30f, 90.0f, 0.8f, 0.02f },
+        [MAT_BRONZE] = { N_("bronce"), 0.55f, 0.30f, 0.45f, 140.0f, 1.2f, 0.05f },
+        [MAT_IRON] = { N_("hierro"), 0.65f, 0.30f, 0.50f, 180.0f, 1.4f, 0.06f },
+        [MAT_STEEL] = { N_("acero"), 0.75f, 0.35f, 0.60f, 240.0f, 1.7f, 0.06f },
+        [MAT_GOLD] = { N_("oro"), 0.45f, 0.20f, 0.35f, 80.0f, 0.7f, 0.07f },
     };
     return &defs[(unsigned)m < MAT_COUNT ? m : 0];
 }
@@ -137,7 +138,7 @@ void armor_repair(Armor *a, float fraction) {
 }
 
 const char *slot_name(ArmorSlot s) {
-    static const char *names[SLOT_COUNT] = { "casco",   "gorjal", "coraza", "hombreras", "brazales",
-                                             "guanteletes", "faldar", "grebas", "botas" };
-    return (unsigned)s < SLOT_COUNT ? names[s] : "?";
+    static const char *names[SLOT_COUNT] = { N_("casco"),   N_("gorjal"), N_("coraza"), N_("hombreras"), N_("brazales"),
+                                             N_("guanteletes"), N_("faldar"), N_("grebas"), N_("botas") };
+    return (unsigned)s < SLOT_COUNT ? T(names[s]) : "?";
 }

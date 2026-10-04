@@ -1,4 +1,5 @@
 #include "sim/actions.h"
+#include "sim/lang.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -45,12 +46,12 @@ Grip hands_grip(const Hands *h) {
 
 const char *grip_name(Grip g) {
     switch (g) {
-    case GRIP_EMPTY: return "desarmado";
-    case GRIP_ONE_HANDED: return "a una mano";
-    case GRIP_DUAL: return "una en cada mano";
-    case GRIP_TWO_HANDED: return "a dos manos";
-    case GRIP_WEAPON_SHIELD: return "arma y escudo";
-    case GRIP_SHIELD: return "solo escudo";
+    case GRIP_EMPTY: return T("desarmado");
+    case GRIP_ONE_HANDED: return T("a una mano");
+    case GRIP_DUAL: return T("una en cada mano");
+    case GRIP_TWO_HANDED: return T("a dos manos");
+    case GRIP_WEAPON_SHIELD: return T("arma y escudo");
+    case GRIP_SHIELD: return T("solo escudo");
     }
     return "?";
 }
@@ -89,57 +90,57 @@ bool hands_holding(const Hands *h, const char *id) {
 
 // ---------------------------------------------------------------- acciones individuales
 static const ActionDef ACTIONS[ACTION_COUNT] = {
-    [ACTION_TAKE] = { "Tomar", "Recoger un objeto del suelo. Hace falta una mano libre.",
-                      ACTOR_PLAYER | ACTOR_NPC, 0.5f, NULL, NULL, "objeto cercano" },
-    [ACTION_THROW] = { "Lanzar", "Arrojar el objeto que se lleva en la mano.", ACTOR_PLAYER | ACTOR_NPC, 0.6f, NULL,
+    [ACTION_TAKE] = { N_("Tomar"), N_("Recoger un objeto del suelo. Hace falta una mano libre."),
+                      ACTOR_PLAYER | ACTOR_NPC, 0.5f, NULL, NULL, N_("objeto cercano") },
+    [ACTION_THROW] = { N_("Lanzar"), N_("Arrojar el objeto que se lleva en la mano."), ACTOR_PLAYER | ACTOR_NPC, 0.6f, NULL,
                        NULL, NULL },
-    [ACTION_CHANGE_GRIP] = { "Cambiar empuñadura",
-                             "Una en cada mano, a dos manos, arma y escudo...", ACTOR_PLAYER | ACTOR_NPC, 0.8f,
+    [ACTION_CHANGE_GRIP] = { N_("Cambiar empuñadura"),
+                             N_("Una en cada mano, a dos manos, arma y escudo..."), ACTOR_PLAYER | ACTOR_NPC, 0.8f,
                              NULL, NULL, NULL },
-    [ACTION_SHEATHE] = { "Enfundar / desenfundar", "Guardar las armas libera las manos.",
+    [ACTION_SHEATHE] = { N_("Enfundar / desenfundar"), N_("Guardar las armas libera las manos."),
                          ACTOR_PLAYER | ACTOR_NPC, 0.6f, NULL, NULL, NULL },
-    [ACTION_PLACE_FIRE] = { "Instalar fogata", "Una fogata pequeña para una persona o dos.",
+    [ACTION_PLACE_FIRE] = { N_("Instalar fogata"), N_("Una fogata pequeña para una persona o dos."),
                             ACTOR_PLAYER | ACTOR_NPC, 4.0f, NULL, "estructura.campamento.fogata", NULL,
                             { { "utileria.objeto.lena", 2 }, { NULL, 0 } } },
-    [ACTION_PLACE_TENT] = { "Instalar tienda", "Tienda ligera de viaje.", ACTOR_PLAYER | ACTOR_NPC, 8.0f, NULL,
+    [ACTION_PLACE_TENT] = { N_("Instalar tienda"), N_("Tienda ligera de viaje."), ACTOR_PLAYER | ACTOR_NPC, 8.0f, NULL,
                             "estructura.vivienda.tienda_ligera", NULL,
                             { { "utileria.material.pieles", 2 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } } },
-    [ACTION_DIG_TRENCH] = { "Cavar trinchera", "Cobertura contra flechas y cargas. Requiere pala.",
+    [ACTION_DIG_TRENCH] = { N_("Cavar trinchera"), N_("Cobertura contra flechas y cargas. Requiere pala."),
                             ACTOR_PLAYER | ACTOR_NPC, 12.0f, "utileria.herramienta.pala",
                             "estructura.defensa.trinchera", NULL },
-    [ACTION_THROW_GRAPPLE] = { "Lanzar trepa", "Gancho con cuerda para escalar muros en un asedio.",
-                               ACTOR_PLAYER | ACTOR_NPC, 1.2f, "utileria.herramienta.gancho_trepa", NULL, "muro" },
-    [ACTION_THROW_LASSO] = { "Lanzar lazo", "Atrapar un animal salvaje: una montura queda domada; un depredador debilitado queda atado hasta que le des carne (K).",
-                             ACTOR_PLAYER | ACTOR_NPC, 1.0f, "arma.distancia.lazo", NULL, "animal salvaje" },
-    [ACTION_LIGHT_TORCH] = { "Encender antorcha", "Luz en la noche; ahuyenta fieras.", ACTOR_PLAYER | ACTOR_NPC,
+    [ACTION_THROW_GRAPPLE] = { N_("Lanzar trepa"), N_("Gancho con cuerda para escalar muros en un asedio."),
+                               ACTOR_PLAYER | ACTOR_NPC, 1.2f, "utileria.herramienta.gancho_trepa", NULL, N_("muro") },
+    [ACTION_THROW_LASSO] = { N_("Lanzar lazo"), N_("Atrapar un animal salvaje: una montura queda domada; un depredador debilitado queda atado hasta que le des carne (K)."),
+                             ACTOR_PLAYER | ACTOR_NPC, 1.0f, "arma.distancia.lazo", NULL, N_("animal salvaje") },
+    [ACTION_LIGHT_TORCH] = { N_("Encender antorcha"), N_("Luz en la noche; ahuyenta fieras."), ACTOR_PLAYER | ACTOR_NPC,
                              1.5f, "utileria.objeto.antorcha", NULL, NULL },
-    [ACTION_SADDLE] = { "Instalar montura", "Ensillar un animal para montarlo.", ACTOR_PLAYER | ACTOR_NPC, 5.0f,
-                        "accesorio.arreo.silla_montar", NULL, "montura" },
+    [ACTION_SADDLE] = { N_("Instalar montura"), N_("Ensillar un animal para montarlo."), ACTOR_PLAYER | ACTOR_NPC, 5.0f,
+                        "accesorio.arreo.silla_montar", NULL, N_("montura") },
 };
 
 const ActionDef *action_def(ActionId a) { return a >= 0 && a < ACTION_COUNT ? &ACTIONS[a] : NULL; }
 
 // ---------------------------------------------------------------- construcciones en grupo
 static const BuildDef BUILDS[BUILD_COUNT] = {
-    [BUILD_SHELTER] = { "Refugio", "estructura.campamento.refugio", 900.0f, 2, 4, ROLE_NONE, ROLE_BUILDER,
+    [BUILD_SHELTER] = { N_("Refugio"), "estructura.campamento.refugio", 900.0f, 2, 4, ROLE_NONE, ROLE_BUILDER,
         { { "utileria.material.troncos", 4 }, { "utileria.material.pieles", 3 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } } },
-    [BUILD_PALISADE] = { "Muro de empalizada", "estructura.campamento.empalizada", 1200.0f, 3, 6, ROLE_NONE, ROLE_BUILDER,
+    [BUILD_PALISADE] = { N_("Muro de empalizada"), "estructura.campamento.empalizada", 1200.0f, 3, 6, ROLE_NONE, ROLE_BUILDER,
         { { "utileria.material.troncos", 8 }, { "utileria.material.cuerda", 2 }, { NULL, 0 } } },
-    [BUILD_STONE_WALL] = { "Muro de piedra", "estructura.defensa.muro_piedra", 2400.0f, 4, 8, ROLE_NONE, ROLE_BUILDER,
+    [BUILD_STONE_WALL] = { N_("Muro de piedra"), "estructura.defensa.muro_piedra", 2400.0f, 4, 8, ROLE_NONE, ROLE_BUILDER,
         { { "utileria.material.piedra", 12 }, { NULL, 0 } } },
-    [BUILD_BONFIRE] = { "Hoguera", "estructura.campamento.hoguera", 300.0f, 2, 4, ROLE_NONE, ROLE_HUNTER,
+    [BUILD_BONFIRE] = { N_("Hoguera"), "estructura.campamento.hoguera", 300.0f, 2, 4, ROLE_NONE, ROLE_HUNTER,
         { { "utileria.objeto.lena", 6 }, { NULL, 0 } } },
-    [BUILD_TOTEM] = { "Tótem de protección", "totem.proteccion.guardian", 900.0f, 2, 4, ROLE_NONE, ROLE_HEALER,
+    [BUILD_TOTEM] = { N_("Tótem de protección"), "totem.proteccion.guardian", 900.0f, 2, 4, ROLE_NONE, ROLE_HEALER,
         { { "utileria.material.troncos", 2 }, { "utileria.material.pieles", 1 }, { NULL, 0 } } },
-    [BUILD_OVEN] = { "Horno de cocina", "estructura.campamento.horno_cocina", 600.0f, 2, 3, ROLE_NONE, ROLE_COOK,
+    [BUILD_OVEN] = { N_("Horno de cocina"), "estructura.campamento.horno_cocina", 600.0f, 2, 3, ROLE_NONE, ROLE_COOK,
         { { "utileria.material.barro", 6 }, { "utileria.material.piedra", 4 }, { NULL, 0 } } },
-    [BUILD_FURNACE_BRONZE] = { "Horno de fundición (bronce)", "estructura.campamento.horno_bronce", 1800.0f, 3, 5, ROLE_SMITH, ROLE_SMITH,
+    [BUILD_FURNACE_BRONZE] = { N_("Horno de fundición (bronce)"), "estructura.campamento.horno_bronce", 1800.0f, 3, 5, ROLE_SMITH, ROLE_SMITH,
         { { "utileria.material.barro", 8 }, { "utileria.material.piedra", 6 }, { "utileria.material.carbon", 4 }, { NULL, 0 } } },
-    [BUILD_FURNACE_STEEL] = { "Horno de fundición (acero)", "estructura.campamento.horno_acero", 3000.0f, 4, 6, ROLE_SMITH, ROLE_SMITH,
+    [BUILD_FURNACE_STEEL] = { N_("Horno de fundición (acero)"), "estructura.campamento.horno_acero", 3000.0f, 4, 6, ROLE_SMITH, ROLE_SMITH,
         { { "utileria.material.piedra", 14 }, { "utileria.material.carbon", 8 }, { "utileria.material.hierro", 2 }, { NULL, 0 } } },
-    [BUILD_WATCHTOWER] = { "Torre de vigilancia", "estructura.campamento.atalaya", 1500.0f, 3, 6, ROLE_NONE, ROLE_BUILDER,
+    [BUILD_WATCHTOWER] = { N_("Torre de vigilancia"), "estructura.campamento.atalaya", 1500.0f, 3, 6, ROLE_NONE, ROLE_BUILDER,
         { { "utileria.material.troncos", 12 }, { "utileria.material.cuerda", 3 }, { NULL, 0 } } },
-    [BUILD_CORRAL] = { "Corral", "estructura.campamento.corral", 600.0f, 2, 4, ROLE_NONE, ROLE_HUNTER,
+    [BUILD_CORRAL] = { N_("Corral"), "estructura.campamento.corral", 600.0f, 2, 4, ROLE_NONE, ROLE_HUNTER,
         { { "utileria.material.troncos", 6 }, { "utileria.material.cuerda", 3 }, { NULL, 0 } } },
 };
 
@@ -220,9 +221,9 @@ float build_rate_present(const BuildDef *def, const CrewPlan *plan, const bool *
 const char *build_check_text(const BuildDef *def, BuildCheck c) {
     static char buf[96];
     switch (c) {
-    case BUILD_READY: return "lista";
-    case BUILD_FEW_WORKERS: snprintf(buf, sizeof(buf), "faltan manos (mínimo %d)", def->min_workers); return buf;
-    case BUILD_MISSING_ROLE: snprintf(buf, sizeof(buf), "falta un %s en la tribu", role_name(def->required_role)); return buf;
+    case BUILD_READY: return T("lista");
+    case BUILD_FEW_WORKERS: snprintf(buf, sizeof(buf), T("faltan manos (mínimo %d)"), def->min_workers); return buf;
+    case BUILD_MISSING_ROLE: snprintf(buf, sizeof(buf), T("falta un %s en la tribu"), role_name(def->required_role)); return buf;
     }
     return "?";
 }

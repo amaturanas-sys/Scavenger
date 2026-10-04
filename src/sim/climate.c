@@ -1,4 +1,5 @@
 #include "climate.h"
+#include "sim/lang.h"
 
 #include <math.h>
 #include <stddef.h>
@@ -56,8 +57,8 @@ WeatherKind climate_block_weather(int block, uint32_t seed) {
 }
 
 const char *weather_name(WeatherKind w) {
-    static const char *names[WEATHER_COUNT] = { "despejado", "nublado", "lluvia", "tormenta", "nevada", "ventisca" };
-    return (unsigned)w < WEATHER_COUNT ? names[w] : "?";
+    static const char *names[WEATHER_COUNT] = { N_("despejado"), N_("nublado"), N_("lluvia"), N_("tormenta"), N_("nevada"), N_("ventisca") };
+    return (unsigned)w < WEATHER_COUNT ? T(names[w]) : "?";
 }
 
 typedef struct {

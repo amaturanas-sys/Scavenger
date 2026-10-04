@@ -1,4 +1,5 @@
 #include "sim/economy.h"
+#include "sim/lang.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -161,39 +162,39 @@ CampEffects camp_effects(const char *const *ids, int n) {
 #define STEEL "estructura.campamento.horno_acero"
 
 static const CraftDef CRAFTS[CRAFT_COUNT] = {
-    [CRAFT_SABLE_BRONZE] = { "Sable de bronce", "arma.corta.sable_bronce", BRONZE, ROLE_SMITH,
+    [CRAFT_SABLE_BRONZE] = { N_("Sable de bronce"), "arma.corta.sable_bronce", BRONZE, ROLE_SMITH,
                              { { "utileria.material.cobre", 2 }, { "utileria.material.estano", 1 },
                                { "utileria.material.carbon", 2 }, { NULL, 0 } }, 120.0f },
-    [CRAFT_SPEAR_BRONZE] = { "Lanza de punta de bronce", "arma.larga.lanza_bronce", BRONZE, ROLE_SMITH,
+    [CRAFT_SPEAR_BRONZE] = { N_("Lanza de punta de bronce"), "arma.larga.lanza_bronce", BRONZE, ROLE_SMITH,
                              { { "utileria.material.cobre", 1 }, { "utileria.material.estano", 1 },
                                { "utileria.material.troncos", 1 }, { NULL, 0 } }, 90.0f },
-    [CRAFT_HELMET_BRONZE] = { "Casco de bronce", "armadura.casco.bronce", BRONZE, ROLE_SMITH,
+    [CRAFT_HELMET_BRONZE] = { N_("Casco de bronce"), "armadura.casco.bronce", BRONZE, ROLE_SMITH,
                               { { "utileria.material.cobre", 3 }, { "utileria.material.estano", 1 },
                                 { "utileria.material.carbon", 2 }, { NULL, 0 } }, 150.0f },
-    [CRAFT_SABLE_STEEL] = { "Sable de acero", "arma.corta.sable_acero", STEEL, ROLE_SMITH,
+    [CRAFT_SABLE_STEEL] = { N_("Sable de acero"), "arma.corta.sable_acero", STEEL, ROLE_SMITH,
                             { { "utileria.material.hierro", 2 }, { "utileria.material.carbon", 3 }, { NULL, 0 } },
                             200.0f },
-    [CRAFT_SCALE_ARMOR_STEEL] = { "Coraza de escamas de acero", "armadura.torso.escamas_hierro", STEEL, ROLE_SMITH,
+    [CRAFT_SCALE_ARMOR_STEEL] = { N_("Coraza de escamas de acero"), "armadura.torso.escamas_hierro", STEEL, ROLE_SMITH,
                                   { { "utileria.material.hierro", 4 }, { "utileria.material.carbon", 4 },
                                     { "utileria.material.pieles", 1 }, { NULL, 0 } }, 300.0f },
-    [CRAFT_SHIELD_IRON] = { "Escudo de láminas de hierro", "escudo.mano.lamina", STEEL, ROLE_SMITH,
+    [CRAFT_SHIELD_IRON] = { N_("Escudo de láminas de hierro"), "escudo.mano.lamina", STEEL, ROLE_SMITH,
                             { { "utileria.material.hierro", 2 }, { "utileria.material.carbon", 2 },
                               { "utileria.material.troncos", 1 }, { NULL, 0 } }, 150.0f },
     // A mano: con lo que da la estepa (leña, pedernal, plumas y huesos de la caza, hierbas, miel).
-    [CRAFT_ARROWS] = { "Flechas (5)", "proyectil.flecha.comun", NULL, ROLE_NONE,
+    [CRAFT_ARROWS] = { N_("Flechas (5)"), "proyectil.flecha.comun", NULL, ROLE_NONE,
                        { { "utileria.objeto.lena", 1 }, { "utileria.material.plumas", 1 }, { "utileria.material.pedernal", 1 },
                          { NULL, 0 } }, 20.0f, 5 },
-    [CRAFT_BOLTS] = { "Virotes (4)", "proyectil.virote.comun", NULL, ROLE_NONE,
+    [CRAFT_BOLTS] = { N_("Virotes (4)"), "proyectil.virote.comun", NULL, ROLE_NONE,
                       { { "utileria.objeto.lena", 1 }, { "utileria.material.hueso", 1 }, { NULL, 0 } }, 20.0f, 4 },
-    [CRAFT_SLING_STONES] = { "Piedras de honda (8)", "proyectil.piedra.honda", NULL, ROLE_NONE,
+    [CRAFT_SLING_STONES] = { N_("Piedras de honda (8)"), "proyectil.piedra.honda", NULL, ROLE_NONE,
                              { { "utileria.material.piedra", 1 }, { NULL, 0 } }, 10.0f, 8 },
-    [CRAFT_ROPE] = { "Cuerda de tendones", "utileria.material.cuerda", NULL, ROLE_NONE,
+    [CRAFT_ROPE] = { N_("Cuerda de tendones"), "utileria.material.cuerda", NULL, ROLE_NONE,
                      { { "utileria.material.tendones", 2 }, { NULL, 0 } }, 25.0f, 1 },
-    [CRAFT_OINTMENT] = { "Ungüento de hierbas y miel", "utileria.consumible.unguento", NULL, ROLE_NONE,
+    [CRAFT_OINTMENT] = { N_("Ungüento de hierbas y miel"), "utileria.consumible.unguento", NULL, ROLE_NONE,
                          { { "utileria.consumible.hierbas", 2 }, { "utileria.consumible.miel", 1 }, { NULL, 0 } }, 15.0f, 1 },
-    [CRAFT_LEATHER_CUIRASS] = { "Coraza laminar de cuero", "armadura.torso.laminar_cuero", NULL, ROLE_NONE,
+    [CRAFT_LEATHER_CUIRASS] = { N_("Coraza laminar de cuero"), "armadura.torso.laminar_cuero", NULL, ROLE_NONE,
                                 { { "utileria.material.pieles", 3 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } }, 90.0f, 1 },
-    [CRAFT_FELT_BOOTS] = { "Botas de fieltro", "armadura.botas.fieltro", NULL, ROLE_NONE,
+    [CRAFT_FELT_BOOTS] = { N_("Botas de fieltro"), "armadura.botas.fieltro", NULL, ROLE_NONE,
                            { { "utileria.material.pieles", 2 }, { NULL, 0 } }, 45.0f, 1 },
 };
 

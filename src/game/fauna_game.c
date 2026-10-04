@@ -12,6 +12,7 @@
 #include "sim/clock.h"
 #include "sim/hazards.h"
 #include "ui/theme.h"
+#include "sim/lang.h"
 
 #define POP_TARGET 16        // animales salvajes vivos alrededor del jugador
 #define POP_RADIUS 150.0f
@@ -177,7 +178,7 @@ bool fg_spawn_named(GameActions *ga, const char *what, const Player *p, float di
     }
     float ang = p->yaw + (rng_float(&ga->rng) - 0.5f) * 0.6f;
     fg_spawn_group(ga, (Species)s, p->pos.x + sinf(ang) * dist, p->pos.z + cosf(ang) * dist);
-    snprintf(log, len, "Aparecen cerca: %s.", species_def((Species)s)->name);
+    snprintf(log, len, T("Aparecen cerca: %s."), T(species_def((Species)s)->name));
     return true;
 }
 
@@ -235,15 +236,15 @@ void fg_hurt(GameActions *ga, int idx, float dmg, WoundKind w, int part, int att
     int wi = animal_hurt(ga->animals, ga->animal_count, idx, &ga->rng, dmg, w, part, attacker >= 0, human_index_of(attacker));
     if (attacker != 0 || !log) return;
     char who[48], dsc[96];
-    lower(d->name, who, sizeof(who));
+    lower(T(d->name), who, sizeof(who));
     if (a->state == ANIMAL_DEAD) {
-        snprintf(log, len, "Abatiste: %s. K para despiezarlo.", who);
+        snprintf(log, len, T("Abatiste: %s. K para despiezarlo."), who);
     } else if (d->cls == CLASS_TAMEABLE && a->weakened && was_strong && a->state == ANIMAL_WILD) {
-        snprintf(log, len, "El %s está débil: ¡lánzale el lazo (menú) y dale carne!", who);
+        snprintf(log, len, T("El %s está débil: ¡lánzale el lazo (menú) y dale carne!"), who);
     } else if (wi >= 0) {
         wound_describe(&a->h.wounds[wi], true, dsc, sizeof(dsc));
         if (dsc[0] >= 'A' && dsc[0] <= 'Z') dsc[0] = (char)(dsc[0] - 'A' + 'a');
-        snprintf(log, len, "Hieres al %s: %s.", who, dsc);
+        snprintf(log, len, T("Hieres al %s: %s."), who, dsc);
     }
 }
 
@@ -369,9 +370,9 @@ static void update_swarms(GameActions *ga, Combat *cb, const Player *p, const Te
         health_poison(&cb->player, hit.venom);
         if (ga->sting_timer <= 0.0f) {
             char who[48];
-            const char *tip = s->kind == SWARM_MOSQUITOES ? " (el fuego los espanta)"
-                                                          : " ¡Corre, métete al agua o usa humo!";
-            snprintf(log, len, "Te pican: %s.%s", lower(swarm_def(s->kind)->name, who, sizeof(who)), tip);
+            const char *tip = s->kind == SWARM_MOSQUITOES ? T(" (el fuego los espanta)")
+                                                          : T(" ¡Corre, métete al agua o usa humo!");
+            snprintf(log, len, T("Te pican: %s.%s"), lower(T(swarm_def(s->kind)->name), who, sizeof(who)), tip);
             ga->sting_timer = 4.0f;
         }
     }
@@ -384,12 +385,12 @@ bool fg_fish(GameActions *ga, const Terrain *t, Vector3 pos, float yaw, float re
         Swarm *s = &ga->swarms[i];
         if (!s->used || s->kind != SWARM_FISH || dist_xz(s->cx, s->cz, at.x, at.z) > 4.0f) continue;
         if (rng_float(&ga->rng) > (spear ? 0.7f : 0.3f)) {
-            snprintf(log, len, "Los peces se escapan entre tus piernas.");
+            snprintf(log, len, "%s", T("Los peces se escapan entre tus piernas."));
             return true;
         }
         if (swarm_catch(s, at.x, at.y, at.z, spear ? 1.4f : 1.0f, 1)) {
             bool kept = ig_store(ga, NULL, &(Player){ .pos = pos }, FRESH_MEAT_ID, 1, 1.0f) == 1;
-            snprintf(log, len, kept ? "¡Pescaste un pez! (+1 carne fresca)" : "¡Pescaste un pez! Pero no te cabe: lo sueltas.");
+            snprintf(log, len, "%s", kept ? T("¡Pescaste un pez! (+1 carne fresca)") : T("¡Pescaste un pez! Pero no te cabe: lo sueltas."));
             return true;
         }
     }
@@ -402,7 +403,7 @@ bool fg_shot_water(GameActions *ga, const Terrain *t, Vector3 at, char *log, siz
         if (!s->used || s->kind != SWARM_FISH || dist_xz(s->cx, s->cz, at.x, at.z) > 4.0f) continue;
         if (swarm_catch(s, at.x, t->look.water_level - 0.3f, at.z, 1.2f, 1)) {
             ig_store(ga, NULL, &(Player){ .pos = at }, FRESH_MEAT_ID, 1, 1.0f);
-            snprintf(log, len, "¡La flecha atraviesa un pez! (+1 carne fresca)");
+            snprintf(log, len, "%s", T("¡La flecha atraviesa un pez! (+1 carne fresca)"));
             return true;
         }
     }
@@ -460,8 +461,8 @@ static void butcher(GameActions *ga, const Player *p, Animal *a, char *log, size
         ig_store(ga, NULL, p, "utileria.material.tendones", k, 1.0f);
     }
     char who[48];
-    snprintf(log, len, "%s %s: +%d carne fresca, +%d pieles%s", how, lower(species_def(a->species)->name, who, sizeof(who)),
-             meat, hide, kept < meat + hide ? TextFormat(" (no te cabe todo: %d se quedan)", meat + hide - kept) : ".");
+    snprintf(log, len, T("%s %s: +%d carne fresca, +%d pieles%s"), how, lower(T(species_def(a->species)->name), who, sizeof(who)),
+             meat, hide, kept < meat + hide ? TextFormat(T(" (no te cabe todo: %d se quedan)"), meat + hide - kept) : ".");
 }
 
 static void interact(GameActions *ga, const Player *p, bool shift, char *log, size_t len) {
@@ -470,49 +471,49 @@ static void interact(GameActions *ga, const Player *p, bool shift, char *log, si
         if (ga->torch_lit && !ga->hands.sheathed) {
             swarm_smoke(hive);
             if (hive->honey_taken) {
-                snprintf(log, len, "Esta colmena ya no tiene miel hoy.");
+                snprintf(log, len, "%s", T("Esta colmena ya no tiene miel hoy."));
             } else {
                 hive->honey_taken = true;
                 ig_store(ga, NULL, p, "utileria.consumible.miel", 2, 1.0f);
-                snprintf(log, len, "El humo calma a las abejas: tomas miel (+2).");
+                snprintf(log, len, "%s", T("El humo calma a las abejas: tomas miel (+2)."));
             }
         } else {
             swarm_provoke(hive);
-            snprintf(log, len, "¡Las abejas defienden la colmena! Hace falta humo (antorcha encendida).");
+            snprintf(log, len, "%s", T("¡Las abejas defienden la colmena! Hace falta humo (antorcha encendida)."));
         }
         return;
     }
     int what = 0, i = nearest_interactable(ga, p, &what);
     if (i < 0) {
-        snprintf(log, len, "No hay ningún animal con el que hacer algo aquí.");
+        snprintf(log, len, "%s", T("No hay ningún animal con el que hacer algo aquí."));
         return;
     }
     Animal *a = &ga->animals[i];
     char who[48];
-    lower(species_def(a->species)->name, who, sizeof(who));
+    lower(T(species_def(a->species)->name), who, sizeof(who));
     if (what == 1) {
         const char *food = ig_count(ga, NULL, p, FRESH_MEAT_ID) > 0 ? FRESH_MEAT_ID
                            : ig_count(ga, NULL, p, FOOD_ID) > 0    ? FOOD_ID
                                                                    : NULL;
         if (!food) {
-            snprintf(log, len, "Necesitas llevar carne para darle de comer al %s.", who);
+            snprintf(log, len, T("Necesitas llevar carne para darle de comer al %s."), who);
             return;
         }
         ig_use(ga, NULL, p, food, 1);
         animal_feed(a, 0.0f, 0.0f);
-        snprintf(log, len, "Le das carne al %s: ¡ahora es de la tribu y te defenderá!", who);
+        snprintf(log, len, T("Le das carne al %s: ¡ahora es de la tribu y te defenderá!"), who);
     } else if (what == 2) {
-        butcher(ga, p, a, log, len, "Despiezas");
+        butcher(ga, p, a, log, len, T("Despiezas"));
     } else if (shift) {
-        if (animal_slaughter(a)) butcher(ga, p, a, log, len, "Sacrificas");
+        if (animal_slaughter(a)) butcher(ga, p, a, log, len, T("Sacrificas"));
     } else {
         int milk = animal_milk(a);
         if (milk > 0) {
             ig_store(ga, NULL, p, MILK_ID, milk, 1.0f);
-            snprintf(log, len, "Ordeñas la %s: +%d leche.", who, milk);
+            snprintf(log, len, T("Ordeñas la %s: +%d leche."), who, milk);
         } else {
-            snprintf(log, len, species_def(a->species)->milk > 0 ? "Ya ordeñaste hoy a este animal."
-                                                                 : "Este animal no da leche (Mayús+K: sacrificar).");
+            snprintf(log, len, "%s", species_def(a->species)->milk > 0 ? T("Ya ordeñaste hoy a este animal.")
+                                                                 : T("Este animal no da leche (Mayús+K: sacrificar)."));
         }
     }
 }
@@ -521,18 +522,18 @@ static void update_hint(GameActions *ga, const Player *p) {
     int what = 0, i = nearest_interactable(ga, p, &what);
     g_hint[0] = '\0';
     if (hive_near(ga, p)) {
-        snprintf(g_hint, sizeof(g_hint), ga->torch_lit ? "K: tomar miel (el humo calma a las abejas)"
-                                                       : "Colmena: enciende la antorcha (humo) antes de tomar la miel");
+        snprintf(g_hint, sizeof(g_hint), "%s", ga->torch_lit ? T("K: tomar miel (el humo calma a las abejas)")
+                                                       : T("Colmena: enciende la antorcha (humo) antes de tomar la miel"));
         return;
     }
     if (i < 0) return;
     char who[48];
-    lower(species_def(ga->animals[i].species)->name, who, sizeof(who));
-    if (what == 1) snprintf(g_hint, sizeof(g_hint), "K: dar de comer al %s atado (%.0f s)", who, ga->animals[i].bound_timer);
-    else if (what == 2) snprintf(g_hint, sizeof(g_hint), "K: despiezar (%s)", who);
+    lower(T(species_def(ga->animals[i].species)->name), who, sizeof(who));
+    if (what == 1) snprintf(g_hint, sizeof(g_hint), T("K: dar de comer al %s atado (%.0f s)"), who, ga->animals[i].bound_timer);
+    else if (what == 2) snprintf(g_hint, sizeof(g_hint), T("K: despiezar (%s)"), who);
     else if (species_def(ga->animals[i].species)->milk > 0 && !ga->animals[i].milked)
-        snprintf(g_hint, sizeof(g_hint), "K: ordeñar · Mayús+K: sacrificar (%s)", who);
-    else snprintf(g_hint, sizeof(g_hint), "Mayús+K: sacrificar (%s)", who);
+        snprintf(g_hint, sizeof(g_hint), T("K: ordeñar · Mayús+K: sacrificar (%s)"), who);
+    else snprintf(g_hint, sizeof(g_hint), T("Mayús+K: sacrificar (%s)"), who);
 }
 
 // ------------------------------------------------------------------ actualizacion
@@ -578,33 +579,33 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
         const FaunaEvent *f = &ev.ev[e];
         Animal *a = &ga->animals[f->animal];
         char who[48], other[48];
-        lower(species_def(a->species)->name, who, sizeof(who));
+        lower(T(species_def(a->species)->name), who, sizeof(who));
         switch (f->kind) {
         case FEV_BITE_HUMAN: {
             if (f->other < 0 || f->other >= g_ref_count) break;
             const HumanRef *r = &g_refs[f->other];
             Vector3 from = { a->x, terrain_height(t, a->x, a->z), a->z };
             cb_beast_strike(cb, p, ga, troop, r->kind, r->id, from, f->damage, f->wound, f->venom,
-                            species_def(a->species)->name, log, len);
+                            T(species_def(a->species)->name), log, len);
             break;
         }
         case FEV_KILL: {
             Animal *v = &ga->animals[f->other];
-            lower(species_def(v->species)->name, other, sizeof(other));
+            lower(T(species_def(v->species)->name), other, sizeof(other));
             if (a->state == ANIMAL_TAMED || a->state == ANIMAL_SADDLED) {
                 char msg[96];
-                snprintf(msg, sizeof(msg), "Tu %s caza: %s.", who, other);
+                snprintf(msg, sizeof(msg), T("Tu %s caza: %s."), who, other);
                 butcher(ga, p, v, log, len, msg);
             } else if (adist(a, p->pos) < 45.0f) {
-                snprintf(log, len, "Cerca de ti, un cazador (%s) abate a su presa (%s).", who, other);
+                snprintf(log, len, T("Cerca de ti, un cazador (%s) abate a su presa (%s)."), who, other);
             }
             break;
         }
         case FEV_RIVAL_WON:
-            if (adist(a, p->pos) < 45.0f) snprintf(log, len, "Rivales (%s) pelean por el territorio: el perdedor se retira.", who);
+            if (adist(a, p->pos) < 45.0f) snprintf(log, len, T("Rivales (%s) pelean por el territorio: el perdedor se retira."), who);
             break;
         case FEV_BREAK_FREE:
-            if (adist(a, p->pos) < 60.0f) snprintf(log, len, "Se soltó del lazo sin comer: %s. ¡Cuidado!", who);
+            if (adist(a, p->pos) < 60.0f) snprintf(log, len, T("Se soltó del lazo sin comer: %s. ¡Cuidado!"), who);
             break;
         default: break;
         }
@@ -613,7 +614,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
     // La montura cayo.
     if (ga->mounted >= 0 && !alive(&ga->animals[ga->mounted])) {
         ga->mounted = -1;
-        snprintf(log, len, "¡Tu montura cayó! Sigues a pie.");
+        snprintf(log, len, "%s", T("¡Tu montura cayó! Sigues a pie."));
     }
     // El cuervo domado explora: revela el mapa por donde vuela.
     ga->reveal_timer += dt;

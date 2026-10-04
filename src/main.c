@@ -1,4 +1,4 @@
-// ESTEPA (titulo provisional) — Fase 0: prototipo jugable.
+// SCAVENGERS THRIVE - THEY COME FROM THE STEPPES (nombre interno: estepa).
 //
 // El mundo se dibuja en una textura de baja resolucion (640x360) que luego
 // se escala sin suavizado: es el look pixel/low-res y, a la vez, la mayor
@@ -24,6 +24,7 @@
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
 #include "game/save_game.h"
+#include "game/settings.h"
 #include "game/title_menu.h"
 #include "game/hazards_game.h"
 #include "game/player.h"
@@ -45,6 +46,7 @@
 #include "world/sky.h"
 #include "world/weather.h"
 #include "world/terrain.h"
+#include "sim/lang.h"
 
 #ifndef ESTEPA_VERSION
 #define ESTEPA_VERSION "dev"
@@ -96,7 +98,7 @@ static void seed_troop(Troop *t) {
     troop_assign_role(t, troop_recruit(t, "Jebe", TRAIT_BLOODTHIRSTY), ROLE_HUNTER);
     troop_assign_role(t, troop_recruit(t, "Khasar", TRAIT_AMBITIOUS), ROLE_SCOUT);
     troop_assign_role(t, troop_recruit(t, "Temulun", 0), ROLE_COOK);
-    troop_take_prisoner(t, "Explorador enemigo", 0);
+    troop_take_prisoner(t, T("Explorador enemigo"), 0);
 }
 
 static int first_with_status(const Troop *t, MemberStatus s, int skip_lieutenant) {
@@ -113,9 +115,9 @@ static int meet_champion(Troop *t, Rng *rng, MemberStatus status, char *log, siz
     champion_generate(&c, rng);
     int id = troop_add_champion(t, &c, status);
     if (id >= 0) {
-        snprintf(log, log_len, status == STATUS_ACTIVE ? "Un gran guerrero se une: %s, %s."
-                                                       : "Capturaste a un gran guerrero: %s, %s.",
-                 c.name, c.epithet);
+        snprintf(log, log_len, status == STATUS_ACTIVE ? T("Un gran guerrero se une: %s, %s.")
+                                                       : T("Capturaste a un gran guerrero: %s, %s."),
+                 c.name, T(c.epithet));
     }
     return id;
 }
@@ -132,32 +134,32 @@ static void debug_camp_actions(Troop *t, Rng *rng, float *world_time, int *last_
         } else {
             unsigned traits = 1u << rng_range(rng, 5);
             troop_recruit(t, names[rng_range(rng, 6)], traits);
-            snprintf(log, log_len, "Reclutaste un nuevo guerrero.");
+            snprintf(log, log_len, "%s", T("Reclutaste un nuevo guerrero."));
         }
     } else if (IsKeyPressed(KEY_TWO)) {
         if (champion_appears(rng, CHAMPION_DEFAULT_CHANCE)) {
             champ = meet_champion(t, rng, STATUS_PRISONER, log, log_len);
         } else {
-            troop_take_prisoner(t, "Cautivo", 0);
-            snprintf(log, log_len, "Tomaste un prisionero.");
+            troop_take_prisoner(t, T("Cautivo"), 0);
+            snprintf(log, log_len, "%s", T("Tomaste un prisionero."));
         }
     } else if (IsKeyPressed(KEY_EIGHT)) {
         champ = meet_champion(t, rng, STATUS_ACTIVE, log, log_len); // prueba: fuerza el encuentro
     } else if (IsKeyPressed(KEY_THREE)) {
         int id = first_with_status(t, STATUS_PRISONER, 0);
-        if (id >= 0 && troop_execute(t, id)) snprintf(log, log_len, "Ejecutaste a un prisionero.");
+        if (id >= 0 && troop_execute(t, id)) snprintf(log, log_len, "%s", T("Ejecutaste a un prisionero."));
     } else if (IsKeyPressed(KEY_FOUR)) {
         int id = first_with_status(t, STATUS_ACTIVE, 1);
-        if (id >= 0 && troop_execute(t, id)) snprintf(log, log_len, "Ejecutaste a uno de los tuyos.");
+        if (id >= 0 && troop_execute(t, id)) snprintf(log, log_len, "%s", T("Ejecutaste a uno de los tuyos."));
     } else if (IsKeyPressed(KEY_FIVE)) {
         int id = first_with_status(t, STATUS_ACTIVE, 1);
-        if (id >= 0 && troop_banish(t, id)) snprintf(log, log_len, "Desterraste a un integrante.");
+        if (id >= 0 && troop_banish(t, id)) snprintf(log, log_len, "%s", T("Desterraste a un integrante."));
     } else if (IsKeyPressed(KEY_SIX)) {
         troop_share_loot(t);
-        snprintf(log, log_len, "Repartiste el botin.");
+        snprintf(log, log_len, "%s", T("Repartiste el botin."));
     } else if (IsKeyPressed(KEY_SEVEN)) {
         int id = first_with_status(t, STATUS_PRISONER, 0);
-        if (id >= 0 && troop_release_prisoner(t, id)) snprintf(log, log_len, "Liberaste a un prisionero.");
+        if (id >= 0 && troop_release_prisoner(t, id)) snprintf(log, log_len, "%s", T("Liberaste a un prisionero."));
     } else if (IsKeyPressed(KEY_ENTER)) {
         *world_time = (float)clock_day(*world_time) * GAME_SECONDS_PER_DAY; // salta al amanecer siguiente
     } else if (IsKeyPressed(KEY_N)) {
@@ -180,12 +182,12 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
         dz_new_day(&g_dz, &g_props, &g_actions, t, g_climate.wetness > 0.4f, log, log_len); // desgaste y reparaciones
         if (r.rebellion) {
             const Member *m = troop_find(t, r.rebellion_leader);
-            snprintf(log, log_len, "Dia %d: REBELION encabezada por %s!", *day, m ? m->name : "?");
+            snprintf(log, log_len, T("Dia %d: REBELION encabezada por %s!"), *day, m ? m->name : "?");
         } else if (r.champions_deserted) {
-            snprintf(log, log_len, "Dia %d: %d desertores, %d grandes guerreros.", *day, r.deserted,
+            snprintf(log, log_len, T("Dia %d: %d desertores, %d grandes guerreros."), *day, r.deserted,
                      r.champions_deserted);
         } else if (r.deserted) {
-            snprintf(log, log_len, "Dia %d: %d desertores.", *day, r.deserted);
+            snprintf(log, log_len, T("Dia %d: %d desertores."), *day, r.deserted);
         }
     }
 }
@@ -211,8 +213,9 @@ static void draw_champion_card(const Troop *t, int id) {
     int h = 2 * pad + 30 + ui_text_wrapped_height(story, iw, 10) + 10 + 12 * (c->weapon >= 0 ? 4 : 3);
     ui_panel((Rectangle){ x0, y0, w, h }, UI_METAL_GOLD);
     int y = y0 + pad;
-    ui_text(TextFormat("%s, %s", c->name, c->epithet), x, y, 20, UI_GOLD_LIGHT);
-    ui_text(status_name(m->status), x + iw - MeasureText(status_name(m->status), 10), y + 6, 10, UI_BONE_DIM);
+    ui_text(TextFormat("%s, %s", c->name, T(c->epithet)), x, y, 20, UI_GOLD_LIGHT);
+    const char *st = T(status_name(m->status));
+    ui_text(st, x + iw - MeasureText(st, 10), y + 6, 10, UI_BONE_DIM);
     y += 24;
     ui_divider(x, y, iw, UI_METAL_GOLD);
     y += 6;
@@ -223,21 +226,21 @@ static void draw_champion_card(const Troop *t, int id) {
     for (int g = 0; g < GIFT_COUNT; g++) {
         if (!(c->gifts & (1u << g))) continue;
         size_t n = strlen(gifts);
-        snprintf(gifts + n, sizeof(gifts) - n, "%s%s", n ? ", " : "Dones: ", gift_name((ChampionGift)(1u << g)));
+        snprintf(gifts + n, sizeof(gifts) - n, "%s%s", n ? ", " : T("Dones: "), gift_name((ChampionGift)(1u << g)));
     }
     ui_text(gifts, x, y, 10, UI_TURQUOISE);
     y += 12;
     if (c->weapon >= 0) {
-        ui_text(TextFormat("Arma: %s", champion_weapon_name(c->weapon)), x, y, 10, UI_GOLD);
+        ui_text(TextFormat(T("Arma: %s"), champion_weapon_name(c->weapon)), x, y, 10, UI_GOLD);
         y += 12;
     }
     const CombatStats *s = &c->stats;
-    ui_text(TextFormat("Talla x%.2f  Rapidez x%.2f  Fuerza x%.2f  Aguante x%.2f", s->size, s->speed, s->strength,
+    ui_text(TextFormat(T("Talla x%.2f  Rapidez x%.2f  Fuerza x%.2f  Aguante x%.2f"), s->size, s->speed, s->strength,
                        s->endurance), x, y, 10, UI_BONE_DIM);
     y += 12;
-    ui_text(s->healing > 0.0f ? TextFormat("Puntería x%.2f  Monta x%.2f  Sanación %.0f%%", s->aim, s->riding,
+    ui_text(s->healing > 0.0f ? TextFormat(T("Puntería x%.2f  Monta x%.2f  Sanación %.0f%%"), s->aim, s->riding,
                                            s->healing * 100.0f)
-                              : TextFormat("Puntería x%.2f  Monta x%.2f", s->aim, s->riding),
+                              : TextFormat(T("Puntería x%.2f  Monta x%.2f"), s->aim, s->riding),
             x, y, 10, UI_BONE_DIM);
 }
 
@@ -246,7 +249,7 @@ static const char *clock_text(float world_time) {
     int day = clock_day(world_time);
     float x = clock_seconds_into_day(world_time), light = clock_daylight_seconds(day);
     float left = x < light ? light - x : GAME_SECONDS_PER_DAY - x;
-    return TextFormat("Día %d · %s · %s (%d min)", day, season_name(clock_season(day)),
+    return TextFormat(T("Día %d · %s · %s (%d min)"), day, season_name(clock_season(day)),
                       phase_name(clock_phase(world_time)), (int)ceilf(left / 60.0f));
 }
 
@@ -275,15 +278,15 @@ static void draw_hud(const Troop *t, float world_time, const char *hands, const 
     DrawRectangle(4, 4, w, 46, (Color){ 20, 14, 10, 170 });
     DrawRectangleLines(4, 4, w, 46, Fade(UI_GOLD_DARK, 0.9f));
     ui_text(clock_text(world_time), x, 8, 10, clock_is_night(world_time) ? UI_BONE_DIM : UI_GOLD_LIGHT);
-    ui_text(TextFormat("Tropa %d", troop_count_with_status(t, STATUS_ACTIVE)), x, 22, 10, UI_BONE);
+    ui_text(TextFormat(T("Tropa %d"), troop_count_with_status(t, STATUS_ACTIVE)), x, 22, 10, UI_BONE);
     int prisoners = troop_count_with_status(t, STATUS_PRISONER);
-    if (prisoners) ui_text(TextFormat("· %d cautivo%s", prisoners, prisoners == 1 ? "" : "s"), x + 46, 22, 10, UI_BONE_DIM);
+    if (prisoners) ui_text(TextFormat(T("· %d cautivo%s"), prisoners, prisoners == 1 ? "" : "s"), x + 46, 22, 10, UI_BONE_DIM);
     // Animo (turquesa) y lealtad (lapislazuli), dos barras cortas.
     ui_bar(x + 128, 23, 46, troop_avg_morale(t) / 100.0f, UI_TURQUOISE, UI_METAL_GOLD);
     ui_bar(x + 178, 23, 46, troop_avg_loyalty(t) / 100.0f, UI_LAPIS, UI_METAL_GOLD);
     ui_text(hands, x, 36, 10, UI_TURQUOISE);
     float rebellion = troop_rebellion_chance(t);
-    if (rebellion > 0.0f) ui_text(TextFormat("Riesgo de rebelión %d%%", (int)(rebellion * 100)), x, 54, 10, UI_CARNELIAN);
+    if (rebellion > 0.0f) ui_text(TextFormat(T("Riesgo de rebelión %d%%"), (int)(rebellion * 100)), x, 54, 10, UI_CARNELIAN);
     // Registro: abajo a la izquierda, se desvanece a los 8 s.
     if (log[0] && log_age < 8.0f) {
         float a = log_age < 6.0f ? 1.0f : (8.0f - log_age) / 2.0f;
@@ -298,7 +301,7 @@ static void draw_hud(const Troop *t, float world_time, const char *hands, const 
         EndScissorMode();
     }
     if (menu) return;
-    const char *hint = "F1 controles · Esc menú";
+    const char *hint = T("F1 controles · Esc menú");
     ui_text(hint, VIRTUAL_W - 8 - MeasureText(hint, 10), VIRTUAL_H - 16, 10, Fade(UI_BONE_DIM, 0.8f));
 }
 
@@ -325,15 +328,15 @@ static void game_new(GameState *g, Terrain *terrain, int start_day, float start_
     cb_init(g->cb, WORLD_SEED);
     dz_init(g->dz, WORLD_SEED);
     g->hz->body = &g->cb->player; // caidas y congelacion hieren
-    snprintf(log, len, "Tu tropa acampa en la estepa.");
+    snprintf(log, len, "%s", T("Tu tropa acampa en la estepa."));
 }
 
 static void draw_keyboard_notice(void) {
     DrawRectangle(0, 0, VIRTUAL_W, VIRTUAL_H, (Color){ 8, 6, 5, 200 });
     const int w = 400, h = 76;
     ui_panel((Rectangle){ (VIRTUAL_W - w) / 2, (VIRTUAL_H - h) / 2, w, h }, UI_METAL_GOLD);
-    ui_text_centered("Conecta un teclado para jugar", VIRTUAL_W / 2, VIRTUAL_H / 2 - 18, 20, UI_GOLD_LIGHT);
-    ui_text_centered("Estepa se juega con teclado fisico (raton o mando opcionales).", VIRTUAL_W / 2,
+    ui_text_centered(T("Conecta un teclado para jugar"), VIRTUAL_W / 2, VIRTUAL_H / 2 - 18, 20, UI_GOLD_LIGHT);
+    ui_text_centered(T("Scavengers Thrive se juega con teclado físico (ratón o mando opcionales)."), VIRTUAL_W / 2,
                      VIRTUAL_H / 2 + 8, 10, UI_BONE);
 }
 
@@ -388,9 +391,9 @@ int main(int argc, char **argv) {
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
 #if defined(__ANDROID__)
-    InitWindow(0, 0, "Estepa"); // pantalla completa del dispositivo
+    InitWindow(0, 0, GAME_TITLE " - " GAME_SUBTITLE); // pantalla completa del dispositivo
 #else
-    InitWindow(VIRTUAL_W * 2, VIRTUAL_H * 2, "Estepa");
+    InitWindow(VIRTUAL_W * 2, VIRTUAL_H * 2, GAME_TITLE " - " GAME_SUBTITLE);
 #endif
     SetTargetFPS(60);
 
@@ -426,6 +429,7 @@ int main(int argc, char **argv) {
     }
     props_init(&g_props, &g_inventory);
     CameraRig rig = { .yaw = PI, .pitch = 0.38f, .dist = 11.0f };
+    settings_init(); // idioma (y sus traducciones), antes del primer texto de la partida
     GameState gs = { &world_time, &day, &last_champion, &rig.yaw, &rng, &player, &overlord, &troop, &g_actions,
                      &g_props, &g_combat, &g_hazards, &g_dz, &g_memory, &g_inventory };
     game_new(&gs, &terrain, start_day, start_minute, log, sizeof(log));
@@ -458,7 +462,7 @@ int main(int argc, char **argv) {
         player.pos = gallery.start;
         player.pos.y = terrain_height(&terrain, player.pos.x, player.pos.z);
         player.yaw = PI; // mirando a -Z, hacia las filas
-        snprintf(log, sizeof(log), "Galeria: %d objetos (%d con modelo).", gallery.count, gallery.loaded);
+        snprintf(log, sizeof(log), T("Galeria: %d objetos (%d con modelo)."), gallery.count, gallery.loaded);
     } else {
         gallery_mode = false;
     }
@@ -527,7 +531,7 @@ int main(int argc, char **argv) {
                 if (save_read(menu.slot, &gs, err, sizeof(err))) {
                     in_game = true;
                     menu.screen = MENU_HIDDEN;
-                    snprintf(log, sizeof(log), "Partida cargada (hueco %d).", menu.slot + 1);
+                    snprintf(log, sizeof(log), T("Partida cargada (hueco %d)."), menu.slot + 1);
                 } else {
                     menu_message(&menu, err);
                 }
@@ -535,7 +539,7 @@ int main(int argc, char **argv) {
             case MENU_SAVE_SLOT:
                 if (save_write(menu.slot, &gs, pause_shot, err, sizeof(err))) {
                     menu_open(&menu, MENU_SAVE);
-                    menu_message(&menu, TextFormat("Partida guardada en el hueco %d.", menu.cursor + 1));
+                    menu_message(&menu, TextFormat(T("Partida guardada en el hueco %d."), menu.cursor + 1));
                 } else {
                     menu_message(&menu, err);
                 }
@@ -545,6 +549,7 @@ int main(int argc, char **argv) {
                 menu_open(&menu, MENU_TITLE);
                 break;
             case MENU_QUIT: quit = true; break;
+            case MENU_LANG: settings_next_lang(); break;
             default: break;
             }
         }
@@ -569,7 +574,7 @@ int main(int argc, char **argv) {
             start_loot = false;
         }
         if (start_load >= 0 && frame == 2) { // prueba: cargar un hueco al empezar
-            if (save_read(start_load, &gs, err, sizeof(err))) snprintf(log, sizeof(log), "Partida cargada (hueco %d).", start_load + 1);
+            if (save_read(start_load, &gs, err, sizeof(err))) snprintf(log, sizeof(log), T("Partida cargada (hueco %d)."), start_load + 1);
             else snprintf(log, sizeof(log), "%s", err);
             start_load = -1;
         }
@@ -644,7 +649,7 @@ int main(int argc, char **argv) {
             if (IsKeyPressed(KEY_M)) {
                 MarkerKind kind = IsKeyDown(KEY_LEFT_SHIFT) ? MARKER_DANGER : MARKER_INTEREST;
                 bool placed = memmap_toggle_marker(&g_memory, player.pos.x, player.pos.z, kind, 6.0f);
-                snprintf(log, sizeof(log), placed ? "Marcaste este lugar en el mapa." : "Quitaste la marca.");
+                snprintf(log, sizeof(log), "%s", placed ? T("Marcaste este lugar en el mapa.") : T("Quitaste la marca."));
             }
         }
         camera_update(&rig, &cam, &player, dt);
@@ -714,7 +719,7 @@ int main(int argc, char **argv) {
         }
         menu_draw(&menu, in_game,
                   TextFormat("v%s (build %d) · %d fps%s", ESTEPA_VERSION, ESTEPA_BUILD_CODE, GetFPS(),
-                             in_game ? TextFormat(" · %s: %+d", overlord.name, (int)overlord.relation) : ""),
+                             in_game ? TextFormat(" · %s: %+d", T(overlord.name), (int)overlord.relation) : ""),
                   VIRTUAL_W, VIRTUAL_H);
         ui_legend_draw(VIRTUAL_W, VIRTUAL_H); // la leyenda de lo que esta bajo el puntero
         if (!has_keyboard) draw_keyboard_notice();
@@ -748,6 +753,7 @@ int main(int argc, char **argv) {
 
     if (pause_shot.data) UnloadImage(pause_shot);
     icons_unload();
+    settings_free();
     menu_unload(&menu);
     if (gallery_mode) gallery_unload(&gallery);
     props_unload(&g_props);

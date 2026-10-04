@@ -1,4 +1,5 @@
 #include "hazards.h"
+#include "sim/lang.h"
 
 #include <math.h>
 
@@ -42,8 +43,8 @@ ColdLevel warmth_level(const Warmth *w) {
 }
 
 const char *cold_name(ColdLevel c) {
-    static const char *names[] = { "abrigado", "fresco", "frío", "helado", "hipotermia" };
-    return (unsigned)c <= COLD_HYPOTHERMIA ? names[c] : "?";
+    static const char *names[] = { N_("abrigado"), N_("fresco"), N_("frío"), N_("helado"), N_("hipotermia") };
+    return (unsigned)c <= COLD_HYPOTHERMIA ? T(names[c]) : "?";
 }
 
 float warmth_speed_scale(const Warmth *w) { return w->heat >= 35.0f ? 1.0f : 0.6f + 0.4f * w->heat / 35.0f; }
@@ -83,8 +84,8 @@ bool hazard_sinkhole_cell(uint32_t seed, int day, int cx, int cz, Sinkhole *out)
 
 const char *sink_name(SinkKind k) {
     switch (k) {
-    case SINK_SNOW: return "socavón de nieve";
-    case SINK_QUICKSAND: return "arena movediza";
+    case SINK_SNOW: return T("socavón de nieve");
+    case SINK_QUICKSAND: return T("arena movediza");
     default: return "";
     }
 }

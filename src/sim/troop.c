@@ -1,5 +1,7 @@
 #include "troop.h"
 
+#include "lang.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -271,7 +273,7 @@ DayReport troop_process_day(Troop *t, Rng *rng) {
 
 void kingdom_init_iron_khanate(Kingdom *k) {
     memset(k, 0, sizeof(*k));
-    snprintf(k->name, NAME_LEN, "Kanato de Hierro");
+    snprintf(k->name, NAME_LEN, "%s", N_("Kanato de Hierro")); // se muestra con T(k->name)
     k->relation = 10.0f;
     k->stance[ACT_EXECUTE_PRISONER] = +3.0f;
     k->stance[ACT_EXECUTE_MEMBER] = +1.0f;  // disciplina
@@ -282,7 +284,7 @@ void kingdom_init_iron_khanate(Kingdom *k) {
 
 void kingdom_init_jade_dynasty(Kingdom *k) {
     memset(k, 0, sizeof(*k));
-    snprintf(k->name, NAME_LEN, "Dinastia de Jade");
+    snprintf(k->name, NAME_LEN, "%s", N_("Dinastía de Jade"));
     k->relation = 10.0f;
     k->stance[ACT_EXECUTE_PRISONER] = -6.0f;
     k->stance[ACT_EXECUTE_MEMBER] = -3.0f;
@@ -292,8 +294,11 @@ void kingdom_init_jade_dynasty(Kingdom *k) {
 }
 
 const char *role_name(Role r) {
-    static const char *N[ROLE_COUNT] = { "sin funcion", "explorador", "cazador", "cocinero",
-                                         "herrero", "guardia", "curandero", "lugarteniente", "constructor" };
+    // Se muestran con T(role_name(r)).
+    static const char *N[ROLE_COUNT] = { N_("sin función"), N_("explorador"), N_("cazador"),       N_("cocinero"),
+                                         N_("herrero"),     N_("guardia"),    N_("curandero"),     N_("lugarteniente"),
+                                         N_("constructor"), N_("soldado"),    N_("druida"),        N_("orfebre"),
+                                         N_("pastor") };
     return (r >= 0 && r < ROLE_COUNT) ? N[r] : "?";
 }
 

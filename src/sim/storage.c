@@ -1,4 +1,5 @@
 #include "sim/storage.h"
+#include "sim/lang.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -46,8 +47,8 @@ float item_kg(const InvItem *it) {
 }
 
 const char *bag_kind_name(BagKind k) {
-    static const char *names[BAG_KIND_COUNT] = { "Bolsillos", "Mochila", "Alforjas", "Carreta", "Acopio del campamento" };
-    return (unsigned)k < BAG_KIND_COUNT ? names[k] : "?";
+    static const char *names[BAG_KIND_COUNT] = { N_("Bolsillos"), N_("Mochila"), N_("Alforjas"), N_("Carreta"), N_("Acopio del campamento") };
+    return (unsigned)k < BAG_KIND_COUNT ? T(names[k]) : "?";
 }
 
 void bag_init(Bag *b, BagKind kind, float cap_kg) {
@@ -77,6 +78,10 @@ int bag_count(const Bag *b, const char *id) {
 }
 
 int bag_add(Bag *b, const Inventory *inv, const char *id, int n, float condition) {
+    return bag_add_var(b, inv, id, n, condition, 0);
+}
+
+int bag_add_var(Bag *b, const Inventory *inv, const char *id, int n, float condition, unsigned short var) {
     const InvItem *it = inventory_find(inv, id);
     if (!it || n <= 0 || !item_storable(it)) return 0;
     if (fmaxf(it->w, fmaxf(it->h, it->l)) > b->max_size) return 0; // no cabe
@@ -89,7 +94,7 @@ int bag_add(Bag *b, const Inventory *inv, const char *id, int n, float condition
     // Lo apilable (o el equipo en perfecto estado) va con los suyos.
     for (int i = 0; i < b->n && added < n; i++) {
         BagSlot *s = &b->s[i];
-        if (strcmp(s->id, id) != 0) continue;
+        if (strcmp(s->id, id) != 0 || s->var != var) continue; // otra variante (una joya con otra piedra)
         if (gear && (condition < 0.999f || s->condition < 0.999f)) continue;
         s->count += n - added;
         added = n;
@@ -98,6 +103,7 @@ int bag_add(Bag *b, const Inventory *inv, const char *id, int n, float condition
     while (added < n && b->n < b->slots) {
         BagSlot *s = &b->s[b->n++];
         snprintf(s->id, sizeof(s->id), "%s", id);
+        s->var = var;
         s->condition = gear ? fminf(1.0f, fmaxf(0.0f, condition)) : 1.0f;
         int put = gear && condition < 0.999f ? 1 : n - added;
         s->count = put;
@@ -137,7 +143,7 @@ int bag_move_slot(Bag *from, int slot, Bag *to, const Inventory *inv, int n) {
     if (slot < 0 || slot >= from->n || n <= 0) return 0;
     BagSlot s = from->s[slot];
     if (n > s.count) n = s.count;
-    int moved = bag_add(to, inv, s.id, n, s.condition);
+    int moved = bag_add_var(to, inv, s.id, n, s.condition, s.var);
     if (moved <= 0) return 0;
     from->s[slot].count -= moved;
     if (from->s[slot].count <= 0) remove_slot(from, slot);

@@ -341,3 +341,30 @@ personaje.npc.bandido	Bandido	rig:humanoide,faccion:salvaje,motivo:combate	0.5x1
 personaje.npc.mercenario	Mercenario	rig:humanoide,faccion:neutral,motivo:combate	0.5x1.7x0.3	1500	pendiente	
 personaje.npc.nino	Niño	rig:humanoide,faccion:cualquiera,talla:pequena,motivo:civil	0.5x1.7x0.3	1500	pendiente	
 personaje.npc.anciano	Anciano	rig:humanoide,faccion:cualquiera,motivo:civil	0.5x1.7x0.3	1500	pendiente	
+accesorio.anillo.bronce	Anillo de bronce	uso:equipable,material:bronce,estilo:animal	0.025x0.025x0.008	40	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.anillo.plata	Anillo de plata	uso:equipable,material:plata,estilo:animal	0.025x0.025x0.008	40	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.anillo.oro	Anillo de oro	uso:equipable,material:oro,estilo:animal	0.025x0.025x0.008	40	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.brazalete.bronce	Brazalete de bronce	uso:equipable,material:bronce,estilo:animal	0.08x0.03x0.08	60	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.brazalete.plata	Brazalete de plata	uso:equipable,material:plata,estilo:animal	0.08x0.03x0.08	60	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.brazalete.oro	Brazalete de oro	uso:equipable,material:oro,estilo:animal	0.08x0.03x0.08	60	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.collar.bronce	Collar de bronce	uso:equipable,material:bronce,estilo:animal	0.2x0.25x0.02	80	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.collar.plata	Collar de plata	uso:equipable,material:plata,estilo:animal	0.2x0.25x0.02	80	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.collar.oro	Collar de oro	uso:equipable,material:oro,estilo:animal	0.2x0.25x0.02	80	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.aretes.bronce	Aretes de bronce	uso:equipable,material:bronce,estilo:animal	0.03x0.05x0.01	40	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.aretes.plata	Aretes de plata	uso:equipable,material:plata,estilo:animal	0.03x0.05x0.01	40	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.aretes.oro	Aretes de oro	uso:equipable,material:oro,estilo:animal	0.03x0.05x0.01	40	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.hebilla.bronce	Hebilla de cinturón de bronce	uso:equipable,material:bronce,estilo:animal	0.08x0.06x0.015	60	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.hebilla.plata	Hebilla de cinturón de plata	uso:equipable,material:plata,estilo:animal	0.08x0.06x0.015	60	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+accesorio.hebilla.oro	Hebilla de cinturón de oro	uso:equipable,material:oro,estilo:animal	0.08x0.06x0.015	60	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
+utileria.gema.turquesa	Turquesa	uso:recolectable,uso:material,material:piedra	0.03x0.02x0.03	20	pendiente	Piedra preciosa: rocas, corales, excavaciones y ríos.
+utileria.gema.cornalina	Cornalina	uso:recolectable,uso:material,material:piedra	0.03x0.02x0.03	20	pendiente	Piedra preciosa: rocas, corales, excavaciones y ríos.
+utileria.gema.lapislazuli	Lapislázuli	uso:recolectable,uso:material,material:piedra	0.03x0.02x0.03	20	pendiente	Piedra preciosa: rocas, corales, excavaciones y ríos.
+utileria.gema.ambar	Ámbar	uso:recolectable,uso:material,material:piedra	0.03x0.02x0.03	20	pendiente	Piedra preciosa: rocas, corales, excavaciones y ríos.
+utileria.gema.jade	Jade	uso:recolectable,uso:material,material:piedra	0.03x0.02x0.03	20	pendiente	Piedra preciosa: rocas, corales, excavaciones y ríos.
+utileria.gema.granate	Granate	uso:recolectable,uso:material,material:piedra	0.03x0.02x0.03	20	pendiente	Piedra preciosa: rocas, corales, excavaciones y ríos.
+utileria.gema.perla	Perla	uso:recolectable,uso:material,material:piedra	0.03x0.02x0.03	20	pendiente	Piedra preciosa: rocas, corales, excavaciones y ríos.
+utileria.gema.coral	Coral rojo	uso:recolectable,uso:material,material:piedra	0.03x0.02x0.03	20	pendiente	Piedra preciosa: rocas, corales, excavaciones y ríos.
+utileria.material.bronce	Lingote de bronce	uso:material,material:bronce	0.2x0.05x0.08	20	pendiente	Metal de joyas y forja.
+utileria.material.plata	Plata	uso:recolectable,uso:material,material:plata	0.15x0.05x0.08	20	pendiente	Metal de joyas.
+utileria.material.oro	Oro	uso:recolectable,uso:material,material:oro	0.12x0.04x0.07	20	pendiente	Metal de joyas.
+mapa.agua.coral	Arrecife de coral	bioma:cualquiera,uso:decorado,uso:recolectable	1.5x0.8x1.5	120	pendiente	Bajo el agua de los lagos: coral rojo y perlas.

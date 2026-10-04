@@ -20,6 +20,12 @@ typedef enum {
     STAT_ARCHERY,       // precision a distancia
     STAT_CHARISMA,      // reclutar y sostener la moral
     STAT_RIDING,        // control de monturas
+    STAT_MELEE,         // daño cuerpo a cuerpo
+    STAT_SPEED,         // velocidad a pie
+    STAT_HEALTH,        // vida maxima
+    STAT_PERCEPTION,    // ver de lejos (y ver venir al enemigo)
+    STAT_CARRY,         // carga sin frenarse
+    STAT_CRAFT,         // fabricar y reparar mas rapido
     STAT_COUNT
 } Stat;
 

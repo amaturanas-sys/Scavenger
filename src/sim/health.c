@@ -1,4 +1,5 @@
 #include "health.h"
+#include "sim/lang.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -229,39 +230,39 @@ int health_worst(const Health *h) {
 }
 
 const char *wound_name(WoundKind k) {
-    static const char *names[WOUND_COUNT] = { "Corte", "Golpe", "Fractura", "Mordida", "Congelación", "Quemadura" };
-    return (unsigned)k < WOUND_COUNT ? names[k] : "?";
+    static const char *names[WOUND_COUNT] = { N_("Corte"), N_("Golpe"), N_("Fractura"), N_("Mordida"), N_("Congelación"), N_("Quemadura") };
+    return (unsigned)k < WOUND_COUNT ? T(names[k]) : "?";
 }
 
 const char *part_name(BodyPart p, bool beast) {
     static const char *human[PART_COUNT] = {
-        "la cabeza",         "el cuello",           "el tórax",          "el abdomen",           "la pelvis",
-        "el brazo izquierdo", "el antebrazo izquierdo", "el brazo derecho", "el antebrazo derecho",
-        "el muslo izquierdo", "la pierna izquierda",  "el muslo derecho",  "la pierna derecha",
+        N_("la cabeza"),         N_("el cuello"),           N_("el tórax"),          N_("el abdomen"),           N_("la pelvis"),
+        N_("el brazo izquierdo"), N_("el antebrazo izquierdo"), N_("el brazo derecho"), N_("el antebrazo derecho"),
+        N_("el muslo izquierdo"), N_("la pierna izquierda"),  N_("el muslo derecho"),  N_("la pierna derecha"),
     };
     static const char *animal[PART_COUNT] = {
-        "la cabeza",       "el cuello",          "el pecho",         "el vientre",          "la grupa",
-        "la paleta izquierda", "la pata delantera izquierda", "la paleta derecha", "la pata delantera derecha",
-        "el anca izquierda", "la pata trasera izquierda", "el anca derecha", "la pata trasera derecha",
+        N_("la cabeza"),       N_("el cuello"),          N_("el pecho"),         N_("el vientre"),          N_("la grupa"),
+        N_("la paleta izquierda"), N_("la pata delantera izquierda"), N_("la paleta derecha"), N_("la pata delantera derecha"),
+        N_("el anca izquierda"), N_("la pata trasera izquierda"), N_("el anca derecha"), N_("la pata trasera derecha"),
     };
     if ((unsigned)p >= PART_COUNT) return "?";
-    return beast ? animal[p] : human[p];
+    return T(beast ? animal[p] : human[p]);
 }
 
-const char *severity_name(float s) { return s < 0.3f ? "leve" : s < 0.6f ? "moderada" : "grave"; }
+const char *severity_name(float s) { return s < 0.3f ? T("leve") : s < 0.6f ? T("moderada") : T("grave"); }
 
 int wound_describe(const Wound *w, bool beast, char *out, int len) {
-    return snprintf(out, (size_t)len, "%s en %s (%s%s%s)", wound_name(w->kind), part_name(w->part, beast),
-                    severity_name(w->severity), w->bleeding ? ", sangra" : "",
-                    w->treated ? (w->kind == WOUND_FRACTURE ? ", entablillada" : ", vendada") : "");
+    return snprintf(out, (size_t)len, T("%s en %s (%s%s%s)"), wound_name(w->kind), part_name(w->part, beast),
+                    severity_name(w->severity), w->bleeding ? T(", sangra") : "",
+                    w->treated ? (w->kind == WOUND_FRACTURE ? T(", entablillada") : T(", vendada")) : "");
 }
 
 const char *health_state_name(const Health *h) {
-    if (h->dead) return "muerto";
-    if (h->down) return "abatido";
-    if (h->venom >= 1.0f) return "envenenado";
+    if (h->dead) return T("muerto");
+    if (h->down) return T("abatido");
+    if (h->venom >= 1.0f) return T("envenenado");
     int worst = health_worst(h);
-    if (h->hp < 0.35f * h->hp_max || (worst >= 0 && h->wounds[worst].severity >= 0.6f)) return "malherido";
-    if (h->wound_count > 0 || h->hp < 0.9f * h->hp_max) return "herido";
-    return "sano";
+    if (h->hp < 0.35f * h->hp_max || (worst >= 0 && h->wounds[worst].severity >= 0.6f)) return T("malherido");
+    if (h->wound_count > 0 || h->hp < 0.9f * h->hp_max) return T("herido");
+    return T("sano");
 }
