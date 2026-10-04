@@ -174,6 +174,7 @@ typedef struct {
     // Profundidad del agua en (x, z) (<= 0 en seco); NULL: no hay agua.
     float (*water_depth)(void *ud, float x, float z);
     void *water_ud;
+    bool grass;         // hay pasto (sin nieve): los herbivoros domados pastan solos
 } FaunaCtx;
 
 typedef enum {
@@ -182,6 +183,8 @@ typedef enum {
     FEV_RIVAL_WON,   // un rival echa a otro de su territorio
     FEV_BREAK_FREE,  // un animal atado se solto del lazo
     FEV_PREY_ALARM,  // una presa noto a un cazador y su grupo huye
+    FEV_HUNGRY,      // un animal de la tribu tiene hambre (pasto, forraje o carne)
+    FEV_STARVED,     // un animal de la tribu se fue por hambre (vuelve a ser salvaje)
 } FaunaEventKind;
 
 typedef struct {
@@ -233,6 +236,11 @@ TameResult animal_lasso(Animal *a, Rng *rng, float bonus, float camp_x, float ca
 bool animal_try_tame(Animal *a, Rng *rng, float bonus, float camp_x, float camp_z);
 // Dar de comer a un animal atado: queda domado y sigue a la tribu.
 bool animal_feed(Animal *a, float camp_x, float camp_z);
+// Come el que tenga la tribu: carne (cazadores) o forraje (los demas). false si no le toca o no tiene hambre.
+bool animal_feed_tamed(Animal *a, bool meat);
+// ¿Come carne? (los cazadores); los demas pastan o comen forraje.
+bool species_eats_meat(Species s);
+bool animal_domestic(const Animal *a); // domado o ensillado
 // Ensillar: solo animales domados y montables.
 bool animal_saddle(Animal *a);
 bool animal_can_ride(const Animal *a);

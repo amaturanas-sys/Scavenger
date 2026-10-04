@@ -241,6 +241,7 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
     case ACTION_TAKE: {
         if (ig_take_loot(ga, props, p, log, len)) return; // una bolsa de botin cerca: al momento
         if (gems_coral(ga, (Props *)props, p, log, len)) return; // un arrecife de coral: al momento
+        if (props_nearest(props, p->pos, REACH, true) < 0 && fg_cut_grass(ga, (Props *)props, p, log, len)) return; // forraje
         int near = props_nearest(props, p->pos, REACH, true);
         ga->take_all = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
         if (near >= 0 && goes_to_bags(props->items[near].item)) break; // a la mochila: no hace falta mano libre
@@ -648,6 +649,7 @@ static Rectangle grid_rect(int i, int first_row) {
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
                size_t log_len) {
     ga->terrain = t;
+    ga->troop_ref = troop;
     ga->here = camp_at(ga->camps, CAMPS_MAX, p->pos.x, p->pos.z);
     ga->player_pos = p->pos; // fuera de todo campamento: el acopio del mas cercano
     sync_npcs(ga, troop, t);

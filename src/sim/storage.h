@@ -30,6 +30,14 @@ typedef struct {
     int n;
 } Bag;
 
+// Mochilas de tres tamaños: mas grandes, mas caben, pero frenan (aun vacias).
+typedef enum { PACK_NONE, PACK_SMALL, PACK_MEDIUM, PACK_LARGE, PACK_COUNT } PackSize;
+void bag_init_pack(Bag *b, PackSize s);      // conserva lo que habia si cabe (no: hay que vaciarla antes)
+float pack_speed(PackSize s);                // 1, 0.97, 0.9
+PackSize pack_size_of(const char *inv_id);   // "utileria.mochila.grande" -> PACK_LARGE (o PACK_NONE)
+const char *pack_id(PackSize s);
+const char *pack_name(PackSize s);           // T()
+
 // Peso aproximado de un objeto (kg), por su tipo, sus medidas y su material.
 float item_kg(const InvItem *it);
 // ¿Se puede llevar en un contenedor? (no las construcciones ni los vehiculos)

@@ -368,3 +368,7 @@ utileria.material.bronce	Lingote de bronce	uso:material,material:bronce	0.2x0.05
 utileria.material.plata	Plata	uso:recolectable,uso:material,material:plata	0.15x0.05x0.08	20	pendiente	Metal de joyas.
 utileria.material.oro	Oro	uso:recolectable,uso:material,material:oro	0.12x0.04x0.07	20	pendiente	Metal de joyas.
 mapa.agua.coral	Arrecife de coral	bioma:cualquiera,uso:decorado,uso:recolectable	1.5x0.8x1.5	120	pendiente	Bajo el agua de los lagos: coral rojo y perlas.
+utileria.consumible.forraje	Forraje	uso:recolectable,uso:consumible,material:fibra	0.4x0.3x0.4	30	pendiente	Hierba seca para los herbívoros de la tribu cuando no hay pasto (se corta de la hierba alta; los pastores lo juntan).
+utileria.mochila.pequena	Mochila pequeña	uso:equipable,material:cuero	0.35x0.4x0.2	80	pendiente	15 kg, 12 huecos; no frena.
+utileria.mochila.mediana	Mochila mediana	uso:equipable,material:cuero	0.4x0.55x0.25	100	pendiente	25 kg, 18 huecos; frena un poco.
+utileria.mochila.grande	Mochila grande	uso:equipable,material:cuero	0.5x0.75x0.3	120	pendiente	40 kg, 28 huecos; frena (se puede dejar en el suelo para pelear).

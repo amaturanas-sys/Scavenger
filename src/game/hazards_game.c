@@ -287,7 +287,7 @@ static void update_escort(Hazards *hz, GameActions *ga, Troop *troop, const Terr
         n->moving = d > 0.6f;
         float speed = 0.0f;
         if (n->moving) {
-            speed = fminf(ESCORT_SPEED, d * 2.0f);
+            speed = fminf(ESCORT_SPEED * pack_speed((PackSize)troop->members[i].pack), d * 2.0f); // la mochila grande frena
             float step = fminf(speed * dt, d);
             n->pos.x += (to.x - n->pos.x) / d * step;
             n->pos.z += (to.z - n->pos.z) / d * step;

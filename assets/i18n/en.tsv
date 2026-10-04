@@ -146,6 +146,7 @@ Faldar ritual del culto	Cult ritual tassets
 Flecha silbadora (señales)	Whistling arrow (signals)
 Fogata	Campfire
 Forja portátil	Portable forge
+Forraje	Fodder
 Fundición / taller industrial	Foundry / workshop
 Gorjal / cofia de escamas de hierro	Iron scale gorget
 Gorjal / cofia de fieltro acolchado	Padded felt gorget
@@ -214,6 +215,9 @@ Miel silvestre	Wild honey
 Mineral de cobre	Copper ore
 Mineral de estaño	Tin ore
 Mineral de hierro	Iron ore
+Mochila grande	Large backpack
+Mochila mediana	Medium backpack
+Mochila pequeña	Small backpack
 Molino	Mill
 Mosca (nube)	Fly (cloud)
 Mosquete de mecha	Matchlock musket
@@ -461,8 +465,8 @@ nada	nothing
 ocupado en una tarea	busy with a task
 te sigue · clic: que se quede	follows you · click: stay
 ¿A quién capacitamos? Mientras aprende no hace otra cosa.	Whom shall we train? While learning they do nothing else.
-¿Disolvemos el campamento? No hay carreta cerca: solo se llevará lo que quepa en las alforjas. El resto arderá.	Dissolve the camp? There's no cart nearby: only what fits in the saddlebags goes. The rest will burn.
-¿Disolvemos el campamento? Quemaremos las estructuras, cargaremos en la carreta lo que quepa y te seguiremos.	Dissolve the camp? We'll burn the structures, load what fits in the cart and follow you.
+¿Disolvemos el campamento? No hay carreta cerca: solo se llevará lo que quepa en las alforjas y en nuestras mochilas. El resto arderá.	Dissolve the camp? There's no cart nearby: only what fits in the saddlebags and our backpacks goes. The rest will burn.
+¿Disolvemos el campamento? Quemaremos las estructuras, cargaremos en la carreta y en nuestras mochilas lo que quepa y te seguiremos.	Dissolve the camp? We'll burn the structures, load what fits in the cart and our backpacks, and follow you.
 ¿Quién sale contigo? Los marcados ya te siguen. La escolta no trabaja en las obras.	Who comes with you? The marked ones already follow you. The escort doesn't work on builds.
 ¿Qué levantamos? La cuadrilla sale de la gente sin tarea de este campamento.	What shall we raise? The crew comes from this camp's idle people.
 ¿Qué oficio aprende %s? Un maestro del oficio en el campamento lo acelera mucho.	Which trade does %s learn? A master of the trade in camp speeds it up a lot.
@@ -579,13 +583,22 @@ Abatiste: %s. K para despiezarlo.	You killed: %s. K to butcher it.
 Aparecen cerca: %s.	Nearby: %s.
 Cerca de ti, un cazador (%s) abate a su presa (%s).	Near you, a hunter (%s) takes its prey (%s).
 Colmena: enciende la antorcha (humo) antes de tomar la miel	Beehive: light your torch (smoke) before taking honey
+Cortas hierba alta: +%d forraje para los animales.	You cut tall grass: +%d fodder for the animals.
+Das de comer al %s.	You feed the %s.
 Despiezas	You butcher
+El %s de la tribu tiene hambre: dale carne (K) o déjalo cazar.	The tribe's %s is hungry: give it meat (K) or let it hunt.
+El %s de la tribu tiene hambre: llévalo a pastar o dale forraje (K).	The tribe's %s is hungry: take it to graze or give it fodder (K).
 El %s está débil: ¡lánzale el lazo (menú) y dale carne!	The %s is weak: lasso it (menu) and feed it meat!
+El %s se fue: pasó demasiada hambre y vuelve a ser salvaje.	The %s left: it went hungry too long and turned wild again.
+El %s tiene hambre: necesitas carne, o déjalo cazar.	The %s is hungry: you need meat, or let it hunt.
+El %s tiene hambre: necesitas forraje (corta hierba alta con F), o llévalo a pastar.	The %s is hungry: you need fodder (cut tall grass with F), or take it to graze.
 El humo calma a las abejas: tomas miel (+2).	Smoke calms the bees: you take honey (+2).
 Esta colmena ya no tiene miel hoy.	This hive has no more honey today.
 Este animal no da leche (Mayús+K: sacrificar).	This animal gives no milk (Shift+K: slaughter).
 Hieres al %s: %s.	You wound the %s: %s.
+K: dar carne al %s (tiene hambre)	K: give meat to the %s (hungry)
 K: dar de comer al %s atado (%.0f s)	K: feed the bound %s (%.0f s)
+K: dar forraje al %s (tiene hambre)	K: give fodder to the %s (hungry)
 K: despiezar (%s)	K: butcher (%s)
 K: ordeñar · Mayús+K: sacrificar (%s)	K: milk · Shift+K: slaughter (%s)
 K: tomar miel (el humo calma a las abejas)	K: take honey (smoke calms the bees)
@@ -594,6 +607,7 @@ Los peces se escapan entre tus piernas.	The fish slip between your legs.
 Mayús+K: sacrificar (%s)	Shift+K: slaughter (%s)
 Necesitas llevar carne para darle de comer al %s.	You need meat to feed the %s.
 No hay ningún animal con el que hacer algo aquí.	No animal to deal with here.
+No te cabe más forraje.	No room for more fodder.
 Ordeñas la %s: +%d leche.	You milk the %s: +%d milk.
 Rivales (%s) pelean por el territorio: el perdedor se retira.	Rivals (%s) fight for territory: the loser retreats.
 Sacrificas	You slaughter
@@ -681,26 +695,32 @@ Acopio y armería del campamento	Camp store and armory
 Alforjas (%s)	Saddlebags (%s)
 Armadura	Armour
 Bolsillos	Pockets
+Cambias de mochila: ahora llevas la %s.	You switch backpacks: now carrying the %s.
+Cargas tu mochila en el lomo del %s.	You load your backpack on the %s's back.
+Cargas tu mochila en la carreta (G junto a ella para recogerla).	You load your backpack on the cart (G next to it to take it back).
 Carreta de la tribu	Tribe wagon
 Contra el corte	Against cuts
 Contra el golpe	Against blows
 Contra flechas y puntas	Against arrows and points
 Cubre su zona	Covers its zone
+Dejas la mochila en el suelo: vas más ligero (G para recogerla).	You drop the backpack: you move lighter (G to pick it up).
 Envenenado	Poisoned
-Flechas: elegir · Q/E: contenedor · Enter: pasar · I: cerrar	Arrows: choose · Q/E: container · Enter: move · I: close
+Flechas: elegir · Q/E: contenedor · Enter: pasar · U: cambiar de mochila · G: dejarla o recogerla	Arrows: pick · Q/E: container · Enter: move · U: switch backpack · G: drop or pick it up
 Hace falta: %s (cerca).	Needs: %s (nearby).
 Herida	Wound
 Inventario	Inventory
 Joyas	Jewels
 La armadura frena	Armor slows you
 Llevas encima	Carrying
+Lo que llevas no cabe en la %s: vacíala antes.	What you carry doesn't fit in the %s: empty it first.
 Los tatuajes los hace un druida: háblale (F).	Tattoos are made by a druid: talk to them (F).
-Mochila	Backpack
+Mochila de %s	%s's backpack
 Nivel %d	Level %d
 No cabe en %s (peso, talla o huecos).	Won't fit in %s (weight, size or slots).
 No hay sitio donde dejar la pieza que llevas.	No room to put the piece you wear.
 No hay sitio donde guardar la joya.	There's no room to store the jewel.
 No hay sitio donde guardar la pieza.	No room to store the piece.
+No llevas mochila.	You have no backpack.
 No se puede reparar: %s	Can't repair: %s
 No te cabe nada del botín (I: inventario).	None of the loot fits (I: inventory).
 No tienes a mano otra pieza para %s.	No other piece at hand for %s.
@@ -711,10 +731,16 @@ Reparas: %s (%d %% -> %d %%).	Repaired: %s (%d %% -> %d %%).
 Sangre	Blood
 Se perdieron las alforjas de una montura.	A mount's saddlebags were lost.
 Sin encantar no hace nada: llévasela a un druida.	Unenchanted it does nothing: take it to a druid.
+Sin mochila a mano (G para recogerla)	No backpack at hand (G to pick it up)
 Tatuajes	Tattoos
+Te cuelgas la %s.	You shoulder the %s.
 Te pones: %s (%d %%).	You put on: %s (%d %%).
 Te pones: %s (%s).	You put on: %s (%s).
 Te quitas: %s.	You take off: %s.
+Tu mochila (dejada aquí)	Your backpack (left here)
+Tu mochila quedó en el suelo, lejos de aquí.	Your backpack was left on the ground, far from here.
+Tu mochila va en la carreta: acércate a ella.	Your backpack is on the cart: go to it.
+Tu mochila va en un animal de carga: acércate a él.	Your backpack is on a pack animal: go to it.
 Un tatuaje es para siempre: la zona del cuerpo cambia a qué va el bonus. El tercer grado se bifurca: elegir una rama cierra la otra.	A tattoo is forever: the body zone changes what the bonus goes to. The third tier branches: choosing one branch closes the other.
 Un tatuaje no se puede quitar.	A tattoo can't be removed.
 Vida	Health
@@ -828,6 +854,7 @@ F1 cerrar esta ayuda	F1 close this help
 F2, F3, F4: habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)	F2, F3, F4: active abilities · P gear: armour, jewels and tattoos (Q/E)
 Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.	Craft by hand: arrows (wood, feathers, flint), rope (sinew), ointment (herbs and honey), cuirass and boots (hides). Forged goods need a smith and a furnace.
 Fauna y caza	Wildlife and hunting
+G deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	G drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
 G ficha · M mapa	G sheet · M map
 Golpea hacia el agua o tira una flecha para pescar.	Strike at the water or shoot an arrow to fish.
 Guardar en	Save to
@@ -851,6 +878,7 @@ La tribu y el campamento	The tribe and the camp
 Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.	Structures wear out: the tribe repairs them with logs every day. Without upkeep, torrential rain brings them down.
 Las partidas guardadas, con su foto y su fecha	Saved games, with their picture and date
 Lobos, perros, tigres, pumas, halcones y cuervos: debilítalos peleando, échales el lazo y dales carne (K) para domarlos.	Wolves, dogs, tigers, pumas, falcons and crows: weaken them in a fight, lasso them and feed them meat (K) to tame them.
+Los animales de la tribu comen: los herbívoros pastan solos si hay pasto; con nieve, forraje (F corta hierba alta). Los carnívoros, carne o cazan. K les da de comer; los pastores lo hacen en el campamento.	The tribe's animals eat: herbivores graze on their own if there's grass; in snow, fodder (F cuts tall grass). Carnivores eat meat or hunt. K feeds them; herders do it in camp.
 Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se queda).	Fallen enemies drop a loot bag: F picks it up (what doesn't fit stays).
 Los lagos helados se cruzan, pero el hielo puede romperse.	Frozen lakes can be crossed, but the ice may break.
 Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.	Menus are icons: hover with the mouse (or pick with the arrows) and the name shows below; click or Enter to use them.
@@ -1219,6 +1247,11 @@ Gancho al escudo	Shield hook
 Acopio del campamento	Camp store
 Alforjas	Saddlebags
 Carreta	Cart
+Mochila	Backpack
+mochila grande	large backpack
+mochila mediana	medium backpack
+mochila pequeña	small backpack
+sin mochila	no backpack
 # --- src/sim/swarms.c
 Avispas	Wasps
 Banco de peces	School of fish

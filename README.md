@@ -80,6 +80,18 @@ Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.
 
+Mochilas:
+- **Tamaños:** pequeña (15 kg, 12 huecos), mediana (25 kg, 18) o grande (40 kg, 28). La grande frena aun vacía.
+- **`G`:** deja la mochila (en la carreta o en el lomo de una mula, burro, camello, caballo o buey ensillado si están al lado; si no, en el suelo) y la recoge. Sin ella vas más ligero para pelear.
+- **`U` sobre una mochila en el inventario:** cambias de mochila (lo que llevas tiene que caber).
+- **La escolta lleva mochila:** las de quien esté a tu lado aparecen como contenedores en el inventario. Al disolver un campamento, la gente carga lo que quepa.
+
+Animales de la tribu:
+- **Comen.** Los herbívoros pastan solos si hay pasto. Con nieve hay que darles forraje: `F` corta hierba alta y los pastores lo juntan cada día.
+- **Los carnívoros** comen carne o cazan presas cercanas cuando tienen hambre.
+- **`K`** da de comer al animal hambriento que tengas al lado. Los pastores alimentan, con el acopio, a los que están en su campamento.
+- **El hambre:** sobre la cabeza aparece un cuenco. Con mucha hambre adelgazan y al final se van y vuelven a ser salvajes.
+
 Campamentos:
 - **Fundar:** al levantar una tienda (`Tab`, «Instalar tienda») o un refugio lejos (más de 70 m) de los demás campamentos, nace uno nuevo. Hay que nombrar guardián a alguien de la escolta, que se queda a administrarlo.
 - **Lo propio de cada campamento:** su acopio y su gente. Las obras las levantan los del lugar; fuera de todo campamento, la escolta.

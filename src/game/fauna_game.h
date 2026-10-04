@@ -51,5 +51,7 @@ int fg_threat_near(const GameActions *ga, Vector3 pos, float range, float *dist)
 void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float time);
 void fg_draw_overlay(const GameActions *ga, const Terrain *t, Camera3D cam, int w, int h);
 void fg_draw_hud(const GameActions *ga, int w, int h);
+// F junto a la hierba alta: cortar forraje. true si habia hierba que cortar.
+bool fg_cut_grass(GameActions *ga, Props *props, const Player *p, char *log, size_t len);
 
 #endif

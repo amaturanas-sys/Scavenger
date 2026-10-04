@@ -316,6 +316,31 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - El bronce, el hierro y el acero piden herrero, su horno en el campamento y metal con carbón.
   - Cada reparación devuelve parte del estado (60 % el cuero, 80 % el metal).
 
+### Mochilas y alimentación de los animales (implementado — `src/sim/storage.*`, `src/sim/animals.*`)
+- **Mochilas, tres tamaños:**
+
+  | Tamaño | Carga | Huecos | Paso |
+  |---|---|---|---|
+  | Pequeña | 15 kg | 12 | ×1 |
+  | Mediana | 25 kg | 18 | ×0,97 |
+  | Grande | 40 kg | 28 | ×0,9, aun vacía |
+
+  - Se cambia de mochila con `U` sobre otra en el inventario; lo que llevas tiene que caber.
+  - `G` la deja en el suelo y la recoge al momento: útil para pelear más ligero.
+  - Junto a la carreta, o a una mula, burro, camello, caballo o buey ensillado, `G` la carga en ellos; la mochila sigue al animal o al carro.
+- **La gente también lleva mochila** (`Member.pack`, `Member.bag`):
+  - las de la escolta que está al lado son contenedores en el inventario;
+  - una mochila grande frena a la escolta;
+  - al disolver un campamento, la gente carga lo que quepa.
+- **Animales de la tribu (domados y ensillados):**
+  - el hambre sube con el tiempo;
+  - los herbívoros pastan solos si hay pasto (sin nieve);
+  - los carnívoros con hambre cazan presas de su talla cerca;
+  - si no, hay que alimentarlos con `K`: forraje para los herbívoros, carne para los carnívoros;
+  - los pastores alimentan con el acopio a los que están en su campamento y juntan forraje cada día;
+  - con mucha hambre adelgazan, y al final abandonan a la tribu y vuelven a ser salvajes;
+  - aviso en el registro y un cuenco sobre la cabeza del animal.
+
 ### Campamentos y guardián (implementado — `src/sim/camps.*`, en juego `src/game/camp_game.*`)
 - **Fundar:** un campamento nace al levantar una estructura básica (tienda o refugio) a más de 70 m de los demás. La escolta nombra a un guardián, que se queda.
 - **Cada campamento tiene:**
