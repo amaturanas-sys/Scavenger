@@ -88,6 +88,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Nivel y experiencia; árbol de tatuajes permanentes (5 motivos × 3 grados con ramas excluyentes, 8 zonas del cuerpo) hechos por el druida; joyas (anillos, brazaletes, collar, aretes, hebilla) del orfebre con metal y piedra, encantadas por el druida (pasivo o activo); piedras de rocas, corales, excavaciones y ríos.
 - [x] Campamentos: fundar con una estructura básica y un guardián; acopio y gente por campamento; diálogo del guardián (obras, escolta, reclutar, capacitar en 7 oficios, estado, disolver con fuego y carga en carretas).
 - [x] Mochilas de tres tamaños (frenan las grandes), dejarlas y recogerlas (G), cargarlas en carretas y animales; mochilas de la escolta. Los animales de la tribu comen: pastan, cazan o se les da forraje o carne; los pastores los alimentan; con hambre se van.
+- [x] Órdenes a la escolta (Mayús+Y): despachar seguidores a campamentos o sitios marcados que alguno conozca, con riesgo según conocimiento, distancia, grupo y noche; mensajeros que vuelven con refuerzos.
 - [x] Combate montado (golpe con inercia, lanza que derriba, arrollar, la montura recibe golpes, derribo que desmonta), jinetes bandidos y botín de los enemigos.
 - [ ] Trepar árboles y rocas sin trepa (Fase 2).
 

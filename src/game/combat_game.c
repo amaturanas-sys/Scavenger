@@ -1339,7 +1339,7 @@ static BodyColors enemy_colors(EnemyKind k, bool hit) {
 }
 
 // El caballo del jinete enemigo: cuerpo, cuello, cabeza y patas que trotan.
-static void draw_enemy_horse(Vector3 pos, float yaw, float speed, float time, bool hit) {
+void cb_draw_horse(Vector3 pos, float yaw, float speed, float time, bool hit) {
     Color hide = hit ? (Color){ 220, 200, 180, 255 } : (Color){ 96, 64, 40, 255 };
     Color dark = { 48, 32, 22, 255 };
     Vector3 f = { sinf(yaw), 0, cosf(yaw) }, r = { cosf(yaw), 0, -sinf(yaw) };
@@ -1395,7 +1395,7 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         bool dead = e->state == EN_DEAD;
         Vector3 at = e->pos;
         if (e->mounted && !dead) { // a caballo: el jinete va encima
-            draw_enemy_horse(e->pos, e->yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
+            cb_draw_horse(e->pos, e->yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
             at.y += RIDER_LIFT;
         }
         if (props_has_model(props, it)) {

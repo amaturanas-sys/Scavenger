@@ -30,6 +30,7 @@
 #include "../src/sim/fire.h"
 #include "../src/sim/melee.h"
 #include "../src/sim/storage.h"
+#include "../src/sim/travel.h"
 #include "../src/sim/troop.h"
 
 static int g_failed = 0, g_checks = 0;
@@ -2283,6 +2284,47 @@ static void test_backpacks_and_feeding(void) {
     CHECK(starved);
 }
 
+static void test_travel_dispatch_and_messengers(void) {
+    // Riesgo: sin nadie que conozca el destino, casi seguro se pierden.
+    CHECK(journey_risk(300.0f, 0.0f, 3, false) >= 0.89f);
+    float some = journey_risk(300.0f, 0.34f, 3, false), all = journey_risk(300.0f, 1.0f, 3, false);
+    CHECK(all < some && some < 0.9f);
+    CHECK(journey_risk(300.0f, 1.0f, 6, false) < all);  // en grupo se cuidan
+    CHECK(journey_risk(300.0f, 1.0f, 3, true) > all);   // de noche, peor
+    CHECK(journey_risk(900.0f, 1.0f, 3, false) > all);  // mas lejos, peor
+    CHECK(travel_speed(TRAVEL_MOUNTED) > travel_speed(TRAVEL_FOOT));
+    CHECK(journey_eta(400.0f, TRAVEL_MOUNTED) < journey_eta(400.0f, TRAVEL_FOOT));
+    // Viajes: hay lugar para JOURNEYS_MAX a la vez.
+    Journey list[JOURNEYS_MAX];
+    memset(list, 0, sizeof(list));
+    int ppl[3] = { 4, 7, 9 };
+    int k = journey_start(list, JOURNEYS_MAX, JOURNEY_DISPATCH, ppl, 3, SITE_CAMP(1), 0, 0, 300, 0, TRAVEL_FOOT, 1.0f);
+    CHECK(k == 0 && list[0].used && list[0].n == 3 && list[0].people[2] == 9 && list[0].eta > 80.0f);
+    CHECK(journey_start(list, JOURNEYS_MAX, JOURNEY_MESSENGER, ppl, 0, 0, 0, 0, 1, 1, TRAVEL_FOOT, 1.0f) == -1);
+    for (int i = 1; i < JOURNEYS_MAX; i++) journey_start(list, JOURNEYS_MAX, JOURNEY_MESSENGER, ppl, 1, 0, 0, 0, 10, 0, TRAVEL_FOOT, 1.0f);
+    CHECK(journey_start(list, JOURNEYS_MAX, JOURNEY_MESSENGER, ppl, 1, 0, 0, 0, 10, 0, TRAVEL_FOOT, 1.0f) == -1);
+    // Suerte: con quien conozca el camino la mayoria llega; sin nadie, muchos no llegan.
+    Rng rng;
+    rng_seed(&rng, 99u);
+    int safe = 0, lost = 0;
+    for (int t = 0; t < 400; t++) {
+        Journey j = list[0];
+        j.knowledge = 1.0f;
+        safe += journey_resolve(&j, &rng, false);
+        j.knowledge = 0.0f;
+        lost += journey_resolve(&j, &rng, false);
+        for (int i = 0; i < j.n; i++) CHECK(j.fate[i] >= FATE_OK && j.fate[i] <= FATE_DEAD);
+    }
+    CHECK(safe > lost && safe > 400 * 3 * 9 / 10);
+    // Sitios conocidos.
+    uint64_t known = 0;
+    CHECK(!site_known(known, SITE_MARK(3)));
+    known = site_learn(known, SITE_MARK(3));
+    known = site_learn(known, SITE_CAMP(0));
+    CHECK(site_known(known, SITE_MARK(3)) && site_known(known, 0) && !site_known(known, 1));
+    CHECK(site_learn(known, SITES_MAX) == known && !site_known(known, -1));
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -2291,6 +2333,7 @@ int main(void) {
     RUN(test_lang_table);
     RUN(test_camps_found_tasks_and_rates);
     RUN(test_backpacks_and_feeding);
+    RUN(test_travel_dispatch_and_messengers);
     RUN(test_hand_crafting_and_repairs);
     RUN(test_enemy_loot_and_mounted_momentum);
     RUN(test_banish_removes_from_active);

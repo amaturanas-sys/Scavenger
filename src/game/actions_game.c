@@ -590,7 +590,7 @@ static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const T
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
         Npc *n = &ga->npcs[i];
         const Member *m = &troop->members[i];
-        if (m->status != STATUS_ACTIVE || n->escort) continue;
+        if (m->status != STATUS_ACTIVE || n->escort || m->journey > 0) continue; // de viaje: lo mueve src/game/travel_game.c
         if (n->project >= 0 && n->project < ga->project_count) {
             const BuildProject *bp = &ga->projects[n->project];
             float ang = (float)i * 1.3f; // cada uno en su lado de la obra
@@ -944,6 +944,7 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         const Member *m = &troop->members[i];
         const Npc *n = &ga->npcs[i];
         if (m->status != STATUS_ACTIVE || n->member_id != m->id) continue;
+        if (m->journey > 0 && n->leave_t >= 14.0f) continue; // ya se perdio en el horizonte
         float s = m->champion >= 0 ? troop->champions[m->champion].stats.size : 1.0f;
         bool working = n->project >= 0 && n->project < ga->project_count &&
                        dist2d(n->pos, (Vector3){ ga->projects[n->project].x, 0, ga->projects[n->project].z }) < AT_SITE;

@@ -27,6 +27,7 @@
 #include "game/settings.h"
 #include "game/camp_game.h"
 #include "game/talents_game.h"
+#include "game/travel_game.h"
 #include "game/title_menu.h"
 #include "game/hazards_game.h"
 #include "game/player.h"
@@ -390,6 +391,8 @@ int main(int argc, char **argv) {
             i++;
             start_talk = !strcmp(argv[i], "orfebre") ? 2 : !strcmp(argv[i], "guardian") ? 3 : 1;
         } else if (!strcmp(argv[i], "--fundar")) start_talk = 4;
+        else if (!strcmp(argv[i], "--ordenes")) start_talk = 5;
+        else if (!strcmp(argv[i], "--despachar")) start_talk = 6;
         else if (!strcmp(argv[i], "--joyas")) start_equip = true, start_equip_tab = 1;
         else if (!strcmp(argv[i], "--tatuajes")) start_equip = true, start_equip_tab = 2;
         else if (!strcmp(argv[i], "--pausa")) start_pause = 1;
@@ -588,6 +591,17 @@ int main(int argc, char **argv) {
             cg_basic_structure(&g_actions, 122.0f, 40.0f);
             start_talk = 0;
         }
+        if ((start_talk == 5 || start_talk == 6) && frame == 6) { // prueba: ordenes a la escolta (o elegir destino)
+            for (int k = 1; k <= 3 && k < troop.count; k++) g_actions.npcs[k].escort = true;
+            g_actions.travel_npick = 0;
+            for (int k = 1; k <= 2 && k < troop.count; k++) g_actions.travel_pick[g_actions.travel_npick++] = troop.members[k].id;
+            memmap_toggle_marker(&g_memory, 140.0f, -60.0f, MARKER_INTEREST, 5.0f); // un sitio marcado que nadie conoce
+            g_actions.talk_mode = start_talk == 5 ? 200 : 202;
+            g_actions.talk_member = -1;
+            g_actions.dlg.cursor = 0;
+            g_actions.dlg.open = true;
+            start_talk = 0;
+        }
         if (start_talk == 3 && frame == 6) { // prueba: hablando con el guardian del campamento inicial
             for (int k = 0; k < troop.count && k < TROOP_MAX; k++)
                 if (troop.members[k].id == g_actions.camps[0].guardian) {
@@ -670,6 +684,9 @@ int main(int argc, char **argv) {
                 ig_update(&g_actions, &g_combat, &g_props, &player, !menu && !hz_blocks_input(&g_hazards) && !g_actions.dlg.open, log,
                           sizeof(log));
             if (!gallery_mode) cg_update(&g_actions, &troop, &g_props, &player, day, dt, log, sizeof(log));
+            if (!gallery_mode)
+                trv_update(&g_actions, &troop, &g_memory, &player, &terrain, clock_is_night(world_time),
+                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             if (!g_actions.camps[0].used && camp.yurt_count) { // el campamento inicial se disolvio: sus yurtas arden
                 for (int i = 0; i < camp.yurt_count; i++) {
                     bool ruin = false;
@@ -750,6 +767,7 @@ int main(int argc, char **argv) {
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
         if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());
         if (!gallery_mode) ig_draw_world(&g_actions, &terrain, (float)GetTime());
+        if (!gallery_mode) trv_draw_world(&g_actions, &troop, (float)GetTime());
         if (!gallery_mode) dz_draw_world(&g_dz, &terrain, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
         if (!gallery_mode) hz_draw_world(&g_hazards, &terrain, &g_actions, &troop, (float)GetTime());

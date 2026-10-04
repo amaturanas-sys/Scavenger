@@ -366,6 +366,17 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - la escolta sin casa se queda en el próximo campamento que se funde (o en el campamento del guardián al dejar de escoltar).
 - **Comida:** cada campamento alimenta a su gente con su acopio. La escolta come del campamento más cercano al jugador.
 
+### Órdenes a la escolta: despachar y mensajeros (implementado — `src/sim/travel.*`, en juego `src/game/travel_game.*`)
+- **Despachar (`Mayús+Y`):** a un campamento o a un sitio marcado en el mapa. Al menos uno de los despachados tiene que conocer el destino (`Member.known`: un bit por sitio; se aprende al pasar a menos de 35 m).
+- **Riesgo de un percance** (`journey_risk`):
+  - sin nadie que conozca el camino, 90 %;
+  - crece con la distancia y de noche (×1.4);
+  - baja con la fracción del grupo que conoce el destino (hasta la mitad) y con el tamaño del grupo;
+  - si hay percance, cada uno tira su suerte: llega bien, herido o no llega.
+- **Sin simular el camino:** los despachados caminan (o cabalgan) hacia el destino unos segundos y desaparecen en el horizonte; el viaje es un temporizador (distancia / velocidad, a pie 3.5 m/s, a caballo 8 m/s). Al llegar aparecen en el destino, pero el jugador solo se entera del resultado al ir allí.
+- **Mensajero:** va a un campamento; los que llegan vuelven con refuerzos (gente sin tarea del campamento, no el guardián) hasta la posición del jugador. Tarda la ida y la vuelta. Si el mensajero no llega, el jugador se entera porque no vuelve.
+- **Hasta 8 partidas de camino a la vez**, de hasta 8 personas cada una.
+
 ### Nivel, tatuajes y joyas (implementado — `src/sim/talents.*`, `src/sim/jewelry.*`, en juego `src/game/talents_game.*`, `src/game/gems_game.*`)
 - **Nivel (1 a 20):** la experiencia sale de pelear, cazar, fabricar, construir y domar. Cada nivel pide más que el anterior.
 - **Tatuajes, permanentes:** los hace un druida de la tribu (`F` junto a él).

@@ -50,6 +50,7 @@ add_library(estepa_sim STATIC
   src/sim/talents.c
   src/sim/jewelry.c
   src/sim/camps.c
+  src/sim/travel.c
   src/sim/anim_index.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
@@ -95,6 +96,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/talents_game.c
     src/game/gems_game.c
     src/game/camp_game.c
+    src/game/travel_game.c
     src/game/title_menu.c
     src/game/inventory_game.c
     src/world/props.c

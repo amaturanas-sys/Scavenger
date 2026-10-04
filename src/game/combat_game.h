@@ -132,6 +132,8 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
 void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
                     size_t len);
 // Un animal ataca a una persona: kind 0 el jugador, 1 el integrante id, 2 el enemigo id (indice).
+// Un caballo bajo un jinete (enemigos a caballo, la escolta que parte montada).
+void cb_draw_horse(Vector3 pos, float yaw, float speed, float time, bool hit);
 void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int kind, int id, Vector3 from, float dmg,
                      WoundKind wound, float venom, const char *who, char *log, size_t len);
 
