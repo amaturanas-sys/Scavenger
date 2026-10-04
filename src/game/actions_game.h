@@ -19,6 +19,7 @@
 #include "sim/actions.h"
 #include "sim/animals.h"
 #include "sim/apparel.h"
+#include "sim/water.h"
 #include "sim/economy.h"
 #include "sim/memory_map.h"
 #include "game/dialog.h"
@@ -118,6 +119,8 @@ typedef struct {
     Outfit outfit;   // la ropa (src/sim/apparel.h): abriga, da sombra, escarmienta
     int wear_cursor; // hueco elegido en la pestaña de ropa
     float dress_t;   // reloj de los NPCs que se cambian de ropa (src/game/apparel_game.c)
+    Hydration hydro; // sed, borrachera y espiritus malditos del agua (src/game/water_game.c)
+    float dry_t;     // segundos con la sed a cero
     float ab_timer[ABIL_COUNT], ab_cd[ABIL_COUNT], ab_pot[ABIL_COUNT];
     float warmth_boost; // calor que devuelve una habilidad (lo consume src/game/hazards_game.c)
     // Dialogo con el druida o el orfebre (y luego el guardian del campamento).
@@ -171,7 +174,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
 // Despues de mover al jugador: trepar, montura, escondite.
 void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p);
 // Un dia nuevo: comida y recoleccion, efectos de las construcciones, trabajos de los NPCs.
-void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day,
+void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day, float temp_mean,
                 char *log, size_t log_len);
 void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time);
 // Dibuja al jugador con el modelo del protagonista y su animacion, si ya fue

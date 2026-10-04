@@ -29,6 +29,7 @@
 #include "game/talents_game.h"
 #include "game/travel_game.h"
 #include "game/apparel_game.h"
+#include "game/water_game.h"
 #include "game/title_menu.h"
 #include "game/hazards_game.h"
 #include "game/player.h"
@@ -174,7 +175,7 @@ static void debug_camp_actions(Troop *t, Rng *rng, float *world_time, int *last_
         if (id >= 0 && troop_release_prisoner(t, id)) snprintf(log, log_len, "%s", T("Liberaste a un prisionero."));
     } else if (IsKeyPressed(KEY_ENTER)) {
         *world_time = (float)clock_day(*world_time) * GAME_SECONDS_PER_DAY; // salta al amanecer siguiente
-    } else if (IsKeyPressed(KEY_N)) {
+    } else if (IsKeyPressed(KEY_N) && (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))) {
         *world_time += 120.0f; // adelanta dos minutos (para ver el ocaso y la noche)
     }
     if (champ >= 0) *last_champion = champ;
@@ -187,7 +188,7 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
         DayReport r = troop_process_day(t, rng);
         (*day)++;
         // Comida, recoleccion, efectos del campamento y trabajos de los NPCs.
-        ga_new_day(&g_actions, &g_props, terrain, t, &g_memory, world_time, *day, log, log_len);
+        ga_new_day(&g_actions, &g_props, terrain, t, &g_memory, world_time, *day, climate_at(world_time, WORLD_SEED).temp_mean, log, log_len);
         hz_new_day(&g_hazards, &g_climate, &g_actions, &g_props, t, log, log_len); // las noches heladas gastan lena
         cb_new_day(&g_combat, t); // el jugador tambien descansa y sana
         fg_new_day(&g_actions);   // el ganado se vuelve a ordeñar
@@ -693,6 +694,9 @@ int main(int argc, char **argv) {
                 trv_update(&g_actions, &troop, &g_memory, &player, &terrain, clock_is_night(world_time),
                            !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             if (!gallery_mode) ag_update(&g_actions, &troop, &g_climate, g_hazards.seed, world_time, dt, log, sizeof(log));
+            if (!gallery_mode)
+                wg_update(&g_actions, &troop, &player, &g_props, &g_hazards, &g_climate, camp.fire, &terrain,
+                          !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             if (!g_actions.camps[0].used && camp.yurt_count) { // el campamento inicial se disolvio: sus yurtas arden
                 for (int i = 0; i < camp.yurt_count; i++) {
                     bool ruin = false;
@@ -809,6 +813,7 @@ int main(int argc, char **argv) {
             ga_draw_hud(&g_actions, &g_props, &troop, &player, VIRTUAL_W, VIRTUAL_H);
             hz_draw_hud(&g_hazards, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 40, VIRTUAL_W, VIRTUAL_H);
             cb_draw_hud(&g_combat, &g_actions, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 63, VIRTUAL_W, VIRTUAL_H);
+            wg_draw_hud(&g_actions, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 89);
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions)) tg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);

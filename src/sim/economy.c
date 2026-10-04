@@ -70,6 +70,10 @@ void stock_seed_camp(Stockpile *s) {
         { "utileria.material.cobre", 3 },
         { "utileria.material.estano", 2 },
         { "utileria.material.hierro", 2 },
+        { "utileria.consumible.agua_hervida", 6 }, // el agua: hervida o en bebidas (src/sim/water.h)
+        { "utileria.consumible.cerveza", 4 },
+        { "utileria.consumible.airag", 4 },
+        { "utileria.consumible.vino", 2 },
         { NULL, 0 },
     };
     for (const Ingredient *m = START; m->id; m++) stock_add(s, m->id, m->count);
@@ -222,6 +226,12 @@ static const CraftDef CRAFTS[CRAFT_COUNT] = {
     [CRAFT_GOAT_COAT] = { N_("Abrigo de lana de cabra"), "vestimenta.espalda.abrigo_cabra", NULL, ROLE_NONE, { { "utileria.piel.cabra", 4 }, { NULL, 0 } }, 50.0f, 1 },
     [CRAFT_WHITE_MANTLE] = { N_("Manto blanco del desierto"), "vestimenta.espalda.manto_blanco", NULL, ROLE_NONE, { { "utileria.material.seda", 2 }, { NULL, 0 } }, 30.0f, 1 },
     [CRAFT_FUR_BOOTS] = { N_("Botas de piel de reno"), "vestimenta.pies.botas_piel", NULL, ROLE_NONE, { { "utileria.piel.reno", 1 }, { "utileria.material.tendones", 1 }, { NULL, 0 } }, 35.0f, 1 },
+    [CRAFT_WATERED_WINE] = { N_("Agua con vino (3)"), "utileria.consumible.agua_vino", NULL, ROLE_NONE,
+                             { { "utileria.consumible.agua", 2 }, { "utileria.consumible.vino", 1 }, { NULL, 0 } }, 10.0f, 3 },
+    [CRAFT_AIRAG] = { N_("Airag (leche de yegua fermentada)"), "utileria.consumible.airag", NULL, ROLE_NONE,
+                      { { "utileria.consumible.leche", 2 }, { NULL, 0 } }, 30.0f, 1 },
+    [CRAFT_BEER] = { N_("Cerveza de pan (2)"), "utileria.consumible.cerveza", NULL, ROLE_NONE,
+                     { { "utileria.consumible.pan", 1 }, { "utileria.consumible.agua", 1 }, { NULL, 0 } }, 40.0f, 2 },
     [CRAFT_SANDALS] = { N_("Sandalias de cuero"), "vestimenta.pies.sandalias", NULL, ROLE_NONE, { { "utileria.material.pieles", 1 }, { NULL, 0 } }, 15.0f, 1 },
 };
 

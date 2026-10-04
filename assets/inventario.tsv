@@ -280,7 +280,7 @@ utileria.consumible.carne_seca	Carne seca	uso:recolectable,uso:consumible	0.2x0.
 utileria.consumible.airag	Odre de airag (leche de yegua)	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.queso_seco	Queso seco	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.hierbas	Hierbas curativas	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
-utileria.consumible.agua	Agua	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
+utileria.consumible.agua	Agua cruda	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.pan	Pan del imperio	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.carne_fresca	Carne fresca	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	De la caza o el sacrificio; se come antes que la seca.
 utileria.consumible.leche	Leche	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	Del ordeño diario del ganado.
@@ -396,3 +396,7 @@ utileria.piel.coyote	Piel de coyote	uso:recolectable,uso:material,material:cuero
 utileria.piel.reno	Piel de reno	uso:recolectable,uso:material,material:cuero	0.8x0.15x1.2	40	pendiente	Del despiece: abrigos y botas.
 utileria.piel.cabra	Lana de cabra	uso:recolectable,uso:material,material:lana	0.5x0.2x0.5	40	pendiente	De las cabras (despiece y esquila de los pastores): fieltro, lana.
 utileria.material.seda	Seda	uso:recolectable,uso:material,material:seda	0.4x0.1x0.3	30	pendiente	De las caravanas del imperio (botín).
+utileria.consumible.agua_hervida	Agua hervida	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	Hervir el agua (Tab, junto a un fuego) echa a los espíritus malditos.
+utileria.consumible.agua_vino	Agua con vino	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	El vino purifica el agua: segura y apenas achispa.
+utileria.consumible.cerveza	Cerveza	uso:recolectable,uso:consumible	0.2x0.25x0.2	40	pendiente	Segura de beber; en exceso, torpe y fatigado.
+utileria.consumible.vino	Vino	uso:recolectable,uso:consumible	0.12x0.3x0.12	40	pendiente	De las caravanas del imperio. Seguro; emborracha pronto.

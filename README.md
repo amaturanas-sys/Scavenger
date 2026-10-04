@@ -65,8 +65,9 @@ Las partidas se guardan en `saves/` junto al ejecutable (en Android, en el almac
 | Montar / desmontar | R | — |
 | Inventario (bolsillos, mochila, alforjas, carreta, campamento) | I | — |
 | Esconderse | acechar (C) dentro de la hierba alta | — |
+| Beber / tomar hierbas contra los espíritus del agua | N / Mayús+N | — |
 
-Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente · `N` adelantar dos minutos.
+Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente · `Ctrl+N` adelantar dos minutos.
 
 Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañero atrapado para rescatarlo · `J K L U I O` en el minijuego de rescate.
 
@@ -125,6 +126,16 @@ Ropa y clima:
 - **La tribu se cambia sola** según el tiempo, con la ropa de su mochila y, en su campamento, la del acopio. Sin ropa adecuada pasa frío o calor (un copo o un sol sobre la cabeza) y baja la moral.
 
 Prueba: `--ropa`.
+
+El agua:
+- **La sed** baja con el tiempo, más con calor y corriendo. Con sed vas más lento y te cansas; con la sed a cero te desmayas y la tribu te lleva al campamento a beber.
+- **`N` bebe** lo más seguro que tengas a mano: agua hervida, agua con vino, airag, cerveza, leche, vino y, al final, agua cruda. En la orilla, sin nada, bebes del río.
+- **Espíritus malditos:** el agua que corre por los suelos (ríos, lagos) puede traerlos, más con calor. Se incuban uno o dos minutos y luego dan fiebre: más lento, más sed, te cansas. Se van solos en unos minutos (antes descansando); las hierbas (`Mayús+N`) los cortan.
+- **Hervir el agua los elimina** (`Tab`, «Hervir agua», junto a un fuego, una leña). El alcohol también: la cerveza, el vino, el airag y el agua con vino son seguros. «Llenar el odre» en la orilla da agua cruda (3 tragos por odre).
+- **El exceso de alcohol** emborracha: torpe (menos daño y peor puntería), fatigado y te tambaleas al andar. Se pasa con el tiempo.
+- **Fabricar:** agua con vino (2 de agua y 1 de vino), airag (2 de leche) y cerveza de pan. El vino y la cerveza también salen del botín de jinetes y bandidos.
+- **La tribu bebe cada día** del acopio. Si falta, del río cercano: hervida si hay leña (una cada cuatro); si no, cruda, y a algunos les caen los espíritus (fiebre: baja la vida y el ánimo). Sin agua cerca, pasan sed.
+- **Los animales de la tribu beben** solos junto al agua. Con sed, una gota sobre la cabeza: llévalos al agua o dales de beber (`K` con agua); los pastores les dan del acopio. Con mucha sed se van.
 
 Tatuajes, joyas y nivel:
 - **Nivel:** subes peleando, cazando, fabricando, construyendo y domando.

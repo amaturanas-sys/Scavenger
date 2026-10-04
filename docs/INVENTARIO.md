@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**395 objetos** · 1 con modelo · 394 pendientes.
+**399 objetos** · 1 con modelo · 398 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 60 | 60 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 64 | 64 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -446,7 +446,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.consumible.airag` | Odre de airag (leche de yegua) | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.queso_seco` | Queso seco | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.hierbas` | Hierbas curativas | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
-| `utileria.consumible.agua` | Agua | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
+| `utileria.consumible.agua` | Agua cruda | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.pan` | Pan del imperio | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.carne_fresca` | Carne fresca | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | De la caza o el sacrificio; se come antes que la seca. |
 | `utileria.consumible.leche` | Leche | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | Del ordeño diario del ganado. |
@@ -492,6 +492,10 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.piel.reno` | Piel de reno | 0.8x0.15x1.2 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Del despiece: abrigos y botas. |
 | `utileria.piel.cabra` | Lana de cabra | 0.5x0.2x0.5 | 40 | pendiente | `uso:recolectable` `uso:material` `material:lana` | De las cabras (despiece y esquila de los pastores): fieltro, lana. |
 | `utileria.material.seda` | Seda | 0.4x0.1x0.3 | 30 | pendiente | `uso:recolectable` `uso:material` `material:seda` | De las caravanas del imperio (botín). |
+| `utileria.consumible.agua_hervida` | Agua hervida | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | Hervir el agua (Tab, junto a un fuego) echa a los espíritus malditos. |
+| `utileria.consumible.agua_vino` | Agua con vino | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | El vino purifica el agua: segura y apenas achispa. |
+| `utileria.consumible.cerveza` | Cerveza | 0.2x0.25x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | Segura de beber; en exceso, torpe y fatigado. |
+| `utileria.consumible.vino` | Vino | 0.12x0.3x0.12 | 40 | pendiente | `uso:recolectable` `uso:consumible` | De las caravanas del imperio. Seguro; emborracha pronto. |
 
 <a id="personaje"></a>
 

@@ -112,6 +112,14 @@ static const HelpPage PAGES[] = {
         "",
         N_("Se fabrican a mano (Tab, Fabricar) con las pieles del despiece, la lana de las cabras (los pastores las esquilan) y la seda del botín."),
         N_("La tribu se cambia sola según el tiempo con la ropa de su mochila y del acopio; sin ropa adecuada pasa frío o calor y baja la moral.") } },
+    { N_("El agua"), 4,
+      { N_("N bebe lo más seguro que tengas; en la orilla, sin nada, bebes del río. Con calor da más sed; sin agua te desmayas."),
+        N_("El agua que corre por los suelos puede traer espíritus malditos: al rato, fiebre (más lento, más sed). Mayús+N: hierbas."),
+        N_("Hervirla los echa (Tab, Hervir agua, junto a un fuego). El alcohol también: cerveza, vino, airag y agua con vino son seguros."),
+        N_("Beber de más emborracha: torpe con las armas, cansado y te tambaleas."),
+        "",
+        N_("Tab, Llenar el odre en la orilla: agua cruda (3 tragos por odre). Fabricar: agua con vino, airag y cerveza de pan."),
+        N_("La tribu bebe del acopio o del río cercano (hervida si hay leña). Los animales beben junto al agua; K con agua les da de beber.") } },
 };
 #define PAGE_COUNT ((int)(sizeof(PAGES) / sizeof(PAGES[0])))
 

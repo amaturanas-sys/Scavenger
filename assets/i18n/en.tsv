@@ -5,7 +5,9 @@
 Abedul	Birch
 Abeja (enjambre)	Bee (swarm)
 Acantilado modular	Modular cliff
-Agua	Water
+Agua con vino	Watered wine
+Agua cruda	Raw water
+Agua hervida	Boiled water
 Alabarda	Halberd
 Alerce	Larch
 Altar del culto	Cult altar
@@ -91,6 +93,7 @@ Catapulta	Catapult
 Cazador del bosque	Forest hunter
 Cañón de campaña	Field cannon
 Cenizas de una estructura	Ashes of a structure
+Cerveza	Beer
 Chamán	Shaman
 Choza de fieltro	Felt hut
 Cinturón con placa de estilo animal	Animal-style plaque belt
@@ -323,6 +326,7 @@ Túnica del culto	Cult robe
 Uniforme imperial	Imperial uniform
 Velero	Sailboat
 Verdugo	Executioner
+Vino	Wine
 Virote de ballesta	Crossbow bolt
 Yak	Yak
 Yunque	Anvil
@@ -343,6 +347,8 @@ Zorro	Fox
  (silla para montarlo)	 (saddle it to ride)
  · OCULTO	 · HIDDEN
  · montado	 · mounted
+%d bebieron agua cruda y les cayeron los espíritus malditos (hace falta leña para hervirla).	%d drank raw water and the cursed spirits fell upon them (firewood is needed to boil it).
+%d pasaron sed: no hay agua cerca ni en el acopio.	%d went thirsty: no water nearby or in the stockpile.
 %s terminó: %s.	%s finished: %s.
 %s · Enter o clic otra vez: reparar	%s · Enter or click again: repair
 , antorcha	, torch
@@ -372,8 +378,10 @@ Hace falta: %s.	Needs: %s.
 Haciendo: %s %d%%	Making: %s %d%%
 Hecho	Made
 Hecho: %s.	Done: %s.
+Hierves el agua: +%d agua hervida, sin espíritus malditos.	You boil the water: +%d boiled water, free of cursed spirits.
 La trepa se engancha: ¡a escalar!	The grapple holds: climb!
 Lanzaste: %s.	You threw: %s.
+Llenas el odre: +%d agua cruda. Hiérvela junto a un fuego antes de beberla (o bebe con riesgo).	You fill the waterskin: +%d raw water. Boil it by a fire before drinking (or drink at your own risk).
 Montaste el %s.	You mount the %s.
 Montura instalada: R para montar.	Saddle on: R to ride.
 Nada que reparar	Nothing to repair
@@ -389,11 +397,14 @@ No llevas nada para lanzar (F para tomar).	You carry nothing to throw (F to take
 No se puede: el escudo va en el brazo izquierdo y las armas a dos manos, en las dos (%s).	Can't: the shield goes on the left arm and two-handed weapons in both (%s).
 No te cabe: %s.	No room for: %s.
 No te caben más hierbas.	No room for more herbs.
+No tienes agua cruda que hervir (llena el odre en la orilla).	You have no raw water to boil (fill the waterskin at the shore).
 No tienes armas que enfundar.	You have no weapons to sheathe.
 Obra iniciada: %s. La cuadrilla va en camino.	Work started: %s. The crew is on its way.
 Obra terminada: %s.	Work finished: %s.
 Obras	Works
 Para cribar hay que estar en la orilla, mirando al agua.	To pan you must stand on the shore, facing the water.
+Para hervir el agua hace falta un fuego encendido cerca.	Boiling water needs a lit fire nearby.
+Para llenar el odre hay que estar en la orilla, mirando al agua.	To fill the waterskin you must stand on the shore, facing the water.
 Pasas el arma a la otra mano: %s.	You switch the weapon to the other hand: %s.
 Q / E cambia de pestaña	Q / E switches tab
 Recoges %d hierbas curativas.	You gather %d healing herbs.
@@ -403,6 +414,7 @@ Te falta: %s.	You lack: %s.
 Tomas %d cosas%s.	You take %d things%s.
 Tomaste: %s (T para lanzarlo).	You took: %s (T to throw it).
 Tomaste: %s.	You took: %s.
+Tus odres ya están llenos.	Your waterskins are already full.
 Un %s no se puede montar.	A %s can't be ridden.
 Un animal así no se doma (%s): solo se caza.	That animal can't be tamed (%s): only hunted.
 Vacío	Empty
@@ -591,12 +603,15 @@ Aparecen cerca: %s.	Nearby: %s.
 Cerca de ti, un cazador (%s) abate a su presa (%s).	Near you, a hunter (%s) takes its prey (%s).
 Colmena: enciende la antorcha (humo) antes de tomar la miel	Beehive: light your torch (smoke) before taking honey
 Cortas hierba alta: +%d forraje para los animales.	You cut tall grass: +%d fodder for the animals.
+Das de beber al %s.	You give the %s water.
 Das de comer al %s.	You feed the %s.
 Despiezas	You butcher
 El %s de la tribu tiene hambre: dale carne (K) o déjalo cazar.	The tribe's %s is hungry: give it meat (K) or let it hunt.
 El %s de la tribu tiene hambre: llévalo a pastar o dale forraje (K).	The tribe's %s is hungry: take it to graze or give it fodder (K).
+El %s de la tribu tiene sed: llévalo al agua o dale de beber (K, con agua).	The tribe's %s is thirsty: take it to water or give it a drink (K, with water).
 El %s está débil: ¡lánzale el lazo (menú) y dale carne!	The %s is weak: lasso it (menu) and feed it meat!
 El %s se fue: pasó demasiada hambre y vuelve a ser salvaje.	The %s left: it went hungry too long and turned wild again.
+El %s se fue: pasó demasiada sed y vuelve a ser salvaje.	The %s left: it was too thirsty and goes wild again.
 El %s tiene hambre: necesitas carne, o déjalo cazar.	The %s is hungry: you need meat, or let it hunt.
 El %s tiene hambre: necesitas forraje (corta hierba alta con F), o llévalo a pastar.	The %s is hungry: you need fodder (cut tall grass with F), or take it to graze.
 El humo calma a las abejas: tomas miel (+2).	Smoke calms the bees: you take honey (+2).
@@ -604,6 +619,7 @@ Esta colmena ya no tiene miel hoy.	This hive has no more honey today.
 Este animal no da leche (Mayús+K: sacrificar).	This animal gives no milk (Shift+K: slaughter).
 Hieres al %s: %s.	You wound the %s: %s.
 K: dar carne al %s (tiene hambre)	K: give meat to the %s (hungry)
+K: dar de beber al %s (tiene sed)	K: give the %s water (thirsty)
 K: dar de comer al %s atado (%.0f s)	K: feed the bound %s (%.0f s)
 K: dar forraje al %s (tiene hambre)	K: give fodder to the %s (hungry)
 K: despiezar (%s)	K: butcher (%s)
@@ -853,6 +869,7 @@ Arco, ballesta u honda: mantén V para tensar y suelta para disparar. La cámara
 Arcos, flechas y armaduras	Bows, arrows and armour
 B venda heridas con hierbas (o ungüento) · P equipo y heridas · I inventario	B bandages wounds with herbs (or ointment) · P gear and wounds · I inventory
 B vendar · P equipo	B bandage · P gear
+Beber de más emborracha: torpe con las armas, cansado y te tambaleas.	Drinking too much gets you drunk: clumsy with weapons, tired and staggering.
 C acechar · Espacio saltar	C sneak · Space jump
 Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales.	Each body zone takes different damage: head and neck are lethal.
 Camina cerca del ganado para llevarlo (pastoreo).	Walk near livestock to drive them (herding).
@@ -867,6 +884,8 @@ Controles	Controls
 Controles y reglas del juego	Controls and game rules
 Dejar la partida (lo no guardado se pierde)	Leave the game (unsaved progress is lost)
 Día %d · %s · tribu de %d	Day %d · %s · tribe of %d
+El agua	Water
+El agua que corre por los suelos puede traer espíritus malditos: al rato, fiebre (más lento, más sed). Mayús+N: hierbas.	Water running on the ground may carry cursed spirits: after a while, fever (slower, thirstier). Shift+N: herbs.
 El desierto quema de día y hiela de noche. Con calor te sofocas: busca sombra (las yurtas) o el agua; con golpe de calor te desmayas.	The desert burns by day and freezes by night. Heat overwhelms you: seek shade (the yurts) or water; with heatstroke you faint.
 El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Cold drains your warmth: seek fire and yurts; wet clothes chill you.
 En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
@@ -888,6 +907,7 @@ Golpea hacia el agua o tira una flecha para pescar.	Strike at the water or shoot
 Guardar en	Save to
 Guardar partida	Save game
 Guías una tropa nómada por la estepa: caza, construye, pelea y sobrevive a las estaciones. Un día dura 30 minutos; en invierno las noches son largas.	You lead a nomad band across the steppe: hunt, build, fight and survive the seasons. A day lasts 30 minutes; winter nights are long.
+Hervirla los echa (Tab, Hervir agua, junto a un fuego). El alcohol también: cerveza, vino, airag y agua con vino son seguros.	Boiling drives them out (Tab, Boil water, by a fire). So does alcohol: beer, wine, airag and watered wine are safe.
 I inventario · Y escolta	I inventory · Y escort
 Idioma	Language
 Instructivo	Guide
@@ -901,6 +921,7 @@ La armadura va por piezas (casco, gorjal, coraza, hombreras, brazales, guantes, 
 La estepa	The steppe
 La lluvia apaga todo fuego: antorchas, fogatas, hornos y flechas.	Rain puts out every fire: torches, campfires, furnaces and arrows.
 La moral y la lealtad deciden si la tribu se rebela.	Morale and loyalty decide whether the tribe rebels.
+La tribu bebe del acopio o del río cercano (hervida si hay leña). Los animales beben junto al agua; K con agua les da de beber.	The tribe drinks from the stockpile or the nearby river (boiled if there is firewood). Animals drink by the water; K with water gives them a drink.
 La tribu come carne fresca y leche antes que la seca; con hambre baja la moral.	The tribe eats fresh meat and milk before dried food; hunger lowers morale.
 La tribu se cambia sola según el tiempo con la ropa de su mochila y del acopio; sin ropa adecuada pasa frío o calor y baja la moral.	The tribe changes clothes on its own with the weather, from their packs and the stockpile; without suitable clothing they suffer cold or heat and morale drops.
 La tribu y el campamento	The tribe and the camp
@@ -915,6 +936,7 @@ Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre apar
 Los rayos caen sobre lo alto durante las tormentas.	Lightning strikes high ground during storms.
 Mayús+X cambiar de mano	Shift+X switch hands
 Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta y desmonta.	Mounts (horse, mule, donkey, ox, camel, elephant): lasso and saddle; R mounts and dismounts.
+N bebe lo más seguro que tengas; en la orilla, sin nada, bebes del río. Con calor da más sed; sin agua te desmayas.	N drinks the safest thing you have; at the shore, with nothing, you drink from the river. Heat makes you thirstier; without water you faint.
 Nueva partida	New game
 O engancha el escudo enemigo con hacha, guja o alabarda	O hooks the enemy shield with an axe, glaive or halberd
 Osos, hienas, coyotes y jabalíes: siempre hostiles.	Bears, hyenas, coyotes and boars: always hostile.
@@ -937,6 +959,7 @@ Serpientes, escorpiones, arañas y avispas envenenan: véndate (B).	Snakes, scor
 Socavones de nieve y arena movediza aparecen cada día en otro lugar.	Snow sinkholes and quicksand appear somewhere new every day.
 Subes de nivel peleando, cazando, fabricando, construyendo y domando.	You level up by fighting, hunting, crafting, building and taming.
 Tab acciones/fabricar	Tab actions/craft
+Tab, Llenar el odre en la orilla: agua cruda (3 tragos por odre). Fabricar: agua con vino, airag y cerveza de pan.	Tab, Fill the waterskin at the shore: raw water (3 sips per waterskin). Craft: watered wine, airag and bread beer.
 Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario	Tab: actions, works, craft and repair (Q/E switches tab) · I: inventory
 Tatuajes (para siempre): habla (F) con el druida, elige motivo y zona. Lobo, ciervo, grifo, tamga y olas suben en tres grados; el tercero se bifurca y elegir una rama cierra la otra. La zona del cuerpo cambia a qué va el bonus.	Tattoos (forever): talk (F) to the druid, choose motif and zone. Wolf, deer, griffin, tamga and waves rise in three tiers; the third branches and choosing one closes the other. The body zone changes what the bonus goes to.
 Tatuajes y joyas	Tattoos and jewels
@@ -989,6 +1012,21 @@ va · clic: se queda	goes · click: stays
 ¿Quién lleva el mensaje? Tiene que conocer el campamento.	Who carries the message? They must know the camp.
 ¿Quiénes van? Marca a los que salen y luego elige el destino.	Who goes? Mark those leaving, then choose the destination.
 Órdenes a la escolta	Escort orders
+# --- src/game/water_game.c
+ · fiebre	 · fever
+Bebes del agua que corre por el suelo. Puede traer espíritus malditos...	You drink the water running on the ground. It may carry cursed spirits...
+Bebes: %s.	You drink: %s.
+Bebes: %s. El agua cruda puede traer espíritus malditos: mejor hervida.	You drink: %s. Raw water may carry cursed spirits: better boiled.
+Bebes: %s. Estás %s: torpe con las armas y te cansas antes.	You drink: %s. You are %s: clumsy with weapons and you tire sooner.
+Estás %s: bebe (N).	You are %s: drink (N).
+Fiebre y retortijones: espíritus malditos del agua. Toma hierbas (Mayús+N), descansa y bebe agua hervida.	Fever and cramps: cursed spirits from the water. Take herbs (Shift+N), rest and drink boiled water.
+Las hierbas alivian la fiebre.	The herbs ease the fever.
+Las hierbas echan a los espíritus malditos.	The herbs drive out the cursed spirits.
+No tienes hierbas para echar a los espíritus. Descansa y bebe agua hervida.	You have no herbs to drive out the spirits. Rest and drink boiled water.
+No tienes los espíritus del agua: guarda las hierbas.	You don't have the water spirits: save the herbs.
+No tienes nada que beber: llena el odre en la orilla (Tab) o bebe del río (N, mirando al agua).	You have nothing to drink: fill the waterskin at the shore (Tab) or drink from the river (N, facing the water).
+No tienes sed.	You are not thirsty.
+Te desmayaste de sed; la tribu te llevó al campamento y te dio de beber (moral -3).	You fainted from thirst; the tribe carried you to camp and gave you water (morale -3).
 # --- src/main.c
 Arma: %s	Weapon: %s
 Capturaste a un gran guerrero: %s, %s.	You captured a great warrior: %s, %s.
@@ -1031,11 +1069,13 @@ Cobertura contra flechas y cargas. Requiere pala.	Cover against arrows and charg
 Corral	Corral
 Cribar en el agua	Pan in the water
 En la orilla de un río o un lago: piedras preciosas rodadas, plata y oro.	On the shore of a river or lake: worn gems, silver and gold.
+En la orilla: agua cruda. Puede traer espíritus malditos: hiérvela antes de beberla.	At the shore: raw water. It may carry cursed spirits: boil it before drinking.
 Encender antorcha	Light torch
 Enfundar / desenfundar	Sheathe / draw
 Ensillar un animal para montarlo.	Saddle an animal to ride it.
 Gancho con cuerda para escalar muros en un asedio.	Hook and rope to scale walls in a siege.
 Guardar las armas libera las manos.	Putting weapons away frees your hands.
+Hervir agua	Boil water
 Hoguera	Bonfire
 Horno de cocina	Cooking oven
 Horno de fundición (acero)	Smelting furnace (steel)
@@ -1043,9 +1083,11 @@ Horno de fundición (bronce)	Smelting furnace (bronze)
 Instalar fogata	Set campfire
 Instalar montura	Fit saddle
 Instalar tienda	Pitch tent
+Junto a un fuego encendido: el agua hervida es segura. Gasta una leña.	By a lit fire: boiled water is safe. Uses one firewood.
 Lanzar	Throw
 Lanzar lazo	Throw lasso
 Lanzar trepa	Throw grapple
+Llenar el odre	Fill the waterskin
 Luz en la noche; ahuyenta fieras.	Light at night; keeps beasts away.
 Muro de empalizada	Palisade wall
 Muro de piedra	Stone wall
@@ -1065,6 +1107,7 @@ arma y escudo	weapon and shield
 desarmado	unarmed
 falta un %s en la tribu	the tribe lacks a %s
 faltan manos (mínimo %d)	not enough hands (at least %d)
+fuego	fire
 lista	ready
 montura	mount
 muro	wall
@@ -1225,6 +1268,8 @@ Abrigo de lana de cabra	Goat wool coat
 Abrigo de piel de oso	Bear fur coat
 Abrigo de piel de reno	Reindeer fur coat
 Abrigo de piel de tigre	Tiger fur coat
+Agua con vino (3)	Watered wine (3)
+Airag (leche de yegua fermentada)	Airag (fermented mare's milk)
 Botas de fieltro	Felt boots
 Botas de piel de reno	Reindeer fur boots
 Bufanda de piel de zorro	Fox fur scarf
@@ -1233,6 +1278,7 @@ Capa de piel de hiena	Hyena fur cloak
 Capa de piel de lobo	Wolf fur cloak
 Capa de piel de puma	Puma fur cloak
 Casco de bronce	Bronze helmet
+Cerveza de pan (2)	Bread beer (2)
 Coraza de escamas de acero	Steel scale cuirass
 Coraza laminar de cuero	Lamellar leather cuirass
 Cuerda de tendones	Sinew rope
@@ -1442,6 +1488,15 @@ orfebre	goldsmith
 pastor	herder
 sin función	no role
 soldado	soldier
+# --- src/sim/water.c
+alegre	merry
+borracho	drunk
+con sed	thirsty
+deshidratado	dehydrated
+ebrio perdido	blind drunk
+reseco	parched
+sin sed	not thirsty
+sobrio	sober
 # --- src/world/gallery.c
 GALERIA  %d objetos  |  %d con modelo  |  %d pendientes	GALLERY  %d objects  |  %d with model  |  %d pending
 modelo cargado	model loaded

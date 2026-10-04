@@ -118,6 +118,10 @@ static const ActionDef ACTIONS[ACTION_COUNT] = {
                         "accesorio.arreo.silla_montar", NULL, N_("montura") },
     [ACTION_PAN] = { N_("Cribar en el agua"), N_("En la orilla de un río o un lago: piedras preciosas rodadas, plata y oro."), ACTOR_PLAYER | ACTOR_NPC, 8.0f,
                      NULL, NULL, N_("agua") },
+    [ACTION_FILL_WATER] = { N_("Llenar el odre"), N_("En la orilla: agua cruda. Puede traer espíritus malditos: hiérvela antes de beberla."),
+                            ACTOR_PLAYER | ACTOR_NPC, 3.0f, "utileria.objeto.odre", NULL, N_("agua") },
+    [ACTION_BOIL] = { N_("Hervir agua"), N_("Junto a un fuego encendido: el agua hervida es segura. Gasta una leña."), ACTOR_PLAYER | ACTOR_NPC, 10.0f,
+                      NULL, NULL, N_("fuego"), { { "utileria.objeto.lena", 1 }, { NULL, 0 } } },
 };
 
 const ActionDef *action_def(ActionId a) { return a >= 0 && a < ACTION_COUNT ? &ACTIONS[a] : NULL; }
