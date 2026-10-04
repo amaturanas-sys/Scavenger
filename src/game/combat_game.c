@@ -2,6 +2,8 @@
 
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
+#include "game/gems_game.h"
+#include "game/talents_game.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -406,13 +408,16 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     int an = m == MOVE_GRAPPLE || m == MOVE_HOOK || m == MOVE_SHIELD_BASH ? -1 : fg_melee_target(ga, t, p->pos, p->yaw, reach, &ad);
     if (an >= 0 && (!e || ad < ed)) {
         float base = m == MOVE_LIGHT || m == MOVE_HEAVY ? w.damage * (m == MOVE_HEAVY ? 1.8f : melee_combo_scale(step)) : md->damage;
-        float dmg = combat_damage(base, (off ? 0.8f : 1.0f) * momentum, health_attack_scale(&cb->player), false, &cb->rng);
+        float dmg = combat_damage(base, (off ? 0.8f : 1.0f) * momentum * (1.0f + ig_stat(ga, STAT_MELEE)), health_attack_scale(&cb->player),
+                                  false, &cb->rng);
         fg_hurt(ga, an, dmg, m == MOVE_LIGHT || m == MOVE_HEAVY ? w.wound : WOUND_BRUISE, PART_RANDOM, 0, log, len);
         return;
     }
     if (!e) {
         if (m != MOVE_LIGHT && m != MOVE_HEAVY) return;
         // Nada a quien golpear: un nido que se enfada o un pez en el agua.
+        float rock_dmg = (m == MOVE_HEAVY ? 1.8f : 1.0f) * w.damage * (w.wound == WOUND_BRUISE ? 1.6f : 1.0f); // la maza parte mejor
+        if (gems_hit_rock(ga, props, p, rock_dmg, w.reach, log, len)) return;
         if (fg_poke_nest(ga, p->pos, w.reach)) snprintf(log, len, "%s", T("¡Golpeaste el nido! Ahí vienen..."));
         else fg_fish(ga, t, p->pos, p->yaw, w.reach, w.spear, log, len);
         return;
@@ -420,7 +425,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
     me.strength *= health_attack_scale(&cb->player) * (off ? 0.8f : 1.0f);
     if (m == MOVE_GRAPPLE) me.strength *= 1.0f + ig_stat(ga, STAT_GRAPPLE_POWER); // amuletos del tigre y del oso
-    me.strength *= momentum;
+    me.strength *= momentum * (1.0f + ig_stat(ga, STAT_MELEE)); // tatuajes, joyas y el aullido
     MeleeResult r = melee_resolve(m, &me, &foe, weapon, step, &cb->rng);
     // La lanza al galope: el que la recibe (sin pararla) suele caer.
     if (riding && w.spear && cb->pl_speed > GALLOP_SPEED && r.landed && !r.blocked && rng_float(&cb->rng) < 0.6f)
@@ -799,6 +804,7 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
 // (src/sim/combat.c) y a veces piezas de su armadura, con el estado en que quedaron.
 static void drop_loot(Combat *cb, GameActions *ga, Enemy *e, const Player *p, char *log, size_t len) {
     e->loot_dropped = true;
+    if (dist2(e->pos, p->pos) < 40.0f) tg_xp(ga, XP_KILL, log, len); // pelear da experiencia (a ti y a tu escolta)
     LootItem items[LOOT_MAX];
     int n = enemy_loot(e->kind, e->armed, e->shield, &cb->rng, items, LOOT_MAX);
     for (int s = 0; s < SLOT_COUNT && n < LOOT_MAX; s++) {
@@ -1021,6 +1027,7 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *
             const char *weapon = member_weapon(m);
             Fighter me = fighter_member(n, m, troop, best->pos), foe = fighter_enemy(best, n->pos);
             me.strength *= health_attack_scale(&m->health);
+            if (ga->ab_timer[ABIL_WAR_CRY] > 0.0f && dist2(n->pos, p->pos) < 20.0f) me.strength *= 1.0f + 0.3f * ga->ab_pot[ABIL_WAR_CRY];
             MeleeMove mv = ai_choose(&cb->rng, &me, &foe, weapon, false, d);
             if (mv == MOVE_SHIELD_BASH || (mv == MOVE_HOOK && !weapon_can_hook(weapon))) mv = MOVE_HEAVY;
             if (mv == MOVE_LIGHT) n->combo = n->combo % 3 + 1;
@@ -1109,6 +1116,12 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
     bool at_camp = dist2(p->pos, camp_fire) < CAMP_RADIUS;
     float healer = at_camp ? troop_healer_skill(troop) : 0.0f;
     // Aguante (amuletos del ciervo y del oso): se sana como si alguien atendiera.
+    // Vida maxima: 100 mas lo que den tatuajes y joyas (se conserva la proporcion al cambiar).
+    float want = 100.0f * (1.0f + fmaxf(-0.5f, ig_stat(ga, STAT_HEALTH)));
+    if (fabsf(cb->player.hp_max - want) > 0.05f) {
+        cb->player.hp = cb->player.hp * want / cb->player.hp_max;
+        cb->player.hp_max = want;
+    }
     health_update(&cb->player, &cb->rng, dt, !p->moving, healer + ig_stat(ga, STAT_STAMINA_REGEN));
     // El jugador no muere: desangrado queda abatido hasta que lo socorran.
     if (cb->player.dead) {

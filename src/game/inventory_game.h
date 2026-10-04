@@ -28,8 +28,12 @@ int ig_use(GameActions *ga, const Props *props, const Player *p, const char *id,
 int ig_store(GameActions *ga, const Props *props, const Player *p, const char *id, int n, float condition);
 float ig_carried_kg(const GameActions *ga);
 float ig_speed_scale(const GameActions *ga); // la carga frena
-// Suma de los amuletos colgados.
+// Suma de tatuajes, joyas y habilidades activas en curso (src/game/talents_game.c).
 float ig_stat(const GameActions *ga, Stat s);
+// Guarda con variante (una joya con su piedra y su encantamiento).
+int ig_store_var(GameActions *ga, const Props *props, const Player *p, const char *id, int n, float condition, unsigned short var);
+// Los contenedores a mano (el campamento: su armeria). Devuelve cuantos.
+int ig_bags(GameActions *ga, const Props *props, const Player *p, Bag **out, int max);
 // ---------------------------------------------------------------- reparaciones
 typedef struct {
     bool worn;      // puesta (si no, en un contenedor a mano)

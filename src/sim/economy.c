@@ -196,6 +196,9 @@ static const CraftDef CRAFTS[CRAFT_COUNT] = {
                                 { { "utileria.material.pieles", 3 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } }, 90.0f, 1 },
     [CRAFT_FELT_BOOTS] = { N_("Botas de fieltro"), "armadura.botas.fieltro", NULL, ROLE_NONE,
                            { { "utileria.material.pieles", 2 }, { NULL, 0 } }, 45.0f, 1 },
+    [CRAFT_BRONZE_INGOT] = { N_("Lingote de bronce"), "utileria.material.bronce", BRONZE, ROLE_SMITH,
+                             { { "utileria.material.cobre", 2 }, { "utileria.material.estano", 1 }, { "utileria.material.carbon", 1 }, { NULL, 0 } },
+                             60.0f, 1 },
 };
 
 bool craft_by_hand(const CraftDef *c) { return c->role == ROLE_NONE; }

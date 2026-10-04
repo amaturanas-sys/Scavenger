@@ -77,6 +77,7 @@ typedef enum {
     ACTION_THROW_LASSO,   // lanzar el lazo a un animal salvaje
     ACTION_LIGHT_TORCH,   // encender una antorcha
     ACTION_SADDLE,        // instalar una montura (ensillar)
+    ACTION_PAN,           // cribar en el agua: piedras rodadas y oro
     ACTION_COUNT
 } ActionId;
 

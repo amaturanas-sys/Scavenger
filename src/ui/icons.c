@@ -75,6 +75,10 @@ typedef struct {
 // La primera regla que encaja gana: lo concreto antes que lo general.
 static const IconRule RULES[] = {
     { "amuleto", ICON_AMULETO },     { "tatuaje", ICON_TATUAJE },      { "mensaje", ICON_MENSAJE },
+    { "anillo", ICON_ANILLO },       { "brazalete", ICON_BRAZALETE },  { "collar", ICON_COLLAR },
+    { "aretes", ICON_ARETE },        { "hebilla", ICON_HEBILLA },      { "gema", ICON_GEMA },
+    { "agua.coral", ICON_GEMA },     { "material.oro", ICON_LINGOTE }, { "material.plata", ICON_LINGOTE },
+    { "material.bronce", ICON_LINGOTE },
     { "arreo.alforjas", ICON_ALFORJAS }, { "arreo", ICON_ENSILLAR },  { "armadura.montura", ICON_ENSILLAR },
     { "casco", ICON_CASCO },         { "cabeza", ICON_CASCO },         { "cuello", ICON_CUELLO },
     { "hombreras", ICON_HOMBRERAS }, { "brazales", ICON_BRAZALES },    { "guantes", ICON_GUANTES },

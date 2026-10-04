@@ -91,6 +91,8 @@ if(ESTEPA_BUILD_GAME)
     src/game/save_game.c
     src/game/settings.c
     src/game/dialog.c
+    src/game/talents_game.c
+    src/game/gems_game.c
     src/game/title_menu.c
     src/game/inventory_game.c
     src/world/props.c

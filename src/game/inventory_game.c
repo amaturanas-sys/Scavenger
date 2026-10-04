@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "raymath.h"
+#include "game/talents_game.h"
 #include "ui/icons.h"
 #include "ui/theme.h"
 #include "sim/lang.h"
@@ -12,7 +13,8 @@
 #define CART_ID "vehiculo.tierra.carreta_bueyes"
 #define CART_RANGE 5.0f  // m: para cargar la carreta
 #define PACK_RANGE 8.0f  // m: para usar las alforjas de una montura
-#define CARRY_LIMIT 20.0f // kg: con mas encima se anda mas lento
+#define CARRY_BASE 20.0f // kg: con mas encima se anda mas lento (mas con tatuajes y joyas de carga)
+#define CARRY_LIMIT (CARRY_BASE * (1.0f + ig_stat(ga, STAT_CARRY)))
 
 static float dist_xz(Vector3 a, float x, float z) { return sqrtf((a.x - x) * (a.x - x) + (a.z - z) * (a.z - z)); }
 
@@ -23,8 +25,7 @@ void ig_init(GameActions *ga, Props *props, const Terrain *t) {
     bag_init(&ga->armory, BAG_CAMP, 0.0f);
     for (int i = 0; i < GA_PACKS; i++) ga->pack_animal[i] = -1;
     for (int i = 0; i < GA_LOOT; i++) ga->loot_age[i] = -1.0f;
-    loadout_init(&ga->loadout);
-    memset(ga->amulet_id, 0, sizeof(ga->amulet_id));
+    tg_init(ga);
     const Inventory *inv = ga->inv;
     // Lo que el jugador lleva al salir: municion, hierbas, algo de comer y dos amuletos.
     bag_add(&ga->pockets, inv, "utileria.consumible.hierbas", 1, 1.0f);
@@ -35,6 +36,8 @@ void ig_init(GameActions *ga, Props *props, const Terrain *t) {
     bag_add(&ga->backpack, inv, "utileria.consumible.carne_seca", 2, 1.0f);
     bag_add(&ga->backpack, inv, "accesorio.amuleto.lobo", 1, 1.0f);
     bag_add(&ga->backpack, inv, "accesorio.amuleto.ciervo", 1, 1.0f);
+    bag_add(&ga->pockets, inv, "utileria.gema.turquesa", 1, 1.0f); // para el orfebre
+    bag_add(&ga->pockets, inv, "utileria.material.plata", 1, 1.0f);
     // La carreta de la tribu, junto al campamento, con algo de carga.
     props_add(props, CART_ID, (Vector3){ -12.0f, terrain_height(t, -12.0f, 24.0f), 24.0f }, 0.6f);
     bag_add(&ga->cart, inv, "utileria.material.troncos", 4, 1.0f);
@@ -48,7 +51,7 @@ void ig_init(GameActions *ga, Props *props, const Terrain *t) {
     bag_add(&ga->armory, inv, "accesorio.amuleto.aguila_ibice", 1, 1.0f);
 }
 
-bool ig_blocks_input(const GameActions *ga) { return ga->inv_open || ga->equip_open; }
+bool ig_blocks_input(const GameActions *ga) { return ga->inv_open || ga->equip_open || ga->dlg.open; }
 
 // ------------------------------------------------------------------ contenedores a mano
 typedef enum { C_BAG, C_CAMP } ContType;
@@ -122,13 +125,13 @@ int ig_use(GameActions *ga, const Props *props, const Player *p, const char *id,
     return used;
 }
 
-static int put_into(GameActions *ga, const Cont *to, const char *id, int n, float cond) {
+static int put_into(GameActions *ga, const Cont *to, const char *id, int n, float cond, unsigned short var) {
     if (to->type == C_CAMP) {
-        if (item_is_gear(id) || !strncmp(id, "accesorio.", 10)) return bag_add(&ga->armory, ga->inv, id, n, cond);
+        if (item_is_gear(id) || !strncmp(id, "accesorio.", 10)) return bag_add_var(&ga->armory, ga->inv, id, n, cond, var);
         stock_add(&ga->stock, id, n);
         return n;
     }
-    return bag_add(to->bag, ga->inv, id, n, cond);
+    return bag_add_var(to->bag, ga->inv, id, n, cond, var);
 }
 
 int ig_store(GameActions *ga, const Props *props, const Player *p, const char *id, int n, float condition) {
@@ -136,8 +139,8 @@ int ig_store(GameActions *ga, const Props *props, const Player *p, const char *i
     int k = containers(ga, props, p, c), stored = 0;
     // Primero la mochila, luego los bolsillos y lo demas.
     static const int order[] = { 1, 0 };
-    for (int o = 0; o < 2 && stored < n; o++) stored += put_into(ga, &c[order[o]], id, n - stored, condition);
-    for (int i = 2; i < k && stored < n; i++) stored += put_into(ga, &c[i], id, n - stored, condition);
+    for (int o = 0; o < 2 && stored < n; o++) stored += put_into(ga, &c[order[o]], id, n - stored, condition, 0);
+    for (int i = 2; i < k && stored < n; i++) stored += put_into(ga, &c[i], id, n - stored, condition, 0);
     return stored;
 }
 
@@ -147,7 +150,23 @@ float ig_speed_scale(const GameActions *ga) {
     return ga->mounted >= 0 ? 1.0f : bag_speed_scale(ig_carried_kg(ga), CARRY_LIMIT);
 }
 
-float ig_stat(const GameActions *ga, Stat s) { return loadout_stat(&ga->loadout, s); }
+float ig_stat(const GameActions *ga, Stat s) { return tg_stat(ga, s); }
+
+int ig_store_var(GameActions *ga, const Props *props, const Player *p, const char *id, int n, float condition, unsigned short var) {
+    Cont c[10];
+    int k = containers(ga, props, p, c), stored = 0;
+    static const int order[] = { 1, 0 };
+    for (int o = 0; o < 2 && stored < n; o++) stored += put_into(ga, &c[order[o]], id, n - stored, condition, var);
+    for (int i = 2; i < k && stored < n; i++) stored += put_into(ga, &c[i], id, n - stored, condition, var);
+    return stored;
+}
+
+int ig_bags(GameActions *ga, const Props *props, const Player *p, Bag **out, int max) {
+    Cont c[10];
+    int k = containers(ga, props, p, c), n = 0;
+    for (int i = 0; i < k && n < max; i++) out[n++] = c[i].type == C_BAG ? c[i].bag : &ga->armory;
+    return n;
+}
 
 // ------------------------------------------------------------------ filas de un contenedor
 typedef struct {
@@ -156,18 +175,19 @@ typedef struct {
     float cond;
     int src; // 0 hueco de bolsa, 1 acopio, 2 armeria
     int idx;
+    unsigned short var; // variante (joyas)
 } Row;
 
 static int rows_of(const GameActions *ga, const Cont *c, Row *rows, int max) {
     int n = 0;
     if (c->type == C_BAG) {
-        for (int i = 0; i < c->bag->n && n < max; i++) rows[n++] = (Row){ c->bag->s[i].id, c->bag->s[i].count, c->bag->s[i].condition, 0, i };
+        for (int i = 0; i < c->bag->n && n < max; i++) rows[n++] = (Row){ c->bag->s[i].id, c->bag->s[i].count, c->bag->s[i].condition, 0, i, c->bag->s[i].var };
         return n;
     }
     for (int i = 0; i < ga->armory.n && n < max; i++)
-        rows[n++] = (Row){ ga->armory.s[i].id, ga->armory.s[i].count, ga->armory.s[i].condition, 2, i };
+        rows[n++] = (Row){ ga->armory.s[i].id, ga->armory.s[i].count, ga->armory.s[i].condition, 2, i, ga->armory.s[i].var };
     for (int i = 0; i < ga->stock.n && n < max; i++)
-        if (ga->stock.e[i].count > 0) rows[n++] = (Row){ ga->stock.e[i].id, ga->stock.e[i].count, 1.0f, 1, i };
+        if (ga->stock.e[i].count > 0) rows[n++] = (Row){ ga->stock.e[i].id, ga->stock.e[i].count, 1.0f, 1, i, 0 };
     return n;
 }
 
@@ -184,7 +204,7 @@ static int move_row(GameActions *ga, const Cont *from, const Row *r, const Cont 
     snprintf(id, sizeof(id), "%s", r->id); // la fila apunta al hueco, que puede cambiar
     Row copy = *r;
     copy.id = id;
-    int moved = put_into(ga, to, id, n, r->cond);
+    int moved = put_into(ga, to, id, n, r->cond, r->var);
     if (moved > 0) remove_row(ga, from, &copy, moved);
     return moved;
 }
@@ -195,7 +215,7 @@ static const char *item_name(const GameActions *ga, const char *id) {
 }
 
 // ------------------------------------------------------------------ equipo
-// Las piezas que se pueden poner en el hueco s (armadura) o como amuleto (s < 0).
+// Las piezas que se pueden poner en el hueco s (armadura) o en el hueco de joya -(s + 1).
 static int candidates(GameActions *ga, const Props *props, const Player *p, int s, Cont *conts, int nc, Row *out, int *cont_of,
                       int max) {
     int n = 0;
@@ -203,7 +223,7 @@ static int candidates(GameActions *ga, const Props *props, const Player *p, int 
         Row rows[64];
         int k = rows_of(ga, &conts[c], rows, 64);
         for (int i = 0; i < k && n < max; i++) {
-            bool fits = s >= 0 ? armor_slot_for(rows[i].id) == s : !strncmp(rows[i].id, "accesorio.amuleto.", 18);
+            bool fits = s >= 0 ? armor_slot_for(rows[i].id) == s : jewel_fits(rows[i].id, (JewelSlot)(-s - 1));
             if (!fits) continue;
             out[n] = rows[i];
             cont_of[n++] = c;
@@ -254,7 +274,7 @@ static void equip_armor(GameActions *ga, Combat *cb, const Props *props, const P
     float cond = cand[pick].cond;
     remove_row(ga, &conts[cont_of[pick]], &cand[pick], 1);
     if (cur->id[0] && !stash(ga, props, p, cur->id, cur->durability / cur->durability_max)) {
-        put_into(ga, &conts[cont_of[pick]], id, 1, cond); // la devuelve: no hay donde dejar la vieja
+        put_into(ga, &conts[cont_of[pick]], id, 1, cond, 0); // la devuelve: no hay donde dejar la vieja
         snprintf(log, len, "%s", T("No hay sitio donde dejar la pieza que llevas."));
         return;
     }
@@ -263,40 +283,38 @@ static void equip_armor(GameActions *ga, Combat *cb, const Props *props, const P
     snprintf(log, len, T("Te pones: %s (%d %%)."), item_name(ga, id), (int)(cond * 100.0f));
 }
 
-static void equip_amulet(GameActions *ga, const Props *props, const Player *p, int slot, bool remove, char *log, size_t len) {
-    char *cur = ga->amulet_id[slot];
-    if (remove || cur[0]) { // quitar el que hay (y, si no era quitar, poner otro despues)
-        if (cur[0]) {
-            if (!stash(ga, props, p, cur, 1.0f)) {
-                snprintf(log, len, "%s", T("No hay sitio donde guardar el amuleto."));
-                return;
-            }
-            snprintf(log, len, T("Te quitas: %s."), item_name(ga, cur));
-            loadout_unequip_amulet(&ga->loadout, slot);
-            cur[0] = '\0';
-        }
-        if (remove) return;
-    }
+// Joyas: Enter pone (o cambia por la siguiente que haya a mano); quitar la guarda.
+static void equip_jewel(GameActions *ga, const Props *props, const Player *p, int slot, bool remove, char *log, size_t len) {
+    WornJewel *cur = &ga->jewels.slot[slot];
     Cont conts[10];
     int nc = containers(ga, props, p, conts);
     Row cand[16];
     int cont_of[16];
-    int n = candidates(ga, props, p, -1, conts, nc, cand, cont_of, 16);
-    for (int i = 0; i < n; i++) {
-        bool worn = false;
-        for (int k = 0; k < AMULET_SLOTS; k++) worn |= !strcmp(ga->amulet_id[k], cand[i].id);
-        if (worn) continue;
-        Charm c;
-        if (!amulet_charm(cand[i].id, &c)) continue;
-        snprintf(cur, INV_ID_LEN, "%s", cand[i].id);
-        remove_row(ga, &conts[cont_of[i]], &cand[i], 1);
-        loadout_equip_amulet(&ga->loadout, slot, &c);
-        char d[96];
-        charm_describe(&c, d, sizeof(d));
-        snprintf(log, len, T("Te cuelgas: %s (%s)."), item_name(ga, cur), d);
+    int n = remove ? 0 : candidates(ga, props, p, -(slot + 1), conts, nc, cand, cont_of, 16);
+    if (!remove && !n) {
+        snprintf(log, len, T("No tienes a mano una joya para: %s."), jewel_slot_name((JewelSlot)slot));
         return;
     }
-    if (!remove) snprintf(log, len, "%s", T("No tienes a mano otro amuleto."));
+    if (cur->id[0]) { // quitar la que hay
+        if (ig_store_var(ga, props, p, cur->id, 1, 1.0f, cur->var) != 1) {
+            snprintf(log, len, "%s", T("No hay sitio donde guardar la joya."));
+            return;
+        }
+        snprintf(log, len, T("Te quitas: %s."), item_name(ga, cur->id));
+        memset(cur, 0, sizeof(*cur));
+        if (remove) return;
+        n = candidates(ga, props, p, -(slot + 1), conts, nc, cand, cont_of, 16); // las filas cambiaron
+        if (!n) return;
+    }
+    char id[INV_ID_LEN];
+    snprintf(id, sizeof(id), "%s", cand[0].id);
+    unsigned short var = cand[0].var;
+    remove_row(ga, &conts[cont_of[0]], &cand[0], 1);
+    snprintf(cur->id, sizeof(cur->id), "%s", id);
+    cur->var = var;
+    char d[128];
+    jewel_describe(id, var, d, sizeof(d));
+    snprintf(log, len, T("Te pones: %s (%s)."), item_name(ga, id), d[0] ? d : T("sin efecto"));
 }
 
 // ------------------------------------------------------------------ reparaciones
@@ -511,14 +529,43 @@ static Rectangle inv_tile_rect(int k, int i, int first_row) {
                         (float)(PANE_Y + UI_PANEL_INSET + 46 + r * (INV_TILE + INV_GAP)), INV_TILE, INV_TILE };
 }
 
-// Equipo: los nueve huecos alrededor de la figura y los tres amuletos debajo.
+// Equipo, en tres pestañas: armadura (nueve huecos alrededor de la figura), joyas
+// (cuatro anillos, dos brazaletes, collar, aretes y hebilla) y tatuajes (las ocho
+// zonas del cuerpo y, a la derecha, el arbol de los cinco motivos).
 #define FIG_X 170
+#define EQUIP_TABS 3
+static Rectangle equip_tab_rect(int t) { return (Rectangle){ (float)(26 + t * 32), 20, 28, 28 }; }
+
 static Rectangle equip_rect(int i) {
     static const int pos[SLOT_COUNT][2] = {
-        { -84, 44 }, { 52, 64 }, { 52, 104 }, { -84, 84 }, { -84, 124 }, { 52, 144 }, { -84, 164 }, { 52, 184 }, { -16, 222 },
+        { -84, 56 }, { 52, 76 }, { 52, 116 }, { -84, 96 }, { -84, 136 }, { 52, 156 }, { -84, 176 }, { 52, 196 }, { -16, 234 },
     };
-    if (i < SLOT_COUNT) return (Rectangle){ (float)(FIG_X + pos[i][0]), (float)pos[i][1], 32, 32 };
-    return (Rectangle){ (float)(FIG_X - 58 + (i - SLOT_COUNT) * 42), 278, 32, 32 };
+    return (Rectangle){ (float)(FIG_X + pos[i][0]), (float)pos[i][1], 32, 32 };
+}
+
+static Rectangle jewel_rect(int i) {
+    static const int pos[JS_COUNT][2] = {
+        { -84, 156 }, { -84, 196 }, { 52, 156 }, { 52, 196 }, { -84, 116 }, { 52, 116 }, { 52, 76 }, { -84, 56 }, { -16, 234 },
+    };
+    return (Rectangle){ (float)(FIG_X + pos[i][0]), (float)pos[i][1], 32, 32 };
+}
+
+static Rectangle zone_rect(int z) {
+    static const int pos[TZ_COUNT][2] = { { -84, 56 }, { 52, 76 }, { 52, 116 }, { -84, 96 }, { -84, 136 }, { 52, 156 }, { -84, 176 }, { 52, 196 } };
+    return (Rectangle){ (float)(FIG_X + pos[z][0]), (float)pos[z][1], 32, 32 };
+}
+
+// El arbol: una columna por motivo; filas: grado 1, grado 2, rama A y rama B del tercero.
+static Rectangle node_rect(int i) {
+    const TattooNode *n = tattoo_node(i);
+    int row = n->tier == 3 ? 1 + n->branch : n->tier - 1;
+    return (Rectangle){ (float)(338 + n->motif * 54), (float)(70 + row * 46), 32, 32 };
+}
+
+static int equip_count(const GameActions *ga) { return ga->equip_tab == 0 ? SLOT_COUNT : ga->equip_tab == 1 ? JS_COUNT : TATTOO_NODES; }
+static int *equip_cur(GameActions *ga) { return ga->equip_tab == 0 ? &ga->equip_cursor : ga->equip_tab == 1 ? &ga->jewel_cursor : &ga->tattoo_cursor; }
+static Rectangle equip_item_rect(const GameActions *ga, int i) {
+    return ga->equip_tab == 0 ? equip_rect(i) : ga->equip_tab == 1 ? jewel_rect(i) : node_rect(i);
 }
 
 void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool input_ok, char *log, size_t len) {
@@ -578,24 +625,30 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
         }
     }
     if (ga->equip_open) {
-        const int total = SLOT_COUNT + AMULET_SLOTS;
-        if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_S) || IsKeyPressed(KEY_D))
-            ga->equip_cursor = (ga->equip_cursor + 1) % total;
-        if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_W) || IsKeyPressed(KEY_A))
-            ga->equip_cursor = (ga->equip_cursor + total - 1) % total;
+        // Pestañas: Q/E o clic.
+        if (IsKeyPressed(KEY_E)) ga->equip_tab = (ga->equip_tab + 1) % EQUIP_TABS;
+        if (IsKeyPressed(KEY_Q)) ga->equip_tab = (ga->equip_tab + EQUIP_TABS - 1) % EQUIP_TABS;
+        for (int t = 0; t < EQUIP_TABS; t++)
+            if (ui_click(equip_tab_rect(t))) ga->equip_tab = t;
+        const int total = equip_count(ga);
+        int *cur = equip_cur(ga);
+        if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_S) || IsKeyPressed(KEY_D)) *cur = (*cur + 1) % total;
+        if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_W) || IsKeyPressed(KEY_A)) *cur = (*cur + total - 1) % total;
+        if (*cur >= total) *cur = 0;
         bool put = IsKeyPressed(KEY_ENTER), take = IsKeyPressed(KEY_BACKSPACE) || IsKeyPressed(KEY_DELETE);
         for (int i = 0; i < total; i++) { // raton: pasar elige; clic sobre lo elegido cambia; clic derecho quita
-            Rectangle r = equip_rect(i);
-            if (ui_pointer_moved() && ui_hover(r)) ga->equip_cursor = i;
+            Rectangle r = equip_item_rect(ga, i);
+            if (ui_pointer_moved() && ui_hover(r)) *cur = i;
             if (ui_click(r)) {
-                if (ga->equip_cursor == i) put = true;
-                ga->equip_cursor = i;
+                if (*cur == i) put = true;
+                *cur = i;
             }
-            if (ui_hover(r) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) ga->equip_cursor = i, take = true;
+            if (ui_hover(r) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) *cur = i, take = true;
         }
-        if (put || take) {
-            if (ga->equip_cursor < SLOT_COUNT) equip_armor(ga, cb, props, p, ga->equip_cursor, take, log, len);
-            else equip_amulet(ga, props, p, ga->equip_cursor - SLOT_COUNT, take, log, len);
+        if (put || take) { // los tatuajes no se ponen ni se quitan aqui: los hace el druida, para siempre
+            if (ga->equip_tab == 0) equip_armor(ga, cb, props, p, *cur, take, log, len);
+            else if (ga->equip_tab == 1) equip_jewel(ga, props, p, *cur, take, log, len);
+            else snprintf(log, len, "%s", take ? T("Un tatuaje no se puede quitar.") : T("Los tatuajes los hace un druida: háblale (F)."));
         }
     }
 }
@@ -674,12 +727,141 @@ static void draw_inventory(const GameActions *ga, const Props *props, const Play
     ui_legend_default(T("Inventario"), T("Flechas: elegir · Q/E: contenedor · Enter: pasar · I: cerrar"));
 }
 
+static IconId motif_icon(Motif m) {
+    static const IconId I[MOTIF_COUNT] = { ICON_ANIMAL, ICON_VELOCIDAD, ICON_EXPLORADOR, ICON_TATUAJE, ICON_AGUA };
+    return m >= 0 && m < MOTIF_COUNT ? I[m] : ICON_TATUAJE;
+}
+
+static IconId zone_icon(TattooZone z) {
+    static const IconId I[TZ_COUNT] = { ICON_CASCO, ICON_CUELLO, ICON_TORSO, ICON_MOCHILA, ICON_BRAZALES, ICON_SABLE, ICON_GUANTES, ICON_GREBAS };
+    return z >= 0 && z < TZ_COUNT ? I[z] : ICON_TATUAJE;
+}
+
+static IconId jewel_slot_icon(int s) {
+    JewelType t = slot_type((JewelSlot)s);
+    return t == JT_RING ? ICON_ANILLO : t == JT_BRACELET ? ICON_BRAZALETE : t == JT_NECKLACE ? ICON_COLLAR : t == JT_EARRINGS ? ICON_ARETE : ICON_HEBILLA;
+}
+
+static void draw_jewel_tab(const GameActions *ga, int w, int h) {
+    (void)h;
+    for (int i = 0; i < JS_COUNT; i++) {
+        const WornJewel *j = &ga->jewels.slot[i];
+        Rectangle r = jewel_rect(i);
+        bool sel = i == ga->jewel_cursor;
+        bool hover = ui_tile(r, j->id[0] ? icon_for_item(j->id) : jewel_slot_icon(i), sel, j->id[0] != '\0');
+        Gem g = jewel_gem(j->var);
+        if (j->id[0] && g != GEM_NONE) DrawCircle((int)r.x + 5, (int)r.y + 5, 2, jewel_enchant(j->var) ? UI_TURQUOISE : UI_BONE_DIM);
+        if (hover || sel) {
+            char d[160] = "";
+            if (j->id[0]) jewel_describe(j->id, j->var, d, sizeof(d));
+            const char *title = j->id[0] ? item_name(ga, j->id) : jewel_slot_name((JewelSlot)i);
+            const char *det = j->id[0] ? TextFormat(T("%s · Supr: quitar"), d) : T("vacío · Enter: ponerte una joya que tengas a mano");
+            if (hover) ui_legend(title, det);
+            else ui_legend_default(title, det);
+        }
+    }
+    // Detalle: icono grande, la piedra, el encantamiento y lo que da.
+    const int dx = 330, dw = w - dx - 26;
+    const WornJewel *j = &ga->jewels.slot[ga->jewel_cursor];
+    Rectangle big = { (float)dx, 60, 68, 68 };
+    ui_tile(big, j->id[0] ? icon_for_item(j->id) : jewel_slot_icon(ga->jewel_cursor), true, j->id[0] != '\0');
+    int tx = dx + 78;
+    if (!j->id[0]) {
+        ui_text(jewel_slot_name((JewelSlot)ga->jewel_cursor), tx, 62, 10, UI_BONE_DIM);
+    } else {
+        ui_text_wrapped(item_name(ga, j->id), tx, 62, dw - 78, 10, UI_GOLD_LIGHT);
+        Gem g = jewel_gem(j->var);
+        if (g != GEM_NONE) {
+            ui_icon(ICON_GEMA, (float)tx, 84, 16, UI_TURQ_LIGHT);
+            ui_text(gem_name(g), tx + 20, 88, 10, UI_BONE);
+        }
+        char d[160];
+        jewel_describe(j->id, j->var, d, sizeof(d));
+        ui_text_wrapped(d, dx, 140, dw, 10, UI_TURQUOISE);
+        if (jewel_parse(j->id, NULL, NULL) && jewel_enchant(j->var) == ENCH_NONE)
+            ui_text_wrapped(T("Sin encantar no hace nada: llévasela a un druida."), dx, 170, dw, 10, UI_CARNELIAN);
+    }
+    // Suma de todas las joyas.
+    int y = 206, x = dx;
+    ui_divider(dx, y - 8, dw, UI_METAL_GOLD);
+    for (int s = 0; s < STAT_COUNT; s++) {
+        float v = jewelry_stat(&ga->jewels, (Stat)s);
+        if (v == 0.0f) continue;
+        const char *t = TextFormat("%s %+d%%", stat_name((Stat)s), (int)(v * 100.0f + 0.5f));
+        if (x + MeasureText(t, 10) > dx + dw) x = dx, y += 12;
+        ui_text(t, x, y, 10, UI_BONE);
+        x += MeasureText(t, 10) + 12;
+    }
+}
+
+static void draw_tattoo_tab(const GameActions *ga, int w, int h) {
+    (void)h;
+    // El cuerpo: lo tatuado en cada zona (para siempre).
+    for (int z = 0; z < TZ_COUNT; z++) {
+        Rectangle r = zone_rect(z);
+        int node = ga->tattoos.node[z];
+        bool hover = ui_tile(r, node >= 0 ? motif_icon(tattoo_node(node)->motif) : zone_icon((TattooZone)z), false, node >= 0);
+        if (node >= 0) ui_tile_badge(r, tattoo_node(node)->tier == 3 ? "III" : tattoo_node(node)->tier == 2 ? "II" : "I", UI_TURQ_LIGHT);
+        if (hover) {
+            char d[160] = "";
+            if (node >= 0) tattoo_describe(node, (TattooZone)z, d, sizeof(d));
+            char zn[48];
+            snprintf(zn, sizeof(zn), "%s", zone_name((TattooZone)z));
+            if (zn[0] >= 'a' && zn[0] <= 'z') zn[0] = (char)(zn[0] - 'a' + 'A');
+            ui_legend(node >= 0 ? TextFormat("%s: %s", zn, T(tattoo_node(node)->name)) : zn, node >= 0 ? d : T("sin tatuar"));
+        }
+    }
+    // Nivel y experiencia.
+    const int dx = 330, dw = w - dx - 26;
+    ui_icon(ICON_NIVEL, (float)dx, 24, 16, UI_GOLD_LIGHT);
+    ui_text(TextFormat(T("Nivel %d"), ga->prog.level), dx + 20, 28, 10, UI_GOLD_LIGHT);
+    ui_bar(dx + 80, 30, dw - 80, ga->prog.level >= LEVEL_MAX ? 1.0f : ga->prog.xp / xp_to_next(ga->prog.level), UI_TURQUOISE, UI_METAL_GOLD);
+    // El arbol: una columna por motivo.
+    for (int m = 0; m < MOTIF_COUNT; m++) {
+        int cx = 338 + m * 54;
+        ui_icon(motif_icon((Motif)m), (float)cx + 8, 48, 16, UI_BONE_DIM);
+        DrawLine(cx + 16, 102, cx + 16, 116, UI_GOLD_DARK);
+        DrawLine(cx + 16, 148, cx + 16, 162, UI_GOLD_DARK);
+    }
+    for (int i = 0; i < TATTOO_NODES; i++) {
+        const TattooNode *n = tattoo_node(i);
+        Rectangle r = node_rect(i);
+        bool have = tattoo_has(&ga->tattoos, i);
+        TattooCheck c = have ? TAT_OK : tattoo_can(&ga->tattoos, i, TZ_COUNT, ga->prog.level);
+        // tattoo_can con una zona invalida contesta "zona ocupada": miramos lo demas aparte.
+        bool open = !have && ga->prog.level >= n->level;
+        for (int k = 0; k < TATTOO_NODES && open; k++) {
+            const TattooNode *o = tattoo_node(k);
+            if (o->motif == n->motif && o->tier == 3 && n->tier == 3 && o->branch != n->branch && tattoo_has(&ga->tattoos, k)) open = false;
+        }
+        if (open && n->tier > 1) {
+            bool prev = false;
+            for (int k = 0; k < TATTOO_NODES; k++)
+                if (tattoo_node(k)->motif == n->motif && tattoo_node(k)->tier == n->tier - 1 && tattoo_has(&ga->tattoos, k)) prev = true;
+            open = prev;
+        }
+        (void)c;
+        bool sel = i == ga->tattoo_cursor;
+        bool hover = ui_tile(r, motif_icon(n->motif), sel || have, open || have);
+        if (have) DrawRectangleLinesEx((Rectangle){ r.x - 2, r.y - 2, r.width + 4, r.height + 4 }, 1, UI_TURQUOISE);
+        if (!open && !have) ui_icon(ICON_BLOQUEADO, r.x + r.width - 12, r.y + r.height - 12, 16, UI_BONE_DIM);
+        if (n->active != ABIL_NONE) DrawCircle((int)r.x + 5, (int)r.y + 5, 2, UI_CARNELIAN); // habilidad activa
+        if (hover || sel) {
+            const char *det = TextFormat(T("%s · nivel %d%s"), T(n->desc), n->level, have ? T(" · tatuado") : open ? T(" · pídeselo a un druida") : "");
+            if (hover) ui_legend(T(n->name), det);
+            else ui_legend_default(T(n->name), det);
+        }
+    }
+    ui_text_wrapped(T("Un tatuaje es para siempre: la zona del cuerpo cambia a qué va el bonus. El tercer grado se bifurca: elegir una rama cierra la otra."),
+                    dx, 262, dw, 10, UI_BONE_DIM);
+}
+
 static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h) {
     DrawRectangle(0, 0, w, h, (Color){ 10, 7, 5, 150 });
     ui_panel((Rectangle){ 10, 10, (float)(w - 20), (float)(h - 34) }, UI_METAL_GOLD);
     const ArmorPiece *s = cb->armor.slot;
     // La figura: un guerrero esquematico con sus piezas coloreadas por material.
-    const int fx = FIG_X, fy = 56;
+    const int fx = FIG_X, fy = 68;
     DrawCircle(fx, fy + 12, 11, mat_color(&s[SLOT_HELMET]));
     DrawRectangle(fx - 5, fy + 23, 10, 7, mat_color(&s[SLOT_NECK]));
     DrawRectangle(fx - 18, fy + 30, 36, 42, mat_color(&s[SLOT_TORSO]));
@@ -694,9 +876,22 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
     DrawRectangle(fx + 3, fy + 88, 13, 60, mat_color(&s[SLOT_GREAVES]));
     DrawRectangle(fx - 17, fy + 148, 15, 9, mat_color(&s[SLOT_BOOTS]));
     DrawRectangle(fx + 2, fy + 148, 15, 9, mat_color(&s[SLOT_BOOTS]));
-    ui_divider(fx - 70, 266, 140, UI_METAL_GOLD);
+    // Pestañas: armadura, joyas, tatuajes.
+    static const IconId TAB_ICON[EQUIP_TABS] = { ICON_TORSO, ICON_ANILLO, ICON_TATUAJE };
+    static const char *TAB_NAME[EQUIP_TABS] = { N_("Armadura"), N_("Joyas"), N_("Tatuajes") };
+    for (int t = 0; t < EQUIP_TABS; t++)
+        if (ui_tile(equip_tab_rect(t), TAB_ICON[t], t == ga->equip_tab, true)) ui_legend(T(TAB_NAME[t]), T("Q / E cambia de pestaña"));
+    ui_text(T(TAB_NAME[ga->equip_tab]), 26 + EQUIP_TABS * 32 + 6, 26, 20, UI_GOLD_LIGHT);
+    if (ga->equip_tab == 1) {
+        draw_jewel_tab(ga, w, h);
+        return;
+    }
+    if (ga->equip_tab == 2) {
+        draw_tattoo_tab(ga, w, h);
+        return;
+    }
     // Los huecos: el icono del hueco; puesto, teñido del material.
-    for (int i = 0; i < SLOT_COUNT + AMULET_SLOTS; i++) {
+    for (int i = 0; i < SLOT_COUNT; i++) {
         Rectangle r = equip_rect(i);
         bool sel = i == ga->equip_cursor, hover;
         if (i < SLOT_COUNT) {
@@ -717,18 +912,6 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
                 if (hover) ui_legend(title, d);
                 else ui_legend_default(title, d);
             }
-        } else {
-            const char *id = ga->amulet_id[i - SLOT_COUNT];
-            hover = ui_tile(r, id[0] ? icon_for_item(id) : ICON_AMULETO, sel, id[0] != '\0');
-            if (hover || sel) {
-                Charm c;
-                char d[96] = "";
-                if (id[0] && amulet_charm(id, &c)) charm_describe(&c, d, sizeof(d));
-                const char *title = id[0] ? item_name(ga, id) : TextFormat(T("Amuleto %d"), i - SLOT_COUNT + 1);
-                const char *det = id[0] ? d : T("vacío · Enter: colgarte uno de los que lleves");
-                if (hover) ui_legend(title, det);
-                else ui_legend_default(title, det);
-            }
         }
     }
     // Detalle del hueco elegido: icono grande y cifras con iconos.
@@ -736,7 +919,7 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
     int dy = 28;
     Rectangle big = { (float)dx, (float)dy, 68, 68 };
     int tx = dx + 78;
-    if (ga->equip_cursor < SLOT_COUNT) {
+    {
         const ArmorPiece *pc = &s[ga->equip_cursor];
         ui_tile(big, icon_for_slot(ga->equip_cursor), true, pc->id[0] != '\0');
         if (pc->id[0]) {
@@ -758,18 +941,6 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
                 ui_text(TextFormat("%d %%", st[k].pct), cx + 20, cy + 4, 10, UI_BONE);
                 if (ui_hover((Rectangle){ (float)cx, (float)cy, 120, 18 })) ui_legend(st[k].name, TextFormat("%d %%", st[k].pct));
             }
-        } else {
-            ui_text(T("Vacío"), tx, dy + 2, 10, UI_BONE_DIM);
-        }
-    } else {
-        Charm c;
-        const char *id = ga->amulet_id[ga->equip_cursor - SLOT_COUNT];
-        ui_tile(big, id[0] ? icon_for_item(id) : ICON_AMULETO, true, id[0] != '\0');
-        if (id[0] && amulet_charm(id, &c)) {
-            char d[96];
-            charm_describe(&c, d, sizeof(d));
-            ui_text_wrapped(item_name(ga, id), tx, dy + 2, dw - 78, 10, UI_GOLD_LIGHT);
-            ui_text_wrapped(d, dx, dy + 80, dw, 10, UI_TURQUOISE);
         } else {
             ui_text(T("Vacío"), tx, dy + 2, 10, UI_BONE_DIM);
         }

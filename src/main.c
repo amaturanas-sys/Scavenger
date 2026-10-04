@@ -25,6 +25,7 @@
 #include "game/inventory_game.h"
 #include "game/save_game.h"
 #include "game/settings.h"
+#include "game/talents_game.h"
 #include "game/title_menu.h"
 #include "game/hazards_game.h"
 #include "game/player.h"
@@ -98,6 +99,8 @@ static void seed_troop(Troop *t) {
     troop_assign_role(t, troop_recruit(t, "Jebe", TRAIT_BLOODTHIRSTY), ROLE_HUNTER);
     troop_assign_role(t, troop_recruit(t, "Khasar", TRAIT_AMBITIOUS), ROLE_SCOUT);
     troop_assign_role(t, troop_recruit(t, "Temulun", 0), ROLE_COOK);
+    troop_assign_role(t, troop_recruit(t, "Ulagan", TRAIT_DEVOUT), ROLE_DRUID);   // tatua y encanta
+    troop_assign_role(t, troop_recruit(t, "Altani", 0), ROLE_GOLDSMITH);          // hace joyas
     troop_take_prisoner(t, T("Explorador enemigo"), 0);
 }
 
@@ -353,7 +356,9 @@ int main(int argc, char **argv) {
     MenuScreen start_menu_screen = MENU_TITLE;
     int start_save = -1, start_load = -1;
     int start_pause = 0;  // prueba: 1 pausa, 2 guardar, 3 controles (F1), sobre la partida
-    int start_tab = -1;   // prueba: menu Tab abierto en esa pestaña
+    int start_tab = -1;
+    int start_talk = 0;      // prueba: 1 hablar con el druida, 2 con el orfebre
+    int start_equip_tab = -1; // prueba: pestaña del equipo (1 joyas, 2 tatuajes)   // prueba: menu Tab abierto en esa pestaña
     bool start_loot = false; // prueba: bolsas de botin delante
     bool start_inv = false, start_equip = false; // pruebas: guardar al final en ese hueco / cargar al empezar
     float start_x = 0.0f, start_z = 0.0f;
@@ -374,6 +379,9 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--inventario")) start_inv = true;
         else if (!strcmp(argv[i], "--pestana") && i + 1 < argc) start_tab = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--botin")) start_loot = true;
+        else if (!strcmp(argv[i], "--hablar") && i + 1 < argc) start_talk = !strcmp(argv[++i], "orfebre") ? 2 : 1;
+        else if (!strcmp(argv[i], "--joyas")) start_equip = true, start_equip_tab = 1;
+        else if (!strcmp(argv[i], "--tatuajes")) start_equip = true, start_equip_tab = 2;
         else if (!strcmp(argv[i], "--pausa")) start_pause = 1;
         else if (!strcmp(argv[i], "--guardar")) start_pause = 2;
         else if (!strcmp(argv[i], "--controles")) start_pause = 3;
@@ -560,6 +568,20 @@ int main(int argc, char **argv) {
             g_actions.equip_open = start_equip;
             start_inv = start_equip = false;
         }
+        if (start_equip_tab >= 0 && frame == 4) {
+            g_actions.equip_tab = start_equip_tab;
+            start_equip_tab = -1;
+        }
+        if (start_talk && frame == 6) { // prueba: al lado del druida (u orfebre), hablando
+            Role want = start_talk == 2 ? ROLE_GOLDSMITH : ROLE_DRUID;
+            for (int k = 0; k < troop.count && k < TROOP_MAX; k++)
+                if (troop.members[k].role == want) {
+                    Vector3 at = g_actions.npcs[k].pos;
+                    player.pos = (Vector3){ at.x + 1.5f, terrain_height(&terrain, at.x + 1.5f, at.z), at.z };
+                }
+            tg_try_talk(&g_actions, &troop, &player, log, sizeof(log));
+            start_talk = 0;
+        }
         if (start_tab >= 0 && frame == 3) { // prueba: menu Tab (0 acciones, 1 obras, 2 fabricar, 3 reparar)
             g_actions.menu_open = true;
             g_actions.menu_tab = start_tab;
@@ -620,7 +642,11 @@ int main(int argc, char **argv) {
                 hz_update(&g_hazards, &g_climate, &terrain, &player, &g_actions, &g_props, &troop, camp.fire, world_time,
                           dt, log, sizeof(log));
             if (!gallery_mode)
-                ig_update(&g_actions, &g_combat, &g_props, &player, !menu && !hz_blocks_input(&g_hazards), log, sizeof(log));
+                ig_update(&g_actions, &g_combat, &g_props, &player, !menu && !hz_blocks_input(&g_hazards) && !g_actions.dlg.open, log,
+                          sizeof(log));
+            if (!gallery_mode)
+                tg_update(&g_actions, &g_combat, &troop, &g_props, &player,
+                          !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             if (!gallery_mode)
                 cb_update(&g_combat, &player, &g_actions, &troop, &g_props, &terrain, camp.fire,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), clock_is_night(world_time),
@@ -646,6 +672,14 @@ int main(int argc, char **argv) {
             advance_days(&troop, &rng, &day, world_time, &terrain, log, sizeof(log));
             if (IsKeyPressed(KEY_G)) show_card = !show_card && last_champion >= 0;
             memmap_visit(&g_memory, player.pos.x, player.pos.z, dt, world_time);
+            { // la vista (tatuajes del grifo, lapislazuli): el mapa se descubre mas lejos
+                static float reveal_t = 0.0f;
+                float per = ig_stat(&g_actions, STAT_PERCEPTION);
+                if (per > 0.0f && (reveal_t += dt) > 1.0f) {
+                    reveal_t = 0.0f;
+                    memmap_reveal(&g_memory, player.pos.x, player.pos.z, 30.0f * per, 30.0f, world_time);
+                }
+            }
             if (IsKeyPressed(KEY_M)) {
                 MarkerKind kind = IsKeyDown(KEY_LEFT_SHIFT) ? MARKER_DANGER : MARKER_INTEREST;
                 bool placed = memmap_toggle_marker(&g_memory, player.pos.x, player.pos.z, kind, 6.0f);
@@ -713,6 +747,8 @@ int main(int argc, char **argv) {
             cb_draw_hud(&g_combat, &g_actions, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 63, VIRTUAL_W, VIRTUAL_H);
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);
+            if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions)) tg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
+            tg_draw(&g_actions, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
             if (show_controls) menu_draw_controls(VIRTUAL_W / 2 - 200, 90, 400, 140);
         }

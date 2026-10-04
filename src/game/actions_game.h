@@ -20,7 +20,10 @@
 #include "sim/animals.h"
 #include "sim/economy.h"
 #include "sim/memory_map.h"
+#include "game/dialog.h"
+#include "sim/jewelry.h"
 #include "sim/loadout.h"
+#include "sim/talents.h"
 #include "sim/storage.h"
 #include "sim/swarms.h"
 #include "world/props.h"
@@ -91,9 +94,17 @@ typedef struct {
     Bag pockets, backpack, cart, armory;
     Bag packs[GA_PACKS];
     int pack_animal[GA_PACKS]; // animal que lleva cada alforja, o -1
-    // Amuletos colgados (src/sim/loadout.h) y sus ids del inventario.
-    Loadout loadout;
-    char amulet_id[AMULET_SLOTS][INV_ID_LEN];
+    // Capacidades del jugador (src/game/talents_game.c): nivel, tatuajes (para siempre),
+    // joyas puestas y habilidades activas (en curso y en espera).
+    Progress prog;
+    TattooBody tattoos;
+    Jewelry jewels;
+    float ab_timer[ABIL_COUNT], ab_cd[ABIL_COUNT], ab_pot[ABIL_COUNT];
+    float warmth_boost; // calor que devuelve una habilidad (lo consume src/game/hazards_game.c)
+    // Dialogo con el druida o el orfebre (y luego el guardian del campamento).
+    Dialog dlg;
+    int talk_mode, talk_member, talk_a, talk_b, talk_c;
+    int equip_tab, jewel_cursor, tattoo_cursor; // menu de equipo: armadura, joyas, tatuajes
     // Menus de inventario y de equipo.
     bool inv_open, equip_open;
     int inv_pane, inv_cont[2], inv_cursor[2], equip_cursor;
@@ -105,6 +116,7 @@ typedef struct {
     Vector3 loot_pos[GA_LOOT];
     float loot_age[GA_LOOT]; // s en el suelo; < 0: hueco libre
     Armor *player_armor; // la armadura que lleva el jugador (la pone main cada cuadro; no se guarda)
+    const Terrain *terrain; // el terreno (lo pone ga_update cada cuadro; no se guarda)
     // Trepar.
     bool climbing;
     float climb_t;

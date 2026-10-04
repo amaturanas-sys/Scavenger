@@ -87,6 +87,7 @@ typedef enum {
     CRAFT_OINTMENT,
     CRAFT_LEATHER_CUIRASS,
     CRAFT_FELT_BOOTS,
+    CRAFT_BRONZE_INGOT, // el bronce de las joyas
     CRAFT_COUNT
 } CraftId;
 
