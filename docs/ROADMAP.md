@@ -111,3 +111,4 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 ## Herramientas
 - **Assets 3D:** inventario en `assets/inventario.tsv`; importación en [assets/models/README.md](../assets/models/README.md); Kiln (`tools/assets/*.kiln.js`) y text-to-cad para crear y refinar.
 - **Optimización:** Ghidra sobre nuestros propios builds. Ver [GHIDRA.md](GHIDRA.md).
+- **Skills y agentes de Claude Code:** `.claude/skills/` (programación de juegos, C/C++, pruebas, depuración, revisión, diseño de juego) y el equipo `gamedev-*` en `.claude/agents/` con `/gamedev <tarea>`. Origen y licencias en [.claude/skills/THIRD_PARTY.md](../.claude/skills/THIRD_PARTY.md); convenciones del proyecto en `.claude/skills/estepa/`.
