@@ -3,54 +3,55 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "sim/lang.h"
 #include "sim/troop.h"
 
 #define COUNT(a) ((int)(sizeof(a) / sizeof((a)[0])))
 
 // Tablas de historia (UTF-8). Redaccion sin genero gramatical: valen para cualquiera.
 static const char *ORIGINS[] = {
-    "en una yurta de pastores de la estepa central",
-    "entre los herreros de un pueblo de montaña",
-    "en una familia campesina de la ciudad amurallada",
-    "en un clan de pescadores de la costa de fiordos",
-    "en una caravana que cruzaba el desierto",
-    "entre los cazadores del bosque de coníferas",
-    "en un clan aliado de la antigua confederación",
-    "en un campamento de esclavos del imperio",
+    N_("en una yurta de pastores de la estepa central"),
+    N_("entre los herreros de un pueblo de montaña"),
+    N_("en una familia campesina de la ciudad amurallada"),
+    N_("en un clan de pescadores de la costa de fiordos"),
+    N_("en una caravana que cruzaba el desierto"),
+    N_("entre los cazadores del bosque de coníferas"),
+    N_("en un clan aliado de la antigua confederación"),
+    N_("en un campamento de esclavos del imperio"),
 };
 static const char *EXILES[] = {
-    "Su clan fue arrasado en la masacre de la estepa",
-    "Huyó tras negarse a servir al culto",
-    "Fue desterrado por matar a un recaudador de tributos",
-    "Escapó de una columna de prisioneros destinados al sacrificio",
-    "La sequía y las malas cosechas se llevaron a su familia",
-    "Su propio clan le dio la espalda tras una derrota",
-    "Desertó del ejército imperial",
-    "Una deuda de sangre le obligó a huir",
+    N_("Su clan fue arrasado en la masacre de la estepa"),
+    N_("Huyó tras negarse a servir al culto"),
+    N_("Fue desterrado por matar a un recaudador de tributos"),
+    N_("Escapó de una columna de prisioneros destinados al sacrificio"),
+    N_("La sequía y las malas cosechas se llevaron a su familia"),
+    N_("Su propio clan le dio la espalda tras una derrota"),
+    N_("Desertó del ejército imperial"),
+    N_("Una deuda de sangre le obligó a huir"),
 };
 static const char *LIVELIHOODS[] = {
-    "vive de cazar en soledad",
-    "vende su espada a quien pague",
-    "protege caravanas en las rutas del desierto",
-    "asalta los convoyes del imperio",
-    "cura a los heridos de los caminos a cambio de comida",
-    "vaga de campamento en campamento",
-    "doma caballos salvajes en las praderas",
-    "sobrevive con lo que encuentra entre las ruinas",
+    N_("vive de cazar en soledad"),
+    N_("vende su espada a quien pague"),
+    N_("protege caravanas en las rutas del desierto"),
+    N_("asalta los convoyes del imperio"),
+    N_("cura a los heridos de los caminos a cambio de comida"),
+    N_("vaga de campamento en campamento"),
+    N_("doma caballos salvajes en las praderas"),
+    N_("sobrevive con lo que encuentra entre las ruinas"),
 };
 // La aspiracion fija el rasgo de tropa.
 static const struct {
     const char *text;
     unsigned trait;
 } ASPIRATIONS[] = {
-    { "vengar a los suyos", TRAIT_BLOODTHIRSTY },
-    { "ver arder el altar del culto", TRAIT_DEVOUT },
-    { "reunir un clan propio", TRAIT_AMBITIOUS },
-    { "encontrar un lugar donde envejecer en paz", TRAIT_MERCIFUL },
-    { "que su nombre viva en los cantos de la estepa", TRAIT_AMBITIOUS },
-    { "liberar a un ser querido prisionero", TRAIT_LOYALIST },
-    { "pagar una deuda de honor", TRAIT_LOYALIST },
-    { "recuperar las tierras de su familia", TRAIT_AMBITIOUS },
+    { N_("vengar a los suyos"), TRAIT_BLOODTHIRSTY },
+    { N_("ver arder el altar del culto"), TRAIT_DEVOUT },
+    { N_("reunir un clan propio"), TRAIT_AMBITIOUS },
+    { N_("encontrar un lugar donde envejecer en paz"), TRAIT_MERCIFUL },
+    { N_("que su nombre viva en los cantos de la estepa"), TRAIT_AMBITIOUS },
+    { N_("liberar a un ser querido prisionero"), TRAIT_LOYALIST },
+    { N_("pagar una deuda de honor"), TRAIT_LOYALIST },
+    { N_("recuperar las tierras de su familia"), TRAIT_AMBITIOUS },
 };
 static const char *NAMES[] = {
     "Arslan", "Toregene", "Chilaun", "Mukhali", "Sorghaghtani", "Bo'orchu", "Khutulun", "Tolui",
@@ -60,21 +61,21 @@ static const char *NAMES[] = {
 static const struct {
     const char *name, *epithet;
 } WEAPONS[] = {
-    { "guja de hoja ancha", "Hoja Ancha" },
-    { "sable de acero damasquinado", "Acero Rizado" },
-    { "arco compuesto de cuerno", "Arco de Cuerno" },
-    { "maza de bronce con cabeza de tigre", "Cabeza de Tigre" },
-    { "lazo con plomadas", "Lazo de Plomo" },
-    { "hacha ceremonial", "Hacha de los Muertos" },
-    { "lanza de caballería de doble punta", "Doble Punta" },
-    { "ballesta de repetición", "Lluvia de Virotes" },
+    { N_("guja de hoja ancha"), N_("Hoja Ancha") },
+    { N_("sable de acero damasquinado"), N_("Acero Rizado") },
+    { N_("arco compuesto de cuerno"), N_("Arco de Cuerno") },
+    { N_("maza de bronce con cabeza de tigre"), N_("Cabeza de Tigre") },
+    { N_("lazo con plomadas"), N_("Lazo de Plomo") },
+    { N_("hacha ceremonial"), N_("Hacha de los Muertos") },
+    { N_("lanza de caballería de doble punta"), N_("Doble Punta") },
+    { N_("ballesta de repetición"), N_("Lluvia de Virotes") },
 };
 static const char *GIFT_NAMES[GIFT_COUNT] = {
-    "gran talla", "rapidez", "fuerza", "aguante", "arma especial", "sanación", "puntería", "monta",
+    N_("gran talla"), N_("rapidez"), N_("fuerza"), N_("aguante"), N_("arma especial"), N_("sanación"), N_("puntería"), N_("monta"),
 };
 static const char *GIFT_EPITHETS[GIFT_COUNT] = {
-    "Sombra Alta", "Pies de Viento", "Mano de Hierro", "Piel de Roca",
-    NULL, "Manos que Curan", "Ojo de Halcón", "Crin Negra",
+    N_("Sombra Alta"), N_("Pies de Viento"), N_("Mano de Hierro"), N_("Piel de Roca"),
+    NULL, N_("Manos que Curan"), N_("Ojo de Halcón"), N_("Crin Negra"),
 };
 
 bool champion_appears(Rng *rng, float chance) { return rng_float(rng) < chance; }
@@ -121,18 +122,18 @@ void champion_generate(Champion *c, Rng *rng) {
 }
 
 int champion_story(const Champion *c, char *buf, size_t len) {
-    return snprintf(buf, len, "Nació %s. %s. Hoy %s, y sueña con %s.", ORIGINS[c->origin], EXILES[c->exile],
-                    LIVELIHOODS[c->livelihood], ASPIRATIONS[c->aspiration].text);
+    return snprintf(buf, len, T("Nació %s. %s. Hoy %s, y sueña con %s."), T(ORIGINS[c->origin]), T(EXILES[c->exile]),
+                    T(LIVELIHOODS[c->livelihood]), T(ASPIRATIONS[c->aspiration].text));
 }
 
 const char *gift_name(ChampionGift g) {
     for (int i = 0; i < GIFT_COUNT; i++)
-        if (g == (ChampionGift)(1u << i)) return GIFT_NAMES[i];
+        if (g == (ChampionGift)(1u << i)) return T(GIFT_NAMES[i]);
     return "?";
 }
 
 const char *champion_weapon_name(int weapon) {
-    return weapon >= 0 && weapon < COUNT(WEAPONS) ? WEAPONS[weapon].name : "";
+    return weapon >= 0 && weapon < COUNT(WEAPONS) ? T(WEAPONS[weapon].name) : "";
 }
 
 int champion_gift_count(const Champion *c) {

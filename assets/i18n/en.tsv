@@ -1,0 +1,1188 @@
+# Traducciones al idioma 'en'. Columna 1: el texto en español tal como esta en el codigo;
+# columna 2: la traduccion (vacia = sin traducir, se muestra en español). Conserva %d, %s, %.1f...
+# Se regenera con 'python3 tools/assets/i18n.py extraer' (las traducciones se conservan).
+# --- assets/inventario.tsv
+Abedul	Birch
+Abeja (enjambre)	Bee (swarm)
+Acantilado modular	Modular cliff
+Agua	Water
+Alabarda	Halberd
+Alerce	Larch
+Altar del culto	Cult altar
+Amuleto del caballo	Horse amulet
+Amuleto del ciervo	Deer amulet
+Amuleto del lobo	Wolf amulet
+Amuleto del oso	Bear amulet
+Amuleto del tigre y el dragón	Tiger and dragon amulet
+Amuleto del águila y el íbice	Eagle and ibex amulet
+Anciano	Elder
+Anillo de bronce	Bronze ring
+Anillo de oro	Gold ring
+Anillo de plata	Silver ring
+Antorcha	Torch
+Arbusto estepario	Steppe shrub
+Arco compuesto	Composite bow
+Arco compuesto de cuerno	Horn composite bow
+Arco largo	Longbow
+Aretes de bronce	Bronze earrings
+Aretes de oro	Gold earrings
+Aretes de plata	Silver earrings
+Ariete cubierto	Covered ram
+Arrecife de coral	Coral reef
+Artillero	Gunner
+Atalaya de madera	Wooden watchtower
+Avispa (enjambre)	Wasp (swarm)
+Avispero	Wasp nest
+Bala de cañón	Cannonball
+Bala de mosquete	Musket ball
+Balbal (estatua de piedra)	Balbal (stone statue)
+Ballesta	Crossbow
+Ballesta de repetición	Repeating crossbow
+Balsa	Raft
+Barco de carga	Cargo ship
+Barco de guerra con cañones	Cannon warship
+Barda de cuero para caballo	Leather horse barding
+Barda de hierro para caballo	Iron horse barding
+Barril de pólvora	Powder keg
+Barro (adobe)	Clay (adobe)
+Boleadoras	Bolas
+Botas (par) de escamas de hierro	Iron scale boots (pair)
+Botas (par) de fieltro acolchado	Padded felt boots (pair)
+Botas (par) de malla	Mail boots (pair)
+Botas (par) laminar de cuero	Leather lamellar boots (pair)
+Botas (par) ritual del culto	Cult ritual boots (pair)
+Bote de remos	Rowboat
+Brazales (par) de escamas de hierro	Iron scale bracers (pair)
+Brazales (par) de fieltro acolchado	Padded felt bracers (pair)
+Brazales (par) de malla	Mail bracers (pair)
+Brazales (par) laminar de cuero	Leather lamellar bracers (pair)
+Brazales (par) ritual del culto	Cult ritual bracers (pair)
+Brazalete de bronce	Bronze bracelet
+Brazalete de oro	Gold bracelet
+Brazalete de plata	Silver bracelet
+Brida y riendas	Bridle and reins
+Bufanda / velo contra la arena	Sand scarf / veil
+Buitre	Vulture
+Burócrata	Bureaucrat
+Caballo de guerra	Warhorse
+Cabaña de troncos	Log cabin
+Cadalso de ejecución pública	Public execution scaffold
+Caldero	Cauldron
+Campamento abandonado del padre	Father's abandoned camp
+Campesino	Peasant
+Canoa de pieles	Hide canoe
+Capa de lana	Wool cloak
+Capa de piel de lobo	Wolf fur cloak
+Carbón vegetal	Charcoal
+Carne fresca	Fresh meat
+Carne seca	Dried meat
+Carreta de mercancías	Goods wagon
+Carro con yurta montada (kibitka)	Yurt wagon (kibitka)
+Carruaje imperial	Imperial carriage
+Casa campesina	Peasant house
+Casa de adobe	Adobe house
+Casa larga de los fiordos	Fjord longhouse
+Casa urbana de dos plantas	Two-storey town house
+Casco de escamas de hierro	Iron scale helmet
+Casco de fieltro acolchado	Padded felt helmet
+Casco de malla	Mail helmet
+Casco de oro del padre	Father's gold helmet
+Casco laminar de cuero	Leather lamellar helmet
+Casco ritual del culto	Cult ritual helmet
+Catapulta	Catapult
+Cazador del bosque	Forest hunter
+Cañón de campaña	Field cannon
+Cenizas de una estructura	Ashes of a structure
+Chamán	Shaman
+Choza de fieltro	Felt hut
+Cinturón con placa de estilo animal	Animal-style plaque belt
+Cofre de botín	Loot chest
+Collar de bronce	Bronze necklace
+Collar de oro	Gold necklace
+Collar de plata	Silver necklace
+Colmena silvestre	Wild beehive
+Comerciante de caravana	Caravan merchant
+Coral rojo	Red coral
+Coraza / peto de escamas de hierro	Iron scale cuirass
+Coraza / peto de fieltro acolchado	Padded felt cuirass
+Coraza / peto de malla	Mail cuirass
+Coraza / peto laminar de cuero	Leather lamellar cuirass
+Coraza / peto ritual del culto	Cult ritual cuirass
+Cornalina	Carnelian
+Corral de cuerdas y estacas	Rope and stake corral
+Cuartel	Barracks
+Cuchillo de hueso y hierro	Bone and iron knife
+Cuerpo base: adulto común	Base body: common adult
+Cuerpo base: adulto robusto	Base body: sturdy adult
+Cuerpo base: anciano	Base body: elder
+Cuerpo base: gigante (gran guerrero)	Base body: giant (champion)
+Cuerpo base: niño	Base body: child
+Curandero	Healer
+Daga	Dagger
+Deel (caftán cruzado)	Deel (wrap caftan)
+Deel de invierno con piel	Fur winter deel
+Dromedario	Dromedary
+Duna	Dune
+El medio-hermano	The half-brother
+El padre (jefe de la confederación)	The father (confederation chief)
+El rey (anciano)	The king (elder)
+Elefante de guerra	War elephant
+Empalizada modular	Modular palisade
+Escombros	Rubble
+Escudo ceremonial del culto	Cult ceremonial shield
+Escudo de cuero endurecido	Hardened leather shield
+Escudo de madera con umbo	Bossed wooden shield
+Escudo redondo de mimbre	Round wicker shield
+Espada ceremonial del padre	Father's ceremonial sword
+Espada larga	Longsword
+Estandarte con la tamga del padre	Banner with father's tamga
+Estribos (par)	Stirrups (pair)
+Explorador	Scout
+Faldar de escamas de hierro	Iron scale tassets
+Faldar de fieltro acolchado	Padded felt tassets
+Faldar de malla	Mail tassets
+Faldar laminar de cuero	Leather lamellar tassets
+Faldar ritual del culto	Cult ritual tassets
+Flecha silbadora (señales)	Whistling arrow (signals)
+Fogata	Campfire
+Forja portátil	Portable forge
+Fundición / taller industrial	Foundry / workshop
+Gorjal / cofia de escamas de hierro	Iron scale gorget
+Gorjal / cofia de fieltro acolchado	Padded felt gorget
+Gorjal / cofia de malla	Mail coif
+Gorjal / cofia laminar de cuero	Leather lamellar gorget
+Gorjal / cofia ritual del culto	Cult ritual gorget
+Gorro de fieltro de punta	Pointed felt hat
+Gorro de piel	Fur hat
+Granate	Garnet
+Granero	Granary
+Grebas (par) de escamas de hierro	Iron scale greaves (pair)
+Grebas (par) de malla	Mail greaves (pair)
+Grebas (par) laminar de cuero	Leather lamellar greaves (pair)
+Grebas (par) ritual del culto	Cult ritual greaves (pair)
+Grieta de glaciar	Glacier crevasse
+Grilletes y cadenas	Shackles and chains
+Guanteletes (par) de escamas de hierro	Iron scale gauntlets (pair)
+Guanteletes (par) de malla	Mail gauntlets (pair)
+Guanteletes (par) laminar de cuero	Leather lamellar gauntlets (pair)
+Guanteletes (par) ritual del culto	Cult ritual gauntlets (pair)
+Guerrero nómada	Nomad warrior
+Guja	Glaive
+Guja de hoja ancha	Broad-bladed glaive
+Hacha ceremonial	Ceremonial axe
+Hacha de mano	Hand axe
+Halcón (cetrería)	Falcon (falconry)
+Harapos de prisionero	Prisoner rags
+Haz de leña	Bundle of firewood
+Hebilla de cinturón de bronce	Bronze belt buckle
+Hebilla de cinturón de oro	Gold belt buckle
+Hebilla de cinturón de plata	Silver belt buckle
+Herrero	Smith
+Hierba alta (escondite)	Tall grass (hiding)
+Hierbas curativas	Healing herbs
+Hoguera grande	Large bonfire
+Hombreras (par) de escamas de hierro	Iron scale pauldrons (pair)
+Hombreras (par) de fieltro acolchado	Padded felt pauldrons (pair)
+Hombreras (par) de malla	Mail pauldrons (pair)
+Hombreras (par) laminar de cuero	Leather lamellar pauldrons (pair)
+Hombreras (par) ritual del culto	Cult ritual pauldrons (pair)
+Honda	Sling
+Horno de cocina de barro	Clay cooking oven
+Horno de fundición de acero	Steel furnace
+Horno de fundición de bronce	Bronze furnace
+Huesos	Bones
+Jade	Jade
+Jaula de cautivos para el sacrificio	Sacrifice captive cage
+Jaula de prisioneros	Prisoner cage
+Jinete arquero	Horse archer
+Kurgán (túmulo funerario)	Kurgan (burial mound)
+La madre	The mother
+Lanza	Spear
+Lanza de caballería de doble punta	Double-tipped cavalry lance
+Lapislázuli	Lapis lazuli
+Lazo	Lasso
+Lazo con plomadas	Weighted lasso
+Leche	Milk
+Leopardo de las nieves	Snow leopard
+Lingote de bronce	Bronze ingot
+Liquen y musgo de tundra	Tundra lichen and moss
+Mantelete	Mantlet
+Mata de hierbas curativas	Healing herb patch
+Maza	Mace
+Maza de bronce con cabeza de tigre	Tiger-head bronze mace
+Mercenario	Mercenary
+Miel silvestre	Wild honey
+Mineral de cobre	Copper ore
+Mineral de estaño	Tin ore
+Mineral de hierro	Iron ore
+Molino	Mill
+Mosca (nube)	Fly (cloud)
+Mosquete de mecha	Matchlock musket
+Mosquetero	Musketeer
+Mosquito (nube)	Mosquito (cloud)
+Muralla modular	Modular city wall
+Muro de piedra seca	Dry stone wall
+Muro en ruinas	Ruined wall
+Máscara ritual del culto	Cult ritual mask
+Niño	Child
+Nómada del desierto	Desert nomad
+Oasis	Oasis
+Obrero de la fundición	Foundry worker
+Odre de airag (leche de yegua)	Airag skin (mare's milk)
+Odre de cuero	Leather waterskin
+Oficial imperial	Imperial officer
+Oro	Gold
+Oveja	Sheep
+Ovoo (túmulo de piedras chamánico)	Ovoo (shamanic cairn)
+Pala	Shovel
+Palacio imperial	Imperial palace
+Palmera datilera	Date palm
+Pan del imperio	Imperial bread
+Pantalón de montar	Riding trousers
+Pastor	Herder
+Pavés imperial	Imperial pavise
+Pedernal	Flint
+Perla	Pearl
+Perro pastor (mastín)	Sheepdog (mastiff)
+Pescador de los fiordos	Fjord fisher
+Pez (banco)	Fish (shoal)
+Peñasco (escalable)	Crag (climbable)
+Pica imperial	Imperial pike
+Piedra con mensaje cifrado	Stone with coded message
+Piedra de honda	Sling stone
+Piedra-ciervo	Deer stone
+Piedras	Stones
+Pieles curtidas	Tanned hides
+Pila de cráneos del culto	Cult skull pile
+Pino	Pine
+Placa de arreo de estilo animal del padre	Father's animal-style harness plaque
+Plata	Silver
+Plumas	Feathers
+Poste de castigo	Punishment post
+Poste tótem del clan	Clan totem pole
+Prisionero	Prisoner
+Protagonista ({NOMBRE})	Protagonist ({NOMBRE})
+Puerta de la ciudad	City gate
+Queso seco	Dried cheese
+Refugiado	Refugee
+Refugio de ramas y pieles	Branch and hide shelter
+Refugio excavado en la nieve	Snow dugout shelter
+Reno de tiro	Draft reindeer
+Roca mediana	Medium rock
+Roca pequeña	Small rock
+Rollo de cuerda	Coil of rope
+Sable curvo	Curved sabre
+Sable de acero damasquinado	Damascus steel sabre
+Sacerdote del culto	Cult priest
+Saco de grano	Sack of grain
+Saxaúl (arbusto del desierto)	Saxaul (desert shrub)
+Secadero de carne	Meat drying rack
+Silla de montar	Saddle
+Soldado ballestero	Crossbow soldier
+Soldado lancero	Spear soldier
+Suelo: Altiplano glaciar	Ground: glacial plateau
+Suelo: Bosque de coníferas	Ground: conifer forest
+Suelo: Costa de fiordos	Ground: fjord coast
+Suelo: Desierto	Ground: desert
+Suelo: Estepa	Ground: steppe
+Sulde (estandarte de crines)	Sulde (horsehair banner)
+Tablilla de madera cifrada	Coded wooden tablet
+Tambor chamánico	Shaman drum
+Tatuaje de la tamga	Tamga tattoo
+Tatuaje de olas	Wave tattoo
+Tatuaje del ciervo	Deer tattoo
+Tatuaje del grifo	Griffin tattoo
+Tatuaje del lobo	Wolf tattoo
+Telar de fieltro	Felt loom
+Templo del culto	Cult temple
+Tendones	Sinew
+Tienda ligera de viaje	Light travel tent
+Torre de asedio	Siege tower
+Tramo de río modular	Modular river section
+Trebuchet	Trebuchet
+Trepa (gancho con cuerda)	Grapple (hook and rope)
+Trinchera	Trench
+Trineo	Sled
+Troncos	Logs
+Tumba helada del padre	Father's frozen tomb
+Turquesa	Turquoise
+Témpano de hielo	Ice floe
+Tótem del ciervo	Deer totem
+Tótem del lobo	Wolf totem
+Tótem del tigre	Tiger totem
+Tótem del águila	Eagle totem
+Túnica campesina	Peasant tunic
+Túnica del culto	Cult robe
+Uniforme imperial	Imperial uniform
+Velero	Sailboat
+Verdugo	Executioner
+Virote de ballesta	Crossbow bolt
+Yak	Yak
+Yunque	Anvil
+Yunta de bueyes con carreta	Ox team with wagon
+Yurta común	Common yurt
+Yurta del jefe	Chief's yurt
+Yurta enfermería	Infirmary yurt
+Yurta quemada	Burnt yurt
+Zorro	Fox
+Águila (cetrería)	Eagle (falconry)
+Ámbar	Amber
+Ídolo del culto	Cult idol
+# --- src/game/actions_game.c
+ (%d no caben)	 (%d don't fit)
+ (%d sin ración)	 (%d unfed)
+ (enfundado)	 (sheathed)
+ (lo que no cabe, al acopio)	 (the rest goes to the store)
+ (silla para montarlo)	 (saddle it to ride)
+ · OCULTO	 · HIDDEN
+ · montado	 · mounted
+%s terminó: %s.	%s finished: %s.
+%s · Enter o clic otra vez: reparar	%s · Enter or click again: repair
+, antorcha	, torch
+, lleva algo	, carrying
+Acciones	Actions
+Cuadrilla de %d · se levanta 6 m delante de ti	Crew of %d · built 6 m ahead of you
+Demasiadas obras a la vez.	Too many works at once.
+Desenfundaste.	You draw your weapons.
+Desmonta antes de trepar (R).	Dismount before climbing (R).
+Desmontaste.	You dismount.
+Día %d: comieron %d%s, recolectaron %d. Ánimo del campamento %+.0f.	Day %d: %d ate%s, %d gathered. Camp morale %+.0f.
+El %s está demasiado entero: debilítalo peleando antes del lazo.	The %s is too strong: weaken it in a fight before the lasso.
+El %s se zafó del lazo.	The %s slipped the lasso.
+Empuñadura: %s.	Grip: %s.
+Empuñe: %s%s%s%s%s%s	Grip: %s%s%s%s%s%s
+Encendiste la antorcha (mano izquierda).	You light the torch (left hand).
+Enfundaste las armas: manos libres.	Weapons sheathed: hands free.
+Fabricando: %s.	Crafting: %s.
+Fabricar	Craft
+Falta en el acopio: %s (%d de %d).	Missing from the store: %s (%d of %d).
+Falta: %s (%d de %d).	Missing: %s (%d of %d).
+Forjado	Forged
+Forjando: %s.	Forging: %s.
+Hace falta un %s en la tribu.	The tribe needs a %s.
+Hace falta: %s.	Needs: %s.
+Haciendo: %s %d%%	Making: %s %d%%
+Hecho	Made
+Hecho: %s.	Done: %s.
+La trepa se engancha: ¡a escalar!	The grapple holds: climb!
+Lanzaste: %s.	You threw: %s.
+Montaste el %s.	You mount the %s.
+Montura instalada: R para montar.	Saddle on: R to ride.
+Nada que reparar	Nothing to repair
+Necesitas una mano libre (H para enfundar).	You need a free hand (H to sheathe).
+Ninguna pieza gastada a mano	No worn gear at hand
+No cabe en la mochila: llevas %s en brazos (T para soltarlo).	Won't fit in the pack: you carry %s in your arms (T to drop).
+No hay nada que tomar al alcance.	Nothing within reach to take.
+No hay un animal domado cerca para ensillar.	No tamed animal nearby to saddle.
+No hay un animal salvaje a tiro de lazo delante.	No wild animal in lasso range ahead.
+No hay un muro a tiro de trepa delante.	No wall in grapple range ahead.
+No hay una montura ensillada cerca (lazo + silla).	No saddled mount nearby (lasso + saddle).
+No llevas nada para lanzar (F para tomar).	You carry nothing to throw (F to take).
+No se puede: el escudo va en el brazo izquierdo y las armas a dos manos, en las dos (%s).	Can't: the shield goes on the left arm and two-handed weapons in both (%s).
+No te cabe: %s.	No room for: %s.
+No te caben más hierbas.	No room for more herbs.
+No tienes armas que enfundar.	You have no weapons to sheathe.
+Obra iniciada: %s. La cuadrilla va en camino.	Work started: %s. The crew is on its way.
+Obra terminada: %s.	Work finished: %s.
+Obras	Works
+Pasas el arma a la otra mano: %s.	You switch the weapon to the other hand: %s.
+Q / E cambia de pestaña	Q / E switches tab
+Recoges %d hierbas curativas.	You gather %d healing herbs.
+Reparar	Repair
+Requiere: %s	Requires: %s
+Te falta: %s.	You lack: %s.
+Tomas %d cosas%s.	You take %d things%s.
+Tomaste: %s (T para lanzarlo).	You took: %s (T to throw it).
+Tomaste: %s.	You took: %s.
+Un %s no se puede montar.	A %s can't be ridden.
+Un animal así no se doma (%s): solo se caza.	That animal can't be tamed (%s): only hunted.
+Vacío	Empty
+Ya es de la tribu.	It already belongs to the tribe.
+Ya estás fabricando algo: %s.	You are already crafting: %s.
+Ya llevas algo: T para lanzarlo.	You already carry something: T to throw it.
+a mano	by hand
+da %d x %s · va a la mochila (o al acopio)	makes %d x %s · goes to the pack (or the store)
+en el acopio	in the store
+falta	missing
+guardada	stored
+lo tienes	you have it
+no lo tienes a mano	not at hand
+puesta	worn
+sin cuadrilla	no crew
+tienes %d %s, hacen falta %d	you have %d %s, %d needed
+y un %s en la tribu	and a %s in the tribe
+¡Atrapaste al %s con el lazo! Dale carne (K) antes de que se suelte.	You lassoed the %s! Feed it meat (K) before it breaks free.
+¡Domaste: %s! Ahora sigue a la tribu%s.	Tamed: %s! It now follows the tribe%s.
+# --- src/game/combat_game.c
+ (la armadura amortigua)	 (armor softens it)
+ con el arma	 with the weapon
+ y se rompe	 and breaks
+ · ENCENDIDA (%.0f s)	 · LIT (%.0f s)
+ · L: encender	 · L: light
+ · recargando	 · reloading
+ · sangra	 · bleeding
+%s abatió a un %s.	%s brought down a %s.
+%s del %s contra tu escudo: pierdes la guardia.	%s by the %s on your shield: guard broken.
+%s del %s: ¡te derriba!	%s by the %s: you go down!
+%s del %s: ¡te tira del caballo!	%s by the %s: you're thrown from your horse!
+%s le arranca el escudo al %s.	%s rips the shield from the %s.
+%s murió de sus heridas. La tribu está de luto (moral -6).	%s died of their wounds. The tribe mourns (morale -6).
+%s te levanta y te venda. ¡Sigue en pie!	%s lifts you up and binds you. Keep going!
+%s te venda las heridas.	%s binds your wounds.
+%s: %s derriba al %s.	%s: %s knocks down the %s.
+%s: el %s se tambalea.	%s: the %s staggers.
+%s: ¡derribas al %s del caballo!	%s: you unhorse the %s!
+%s: ¡el %s cae al suelo!	%s: the %s hits the ground!
+%s: ¡le arrancas el escudo al %s!	%s: you rip the %s's shield away!
+; se rompe la pieza	; the piece breaks
+A caballo no: solo golpe (V) y golpe pesado (mantener V).	Not on horseback: only strike (V) and heavy strike (hold V).
+Abatiste al %s: deja botín (F para recogerlo).	You brought down the %s: it drops loot (F to pick up).
+Acércate a un fuego (fogata, hoguera o algo que arda) para encender la flecha.	Get near a fire (campfire, bonfire or anything burning) to light the arrow.
+Agarre	Grapple
+Arma	Weapon
+Arrollas al %s con el caballo: queda en el suelo. Deja botín (F).	You ride down the %s: it stays down. Loot dropped (F).
+Carga con escudo	Shield charge
+Con esta lluvia la flecha no prende.	The arrow won't light in this rain.
+Despiertas en el campamento: te encontraron malherido (moral -5).	You wake in camp: they found you badly hurt (morale -5).
+El %s deja botín (F para recogerlo).	The %s drops loot (F to pick up).
+El %s para tu %s%s.	The %s blocks your %s%s.
+El %s se zafa del agarre: ¡quedas expuesto!	The %s breaks the hold: you're exposed!
+El golpe del %s alcanza a tu montura.	The %s's blow hits your mount.
+Escudo contra escudo: los dos os tambaleáis.	Shield against shield: you both stagger.
+Estás abatido	You are down
+Flecha encendida: dispara antes de que se apague.	Arrow lit: shoot before it goes out.
+Gancho	Hook
+Golpe	Strike
+Golpe de escudo	Shield bash
+Golpe pesado	Heavy strike
+La flecha encendida se apagó.	The fire arrow went out.
+La flecha ya arde: ¡dispara!	The arrow is burning: shoot!
+La lluvia apaga la flecha.	The rain puts out the arrow.
+Le agarras el brazo armado y lo desarmas con una llave: ¡el %s cae!	You seize the weapon arm and disarm with a lock: the %s falls!
+Le das al %s: %s.	You hit the %s: %s.
+Levantas a %s, pero sin hierbas sigue sangrando.	You lift %s, but without herbs the bleeding goes on.
+Levantas y vendas a %s.	You lift and bind %s.
+No hay heridas que vendar.	No wounds to bind.
+No llevas hierbas curativas (I: inventario).	You carry no healing herbs (I: inventory).
+No logras arrancarle el escudo al %s.	You fail to rip away the %s's shield.
+No te quedan %ss a mano (I: inventario).	No %ss left at hand (I: inventory).
+Paras el ataque del %s con el escudo.	You block the %s's attack with your shield.
+Paras el golpe del %s.	You block the %s's blow.
+Patada	Kick
+Patada a la carrera	Running kick
+Si tu escolta está cerca, te levantará; si no, la tribu te buscará.	If your escort is near, they'll lift you; if not, the tribe will find you.
+Sin escudo no puedes hacer eso.	You can't do that without a shield.
+Solo las flechas y los virotes se encienden.	Only arrows and bolts can be lit.
+Te ataca un %s: %s.	A %s attacks you: %s.
+Te hieren: %s.	You're wounded: %s.
+Te levantas.	You get up.
+Te untas el ungüento: cierra las heridas y corta el veneno.	You apply the salve: it closes wounds and stops poison.
+Te vendas %d herida%s con hierbas curativas.	You bind %d wound%s with healing herbs.
+Te zafas del agarre del %s.	You break the %s's hold.
+Tu arma no tiene gancho (hacha, guja o alabarda).	Your weapon has no hook (axe, glaive or halberd).
+Tu golpe pesado rompe la guardia del %s.	Your heavy strike breaks the %s's guard.
+Un %s abate a un %s.	A %s brings down a %s.
+Una %s alcanza a %s en %s.	A %s hits %s in %s.
+Vendas las heridas de %s.	You bind %s's wounds.
+golpe	strike
+la armadura para el golpe%s	the armor stops the blow%s
+patada con el escudo: pierde la guardia	kick with the shield: loses guard
+¡%s cae herido! Acércate y pulsa B para levantarlo.	%s is down! Get close and press B to lift them.
+¡Arqueros! Busca cubrirte o acércate rápido.	Archers! Take cover or close in fast.
+¡Arrollas al %s con el caballo!	You ride down the %s!
+¡Bandidos! Vienen a por tu botín.	Bandits! They're after your loot.
+¡Diana! Abatiste al %s (%s).	Bullseye! You brought down the %s (%s).
+¡El %s te arranca el escudo! (X para volver a empuñar)	The %s rips your shield away! (X to grip again)
+¡El %s te desarma con una llave! (X para volver a empuñar)	The %s disarms you with a lock! (X to grip again)
+¡Fanáticos del culto! Buscan prisioneros para el sacrificio.	Cult fanatics! They seek prisoners for sacrifice.
+¡Golpeaste el nido! Ahí vienen...	You hit the nest! Here they come...
+¡Jinetes bandidos al galope! Derríbalos del caballo.	Bandit riders galloping in! Knock them off their horses.
+¡Te muerde un %s: veneno! Véndate con hierbas (B).	A %s bites you: poison! Bind it with herbs (B).
+¡Un %s derriba a %s! Acércate y pulsa B.	A %s knocks down %s! Get close and press B.
+¡Una %s te alcanza! %s.	A %s hits you! %s.
+# --- src/game/dialog.c
+Esc	Esc
+volver	back
+# --- src/game/disasters_game.c
+%d estructura%s sin mantenimiento: la lluvia torrencial puede derrumbarla%s (faltan troncos o constructores).	%d structure%s unmaintained: heavy rain may bring %s down (need logs or builders).
+El fuego reduce a cenizas: %s.	Fire burns to ashes: %s.
+Escampó: la tribu vuelve a encender las fogatas.	The rain stops: the tribe relights the fires.
+Humo en el horizonte: ¡un incendio en la estepa seca!	Smoke on the horizon: a wildfire on the dry steppe!
+La flecha encendida prende fuego.	The fire arrow sets things alight.
+La lluvia apaga las fogatas del campamento.	The rain puts out the camp fires.
+La lluvia apaga tu antorcha.	The rain puts out your torch.
+La lluvia torrencial derrumba: %s (sin mantenimiento).	Heavy rain brings down: %s (unmaintained).
+La tribu repara %d estructura%s (troncos del acopio).	The tribe repairs %d structure%s (logs from the store).
+¡El fuego llega al campamento!	The fire reaches the camp!
+¡Te alcanza un rayo! Aléjate de lo alto durante la tormenta.	Lightning strikes you! Keep off high ground in storms.
+¡Te quemas! Sal del fuego.	You're burning! Get out of the fire.
+¡Un rayo cae sobre: %s!	Lightning strikes: %s!
+# --- src/game/fauna_game.c
+ (el fuego los espanta)	 (fire drives them off)
+ (no te cabe todo: %d se quedan)	 (not all fits: %d left behind)
+ ¡Corre, métete al agua o usa humo!	 Run, get in the water or use smoke!
+%s %s: +%d carne fresca, +%d pieles%s	%s %s: +%d fresh meat, +%d hides%s
+Abatiste: %s. K para despiezarlo.	You killed: %s. K to butcher it.
+Aparecen cerca: %s.	Nearby: %s.
+Cerca de ti, un cazador (%s) abate a su presa (%s).	Near you, a hunter (%s) takes its prey (%s).
+Colmena: enciende la antorcha (humo) antes de tomar la miel	Beehive: light your torch (smoke) before taking honey
+Despiezas	You butcher
+El %s está débil: ¡lánzale el lazo (menú) y dale carne!	The %s is weak: lasso it (menu) and feed it meat!
+El humo calma a las abejas: tomas miel (+2).	Smoke calms the bees: you take honey (+2).
+Esta colmena ya no tiene miel hoy.	This hive has no more honey today.
+Este animal no da leche (Mayús+K: sacrificar).	This animal gives no milk (Shift+K: slaughter).
+Hieres al %s: %s.	You wound the %s: %s.
+K: dar de comer al %s atado (%.0f s)	K: feed the bound %s (%.0f s)
+K: despiezar (%s)	K: butcher (%s)
+K: ordeñar · Mayús+K: sacrificar (%s)	K: milk · Shift+K: slaughter (%s)
+K: tomar miel (el humo calma a las abejas)	K: take honey (smoke calms the bees)
+Le das carne al %s: ¡ahora es de la tribu y te defenderá!	You feed the %s: now it's the tribe's and will defend you!
+Los peces se escapan entre tus piernas.	The fish slip between your legs.
+Mayús+K: sacrificar (%s)	Shift+K: slaughter (%s)
+Necesitas llevar carne para darle de comer al %s.	You need meat to feed the %s.
+No hay ningún animal con el que hacer algo aquí.	No animal to deal with here.
+Ordeñas la %s: +%d leche.	You milk the %s: +%d milk.
+Rivales (%s) pelean por el territorio: el perdedor se retira.	Rivals (%s) fight for territory: the loser retreats.
+Sacrificas	You slaughter
+Se soltó del lazo sin comer: %s. ¡Cuidado!	Broke free of the lasso unfed: %s. Careful!
+Te pican: %s.%s	Stung by: %s.%s
+Tu %s caza: %s.	Your %s hunts: %s.
+Ya ordeñaste hoy a este animal.	You already milked this animal today.
+¡La flecha atraviesa un pez! (+1 carne fresca)	Your arrow spears a fish! (+1 fresh meat)
+¡Las abejas defienden la colmena! Hace falta humo (antorcha encendida).	The bees defend the hive! You need smoke (lit torch).
+¡Pescaste un pez! (+1 carne fresca)	You caught a fish! (+1 fresh meat)
+¡Pescaste un pez! Pero no te cabe: lo sueltas.	You caught a fish! But no room: you let it go.
+¡Tu montura cayó! Sigues a pie.	Your mount fell! You go on foot.
+# --- src/game/hazards_game.c
+ y 	 and 
+ · barro	 · mud
+ · hielo	 · ice
+ · mojado	 · wet
+ · nadando	 · swimming
+ · vadeando	 · wading
+%s %s te tiende la lanza.	%s %s holds out a spear to you.
+%s %s. La tribu está de luto (moral -6).	%s %s. The tribe mourns (morale -6).
+, pero se tragó 	, but it swallowed 
+; se hundió 	; sunk: 
+Escapaste de la arena%s%s.	You escaped the sand%s%s.
+La escolta vuelve al campamento.	The escort returns to camp.
+No hay nadie libre cerca para acompañarte.	Nobody free nearby to go with you.
+Noche helada: faltó leña (%d de %d). La tribu pasó frío (moral -4).	Freezing night: short of firewood (%d of %d). The tribe was cold (morale -4).
+Pulsa las teclas en orden  ·  errores %d/%d	Press the keys in order  ·  mistakes %d/%d
+Saliste a duras penas, helado%s%s.	You barely got out, frozen%s%s.
+Saliste del agua helada. Estás empapado: busca un fuego.	You're out of the icy water. Soaked: find a fire.
+Se te escapa %s de las manos. ¡Inténtalo otra vez (F)!	%s slips from your hands. Try again (F)!
+Tardaste en salir del socavón: el frío te caló.	You took too long in the sinkhole: the cold got to you.
+Te acompañan %s (Y: volver).	%s go with you (Y: send back).
+Te arrastraste fuera de la arena movediza.	You crawled out of the quicksand.
+Te desmayaste de frío; la tribu te llevó junto al fuego (moral -3).	You fainted from cold; the tribe carried you to the fire (morale -3).
+Tiras de %s: ¡no lo sueltes!	You pull %s: don't let go!
+Trepaste fuera del socavón.	You climbed out of the sinkhole.
+Un compañero	A companion
+cayó al agua helada	fell into icy water
+cayó en un socavón	fell into a sinkhole
+desapareció en la arena	vanished in the sand
+lo que cargabas	what you carried
+lo que cargabas y tu arma	what you carried and your weapon
+murió de frío en el socavón	froze to death in the sinkhole
+se ahogó bajo el hielo	drowned under the ice
+se hunde en la arena	is sinking in the sand
+tu arma	your weapon
+tu compañero	your companion
+¡%s %s! Acércate y pulsa F.	%s %s! Get close and press F.
+¡%s está atrapado! Acércate y pulsa F (%d s)	%s is trapped! Get close and press F (%d s)
+¡Arena movediza!	Quicksand!
+¡Arena movediza! Te hundes.	Quicksand! You're sinking.
+¡Caíste en un socavón de nieve!	You fell into a snow sinkhole!
+¡El hielo se rompió bajo tus pies!	The ice broke under your feet!
+¡El hielo se rompió!	The ice broke!
+¡Saca a %s!	Pull %s out!
+¡Salvaste a %s! La tribu lo celebra (moral +3).	You saved %s! The tribe cheers (morale +3).
+¡Socavón de nieve!	Snow sinkhole!
+# --- src/game/inventory_game.c
+ (lo demás no te cabe).	 (the rest won't fit).
+ y %d más	 and %d more
+ · estado %d %%	 · condition %d %%
+%.1f de %.0f kg · %d de %d huecos	%.1f of %.0f kg · %d of %d slots
+%.1f kg	%.1f kg
+%.1f kg (hasta %.0f sin frenarte)	%.1f kg (up to %.0f without slowing)
+%.1f kg: pesado, andas más lento (más de %.0f kg)	%.1f kg: heavy, you walk slower (over %.0f kg)
+%d · %.1f kg%s · Enter o clic: pasar (Mayús: todo)	%d · %.1f kg%s · Enter or click: move (Shift: all)
+%s · Enter: cambiar · Supr o clic derecho: quitar	%s · Enter: change · Del or right-click: remove
+Acopio y armería del campamento	Camp store and armory
+Alforjas (%s)	Saddlebags (%s)
+Amuleto %d	Amulet %d
+Bolsillos	Pockets
+Carreta de la tribu	Tribe wagon
+Contra el corte	Against cuts
+Contra el golpe	Against blows
+Contra flechas y puntas	Against arrows and points
+Cubre su zona	Covers its zone
+Envenenado	Poisoned
+Flechas: elegir · Q/E: contenedor · Enter: pasar · I: cerrar	Arrows: choose · Q/E: container · Enter: move · I: close
+Hace falta: %s (cerca).	Needs: %s (nearby).
+Herida	Wound
+Inventario	Inventory
+La armadura frena	Armor slows you
+Llevas encima	Carrying
+Mochila	Backpack
+No cabe en %s (peso, talla o huecos).	Won't fit in %s (weight, size or slots).
+No hay sitio donde dejar la pieza que llevas.	No room to put the piece you wear.
+No hay sitio donde guardar el amuleto.	No room to store the amulet.
+No hay sitio donde guardar la pieza.	No room to store the piece.
+No se puede reparar: %s	Can't repair: %s
+No te cabe nada del botín (I: inventario).	None of the loot fits (I: inventory).
+No tienes a mano otra pieza para %s.	No other piece at hand for %s.
+No tienes a mano otro amuleto.	No other amulet at hand.
+Q / E o clic: cambiar de contenedor	Q / E or click: change container
+Recoges el botín: %s%s%s	You pick up the loot: %s%s%s
+Reparas: %s (%d %% -> %d %%).	Repaired: %s (%d %% -> %d %%).
+Sangre	Blood
+Se perdieron las alforjas de una montura.	A mount's saddlebags were lost.
+Te cuelgas: %s (%s).	You put on: %s (%s).
+Te pones: %s (%d %%).	You put on: %s (%d %%).
+Te quitas: %s.	You take off: %s.
+Vida	Health
+el ungüento corta el veneno (B)	salve stops the poison (B)
+no sangras	not bleeding
+sangras: véndate (B)	bleeding: bind it (B)
+un %d %%	by %d %%
+vacío · Enter: colgarte uno de los que lleves	empty · Enter: wear one you carry
+vacío · Enter: ponerte una pieza a mano	empty · Enter: wear a piece at hand
+# --- src/game/player.c
+acechando	sneaking
+caminando	walking
+corriendo	running
+# --- src/game/save_game.c
+Ese hueco está vacío.	That slot is empty.
+La partida es de otra versión del juego y no se puede cargar.	That save is from another game version and can't be loaded.
+La partida está dañada (archivo incompleto).	The save is damaged (incomplete file).
+No se pudo escribir en %s.	Could not write to %s.
+No se pudo guardar la partida (disco lleno o sin permiso).	Could not save the game (disk full or no permission).
+Sin memoria para cargar la partida.	Out of memory loading the game.
+abr	Apr
+ago	Aug
+dic	Dec
+ene	Jan
+feb	Feb
+jul	Jul
+jun	Jun
+mar	Mar
+may	May
+nov	Nov
+oct	Oct
+sep	Sep
+# --- src/game/title_menu.c
+%s el hueco %d	%s slot %d
+A / D o flechas	A / D or arrows
+A caballo: V golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo.	Mounted: V strikes farther with the gallop's momentum; the spear knocks down; at a gallop you trample. Being knocked down throws you off the horse.
+Abejas: con la antorcha encendida, el humo las calma y K toma la miel.	Bees: with a lit torch the smoke calms them and K takes the honey.
+Al caer: pulsa la serie de teclas (J K L U I O) a tiempo.	When you fall: press the key sequence (J K L U I O) in time.
+Arco, ballesta u honda: mantén V para tensar y suelta para disparar. La cámara alza la mira: la curva amarilla muestra dónde caerá; la caída depende del peso del proyectil y de la potencia del arma.	Bow, crossbow or sling: hold V to draw and release to shoot. The camera raises the aim: the yellow curve shows where it will land; the drop depends on the projectile's weight and the weapon's power.
+Arcos, flechas y armaduras	Bows, arrows and armour
+B venda heridas con hierbas (o ungüento) · P equipo y heridas · I inventario	B bandages wounds with herbs (or ointment) · P gear and wounds · I inventory
+B vendar · P equipo	B bandage · P gear
+C acechar · Espacio saltar	C sneak · Space jump
+Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales.	Each body zone takes different damage: head and neck are lethal.
+Camina cerca del ganado para llevarlo (pastoreo).	Walk near livestock to drive them (herding).
+Cargar	Load
+Cargar partida	Load game
+Cerrar el juego	Close the game
+Clima y peligros	Weather and hazards
+Combate cuerpo a cuerpo	Melee combat
+Continuar	Continue
+Controles	Controls
+Controles y reglas del juego	Controls and game rules
+Dejar la partida (lo no guardado se pierde)	Leave the game (unsaved progress is lost)
+Día %d · %s · tribu de %d	Day %d · %s · tribe of %d
+El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Cold drains your warmth: seek fire and yurts; wet clothes chill you.
+En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
+En verano el pasto seco arde: los incendios corren con el viento.	In summer dry grass burns: wildfires run with the wind.
+Esa partida es de otra versión del juego.	That save is from another game version.
+Esc menú (guardar, cargar) · F1 controles en el juego	Esc menu (save, load) · F1 in-game controls
+Esc menú: guardar/cargar	Esc menu: save/load
+Ese hueco tiene una partida: Enter otra vez para sobrescribirla.	That slot has a save: Enter again to overwrite it.
+Espacio saltar · Q/E girar la cámara · M marcar el mapa	Space jump · Q/E turn camera · M mark the map
+F tomar/botín · T lanzar	F take/loot · T throw
+F1 cerrar esta ayuda	F1 close this help
+Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.	Craft by hand: arrows (wood, feathers, flint), rope (sinew), ointment (herbs and honey), cuirass and boots (hides). Forged goods need a smith and a furnace.
+Fauna y caza	Wildlife and hunting
+G ficha · M mapa	G sheet · M map
+Golpea hacia el agua o tira una flecha para pescar.	Strike at the water or shoot an arrow to fish.
+Guardar en	Save to
+Guardar partida	Save game
+Guías una tropa nómada por la estepa: caza, construye, pelea y sobrevive a las estaciones. Un día dura 30 minutos; en invierno las noches son largas.	You lead a nomad band across the steppe: hunt, build, fight and survive the seasons. A day lasts 30 minutes; winter nights are long.
+I inventario · Y escolta	I inventory · Y escort
+Idioma	Language
+Instructivo	Guide
+J o botón central: patada · corriendo: patada con inercia (tumba aun con escudo)	J or middle button: kick · running: momentum kick (knocks down even behind a shield)
+J patada · Z cubrirse	J kick · Z guard
+K despieza un cadáver, ordeña la cabra · Mayús+K sacrifica el ganado.	K butchers a carcass, milks the goat · Shift+K slaughters livestock.
+L encender flecha	L light arrow
+L junto a un fuego enciende la flecha: quema y prende lo que toca.	L next to a fire lights the arrow: it burns and ignites what it hits.
+La armadura va por piezas (casco, gorjal, coraza, hombreras, brazales, guantes, faldar, grebas, botas). Cada material para distinto el corte, el golpe y la flecha, y se gasta con los impactos.	Armour comes in pieces (helmet, gorget, cuirass, pauldrons, bracers, gauntlets, skirt, greaves, boots). Each material stops cuts, blows and arrows differently, and wears with hits.
+La estepa	The steppe
+La lluvia apaga todo fuego: antorchas, fogatas, hornos y flechas.	Rain puts out every fire: torches, campfires, furnaces and arrows.
+La moral y la lealtad deciden si la tribu se rebela.	Morale and loyalty decide whether the tribe rebels.
+La tribu come carne fresca y leche antes que la seca; con hambre baja la moral.	The tribe eats fresh meat and milk before dried food; hunger lowers morale.
+La tribu y el campamento	The tribe and the camp
+Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.	Structures wear out: the tribe repairs them with logs every day. Without upkeep, torrential rain brings them down.
+Las partidas guardadas, con su foto y su fecha	Saved games, with their picture and date
+Lobos, perros, tigres, pumas, halcones y cuervos: debilítalos peleando, échales el lazo y dales carne (K) para domarlos.	Wolves, dogs, tigers, pumas, falcons and crows: weaken them in a fight, lasso them and feed them meat (K) to tame them.
+Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se queda).	Fallen enemies drop a loot bag: F picks it up (what doesn't fit stays).
+Los lagos helados se cruzan, pero el hielo puede romperse.	Frozen lakes can be crossed, but the ice may break.
+Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.	Menus are icons: hover with the mouse (or pick with the arrows) and the name shows below; click or Enter to use them.
+Los rayos caen sobre lo alto durante las tormentas.	Lightning strikes high ground during storms.
+Mayús+X cambiar de mano	Shift+X switch hands
+Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta y desmonta.	Mounts (horse, mule, donkey, ox, camel, elephant): lasso and saddle; R mounts and dismounts.
+Nueva partida	New game
+O engancha el escudo enemigo con hacha, guja o alabarda	O hooks the enemy shield with an axe, glaive or halberd
+Osos, hienas, coyotes y jabalíes: siempre hostiles.	Bears, hyenas, coyotes and boars: always hostile.
+Partida de otra versión del juego	Save from another game version
+Pausa	Pause
+Página anterior	Previous page
+Página siguiente	Next page
+Q/E cámara · M marcar	Q/E camera · M mark
+R montar · K animal	R ride · K animal
+Reclutar, liberar o ejecutar prisioneros cambia la relación con el reino.	Recruiting, freeing or executing prisoners changes your standing with the kingdom.
+Reparar: el cuero y el fieltro con pieles; el bronce y el hierro, herrero, horno y metal.	Repair: leather and felt with hides; bronze and iron need a smith, a furnace and metal.
+Salir	Quit
+Salir al título	Back to title
+Salir del juego	Quit game
+Serpientes, escorpiones, arañas y avispas envenenan: véndate (B).	Snakes, scorpions, spiders and wasps are venomous: bandage yourself (B).
+Socavones de nieve y arena movediza aparecen cada día en otro lugar.	Snow sinkholes and quicksand appear somewhere new every day.
+Tab acciones/fabricar	Tab actions/craft
+Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario	Tab: actions, works, craft and repair (Q/E switches tab) · I: inventory
+Tu personaje no muere: abatido, tu escolta te levanta o despiertas en el campamento. Tus compañeros sí pueden morir.	Your character never dies: when downed, your escort lifts you or you wake up at camp. Your companions can die.
+U agarre y llave: arrancas el escudo, desarmas o tumbas	U grapple and lock: rip the shield away, disarm or throw down
+U agarre · O gancho	U grapple · O hook
+Una tribu nueva en la estepa	A new tribe on the steppe
+V golpe (mantener: pesado)	V strike (hold: heavy)
+V golpe; tres seguidos: combo · mantener V: golpe pesado (rompe guardias)	V strike; three in a row: combo · hold V: heavy blow (breaks guards)
+Vacío: no hay partida	Empty: no save
+Volver	Back
+Volver a una partida guardada	Return to a saved game
+Volver al juego (Esc)	Back to the game (Esc)
+WASD mover · Shift correr	WASD move · Shift run
+WASD mover · Shift correr · C acechar (en la hierba alta te ocultas)	WASD move · Shift run · C sneak (tall grass hides you)
+X cambiar empuñadura · Mayús+X pasar el arma de mano · H enfundar	X change grip · Shift+X switch weapon hand · H sheathe
+X/H empuñar/enfundar	X/H grip/sheathe
+Y: dos integrantes te escoltan · G: ficha del gran guerrero	Y: two members escort you · G: great warrior sheet
+Z cubrirse · con escudo: Z + V golpe de escudo · corriendo + Z: carga	Z guard · with shield: Z + V shield bash · running + Z: charge
+# --- src/main.c
+Arma: %s	Weapon: %s
+Capturaste a un gran guerrero: %s, %s.	You captured a great warrior: %s, %s.
+Cautivo	Captive
+Conecta un teclado para jugar	Connect a keyboard to play
+Desterraste a un integrante.	You banished a member.
+Dia %d: %d desertores, %d grandes guerreros.	Day %d: %d deserters, %d great warriors.
+Dia %d: %d desertores.	Day %d: %d deserters.
+Dia %d: REBELION encabezada por %s!	Day %d: REBELLION led by %s!
+Dones: 	Gifts: 
+Día %d · %s · %s (%d min)	Day %d · %s · %s (%d min)
+Ejecutaste a un prisionero.	You executed a prisoner.
+Ejecutaste a uno de los tuyos.	You executed one of your own.
+Explorador enemigo	Enemy scout
+F1 controles · Esc menú	F1 controls · Esc menu
+Galeria: %d objetos (%d con modelo).	Gallery: %d objects (%d with model).
+Liberaste a un prisionero.	You freed a prisoner.
+Marcaste este lugar en el mapa.	You marked this place on the map.
+Partida cargada (hueco %d).	Game loaded (slot %d).
+Partida guardada en el hueco %d.	Game saved in slot %d.
+Puntería x%.2f  Monta x%.2f	Aim x%.2f  Riding x%.2f
+Puntería x%.2f  Monta x%.2f  Sanación %.0f%%	Aim x%.2f  Riding x%.2f  Healing %.0f%%
+Quitaste la marca.	You removed the mark.
+Reclutaste un nuevo guerrero.	You recruited a new warrior.
+Repartiste el botin.	You shared out the loot.
+Riesgo de rebelión %d%%	Rebellion risk %d%%
+Scavengers Thrive se juega con teclado físico (ratón o mando opcionales).	Scavengers Thrive is played with a physical keyboard (mouse or gamepad optional).
+Talla x%.2f  Rapidez x%.2f  Fuerza x%.2f  Aguante x%.2f	Size x%.2f  Speed x%.2f  Strength x%.2f  Stamina x%.2f
+Tomaste un prisionero.	You took a prisoner.
+Tropa %d	Band %d
+Tu tropa acampa en la estepa.	Your band camps on the steppe.
+Un gran guerrero se une: %s, %s.	A great warrior joins: %s, %s.
+· %d cautivo%s	· %d captive%s
+# --- src/sim/actions.c
+Arrojar el objeto que se lleva en la mano.	Throw the object in your hand.
+Atrapar un animal salvaje: una montura queda domada; un depredador debilitado queda atado hasta que le des carne (K).	Catch a wild animal: a mount is tamed; a weakened predator stays tied until you feed it meat (K).
+Cambiar empuñadura	Change grip
+Cavar trinchera	Dig trench
+Cobertura contra flechas y cargas. Requiere pala.	Cover against arrows and charges. Needs a shovel.
+Corral	Corral
+Encender antorcha	Light torch
+Enfundar / desenfundar	Sheathe / draw
+Ensillar un animal para montarlo.	Saddle an animal to ride it.
+Gancho con cuerda para escalar muros en un asedio.	Hook and rope to scale walls in a siege.
+Guardar las armas libera las manos.	Putting weapons away frees your hands.
+Hoguera	Bonfire
+Horno de cocina	Cooking oven
+Horno de fundición (acero)	Smelting furnace (steel)
+Horno de fundición (bronce)	Smelting furnace (bronze)
+Instalar fogata	Set campfire
+Instalar montura	Fit saddle
+Instalar tienda	Pitch tent
+Lanzar	Throw
+Lanzar lazo	Throw lasso
+Lanzar trepa	Throw grapple
+Luz en la noche; ahuyenta fieras.	Light at night; keeps beasts away.
+Muro de empalizada	Palisade wall
+Muro de piedra	Stone wall
+Recoger un objeto del suelo. Hace falta una mano libre.	Pick an object up from the ground. Needs a free hand.
+Refugio	Shelter
+Tienda ligera de viaje.	Light travel tent.
+Tomar	Take
+Torre de vigilancia	Watchtower
+Tótem de protección	Protective totem
+Una en cada mano, a dos manos, arma y escudo...	One in each hand, two-handed, weapon and shield...
+Una fogata pequeña para una persona o dos.	A small campfire for one or two people.
+a dos manos	two-handed
+a una mano	one-handed
+animal salvaje	wild animal
+arma y escudo	weapon and shield
+desarmado	unarmed
+falta un %s en la tribu	the tribe lacks a %s
+faltan manos (mínimo %d)	not enough hands (at least %d)
+lista	ready
+montura	mount
+muro	wall
+objeto cercano	nearby object
+solo escudo	shield only
+una en cada mano	one in each hand
+# --- src/sim/animals.c
+Antílope saiga	Saiga antelope
+Araña	Spider
+Becerro	Calf
+Buey	Ox
+Burro	Donkey
+Caballo estepario	Steppe horse
+Cabra	Goat
+Camello bactriano	Bactrian camel
+Ciervo	Deer
+Cocodrilo	Crocodile
+Coyote	Coyote
+Cuervo	Crow
+Elefante	Elephant
+Escorpión	Scorpion
+Gacela	Gazelle
+Halcón	Falcon
+Hiena	Hyena
+Jabalí	Boar
+Liebre	Hare
+Lobo	Wolf
+Mula	Mule
+Oso pardo	Brown bear
+Perro asilvestrado	Feral dog
+Puma	Puma
+Reno salvaje	Wild reindeer
+Tigre	Tiger
+Tortuga marina	Sea turtle
+Víbora	Viper
+Íbice	Ibex
+# --- src/sim/armor.c
+acero	steel
+botas	boots
+brazales	bracers
+bronce	bronze
+casco	helmet
+coraza	cuirass
+cuero laminar	lamellar leather
+faldar	skirt
+fieltro	felt
+gorjal	gorget
+grebas	greaves
+guanteletes	gauntlets
+hierro	iron
+hombreras	pauldrons
+oro	gold
+# --- src/sim/ballistics.c
+Bala	Ball
+Flecha	Arrow
+Piedra	Stone
+Virote	Bolt
+# --- src/sim/champion.c
+Acero Rizado	Rippled Steel
+Arco de Cuerno	Horn Bow
+Cabeza de Tigre	Tiger Head
+Crin Negra	Black Mane
+Desertó del ejército imperial	Deserted the imperial army
+Doble Punta	Double Point
+Escapó de una columna de prisioneros destinados al sacrificio	Escaped a column of prisoners bound for sacrifice
+Fue desterrado por matar a un recaudador de tributos	Was banished for killing a tax collector
+Hacha de los Muertos	Axe of the Dead
+Hoja Ancha	Broad Blade
+Huyó tras negarse a servir al culto	Fled after refusing to serve the cult
+La sequía y las malas cosechas se llevaron a su familia	Drought and bad harvests took their family
+Lazo de Plomo	Lead Lasso
+Lluvia de Virotes	Bolt Rain
+Mano de Hierro	Iron Hand
+Manos que Curan	Healing Hands
+Nació %s. %s. Hoy %s, y sueña con %s.	Born %s. %s. Now %s, and dreams of %s.
+Ojo de Halcón	Hawk Eye
+Piel de Roca	Rock Skin
+Pies de Viento	Wind Feet
+Sombra Alta	Tall Shadow
+Su clan fue arrasado en la masacre de la estepa	Their clan was wiped out in the steppe massacre
+Su propio clan le dio la espalda tras una derrota	Their own clan turned its back after a defeat
+Una deuda de sangre le obligó a huir	A blood debt forced them to flee
+aguante	stamina
+arco compuesto de cuerno	horn composite bow
+arma especial	special weapon
+asalta los convoyes del imperio	raids the empire's convoys
+ballesta de repetición	repeating crossbow
+cura a los heridos de los caminos a cambio de comida	heals the wounded on the roads for food
+doma caballos salvajes en las praderas	breaks wild horses on the grasslands
+en un campamento de esclavos del imperio	in an imperial slave camp
+en un clan aliado de la antigua confederación	in an allied clan of the old confederation
+en un clan de pescadores de la costa de fiordos	in a fishing clan on the fjord coast
+en una caravana que cruzaba el desierto	in a caravan crossing the desert
+en una familia campesina de la ciudad amurallada	to a peasant family in the walled city
+en una yurta de pastores de la estepa central	in a herders' yurt on the central steppe
+encontrar un lugar donde envejecer en paz	finding a place to grow old in peace
+entre los cazadores del bosque de coníferas	among the hunters of the conifer forest
+entre los herreros de un pueblo de montaña	among the smiths of a mountain village
+fuerza	strength
+gran talla	great size
+guja de hoja ancha	broad-bladed glaive
+hacha ceremonial	ceremonial axe
+lanza de caballería de doble punta	double-pointed cavalry lance
+lazo con plomadas	weighted lasso
+liberar a un ser querido prisionero	freeing a loved one held prisoner
+maza de bronce con cabeza de tigre	tiger-headed bronze mace
+monta	riding
+pagar una deuda de honor	paying a debt of honour
+protege caravanas en las rutas del desierto	guards caravans on the desert roads
+puntería	aim
+que su nombre viva en los cantos de la estepa	their name living on in the songs of the steppe
+rapidez	speed
+recuperar las tierras de su familia	winning back their family's lands
+reunir un clan propio	gathering a clan of their own
+sable de acero damasquinado	damascened steel sabre
+sanación	healing
+sobrevive con lo que encuentra entre las ruinas	survives on what they find among ruins
+vaga de campamento en campamento	drifts from camp to camp
+vende su espada a quien pague	sells their sword to whoever pays
+vengar a los suyos	avenging their people
+ver arder el altar del culto	seeing the cult's altar burn
+vive de cazar en soledad	lives by hunting alone
+# --- src/sim/climate.c
+despejado	clear
+lluvia	rain
+nevada	snowfall
+nublado	cloudy
+tormenta	storm
+ventisca	blizzard
+# --- src/sim/clock.c
+alba	dawn
+día	day
+invierno	winter
+noche	night
+ocaso	dusk
+otoño	autumn
+primavera	spring
+verano	summer
+# --- src/sim/combat.c
+Arquero bandido	Bandit archer
+Bandido	Bandit
+Captor del culto	Cult captor
+Fanático del culto	Cult fanatic
+Jinete bandido	Bandit rider
+# --- src/sim/economy.c
+Botas de fieltro	Felt boots
+Casco de bronce	Bronze helmet
+Coraza de escamas de acero	Steel scale cuirass
+Coraza laminar de cuero	Lamellar leather cuirass
+Cuerda de tendones	Sinew rope
+Escudo de láminas de hierro	Iron-plated shield
+Flechas (5)	Arrows (5)
+Lanza de punta de bronce	Bronze-tipped spear
+Piedras de honda (8)	Sling stones (8)
+Sable de acero	Steel sabre
+Sable de bronce	Bronze sabre
+Ungüento de hierbas y miel	Herb and honey ointment
+Virotes (4)	Bolts (4)
+# --- src/sim/hazards.c
+abrigado	warm
+arena movediza	quicksand
+fresco	cool
+frío	cold
+helado	freezing
+hipotermia	hypothermia
+socavón de nieve	snow sinkhole
+# --- src/sim/health.c
+%s en %s (%s%s%s)	%s on %s (%s%s%s)
+, entablillada	, splinted
+, sangra	, bleeding
+, vendada	, bandaged
+Congelación	Frostbite
+Corte	Cut
+Fractura	Fracture
+Mordida	Bite
+Quemadura	Burn
+abatido	downed
+el abdomen	the abdomen
+el anca derecha	the right haunch
+el anca izquierda	the left haunch
+el antebrazo derecho	the right forearm
+el antebrazo izquierdo	the left forearm
+el brazo derecho	the right arm
+el brazo izquierdo	the left arm
+el cuello	the neck
+el muslo derecho	the right thigh
+el muslo izquierdo	the left thigh
+el pecho	the chest
+el tórax	the thorax
+el vientre	the belly
+envenenado	poisoned
+grave	severe
+herido	wounded
+la cabeza	the head
+la grupa	the rump
+la paleta derecha	the right shoulder
+la paleta izquierda	the left shoulder
+la pata delantera derecha	the right foreleg
+la pata delantera izquierda	the left foreleg
+la pata trasera derecha	the right hind leg
+la pata trasera izquierda	the left hind leg
+la pelvis	the pelvis
+la pierna derecha	the right leg
+la pierna izquierda	the left leg
+leve	light
+malherido	badly hurt
+moderada	moderate
+muerto	dead
+sano	healthy
+# --- src/sim/jewelry.c
+%s%s (activa, x%.2f)	%s%s (active, x%.2f)
+, sin encantar	, unenchanted
+anillo	ring
+anillo, mano derecha	ring, right hand
+anillo, mano izquierda	ring, left hand
+aretes	earrings
+brazalete	bracelet
+brazalete derecho	right bracelet
+brazalete izquierdo	left bracelet
+collar	necklace
+coral	coral
+cornalina	carnelian
+granate	garnet
+hebilla	buckle
+hebilla del cinturón	belt buckle
+jade	jade
+lapislázuli	lapis lazuli
+perla	pearl
+sin piedra	no gem
+turquesa	turquoise
+ámbar	amber
+# --- src/sim/loadout.c
+agarre	grapple
+carga	carry
+carisma	charisma
+cuerpo a cuerpo	melee
+oficio	craft
+sigilo	stealth
+velocidad	speed
+vida	health
+vista	sight
+# --- src/sim/melee.c
+Gancho al escudo	Shield hook
+# --- src/sim/storage.c
+Acopio del campamento	Camp store
+Alforjas	Saddlebags
+Carreta	Cart
+# --- src/sim/swarms.c
+Avispas	Wasps
+Banco de peces	School of fish
+Enjambre de abejas	Bee swarm
+Moscas	Flies
+Mosquitos	Mosquitoes
+# --- src/sim/talents.c
+Agua del río	River Water
+Astas del ciervo	Deer Antlers
+Aullido	Howl
+Cada flecha va donde miras.	Every arrow goes where you look.
+Calor del ámbar	Amber Warmth
+Cargas más sin frenarte.	You carry more without slowing down.
+Carrera larga	Long Run
+Casi nadie te ve un rato.	Almost no one sees you for a while.
+Corres como el ciervo, a pie o a caballo.	You run like the deer, on foot or mounted.
+Corres más y te cansas menos.	You run more and tire less.
+Corriente	Current
+Devuelve el calor del cuerpo, aun en la nevada.	Restores body heat, even in a snowfall.
+Esa zona ya está tatuada (para siempre).	That zone is already tattooed (forever).
+Fabricas y reparas más rápido.	You craft and repair faster.
+Galope	Gallop
+Galope del ciervo	Deer's Gallop
+Garra del grifo	Griffin's Claw
+Golpeas y aguantas como la crecida.	You strike and endure like the flood.
+Grifo	Griffin
+Grito del clan	Clan Cry
+Habilidad activa: la escolta pelea a tu lado con más fuerza.	Active ability: your escort fights harder at your side.
+Habilidad activa: la furia de la manada.	Active ability: the fury of the pack.
+Habilidad activa: recuperas de golpe parte de la vida.	Active ability: you instantly recover some health.
+Habilidad activa: una carrera que nadie alcanza.	Active ability: a run no one can catch.
+Habilidad activa: vista de águila y tiro certero.	Active ability: eagle sight and true aim.
+Huella del lobo	Wolf's Track
+La furia de la manada: más daño cuerpo a cuerpo y agarre.	The fury of the pack: more melee damage and grapple.
+La tribu te escucha.	The tribe listens to you.
+Las heridas dejan de sangrar.	Wounds stop bleeding.
+Mandas y cargas como un jefe.	You command and carry like a chief.
+Manos del clan	Clan Hands
+Marea	Tide
+Marea que sana	Healing Tide
+Más vida y más aguante.	More health and stamina.
+Más vida.	More health.
+Ninguna	None
+Ojo del grifo	Griffin's Eye
+Olas	Waves
+Paso de la manada	Pack Stride
+Piel de río	River Skin
+Pisas sin ruido.	You tread silently.
+Pluma certera	True Feather
+Primero el grado anterior de ese motivo.	First the previous tier of that motif.
+Recuperas de golpe parte de la vida.	You instantly recover some health.
+Rondas como el lobo: sigilo y paso.	You prowl like the wolf: stealth and stride.
+Sangre de granate	Garnet Blood
+Sangre de la tierra	Blood of the Earth
+Se puede.	Possible.
+Sello del clan	Clan Seal
+Señor de la estepa	Lord of the Steppe
+Sombra	Shadow
+Sombra de la estepa	Steppe Shadow
+Tamga	Tamga
+Te falta nivel.	Your level is too low.
+Te pierdes en la hierba.	You vanish into the grass.
+Te repones antes.	You recover sooner.
+Tu escolta y tú peleáis con más fuerza.	You and your escort fight harder.
+Tu tiro se afina.	Your aim sharpens.
+Ves de lejos y tu tiro no falla.	You see far and never miss.
+Ves más lejos.	You see farther.
+Vuelo del grifo	Griffin's Flight
+Ya elegiste la otra rama de ese motivo.	You already chose the other branch of that motif.
+Ya llevas ese tatuaje.	You already have that tattoo.
+brazo derecho	right arm
+brazo izquierdo	left arm
+cabeza	head
+cuello	neck
+espalda	back
+manos	hands
+pecho	chest
+piernas	legs
+# --- src/sim/troop.c
+Dinastía de Jade	Jade Dynasty
+Kanato de Hierro	Iron Khanate
+cazador	hunter
+cocinero	cook
+constructor	builder
+curandero	healer
+druida	druid
+explorador	scout
+guardia	guard
+herrero	smith
+lugarteniente	lieutenant
+orfebre	goldsmith
+pastor	herder
+sin función	no role
+soldado	soldier
+# --- src/world/gallery.c
+GALERIA  %d objetos  |  %d con modelo  |  %d pendientes	GALLERY  %d objects  |  %d with model  |  %d pending
+modelo cargado	model loaded

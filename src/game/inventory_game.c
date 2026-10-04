@@ -7,6 +7,7 @@
 #include "raymath.h"
 #include "ui/icons.h"
 #include "ui/theme.h"
+#include "sim/lang.h"
 
 #define CART_ID "vehiculo.tierra.carreta_bueyes"
 #define CART_RANGE 5.0f  // m: para cargar la carreta
@@ -77,16 +78,24 @@ static bool pack_near(const GameActions *ga, int k, const Player *p) {
 
 static int containers(GameActions *ga, const Props *props, const Player *p, Cont out[10]) {
     int n = 0;
-    out[n++] = (Cont){ C_BAG, &ga->pockets, "Bolsillos", ICON_BOLSILLO };
-    out[n++] = (Cont){ C_BAG, &ga->backpack, "Mochila", ICON_MOCHILA };
+    out[n++] = (Cont){ C_BAG, &ga->pockets, "", ICON_BOLSILLO };
+    snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s", T("Bolsillos"));
+    out[n++] = (Cont){ C_BAG, &ga->backpack, "", ICON_MOCHILA };
+    snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s", T("Mochila"));
     for (int k = 0; k < GA_PACKS; k++) {
         if (!pack_near(ga, k, p)) continue;
         out[n] = (Cont){ C_BAG, &ga->packs[k], "", ICON_ALFORJAS };
-        snprintf(out[n].label, sizeof(out[n].label), "Alforjas (%s)", species_def(ga->animals[ga->pack_animal[k]].species)->name);
+        snprintf(out[n].label, sizeof(out[n].label), T("Alforjas (%s)"), T(species_def(ga->animals[ga->pack_animal[k]].species)->name));
         n++;
     }
-    if (near_cart(props, p)) out[n++] = (Cont){ C_BAG, &ga->cart, "Carreta de la tribu", ICON_CARRETA };
-    if (near_camp(p)) out[n++] = (Cont){ C_CAMP, NULL, "Acopio y armería del campamento", ICON_CAMPAMENTO };
+    if (near_cart(props, p)) {
+        out[n++] = (Cont){ C_BAG, &ga->cart, "", ICON_CARRETA };
+        snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s", T("Carreta de la tribu"));
+    }
+    if (near_camp(p)) {
+        out[n++] = (Cont){ C_CAMP, NULL, "", ICON_CAMPAMENTO };
+        snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s", T("Acopio y armería del campamento"));
+    }
     return n;
 }
 
@@ -182,7 +191,7 @@ static int move_row(GameActions *ga, const Cont *from, const Row *r, const Cont 
 
 static const char *item_name(const GameActions *ga, const char *id) {
     const InvItem *it = inventory_find(ga->inv, id);
-    return it ? it->name : id;
+    return it ? T(it->name) : id;
 }
 
 // ------------------------------------------------------------------ equipo
@@ -217,11 +226,11 @@ static void equip_armor(GameActions *ga, Combat *cb, const Props *props, const P
         char id[INV_ID_LEN];
         snprintf(id, sizeof(id), "%s", cur->id);
         if (!stash(ga, props, p, id, cur->durability / cur->durability_max)) {
-            snprintf(log, len, "No hay sitio donde guardar la pieza.");
+            snprintf(log, len, "%s", T("No hay sitio donde guardar la pieza."));
             return;
         }
         armor_unequip(&cb->armor, (ArmorSlot)slot);
-        snprintf(log, len, "Te quitas: %s.", item_name(ga, id));
+        snprintf(log, len, T("Te quitas: %s."), item_name(ga, id));
         return;
     }
     Cont conts[10];
@@ -230,7 +239,7 @@ static void equip_armor(GameActions *ga, Combat *cb, const Props *props, const P
     int cont_of[16];
     int n = candidates(ga, props, p, slot, conts, nc, cand, cont_of, 16);
     if (!n) {
-        snprintf(log, len, "No tienes a mano otra pieza para %s.", slot_name((ArmorSlot)slot));
+        snprintf(log, len, T("No tienes a mano otra pieza para %s."), slot_name((ArmorSlot)slot));
         return;
     }
     // Enter recorre las piezas a mano: la primera que no sea la que llevas.
@@ -246,12 +255,12 @@ static void equip_armor(GameActions *ga, Combat *cb, const Props *props, const P
     remove_row(ga, &conts[cont_of[pick]], &cand[pick], 1);
     if (cur->id[0] && !stash(ga, props, p, cur->id, cur->durability / cur->durability_max)) {
         put_into(ga, &conts[cont_of[pick]], id, 1, cond); // la devuelve: no hay donde dejar la vieja
-        snprintf(log, len, "No hay sitio donde dejar la pieza que llevas.");
+        snprintf(log, len, "%s", T("No hay sitio donde dejar la pieza que llevas."));
         return;
     }
     armor_equip(&cb->armor, id);
     cur->durability = cur->durability_max * cond;
-    snprintf(log, len, "Te pones: %s (%d %%).", item_name(ga, id), (int)(cond * 100.0f));
+    snprintf(log, len, T("Te pones: %s (%d %%)."), item_name(ga, id), (int)(cond * 100.0f));
 }
 
 static void equip_amulet(GameActions *ga, const Props *props, const Player *p, int slot, bool remove, char *log, size_t len) {
@@ -259,10 +268,10 @@ static void equip_amulet(GameActions *ga, const Props *props, const Player *p, i
     if (remove || cur[0]) { // quitar el que hay (y, si no era quitar, poner otro despues)
         if (cur[0]) {
             if (!stash(ga, props, p, cur, 1.0f)) {
-                snprintf(log, len, "No hay sitio donde guardar el amuleto.");
+                snprintf(log, len, "%s", T("No hay sitio donde guardar el amuleto."));
                 return;
             }
-            snprintf(log, len, "Te quitas: %s.", item_name(ga, cur));
+            snprintf(log, len, T("Te quitas: %s."), item_name(ga, cur));
             loadout_unequip_amulet(&ga->loadout, slot);
             cur[0] = '\0';
         }
@@ -284,10 +293,10 @@ static void equip_amulet(GameActions *ga, const Props *props, const Player *p, i
         loadout_equip_amulet(&ga->loadout, slot, &c);
         char d[96];
         charm_describe(&c, d, sizeof(d));
-        snprintf(log, len, "Te cuelgas: %s (%s).", item_name(ga, cur), d);
+        snprintf(log, len, T("Te cuelgas: %s (%s)."), item_name(ga, cur), d);
         return;
     }
-    if (!remove) snprintf(log, len, "No tienes a mano otro amuleto.");
+    if (!remove) snprintf(log, len, "%s", T("No tienes a mano otro amuleto."));
 }
 
 // ------------------------------------------------------------------ reparaciones
@@ -353,16 +362,16 @@ bool ig_can_repair(GameActions *ga, const Props *props, const Player *p, const T
                    size_t len) {
     const RepairDef *d = repair_def(it->material);
     if (d->building && !building_near(props, d->building, p)) {
-        snprintf(why, len, "Hace falta: %s (cerca).", item_name(ga, d->building));
+        snprintf(why, len, T("Hace falta: %s (cerca)."), item_name(ga, d->building));
         return false;
     }
     if (d->role != ROLE_NONE && !has_role(troop, d->role)) {
-        snprintf(why, len, "Hace falta un %s en la tribu.", role_name(d->role));
+        snprintf(why, len, T("Hace falta un %s en la tribu."), T(role_name(d->role)));
         return false;
     }
     const Ingredient *miss = ig_first_missing(ga, props, p, d->mats);
     if (miss) {
-        snprintf(why, len, "Falta: %s (%d de %d).", item_name(ga, miss->id), ig_count(ga, props, p, miss->id), miss->count);
+        snprintf(why, len, T("Falta: %s (%d de %d)."), item_name(ga, miss->id), ig_count(ga, props, p, miss->id), miss->count);
         return false;
     }
     if (why && len) why[0] = '\0';
@@ -373,7 +382,7 @@ bool ig_repair(GameActions *ga, const Props *props, const Player *p, const Troop
                size_t len) {
     char why[128];
     if (!ig_can_repair(ga, props, p, troop, it, why, sizeof(why))) {
-        snprintf(log, len, "No se puede reparar: %s", why);
+        snprintf(log, len, T("No se puede reparar: %s"), why);
         return false;
     }
     const RepairDef *d = repair_def(it->material);
@@ -389,7 +398,7 @@ bool ig_repair(GameActions *ga, const Props *props, const Player *p, const Troop
                 break;
             }
     }
-    snprintf(log, len, "Reparas: %s (%d %% -> %d %%).", item_name(ga, it->id), (int)(it->cond * 100), (int)(cond * 100));
+    snprintf(log, len, T("Reparas: %s (%d %% -> %d %%)."), item_name(ga, it->id), (int)(it->cond * 100), (int)(cond * 100));
     return true;
 }
 
@@ -434,9 +443,9 @@ bool ig_take_loot(GameActions *ga, const Props *props, const Player *p, char *lo
         bag_remove_slot(b, i, got);
     }
     if (!b->n) ga->loot_age[k] = -1.0f;
-    if (taken) snprintf(log, len, "Recoges el botín: %s%s%s", first, taken > 1 ? TextFormat(" y %d más", taken - 1) : "",
-                        b->n ? " (lo demás no te cabe)." : ".");
-    else snprintf(log, len, "No te cabe nada del botín (I: inventario).");
+    if (taken) snprintf(log, len, T("Recoges el botín: %s%s%s"), first, taken > 1 ? TextFormat(T(" y %d más"), taken - 1) : "",
+                        b->n ? T(" (lo demás no te cabe).") : ".");
+    else snprintf(log, len, "%s", T("No te cabe nada del botín (I: inventario)."));
     return true;
 }
 
@@ -458,7 +467,7 @@ static void sync_packs(GameActions *ga, char *log, size_t len) {
         int a = ga->pack_animal[k];
         if (a < 0) continue;
         if (a >= ga->animal_count || !ga->animals[a].used || ga->animals[a].state != ANIMAL_SADDLED) {
-            if (ga->packs[k].n) snprintf(log, len, "Se perdieron las alforjas de una montura.");
+            if (ga->packs[k].n) snprintf(log, len, "%s", T("Se perdieron las alforjas de una montura."));
             ga->pack_animal[k] = -1;
             ga->packs[k].n = 0;
         }
@@ -565,7 +574,7 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
             const Cont *to = &conts[ga->inv_cont[1 - *pane]];
             int moved = move_row(ga, &conts[*cont], &rows[*cur], to, all ? rows[*cur].count : 1);
             if (moved) snprintf(log, len, "%d x %s a: %s.", moved, item_name(ga, rows[*cur].id), to->label);
-            else snprintf(log, len, "No cabe en %s (peso, talla o huecos).", to->label);
+            else snprintf(log, len, T("No cabe en %s (peso, talla o huecos)."), to->label);
         }
     }
     if (ga->equip_open) {
@@ -609,7 +618,7 @@ static void draw_pane(const GameActions *ga, const Cont *conts, int nc, int k) {
     // Contenedores a mano: un icono cada uno (Q/E o clic).
     for (int i = 0; i < nc; i++) {
         Rectangle r = cont_tab_rect(k, i);
-        if (ui_tile(r, conts[i].icon, i == c, true)) ui_legend(conts[i].label, "Q / E o clic: cambiar de contenedor");
+        if (ui_tile(r, conts[i].icon, i == c, true)) ui_legend(conts[i].label, T("Q / E o clic: cambiar de contenedor"));
     }
     int ix = x + UI_PANEL_INSET + 2, iw = PANE_W - 2 * UI_PANEL_INSET - 4, hy = y + UI_PANEL_INSET + 30;
     if (ct->type == C_BAG) { // peso y huecos
@@ -620,7 +629,7 @@ static void draw_pane(const GameActions *ga, const Cont *conts, int nc, int k) {
         const char *cap = TextFormat("%.1f/%.0f", kg, ct->bag->cap_kg);
         ui_text(cap, ix + iw - MeasureText(cap, 10), hy, 10, full ? UI_CARNELIAN : UI_BONE_DIM);
         if (ui_hover((Rectangle){ (float)ix, (float)hy - 4, (float)iw, 14 }))
-            ui_legend(ct->label, TextFormat("%.1f de %.0f kg · %d de %d huecos", kg, ct->bag->cap_kg, ct->bag->n, ct->bag->slots));
+            ui_legend(ct->label, TextFormat(T("%.1f de %.0f kg · %d de %d huecos"), kg, ct->bag->cap_kg, ct->bag->n, ct->bag->slots));
     } else {
         ui_text(ct->label, ix, hy, 10, UI_BONE_DIM);
     }
@@ -637,10 +646,10 @@ static void draw_pane(const GameActions *ga, const Cont *conts, int nc, int k) {
         if (gear && rows[i].cond < 0.999f) ui_tile_bar(r, rows[i].cond, rows[i].cond < 0.3f ? UI_CARNELIAN : UI_GOLD);
         if (hover || sel) {
             const InvItem *it = inventory_find(ga->inv, rows[i].id);
-            const char *d = TextFormat("%d · %.1f kg%s · Enter o clic: pasar (Mayús: todo)", rows[i].count, item_kg(it) * (float)rows[i].count,
-                                       gear ? TextFormat(" · estado %d %%", (int)(rows[i].cond * 100)) : "");
-            if (hover) ui_legend(it ? it->name : rows[i].id, d);
-            else ui_legend_default(it ? it->name : rows[i].id, d);
+            const char *d = TextFormat(T("%d · %.1f kg%s · Enter o clic: pasar (Mayús: todo)"), rows[i].count, item_kg(it) * (float)rows[i].count,
+                                       gear ? TextFormat(T(" · estado %d %%"), (int)(rows[i].cond * 100)) : "");
+            if (hover) ui_legend(it ? T(it->name) : rows[i].id, d);
+            else ui_legend_default(it ? T(it->name) : rows[i].id, d);
         }
     }
     if (n > (first + INV_ROWS) * INV_COLS || first > 0) ui_text(TextFormat("%d/%d", cursor + 1, n), ix, y + PANE_H - UI_PANEL_INSET - 10, 10, UI_BONE_DIM);
@@ -658,11 +667,11 @@ static void draw_inventory(const GameActions *ga, const Props *props, const Play
     bool heavy = kg > CARRY_LIMIT;
     Rectangle wr = { 14, (float)(PANE_Y + PANE_H + 4), 90, 18 };
     ui_icon(ICON_PERSONA, wr.x, wr.y + 1, 16, UI_GOLD);
-    ui_text(TextFormat("%.1f kg", kg), (int)wr.x + 20, (int)wr.y + 5, 10, heavy ? UI_CARNELIAN : UI_BONE);
+    ui_text(TextFormat(T("%.1f kg"), kg), (int)wr.x + 20, (int)wr.y + 5, 10, heavy ? UI_CARNELIAN : UI_BONE);
     if (heavy) ui_icon(ICON_VELOCIDAD, wr.x + 70, wr.y + 1, 16, UI_CARNELIAN);
-    if (ui_hover(wr)) ui_legend("Llevas encima", heavy ? TextFormat("%.1f kg: pesado, andas más lento (más de %.0f kg)", kg, CARRY_LIMIT)
-                                                    : TextFormat("%.1f kg (hasta %.0f sin frenarte)", kg, CARRY_LIMIT));
-    ui_legend_default("Inventario", "Flechas: elegir · Q/E: contenedor · Enter: pasar · I: cerrar");
+    if (ui_hover(wr)) ui_legend(T("Llevas encima"), heavy ? TextFormat(T("%.1f kg: pesado, andas más lento (más de %.0f kg)"), kg, CARRY_LIMIT)
+                                                    : TextFormat(T("%.1f kg (hasta %.0f sin frenarte)"), kg, CARRY_LIMIT));
+    ui_legend_default(T("Inventario"), T("Flechas: elegir · Q/E: contenedor · Enter: pasar · I: cerrar"));
 }
 
 static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h) {
@@ -703,8 +712,8 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
                 char sn[32];
                 snprintf(sn, sizeof(sn), "%s", slot_name((ArmorSlot)i));
                 if (sn[0] >= 'a' && sn[0] <= 'z') sn[0] = (char)(sn[0] - 'a' + 'A');
-                const char *title = it ? it->name : sn;
-                const char *d = pc->id[0] ? TextFormat("%s · Enter: cambiar · Supr o clic derecho: quitar", sn) : "vacío · Enter: ponerte una pieza a mano";
+                const char *title = it ? T(it->name) : sn;
+                const char *d = pc->id[0] ? TextFormat(T("%s · Enter: cambiar · Supr o clic derecho: quitar"), sn) : T("vacío · Enter: ponerte una pieza a mano");
                 if (hover) ui_legend(title, d);
                 else ui_legend_default(title, d);
             }
@@ -715,8 +724,8 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
                 Charm c;
                 char d[96] = "";
                 if (id[0] && amulet_charm(id, &c)) charm_describe(&c, d, sizeof(d));
-                const char *title = id[0] ? item_name(ga, id) : TextFormat("Amuleto %d", i - SLOT_COUNT + 1);
-                const char *det = id[0] ? d : "vacío · Enter: colgarte uno de los que lleves";
+                const char *title = id[0] ? item_name(ga, id) : TextFormat(T("Amuleto %d"), i - SLOT_COUNT + 1);
+                const char *det = id[0] ? d : T("vacío · Enter: colgarte uno de los que lleves");
                 if (hover) ui_legend(title, det);
                 else ui_legend_default(title, det);
             }
@@ -733,15 +742,15 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
         if (pc->id[0]) {
             const MaterialDef *m = material_def(pc->material);
             const InvItem *it = inventory_find(ga->inv, pc->id);
-            ui_text_wrapped(it ? it->name : pc->id, tx, dy + 2, dw - 78, 10, UI_GOLD_LIGHT);
-            ui_text(m->name, tx, dy + 28, 10, mat_color(pc));
+            ui_text_wrapped(it ? T(it->name) : pc->id, tx, dy + 2, dw - 78, 10, UI_GOLD_LIGHT);
+            ui_text(T(m->name), tx, dy + 28, 10, mat_color(pc));
             float f = pc->durability / pc->durability_max;
             ui_bar(tx, dy + 46, dw - 78, f, f < 0.3f ? UI_CARNELIAN : UI_GOLD, UI_METAL_SILVER);
             struct { IconId icon; int pct; const char *name; } st[4] = {
-                { ICON_CORTE, (int)(m->vs_cut * 100), "Contra el corte" },
-                { ICON_GOLPE, (int)(m->vs_blunt * 100), "Contra el golpe" },
-                { ICON_PUNTA, (int)(m->vs_pierce * 100 * (pc->mail ? 0.7f : 1.0f)), "Contra flechas y puntas" },
-                { ICON_COBERTURA, (int)(pc->coverage * 100), "Cubre su zona" },
+                { ICON_CORTE, (int)(m->vs_cut * 100), T("Contra el corte") },
+                { ICON_GOLPE, (int)(m->vs_blunt * 100), T("Contra el golpe") },
+                { ICON_PUNTA, (int)(m->vs_pierce * 100 * (pc->mail ? 0.7f : 1.0f)), T("Contra flechas y puntas") },
+                { ICON_COBERTURA, (int)(pc->coverage * 100), T("Cubre su zona") },
             };
             for (int k = 0; k < 4; k++) {
                 int cx = dx + (k % 2) * 130, cy = dy + 80 + (k / 2) * 22;
@@ -750,7 +759,7 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
                 if (ui_hover((Rectangle){ (float)cx, (float)cy, 120, 18 })) ui_legend(st[k].name, TextFormat("%d %%", st[k].pct));
             }
         } else {
-            ui_text("Vacío", tx, dy + 2, 10, UI_BONE_DIM);
+            ui_text(T("Vacío"), tx, dy + 2, 10, UI_BONE_DIM);
         }
     } else {
         Charm c;
@@ -762,7 +771,7 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
             ui_text_wrapped(item_name(ga, id), tx, dy + 2, dw - 78, 10, UI_GOLD_LIGHT);
             ui_text_wrapped(d, dx, dy + 80, dw, 10, UI_TURQUOISE);
         } else {
-            ui_text("Vacío", tx, dy + 2, 10, UI_BONE_DIM);
+            ui_text(T("Vacío"), tx, dy + 2, 10, UI_BONE_DIM);
         }
     }
     // Salud y heridas, con iconos.
@@ -772,21 +781,21 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
     int cx = dx;
     ui_icon(ICON_VIDA, (float)cx, (float)hy, 16, UI_CARNELIAN);
     ui_text(TextFormat("%d/%d", (int)fmaxf(0, ph->hp), (int)ph->hp_max), cx + 20, hy + 4, 10, UI_BONE);
-    if (ui_hover((Rectangle){ (float)cx, (float)hy, 80, 18 })) ui_legend("Vida", health_state_name(ph));
+    if (ui_hover((Rectangle){ (float)cx, (float)hy, 80, 18 })) ui_legend(T("Vida"), health_state_name(ph));
     cx += 86;
     ui_icon(ICON_SANGRE, (float)cx, (float)hy, 16, health_bleeding(ph) ? UI_CARNELIAN : UI_GOLD);
     ui_text(TextFormat("%d %%", (int)(ph->blood * 100)), cx + 20, hy + 4, 10, health_bleeding(ph) ? UI_CARNELIAN : UI_BONE);
-    if (ui_hover((Rectangle){ (float)cx, (float)hy, 70, 18 })) ui_legend("Sangre", health_bleeding(ph) ? "sangras: véndate (B)" : "no sangras");
+    if (ui_hover((Rectangle){ (float)cx, (float)hy, 70, 18 })) ui_legend(T("Sangre"), health_bleeding(ph) ? T("sangras: véndate (B)") : T("no sangras"));
     cx += 76;
     if (ph->venom >= 1.0f) {
         ui_icon(ICON_VENENO, (float)cx, (float)hy, 16, UI_CARNELIAN);
-        if (ui_hover((Rectangle){ (float)cx, (float)hy, 18, 18 })) ui_legend("Envenenado", "el ungüento corta el veneno (B)");
+        if (ui_hover((Rectangle){ (float)cx, (float)hy, 18, 18 })) ui_legend(T("Envenenado"), T("el ungüento corta el veneno (B)"));
         cx += 24;
     }
     float speed = armor_speed_scale(&cb->armor);
     ui_icon(ICON_VELOCIDAD, (float)cx, (float)hy, 16, UI_BONE_DIM);
     ui_text(TextFormat("-%d %%", (int)((1.0f - speed) * 100.0f + 0.5f)), cx + 20, hy + 4, 10, UI_BONE_DIM);
-    if (ui_hover((Rectangle){ (float)cx, (float)hy, 70, 18 })) ui_legend("La armadura frena", TextFormat("un %d %%", (int)((1.0f - speed) * 100.0f + 0.5f)));
+    if (ui_hover((Rectangle){ (float)cx, (float)hy, 70, 18 })) ui_legend(T("La armadura frena"), TextFormat(T("un %d %%"), (int)((1.0f - speed) * 100.0f + 0.5f)));
     for (int i = 0; i < ph->wound_count && i < 6; i++) { // las heridas: un icono por herida; el detalle, al pasar
         Rectangle r = { (float)(dx + i * 22), (float)(hy + 26), 18, 18 };
         DrawRectangleRec(r, (Color){ 70, 24, 18, 236 });
@@ -794,7 +803,7 @@ static void draw_equipment(const GameActions *ga, const Combat *cb, int w, int h
         if (ui_hover(r)) {
             char d[96];
             wound_describe(&ph->wounds[i], false, d, sizeof(d));
-            ui_legend("Herida", d);
+            ui_legend(T("Herida"), d);
         }
     }
 }

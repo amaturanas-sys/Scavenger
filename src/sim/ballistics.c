@@ -1,14 +1,15 @@
 #include "ballistics.h"
+#include "sim/lang.h"
 
 #include <math.h>
 #include <string.h>
 
 const ProjectileDef *projectile_def(ProjectileKind k) {
     static const ProjectileDef defs[PROJ_COUNT] = {
-        [PROJ_ARROW] = { "Flecha", "proyectil.flecha.comun", 0.030f, 0.00012f, 3.2f, WOUND_CUT },
-        [PROJ_BOLT] = { "Virote", "proyectil.virote.comun", 0.060f, 0.00015f, 3.2f, WOUND_CUT },
-        [PROJ_BALL] = { "Bala", "proyectil.bala.mosquete", 0.030f, 0.00008f, 3.0f, WOUND_CUT },
-        [PROJ_STONE] = { "Piedra", "proyectil.piedra.honda", 0.050f, 0.00030f, 3.0f, WOUND_BRUISE },
+        [PROJ_ARROW] = { N_("Flecha"), "proyectil.flecha.comun", 0.030f, 0.00012f, 3.2f, WOUND_CUT },
+        [PROJ_BOLT] = { N_("Virote"), "proyectil.virote.comun", 0.060f, 0.00015f, 3.2f, WOUND_CUT },
+        [PROJ_BALL] = { N_("Bala"), "proyectil.bala.mosquete", 0.030f, 0.00008f, 3.0f, WOUND_CUT },
+        [PROJ_STONE] = { N_("Piedra"), "proyectil.piedra.honda", 0.050f, 0.00030f, 3.0f, WOUND_BRUISE },
     };
     return &defs[(unsigned)k < PROJ_COUNT ? k : 0];
 }

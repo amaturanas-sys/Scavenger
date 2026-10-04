@@ -7,6 +7,7 @@
 
 #include "platform.h"
 #include "sim/clock.h"
+#include "sim/lang.h"
 
 #define SAVE_MAGIC 0x50545345u // "ESTP"
 #define SAVE_VERSION 1u
@@ -44,9 +45,9 @@ const char *save_path(int slot, bool thumb) {
     return b;
 }
 
-static void place_text(const GameState *g, char *out, size_t len) {
-    int day = clock_day(*g->world_time);
-    snprintf(out, len, "%s, %s", season_name(clock_season(day)), phase_name(clock_phase(*g->world_time)));
+static void place_text(float world_time, char *out, size_t len) {
+    int day = clock_day(world_time);
+    snprintf(out, len, "%s, %s", season_name(clock_season(day)), phase_name(clock_phase(world_time)));
 }
 
 static bool put(FILE *f, const void *p, size_t n) { return fwrite(p, 1, n, f) == n; }
@@ -58,12 +59,12 @@ bool save_write(int slot, const GameState *g, Image thumb, char *err, size_t len
     snprintf(tmp, sizeof(tmp), "%s.tmp", path); // se escribe aparte y se renombra: nunca queda a medias
     FILE *f = fopen(tmp, "wb");
     if (!f) {
-        snprintf(err, len, "No se pudo escribir en %s.", platform_save_dir());
+        snprintf(err, len, T("No se pudo escribir en %s."), platform_save_dir());
         return false;
     }
     SaveHeader h = { SAVE_MAGIC, SAVE_VERSION, layout_hash(), (long long)time(NULL), *g->day,
                      troop_count_with_status(g->troop, STATUS_ACTIVE), *g->world_time, "" };
-    place_text(g, h.place, sizeof(h.place));
+    place_text(*g->world_time, h.place, sizeof(h.place));
     bool ok = put(f, &h, sizeof(h));
     ok = ok && put(f, g->last_champion, sizeof(int)) && put(f, g->cam_yaw, sizeof(float)) && put(f, g->rng, sizeof(Rng));
     ok = ok && put(f, g->player, sizeof(Player)) && put(f, g->overlord, sizeof(Kingdom)) && put(f, g->troop, sizeof(Troop));
@@ -92,7 +93,7 @@ bool save_write(int slot, const GameState *g, Image thumb, char *err, size_t len
     if (fclose(f) != 0) ok = false;
     if (!ok || rename(tmp, path) != 0) {
         remove(tmp);
-        snprintf(err, len, "No se pudo guardar la partida (disco lleno o sin permiso).");
+        snprintf(err, len, "%s", T("No se pudo guardar la partida (disco lleno o sin permiso)."));
         return false;
     }
     if (thumb.data) {
@@ -109,13 +110,13 @@ static bool read_header(FILE *f, SaveHeader *h) { return get(f, h, sizeof(*h)) &
 bool save_read(int slot, GameState *g, char *err, size_t len) {
     FILE *f = fopen(save_path(slot, false), "rb");
     if (!f) {
-        snprintf(err, len, "Ese hueco está vacío.");
+        snprintf(err, len, "%s", T("Ese hueco está vacío."));
         return false;
     }
     SaveHeader h;
     if (!read_header(f, &h) || h.version != SAVE_VERSION || h.layout != layout_hash()) {
         fclose(f);
-        snprintf(err, len, "La partida es de otra versión del juego y no se puede cargar.");
+        snprintf(err, len, "%s", T("La partida es de otra versión del juego y no se puede cargar."));
         return false;
     }
     // Se lee todo aparte y solo si esta completo se pisa el estado.
@@ -133,7 +134,7 @@ bool save_read(int slot, GameState *g, char *err, size_t len) {
     } *b = calloc(1, sizeof(struct Blob));
     if (!b) {
         fclose(f);
-        snprintf(err, len, "Sin memoria para cargar la partida.");
+        snprintf(err, len, "%s", T("Sin memoria para cargar la partida."));
         return false;
     }
     bool ok = get(f, &b->last_champion, sizeof(int)) && get(f, &b->cam_yaw, sizeof(float)) && get(f, &b->rng, sizeof(Rng));
@@ -154,7 +155,7 @@ bool save_read(int slot, GameState *g, char *err, size_t len) {
     fclose(f);
     if (!ok) {
         free(b), free(props), free(pg);
-        snprintf(err, len, "La partida está dañada (archivo incompleto).");
+        snprintf(err, len, "%s", T("La partida está dañada (archivo incompleto)."));
         return false;
     }
     // Completo: al estado, rehaciendo los punteros.
@@ -201,7 +202,7 @@ void save_list(SaveInfo out[SAVE_SLOTS]) {
             si->saved_at = h.saved_at;
             si->day = h.day;
             si->tribe = h.tribe;
-            snprintf(si->place, sizeof(si->place), "%s", h.place);
+            place_text(h.world_time, si->place, sizeof(si->place)); // en el idioma de ahora
         }
         fclose(f);
         if (si->used && FileExists(save_path(s, true))) si->thumb = LoadTexture(save_path(s, true));
@@ -214,12 +215,12 @@ void save_list_unload(SaveInfo out[SAVE_SLOTS]) {
 }
 
 const char *save_date_text(long long when) {
-    static const char *months[12] = { "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic" };
+    static const char *months[12] = { N_("ene"), N_("feb"), N_("mar"), N_("abr"), N_("may"), N_("jun"), N_("jul"), N_("ago"), N_("sep"), N_("oct"), N_("nov"), N_("dic") };
     static char buf[48];
     time_t t = (time_t)when;
     struct tm *tm = localtime(&t);
     if (!tm) return "?";
-    snprintf(buf, sizeof(buf), "%d %s %d, %02d:%02d", tm->tm_mday, months[tm->tm_mon % 12], tm->tm_year + 1900, tm->tm_hour,
+    snprintf(buf, sizeof(buf), "%d %s %d, %02d:%02d", tm->tm_mday, T(months[tm->tm_mon % 12]), tm->tm_year + 1900, tm->tm_hour,
              tm->tm_min);
     return buf;
 }

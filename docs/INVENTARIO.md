@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**340 objetos** · 1 con modelo · 339 pendientes.
+**367 objetos** · 1 con modelo · 366 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -11,7 +11,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
-| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 29 | 29 | 0 | 0 | 0 |
+| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 30 | 0 | 0 | 0 |
 | [Estructuras](#estructura) | 42 | 41 | 1 | 0 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 46 | 46 | 0 | 0 | 0 |
@@ -21,9 +21,9 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
 | [Armaduras (por piezas)](#armadura) | 48 | 48 | 0 | 0 | 0 |
 | [Vestimenta (personalización)](#vestimenta) | 14 | 14 | 0 | 0 | 0 |
-| [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 18 | 18 | 0 | 0 | 0 |
+| [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 36 | 36 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 47 | 47 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -81,6 +81,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.hito.campamento_abandonado` | Campamento abandonado del padre | 10x3x10 | 400 | pendiente | `acto:3` `especial:rastro_padre` |  |
 | `mapa.hito.piedra_ciervo` | Piedra-ciervo | 0.6x3x0.4 | 150 | pendiente | `bioma:estepa` `material:piedra` `especial:rastro_padre` | Estela con ciervos de estilo animal. |
 | `mapa.hito.balbal` | Balbal (estatua de piedra) | 0.6x1.8x0.5 | 150 | pendiente | `bioma:estepa` `material:piedra` |  |
+| `mapa.agua.coral` | Arrecife de coral | 1.5x0.8x1.5 | 120 | pendiente | `bioma:cualquiera` `uso:decorado` `uso:recolectable` | Bajo el agua de los lagos: coral rojo y perlas. |
 
 <a id="estructura"></a>
 
@@ -382,6 +383,21 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `accesorio.arreo.placa_arreo_padre` | Placa de arreo de estilo animal del padre | 0.12x0.08x0.01 | 120 | pendiente | `uso:equipable` `especial:rastro_padre` `material:oro` `estilo:animal` | Rastros del padre (acto III). |
 | `accesorio.mensaje.piedra_runica` | Piedra con mensaje cifrado | 0.5x0.8x0.2 | 120 | pendiente | `acto:3` `especial:rastro_padre` `material:piedra` | Mensajes en las antiguas lenguas de la estepa. |
 | `accesorio.mensaje.tablilla` | Tablilla de madera cifrada | 0.2x0.3x0.02 | 60 | pendiente | `acto:3` `especial:rastro_padre` `material:madera` |  |
+| `accesorio.anillo.bronce` | Anillo de bronce | 0.025x0.025x0.008 | 40 | pendiente | `uso:equipable` `material:bronce` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.anillo.plata` | Anillo de plata | 0.025x0.025x0.008 | 40 | pendiente | `uso:equipable` `material:plata` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.anillo.oro` | Anillo de oro | 0.025x0.025x0.008 | 40 | pendiente | `uso:equipable` `material:oro` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.brazalete.bronce` | Brazalete de bronce | 0.08x0.03x0.08 | 60 | pendiente | `uso:equipable` `material:bronce` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.brazalete.plata` | Brazalete de plata | 0.08x0.03x0.08 | 60 | pendiente | `uso:equipable` `material:plata` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.brazalete.oro` | Brazalete de oro | 0.08x0.03x0.08 | 60 | pendiente | `uso:equipable` `material:oro` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.collar.bronce` | Collar de bronce | 0.2x0.25x0.02 | 80 | pendiente | `uso:equipable` `material:bronce` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.collar.plata` | Collar de plata | 0.2x0.25x0.02 | 80 | pendiente | `uso:equipable` `material:plata` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.collar.oro` | Collar de oro | 0.2x0.25x0.02 | 80 | pendiente | `uso:equipable` `material:oro` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.aretes.bronce` | Aretes de bronce | 0.03x0.05x0.01 | 40 | pendiente | `uso:equipable` `material:bronce` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.aretes.plata` | Aretes de plata | 0.03x0.05x0.01 | 40 | pendiente | `uso:equipable` `material:plata` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.aretes.oro` | Aretes de oro | 0.03x0.05x0.01 | 40 | pendiente | `uso:equipable` `material:oro` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.hebilla.bronce` | Hebilla de cinturón de bronce | 0.08x0.06x0.015 | 60 | pendiente | `uso:equipable` `material:bronce` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.hebilla.plata` | Hebilla de cinturón de plata | 0.08x0.06x0.015 | 60 | pendiente | `uso:equipable` `material:plata` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
+| `accesorio.hebilla.oro` | Hebilla de cinturón de oro | 0.08x0.06x0.015 | 60 | pendiente | `uso:equipable` `material:oro` `estilo:animal` | Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c). |
 
 <a id="asedio"></a>
 
@@ -437,6 +453,17 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.material.hueso` | Huesos | 0.3x0.1x0.3 | 30 | pendiente | `uso:recolectable` `uso:material` `material:hueso` | Del despiece: puntas de virote. |
 | `utileria.material.tendones` | Tendones | 0.2x0.05x0.3 | 20 | pendiente | `uso:recolectable` `uso:material` | Del despiece: cuerda. |
 | `utileria.material.pedernal` | Pedernal | 0.15x0.1x0.15 | 30 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Se recoge en la estepa: puntas de flecha. |
+| `utileria.gema.turquesa` | Turquesa | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
+| `utileria.gema.cornalina` | Cornalina | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
+| `utileria.gema.lapislazuli` | Lapislázuli | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
+| `utileria.gema.ambar` | Ámbar | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
+| `utileria.gema.jade` | Jade | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
+| `utileria.gema.granate` | Granate | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
+| `utileria.gema.perla` | Perla | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
+| `utileria.gema.coral` | Coral rojo | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
+| `utileria.material.bronce` | Lingote de bronce | 0.2x0.05x0.08 | 20 | pendiente | `uso:material` `material:bronce` | Metal de joyas y forja. |
+| `utileria.material.plata` | Plata | 0.15x0.05x0.08 | 20 | pendiente | `uso:recolectable` `uso:material` `material:plata` | Metal de joyas. |
+| `utileria.material.oro` | Oro | 0.12x0.04x0.07 | 20 | pendiente | `uso:recolectable` `uso:material` `material:oro` | Metal de joyas. |
 
 <a id="personaje"></a>
 

@@ -18,6 +18,7 @@ typedef struct {
     char id[INV_ID_LEN];
     int count;
     float condition; // [0, 1]: estado de la pieza (1 nueva)
+    unsigned short var; // variante: piedra y encantamiento de una joya (src/sim/jewelry.h); 0 = ninguna
 } BagSlot;
 
 typedef struct {
@@ -43,6 +44,8 @@ float bag_kg(const Bag *b, const Inventory *inv);
 int bag_count(const Bag *b, const char *id);
 // Mete hasta n (las que quepan); devuelve cuantas. condition: estado de una pieza de equipo.
 int bag_add(Bag *b, const Inventory *inv, const char *id, int n, float condition);
+// Igual, con variante (no se apila con otras variantes del mismo id).
+int bag_add_var(Bag *b, const Inventory *inv, const char *id, int n, float condition, unsigned short var);
 // Saca hasta n; devuelve cuantas. condition (si no es NULL): el estado de la ultima sacada.
 int bag_take(Bag *b, const char *id, int n, float *condition);
 // Quita n del hueco slot (lo vacia si llega a 0).

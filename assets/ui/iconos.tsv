@@ -102,3 +102,32 @@ indice	nombre	columna	fila	descripcion
 98	falta	2	6	Falta algo
 99	tribu	3	6	La tribu
 100	velocidad	4	6	Velocidad
+101	idioma	5	6	Idioma: globo
+102	druida	6	6	Druida: báculo y capucha
+103	orfebre	7	6	Orfebre: anillo y martillo
+104	anillo	8	6	Anillo
+105	brazalete	9	6	Brazalete
+106	collar	10	6	Collar
+107	arete	11	6	Aretes
+108	hebilla	12	6	Hebilla de cinturón
+109	gema	13	6	Piedra preciosa
+110	guardian	14	6	Guardián del campamento
+111	reclutar	15	6	Reclutar
+112	entrenar	0	7	Capacitar en un oficio
+113	disolver	1	7	Disolver el campamento
+114	mochila_grande	2	7	Mochila grande
+115	soltar	3	7	Dejar la mochila en el suelo
+116	recoger	4	7	Recoger la mochila
+117	mensajero	5	7	Mensajero: cuerno
+118	despachar	6	7	Despachar seguidores
+119	lugar	7	7	Lugar conocido
+120	alimentar	8	7	Alimentar a los animales
+121	pastar	9	7	Pastar
+122	soldado	10	7	Soldado
+123	pastor	11	7	Pastor: cayado
+124	cazador	12	7	Cazador
+125	explorador	13	7	Explorador: ojo
+126	nivel	14	7	Nivel: estrella
+127	bloqueado	15	7	Bloqueado: candado
+128	dialogo	0	8	Hablar
+129	mapa	1	8	Mapa

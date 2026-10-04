@@ -8,6 +8,7 @@
 #include "raymath.h"
 #include "sim/clock.h"
 #include "sim/hazards.h"
+#include "sim/lang.h"
 
 #define WILDFIRE_MIN 60.0f
 #define WILDFIRE_MAX 140.0f
@@ -86,8 +87,8 @@ static void ruin(Props *props, int i, bool fire, char *log, size_t len) {
     Prop pr = props->items[i];
     props_remove(props, i);
     props_add(props, fire ? "estructura.ruina.cenizas" : "estructura.ruina.escombros", pr.pos, pr.yaw);
-    snprintf(log, len, fire ? "El fuego reduce a cenizas: %s." : "La lluvia torrencial derrumba: %s (sin mantenimiento).",
-             pr.item->name);
+    snprintf(log, len, fire ? T("El fuego reduce a cenizas: %s.") : T("La lluvia torrencial derrumba: %s (sin mantenimiento)."),
+             T(pr.item->name));
 }
 
 bool dz_ignite_at(Disasters *dz, const Camp *camp, const Props *props, const Terrain *t, const Climate *c, float x, float z) {
@@ -130,7 +131,7 @@ static void lightning(Disasters *dz, const Climate *c, Camp *camp, GameActions *
             ruin(props, ref, true, log, len);
             kind = FUEL_GRASS, ref = -1;
         } else if (dist_xz(x, z, p->pos.x, p->pos.z) < 80.0f) {
-            snprintf(log, len, "¡Un rayo cae sobre: %s!", pr->item->name);
+            snprintf(log, len, T("¡Un rayo cae sobre: %s!"), T(pr->item->name));
         }
     }
     bool water = t->look.water_level > y;
@@ -141,7 +142,7 @@ static void lightning(Disasters *dz, const Climate *c, Camp *camp, GameActions *
     if (dp < BOLT_HURT && !cb->player.down) {
         health_hit(&cb->player, &cb->rng, 40.0f * (1.0f - dp / BOLT_HURT) + 10.0f, WOUND_BURN, PART_RANDOM);
         cb->hit_anim = 0.4f;
-        snprintf(log, len, "¡Te alcanza un rayo! Aléjate de lo alto durante la tormenta.");
+        snprintf(log, len, "%s", T("¡Te alcanza un rayo! Aléjate de lo alto durante la tormenta."));
     }
     for (int i = 0; i < ga->animal_count; i++) {
         const Animal *an = &ga->animals[i];
@@ -171,7 +172,7 @@ void dz_update(Disasters *dz, const Climate *c, Camp *camp, GameActions *ga, Pro
             else if (e->kind == FIRE_EV_EXTINGUISHED) props->items[s].condition -= 0.3f;
         }
         if (e->kind == FIRE_EV_SPREAD && !dz->camp_warned && dist_xz(e->x, e->z, 0.0f, 0.0f) < 45.0f) {
-            snprintf(log, len, "¡El fuego llega al campamento!");
+            snprintf(log, len, "%s", T("¡El fuego llega al campamento!"));
             dz->camp_warned = true;
         }
     }
@@ -185,7 +186,7 @@ void dz_update(Disasters *dz, const Climate *c, Camp *camp, GameActions *ga, Pro
             int ref;
             FuelKind kd = fuel_at(&fctx, x, z, &ref);
             if (kd == FUEL_NONE || !fire_ignite_hot(&dz->fire, x, z, kd, ref, 0.8f)) continue;
-            snprintf(log, len, "Humo en el horizonte: ¡un incendio en la estepa seca!");
+            snprintf(log, len, "%s", T("Humo en el horizonte: ¡un incendio en la estepa seca!"));
             break;
         }
     }
@@ -203,16 +204,16 @@ void dz_update(Disasters *dz, const Climate *c, Camp *camp, GameActions *ga, Pro
     if (ga->raining) {
         if (ga->torch_lit) {
             ga->torch_lit = false;
-            snprintf(log, len, "La lluvia apaga tu antorcha.");
+            snprintf(log, len, "%s", T("La lluvia apaga tu antorcha."));
         }
-        if (!ga->fires_out) snprintf(log, len, "La lluvia apaga las fogatas del campamento.");
+        if (!ga->fires_out) snprintf(log, len, "%s", T("La lluvia apaga las fogatas del campamento."));
         ga->fires_out = true;
         dz->relight_timer = 60.0f;
     } else if (ga->fires_out && c->rain < 0.1f) {
         dz->relight_timer -= dt;
         if (dz->relight_timer <= 0.0f) {
             ga->fires_out = false;
-            snprintf(log, len, "Escampó: la tribu vuelve a encender las fogatas.");
+            snprintf(log, len, "%s", T("Escampó: la tribu vuelve a encender las fogatas."));
         }
     }
     // Hay fuego cerca (para encender una flecha)?
@@ -227,7 +228,7 @@ void dz_update(Disasters *dz, const Climate *c, Camp *camp, GameActions *ga, Pro
     for (int i = 0; i < ga->ignite_n; i++) {
         Vector3 at = ga->ignite_at[i];
         if (dz_ignite_at(dz, camp, props, t, c, at.x, at.z) && dist_xz(at.x, at.z, p->pos.x, p->pos.z) < 60.0f)
-            snprintf(log, len, "La flecha encendida prende fuego.");
+            snprintf(log, len, "%s", T("La flecha encendida prende fuego."));
     }
     ga->ignite_n = 0;
     // Pisar el fuego quema.
@@ -238,7 +239,7 @@ void dz_update(Disasters *dz, const Climate *c, Camp *camp, GameActions *ga, Pro
         cb->hit_anim = 0.3f;
         dz->burn_tick = 0.7f;
         dz->warn_timer -= 0.7f;
-        if (dz->warn_timer <= 0.0f) snprintf(log, len, "¡Te quemas! Sal del fuego."), dz->warn_timer = 4.0f;
+        if (dz->warn_timer <= 0.0f) snprintf(log, len, "%s", T("¡Te quemas! Sal del fuego.")), dz->warn_timer = 4.0f;
     }
     // Los animales en el fuego tambien.
     for (int i = 0; i < ga->animal_count; i++) {
@@ -284,10 +285,10 @@ void dz_new_day(Disasters *dz, Props *props, GameActions *ga, const Troop *troop
     for (int i = 0; i < props->count; i++)
         neglected += is_structure(&props->items[i]) && props->items[i].condition < STRUCTURE_NEGLECTED;
     if (neglected)
-        snprintf(log, len, "%d estructura%s sin mantenimiento: la lluvia torrencial puede derrumbarla%s (faltan troncos o constructores).",
+        snprintf(log, len, T("%d estructura%s sin mantenimiento: la lluvia torrencial puede derrumbarla%s (faltan troncos o constructores)."),
                  neglected, neglected == 1 ? "" : "s", neglected == 1 ? "" : "s");
     else if (fixed)
-        snprintf(log, len, "La tribu repara %d estructura%s (troncos del acopio).", fixed, fixed == 1 ? "" : "s");
+        snprintf(log, len, T("La tribu repara %d estructura%s (troncos del acopio)."), fixed, fixed == 1 ? "" : "s");
 }
 
 // ------------------------------------------------------------------ dibujo

@@ -15,6 +15,7 @@
 #include "sim/melee.h"
 #include "ui/theme.h"
 #include "world/body_draw.h"
+#include "sim/lang.h"
 
 #define HERBS_ID "utileria.consumible.hierbas"
 #define CAMP_RADIUS 14.0f
@@ -118,21 +119,21 @@ void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player 
         n = 3;
         kinds[0] = kinds[1] = ENEMY_FANATIC;
         kinds[2] = ENEMY_CAPTOR;
-        snprintf(log, len, "¡Fanáticos del culto! Buscan prisioneros para el sacrificio.");
+        snprintf(log, len, "%s", T("¡Fanáticos del culto! Buscan prisioneros para el sacrificio."));
     } else if (!strcmp(what, "arqueros")) {
         n = 2;
         kinds[0] = kinds[1] = ENEMY_ARCHER;
-        snprintf(log, len, "¡Arqueros! Busca cubrirte o acércate rápido.");
+        snprintf(log, len, "%s", T("¡Arqueros! Busca cubrirte o acércate rápido."));
     } else if (!strcmp(what, "jinetes")) {
         n = 2 + rng_range(&cb->rng, 2);
         for (int i = 0; i < n; i++) kinds[i] = ENEMY_RIDER;
-        snprintf(log, len, "¡Jinetes bandidos al galope! Derríbalos del caballo.");
+        snprintf(log, len, "%s", T("¡Jinetes bandidos al galope! Derríbalos del caballo."));
     } else {
         n = 2 + rng_range(&cb->rng, 2);
         for (int i = 0; i < n; i++) kinds[i] = ENEMY_BANDIT;
         if (rng_float(&cb->rng) < 0.6f) kinds[n++] = ENEMY_ARCHER; // a veces con un arquero detras
         else if (rng_float(&cb->rng) < 0.5f) kinds[n++] = ENEMY_RIDER; // o un jinete
-        snprintf(log, len, "¡Bandidos! Vienen a por tu botín.");
+        snprintf(log, len, "%s", T("¡Bandidos! Vienen a por tu botín."));
     }
     for (int i = 0; i < n; i++) {
         float a = (float)i * 2.1f;
@@ -164,13 +165,13 @@ static void natural_spawns(Combat *cb, GameActions *ga, const Player *p, const T
 // ------------------------------------------------------------------- golpes
 static void describe_hit(const Health *h, int w, float absorbed, bool broke, char *out, size_t len) {
     if (w < 0) {
-        snprintf(out, len, "la armadura para el golpe%s", broke ? " y se rompe" : "");
+        snprintf(out, len, T("la armadura para el golpe%s"), broke ? T(" y se rompe") : "");
         return;
     }
     char d[96];
     wound_describe(&h->wounds[w], h->beast, d, sizeof(d));
     lower_first(d);
-    snprintf(out, len, "%s%s%s", d, absorbed > 0.5f ? " (la armadura amortigua)" : "", broke ? "; se rompe la pieza" : "");
+    snprintf(out, len, "%s%s%s", d, absorbed > 0.5f ? T(" (la armadura amortigua)") : "", broke ? T("; se rompe la pieza") : "");
 }
 
 static void enemy_down_check(Enemy *e) {
@@ -265,14 +266,14 @@ static MeleeMove ai_choose(Rng *rng, const Fighter *self, const Fighter *foe, co
 
 static const char *move_verb(MeleeMove m) {
     switch (m) {
-    case MOVE_KICK: return "Patada";
-    case MOVE_RUN_KICK: return "Patada a la carrera";
-    case MOVE_SHIELD_BASH: return "Golpe de escudo";
-    case MOVE_SHIELD_CHARGE: return "Carga con escudo";
-    case MOVE_GRAPPLE: return "Agarre";
-    case MOVE_HOOK: return "Gancho";
-    case MOVE_HEAVY: return "Golpe pesado";
-    default: return "Golpe";
+    case MOVE_KICK: return T("Patada");
+    case MOVE_RUN_KICK: return T("Patada a la carrera");
+    case MOVE_SHIELD_BASH: return T("Golpe de escudo");
+    case MOVE_SHIELD_CHARGE: return T("Carga con escudo");
+    case MOVE_GRAPPLE: return T("Agarre");
+    case MOVE_HOOK: return T("Gancho");
+    case MOVE_HEAVY: return T("Golpe pesado");
+    default: return T("Golpe");
     }
 }
 
@@ -304,22 +305,22 @@ static void hit_enemy(Combat *cb, Enemy *e, MeleeMove m, const MeleeResult *r, P
     enemy_down_check(e);
     if (attacker != 0 || !log) return;
     char who[48], d[128];
-    lower_name(def->name, who, sizeof(who));
-    if (e->state == EN_DEAD) snprintf(log, len, "Abatiste al %s: deja botín (F para recogerlo).", who);
-    else if (unhorsed) snprintf(log, len, "%s: ¡derribas al %s del caballo!", move_verb(m), who);
-    else if (r->attacker_staggered && m == MOVE_GRAPPLE) snprintf(log, len, "El %s se zafa del agarre: ¡quedas expuesto!", who);
-    else if (!r->landed && m == MOVE_HOOK) snprintf(log, len, "Tu arma no tiene gancho (hacha, guja o alabarda).");
-    else if (!r->landed) snprintf(log, len, "Sin escudo no puedes hacer eso.");
-    else if (r->shield_dropped) snprintf(log, len, "%s: ¡le arrancas el escudo al %s!", move_verb(m), who);
-    else if (r->disarmed) snprintf(log, len, "Le agarras el brazo armado y lo desarmas con una llave: ¡el %s cae!", who);
-    else if (r->knocked_down) snprintf(log, len, "%s: ¡el %s cae al suelo!", move_verb(m), who);
-    else if (m == MOVE_HEAVY && r->blocked) snprintf(log, len, "Tu golpe pesado rompe la guardia del %s.", who);
-    else if (r->blocked && r->attacker_staggered) snprintf(log, len, "Escudo contra escudo: los dos os tambaleáis.");
-    else if (r->blocked) snprintf(log, len, "El %s para tu %s%s.", who, m == MOVE_KICK ? "patada con el escudo: pierde la guardia" : "golpe",
-                                  e->shield ? "" : " con el arma");
-    else if (m == MOVE_HOOK) snprintf(log, len, "No logras arrancarle el escudo al %s.", who);
+    lower_name(T(def->name), who, sizeof(who));
+    if (e->state == EN_DEAD) snprintf(log, len, T("Abatiste al %s: deja botín (F para recogerlo)."), who);
+    else if (unhorsed) snprintf(log, len, T("%s: ¡derribas al %s del caballo!"), move_verb(m), who);
+    else if (r->attacker_staggered && m == MOVE_GRAPPLE) snprintf(log, len, T("El %s se zafa del agarre: ¡quedas expuesto!"), who);
+    else if (!r->landed && m == MOVE_HOOK) snprintf(log, len, "%s", T("Tu arma no tiene gancho (hacha, guja o alabarda)."));
+    else if (!r->landed) snprintf(log, len, "%s", T("Sin escudo no puedes hacer eso."));
+    else if (r->shield_dropped) snprintf(log, len, T("%s: ¡le arrancas el escudo al %s!"), move_verb(m), who);
+    else if (r->disarmed) snprintf(log, len, T("Le agarras el brazo armado y lo desarmas con una llave: ¡el %s cae!"), who);
+    else if (r->knocked_down) snprintf(log, len, T("%s: ¡el %s cae al suelo!"), move_verb(m), who);
+    else if (m == MOVE_HEAVY && r->blocked) snprintf(log, len, T("Tu golpe pesado rompe la guardia del %s."), who);
+    else if (r->blocked && r->attacker_staggered) snprintf(log, len, "%s", T("Escudo contra escudo: los dos os tambaleáis."));
+    else if (r->blocked) snprintf(log, len, T("El %s para tu %s%s."), who, m == MOVE_KICK ? T("patada con el escudo: pierde la guardia") : T("golpe"),
+                                  e->shield ? "" : T(" con el arma"));
+    else if (m == MOVE_HOOK) snprintf(log, len, T("No logras arrancarle el escudo al %s."), who);
     else if (wi >= 0) describe_hit(&e->h, wi, absorbed, broke, d, sizeof(d)), snprintf(log, len, "%s: %s.", move_verb(m), d);
-    else if (r->staggered) snprintf(log, len, "%s: el %s se tambalea.", move_verb(m), who);
+    else if (r->staggered) snprintf(log, len, T("%s: el %s se tambalea."), move_verb(m), who);
 }
 
 static void hit_player(Combat *cb, GameActions *ga, MeleeMove m, const MeleeResult *r, const char *who, char *log,
@@ -339,14 +340,14 @@ static void hit_player(Combat *cb, GameActions *ga, MeleeMove m, const MeleeResu
     if (r->disarmed && ga->hands.right.id[0]) hands_clear(&ga->hands, HAND_RIGHT);
     char name[48], d[128];
     lower_name(who, name, sizeof(name));
-    if (r->shield_dropped) snprintf(log, len, "¡El %s te arranca el escudo! (X para volver a empuñar)", name);
-    else if (r->disarmed) snprintf(log, len, "¡El %s te desarma con una llave! (X para volver a empuñar)", name);
-    else if (unhorsed) snprintf(log, len, "%s del %s: ¡te tira del caballo!", move_verb(m), name);
-    else if (r->knocked_down) snprintf(log, len, "%s del %s: ¡te derriba!", move_verb(m), name);
-    else if (r->blocked && r->staggered) snprintf(log, len, "%s del %s contra tu escudo: pierdes la guardia.", move_verb(m), name);
-    else if (r->blocked) snprintf(log, len, "Paras el golpe del %s.", name);
-    else if (r->attacker_staggered) snprintf(log, len, "Te zafas del agarre del %s.", name);
-    else if (wi >= 0) describe_hit(&cb->player, wi, absorbed, broke, d, sizeof(d)), snprintf(log, len, "Te hieren: %s.", d);
+    if (r->shield_dropped) snprintf(log, len, T("¡El %s te arranca el escudo! (X para volver a empuñar)"), name);
+    else if (r->disarmed) snprintf(log, len, T("¡El %s te desarma con una llave! (X para volver a empuñar)"), name);
+    else if (unhorsed) snprintf(log, len, T("%s del %s: ¡te tira del caballo!"), move_verb(m), name);
+    else if (r->knocked_down) snprintf(log, len, T("%s del %s: ¡te derriba!"), move_verb(m), name);
+    else if (r->blocked && r->staggered) snprintf(log, len, T("%s del %s contra tu escudo: pierdes la guardia."), move_verb(m), name);
+    else if (r->blocked) snprintf(log, len, T("Paras el golpe del %s."), name);
+    else if (r->attacker_staggered) snprintf(log, len, T("Te zafas del agarre del %s."), name);
+    else if (wi >= 0) describe_hit(&cb->player, wi, absorbed, broke, d, sizeof(d)), snprintf(log, len, T("Te hieren: %s."), d);
 }
 
 static void hit_member(Combat *cb, GameActions *ga, Troop *troop, Member *m, const MeleeResult *r, char *log, size_t len) {
@@ -358,7 +359,7 @@ static void hit_member(Combat *cb, GameActions *ga, Troop *troop, Member *m, con
         if (r->staggered) n->stagger = STAGGER_SECONDS;
         if (r->knocked_down) n->knock = KNOCKDOWN_SECONDS;
     }
-    if (m->health.down) snprintf(log, len, "¡%s cae herido! Acércate y pulsa B para levantarlo.", m->name);
+    if (m->health.down) snprintf(log, len, T("¡%s cae herido! Acércate y pulsa B para levantarlo."), m->name);
 }
 
 // El enemigo vivo mas cercano delante de pos, a menos de reach.
@@ -412,7 +413,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     if (!e) {
         if (m != MOVE_LIGHT && m != MOVE_HEAVY) return;
         // Nada a quien golpear: un nido que se enfada o un pez en el agua.
-        if (fg_poke_nest(ga, p->pos, w.reach)) snprintf(log, len, "¡Golpeaste el nido! Ahí vienen...");
+        if (fg_poke_nest(ga, p->pos, w.reach)) snprintf(log, len, "%s", T("¡Golpeaste el nido! Ahí vienen..."));
         else fg_fish(ga, t, p->pos, p->yaw, w.reach, w.spear, log, len);
         return;
     }
@@ -458,7 +459,7 @@ static void enemy_melee(Combat *cb, Enemy *e, Player *p, GameActions *ga, Troop 
     if (!m && ga->mounted >= 0 && r.damage > 0.5f && !r.blocked && rng_float(&cb->rng) < 0.35f) {
         fg_hurt(ga, ga->mounted, r.damage, r.wound, PART_RANDOM, -1, NULL, 0);
         char who[48];
-        snprintf(log, len, "El golpe del %s alcanza a tu montura.", lower_name(def->name, who, sizeof(who)));
+        snprintf(log, len, T("El golpe del %s alcanza a tu montura."), lower_name(T(def->name), who, sizeof(who)));
         e->cooldown = def->cooldown;
         e->attack_anim = 0.45f;
         return;
@@ -473,7 +474,7 @@ static void enemy_melee(Combat *cb, Enemy *e, Player *p, GameActions *ga, Troop 
     e->move_anim = 0.45f;
     if (r.attacker_staggered) e->stagger = STAGGER_SECONDS;
     if (m) hit_member(cb, ga, troop, m, &r, log, len);
-    else hit_player(cb, ga, mv, &r, def->name, log, len);
+    else hit_player(cb, ga, mv, &r, T(def->name), log, len);
     (void)props;
 }
 
@@ -501,9 +502,9 @@ void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int k
         if (!blocked && wi >= 0) health_poison(&cb->player, venom);
         cb->hit_anim = 0.3f;
         char d[128];
-        if (blocked) snprintf(log, len, "Paras el ataque del %s con el escudo.", name);
-        else if (wi >= 0 && venom > 0.0f) snprintf(log, len, "¡Te muerde un %s: veneno! Véndate con hierbas (B).", name);
-        else describe_hit(&cb->player, wi, absorbed, broke, d, sizeof(d)), snprintf(log, len, "Te ataca un %s: %s.", name, d);
+        if (blocked) snprintf(log, len, T("Paras el ataque del %s con el escudo."), name);
+        else if (wi >= 0 && venom > 0.0f) snprintf(log, len, T("¡Te muerde un %s: veneno! Véndate con hierbas (B)."), name);
+        else describe_hit(&cb->player, wi, absorbed, broke, d, sizeof(d)), snprintf(log, len, T("Te ataca un %s: %s."), name, d);
         return;
     }
     if (kind == 1) {
@@ -513,7 +514,7 @@ void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int k
             health_poison(&m->health, venom);
         for (int i = 0; i < troop->count && i < TROOP_MAX; i++)
             if (ga->npcs[i].member_id == m->id) ga->npcs[i].hurt_anim = 0.3f;
-        if (m->health.down) snprintf(log, len, "¡Un %s derriba a %s! Acércate y pulsa B.", name, m->name);
+        if (m->health.down) snprintf(log, len, T("¡Un %s derriba a %s! Acércate y pulsa B."), name, m->name);
         return;
     }
     if (id < 0 || id >= CB_MAX_ENEMIES || !cb->enemies[id].used || cb->enemies[id].state == EN_DEAD) return;
@@ -524,7 +525,7 @@ void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int k
     enemy_down_check(e);
     if (e->state == EN_DEAD && dist2(e->pos, p->pos) < 40.0f) {
         char en[48];
-        snprintf(log, len, "Un %s abate a un %s.", name, lower_name(enemy_def(e->kind)->name, en, sizeof(en)));
+        snprintf(log, len, T("Un %s abate a un %s."), name, lower_name(T(enemy_def(e->kind)->name), en, sizeof(en)));
     }
 }
 
@@ -551,17 +552,17 @@ static void fire(Combat *cb, const RangedDef *rd, Vector3 from, float yaw, float
 // L: encender la flecha en un fuego cercano.
 static void light_arrow(Combat *cb, const GameActions *ga, const RangedDef *rd, char *log, size_t len) {
     if (rd->projectile != PROJ_ARROW && rd->projectile != PROJ_BOLT) {
-        snprintf(log, len, "Solo las flechas y los virotes se encienden.");
+        snprintf(log, len, "%s", T("Solo las flechas y los virotes se encienden."));
     } else if (cb->arrow_lit) {
-        snprintf(log, len, "La flecha ya arde: ¡dispara!");
+        snprintf(log, len, "%s", T("La flecha ya arde: ¡dispara!"));
     } else if (ga->raining) {
-        snprintf(log, len, "Con esta lluvia la flecha no prende.");
+        snprintf(log, len, "%s", T("Con esta lluvia la flecha no prende."));
     } else if (!ga->fire_near) {
-        snprintf(log, len, "Acércate a un fuego (fogata, hoguera o algo que arda) para encender la flecha.");
+        snprintf(log, len, "%s", T("Acércate a un fuego (fogata, hoguera o algo que arda) para encender la flecha."));
     } else {
         cb->arrow_lit = true;
         cb->arrow_lit_timer = ARROW_LIT_SECONDS;
-        snprintf(log, len, "Flecha encendida: dispara antes de que se apague.");
+        snprintf(log, len, "%s", T("Flecha encendida: dispara antes de que se apague."));
     }
 }
 
@@ -633,7 +634,7 @@ static void shot_hits_player(Combat *cb, Shot *s, int part, Player *p, const Gam
     cb->hit_anim = 0.3f;
     char d[128], what[32];
     describe_hit(&cb->player, wi, absorbed, broke, d, sizeof(d));
-    snprintf(log, len, "¡Una %s te alcanza! %s.", lower_name(pd->name, what, sizeof(what)), d);
+    snprintf(log, len, T("¡Una %s te alcanza! %s."), lower_name(T(pd->name), what, sizeof(what)), d);
 }
 
 static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, const Terrain *t, float time, float dt,
@@ -707,7 +708,7 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
                 combat_apply_hit(&m->health, &m->armor, &cb->rng, projectile_damage(&s->p), pd->wound, part, true, NULL, NULL);
                 ga->npcs[idx].hurt_anim = 0.3f;
                 char what[32];
-                snprintf(log, len, "Una %s alcanza a %s en %s.", lower_name(pd->name, what, sizeof(what)), m->name,
+                snprintf(log, len, T("Una %s alcanza a %s en %s."), lower_name(T(pd->name), what, sizeof(what)), m->name,
                          part_name((BodyPart)part, false));
             } else if (kind == 3) {
                 int owner = s->owner > 0 ? s->owner : s->owner == 0 ? 0 : -1;
@@ -724,9 +725,9 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
                 enemy_down_check(e);
                 if (s->owner == 0) {
                     char dsc[128], who[48];
-                    lower_name(enemy_def(e->kind)->name, who, sizeof(who));
-                    if (e->state == EN_DEAD) snprintf(log, len, "¡Diana! Abatiste al %s (%s).", who, part_name((BodyPart)part, e->h.beast));
-                    else describe_hit(&e->h, wi, absorbed, broke, dsc, sizeof(dsc)), snprintf(log, len, "Le das al %s: %s.", who, dsc);
+                    lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
+                    if (e->state == EN_DEAD) snprintf(log, len, T("¡Diana! Abatiste al %s (%s)."), who, part_name((BodyPart)part, e->h.beast));
+                    else describe_hit(&e->h, wi, absorbed, broke, dsc, sizeof(dsc)), snprintf(log, len, T("Le das al %s: %s."), who, dsc);
                 }
             }
             continue;
@@ -766,7 +767,7 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
     cb->ammo_shown = ammo_left;
     if (pressed && ammo_left <= 0) {
         char what[32];
-        snprintf(log, len, "No te quedan %ss a mano (I: inventario).", lower_name(projectile_def(rd->projectile)->name, what, sizeof(what)));
+        snprintf(log, len, T("No te quedan %ss a mano (I: inventario)."), lower_name(T(projectile_def(rd->projectile)->name), what, sizeof(what)));
         return;
     }
     cb->aiming = held && cb->reload <= 0.0f && ammo_left > 0;
@@ -808,7 +809,7 @@ static void drop_loot(Combat *cb, GameActions *ga, Enemy *e, const Player *p, ch
     if (n <= 0 || !ig_drop_loot(ga, e->pos, items, n)) return;
     if (!log[0] && dist2(e->pos, p->pos) < 30.0f) {
         char who[48];
-        snprintf(log, len, "El %s deja botín (F para recogerlo).", lower_name(enemy_def(e->kind)->name, who, sizeof(who)));
+        snprintf(log, len, T("El %s deja botín (F para recogerlo)."), lower_name(T(enemy_def(e->kind)->name), who, sizeof(who)));
     }
 }
 
@@ -963,7 +964,7 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *
         // Toda la tribu sangra y sana; en el campamento descansan.
         health_update(&m->health, &cb->rng, dt, !n->escort, healer);
         if (m->health.dead) {
-            snprintf(log, len, "%s murió de sus heridas. La tribu está de luto (moral -6).", m->name);
+            snprintf(log, len, T("%s murió de sus heridas. La tribu está de luto (moral -6)."), m->name);
             troop_mourn(troop, m->id, 6.0f);
             n->escort = false;
             continue;
@@ -1031,10 +1032,10 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *
             n->move = (int)mv + 1;
             n->move_anim = 0.45f;
             char who[48];
-            lower_name(enemy_def(best->kind)->name, who, sizeof(who));
-            if (best->state == EN_DEAD) snprintf(log, len, "%s abatió a un %s.", m->name, who);
-            else if (r.knocked_down && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, "%s: %s derriba al %s.", move_verb(mv), m->name, who);
-            else if (r.shield_dropped && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, "%s le arranca el escudo al %s.", m->name, who);
+            lower_name(T(enemy_def(best->kind)->name), who, sizeof(who));
+            if (best->state == EN_DEAD) snprintf(log, len, T("%s abatió a un %s."), m->name, who);
+            else if (r.knocked_down && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s: %s derriba al %s."), move_verb(mv), m->name, who);
+            else if (r.shield_dropped && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s le arranca el escudo al %s."), m->name, who);
         }
     }
 }
@@ -1063,11 +1064,11 @@ static void bandage(Combat *cb, GameActions *ga, Troop *troop, const Props *prop
             health_treat(&m->health);
         }
         health_revive(&m->health);
-        snprintf(log, len, herbs ? "Levantas y vendas a %s." : "Levantas a %s, pero sin hierbas sigue sangrando.", m->name);
+        snprintf(log, len, herbs ? T("Levantas y vendas a %s.") : T("Levantas a %s, pero sin hierbas sigue sangrando."), m->name);
         return;
     }
     if (!herbs && ig_count(ga, props, p, "utileria.consumible.unguento") <= 0) {
-        snprintf(log, len, "No llevas hierbas curativas (I: inventario).");
+        snprintf(log, len, "%s", T("No llevas hierbas curativas (I: inventario)."));
         return;
     }
     // 2) Tus propias heridas: con ungüento (si llevas), mejor que con hierbas.
@@ -1076,23 +1077,23 @@ static void bandage(Combat *cb, GameActions *ga, Troop *troop, const Props *prop
         health_treat(&cb->player);
         cb->player.venom = 0.0f;
         cb->player.hp = fminf(cb->player.hp_max, cb->player.hp + cb->player.hp_max * 0.2f);
-        snprintf(log, len, "Te untas el ungüento: cierra las heridas y corta el veneno.");
+        snprintf(log, len, "%s", T("Te untas el ungüento: cierra las heridas y corta el veneno."));
         return;
     }
     if (health_untreated(&cb->player) > 0 && herbs) {
         ig_use(ga, props, p, HERBS_ID, 1);
         int n = health_treat(&cb->player);
-        snprintf(log, len, "Te vendas %d herida%s con hierbas curativas.", n, n == 1 ? "" : "s");
+        snprintf(log, len, T("Te vendas %d herida%s con hierbas curativas."), n, n == 1 ? "" : "s");
         return;
     }
     // 3) Un companero herido cerca.
     if (herbs && npc_near(ga, troop, p, 3.0f, false, &m)) {
         ig_use(ga, props, p, HERBS_ID, 1);
         health_treat(&m->health);
-        snprintf(log, len, "Vendas las heridas de %s.", m->name);
+        snprintf(log, len, T("Vendas las heridas de %s."), m->name);
         return;
     }
-    snprintf(log, len, "No hay heridas que vendar.");
+    snprintf(log, len, "%s", T("No hay heridas que vendar."));
 }
 
 static const Member *role_member(const Troop *troop, Role role) {
@@ -1122,7 +1123,7 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
     if (at_camp && hm && cb->healer_timer <= 0.0f && health_untreated(&cb->player) > 0) {
         health_treat(&cb->player);
         cb->healer_timer = 8.0f;
-        snprintf(log, len, "%s te venda las heridas.", hm->name);
+        snprintf(log, len, T("%s te venda las heridas."), hm->name);
     }
     if (!cb->player.down) {
         cb->down_timer = 0.0f;
@@ -1139,7 +1140,7 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
     if (helper && cb->down_timer > DOWN_HELP_SECONDS) {
         health_treat(&cb->player);
         health_revive(&cb->player);
-        snprintf(log, len, "%s te levanta y te venda. ¡Sigue en pie!", helper->name);
+        snprintf(log, len, T("%s te levanta y te venda. ¡Sigue en pie!"), helper->name);
     } else if (!helper && cb->down_timer > DOWN_WAKE_SECONDS) {
         if (ga->mounted >= 0) ga->animals[ga->mounted].ridden = false, ga->mounted = -1;
         p->pos = (Vector3){ camp_fire.x - 2.5f, terrain_height(t, camp_fire.x - 2.5f, camp_fire.z), camp_fire.z };
@@ -1148,7 +1149,7 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
         health_revive(&cb->player);
         ga->hands.carried[0] = '\0';
         troop_adjust_morale(troop, -5.0f);
-        snprintf(log, len, "Despiertas en el campamento: te encontraron malherido (moral -5).");
+        snprintf(log, len, "%s", T("Despiertas en el campamento: te encontraron malherido (moral -5)."));
     }
 }
 
@@ -1169,7 +1170,7 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, const Ter
     // A caballo solo se golpea con el arma (V); patadas, agarres, ganchos y cargas, a pie.
     if (riding && ready && (IsKeyPressed(KEY_J) || IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE) || IsKeyPressed(KEY_U) ||
                             IsKeyPressed(KEY_O) || (cb->blocking && v_press))) {
-        snprintf(log, len, "A caballo no: solo golpe (V) y golpe pesado (mantener V).");
+        snprintf(log, len, "%s", T("A caballo no: solo golpe (V) y golpe pesado (mantener V)."));
         return;
     }
     // Carga con escudo: corriendo, Z; arrolla al primero que encuentra delante.
@@ -1232,10 +1233,10 @@ static void trample(Combat *cb, Player *p, GameActions *ga, Props *props, char *
     r.knocked_down = !e->mounted || rng_float(&cb->rng) < 0.3f;
     r.staggered = !r.knocked_down;
     char who[48];
-    lower_name(enemy_def(e->kind)->name, who, sizeof(who));
+    lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
     hit_enemy(cb, e, MOVE_RUN_KICK, &r, props, 0, NULL, 0);
-    if (e->state == EN_DEAD) snprintf(log, len, "Arrollas al %s con el caballo: queda en el suelo. Deja botín (F).", who);
-    else snprintf(log, len, "¡Arrollas al %s con el caballo!", who);
+    if (e->state == EN_DEAD) snprintf(log, len, T("Arrollas al %s con el caballo: queda en el suelo. Deja botín (F)."), who);
+    else snprintf(log, len, T("¡Arrollas al %s con el caballo!"), who);
     if (e->target < 0) e->target = 0;
     cb->trample_cd = 1.2f;
     (void)ga;
@@ -1251,7 +1252,7 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     cb->combo_timer = fmaxf(0.0f, cb->combo_timer - dt);
     cb->move_anim = fmaxf(0.0f, cb->move_anim - dt);
     cb->stagger = fmaxf(0.0f, cb->stagger - dt);
-    if (cb->knock > 0.0f && (cb->knock -= dt) <= 0.0f && !cb->player.down) snprintf(log, log_len, "Te levantas.");
+    if (cb->knock > 0.0f && (cb->knock -= dt) <= 0.0f && !cb->player.down) snprintf(log, log_len, "%s", T("Te levantas."));
     cb->knock = fmaxf(0.0f, cb->knock);
     // Velocidad real (para la inercia a caballo); un salto grande es un viaje, no una carrera.
     float moved = dist2(p->pos, cb->last_pos);
@@ -1272,7 +1273,7 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
         cb->arrow_lit_timer -= dt;
         if (ga->raining || cb->arrow_lit_timer <= 0.0f || !rd) {
             cb->arrow_lit = false;
-            snprintf(log, log_len, ga->raining ? "La lluvia apaga la flecha." : "La flecha encendida se apagó.");
+            snprintf(log, log_len, "%s", ga->raining ? T("La lluvia apaga la flecha.") : T("La flecha encendida se apagó."));
         }
     }
     if (rd) player_ranged(cb, p, ga, props, rd, can_act, cam_yaw, cam_pitch, dt, log, log_len);
@@ -1462,7 +1463,7 @@ void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h) {
     (void)troop;
     const Health *ph = &cb->player;
-    const char *txt = TextFormat("%s%s", health_state_name(ph), health_bleeding(ph) ? " · sangra" : "");
+    const char *txt = TextFormat("%s%s", health_state_name(ph), health_bleeding(ph) ? T(" · sangra") : "");
     Color col = health_bleeding(ph) || ph->down ? UI_CARNELIAN : ph->wound_count ? UI_GOLD : UI_BONE;
     ui_text(txt, right_x - MeasureText(txt, 10), y, 10, col);
     ui_bar(right_x - 92, y + 12, 92, fmaxf(0.0f, ph->hp) / ph->hp_max, UI_CARNELIAN, UI_METAL_SILVER);
@@ -1473,11 +1474,11 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
     if (rd) {
         const InvItem *wi = inventory_find(ga->inv, rd->weapon);
         const ProjectileDef *pd = projectile_def(rd->projectile);
-        const char *fire = cb->arrow_lit                   ? TextFormat(" · ENCENDIDA (%.0f s)", cb->arrow_lit_timer)
-                           : ga->fire_near && !ga->raining && rd->projectile <= PROJ_BOLT ? " · L: encender"
+        const char *fire = cb->arrow_lit                   ? TextFormat(T(" · ENCENDIDA (%.0f s)"), cb->arrow_lit_timer)
+                           : ga->fire_near && !ga->raining && rd->projectile <= PROJ_BOLT ? T(" · L: encender")
                                                                                            : "";
-        const char *line = TextFormat("%s · %ss: %d%s%s", wi ? wi->name : "Arma", pd->name, cb->ammo_shown,
-                                      cb->reload > 0.0f ? " · recargando" : "", fire);
+        const char *line = TextFormat("%s · %ss: %d%s%s", wi ? T(wi->name) : T("Arma"), T(pd->name), cb->ammo_shown,
+                                      cb->reload > 0.0f ? T(" · recargando") : "", fire);
         int lw = MeasureText(line, 10);
         ui_text(line, w / 2 - lw / 2, h - 58, 10, UI_BONE);
         if (cb->aiming && rd->draw_time > 0.0f)
@@ -1486,7 +1487,7 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
 
     if (ph->down) {
         DrawRectangle(0, 0, w, h, (Color){ 60, 0, 0, 90 });
-        ui_text_centered("Estás abatido", w / 2, h / 2 - 30, 20, UI_CARNELIAN);
-        ui_text_centered("Si tu escolta está cerca, te levantará; si no, la tribu te buscará.", w / 2, h / 2 - 6, 10, UI_BONE);
+        ui_text_centered(T("Estás abatido"), w / 2, h / 2 - 30, 20, UI_CARNELIAN);
+        ui_text_centered(T("Si tu escolta está cerca, te levantará; si no, la tribu te buscará."), w / 2, h / 2 - 6, 10, UI_BONE);
     }
 }

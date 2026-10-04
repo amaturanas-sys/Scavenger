@@ -7,6 +7,7 @@
 #include "platform.h"
 #include "raymath.h"
 #include "ui/theme.h"
+#include "sim/lang.h"
 
 #define ROW_GAP 8.0f  // separacion entre filas (categorias)
 #define ITEM_GAP 2.0f // separacion entre objetos de una fila
@@ -114,12 +115,12 @@ void gallery_draw_labels(const Gallery *g, Camera3D cam, Vector3 viewer, int wid
     }
     // Ficha del objeto mas cercano.
     ui_strip((Rectangle){ 0, 0, (float)width, 30 }, UI_METAL_GOLD);
-    ui_text(TextFormat("GALERIA  %d objetos  |  %d con modelo  |  %d pendientes", g->count, g->loaded,
+    ui_text(TextFormat(T("GALERIA  %d objetos  |  %d con modelo  |  %d pendientes"), g->count, g->loaded,
                        g->count - g->loaded), 6, 7, 10, UI_GOLD_LIGHT);
     if (nearest && best < 20.0f) {
         const InvItem *it = nearest->item;
-        ui_text(TextFormat("%s  -  %s  -  %.2gx%.2gx%.2g m  -  %s", it->id, it->name, it->w, it->h, it->l,
-                           nearest->loaded ? "modelo cargado" : inventory_state_name(it->state)),
+        ui_text(TextFormat("%s  -  %s  -  %.2gx%.2gx%.2g m  -  %s", it->id, T(it->name), it->w, it->h, it->l,
+                           nearest->loaded ? T("modelo cargado") : inventory_state_name(it->state)),
                 6, 18, 10, nearest->loaded ? UI_TURQUOISE : UI_BONE);
     }
 }

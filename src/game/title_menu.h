@@ -22,9 +22,13 @@ typedef enum {
     MENU_SAVE_SLOT, // guardar en el hueco slot
     MENU_TO_TITLE,
     MENU_QUIT,
+    MENU_LANG, // cambiar el idioma de la interfaz
 } MenuAction;
 
 #define MENU_PLATES 7
+
+#define GAME_TITLE "SCAVENGERS THRIVE"
+#define GAME_SUBTITLE "THEY COME FROM THE STEPPES"
 
 typedef struct {
     MenuScreen screen, back; // pantalla actual y a la que vuelve con Esc

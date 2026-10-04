@@ -23,6 +23,7 @@ jobs:
           python3 tools/assets/animaciones.py check
           python3 tools/assets/animaciones.py doc --verificar
           python3 tools/assets/iconos.py check
+          python3 tools/assets/i18n.py check
       - name: Configurar
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
       - name: Compilar

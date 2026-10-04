@@ -1,5 +1,7 @@
 #include "loadout.h"
 
+#include "lang.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -96,8 +98,10 @@ bool charm_add_buff(Charm *c, const char *buff_id, BuffKind kind, Stat stat, flo
 }
 
 const char *stat_name(Stat s) {
-    static const char *names[STAT_COUNT] = { "aguante", "agarre", "sigilo", "puntería", "carisma", "monta" };
-    return (unsigned)s < STAT_COUNT ? names[s] : "?";
+    static const char *names[STAT_COUNT] = { N_("aguante"), N_("agarre"),   N_("sigilo"), N_("puntería"),   N_("carisma"),
+                                             N_("monta"),   N_("cuerpo a cuerpo"), N_("velocidad"), N_("vida"), N_("vista"),
+                                             N_("carga"),   N_("oficio") };
+    return (unsigned)s < STAT_COUNT ? T(names[s]) : "?";
 }
 
 bool amulet_charm(const char *inv_id, Charm *out) {

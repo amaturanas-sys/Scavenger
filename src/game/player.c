@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "raymath.h"
+#include "sim/lang.h"
 
 #define WALK_SPEED 4.0f
 #define RUN_SPEED 8.5f
@@ -102,9 +103,9 @@ void player_draw(const Player *p) {
 
 const char *stance_name(Stance s) {
     switch (s) {
-    case STANCE_WALK: return "caminando";
-    case STANCE_RUN: return "corriendo";
-    case STANCE_SNEAK: return "acechando";
+    case STANCE_WALK: return T("caminando");
+    case STANCE_RUN: return T("corriendo");
+    case STANCE_SNEAK: return T("acechando");
     }
     return "?";
 }

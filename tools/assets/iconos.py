@@ -899,6 +899,238 @@ def _(p):
     p.poly([(60, 30), (110, 64), (60, 98), (74, 64)])
 
 
+# -- idioma, tatuajes, joyas, campamento, viajes (version 2: se añaden al atlas sin tocar las celdas ya pintadas)
+@icon("idioma", "Idioma: globo")
+def _(p):
+    p.ring(64, 64, 50, 8)
+    p.arc(64, 64, 50, 0, 360, 8)
+    p.d.ellipse((44, 14, 84, 114), outline=W, width=7)
+    p.thick(14, 64, 114, 64, 7)
+    p.thick(22, 40, 106, 40, 5)
+    p.thick(22, 88, 106, 88, 5)
+
+
+@icon("druida", "Druida: báculo y capucha")
+def _(p):
+    p.poly([(40, 120), (46, 52), (54, 30), (64, 22), (76, 30), (84, 52), (90, 120)])
+    p.ell(64, 44, 10, 12, K)
+    p.thick(100, 120, 100, 22, 7)
+    p.ring(100, 18, 10, 5)
+
+
+@icon("orfebre", "Orfebre: anillo y martillo")
+def _(p):
+    p.ring(48, 76, 30, 10)
+    p.poly([(36, 40), (48, 28), (60, 40), (48, 52)])
+    p.thick(70, 110, 108, 56, 9)
+    p.poly(rot([(92, 30), (124, 30), (124, 50), (92, 50)], 108, 40, -55))
+
+
+@icon("anillo", "Anillo")
+def _(p):
+    p.ring(64, 76, 34, 12)
+    p.poly([(48, 36), (64, 18), (80, 36), (64, 52)])
+    p.poly([(56, 36), (64, 28), (72, 36), (64, 44)], K)
+
+
+@icon("brazalete", "Brazalete")
+def _(p):
+    p.d.ellipse((14, 34, 114, 94), outline=W, width=16)
+    for x in (34, 64, 94):
+        p.ell(x, 40 if x == 64 else 46, 7, c=K)
+
+
+@icon("collar", "Collar")
+def _(p):
+    p.arc(64, 30, 46, 20, 160, 7)
+    for a in range(30, 160, 22):
+        x, y = 64 + math.cos(math.radians(a)) * 46, 30 + math.sin(math.radians(a)) * 46
+        p.ell(x, y, 7)
+    p.poly([(52, 80), (76, 80), (64, 112)])
+
+
+@icon("arete", "Aretes")
+def _(p):
+    for cx in (40, 88):
+        p.ring(cx, 30, 12, 6)
+        p.thick(cx, 42, cx, 62, 5)
+        p.poly([(cx, 60), (cx + 16, 86), (cx, 112), (cx - 16, 86)])
+
+
+@icon("hebilla", "Hebilla de cinturón")
+def _(p):
+    p.rect(8, 50, 120, 78)
+    p.rect(30, 30, 98, 98, r=10)
+    p.rect(42, 42, 86, 86, K, r=6)
+    p.thick(64, 42, 64, 86, 7)
+
+
+@icon("gema", "Piedra preciosa")
+def _(p):
+    p.poly([(30, 40), (98, 40), (118, 62), (64, 118), (10, 62)])
+    p.line([(10, 62), (118, 62)], 4, K)
+    p.line([(30, 40), (46, 62), (64, 118)], 4, K)
+    p.line([(98, 40), (82, 62), (64, 118)], 4, K)
+
+
+@icon("guardian", "Guardián del campamento")
+def _(p):
+    p.ell(56, 24, 14)
+    p.poly([(36, 42), (76, 42), (84, 82), (74, 84), (72, 120), (40, 120), (38, 84), (28, 82)])
+    p.thick(100, 124, 100, 14, 7)
+    p.poly([(92, 22), (100, 4), (108, 22)])
+
+
+@icon("reclutar", "Reclutar")
+def _(p):
+    p.ell(52, 30, 16)
+    p.poly([(28, 52), (76, 52), (86, 118), (18, 118)])
+    p.rect(94, 40, 104, 80)
+    p.rect(80, 55, 118, 65)
+
+
+@icon("entrenar", "Capacitar en un oficio")
+def _(p):
+    p.ell(48, 34, 16)
+    p.poly([(24, 56), (72, 56), (82, 120), (14, 120)])
+    p.poly([(98, 14), (106, 34), (126, 36), (110, 50), (116, 70), (98, 58), (80, 70), (86, 50), (70, 36), (90, 34)])
+
+
+@icon("disolver", "Disolver el campamento")
+def _(p):
+    yurt(p, 0, 18, 0.7)
+    flame(p, 64, 46, 0.6)
+
+
+@icon("mochila_grande", "Mochila grande")
+def _(p):
+    p.rect(20, 22, 108, 120, r=16)
+    p.rect(30, 56, 98, 70, K)
+    p.rect(30, 84, 98, 110, K, r=6)
+    p.rect(34, 88, 94, 106, r=4)
+    p.arc(64, 22, 20, 180, 360, 8)
+
+
+@icon("soltar", "Dejar la mochila en el suelo")
+def _(p):
+    p.rect(30, 8, 98, 70, r=12)
+    p.thick(64, 74, 64, 104, 10)
+    p.poly([(44, 96), (84, 96), (64, 120)])
+    p.rect(10, 116, 118, 122)
+
+
+@icon("recoger", "Recoger la mochila")
+def _(p):
+    p.rect(30, 58, 98, 120, r=12)
+    p.thick(64, 54, 64, 22, 10)
+    p.poly([(44, 30), (84, 30), (64, 6)])
+
+
+@icon("mensajero", "Mensajero: cuerno")
+def _(p):
+    p.poly([(14, 76), (90, 40), (110, 20), (118, 60), (100, 100), (90, 84), (20, 92)])
+    p.ell(16, 84, 10)
+
+
+@icon("despachar", "Despachar seguidores")
+def _(p):
+    p.ell(30, 40, 12)
+    p.poly([(14, 56), (46, 56), (52, 112), (8, 112)])
+    p.thick(60, 70, 104, 70, 8)
+    p.poly([(98, 54), (124, 70), (98, 86)])
+    p.rect(64, 106, 124, 110)
+
+
+@icon("lugar", "Lugar conocido")
+def _(p):
+    p.ell(64, 48, 36)
+    p.poly([(32, 62), (96, 62), (64, 122)])
+    p.ell(64, 48, 14, c=K)
+
+
+@icon("alimentar", "Alimentar a los animales")
+def _(p):
+    p.d.chord((14, 40, 114, 120), 0, 180, fill=W)
+    p.rect(14, 76, 114, 82)
+    for x, y in ((40, 64), (58, 56), (76, 62), (92, 54), (50, 44), (70, 40)):
+        p.ell(x, y, 8, 6)
+
+
+@icon("pastar", "Pastar")
+def _(p):
+    for x, h in ((18, 70), (36, 90), (54, 60), (72, 96), (90, 72), (108, 86)):
+        p.poly([(x - 8, 118), (x + 2, 118 - h), (x + 8, 118)])
+    p.rect(8, 112, 120, 120)
+
+
+@icon("soldado", "Soldado")
+def _(p):
+    p.d.pieslice((40, 6, 76, 42), 180, 360, fill=W)
+    p.ell(58, 30, 13)
+    p.poly([(36, 46), (80, 46), (86, 120), (30, 120)])
+    p.poly([(70, 60), (112, 60), (110, 94), (91, 112), (72, 94)])
+
+
+@icon("pastor", "Pastor: cayado")
+def _(p):
+    p.thick(48, 122, 48, 34, 8)
+    p.arc(68, 34, 20, 180, 360, 8)
+    p.thick(88, 34, 88, 50, 8)
+    p.ell(96, 98, 22, 16)
+    p.ell(114, 88, 8, 7)
+
+
+@icon("cazador", "Cazador")
+def _(p):
+    p.arc(10, 64, 58, 300, 60, 7)
+    p.thick(39, 14, 39, 114, 3)
+    p.thick(30, 64, 118, 64, 5)
+    p.poly([(110, 54), (126, 64), (110, 74)])
+
+
+@icon("explorador", "Explorador: ojo")
+def _(p):
+    p.d.chord((8, 30, 120, 130), 200, 340, fill=W)
+    p.d.chord((8, -2, 120, 98), 20, 160, fill=W)
+    p.ell(64, 64, 22, c=K)
+    p.ell(64, 64, 12)
+
+
+@icon("nivel", "Nivel: estrella")
+def _(p):
+    pts = []
+    for i in range(10):
+        a = math.radians(-90 + i * 36)
+        r = 56 if i % 2 == 0 else 24
+        pts.append((64 + math.cos(a) * r, 66 + math.sin(a) * r))
+    p.poly(pts)
+
+
+@icon("bloqueado", "Bloqueado: candado")
+def _(p):
+    p.rect(26, 58, 102, 118, r=8)
+    p.arc(64, 58, 26, 180, 360, 10)
+    p.thick(38, 58, 38, 64, 10)
+    p.thick(90, 58, 90, 64, 10)
+    p.ell(64, 84, 8, c=K)
+    p.rect(60, 86, 68, 104, K)
+
+
+@icon("dialogo", "Hablar")
+def _(p):
+    p.rect(10, 18, 118, 86, r=18)
+    p.poly([(30, 80), (56, 80), (24, 114)])
+    for x in (38, 64, 90):
+        p.ell(x, 52, 7, c=K)
+
+
+@icon("mapa", "Mapa")
+def _(p):
+    p.poly([(8, 24), (44, 12), (84, 24), (120, 12), (120, 104), (84, 116), (44, 104), (8, 116)])
+    p.thick(44, 14, 44, 102, 4, K)
+    p.thick(84, 26, 84, 114, 4, K)
+
+
 # ------------------------------------------------------------------ atlas
 def render(fn):
     pen = Pen()
@@ -929,25 +1161,65 @@ def atlas_size():
     return COLS * CELL, rows * CELL
 
 
+def read_tsv_map():
+    """nombre -> indice segun iconos.tsv (vacio si no existe)."""
+    m = {}
+    if os.path.exists(TSV):
+        for line in open(TSV, encoding="utf-8"):
+            if line.startswith("#") or line.startswith("indice"):
+                continue
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) >= 2 and parts[0].isdigit():
+                m[parts[1]] = int(parts[0])
+    return m
+
+
 def generar(force):
+    """Sin --forzar: añade al atlas solo los iconos nuevos, en celdas libres; lo pintado no se toca."""
     if os.path.exists(OUT) and not force:
-        print(f"{os.path.relpath(OUT, ROOT)} ya existe (tus cambios se respetan): usa --forzar para redibujarlo.")
+        cells = read_tsv_map()
+        missing = [(n, d, fn) for n, d, fn in ICONS if n not in cells]
+        if not missing:
+            print(f"{os.path.relpath(OUT, ROOT)} ya tiene todos los iconos (tus cambios se respetan; --forzar lo redibuja).")
+            return
+        img = Image.open(OUT).convert("RGBA")
+        nxt = max(cells.values(), default=-1) + 1
+        rows = (nxt + len(missing) + COLS - 1) // COLS
+        if rows * CELL > img.height:  # crece hacia abajo
+            big = Image.new("RGBA", (COLS * CELL, rows * CELL), (0, 0, 0, 0))
+            big.alpha_composite(img, (0, 0))
+            img = big
+        for n, d, fn in missing:
+            img.alpha_composite(render(fn), ((nxt % COLS) * CELL, (nxt // COLS) * CELL))
+            cells[n] = nxt
+            nxt += 1
+        img.save(OUT, optimize=True)
+        write_tsv(cells)
+        print(f"Añadidos {len(missing)} iconos a {os.path.relpath(OUT, ROOT)}: {', '.join(n for n, _, _ in missing)}.")
         return
     w, h = atlas_size()
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     for i, (name, desc, fn) in enumerate(ICONS):
         img.alpha_composite(render(fn), ((i % COLS) * CELL, (i // COLS) * CELL))
     img.save(OUT, optimize=True)
+    write_tsv({n: i for i, (n, _, _) in enumerate(ICONS)})
     print(f"Escrito {os.path.relpath(OUT, ROOT)} ({len(ICONS)} iconos, {w}x{h}).")
 
 
-def guia():
+def write_tsv(cells):
+    desc = {n: d for n, d, _ in ICONS}
     with open(TSV, "w", encoding="utf-8") as f:
         f.write("# Iconos de los menus: celda del atlas assets/ui/iconos.png (32x32, 16 columnas).\n")
         f.write("# El juego lo lee al arrancar: si mueves un icono de celda, cambia aqui su indice.\n")
         f.write("indice\tnombre\tcolumna\tfila\tdescripcion\n")
-        for i, (name, desc, _) in enumerate(ICONS):
-            f.write(f"{i}\t{name}\t{i % COLS}\t{i // COLS}\t{desc}\n")
+        for n, i in sorted(cells.items(), key=lambda kv: kv[1]):
+            f.write(f"{i}\t{n}\t{i % COLS}\t{i // COLS}\t{desc.get(n, '')}\n")
+
+
+def guia():
+    cells = read_tsv_map() or {n: i for i, (n, _, _) in enumerate(ICONS)}
+    write_tsv(cells)  # conserva tus celdas; solo refresca columnas y descripciones
+    names = {i: n for n, i in cells.items()}
     print(f"Escrito {os.path.relpath(TSV, ROOT)}.")
     src = Image.open(OUT).convert("RGBA") if os.path.exists(OUT) else None
     if src is None:
@@ -966,8 +1238,8 @@ def guia():
             d.rectangle((x, y, x + cw - 1, y + ch - 1), outline=(120, 82, 28, 255))
             cell = src.crop((c * CELL, r * CELL, (c + 1) * CELL, (r + 1) * CELL)).resize((cw, cw), Image.NEAREST)
             g.alpha_composite(cell, (x, y))
-            if i < len(ICONS):
-                d.text((x + 3, y + cw + 1), f"{i} {ICONS[i][0]}", fill=(242, 228, 192, 255), font=font)
+            if i in names:
+                d.text((x + 3, y + cw + 1), f"{i} {names[i]}", fill=(242, 228, 192, 255), font=font)
     g.save(GUIDE, optimize=True)
     print(f"Escrito {os.path.relpath(GUIDE, ROOT)}.")
 
