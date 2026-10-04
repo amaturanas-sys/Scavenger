@@ -33,6 +33,7 @@
 #include "../src/sim/storage.h"
 #include "../src/sim/travel.h"
 #include "../src/sim/troop.h"
+#include "../src/sim/water.h"
 
 static int g_failed = 0, g_checks = 0;
 
@@ -2366,6 +2367,111 @@ static void test_apparel_and_climate(void) {
     inventory_free(&inv);
 }
 
+static float test_water_everywhere(void *ud, float x, float z) {
+    (void)ud, (void)x, (void)z;
+    return 1.0f;
+}
+
+static void test_water_spirits_and_drink(void) {
+    Rng rng;
+    rng_seed(&rng, 7u);
+    Hydration h;
+    hydration_init(&h);
+    CHECK(h.water == THIRST_MAX && thirst_level(&h) == THIRST_FINE && drunk_level(&h) == DRUNK_SOBER);
+    // La sed baja, mas rapido con calor.
+    Hydration cool = h, hot = h;
+    for (int i = 0; i < 600; i++) hydration_update(&cool, 1.0f, false, 1.0f), hydration_update(&hot, 2.5f, false, 1.0f);
+    CHECK(hot.water < cool.water && cool.water < THIRST_MAX && thirst_level(&hot) >= THIRST_THIRSTY);
+    CHECK(hydration_speed_scale(&hot) < 1.0f && hydration_stamina_scale(&hot) < 1.0f);
+    for (int i = 0; i < 3000; i++) hydration_update(&hot, 2.5f, false, 1.0f);
+    CHECK(hot.water == 0.0f && thirst_level(&hot) == THIRST_DRY);
+    // Lo hervido y el alcohol no traen espiritus; lo crudo, a veces (cuanto mas calor, mas).
+    int sick = 0;
+    for (int i = 0; i < 200; i++) {
+        Hydration b;
+        hydration_init(&b);
+        b.water = 10.0f;
+        CHECK(!hydration_drink(&b, DRINK_BOILED, 1.0f, &rng) && !hydration_drink(&b, DRINK_BEER, 1.0f, &rng));
+        CHECK(!hydration_drink(&b, DRINK_WATERED_WINE, 1.0f, &rng) && b.curse == 0.0f);
+        Hydration r;
+        hydration_init(&r);
+        sick += hydration_drink(&r, DRINK_RAW, water_spirit_chance(20.0f, true), &rng);
+    }
+    CHECK(sick > 40 && sick < 160);
+    CHECK(water_spirit_chance(25.0f, true) > water_spirit_chance(0.0f, false));
+    CHECK(water_spirit_chance(0.0f, false) > 0.0f);
+    // Los espiritus se incuban, dan fiebre y se van (antes con hierbas).
+    Hydration c;
+    hydration_init(&c);
+    CHECK(hydration_drink(&c, DRINK_RAW, 1.0f, &rng) && !hydration_sick(&c) && c.incubate >= 60.0f);
+    for (int i = 0; i < 130; i++) hydration_update(&c, 1.0f, false, 1.0f);
+    CHECK(hydration_sick(&c) && hydration_speed_scale(&c) < 1.0f);
+    Hydration d = c;
+    hydration_herbs(&d);
+    CHECK(d.curse < c.curse);
+    for (int i = 0; i < 1300; i++) hydration_update(&c, 1.0f, true, 1.0f);
+    CHECK(!hydration_sick(&c));
+    // Las hierbas durante la incubacion casi la cortan.
+    Hydration e;
+    hydration_init(&e);
+    hydration_drink(&e, DRINK_RAW, 1.0f, &rng);
+    hydration_herbs(&e);
+    hydration_herbs(&e);
+    CHECK(e.curse == 0.0f);
+    // Beber mucho vino emborracha: torpe, fatigado; se pasa con el tiempo.
+    Hydration w;
+    hydration_init(&w);
+    for (int i = 0; i < 4; i++) hydration_drink(&w, DRINK_WINE, 0.0f, &rng);
+    CHECK(drunk_level(&w) >= DRUNK_WASTED && hydration_clumsy(&w) > 0.9f && hydration_stamina_scale(&w) < 0.6f);
+    Hydration one;
+    hydration_init(&one);
+    hydration_drink(&one, DRINK_BEER, 0.0f, &rng);
+    CHECK(drunk_level(&one) == DRUNK_SOBER && hydration_clumsy(&one) == 0.0f); // una cerveza: nada
+    for (int i = 0; i < 800; i++) hydration_update(&w, 1.0f, true, 1.0f);
+    CHECK(drunk_level(&w) == DRUNK_SOBER);
+    CHECK(drink_find("utileria.consumible.agua") == DRINK_RAW && drink_find("utileria.consumible.vino") == DRINK_WINE && drink_find("arma.corta.sable") < 0);
+    // La tribu: del acopio lo seguro; si falta, del rio hervida con leña; sin leña, cruda; sin agua, sed.
+    Troop t;
+    troop_init(&t, NULL);
+    for (int i = 0; i < 8; i++) troop_recruit(&t, "Bebedor", 0);
+    Stockpile s;
+    stock_init(&s);
+    stock_add(&s, "utileria.consumible.agua_hervida", 2);
+    stock_add(&s, "utileria.consumible.cerveza", 1);
+    stock_add(&s, "utileria.objeto.lena", 1);
+    WaterReport r = water_daily(&s, &t, true, 1.0f, &rng);
+    CHECK(r.safe == 3 && r.boiled == WATER_WOOD_PER && r.raw == 8 - 3 - WATER_WOOD_PER && r.sick == r.raw && r.dry == 0);
+    CHECK(stock_count(&s, "utileria.objeto.lena") == 0 && stock_count(&s, "utileria.consumible.cerveza") == 0);
+    float morale = t.members[7].morale;
+    WaterReport none = water_daily(&s, &t, false, 1.0f, &rng);
+    CHECK(none.dry == 8 && t.members[7].morale < morale);
+    for (int i = 0; i < 20; i++) water_daily(&s, &t, false, 1.0f, &rng);
+    CHECK(t.members[0].health.hp >= t.members[0].health.hp_max * 0.3f - 0.01f); // nadie muere de esto
+    // Los animales de la tribu tienen sed; junto al agua beben solos.
+    Animal a;
+    memset(&a, 0, sizeof(a));
+    animal_init(&a, SPECIES_HORSE, 0.0f, 0.0f);
+    a.state = ANIMAL_TAMED;
+    CHECK(!animal_give_water(&a));
+    a.thirst = 1.2f;
+    CHECK(animal_give_water(&a) && a.thirst == 0.0f);
+    // En seco la sed sube (y avisa); junto al agua bebe solo.
+    FaunaHuman hu = { 300.0f, 300.0f, false, false, false };
+    FaunaCtx dry;
+    memset(&dry, 0, sizeof(dry));
+    dry.humans = &hu, dry.human_count = 1, dry.px = dry.pz = 300.0f, dry.grass = true;
+    FaunaEvents ev = { 0 };
+    a.thirst = 0.95f;
+    for (int i = 0; i < 40; i++) fauna_update(&a, 1, &dry, &rng, 0.5f, &ev);
+    bool told = false;
+    for (int i = 0; i < ev.n; i++) told |= ev.ev[i].kind == FEV_THIRSTY;
+    CHECK(a.thirst > 1.0f && told);
+    FaunaCtx wet = dry;
+    wet.water_depth = test_water_everywhere;
+    for (int i = 0; i < 40; i++) fauna_update(&a, 1, &wet, &rng, 0.5f, NULL);
+    CHECK(a.thirst < 0.5f);
+}
+
 static void test_travel_dispatch_and_messengers(void) {
     // Riesgo: sin nadie que conozca el destino, casi seguro se pierden.
     CHECK(journey_risk(300.0f, 0.0f, 3, false) >= 0.89f);
@@ -2417,6 +2523,7 @@ int main(void) {
     RUN(test_backpacks_and_feeding);
     RUN(test_travel_dispatch_and_messengers);
     RUN(test_apparel_and_climate);
+    RUN(test_water_spirits_and_drink);
     RUN(test_hand_crafting_and_repairs);
     RUN(test_enemy_loot_and_mounted_momentum);
     RUN(test_banish_removes_from_active);

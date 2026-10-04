@@ -4,6 +4,7 @@
 #include "game/inventory_game.h"
 #include "game/camp_game.h"
 #include "game/gems_game.h"
+#include "game/water_game.h"
 #include "game/talents_game.h"
 
 #include <math.h>
@@ -147,6 +148,7 @@ void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain 
     };
     for (size_t i = 0; i < sizeof(WARDROBE) / sizeof(WARDROBE[0]); i++) stock_add(&ga->camps[0].stock, WARDROBE[i].id, WARDROBE[i].n);
     // Lo que lleva puesto el jugador al empezar.
+    hydration_init(&ga->hydro);
     outfit_clear(&ga->outfit);
     static const char *const START_WEAR[] = { "vestimenta.torso.deel", "vestimenta.cabeza.gorro_piel", "vestimenta.pies.botas_fieltro",
                                               "vestimenta.espalda.capa" };
@@ -206,7 +208,7 @@ float ga_speed_scale(const GameActions *ga) {
     // Montado, la montura (y el amuleto del caballo); a pie, cuanto pesa lo que llevas.
     if (ga->mounted >= 0)
         return species_def(ga->animals[ga->mounted].species)->ride_speed * (1.0f + 0.5f * ig_stat(ga, STAT_RIDING));
-    return ig_speed_scale(ga) * (1.0f + ig_stat(ga, STAT_SPEED)); // a pie: la carga, y tatuajes y joyas
+    return ig_speed_scale(ga) * (1.0f + ig_stat(ga, STAT_SPEED)) * wg_speed_scale(ga); // a pie: la carga, tatuajes y joyas, la sed
 }
 
 // ---------------------------------------------------------------- objetivos
@@ -302,6 +304,26 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
     case ACTION_PAN:
         if (!ga->terrain || !gems_water_ahead(ga->terrain, p)) {
             snprintf(log, len, "%s", T("Para cribar hay que estar en la orilla, mirando al agua."));
+            return;
+        }
+        break;
+    case ACTION_FILL_WATER:
+        if (!ga->terrain || !gems_water_ahead(ga->terrain, p)) {
+            snprintf(log, len, "%s", T("Para llenar el odre hay que estar en la orilla, mirando al agua."));
+            return;
+        }
+        if (wg_water_room(ga, props, p) <= 0) {
+            snprintf(log, len, "%s", T("Tus odres ya están llenos."));
+            return;
+        }
+        break;
+    case ACTION_BOIL:
+        if (!ga->fire_near || ga->fires_out) {
+            snprintf(log, len, "%s", T("Para hervir el agua hace falta un fuego encendido cerca."));
+            return;
+        }
+        if (ig_count(ga, props, p, "utileria.consumible.agua") <= 0) {
+            snprintf(log, len, "%s", T("No tienes agua cruda que hervir (llena el odre en la orilla)."));
             return;
         }
         break;
@@ -443,6 +465,19 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
             snprintf(log, len, "%s", T("Montura instalada: R para montar."));
         break;
     case ACTION_PAN: gems_pan(ga, props, p, log, len); break;
+    case ACTION_FILL_WATER: {
+        int n = ig_store(ga, props, p, "utileria.consumible.agua", wg_water_room(ga, props, p), 1.0f);
+        snprintf(log, len, T("Llenas el odre: +%d agua cruda. Hiérvela junto a un fuego antes de beberla (o bebe con riesgo)."), n);
+        break;
+    }
+    case ACTION_BOIL: {
+        int n = ig_count(ga, props, p, "utileria.consumible.agua");
+        if (n > 4) n = 4; // una olla
+        ig_use(ga, props, p, "utileria.consumible.agua", n);
+        int kept = ig_store(ga, props, p, "utileria.consumible.agua_hervida", n, 1.0f);
+        snprintf(log, len, T("Hierves el agua: +%d agua hervida, sin espíritus malditos."), kept);
+        break;
+    }
     default:
         if (d->produces) { // instalar fogata, tienda, cavar trinchera
             Vector3 at = ground_ahead(t, p, 2.5f);
@@ -638,7 +673,8 @@ static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const T
 static const IconId TAB_ICONS[4] = { ICON_ACCIONES, ICON_OBRAS, ICON_FABRICAR, ICON_REPARAR };
 static const IconId ACTION_ICONS[ACTION_COUNT] = { ICON_TOMAR,   ICON_LANZAR,   ICON_EMPUNAR, ICON_ENFUNDAR,
                                                    ICON_FOGATA,  ICON_TIENDA,   ICON_TRINCHERA, ICON_TREPA,
-                                                   ICON_LAZO,    ICON_ANTORCHA, ICON_ENSILLAR, ICON_GEMA };
+                                                   ICON_LAZO,    ICON_ANTORCHA, ICON_ENSILLAR, ICON_GEMA,
+                                                   ICON_AGUA,    ICON_HERVIR };
 static const IconId BUILD_ICONS[BUILD_COUNT] = { ICON_REFUGIO, ICON_OBRAS, ICON_MURO_PIEDRA, ICON_HOGUERA, ICON_TOTEM,
                                                  ICON_HORNO,   ICON_FUNDICION, ICON_FUNDICION, ICON_TORRE, ICON_CORRAL };
 
@@ -869,11 +905,12 @@ void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p)
 }
 
 // ---------------------------------------------------------------- dia nuevo
-void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day,
+void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day, float temp_mean,
                 char *log, size_t log_len) {
     // Comida y recoleccion: cada campamento con su gente y su acopio; la escolta (y quien no
     // tiene casa) come de lo del campamento mas cercano al jugador.
     UpkeepReport up = { 0, 0, 0 };
+    WaterReport wr = { 0, 0, 0, 0, 0 };
     int near_camp = camp_nearest(ga->camps, CAMPS_MAX, ga->player_pos.x, ga->player_pos.z, NULL);
     static Troop sub; // grande: fuera de la pila
     for (int k = 0; k < CAMPS_MAX; k++) {
@@ -890,8 +927,15 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
         }
         if (!sub.count) continue;
         UpkeepReport r = economy_daily_upkeep(&ga->camps[k].stock, &sub);
-        for (int j = 0; j < sub.count; j++) troop->members[idx[j]].morale = sub.members[j].morale; // el hambre baja el animo
+        // El agua: del acopio, o del rio cercano (hervida si hay leña; cruda, con los espiritus).
+        CampSite *cs = &ga->camps[k];
+        WaterReport w = water_daily(&cs->stock, &sub, wg_water_near(t, cs->x, cs->z), water_spirit_chance(temp_mean, false), &ga->rng);
+        for (int j = 0; j < sub.count; j++) { // el hambre, la sed y la fiebre bajan el animo (y la vida)
+            troop->members[idx[j]].morale = sub.members[j].morale;
+            troop->members[idx[j]].health.hp = sub.members[j].health.hp;
+        }
         up.eaten += r.eaten, up.hungry += r.hungry, up.gathered += r.gathered;
+        wr.safe += w.safe, wr.boiled += w.boiled, wr.raw += w.raw, wr.sick += w.sick, wr.dry += w.dry;
     }
     // Efectos de lo construido en el campamento.
     const char *ids[PROPS_MAX + 8];
@@ -918,6 +962,11 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
     if (charisma > 0.0f) troop_adjust_morale(troop, charisma * 10.0f);
     snprintf(log, log_len, T("Día %d: comieron %d%s, recolectaron %d. Ánimo del campamento %+.0f."), day, up.eaten,
              up.hungry ? TextFormat(T(" (%d sin ración)"), up.hungry) : "", up.gathered, fx.morale_per_day);
+    size_t used = strlen(log);
+    if (wr.sick || wr.dry) // el agua: solo si algo salio mal
+        snprintf(log + used, log_len - used, " %s",
+                 wr.dry ? TextFormat(T("%d pasaron sed: no hay agua cerca ni en el acopio."), wr.dry)
+                        : TextFormat(T("%d bebieron agua cruda y les cayeron los espíritus malditos (hace falta leña para hervirla)."), wr.sick));
 }
 
 // ---------------------------------------------------------------- dibujo

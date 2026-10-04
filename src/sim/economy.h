@@ -109,6 +109,10 @@ typedef enum {
     CRAFT_WHITE_MANTLE,
     CRAFT_FUR_BOOTS,
     CRAFT_SANDALS,
+    // Bebidas (src/sim/water.h): el alcohol purifica el agua.
+    CRAFT_WATERED_WINE,
+    CRAFT_AIRAG,
+    CRAFT_BEER,
     CRAFT_COUNT
 } CraftId;
 

@@ -1,6 +1,7 @@
 #include "combat_game.h"
 
 #include "game/apparel_game.h"
+#include "game/water_game.h"
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
 #include "game/gems_game.h"
@@ -409,7 +410,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     int an = m == MOVE_GRAPPLE || m == MOVE_HOOK || m == MOVE_SHIELD_BASH ? -1 : fg_melee_target(ga, t, p->pos, p->yaw, reach, &ad);
     if (an >= 0 && (!e || ad < ed)) {
         float base = m == MOVE_LIGHT || m == MOVE_HEAVY ? w.damage * (m == MOVE_HEAVY ? 1.8f : melee_combo_scale(step)) : md->damage;
-        float dmg = combat_damage(base, (off ? 0.8f : 1.0f) * momentum * (1.0f + ig_stat(ga, STAT_MELEE)), health_attack_scale(&cb->player),
+        float dmg = combat_damage(base, (off ? 0.8f : 1.0f) * momentum * (1.0f + ig_stat(ga, STAT_MELEE)) * (1.0f - 0.35f * wg_clumsy(ga)), health_attack_scale(&cb->player),
                                   false, &cb->rng);
         fg_hurt(ga, an, dmg, m == MOVE_LIGHT || m == MOVE_HEAVY ? w.wound : WOUND_BRUISE, PART_RANDOM, 0, log, len);
         return;
@@ -426,7 +427,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
     me.strength *= health_attack_scale(&cb->player) * (off ? 0.8f : 1.0f);
     if (m == MOVE_GRAPPLE) me.strength *= 1.0f + ig_stat(ga, STAT_GRAPPLE_POWER); // amuletos del tigre y del oso
-    me.strength *= momentum * (1.0f + ig_stat(ga, STAT_MELEE)); // tatuajes, joyas y el aullido
+    me.strength *= momentum * (1.0f + ig_stat(ga, STAT_MELEE)) * (1.0f - 0.35f * wg_clumsy(ga)); // tatuajes, joyas, el aullido; borracho, menos
     MeleeResult r = melee_resolve(m, &me, &foe, weapon, step, &cb->rng);
     // La lanza al galope: el que la recibe (sin pararla) suele caer.
     if (riding && w.spear && cb->pl_speed > GALLOP_SPEED && r.landed && !r.blocked && rng_float(&cb->rng) < 0.6f)
@@ -787,7 +788,7 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
         float charge = rd->draw_time > 0.0f ? fminf(1.0f, cb->draw / rd->draw_time) : 1.0f;
         ig_use(ga, props, p, ammo, 1);
         // Punteria (amuleto del aguila): menos dispersion.
-        float steady = 1.0f - 0.6f * fminf(1.0f, ig_stat(ga, STAT_ARCHERY));
+        float steady = (1.0f - 0.6f * fminf(1.0f, ig_stat(ga, STAT_ARCHERY))) * (1.0f + 1.5f * wg_clumsy(ga)); // borracho, torpe
         // A caballo, la carrera dispersa el tiro; la monta (amuletos) lo corrige.
         if (ga->mounted >= 0)
             steady *= 1.0f + fminf(cb->pl_speed, 12.0f) / 6.0f * (1.0f - 0.6f * fminf(1.0f, ig_stat(ga, STAT_RIDING)));

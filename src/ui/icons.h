@@ -148,6 +148,11 @@ typedef enum {
     ICON_SOMBRERO,
     ICON_CAPA,
     ICON_ESCARMIENTO,
+    ICON_HERVIR,
+    ICON_JARRA,
+    ICON_VINO,
+    ICON_ESPIRITUS,
+    ICON_BEBER,
     ICON_COUNT
 } IconId;
 

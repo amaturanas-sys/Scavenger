@@ -65,7 +65,7 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 - **Frecuencia = nitidez:** cada zona acumula familiaridad. Lo recorrido a menudo brilla más, como la memoria espacial real.
 - **Olvido en días de juego:** el brillo se apaga con los días (un día de juego = 30 minutos reales; `src/sim/clock.h`). Una zona vista de pasada se borra en una o dos semanas de juego; lo familiar dura mucho más (repetición espaciada).
 - **Todo el mundo:** el minimapa siempre se centra en el jugador y muestra el mundo a su alrededor; lo no explorado aparece oscuro. La memoria se guarda por páginas que solo se crean al explorar, así que crece con lo recorrido, no con el tamaño del mundo.
-- **Días automáticos:** el reloj de juego avanza los días solo; `Enter` salta al amanecer siguiente y `N` adelanta dos minutos (prueba).
+- **Días automáticos:** el reloj de juego avanza los días solo; `Enter` salta al amanecer siguiente y `Ctrl+N` adelanta dos minutos (prueba).
 - **Marcas:** el jugador marca sitios de interés (`M`) o de peligro (`Shift+M`). Pulsar de nuevo cerca de una marca la quita. Las marcas fuera de alcance quedan en el borde, señalando su dirección.
 - Los parámetros (radio de vista, velocidad de aprendizaje y de olvido, brillo de una sola pasada) están en `memmap_default_params` y son de balance.
 
@@ -374,6 +374,15 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
 - **Escarmiento** (pieles de lobo, oso, tigre, puma, hiena; hasta 50 %): el enemigo que ve de cerca a quien las lleva tira una vez y puede retroceder unos segundos; herido, huye antes. Los fanáticos, al 30 %.
 - **Materiales:** el despiece da la piel de la especie (`species_pelt`) además de pieles curtidas; los pastores esquilan las cabras del campamento cada día; la seda sale del botín de bandidos y jinetes. 20 recetas a mano.
 - **NPCs:** cada 4 s eligen prenda por capa (`garment_pick`: lo que falta de abrigo, la sombra si hay sol, el peso) entre lo puesto, su mochila y el acopio de su campamento. Si con su ropa la sensación térmica queda bajo 2° o sobre 33°, pasan frío o calor (aviso sobre la cabeza) y baja su moral.
+
+### El agua (implementado — `src/sim/water.*`, en juego `src/game/water_game.*`)
+- **Sed** [0, 100]: de llena a seca en 25 minutos sin calor; el calor (`heat_thirst_scale`, hasta ×2.5), correr y la fiebre la aceleran. Con sed (< 40) y reseco (< 15): más lento y menos aguante. A cero, 20 s y desmayo (la tribu da de beber).
+- **Bebidas** (`DrinkDef`): agua cruda, hervida, agua con vino, leche, airag, cerveza, vino; cuánta sed quitan y cuánto emborrachan.
+- **Espíritus malditos:** cada trago de agua cruda tira `water_spirit_chance` (15 % + hasta 25 % con calor + 10 % en agua quieta). Se incuban 60–120 s y luego dan fiebre: frena, cansa, más sed. Se curan solos en unos 10 minutos (el doble de rápido descansando); las hierbas los cortan a la mitad (y casi del todo si aún se incuban).
+- **Hervir** (acción junto a un fuego, una leña, hasta 4 tragos) y **el alcohol** purifican.
+- **Borrachera** [0, 2]: alegre (> 0.3), borracho (> 0.8), ebrio perdido (> 1.4). Torpeza (golpes −35 %, puntería ×2.5 de dispersión), aguante a la mitad, se tambalea. Se pasa con el tiempo.
+- **La tribu** (`water_daily`): una ración por persona y día del acopio (lo seguro primero). Si falta y hay agua a menos de 60 m del campamento: hervida mientras haya leña (una cada cuatro), cruda si no (fiebre: −20 de vida y −6 de ánimo a quien le toque). Sin agua: −15 de vida y −12 de ánimo. La vida no baja del 30 %.
+- **Animales:** los de la tribu tienen sed (de 0 a 2); junto al agua beben solos; `K` con agua o los pastores con el acopio. Con sed > 1 adelgazan; > 2, se van.
 
 ### Órdenes a la escolta: despachar y mensajeros (implementado — `src/sim/travel.*`, en juego `src/game/travel_game.*`)
 - **Despachar (`Mayús+Y`):** a un campamento o a un sitio marcado en el mapa. Al menos uno de los despachados tiene que conocer el destino (`Member.known`: un bit por sitio; se aprende al pasar a menos de 35 m).

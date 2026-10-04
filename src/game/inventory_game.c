@@ -39,6 +39,8 @@ void ig_init(GameActions *ga, Props *props, const Terrain *t) {
     bag_add(&ga->backpack, inv, "proyectil.piedra.honda", 10, 1.0f);
     bag_add(&ga->backpack, inv, "utileria.consumible.hierbas", 2, 1.0f);
     bag_add(&ga->backpack, inv, "utileria.consumible.carne_seca", 2, 1.0f);
+    bag_add(&ga->backpack, inv, "utileria.objeto.odre", 1, 1.0f); // el agua: 3 tragos por odre
+    bag_add(&ga->backpack, inv, "utileria.consumible.agua_hervida", 2, 1.0f);
     bag_add(&ga->backpack, inv, "accesorio.amuleto.lobo", 1, 1.0f);
     bag_add(&ga->backpack, inv, "accesorio.amuleto.ciervo", 1, 1.0f);
     bag_add(&ga->pockets, inv, "utileria.gema.turquesa", 1, 1.0f); // para el orfebre

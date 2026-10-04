@@ -15,6 +15,8 @@ const char *anim_for_action(ActionId a) {
     case ACTION_THROW_LASSO: return "lanzar_lazo";
     case ACTION_LIGHT_TORCH: return "encender";
     case ACTION_SADDLE: return "ensillar";
+    case ACTION_FILL_WATER:
+    case ACTION_BOIL: return "agacharse_trabajar";
     default: return ANIM_IDLE;
     }
 }

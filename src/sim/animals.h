@@ -144,6 +144,7 @@ typedef struct {
     float alert;          // s: asustado (huye de lo que lo asusto)
     float fear_humans;    // s: huye de las personas (le hicieron daño)
     float hunger;         // [0, 1+]: con hambre (> 0.5) un cazador sale a cazar
+    float thirst;         // [0, 2]: los de la tribu beben junto al agua (src/sim/water.h)
     float stamina;        // [0, 1]: la carrera cansa (la manada caza por agotamiento)
     float rival_timer;    // s: pelea de rivales en curso
     float clock;          // s de vida (aves domadas: vuelo en circulos)
@@ -185,6 +186,8 @@ typedef enum {
     FEV_PREY_ALARM,  // una presa noto a un cazador y su grupo huye
     FEV_HUNGRY,      // un animal de la tribu tiene hambre (pasto, forraje o carne)
     FEV_STARVED,     // un animal de la tribu se fue por hambre (vuelve a ser salvaje)
+    FEV_THIRSTY,     // un animal de la tribu tiene sed (llevalo al agua o dale de beber)
+    FEV_PARCHED,     // un animal de la tribu se fue por sed
 } FaunaEventKind;
 
 typedef struct {
@@ -238,6 +241,8 @@ bool animal_try_tame(Animal *a, Rng *rng, float bonus, float camp_x, float camp_
 bool animal_feed(Animal *a, float camp_x, float camp_z);
 // Come el que tenga la tribu: carne (cazadores) o forraje (los demas). false si no le toca o no tiene hambre.
 bool animal_feed_tamed(Animal *a, bool meat);
+// Darle de beber (agua de un odre o del acopio). false si no es de la tribu o no tiene sed.
+bool animal_give_water(Animal *a);
 // ¿Come carne? (los cazadores); los demas pastan o comen forraje.
 bool species_eats_meat(Species s);
 bool animal_domestic(const Animal *a); // domado o ensillado

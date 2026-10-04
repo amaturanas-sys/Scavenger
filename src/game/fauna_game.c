@@ -3,6 +3,8 @@
 #include "game/inventory_game.h"
 
 #define FODDER_ID "utileria.consumible.forraje"
+#define WATER_ID "utileria.consumible.agua"
+#define BOILED_ID "utileria.consumible.agua_hervida"
 #include "game/talents_game.h"
 
 #include <math.h>
@@ -53,6 +55,8 @@ static bool deep_water(const Terrain *t, float x, float z) {
 }
 
 // Profundidad del agua (para la fauna y los peces); helado, se camina por encima.
+static const char *water_at_hand(const GameActions *ga, const Player *p);
+
 static float water_depth_cb(void *ud, float x, float z) {
     const Terrain *t = ud;
     if (hazard_ice_walkable(t->look.ice)) return 0.0f;
@@ -444,6 +448,7 @@ static int nearest_interactable(const GameActions *ga, const Player *p, int *wha
         if (!a->used || a->ridden || (species_def(a->species)->flier && a->alt > 2.0f && a->state != ANIMAL_DEAD)) continue;
         int w = a->state == ANIMAL_BOUND                                                              ? 1
                 : a->state == ANIMAL_DEAD && !a->butchered                                             ? 2
+                : animal_domestic(a) && a->thirst > 0.5f && water_at_hand(ga, p)                ? 5
                 : animal_domestic(a) && a->hunger > 0.3f                                       ? 4
                 : a->state == ANIMAL_TAMED && species_def(a->species)->cls == CLASS_LIVESTOCK ? 3
                                                                                                        : 0;
@@ -452,6 +457,13 @@ static int nearest_interactable(const GameActions *ga, const Player *p, int *wha
         if (d < bd) bd = d, best = i, *what = w;
     }
     return best;
+}
+
+// Agua para dar de beber a un animal: cruda o hervida (a ellos no les hacen nada los espiritus).
+static const char *water_at_hand(const GameActions *ga, const Player *p) {
+    if (ig_count(ga, NULL, p, WATER_ID) > 0) return WATER_ID;
+    if (ig_count(ga, NULL, p, BOILED_ID) > 0) return BOILED_ID;
+    return NULL;
 }
 
 static void butcher(GameActions *ga, const Player *p, Animal *a, char *log, size_t len, const char *how) {
@@ -517,6 +529,12 @@ static void interact(GameActions *ga, const Player *p, bool shift, char *log, si
         animal_feed(a, 0.0f, 0.0f);
         snprintf(log, len, T("Le das carne al %s: ¡ahora es de la tribu y te defenderá!"), who);
         tg_xp(ga, XP_TAME, log, len);
+    } else if (what == 5) { // un animal de la tribu con sed: un trago del odre
+        const char *w = water_at_hand(ga, p);
+        if (w && animal_give_water(a)) {
+            ig_use(ga, NULL, p, w, 1);
+            snprintf(log, len, T("Das de beber al %s."), who);
+        }
     } else if (what == 4) { // un animal de la tribu con hambre: carne o forraje
         bool meat = species_eats_meat(a->species);
         const char *food = meat ? (ig_count(ga, NULL, p, FRESH_MEAT_ID) > 0 ? FRESH_MEAT_ID : ig_count(ga, NULL, p, FOOD_ID) > 0 ? FOOD_ID : NULL)
@@ -557,6 +575,7 @@ static void update_hint(GameActions *ga, const Player *p) {
     lower(T(species_def(ga->animals[i].species)->name), who, sizeof(who));
     if (what == 1) snprintf(g_hint, sizeof(g_hint), T("K: dar de comer al %s atado (%.0f s)"), who, ga->animals[i].bound_timer);
     else if (what == 2) snprintf(g_hint, sizeof(g_hint), T("K: despiezar (%s)"), who);
+    else if (what == 5) snprintf(g_hint, sizeof(g_hint), T("K: dar de beber al %s (tiene sed)"), who);
     else if (what == 4)
         snprintf(g_hint, sizeof(g_hint), species_eats_meat(ga->animals[i].species) ? T("K: dar carne al %s (tiene hambre)") : T("K: dar forraje al %s (tiene hambre)"), who);
     else if (species_def(ga->animals[i].species)->milk > 0 && !ga->animals[i].milked)
@@ -641,6 +660,8 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
                      who);
             break;
         case FEV_STARVED: snprintf(log, len, T("El %s se fue: pasó demasiada hambre y vuelve a ser salvaje."), who); break;
+        case FEV_THIRSTY: snprintf(log, len, T("El %s de la tribu tiene sed: llévalo al agua o dale de beber (K, con agua)."), who); break;
+        case FEV_PARCHED: snprintf(log, len, T("El %s se fue: pasó demasiada sed y vuelve a ser salvaje."), who); break;
         default: break;
         }
     }
@@ -661,6 +682,11 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
                 bool meat = species_eats_meat(a->species);
                 const char *food = meat ? (stock_count(&c->stock, FRESH_MEAT_ID) > 0 ? FRESH_MEAT_ID : FOOD_ID) : FODDER_ID;
                 if (stock_take(&c->stock, food, 1)) animal_feed_tamed(a, meat);
+            }
+            for (int i = 0; herders > 0 && i < ga->animal_count; i++) { // y les dan de beber
+                Animal *a = &ga->animals[i];
+                if (!animal_domestic(a) || a->thirst < 0.5f || adist(a, (Vector3){ c->x, 0, c->z }) > CAMP_RADIUS_M) continue;
+                if (stock_take(&c->stock, WATER_ID, 1) || stock_take(&c->stock, BOILED_ID, 1)) animal_give_water(a);
             }
         }
     }
@@ -835,12 +861,15 @@ static void draw_swarm(const Swarm *s, Props *props, const InvItem *nest, const 
 void fg_draw_overlay(const GameActions *ga, const Terrain *t, Camera3D cam, int w, int h) {
     for (int i = 0; i < ga->animal_count; i++) { // los de la tribu con hambre: un cuenco sobre la cabeza
         const Animal *a = &ga->animals[i];
-        if (!animal_domestic(a) || a->hunger < 0.8f || a->ridden) continue;
+        bool hungry = a->hunger >= 0.8f, thirsty = a->thirst >= 0.8f;
+        if (!animal_domestic(a) || (!hungry && !thirsty) || a->ridden) continue;
         Vector3 pos = { a->x, terrain_height(t, a->x, a->z) + a->alt + species_def(a->species)->size * 0.55f + 0.9f, a->z };
         Vector3 to = Vector3Subtract(pos, cam.position);
         if (Vector3DotProduct(to, Vector3Subtract(cam.target, cam.position)) <= 0.0f || Vector3Length(to) > 35.0f) continue;
         Vector2 s = GetWorldToScreenEx(pos, cam, w, h);
-        ui_icon(ICON_ALIMENTAR, s.x - 8, s.y - 8, 16, a->hunger > 1.0f ? UI_CARNELIAN : UI_GOLD);
+        float x0 = hungry && thirsty ? s.x - 17 : s.x - 8;
+        if (hungry) ui_icon(ICON_ALIMENTAR, x0, s.y - 8, 16, a->hunger > 1.0f ? UI_CARNELIAN : UI_GOLD);
+        if (thirsty) ui_icon(ICON_AGUA, hungry ? x0 + 18 : x0, s.y - 8, 16, a->thirst > 1.0f ? UI_CARNELIAN : UI_TURQ_LIGHT);
     }
     for (int i = 0; i < ga->animal_count; i++) {
         const Animal *a = &ga->animals[i];

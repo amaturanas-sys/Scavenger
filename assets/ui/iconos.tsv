@@ -137,3 +137,8 @@ indice	nombre	columna	fila	descripcion
 133	sombrero	5	8	Sombrero o gorro
 134	capa	6	8	Capa o abrigo
 135	escarmiento	7	8	Escarmiento: colmillos
+136	hervir	8	8	Hervir: caldero con vapor
+137	jarra	9	8	Cerveza: jarra
+138	vino	10	8	Vino: anfora
+139	espiritus	11	8	Espiritus malditos: fantasma
+140	beber	12	8	Beber: gota

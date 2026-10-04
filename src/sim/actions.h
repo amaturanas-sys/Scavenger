@@ -78,6 +78,8 @@ typedef enum {
     ACTION_LIGHT_TORCH,   // encender una antorcha
     ACTION_SADDLE,        // instalar una montura (ensillar)
     ACTION_PAN,           // cribar en el agua: piedras rodadas y oro
+    ACTION_FILL_WATER,    // llenar el odre en el rio o el lago (agua cruda)
+    ACTION_BOIL,          // hervir agua junto a un fuego: echa a los espiritus malditos
     ACTION_COUNT
 } ActionId;
 

@@ -1181,6 +1181,52 @@ def _(p):
         p.poly([(x - 6, 46), (x + 6, 46), (x, 70)])
 
 
+@icon("hervir", "Hervir: caldero con vapor")
+def _(p):
+    p.d.chord((14, 52, 114, 124), 0, 180, fill=W)
+    p.rect(10, 52, 118, 64, r=4)
+    for x in (40, 64, 88):
+        p.arc(x - 6, 30, 10, 270, 90, 5)
+        p.arc(x + 6, 14, 10, 90, 270, 5)
+
+
+@icon("jarra", "Cerveza: jarra")
+def _(p):
+    p.rect(28, 30, 88, 118, r=8)
+    p.arc(88, 74, 22, 270, 90, 10)
+    p.ell(40, 30, 14)
+    p.ell(62, 24, 16)
+    p.ell(82, 30, 12)
+
+
+@icon("vino", "Vino: anfora")
+def _(p):
+    p.d.ellipse((30, 40, 98, 112), fill=W)
+    p.rect(52, 12, 76, 46)
+    p.rect(46, 8, 82, 18, r=4)
+    p.arc(46, 40, 14, 90, 270, 7)
+    p.arc(82, 40, 14, 270, 90, 7)
+    p.poly([(56, 108), (72, 108), (64, 124)])
+
+
+@icon("espiritus", "Espiritus malditos: fantasma")
+def _(p):
+    p.d.chord((24, 10, 104, 90), 180, 360, fill=W)
+    p.rect(24, 50, 104, 100)
+    for i, x in enumerate((24, 44, 64, 84)):
+        p.poly([(x, 100), (x + 20, 100), (x + 10, 120 if i % 2 == 0 else 110)])
+    p.ell(48, 52, 9, c=K)
+    p.ell(80, 52, 9, c=K)
+    p.ell(64, 78, 7, c=K)
+
+
+@icon("beber", "Beber: gota")
+def _(p):
+    p.poly([(64, 8), (98, 70), (30, 70)])
+    p.ell(64, 80, 36)
+    p.ell(52, 82, 8, c=K)
+
+
 # ------------------------------------------------------------------ atlas
 def render(fn):
     pen = Pen()

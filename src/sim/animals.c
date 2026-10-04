@@ -1,8 +1,11 @@
 #include "sim/animals.h"
 #include "sim/lang.h"
+#include "sim/water.h"
 
 #include <math.h>
 #include <string.h>
+
+static bool water_near(const FaunaCtx *c, float x, float z);
 
 // clang-format off
 static const SpeciesDef SPECIES[SPECIES_COUNT] = {
@@ -650,15 +653,23 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
                 a->hunger = fmaxf(0.0f, a->hunger - dt * HUNGER_RATE * 4.0f);
             if (hunger0 < 1.0f && a->hunger >= 1.0f) push(ev, FEV_HUNGRY, i, -1, 0.0f, WOUND_BRUISE);
             if (a->hunger > 1.0f) a->h.hp = fmaxf(a->h.hp_max * 0.15f, a->h.hp - dt * 0.12f); // pasa hambre: adelgaza
-            if (a->hunger > 2.0f && !a->ridden) { // abandona a la tribu
+            // Sed: junto al agua beben solos; con mucha sed adelgazan y al final se van.
+            float thirst0 = a->thirst;
+            a->thirst += dt * THIRST_ANIMAL_RATE;
+            if (water_near(c, a->x, a->z)) a->thirst = fmaxf(0.0f, a->thirst - dt * THIRST_ANIMAL_RATE * 30.0f);
+            if (thirst0 < 1.0f && a->thirst >= 1.0f) push(ev, FEV_THIRSTY, i, -1, 0.0f, WOUND_BRUISE);
+            if (a->thirst > 1.0f) a->h.hp = fmaxf(a->h.hp_max * 0.15f, a->h.hp - dt * 0.12f);
+            bool parched = a->thirst > 2.0f;
+            if ((a->hunger > 2.0f || parched) && !a->ridden) { // abandona a la tribu
                 a->state = ANIMAL_WILD;
                 a->mode = MODE_GRAZE;
                 a->group = -1;
                 a->home_x = a->tx = a->x;
                 a->home_z = a->tz = a->z;
                 a->hunger = 0.6f;
+                a->thirst = 0.0f;
                 clear_target(a);
-                push(ev, FEV_STARVED, i, -1, 0.0f, WOUND_BRUISE);
+                push(ev, parched ? FEV_PARCHED : FEV_STARVED, i, -1, 0.0f, WOUND_BRUISE);
             }
         }
         if (a->ridden) continue; // lo mueve el jinete (y fija su velocidad)
@@ -732,6 +743,21 @@ bool animal_feed_tamed(Animal *a, bool meat) {
     if (!animal_domestic(a) || a->hunger < 0.2f || meat != species_eats_meat(a->species)) return false;
     a->hunger = 0.0f;
     return true;
+}
+
+bool animal_give_water(Animal *a) {
+    if (!animal_domestic(a) || a->thirst < 0.2f) return false;
+    a->thirst = 0.0f;
+    return true;
+}
+
+// Agua a unos pasos (beben solos).
+static bool water_near(const FaunaCtx *c, float x, float z) {
+    if (!c->water_depth) return false;
+    static const float off[5][2] = { { 0, 0 }, { 3, 0 }, { -3, 0 }, { 0, 3 }, { 0, -3 } };
+    for (int k = 0; k < 5; k++)
+        if (c->water_depth(c->water_ud, x + off[k][0], z + off[k][1]) > 0.0f) return true;
+    return false;
 }
 
 bool animal_feed(Animal *a, float camp_x, float camp_z) {
