@@ -64,6 +64,42 @@ void bag_init(Bag *b, BagKind kind, float cap_kg) {
     if (cap_kg > 0.0f && kind != BAG_MOUNT) b->cap_kg = cap_kg;
 }
 
+void bag_init_pack(Bag *b, PackSize s) {
+    static const float KG[PACK_COUNT] = { 0.0f, 15.0f, 25.0f, 40.0f };
+    static const int SLOTS[PACK_COUNT] = { 0, 12, 18, 28 };
+    int n = b->n;
+    BagSlot keep[BAG_SLOTS];
+    memcpy(keep, b->s, sizeof(keep));
+    bag_init(b, BAG_BACKPACK, s > PACK_NONE && s < PACK_COUNT ? KG[s] : 0.0f);
+    b->slots = s > PACK_NONE && s < PACK_COUNT ? SLOTS[s] : 0;
+    if (s == PACK_NONE) b->cap_kg = 0.0f;
+    // Lo que llevaba (si entra en los huecos nuevos).
+    for (int i = 0; i < n && i < b->slots; i++) b->s[b->n++] = keep[i];
+}
+
+float pack_speed(PackSize s) {
+    static const float SP[PACK_COUNT] = { 1.0f, 1.0f, 0.97f, 0.9f };
+    return s >= 0 && s < PACK_COUNT ? SP[s] : 1.0f;
+}
+
+PackSize pack_size_of(const char *id) {
+    if (!id || strncmp(id, "utileria.mochila.", 17) != 0) return PACK_NONE;
+    if (!strcmp(id + 17, "pequena")) return PACK_SMALL;
+    if (!strcmp(id + 17, "mediana")) return PACK_MEDIUM;
+    if (!strcmp(id + 17, "grande")) return PACK_LARGE;
+    return PACK_NONE;
+}
+
+const char *pack_id(PackSize s) {
+    static const char *I[PACK_COUNT] = { "", "utileria.mochila.pequena", "utileria.mochila.mediana", "utileria.mochila.grande" };
+    return s >= 0 && s < PACK_COUNT ? I[s] : "";
+}
+
+const char *pack_name(PackSize s) {
+    static const char *N[PACK_COUNT] = { N_("sin mochila"), N_("mochila pequeña"), N_("mochila mediana"), N_("mochila grande") };
+    return s >= 0 && s < PACK_COUNT ? T(N[s]) : "";
+}
+
 float bag_kg(const Bag *b, const Inventory *inv) {
     float kg = 0.0f;
     for (int i = 0; i < b->n; i++) kg += item_kg(inventory_find(inv, b->s[i].id)) * (float)b->s[i].count;

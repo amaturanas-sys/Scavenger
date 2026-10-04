@@ -36,6 +36,8 @@
 #define GA_PACKS 4 // monturas con alforjas
 #define GA_LOOT 8  // bolsas de botin en el suelo
 
+enum { PACKW_WORN, PACKW_GROUND, PACKW_CART, PACKW_ANIMAL };
+
 typedef struct {
     int member_id;     // integrante de la tropa (0 = libre)
     Vector3 pos, home;
@@ -94,6 +96,7 @@ typedef struct {
     // Fuego y lluvia (los pone src/game/disasters_game.c).
     bool fires_out;     // la lluvia apago las fogatas y los hornos
     bool raining;       // llueve: no se enciende nada
+    bool grass;         // hay pasto (sin nieve): los herbivoros de la tribu pastan solos (lo pone main)
     bool fire_near;     // hay un fuego al lado del jugador (para encender una flecha)
     Vector3 ignite_at[8]; // donde cayeron flechas encendidas este paso
     int ignite_n;
@@ -125,6 +128,10 @@ typedef struct {
     float loot_age[GA_LOOT]; // s en el suelo; < 0: hueco libre
     Armor *player_armor; // la armadura que lleva el jugador (la pone main cada cuadro; no se guarda)
     const Terrain *terrain; // el terreno (lo pone ga_update cada cuadro; no se guarda)
+    Troop *troop_ref;       // la tribu (lo pone ga_update cada cuadro; no se guarda)
+    // La mochila del jugador: su tamaño y donde esta (puesta, en el suelo, en la carreta o en un animal).
+    int pack_size, pack_where, pack_anchor; // PackSize; PACKW_*; animal que la lleva
+    Vector3 pack_pos;
     // Trepar.
     bool climbing;
     float climb_t;

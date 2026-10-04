@@ -111,6 +111,10 @@ UpkeepReport economy_daily_upkeep(Stockpile *s, Troop *t) {
             r.gathered += 1;
             break;
         case ROLE_COOK: cooks++; break;
+        case ROLE_HERDER: // junta forraje para el ganado y las monturas
+            stock_add(s, "utileria.consumible.forraje", 3);
+            r.gathered += 3;
+            break;
         default: break;
         }
     }

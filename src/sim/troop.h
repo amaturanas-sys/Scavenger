@@ -11,6 +11,7 @@
 
 #include "champion.h"
 #include "armor.h"
+#include "storage.h"
 #include "health.h"
 #include "rng.h"
 
@@ -79,6 +80,8 @@ typedef struct {
     Armor armor;   // piezas de armadura que lleva (src/sim/armor.h)
     bool outfitted; // ya recibio su equipo inicial
     int camp;       // campamento donde vive (src/sim/camps.h), o -1 si va con el jugador sin hogar
+    int pack;       // su mochila (PackSize de src/sim/storage.h): mas grande, mas carga y mas lento
+    Bag bag;        // lo que lleva en ella
 } Member;
 
 // Reino al que la tropa rinde tributo. `stance` dice cuanto sube o baja la

@@ -1198,7 +1198,7 @@ static void test_animals_flee_and_wander(void) {
     Animal herd[3];
     for (int i = 0; i < 3; i++) animal_init(&herd[i], SPECIES_DEER, (float)i * 2.0f, 0), herd[i].group = 7;
     FaunaHuman hu = { 5.0f, 0.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 5.0f, 0.0f, false, 100.0f, 100.0f, false, NULL, NULL };
+    FaunaCtx c = { &hu, 1, 5.0f, 0.0f, false, 100.0f, 100.0f, false, NULL, NULL, false };
     animal_hurt(herd, 3, 2, &r, 10.0f, WOUND_CUT, PART_THORAX, true, 0);
     CHECK(herd[2].fear_humans > 0.0f && herd[0].fear_humans > 0.0f && herd[1].fear_humans > 0.0f);
     float before = an_dist(&herd[0], 5.0f, 0.0f);
@@ -1249,7 +1249,7 @@ static void test_animals_tame_predator(void) {
     Animal w2 = w;
     FaunaEvents ev = { .n = 0 };
     FaunaHuman hu = { 50.0f, 50.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 50.0f, 50.0f, false, 0, 0, false, NULL, NULL };
+    FaunaCtx c = { &hu, 1, 50.0f, 50.0f, false, 0, 0, false, NULL, NULL, false };
     for (int i = 0; i < 650 && w2.state == ANIMAL_BOUND; i++) fauna_update(&w2, 1, &c, &r, 0.1f, &ev);
     CHECK(w2.state == ANIMAL_WILD && ev.n > 0 && ev.ev[ev.n - 1].kind == FEV_BREAK_FREE);
     // Con carne: de la tribu.
@@ -1258,7 +1258,7 @@ static void test_animals_tame_predator(void) {
     Animal pack[1] = { w };
     pack[0].x = 0, pack[0].z = 0;
     FaunaHuman people[2] = { { 0.0f, 0.0f, false, false, false }, { 6.0f, 0.0f, false, false, true } };
-    FaunaCtx c2 = { people, 2, 0.0f, 0.0f, false, 0, 0, false, NULL, NULL };
+    FaunaCtx c2 = { people, 2, 0.0f, 0.0f, false, 0, 0, false, NULL, NULL, false };
     ev.n = 0;
     bool bit_enemy = false;
     for (int i = 0; i < 60; i++) {
@@ -1280,7 +1280,7 @@ static void test_animals_pack_hunt(void) {
     }
     for (int i = 3; i < 7; i++) animal_init(&a[i], SPECIES_DEER, (float)(i - 3) * 2.0f, 3.0f), a[i].group = 2;
     FaunaHuman hu = { 500.0f, 500.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false };
     bool shared = false, alarmed = false, killed = false, ate = false;
     for (int step = 0; step < 1800 && !(killed && ate); step++) {
         FaunaEvents ev = { .n = 0 };
@@ -1306,7 +1306,7 @@ static void test_animals_stalk_and_rivals(void) {
     Rng r;
     rng_seed(&r, 13);
     FaunaHuman hu = { 500.0f, 500.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false };
     Animal a[2];
     animal_init(&a[0], SPECIES_TIGER, 0, 0);
     animal_init(&a[1], SPECIES_DEER, 25.0f, 0);
@@ -1342,7 +1342,7 @@ static void test_animals_flee_only_critical(void) {
     Rng r;
     rng_seed(&r, 17);
     FaunaHuman hu = { 3.0f, 0.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 3.0f, 0.0f, false, 50, 50, false, NULL, NULL };
+    FaunaCtx c = { &hu, 1, 3.0f, 0.0f, false, 50, 50, false, NULL, NULL, false };
     Animal w;
     animal_init(&w, SPECIES_BEAR, 0, 0);
     animal_hurt(&w, 1, 0, &r, 60.0f, WOUND_CUT, PART_THORAX, true, 0);
@@ -1380,7 +1380,7 @@ static void test_animals_livestock(void) {
     CHECK(g[0].state == ANIMAL_TAMED && g[1].state == ANIMAL_TAMED); // de la tribu desde el principio
     // El pastor camina cerca: lo siguen; se para: se quedan donde estan.
     FaunaHuman hu = { 4.0f, 0.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 4.0f, 0.0f, true, 0, 0, false, NULL, NULL };
+    FaunaCtx c = { &hu, 1, 4.0f, 0.0f, true, 0, 0, false, NULL, NULL, false };
     for (int i = 0; i < 300; i++) {
         hu.x = c.px = 4.0f + (float)i * 0.1f; // 1 m/s
         fauna_update(g, 2, &c, &r, 0.1f, NULL);
@@ -1454,7 +1454,7 @@ static void test_animals_water_and_venom(void) {
     Rng r;
     rng_seed(&r, 31);
     FaunaHuman hu = { 6.0f, 0.0f, false, false, false };
-    FaunaCtx c = { &hu, 1, 6.0f, 0.0f, false, 100, 100, false, test_lake, NULL };
+    FaunaCtx c = { &hu, 1, 6.0f, 0.0f, false, 100, 100, false, test_lake, NULL, false };
     Animal croc;
     animal_init(&croc, SPECIES_CROCODILE, -2.0f, 0.0f); // en el agua, junto a la orilla
     FaunaEvents ev = { .n = 0 };
@@ -2237,6 +2237,52 @@ static void test_camps_found_tasks_and_rates(void) {
     CHECK(camp_tick(&c[0], train_work(ROLE_DRUID), NULL, done, CAMP_TASKS) == 1 && done[0].role == ROLE_DRUID && c[0].ntask == 0);
 }
 
+static void test_backpacks_and_feeding(void) {
+    // Mochilas: mas grandes, mas caben, pero frenan.
+    Bag b;
+    memset(&b, 0, sizeof(b));
+    bag_init_pack(&b, PACK_SMALL);
+    float small = b.cap_kg;
+    int small_slots = b.slots;
+    bag_init_pack(&b, PACK_LARGE);
+    CHECK(b.cap_kg > small && b.slots > small_slots && b.kind == BAG_BACKPACK);
+    CHECK(pack_speed(PACK_LARGE) < pack_speed(PACK_MEDIUM) && pack_speed(PACK_MEDIUM) <= pack_speed(PACK_SMALL) && pack_speed(PACK_NONE) == 1.0f);
+    CHECK(pack_size_of("utileria.mochila.grande") == PACK_LARGE && pack_size_of("utileria.mochila.pequena") == PACK_SMALL);
+    CHECK(pack_size_of("arma.corta.sable") == PACK_NONE && !strcmp(pack_id(PACK_MEDIUM), "utileria.mochila.mediana"));
+    bag_init_pack(&b, PACK_NONE);
+    CHECK(b.cap_kg == 0.0f && b.slots == 0);
+    // Animales de la tribu: el hambre sube; los herbivoros pastan si hay pasto; se les da forraje o carne.
+    Rng rng;
+    rng_seed(&rng, 12u);
+    Animal herd[2];
+    memset(herd, 0, sizeof(herd));
+    animal_init(&herd[0], SPECIES_HORSE, 0.0f, 0.0f);
+    herd[0].state = ANIMAL_TAMED;
+    animal_init(&herd[1], SPECIES_DOG, 3.0f, 0.0f);
+    herd[1].state = ANIMAL_TAMED;
+    FaunaHuman hu = { 200.0f, 200.0f, false, false, false };
+    FaunaCtx bare = { &hu, 1, 200.0f, 200.0f, false, 0.0f, 0.0f, false, NULL, NULL, false };
+    herd[0].hunger = herd[1].hunger = 0.5f;
+    for (int i = 0; i < 600; i++) fauna_update(herd, 2, &bare, &rng, 0.5f, NULL); // 5 minutos sin pasto
+    CHECK(herd[0].hunger > 0.6f);
+    float h0 = herd[0].hunger;
+    FaunaCtx green = bare;
+    green.grass = true;
+    for (int i = 0; i < 600; i++) fauna_update(herd, 1, &green, &rng, 0.5f, NULL);
+    CHECK(herd[0].hunger < h0); // con pasto, pasta y se le pasa
+    CHECK(!species_eats_meat(SPECIES_HORSE) && species_eats_meat(SPECIES_DOG) && animal_domestic(&herd[1]));
+    herd[1].hunger = 0.9f;
+    CHECK(!animal_feed_tamed(&herd[1], false) && animal_feed_tamed(&herd[1], true) && herd[1].hunger == 0.0f);
+    // Mucha hambre: se va (vuelve a ser salvaje).
+    herd[0].hunger = 1.99f;
+    FaunaEvents ev = { 0 };
+    for (int i = 0; i < 400 && herd[0].state != ANIMAL_WILD; i++) fauna_update(herd, 1, &bare, &rng, 0.5f, &ev);
+    CHECK(herd[0].state == ANIMAL_WILD);
+    bool starved = false;
+    for (int i = 0; i < ev.n; i++) starved |= ev.ev[i].kind == FEV_STARVED;
+    CHECK(starved);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -2244,6 +2290,7 @@ int main(void) {
     RUN(test_jewelry_crafted_and_enchanted);
     RUN(test_lang_table);
     RUN(test_camps_found_tasks_and_rates);
+    RUN(test_backpacks_and_feeding);
     RUN(test_hand_crafting_and_repairs);
     RUN(test_enemy_loot_and_mounted_momentum);
     RUN(test_banish_removes_from_active);

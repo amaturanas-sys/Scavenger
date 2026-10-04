@@ -103,6 +103,12 @@ static void seed_troop(Troop *t) {
     troop_assign_role(t, troop_recruit(t, "Ulagan", TRAIT_DEVOUT), ROLE_DRUID);   // tatua y encanta
     troop_assign_role(t, troop_recruit(t, "Altani", 0), ROLE_GOLDSMITH);          // hace joyas
     troop_take_prisoner(t, T("Explorador enemigo"), 0);
+    for (int i = 0; i < t->count; i++) { // cada uno con su mochila; el lugarteniente y el cazador, una mediana
+        Member *m = &t->members[i];
+        if (m->status != STATUS_ACTIVE) continue;
+        m->pack = m->role == ROLE_LIEUTENANT || m->role == ROLE_HUNTER ? PACK_MEDIUM : PACK_SMALL;
+        bag_init_pack(&m->bag, (PackSize)m->pack);
+    }
 }
 
 static int first_with_status(const Troop *t, MemberStatus s, int skip_lieutenant) {
@@ -684,6 +690,7 @@ int main(int argc, char **argv) {
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), clock_is_night(world_time),
                           g_climate.temp_mean < 0.0f,
                           rig.yaw, rig.pitch, dt, log, sizeof(log));
+            g_actions.grass = g_climate.snow_cover < 0.3f; // con nieve no hay pasto
             if (!gallery_mode)
                 fg_update(&g_actions, &g_combat, &player, &troop, &terrain, &g_memory, world_time, g_climate.temperature,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
@@ -702,7 +709,7 @@ int main(int argc, char **argv) {
             }
             if (last_champion != prev_champion) show_card = true; // ficha al conocerlo
             advance_days(&troop, &rng, &day, world_time, &terrain, log, sizeof(log));
-            if (IsKeyPressed(KEY_G)) show_card = !show_card && last_champion >= 0;
+            if (IsKeyPressed(KEY_G) && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) show_card = !show_card && last_champion >= 0;
             memmap_visit(&g_memory, player.pos.x, player.pos.z, dt, world_time);
             { // la vista (tatuajes del grifo, lapislazuli): el mapa se descubre mas lejos
                 static float reveal_t = 0.0f;

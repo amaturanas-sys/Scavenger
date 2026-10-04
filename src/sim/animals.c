@@ -553,15 +553,17 @@ static void update_tamed(Animal *a, int i, Animal *all, int n, const FaunaCtx *c
                 if (k == i || !alive(o) || o->state != ANIMAL_WILD) continue;
                 const SpeciesDef *od = &SPECIES[o->species];
                 bool threat = od->cls == CLASS_HOSTILE || od->cls == CLASS_TAMEABLE;
-                bool game = od->size <= d->hunt_max && species_is_prey(o->species) && o->species == SPECIES_HARE;
+                // Con hambre cazan cualquier presa de su talla; si no, solo liebres para la tribu.
+                bool game = od->size <= d->hunt_max && species_is_prey(o->species) && (o->species == SPECIES_HARE || a->hunger > 0.6f);
                 if (!threat && !game) continue;
-                float dd = dist_xz(o->x, o->z, c->px, c->pz);
+                float dd = dist_xz(o->x, o->z, game && a->hunger > 0.6f ? a->x : c->px, game && a->hunger > 0.6f ? a->z : c->pz);
                 if (dd < best) best = dd, a->tkind = TGT_ANIMAL, a->target = k;
             }
         }
         if (a->tkind != TGT_NONE && d->damage > 0.0f) {
+            float hunger0 = a->hunger; // el golpe que mata la deja en 0: miramos antes
             hunt(a, i, all, n, c, rng, dt, ev);
-            if (a->mode == MODE_EAT) a->mode = MODE_FOLLOW, clear_target(a); // la presa es para la tribu
+            if (a->mode == MODE_EAT && hunger0 <= 0.6f) a->mode = MODE_FOLLOW, clear_target(a); // sin hambre: la presa es para la tribu
             return;
         }
     }
@@ -639,9 +641,27 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
             continue;
         }
         a->weakened = a->h.hp < WEAK * a->h.hp_max;
+        float hunger0 = a->hunger;
         a->hunger += dt * HUNGER_RATE;
-        if (a->ridden) continue; // lo mueve el jinete (y fija su velocidad)
         const SpeciesDef *d = &SPECIES[a->species];
+        if (animal_domestic(a)) {
+            // Los herbivoros de la tribu pastan solos si hay pasto (quietos o al paso).
+            if (d->hunt_max <= 0.0f && c->grass && !a->ridden && a->mode != MODE_FLEE && a->speed < d->walk * 1.5f)
+                a->hunger = fmaxf(0.0f, a->hunger - dt * HUNGER_RATE * 4.0f);
+            if (hunger0 < 1.0f && a->hunger >= 1.0f) push(ev, FEV_HUNGRY, i, -1, 0.0f, WOUND_BRUISE);
+            if (a->hunger > 1.0f) a->h.hp = fmaxf(a->h.hp_max * 0.15f, a->h.hp - dt * 0.12f); // pasa hambre: adelgaza
+            if (a->hunger > 2.0f && !a->ridden) { // abandona a la tribu
+                a->state = ANIMAL_WILD;
+                a->mode = MODE_GRAZE;
+                a->group = -1;
+                a->home_x = a->tx = a->x;
+                a->home_z = a->tz = a->z;
+                a->hunger = 0.6f;
+                clear_target(a);
+                push(ev, FEV_STARVED, i, -1, 0.0f, WOUND_BRUISE);
+            }
+        }
+        if (a->ridden) continue; // lo mueve el jinete (y fija su velocidad)
         float x0 = a->x, z0 = a->z;
         switch (a->state) {
         case ANIMAL_BOUND:
@@ -666,7 +686,7 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
 
 void animal_update(Animal *a, float dt, float px, float pz, Rng *rng) {
     FaunaHuman h = { px, pz, false, false, false };
-    FaunaCtx c = { &h, 1, px, pz, false, 0.0f, 0.0f, false, NULL, NULL };
+    FaunaCtx c = { &h, 1, px, pz, false, 0.0f, 0.0f, false, NULL, NULL, false };
     fauna_update(a, 1, &c, rng, dt, NULL);
 }
 
@@ -702,6 +722,16 @@ TameResult animal_lasso(Animal *a, Rng *rng, float bonus, float camp_x, float ca
 
 bool animal_try_tame(Animal *a, Rng *rng, float bonus, float camp_x, float camp_z) {
     return animal_lasso(a, rng, bonus, camp_x, camp_z) == TAME_OK;
+}
+
+bool animal_domestic(const Animal *a) { return a->used && (a->state == ANIMAL_TAMED || a->state == ANIMAL_SADDLED); }
+
+bool species_eats_meat(Species s) { return s >= 0 && s < SPECIES_COUNT && SPECIES[s].hunt_max > 0.0f; }
+
+bool animal_feed_tamed(Animal *a, bool meat) {
+    if (!animal_domestic(a) || a->hunger < 0.2f || meat != species_eats_meat(a->species)) return false;
+    a->hunger = 0.0f;
+    return true;
 }
 
 bool animal_feed(Animal *a, float camp_x, float camp_z) {

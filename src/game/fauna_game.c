@@ -1,6 +1,8 @@
 #include "game/fauna_game.h"
 
 #include "game/inventory_game.h"
+
+#define FODDER_ID "utileria.consumible.forraje"
 #include "game/talents_game.h"
 
 #include <math.h>
@@ -12,6 +14,7 @@
 #include "sim/anim_index.h"
 #include "sim/clock.h"
 #include "sim/hazards.h"
+#include "ui/icons.h"
 #include "ui/theme.h"
 #include "sim/lang.h"
 
@@ -440,6 +443,7 @@ static int nearest_interactable(const GameActions *ga, const Player *p, int *wha
         if (!a->used || a->ridden || (species_def(a->species)->flier && a->alt > 2.0f && a->state != ANIMAL_DEAD)) continue;
         int w = a->state == ANIMAL_BOUND                                                              ? 1
                 : a->state == ANIMAL_DEAD && !a->butchered                                             ? 2
+                : animal_domestic(a) && a->hunger > 0.3f                                       ? 4
                 : a->state == ANIMAL_TAMED && species_def(a->species)->cls == CLASS_LIVESTOCK ? 3
                                                                                                        : 0;
         if (!w) continue;
@@ -505,6 +509,17 @@ static void interact(GameActions *ga, const Player *p, bool shift, char *log, si
         animal_feed(a, 0.0f, 0.0f);
         snprintf(log, len, T("Le das carne al %s: ¡ahora es de la tribu y te defenderá!"), who);
         tg_xp(ga, XP_TAME, log, len);
+    } else if (what == 4) { // un animal de la tribu con hambre: carne o forraje
+        bool meat = species_eats_meat(a->species);
+        const char *food = meat ? (ig_count(ga, NULL, p, FRESH_MEAT_ID) > 0 ? FRESH_MEAT_ID : ig_count(ga, NULL, p, FOOD_ID) > 0 ? FOOD_ID : NULL)
+                                : (ig_count(ga, NULL, p, FODDER_ID) > 0 ? FODDER_ID : NULL);
+        if (!food) {
+            snprintf(log, len, meat ? T("El %s tiene hambre: necesitas carne, o déjalo cazar.") : T("El %s tiene hambre: necesitas forraje (corta hierba alta con F), o llévalo a pastar."), who);
+            return;
+        }
+        ig_use(ga, NULL, p, food, 1);
+        animal_feed_tamed(a, meat);
+        snprintf(log, len, T("Das de comer al %s."), who);
     } else if (what == 2) {
         butcher(ga, p, a, log, len, T("Despiezas"));
     } else if (shift) {
@@ -534,6 +549,8 @@ static void update_hint(GameActions *ga, const Player *p) {
     lower(T(species_def(ga->animals[i].species)->name), who, sizeof(who));
     if (what == 1) snprintf(g_hint, sizeof(g_hint), T("K: dar de comer al %s atado (%.0f s)"), who, ga->animals[i].bound_timer);
     else if (what == 2) snprintf(g_hint, sizeof(g_hint), T("K: despiezar (%s)"), who);
+    else if (what == 4)
+        snprintf(g_hint, sizeof(g_hint), species_eats_meat(ga->animals[i].species) ? T("K: dar carne al %s (tiene hambre)") : T("K: dar forraje al %s (tiene hambre)"), who);
     else if (species_def(ga->animals[i].species)->milk > 0 && !ga->animals[i].milked)
         snprintf(g_hint, sizeof(g_hint), T("K: ordeñar · Mayús+K: sacrificar (%s)"), who);
     else snprintf(g_hint, sizeof(g_hint), T("Mayús+K: sacrificar (%s)"), who);
@@ -562,7 +579,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
         g_refs[n++] = (HumanRef){ 2, e };
     }
     g_ref_count = n;
-    FaunaCtx ctx = { hu, n, p->pos.x, p->pos.z, p->moving && ga->mounted < 0, 0.0f, 0.0f, night, water_depth_cb, (void *)t };
+    FaunaCtx ctx = { hu, n, p->pos.x, p->pos.z, p->moving && ga->mounted < 0, 0.0f, 0.0f, night, water_depth_cb, (void *)t, ga->grass };
 
     float ox[GA_MAX_ANIMALS], oz[GA_MAX_ANIMALS];
     for (int i = 0; i < ga->animal_count; i++) ox[i] = ga->animals[i].x, oz[i] = ga->animals[i].z;
@@ -610,7 +627,33 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
         case FEV_BREAK_FREE:
             if (adist(a, p->pos) < 60.0f) snprintf(log, len, T("Se soltó del lazo sin comer: %s. ¡Cuidado!"), who);
             break;
+        case FEV_HUNGRY:
+            snprintf(log, len, species_eats_meat(a->species) ? T("El %s de la tribu tiene hambre: dale carne (K) o déjalo cazar.")
+                                                           : T("El %s de la tribu tiene hambre: llévalo a pastar o dale forraje (K)."),
+                     who);
+            break;
+        case FEV_STARVED: snprintf(log, len, T("El %s se fue: pasó demasiada hambre y vuelve a ser salvaje."), who); break;
         default: break;
+        }
+    }
+
+    // Los pastores alimentan a los animales de la tribu que esten en su campamento (con el acopio).
+    static float herd_t = 0.0f;
+    if ((herd_t += dt) > 15.0f) {
+        herd_t = 0.0f;
+        for (int k = 0; k < CAMPS_MAX; k++) {
+            CampSite *c = &ga->camps[k];
+            if (!c->used) continue;
+            int herders = 0;
+            for (int m = 0; m < troop->count; m++)
+                herders += troop->members[m].status == STATUS_ACTIVE && troop->members[m].camp == k && troop->members[m].role == ROLE_HERDER;
+            for (int i = 0; herders > 0 && i < ga->animal_count; i++) {
+                Animal *a = &ga->animals[i];
+                if (!animal_domestic(a) || a->hunger < 0.5f || adist(a, (Vector3){ c->x, 0, c->z }) > CAMP_RADIUS_M) continue;
+                bool meat = species_eats_meat(a->species);
+                const char *food = meat ? (stock_count(&c->stock, FRESH_MEAT_ID) > 0 ? FRESH_MEAT_ID : FOOD_ID) : FODDER_ID;
+                if (stock_take(&c->stock, food, 1)) animal_feed_tamed(a, meat);
+            }
         }
     }
 
@@ -765,6 +808,15 @@ static void draw_swarm(const Swarm *s, Props *props, const InvItem *nest, const 
 }
 
 void fg_draw_overlay(const GameActions *ga, const Terrain *t, Camera3D cam, int w, int h) {
+    for (int i = 0; i < ga->animal_count; i++) { // los de la tribu con hambre: un cuenco sobre la cabeza
+        const Animal *a = &ga->animals[i];
+        if (!animal_domestic(a) || a->hunger < 0.8f || a->ridden) continue;
+        Vector3 pos = { a->x, terrain_height(t, a->x, a->z) + a->alt + species_def(a->species)->size * 0.55f + 0.9f, a->z };
+        Vector3 to = Vector3Subtract(pos, cam.position);
+        if (Vector3DotProduct(to, Vector3Subtract(cam.target, cam.position)) <= 0.0f || Vector3Length(to) > 35.0f) continue;
+        Vector2 s = GetWorldToScreenEx(pos, cam, w, h);
+        ui_icon(ICON_ALIMENTAR, s.x - 8, s.y - 8, 16, a->hunger > 1.0f ? UI_CARNELIAN : UI_GOLD);
+    }
     for (int i = 0; i < ga->animal_count; i++) {
         const Animal *a = &ga->animals[i];
         if (!alive(a) || a->h.hp >= a->h.hp_max * 0.98f) continue;
@@ -781,4 +833,23 @@ void fg_draw_overlay(const GameActions *ga, const Terrain *t, Camera3D cam, int 
 void fg_draw_hud(const GameActions *ga, int w, int h) {
     (void)ga;
     if (g_hint[0]) ui_text_centered(g_hint, w / 2, h - 84, 10, UI_TURQUOISE);
+}
+
+bool fg_cut_grass(GameActions *ga, Props *props, const Player *p, char *log, size_t len) {
+    int best = -1;
+    float bd = 2.2f;
+    for (int i = 0; i < props->count; i++) {
+        if (strcmp(props->items[i].item->id, "mapa.vegetacion.hierba_alta") != 0) continue;
+        float d = Vector2Distance((Vector2){ props->items[i].pos.x, props->items[i].pos.z }, (Vector2){ p->pos.x, p->pos.z });
+        if (d < bd) bd = d, best = i;
+    }
+    if (best < 0 || ga->grass == false) return false; // con nieve no hay hierba que cortar
+    int kept = ig_store(ga, props, p, FODDER_ID, 2, 1.0f);
+    if (!kept) {
+        snprintf(log, len, "%s", T("No te cabe más forraje."));
+        return true;
+    }
+    props_remove(props, best);
+    snprintf(log, len, T("Cortas hierba alta: +%d forraje para los animales."), kept);
+    return true;
 }

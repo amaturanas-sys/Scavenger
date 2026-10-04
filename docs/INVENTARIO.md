@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**367 objetos** · 1 con modelo · 366 pendientes.
+**371 objetos** · 1 con modelo · 370 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 14 | 14 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 47 | 47 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 51 | 51 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -464,6 +464,10 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.material.bronce` | Lingote de bronce | 0.2x0.05x0.08 | 20 | pendiente | `uso:material` `material:bronce` | Metal de joyas y forja. |
 | `utileria.material.plata` | Plata | 0.15x0.05x0.08 | 20 | pendiente | `uso:recolectable` `uso:material` `material:plata` | Metal de joyas. |
 | `utileria.material.oro` | Oro | 0.12x0.04x0.07 | 20 | pendiente | `uso:recolectable` `uso:material` `material:oro` | Metal de joyas. |
+| `utileria.consumible.forraje` | Forraje | 0.4x0.3x0.4 | 30 | pendiente | `uso:recolectable` `uso:consumible` `material:fibra` | Hierba seca para los herbívoros de la tribu cuando no hay pasto (se corta de la hierba alta; los pastores lo juntan). |
+| `utileria.mochila.pequena` | Mochila pequeña | 0.35x0.4x0.2 | 80 | pendiente | `uso:equipable` `material:cuero` | 15 kg, 12 huecos; no frena. |
+| `utileria.mochila.mediana` | Mochila mediana | 0.4x0.55x0.25 | 100 | pendiente | `uso:equipable` `material:cuero` | 25 kg, 18 huecos; frena un poco. |
+| `utileria.mochila.grande` | Mochila grande | 0.5x0.75x0.3 | 120 | pendiente | `uso:equipable` `material:cuero` | 40 kg, 28 huecos; frena (se puede dejar en el suelo para pelear). |
 
 <a id="personaje"></a>
 

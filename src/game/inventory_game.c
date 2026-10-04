@@ -12,6 +12,9 @@
 
 #define CART_ID "vehiculo.tierra.carreta_bueyes"
 #define CART_RANGE 5.0f  // m: para cargar la carreta
+#define CONT_MAX 16
+#define PACK_REACH 2.5f // m: la mochila dejada se alcanza a este paso
+#define ESCORT_PACK_RANGE 4.0f // m: la mochila de alguien de la escolta
 #define PACK_RANGE 8.0f  // m: para usar las alforjas de una montura
 #define CARRY_BASE 20.0f // kg: con mas encima se anda mas lento (mas con tatuajes y joyas de carga)
 #define CARRY_LIMIT (CARRY_BASE * (1.0f + ig_stat(ga, STAT_CARRY)))
@@ -20,7 +23,9 @@ static float dist_xz(Vector3 a, float x, float z) { return sqrtf((a.x - x) * (a.
 
 void ig_init(GameActions *ga, Props *props, const Terrain *t) {
     bag_init(&ga->pockets, BAG_POCKETS, 0.0f);
-    bag_init(&ga->backpack, BAG_BACKPACK, 0.0f);
+    ga->pack_size = PACK_MEDIUM;
+    ga->pack_where = PACKW_WORN;
+    bag_init_pack(&ga->backpack, PACK_MEDIUM);
     bag_init(&ga->cart, BAG_CART, 0.0f);
     bag_init(&ga->armory, BAG_CAMP, 0.0f);
     for (int i = 0; i < GA_PACKS; i++) ga->pack_animal[i] = -1;
@@ -49,6 +54,8 @@ void ig_init(GameActions *ga, Props *props, const Terrain *t) {
     bag_add(&ga->armory, inv, "armadura.hombreras.fieltro", 1, 1.0f);
     bag_add(&ga->armory, inv, "armadura.grebas.laminar_cuero", 1, 1.0f);
     bag_add(&ga->armory, inv, "accesorio.amuleto.aguila_ibice", 1, 1.0f);
+    bag_add(&ga->armory, inv, "utileria.mochila.grande", 1, 1.0f);  // para cambiar de mochila (U en el inventario)
+    bag_add(&ga->cart, inv, "utileria.mochila.pequena", 1, 1.0f);
 }
 
 bool ig_blocks_input(const GameActions *ga) { return ga->inv_open || ga->equip_open || ga->dlg.open; }
@@ -79,12 +86,17 @@ static bool pack_near(const GameActions *ga, int k, const Player *p) {
     return a == ga->mounted || dist_xz(p->pos, ga->animals[a].x, ga->animals[a].z) < PACK_RANGE;
 }
 
-static int containers(GameActions *ga, const Props *props, const Player *p, Cont out[10]) {
+static int containers(GameActions *ga, const Props *props, const Player *p, Cont out[CONT_MAX]) {
     int n = 0;
     out[n++] = (Cont){ C_BAG, &ga->pockets, "", ICON_BOLSILLO };
     snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s", T("Bolsillos"));
-    out[n++] = (Cont){ C_BAG, &ga->backpack, "", ICON_MOCHILA };
-    snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s", T("Mochila"));
+    // La mochila: puesta, o donde la dejaste si estas al lado; si no, un hueco vacio (sin mochila a mano).
+    static Bag no_pack; // capacidad 0: no entra nada
+    bool pack_here = ga->pack_size > PACK_NONE && (ga->pack_where == PACKW_WORN || dist_xz(p->pos, ga->pack_pos.x, ga->pack_pos.z) < PACK_REACH);
+    out[n++] = (Cont){ C_BAG, pack_here ? &ga->backpack : &no_pack, "", ga->pack_size == PACK_LARGE ? ICON_MOCHILA_GRANDE : ICON_MOCHILA };
+    snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s",
+             !pack_here ? T("Sin mochila a mano (G para recogerla)") : ga->pack_where == PACKW_WORN ? pack_name((PackSize)ga->pack_size)
+                                                                                                  : T("Tu mochila (dejada aquí)"));
     for (int k = 0; k < GA_PACKS; k++) {
         if (!pack_near(ga, k, p)) continue;
         out[n] = (Cont){ C_BAG, &ga->packs[k], "", ICON_ALFORJAS };
@@ -99,11 +111,21 @@ static int containers(GameActions *ga, const Props *props, const Player *p, Cont
         out[n++] = (Cont){ C_CAMP, NULL, "", ICON_CAMPAMENTO };
         snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s", T("Acopio y armería del campamento"));
     }
+    // Las mochilas de la escolta que este a tu lado: se les puede pasar carga.
+    const Troop *troop = ga->troop_ref;
+    for (int i = 0; troop && i < troop->count && i < TROOP_MAX && n < CONT_MAX; i++) {
+        Member *m = (Member *)&troop->members[i];
+        if (m->status != STATUS_ACTIVE || m->pack <= PACK_NONE || !ga->npcs[i].escort || ga->npcs[i].member_id != m->id) continue;
+        if (dist_xz(p->pos, ga->npcs[i].pos.x, ga->npcs[i].pos.z) > ESCORT_PACK_RANGE) continue;
+        out[n] = (Cont){ C_BAG, &m->bag, "", ICON_MOCHILA };
+        snprintf(out[n].label, sizeof(out[n].label), T("Mochila de %s"), m->name);
+        n++;
+    }
     return n;
 }
 
 int ig_count(const GameActions *ga, const Props *props, const Player *p, const char *id) {
-    Cont c[10];
+    Cont c[CONT_MAX];
     int n = containers((GameActions *)ga, props, p, c), total = 0;
     for (int i = 0; i < n; i++)
         total += c[i].type == C_BAG ? bag_count(c[i].bag, id) : stock_count(ga_stock_c(ga), id) + bag_count(&ga->armory, id);
@@ -111,7 +133,7 @@ int ig_count(const GameActions *ga, const Props *props, const Player *p, const c
 }
 
 int ig_use(GameActions *ga, const Props *props, const Player *p, const char *id, int n) {
-    Cont c[10];
+    Cont c[CONT_MAX];
     int k = containers(ga, props, p, c), used = 0;
     for (int i = 0; i < k && used < n; i++) {
         if (c[i].type == C_BAG) {
@@ -135,7 +157,7 @@ static int put_into(GameActions *ga, const Cont *to, const char *id, int n, floa
 }
 
 int ig_store(GameActions *ga, const Props *props, const Player *p, const char *id, int n, float condition) {
-    Cont c[10];
+    Cont c[CONT_MAX];
     int k = containers(ga, props, p, c), stored = 0;
     // Primero la mochila, luego los bolsillos y lo demas.
     static const int order[] = { 1, 0 };
@@ -144,16 +166,20 @@ int ig_store(GameActions *ga, const Props *props, const Player *p, const char *i
     return stored;
 }
 
-float ig_carried_kg(const GameActions *ga) { return bag_kg(&ga->pockets, ga->inv) + bag_kg(&ga->backpack, ga->inv); }
+float ig_carried_kg(const GameActions *ga) {
+    return bag_kg(&ga->pockets, ga->inv) + (ga->pack_where == PACKW_WORN ? bag_kg(&ga->backpack, ga->inv) : 0.0f);
+}
 
 float ig_speed_scale(const GameActions *ga) {
-    return ga->mounted >= 0 ? 1.0f : bag_speed_scale(ig_carried_kg(ga), CARRY_LIMIT);
+    if (ga->mounted >= 0) return 1.0f;
+    // La carga frena, y una mochila grande tambien (aun vacia): para pelear, mejor dejarla (G).
+    return bag_speed_scale(ig_carried_kg(ga), CARRY_LIMIT) * pack_speed(ga->pack_where == PACKW_WORN ? (PackSize)ga->pack_size : PACK_NONE);
 }
 
 float ig_stat(const GameActions *ga, Stat s) { return tg_stat(ga, s); }
 
 int ig_store_var(GameActions *ga, const Props *props, const Player *p, const char *id, int n, float condition, unsigned short var) {
-    Cont c[10];
+    Cont c[CONT_MAX];
     int k = containers(ga, props, p, c), stored = 0;
     static const int order[] = { 1, 0 };
     for (int o = 0; o < 2 && stored < n; o++) stored += put_into(ga, &c[order[o]], id, n - stored, condition, var);
@@ -162,7 +188,7 @@ int ig_store_var(GameActions *ga, const Props *props, const Player *p, const cha
 }
 
 int ig_bags(GameActions *ga, const Props *props, const Player *p, Bag **out, int max) {
-    Cont c[10];
+    Cont c[CONT_MAX];
     int k = containers(ga, props, p, c), n = 0;
     for (int i = 0; i < k && n < max; i++) out[n++] = c[i].type == C_BAG ? c[i].bag : &ga->armory;
     return n;
@@ -253,7 +279,7 @@ static void equip_armor(GameActions *ga, Combat *cb, const Props *props, const P
         snprintf(log, len, T("Te quitas: %s."), item_name(ga, id));
         return;
     }
-    Cont conts[10];
+    Cont conts[CONT_MAX];
     int nc = containers(ga, props, p, conts);
     Row cand[16];
     int cont_of[16];
@@ -286,7 +312,7 @@ static void equip_armor(GameActions *ga, Combat *cb, const Props *props, const P
 // Joyas: Enter pone (o cambia por la siguiente que haya a mano); quitar la guarda.
 static void equip_jewel(GameActions *ga, const Props *props, const Player *p, int slot, bool remove, char *log, size_t len) {
     WornJewel *cur = &ga->jewels.slot[slot];
-    Cont conts[10];
+    Cont conts[CONT_MAX];
     int nc = containers(ga, props, p, conts);
     Row cand[16];
     int cont_of[16];
@@ -347,7 +373,7 @@ int ig_repair_list(GameActions *ga, const Props *props, const Player *p, RepairI
             r->worn = true, r->slot = s, r->cond = pc->durability / pc->durability_max, r->material = (int)pc->material;
             snprintf(r->id, sizeof(r->id), "%s", pc->id);
         }
-    Cont c[10];
+    Cont c[CONT_MAX];
     int nc = containers(ga, props, p, c);
     for (int k = 0; k < nc && n < max; k++) {
         Bag *b = c[k].type == C_BAG ? c[k].bag : &ga->armory;
@@ -468,6 +494,16 @@ bool ig_take_loot(GameActions *ga, const Props *props, const Player *p, char *lo
 }
 
 void ig_draw_world(const GameActions *ga, const Terrain *t, float time) {
+    if (ga->pack_size > PACK_NONE && ga->pack_where != PACKW_WORN) { // la mochila que dejaste
+        const InvItem *it = inventory_find(ga->inv, pack_id((PackSize)ga->pack_size));
+        Vector3 p = ga->pack_pos;
+        float lift = ga->pack_where == PACKW_GROUND ? 0.0f : 1.25f; // sobre la carreta o el lomo del animal
+        p.y = (ga->pack_where == PACKW_GROUND ? terrain_height(t, p.x, p.z) : p.y) + lift;
+        Vector3 sz = it ? (Vector3){ it->w, it->h, it->l } : (Vector3){ 0.4f, 0.55f, 0.25f };
+        DrawCubeV((Vector3){ p.x, p.y + sz.y * 0.5f, p.z }, sz, (Color){ 112, 78, 46, 255 });
+        DrawCubeWiresV((Vector3){ p.x, p.y + sz.y * 0.5f, p.z }, sz, (Color){ 60, 42, 26, 255 });
+        if (ga->pack_where == PACKW_GROUND) DrawCube((Vector3){ p.x, p.y + sz.y + 0.3f + 0.04f * sinf(time * 3.0f), p.z }, 0.08f, 0.08f, 0.08f, UI_TURQUOISE);
+    }
     for (int i = 0; i < GA_LOOT; i++) {
         if (ga->loot_age[i] < 0.0f) continue;
         Vector3 p = ga->loot_pos[i];
@@ -477,6 +513,85 @@ void ig_draw_world(const GameActions *ga, const Terrain *t, float time) {
         DrawCylinder((Vector3){ p.x, p.y + 0.36f, p.z }, 0.05f, 0.09f, 0.1f, 5, (Color){ 90, 62, 38, 255 });
         DrawCube((Vector3){ p.x, p.y + 0.62f + bob, p.z }, 0.1f, 0.1f, 0.1f, UI_GOLD); // una marca para verlo de lejos
     }
+}
+
+// ------------------------------------------------------------------ la mochila del jugador
+// Animales que cargan una mochila: mula, burro, camello (y el caballo y el buey, si estan ensillados).
+static bool pack_animal_ok(const Animal *a) {
+    return a->used && a->state == ANIMAL_SADDLED && !a->ridden &&
+           (a->species == SPECIES_MULE || a->species == SPECIES_DONKEY || a->species == SPECIES_CAMEL || a->species == SPECIES_HORSE ||
+            a->species == SPECIES_OX);
+}
+
+static void pack_follow(GameActions *ga, const Props *props) {
+    if (ga->pack_where == PACKW_CART) {
+        for (int i = 0; props && i < props->count; i++)
+            if (!strcmp(props->items[i].item->id, CART_ID)) ga->pack_pos = props->items[i].pos;
+    } else if (ga->pack_where == PACKW_ANIMAL) {
+        int a = ga->pack_anchor;
+        if (a < 0 || a >= ga->animal_count || !ga->animals[a].used || ga->animals[a].state == ANIMAL_DEAD) {
+            ga->pack_where = PACKW_GROUND; // el animal cayo o se fue: la mochila queda en el suelo
+        } else {
+            ga->pack_pos = (Vector3){ ga->animals[a].x, ga->pack_pos.y, ga->animals[a].z };
+            if (ga->terrain) ga->pack_pos.y = terrain_height(ga->terrain, ga->animals[a].x, ga->animals[a].z);
+        }
+    }
+}
+
+// G: dejar la mochila (en la carreta o en un animal de carga si estan al lado; si no, en el suelo) o recogerla.
+static void pack_toggle(GameActions *ga, const Props *props, const Player *p, char *log, size_t len) {
+    if (ga->pack_size <= PACK_NONE) {
+        snprintf(log, len, "%s", T("No llevas mochila."));
+        return;
+    }
+    if (ga->pack_where != PACKW_WORN) {
+        if (dist_xz(p->pos, ga->pack_pos.x, ga->pack_pos.z) > PACK_REACH) {
+            snprintf(log, len, "%s", ga->pack_where == PACKW_GROUND ? T("Tu mochila quedó en el suelo, lejos de aquí.")
+                                     : ga->pack_where == PACKW_CART ? T("Tu mochila va en la carreta: acércate a ella.")
+                                                                    : T("Tu mochila va en un animal de carga: acércate a él."));
+            return;
+        }
+        ga->pack_where = PACKW_WORN;
+        snprintf(log, len, T("Te cuelgas la %s."), pack_name((PackSize)ga->pack_size));
+        return;
+    }
+    if (near_cart(props, p)) {
+        ga->pack_where = PACKW_CART;
+        pack_follow(ga, props);
+        snprintf(log, len, "%s", T("Cargas tu mochila en la carreta (G junto a ella para recogerla)."));
+        return;
+    }
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *a = &ga->animals[i];
+        if (!pack_animal_ok(a) || dist_xz(p->pos, a->x, a->z) > 3.0f) continue;
+        ga->pack_where = PACKW_ANIMAL;
+        ga->pack_anchor = i;
+        pack_follow(ga, props);
+        snprintf(log, len, T("Cargas tu mochila en el lomo del %s."), T(species_def(a->species)->name));
+        return;
+    }
+    ga->pack_where = PACKW_GROUND;
+    ga->pack_pos = p->pos;
+    snprintf(log, len, "%s", T("Dejas la mochila en el suelo: vas más ligero (G para recogerla)."));
+}
+
+// U en el inventario sobre una mochila: cambiar de mochila (si lo que llevas cabe en la nueva).
+static void pack_swap(GameActions *ga, const Cont *from, const Row *r, char *log, size_t len) {
+    PackSize nw = pack_size_of(r->id), old = (PackSize)ga->pack_size;
+    if (nw == PACK_NONE) return;
+    Bag test = ga->backpack;
+    bag_init_pack(&test, nw);
+    if (ga->backpack.n > test.slots || bag_kg(&ga->backpack, ga->inv) > test.cap_kg) {
+        snprintf(log, len, T("Lo que llevas no cabe en la %s: vacíala antes."), pack_name(nw));
+        return;
+    }
+    Row copy = *r;
+    remove_row(ga, from, &copy, 1);
+    if (old > PACK_NONE) put_into(ga, from, pack_id(old), 1, 1.0f, 0);
+    bag_init_pack(&ga->backpack, nw);
+    ga->pack_size = nw;
+    ga->pack_where = PACKW_WORN;
+    snprintf(log, len, T("Cambias de mochila: ahora llevas la %s."), pack_name(nw));
 }
 
 // ------------------------------------------------------------------ actualizacion
@@ -514,8 +629,9 @@ static void sync_packs(GameActions *ga, char *log, size_t len) {
 
 static int pane_x(int k) { return 14 + k * (PANE_W + 12); }
 
-static Rectangle cont_tab_rect(int k, int c) {
-    return (Rectangle){ (float)(pane_x(k) + UI_PANEL_INSET + 2 + c * 28), (float)(PANE_Y + UI_PANEL_INSET), 24, 24 };
+static Rectangle cont_tab_rect(int k, int c, int nc) {
+    int step = nc > 0 && nc * 28 > PANE_W - 30 ? (PANE_W - 30) / nc : 28; // muchos contenedores: se aprietan
+    return (Rectangle){ (float)(pane_x(k) + UI_PANEL_INSET + 2 + c * step), (float)(PANE_Y + UI_PANEL_INSET), 24, 24 };
 }
 
 static int inv_first_row(int cur) {
@@ -572,17 +688,19 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
     sync_packs(ga, log, len);
     for (int i = 0; i < GA_LOOT; i++) // el botin no se queda para siempre
         if (ga->loot_age[i] >= 0.0f && (ga->loot_age[i] += GetFrameTime()) > LOOT_SECONDS) ga->loot_age[i] = -1.0f;
+    pack_follow(ga, props);
+    if (input_ok && IsKeyPressed(KEY_G) && !ga->inv_open && !ga->equip_open) pack_toggle(ga, props, p, log, len);
     if (input_ok && IsKeyPressed(KEY_I) && !ga->equip_open) ga->inv_open = !ga->inv_open;
     if (input_ok && IsKeyPressed(KEY_P) && !ga->inv_open) ga->equip_open = !ga->equip_open;
     if ((ga->inv_open || ga->equip_open) && IsKeyPressed(KEY_ESCAPE)) ga->inv_open = ga->equip_open = false;
-    Cont conts[10];
+    Cont conts[CONT_MAX];
     int nc = containers(ga, props, p, conts);
     if (ga->inv_open) {
         int *pane = &ga->inv_pane;
         for (int k = 0; k < 2; k++) { // si un contenedor quedo lejos, el ultimo a mano
             if (ga->inv_cont[k] >= nc) ga->inv_cont[k] = k ? nc - 1 : 0;
             for (int c = 0; c < nc; c++)
-                if (ui_click(cont_tab_rect(k, c))) ga->inv_cont[k] = c, ga->inv_cursor[k] = 0, *pane = k;
+                if (ui_click(cont_tab_rect(k, c, nc))) ga->inv_cont[k] = c, ga->inv_cursor[k] = 0, *pane = k;
         }
         int *cont = &ga->inv_cont[*pane];
         // Q/E: contenedor de la columna activa.
@@ -602,6 +720,7 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
         if ((IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) && *cur >= INV_COLS) *cur -= INV_COLS;
         bool all = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
         bool move = IsKeyPressed(KEY_ENTER);
+        if (IsKeyPressed(KEY_U) && *cur < nr && pack_size_of(rows[*cur].id) != PACK_NONE) pack_swap(ga, &conts[*cont], &rows[*cur], log, len);
         for (int k = 0; k < 2; k++) { // raton: pasar elige, un clic sobre lo elegido lo pasa
             Row rk[64];
             int nk = rows_of(ga, &conts[ga->inv_cont[k]], rk, 64), first = inv_first_row(ga->inv_cursor[k]);
@@ -670,7 +789,7 @@ static void draw_pane(const GameActions *ga, const Cont *conts, int nc, int k) {
     ui_panel((Rectangle){ (float)x, (float)y, PANE_W, PANE_H }, active ? UI_METAL_GOLD : UI_METAL_SILVER);
     // Contenedores a mano: un icono cada uno (Q/E o clic).
     for (int i = 0; i < nc; i++) {
-        Rectangle r = cont_tab_rect(k, i);
+        Rectangle r = cont_tab_rect(k, i, nc);
         if (ui_tile(r, conts[i].icon, i == c, true)) ui_legend(conts[i].label, T("Q / E o clic: cambiar de contenedor"));
     }
     int ix = x + UI_PANEL_INSET + 2, iw = PANE_W - 2 * UI_PANEL_INSET - 4, hy = y + UI_PANEL_INSET + 30;
@@ -709,7 +828,7 @@ static void draw_pane(const GameActions *ga, const Cont *conts, int nc, int k) {
 }
 
 static void draw_inventory(const GameActions *ga, const Props *props, const Player *p, int w, int h) {
-    Cont conts[10];
+    Cont conts[CONT_MAX];
     int nc = containers((GameActions *)ga, props, p, conts);
     DrawRectangle(0, 0, w, h, (Color){ 10, 7, 5, 150 });
     for (int k = 0; k < 2; k++) draw_pane(ga, conts, nc, k);
@@ -724,7 +843,7 @@ static void draw_inventory(const GameActions *ga, const Props *props, const Play
     if (heavy) ui_icon(ICON_VELOCIDAD, wr.x + 70, wr.y + 1, 16, UI_CARNELIAN);
     if (ui_hover(wr)) ui_legend(T("Llevas encima"), heavy ? TextFormat(T("%.1f kg: pesado, andas más lento (más de %.0f kg)"), kg, CARRY_LIMIT)
                                                     : TextFormat(T("%.1f kg (hasta %.0f sin frenarte)"), kg, CARRY_LIMIT));
-    ui_legend_default(T("Inventario"), T("Flechas: elegir · Q/E: contenedor · Enter: pasar · I: cerrar"));
+    ui_legend_default(T("Inventario"), T("Flechas: elegir · Q/E: contenedor · Enter: pasar · U: cambiar de mochila · G: dejarla o recogerla"));
 }
 
 static IconId motif_icon(Motif m) {

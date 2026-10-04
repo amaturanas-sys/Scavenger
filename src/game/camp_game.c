@@ -242,8 +242,8 @@ static void build_dialog(GameActions *ga, const Troop *troop, const Props *props
         for (int i = 0; c && i < props->count; i++)
             if (!strcmp(props->items[i].item->id, CART_ID) && dist_xz(props->items[i].pos, c->x, c->z) < CAMP_RADIUS_M) cart = true;
         dlg_begin(d, speaker, ICON_GUARDIAN,
-                  cart ? T("¿Disolvemos el campamento? Quemaremos las estructuras, cargaremos en la carreta lo que quepa y te seguiremos.")
-                       : T("¿Disolvemos el campamento? No hay carreta cerca: solo se llevará lo que quepa en las alforjas. El resto arderá."));
+                  cart ? T("¿Disolvemos el campamento? Quemaremos las estructuras, cargaremos en la carreta y en nuestras mochilas lo que quepa y te seguiremos.")
+                       : T("¿Disolvemos el campamento? No hay carreta cerca: solo se llevará lo que quepa en las alforjas y en nuestras mochilas. El resto arderá."));
         dlg_option(d, ICON_DISOLVER, T("Disolver"), T("No se puede deshacer"), true, 1);
         dlg_option(d, ICON_TITULO, back, "", true, 0);
         break;
@@ -269,7 +269,7 @@ static void build_dialog(GameActions *ga, const Troop *troop, const Props *props
 static void dissolve(GameActions *ga, Troop *troop, Props *props, int k, char *log, size_t len) {
     CampSite *c = &ga->camps[k];
     // A la carreta (si esta cerca) y a las alforjas de las monturas cercanas.
-    Bag *dest[1 + GA_PACKS];
+    Bag *dest[1 + GA_PACKS + TROOP_MAX];
     int nd = 0;
     for (int i = 0; i < props->count; i++)
         if (!strcmp(props->items[i].item->id, CART_ID) && dist_xz(props->items[i].pos, c->x, c->z) < CAMP_RADIUS_M) {
@@ -282,6 +282,10 @@ static void dissolve(GameActions *ga, Troop *troop, Props *props, int k, char *l
             dist_xz((Vector3){ ga->animals[a].x, 0, ga->animals[a].z }, c->x, c->z) < CAMP_RADIUS_M)
             dest[nd++] = &ga->packs[j];
     }
+    // Y las mochilas de la gente del campamento, que se va con lo que pueda cargar.
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++)
+        if (troop->members[i].camp == k && troop->members[i].status == STATUS_ACTIVE && troop->members[i].pack > PACK_NONE)
+            dest[nd++] = &troop->members[i].bag;
     int loaded = 0, lost = 0;
     for (int e = 0; e < c->stock.n; e++) {
         int left = c->stock.e[e].count;
@@ -415,6 +419,8 @@ static void tick_tasks(GameActions *ga, Troop *troop, float dt, char *log, size_
                 Member *nm = troop_find(troop, nid);
                 if (nm) {
                     nm->camp = k;
+                    nm->pack = PACK_SMALL; // llega con lo puesto y una mochila pequeña
+                    bag_init_pack(&nm->bag, PACK_SMALL);
                     snprintf(log, len, T("%s vuelve con %s: se une a %s."), mi >= 0 ? troop->members[mi].name : "", nm->name, c->name);
                 } else {
                     snprintf(log, len, "%s", T("Volvió sin nadie: la tribu está llena."));
