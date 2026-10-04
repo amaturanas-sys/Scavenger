@@ -449,6 +449,10 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
     float wind = c->wind * (shelter > 0.0f ? 0.5f : 1.0f);
     hz->feels = hazard_feels_like(c->temperature, wind, hz->warmth.wet, CLOTHING + shelter + torch, hz->fire);
     warmth_update(&hz->warmth, hz->feels, c->rain, hz->fire > 5.0f, dt);
+    if (ga->warmth_boost > 0.0f) { // el calor del ambar
+        hz->warmth.heat = fminf(100.0f, hz->warmth.heat + ga->warmth_boost);
+        ga->warmth_boost = 0.0f;
+    }
     if (hz->trap == TRAP_ICE) hz->warmth.heat = fmaxf(0.0f, hz->warmth.heat - 1.5f * dt); // el agua helada quema
 
     // Hipotermia: congela manos y pies; tras unos segundos, desmayo y la tribu lo lleva al fuego.

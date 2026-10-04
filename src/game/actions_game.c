@@ -2,6 +2,8 @@
 
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
+#include "game/gems_game.h"
+#include "game/talents_game.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -154,6 +156,7 @@ void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain 
     // Lo que se recolecta para fabricar: matas de hierbas curativas y pedernal.
     scatter(props, t, &ga->rng, "mapa.vegetacion.mata_hierbas", 12, 16.0f, 70.0f);
     scatter(props, t, &ga->rng, "utileria.material.pedernal", 8, 20.0f, 70.0f);
+    gems_scatter(ga, props, t); // rocas que romper y corales en los lagos
 
     // Animales: el ganado del campamento y manadas en los alrededores.
     fg_init(ga, t);
@@ -162,13 +165,13 @@ void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain 
 }
 
 bool ga_menu_open(const GameActions *ga) { return ga->menu_open; }
-bool ga_blocks_input(const GameActions *ga) { return ga->menu_open || ga->climbing || ga->inv_open || ga->equip_open; }
+bool ga_blocks_input(const GameActions *ga) { return ga->menu_open || ga->climbing || ga->inv_open || ga->equip_open || ga->dlg.open; }
 
 float ga_speed_scale(const GameActions *ga) {
     // Montado, la montura (y el amuleto del caballo); a pie, cuanto pesa lo que llevas.
     if (ga->mounted >= 0)
         return species_def(ga->animals[ga->mounted].species)->ride_speed * (1.0f + 0.5f * ig_stat(ga, STAT_RIDING));
-    return ig_speed_scale(ga);
+    return ig_speed_scale(ga) * (1.0f + ig_stat(ga, STAT_SPEED)); // a pie: la carga, y tatuajes y joyas
 }
 
 // ---------------------------------------------------------------- objetivos
@@ -214,6 +217,7 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
     switch (a) {
     case ACTION_TAKE: {
         if (ig_take_loot(ga, props, p, log, len)) return; // una bolsa de botin cerca: al momento
+        if (gems_coral(ga, (Props *)props, p, log, len)) return; // un arrecife de coral: al momento
         int near = props_nearest(props, p->pos, REACH, true);
         ga->take_all = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
         if (near >= 0 && goes_to_bags(props->items[near].item)) break; // a la mochila: no hace falta mano libre
@@ -256,6 +260,12 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
     case ACTION_THROW_LASSO:
         if ((ga->target = animal_ahead(ga, p, ANIMAL_WILD, TARGET_RANGE, true)) < 0) {
             snprintf(log, len, "%s", T("No hay un animal salvaje a tiro de lazo delante."));
+            return;
+        }
+        break;
+    case ACTION_PAN:
+        if (!ga->terrain || !gems_water_ahead(ga->terrain, p)) {
+            snprintf(log, len, "%s", T("Para cribar hay que estar en la orilla, mirando al agua."));
             return;
         }
         break;
@@ -380,8 +390,10 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         case TAME_OK:
             if (an->state == ANIMAL_BOUND)
                 snprintf(log, len, T("¡Atrapaste al %s con el lazo! Dale carne (K) antes de que se suelte."), who);
-            else
+            else {
                 snprintf(log, len, T("¡Domaste: %s! Ahora sigue a la tribu%s."), who, sd->rideable ? T(" (silla para montarlo)") : "");
+                tg_xp(ga, XP_TAME, log, len);
+            }
             break;
         case TAME_TOO_STRONG: snprintf(log, len, T("El %s está demasiado entero: debilítalo peleando antes del lazo."), who); break;
         case TAME_NEVER: snprintf(log, len, T("Un animal así no se doma (%s): solo se caza."), who); break;
@@ -394,11 +406,13 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         if (animal_saddle(&ga->animals[ga->target]))
             snprintf(log, len, "%s", T("Montura instalada: R para montar."));
         break;
+    case ACTION_PAN: gems_pan(ga, props, p, log, len); break;
     default:
         if (d->produces) { // instalar fogata, tienda, cavar trinchera
             props_add(props, d->produces, ground_ahead(t, p, 2.5f), p->yaw);
             snprintf(log, len, T("Hecho: %s."), item_name(ga, d->produces));
         }
+        if (a == ACTION_DIG_TRENCH) gems_dig(ga, props, p, log, len); // a veces sale algo de la tierra
         break;
     }
 }
@@ -446,7 +460,7 @@ static void start_craft(GameActions *ga, CraftId c, const Props *props, const Pl
     ig_use_all(ga, props, p, d->mats);
     ga->crafting = c;
     ga->craft_timer = 0.0f;
-    ga->craft_total = secs;
+    ga->craft_total = secs / (1.0f + fmaxf(0.0f, ig_stat(ga, STAT_CRAFT))); // las manos del clan
     snprintf(log, len, craft_by_hand(d) ? T("Fabricando: %s.") : T("Forjando: %s."), T(d->name));
 }
 
@@ -541,7 +555,7 @@ static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const T
 static const IconId TAB_ICONS[4] = { ICON_ACCIONES, ICON_OBRAS, ICON_FABRICAR, ICON_REPARAR };
 static const IconId ACTION_ICONS[ACTION_COUNT] = { ICON_TOMAR,   ICON_LANZAR,   ICON_EMPUNAR, ICON_ENFUNDAR,
                                                    ICON_FOGATA,  ICON_TIENDA,   ICON_TRINCHERA, ICON_TREPA,
-                                                   ICON_LAZO,    ICON_ANTORCHA, ICON_ENSILLAR };
+                                                   ICON_LAZO,    ICON_ANTORCHA, ICON_ENSILLAR, ICON_GEMA };
 static const IconId BUILD_ICONS[BUILD_COUNT] = { ICON_REFUGIO, ICON_OBRAS, ICON_MURO_PIEDRA, ICON_HOGUERA, ICON_TOTEM,
                                                  ICON_HORNO,   ICON_FUNDICION, ICON_FUNDICION, ICON_TORRE, ICON_CORRAL };
 
@@ -563,9 +577,10 @@ static Rectangle grid_rect(int i, int first_row) {
 // ---------------------------------------------------------------- actualizacion
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
                size_t log_len) {
+    ga->terrain = t;
     sync_npcs(ga, troop, t);
     ga->swap_anim = fmaxf(0.0f, ga->swap_anim - dt);
-    bool other_menu = ga->inv_open || ga->equip_open; // inventario o equipo abiertos
+    bool other_menu = ga->inv_open || ga->equip_open || ga->dlg.open; // inventario, equipo o un dialogo
     if (IsKeyPressed(KEY_TAB) && !other_menu) ga->menu_open = !ga->menu_open;
     if (ga->menu_open) {
         // Pestañas (acciones, obras, fabricar, reparar): Q/E, Re Pág/Av Pág o un clic en su icono.
@@ -611,7 +626,8 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             ga->swap_anim = 0.5f;
         } else if (IsKeyPressed(KEY_X)) start_action(ga, ACTION_CHANGE_GRIP, props, p, log, log_len);
         if (IsKeyPressed(KEY_H)) start_action(ga, ACTION_SHEATHE, props, p, log, log_len);
-        if (IsKeyPressed(KEY_F)) start_action(ga, ACTION_TAKE, props, p, log, log_len);
+        if (IsKeyPressed(KEY_F) && !tg_try_talk(ga, troop, p, log, log_len)) // F: hablar (druida, orfebre) o tomar
+            start_action(ga, ACTION_TAKE, props, p, log, log_len);
         if (IsKeyPressed(KEY_T)) start_action(ga, ACTION_THROW, props, p, log, log_len);
         if (IsKeyPressed(KEY_R)) { // montar / desmontar
             if (ga->mounted >= 0) {
@@ -683,6 +699,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
         if (build_advance(bp, build_rate_present(d, &plan, present), dt)) {
             props_add(props, d->produces, ground_at(t, bp->x, bp->z), 0.0f);
             snprintf(log, log_len, T("Obra terminada: %s."), T(d->name));
+            tg_xp(ga, XP_BUILD, log, log_len);
             ga->projects[i] = ga->projects[--ga->project_count];
             ga->crew_present[i] = ga->crew_present[ga->project_count];
             ga->crew_size[i] = ga->crew_size[ga->project_count];
@@ -702,6 +719,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             if (kept < n) stock_add(&ga->stock, c->produces, n - kept);
             snprintf(log, log_len, "%s: %s%s.", craft_by_hand(c) ? T("Hecho") : T("Forjado"), T(c->name),
                      kept < n ? T(" (lo que no cabe, al acopio)") : "");
+            tg_xp(ga, XP_CRAFT, log, log_len);
             ga->crafting = -1;
         }
     }

@@ -80,6 +80,26 @@ Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.
 
+Tatuajes, joyas y nivel:
+- **Nivel:** subes peleando, cazando, fabricando, construyendo y domando.
+- **Tatuajes:** `F` junto al druida (Ulagan, en el campamento).
+  - Son permanentes: eliges motivo (lobo, ciervo, grifo, tamga, olas), grado (I, II, III; el III se bifurca en dos ramas que se excluyen) y zona del cuerpo.
+  - La zona cambia a qué atributo va el bonus y cuánto pesa.
+  - Tinta: carbón y hierbas (y miel en el tercer grado).
+- **Joyas:** el orfebre (Altani, `F`) hace anillos (dos por mano), brazaletes, collar, aretes y hebilla.
+  - Se hacen con metal (bronce, plata, oro: la potencia) y una piedra (el efecto).
+  - Sin encantar no hacen nada: el druida las encanta con un efecto pasivo (un atributo) o activo (una habilidad), por hierbas y miel.
+- **Piedras y metales:**
+  - rompe rocas a golpes (la maza y el golpe pesado parten mejor);
+  - `F` en los arrecifes de coral de los lagos;
+  - cava trincheras;
+  - criba en la orilla (`Tab`, «Cribar en el agua»);
+  - el lingote de bronce sale del horno de bronce.
+- **Habilidades activas:** `F2`, `F3`, `F4`.
+- **Menú de equipo (`P`):** pestañas Armadura, Joyas y Tatuajes (`Q`/`E`).
+
+Pruebas: `--hablar druida|orfebre`, `--joyas`, `--tatuajes`.
+
 Fauna: lazo (menú) para domar monturas o atar un depredador debilitado · `K` dar de comer al atado, despiezar un cadáver u ordeñar · `Mayús+K` sacrificar ganado · caminar cerca del ganado lo pastorea · golpear hacia el agua (o una flecha) pesca · `K` en una colmena con la antorcha encendida: miel. Prueba: `--lago` arranca en la orilla de un lago.
 
 Al reclutar o tomar prisioneros, a veces aparece un gran guerrero por azar.

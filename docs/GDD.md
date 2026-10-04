@@ -316,6 +316,48 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - El bronce, el hierro y el acero piden herrero, su horno en el campamento y metal con carbón.
   - Cada reparación devuelve parte del estado (60 % el cuero, 80 % el metal).
 
+### Nivel, tatuajes y joyas (implementado — `src/sim/talents.*`, `src/sim/jewelry.*`, en juego `src/game/talents_game.*`, `src/game/gems_game.*`)
+- **Nivel (1 a 20):** la experiencia sale de pelear, cazar, fabricar, construir y domar. Cada nivel pide más que el anterior.
+- **Tatuajes, permanentes:** los hace un druida de la tribu (`F` junto a él).
+  - **Cinco motivos**, cada uno una progresión:
+    - Lobo: sigilo y la furia de la manada.
+    - Ciervo: aguante y carrera.
+    - Grifo: vista y puntería.
+    - Tamga, el sello del clan: mando y oficio.
+    - Olas: vida y carga.
+  - **Grados:** el grado I pide nivel 1; el II, nivel 3 y el grado I del mismo motivo. El III pide nivel 6 y se bifurca en dos habilidades específicas: una rama activa (aullido, galope, vuelo del grifo, grito del clan, marea) o una pasiva más fuerte. Elegir una cierra la otra.
+  - **Zonas:** ocho zonas del cuerpo (cabeza, cuello, pecho, espalda, brazos, manos, piernas), cada una con un solo tatuaje.
+    - La zona favorece unos atributos (×1,5) y no le van otros (×0,75); además suma un +5 % propio (la cabeza, vista; las piernas, velocidad...).
+    - El mismo motivo rinde distinto según dónde se haga.
+  - **Sin vuelta atrás:** no hay forma de quitarlo, así que cada tatuaje es una decisión definitiva.
+  - **Tinta:** carbón y hierbas; en el tercer grado, también miel.
+- **Joyas (amuletos), cambiables:**
+  - **Nueve huecos:** cuatro anillos (dos por mano), dos brazaletes, collar, aretes y hebilla de cinturón.
+  - **Las hace el orfebre** con metal (bronce ×1, plata ×1,3, oro ×1,6) y una piedra. Cada tipo pesa distinto (anillo ×0,6 … collar ×1,2).
+  - **Las encanta el druida**, por hierbas y miel. Hasta entonces no hacen nada.
+  - **Cada piedra da un pasivo o un activo:**
+
+    | Piedra | Pasivo | Activo |
+    |---|---|---|
+    | Turquesa | aguante | marea |
+    | Cornalina | cuerpo a cuerpo | aullido |
+    | Lapislázuli | vista | vuelo del grifo |
+    | Ámbar | carga | calor del ámbar |
+    | Jade | sigilo | sombra |
+    | Granate | vida | sangre de granate |
+    | Perla | carisma | grito del clan |
+    | Coral | monta | galope |
+
+  - Los colgantes de animales de antes van en el collar, ya encantados.
+- **Habilidades activas:** `F2`–`F4`, con duración y espera.
+- **Atributos:** aguante, agarre, sigilo, puntería, carisma, monta, cuerpo a cuerpo, velocidad, vida, vista (descubre el mapa más lejos), carga y oficio (fabricar más rápido).
+- **Piedras y metales:**
+  - las rocas se rompen a golpes y sueltan piedras, mineral y a veces una gema;
+  - los arrecifes de coral de los lagos dan coral y perlas (se agotan);
+  - las trincheras desentierran lapislázuli, ámbar, plata y oro;
+  - en la orilla se criba ("Cribar en el agua") para sacar piedras rodadas y oro;
+  - el lingote de bronce se funde en el horno de bronce.
+
 ### Combate montado y botín (implementado — `src/sim/combat.*`, en juego `src/game/combat_game.*`)
 - **A caballo solo se golpea con el arma** (V; mantener: golpe pesado). Patadas, agarres, ganchos y cargas con escudo son a pie.
 - **El golpe montado:**

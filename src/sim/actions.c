@@ -116,6 +116,8 @@ static const ActionDef ACTIONS[ACTION_COUNT] = {
                              1.5f, "utileria.objeto.antorcha", NULL, NULL },
     [ACTION_SADDLE] = { N_("Instalar montura"), N_("Ensillar un animal para montarlo."), ACTOR_PLAYER | ACTOR_NPC, 5.0f,
                         "accesorio.arreo.silla_montar", NULL, N_("montura") },
+    [ACTION_PAN] = { N_("Cribar en el agua"), N_("En la orilla de un río o un lago: piedras preciosas rodadas, plata y oro."), ACTOR_PLAYER | ACTOR_NPC, 8.0f,
+                     NULL, NULL, N_("agua") },
 };
 
 const ActionDef *action_def(ActionId a) { return a >= 0 && a < ACTION_COUNT ? &ACTIONS[a] : NULL; }

@@ -84,6 +84,8 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Clima con azar: incendios forestales en verano, rayos que queman árboles y estructuras, derrumbes por lluvia torrencial sin mantenimiento; la lluvia apaga todo fuego. Flechas encendidas.
 - [x] Animales acuáticos y anfibios (peces, cocodrilos, tortugas), venenosos (víbora, escorpión, araña) con veneno, e insectos en enjambre (abejas con miel, avispas, mosquitos, moscas).
 - [x] Menú de fabricar (a mano y forja) con ingredientes recolectables, y reparación de armaduras por material.
+- [x] Interfaz en español e inglés (botón de idioma; `assets/i18n/en.tsv`).
+- [x] Nivel y experiencia; árbol de tatuajes permanentes (5 motivos × 3 grados con ramas excluyentes, 8 zonas del cuerpo) hechos por el druida; joyas (anillos, brazaletes, collar, aretes, hebilla) del orfebre con metal y piedra, encantadas por el druida (pasivo o activo); piedras de rocas, corales, excavaciones y ríos.
 - [x] Combate montado (golpe con inercia, lanza que derriba, arrollar, la montura recibe golpes, derribo que desmonta), jinetes bandidos y botín de los enemigos.
 - [ ] Trepar árboles y rocas sin trepa (Fase 2).
 

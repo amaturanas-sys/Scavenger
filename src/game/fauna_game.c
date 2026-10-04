@@ -1,6 +1,7 @@
 #include "game/fauna_game.h"
 
 #include "game/inventory_game.h"
+#include "game/talents_game.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -239,6 +240,7 @@ void fg_hurt(GameActions *ga, int idx, float dmg, WoundKind w, int part, int att
     lower(T(d->name), who, sizeof(who));
     if (a->state == ANIMAL_DEAD) {
         snprintf(log, len, T("Abatiste: %s. K para despiezarlo."), who);
+        tg_xp(ga, XP_HUNT, log, len);
     } else if (d->cls == CLASS_TAMEABLE && a->weakened && was_strong && a->state == ANIMAL_WILD) {
         snprintf(log, len, T("El %s está débil: ¡lánzale el lazo (menú) y dale carne!"), who);
     } else if (wi >= 0) {
@@ -502,6 +504,7 @@ static void interact(GameActions *ga, const Player *p, bool shift, char *log, si
         ig_use(ga, NULL, p, food, 1);
         animal_feed(a, 0.0f, 0.0f);
         snprintf(log, len, T("Le das carne al %s: ¡ahora es de la tribu y te defenderá!"), who);
+        tg_xp(ga, XP_TAME, log, len);
     } else if (what == 2) {
         butcher(ga, p, a, log, len, T("Despiezas"));
     } else if (shift) {
