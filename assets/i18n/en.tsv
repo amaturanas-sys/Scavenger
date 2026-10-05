@@ -349,6 +349,7 @@ Zorro	Fox
  · montado	 · mounted
 %d bebieron agua cruda y les cayeron los espíritus malditos (hace falta leña para hervirla).	%d drank raw water and the cursed spirits fell upon them (firewood is needed to boil it).
 %d pasaron sed: no hay agua cerca ni en el acopio.	%d went thirsty: no water nearby or in the stockpile.
+%s no se empuña.	%s can't be wielded.
 %s terminó: %s.	%s finished: %s.
 %s · Enter o clic otra vez: reparar	%s · Enter or click again: repair
 , antorcha	, torch
@@ -364,6 +365,7 @@ Día %d: comieron %d%s, recolectaron %d. Ánimo del campamento %+.0f.	Day %d: %d
 El %s está demasiado entero: debilítalo peleando antes del lazo.	The %s is too strong: weaken it in a fight before the lasso.
 El %s se zafó del lazo.	The %s slipped the lasso.
 Empuñadura: %s.	Grip: %s.
+Empuñas: %s.	You wield: %s.
 Empuñe: %s%s%s%s%s%s	Grip: %s%s%s%s%s%s
 Encendiste la antorcha (mano izquierda).	You light the torch (left hand).
 Enfundaste las armas: manos libres.	Weapons sheathed: hands free.
@@ -713,13 +715,18 @@ tu compañero	your companion
 Acciones, obras y fabricar	Actions, works and crafting
 B: venda tus heridas (o levanta a un compañero abatido).	B: bandage your wounds (or lift a downed companion).
 Beber	Drink
-Con %s en la izquierda. Tecla %d.	With %s in the left hand. Key %d.
-Lo empuñas. Tecla %d otra vez: enfundar.	You wield it. Key %d again: sheathe.
+Casilla %d: %s.	Slot %d: %s.
+Casilla %d: elige un arma, un objeto o una habilidad	Slot %d: choose a weapon, an item or a skill
+Casilla vacía	Empty slot
+Enter o un toque: asignar · Esc: cerrar	Enter or a tap: assign · Esc: close
+Esa habilidad ya no está activa.	That skill is no longer active.
+Flechas: elegir · Enter: asignar · Esc: cerrar	Arrows: choose · Enter: assign · Esc: close
 Manos libres	Empty hands
 N: bebe lo más seguro que tengas, o del río en la orilla.	N: drink the safest water you carry, or from the river at the bank.
-No lo tienes (ni en el acopio).	You don't have it (not even in the stockpile).
 Tab: el menú de acciones, obras, fabricar y reparar.	Tab: the menu of actions, works, crafting and repairs.
-Tecla %d: empuñar.	Key %d: wield.
+Tecla %d: elegir un arma, un objeto o una habilidad.	Key %d: choose a weapon, an item or a skill.
+Tecla %d: usar. Mayús+%d o clic derecho: cambiar.	Key %d: use. Shift+%d or right click: change.
+Vaciar la casilla	Clear the slot
 Vendar	Bandage
 agotado	exhausted
 cansado	tired
@@ -883,7 +890,7 @@ tienes %d, hacen falta %d · potencia x%.2f	you have %d, %d needed · power x%.2
 ¿Qué pieza? Cada una va en su hueco y pesa distinto.	Which piece? Each goes in its own slot and weighs differently.
 # --- src/game/title_menu.c
 %s el hueco %d	%s slot %d
-1 a 9: la barra rápida de abajo (empuñar; la misma tecla otra vez enfunda; 9 antorcha) · X cambiar empuñadura · H enfundar	1 to 9: the quick bar at the bottom (wield; the same key again sheathes; 9 torch) · X change grip · H sheathe
+1 a 9: la barra rápida (arma, objeto o habilidad; vacía o Mayús+número: elegir qué va) · X cambiar empuñadura · H enfundar	1 to 9: the quick bar (weapon, item or skill; empty or Shift+number: choose what goes there) · X change grip · H sheathe
 A / D o flechas	A / D or arrows
 A caballo: V golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo.	Mounted: V strikes farther with the gallop's momentum; the spear knocks down; at a gallop you trample. Being knocked down throws you off the horse.
 Abatido, tu escolta te levanta. Si mueres (desangrado o sin socorro), vuelves a tu último lugar de descanso (campamento o tienda) y tus huesos quedan donde caíste. Tus compañeros mueren para siempre.	When downed, your escort lifts you. If you die (bled out or with no help), you return to your last resting place (camp or tent) and your bones stay where you fell. Your companions die for good.

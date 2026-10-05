@@ -6,6 +6,7 @@
 #include <time.h>
 
 #include "game/death_game.h"
+#include "game/hud_game.h"
 #include "platform.h"
 #include "sim/clock.h"
 #include "sim/lang.h"
@@ -110,7 +111,7 @@ bool save_write(int slot, const GameState *g, Image thumb, char *err, size_t len
         if (p) ok = put(f, p, sizeof(*p));
     }
     ok = ok && put(f, &g->mem->marker_count, sizeof(int)) && put(f, g->mem->markers, sizeof(g->mem->markers));
-    ok = ok && dg_write(f); // bloque opcional al final: lugar de descanso y restos
+    ok = ok && dg_write(f) && hud_write(f); // bloques opcionales al final: descanso, restos y barra rapida
     if (fclose(f) != 0) ok = false;
     if (!ok || rename(tmp, path) != 0) {
         remove(tmp);
@@ -178,7 +179,7 @@ bool save_read(int slot, GameState *g, char *err, size_t len) {
     int markers = 0;
     MapMarker mk[MEMMAP_MAX_MARKERS];
     ok = ok && get(f, &markers, sizeof(int)) && get(f, mk, sizeof(mk)) && markers >= 0 && markers <= MEMMAP_MAX_MARKERS;
-    if (ok) dg_read(f); // las partidas de antes no lo traen: quedan sin restos
+    if (ok) dg_read(f), hud_read(f); // las partidas de antes no los traen: sin restos, barra de serie
     fclose(f);
     if (!ok) {
         free(b), free(props), free(pg);

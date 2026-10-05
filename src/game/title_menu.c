@@ -65,7 +65,7 @@ static const HelpPage PAGES[] = {
         N_("Z cubrirse · con escudo: Z + V golpe de escudo · corriendo + Z: carga"),
         N_("U agarre y llave: arrancas el escudo, desarmas o tumbas"),
         N_("O engancha el escudo enemigo con hacha, guja o alabarda"),
-        N_("1 a 9: la barra rápida de abajo (empuñar; la misma tecla otra vez enfunda; 9 antorcha) · X cambiar empuñadura · H enfundar"),
+        N_("1 a 9: la barra rápida (arma, objeto o habilidad; vacía o Mayús+número: elegir qué va) · X cambiar empuñadura · H enfundar"),
         N_("Correr, saltar y golpear gastan aguante (la barra de abajo a la derecha): agotado, no corres hasta recobrar el aliento."),
         N_("B venda heridas con hierbas (o ungüento) · P equipo y heridas · I inventario"),
         N_("A caballo: V golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo."),
