@@ -1,8 +1,8 @@
 // Minimapa circular tipo brujula, girado segun la direccion de la camara (arriba = hacia donde
 // mira el jugador). Muestra la geografia que el jugador recuerda (sim/memory_map): las regiones
 // (estepa, bosque, altiplano, fiordos, desierto), el relieve sombreado, rios, lagos y mar, la
-// nieve de las cumbres, y los pueblos, tribus y guaridas ya vistos. Lo no recorrido o
-// olvidado se ve apagado.
+// nieve de las cumbres, y los pueblos, tribus y guaridas ya vistos. Lo no explorado queda
+// a oscuras (es parte del juego) y lo olvidado se va apagando.
 #ifndef ESTEPA_UI_MINIMAP_H
 #define ESTEPA_UI_MINIMAP_H
 

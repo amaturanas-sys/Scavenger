@@ -663,7 +663,7 @@ int main(int argc, char **argv) {
     bool show_card = false;
     memmap_init(&g_memory);
     Minimap minimap;
-    minimap_init(&minimap, MINIMAP_RADIUS, 4.0f); // 4 m por pixel: 200 m de radio
+    minimap_init(&minimap, MINIMAP_RADIUS, 3.0f); // 3 m por pixel: 150 m de radio
     char log[128] = "";
     char *inv_text = LoadFileText(platform_asset_path("assets/inventario.tsv"));
     if (inv_text) {

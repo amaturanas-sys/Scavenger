@@ -8,7 +8,7 @@
 
 MemoryParams memmap_default_params(void) {
     return (MemoryParams){
-        .sight_radius = 22.0f,
+        .sight_radius = 40.0f, // la estepa es abierta: se recuerda lo que se ve alrededor
         .gain = 0.35f,
         .forget_days = 3.0f, // una zona vista de pasada se borra en una o dos semanas de juego
         .base_cap = 0.3f,
