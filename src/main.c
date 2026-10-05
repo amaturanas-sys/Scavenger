@@ -51,6 +51,8 @@
 #include "world/camp.h"
 #include "world/gallery.h"
 #include "world/sky.h"
+#include "world/clouds.h"
+#include "rlgl.h"
 #include "world/weather.h"
 #include "world/terrain.h"
 #include "world/worldview.h"
@@ -81,7 +83,7 @@ typedef struct {
     float yaw, pitch, dist;
 } CameraRig;
 
-static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, float dt) {
+static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const Terrain *t, float dt) {
     // Orbita: Q/E o arrastre con boton derecho; rueda para el zoom.
     if (IsKeyDown(KEY_Q)) rig->yaw += 1.8f * dt;
     if (IsKeyDown(KEY_E)) rig->yaw -= 1.8f * dt;
@@ -95,6 +97,14 @@ static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, float 
     Vector3 target = { p->pos.x, p->pos.y + player_eye_height(p), p->pos.z };
     Vector3 back = { -sinf(rig->yaw) * cosf(rig->pitch), sinf(rig->pitch), -cosf(rig->yaw) * cosf(rig->pitch) };
     cam->position = Vector3Add(target, Vector3Scale(back, rig->dist));
+    // Nunca bajo el suelo (las laderas, los muros): la camara sube sobre el terreno que tenga
+    // detras y en el brazo que la une al jugador.
+    float floor_y = -1e9f;
+    for (int k = 1; k <= 4; k++) {
+        Vector3 q = Vector3Add(target, Vector3Scale(back, rig->dist * k / 4.0f));
+        floor_y = fmaxf(floor_y, terrain_height(t, q.x, q.z) + 1.2f * k / 4.0f);
+    }
+    if (cam->position.y < floor_y) cam->position.y = floor_y;
     cam->target = target;
 }
 
@@ -366,18 +376,47 @@ static void game_new(GameState *g, Terrain *terrain, Camp *camp, unsigned seed, 
 }
 
 // Prueba: lleva al jugador a un sitio del mundo, mirando hacia lo que interesa. Lugares:
-// estepa, bosque, altiplano, fiordos, desierto (en su region); canal, muro, mar (el borde);
-// capital, aldea, guarida (de la region del bosque, desierto y bosque).
+// estepa, bosque, altiplano, fiordos, desierto (en su region); canal, muro, mar, hielo (el
+// borde); meandro, trenzado (los rios); capital, aldea, guarida.
 static void go_to(const Terrain *t, Player *p, const char *what) {
     const World *w = t->world;
     static const char *REG[REGION_COUNT] = { "estepa", "bosque", "altiplano", "fiordos", "desierto" };
     float x = 0, z = 0, lx = 0, lz = 0; // donde y hacia donde mira
     bool ok = false;
-    for (int r = 0; r < REGION_COUNT; r++)
-        if (!strcmp(what, REG[r])) world_region_point(w, (Region)r, 0.6f * WORLD_RADIUS, &x, &z), lx = x * 1.1f, lz = z * 1.1f, ok = true;
-    if (!strcmp(what, "canal")) world_region_point(w, REGION_FOREST, WORLD_RADIUS - 112.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
-    if (!strcmp(what, "muro")) world_region_point(w, REGION_DESERT, WORLD_RADIUS - 150.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
-    if (!strcmp(what, "mar")) world_region_point(w, REGION_FJORD, WORLD_RADIUS - 200.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    for (int r = 1; r < REGION_COUNT; r++)
+        if (!strcmp(what, REG[r])) world_region_point(w, (Region)r, 0.62f * WORLD_RADIUS, &x, &z), lx = x * 1.1f, lz = z * 1.1f, ok = true;
+    if (!strcmp(what, "estepa")) x = 260.0f, z = -180.0f, lx = 600.0f, lz = -400.0f, ok = true;
+    if (!strcmp(what, "canal")) {
+        float x0, z0;
+        world_edge_point(w, REGION_FOREST, 0.0f, &x0, &z0);
+        float a = atan2f(z0, x0), r = world_edge_radius(w, a) - world_canal_offset(w, a) - 62.0f;
+        x = cosf(a) * r, z = sinf(a) * r, lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    }
+    if (!strcmp(what, "muro")) world_edge_point(w, REGION_DESERT, 210.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    if (!strcmp(what, "mar")) { // en la orilla, mirando al mar abierto
+        for (float in = 200.0f; in < 1200.0f; in += 20.0f) {
+            world_edge_point(w, REGION_FJORD, in, &x, &z);
+            if (world_height(w, x, z) > SEA_LEVEL + 1.5f && world_water(w, x, z, 0.0f, NULL) < -1e8f) break;
+        }
+        lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    }
+    if (!strcmp(what, "hielo")) world_edge_point(w, REGION_HIGHLAND, 230.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    if (!strcmp(what, "cumbre")) { // la cumbre mas alta (suele tocar las nubes)
+        float best = -1e9f;
+        for (int i = 0; i < w->peak_count; i++) {
+            float h = world_height(w, w->peaks[i].x, w->peaks[i].z);
+            if (h > best) best = h, x = w->peaks[i].x + 6.0f, z = w->peaks[i].z, lx = 0.0f, lz = 0.0f, ok = true;
+        }
+    }
+    for (int i = 0; i < w->river_count && !ok; i++) { // un rio: a su orilla, mirandolo
+        const River *rv = &w->rivers[i];
+        bool want = (!strcmp(what, "meandro") && rv->kind == RIVER_MEANDER) || (!strcmp(what, "trenzado") && rv->kind == RIVER_BRAIDED);
+        if (!want) continue;
+        int k = rv->n / 2;
+        float dx = rv->x[k + 1] - rv->x[k], dz = rv->z[k + 1] - rv->z[k], l = sqrtf(dx * dx + dz * dz) + 1e-3f;
+        float off = rv->width + 25.0f;
+        x = rv->x[k] - dz / l * off, z = rv->z[k] + dx / l * off, lx = rv->x[k], lz = rv->z[k], ok = true;
+    }
     for (int i = 0; i < w->settlement_count && !ok; i++) {
         const Settlement *s = &w->settlements[i];
         bool want = (!strcmp(what, "capital") && s->kind == SETTLE_CAPITAL && s->region == REGION_FOREST) ||
@@ -418,6 +457,8 @@ int main(int argc, char **argv) {
     unsigned start_seed = WORLD_SEED; // --semilla N: el mundo (sin ella, cada partida nueva del menu sortea uno)
     const char *map_path = NULL;      // --mapa-mundo archivo.png: el mapa general del mundo, y sale
     const char *start_goto = NULL;    // --ir lugar: a un sitio del mundo (ver go_to)
+    float start_heading = -1.0f;      // --rumbo grados: hacia donde mira la camara (0 sur, 90 este, 180 norte, 270 oeste)
+    float start_pitch = -1.0f;        // --camara inclinacion: 0.05 casi de canto (se ve el cielo), 1.25 desde arriba
     int map_size = 1024;
     bool start_orbital = false;       // --orbital [grados] [inclinacion]: la vista orbital
     float start_orbit_deg = 30.0f, start_orbit_tilt = 0.55f;
@@ -444,6 +485,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--lago")) start_lake = true;
         else if (!strcmp(argv[i], "--mapa-mundo") && i + 1 < argc) map_path = argv[++i];
         else if (!strcmp(argv[i], "--ir") && i + 1 < argc) start_goto = argv[++i];
+        else if (!strcmp(argv[i], "--rumbo") && i + 1 < argc) start_heading = (float)atof(argv[++i]);
+        else if (!strcmp(argv[i], "--camara") && i + 1 < argc) start_pitch = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--mapa-tam") && i + 1 < argc) map_size = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--orbital")) {
             start_orbital = true;
@@ -572,6 +615,8 @@ int main(int argc, char **argv) {
 
     Camera3D cam = { .up = { 0, 1, 0 }, .fovy = 55.0f, .projection = CAMERA_PERSPECTIVE };
     if (start_lake || start_goto) rig.yaw = player.yaw; // mirando al agua (o a lo que interesa)
+    if (start_pitch >= 0.0f) rig.pitch = start_pitch;
+    if (start_heading >= 0.0f) rig.yaw = player.yaw = start_heading * DEG2RAD;
 
     // Menu de entrada: al arrancar normalmente; las pruebas (--screenshot, --galeria...) van
     // directo a la partida salvo que pidan el menu (--menu, --instructivo, --huecos).
@@ -745,7 +790,7 @@ int main(int argc, char **argv) {
             player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards) * cb_speed_scale(&g_combat);
             player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
             if (!g_actions.climbing) player_update(&player, &terrain, in, rig.yaw, dt);
-            if (world_clamp(&player.pos.x, &player.pos.z)) { // la frontera invisible del gran circulo
+            if (world_clamp(terrain.world, &player.pos.x, &player.pos.z)) { // la frontera invisible del gran circulo
                 static float told = -100.0f;
                 if (world_time - told > 30.0f) {
                     told = world_time;
@@ -753,6 +798,7 @@ int main(int argc, char **argv) {
                     snprintf(log, sizeof(log), "%s",
                              rg == REGION_FJORD    ? T("Más allá solo hay mar abierto: la tropa no se aventura.")
                              : rg == REGION_DESERT ? T("El gran muro del cañón cierra el desierto: no hay paso.")
+                             : rg == REGION_HIGHLAND ? T("El muro de hielo del glaciar cierra el altiplano: no hay paso.")
                                                    : T("El gran canal marca el fin de estas tierras: no hay vado."));
                 }
             }
@@ -853,7 +899,7 @@ int main(int argc, char **argv) {
                 snprintf(log, sizeof(log), "%s", placed ? T("Marcaste este lugar en el mapa.") : T("Quitaste la marca."));
             }
         }
-        camera_update(&rig, &cam, &player, dt);
+        camera_update(&rig, &cam, &player, &terrain, dt);
         terrain_update(&terrain, player.pos);
         // Clima: estacion, tiempo, nieve, lagos y glaciares (la galeria se ve siempre igual).
         Climate climate = climate_at(world_time, terrain.seed);
@@ -864,6 +910,7 @@ int main(int argc, char **argv) {
             weather_update(&weather, &climate, dt);
         }
         g_climate = climate;
+        terrain_set_haze(&terrain, sky_clear_color(climate.clouds)); // la bruma del horizonte, del color del cielo
 
         BeginTextureMode(lowres);
         ClearBackground(sky_clear_color(climate.clouds));
@@ -876,6 +923,10 @@ int main(int argc, char **argv) {
             ui_text(TextFormat(T("Vista orbital · mundo %u · estás en: %s"), terrain.seed, rg), 10, 10, 10, UI_GOLD_LIGHT);
             ui_text(T("Flechas: girar e inclinar · F5 o Esc: volver"), 10, VIRTUAL_H - 18, 10, UI_BONE_DIM);
         } else if (in_game) {
+        // El firmamento: degradado, resplandor y sol (la galeria, siempre a media mañana).
+        float sky_time = gallery_mode ? 400.0f : world_time;
+        sky_draw_background(cam, sky_time, climate.clouds, VIRTUAL_W, VIRTUAL_H);
+        rlSetClipPlanes(0.1, 3300.0); // el horizonte lejano y el cielo, a ~3 km
         BeginMode3D(cam);
         terrain_draw(&terrain);
         camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used, g_dz.tree_burn);
@@ -891,12 +942,16 @@ int main(int argc, char **argv) {
         if (!gallery_mode) dz_draw_world(&g_dz, &terrain, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
         if (!gallery_mode) hz_draw_world(&g_hazards, &terrain, &g_actions, &troop, (float)GetTime());
+        if (!gallery_mode) clouds_draw(&terrain, cam, world_time, climate.clouds, climate.wind, sky_clear_color(climate.clouds));
         EndMode3D();
         if (!gallery_mode) { // la galeria se ve siempre de dia
+            // Dentro de una nube (en una cumbre alta): niebla.
+            clouds_draw_mist(clouds_mist(&terrain, cam.position, world_time, climate.clouds), VIRTUAL_W, VIRTUAL_H);
             // Noche: se oscurece todo y se suman las estrellas, las llamas y el brillo de los fuegos.
             sky_apply_tint(world_time, climate.clouds, VIRTUAL_W, VIRTUAL_H);
             BeginMode3D(cam);
             sky_draw_stars(&sky, cam, world_time, climate.clouds);
+            sky_draw_moon(cam, world_time, climate.clouds);
             if (!g_actions.fires_out) camp_draw_flame(&camp, (float)GetTime());
             weather_draw(&weather, &climate, cam, (float)GetTime(), clock_light(world_time));
             EndMode3D();
@@ -911,6 +966,7 @@ int main(int argc, char **argv) {
             fg_draw_overlay(&g_actions, &terrain, cam, VIRTUAL_W, VIRTUAL_H);
             ag_draw_overlay(&g_actions, &troop, cam, VIRTUAL_W, VIRTUAL_H);
         }
+        rlSetClipPlanes(RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
         if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
         } else if (!menu_visible(&menu)) {
@@ -977,6 +1033,7 @@ int main(int argc, char **argv) {
     memmap_free(&g_memory);
     camp_unload(&camp);
     terrain_unload(&terrain);
+    clouds_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();
     return 0;

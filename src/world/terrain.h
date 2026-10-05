@@ -32,8 +32,8 @@ typedef struct {
     int cx, cz;
     Model model;
     float *tri;             // por triangulo: lo que hace falta para recolorear con la estacion
-    Model water[3];         // lagos, rios y canal, mar (cada uno sube distinto con la crecida)
-    bool has_water[3];
+    Model water[4];         // lagos, rios y canal, mar, agua glaciar (cada una sube distinto con la crecida)
+    bool has_water[4];
 } Chunk;
 
 typedef struct {
@@ -64,7 +64,10 @@ void terrain_draw_water(const Terrain *t, float time);
 void terrain_init(Terrain *t, unsigned seed);
 // Carga los chunks cercanos a `pos` y descarga los que quedaron lejos.
 void terrain_update(Terrain *t, Vector3 pos);
+// Dibuja los chunks y, debajo, el horizonte lejano (malla gruesa hasta ~2,4 km).
 void terrain_draw(const Terrain *t);
+// Color de la bruma del horizonte (el del cielo); recolorea si cambio.
+void terrain_set_haze(Terrain *t, Color haze);
 void terrain_unload(Terrain *t);
 
 #endif

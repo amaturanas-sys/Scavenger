@@ -98,18 +98,23 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 
 ### El mundo (implementado — `src/sim/world.*`, en juego `src/game/world_game.*` y `src/world/worldview.*`)
 Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
-- **Un gran círculo** de 2,4 km de radio con **cinco regiones fijas**: la estepa en el centro (y un sector hasta el borde) y, alrededor y siempre en este orden, el bosque de coníferas, el altiplano glaciar, la costa de fiordos y el desierto.
+- **Una gran tierra casi redonda** de 4,8 km de radio medio, de borde fractal (no una circunferencia neta), con **cinco regiones fijas**: la estepa en el centro, rodeada de ríos de meandros; el bosque de coníferas al noroeste; el desierto al noreste; el altiplano glaciar al sureste; la costa de fiordos al suroeste.
 - **Altitud media estandarizada:** costa ~12 m, desierto ~28 m, estepa ~40 m, bosque ~55 m, altiplano ~70 m (con cumbres que guardan el glaciar).
 - **La frontera:**
   - la costa termina en el mar, con fiordos estrechos que entran tierra adentro;
-  - el desierto termina en un cañón y, detrás, un muro enorme de seis estratos;
-  - la estepa, el bosque y el altiplano terminan en un gran canal, del que salen ríos tributarios hacia el centro.
-  - Nadie pasa: la frontera invisible está a 2,33 km (un aviso dice por qué).
+  - el desierto termina en un gran cañón y, detrás, un muro de siete estratos;
+  - el altiplano termina en un muro de hielo glaciar, agrietado; sus ríos bajan trenzados por lechos de grava, con lagos turquesa de deshielo;
+  - el bosque termina en un canal sigmoideo, del que salen ríos tributarios hacia adentro;
+  - Nadie pasa: la frontera invisible sigue el borde fractal (un aviso dice por qué).
 - **Cada partida, otro mundo** (la semilla): cambian el trazado de los ríos, la forma y el sitio de los lagos y las montañas, las fronteras entre regiones (dentro de su sector) y dónde caen los pueblos y las guaridas. Las reglas no cambian. La semilla viaja en la partida guardada; `--semilla N` la fija.
 - **Pueblos y reinos:** cada región tiene su reino vecino (la estepa, el Kanato de Hierro al que la tribu rinde tributo; Principado de los Pinos Negros; Señorío del Glaciar; Jarlazgo de la Costa Helada; Reino de los Oasis), una capital amurallada y dos aldeas, al estilo de su región. Al llegar, quedan en el mapa.
 - **Guaridas:** de las fieras de cada región (lobos y tigres en la estepa; osos, lobos y pumas en el bosque; lobos y pumas en el altiplano; osos en la costa; hienas y coyotes en el desierto). Cerca, aparecen sus dueños; quedan en el mapa como peligro.
 - **Fauna por región:** cada región tiene su hábitat (estepa, bosque, frío, costa, desierto).
 - **Árboles:** bosque cerrado de coníferas; pinos dispersos en la costa y las faldas del altiplano; pocos en la estepa (más junto al agua); ninguno en el desierto.
+- **Texturas del suelo:** atlas low-res de 4×4 celdas (`assets/terrain/texturas.png`, `tools/assets/texturas_terreno.py`) inspirado en fotos de la estepa y del Altai; la estación tiñe cada celda.
+- **Horizonte lejano:** una malla gruesa hasta ~2,4 km bajo los chunks cargados, que se pierde en la bruma del color del cielo.
+- **Cielo:** degradado del cenit al horizonte; el sol cruza del este al oeste por el sur; la luna, con fases (14 días), recorre el mismo arco; las estrellas giran alrededor del polo norte.
+- **Nubes:** una capa a altura fija (80 m sobre el llano del campamento) que el viento arrastra; la cobertura sale del clima. Las cumbres altas atraviesan la capa y llevan su gorro de nubes; dentro de una nube, niebla.
 - **Vista orbital (F5)** del mundo entero y **mapa general** (`--mapa-mundo archivo.png`).
 
 ### Peligros del clima y del terreno (implementado — `src/sim/hazards.*`, `src/game/hazards_game.*`)

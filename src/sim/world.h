@@ -1,18 +1,22 @@
-// El mundo (C puro, sin raylib): un gran circulo con cinco regiones climaticas fijas y
-// detalles que cambian en cada partida (la semilla).
+// El mundo (C puro, sin raylib): una gran tierra casi circular (de borde fractal, no una
+// circunferencia neta) con cinco regiones climaticas fijas y detalles que cambian en cada
+// partida (la semilla).
 //
-// Reglas fijas (iguales en todas las partidas):
-//  - la estepa ocupa el centro (alli acampa la tribu) y un sector hasta el borde; alrededor,
-//    en este orden: bosque de coniferas, altiplano glaciar, costa de fiordos y desierto;
+// Reglas fijas (iguales en todas las partidas); el norte es -Z y el este +X:
+//  - la estepa ocupa el centro (alli acampa la tribu), rodeada de rios de trayecto
+//    tortuoso (meandros) que la separan de las demas regiones;
+//  - al suroeste, la costa de fiordos, que termina en el mar;
+//  - al noroeste, un bosque de coniferas muy tupido, que termina en un canal sigmoideo del
+//    que salen rios tributarios;
+//  - al noreste, el desierto, que termina en un gran cañon y un muro de estratos;
+//  - al sureste, el altiplano glaciar, que termina en un muro de hielo; sus rios bajan
+//    trenzados por lechos de grava;
 //  - cada region tiene su altitud media (de la costa, la mas baja, al altiplano, la mas alta);
-//  - el borde del circulo: la costa termina en el mar (con fiordos que entran tierra
-//    adentro), el desierto en un enorme muro escalonado tras un cañon, y la estepa, el
-//    bosque y el altiplano en un gran canal del que salen rios tributarios hacia adentro;
 //  - los asentamientos, las guaridas y los reinos vecinos son de su region.
 //
-// Lo que cambia con la semilla: el trazado de los rios, la forma y el sitio de los lagos y
-// las montañas, las fronteras entre regiones (dentro de su sector), y donde caen los
-// asentamientos, las guaridas y las capitales.
+// Lo que cambia con la semilla: el contorno fractal del borde, el trazado de los rios y sus
+// meandros, la forma y el sitio de los lagos y las montañas, las fronteras entre regiones
+// (dentro de su cuadrante) y donde caen los asentamientos, las guaridas y las capitales.
 //
 // Todo es una funcion pura del mundo y de (x, z): el render, la fisica y la IA consultan
 // la altura y el agua sin estado propio. world_for_seed() guarda el mundo generado.
@@ -22,32 +26,36 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define WORLD_RADIUS 2400.0f // m: radio del gran circulo
-#define WORLD_LIMIT 2330.0f  // m: hasta donde se puede llegar (la frontera invisible)
+#define WORLD_RADIUS 4800.0f // m: radio medio de la tierra (el borde varia, fractal)
 #define SEA_LEVEL 0.0f
 
 typedef enum { REGION_STEPPE, REGION_FOREST, REGION_HIGHLAND, REGION_FJORD, REGION_DESERT, REGION_COUNT } Region;
 
 typedef enum { WATER_NONE, WATER_LAKE, WATER_RIVER, WATER_CANAL, WATER_SEA } WaterKind;
 
-#define LAKES_MAX 20
-#define RIVERS_MAX 12
-#define RIVER_PTS 28
-#define PEAKS_MAX 24
-#define SETTLEMENTS_MAX 16
-#define DENS_MAX 40
+#define LAKES_MAX 32
+#define RIVERS_MAX 24
+#define RIVER_PTS 160
+#define PEAKS_MAX 48
+#define SETTLEMENTS_MAX 24
+#define DENS_MAX 56
 #define CANAL_SAMPLES 360
 
 typedef struct {
     float x, z, r;  // centro y radio (la orilla se deforma con ruido)
     float level;    // nivel base del agua (absoluto)
     bool oasis;     // en el desierto
+    bool glacial;   // del altiplano: agua turquesa de deshielo
 } Lake;
 
+typedef enum { RIVER_MEANDER, RIVER_TRIBUTARY, RIVER_BRAIDED } RiverKind;
+
 typedef struct {
-    float x[RIVER_PTS], z[RIVER_PTS], level[RIVER_PTS]; // del canal hacia adentro
+    float x[RIVER_PTS], z[RIVER_PTS], level[RIVER_PTS];
+    float along[RIVER_PTS]; // metros recorridos hasta cada punto (para los canales trenzados)
     int n;
-    float width;
+    float width;            // trenzado: el ancho del lecho de grava
+    RiverKind kind;
     float minx, minz, maxx, maxz; // caja (para descartar rapido)
 } River;
 
@@ -84,7 +92,7 @@ typedef struct {
     int settlement_count;
     Den dens[DENS_MAX];
     int den_count;
-    float canal_level[CANAL_SAMPLES]; // nivel del agua del gran canal por grado
+    float canal_level[CANAL_SAMPLES]; // nivel del agua del canal del bosque por grado
     float camp_height;                // altura del llano del campamento (origen)
 } World;
 
@@ -101,18 +109,24 @@ float region_altitude(Region r);        // altitud media (m sobre el mar)
 // Habitat de la fauna de cada region (HAB_* de src/sim/animals.h).
 int region_habitat(Region r);
 
-// Altura del suelo (con lagos, rios, canal, mar y muro ya excavados).
+// Altura del suelo (con lagos, rios, canal, mar y muros ya excavados).
 float world_height(const World *w, float x, float z);
 // Superficie del agua en (x, z), o -1e9 si no hay. flood: crecida estacional de lagos y
 // rios (el mar no crece). kind (si no es NULL): que agua es.
 float world_water(const World *w, float x, float z, float flood, WaterKind *kind);
-// Distancia al borde del circulo (positiva dentro).
-float world_edge_distance(float x, float z);
-// Lleva (x, z) dentro de la frontera invisible. Devuelve true si lo movio.
-bool world_clamp(float *x, float *z);
+// El borde fractal: su radio en un angulo, y la distancia de (x, z) a el (positiva dentro).
+float world_edge_radius(const World *w, float angle);
+float world_edge_distance(const World *w, float x, float z);
+// Distancia del eje del canal del bosque al borde, en un angulo (el canal serpentea).
+float world_canal_offset(const World *w, float angle);
+// Lleva (x, z) dentro de la frontera invisible (antes del mar abierto, del muro, del canal
+// o del hielo). Devuelve true si lo movio.
+bool world_clamp(const World *w, float *x, float *z);
 
-// Un punto del eje del sector de una region, a distancia r del centro.
+// Un punto del eje del cuadrante de una region (la estepa: el centro), a distancia r del
+// centro; world_edge_point: a inset metros del borde, en el centro del cuadrante.
 void world_region_point(const World *w, Region rg, float r, float *x, float *z);
+void world_edge_point(const World *w, Region rg, float inset, float *x, float *z);
 
 // Reinos vecinos: uno por region (la estepa es del kanato al que la tribu rinde tributo).
 const char *world_kingdom_name(Region r); // UTF-8
