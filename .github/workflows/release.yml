@@ -72,6 +72,9 @@ jobs:
   publicar:
     name: Publicar la release
     needs: [android, windows]
+    # Basta el APK: si Windows falla o GitHub no le da maquina (la cola de Windows se cancela
+    # sola), la release sale igual y el zip se agrega al relanzar.
+    if: ${{ !cancelled() && needs.android.result == 'success' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
