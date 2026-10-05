@@ -53,6 +53,8 @@ bool props_takeable(const InvItem *item);
 // Dibuja un id del inventario: modelo si existe, si no un marcador.
 // grow en [0, 1] escala la altura (obras a medio construir).
 void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, float grow);
+// Fogata u hoguera (scale: la de hearth.c). Sin modelo, props_draw no las dibuja: lo hace hearth.c.
+bool props_is_fire(const InvItem *item, float *scale);
 void props_draw(Props *p);
 // true si el id ya tiene modelo importado.
 bool props_has_model(Props *p, const InvItem *item);

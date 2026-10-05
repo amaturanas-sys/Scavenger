@@ -27,8 +27,6 @@ void camp_init(Camp *c, const Terrain *t, const char *yurt_path);
 // snow en [0, 1]: nieve sobre los techos de las yurtas y las copas. fire_lit: la fogata
 // arde (la lluvia la apaga). tree_burn (o NULL): por arbol, 0 sano, 0.5 chamuscado, 1 calcinado.
 void camp_draw(const Camp *c, float time, float snow, bool fire_lit, const float *tree_burn);
-// Solo la llama (la luz de la noche la vuelve a dibujar sin oscurecer).
-void camp_draw_flame(const Camp *c, float time);
 void camp_unload(Camp *c);
 
 #endif

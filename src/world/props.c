@@ -156,6 +156,18 @@ void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, floa
     rlPopMatrix();
 }
 
+bool props_is_fire(const InvItem *item, float *scale) {
+    if (!item) return false;
+    bool bon = !strcmp(item->id, "estructura.campamento.hoguera");
+    if (!bon && strcmp(item->id, "estructura.campamento.fogata")) return false;
+    if (scale) *scale = bon ? 2.0f : 1.0f;
+    return true;
+}
+
 void props_draw(Props *p) {
-    for (int i = 0; i < p->count; i++) props_draw_item(p, p->items[i].item, p->items[i].pos, p->items[i].yaw, 1.0f);
+    for (int i = 0; i < p->count; i++) {
+        const InvItem *it = p->items[i].item;
+        if (props_is_fire(it, NULL) && !props_has_model(p, it)) continue; // los dibuja hearth.c
+        props_draw_item(p, it, p->items[i].pos, p->items[i].yaw, 1.0f);
+    }
 }

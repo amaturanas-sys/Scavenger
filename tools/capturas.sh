@@ -40,6 +40,8 @@ for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desier
 done
 # El cielo: el ocaso al oeste, la luna al este y las estrellas.
 shot cielo_ocaso 60 --dia 5 --minuto 15.5 --ir estepa --camara 0.06 --rumbo 270
+shot fogatas_dia 90 --dia 11 --minuto 7 --ir hoguera --camara 0.15
+shot fogatas_noche 90 --dia 5 --minuto 18 --ir hoguera --camara 0.15
 shot cielo_luna 60 --dia 5 --minuto 18 --ir estepa --camara 0.06 --rumbo 90
 shot orbital_1206_30 40 --dia 11 --minuto 7 --orbital 30 0.5
 shot orbital_1206_150 40 --dia 11 --minuto 7 --orbital 150 0.3

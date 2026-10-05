@@ -109,6 +109,14 @@ El norte es −Z y el este +X.
   - **Color por región:** arenisca en el desierto, liquen en el bosque y la costa.
   - **Casas por región:** yurta de fieltro, cabaña de troncos, casa de piedra, casa larga con techo de turba y adobe con cúpula. Las capitales llevan torres de piedra o de madera.
   - **Claro:** alrededor de las estructuras y los campamentos no crecen árboles ni rocas.
+- **Fogatas y hogueras** (`src/world/hearth.c`), a partir de fotos de fogatas reales:
+  - corro de cantos grises de tamaños distintos, algunos tiznados, sobre ceniza y tierra quemada;
+  - leños en tipi con la corteza abajo y la punta carbonizada, y dos troncos cruzados en el lecho;
+  - brasas que laten y lenguas de llama en capas: roja por fuera, naranja, amarilla y un corazón casi blanco; tiemblan, se mecen y el viento las inclina;
+  - chispas que suben girando, se enfrían (amarillo, naranja, rojo) y se apagan;
+  - **humo:** pequeñas bocanadas oscuras que salen sobre las llamas y suben en hilera; el viento las inclina y, al subir, crecen, se aclaran y se desvanecen. De noche se oscurecen con el cielo;
+  - la **hoguera** es la misma fogata al doble de tamaño: más piedras, más leños, llamas más altas y una columna de humo más larga. La capital también tiene una;
+  - las tribus y las aldeas tienen la suya. Con la lluvia, todas quedan apagadas: sin llamas ni humo.
 
 ![Cielo](mundo/cielo.png)
 
@@ -155,6 +163,7 @@ Sitios de `--ir`:
 - **Pueblos y fieras:** capital, aldea y guarida.
 - **Tribus:** tribu (amiga), rival y neutral.
 - **Estructuras:** kurgan, balbales, piedra, fortaleza, ciudad, petroglifos, caravasar, torre, ovoo, pozo y embarcadero.
+- **Fuegos:** fogata (la del campamento, de cerca) y hoguera (pone una junto a ella).
 
 `--camara` fija la inclinación: 0,05 es casi de canto, con el cielo a la vista; 1,25 es desde arriba. `--rumbo` fija los grados: 0 sur, 90 este, 180 norte, 270 oeste.
 
@@ -166,6 +175,10 @@ En el juego, **F5** abre la vista orbital (flechas: girar e inclinar).
 |---|---|
 | ![1206](mundo/mapa_1206.png) | ![42](mundo/mapa_42.png) |
 | ![2024](mundo/mapa_2024.png) | ![31337](mundo/mapa_31337.png) |
+
+![Fogatas](mundo/fogatas.png)
+
+*Una hoguera junto a la fogata del campamento, de día y de noche (`--ir hoguera`).*
 
 ### Vista orbital
 
