@@ -468,7 +468,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             if (r0 < rd) {
                 float size = 0.4f + 1.4f * r1 * r1 + (k[REGION_HIGHLAND] + k[REGION_FJORD]) * 0.8f * r2;
                 push_rock(&b, (Vector3){ x, y, z }, size, h, at);
-            } else if (slope < 0.9f) {
+            } else if (slope < 0.9f && y < t->look.snowline - 6.0f) { // ni en el glaciar
                 push_bush(&b, (Vector3){ x, y, z }, 0.5f + 0.7f * r1, 0.4f + 0.8f * r2 * (0.5f + k[REGION_FOREST]), r2, at);
             }
         }

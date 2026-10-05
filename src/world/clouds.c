@@ -2,8 +2,10 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include "platform.h"
 #include "raymath.h"
 
 #define CELL 230.0f // m: una nube posible por celda (en el marco que arrastra el viento)
@@ -14,6 +16,10 @@ static const Vector2 WIND_DIR = { 0.86f, 0.5f }; // el mismo viento que la lluvi
 
 static Model g_puff;
 static bool g_ready;
+// El atlas de nubes pixeladas (assets/sky/nubes.png, tools/assets/nubes.py): 8 celdas de 64x32
+// en 2 columnas. Filas: cumulos, estratos, cubierto, tormenta.
+static Texture2D g_atlas;
+static bool g_atlas_tried;
 static Vector2 g_drift; // cuanto arrastro el viento la capa
 static float g_last_time = -1.0f;
 
@@ -56,6 +62,38 @@ static void ensure_puff(void) {
 void clouds_unload(void) {
     if (g_ready) UnloadModel(g_puff);
     g_ready = false;
+    if (g_atlas.id) UnloadTexture(g_atlas);
+    g_atlas = (Texture2D){ 0 };
+    g_atlas_tried = false;
+}
+
+static void ensure_atlas(void) {
+    if (g_atlas_tried) return;
+    g_atlas_tried = true;
+    const char *path = platform_asset_path("assets/sky/nubes.png");
+    if (platform_asset_exists(path)) g_atlas = LoadTexture(path);
+    if (g_atlas.id) SetTextureFilter(g_atlas, TEXTURE_FILTER_POINT); // pixeles nitidos
+    platform_note_asset("assets/sky/nubes.png", g_atlas.id != 0);
+}
+
+// Que celda del atlas usa una nube: con poca cobertura, cumulos; con mas, estratos y cielo
+// cubierto; con tormenta, nubarrones.
+static int cloud_tile(float cover, uint32_t h) {
+    float r = unit(h, 4);
+    int row = cover < 0.35f ? (r < 0.8f ? 0 : 1) : cover < 0.75f ? (r < 0.4f ? 0 : r < 0.7f ? 1 : 2) : (r < 0.6f ? 3 : 2);
+    return row * 2 + (int)((h >> 13) & 1u);
+}
+
+typedef struct {
+    Vector3 p;
+    float w, d2;
+    int tile;
+    Color c;
+} Sprite;
+
+static int by_distance(const void *a, const void *b) {
+    float da = ((const Sprite *)a)->d2, db = ((const Sprite *)b)->d2;
+    return da < db ? 1 : da > db ? -1 : 0; // de lejos a cerca
 }
 
 float clouds_base(const Terrain *t) { return t->plain + CLOUD_ABOVE_PLAIN; }
@@ -123,6 +161,7 @@ static int peak_caps(const Terrain *t, float time, float cover, float base, floa
 
 void clouds_draw(const Terrain *t, Camera3D cam, float time, float cover, float wind, Color haze) {
     ensure_puff();
+    ensure_atlas();
     advance(time, wind);
     float base = clouds_base(t);
     Color white = mixc((Color){ 246, 247, 250, 255 }, (Color){ 158, 162, 170, 255 }, (cover - 0.4f) / 0.6f);
@@ -130,14 +169,19 @@ void clouds_draw(const Terrain *t, Camera3D cam, float time, float cover, float 
     float lx = cam.position.x - g_drift.x, lz = cam.position.z - g_drift.y;
     int r = (int)(CLOUD_VIEW / CELL) + 1, c0x = (int)floorf(lx / CELL), c0z = (int)floorf(lz / CELL);
     float puffs[PUFFS_MAX][4];
+    static Sprite spr[1024];
+    int ns = 0;
     for (int dz = -r; dz <= r; dz++)
         for (int dx = -r; dx <= r; dx++) {
-            int n = cell_cloud(c0x + dx, c0z + dz, t->seed, base, cover, puffs);
+            int cx = c0x + dx, cz = c0z + dz, n = cell_cloud(cx, cz, t->seed, base, cover, puffs);
+            int tile = cloud_tile(cover, hash3(cx, cz, t->seed ^ 0xC10Du));
             for (int i = 0; i < n; i++) {
                 Vector3 p = { puffs[i][0] + g_drift.x, puffs[i][1], puffs[i][2] + g_drift.y };
                 float d = Vector2Distance((Vector2){ p.x, p.z }, (Vector2){ cam.position.x, cam.position.z });
                 if (d > CLOUD_VIEW) continue;
-                draw_puff(p, puffs[i][3], mixc(white, haze, (d - 500.0f) / (CLOUD_VIEW - 500.0f)));
+                Color c = mixc(white, haze, (d - 500.0f) / (CLOUD_VIEW - 500.0f));
+                if (!g_atlas.id) draw_puff(p, puffs[i][3], c);
+                else if (ns < 1024) spr[ns++] = (Sprite){ p, puffs[i][3] * 2.6f, Vector3DistanceSqr(p, cam.position), tile, c };
             }
         }
     float caps[64][4];
@@ -146,7 +190,16 @@ void clouds_draw(const Terrain *t, Camera3D cam, float time, float cover, float 
         Vector3 p = { caps[i][0], caps[i][1], caps[i][2] };
         float d = Vector2Distance((Vector2){ p.x, p.z }, (Vector2){ cam.position.x, cam.position.z });
         if (d > CLOUD_VIEW * 1.4f) continue;
-        draw_puff(p, caps[i][3], mixc(white, haze, (d - 700.0f) / (CLOUD_VIEW * 1.4f - 700.0f)));
+        Color c = mixc(white, haze, (d - 700.0f) / (CLOUD_VIEW * 1.4f - 700.0f));
+        if (!g_atlas.id) draw_puff(p, caps[i][3], c);
+        else if (ns < 1024) spr[ns++] = (Sprite){ p, caps[i][3] * 2.4f, Vector3DistanceSqr(p, cam.position), cover > 0.75f ? 4 + (i & 1) : (i & 1), c };
+    }
+    if (!ns) return;
+    // Las nubes del atlas: carteles de cara a la camara, de lejos a cerca (la transparencia).
+    qsort(spr, (size_t)ns, sizeof(Sprite), by_distance);
+    for (int i = 0; i < ns; i++) {
+        Rectangle src = { (float)(spr[i].tile % 2) * 64.0f, (float)(spr[i].tile / 2) * 32.0f, 64.0f, 32.0f };
+        DrawBillboardRec(cam, g_atlas, src, spr[i].p, (Vector2){ spr[i].w, spr[i].w * 0.5f }, spr[i].c);
     }
 }
 

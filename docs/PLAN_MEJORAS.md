@@ -1,5 +1,14 @@
 # Plan de mejoras tras la prueba en tablet (v0.1.0)
 
+> **Estado:** hecho en v0.1.1 (fases 1 y 2) y v0.2.0 (fases 3 a 6).
+>
+> **Quedó para después:**
+> - pasar a OpenGL ES 3 (por ahora se sigue en ES 2, con texturas seguras);
+> - la reasignación de teclas;
+> - la rejilla A\* (los bigotes y la orilla resuelven los lagos);
+> - el comercio con las tribus amigables;
+> - el botín y los relatos de las ruinas.
+
 Lo que reveló la primera prueba en Android, con sus causas y el trabajo para resolverlo. Cada fase va en su propio PR, con CI en verde. Las fases 1 y 2 salen enseguida como **v0.1.1**, para volver a probar en la tablet; el resto sale como **v0.2.0**.
 
 ## Fase 1 — Texturas, menú e iconos en Android (bloqueante)
