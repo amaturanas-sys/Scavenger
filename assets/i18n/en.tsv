@@ -404,12 +404,13 @@ Obra terminada: %s.	Work finished: %s.
 Obras	Works
 Para cribar hay que estar en la orilla, mirando al agua.	To pan you must stand on the shore, facing the water.
 Para hervir el agua hace falta un fuego encendido cerca.	Boiling water needs a lit fire nearby.
-Para llenar el odre hay que estar en la orilla, mirando al agua.	To fill the waterskin you must stand on the shore, facing the water.
+Para llenar el odre hay que estar en la orilla, mirando al agua, o junto a un pozo.	To fill the waterskin you must stand on the shore, facing the water, or next to a well.
 Pasas el arma a la otra mano: %s.	You switch the weapon to the other hand: %s.
 Q / E cambia de pestaña	Q / E switches tab
 Recoges %d hierbas curativas.	You gather %d healing herbs.
 Reparar	Repair
 Requiere: %s	Requires: %s
+Sacas agua del pozo: +%d agua limpia (no hace falta hervirla).	You draw water from the well: +%d clean water (no need to boil it).
 Te falta: %s.	You lack: %s.
 Tomas %d cosas%s.	You take %d things%s.
 Tomaste: %s (T para lanzarlo).	You took: %s (T to throw it).
@@ -1023,6 +1024,7 @@ va · clic: se queda	goes · click: stays
 # --- src/game/water_game.c
  · fiebre	 · fever
 Bebes del agua que corre por el suelo. Puede traer espíritus malditos...	You drink the water running on the ground. It may carry cursed spirits...
+Bebes del pozo: agua honda y limpia.	You drink from the well: deep, clean water.
 Bebes: %s.	You drink: %s.
 Bebes: %s. El agua cruda puede traer espíritus malditos: mejor hervida.	You drink: %s. Raw water may carry cursed spirits: better boiled.
 Bebes: %s. Estás %s: torpe con las armas y te cansas antes.	You drink: %s. You are %s: clumsy with weapons and you tire sooner.
@@ -1038,6 +1040,7 @@ Te desmayaste de sed; la tribu te llevó al campamento y te dio de beber (moral 
 # --- src/game/world_game.c
 El campamento de los %s (tribu %s): te observan, sin buscar pelea.	The camp of the %s (%s tribe): they watch you, without seeking a fight.
 Encuentras %s, de otros tiempos: queda en el mapa.	You find %s from other times: it is now on the map.
+Encuentras %s: agua limpia (Tab: llenar el odre · N: beber). Queda en el mapa.	You find %s: clean water (Tab: fill the waterskin · N: drink). It is now on the map.
 Encuentras %s: queda en el mapa.	You find %s: it is now on the map.
 Entras en: %s (tierras del %s).	Entering: %s (lands of the %s).
 Llegas a %s, aldea del %s.	You reach %s, a village of the %s.
@@ -1104,7 +1107,7 @@ Cobertura contra flechas y cargas. Requiere pala.	Cover against arrows and charg
 Corral	Corral
 Cribar en el agua	Pan in the water
 En la orilla de un río o un lago: piedras preciosas rodadas, plata y oro.	On the shore of a river or lake: worn gems, silver and gold.
-En la orilla: agua cruda. Puede traer espíritus malditos: hiérvela antes de beberla.	At the shore: raw water. It may carry cursed spirits: boil it before drinking.
+En la orilla: agua cruda (puede traer espíritus malditos: hiérvela). Junto a un pozo: agua limpia.	On the shore: raw water (it may carry cursed spirits: boil it). Next to a well: clean water.
 Encender antorcha	Light torch
 Enfundar / desenfundar	Sheathe / draw
 Ensillar un animal para montarlo.	Saddle an animal to ride it.

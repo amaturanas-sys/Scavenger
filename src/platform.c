@@ -35,11 +35,18 @@ int platform_asset_loaded(void) { return g_loaded; }
 
 struct android_app *GetAndroidApp(void); // provisto por raylib (rcore_android.c)
 
-const char *platform_asset_path(const char *rel) { return rel; }
+// En el APK, la carpeta assets/ del repo es la raiz del AssetManager (aapt2 -A assets): el
+// archivo assets/terrain/texturas.png se pide como "terrain/texturas.png". Con el prefijo,
+// AAssetManager_open no lo encuentra y no carga ninguna imagen ni modelo.
+const char *platform_asset_path(const char *rel) {
+    if (rel && !strncmp(rel, "assets/", 7)) return rel + 7;
+    return rel;
+}
 
 bool platform_asset_exists(const char *rel) {
     struct android_app *app = GetAndroidApp();
     if (!app || !app->activity || !app->activity->assetManager || !rel) return false;
+    rel = platform_asset_path(rel);
     AAsset *a = AAssetManager_open(app->activity->assetManager, rel, AASSET_MODE_UNKNOWN);
     if (a) AAsset_close(a);
     return a != NULL;

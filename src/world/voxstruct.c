@@ -243,6 +243,22 @@ static bool build_building(VoxBuilding b, VoxGrid *g) {
         }
         stones_mixed(g, 9u);
         return true;
+    case VB_WALL_STONE: // 8 m de muro de piedra, con almenas y adarve
+        if (!vox_init(g, 32, FOUND + 20, 6, 0.25f)) return false;
+        vox_box(g, 0, 0, 1, 31, FOUND + 16, 4, M_STONE);
+        for (int x = 0; x < 32; x += 4) vox_box(g, x, FOUND + 17, 1, x + 1, FOUND + 19, 4, M_STONE);
+        for (int y = FOUND + 3; y < FOUND + 16; y += 4) vox_box(g, 0, y, 0, 31, y, 0, M_STONE_DARK); // hiladas
+        stones_mixed(g, 3u);
+        return true;
+    case VB_PALISADE: // troncos aguzados, de alturas un poco distintas, con un travesaño
+        if (!vox_init(g, 32, FOUND + 22, 4, 0.25f)) return false;
+        for (int x = 0; x < 32; x += 2) {
+            int h = FOUND + 16 + (x * 7) % 3;
+            vox_box(g, x, 0, 1, x + 1, h, 2, (x / 2) % 2 ? M_WOOD : M_WOOD_DARK);
+            vox_set(g, x, h + 1, 1, M_WOOD_DARK); // la punta
+        }
+        vox_box(g, 0, FOUND + 9, 0, 31, FOUND + 9, 0, M_WOOD_DARK);
+        return true;
     case VB_TOWER_WOOD:
         if (!vox_init(g, 8, FOUND + 16, 8, 0.5f)) return false;
         vox_box(g, 1, 0, 1, 6, FOUND + 12, 6, M_WOOD_DARK);
@@ -384,7 +400,11 @@ static struct {
     float found_h; // m de cimiento (se dibuja hundido)
 } g_sites[SITE_SLOTS], g_builds[VB_KINDS], g_feats[VF_KINDS * VF_VARIANTS];
 
-static bool to_model(VoxGrid *g, Region r, Model *out) {
+static bool to_model(VoxGrid *g, Region r, Model *out, bool refine) {
+    // Estructuras y casas: el doble de resolucion (cada celda en 2x2x2, con las esquinas
+    // redondeadas) y tono por celda. Las formaciones del paisaje (muchas a la vez) no se refinan.
+    g->jitter = 22;
+    if (refine) vox_refine(g);
     uint8_t pal[M_COUNT][4];
     palette_for(r, pal);
     VoxMesh vm;
@@ -418,8 +438,8 @@ void voxs_draw_site(SiteKind kind, Region region, Vector3 at, float yaw, Color t
         g_sites[i].tried = true;
         VoxGrid g;
         if (build_site2(kind, region, &g, 1000u + (uint32_t)i * 17u)) {
-            g_sites[i].ok = to_model(&g, region, &g_sites[i].model);
             g_sites[i].found_h = FOUND * g.size;
+            g_sites[i].ok = to_model(&g, region, &g_sites[i].model, true);
             vox_free(&g);
         }
     }
@@ -432,8 +452,8 @@ void voxs_draw_building(VoxBuilding b, Vector3 at, float yaw, float scale, Color
         g_builds[b].tried = true;
         VoxGrid g;
         if (build_building(b, &g)) {
-            g_builds[b].ok = to_model(&g, REGION_STEPPE, &g_builds[b].model);
             g_builds[b].found_h = FOUND * g.size;
+            g_builds[b].ok = to_model(&g, REGION_STEPPE, &g_builds[b].model, true);
             vox_free(&g);
         }
     }
@@ -447,7 +467,7 @@ void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float s
         g_feats[i].tried = true;
         VoxGrid g;
         if (build_feature(f, variant & (VF_VARIANTS - 1), &g)) {
-            g_feats[i].ok = to_model(&g, REGION_STEPPE, &g_feats[i].model);
+            g_feats[i].ok = to_model(&g, REGION_STEPPE, &g_feats[i].model, false);
             g_feats[i].found_h = (f == VF_ICEBERG ? 3 : FOUND) * g.size;
             vox_free(&g);
         }

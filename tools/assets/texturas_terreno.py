@@ -26,6 +26,7 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "assets", "terrain", "texturas.png")
 GUIDE = os.path.join(ROOT, "assets", "terrain", "texturas_guia.png")
+WATER = os.path.join(ROOT, "assets", "terrain", "agua.png")
 CELL = 32
 COLS = 4
 
@@ -284,13 +285,30 @@ def build():
     return atlas
 
 
+def water_tile():
+    """El agua: ondas claras sobre un fondo casi blanco (el juego la tiñe con el color de cada agua).
+    32x32, potencia de 2: se repite sin costuras (OpenGL ES 2)."""
+    n = wrap_noise(21, 4)
+    n2 = wrap_noise(22, 8)
+
+    def f(x, y, rnd):
+        w = math.sin((y + 5.0 * n(x, y)) * 2 * math.pi / 8.0 + 2.0 * n2(x, y))
+        v = 214 + 22 * w
+        if w > 0.86:
+            v = 255  # cresta que brilla
+        return gray(v, (1.0, 1.0, 1.0))
+
+    return tile(f, 300)
+
+
 def generar(force):
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     if os.path.exists(OUT) and not force:
         print(f"{OUT} ya existe (puede tener tus cambios): usa --forzar para rehacerlo.")
         return
     build().save(OUT)
-    print(f"Escrito {OUT}")
+    water_tile().save(WATER)
+    print(f"Escrito {OUT} y {WATER}")
 
 
 def guia():

@@ -17,6 +17,8 @@ typedef enum {
     VB_ADOBE,         // casa de adobe con cupula (desierto)
     VB_TOWER_STONE,   // torre de muralla (capitales)
     VB_TOWER_WOOD,
+    VB_WALL_STONE,    // tramo de muralla de 8 m (a lo largo de x), con almenas
+    VB_PALISADE,      // tramo de empalizada de troncos de 8 m
     VB_KINDS
 } VoxBuilding;
 

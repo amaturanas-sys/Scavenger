@@ -96,6 +96,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Tras la prueba en tablet (v0.1.1–v0.2.0): assets dentro del APK; controles con alternativa Ctrl, botón Atrás y botones táctiles; diagnóstico; animales fuera de los lagos (beben desde la orilla); arroyos, rocas, matas y flores; más fauna; tribus rivales, neutrales y amigables; ruinas y estructuras por región; nubes pixeladas sacadas de fotos.
 - [x] Voxeles (v0.3.0): nubes al modo de Nubis (perfil dimensional, erosión por ruido, Beer-Lambert y ambiente horneados) con carteles a lo lejos; estructuras y casas de voxeles con caras expuestas y oclusión ambiental; ruinas erosionadas.
 - [x] Paisajes de las fotos (v0.3.1): playas volcánicas, basalto, farallones y espuma (fiordos); lechos de cantos y rápidos (ríos); farallones estratificados, torres de arenisca y creta (desierto); seracs y témpanos (glaciar).
+- [x] Tras la prueba en Lenovo P11 (v0.3.2): imágenes y modelos en Android (ruta sin prefijo `assets/`), minifotos y ajustes; agua continua con pendiente y textura; fogatas con halo chico y punto brillante; voxeles al doble de resolución; pozos con agua limpia.
 - [x] Combate montado (golpe con inercia, lanza que derriba, arrollar, la montura recibe golpes, derribo que desmonta), jinetes bandidos y botín de los enemigos.
 - [ ] Trepar árboles y rocas sin trepa (Fase 2).
 

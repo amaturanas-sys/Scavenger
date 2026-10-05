@@ -23,6 +23,9 @@ float wg_clumsy(const GameActions *ga);
 float wg_stamina(const GameActions *ga);
 // ¿Hay agua (lago o rio) a menos de 60 m de (x, z)?
 bool wg_water_near(const Terrain *t, float x, float z);
+// ¿Junto a un pozo (o la fuente de un caravasar)? Su agua viene de hondo y es limpia: se bebe
+// y se lleva sin hervir.
+bool wg_at_well(const Terrain *t, float x, float z);
 // Sed, borrachera y enfermedad bajo la salud (alineado a la derecha).
 void wg_draw_hud(const GameActions *ga, int right_x, int y);
 

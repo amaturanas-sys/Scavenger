@@ -82,6 +82,11 @@ El norte es −Z y el este +X.
   ![Paisajes](mundo/paisajes.png)
 
   *Farallones y basalto en los fiordos, roquerío con espuma, arroyo con cantos y rápidos · cañón con farallones en estratos, torre de arenisca y creta, frente de seracs.*
+- **Agua:**
+  - es una malla continua sobre la rejilla del suelo (2 m) con el nivel en cada vértice: los ríos bajan en pendiente como un torrente, sin escalones;
+  - un vértice seco toma el nivel de sus vecinos con agua, así el borde se mete bajo la orilla y no quedan huecos;
+  - lleva una textura de ondas (`assets/terrain/agua.png`) teñida con el color de cada agua.
+- **Estructuras de voxeles, resolución:** cada modelo se refina al doble (`vox_refine`: cada celda en 2×2×2, esquinas salientes gastadas y rincones rellenos) y lleva tono por celda, piedra a piedra y tabla a tabla. Las murallas de las capitales son tramos de voxeles: piedra con almenas o empalizada.
 - **Horizonte lejano:** una malla gruesa, de una celda por chunk, que llega a ~2,4 km bajo los chunks cargados. Deja un hueco donde están los chunks. Así se ven a lo lejos las montañas, los muros, el hielo y el mar. Lo lejano se pierde en una bruma del color del horizonte.
 - **Cielo** (`src/world/sky.c`):
   - un degradado del cenit al horizonte;

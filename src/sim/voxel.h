@@ -22,6 +22,7 @@ typedef struct {
     float size;     // metros por celda
     uint8_t *m;     // material (0 vacio) o densidad (1..255) de cada celda: x + nx * (z + nz * y)
     uint8_t *light; // opcional: luz horneada por celda (0..255), para las nubes
+    uint8_t jitter; // 0..40: variacion de tono por celda (piedras, tablas, fieltro: menos plano)
 } VoxGrid;
 
 bool vox_init(VoxGrid *g, int nx, int ny, int nz, float size);
@@ -40,6 +41,11 @@ void vox_ellipsoid(VoxGrid *g, float cx, float cy, float cz, float rx, float ry,
 void vox_carve(VoxGrid *g, int x0, int y0, int z0, int x1, int y1, int z1);
 // Ruinas: quita celdas donde ruido < amount * (altura relativa)^0.7 (lo alto cae antes).
 void vox_erode(VoxGrid *g, uint32_t seed, float amount);
+
+// Duplica la resolucion (cada celda pasa a 2x2x2, de la mitad de tamaño) y redondea: quita
+// las esquinas salientes (pocas vecinas llenas) y rellena los rincones (muchas vecinas).
+// Las formas ganan detalle sin cambiar de tamaño. false si no hay memoria.
+bool vox_refine(VoxGrid *g);
 
 // Ruido de valores 3D en [0, 1] (suave), para la erosion y las nubes.
 float vox_noise3(float x, float y, float z, uint32_t seed);

@@ -73,6 +73,41 @@ void vox_ellipsoid(VoxGrid *g, float cx, float cy, float cz, float rx, float ry,
     }
 }
 
+bool vox_refine(VoxGrid *g) {
+    VoxGrid r;
+    if (!vox_init(&r, g->nx * 2, g->ny * 2, g->nz * 2, g->size * 0.5f)) return false;
+    for (int y = 0; y < r.ny; y++)
+        for (int z = 0; z < r.nz; z++)
+            for (int x = 0; x < r.nx; x++) r.m[idx(&r, x, y, z)] = g->m[idx(g, x / 2, y / 2, z / 2)];
+    // Redondeo: una pasada que decide con la rejilla original refinada (no en cascada).
+    uint8_t *out = malloc((size_t)r.nx * r.ny * r.nz);
+    if (out) {
+        memcpy(out, r.m, (size_t)r.nx * r.ny * r.nz);
+        for (int y = 1; y < r.ny; y++) // la fila de abajo (cimiento) no se toca
+            for (int z = 0; z < r.nz; z++)
+                for (int x = 0; x < r.nx; x++) {
+                    int full = 0;
+                    uint8_t near = 0;
+                    for (int dy = -1; dy <= 1; dy++)
+                        for (int dz = -1; dz <= 1; dz++)
+                            for (int dx = -1; dx <= 1; dx++) {
+                                if (!dx && !dy && !dz) continue;
+                                uint8_t v = vox_get(&r, x + dx, y + dy, z + dz);
+                                if (v) full++, near = v;
+                            }
+                    int i = idx(&r, x, y, z);
+                    if (r.m[i] && full <= 9) out[i] = 0;          // esquina saliente: se gasta
+                    else if (!r.m[i] && full >= 19) out[i] = near; // rincon: se llena
+                }
+        memcpy(r.m, out, (size_t)r.nx * r.ny * r.nz);
+        free(out);
+    }
+    r.jitter = g->jitter;
+    vox_free(g);
+    *g = r;
+    return true;
+}
+
 // ------------------------------------------------------------------ ruido
 static uint32_t hash4(int x, int y, int z, uint32_t s) {
     uint32_t h = (uint32_t)x * 0x8DA6B343u ^ (uint32_t)y * 0xD8163841u ^ (uint32_t)z * 0xCB1AB31Fu ^ s * 0x165667B1u;
@@ -242,6 +277,12 @@ bool vox_mesh(const VoxGrid *g, const uint8_t (*palette)[4], VoxMesh *out) {
                     base[0] = l, base[1] = l, base[2] = (uint8_t)(l + (255 - l) / 12), base[3] = 255;
                 } else {
                     memcpy(base, palette ? palette[m] : (const uint8_t[4]){ 200, 200, 200, 255 }, 4);
+                    if (g->jitter) { // tono de cada celda: piedra a piedra, tabla a tabla
+                        uint32_t h = (uint32_t)x * 73856093u ^ (uint32_t)y * 19349663u ^ (uint32_t)z * 83492791u;
+                        h ^= h >> 13, h *= 0x5BD1E995u, h ^= h >> 15;
+                        float k = 1.0f + ((float)(h & 0xFF) / 255.0f - 0.5f) * (float)g->jitter / 50.0f;
+                        for (int ch = 0; ch < 3; ch++) base[ch] = (uint8_t)fminf(255.0f, base[ch] * k);
+                    }
                 }
                 for (int f = 0; f < 6; f++) {
                     if (vox_get(g, x + FACE_N[f][0], y + FACE_N[f][1], z + FACE_N[f][2])) continue;

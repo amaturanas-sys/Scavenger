@@ -22,8 +22,24 @@ int wg_water_room(GameActions *ga, const Props *props, const Player *p) {
     return room > 0 ? room : 0;
 }
 
+bool wg_at_well(const Terrain *t, float x, float z) {
+    if (!t || !t->world) return false;
+    for (int i = 0; i < t->world->site_count; i++) {
+        const WorldSite *st = &t->world->sites[i];
+        float reach = st->kind == SITE_WELL ? 4.5f : st->kind == SITE_CARAVANSERAI ? 6.0f : 0.0f;
+        float dx = x - st->x, dz = z - st->z;
+        if (reach > 0.0f && dx * dx + dz * dz < reach * reach) return true;
+    }
+    return false;
+}
+
 bool wg_water_near(const Terrain *t, float x, float z) {
     if (!t) return false;
+    for (int i = 0; t->world && i < t->world->site_count; i++) { // un pozo cerca del campamento tambien sirve
+        const WorldSite *st = &t->world->sites[i];
+        float dx = x - st->x, dz = z - st->z;
+        if (st->kind == SITE_WELL && dx * dx + dz * dz < 60.0f * 60.0f) return true;
+    }
     for (float r = 0.0f; r <= 60.0f; r += 15.0f)
         for (int k = 0; k < (r > 0.0f ? 8 : 1); k++) {
             float a = (float)k * 0.785398f, px = x + cosf(a) * r, pz = z + sinf(a) * r;
@@ -55,6 +71,12 @@ static void drink(GameActions *ga, const Props *props, Player *p, const Hazards 
             snprintf(log, len, T("Bebes: %s. El agua cruda puede traer espíritus malditos: mejor hervida."), name);
         else
             snprintf(log, len, T("Bebes: %s."), name);
+        return;
+    }
+    // Junto a un pozo: agua limpia, sin espiritus.
+    if (wg_at_well(ga->terrain, p->pos.x, p->pos.z)) {
+        hydration_drink(&ga->hydro, DRINK_BOILED, 0.0f, &ga->rng);
+        snprintf(log, len, "%s", T("Bebes del pozo: agua honda y limpia."));
         return;
     }
     // Sin nada que beber: del rio o del lago, si estas en la orilla.

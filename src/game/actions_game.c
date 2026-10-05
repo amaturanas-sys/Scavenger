@@ -309,8 +309,8 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
         }
         break;
     case ACTION_FILL_WATER:
-        if (!ga->terrain || !gems_water_ahead(ga->terrain, p)) {
-            snprintf(log, len, "%s", T("Para llenar el odre hay que estar en la orilla, mirando al agua."));
+        if (!ga->terrain || (!gems_water_ahead(ga->terrain, p) && !wg_at_well(ga->terrain, p->pos.x, p->pos.z))) {
+            snprintf(log, len, "%s", T("Para llenar el odre hay que estar en la orilla, mirando al agua, o junto a un pozo."));
             return;
         }
         if (wg_water_room(ga, props, p) <= 0) {
@@ -467,6 +467,11 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         break;
     case ACTION_PAN: gems_pan(ga, props, p, log, len); break;
     case ACTION_FILL_WATER: {
+        if (ga->terrain && wg_at_well(ga->terrain, p->pos.x, p->pos.z)) { // el pozo: agua limpia, como hervida
+            int n = ig_store(ga, props, p, "utileria.consumible.agua_hervida", wg_water_room(ga, props, p), 1.0f);
+            snprintf(log, len, T("Sacas agua del pozo: +%d agua limpia (no hace falta hervirla)."), n);
+            break;
+        }
         int n = ig_store(ga, props, p, "utileria.consumible.agua", wg_water_room(ga, props, p), 1.0f);
         snprintf(log, len, T("Llenas el odre: +%d agua cruda. Hiérvela junto a un fuego antes de beberla (o bebe con riesgo)."), n);
         break;
