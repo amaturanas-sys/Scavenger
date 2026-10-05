@@ -2573,7 +2573,7 @@ static void test_world_regions_borders_and_sites(void) {
         CHECK(wk == WATER_CANAL && lv > world_height(w, cosf(fa) * cr, sinf(fa) * cr) + 1.0f);
         // Los rios: meandros alrededor de la estepa; tributarios que nacen en el canal; trenzados
         // en el altiplano; el agua siempre baja.
-        int kinds[3] = { 0, 0, 0 };
+        int kinds[RIVER_KINDS] = { 0 };
         for (int i = 0; i < w->river_count; i++) {
             const River *rv = &w->rivers[i];
             kinds[rv->kind]++;
@@ -2583,14 +2583,14 @@ static void test_world_regions_borders_and_sites(void) {
                 CHECK(fabsf(world_edge_distance(w, rv->x[0], rv->z[0]) - world_canal_offset(w, th)) < 3.0f);
                 for (int j = 1; j < rv->n; j++) CHECK(rv->level[j] >= rv->level[j - 1]);
             }
-            if (rv->kind == RIVER_BRAIDED)
+            if (rv->kind == RIVER_BRAIDED || rv->kind == RIVER_CREEK)
                 for (int j = 1; j < rv->n; j++) CHECK(rv->level[j] <= rv->level[j - 1]);
             if (rv->kind == RIVER_MEANDER) { // cerca del contorno de la estepa
                 float r0 = sqrtf(rv->x[rv->n / 2] * rv->x[rv->n / 2] + rv->z[rv->n / 2] * rv->z[rv->n / 2]);
                 CHECK(r0 > 0.2f * WORLD_RADIUS && r0 < 0.55f * WORLD_RADIUS);
             }
         }
-        CHECK(kinds[RIVER_MEANDER] >= 4 && kinds[RIVER_TRIBUTARY] >= 3 && kinds[RIVER_BRAIDED] >= 3);
+        CHECK(kinds[RIVER_MEANDER] >= 4 && kinds[RIVER_TRIBUTARY] >= 3 && kinds[RIVER_BRAIDED] >= 3 && kinds[RIVER_CREEK] >= 8);
         // Agua cerca del campamento; el campamento, en seco.
         CHECK(sqrtf(w->lakes[0].x * w->lakes[0].x + w->lakes[0].z * w->lakes[0].z) < 260.0f);
         CHECK(world_water(w, 0.0f, 0.0f, 3.0f, NULL) < world_height(w, 0.0f, 0.0f));

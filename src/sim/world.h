@@ -34,7 +34,7 @@ typedef enum { REGION_STEPPE, REGION_FOREST, REGION_HIGHLAND, REGION_FJORD, REGI
 typedef enum { WATER_NONE, WATER_LAKE, WATER_RIVER, WATER_CANAL, WATER_SEA } WaterKind;
 
 #define LAKES_MAX 32
-#define RIVERS_MAX 24
+#define RIVERS_MAX 48
 #define RIVER_PTS 160
 #define PEAKS_MAX 48
 #define SETTLEMENTS_MAX 24
@@ -48,7 +48,8 @@ typedef struct {
     bool glacial;   // del altiplano: agua turquesa de deshielo
 } Lake;
 
-typedef enum { RIVER_MEANDER, RIVER_TRIBUTARY, RIVER_BRAIDED } RiverKind;
+// Arroyo: un cauce chico (2 a 3,5 m) que baja de lomas, cumbres y bosques hasta un rio.
+typedef enum { RIVER_MEANDER, RIVER_TRIBUTARY, RIVER_BRAIDED, RIVER_CREEK, RIVER_KINDS } RiverKind;
 
 typedef struct {
     float x[RIVER_PTS], z[RIVER_PTS], level[RIVER_PTS];
