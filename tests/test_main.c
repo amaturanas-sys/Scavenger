@@ -7,6 +7,7 @@
 #include "../src/sim/actions.h"
 #include "../src/sim/anim_index.h"
 #include "../src/sim/animals.h"
+#include "../src/sim/voxel.h"
 #include "../src/sim/economy.h"
 #include "../src/sim/champion.h"
 #include "../src/sim/climate.h"
@@ -1480,6 +1481,55 @@ static void test_world_tribes_and_sites(void) {
     }
 }
 
+// Voxeles: figuras, caras expuestas (lo de adentro no se malla), erosion, y nubes al modo de
+// Nubis (densidad por perfil y ruido) con la luz que baja hacia la sombra del sol.
+static void test_voxels(void) {
+    VoxGrid g;
+    CHECK(vox_init(&g, 8, 8, 8, 0.5f));
+    vox_box(&g, 0, 0, 0, 2, 2, 2, 1); // un cubo de 3x3x3: 54 caras expuestas
+    CHECK(vox_count(&g) == 27 && vox_exposed_faces(&g) == 54);
+    VoxMesh m;
+    static const uint8_t PAL[2][4] = { { 0, 0, 0, 0 }, { 200, 100, 50, 255 } };
+    CHECK(vox_mesh(&g, PAL, &m) && m.tris == 108);
+    float miny = 1e9f, maxy = -1e9f;
+    for (int i = 0; i < m.tris * 3; i++) miny = fminf(miny, m.pos[i * 3 + 1]), maxy = fmaxf(maxy, m.pos[i * 3 + 1]);
+    CHECK(fabsf(miny) < 1e-4f && fabsf(maxy - 1.5f) < 1e-4f); // 3 celdas de 0,5 m desde la base
+    vox_mesh_free(&m);
+    vox_free(&g);
+    // Erosion: las ruinas pierden celdas, mas arriba que abajo.
+    CHECK(vox_init(&g, 12, 12, 12, 0.5f));
+    vox_box(&g, 0, 0, 0, 11, 11, 11, 1);
+    vox_erode(&g, 7u, 0.6f);
+    int low = 0, high = 0;
+    for (int z = 0; z < 12; z++)
+        for (int x = 0; x < 12; x++) low += vox_get(&g, x, 1, z) != 0, high += vox_get(&g, x, 10, z) != 0;
+    CHECK(vox_count(&g) < 12 * 12 * 12 && low > high);
+    vox_free(&g);
+    // Nubes: densidad dentro del perfil (nada en el borde), luz del lado del sol > del lado opuesto.
+    for (int k = 0; k < VCLOUD_KINDS; k++) {
+        CHECK(vox_init(&g, 20, 8, 20, 8.0f));
+        vox_cloud_shape(&g, (VoxCloudKind)k, 11u + (uint32_t)k);
+        int n = vox_count(&g);
+        CHECK(n > 60 && n < 20 * 8 * 20);
+        CHECK(!vox_get(&g, 0, 4, 0) && !vox_get(&g, 19, 4, 19)); // las esquinas, vacias
+        vox_free(&g);
+    }
+    CHECK(vox_init(&g, 20, 8, 20, 8.0f));
+    vox_cloud_shape(&g, VCLOUD_CUMULUS, 5u);
+    vox_cloud_light(&g, 1.0f, 0.3f, 0.0f); // sol al este (+x)
+    float east = 0.0f, west = 0.0f;
+    int ne = 0, nw = 0;
+    for (int y = 0; y < 8; y++)
+        for (int z = 0; z < 20; z++)
+            for (int x = 0; x < 20; x++) {
+                if (!vox_get(&g, x, y, z)) continue;
+                if (x >= 13) east += g.light[x + 20 * (z + 20 * y)], ne++;
+                if (x <= 6) west += g.light[x + 20 * (z + 20 * y)], nw++;
+            }
+    CHECK(ne > 0 && nw > 0 && east / ne > west / nw);
+    vox_free(&g);
+}
+
 // Un lago redondo de 20 m de radio y 2 m de hondo en el origen (orilla con pendiente).
 static float test_round_lake(void *ud, float x, float z) {
     (void)ud;
@@ -2748,6 +2798,7 @@ int main(void) {
     RUN(test_animals_water_and_venom);
     RUN(test_animals_keep_out_of_lakes);
     RUN(test_world_tribes_and_sites);
+    RUN(test_voxels);
     RUN(test_swarms);
     RUN(test_fire_spread_and_rain);
     RUN(test_weather_hazards_random);

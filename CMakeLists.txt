@@ -25,6 +25,7 @@ endif()
 
 # Nucleo de simulacion: C puro, sin raylib. Se testea sin pantalla.
 add_library(estepa_sim STATIC
+  src/sim/voxel.c
   src/sim/noise.c
   src/sim/troop.c
   src/sim/loadout.c
@@ -116,6 +117,7 @@ if(ESTEPA_BUILD_GAME)
     src/world/gallery.c
     src/world/sky.c
     src/world/clouds.c
+    src/world/voxstruct.c
     src/world/weather.c
     src/world/body_draw.c)
 

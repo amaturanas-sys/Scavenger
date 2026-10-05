@@ -52,6 +52,7 @@
 #include "world/gallery.h"
 #include "world/sky.h"
 #include "world/clouds.h"
+#include "world/voxstruct.h"
 #include "game/input.h"
 #include "rlgl.h"
 #include "world/weather.h"
@@ -411,7 +412,7 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     for (size_t k = 0; k < sizeof(SITE_PLACES) / sizeof(SITE_PLACES[0]) && !ok; k++) // una estructura: a unos pasos, mirandola
         for (int i = 0; i < w->site_count && !ok; i++)
             if (!strcmp(what, SITE_PLACES[k].name) && w->sites[i].kind == SITE_PLACES[k].kind)
-                x = w->sites[i].x + 22.0f, z = w->sites[i].z + 10.0f, lx = w->sites[i].x, lz = w->sites[i].z, ok = true;
+                x = w->sites[i].x + 30.0f, z = w->sites[i].z + 12.0f, lx = w->sites[i].x, lz = w->sites[i].z, ok = true;
     for (int i = 0; i < w->tribe_count && !ok; i++) { // una tribu (tribu: amiga; rival; neutral), desde fuera de su alcance
         TribeAttitude want = !strcmp(what, "rival") ? TRIBE_RIVAL : !strcmp(what, "neutral") ? TRIBE_NEUTRAL : TRIBE_FRIENDLY;
         if ((!strcmp(what, "tribu") || !strcmp(what, "rival") || !strcmp(what, "neutral")) && w->tribes[i].attitude == want)
@@ -1120,6 +1121,7 @@ int main(int argc, char **argv) {
     camp_unload(&camp);
     terrain_unload(&terrain);
     clouds_unload();
+    voxs_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();
     return 0;

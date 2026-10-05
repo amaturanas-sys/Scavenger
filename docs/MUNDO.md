@@ -66,15 +66,22 @@ El norte es −Z y el este +X.
   - el **sol** sale por el este, pasa por el sur a mediodía y se pone por el oeste, con un resplandor cálido cuando está bajo;
   - la **luna** recorre el mismo arco, retrasada según su fase (una luna cada 14 días: nueva junto al sol, llena opuesta);
   - las **estrellas** giran alrededor del polo norte.
-- **Nubes** (`src/world/clouds.c`):
-  - una capa a altura fija, 80 m sobre el llano del campamento;
-  - cada nube es un racimo de carteles pixelados del atlas `assets/sky/nubes.png`, sacado de fotografías de nubes reales con `tools/assets/nubes.py`:
-    - cúmulos con buen tiempo;
-    - estratos y cielo cubierto con más nubes;
-    - nubarrones con tormenta;
-  - el viento la arrastra, y cuántas nubes hay sale de la cobertura del clima;
-  - las cumbres altas del altiplano atraviesan la capa y llevan además su gorro de nubes;
-  - con la cámara dentro de una nube, la vista se cubre de niebla.
+- **Nubes de voxeles** (`src/world/clouds.c`, `src/sim/voxel.c`), al modo de Nubis (Guerrilla, *Horizon*):
+  - una capa a altura fija, 80 m sobre el llano del campamento; el viento la arrastra y la cobertura sale del clima;
+  - cada nube es una rejilla de voxeles de 8 m. La densidad sale de un **perfil dimensional** (gradiente de abajo, de arriba y del borde) erosionado por ruido 3D: `densidad = saturar(ruido − (1 − perfil))`;
+  - la luz de cada voxel se hornea en su color:
+    - **directa:** transmitancia de Beer-Lambert, marchando por la rejilla hacia el sol, con un toque de polvo en el borde;
+    - **ambiente:** entra por arriba y por los bordes;
+    - se vuelve a iluminar cuando el sol se mueve unos 8°;
+  - tipos: cúmulos, estratos, cielo cubierto y nubarrones de tormenta (3 plantillas de cada uno); las cumbres altas llevan un **gorro** en anillo;
+  - lejos (más de 950 m), cada nube pasa a carteles pixelados del atlas `assets/sky/nubes.png`, sacado de fotos con `tools/assets/nubes.py`;
+  - con la cámara dentro de una nube (según la densidad de sus voxeles), la vista se cubre de niebla.
+- **Estructuras de voxeles** (`src/world/voxstruct.c`): cada estructura del mundo y cada casa son un modelo de voxeles de 0,25 a 0,5 m.
+  - **Malla:** solo las caras expuestas, como en la representación por voxeles de nubes de puntos, con oclusión ambiental por vértice y sombreado por cara.
+  - **Ruinas:** la fortaleza y la ciudad enterrada se erosionan con ruido, y lo alto cae primero.
+  - **Color por región:** arenisca en el desierto, liquen en el bosque y la costa.
+  - **Casas por región:** yurta de fieltro, cabaña de troncos, casa de piedra, casa larga con techo de turba y adobe con cúpula. Las capitales llevan torres de piedra o de madera.
+  - **Claro:** alrededor de las estructuras y los campamentos no crecen árboles ni rocas.
 
 ![Cielo](mundo/cielo.png)
 
@@ -103,7 +110,9 @@ Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
 | `ground_color()`, `ground_tex()` | `src/world/terrain.c` | Color y textura del suelo. |
 | `FAR_CELLS`, `FAR_HAZE_NEAR` | `src/world/terrain.c` | Alcance del horizonte lejano y su bruma. |
 | `SKY_LUNAR_DAYS`, `arc_dir()` | `src/world/sky.*` | Fases de la luna y arco del sol. |
-| `CLOUD_ABOVE_PLAIN`, `CLOUD_VIEW`, `CELL` | `src/world/clouds.*` | Altura de las nubes, alcance y tamaño de la celda de cada nube. |
+| `CLOUD_ABOVE_PLAIN`, `CLOUD_VIEW`, `CELL`, `VT_DIM`, `VOX_NEAR` | `src/world/clouds.*` | Altura de las nubes, alcance, celda de cada nube, tamaño de las rejillas y distancia de los voxeles. |
+| `vox_cloud_shape()`, `vox_cloud_light()` | `src/sim/voxel.c` | Perfil y erosión de las nubes; extinción y ambiente de la luz. |
+| `build_site()`, `build_building()` | `src/world/voxstruct.c` | Las estructuras y casas de voxeles. |
 
 ## Cómo verlo
 

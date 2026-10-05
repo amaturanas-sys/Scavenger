@@ -141,6 +141,7 @@ El mundo ([MUNDO.md](docs/MUNDO.md)):
 - **Tribus nómadas:** las rivales salen al paso, las neutrales observan y las amigables te señalan sitios en el mapa.
 - **Estructuras:** kurganes, balbales, piedras de ciervos, fortalezas, ciudades enterradas, caravasares, torres, ovoos, pozos y embarcaderos; al verlas quedan en el mapa.
 - **Más vida:** arroyos, rocas, matas y flores; los animales rodean los lagos y beben desde la orilla.
+- **Voxeles:** las nubes son volúmenes de voxeles al modo de Nubis (perfil y erosión por ruido, luz del sol horneada) y las estructuras y casas son modelos de voxeles; las ruinas, erosionadas.
 - **`F5` o `Ctrl+M`:** vista orbital del mundo entero (flechas: girar e inclinar).
 
 Pruebas: `--semilla N` fija el mundo; `--ir lugar` lleva a `estepa`, `meandro`, `arroyo`, `bosque`, `canal`, `altiplano`, `trenzado`, `hielo`, `cumbre`, `fiordos`, `mar`, `desierto`, `muro`, `capital`, `aldea`, `guarida`, `tribu`, `rival`, `neutral` o a una estructura (`kurgan`, `caravasar`, `ovoo`…); `--camara inclinación` y `--rumbo grados` orientan la cámara; `--orbital [grados] [inclinación]`; `--mapa-mundo archivo.png` (con `--mapa-tam N`).

@@ -8,6 +8,7 @@
 #include "rlgl.h"
 #include "sim/lang.h"
 #include "world/body_draw.h"
+#include "world/voxstruct.h"
 
 #define SETTLE_DRAW 280.0f // m: se dibujan los asentamientos a esta distancia
 #define SETTLE_ARRIVE 90.0f
@@ -113,40 +114,9 @@ int wd_den_near(const Terrain *t, float x, float z, float radius) {
 }
 
 // ------------------------------------------------------------------ dibujo
-static void gable(Vector3 c, float w, float l, float h, float roof, float yaw, Color wall, Color top) {
-    // Caja con techo a dos aguas (cabaña, casa larga), girada yaw.
-    rlPushMatrix();
-    rlTranslatef(c.x, c.y, c.z);
-    rlRotatef(yaw * RAD2DEG, 0, 1, 0);
-    DrawCube((Vector3){ 0, h * 0.5f, 0 }, w, h, l, wall);
-    DrawCubeWires((Vector3){ 0, h * 0.5f, 0 }, w, h, l, Fade(BLACK, 0.25f));
-    for (int s = -1; s <= 1; s += 2) { // los dos faldones
-        rlPushMatrix();
-        rlTranslatef(s * w * 0.25f, h + roof * 0.5f, 0);
-        rlRotatef(s * -atan2f(roof, w * 0.5f) * RAD2DEG, 0, 0, 1);
-        DrawCube((Vector3){ 0, 0, 0 }, sqrtf(w * w * 0.25f + roof * roof) + 0.2f, 0.25f, l + 0.4f, top);
-        rlPopMatrix();
-    }
-    rlPopMatrix();
-}
-
+// Las casas de cada region, de voxeles (src/world/voxstruct.c): la puerta mira al centro.
 static void building(Region rg, Vector3 at, float yaw, float scale) {
-    switch (rg) {
-    case REGION_FOREST: gable(at, 4.0f * scale, 5.0f * scale, 2.4f, 1.6f, yaw, (Color){ 118, 82, 52, 255 }, (Color){ 72, 58, 44, 255 }); break;
-    case REGION_FJORD: gable(at, 5.0f * scale, 12.0f * scale, 2.2f, 2.6f, yaw, (Color){ 84, 64, 48, 255 }, (Color){ 96, 110, 82, 255 }); break;
-    case REGION_HIGHLAND:
-        DrawCube((Vector3){ at.x, at.y + 1.1f, at.z }, 4.0f * scale, 2.2f, 4.0f * scale, (Color){ 128, 126, 120, 255 });
-        DrawCube((Vector3){ at.x, at.y + 2.35f, at.z }, 4.4f * scale, 0.3f, 4.4f * scale, (Color){ 96, 80, 64, 255 });
-        break;
-    case REGION_DESERT:
-        DrawCube((Vector3){ at.x, at.y + 1.3f, at.z }, 4.5f * scale, 2.6f, 4.5f * scale, (Color){ 196, 160, 112, 255 });
-        DrawSphere((Vector3){ at.x, at.y + 2.6f, at.z }, 1.4f * scale, (Color){ 210, 180, 132, 255 });
-        break;
-    default: // yurta
-        DrawCylinder(at, 2.2f * scale, 2.2f * scale, 1.7f, 10, (Color){ 233, 228, 214, 255 });
-        DrawCylinder((Vector3){ at.x, at.y + 1.7f, at.z }, 0.45f * scale, 2.35f * scale, 0.9f, 10, (Color){ 216, 208, 189, 255 });
-        break;
-    }
+    voxs_draw_building(voxs_region_house(rg), at, yaw + PI, scale, WHITE); // la puerta (+x del modelo) hacia el centro
 }
 
 // Ropa de la gente de cada region.
@@ -173,7 +143,7 @@ static void draw_settlement(const Terrain *t, const Settlement *s, int idx, floa
         for (int i = 0; i < 12; i++) {
             float a = (float)i / 12.0f * 2.0f * PI, x = s->x + cosf(a) * 42.0f, z = s->z + sinf(a) * 42.0f;
             float y = terrain_height(t, x, z);
-            DrawCylinder((Vector3){ x, y, z }, 1.6f, 1.8f, 7.0f, 6, stone);
+            voxs_draw_building(s->region == REGION_STEPPE || s->region == REGION_FOREST ? VB_TOWER_WOOD : VB_TOWER_STONE, (Vector3){ x, y, z }, a, 1.0f, WHITE);
             float a2 = (float)(i + 1) / 12.0f * 2.0f * PI, x2 = s->x + cosf(a2) * 42.0f, z2 = s->z + sinf(a2) * 42.0f;
             Vector3 m = { (x + x2) * 0.5f, (y + terrain_height(t, x2, z2)) * 0.5f + 2.2f, (z + z2) * 0.5f };
             rlPushMatrix();
@@ -244,109 +214,10 @@ static void draw_tribe(const Terrain *t, const TribeCamp *tc, int idx, float tim
     }
 }
 
-static void slab(Vector3 at, float w, float h, float d, float yaw, Color c) {
-    rlPushMatrix();
-    rlTranslatef(at.x, at.y, at.z);
-    rlRotatef(yaw * RAD2DEG, 0, 1, 0);
-    DrawCube((Vector3){ 0, h * 0.5f, 0 }, w, h, d, c);
-    rlPopMatrix();
-}
-
-// Una estructura, con piezas simples (low-poly) al estilo de su region.
+// Una estructura: el modelo de voxeles de su clase, al estilo de su region (src/world/voxstruct.c).
 static void draw_site(const Terrain *t, const WorldSite *st, float time) {
-    float y = terrain_height(t, st->x, st->z);
-    Vector3 c = { st->x, y, st->z };
-    const Color stone = st->region == REGION_DESERT ? (Color){ 186, 150, 104, 255 } : (Color){ 132, 128, 120, 255 };
-    const Color dark = { 96, 92, 86, 255 }, wood = { 108, 80, 54, 255 };
-    float cs = cosf(st->yaw), sn = sinf(st->yaw);
-#define AT(dx, dz) ((Vector3){ c.x + (dx) * cs - (dz) * sn, terrain_height(t, c.x + (dx) * cs - (dz) * sn, c.z + (dx) * sn + (dz) * cs), c.z + (dx) * sn + (dz) * cs })
-    switch (st->kind) {
-    case SITE_KURGAN: // tumulo de tierra con piedras alrededor
-        rlPushMatrix();
-        rlTranslatef(c.x, y - 1.0f, c.z);
-        rlScalef(1.0f, 0.35f, 1.0f);
-        DrawSphereEx((Vector3){ 0 }, 9.0f, 6, 10, st->region == REGION_FJORD ? (Color){ 92, 118, 80, 255 } : (Color){ 122, 128, 76, 255 });
-        rlPopMatrix();
-        for (int i = 0; i < 10; i++) {
-            float a = (float)i / 10.0f * 2.0f * PI;
-            DrawSphereEx(AT(cosf(a) * 10.5f, sinf(a) * 10.5f), 0.6f, 3, 5, stone);
-        }
-        break;
-    case SITE_BALBALS: // hilera de estelas mirando al este
-        for (int i = 0; i < 6; i++) slab(AT((float)i * 2.2f - 5.5f, 0.0f), 0.5f, 1.4f + 0.3f * (float)(i % 3), 0.35f, st->yaw, stone);
-        break;
-    case SITE_DEER_STONE: // monolito alto con bandas grabadas
-        slab(c, 0.8f, 3.6f, 0.45f, st->yaw, dark);
-        for (int i = 0; i < 3; i++) slab((Vector3){ c.x, y + 0.9f + i * 0.9f, c.z }, 0.84f, 0.12f, 0.5f, st->yaw, (Color){ 150, 146, 136, 255 });
-        break;
-    case SITE_RUINED_FORT: // muros derruidos y una torre rota
-        for (int i = 0; i < 4; i++) {
-            float a = (float)i * PI * 0.5f, h = 1.5f + 2.0f * (float)((i * 7) % 3) / 2.0f;
-            Vector3 m = AT(cosf(a) * 11.0f, sinf(a) * 11.0f);
-            slab(m, i % 2 ? 1.2f : 16.0f, h, i % 2 ? 16.0f : 1.2f, st->yaw, stone);
-        }
-        DrawCylinder(AT(11.0f, 11.0f), 2.2f, 2.4f, 6.0f, 7, stone);
-        break;
-    case SITE_BURIED_CITY: // cupulas y muros asomando de la arena
-        for (int i = 0; i < 5; i++) {
-            Vector3 m = AT((float)(i % 3) * 9.0f - 9.0f, (float)(i / 3) * 10.0f - 5.0f);
-            slab((Vector3){ m.x, m.y - 1.0f, m.z }, 5.0f, 2.2f, 5.0f, st->yaw, stone);
-            if (i % 2 == 0) DrawSphereEx((Vector3){ m.x, m.y + 1.0f, m.z }, 2.0f, 5, 8, (Color){ 200, 166, 118, 255 });
-        }
-        break;
-    case SITE_PETROGLYPHS: // peñas con grabados claros
-        for (int i = 0; i < 3; i++) {
-            Vector3 m = AT((float)i * 3.0f - 3.0f, (float)(i % 2) * 2.0f);
-            DrawSphereEx((Vector3){ m.x, m.y + 0.8f, m.z }, 1.6f, 4, 6, dark);
-            slab((Vector3){ m.x, m.y + 1.0f, m.z - 1.45f }, 1.0f, 0.5f, 0.06f, st->yaw, (Color){ 210, 196, 160, 255 });
-        }
-        break;
-    case SITE_CARAVANSERAI: // patio amurallado con portada y camellos
-        for (int i = 0; i < 4; i++) {
-            float a = (float)i * PI * 0.5f;
-            slab(AT(cosf(a) * 12.0f, sinf(a) * 12.0f), i % 2 ? 1.0f : 24.0f, 4.0f, i % 2 ? 24.0f : 1.0f, st->yaw, stone);
-        }
-        slab(AT(12.5f, 0.0f), 2.0f, 6.0f, 6.0f, st->yaw, (Color){ 168, 132, 92, 255 }); // portada
-        slab(AT(0.0f, 0.0f), 3.0f, 0.4f, 3.0f, st->yaw, (Color){ 60, 90, 120, 255 });     // la fuente
-        break;
-    case SITE_WATCHTOWER: // torre de madera (o piedra) con techo
-        if (st->region == REGION_FOREST || st->region == REGION_STEPPE) {
-            for (int i = 0; i < 4; i++) DrawCylinder(AT(i % 2 ? 1.4f : -1.4f, i / 2 ? 1.4f : -1.4f), 0.15f, 0.15f, 8.0f, 4, wood);
-            slab((Vector3){ c.x, y + 8.0f, c.z }, 3.6f, 0.3f, 3.6f, st->yaw, wood);
-            DrawCylinder((Vector3){ c.x, y + 8.3f, c.z }, 0.0f, 2.6f, 1.6f, 4, (Color){ 84, 66, 48, 255 });
-        } else {
-            DrawCylinder(c, 2.0f, 2.3f, 9.0f, 8, stone);
-            DrawCylinder((Vector3){ c.x, y + 9.0f, c.z }, 2.5f, 2.5f, 0.8f, 8, dark);
-        }
-        break;
-    case SITE_OVOO: { // cono de piedras con un palo y cintas que ondean
-        DrawCylinder(c, 0.4f, 2.2f, 1.8f, 7, stone);
-        DrawCylinder((Vector3){ c.x, y + 1.6f, c.z }, 0.06f, 0.06f, 2.6f, 4, wood);
-        static const Color RIB[3] = { { 60, 110, 200, 255 }, { 230, 230, 220, 255 }, { 220, 190, 60, 255 } };
-        for (int i = 0; i < 3; i++) {
-            float wv = sinf(time * 3.0f + i) * 0.3f;
-            DrawCube((Vector3){ c.x + 0.4f + wv * 0.2f, y + 3.6f - i * 0.3f, c.z + (float)i * 0.1f }, 0.8f, 0.12f, 0.03f, RIB[i]);
-        }
-        break;
-    }
-    case SITE_WELL: // brocal de piedra con travesaño y cubo
-        DrawCylinder(c, 1.1f, 1.1f, 0.9f, 8, stone);
-        DrawCylinder((Vector3){ c.x, y + 0.85f, c.z }, 0.8f, 0.8f, 0.08f, 8, (Color){ 40, 60, 80, 255 });
-        DrawCylinder(AT(-1.0f, 0.0f), 0.08f, 0.08f, 2.2f, 4, wood);
-        DrawCylinder(AT(1.0f, 0.0f), 0.08f, 0.08f, 2.2f, 4, wood);
-        slab((Vector3){ c.x, y + 2.1f, c.z }, 2.2f, 0.12f, 0.12f, st->yaw, wood);
-        break;
-    case SITE_HARBOR: // muelle de tablas hacia el agua y una barca
-        for (int i = 0; i < 5; i++) {
-            Vector3 m = AT(0.0f, (float)i * 3.0f);
-            slab((Vector3){ m.x, y + 0.6f, m.z }, 2.4f, 0.2f, 3.0f, st->yaw, wood);
-            DrawCylinder((Vector3){ m.x + 1.1f * cs, m.y - 1.0f, m.z + 1.1f * sn }, 0.12f, 0.12f, 1.9f, 4, (Color){ 80, 60, 44, 255 });
-        }
-        slab(AT(3.0f, 10.0f), 1.6f, 0.6f, 6.0f, st->yaw, (Color){ 96, 70, 48, 255 });
-        break;
-    default: break;
-    }
-#undef AT
+    (void)time;
+    voxs_draw_site(st->kind, st->region, (Vector3){ st->x, terrain_height(t, st->x, st->z), st->z }, st->yaw, WHITE);
 }
 
 void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, float time) {
