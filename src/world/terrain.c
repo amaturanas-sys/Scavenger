@@ -502,6 +502,7 @@ void terrain_init(Terrain *t, unsigned seed) {
     if (!g_atlas_tried) { // una vez: el atlas sirve para cualquier mundo
         g_atlas_tried = true;
         Image img = LoadImage(platform_asset_path("assets/terrain/texturas.png"));
+        platform_note_asset("assets/terrain/texturas.png", img.data != NULL);
         if (img.data) {
             // Cuanto aclarar cada celda: lo que la lleve a un gris medio de 205.
             Color *px = LoadImageColors(img);

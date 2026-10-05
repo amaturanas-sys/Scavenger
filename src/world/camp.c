@@ -4,20 +4,17 @@
 #include <string.h>
 
 #include "../sim/rng.h"
+#include "platform.h"
 #include "raymath.h"
 
 void camp_init(Camp *c, const Terrain *t, const char *yurt_path) {
     memset(c, 0, sizeof(*c));
-    // En Android los assets viven dentro del APK: FileExists() no los ve,
-    // pero LoadModel() si (raylib redirige la lectura al AssetManager).
-#if defined(__ANDROID__)
-    if (yurt_path) {
-#else
-    if (yurt_path && FileExists(yurt_path)) {
-#endif
+    // En Android los assets viven dentro del APK: platform_asset_exists pregunta al AssetManager.
+    if (yurt_path && platform_asset_exists(yurt_path)) {
         c->yurt = LoadModel(yurt_path);
         c->yurt_loaded = c->yurt.meshCount > 0;
     }
+    if (yurt_path) platform_note_asset(yurt_path, c->yurt_loaded);
 
     // Yurtas en semicirculo, con la puerta (+X del modelo) hacia la fogata.
     c->fire = (Vector3){ 0.0f, terrain_height(t, 0.0f, 0.0f), 0.0f };

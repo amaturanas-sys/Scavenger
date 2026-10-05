@@ -52,6 +52,7 @@
 #include "world/gallery.h"
 #include "world/sky.h"
 #include "world/clouds.h"
+#include "game/input.h"
 #include "rlgl.h"
 #include "world/weather.h"
 #include "world/terrain.h"
@@ -153,6 +154,7 @@ static void debug_camp_actions(Troop *t, Rng *rng, float *world_time, int *last_
                                size_t log_len) {
     static const char *names[] = { "Arslan", "Toregene", "Chilaun", "Mukhali", "Sorghaghtani", "Bo'orchu" };
     int champ = -1;
+    if (input_ctrl()) return; // Ctrl+1..3: las habilidades activas
     if (IsKeyPressed(KEY_ONE)) {
         // Por azar, quien se acerca puede ser un gran guerrero.
         if (champion_appears(rng, CHAMPION_DEFAULT_CHANCE)) {
@@ -327,7 +329,7 @@ static void draw_hud(const Troop *t, float world_time, const char *hands, const 
         EndScissorMode();
     }
     if (menu) return;
-    const char *hint = T("F1 controles · Esc menú");
+    const char *hint = T("F1 o Ctrl+H: controles · Esc o Ctrl+P: menú");
     ui_text(hint, VIRTUAL_W - 8 - MeasureText(hint, 10), VIRTUAL_H - 16, 10, Fade(UI_BONE_DIM, 0.8f));
 }
 
@@ -440,6 +442,54 @@ static void draw_keyboard_notice(void) {
     ui_text_centered(T("Conecta un teclado para jugar"), VIRTUAL_W / 2, VIRTUAL_H / 2 - 18, 20, UI_GOLD_LIGHT);
     ui_text_centered(T("Scavengers Thrive se juega con teclado físico (ratón o mando opcionales)."), VIRTUAL_W / 2,
                      VIRTUAL_H / 2 + 8, 10, UI_BONE);
+    ui_text_centered(T("Si ya tienes uno, pulsa una tecla o toca la pantalla para jugar igual."), VIRTUAL_W / 2,
+                     VIRTUAL_H / 2 + 22, 10, UI_BONE_DIM);
+}
+
+// El puntero en la pantalla virtual (raton o dedo).
+static Vector2 virtual_pointer(void) {
+    float sw = (float)GetScreenWidth(), sh = (float)GetScreenHeight();
+    float k = fminf(sw / VIRTUAL_W, sh / VIRTUAL_H);
+    Vector2 m = GetMousePosition();
+    return (Vector2){ (m.x - (sw - VIRTUAL_W * k) * 0.5f) / k, (m.y - (sh - VIRTUAL_H * k) * 0.5f) / k };
+}
+
+// Android: dos botones tactiles en la esquina (pausa y controles), por si el teclado de la
+// tablet no trae Esc ni F1. Un toque inyecta la accion (se lee en el proximo cuadro).
+static void draw_touch_buttons(void) {
+    const int s = 22, y = VIRTUAL_H - 46;
+    const Rectangle pause = { VIRTUAL_W - 8 - s, (float)y, (float)s, (float)s }, help = { VIRTUAL_W - 14 - 2 * s, (float)y, (float)s, (float)s };
+    Vector2 m = virtual_pointer();
+    bool tap = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    for (int i = 0; i < 2; i++) {
+        Rectangle r = i ? help : pause;
+        bool over = CheckCollisionPointRec(m, r);
+        DrawRectangleRec(r, Fade((Color){ 20, 16, 12, 255 }, over ? 0.85f : 0.6f));
+        DrawRectangleLinesEx(r, 1.0f, UI_GOLD);
+        if (i) ui_text_centered("?", (int)(r.x + r.width / 2), (int)r.y + 6, 10, UI_GOLD_LIGHT);
+        else DrawRectangle((int)r.x + 7, (int)r.y + 6, 3, 10, UI_GOLD_LIGHT), DrawRectangle((int)r.x + 12, (int)r.y + 6, 3, 10, UI_GOLD_LIGHT);
+        if (tap && over) input_inject(i ? IN_HELP : IN_PAUSE);
+    }
+}
+
+// Diagnostico (Ctrl+D): version de OpenGL, pantalla, teclado y assets que no cargaron.
+static void draw_diagnostics(bool has_keyboard) {
+    static const char *GL[] = { "?", "1.1", "2.1", "3.3", "4.3", "ES 2.0", "ES 3.0" };
+    int v = rlGetVersion();
+    const char *fails[8];
+    int nf = platform_asset_failures(fails, 8);
+    int h = 70 + 11 * (nf < 8 ? nf : 8);
+    DrawRectangle(8, 60, 300, h, (Color){ 8, 6, 5, 220 });
+    DrawRectangleLines(8, 60, 300, h, UI_GOLD);
+    int y = 66;
+    ui_text(TextFormat(T("Diagnóstico · OpenGL %s · %dx%d · %d fps"), (v >= 0 && v < 7) ? GL[v] : "?", GetScreenWidth(), GetScreenHeight(), GetFPS()), 14, y, 10, UI_GOLD_LIGHT);
+    y += 12;
+    ui_text(TextFormat(T("Teclado: %s · última tecla: %d"), has_keyboard ? T("sí") : T("no"), input_last_key()), 14, y, 10, UI_BONE);
+    y += 12;
+    ui_text(TextFormat(T("Assets cargados: %d · fallidos: %d"), platform_asset_loaded(), nf), 14, y, 10, UI_BONE);
+    y += 12;
+    for (int i = 0; i < nf && i < 8; i++, y += 11) ui_text(fails[i], 20, y, 10, (Color){ 230, 120, 100, 255 });
+    ui_text(T("Ctrl+D: cerrar"), 14, y + 2, 10, UI_BONE_DIM);
 }
 
 int main(int argc, char **argv) {
@@ -635,9 +685,15 @@ int main(int argc, char **argv) {
 
     int frame = 0;
     bool has_keyboard = platform_has_keyboard() && !simulate_no_keyboard;
+    bool keyboard_override = false; // «jugar igual»: un toque sobre el aviso, o cualquier tecla que llegue
+    bool show_diag = false;
     SetExitKey(KEY_NULL); // Esc abre el menu
     while (!WindowShouldClose() && !quit) {
         float dt = fminf(GetFrameTime(), 0.05f);
+        input_update();
+        if (input_last_key() && !simulate_no_keyboard) keyboard_override = true; // llego una tecla: hay teclado
+        if (!has_keyboard && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) keyboard_override = true;
+        if (input_pressed(IN_DIAG)) show_diag = !show_diag;
         { // el puntero (raton o dedo) en la pantalla virtual de 640x360
             float sw = (float)GetScreenWidth(), sh = (float)GetScreenHeight();
             float k = fminf(sw / VIRTUAL_W, sh / VIRTUAL_H);
@@ -645,7 +701,7 @@ int main(int argc, char **argv) {
             Vector2 v = { (m.x - (sw - VIRTUAL_W * k) * 0.5f) / k, (m.y - (sh - VIRTUAL_H * k) * 0.5f) / k };
             ui_pointer_frame(v, d.x != 0.0f || d.y != 0.0f, IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
         }
-        if (frame % 30 == 0) has_keyboard = platform_has_keyboard() && !simulate_no_keyboard; // conexion en caliente
+        if (frame % 30 == 0) has_keyboard = (platform_has_keyboard() && !simulate_no_keyboard) || keyboard_override; // conexion en caliente
         frame++;
         if (start_pause && frame == 10 && in_game) { // prueba: la pausa (o guardar) sobre la partida
             if (start_pause == 3) {
@@ -659,7 +715,7 @@ int main(int argc, char **argv) {
             start_pause = 0;
         }
         // Esc en la partida: pausa (antes, una foto para la partida guardada).
-        if (in_game && !gallery_mode && !orbital && !menu_visible(&menu) && !ig_blocks_input(&g_actions) && IsKeyPressed(KEY_ESCAPE)) {
+        if (in_game && !gallery_mode && !orbital && !menu_visible(&menu) && !ig_blocks_input(&g_actions) && input_pressed(IN_PAUSE)) {
             if (ga_menu_open(&g_actions)) {
                 g_actions.menu_open = false;
             } else {
@@ -703,7 +759,7 @@ int main(int argc, char **argv) {
             default: break;
             }
         }
-        if (in_game && IsKeyPressed(KEY_F1)) show_controls = !show_controls;
+        if (in_game && input_pressed(IN_HELP)) show_controls = !show_controls;
         if ((start_inv || start_equip) && frame == 3) { // prueba: menus de inventario y equipo
             g_actions.inv_open = start_inv;
             g_actions.inv_cont[1] = 99; // a la derecha, el ultimo a mano (el acopio, en el campamento)
@@ -775,12 +831,12 @@ int main(int argc, char **argv) {
         log_age += dt;
         // Sin teclado el juego queda en pausa (Android: tablets sin teclado conectado); con el menu, tambien.
         // F5: la vista orbital del mundo (las flechas la giran y la inclinan).
-        if (in_game && !menu_visible(&menu) && IsKeyPressed(KEY_F5)) orbital = !orbital;
+        if (in_game && !menu_visible(&menu) && input_pressed(IN_ORBITAL)) orbital = !orbital;
         if (orbital) {
             orbit_angle += (IsKeyDown(KEY_RIGHT) ? 1.0f : IsKeyDown(KEY_LEFT) ? -1.0f : 0.06f) * dt;
             if (IsKeyDown(KEY_UP)) orbit_tilt = fminf(1.0f, orbit_tilt + 0.5f * dt);
             if (IsKeyDown(KEY_DOWN)) orbit_tilt = fmaxf(0.0f, orbit_tilt - 0.5f * dt);
-            if (IsKeyPressed(KEY_ESCAPE)) orbital = false;
+            if (input_pressed(IN_BACK)) orbital = false;
         }
         if (has_keyboard && in_game && !menu_visible(&menu)) {
             // Con el menu de acciones abierto el jugador no se mueve (las flechas eligen).
@@ -893,7 +949,7 @@ int main(int argc, char **argv) {
                     memmap_reveal(&g_memory, player.pos.x, player.pos.z, 30.0f * per, 30.0f, world_time);
                 }
             }
-            if (IsKeyPressed(KEY_M)) {
+            if (IsKeyPressed(KEY_M) && !input_ctrl()) { // Ctrl+M: la vista orbital
                 MarkerKind kind = IsKeyDown(KEY_LEFT_SHIFT) ? MARKER_DANGER : MARKER_INTEREST;
                 bool placed = memmap_toggle_marker(&g_memory, player.pos.x, player.pos.z, kind, 6.0f);
                 snprintf(log, sizeof(log), "%s", placed ? T("Marcaste este lugar en el mapa.") : T("Quitaste la marca."));
@@ -993,6 +1049,8 @@ int main(int argc, char **argv) {
                              in_game ? TextFormat(" · %s: %+d", T(overlord.name), (int)overlord.relation) : ""),
                   VIRTUAL_W, VIRTUAL_H);
         ui_legend_draw(VIRTUAL_W, VIRTUAL_H); // la leyenda de lo que esta bajo el puntero
+        if (in_game && !menu_visible(&menu) && platform_touch_ui()) draw_touch_buttons();
+        if (show_diag) draw_diagnostics(has_keyboard);
         if (!has_keyboard) draw_keyboard_notice();
         EndTextureMode();
 

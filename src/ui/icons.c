@@ -19,15 +19,24 @@ static int g_cols = 16;
 void icons_load(void) {
     for (int i = 0; i < ICON_COUNT; i++) g_cell[i] = i; // sin TSV: el orden del enum
     const char *path = platform_asset_path("assets/ui/iconos.png");
-    if (FileExists(path)) g_atlas = LoadTexture(path);
-    if (g_atlas.id) {
-        g_cols = g_atlas.width / CELL > 0 ? g_atlas.width / CELL : 1;
+    Image img = platform_asset_exists(path) ? LoadImage(path) : (Image){ 0 };
+    if (img.data) {
+        g_cols = img.width / CELL > 0 ? img.width / CELL : 1;
+        // Lienzo a potencia de 2 (las filas de abajo quedan vacias): OpenGL ES 2 sin
+        // GL_OES_texture_npot no hace mipmaps de texturas de otro tamaño.
+        int pw = 1, ph = 1;
+        while (pw < img.width) pw <<= 1;
+        while (ph < img.height) ph <<= 1;
+        if (pw != img.width || ph != img.height) ImageResizeCanvas(&img, pw, ph, 0, 0, BLANK);
+        g_atlas = LoadTextureFromImage(img);
         SetTextureFilter(g_atlas, TEXTURE_FILTER_POINT); // a 32 o 64 px, pixeles nitidos
-        // Reducido a 16 px se ve con el promedio de la celda (mipmaps).
-        g_atlas_small = LoadTexture(path);
+        // Reducido a 16 px se ve con el promedio de la celda (mipmaps); sin mipmaps, bilineal.
+        g_atlas_small = LoadTextureFromImage(img);
         GenTextureMipmaps(&g_atlas_small);
-        SetTextureFilter(g_atlas_small, TEXTURE_FILTER_TRILINEAR);
+        SetTextureFilter(g_atlas_small, g_atlas_small.mipmaps > 1 ? TEXTURE_FILTER_TRILINEAR : TEXTURE_FILTER_BILINEAR);
+        UnloadImage(img);
     }
+    platform_note_asset("assets/ui/iconos.png", g_atlas.id != 0);
     char *tsv = LoadFileText(platform_asset_path("assets/ui/iconos.tsv"));
     if (!tsv) return;
     for (char *line = strtok(tsv, "\n"); line; line = strtok(NULL, "\n")) {

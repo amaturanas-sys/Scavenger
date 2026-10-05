@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/input.h"
 #include "raylib.h"
 #include "sim/lang.h"
 #include "ui/theme.h"
@@ -55,7 +56,7 @@ static Rectangle opt_rect(const Dialog *d, int i, int h) {
 
 int dlg_update(Dialog *d) {
     if (!d->open) return DLG_NONE;
-    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE)) return DLG_BACK;
+    if (input_pressed(IN_BACK)) return DLG_BACK;
     if (d->n <= 0) return DLG_NONE;
     if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) d->cursor = (d->cursor + 1) % d->n;
     if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) d->cursor = (d->cursor + d->n - 1) % d->n;

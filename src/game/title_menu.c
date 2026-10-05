@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/input.h"
 #include "platform.h"
 #include "sim/lang.h"
 #include "ui/icons.h"
@@ -134,8 +135,9 @@ static const HelpPage PAGES[] = {
 static Texture2D load_tex(const char *rel) {
     Texture2D t = { 0 };
     const char *path = platform_asset_path(rel);
-    if (FileExists(path)) t = LoadTexture(path);
+    if (platform_asset_exists(path)) t = LoadTexture(path);
     if (t.id) SetTextureFilter(t, TEXTURE_FILTER_POINT);
+    platform_note_asset(rel, t.id != 0);
     return t;
 }
 
@@ -214,7 +216,7 @@ MenuAction menu_update(TitleMenu *m, float dt) {
     if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W) || (row && (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A))))
         m->cursor = (m->cursor + n - 1) % n, m->slot = -1;
     bool enter = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE);
-    bool back = IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE);
+    bool back = input_pressed(IN_BACK);
     // Raton o dedo: pasar por encima elige; pulsar, entra.
     if (m->w > 0 && (row || m->screen == MENU_LOAD || m->screen == MENU_SAVE)) {
         for (int i = 0; i < n; i++) {
