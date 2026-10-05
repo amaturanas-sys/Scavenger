@@ -598,19 +598,21 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
     // Las personas que ven los animales.
     FaunaHuman hu[MAX_HUMANS];
     int n = 0;
-    hu[n] = (FaunaHuman){ p->pos.x, p->pos.z, cb->player.down, p->sneaking || ga->hidden, false };
+    hu[n] = (FaunaHuman){ p->pos.x, p->pos.z, cb->player.down, p->sneaking || ga->hidden, false,
+                          cb->player.hp < 0.6f * cb->player.hp_max || health_bleeding(&cb->player) };
     g_refs[n++] = (HumanRef){ 0, 0 };
     for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
         const Member *m = &troop->members[k];
         const Npc *np = &ga->npcs[k];
         if (m->status != STATUS_ACTIVE || np->member_id != m->id || m->journey > 0) continue; // de viaje: fuera del mundo
-        hu[n] = (FaunaHuman){ np->pos.x, np->pos.z, m->health.down, false, false };
+        hu[n] = (FaunaHuman){ np->pos.x, np->pos.z, m->health.down, false, false,
+                              m->health.hp < 0.6f * m->health.hp_max || health_bleeding(&m->health) };
         g_refs[n++] = (HumanRef){ 1, m->id };
     }
     for (int e = 0; e < CB_MAX_ENEMIES; e++) {
         const Enemy *en = &cb->enemies[e];
         if (!en->used || en->state == EN_DEAD) continue;
-        hu[n] = (FaunaHuman){ en->pos.x, en->pos.z, false, false, true };
+        hu[n] = (FaunaHuman){ en->pos.x, en->pos.z, false, false, true, false };
         g_refs[n++] = (HumanRef){ 2, e };
     }
     g_ref_count = n;

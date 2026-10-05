@@ -53,6 +53,8 @@ void hearth_init(void) {
     UnloadImage(img);
 }
 
+void hearth_forget_gpu(void) { g_puff = (Texture2D){ 0 }; }
+
 void hearth_unload(void) {
     if (g_puff.id) UnloadTexture(g_puff);
     g_puff = (Texture2D){ 0 };

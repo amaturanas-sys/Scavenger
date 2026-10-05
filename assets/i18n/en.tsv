@@ -397,6 +397,7 @@ No llevas nada para lanzar (F para tomar).	You carry nothing to throw (F to take
 No se puede: el escudo va en el brazo izquierdo y las armas a dos manos, en las dos (%s).	Can't: the shield goes on the left arm and two-handed weapons in both (%s).
 No te cabe: %s.	No room for: %s.
 No te caben más hierbas.	No room for more herbs.
+No tienes %s.	You don't have %s.
 No tienes agua cruda que hervir (llena el odre en la orilla).	You have no raw water to boil (fill the waterskin at the shore).
 No tienes armas que enfundar.	You have no weapons to sheathe.
 Obra iniciada: %s. La cuadrilla va en camino.	Work started: %s. The crew is on its way.
@@ -497,6 +498,7 @@ te sigue · clic: que se quede	follows you · click: stay
  · L: encender	 · L: light
  · recargando	 · reloading
  · sangra	 · bleeding
+%s Mueres. Vuelves en %s; tus huesos quedan donde caíste (moral -8).	%s You die. You return at %s; your bones stay where you fell (morale -8).
 %s abatió a un %s.	%s brought down a %s.
 %s del %s contra tu escudo: pierdes la guardia.	%s by the %s on your shield: guard broken.
 %s del %s: ¡te derriba!	%s by the %s: you go down!
@@ -519,7 +521,6 @@ Arma	Weapon
 Arrollas al %s con el caballo: queda en el suelo. Deja botín (F).	You ride down the %s: it stays down. Loot dropped (F).
 Carga con escudo	Shield charge
 Con esta lluvia la flecha no prende.	The arrow won't light in this rain.
-Despiertas en el campamento: te encontraron malherido (moral -5).	You wake in camp: they found you badly hurt (morale -5).
 El %s deja botín (F para recogerlo).	The %s drops loot (F to pick up).
 El %s para tu %s%s.	The %s blocks your %s%s.
 El %s se espanta ante las pieles de fiera y retrocede.	The %s is frightened by the beast pelts and backs off.
@@ -539,6 +540,7 @@ Le agarras el brazo armado y lo desarmas con una llave: ¡el %s cae!	You seize t
 Le das al %s: %s.	You hit the %s: %s.
 Levantas a %s, pero sin hierbas sigue sangrando.	You lift %s, but without herbs the bleeding goes on.
 Levantas y vendas a %s.	You lift and bind %s.
+Nadie llega a socorrerte.	No one comes to help you.
 No hay heridas que vendar.	No wounds to bind.
 No llevas hierbas curativas (I: inventario).	You carry no healing herbs (I: inventory).
 No logras arrancarle el escudo al %s.	You fail to rip away the %s's shield.
@@ -551,6 +553,7 @@ Si tu escolta está cerca, te levantará; si no, la tribu te buscará.	If your e
 Sin escudo no puedes hacer eso.	You can't do that without a shield.
 Solo las flechas y los virotes se encienden.	Only arrows and bolts can be lit.
 Te ataca un %s: %s.	A %s attacks you: %s.
+Te desangras.	You bleed out.
 Te hieren: %s.	You're wounded: %s.
 Te levantas.	You get up.
 Te untas el ungüento: cierra las heridas y corta el veneno.	You apply the salve: it closes wounds and stops poison.
@@ -577,6 +580,8 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡Te muerde un %s: veneno! Véndate con hierbas (B).	A %s bites you: poison! Bind it with herbs (B).
 ¡Un %s derriba a %s! Acércate y pulsa B.	A %s knocks down %s! Get close and press B.
 ¡Una %s te alcanza! %s.	A %s hits you! %s.
+# --- src/game/death_game.c
+el campamento	the camp
 # --- src/game/dialog.c
 Esc	Esc
 volver	back
@@ -704,6 +709,22 @@ tu compañero	your companion
 ¡Saca a %s!	Pull %s out!
 ¡Salvaste a %s! La tribu lo celebra (moral +3).	You saved %s! The tribe cheers (morale +3).
 ¡Socavón de nieve!	Snow sinkhole!
+# --- src/game/hud_game.c
+Acciones, obras y fabricar	Actions, works and crafting
+B: venda tus heridas (o levanta a un compañero abatido).	B: bandage your wounds (or lift a downed companion).
+Beber	Drink
+Con %s en la izquierda. Tecla %d.	With %s in the left hand. Key %d.
+Lo empuñas. Tecla %d otra vez: enfundar.	You wield it. Key %d again: sheathe.
+Manos libres	Empty hands
+N: bebe lo más seguro que tengas, o del río en la orilla.	N: drink the safest water you carry, or from the river at the bank.
+No lo tienes (ni en el acopio).	You don't have it (not even in the stockpile).
+Tab: el menú de acciones, obras, fabricar y reparar.	Tab: the menu of actions, works, crafting and repairs.
+Tecla %d: empuñar.	Key %d: wield.
+Vendar	Bandage
+agotado	exhausted
+cansado	tired
+con aliento	breathing hard
+descansado	rested
 # --- src/game/inventory_game.c
  (lo demás no te cabe).	 (the rest won't fit).
  y %d más	 and %d more
@@ -862,8 +883,10 @@ tienes %d, hacen falta %d · potencia x%.2f	you have %d, %d needed · power x%.2
 ¿Qué pieza? Cada una va en su hueco y pesa distinto.	Which piece? Each goes in its own slot and weighs differently.
 # --- src/game/title_menu.c
 %s el hueco %d	%s slot %d
+1 a 9: la barra rápida de abajo (empuñar; la misma tecla otra vez enfunda; 9 antorcha) · X cambiar empuñadura · H enfundar	1 to 9: the quick bar at the bottom (wield; the same key again sheathes; 9 torch) · X change grip · H sheathe
 A / D o flechas	A / D or arrows
 A caballo: V golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo.	Mounted: V strikes farther with the gallop's momentum; the spear knocks down; at a gallop you trample. Being knocked down throws you off the horse.
+Abatido, tu escolta te levanta. Si mueres (desangrado o sin socorro), vuelves a tu último lugar de descanso (campamento o tienda) y tus huesos quedan donde caíste. Tus compañeros mueren para siempre.	When downed, your escort lifts you. If you die (bled out or with no help), you return to your last resting place (camp or tent) and your bones stay where you fell. Your companions die for good.
 Abejas: con la antorcha encendida, el humo las calma y K toma la miel.	Bees: with a lit torch the smoke calms them and K takes the honey.
 Al caer: pulsa la serie de teclas (J K L U I O) a tiempo.	When you fall: press the key sequence (J K L U I O) in time.
 Arco, ballesta u honda: mantén V para tensar y suelta para disparar. La cámara alza la mira: la curva amarilla muestra dónde caerá; la caída depende del peso del proyectil y de la potencia del arma.	Bow, crossbow or sling: hold V to draw and release to shoot. The camera raises the aim: the yellow curve shows where it will land; the drop depends on the projectile's weight and the weapon's power.
@@ -886,6 +909,7 @@ Continuar	Continue
 Contra el frío, pieles y abrigos: oso, reno, lobo, tigre, cabra. Contra el sol, sombrero, pañuelo del desierto, túnica de seda blanca y manto blanco.	Against the cold, furs and coats: bear, reindeer, wolf, tiger, goat. Against the sun, a hat, a desert scarf, a white silk tunic and a white mantle.
 Controles	Controls
 Controles y reglas del juego	Controls and game rules
+Correr, saltar y golpear gastan aguante (la barra de abajo a la derecha): agotado, no corres hasta recobrar el aliento.	Running, jumping and striking spend stamina (the lowest bar on the right): exhausted, you can't run until you catch your breath.
 Dejar la partida (lo no guardado se pierde)	Leave the game (unsaved progress is lost)
 Día %d · %s · tribu de %d	Day %d · %s · tribe of %d
 El agua	Water
@@ -971,7 +995,6 @@ Tab, Llenar el odre en la orilla: agua cruda (3 tragos por odre). Fabricar: agua
 Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario	Tab: actions, works, craft and repair (Q/E switches tab) · I: inventory
 Tatuajes (para siempre): habla (F) con el druida, elige motivo y zona. Lobo, ciervo, grifo, tamga y olas suben en tres grados; el tercero se bifurca y elegir una rama cierra la otra. La zona del cuerpo cambia a qué va el bonus.	Tattoos (forever): talk (F) to the druid, choose motif and zone. Wolf, deer, griffin, tamga and waves rise in three tiers; the third branches and choosing one closes the other. The body zone changes what the bonus goes to.
 Tatuajes y joyas	Tattoos and jewels
-Tu personaje no muere: abatido, tu escolta te levanta o despiertas en el campamento. Tus compañeros sí pueden morir.	Your character never dies: when downed, your escort lifts you or you wake up at camp. Your companions can die.
 U agarre y llave: arrancas el escudo, desarmas o tumbas	U grapple and lock: rip the shield away, disarm or throw down
 U agarre · O gancho	U grapple · O hook
 Una gran tierra casi redonda con cinco regiones: la estepa en el centro, rodeada de ríos que serpentean; el bosque al noroeste, el desierto al noreste, el altiplano al sureste y los fiordos al suroeste.	A vast, nearly round land with five regions: the steppe at the center, ringed by winding rivers; the forest to the northwest, the desert to the northeast, the highland to the southeast and the fjords to the southwest.
@@ -984,7 +1007,6 @@ Volver a una partida guardada	Return to a saved game
 Volver al juego (Esc)	Back to the game (Esc)
 WASD mover · Shift correr	WASD move · Shift run
 WASD mover · Shift correr · C acechar (en la hierba alta te ocultas)	WASD move · Shift run · C sneak (tall grass hides you)
-X cambiar empuñadura · Mayús+X pasar el arma de mano · H enfundar	X change grip · Shift+X switch weapon hand · H sheathe
 X/H empuñar/enfundar	X/H grip/sheathe
 Y: dos integrantes te escoltan · Mayús+Y: despachar o mandar un mensajero · G: ficha	Y: two members escort you · Shift+Y: dispatch or send a messenger · G: card
 Z cubrirse · con escudo: Z + V golpe de escudo · corriendo + Z: carga	Z guard · with shield: Z + V shield bash · running + Z: charge
@@ -1181,6 +1203,7 @@ Reno salvaje	Wild reindeer
 Tigre	Tiger
 Tortuga marina	Sea turtle
 Víbora	Viper
+Águila real	Golden eagle
 Íbice	Ibex
 # --- src/sim/apparel.c
 a gusto	comfortable

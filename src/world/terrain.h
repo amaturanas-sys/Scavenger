@@ -82,5 +82,11 @@ void terrain_draw(const Terrain *t);
 // Color de la bruma del horizonte (el del cielo); recolorea si cambio.
 void terrain_set_haze(Terrain *t, Color haze);
 void terrain_unload(Terrain *t);
+// Las texturas compartidas (atlas del suelo y agua): al cerrar, se liberan y se vuelven a pedir
+// en el proximo terrain_init. terrain_forget_gpu solo las olvida, sin llamar a OpenGL: en
+// Android, android_main puede volver a correr en el mismo proceso con un contexto nuevo, y las
+// variables estaticas guardarian ids que ya no existen (el suelo se veia negro).
+void terrain_unload_gpu(void);
+void terrain_forget_gpu(void);
 
 #endif

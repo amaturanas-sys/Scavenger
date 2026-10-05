@@ -64,7 +64,7 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 - **Empieza negro:** el personaje no conoce el mundo. Las zonas se **iluminan poco a poco** a medida que el jugador las recorre.
 - **Frecuencia = nitidez:** cada zona acumula familiaridad. Lo recorrido a menudo brilla más, como la memoria espacial real.
 - **Olvido en días de juego:** el brillo se apaga con los días (un día de juego = 30 minutos reales; `src/sim/clock.h`). Una zona vista de pasada se borra en una o dos semanas de juego; lo familiar dura mucho más (repetición espaciada).
-- **Todo el mundo:** el minimapa siempre se centra en el jugador y muestra el mundo a su alrededor; lo no explorado aparece oscuro. La memoria se guarda por páginas que solo se crean al explorar, así que crece con lo recorrido, no con el tamaño del mundo.
+- **Todo el mundo:** el minimapa siempre se centra en el jugador y muestra la geografía a su alrededor (200 m): regiones, relieve sombreado, ríos, lagos, mar, deshielo y nieve de las cumbres, y los pueblos, tribus, guaridas y ruinas ya vistos. Lo no recorrido u olvidado se ve apagado. La memoria se guarda por páginas que solo se crean al explorar, así que crece con lo recorrido, no con el tamaño del mundo.
 - **Días automáticos:** el reloj de juego avanza los días solo; `Enter` salta al amanecer siguiente y `Ctrl+N` adelanta dos minutos (prueba).
 - **Marcas:** el jugador marca sitios de interés (`M`) o de peligro (`Shift+M`). Pulsar de nuevo cerca de una marca la quita. Las marcas fuera de alcance quedan en el borde, señalando su dirección.
 - Los parámetros (radio de vista, velocidad de aprendizaje y de olvido, brillo de una sola pasada) están en `memmap_default_params` y son de balance.
@@ -77,6 +77,7 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 - **Duración de la luz según la estación:** en pleno invierno la noche alcanza **20 minutos** y el día 10; en pleno verano, al revés. En los equinoccios (mitad de la primavera y del otoño) son 15 y 15. El cambio es gradual día a día.
 - **Alba y ocaso:** penumbra de 90 segundos de juego con luz cálida; el sol bajo también entibia los colores.
 - **La noche se ve:** la escena se oscurece y azulea, aparecen las estrellas y los fuegos alumbran a su alrededor (fogata del campamento, fogatas, hogueras, hornos y la antorcha encendida en la mano).
+- **HUD de rol:** bajo el minimapa, una placa con las constantes (vida, calor del cuerpo, sed y **aguante**); abajo a la izquierda, la **barra rápida 1-9** (empuñaduras y antorcha; la misma tecla otra vez enfunda); en el borde izquierdo, una **columna de acciones** (menú, beber, vendar, fogata, tienda, lazo, trepa, hervir agua). Responde al ratón y a los toques. El aguante lo gastan correr, saltar y golpear; agotado, no se corre.
 - **HUD:** el panel dice el día, la estación, la fase y los minutos que faltan para el próximo cambio; bajo el minimapa, una barra muestra el reparto de luz (oro) y noche (lapislázuli) con la hora actual.
 - **Prueba:** `./build/estepa --dia 25 --minuto 14` arranca en una noche de pleno invierno.
 
@@ -156,7 +157,7 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
 - **Sangrado:** cortes y mordidas sangran hasta vendarlos (los leves coagulan solos). Sin sangre se cae **abatido** y, si se acaba, se muere.
 - **Efectos:** heridas en las piernas frenan (y se cojea), en los brazos debilitan los golpes; poca sangre afecta a todo.
 - **Curar:** las heridas sanan con el tiempo, más rápido vendadas y en reposo; las fracturas solo sanan entablilladas. `B` venda con **hierbas curativas** del acopio (a uno mismo o a un compañero cercano; a uno abatido lo levanta). El **curandero** del campamento atiende al jugador cuando está cerca y, cada amanecer, trata y cura a toda la tribu; los grandes guerreros aguantan más (vida según talla y aguante).
-- **El jugador no muere:** abatido, su escolta lo levanta y lo venda; si está solo, despierta en el campamento (moral −5, pierde lo que cargaba). Los compañeros sí mueren (luto: moral −6).
+- **Muerte y regreso:** abatido, su escolta lo levanta y lo venda. Si muere (desangrado, o abatido sin nadie que lo socorra), en el suelo quedan una calavera y unos huesos, y vuelve a su **último lugar de descanso**: el último campamento, tienda o casa de la tribu donde se quedó unos segundos (moral −8, pierde lo que cargaba). Los compañeros mueren para siempre (luto: moral −6).
 - **Combate cuerpo a cuerpo** (`src/sim/melee.*`). Las mismas reglas valen para el jugador, la escolta y los enemigos:
   - **Golpes y combos:** `V` (o clic izquierdo) golpea con el arma empuñada. El daño, el alcance y la cadencia dependen del arma: dagas rápidas, mazas que rompen huesos, lanzas de largo alcance; el bronce, el acero y las armas especiales cortan más. Tres golpes seguidos encadenan un **combo** (el tercero remata). Las armas cortas encadenan más rápido; con las largas (lanza, espada, guja) el remate puede tumbar.
   - **Golpe pesado:** mantener `V` medio segundo. Más daño, desequilibra y rompe la guardia del escudo (algo de daño pasa).

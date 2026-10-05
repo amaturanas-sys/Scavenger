@@ -50,6 +50,8 @@
 #include "ui/theme.h"
 #include "world/camp.h"
 #include "world/hearth.h"
+#include "game/death_game.h"
+#include "game/hud_game.h"
 #include "world/gallery.h"
 #include "world/sky.h"
 #include "world/clouds.h"
@@ -355,6 +357,7 @@ static unsigned fresh_seed(void) {
 // Una partida nueva: la tribu inicial en el campamento, a media mañana del dia pedido.
 static void game_new(GameState *g, Terrain *terrain, Camp *camp, unsigned seed, int start_day, float start_minute, char *log, size_t len) {
     world_reset(terrain, camp, seed);
+    dg_reset(); // sin restos y con el campamento como lugar de descanso
     player_init(g->player, terrain);
     kingdom_init_iron_khanate(g->overlord);
     troop_init(g->troop, g->overlord);
@@ -622,6 +625,11 @@ int main(int argc, char **argv) {
 #endif
     SetTargetFPS(60);
 
+    // Contexto nuevo: lo que los modulos guardaban de una corrida anterior (Android) ya no vale.
+    terrain_forget_gpu();
+    clouds_forget_gpu();
+    voxs_forget_gpu();
+    hearth_forget_gpu();
     RenderTexture2D lowres = LoadRenderTexture(VIRTUAL_W, VIRTUAL_H);
     SetTextureFilter(lowres.texture, TEXTURE_FILTER_POINT); // pixeles nitidos al escalar
 
@@ -655,7 +663,7 @@ int main(int argc, char **argv) {
     bool show_card = false;
     memmap_init(&g_memory);
     Minimap minimap;
-    minimap_init(&minimap, MINIMAP_RADIUS, 2.0f);
+    minimap_init(&minimap, MINIMAP_RADIUS, 4.0f); // 4 m por pixel: 200 m de radio
     char log[128] = "";
     char *inv_text = LoadFileText(platform_asset_path("assets/inventario.tsv"));
     if (inv_text) {
@@ -737,6 +745,7 @@ int main(int argc, char **argv) {
         if (input_last_key() && !simulate_no_keyboard) keyboard_override = true; // llego una tecla: hay teclado
         if (!has_keyboard && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) keyboard_override = true;
         if (input_pressed(IN_DIAG)) show_diag = !show_diag;
+        input_set_debug(show_diag);
         { // el puntero (raton o dedo) en la pantalla virtual de 640x360
             float sw = (float)GetScreenWidth(), sh = (float)GetScreenHeight();
             float k = fminf(sw / VIRTUAL_W, sh / VIRTUAL_H);
@@ -746,6 +755,7 @@ int main(int argc, char **argv) {
         }
         if (frame % 30 == 0) has_keyboard = (platform_has_keyboard() && !simulate_no_keyboard) || keyboard_override; // conexion en caliente
         frame++;
+        hud_frame_begin();
         if (start_pause && frame == 10 && in_game) { // prueba: la pausa (o guardar) sobre la partida
             if (start_pause == 3) {
                 show_controls = true;
@@ -903,7 +913,7 @@ int main(int argc, char **argv) {
             }
             world_time += dt;
             int prev_champion = last_champion;
-            if (!menu) debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log));
+            if (!menu && show_diag) debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log)); // teclas de prueba: con Ctrl+D
             g_actions.player_armor = &g_combat.armor; // para reparar lo que llevas puesto
             if (!gallery_mode) ga_update(&g_actions, &g_props, &terrain, &player, &troop, dt, log, sizeof(log));
             if (!gallery_mode) ga_after_player(&g_actions, &g_props, &terrain, &player);
@@ -1036,6 +1046,7 @@ int main(int argc, char **argv) {
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
         if (!gallery_mode) wd_draw_world(&g_actions, &terrain, &player, (float)GetTime());
+        if (!gallery_mode) dg_draw_world(&terrain); // calaveras y huesos donde murio el jugador
         if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());
         if (!gallery_mode) ig_draw_world(&g_actions, &terrain, (float)GetTime());
         if (!gallery_mode) trv_draw_world(&g_actions, &troop, (float)GetTime());
@@ -1074,14 +1085,24 @@ int main(int argc, char **argv) {
         } else if (!menu_visible(&menu)) {
             draw_hud(&troop, world_time, ga_hands_text(&g_actions), log, log_age,
                      g_actions.menu_open || g_actions.inv_open || g_actions.equip_open);
+            minimap_set_world(&minimap, terrain.world, terrain.plain);
             minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
                          player.pos, rig.yaw, player.yaw, world_time);
             draw_clock_bar(VIRTUAL_W - MINIMAP_RADIUS - 10, 2 * MINIMAP_RADIUS + 19, 2 * MINIMAP_RADIUS - 8, world_time);
             draw_weather_text(VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 27, &climate, terrain_region(&terrain, player.pos.x, player.pos.z));
             ga_draw_hud(&g_actions, &g_props, &troop, &player, VIRTUAL_W, VIRTUAL_H);
-            hz_draw_hud(&g_hazards, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 40, VIRTUAL_W, VIRTUAL_H);
-            cb_draw_hud(&g_combat, &g_actions, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 63, VIRTUAL_W, VIRTUAL_H);
-            wg_draw_hud(&g_actions, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 89);
+            // La placa de las constantes bajo el minimapa: vida, calor del cuerpo, sed y aguante.
+            const int vy = 2 * MINIMAP_RADIUS + 40;
+            hud_vitals_frame(VIRTUAL_W - 10, vy - 3, 4);
+            cb_draw_hud(&g_combat, &g_actions, &troop, VIRTUAL_W - 14, vy, VIRTUAL_W, VIRTUAL_H);
+            hz_draw_hud(&g_hazards, &troop, VIRTUAL_W - 14, vy + 22, VIRTUAL_W, VIRTUAL_H);
+            wg_draw_hud(&g_actions, VIRTUAL_W - 14, vy + 44);
+            hud_stamina(VIRTUAL_W - 14, vy + 66);
+            // Barra rapida (1..9) abajo a la izquierda y la columna de acciones en el borde.
+            if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions) && !g_actions.dlg.open) {
+                hud_quickbar(&g_actions, 6, VIRTUAL_H - 54);
+                hud_action_column(&g_actions, 6, 68);
+            }
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions)) tg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
@@ -1146,6 +1167,7 @@ int main(int argc, char **argv) {
     terrain_unload(&terrain);
     clouds_unload();
     hearth_unload();
+    terrain_unload_gpu();
     voxs_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();

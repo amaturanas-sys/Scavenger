@@ -1202,13 +1202,67 @@ static void test_animals_flee_and_wander(void) {
     // Herida por una persona: huye de ella, y su grupo tambien.
     Animal herd[3];
     for (int i = 0; i < 3; i++) animal_init(&herd[i], SPECIES_DEER, (float)i * 2.0f, 0), herd[i].group = 7;
-    FaunaHuman hu = { 5.0f, 0.0f, false, false, false };
+    FaunaHuman hu = { 5.0f, 0.0f, false, false, false, false };
     FaunaCtx c = { &hu, 1, 5.0f, 0.0f, false, 100.0f, 100.0f, false, NULL, NULL, false };
     animal_hurt(herd, 3, 2, &r, 10.0f, WOUND_CUT, PART_THORAX, true, 0);
     CHECK(herd[2].fear_humans > 0.0f && herd[0].fear_humans > 0.0f && herd[1].fear_humans > 0.0f);
     float before = an_dist(&herd[0], 5.0f, 0.0f);
     for (int i = 0; i < 20; i++) fauna_update(herd, 3, &c, &r, 0.1f, NULL);
     CHECK(herd[0].fleeing && herd[2].fleeing && an_dist(&herd[0], 5.0f, 0.0f) > before);
+}
+
+// Aves: nunca atacan a las personas; las rapaces caen en picado sobre una presa chica y se
+// la llevan; los cuervos bajan a un cadaver y rondan a los heridos.
+static void test_animals_birds(void) {
+    Rng r;
+    rng_seed(&r, 33);
+    // Junto a una persona, ningun ave muerde (ni hambrienta, ni herida por ella).
+    for (int s = 0; s < 3; s++) {
+        Species sp = s == 0 ? SPECIES_RAVEN : s == 1 ? SPECIES_FALCON : SPECIES_EAGLE;
+        Animal b;
+        animal_init(&b, sp, 0, 0);
+        b.hunger = 1.0f;
+        FaunaHuman hu = { 1.0f, 0.0f, false, false, false, true };
+        FaunaCtx c = { &hu, 1, 1.0f, 0.0f, false, 0, 0, false, NULL, NULL, false };
+        FaunaEvents ev = { .n = 0 };
+        int bites = 0;
+        for (int i = 0; i < 600; i++) {
+            if (i == 100) animal_hurt(&b, 1, 0, &r, 2.0f, WOUND_CUT, PART_THORAX, true, 0);
+            ev.n = 0;
+            fauna_update(&b, 1, &c, &r, 0.1f, &ev);
+            for (int k = 0; k < ev.n; k++) bites += ev.ev[k].kind == FEV_BITE_HUMAN;
+        }
+        CHECK(bites == 0);
+    }
+    // El aguila caza una liebre: picado, la arrebata (muere) y se la lleva (sale del mundo).
+    Animal z[2];
+    animal_init(&z[0], SPECIES_EAGLE, 0, 0);
+    animal_init(&z[1], SPECIES_HARE, 25.0f, 0);
+    z[0].hunger = 1.0f;
+    FaunaHuman far = { 500.0f, 500.0f, false, false, false, false };
+    FaunaCtx c = { &far, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false };
+    bool dived = false, killed = false, carried = false;
+    for (int i = 0; i < 900 && z[1].used; i++) {
+        fauna_update(z, 2, &c, &r, 0.05f, NULL);
+        dived |= z[0].mode == MODE_CHASE && z[0].alt < 5.0f;
+        killed |= z[1].state == ANIMAL_DEAD;
+        carried |= z[1].state == ANIMAL_DEAD && z[1].alt > 2.0f;
+    }
+    CHECK(dived && killed && carried && !z[1].used);
+    // El cuervo baja al cadaver y come; con una persona herida cerca, la ronda sin morder.
+    Animal k[2];
+    animal_init(&k[0], SPECIES_RAVEN, 0, 0);
+    animal_init(&k[1], SPECIES_DEER, 30.0f, 0);
+    k[0].hunger = 1.0f;
+    animal_hurt(k, 2, 1, &r, 1000.0f, WOUND_CUT, PART_THORAX, false, -1);
+    for (int i = 0; i < 400 && k[0].mode != MODE_EAT; i++) fauna_update(k, 2, &c, &r, 0.05f, NULL);
+    CHECK(k[0].mode == MODE_EAT && an_dist(&k[0], 30.0f, 0.0f) < 2.0f);
+    Animal rv;
+    animal_init(&rv, SPECIES_RAVEN, 0, 0);
+    FaunaHuman hurt = { 20.0f, 0.0f, false, false, false, true };
+    FaunaCtx ch = { &hurt, 1, 20.0f, 0.0f, false, 0, 0, false, NULL, NULL, false };
+    for (int i = 0; i < 400; i++) fauna_update(&rv, 1, &ch, &r, 0.05f, NULL);
+    CHECK(rv.mode == MODE_STALK && an_dist(&rv, 20.0f, 0.0f) < 13.0f && rv.alt > 3.0f);
 }
 
 static void test_animals_tame_saddle_ride(void) {
@@ -1253,7 +1307,7 @@ static void test_animals_tame_predator(void) {
     // Sin comer, se suelta.
     Animal w2 = w;
     FaunaEvents ev = { .n = 0 };
-    FaunaHuman hu = { 50.0f, 50.0f, false, false, false };
+    FaunaHuman hu = { 50.0f, 50.0f, false, false, false, false };
     FaunaCtx c = { &hu, 1, 50.0f, 50.0f, false, 0, 0, false, NULL, NULL, false };
     for (int i = 0; i < 650 && w2.state == ANIMAL_BOUND; i++) fauna_update(&w2, 1, &c, &r, 0.1f, &ev);
     CHECK(w2.state == ANIMAL_WILD && ev.n > 0 && ev.ev[ev.n - 1].kind == FEV_BREAK_FREE);
@@ -1262,7 +1316,7 @@ static void test_animals_tame_predator(void) {
     // Domado, defiende al jugador: va a por un enemigo de la tribu y lo ataca.
     Animal pack[1] = { w };
     pack[0].x = 0, pack[0].z = 0;
-    FaunaHuman people[2] = { { 0.0f, 0.0f, false, false, false }, { 6.0f, 0.0f, false, false, true } };
+    FaunaHuman people[2] = { { 0.0f, 0.0f, false, false, false, false }, { 6.0f, 0.0f, false, false, true, false } };
     FaunaCtx c2 = { people, 2, 0.0f, 0.0f, false, 0, 0, false, NULL, NULL, false };
     ev.n = 0;
     bool bit_enemy = false;
@@ -1284,7 +1338,7 @@ static void test_animals_pack_hunt(void) {
         a[i].group = 1, a[i].hunger = 1.0f;
     }
     for (int i = 3; i < 7; i++) animal_init(&a[i], SPECIES_DEER, (float)(i - 3) * 2.0f, 3.0f), a[i].group = 2;
-    FaunaHuman hu = { 500.0f, 500.0f, false, false, false };
+    FaunaHuman hu = { 500.0f, 500.0f, false, false, false, false };
     FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false };
     bool shared = false, alarmed = false, killed = false, ate = false;
     for (int step = 0; step < 1800 && !(killed && ate); step++) {
@@ -1310,7 +1364,7 @@ static void test_animals_pack_hunt(void) {
 static void test_animals_stalk_and_rivals(void) {
     Rng r;
     rng_seed(&r, 13);
-    FaunaHuman hu = { 500.0f, 500.0f, false, false, false };
+    FaunaHuman hu = { 500.0f, 500.0f, false, false, false, false };
     FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false };
     Animal a[2];
     animal_init(&a[0], SPECIES_TIGER, 0, 0);
@@ -1346,7 +1400,7 @@ static void test_animals_stalk_and_rivals(void) {
 static void test_animals_flee_only_critical(void) {
     Rng r;
     rng_seed(&r, 17);
-    FaunaHuman hu = { 3.0f, 0.0f, false, false, false };
+    FaunaHuman hu = { 3.0f, 0.0f, false, false, false, false };
     FaunaCtx c = { &hu, 1, 3.0f, 0.0f, false, 50, 50, false, NULL, NULL, false };
     Animal w;
     animal_init(&w, SPECIES_BEAR, 0, 0);
@@ -1384,7 +1438,7 @@ static void test_animals_livestock(void) {
     animal_init(&g[1], SPECIES_CALF, 2, 0);
     CHECK(g[0].state == ANIMAL_TAMED && g[1].state == ANIMAL_TAMED); // de la tribu desde el principio
     // El pastor camina cerca: lo siguen; se para: se quedan donde estan.
-    FaunaHuman hu = { 4.0f, 0.0f, false, false, false };
+    FaunaHuman hu = { 4.0f, 0.0f, false, false, false, false };
     FaunaCtx c = { &hu, 1, 4.0f, 0.0f, true, 0, 0, false, NULL, NULL, false };
     for (int i = 0; i < 300; i++) {
         hu.x = c.px = 4.0f + (float)i * 0.1f; // 1 m/s
@@ -1499,6 +1553,25 @@ static void test_world_river_banks(void) {
     CHECK(world_river_bank(w, 0.0f, 0.0f, NULL) < 0.01f); // el campamento, lejos de los rios
 }
 
+// Ningun lago ni rio flota: junto a un cañon (el lago 16 de la semilla 1206 tiene uno al oeste)
+// el agua de arriba no sigue en el aire sobre el barranco.
+static void test_world_water_never_floats(void) {
+    const World *w = world_for_seed(1206u);
+    int wet = 0;
+    for (int i = 0; i < w->lake_count; i++) {
+        const Lake *l = &w->lakes[i];
+        for (float dx = -l->r * 1.6f; dx <= l->r * 1.6f; dx += 6.0f)
+            for (float dz = -l->r * 1.6f; dz <= l->r * 1.6f; dz += 6.0f) {
+                WaterKind k;
+                float lv = world_water(w, l->x + dx, l->z + dz, 0.0f, &k);
+                if (k != WATER_LAKE && k != WATER_RIVER) continue;
+                wet++;
+                CHECK(lv - world_height(w, l->x + dx, l->z + dz) < 9.0f);
+            }
+    }
+    CHECK(wet > 100);
+}
+
 static void test_voxels(void) {
     VoxGrid g;
     CHECK(vox_init(&g, 8, 8, 8, 0.5f));
@@ -1557,7 +1630,7 @@ static float test_round_lake(void *ud, float x, float z) {
 static void test_animals_keep_out_of_lakes(void) {
     Rng r;
     rng_seed(&r, 77);
-    FaunaHuman hu = { 500.0f, 500.0f, false, false, false };
+    FaunaHuman hu = { 500.0f, 500.0f, false, false, false, false };
     FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 100, 100, false, test_round_lake, NULL, false };
     Animal herd[4];
     for (int i = 0; i < 4; i++) {
@@ -1588,7 +1661,7 @@ static void test_animals_keep_out_of_lakes(void) {
 static void test_animals_water_and_venom(void) {
     Rng r;
     rng_seed(&r, 31);
-    FaunaHuman hu = { 6.0f, 0.0f, false, false, false };
+    FaunaHuman hu = { 6.0f, 0.0f, false, false, false, false };
     FaunaCtx c = { &hu, 1, 6.0f, 0.0f, false, 100, 100, false, test_lake, NULL, false };
     Animal croc;
     animal_init(&croc, SPECIES_CROCODILE, -2.0f, 0.0f); // en el agua, junto a la orilla
@@ -2395,7 +2468,7 @@ static void test_backpacks_and_feeding(void) {
     herd[0].state = ANIMAL_TAMED;
     animal_init(&herd[1], SPECIES_DOG, 3.0f, 0.0f);
     herd[1].state = ANIMAL_TAMED;
-    FaunaHuman hu = { 200.0f, 200.0f, false, false, false };
+    FaunaHuman hu = { 200.0f, 200.0f, false, false, false, false };
     FaunaCtx bare = { &hu, 1, 200.0f, 200.0f, false, 0.0f, 0.0f, false, NULL, NULL, false };
     herd[0].hunger = herd[1].hunger = 0.5f;
     for (int i = 0; i < 600; i++) fauna_update(herd, 2, &bare, &rng, 0.5f, NULL); // 5 minutos sin pasto
@@ -2588,7 +2661,7 @@ static void test_water_spirits_and_drink(void) {
     a.thirst = 1.2f;
     CHECK(animal_give_water(&a) && a.thirst == 0.0f);
     // En seco la sed sube (y avisa); junto al agua bebe solo.
-    FaunaHuman hu = { 300.0f, 300.0f, false, false, false };
+    FaunaHuman hu = { 300.0f, 300.0f, false, false, false, false };
     FaunaCtx dry;
     memset(&dry, 0, sizeof(dry));
     dry.humans = &hu, dry.human_count = 1, dry.px = dry.pz = 300.0f, dry.grass = true;
@@ -2803,6 +2876,7 @@ int main(void) {
     RUN(test_build_materials_and_crew_presence);
     RUN(test_animals_classes);
     RUN(test_animals_flee_and_wander);
+    RUN(test_animals_birds);
     RUN(test_animals_tame_saddle_ride);
     RUN(test_animals_tame_predator);
     RUN(test_animals_pack_hunt);
@@ -2816,6 +2890,7 @@ int main(void) {
     RUN(test_world_tribes_and_sites);
     RUN(test_voxels);
     RUN(test_world_river_banks);
+    RUN(test_world_water_never_floats);
     RUN(test_swarms);
     RUN(test_fire_spread_and_rain);
     RUN(test_weather_hazards_random);

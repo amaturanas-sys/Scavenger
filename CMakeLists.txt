@@ -103,6 +103,8 @@ if(ESTEPA_BUILD_GAME)
     src/game/travel_game.c
     src/game/apparel_game.c
     src/game/water_game.c
+    src/game/death_game.c
+    src/game/hud_game.c
     src/game/world_game.c
     src/game/title_menu.c
     src/game/input.c

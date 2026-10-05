@@ -23,5 +23,6 @@ float clouds_mist(const Terrain *t, Vector3 pos, float time, float cover);
 // La niebla de estar dentro de una nube (fuera de BeginMode3D, antes del tinte).
 void clouds_draw_mist(float mist, int w, int h);
 void clouds_unload(void);
+void clouds_forget_gpu(void); // ver terrain_forget_gpu
 
 #endif

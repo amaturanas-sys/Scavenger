@@ -127,6 +127,7 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
 // Barras de vida sobre enemigos y companeros heridos. Fuera de BeginMode3D.
 void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop, Camera3D cam, int w, int h);
 // Vida del jugador (bajo el calor), panel de heridas (P) y aviso de abatido.
+void cb_request_bandage(void); // como pulsar B (desde el HUD)
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h);
 // Prueba: hace aparecer enemigos cerca del jugador ("bandidos", "culto", "arqueros"),
 // o fieras por nombre ("lobos", "tigre", "jabali"...).
