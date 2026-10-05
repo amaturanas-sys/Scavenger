@@ -6,6 +6,7 @@
 #define WATER_ID "utileria.consumible.agua"
 #define BOILED_ID "utileria.consumible.agua_hervida"
 #include "game/talents_game.h"
+#include "game/world_game.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -51,7 +52,7 @@ static const char *lower(const char *name, char *buf, size_t len) {
 }
 
 static bool deep_water(const Terrain *t, float x, float z) {
-    return t->look.water_level > terrain_height(t, x, z) + 0.6f && !hazard_ice_walkable(t->look.ice);
+    return terrain_deep_water(t, x, z, 0.6f);
 }
 
 // Profundidad del agua (para la fauna y los peces); helado, se camina por encima.
@@ -59,8 +60,8 @@ static const char *water_at_hand(const GameActions *ga, const Player *p);
 
 static float water_depth_cb(void *ud, float x, float z) {
     const Terrain *t = ud;
-    if (hazard_ice_walkable(t->look.ice)) return 0.0f;
-    return t->look.water_level - terrain_height(t, x, z);
+    if (hazard_ice_walkable(terrain_ice(t, x, z))) return 0.0f;
+    return terrain_water(t, x, z) - terrain_height(t, x, z);
 }
 
 static int free_slot(GameActions *ga) {
@@ -124,9 +125,8 @@ void fg_init(GameActions *ga, const Terrain *t) {
 
 static int habitat_at(const Terrain *t, float x, float z) {
     if (deep_water(t, x, z)) return HAB_WATER;
-    if (biome_desert(t->seed, x, z) > 0.5f) return HAB_DESERT;
-    if (terrain_height(t, x, z) > t->look.snowline - 30.0f) return HAB_COLD;
-    return HAB_STEPPE;
+    if (terrain_height(t, x, z) > t->look.snowline - 30.0f) return HAB_COLD; // cumbres nevadas
+    return region_habitat(terrain_region(t, x, z));
 }
 
 static int pick_species(GameActions *ga, int hab, bool night) {
@@ -168,6 +168,14 @@ static void populate(GameActions *ga, const Player *p, const Terrain *t, bool ni
         float ang = rng_float(&ga->rng) * 2.0f * PI, r = SPAWN_MIN + rng_float(&ga->rng) * (SPAWN_MAX - SPAWN_MIN);
         float x = p->pos.x + cosf(ang) * r, z = p->pos.z + sinf(ang) * r;
         if (sqrtf(x * x + z * z) < CAMP_CLEAR) continue;
+        // Cerca de una guarida, a menudo aparece su dueño (junto a ella).
+        int den = wd_den_near(t, p->pos.x, p->pos.z, SPAWN_MAX + 60.0f);
+        if (den >= 0 && rng_float(&ga->rng) < 0.5f) {
+            const Den *d = &t->world->dens[den];
+            float da = rng_float(&ga->rng) * 2.0f * PI;
+            fg_spawn_group(ga, (Species)d->species, d->x + cosf(da) * 8.0f, d->z + sinf(da) * 8.0f);
+            return;
+        }
         int s = pick_species(ga, habitat_at(t, x, z), night);
         if (s >= 0) fg_spawn_group(ga, (Species)s, x, z);
         return;
@@ -313,10 +321,10 @@ static void seed_cell(GameActions *ga, const Terrain *t, int cx, int cz) {
         if (r < 0.55f) k = SWARM_FISH;
         else if (r < 0.8f) k = SWARM_MOSQUITOES;
         else return;
-        y = t->look.water_level;
+        y = terrain_water(t, x, z);
         if (k == SWARM_MOSQUITOES) y += 0.2f;
     } else {
-        if (deep_water(t, x, z) || biome_desert(t->seed, x, z) > 0.5f || terrain_height(t, x, z) > t->look.snowline - 30.0f) return;
+        if (deep_water(t, x, z) || terrain_region(t, x, z) == REGION_DESERT || terrain_height(t, x, z) > t->look.snowline - 30.0f) return;
         if (r < 0.12f) k = SWARM_BEES;
         else if (r < 0.2f) k = SWARM_WASPS;
         else return;
@@ -365,15 +373,14 @@ static void update_swarms(GameActions *ga, Combat *cb, const Player *p, const Te
         flies_on_corpses(ga, t);
     }
     DayPhase ph = clock_phase(now);
-    float ground = terrain_height(t, p->pos.x, p->pos.z);
     SwarmCtx c = { p->pos.x, p->pos.y, p->pos.z, cb->player.down, ga->torch_lit && !ga->hands.sheathed,
-                   t->look.water_level > ground + 1.3f && !hazard_ice_walkable(t->look.ice), temp,
+                   terrain_deep_water(t, p->pos.x, p->pos.z, 1.3f), temp,
                    ph == PHASE_NIGHT, ph == PHASE_DUSK || ph == PHASE_DAWN, water_depth_cb, (void *)t };
     for (int i = 0; i < GA_MAX_SWARMS; i++) {
         Swarm *s = &ga->swarms[i];
         if (!s->used) continue;
-        if (s->kind == SWARM_FISH && hazard_ice_walkable(t->look.ice)) continue; // bajo el hielo
-        if (s->kind == SWARM_FISH) s->hy = t->look.water_level;                  // el nivel cambia con la estacion
+        if (s->kind == SWARM_FISH && hazard_ice_walkable(terrain_ice(t, s->cx, s->cz))) continue; // bajo el hielo
+        if (s->kind == SWARM_FISH) s->hy = terrain_water(t, s->cx, s->cz);                         // el nivel cambia con la estacion
         SwarmHit hit = swarm_update(s, &c, &ga->rng, dt);
         if (!hit.stings) continue;
         cb->player.hp -= hit.damage;
@@ -389,8 +396,9 @@ static void update_swarms(GameActions *ga, Combat *cb, const Player *p, const Te
 }
 
 bool fg_fish(GameActions *ga, const Terrain *t, Vector3 pos, float yaw, float reach, bool spear, char *log, size_t len) {
-    if (hazard_ice_walkable(t->look.ice)) return false;
-    Vector3 at = { pos.x + sinf(yaw) * reach * 0.8f, t->look.water_level - 0.3f, pos.z + cosf(yaw) * reach * 0.8f };
+    float ax = pos.x + sinf(yaw) * reach * 0.8f, az = pos.z + cosf(yaw) * reach * 0.8f;
+    if (hazard_ice_walkable(terrain_ice(t, ax, az))) return false;
+    Vector3 at = { ax, terrain_water(t, ax, az) - 0.3f, az };
     for (int i = 0; i < GA_MAX_SWARMS; i++) {
         Swarm *s = &ga->swarms[i];
         if (!s->used || s->kind != SWARM_FISH || dist_xz(s->cx, s->cz, at.x, at.z) > 4.0f) continue;
@@ -411,7 +419,7 @@ bool fg_shot_water(GameActions *ga, const Terrain *t, Vector3 at, char *log, siz
     for (int i = 0; i < GA_MAX_SWARMS; i++) {
         Swarm *s = &ga->swarms[i];
         if (!s->used || s->kind != SWARM_FISH || dist_xz(s->cx, s->cz, at.x, at.z) > 4.0f) continue;
-        if (swarm_catch(s, at.x, t->look.water_level - 0.3f, at.z, 1.2f, 1)) {
+        if (swarm_catch(s, at.x, terrain_water(t, at.x, at.z) - 0.3f, at.z, 1.2f, 1)) {
             ig_store(ga, NULL, &(Player){ .pos = at }, FRESH_MEAT_ID, 1, 1.0f);
             snprintf(log, len, "%s", T("¡La flecha atraviesa un pez! (+1 carne fresca)"));
             return true;
@@ -778,7 +786,7 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
         // En el agua, los anfibios flotan: solo asoma el lomo (el cocodrilo, los ojos).
         float depth = water_depth_cb((void *)t, a->x, a->z);
         if (d->aquatic && depth > 0.3f && a->state != ANIMAL_DEAD)
-            pos.y = t->look.water_level - (a->species == SPECIES_CROCODILE && a->mode != MODE_CHASE ? 0.42f : 0.25f);
+            pos.y = terrain_water(t, a->x, a->z) - (a->species == SPECIES_CROCODILE && a->mode != MODE_CHASE ? 0.42f : 0.25f);
         float top = it ? it->h : d->size * 0.6f;
         if (it && props_has_model(props, it)) {
             // El modelo mira a +X (Kiln); el animal avanza segun yaw (0 = +Z).

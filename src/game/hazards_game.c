@@ -132,7 +132,7 @@ static void climb_out(Hazards *hz, Player *p, const Terrain *t, float away) {
     p->pos.x = hz->trap_pos.x + sinf(back) * away;
     p->pos.z = hz->trap_pos.z + cosf(back) * away;
     float ground = terrain_height(t, p->pos.x, p->pos.z);
-    p->pos.y = fmaxf(ground, t->look.water_level);
+    p->pos.y = fmaxf(ground, terrain_water(t, p->pos.x, p->pos.z));
     p->vy = 0.0f;
     p->grounded = true;
 }
@@ -205,7 +205,7 @@ static void resolve_rescue(Hazards *hz, bool won, GameActions *ga, Troop *troop,
     Npc *n = npc_for(ga, troop, hz->victim);
     if (n) { // lo deja junto al jugador, en suelo firme
         n->pos = (Vector3){ p->pos.x + 1.2f, 0.0f, p->pos.z };
-        n->pos.y = fmaxf(terrain_height(t, n->pos.x, n->pos.z), t->look.water_level);
+        n->pos.y = fmaxf(terrain_height(t, n->pos.x, n->pos.z), terrain_water(t, n->pos.x, n->pos.z));
     }
     troop_adjust_morale(troop, 3.0f);
     snprintf(log, len, T("¡Salvaste a %s! La tribu lo celebra (moral +3)."), m ? m->name : T("tu compañero"));
@@ -255,9 +255,8 @@ static void toggle_escort(Hazards *hz, GameActions *ga, const Troop *troop, cons
 }
 
 static float surface_y(const Terrain *t, float x, float z) {
-    float ground = terrain_height(t, x, z);
-    if (t->look.water_level > ground + 0.25f)
-        return hazard_ice_walkable(t->look.ice) ? t->look.water_level : fmaxf(ground, t->look.water_level - 1.25f);
+    float ground = terrain_height(t, x, z), water = terrain_water(t, x, z);
+    if (water > ground + 0.25f) return hazard_ice_walkable(terrain_ice(t, x, z)) ? water : fmaxf(ground, water - 1.25f);
     return ground;
 }
 
@@ -275,7 +274,7 @@ static void update_escort(Hazards *hz, GameActions *ga, Troop *troop, const Terr
         if (troop->members[i].health.down || n->fighting) continue; // abatido o peleando: no sigue al jugador
         if (n->member_id == hz->victim) { // atrapado: no se mueve, hundido
             float ground = terrain_height(t, n->pos.x, n->pos.z);
-            n->pos.y = (hz->victim_trap == TRAP_ICE ? t->look.water_level : ground) - 1.0f;
+            n->pos.y = (hz->victim_trap == TRAP_ICE ? terrain_water(t, n->pos.x, n->pos.z) : ground) - 1.0f;
             n->moving = false;
             continue;
         }
@@ -296,9 +295,10 @@ static void update_escort(Hazards *hz, GameActions *ga, Troop *troop, const Terr
         n->pos.y = surface_y(t, n->pos.x, n->pos.z);
         if (!roll || hz->victim) continue;
         // La escolta tambien puede romper el hielo o pisar un socavon.
-        bool over_water = t->look.water_level > terrain_height(t, n->pos.x, n->pos.z) + 0.25f;
-        if (over_water && hazard_ice_walkable(t->look.ice)) {
-            if (in_hole(hz, n->pos) || rng_float(&hz->rng) < hazard_ice_break_chance(t->look.ice, speed, 1.0f) * 0.5f) {
+        bool over_water = terrain_water(t, n->pos.x, n->pos.z) > terrain_height(t, n->pos.x, n->pos.z) + 0.25f;
+        float nice = terrain_ice(t, n->pos.x, n->pos.z);
+        if (over_water && hazard_ice_walkable(nice)) {
+            if (in_hole(hz, n->pos) || rng_float(&hz->rng) < hazard_ice_break_chance(nice, speed, 1.0f) * 0.5f) {
                 add_hole(hz, n->pos);
                 victim_trapped(hz, troop, n->member_id, TRAP_ICE, log, len);
             }
@@ -390,11 +390,11 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
 
     // Terreno bajo los pies: hielo, vadeo, nado, barro.
     float ground = terrain_height(t, p->pos.x, p->pos.z);
-    float water = t->look.water_level;
+    float water = terrain_water(t, p->pos.x, p->pos.z), ice = terrain_ice(t, p->pos.x, p->pos.z);
     bool over_water = water > ground + 0.25f;
     hz->on_ice = hz->wading = hz->swimming = false;
     if (hz->trap == TRAP_NONE && over_water && !ga->climbing) {
-        if (hazard_ice_walkable(t->look.ice)) {
+        if (hazard_ice_walkable(ice)) {
             hz->on_ice = true;
             if (p->pos.y < water) {
                 p->pos.y = water;
@@ -404,7 +404,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
             float speed = p->moving ? (p->stance == STANCE_RUN ? 7.5f : 4.0f) * p->speed_scale : 0.0f;
             float load = ga->mounted >= 0 ? 2.5f : 1.0f;
             if (p->grounded &&
-                (in_hole(hz, p->pos) || (roll && rng_float(&hz->rng) < hazard_ice_break_chance(t->look.ice, speed, load) * 0.5f))) {
+                (in_hole(hz, p->pos) || (roll && rng_float(&hz->rng) < hazard_ice_break_chance(ice, speed, load) * 0.5f))) {
                 add_hole(hz, p->pos);
                 start_self_trap(hz, TRAP_ICE, p, ga, troop, log, log_len);
             }
@@ -448,7 +448,8 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
     float torch = ga->torch_lit && !ga->hands.sheathed ? 4.0f : 0.0f;
     float wind = c->wind * (shelter > 0.0f ? 0.5f : 1.0f);
     float sun_h = clock_sun_height(world_time);
-    hz->temp_here = local_temperature(c->temperature, sun_h, desert);
+    // En lo alto hace mas frio (el altiplano, las cumbres): unos 7 grados cada 100 m sobre el llano.
+    hz->temp_here = local_temperature(c->temperature, sun_h, desert) - fmaxf(0.0f, p->pos.y - t->plain) * 0.07f;
     bool shade_here = shelter > 0.0f || hz->wading || hz->swimming; // a la sombra de las yurtas o en el agua
     hz->sun = shade_here ? 0.0f : sun_strength(sun_h, c->clouds, desert);
     hz->feels = apparel_feels_like(hz->temp_here, wind, hz->warmth.wet, hz->sun, &ga->outfit, shelter + torch, hz->fire);
@@ -523,10 +524,9 @@ void hz_new_day(Hazards *hz, const Climate *c, GameActions *ga, const Props *pro
 
 // ------------------------------------------------------------------ dibujo
 void hz_draw_world(const Hazards *hz, const Terrain *t, const GameActions *ga, const Troop *troop, float time) {
-    float water = t->look.water_level;
     // Agujeros en el hielo: agua negra con esquirlas alrededor.
     for (int i = 0; i < hz->hole_count; i++) {
-        Vector3 h = { hz->holes[i].x, water + 0.02f, hz->holes[i].z };
+        Vector3 h = { hz->holes[i].x, terrain_water(t, hz->holes[i].x, hz->holes[i].z) + 0.02f, hz->holes[i].z };
         DrawCylinder(h, HOLE_RADIUS, HOLE_RADIUS, 0.03f, 12, (Color){ 18, 34, 48, 255 });
         for (int k = 0; k < 8; k++) {
             float a = k * PI / 4.0f + i;
@@ -544,7 +544,7 @@ void hz_draw_world(const Hazards *hz, const Terrain *t, const GameActions *ga, c
     // Trampa del jugador: el borde se agita.
     if (hz->trap != TRAP_NONE) {
         Vector3 c = hz->trap_pos;
-        c.y = (hz->trap == TRAP_ICE ? water : terrain_height(t, c.x, c.z)) + 0.05f;
+        c.y = (hz->trap == TRAP_ICE ? terrain_water(t, c.x, c.z) : terrain_height(t, c.x, c.z)) + 0.05f;
         Color col = hz->trap == TRAP_ICE ? (Color){ 230, 240, 250, 255 } : hz->trap == TRAP_SNOW ? (Color){ 240, 244, 248, 255 }
                                                                                                 : (Color){ 170, 140, 96, 255 };
         DrawCircle3D(c, 1.0f + 0.15f * sinf(time * 6.0f), (Vector3){ 1, 0, 0 }, 90.0f, col);
@@ -558,7 +558,7 @@ void hz_draw_world(const Hazards *hz, const Terrain *t, const GameActions *ga, c
             if (n->member_id != hz->victim) continue;
             Vector3 c = { n->pos.x, n->pos.y + 1.0f, n->pos.z };
             if (hz->victim_trap == TRAP_ICE)
-                DrawCylinder((Vector3){ c.x, water + 0.02f, c.z }, HOLE_RADIUS, HOLE_RADIUS, 0.03f, 12, (Color){ 18, 34, 48, 255 });
+                DrawCylinder((Vector3){ c.x, terrain_water(t, c.x, c.z) + 0.02f, c.z }, HOLE_RADIUS, HOLE_RADIUS, 0.03f, 12, (Color){ 18, 34, 48, 255 });
             for (int k = 0; k < 2; k++)
                 DrawCircle3D(c, 0.8f + fmodf(time * 0.8f + k * 0.5f, 1.0f), (Vector3){ 1, 0, 0 }, 90.0f,
                              (Color){ 220, 235, 250, 200 });

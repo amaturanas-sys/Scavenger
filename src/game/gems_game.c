@@ -18,14 +18,14 @@ void gems_scatter(GameActions *ga, Props *props, const Terrain *t) {
     for (int i = 0; i < 14; i++) {
         float a = rng_float(&ga->rng) * 6.2831853f, r = 25.0f + rng_float(&ga->rng) * 90.0f;
         float x = cosf(a) * r, z = sinf(a) * r, h = terrain_height(t, x, z);
-        if (t->look.water_level > h - 0.2f) continue;
+        if (terrain_water(t, x, z) > h - 0.2f) continue;
         props_add(props, i % 3 ? ROCK_SMALL : ROCK_MEDIUM, (Vector3){ x, h, z }, rng_float(&ga->rng) * 6.28f);
     }
     // Arrecifes de coral en el agua poco honda de los lagos cercanos.
     int placed = 0;
     for (int tries = 0; tries < 2500 && placed < 10; tries++) {
         float x = (rng_float(&ga->rng) - 0.5f) * 500.0f, z = (rng_float(&ga->rng) - 0.5f) * 500.0f;
-        float h = terrain_height(t, x, z), depth = t->look.water_level - h;
+        float h = terrain_height(t, x, z), depth = terrain_water(t, x, z) - h;
         if (depth < 0.5f || depth > 2.5f) continue;
         props_add(props, CORAL_ID, (Vector3){ x, h, z }, rng_float(&ga->rng) * 6.28f);
         placed++;
@@ -108,7 +108,7 @@ void gems_dig(GameActions *ga, const Props *props, const Player *p, char *log, s
 bool gems_water_ahead(const Terrain *t, const Player *p) {
     for (float d = 0.0f; d <= 2.5f; d += 0.5f) {
         float x = p->pos.x + sinf(p->yaw) * d, z = p->pos.z + cosf(p->yaw) * d;
-        if (t->look.water_level > terrain_height(t, x, z) + 0.1f) return true;
+        if (terrain_water(t, x, z) > terrain_height(t, x, z) + 0.1f) return true;
     }
     return false;
 }

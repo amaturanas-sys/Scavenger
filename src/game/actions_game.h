@@ -121,6 +121,10 @@ typedef struct {
     float dress_t;   // reloj de los NPCs que se cambian de ropa (src/game/apparel_game.c)
     Hydration hydro; // sed, borrachera y espiritus malditos del agua (src/game/water_game.c)
     float dry_t;     // segundos con la sed a cero
+    // El mundo (src/game/world_game.c): region donde esta el jugador + 1, asentamientos y guaridas vistos.
+    int last_region;
+    uint32_t seen_settle;
+    uint64_t seen_dens;
     float ab_timer[ABIL_COUNT], ab_cd[ABIL_COUNT], ab_pot[ABIL_COUNT];
     float warmth_boost; // calor que devuelve una habilidad (lo consume src/game/hazards_game.c)
     // Dialogo con el druida o el orfebre (y luego el guardian del campamento).
