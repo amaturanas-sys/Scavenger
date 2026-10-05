@@ -34,6 +34,10 @@ void player_init(Player *p, const Terrain *t);
 void player_update(Player *p, const Terrain *t, PlayerInput in, float cam_yaw, float dt);
 void player_draw(const Player *p);
 float player_eye_height(const Player *p);
+// Aguante del jugador [0, 1] (correr y saltar lo gastan; no se guarda). winded: agotado, sin correr.
+float player_stamina(void);
+bool player_winded(void);
+void player_stamina_spend(float amount);
 const char *stance_name(Stance s);
 
 #endif

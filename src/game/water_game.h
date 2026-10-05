@@ -27,6 +27,7 @@ bool wg_water_near(const Terrain *t, float x, float z);
 // y se lleva sin hervir.
 bool wg_at_well(const Terrain *t, float x, float z);
 // Sed, borrachera y enfermedad bajo la salud (alineado a la derecha).
+void wg_request_drink(void); // como pulsar N (desde el HUD)
 void wg_draw_hud(const GameActions *ga, int right_x, int y);
 
 #endif

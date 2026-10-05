@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "game/gems_game.h"
+#include "game/hud_game.h"
 #include "game/inventory_game.h"
 #include "sim/lang.h"
 #include "ui/icons.h"
@@ -106,16 +107,20 @@ static void herbs(GameActions *ga, const Props *props, const Player *p, char *lo
     snprintf(log, len, "%s", ga->hydro.curse > 0.0f ? T("Las hierbas alivian la fiebre.") : T("Las hierbas echan a los espíritus malditos."));
 }
 
+static bool g_drink_req; // beber pedido desde el HUD (un toque)
+void wg_request_drink(void) { g_drink_req = true; }
+
 void wg_update(GameActions *ga, Troop *troop, Player *p, const Props *props, const Hazards *hz, const Climate *c, Vector3 camp_fire,
                const Terrain *t, bool input_ok, float dt, char *log, size_t len) {
     bool was_sick = hydration_sick(&ga->hydro);
     ThirstLevel was_thirst = thirst_level(&ga->hydro);
     hydration_update(&ga->hydro, heat_thirst_scale(&hz->heat) * (p->stance == STANCE_RUN && p->moving ? 1.3f : 1.0f), !p->moving, dt);
     bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT), ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
-    if (input_ok && !ctrl && IsKeyPressed(KEY_N)) {
-        if (shift) herbs(ga, props, p, log, len);
+    if (input_ok && ((!ctrl && IsKeyPressed(KEY_N)) || g_drink_req)) {
+        if (shift && !g_drink_req) herbs(ga, props, p, log, len);
         else drink(ga, props, p, hz, c, log, len);
     }
+    g_drink_req = false;
     if (!was_sick && hydration_sick(&ga->hydro))
         snprintf(log, len, "%s", T("Fiebre y retortijones: espíritus malditos del agua. Toma hierbas (Mayús+N), descansa y bebe agua hervida."));
     else if (thirst_level(&ga->hydro) > was_thirst && thirst_level(&ga->hydro) >= THIRST_THIRSTY)
@@ -153,9 +158,6 @@ void wg_draw_hud(const GameActions *ga, int right_x, int y) {
     const char *txt = TextFormat("%s%s%s", thirst_name(tl), dl > DRUNK_SOBER ? TextFormat(" · %s", drunk_name(dl)) : "",
                                  hydration_sick(h) ? T(" · fiebre") : "");
     Color col = tl >= THIRST_PARCHED || hydration_sick(h) ? UI_CARNELIAN : tl == THIRST_THIRSTY ? UI_GOLD_LIGHT : UI_TURQ_LIGHT;
-    int tw = MeasureText(txt, 10);
-    ui_text(txt, right_x - tw, y, 10, col);
     IconId icon = hydration_sick(h) ? ICON_ESPIRITUS : dl >= DRUNK_DRUNK ? ICON_JARRA : ICON_BEBER;
-    ui_icon(icon, (float)(right_x - tw - 15), (float)y - 3, 16, col);
-    ui_bar(right_x - 92, y + 12, 92, h->water / THIRST_MAX, UI_TURQUOISE, UI_METAL_SILVER);
+    hud_vital(icon, txt, col, h->water / THIRST_MAX, UI_TURQUOISE, right_x, y);
 }

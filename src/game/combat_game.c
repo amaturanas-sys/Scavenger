@@ -1,6 +1,8 @@
 #include "combat_game.h"
 
 #include "game/death_game.h"
+#include "game/input.h"
+#include "game/hud_game.h"
 #include "game/apparel_game.h"
 #include "game/water_game.h"
 #include "game/fauna_game.h"
@@ -400,6 +402,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
                                                                                                      : md->recovery;
     cb->combo_timer = m == MOVE_LIGHT ? cb->attack_cd + COMBO_WINDOW : 0.0f;
     cb->move = (int)m + 1;
+    if (!riding) player_stamina_spend(m == MOVE_LIGHT ? 0.04f : 0.09f); // cada golpe cansa; los fuertes, mas
     cb->move_anim = 0.45f;
     if (m == MOVE_LIGHT || m == MOVE_HEAVY) cb->attack_anim = 0.4f;
     ga->pl_spear = w.spear;
@@ -1201,8 +1204,9 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, const Ter
                                float dt, char *log, size_t len) {
     bool shield = player_has_shield(ga);
     bool running = p->stance == STANCE_RUN && p->moving;
-    bool v_press = IsKeyPressed(KEY_V) || IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-    bool v_down = IsKeyDown(KEY_V) || IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+    bool on_hud = hud_pointer_over(); // un clic en una casilla del HUD no es un golpe
+    bool v_press = IsKeyPressed(KEY_V) || (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !on_hud);
+    bool v_down = IsKeyDown(KEY_V) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !on_hud);
     if (!can_fight) {
         cb->v_hold = 0.0f;
         return;
@@ -1284,6 +1288,9 @@ static void trample(Combat *cb, Player *p, GameActions *ga, Props *props, char *
     (void)ga;
 }
 
+static bool g_bandage_req; // vendar pedido desde el HUD
+void cb_request_bandage(void) { g_bandage_req = true; }
+
 void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *props, const Terrain *t, Vector3 camp_fire,
                bool input_ok, bool night, bool winter, float cam_yaw, float cam_pitch, float dt, char *log, size_t log_len) {
     float time = (float)GetTime();
@@ -1323,8 +1330,9 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
         cb->aiming = false;
         player_melee_input(cb, p, ga, t, props, can_act && cb->stagger <= 0.0f, dt, log, log_len);
     }
-    if (input_ok && IsKeyPressed(KEY_B)) bandage(cb, ga, troop, props, p, log, log_len);
-    if (input_ok && IsKeyPressed(KEY_NINE)) { // prueba: enemigos delante
+    if (input_ok && (IsKeyPressed(KEY_B) || g_bandage_req)) bandage(cb, ga, troop, props, p, log, log_len);
+    g_bandage_req = false;
+    if (input_ok && input_debug() && IsKeyPressed(KEY_NINE)) { // prueba (con Ctrl+D): enemigos delante
         bool sh = IsKeyDown(KEY_LEFT_SHIFT), ct = IsKeyDown(KEY_LEFT_CONTROL);
         const char *what = sh && ct ? "jinetes" : sh ? "lobos" : ct ? "culto"
                            : IsKeyDown(KEY_LEFT_ALT)                                         ? "arqueros"
@@ -1509,9 +1517,8 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
     const Health *ph = &cb->player;
     const char *txt = TextFormat("%s%s", health_state_name(ph), health_bleeding(ph) ? T(" · sangra") : "");
     Color col = health_bleeding(ph) || ph->down ? UI_CARNELIAN : ph->wound_count ? UI_GOLD : UI_BONE;
-    ui_text(txt, right_x - MeasureText(txt, 10), y, 10, col);
-    ui_bar(right_x - 92, y + 12, 92, fmaxf(0.0f, ph->hp) / ph->hp_max, UI_CARNELIAN, UI_METAL_SILVER);
-    DrawRectangle(right_x - 92, y + 19, (int)(92 * ph->blood), 2, UI_LAPIS); // sangre
+    hud_vital(health_bleeding(ph) ? ICON_SANGRE : ICON_VIDA, txt, col, fmaxf(0.0f, ph->hp) / ph->hp_max, UI_CARNELIAN, right_x, y);
+    DrawRectangle(right_x - 80, y + 18, (int)(80 * ph->blood), 2, UI_LAPIS); // sangre
 
     // Arma a distancia: municion, tension y recarga, abajo al centro.
     const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);

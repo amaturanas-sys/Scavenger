@@ -84,6 +84,42 @@ static void apply_preset(GameActions *ga) {
     if (l) hands_equip(&ga->hands, inventory_find(ga->inv, l), HAND_LEFT);
 }
 
+// ---------------------------------------------------------------- barra rapida
+// Las casillas 1..8 son las empuñaduras de PRESETS; la 9, la antorcha. Las pide el teclado
+// (1..9) o un toque en la barra del HUD (src/game/hud_game.c); se atienden en ga_update.
+static int g_quick_slot = -1;    // casilla pedida (0..8)
+static int g_quick_action = -1;  // accion pedida desde la columna del HUD
+static bool g_quick_menu;        // abrir el menu de acciones
+
+static bool preset_available(const GameActions *ga, int k) {
+    for (int h = 0; h < 2; h++)
+        if (PRESETS[k][h] && !has_item(ga, PRESETS[k][h])) return false;
+    return true;
+}
+
+int ga_quick_slots(const GameActions *ga, GaQuickSlot out[GA_QUICK_SLOTS]) {
+    for (int k = 0; k < GA_QUICK_SLOTS; k++) {
+        GaQuickSlot *q = &out[k];
+        memset(q, 0, sizeof(*q));
+        if (k < PRESET_COUNT && k < GA_QUICK_SLOTS - 1) {
+            const char *r = PRESETS[k][0], *l = PRESETS[k][1];
+            if (r && !strcmp(r, "arma.corta.sable")) r = best_sable(ga);
+            q->right = r, q->left = l;
+            q->available = preset_available(ga, k);
+            q->active = ga->preset == k && !ga->hands.sheathed && !ga->torch_lit;
+        } else if (k == GA_QUICK_SLOTS - 1) { // la antorcha
+            q->right = "utileria.objeto.antorcha";
+            q->available = has_item(ga, q->right);
+            q->active = ga->torch_lit;
+        }
+    }
+    return GA_QUICK_SLOTS;
+}
+
+void ga_quick_request_slot(int slot) { g_quick_slot = slot; }
+void ga_quick_request_action(ActionId a) { g_quick_action = (int)a; }
+void ga_quick_request_menu(void) { g_quick_menu = true; }
+
 static Vector3 forward_of(float yaw) { return (Vector3){ sinf(yaw), 0.0f, cosf(yaw) }; }
 
 static Vector3 ground_at(const Terrain *t, float x, float z) { return (Vector3){ x, terrain_height(t, x, z), z }; }
@@ -712,7 +748,28 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     sync_npcs(ga, troop, t);
     ga->swap_anim = fmaxf(0.0f, ga->swap_anim - dt);
     bool other_menu = ga->inv_open || ga->equip_open || ga->dlg.open; // inventario, equipo o un dialogo
-    if (IsKeyPressed(KEY_TAB) && !other_menu) ga->menu_open = !ga->menu_open;
+    if ((IsKeyPressed(KEY_TAB) || g_quick_menu) && !other_menu) ga->menu_open = !ga->menu_open;
+    g_quick_menu = false;
+    // Teclas 1..9: la barra rapida (Ctrl+1..3 son las habilidades).
+    for (int k = 0; k < GA_QUICK_SLOTS; k++)
+        if (IsKeyPressed(KEY_ONE + k) && !input_ctrl() && !input_debug() && !other_menu && !ga->menu_open) g_quick_slot = k;
+    if (ga->doing < 0 && !ga->climbing && !other_menu && !ga->menu_open) {
+        if (g_quick_slot >= 0) {
+            GaQuickSlot q[GA_QUICK_SLOTS];
+            ga_quick_slots(ga, q);
+            int k = g_quick_slot;
+            if (!q[k].available) snprintf(log, log_len, T("No tienes %s."), item_name(ga, q[k].right ? q[k].right : q[k].left));
+            else if (k == GA_QUICK_SLOTS - 1) start_action(ga, ACTION_LIGHT_TORCH, props, p, log, log_len);
+            else if (q[k].active) start_action(ga, ACTION_SHEATHE, props, p, log, log_len); // otra vez: enfunda
+            else {
+                if (ga->hands.sheathed) hands_toggle_sheathe(&ga->hands);
+                ga->preset = (k + PRESET_COUNT - 1) % PRESET_COUNT; // CHANGE_GRIP pasa a la siguiente: la pedida
+                start_action(ga, ACTION_CHANGE_GRIP, props, p, log, log_len);
+            }
+        }
+        if (g_quick_action >= 0) start_action(ga, (ActionId)g_quick_action, props, p, log, log_len);
+    }
+    g_quick_slot = g_quick_action = -1;
     if (ga->menu_open) {
         // Pestañas (acciones, obras, fabricar, reparar): Q/E, Re Pág/Av Pág o un clic en su icono.
         if (IsKeyPressed(KEY_E) || IsKeyPressed(KEY_PAGE_DOWN)) ga->menu_tab = (ga->menu_tab + 1) % 4;
@@ -1319,7 +1376,8 @@ void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, 
     }
     int lines = ga->project_count + (ga->crafting >= 0);
     if (lines > 0 && !ga->stock_open) {
-        int x = width - 236, y = 128, w = 230, h = 20 + 12 * lines;
+        // Bajo la placa de las constantes (src/game/hud_game.c).
+        int x = width - 236, y = 234, w = 230, h = 20 + 12 * lines;
         ui_panel((Rectangle){ (float)x, (float)y, (float)w, (float)h + UI_PANEL_INSET }, UI_METAL_SILVER);
         int ty = y + UI_PANEL_INSET;
         for (int i = 0; i < ga->project_count; i++, ty += 12) {

@@ -51,3 +51,7 @@ const char *input_keys_text(InputAction a) {
     default: return "";
     }
 }
+
+static bool g_debug;
+void input_set_debug(bool on) { g_debug = on; }
+bool input_debug(void) { return g_debug; }

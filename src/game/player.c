@@ -33,7 +33,26 @@ PlayerInput player_read_input(void) {
     return in;
 }
 
+// Aguante [0, 1]: correr lo gasta (~12 s a la carrera), saltar tambien; se recupera al paso y
+// mas rapido quieto. Agotado no se corre hasta recobrar un 30 %. A caballo corre la montura.
+// No se guarda: al cargar una partida empieza lleno.
+#define STAMINA_RUN_COST (1.0f / 12.0f)
+#define STAMINA_JUMP_COST 0.08f
+#define STAMINA_REGEN_WALK (1.0f / 14.0f)
+#define STAMINA_REGEN_REST (1.0f / 6.0f)
+#define STAMINA_RECOVER 0.3f
+static float g_stamina = 1.0f;
+static bool g_winded;
+
+float player_stamina(void) { return g_stamina; }
+bool player_winded(void) { return g_winded; }
+void player_stamina_spend(float amount) {
+    g_stamina = fmaxf(0.0f, g_stamina - amount);
+    if (g_stamina <= 0.0f) g_winded = true;
+}
+
 void player_init(Player *p, const Terrain *t) {
+    g_stamina = 1.0f, g_winded = false;
     *p = (Player){ 0 };
     p->pos = (Vector3){ 0.0f, 0.0f, 22.0f }; // en la entrada sur del campamento
     p->pos.y = terrain_height(t, p->pos.x, p->pos.z);
@@ -50,7 +69,10 @@ void player_update(Player *p, const Terrain *t, PlayerInput in, float cam_yaw, f
     if (len > 1.0f) dir = Vector2Scale(dir, 1.0f / len);
     p->moving = len > 0.05f;
 
-    // Correr cancela el sigilo; el sigilo es lento y silencioso.
+    // Correr cancela el sigilo; el sigilo es lento y silencioso. Sin aguante no se corre.
+    bool mounted = p->draw_lift > 0.0f;
+    if (g_winded && g_stamina >= STAMINA_RECOVER) g_winded = false;
+    if (g_winded && !mounted) in.run = false;
     if (in.run && p->moving) p->sneaking = false;
     p->stance = p->sneaking ? STANCE_SNEAK : (in.run && p->moving ? STANCE_RUN : STANCE_WALK);
     float speed = p->stance == STANCE_SNEAK ? SNEAK_SPEED : (p->stance == STANCE_RUN ? RUN_SPEED : WALK_SPEED);
@@ -68,8 +90,12 @@ void player_update(Player *p, const Terrain *t, PlayerInput in, float cam_yaw, f
         p->yaw += diff * fminf(1.0f, TURN_RATE * dt);
     }
 
+    if (!mounted && p->stance == STANCE_RUN) player_stamina_spend(STAMINA_RUN_COST * dt);
+    else g_stamina = fminf(1.0f, g_stamina + (p->moving ? STAMINA_REGEN_WALK : STAMINA_REGEN_REST) * dt);
+
     float ground = terrain_height(t, p->pos.x, p->pos.z);
-    if (p->grounded && in.jump && p->stance != STANCE_SNEAK) {
+    if (p->grounded && in.jump && p->stance != STANCE_SNEAK && (mounted || g_stamina > 0.0f)) {
+        if (!mounted) player_stamina_spend(STAMINA_JUMP_COST);
         p->vy = JUMP_SPEED;
         p->grounded = false;
     }

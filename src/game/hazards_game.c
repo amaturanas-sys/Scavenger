@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/hud_game.h"
 #include "raymath.h"
 #include "sim/clock.h"
 #include "ui/theme.h"
@@ -617,8 +618,7 @@ void hz_draw_hud(const Hazards *hz, const Troop *troop, int right_x, int y, int 
     const char *state = hot ? heat_name(heat_level(&hz->heat)) : cold_name(warmth_level(&hz->warmth));
     const char *txt = TextFormat("%d° · %s%s%s%s", (int)roundf(hz->temp_here), state, hz->sun > 0.5f && hz->temp_here > 20.0f ? T(" · sol fuerte") : "",
                                  hz->warmth.wet > 0.3f ? T(" · mojado") : "", ground);
-    ui_text(txt, right_x - MeasureText(txt, 10), y, 10, col);
-    ui_bar(right_x - 92, y + 12, 92, hot ? hz->heat.load / HEAT_MAX : hz->warmth.heat / WARMTH_MAX, col, UI_METAL_SILVER);
+    hud_vital(hot ? ICON_SOL : ICON_FRIO, txt, col, hot ? hz->heat.load / HEAT_MAX : hz->warmth.heat / WARMTH_MAX, col, right_x, y);
 
     if (hz->victim && !(hz->qte_rescue && hz->qte.state == QTE_RUNNING)) {
         const Member *m = troop_find((Troop *)troop, hz->victim);
