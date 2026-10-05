@@ -67,6 +67,8 @@ typedef enum {
     SPECIES_SNAKE,
     SPECIES_SCORPION,
     SPECIES_SPIDER,
+    // Al final para no mover los numeros de las partidas guardadas.
+    SPECIES_EAGLE, // rapaz grande: caza en picado y se lleva la presa
     SPECIES_COUNT
 } Species;
 
@@ -168,6 +170,7 @@ typedef struct {
     bool down;     // abatida: los animales la ignoran
     bool sneaking; // acechando: cuesta mas verla
     bool enemy;    // enemigo de la tribu: los animales domados la atacan
+    bool hurt;     // malherida o sangrando: los cuervos la rondan
 } FaunaHuman;
 
 typedef struct {

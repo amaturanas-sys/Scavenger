@@ -39,6 +39,7 @@ static const SpeciesDef SPECIES[SPECIES_COUNT] = {
     [SPECIES_SNAKE]    = { N_("Víbora"),            "animal.salvaje.vibora",            CLASS_HOSTILE,   3.0f, 0.5f, 1.0f,   6.0f,  3.0f, 0.9f, 1.5f, WOUND_BITE,    3.5f, 0.0f,  false, 1.0f, false, false, true,  0.0f,  0, 0, 0, 1, 1, HAB_STEPPE | HAB_DESERT,         0.7f, false, 22.0f, 4.0f },
     [SPECIES_SCORPION] = { N_("Escorpión"),         "animal.salvaje.escorpion",         CLASS_HOSTILE,   1.5f, 0.3f, 0.2f,   3.0f,  1.0f, 0.5f, 1.3f, WOUND_CUT,     2.5f, 0.0f,  false, 1.0f, false, false, true,  0.0f,  0, 0, 0, 1, 1, HAB_DESERT,                      0.8f, false, 15.0f, 3.0f },
     [SPECIES_SPIDER]   = { N_("Araña"),             "animal.salvaje.arana",             CLASS_HOSTILE,   1.2f, 0.3f, 0.15f,  2.0f,  0.5f, 0.5f, 1.5f, WOUND_BITE,    2.0f, 0.0f,  false, 1.0f, false, false, true,  0.0f,  0, 0, 0, 1, 1, HAB_STEPPE | HAB_DESERT | HAB_COLD | HAB_FOREST, 0.5f, false, 8.0f,  2.5f },
+    [SPECIES_EAGLE]    = { N_("Águila real"),       "animal.ave.aguila",                CLASS_TAMEABLE, 18.0f, 3.0f, 0.9f,  24.0f,  6.0f, 1.2f, 1.2f, WOUND_CUT,    90.0f, 0.0f,  false, 1.0f, false, true,  false, 1.0f,  0, 0, 0, 1, 1, HAB_COLD | HAB_STEPPE | HAB_COAST,          0.3f, false, 0.0f, 0.0f },
 };
 // clang-format on
 
@@ -275,6 +276,11 @@ int animal_hurt(Animal *a, int n, int idx, Rng *rng, float damage, WoundKind kin
             if (i != idx && alive(&a[i]) && a[i].state == ANIMAL_WILD && t->group >= 0 && a[i].group == t->group &&
                 adist(&a[i], t) < ALARM_RADIUS)
                 a[i].fear_humans = FEAR_SECONDS, a[i].alert = 8.0f;
+    } else if (d->flier) {
+        // Las aves no se vuelven contra las personas: se espantan y se alejan volando.
+        t->alert = 8.0f;
+        clear_target(t);
+        t->mode = MODE_FLEE;
     } else if (attacker_human >= 0) {
         // Cazadores, hostiles y los que se defienden: se vuelven contra quien los hirio.
         t->tkind = TGT_HUMAN;
@@ -511,6 +517,149 @@ static void rivalry(Animal *a, int i, Animal *all, int n, Rng *rng, float dt, Fa
 }
 
 // ------------------------------------------------------------------ actualizacion
+// ------------------------------------------------------------------ aves salvajes
+// Nunca atacan a las personas.
+//  - Rapaces (halcon, aguila): con hambre buscan una presa chica, la sobrevuelan alto, caen en
+//    picado, la arrebatan del suelo y se la llevan volando (la presa sale del mundo).
+//  - Cuervos: rondan en circulo sobre los heridos (personas o animales) y bajan a comer los
+//    cadaveres; si alguien se acerca, levantan el vuelo.
+#define BIRD_SPOOK 6.0f      // m: una persona tan cerca espanta al ave que come en el suelo
+#define CARRY_SECONDS 14.0f  // s: la rapaz se aleja con la presa y desaparecen
+#define CARRION_RANGE 90.0f  // m: a esta distancia el cuervo ve un cadaver
+#define RAPTOR_HIGH 18.0f    // m: altura de acecho antes del picado
+
+static bool raptor(const SpeciesDef *d) { return d->flier && d->hunt_max > 0.0f; }
+
+static bool raptor_prey(const SpeciesDef *d, const Animal *p, const Animal *a, const FaunaCtx *c) {
+    const SpeciesDef *pd = &SPECIES[p->species];
+    if (!alive(p) || p->ridden || p->state != ANIMAL_WILD || pd->flier || pd->aquatic || pd->size > d->hunt_max) return false;
+    if (!species_is_prey(p->species) && p->species != SPECIES_SNAKE) return false; // el aguila tambien caza viboras
+    return !safe_in_water(p, a, c);
+}
+
+static void bird_flee(Animal *a, const FaunaCtx *c, float dt) {
+    float dh;
+    int h = nearest_human(c, a->x, a->z, 40.0f, false, &dh);
+    if (h >= 0) a->flee_x = c->humans[h].x, a->flee_z = c->humans[h].z;
+    a->mode = MODE_FLEE;
+    a->fleeing = true;
+    move_away(a, a->flee_x, a->flee_z, SPECIES[a->species].speed, dt);
+}
+
+static void update_wild_bird(Animal *a, int i, Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, FaunaEvents *ev) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    a->fleeing = false;
+    if (a->tkind == TGT_HUMAN) clear_target(a); // nunca tras una persona
+    if (a->alert > 0.0f || a->h.hp < CRITICAL * a->h.hp_max) {
+        if (a->mode == MODE_EAT && raptor(d)) a->mode = MODE_GRAZE, clear_target(a); // suelta la presa
+        bird_flee(a, c, dt);
+        return;
+    }
+    Animal *prey = a->tkind == TGT_ANIMAL && a->target >= 0 && a->target < n && all[a->target].used ? &all[a->target] : NULL;
+    if (a->mode == MODE_EAT) {
+        a->timer -= dt;
+        if (raptor(d)) { // se la lleva: sube y se aleja hacia su territorio con la presa colgando
+            if (prey && prey->state == ANIMAL_DEAD) {
+                float dx = a->x - a->home_x, dz = a->z - a->home_z, l = sqrtf(dx * dx + dz * dz);
+                if (l < 40.0f) move_towards(a, a->x + (l > 0.1f ? dx / l : 1.0f) * 50.0f, a->z + (l > 0.1f ? dz / l : 0.0f) * 50.0f, d->speed * 0.55f, dt);
+                else move_towards(a, a->home_x, a->home_z, d->speed * 0.55f, dt);
+                prey->x = a->x, prey->z = a->z, prey->alt = fmaxf(0.0f, a->alt - 0.5f);
+                if (a->timer <= EAT_SECONDS - CARRY_SECONDS) prey->used = false; // se la llevo lejos
+            }
+            if (!prey || !prey->used || a->timer <= EAT_SECONDS - CARRY_SECONDS) a->mode = MODE_GRAZE, clear_target(a);
+            return;
+        }
+        // Cuervo en el suelo: picotea el cadaver; si alguien se acerca, levanta el vuelo.
+        float dh;
+        if (nearest_human(c, a->x, a->z, BIRD_SPOOK, true, &dh) >= 0) {
+            a->alert = 3.0f;
+            a->mode = MODE_GRAZE, clear_target(a);
+            return;
+        }
+        if (prey) prey->eaten = fminf(1.0f, prey->eaten + dt / 120.0f);
+        if (a->timer <= 0.0f || !prey) a->mode = MODE_GRAZE, clear_target(a), a->hunger = 0.0f;
+        return;
+    }
+    if (raptor(d)) {
+        if (prey && !raptor_prey(d, prey, a, c)) clear_target(a), prey = NULL;
+        if (!prey && a->hunger > 0.5f) { // la presa chica mas cercana que ve
+            float best = d->sense;
+            for (int k = 0; k < n; k++) {
+                if (k == i || !raptor_prey(d, &all[k], a, c)) continue;
+                float dd = adist(a, &all[k]);
+                if (dd < best) best = dd, a->tkind = TGT_ANIMAL, a->target = k, prey = &all[k];
+            }
+        }
+        if (prey) {
+            float dist = adist(a, prey);
+            a->yaw = atan2f(prey->x - a->x, prey->z - a->z);
+            if (dist > 3.0f && a->mode != MODE_CHASE) { // la sobrevuela alto, sin que la note
+                a->mode = MODE_STALK;
+                move_towards(a, prey->x, prey->z, d->speed * 0.6f, dt);
+                if (dist < 6.0f && a->alt > RAPTOR_HIGH - 4.0f) a->mode = MODE_CHASE; // encima: picado
+                return;
+            }
+            a->mode = MODE_CHASE; // en picado: cae casi vertical y sigue a la presa
+            move_towards(a, prey->x, prey->z, d->speed, dt);
+            if (dist > 12.0f) a->mode = MODE_STALK; // se le escapo: vuelve a subir
+            if (dist <= d->reach + 0.5f && a->alt < 1.5f) { // la arrebata del suelo
+                int t = a->target;
+                animal_hurt(all, n, t, rng, 1000.0f, d->wound, PART_RANDOM, false, -1);
+                push(ev, FEV_KILL, i, t, 0.0f, d->wound);
+                a->mode = MODE_EAT;
+                a->timer = EAT_SECONDS;
+                a->hunger = 0.0f;
+            }
+            return;
+        }
+    } else {
+        // Cuervo: un cadaver cerca (que no se lleve otra ave), o un herido al que rondar.
+        if (!prey || prey->state != ANIMAL_DEAD || prey->eaten >= 1.0f || prey->alt > 0.3f) {
+            clear_target(a), prey = NULL;
+            if (a->hunger > 0.3f) {
+                float best = CARRION_RANGE;
+                for (int k = 0; k < n; k++) {
+                    const Animal *o = &all[k];
+                    if (!o->used || o->state != ANIMAL_DEAD || o->eaten >= 1.0f || o->alt > 0.3f) continue;
+                    float dd = adist(a, o);
+                    if (dd < best && nearest_human(c, o->x, o->z, BIRD_SPOOK * 1.5f, false, NULL) < 0)
+                        best = dd, a->tkind = TGT_ANIMAL, a->target = k, prey = &all[k];
+                }
+            }
+        }
+        if (prey) {
+            float dist = adist(a, prey);
+            a->mode = MODE_STALK;
+            move_towards(a, prey->x + 0.6f, prey->z, d->speed * 0.7f, dt);
+            if (dist < 1.2f) a->mode = MODE_EAT, a->timer = EAT_SECONDS * 1.5f;
+            return;
+        }
+        // Rondar a un herido: una persona malherida o un animal debil, en circulos y sin bajar.
+        float hx = 0.0f, hz = 0.0f, best = 70.0f;
+        bool found = false;
+        for (int h = 0; h < c->human_count; h++) {
+            const FaunaHuman *hu = &c->humans[h];
+            float dd = dist_xz(a->x, a->z, hu->x, hu->z);
+            if ((hu->hurt || hu->down) && dd < best) best = dd, hx = hu->x, hz = hu->z, found = true;
+        }
+        for (int k = 0; k < n && !found; k++) {
+            const Animal *o = &all[k];
+            if (k == i || !alive(o) || SPECIES[o->species].flier || o->h.hp > 0.5f * o->h.hp_max) continue;
+            float dd = adist(a, o);
+            if (dd < best) best = dd, hx = o->x, hz = o->z, found = true;
+        }
+        if (found) {
+            float ang = a->clock * 0.6f + (float)i * 1.3f, r = 7.0f + (float)(i % 3);
+            a->mode = MODE_STALK; // acecha desde arriba
+            move_towards(a, hx + cosf(ang) * r, hz + sinf(ang) * r, d->speed * 0.6f, dt);
+            return;
+        }
+    }
+    a->mode = MODE_GRAZE;
+    clear_target(a);
+    if (!keep_with_group(a, i, all, n, dt)) wander(a, rng, 30.0f, dt);
+}
+
 static void update_wild(Animal *a, int i, Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, FaunaEvents *ev) {
     const SpeciesDef *d = &SPECIES[a->species];
     bool critical = a->h.hp < CRITICAL * a->h.hp_max;
@@ -540,6 +689,10 @@ static void update_wild(Animal *a, int i, Animal *all, int n, const FaunaCtx *c,
         return;
     }
 
+    if (d->flier) { // aves: su propia conducta (nunca contra las personas)
+        update_wild_bird(a, i, all, n, c, rng, dt, ev);
+        return;
+    }
     // Cazadores, hostiles y defensores.
     if (critical && d->cls != CLASS_MOUNT && d->cls != CLASS_LIVESTOCK) {
         // Vida critica: ahora si, huye.
@@ -677,10 +830,14 @@ static void update_bird_alt(Animal *a, float dt) {
     float want;
     if (a->state == ANIMAL_DEAD) want = 0.0f;
     else if (a->state == ANIMAL_BOUND) want = 0.3f;
-    else if (a->mode == MODE_CHASE || a->mode == MODE_EAT) want = a->mode == MODE_EAT ? 0.2f : 1.2f; // en picado
+    else if (a->state == ANIMAL_WILD && d->hunt_max > 0.0f && a->mode == MODE_EAT) want = 10.0f; // se lleva la presa
+    else if (a->state == ANIMAL_WILD && d->hunt_max > 0.0f && a->mode == MODE_STALK) want = RAPTOR_HIGH;
+    else if (a->state == ANIMAL_WILD && a->mode == MODE_STALK) want = 6.0f; // el cuervo ronda bajo
+    else if (a->mode == MODE_CHASE || a->mode == MODE_EAT) want = a->mode == MODE_EAT ? 0.2f : 0.6f; // en picado
     else if (a->state != ANIMAL_WILD) want = a->species == SPECIES_RAVEN ? 12.0f : 4.0f;
     else want = 9.0f + 3.0f * sinf(a->clock * 0.5f);
-    float rate = a->mode == MODE_CHASE ? 9.0f : 4.0f;
+    // El picado de las rapaces: casi en caida libre.
+    float rate = a->mode == MODE_CHASE ? (d->hunt_max > 0.0f && a->state == ANIMAL_WILD ? 24.0f : 9.0f) : a->mode == MODE_EAT ? 3.0f : 4.0f;
     a->alt += fmaxf(-rate * dt, fminf(rate * dt, want - a->alt));
 }
 
@@ -699,6 +856,10 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
         if (a->state == ANIMAL_DEAD) {
             a->corpse += dt;
             update_bird_alt(a, dt);
+            bool carried = false; // en las garras de una rapaz: la mueve ella
+            for (int k = 0; k < n && !carried && a->alt > 0.0f; k++)
+                carried = all[k].used && all[k].mode == MODE_EAT && all[k].tkind == TGT_ANIMAL && all[k].target == i && SPECIES[all[k].species].flier;
+            if (!carried && !SPECIES[a->species].flier) a->alt = fmaxf(0.0f, a->alt - 9.0f * dt); // la solto: cae
             continue;
         }
         health_update(&a->h, rng, dt, a->mode == MODE_GRAZE, 0.0f);
@@ -765,7 +926,7 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
 }
 
 void animal_update(Animal *a, float dt, float px, float pz, Rng *rng) {
-    FaunaHuman h = { px, pz, false, false, false };
+    FaunaHuman h = { px, pz, false, false, false, false };
     FaunaCtx c = { &h, 1, px, pz, false, 0.0f, 0.0f, false, NULL, NULL, false };
     fauna_update(a, 1, &c, rng, dt, NULL);
 }
@@ -879,7 +1040,7 @@ void animal_body(const Animal *a, BodyPose *b) {
     const SpeciesDef *d = &SPECIES[a->species];
     memset(b, 0, sizeof(*b));
     float s = d->size / 1.3f; // las medidas de abajo, para una fiera de 1.3 m
-    float y0 = d->flier ? a->alt : 0.0f;
+    float y0 = a->alt; // aves en vuelo, y la presa que lleva una rapaz
     if (d->flier) { // un ave: cuerpo y cabeza
         b->seg[PART_THORAX] = (BodySeg){ { 0, y0 + 0.1f, -0.15f }, { 0, y0 + 0.1f, 0.1f }, 0.09f };
         b->seg[PART_HEAD] = (BodySeg){ { 0, y0 + 0.15f, 0.15f }, { 0, y0 + 0.15f, 0.2f }, 0.05f };
@@ -896,8 +1057,8 @@ void animal_body(const Animal *a, BodyPose *b) {
         return;
     }
     if (a->state == ANIMAL_DEAD) { // tendido de lado
-        b->seg[PART_THORAX] = (BodySeg){ { 0, 0.2f * s, -0.4f * s }, { 0, 0.2f * s, 0.4f * s }, 0.2f * s };
-        b->seg[PART_HEAD] = (BodySeg){ { 0, 0.12f * s, 0.6f * s }, { 0, 0.12f * s, 0.75f * s }, 0.12f * s };
+        b->seg[PART_THORAX] = (BodySeg){ { 0, y0 + 0.2f * s, -0.4f * s }, { 0, y0 + 0.2f * s, 0.4f * s }, 0.2f * s };
+        b->seg[PART_HEAD] = (BodySeg){ { 0, y0 + 0.12f * s, 0.6f * s }, { 0, y0 + 0.12f * s, 0.75f * s }, 0.12f * s };
         return;
     }
     b->seg[PART_HEAD] = (BodySeg){ { 0, 0.65f * s, 0.55f * s }, { 0, 0.65f * s, 0.7f * s }, 0.13f * s };
