@@ -58,6 +58,10 @@ float terrain_ice(const Terrain *t, float x, float z);
 // ¿Agua (sin hielo que aguante) a mas de depth de profundidad en (x, z)?
 bool terrain_deep_water(const Terrain *t, float x, float z, float depth);
 Region terrain_region(const Terrain *t, float x, float z);
+// Un paso de (x0, z0) a (*x, *z) que no entre en agua honda (mas de 0,6 m, o hielo que no
+// aguanta): si entra, prueba a rodearla girando a uno y otro lado; si no puede, se queda.
+// Quien ya esta en el agua puede salir. Para la gente (la tribu, los enemigos) y sus monturas.
+void terrain_dry_step(const Terrain *t, float x0, float z0, float *x, float *z);
 // Agua (o hielo) en el area cargada. Despues de lo opaco.
 void terrain_draw_water(const Terrain *t, float time);
 

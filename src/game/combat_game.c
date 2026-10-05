@@ -940,9 +940,10 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         float d = dist2(e->pos, goal);
         e->speed = 0.0f;
         if (speed > 0.0f && d > 0.2f) {
-            float step = fminf(speed * dt, d);
+            float step = fminf(speed * dt, d), x0 = e->pos.x, z0 = e->pos.z;
             e->pos.x += (goal.x - e->pos.x) / d * step;
             e->pos.z += (goal.z - e->pos.z) / d * step;
+            terrain_dry_step(t, x0, z0, &e->pos.x, &e->pos.z);
             if (e->state != EN_CHASE) e->yaw = atan2f(goal.x - e->pos.x, goal.z - e->pos.z);
             e->speed = speed;
         }
@@ -1011,9 +1012,10 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *
             n->moving = d > 1.6f;
             if (n->moving) {
                 float speed = 5.0f * health_speed_scale(&m->health) * armor_speed_scale(&m->armor);
-                float step = fminf(speed * dt, d - 1.5f);
+                float step = fminf(speed * dt, d - 1.5f), x0 = n->pos.x, z0 = n->pos.z;
                 n->pos.x += (apos.x - n->pos.x) / d * step;
                 n->pos.z += (apos.z - n->pos.z) / d * step;
+                terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z);
                 n->pos.y = surface_y(t, n->pos.x, n->pos.z);
             } else if (cb->comp_cd[k] <= 0.0f) {
                 const Champion *c = troop_champion(troop, m->id);
@@ -1032,9 +1034,10 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *
         float speed = 5.0f * health_speed_scale(&m->health) * armor_speed_scale(&m->armor);
         n->moving = d > 1.5f;
         if (n->moving) {
-            float step = fminf(speed * dt, d - 1.4f);
+            float step = fminf(speed * dt, d - 1.4f), x0 = n->pos.x, z0 = n->pos.z;
             n->pos.x += (best->pos.x - n->pos.x) / d * step;
             n->pos.z += (best->pos.z - n->pos.z) / d * step;
+            terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z);
             n->pos.y = surface_y(t, n->pos.x, n->pos.z);
         } else if (cb->comp_cd[k] <= 0.0f && n->stagger <= 0.0f) {
             // Las mismas reglas que el jugador: combos, patadas, agarres y ganchos segun lo que haga el rival.

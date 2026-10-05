@@ -604,8 +604,10 @@ static bool npc_walk(Npc *n, const Terrain *t, Vector3 to, float dt) {
     if (d < 0.3f) return true;
     float step = fminf(NPC_SPEED * dt, d);
     float dx = (to.x - n->pos.x) / d, dz = (to.z - n->pos.z) / d;
+    float x0 = n->pos.x, z0 = n->pos.z;
     n->pos.x += dx * step;
     n->pos.z += dz * step;
+    terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z); // rodea lagos y rios hondos
     n->pos.y = terrain_height(t, n->pos.x, n->pos.z);
     n->yaw = atan2f(dx, dz);
     return false;

@@ -118,7 +118,11 @@ typedef enum {
     MODE_EAT,    // come una presa abatida
     MODE_RIVAL,  // pelea con un rival de su especie
     MODE_FOLLOW, // sigue al jugador (domado, ganado pastoreado)
+    MODE_DRINK,  // con sed: va a la orilla (tx, tz) y bebe desde tierra
 } AnimalMode;
+
+// Los de tierra no pasan de esta profundidad (m): rodean lagos y rios hondos.
+#define ANIMAL_WADE_MAX 0.3f
 
 // Objetivo: un animal (indice) o una persona (indice en FaunaCtx.humans).
 typedef enum { TGT_NONE, TGT_ANIMAL, TGT_HUMAN } TargetKind;

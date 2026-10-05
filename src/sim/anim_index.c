@@ -90,6 +90,7 @@ const char *anim_quadruped(const Animal *a) {
     if (a->speed > 2.0f) return "trotar";
     if (a->speed > 0.2f) return "caminar";
     if (a->mode == MODE_EAT) return "comer_presa";
+    if (a->mode == MODE_DRINK) return "pastar"; // la cabeza baja al agua
     // Quieto: los herbivoros pastan, los cazadores esperan.
     return d->hunt_max > 0.0f || d->cls == CLASS_HOSTILE ? ANIM_IDLE : "pastar";
 }

@@ -158,6 +158,68 @@ static float tire_rate(const SpeciesDef *d) {
     return d->social ? 1.0f / 40.0f : 1.0f / 9.0f;
 }
 
+// Los de tierra (ni aves ni nadadores) no entran en agua honda.
+static bool walks_on_land(const SpeciesDef *d) { return !d->aquatic && !d->flier; }
+
+// Tras moverse: si el paso lo mete en agua honda (y no venia de ella), prueba a rodearla
+// girando a uno y otro lado; si no puede, se queda en la orilla y elige otro destino.
+static void keep_dry(Animal *a, const FaunaCtx *c, float x0, float z0) {
+    if (!c || !c->water_depth || !walks_on_land(&SPECIES[a->species])) return;
+    float depth = water_at(c, a->x, a->z);
+    if (depth <= ANIMAL_WADE_MAX) return;
+    if (depth <= water_at(c, x0, z0)) return; // ya estaba en el agua: que salga
+    float dx = a->x - x0, dz = a->z - z0;
+    static const float TURN[8] = { 0.5f, -0.5f, 1.0f, -1.0f, 1.5f, -1.5f, 2.0f, -2.0f };
+    for (int k = 0; k < 8; k++) {
+        float cs = cosf(TURN[k]), sn = sinf(TURN[k]);
+        float nx = x0 + dx * cs - dz * sn, nz = z0 + dx * sn + dz * cs;
+        if (water_at(c, nx, nz) <= ANIMAL_WADE_MAX) {
+            a->x = nx, a->z = nz;
+            a->yaw = atan2f(nx - x0, nz - z0);
+            return;
+        }
+    }
+    a->x = x0, a->z = z0;
+    if (a->mode == MODE_GRAZE) a->timer = 0.0f; // otro destino
+    if (water_at(c, a->tx, a->tz) > ANIMAL_WADE_MAX) a->tx = x0, a->tz = z0;
+}
+
+// Con sed, los de tierra buscan la orilla mas cercana, van hasta ella y beben desde
+// tierra firme (mirando al agua). Devuelve true mientras se ocupa de eso.
+static bool seek_drink(Animal *a, const FaunaCtx *c, float dt) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    if (!c || !c->water_depth || !walks_on_land(d) || a->thirst < 0.8f) {
+        if (a->mode == MODE_DRINK) a->mode = MODE_GRAZE;
+        return false;
+    }
+    if (a->mode != MODE_DRINK) {
+        bool found = false;
+        for (float r = 6.0f; r <= 120.0f && !found; r += 6.0f)
+            for (int k = 0; k < 16 && !found; k++) {
+                float ang = (float)k / 16.0f * 6.2831853f + r * 0.13f, ux = cosf(ang), uz = sinf(ang);
+                if (water_at(c, a->x + ux * r, a->z + uz * r) <= 0.05f) continue;
+                for (float back = 2.0f; back < r; back += 1.5f) { // retrocede hasta tierra firme
+                    float tx = a->x + ux * (r - back), tz = a->z + uz * (r - back);
+                    if (water_at(c, tx, tz) <= 0.0f && water_near(c, tx, tz)) {
+                        a->tx = tx, a->tz = tz, found = true;
+                        break;
+                    }
+                }
+            }
+        if (!found) { // no hay agua cerca: aguanta (bebera de un charco)
+            a->thirst = 0.3f;
+            return false;
+        }
+        a->mode = MODE_DRINK;
+    }
+    if (dist_xz(a->x, a->z, a->tx, a->tz) > 1.2f) move_towards(a, a->tx, a->tz, d->walk, dt);
+    if (water_near(c, a->x, a->z)) { // en la orilla: bebe
+        a->thirst = fmaxf(0.0f, a->thirst - dt * 0.25f);
+        if (a->thirst <= 0.05f) a->mode = MODE_GRAZE, a->timer = 0.0f;
+    }
+    return true;
+}
+
 // Elige un destino al azar en su territorio; los que pastan a veces se quedan quietos.
 static void wander(Animal *a, Rng *rng, float radius, float dt) {
     const SpeciesDef *d = &SPECIES[a->species];
@@ -470,6 +532,7 @@ static void update_wild(Animal *a, int i, Animal *all, int n, const FaunaCtx *c,
             else move_away(a, a->flee_x, a->flee_z, run_speed(a), dt);
             return;
         }
+        if (seek_drink(a, c, dt)) return;
         a->mode = MODE_GRAZE;
         clear_target(a);
         if (!keep_with_group(a, i, all, n, dt)) wander(a, rng, WANDER_RADIUS, dt);
@@ -520,6 +583,7 @@ static void update_wild(Animal *a, int i, Animal *all, int n, const FaunaCtx *c,
         hunt(a, i, all, n, c, rng, dt, ev);
         return;
     }
+    if (seek_drink(a, c, dt)) return;
     a->mode = MODE_GRAZE;
     float radius = d->leash > 0.0f ? d->leash * 0.5f : d->flier ? 30.0f : WANDER_RADIUS;
     if (!keep_with_group(a, i, all, n, dt)) wander(a, rng, radius, dt);
@@ -672,6 +736,10 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
                 push(ev, parched ? FEV_PARCHED : FEV_STARVED, i, -1, 0.0f, WOUND_BRUISE);
             }
         }
+        else if (walks_on_land(d) && c->water_depth) { // los salvajes de tierra tambien tienen sed
+            a->thirst = fminf(1.5f, a->thirst + dt * THIRST_ANIMAL_RATE);
+            if (a->mode != MODE_DRINK && water_near(c, a->x, a->z)) a->thirst = fmaxf(0.0f, a->thirst - dt * THIRST_ANIMAL_RATE * 30.0f);
+        }
         if (a->ridden) continue; // lo mueve el jinete (y fija su velocidad)
         float x0 = a->x, z0 = a->z;
         switch (a->state) {
@@ -688,6 +756,7 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
         case ANIMAL_SADDLED: update_tamed(a, i, all, n, c, rng, dt, ev); break;
         default: update_wild(a, i, all, n, c, rng, dt, ev); break;
         }
+        if (a->state != ANIMAL_BOUND) keep_dry(a, c, x0, z0);
         a->speed = dt > 0.0f ? dist_xz(a->x, a->z, x0, z0) / dt : 0.0f;
         if (a->speed > d->walk * 2.5f) a->stamina = fmaxf(0.0f, a->stamina - tire_rate(d) * dt);
         else a->stamina = fminf(1.0f, a->stamina + dt / 20.0f);

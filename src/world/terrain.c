@@ -34,6 +34,22 @@ float terrain_height(const Terrain *t, float x, float z) { return world_height(t
 float terrain_plain_height(const Terrain *t) { return t->world->camp_height; }
 Region terrain_region(const Terrain *t, float x, float z) { return world_region(t->world, x, z); }
 
+void terrain_dry_step(const Terrain *t, float x0, float z0, float *x, float *z) {
+    const float deep = 0.6f;
+    if (!terrain_deep_water(t, *x, *z, deep) || terrain_deep_water(t, x0, z0, deep)) return;
+    float dx = *x - x0, dz = *z - z0;
+    static const float TURN[8] = { 0.5f, -0.5f, 1.0f, -1.0f, 1.5f, -1.5f, 2.0f, -2.0f };
+    for (int k = 0; k < 8; k++) {
+        float cs = cosf(TURN[k]), sn = sinf(TURN[k]);
+        float nx = x0 + dx * cs - dz * sn, nz = z0 + dx * sn + dz * cs;
+        if (!terrain_deep_water(t, nx, nz, deep)) {
+            *x = nx, *z = nz;
+            return;
+        }
+    }
+    *x = x0, *z = z0;
+}
+
 float terrain_water(const Terrain *t, float x, float z) { return world_water(t->world, x, z, t->look.flood, NULL); }
 
 float terrain_ice(const Terrain *t, float x, float z) {
