@@ -114,6 +114,7 @@ if(ESTEPA_BUILD_GAME)
     src/world/terrain.c
     src/world/worldview.c
     src/world/camp.c
+    src/world/hearth.c
     src/world/gallery.c
     src/world/sky.c
     src/world/clouds.c

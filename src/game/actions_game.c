@@ -19,6 +19,7 @@
 #include "sim/melee.h"
 #include "sim/clock.h"
 #include "world/body_draw.h"
+#include "world/hearth.h"
 #include "ui/icons.h"
 #include "ui/theme.h"
 #include "sim/lang.h"
@@ -1002,6 +1003,12 @@ static Color role_color(Role r) {
 
 void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time) {
     props_draw(props);
+    for (int i = 0; i < props->count; i++) { // fogatas y hogueras: piedras, leños, llamas y humo
+        const Prop *pr = &props->items[i];
+        float scale;
+        if (props_is_fire(pr->item, &scale) && !props_has_model(props, pr->item))
+            hearth_draw_base(pr->pos, scale, (uint32_t)(int)(pr->pos.x * 13.0f + pr->pos.z * 7.0f), !ga->fires_out);
+    }
     for (int i = 0; i < ga->project_count; i++) {
         const BuildProject *bp = &ga->projects[i];
         const InvItem *it = inventory_find(ga->inv, build_def(bp->def)->produces);

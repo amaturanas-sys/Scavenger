@@ -49,6 +49,7 @@
 #include "ui/icons.h"
 #include "ui/theme.h"
 #include "world/camp.h"
+#include "world/hearth.h"
 #include "world/gallery.h"
 #include "world/sky.h"
 #include "world/clouds.h"
@@ -403,6 +404,8 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
         }
         lx = x * 1.2f, lz = z * 1.2f, ok = true;
     }
+    if (!strcmp(what, "fogata")) x = 1.8f, z = 0.0f, lx = 1.8f, lz = 10.0f, ok = true; // la del campamento, de cerca
+    if (!strcmp(what, "hoguera")) x = 6.5f, z = -2.0f, lx = 6.5f, lz = 10.0f, ok = true; // una hoguera junto a la fogata
     if (!strcmp(what, "hielo")) world_edge_point(w, REGION_HIGHLAND, 230.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
     static const struct { const char *name; SiteKind kind; } SITE_PLACES[] = {
         { "kurgan", SITE_KURGAN },       { "balbales", SITE_BALBALS },        { "piedra", SITE_DEER_STONE }, { "fortaleza", SITE_RUINED_FORT },
@@ -645,6 +648,7 @@ int main(int argc, char **argv) {
     int day = 1;
     Sky sky;
     sky_init(&sky, WORLD_SEED);
+    hearth_init();
     WeatherFx weather;
     weather_init(&weather, WORLD_SEED);
     int last_champion = -1;  // id del ultimo gran guerrero encontrado
@@ -689,6 +693,8 @@ int main(int argc, char **argv) {
     }
 
     if (start_goto && !gallery_mode) go_to(&terrain, &player, start_goto);
+    if (start_goto && !gallery_mode && !strcmp(start_goto, "hoguera"))
+        props_add(&g_props, "estructura.campamento.hoguera", (Vector3){ 3.0f, terrain_height(&terrain, 3.0f, -2.0f), -2.0f }, 0.0f);
 
     Gallery gallery = { 0 };
     if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
@@ -1020,6 +1026,7 @@ int main(int argc, char **argv) {
         float sky_time = gallery_mode ? 400.0f : world_time;
         sky_draw_background(cam, sky_time, climate.clouds, VIRTUAL_W, VIRTUAL_H);
         rlSetClipPlanes(0.1, 3300.0); // el horizonte lejano y el cielo, a ~3 km
+        hearth_frame_begin();
         BeginMode3D(cam);
         terrain_draw(&terrain);
         camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used, g_dz.tree_burn);
@@ -1034,6 +1041,8 @@ int main(int argc, char **argv) {
         if (!gallery_mode) trv_draw_world(&g_actions, &troop, (float)GetTime());
         if (!gallery_mode) dz_draw_world(&g_dz, &terrain, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
+        hearth_draw_smoke(cam, (float)GetTime(), climate.wind, gallery_mode ? 1.0f : clock_light(world_time)); // el humo, oscurecido de noche como todo
+        if (gallery_mode) hearth_draw_flames((float)GetTime(), climate.wind);
         if (!gallery_mode) hz_draw_world(&g_hazards, &terrain, &g_actions, &troop, (float)GetTime());
         if (!gallery_mode) clouds_draw(&terrain, cam, world_time, climate.clouds, climate.wind, sky_clear_color(climate.clouds));
         EndMode3D();
@@ -1045,7 +1054,7 @@ int main(int argc, char **argv) {
             BeginMode3D(cam);
             sky_draw_stars(&sky, cam, world_time, climate.clouds);
             sky_draw_moon(cam, world_time, climate.clouds);
-            if (!g_actions.fires_out) camp_draw_flame(&camp, (float)GetTime());
+            hearth_draw_flames((float)GetTime(), climate.wind); // los fuegos encendidos de este cuadro
             weather_draw(&weather, &climate, cam, (float)GetTime(), clock_light(world_time));
             EndMode3D();
             Vector3 light_pos[SKY_MAX_LIGHTS];
@@ -1089,6 +1098,13 @@ int main(int argc, char **argv) {
         if (in_game && !menu_visible(&menu) && (platform_touch_ui() || g_force_touch)) draw_touch_buttons();
         if (show_diag) draw_diagnostics(has_keyboard);
         if (!has_keyboard) draw_keyboard_notice();
+        // Lo translucido (humo, agua, nubes) baja el alfa del cuadro: se deja opaco para que la
+        // captura y la minifoto de la partida se vean como en pantalla.
+        rlDrawRenderBatchActive();
+        rlColorMask(false, false, false, true);
+        DrawRectangle(0, 0, VIRTUAL_W, VIRTUAL_H, WHITE);
+        rlDrawRenderBatchActive();
+        rlColorMask(true, true, true, true);
         EndTextureMode();
 
         // Escala a la ventana conservando la proporcion (con bandas si hace falta).
@@ -1129,6 +1145,7 @@ int main(int argc, char **argv) {
     camp_unload(&camp);
     terrain_unload(&terrain);
     clouds_unload();
+    hearth_unload();
     voxs_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();

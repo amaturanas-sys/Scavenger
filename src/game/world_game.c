@@ -8,6 +8,7 @@
 #include "rlgl.h"
 #include "sim/lang.h"
 #include "world/body_draw.h"
+#include "world/hearth.h"
 #include "world/voxstruct.h"
 
 #define SETTLE_DRAW 280.0f // m: se dibujan los asentamientos a esta distancia
@@ -132,6 +133,8 @@ static Color folk_color(Region rg, int k) {
     return C[rg][k & 1];
 }
 
+static bool g_fires_out;
+
 static void draw_settlement(const Terrain *t, const Settlement *s, int idx, float time) {
     float ground = terrain_height(t, s->x, s->z);
     int n = s->kind == SETTLE_CAPITAL ? 9 : 5;
@@ -165,7 +168,7 @@ static void draw_settlement(const Terrain *t, const Settlement *s, int idx, floa
         DrawCube((Vector3){ pole.x + 1.0f, ground + 8.0f + wave * 0.2f, pole.z }, 2.0f, 1.2f, 0.08f, folk_color(s->region, idx + 1));
     }
     // Fogata y gente.
-    DrawCylinder((Vector3){ s->x, ground + 0.1f, s->z }, 0.0f, 0.4f, 0.8f, 5, (Color){ 240, 140, 40, 255 });
+    hearth_draw_base((Vector3){ s->x, ground, s->z }, s->kind == SETTLE_CAPITAL ? HEARTH_SCALE_BONFIRE : 1.3f, 100u + (uint32_t)idx, !g_fires_out);
     for (int k = 0; k < 4; k++) {
         float a = time * 0.05f + (float)k * 1.6f + idx, r = 5.0f + 1.5f * (float)(k % 2);
         Vector3 pos = { s->x + cosf(a) * r, 0, s->z + sinf(a) * r };
@@ -204,7 +207,7 @@ static void draw_tribe(const Terrain *t, const TribeCamp *tc, int idx, float tim
     DrawCylinder(pole, 0.1f, 0.1f, 6.5f, 5, (Color){ 90, 70, 50, 255 });
     float wave = sinf(time * 2.3f + idx) * 0.25f;
     DrawCube((Vector3){ pole.x + 0.8f, ground + 5.8f + wave * 0.2f, pole.z }, 1.6f, 1.0f, 0.08f, BANNER[tc->attitude]);
-    DrawCylinder((Vector3){ tc->x, ground + 0.1f, tc->z }, 0.0f, 0.4f, 0.8f, 5, (Color){ 240, 140, 40, 255 });
+    hearth_draw_base((Vector3){ tc->x, ground, tc->z }, 1.2f, 200u + (uint32_t)idx, !g_fires_out);
     for (int k = 0; k < 3; k++) {
         float a = time * 0.04f + (float)k * 2.1f + idx, r = 5.0f;
         Vector3 pos = { tc->x + cosf(a) * r, 0, tc->z + sinf(a) * r };
@@ -228,7 +231,7 @@ static void draw_site(const Terrain *t, const WorldSite *st, float time) {
 }
 
 void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, float time) {
-    (void)ga;
+    g_fires_out = ga->fires_out; // la lluvia apaga tambien los fuegos de los demas
     const World *w = t->world;
     for (int i = 0; i < w->settlement_count; i++)
         if (dist_xz(w->settlements[i].x, w->settlements[i].z, p->pos.x, p->pos.z) < SETTLE_DRAW) draw_settlement(t, &w->settlements[i], i, time);
