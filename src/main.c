@@ -412,7 +412,8 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     }
     for (int i = 0; i < w->river_count && !ok; i++) { // un rio: a su orilla, mirandolo
         const River *rv = &w->rivers[i];
-        bool want = (!strcmp(what, "meandro") && rv->kind == RIVER_MEANDER) || (!strcmp(what, "trenzado") && rv->kind == RIVER_BRAIDED);
+        bool want = (!strcmp(what, "meandro") && rv->kind == RIVER_MEANDER) || (!strcmp(what, "trenzado") && rv->kind == RIVER_BRAIDED) ||
+                    (!strcmp(what, "arroyo") && rv->kind == RIVER_CREEK);
         if (!want) continue;
         int k = rv->n / 2;
         float dx = rv->x[k + 1] - rv->x[k], dz = rv->z[k + 1] - rv->z[k], l = sqrtf(dx * dx + dz * dz) + 1e-3f;

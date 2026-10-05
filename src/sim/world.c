@@ -317,7 +317,8 @@ float world_height(const World *w, float x, float z) {
             if (d < r->width) h = fminf(h, braid_channel(w, r, along, side) ? lv - 0.6f : lv + 0.12f); // grava y canales
             else if (d < r->width * 1.6f) h = fminf(h, lerpf(lv + 0.12f, fmaxf(h, lv + 0.12f), smooth(r->width, r->width * 1.6f, d)));
         } else {
-            if (d < r->width) h = fminf(h, lv - 0.4f - 2.2f * (1.0f - (d / r->width) * (d / r->width)));
+            float deep = 2.2f * fminf(1.0f, r->width / 5.0f); // los arroyos, menos hondos
+            if (d < r->width) h = fminf(h, lv - 0.4f - deep * (1.0f - (d / r->width) * (d / r->width)));
             else if (d < r->width * 2.4f) h = fminf(h, lerpf(lv + 0.2f, fmaxf(h, lv + 0.2f), smooth(r->width, r->width * 2.4f, d)));
         }
     }
@@ -546,6 +547,43 @@ static void make_radial(World *w, Rng *rng, RiverKind kind, Region rg, float ang
     w->river_count++;
 }
 
+// Un arroyo: de (x, z) hacia el punto mas cercano de los rios ya trazados (los primeros
+// `mains`), serpenteando; el agua baja hacia la junta.
+static void make_creek(World *w, Rng *rng, int mains, float x, float z) {
+    if (w->river_count >= RIVERS_MAX) return;
+    float best = 1e18f, tx = 0.0f, tz = 0.0f;
+    for (int i = 0; i < mains; i++)
+        for (int k = 0; k < w->rivers[i].n; k += 2) {
+            float dx = w->rivers[i].x[k] - x, dz = w->rivers[i].z[k] - z, d2 = dx * dx + dz * dz;
+            if (d2 < best) best = d2, tx = w->rivers[i].x[k], tz = w->rivers[i].z[k];
+        }
+    float dist = sqrtf(best);
+    if (dist < 120.0f || dist > 1400.0f) return;
+    River *rv = &w->rivers[w->river_count];
+    memset(rv, 0, sizeof(*rv));
+    rv->kind = RIVER_CREEK;
+    rv->width = 2.0f + rng_float(rng) * 1.5f;
+    const float step = 16.0f;
+    float px = x, pz = z, phase = rng_float(rng) * 50.0f;
+    for (int k = 0; k < RIVER_PTS; k++) {
+        rv->x[rv->n] = px, rv->z[rv->n] = pz;
+        rv->n++;
+        float dx = tx - px, dz = tz - pz, d = sqrtf(dx * dx + dz * dz);
+        if (d < step) {
+            rv->x[rv->n] = tx, rv->z[rv->n] = tz; // la junta
+            rv->n++;
+            break;
+        }
+        float a = atan2f(dz, dx) + 0.7f * noise2d(phase + k * 0.18f, (float)w->river_count, w->seed + 83u);
+        px += cosf(a) * step, pz += sinf(a) * step;
+        if (rv->n >= RIVER_PTS - 1) break;
+    }
+    if (rv->n < 6) return;
+    river_finish(rv);
+    river_levels(w, rv, 0.9f, true);
+    w->river_count++;
+}
+
 void world_generate(World *w, uint32_t seed) {
     memset(w, 0, sizeof(*w));
     w->seed = seed;
@@ -611,6 +649,19 @@ void world_generate(World *w, uint32_t seed) {
         float a = SECTOR_ANGLE[REGION_FJORD] - w->warp_phase + (rng_float(&rng) - 0.5f) * 1.2f * SECTOR_HALF;
         make_radial(w, &rng, RIVER_BRAIDED, REGION_FJORD, a, steppe_radius(w, a) + 60.0f, world_edge_radius(w, a) - 80.0f, false,
                     35.0f + rng_float(&rng) * 30.0f);
+    }
+    // Arroyos: bajan de las lomas de la estepa, del bosque, del altiplano y de la costa hasta un rio.
+    {
+        static const Region CREEK_REGIONS[] = { REGION_STEPPE, REGION_FOREST, REGION_HIGHLAND, REGION_FJORD };
+        int mains = w->river_count, creeks = 14 + rng_range(&rng, 7);
+        for (int i = 0; i < creeks * 6 && creeks > 0 && w->river_count < RIVERS_MAX - 2; i++) {
+            float x, z;
+            random_point(w, &rng, CREEK_REGIONS[i % 4], 260.0f, &x, &z);
+            if (x * x + z * z < 300.0f * 300.0f || !dry_spot(w, x, z)) continue;
+            int before = w->river_count;
+            make_creek(w, &rng, mains, x, z);
+            if (w->river_count > before) creeks--;
+        }
     }
     // Lagos: uno junto al campamento (siempre), otros donde caigan; oasis en el desierto.
     {

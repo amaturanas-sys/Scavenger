@@ -12,7 +12,7 @@
 // Por triangulo: altura, pendiente, luz, mancha, y pesos de desierto, bosque, altiplano y
 // costa, distancia sobre el agua (para la orilla) y que es (suelo, copa o tronco).
 enum { A_H, A_SLOPE, A_LIGHT, A_PATCH, A_DESERT, A_FOREST, A_HIGH, A_FJORD, A_SHORE, A_EDGE, A_KIND, TRI_ATTRS };
-enum { KIND_GROUND, KIND_CANOPY, KIND_TRUNK };
+enum { KIND_GROUND, KIND_CANOPY, KIND_TRUNK, KIND_ROCK, KIND_BUSH };
 enum { W_LAKE, W_RIVER, W_SEA, W_GLACIAL }; // las mallas de agua de cada chunk
 
 // Texturas del suelo (assets/terrain/texturas.png, tools/assets/texturas_terreno.py): un atlas
@@ -116,7 +116,34 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
     return c;
 }
 
+// Rocas: gris (rojiza en el desierto), con liquen; nieve encima en invierno y en lo alto.
+static Color rock_color(const TerrainLook *L, const float *a) {
+    Color c = mixc((Color){ 118, 114, 106, 255 }, (Color){ 142, 138, 126, 255 }, a[A_PATCH]);
+    c = mixc(c, (Color){ 168, 104, 72, 255 }, a[A_DESERT]);
+    c = mixc(c, (Color){ 104, 116, 92, 255 }, 0.25f * a[A_FJORD]); // liquen de la costa
+    float cover = L->snow_cover * (a[A_SLOPE] < 0.5f ? 1.0f : 0.3f);
+    if (a[A_H] > L->snowline - 4.0f) cover = fmaxf(cover, 0.8f);
+    return mixc(c, (Color){ 226, 232, 240, 255 }, a[A_SLOPE] < 0.4f ? cover : cover * 0.4f);
+}
+
+// Matas y arbustos: verdes en primavera, secos en verano, ocres en otoño; flores de la
+// estepa en primavera (las matas de mancha alta); nieve encima.
+static Color bush_color(const TerrainLook *L, const float *a) {
+    Color green = { 86, 120, 58, 255 }, dry = { 150, 134, 84, 255 }, ochre = { 168, 112, 56, 255 };
+    Color c = mixc(dry, green, L->greenness);
+    c = mixc(c, ochre, L->autumn * 0.8f);
+    c = mixc(c, (Color){ 60, 84, 52, 255 }, a[A_FOREST] * 0.6f);  // sotobosque
+    c = mixc(c, (Color){ 132, 118, 80, 255 }, a[A_DESERT] * 0.8f); // saxaul
+    if (a[A_PATCH] > 0.86f && a[A_FOREST] < 0.5f && a[A_DESERT] < 0.5f && a[A_HIGH] < 0.5f && L->greenness > 0.5f) {
+        static const Color FLOWERS[3] = { { 214, 92, 120, 255 }, { 226, 200, 84, 255 }, { 156, 120, 200, 255 } };
+        c = mixc(c, FLOWERS[(int)(a[A_PATCH] * 997.0f) % 3], (L->greenness - 0.5f) * 1.6f);
+    }
+    return mixc(c, (Color){ 222, 228, 236, 255 }, L->snow_cover * 0.85f);
+}
+
 static Color tree_color(const TerrainLook *L, const float *a) {
+    if (a[A_KIND] == KIND_ROCK) return rock_color(L, a);
+    if (a[A_KIND] == KIND_BUSH) return bush_color(L, a);
     if (a[A_KIND] == KIND_TRUNK) return (Color){ 92, 66, 44, 255 };
     Color c = mixc((Color){ 52, 86, 50, 255 }, (Color){ 74, 92, 58, 255 }, a[A_PATCH]);
     // Los alerces (la mitad del bosque) se doran en otoño, como en las laderas del Altai.
@@ -237,10 +264,64 @@ static void push_tree(TriBuf *b, Vector3 base, float height, float radius, float
     }
 }
 
+// Una roca: un canto rodado facetado (anillo de 5 con alturas al azar y un tope), medio
+// enterrado. at trae la region (desierto, costa) para el color.
+static void push_rock(TriBuf *b, Vector3 base, float r, uint32_t h, const float *region_at) {
+    float at[TRI_ATTRS];
+    memcpy(at, region_at, sizeof(at));
+    at[A_KIND] = KIND_ROCK;
+    at[A_PATCH] = (float)(h & 0xFF) / 255.0f;
+    at[A_H] = base.y + r * 0.5f;
+    const int sides = 5;
+    Vector3 ring[5], top = { base.x + r * 0.15f, base.y + r * (0.7f + 0.5f * (float)((h >> 8) & 0xFF) / 255.0f), base.z - r * 0.1f };
+    for (int i = 0; i < sides; i++) {
+        float a = (float)i / sides * 2.0f * PI + (float)((h >> (i * 3)) & 7) * 0.08f;
+        float rr = r * (0.75f + 0.25f * (float)((h >> (i * 5 + 2)) & 3) / 3.0f);
+        ring[i] = (Vector3){ base.x + cosf(a) * rr, base.y + r * (0.15f + 0.2f * (float)((h >> (i * 4 + 1)) & 3) / 3.0f), base.z + sinf(a) * rr };
+    }
+    for (int i = 0; i < sides; i++) {
+        Vector3 p0 = ring[i], p1 = ring[(i + 1) % sides];
+        Vector3 g0 = { p0.x * 1.0f, base.y - 0.4f, p0.z }, g1 = { p1.x, base.y - 0.4f, p1.z };
+        push_tri(b, p0, top, p1, at);   // cara de arriba
+        push_tri(b, g0, p0, p1, at);    // costado hasta el suelo
+        push_tri(b, g0, p1, g1, at);
+    }
+}
+
+// Una mata o arbusto: un domo bajo de 5 caras.
+static void push_bush(TriBuf *b, Vector3 base, float r, float hgt, float patch, const float *region_at) {
+    float at[TRI_ATTRS];
+    memcpy(at, region_at, sizeof(at));
+    at[A_KIND] = KIND_BUSH;
+    at[A_PATCH] = patch;
+    at[A_H] = base.y + hgt * 0.5f;
+    const int sides = 5;
+    Vector3 top = { base.x, base.y + hgt, base.z };
+    for (int i = 0; i < sides; i++) {
+        float a0 = (float)i / sides * 2.0f * PI + patch, a1 = (float)(i + 1) / sides * 2.0f * PI + patch;
+        Vector3 p0 = { base.x + cosf(a0) * r, base.y + hgt * 0.35f, base.z + sinf(a0) * r }, p1 = { base.x + cosf(a1) * r, base.y + hgt * 0.35f, base.z + sinf(a1) * r };
+        Vector3 g0 = { base.x + cosf(a0) * r * 0.7f, base.y - 0.1f, base.z + sinf(a0) * r * 0.7f }, g1 = { base.x + cosf(a1) * r * 0.7f, base.y - 0.1f, base.z + sinf(a1) * r * 0.7f };
+        push_tri(b, p0, top, p1, at);
+        push_tri(b, g0, p0, p1, at);
+        push_tri(b, g0, p1, g1, at);
+    }
+}
+
+// Rocas y matas por region (por celda de 3 m): pedreros en el altiplano y la costa,
+// cantos rojizos en el desierto; matas en la estepa (mas junto al agua), sotobosque.
+static float rock_density(const float *k) {
+    return k[REGION_HIGHLAND] * 0.09f + k[REGION_FJORD] * 0.07f + k[REGION_DESERT] * 0.04f + k[REGION_FOREST] * 0.025f + k[REGION_STEPPE] * 0.018f;
+}
+static float bush_density(const float *k, float near_water) {
+    return k[REGION_STEPPE] * (0.07f + 0.18f * near_water) + k[REGION_FOREST] * 0.10f + k[REGION_FJORD] * 0.08f + k[REGION_HIGHLAND] * 0.04f +
+           k[REGION_DESERT] * (0.02f + 0.2f * near_water);
+}
+
 // Densidad de arboles: bosque cerrado; algunos en la costa y en las faldas del altiplano;
 // pocos en la estepa (mas junto al agua); ninguno en el desierto.
 static float tree_density(const float *k, float near_water) {
-    return k[REGION_FOREST] * 0.62f + k[REGION_FJORD] * 0.12f + k[REGION_HIGHLAND] * 0.05f + k[REGION_STEPPE] * (0.01f + 0.08f * near_water);
+    return k[REGION_FOREST] * 0.72f + k[REGION_FJORD] * 0.14f + k[REGION_HIGHLAND] * 0.06f + k[REGION_STEPPE] * (0.01f + 0.22f * near_water) +
+           k[REGION_DESERT] * 0.25f * near_water; // sotos junto a rios y oasis
 }
 
 static Model make_model(TriBuf *b) {
@@ -297,10 +378,11 @@ static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
 }
 
 static Chunk build_chunk(const Terrain *t, int cx, int cz) {
-    enum { GROUND = CHUNK_CELLS * CHUNK_CELLS * 2, TREE_SLOTS = 12, TREES_MAX = TREE_SLOTS * TREE_SLOTS, TREE_TRIS = 22 };
-    static float vbuf[(GROUND + TREES_MAX * TREE_TRIS) * 9], nbuf[(GROUND + TREES_MAX * TREE_TRIS) * 9];
-    static float abuf[(GROUND + TREES_MAX * TREE_TRIS) * TRI_ATTRS], uvbuf[(GROUND + TREES_MAX * TREE_TRIS) * 6];
-    TriBuf b = { vbuf, nbuf, abuf, uvbuf, 0, GROUND + TREES_MAX * TREE_TRIS, { 0 } };
+    enum { GROUND = CHUNK_CELLS * CHUNK_CELLS * 2, TREE_SLOTS = 12, TREES_MAX = TREE_SLOTS * TREE_SLOTS, TREE_TRIS = 22,
+           PROP_SLOTS = 16, PROP_TRIS = 15, CAP = GROUND + TREES_MAX * TREE_TRIS + PROP_SLOTS * PROP_SLOTS * PROP_TRIS };
+    static float vbuf[CAP * 9], nbuf[CAP * 9];
+    static float abuf[CAP * TRI_ATTRS], uvbuf[CAP * 6];
+    TriBuf b = { vbuf, nbuf, abuf, uvbuf, 0, CAP, { 0 } };
     g_perma_snow = t->plain + 40.0f;
     const float cell = CHUNK_SIZE / CHUNK_CELLS;
     const float ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
@@ -358,6 +440,37 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? 80.0f : 45.0f)) continue; // claros de los pueblos
             float height = 5.0f + 5.0f * r1 * (0.6f + 0.4f * k[REGION_FOREST]);
             push_tree(&b, (Vector3){ x, y, z }, height, 1.4f + 0.8f * r2, r2);
+        }
+    // Rocas y matas (deterministas por posicion): ni en el agua, ni en el campamento, ni en los pueblos.
+    const float pslot = CHUNK_SIZE / PROP_SLOTS;
+    for (int iz = 0; iz < PROP_SLOTS; iz++)
+        for (int ix = 0; ix < PROP_SLOTS; ix++) {
+            int gx = cx * PROP_SLOTS + ix, gz = cz * PROP_SLOTS + iz;
+            uint32_t h = hash2(gx, gz, t->seed ^ 0x5EEDu);
+            float r0 = (float)(h & 0xFFFF) / 65535.0f, r1 = (float)((h >> 16) & 0xFF) / 255.0f, r2 = (float)(h >> 24) / 255.0f;
+            float x = ox + (ix + 0.1f + 0.8f * r1) * pslot, z = oz + (iz + 0.1f + 0.8f * r2) * pslot;
+            if (x * x + z * z < 60.0f * 60.0f || world_edge_distance(t->world, x, z) < 90.0f) continue;
+            float k[REGION_COUNT];
+            world_region_weights(t->world, x, z, k);
+            float rd = rock_density(k), wl = world_water(t->world, x, z, 0.0f, NULL), y = terrain_height(t, x, z);
+            float near_water = wl > -1e8f && y - wl < 5.0f ? 1.0f : 0.0f;
+            float bd = bush_density(k, near_water);
+            if (r0 > rd + bd) continue;
+            if (wl > y - 0.4f) continue; // en el agua, no
+            float dist;
+            int si = world_nearest_settlement(t->world, x, z, &dist);
+            if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? 70.0f : 40.0f)) continue;
+            float sx = terrain_height(t, x + 1.5f, z) - y, sz = terrain_height(t, x, z + 1.5f) - y;
+            float slope = sqrtf(sx * sx + sz * sz) / 1.5f;
+            float at[TRI_ATTRS] = { 0 };
+            at[A_DESERT] = k[REGION_DESERT], at[A_FOREST] = k[REGION_FOREST], at[A_HIGH] = k[REGION_HIGHLAND], at[A_FJORD] = k[REGION_FJORD];
+            at[A_SLOPE] = slope;
+            if (r0 < rd) {
+                float size = 0.4f + 1.4f * r1 * r1 + (k[REGION_HIGHLAND] + k[REGION_FJORD]) * 0.8f * r2;
+                push_rock(&b, (Vector3){ x, y, z }, size, h, at);
+            } else if (slope < 0.9f) {
+                push_bush(&b, (Vector3){ x, y, z }, 0.5f + 0.7f * r1, 0.4f + 0.8f * r2 * (0.5f + k[REGION_FOREST]), r2, at);
+            }
         }
     Chunk ch = { .loaded = true, .cx = cx, .cz = cz };
     ch.model = make_model(&b);

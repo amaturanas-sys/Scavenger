@@ -22,11 +22,11 @@
 #include "ui/theme.h"
 #include "sim/lang.h"
 
-#define POP_TARGET 16        // animales salvajes vivos alrededor del jugador
-#define POP_RADIUS 150.0f
+#define POP_TARGET 30        // animales salvajes vivos alrededor del jugador (hasta GA_MAX_ANIMALS con los de la tribu)
+#define POP_RADIUS 200.0f
 #define SPAWN_MIN 70.0f
-#define SPAWN_MAX 110.0f
-#define DESPAWN_DIST 190.0f
+#define SPAWN_MAX 150.0f
+#define DESPAWN_DIST 240.0f
 #define CAMP_CLEAR 50.0f     // no aparecen salvajes tan cerca del campamento
 #define INTERACT_RANGE 3.0f
 #define CORPSE_KEEP 300.0f   // s que se queda un cadaver entero
@@ -148,7 +148,7 @@ static int pick_species(GameActions *ga, int hab, bool night) {
 
 static void populate(GameActions *ga, const Player *p, const Terrain *t, bool night, float dt) {
     ga->fauna_timer += dt;
-    if (ga->fauna_timer < 8.0f) return;
+    if (ga->fauna_timer < 5.0f) return;
     ga->fauna_timer = 0.0f;
     int wild = 0;
     for (int i = 0; i < ga->animal_count; i++) {
