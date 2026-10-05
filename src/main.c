@@ -625,6 +625,10 @@ int main(int argc, char **argv) {
     InitWindow(0, 0, GAME_TITLE " - " GAME_SUBTITLE); // pantalla completa del dispositivo
 #else
     InitWindow(VIRTUAL_W * 2, VIRTUAL_H * 2, GAME_TITLE " - " GAME_SUBTITLE);
+    { // el logo en la barra de la ventana (en Android, el icono va en el APK)
+        Image icon = LoadImage(platform_asset_path("assets/ui/icono.png"));
+        if (icon.data) SetWindowIcon(icon), UnloadImage(icon);
+    }
 #endif
     SetTargetFPS(60);
 

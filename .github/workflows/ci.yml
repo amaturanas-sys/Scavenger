@@ -86,6 +86,8 @@ jobs:
           # tienen que estar justo bajo assets/ (la raiz del AssetManager).
           unzip -l build-android/estepa.apk | grep -E " assets/ui/iconos.png$"
           unzip -l build-android/estepa.apk | grep -E " assets/terrain/texturas.png$"
+          unzip -l build-android/estepa.apk | grep -E " assets/ui/logo.png$"
+          unzip -l build-android/estepa.apk | grep -E "res/mipmap-xxxhdpi(-v4)?/ic_launcher.png$" # el icono de la app
       - uses: actions/upload-artifact@v4
         with:
           name: estepa-android

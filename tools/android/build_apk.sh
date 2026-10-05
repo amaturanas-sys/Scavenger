@@ -52,9 +52,12 @@ rm -rf "$STAGE" && mkdir -p "$STAGE/lib/$ABI"
 cp "$BUILD/libestepa.so" "$STAGE/lib/$ABI/"
 "$NDK"/toolchains/llvm/prebuilt/*/bin/llvm-strip --strip-unneeded "$STAGE/lib/$ABI/libestepa.so"
 
-# 1) Manifest + assets.
+# 1) Manifest, recursos (el icono: android/res/mipmap-*) y assets.
+rm -rf "$BUILD/res" && mkdir -p "$BUILD/res"
+"$BUILD_TOOLS/aapt2" compile --dir "$ROOT/android/res" -o "$BUILD/res"
 "$BUILD_TOOLS/aapt2" link -o "$BUILD/estepa.unaligned.apk" \
   --manifest "$ROOT/android/AndroidManifest.xml" \
+  "$BUILD"/res/*.flat \
   -I "$PLATFORM_DIR/android.jar" -A "$ROOT/assets" \
   --min-sdk-version "$MIN_API" --target-sdk-version "$TARGET_API" \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME" --replace-version
