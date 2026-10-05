@@ -186,6 +186,8 @@ adb install -r build-android/estepa.apk
 
 El CI publica el APK como artefacto `estepa-android`.
 
+**Releases:** al subir una etiqueta `vX.Y.Z` (o desde Actions → Release → Run workflow, con la versión de `VERSION`), `.github/workflows/release.yml` compila y publica en GitHub Releases el APK firmado y el zip de Windows. Las notas salen de `tools/release/notas.md`. Si el repo tiene en sus secrets una clave propia (`ESTEPA_KEYSTORE_B64`, `ESTEPA_KEYSTORE_PASS`, `ESTEPA_KEY_ALIAS`), firma con ella; si no, con la de desarrollo.
+
 ### Actualizaciones
 Cada versión nueva **se instala encima de la anterior**, sin desinstalar y conservando los datos:
 - Todos los builds se firman con la misma clave de desarrollo (`android/estepa-dev.keystore`); el script verifica la huella del certificado (`android/dev-cert.sha256`) en cada build.
