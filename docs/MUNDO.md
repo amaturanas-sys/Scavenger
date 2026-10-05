@@ -125,7 +125,7 @@ El norte es −Z y el este +X.
 
 ![HUD](mundo/hud.png)
 
-*El HUD: el minimapa con la geografía (aquí, el meandro), la placa de las constantes, la barra rápida 1-9 y la columna de acciones.*
+*El HUD: el minimapa (lo explorado muestra su geografía; lo demás, a oscuras), la placa de las constantes, la barra rápida 1-9 y la columna de acciones.*
 
 ![Cielo](mundo/cielo.png)
 

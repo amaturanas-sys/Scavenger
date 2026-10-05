@@ -192,9 +192,9 @@ void minimap_draw(Minimap *mm, const MemoryMap *map, Vector2 center, Vector3 pla
             float wz = player_pos.z + (rz * dx - fz * dy) * mpp;
             float light = memmap_light(map, wx, wz, now);
             MinimapCell *cell = NULL;
-            if (mm->world && mm->cache)
+            if (mm->world && mm->cache && light > 0.02f) // lo no explorado queda a oscuras
                 cell = cell_at(mm, (int)floorf(wx / MINIMAP_CELL), (int)floorf(wz / MINIMAP_CELL), &budget);
-            if (!cell) { // sin mundo (o la celda aun sin calcular): la tinta de la memoria
+            if (!cell) { // sin explorar (oscuro), sin mundo o la celda aun sin calcular
                 *px = memory_color(light);
                 continue;
             }
@@ -206,9 +206,8 @@ void minimap_draw(Minimap *mm, const MemoryMap *map, Vector2 center, Vector3 pla
                 c = (Color){ (unsigned char)fminf(255.0f, c.r * shade), (unsigned char)fminf(255.0f, c.g * shade),
                              (unsigned char)fminf(255.0f, c.b * shade), 255 };
             }
-            // La tribu conoce su tierra: la geografia se ve siempre, apagada donde no estuviste y
-            // viva donde la recuerdas.
-            *px = lerp_color(memory_color(0.0f), c, 0.6f + 0.4f * fminf(1.0f, light * 1.4f));
+            // Lo explorado muestra su geografia; al olvidarse se apaga hacia la oscuridad.
+            *px = lerp_color(memory_color(0.0f), c, 0.25f + 0.75f * fminf(1.0f, light * 1.4f));
         }
     }
     UpdateTexture(mm->tex, mm->pixels);
