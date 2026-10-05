@@ -50,6 +50,7 @@
 #include "ui/theme.h"
 #include "world/camp.h"
 #include "world/hearth.h"
+#include "game/death_game.h"
 #include "world/gallery.h"
 #include "world/sky.h"
 #include "world/clouds.h"
@@ -355,6 +356,7 @@ static unsigned fresh_seed(void) {
 // Una partida nueva: la tribu inicial en el campamento, a media mañana del dia pedido.
 static void game_new(GameState *g, Terrain *terrain, Camp *camp, unsigned seed, int start_day, float start_minute, char *log, size_t len) {
     world_reset(terrain, camp, seed);
+    dg_reset(); // sin restos y con el campamento como lugar de descanso
     player_init(g->player, terrain);
     kingdom_init_iron_khanate(g->overlord);
     troop_init(g->troop, g->overlord);
@@ -1041,6 +1043,7 @@ int main(int argc, char **argv) {
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
         if (!gallery_mode) wd_draw_world(&g_actions, &terrain, &player, (float)GetTime());
+        if (!gallery_mode) dg_draw_world(&terrain); // calaveras y huesos donde murio el jugador
         if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());
         if (!gallery_mode) ig_draw_world(&g_actions, &terrain, (float)GetTime());
         if (!gallery_mode) trv_draw_world(&g_actions, &troop, (float)GetTime());

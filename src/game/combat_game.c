@@ -1,5 +1,6 @@
 #include "combat_game.h"
 
+#include "game/death_game.h"
 #include "game/apparel_game.h"
 #include "game/water_game.h"
 #include "game/fauna_game.h"
@@ -23,7 +24,7 @@
 
 #define HERBS_ID "utileria.consumible.hierbas"
 #define CAMP_RADIUS 14.0f
-#define DOWN_WAKE_SECONDS 25.0f // abatido y solo: despierta en el campamento
+#define DOWN_WAKE_SECONDS 25.0f // abatido y solo: muere y vuelve a su lugar de descanso
 #define DOWN_HELP_SECONDS 5.0f  // con la escolta cerca: lo levantan
 #define CORPSE_SECONDS 30.0f
 #define DESPAWN_DIST 160.0f
@@ -1128,6 +1129,26 @@ static const Member *role_member(const Troop *troop, Role role) {
 }
 
 // ------------------------------------------------------------------ jugador
+// La muerte: en el suelo quedan una calavera y unos huesos, y el jugador vuelve a su ultimo
+// lugar de descanso (src/game/death_game.c), curado, sin lo que llevaba en las manos.
+static void player_dies(Combat *cb, Player *p, GameActions *ga, Troop *troop, const Terrain *t, Vector3 camp_fire,
+                        const char *why, char *log, size_t len) {
+    dg_leave_remains(p->pos, p->yaw);
+    if (ga->mounted >= 0) ga->animals[ga->mounted].ridden = false, ga->mounted = -1;
+    p->pos = dg_rest_point(t, camp_fire);
+    p->vy = 0.0f;
+    cb->player.dead = false; // health_revive no levanta a un muerto
+    health_treat(&cb->player);
+    health_revive(&cb->player);
+    cb->player.hp = fmaxf(cb->player.hp, 0.6f * cb->player.hp_max);
+    cb->player.blood = fmaxf(cb->player.blood, 0.6f);
+    cb->down_timer = 0.0f;
+    cb->knock = 0.0f;
+    ga->hands.carried[0] = '\0';
+    troop_adjust_morale(troop, -8.0f);
+    snprintf(log, len, T("%s Mueres. Vuelves en %s; tus huesos quedan donde caíste (moral -8)."), why, dg_rest_name());
+}
+
 static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, const Terrain *t, Vector3 camp_fire,
                           float dt, char *log, size_t len) {
     bool at_camp = dist2(p->pos, camp_fire) < CAMP_RADIUS;
@@ -1140,12 +1161,10 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
         cb->player.hp_max = want;
     }
     health_update(&cb->player, &cb->rng, dt, !p->moving, healer + ig_stat(ga, STAT_STAMINA_REGEN));
-    // El jugador no muere: desangrado queda abatido hasta que lo socorran.
+    // Desangrado: muere (ver player_dies).
     if (cb->player.dead) {
-        cb->player.dead = false;
-        cb->player.down = true;
-        cb->player.blood = fmaxf(cb->player.blood, 0.06f);
-        cb->player.hp = fmaxf(cb->player.hp, -0.4f * cb->player.hp_max);
+        player_dies(cb, p, ga, troop, t, camp_fire, T("Te desangras."), log, len);
+        return;
     }
     // El curandero del campamento atiende al jugador.
     cb->healer_timer -= dt;
@@ -1172,14 +1191,7 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
         health_revive(&cb->player);
         snprintf(log, len, T("%s te levanta y te venda. ¡Sigue en pie!"), helper->name);
     } else if (!helper && cb->down_timer > DOWN_WAKE_SECONDS) {
-        if (ga->mounted >= 0) ga->animals[ga->mounted].ridden = false, ga->mounted = -1;
-        p->pos = (Vector3){ camp_fire.x - 2.5f, terrain_height(t, camp_fire.x - 2.5f, camp_fire.z), camp_fire.z };
-        p->vy = 0.0f;
-        health_treat(&cb->player);
-        health_revive(&cb->player);
-        ga->hands.carried[0] = '\0';
-        troop_adjust_morale(troop, -5.0f);
-        snprintf(log, len, "%s", T("Despiertas en el campamento: te encontraron malherido (moral -5)."));
+        player_dies(cb, p, ga, troop, t, camp_fire, T("Nadie llega a socorrerte."), log, len);
     }
 }
 
@@ -1324,6 +1336,7 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     update_enemies(cb, p, ga, troop, props, t, night, dt, log, log_len);
     update_shots(cb, p, ga, troop, t, time, dt, log, log_len);
     update_companions(cb, ga, troop, props, p, t, dt, log, log_len);
+    if (!cb->player.down) dg_track_rest(ga, props, p->pos, camp_fire, dt);
     update_player(cb, p, ga, troop, t, camp_fire, dt, log, log_len);
     // Animacion del jugador.
     ga->pl_down = cb->player.down;

@@ -48,7 +48,7 @@ static const HelpPage PAGES[] = {
         N_("G deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila"),
         N_("Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos."),
         "",
-        N_("Tu personaje no muere: abatido, tu escolta te levanta o despiertas en el campamento. Tus compañeros sí pueden morir.") } },
+        N_("Abatido, tu escolta te levanta. Si mueres (desangrado o sin socorro), vuelves a tu último lugar de descanso (campamento o tienda) y tus huesos quedan donde caíste. Tus compañeros mueren para siempre.") } },
     { N_("La tribu y el campamento"), 6,
       { N_("Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario"),
         N_("Una tienda o un refugio lejos de los demás campamentos funda uno nuevo: nombra guardián a alguien de tu escolta."),
