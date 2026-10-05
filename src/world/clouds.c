@@ -7,10 +7,11 @@
 
 #include "platform.h"
 #include "raymath.h"
+#include "sim/voxel.h"
+#include "world/sky.h"
 
 #define CELL 230.0f // m: una nube posible por celda (en el marco que arrastra el viento)
 #define PUFFS_MAX 6
-#define CAP_PUFFS 6
 
 static const Vector2 WIND_DIR = { 0.86f, 0.5f }; // el mismo viento que la lluvia (weather.c)
 
@@ -20,6 +21,21 @@ static bool g_ready;
 // en 2 columnas. Filas: cumulos, estratos, cubierto, tormenta.
 static Texture2D g_atlas;
 static bool g_atlas_tried;
+// Nubes de voxeles (al modo de Nubis, src/sim/voxel.h): plantillas por tipo, con la luz del sol
+// horneada en el color; se vuelven a iluminar cuando el sol se mueve. Lejos, el cartel del atlas.
+#define VT_PER_KIND 3
+#define VT_COUNT (VCLOUD_KINDS * VT_PER_KIND)
+#define VOX_NEAR 950.0f // m: hasta aqui, voxeles; mas lejos, carteles
+static const int VT_DIM[VCLOUD_KINDS][3] = { { 20, 8, 20 }, { 26, 5, 18 }, { 22, 12, 22 }, { 18, 7, 18 } };
+static const float VT_SIZE = 8.0f; // m por voxel
+static struct {
+    VoxGrid g;
+    VoxMesh m;
+    Model model;
+    bool ok;
+} g_vt[VT_COUNT];
+static bool g_vt_ready;
+static Vector3 g_lit_sun;
 static Vector2 g_drift; // cuanto arrastro el viento la capa
 static float g_last_time = -1.0f;
 
@@ -59,9 +75,58 @@ static void ensure_puff(void) {
     g_ready = true;
 }
 
+static void vt_upload(int i) {
+    Mesh *mesh = &g_vt[i].model.meshes[0];
+    memcpy(mesh->colors, g_vt[i].m.col, (size_t)g_vt[i].m.tris * 12);
+    UpdateMeshBuffer(*mesh, 3, mesh->colors, g_vt[i].m.tris * 12, 0);
+}
+
+// Las plantillas: se arman una vez; se vuelven a iluminar si el sol se movio (unos 8 grados).
+static void ensure_templates(Vector3 sun) {
+    if (!g_vt_ready) {
+        g_vt_ready = true;
+        for (int i = 0; i < VT_COUNT; i++) {
+            int k = i / VT_PER_KIND;
+            if (!vox_init(&g_vt[i].g, VT_DIM[k][0], VT_DIM[k][1], VT_DIM[k][2], VT_SIZE)) continue;
+            vox_cloud_shape(&g_vt[i].g, (VoxCloudKind)k, 101u + (uint32_t)i * 37u);
+            vox_cloud_light(&g_vt[i].g, sun.x, sun.y, sun.z);
+            if (!vox_mesh(&g_vt[i].g, NULL, &g_vt[i].m) || !g_vt[i].m.tris) continue;
+            Mesh mesh = { 0 };
+            mesh.triangleCount = g_vt[i].m.tris;
+            mesh.vertexCount = g_vt[i].m.tris * 3;
+            mesh.vertices = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
+            mesh.normals = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
+            mesh.colors = MemAlloc(mesh.vertexCount * 4);
+            memcpy(mesh.vertices, g_vt[i].m.pos, mesh.vertexCount * 3 * sizeof(float));
+            memcpy(mesh.normals, g_vt[i].m.nrm, mesh.vertexCount * 3 * sizeof(float));
+            memcpy(mesh.colors, g_vt[i].m.col, (size_t)mesh.vertexCount * 4);
+            UploadMesh(&mesh, true); // los colores cambian con el sol
+            g_vt[i].model = LoadModelFromMesh(mesh);
+            g_vt[i].ok = true;
+        }
+        g_lit_sun = sun;
+        return;
+    }
+    if (Vector3DotProduct(sun, g_lit_sun) > 0.99f) return;
+    g_lit_sun = sun;
+    for (int i = 0; i < VT_COUNT; i++) {
+        if (!g_vt[i].ok) continue;
+        vox_cloud_light(&g_vt[i].g, sun.x, sun.y, sun.z);
+        vox_mesh_free(&g_vt[i].m);
+        if (vox_mesh(&g_vt[i].g, NULL, &g_vt[i].m)) vt_upload(i);
+    }
+}
+
 void clouds_unload(void) {
     if (g_ready) UnloadModel(g_puff);
     g_ready = false;
+    for (int i = 0; i < VT_COUNT; i++) {
+        if (g_vt[i].ok) UnloadModel(g_vt[i].model);
+        vox_mesh_free(&g_vt[i].m);
+        vox_free(&g_vt[i].g);
+        g_vt[i].ok = false;
+    }
+    g_vt_ready = false;
     if (g_atlas.id) UnloadTexture(g_atlas);
     g_atlas = (Texture2D){ 0 };
     g_atlas_tried = false;
@@ -82,6 +147,12 @@ static int cloud_tile(float cover, uint32_t h) {
     float r = unit(h, 4);
     int row = cover < 0.35f ? (r < 0.8f ? 0 : 1) : cover < 0.75f ? (r < 0.4f ? 0 : r < 0.7f ? 1 : 2) : (r < 0.6f ? 3 : 2);
     return row * 2 + (int)((h >> 13) & 1u);
+}
+
+// El tipo de nube de voxeles de cada fila del atlas: cumulos, estratos, cubierto, tormenta.
+static VoxCloudKind tile_kind(int tile) {
+    static const VoxCloudKind K[4] = { VCLOUD_CUMULUS, VCLOUD_STRATUS, VCLOUD_STRATUS, VCLOUD_STORM };
+    return K[(tile / 2) & 3];
 }
 
 typedef struct {
@@ -114,7 +185,7 @@ static int cell_cloud(int cx, int cz, uint32_t seed, float base, float cover, fl
     uint32_t h = hash3(cx, cz, seed);
     float chance = 0.06f + 0.85f * cover;
     if (unit(h, 0) > chance) return 0;
-    int n = 2 + (int)(unit(h, 8) * (PUFFS_MAX - 1.0f));
+    int n = 2 + (int)(unit(h, 8) * (PUFFS_MAX - 2.0f)); // a lo sumo PUFFS_MAX
     float size = (0.55f + 0.45f * unit(h, 16)) * (0.7f + 0.5f * cover);
     float ox = (cx + 0.2f + 0.6f * unit(h, 24)) * CELL, oz = (cz + 0.2f + 0.6f * unit(hash3(cz, cx, seed), 0)) * CELL;
     for (int i = 0; i < n; i++) {
@@ -137,28 +208,6 @@ static void draw_puff(Vector3 p, float r, Color c) {
     DrawModelEx(g_puff, p, (Vector3){ 0, 1, 0 }, 0.0f, (Vector3){ r, r * 0.42f, r }, c);
 }
 
-// Los gorros de las cumbres que llegan a la capa: bollos alrededor de la cima, que el viento
-// mece pero no se lleva (la montaña los forma).
-static int peak_caps(const Terrain *t, float time, float cover, float base, float out[][4], int max) {
-    const World *w = t->world;
-    int n = 0;
-    for (int i = 0; i < w->peak_count; i++) {
-        const Peak *pk = &w->peaks[i];
-        float top = world_height(w, pk->x, pk->z);
-        if (top < base - 12.0f) continue;
-        float size = 0.8f + 0.5f * cover;
-        for (int k = 0; k < CAP_PUFFS && n < max; k++, n++) {
-            float a = k * (2.0f * PI / CAP_PUFFS) + 0.15f * sinf(time * 0.01f + i);
-            float d = (30.0f + 18.0f * (k & 1)) * size;
-            out[n][0] = pk->x + cosf(a) * d + WIND_DIR.x * 25.0f;
-            out[n][2] = pk->z + sinf(a) * d + WIND_DIR.y * 25.0f;
-            out[n][1] = fminf(top - 6.0f, base + 10.0f) + 5.0f * (k % 3);
-            out[n][3] = (34.0f + 10.0f * (k % 3)) * size;
-        }
-    }
-    return n;
-}
-
 void clouds_draw(const Terrain *t, Camera3D cam, float time, float cover, float wind, Color haze) {
     ensure_puff();
     ensure_atlas();
@@ -168,31 +217,44 @@ void clouds_draw(const Terrain *t, Camera3D cam, float time, float cover, float 
     // La camara en el marco del viento.
     float lx = cam.position.x - g_drift.x, lz = cam.position.z - g_drift.y;
     int r = (int)(CLOUD_VIEW / CELL) + 1, c0x = (int)floorf(lx / CELL), c0z = (int)floorf(lz / CELL);
+    ensure_templates(sky_sun_dir(time));
     float puffs[PUFFS_MAX][4];
     static Sprite spr[1024];
     int ns = 0;
     for (int dz = -r; dz <= r; dz++)
         for (int dx = -r; dx <= r; dx++) {
             int cx = c0x + dx, cz = c0z + dz, n = cell_cloud(cx, cz, t->seed, base, cover, puffs);
-            int tile = cloud_tile(cover, hash3(cx, cz, t->seed ^ 0xC10Du));
-            for (int i = 0; i < n; i++) {
+            if (!n) continue;
+            uint32_t h = hash3(cx, cz, t->seed ^ 0xC10Du);
+            int tile = cloud_tile(cover, h), vt = (int)tile_kind(tile) * VT_PER_KIND + (int)(h % VT_PER_KIND);
+            // El centro de la nube: el primer bollo (en el suelo de la capa).
+            Vector3 c = { puffs[0][0] + g_drift.x, base, puffs[0][2] + g_drift.y };
+            float d = Vector2Distance((Vector2){ c.x, c.z }, (Vector2){ cam.position.x, cam.position.z });
+            if (d > CLOUD_VIEW) continue;
+            Color col = mixc(white, haze, (d - 500.0f) / (CLOUD_VIEW - 500.0f));
+            float scale = 0.6f + 0.55f * unit(h, 20) * (0.6f + 0.6f * cover);
+            if (g_vt[vt].ok && d < VOX_NEAR) {
+                DrawModelEx(g_vt[vt].model, c, (Vector3){ 0, 1, 0 }, 0.0f, (Vector3){ scale, scale, scale }, col);
+                continue;
+            }
+            for (int i = 0; i < n; i++) { // lejos: los carteles del atlas (o los bollos, sin atlas)
                 Vector3 p = { puffs[i][0] + g_drift.x, puffs[i][1], puffs[i][2] + g_drift.y };
-                float d = Vector2Distance((Vector2){ p.x, p.z }, (Vector2){ cam.position.x, cam.position.z });
-                if (d > CLOUD_VIEW) continue;
-                Color c = mixc(white, haze, (d - 500.0f) / (CLOUD_VIEW - 500.0f));
-                if (!g_atlas.id) draw_puff(p, puffs[i][3], c);
-                else if (ns < 1024) spr[ns++] = (Sprite){ p, puffs[i][3] * 2.6f, Vector3DistanceSqr(p, cam.position), tile, c };
+                if (!g_atlas.id) draw_puff(p, puffs[i][3], col);
+                else if (ns < 1024) spr[ns++] = (Sprite){ p, puffs[i][3] * 2.6f, Vector3DistanceSqr(p, cam.position), tile, col };
             }
         }
-    float caps[64][4];
-    int n = peak_caps(t, time, cover, base, caps, 64);
-    for (int i = 0; i < n; i++) {
-        Vector3 p = { caps[i][0], caps[i][1], caps[i][2] };
-        float d = Vector2Distance((Vector2){ p.x, p.z }, (Vector2){ cam.position.x, cam.position.z });
+    // Los gorros de las cumbres altas: una nube de voxeles en anillo alrededor de la cima.
+    const World *w = t->world;
+    for (int i = 0; i < w->peak_count; i++) {
+        const Peak *pk = &w->peaks[i];
+        float top = world_height(w, pk->x, pk->z);
+        if (top < base - 12.0f) continue;
+        float d = Vector2Distance((Vector2){ pk->x, pk->z }, (Vector2){ cam.position.x, cam.position.z });
         if (d > CLOUD_VIEW * 1.4f) continue;
-        Color c = mixc(white, haze, (d - 700.0f) / (CLOUD_VIEW * 1.4f - 700.0f));
-        if (!g_atlas.id) draw_puff(p, caps[i][3], c);
-        else if (ns < 1024) spr[ns++] = (Sprite){ p, caps[i][3] * 2.4f, Vector3DistanceSqr(p, cam.position), cover > 0.75f ? 4 + (i & 1) : (i & 1), c };
+        Color col = mixc(white, haze, (d - 700.0f) / (CLOUD_VIEW * 1.4f - 700.0f));
+        int vt = VCLOUD_CAP * VT_PER_KIND + i % VT_PER_KIND;
+        Vector3 c = { pk->x + WIND_DIR.x * 20.0f + 6.0f * sinf(time * 0.01f + i), fminf(top - 30.0f, base - 4.0f), pk->z + WIND_DIR.y * 20.0f };
+        if (g_vt[vt].ok) DrawModelEx(g_vt[vt].model, c, (Vector3){ 0, 1, 0 }, 0.0f, (Vector3){ 1.0f + 0.3f * cover, 1.0f, 1.0f + 0.3f * cover }, col);
     }
     if (!ns) return;
     // Las nubes del atlas: carteles de cara a la camara, de lejos a cerca (la transparencia).
@@ -203,30 +265,39 @@ void clouds_draw(const Terrain *t, Camera3D cam, float time, float cover, float 
     }
 }
 
-// Dentro de un bollo (elipsoide un poco agrandado): 1 en el centro, 0 en la orilla.
-static float inside(Vector3 pos, const float pf[4]) {
-    float r = pf[3] * 1.15f;
-    float dx = (pos.x - pf[0]) / r, dy = (pos.y - pf[1]) / (r * 0.42f), dz = (pos.z - pf[2]) / r;
-    return Clamp(1.4f * (1.0f - sqrtf(dx * dx + dy * dy + dz * dz)), 0.0f, 1.0f);
+// Densidad de una plantilla en un punto del mundo (centro de la base c, escala sx/sy/sz).
+static float template_density(int vt, Vector3 c, Vector3 scale, Vector3 pos) {
+    if (vt < 0 || vt >= VT_COUNT || !g_vt[vt].ok) return 0.0f;
+    const VoxGrid *g = &g_vt[vt].g;
+    float lx = (pos.x - c.x) / scale.x / g->size + g->nx * 0.5f, ly = (pos.y - c.y) / scale.y / g->size, lz = (pos.z - c.z) / scale.z / g->size + g->nz * 0.5f;
+    return vox_get(g, (int)floorf(lx), (int)floorf(ly), (int)floorf(lz)) / 255.0f;
 }
 
 float clouds_mist(const Terrain *t, Vector3 pos, float time, float cover) {
     float base = clouds_base(t);
-    if (pos.y < base - 30.0f || pos.y > base + 60.0f) return 0.0f;
+    if (pos.y < base - 60.0f || pos.y > base + 120.0f) return 0.0f;
     float mist = 0.0f, puffs[PUFFS_MAX][4];
     float lx = pos.x - g_drift.x, lz = pos.z - g_drift.y;
     int c0x = (int)floorf(lx / CELL), c0z = (int)floorf(lz / CELL);
     for (int dz = -1; dz <= 1; dz++)
         for (int dx = -1; dx <= 1; dx++) {
-            int n = cell_cloud(c0x + dx, c0z + dz, t->seed, base, cover, puffs);
-            for (int i = 0; i < n; i++) {
-                float pf[4] = { puffs[i][0] + g_drift.x, puffs[i][1], puffs[i][2] + g_drift.y, puffs[i][3] };
-                mist = fmaxf(mist, inside(pos, pf));
-            }
+            int cx = c0x + dx, cz = c0z + dz;
+            if (!cell_cloud(cx, cz, t->seed, base, cover, puffs)) continue;
+            uint32_t h = hash3(cx, cz, t->seed ^ 0xC10Du);
+            int vt = (int)tile_kind(cloud_tile(cover, h)) * VT_PER_KIND + (int)(h % VT_PER_KIND);
+            float scale = 0.6f + 0.55f * unit(h, 20) * (0.6f + 0.6f * cover);
+            Vector3 c = { puffs[0][0] + g_drift.x, base, puffs[0][2] + g_drift.y };
+            mist = fmaxf(mist, fminf(1.0f, template_density(vt, c, (Vector3){ scale, scale, scale }, pos) * 2.5f));
         }
-    float caps[64][4];
-    int n = peak_caps(t, time, cover, base, caps, 64);
-    for (int i = 0; i < n; i++) mist = fmaxf(mist, inside(pos, caps[i]));
+    const World *w = t->world;
+    for (int i = 0; i < w->peak_count; i++) {
+        const Peak *pk = &w->peaks[i];
+        float top = world_height(w, pk->x, pk->z);
+        if (top < base - 12.0f) continue;
+        Vector3 c = { pk->x + WIND_DIR.x * 20.0f + 6.0f * sinf(time * 0.01f + i), fminf(top - 30.0f, base - 4.0f), pk->z + WIND_DIR.y * 20.0f };
+        int vt = VCLOUD_CAP * VT_PER_KIND + i % VT_PER_KIND;
+        mist = fmaxf(mist, fminf(1.0f, template_density(vt, c, (Vector3){ 1.0f + 0.3f * cover, 1.0f, 1.0f + 0.3f * cover }, pos) * 2.5f));
+    }
     return mist;
 }
 

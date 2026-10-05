@@ -324,6 +324,19 @@ static float tree_density(const float *k, float near_water) {
            k[REGION_DESERT] * 0.25f * near_water; // sotos junto a rios y oasis
 }
 
+// Claro alrededor de las estructuras y de los campamentos de tribus (ni arboles ni rocas encima).
+static bool near_site(const World *w, float x, float z) {
+    for (int i = 0; i < w->site_count; i++) {
+        float dx = x - w->sites[i].x, dz = z - w->sites[i].z;
+        if (dx * dx + dz * dz < 32.0f * 32.0f) return true;
+    }
+    for (int i = 0; i < w->tribe_count; i++) {
+        float dx = x - w->tribes[i].x, dz = z - w->tribes[i].z;
+        if (dx * dx + dz * dz < 26.0f * 26.0f) return true;
+    }
+    return false;
+}
+
 static Model make_model(TriBuf *b) {
     Mesh mesh = { 0 };
     mesh.triangleCount = b->count;
@@ -438,6 +451,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             float dist;
             int si = world_nearest_settlement(t->world, x, z, &dist);
             if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? 80.0f : 45.0f)) continue; // claros de los pueblos
+            if (near_site(t->world, x, z)) continue;
             float height = 5.0f + 5.0f * r1 * (0.6f + 0.4f * k[REGION_FOREST]);
             push_tree(&b, (Vector3){ x, y, z }, height, 1.4f + 0.8f * r2, r2);
         }
@@ -460,6 +474,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             float dist;
             int si = world_nearest_settlement(t->world, x, z, &dist);
             if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? 70.0f : 40.0f)) continue;
+            if (near_site(t->world, x, z)) continue;
             float sx = terrain_height(t, x + 1.5f, z) - y, sz = terrain_height(t, x, z + 1.5f) - y;
             float slope = sqrtf(sx * sx + sz * sz) / 1.5f;
             float at[TRI_ATTRS] = { 0 };
