@@ -15,7 +15,7 @@
 #include "rng.h"
 
 // ------------------------------------------------------------------ biomas
-// Desierto: regiones lejanas al campamento, en [0, 1] (1 = arena plena).
+// Desierto: el sector del desierto del mundo (src/sim/world.h), en [0, 1] (1 = arena plena).
 float biome_desert(uint32_t seed, float x, float z);
 
 // --------------------------------------------------------------------- frio

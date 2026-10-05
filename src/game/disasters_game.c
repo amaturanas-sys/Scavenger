@@ -63,7 +63,7 @@ static FuelKind fuel_at(void *ud, float x, float z, int *ref) {
     }
     // Pasto: no en el agua, la nieve, el desierto pelado ni el suelo pisado del campamento.
     float h = terrain_height(f->t, x, z);
-    if (f->t->look.water_level > h - 0.1f || f->c->snow_cover > 0.3f || h > f->t->look.snowline - 20.0f) return FUEL_NONE;
+    if (terrain_water(f->t, x, z) > h - 0.1f || f->c->snow_cover > 0.3f || h > f->t->look.snowline - 20.0f) return FUEL_NONE;
     if (biome_desert(f->t->seed, x, z) > 0.6f || sqrtf(x * x + z * z) < CAMP_TRAMPLED) return FUEL_NONE;
     return FUEL_GRASS;
 }
@@ -134,7 +134,7 @@ static void lightning(Disasters *dz, const Climate *c, Camp *camp, GameActions *
             snprintf(log, len, T("¡Un rayo cae sobre: %s!"), T(pr->item->name));
         }
     }
-    bool water = t->look.water_level > y;
+    bool water = terrain_water(t, x, z) > y;
     if (!water && rng_float(&dz->rng) < fire_lightning_ignite_chance(dryness, c->rain))
         fire_ignite_hot(&dz->fire, x, z, kind, ref, 1.0f);
     // Quien este cerca.

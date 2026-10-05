@@ -87,14 +87,30 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 - **Temperatura continental:** de unos −18 °C a mitad del invierno a +24 °C a mitad del verano; sube de día y baja de noche. La partida empieza al final del invierno: el deshielo llega hacia el día 5.
 - **Tiempo atmosférico** en bloques de 7,5 minutos con transición suave: despejado, nublado, lluvia, tormenta eléctrica, nevada y ventisca. Cada estación tiene sus probabilidades (verano seco con tormentas, otoño lluvioso, nevadas en invierno) y con helada la precipitación es nieve. El tiempo tiende a durar más de un bloque.
 - **Suelo según la estación:** pasto verde al final de la primavera, seco y amarillo al final del verano, ocre en otoño y dormido con helada. La lluvia lo oscurece y embarra. La nieve lo cubre en manchas que crecen hasta tapar todo en invierno; cuesta más en las pendientes. Las yurtas y las copas de los árboles se nevan.
-- **Lagos:** ocupan las hondonadas más bajas (7 % del terreno bajo su nivel base, siempre debajo del campamento). Crecen hasta 3 m con el deshielo de primavera y las lluvias y bajan al final del verano, dejando a la vista el lecho seco y una orilla de barro. En invierno se congelan.
-- **Cordilleras y glaciares:** lejos del campamento se levantan crestas de hasta ~60 m. La nieve permanente baja en invierno (glaciares extensos) y sube en verano (solo las cumbres).
+- **Lagos y ríos:** cada lago y cada río tiene su nivel (ver [El mundo](#el-mundo-implementado--srcsimworld-en-juego-srcgameworld_game-y-srcworldworldview)). Crecen hasta 3 m con el deshielo de primavera y las lluvias (los ríos, la mitad) y bajan al final del verano, dejando a la vista el lecho seco y una orilla de barro. En invierno se congelan; el mar, no.
+- **Cordilleras y glaciares:** las montañas de cada región (las más altas en el altiplano). La nieve permanente baja en invierno (glaciares extensos) y sube en verano (solo las cumbres). Arriba hace más frío: unos 7 °C menos cada 100 m sobre el llano.
 - **Atmósfera:** lluvia y nieve como partículas ancladas al mundo, ventisca casi horizontal que blanquea la vista, relámpagos en las tormentas, cielo gris y luz apagada con nubes; las nubes tapan las estrellas.
 - **HUD:** bajo la barra del ciclo, el tiempo y la temperatura (p. ej. «nevada · −12 °C»).
 - **Modelos por estación:** un modelo puede traer variantes junto al base (`yurta_comun@invierno.glb`, `@primavera`, `@verano`, `@otono`); el juego usa la de la estación si existe.
-- **Prueba:** `--dia N --minuto M` elige el momento y `--pos X Z` el lugar (p. ej. `--dia 23 --pos -340 -130`: glaciares en invierno; `--dia 7 --pos -112 -2`: un lago crecido).
+- **Prueba:** `--dia N --minuto M` elige el momento, `--pos X Z` el lugar e `--ir lugar` un sitio del mundo (p. ej. `--dia 23 --ir altiplano`: glaciares en invierno; `--dia 7 --lago`: un lago crecido).
 
 **Pendiente:** cosechas y pasto para el ganado según la estación, ríos.
+
+### El mundo (implementado — `src/sim/world.*`, en juego `src/game/world_game.*` y `src/world/worldview.*`)
+Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
+- **Un gran círculo** de 2,4 km de radio con **cinco regiones fijas**: la estepa en el centro (y un sector hasta el borde) y, alrededor y siempre en este orden, el bosque de coníferas, el altiplano glaciar, la costa de fiordos y el desierto.
+- **Altitud media estandarizada:** costa ~12 m, desierto ~28 m, estepa ~40 m, bosque ~55 m, altiplano ~70 m (con cumbres que guardan el glaciar).
+- **La frontera:**
+  - la costa termina en el mar, con fiordos estrechos que entran tierra adentro;
+  - el desierto termina en un cañón y, detrás, un muro enorme de seis estratos;
+  - la estepa, el bosque y el altiplano terminan en un gran canal, del que salen ríos tributarios hacia el centro.
+  - Nadie pasa: la frontera invisible está a 2,33 km (un aviso dice por qué).
+- **Cada partida, otro mundo** (la semilla): cambian el trazado de los ríos, la forma y el sitio de los lagos y las montañas, las fronteras entre regiones (dentro de su sector) y dónde caen los pueblos y las guaridas. Las reglas no cambian. La semilla viaja en la partida guardada; `--semilla N` la fija.
+- **Pueblos y reinos:** cada región tiene su reino vecino (la estepa, el Kanato de Hierro al que la tribu rinde tributo; Principado de los Pinos Negros; Señorío del Glaciar; Jarlazgo de la Costa Helada; Reino de los Oasis), una capital amurallada y dos aldeas, al estilo de su región. Al llegar, quedan en el mapa.
+- **Guaridas:** de las fieras de cada región (lobos y tigres en la estepa; osos, lobos y pumas en el bosque; lobos y pumas en el altiplano; osos en la costa; hienas y coyotes en el desierto). Cerca, aparecen sus dueños; quedan en el mapa como peligro.
+- **Fauna por región:** cada región tiene su hábitat (estepa, bosque, frío, costa, desierto).
+- **Árboles:** bosque cerrado de coníferas; pinos dispersos en la costa y las faldas del altiplano; pocos en la estepa (más junto al agua); ninguno en el desierto.
+- **Vista orbital (F5)** del mundo entero y **mapa general** (`--mapa-mundo archivo.png`).
 
 ### Peligros del clima y del terreno (implementado — `src/sim/hazards.*`, `src/game/hazards_game.*`)
 - **Frío:** el jugador tiene **calor corporal** (barra bajo el minimapa: abrigado, fresco, frío, helado, hipotermia). Lo baja la sensación térmica: temperatura + abrigo de pieles − viento − ropa mojada. Lo sube estar junto a un fuego (fogata del campamento, fogatas, hogueras, hornos); las yurtas cortan el viento y la antorcha da algo de calor. La lluvia empapa y el fuego seca. Con frío el cuerpo se entumece (más lento) y con **hipotermia** el jugador se desmaya: la tribu lo lleva junto al fuego (moral −3). Una noche de pleno invierno a la intemperie congela en unos minutos.
@@ -102,11 +118,11 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 - **Barro:** la lluvia y el deshielo frenan la marcha en suelo blando (hasta −40 %); no en la arena ni bajo la nieve.
 - **Agua:** sin hielo, los lagos se vadean (más lento, la ropa se moja) o se nadan.
 - **Lagos helados:** con el lago congelado se camina sobre el hielo, pero la capa puede romperse: más riesgo corriendo, a caballo y con hielo recién formado. El agujero queda abierto hasta el día siguiente.
-- **Desierto:** regiones de dunas lejos del campamento (arena dorada, sin barro, casi sin nieve).
+- **Desierto:** su región del mundo: dunas y mesetas (arena dorada y roca rojiza, sin barro, casi sin nieve).
 - **Socavones ocultos:** cada día aparecen en sitios al azar distintos: **socavones de nieve** en los glaciares y **arena movediza** en el desierto. No se ven; al acercarse solo una pista sutil (un cerco de grietas o de arena húmeda). Pisarlo atrapa.
 - **Minijuego de rescate (coordinación mano-ojo):** al caer, el juego pide una serie de teclas (J K L U I O) que hay que pulsar en orden y a tiempo; cada acierto acorta el tiempo de la siguiente y los errores (o las demoras) se cuentan. Ganar: sales (empapado si fue el hielo). Perder: sales a duras penas, helado, y se hunde lo que cargabas o tu arma.
 - **Escolta (Y):** dos integrantes libres te acompañan. También pueden romper el hielo o caer en un socavón: entonces corre el tiempo (unos 40–60 s) y hay que acercarse y pulsar **F** para sacarlos con el minijuego (si falla, se puede reintentar con menos tiempo). Salvarlo sube la moral (+3); si no llegas, muere (moral −6). Si caes tú con la escolta cerca, te tienden la lanza: la serie es más corta y con más margen.
-- **Prueba:** `--trampa hielo|nieve|arena|rescate` arranca en cada caso (p. ej. `--dia 25 --pos -148 -12 --trampa rescate`; arena: `--dia 12 --pos 352 20 --trampa arena`).
+- **Prueba:** `--trampa hielo|nieve|arena|rescate` arranca en cada caso (p. ej. `--dia 25 --lago --trampa rescate`; arena: `--dia 12 --ir desierto --trampa arena`).
 
 **Pendiente:** ropa y abrigo como equipo, que los NPCs del campamento también sufran el frío individualmente, animales que caen al hielo.
 

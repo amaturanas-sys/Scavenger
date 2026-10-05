@@ -8,40 +8,29 @@
 #include "../sim/noise.h"
 #include "raymath.h"
 
-#define TRI_ATTRS 5 // por triangulo: altura, pendiente, luz, mancha, desierto
+// Por triangulo: altura, pendiente, luz, mancha, y pesos de desierto, bosque, altiplano y
+// costa, distancia sobre el agua (para la orilla) y que es (suelo, copa o tronco).
+enum { A_H, A_SLOPE, A_LIGHT, A_PATCH, A_DESERT, A_FOREST, A_HIGH, A_FJORD, A_SHORE, A_KIND, TRI_ATTRS };
+enum { KIND_GROUND, KIND_CANOPY, KIND_TRUNK };
+enum { W_LAKE, W_RIVER, W_SEA }; // las mallas de agua de cada chunk
 
-// Campamento inicial en el origen: el terreno se aplana a su alrededor.
-#define CAMP_FLAT_INNER 18.0f
-#define CAMP_FLAT_OUTER 42.0f
+float terrain_height(const Terrain *t, float x, float z) { return world_height(t->world, x, z); }
+float terrain_plain_height(const Terrain *t) { return t->world->camp_height; }
+Region terrain_region(const Terrain *t, float x, float z) { return world_region(t->world, x, z); }
 
-static float smoothstepf(float a, float b, float x) {
-    float t = Clamp((x - a) / (b - a), 0.0f, 1.0f);
-    return t * t * (3.0f - 2.0f * t);
+float terrain_water(const Terrain *t, float x, float z) { return world_water(t->world, x, z, t->look.flood, NULL); }
+
+float terrain_ice(const Terrain *t, float x, float z) {
+    WaterKind k;
+    world_water(t->world, x, z, t->look.flood, &k);
+    return k == WATER_SEA ? 0.0f : t->look.ice;
 }
 
-float terrain_height(const Terrain *t, float x, float z) {
-    float hills = fbm2d(x * 0.006f, z * 0.006f, t->seed, 5) * 16.0f;  // colinas amplias
-    float bumps = fbm2d(x * 0.04f, z * 0.04f, t->seed + 17u, 3) * 1.2f; // ondulacion fina
-    float h = hills + bumps;
-    float d = sqrtf(x * x + z * z);
-    // Desierto: llanuras de dunas (las colinas se suavizan y aparecen crestas de arena).
-    float desert = biome_desert(t->seed, x, z);
-    if (desert > 0.0f) {
-        float dunes = (1.0f - fabsf(noise2d(x * 0.03f + z * 0.012f, z * 0.02f, t->seed + 505u))) * 2.4f;
-        h = h * (1.0f - 0.6f * desert) + dunes * desert;
-    }
-    // Cordilleras lejos del campamento: crestas que guardan nieve y glaciares.
-    float region = smoothstepf(0.05f, 0.45f, fbm2d(x * 0.0016f, z * 0.0016f, t->seed + 101u, 3));
-    if (region > 0.0f) {
-        float ridge = 1.0f - fabsf(fbm2d(x * 0.005f, z * 0.005f, t->seed + 202u, 4));
-        h += region * ridge * ridge * 58.0f * smoothstepf(150.0f, 320.0f, d) * (1.0f - desert);
-    }
-    float k = smoothstepf(CAMP_FLAT_INNER, CAMP_FLAT_OUTER, d);
-    float base = fbm2d(0.0f, 0.0f, t->seed, 5) * 16.0f; // altura del llano del campamento
-    return base + (h - base) * k;
+bool terrain_deep_water(const Terrain *t, float x, float z, float depth) {
+    WaterKind k;
+    float w = world_water(t->world, x, z, t->look.flood, &k);
+    return w > terrain_height(t, x, z) + depth && (k == WATER_SEA || !hazard_ice_walkable(t->look.ice));
 }
-
-float terrain_plain_height(const Terrain *t) { return fbm2d(0.0f, 0.0f, t->seed, 5) * 16.0f; }
 
 static Color mixc(Color a, Color b, float k) {
     k = Clamp(k, 0.0f, 1.0f);
@@ -49,31 +38,39 @@ static Color mixc(Color a, Color b, float k) {
                     255 };
 }
 
-// Paleta de estepa segun la estacion: pasto verde, seco, ocre o dormido; tierra
-// y roca en las pendientes; barro con lluvia; nieve, hielo y glaciares.
+// Paleta segun la region y la estacion: pasto de estepa (verde, seco, ocre o dormido),
+// sotobosque de coniferas, tundra del altiplano, musgo de la costa y arena del desierto;
+// tierra y roca en las pendientes; barro con lluvia; orillas; nieve, hielo y glaciares.
 // h: altura relativa al llano; patch en [0, 1]: manchas (nieve a medio cubrir).
-static Color ground_color(const TerrainLook *L, float lake_base, float h, float h_abs, float slope, float patch,
-                          float desert) {
+static Color ground_color(const TerrainLook *L, const float *a, float h) {
+    float h_abs = a[A_H], slope = a[A_SLOPE], patch = a[A_PATCH], desert = a[A_DESERT];
     const Color green = { 112, 150, 70, 255 }, dry = { 188, 168, 106, 255 }, ochre = { 172, 124, 68, 255 };
     const Color dormant = { 140, 128, 98, 255 }, dirt = { 140, 110, 76, 255 }, rock = { 120, 116, 108, 255 };
     const Color snow = { 226, 232, 240, 255 }, glacier = { 196, 218, 236, 255 }, mud = { 112, 96, 72, 255 };
-    const Color lakebed = { 158, 140, 108, 255 };
+    const Color lakebed = { 158, 140, 108, 255 }, needles = { 72, 96, 54, 255 }, tundra = { 132, 136, 104, 255 };
+    const Color moss = { 96, 124, 92, 255 }, shingle = { 128, 128, 124, 255 };
     Color grass = mixc(dry, green, L->greenness);
     grass = mixc(grass, ochre, L->autumn * 0.85f);
     grass = mixc(dormant, grass, 0.35f + 0.65f * Clamp(L->greenness + L->autumn, 0.0f, 1.0f));
     if (h > 6.0f) grass = mixc(grass, dry, 0.45f); // lomas mas secas
+    grass = mixc(grass, mixc(needles, ochre, L->autumn * 0.3f), a[A_FOREST]); // el suelo del bosque
+    grass = mixc(grass, tundra, a[A_HIGH]);                                    // la tundra del altiplano
+    grass = mixc(grass, moss, a[A_FJORD]);                                     // el musgo de la costa
     Color c = grass;
     bool bare = false;
-    if (slope > 0.45f || h > 18.0f) c = dirt, bare = true;
-    if (slope > 0.75f || (h > 24.0f && slope > 0.35f)) c = rock, bare = true;
-    // Orillas: el lecho que el agua dejo al bajar, y el barro junto al agua.
-    float above_water = h_abs - L->water_level;
-    if (h_abs < lake_base + TERRAIN_LAKE_FLOOD && above_water > 0.0f) c = above_water < 0.4f ? mud : mixc(c, lakebed, 0.7f);
+    float steep = 0.45f + 0.15f * a[A_HIGH];
+    if (slope > steep) c = dirt, bare = true;
+    if (slope > 0.75f || (slope > 0.35f && a[A_HIGH] + a[A_FJORD] > 0.5f && h > 30.0f)) c = rock, bare = true;
+    // Orillas: el lecho que el agua deja al bajar, y el barro (o los guijarros del mar) junto al agua.
+    float above_water = a[A_SHORE];
+    if (above_water > 0.0f && above_water < TERRAIN_LAKE_FLOOD)
+        c = above_water < 0.4f ? (a[A_FJORD] > 0.5f ? shingle : mud) : mixc(c, lakebed, 0.7f);
     if (!bare) c = mixc(c, mud, L->wetness * 0.35f * (1.0f - desert)); // suelo mojado (la arena no se embarra)
-    // Desierto: arena dorada, con vetas segun la mancha.
+    // Desierto: arena dorada con vetas; las mesetas y el muro, roca rojiza en estratos.
     if (desert > 0.0f) {
-        const Color sand = { 214, 188, 134, 255 }, sand_dark = { 190, 160, 108, 255 };
-        c = mixc(c, mixc(sand, sand_dark, patch * 0.8f), Clamp(desert * 1.4f, 0.0f, 1.0f));
+        const Color sand = { 214, 188, 134, 255 }, sand_dark = { 190, 160, 108, 255 }, redrock = { 178, 104, 70, 255 };
+        Color dc = slope > 0.5f ? mixc(redrock, sand_dark, 0.5f + 0.5f * sinf(h_abs * 0.6f)) : mixc(sand, sand_dark, patch * 0.8f);
+        c = mixc(c, dc, Clamp(desert * 1.4f, 0.0f, 1.0f));
     }
     // Nieve: cubre el llano segun la estacion (en manchas a medio cubrir); menos en lo empinado y en la arena.
     float cover = L->snow_cover * (slope > 0.75f ? 0.55f : 1.0f) * (1.0f - 0.6f * desert);
@@ -83,6 +80,14 @@ static Color ground_color(const TerrainLook *L, float lake_base, float h, float 
     if (above > 0.0f) c = slope < 0.7f ? glacier : mixc(rock, snow, 0.5f);
     else if (above > -6.0f && patch < (above + 6.0f) / 6.0f) c = snow;
     return c;
+}
+
+static Color tree_color(const TerrainLook *L, const float *a) {
+    if (a[A_KIND] == KIND_TRUNK) return (Color){ 92, 66, 44, 255 };
+    Color c = mixc((Color){ 52, 86, 50, 255 }, (Color){ 74, 92, 58, 255 }, a[A_PATCH]);
+    float cover = L->snow_cover * 0.8f;
+    if (a[A_H] > L->snowline - 4.0f) cover = fmaxf(cover, 0.7f);
+    return mixc(c, (Color){ 222, 228, 236, 255 }, cover * (0.4f + 0.6f * a[A_PATCH])); // nieve en las ramas
 }
 
 static Color shade(Color c, float light) {
@@ -95,7 +100,8 @@ static void paint_chunk(const Terrain *t, Chunk *ch, bool upload) {
     const int tris = mesh->triangleCount;
     for (int i = 0; i < tris; i++) {
         const float *a = &ch->tri[i * TRI_ATTRS];
-        Color col = shade(ground_color(&t->look, t->lake_base, a[0] - t->plain, a[0], a[1], a[3], a[4]), a[2]);
+        Color base = a[A_KIND] == KIND_GROUND ? ground_color(&t->look, a, a[A_H] - t->plain) : tree_color(&t->look, a);
+        Color col = shade(base, a[A_LIGHT]);
         for (int k = 0; k < 3; k++) {
             unsigned char *dst = &mesh->colors[(i * 3 + k) * 4];
             dst[0] = col.r;
@@ -107,105 +113,211 @@ static void paint_chunk(const Terrain *t, Chunk *ch, bool upload) {
     if (upload) UpdateMeshBuffer(*mesh, 3, mesh->colors, mesh->vertexCount * 4, 0);
 }
 
-static Chunk build_chunk(const Terrain *t, int cx, int cz) {
-    const int tris = CHUNK_CELLS * CHUNK_CELLS * 2;
+// ------------------------------------------------------------------ construccion
+typedef struct {
+    float *v, *n, *attr;
+    int count, cap; // triangulos
+} TriBuf;
+
+static void push_tri(TriBuf *b, Vector3 p0, Vector3 p1, Vector3 p2, const float *attrs) {
+    if (b->count >= b->cap) return;
+    Vector3 n = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(p1, p0), Vector3Subtract(p2, p0)));
+    Vector3 tri[3] = { p0, p1, p2 };
+    for (int k = 0; k < 3; k++) {
+        int v = b->count * 3 + k;
+        b->v[v * 3 + 0] = tri[k].x, b->v[v * 3 + 1] = tri[k].y, b->v[v * 3 + 2] = tri[k].z;
+        b->n[v * 3 + 0] = n.x, b->n[v * 3 + 1] = n.y, b->n[v * 3 + 2] = n.z;
+    }
+    float *at = &b->attr[b->count * TRI_ATTRS];
+    memcpy(at, attrs, sizeof(float) * TRI_ATTRS);
+    const Vector3 sun = Vector3Normalize((Vector3){ -0.45f, 1.0f, -0.3f });
+    at[A_SLOPE] = 1.0f - n.y;
+    at[A_LIGHT] = 0.55f + 0.45f * fmaxf(0.0f, Vector3DotProduct(n, sun)); // iluminacion horneada: cero costo en GPU
+    b->count++;
+}
+
+static uint32_t hash2(int x, int z, uint32_t seed) {
+    uint32_t h = (uint32_t)x * 0x8DA6B343u ^ (uint32_t)z * 0xD8163841u ^ seed * 0xCB1AB31Fu;
+    h ^= h >> 13;
+    h *= 0x5BD1E995u;
+    return h ^ (h >> 15);
+}
+
+// Un pino: tronco y dos copas conicas.
+static void push_tree(TriBuf *b, Vector3 base, float height, float radius, float patch) {
+    float at[TRI_ATTRS] = { 0 };
+    at[A_H] = base.y + height * 0.6f;
+    at[A_PATCH] = patch;
+    at[A_KIND] = KIND_TRUNK;
+    const int sides = 5;
+    float tr = radius * 0.18f, th = height * 0.3f;
+    for (int i = 0; i < sides; i++) {
+        float a0 = (float)i / sides * 2.0f * PI, a1 = (float)(i + 1) / sides * 2.0f * PI;
+        Vector3 b0 = { base.x + cosf(a0) * tr, base.y - 0.3f, base.z + sinf(a0) * tr }, b1 = { base.x + cosf(a1) * tr, base.y - 0.3f, base.z + sinf(a1) * tr };
+        Vector3 t0 = { b0.x, base.y + th, b0.z }, t1 = { b1.x, base.y + th, b1.z };
+        push_tri(b, b0, t0, b1, at);
+        push_tri(b, b1, t0, t1, at);
+    }
+    at[A_KIND] = KIND_CANOPY;
+    for (int tier = 0; tier < 2; tier++) {
+        float y0 = base.y + th + tier * height * 0.3f, y1 = y0 + height * (tier ? 0.45f : 0.55f), r = radius * (tier ? 0.7f : 1.0f);
+        Vector3 tip = { base.x, y1, base.z };
+        for (int i = 0; i < sides + 1; i++) {
+            float a0 = (float)i / (sides + 1) * 2.0f * PI, a1 = (float)(i + 1) / (sides + 1) * 2.0f * PI;
+            Vector3 p0 = { base.x + cosf(a0) * r, y0, base.z + sinf(a0) * r }, p1 = { base.x + cosf(a1) * r, y0, base.z + sinf(a1) * r };
+            push_tri(b, p0, tip, p1, at);
+        }
+    }
+}
+
+// Densidad de arboles: bosque cerrado; algunos en la costa y en las faldas del altiplano;
+// pocos en la estepa (mas junto al agua); ninguno en el desierto.
+static float tree_density(const float *k, float near_water) {
+    return k[REGION_FOREST] * 0.32f + k[REGION_FJORD] * 0.12f + k[REGION_HIGHLAND] * 0.05f + k[REGION_STEPPE] * (0.01f + 0.08f * near_water);
+}
+
+static Model make_model(TriBuf *b) {
     Mesh mesh = { 0 };
-    mesh.triangleCount = tris;
-    mesh.vertexCount = tris * 3;
+    mesh.triangleCount = b->count;
+    mesh.vertexCount = b->count * 3;
     mesh.vertices = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
     mesh.normals = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
     mesh.colors = MemAlloc(mesh.vertexCount * 4 * sizeof(unsigned char));
-    float *attr = MemAlloc(tris * TRI_ATTRS * sizeof(float));
+    memcpy(mesh.vertices, b->v, mesh.vertexCount * 3 * sizeof(float));
+    memcpy(mesh.normals, b->n, mesh.vertexCount * 3 * sizeof(float));
+    return LoadModelFromMesh(mesh);
+}
 
+// Agua de un chunk: un cuadro plano por celda donde el agua (con la crecida maxima) queda
+// sobre alguna esquina del suelo. Tres mallas: lagos, rios y canal, y mar; al dibujarlas,
+// los lagos suben con la crecida, los rios con la mitad, el mar nada.
+static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
+    enum { CELLS = CHUNK_CELLS / 2, MAXT = CELLS * CELLS * 2 };
+    const float cell = CHUNK_SIZE / CELLS, ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
+    static float verts[3][MAXT * 9];
+    int count[3] = { 0, 0, 0 };
+    for (int iz = 0; iz < CELLS; iz++)
+        for (int ix = 0; ix < CELLS; ix++) {
+            float x0 = ox + ix * cell, z0 = oz + iz * cell, x1 = x0 + cell, z1 = z0 + cell;
+            WaterKind k;
+            float lv = world_water(t->world, x0 + cell * 0.5f, z0 + cell * 0.5f, 0.0f, &k);
+            if (k == WATER_NONE) continue;
+            float lowest = fminf(fminf(terrain_height(t, x0, z0), terrain_height(t, x1, z0)), fminf(terrain_height(t, x0, z1), terrain_height(t, x1, z1)));
+            if (lv + (k == WATER_SEA ? 0.0f : TERRAIN_LAKE_FLOOD) < lowest) continue;
+            int m = k == WATER_SEA ? W_SEA : k == WATER_LAKE ? W_LAKE : W_RIVER;
+            float q[6][3] = { { x0, lv, z0 }, { x0, lv, z1 }, { x1, lv, z0 }, { x1, lv, z0 }, { x0, lv, z1 }, { x1, lv, z1 } };
+            memcpy(&verts[m][count[m] * 9], q, sizeof(q));
+            count[m] += 2;
+        }
+    for (int m = 0; m < 3; m++) {
+        ch->has_water[m] = count[m] > 0;
+        if (!count[m]) continue;
+        Mesh mesh = { 0 };
+        mesh.triangleCount = count[m];
+        mesh.vertexCount = count[m] * 3;
+        mesh.vertices = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
+        mesh.normals = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
+        memcpy(mesh.vertices, verts[m], mesh.vertexCount * 3 * sizeof(float));
+        for (int i = 0; i < mesh.vertexCount; i++) mesh.normals[i * 3 + 1] = 1.0f;
+        UploadMesh(&mesh, false);
+        ch->water[m] = LoadModelFromMesh(mesh);
+    }
+}
+
+static Chunk build_chunk(const Terrain *t, int cx, int cz) {
+    enum { GROUND = CHUNK_CELLS * CHUNK_CELLS * 2, TREE_SLOTS = 12, TREES_MAX = TREE_SLOTS * TREE_SLOTS, TREE_TRIS = 22 };
+    static float vbuf[(GROUND + TREES_MAX * TREE_TRIS) * 9], nbuf[(GROUND + TREES_MAX * TREE_TRIS) * 9];
+    static float abuf[(GROUND + TREES_MAX * TREE_TRIS) * TRI_ATTRS];
+    TriBuf b = { vbuf, nbuf, abuf, 0, GROUND + TREES_MAX * TREE_TRIS };
     const float cell = CHUNK_SIZE / CHUNK_CELLS;
     const float ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
-    const Vector3 sun = Vector3Normalize((Vector3){ -0.45f, 1.0f, -0.3f });
-    int v = 0;
-
+    // El suelo: dos triangulos por celda, con los pesos de region de su centro.
+    static float hgrid[CHUNK_CELLS + 1][CHUNK_CELLS + 1];
+    for (int iz = 0; iz <= CHUNK_CELLS; iz++)
+        for (int ix = 0; ix <= CHUNK_CELLS; ix++) hgrid[iz][ix] = terrain_height(t, ox + ix * cell, oz + iz * cell);
     for (int iz = 0; iz < CHUNK_CELLS; iz++) {
         for (int ix = 0; ix < CHUNK_CELLS; ix++) {
-            float x0 = ox + ix * cell, x1 = x0 + cell;
-            float z0 = oz + iz * cell, z1 = z0 + cell;
-            Vector3 p00 = { x0, terrain_height(t, x0, z0), z0 };
-            Vector3 p10 = { x1, terrain_height(t, x1, z0), z0 };
-            Vector3 p01 = { x0, terrain_height(t, x0, z1), z1 };
-            Vector3 p11 = { x1, terrain_height(t, x1, z1), z1 };
-            Vector3 quads[2][3] = { { p00, p01, p10 }, { p10, p01, p11 } };
-            for (int q = 0; q < 2; q++) {
-                Vector3 a = quads[q][0], b = quads[q][1], c = quads[q][2];
-                Vector3 n = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(b, a), Vector3Subtract(c, a)));
-                float slope = 1.0f - n.y;
-                float hmid = (a.y + b.y + c.y) / 3.0f;
-                // Iluminacion horneada: ambiente + difusa. Cero costo en GPU.
-                float light = 0.55f + 0.45f * fmaxf(0.0f, Vector3DotProduct(n, sun));
-                float cx_ = (a.x + b.x + c.x) / 3.0f, cz_ = (a.z + b.z + c.z) / 3.0f;
-                int ti = v / 3;
-                float *at = &attr[ti * TRI_ATTRS];
-                at[0] = hmid;
-                at[1] = slope;
-                at[2] = light;
-                at[3] = 0.5f + 0.5f * fbm2d(cx_ * 0.08f, cz_ * 0.08f, t->seed + 303u, 2); // manchas
-                at[4] = biome_desert(t->seed, cx_, cz_);
-                Vector3 tri[3] = { a, b, c };
-                for (int k = 0; k < 3; k++, v++) {
-                    mesh.vertices[v * 3 + 0] = tri[k].x;
-                    mesh.vertices[v * 3 + 1] = tri[k].y;
-                    mesh.vertices[v * 3 + 2] = tri[k].z;
-                    mesh.normals[v * 3 + 0] = n.x;
-                    mesh.normals[v * 3 + 1] = n.y;
-                    mesh.normals[v * 3 + 2] = n.z;
-                }
-            }
+            float x0 = ox + ix * cell, x1 = x0 + cell, z0 = oz + iz * cell, z1 = z0 + cell;
+            Vector3 p00 = { x0, hgrid[iz][ix], z0 }, p10 = { x1, hgrid[iz][ix + 1], z0 };
+            Vector3 p01 = { x0, hgrid[iz + 1][ix], z1 }, p11 = { x1, hgrid[iz + 1][ix + 1], z1 };
+            float mx = x0 + cell * 0.5f, mz = z0 + cell * 0.5f, k[REGION_COUNT];
+            world_region_weights(t->world, mx, mz, k);
+            float at[TRI_ATTRS] = { 0 };
+            at[A_PATCH] = 0.5f + 0.5f * fbm2d(mx * 0.08f, mz * 0.08f, t->seed + 303u, 2); // manchas
+            at[A_DESERT] = k[REGION_DESERT], at[A_FOREST] = k[REGION_FOREST], at[A_HIGH] = k[REGION_HIGHLAND], at[A_FJORD] = k[REGION_FJORD];
+            float hm = (p00.y + p10.y + p01.y + p11.y) * 0.25f, wl = world_water(t->world, mx, mz, 0.0f, NULL);
+            at[A_SHORE] = wl > -1e8f ? hm - wl : 99.0f;
+            at[A_KIND] = KIND_GROUND;
+            at[A_H] = (p00.y + p01.y + p10.y) / 3.0f;
+            push_tri(&b, p00, p01, p10, at);
+            at[A_H] = (p10.y + p01.y + p11.y) / 3.0f;
+            push_tri(&b, p10, p01, p11, at);
         }
     }
-    Chunk ch = { .loaded = true, .cx = cx, .cz = cz, .model = LoadModelFromMesh(mesh), .tri = attr };
+    // Arboles (deterministas por posicion): segun la region, nunca en el agua, el campamento ni lo empinado.
+    const float slot = CHUNK_SIZE / TREE_SLOTS;
+    for (int iz = 0; iz < TREE_SLOTS; iz++)
+        for (int ix = 0; ix < TREE_SLOTS; ix++) {
+            int gx = cx * TREE_SLOTS + ix, gz = cz * TREE_SLOTS + iz;
+            uint32_t h = hash2(gx, gz, t->seed);
+            float r0 = (float)(h & 0xFFFF) / 65535.0f, r1 = (float)((h >> 16) & 0xFF) / 255.0f, r2 = (float)(h >> 24) / 255.0f;
+            float x = ox + (ix + 0.15f + 0.7f * r1) * slot, z = oz + (iz + 0.15f + 0.7f * r2) * slot;
+            if (x * x + z * z < 120.0f * 120.0f || world_edge_distance(x, z) < 110.0f) continue;
+            float k[REGION_COUNT];
+            world_region_weights(t->world, x, z, k);
+            float y = terrain_height(t, x, z), wl = world_water(t->world, x, z, 0.0f, NULL);
+            float near_water = wl > -1e8f && y - wl < 6.0f ? 1.0f : 0.0f;
+            if (r0 > tree_density(k, near_water)) continue;
+            if (wl > y - 0.8f || y > t->look.snowline + 8.0f) continue; // en el agua o en el glaciar, no
+            float sx = terrain_height(t, x + 2.0f, z) - y, sz = terrain_height(t, x, z + 2.0f) - y;
+            if (sx * sx + sz * sz > 2.2f) continue;
+            float dist;
+            int si = world_nearest_settlement(t->world, x, z, &dist);
+            if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? 80.0f : 45.0f)) continue; // claros de los pueblos
+            float height = 5.0f + 5.0f * r1 * (0.6f + 0.4f * k[REGION_FOREST]);
+            push_tree(&b, (Vector3){ x, y, z }, height, 1.4f + 0.8f * r2, r2);
+        }
+    Chunk ch = { .loaded = true, .cx = cx, .cz = cz };
+    ch.model = make_model(&b);
+    ch.tri = MemAlloc(b.count * TRI_ATTRS * sizeof(float));
+    memcpy(ch.tri, abuf, b.count * TRI_ATTRS * sizeof(float));
     paint_chunk(t, &ch, false);
     // Los colores cambian con las estaciones: buffer dinamico.
     UploadMesh(&ch.model.meshes[0], true);
+    build_water(t, &ch, cx, cz);
     return ch;
 }
 
 static void free_chunk(Chunk *c) {
     UnloadModel(c->model);
+    for (int m = 0; m < 3; m++)
+        if (c->has_water[m]) UnloadModel(c->water[m]);
     MemFree(c->tri);
     c->tri = NULL;
     c->loaded = false;
-}
-
-static int cmp_float(const void *a, const void *b) {
-    float x = *(const float *)a, y = *(const float *)b;
-    return (x > y) - (x < y);
+    memset(c->has_water, 0, sizeof(c->has_water));
 }
 
 void terrain_init(Terrain *t, unsigned seed) {
     memset(t, 0, sizeof(*t));
     t->seed = seed;
+    t->world = world_for_seed(seed);
     t->plain = terrain_plain_height(t);
-    // Nivel base de los lagos: el percentil TERRAIN_LAKE_SHARE de las alturas en 1.2 km a la redonda.
-    enum { N = 41 };
-    static float samples[N * N];
-    int k = 0;
-    for (int iz = 0; iz < N; iz++)
-        for (int ix = 0; ix < N; ix++)
-            samples[k++] = terrain_height(t, -600.0f + ix * 30.0f, -600.0f + iz * 30.0f);
-    qsort(samples, N * N, sizeof(float), cmp_float);
-    t->lake_base = fminf(samples[(int)(TERRAIN_LAKE_SHARE * N * N)], t->plain - TERRAIN_LAKE_DEPTH - TERRAIN_LAKE_FLOOD);
     // Aspecto inicial: verano seco, sin nieve.
-    t->look = (TerrainLook){ .greenness = 0.4f, .snowline = t->plain + 40.0f,
-                             .water_level = t->lake_base };
+    t->look = (TerrainLook){ .greenness = 0.4f, .snowline = t->plain + 40.0f };
 }
 
 static bool look_changed(const TerrainLook *a, const TerrainLook *b) {
     return fabsf(a->greenness - b->greenness) > 0.02f || fabsf(a->autumn - b->autumn) > 0.02f ||
            fabsf(a->snow_cover - b->snow_cover) > 0.02f || fabsf(a->wetness - b->wetness) > 0.03f ||
-           fabsf(a->snowline - b->snowline) > 0.25f || fabsf(a->water_level - b->water_level) > 0.05f;
+           fabsf(a->snowline - b->snowline) > 0.25f;
 }
 
 void terrain_set_look(Terrain *t, const TerrainLook *look) {
     bool repaint = look_changed(&t->look, look);
-    float ice = look->ice;
-    if (!repaint) {
-        t->look.ice = ice; // el hielo solo cambia el agua, no el suelo
+    if (!repaint) { // la crecida y el hielo solo cambian el agua, no el suelo
+        t->look.ice = look->ice;
+        t->look.flood = look->flood;
         return;
     }
     t->look = *look;
@@ -215,15 +327,20 @@ void terrain_set_look(Terrain *t, const TerrainLook *look) {
 
 void terrain_draw_water(const Terrain *t, float time) {
     if (!t->has_center) return;
-    const float span = (2 * CHUNK_RADIUS + 1) * CHUNK_SIZE;
-    Vector3 c = { (t->center_cx + 0.5f) * CHUNK_SIZE, t->look.water_level, (t->center_cz + 0.5f) * CHUNK_SIZE };
-    const Color water = { 52, 96, 128, 200 }, ice = { 198, 220, 236, 240 };
-    Color col = mixc(water, ice, t->look.ice);
-    col.a = (unsigned char)Lerp(water.a, ice.a, Clamp(t->look.ice, 0.0f, 1.0f));
-    // Oleaje leve: el brillo del agua respira (el hielo no).
-    float ripple = (1.0f - t->look.ice) * 0.06f * sinf(time * 1.3f);
-    col = ColorBrightness(col, ripple);
-    DrawPlane(c, (Vector2){ span, span }, col);
+    const Color water = { 52, 96, 128, 200 }, river = { 62, 112, 140, 200 }, sea = { 36, 72, 104, 220 }, ice = { 198, 220, 236, 240 };
+    float ripple = 0.06f * sinf(time * 1.3f); // oleaje leve: el brillo del agua respira (el hielo no)
+    for (int m = 0; m < 3; m++) {
+        Color col = m == W_SEA ? sea : m == W_RIVER ? river : water;
+        float frozen = m == W_SEA ? 0.0f : Clamp(t->look.ice, 0.0f, 1.0f);
+        Color c = mixc(col, ice, frozen);
+        c.a = (unsigned char)Lerp(col.a, ice.a, frozen);
+        c = ColorBrightness(c, ripple * (1.0f - frozen));
+        float lift = m == W_SEA ? 0.0f : m == W_RIVER ? 0.5f * t->look.flood : t->look.flood;
+        for (int i = 0; i < CHUNK_SLOTS; i++) {
+            const Chunk *ch = &t->slots[i];
+            if (ch->loaded && ch->has_water[m]) DrawModel(ch->water[m], (Vector3){ 0, lift, 0 }, 1.0f, c);
+        }
+    }
 }
 
 static bool in_range(int cx, int cz, int ccx, int ccz) {

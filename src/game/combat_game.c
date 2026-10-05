@@ -67,9 +67,8 @@ float cb_speed_scale(const Combat *cb) {
 }
 
 static float surface_y(const Terrain *t, float x, float z) {
-    float ground = terrain_height(t, x, z);
-    if (t->look.water_level > ground + 0.25f)
-        return hazard_ice_walkable(t->look.ice) ? t->look.water_level : fmaxf(ground, t->look.water_level - 1.25f);
+    float ground = terrain_height(t, x, z), water = terrain_water(t, x, z);
+    if (water > ground + 0.25f) return hazard_ice_walkable(terrain_ice(t, x, z)) ? water : fmaxf(ground, water - 1.25f);
     return ground;
 }
 
@@ -748,7 +747,7 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             s->stuck = true;
             s->life = 0.0f;
             if (s->burning && ga->ignite_n < 8) ga->ignite_at[ga->ignite_n++] = to_vec(s->p.pos); // prende donde cae
-            if (t->look.water_level > terrain_height(t, s->p.pos.x, s->p.pos.z) + 0.25f && !hazard_ice_walkable(t->look.ice)) {
+            if (terrain_deep_water(t, s->p.pos.x, s->p.pos.z, 0.25f)) {
                 s->p.alive = false; // al agua (quiza atraviese un pez)
                 if (s->owner == 0) fg_shot_water(ga, t, to_vec(s->p.pos), log, len);
             }

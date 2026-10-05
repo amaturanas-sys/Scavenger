@@ -871,6 +871,9 @@ B venda heridas con hierbas (o ungüento) · P equipo y heridas · I inventario	
 B vendar · P equipo	B bandage · P gear
 Beber de más emborracha: torpe con las armas, cansado y te tambaleas.	Drinking too much gets you drunk: clumsy with weapons, tired and staggering.
 C acechar · Espacio saltar	C sneak · Space jump
+Cada partida nueva cambia los ríos, los lagos, las montañas y dónde están los pueblos y las guaridas.	Each new game changes the rivers, lakes, mountains and where villages and dens are.
+Cada región tiene su altura: la costa, la más baja; el altiplano, el más alto. Hace más frío cuanto más alto.	Each region has its own altitude: the coast is the lowest, the highland the highest. The higher, the colder.
+Cada región tiene su reino, sus aldeas y su capital amurallada, y sus fieras: cerca de una guarida aparecen sus dueños.	Each region has its kingdom, its villages and a walled capital, and its beasts: near a den, its owners appear.
 Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales.	Each body zone takes different damage: head and neck are lethal.
 Camina cerca del ganado para llevarlo (pastoreo).	Walk near livestock to drive them (herding).
 Cargar	Load
@@ -886,8 +889,10 @@ Dejar la partida (lo no guardado se pierde)	Leave the game (unsaved progress is 
 Día %d · %s · tribu de %d	Day %d · %s · tribe of %d
 El agua	Water
 El agua que corre por los suelos puede traer espíritus malditos: al rato, fiebre (más lento, más sed). Mayús+N: hierbas.	Water running on the ground may carry cursed spirits: after a while, fever (slower, thirstier). Shift+N: herbs.
+El borde: la costa da al mar, el desierto termina en un muro enorme tras un cañón, y el resto en un gran canal del que salen ríos.	The edge: the coast meets the sea, the desert ends at a huge wall behind a canyon, and the rest at a great canal from which rivers branch.
 El desierto quema de día y hiela de noche. Con calor te sofocas: busca sombra (las yurtas) o el agua; con golpe de calor te desmayas.	The desert burns by day and freezes by night. Heat overwhelms you: seek shade (the yurts) or water; with heatstroke you faint.
 El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Cold drains your warmth: seek fire and yurts; wet clothes chill you.
+El mundo	The world
 En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
 En verano el pasto seco arde: los incendios corren con el viento.	In summer dry grass burns: wildfires run with the wind.
 Esa partida es de otra versión del juego.	That save is from another game version.
@@ -899,6 +904,7 @@ F junto al guardián: obras, escolta, reclutar, capacitar en un oficio, estado y
 F tomar/botín · T lanzar	F take/loot · T throw
 F1 cerrar esta ayuda	F1 close this help
 F2, F3, F4: habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)	F2, F3, F4: active abilities · P gear: armour, jewels and tattoos (Q/E)
+F5: vista orbital del mundo entero (flechas para girar e inclinar).	F5: orbital view of the whole world (arrows to rotate and tilt).
 Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.	Craft by hand: arrows (wood, feathers, flint), rope (sinew), ointment (herbs and honey), cuirass and boots (hides). Forged goods need a smith and a furnace.
 Fauna y caza	Wildlife and hunting
 G deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	G drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
@@ -966,6 +972,7 @@ Tatuajes y joyas	Tattoos and jewels
 Tu personaje no muere: abatido, tu escolta te levanta o despiertas en el campamento. Tus compañeros sí pueden morir.	Your character never dies: when downed, your escort lifts you or you wake up at camp. Your companions can die.
 U agarre y llave: arrancas el escudo, desarmas o tumbas	U grapple and lock: rip the shield away, disarm or throw down
 U agarre · O gancho	U grapple · O hook
+Un gran círculo con cinco regiones: la estepa en el centro y, alrededor, el bosque de coníferas, el altiplano glaciar, la costa de fiordos y el desierto.	A great circle with five regions: the steppe at the center and, around it, the conifer forest, the glacial highland, the fjord coast and the desert.
 Una tienda o un refugio lejos de los demás campamentos funda uno nuevo: nombra guardián a alguien de tu escolta.	A tent or shelter far from other camps founds a new one: name someone from your escort its keeper.
 Una tribu nueva en la estepa	A new tribe on the steppe
 V golpe (mantener: pesado)	V strike (hold: heavy)
@@ -1027,6 +1034,11 @@ No tienes los espíritus del agua: guarda las hierbas.	You don't have the water 
 No tienes nada que beber: llena el odre en la orilla (Tab) o bebe del río (N, mirando al agua).	You have nothing to drink: fill the waterskin at the shore (Tab) or drink from the river (N, facing the water).
 No tienes sed.	You are not thirsty.
 Te desmayaste de sed; la tribu te llevó al campamento y te dio de beber (moral -3).	You fainted from thirst; the tribe carried you to camp and gave you water (morale -3).
+# --- src/game/world_game.c
+Entras en: %s (tierras del %s).	Entering: %s (lands of the %s).
+Llegas a %s, aldea del %s.	You reach %s, a village of the %s.
+Llegas a %s, capital del %s.	You reach %s, capital of the %s.
+Una guarida (%s): queda marcada como peligro en el mapa.	A den (%s): marked as danger on the map.
 # --- src/main.c
 Arma: %s	Weapon: %s
 Capturaste a un gran guerrero: %s, %s.	You captured a great warrior: %s, %s.
@@ -1040,11 +1052,15 @@ Dones: 	Gifts:
 Día %d · %s · %s (%d min)	Day %d · %s · %s (%d min)
 Ejecutaste a un prisionero.	You executed a prisoner.
 Ejecutaste a uno de los tuyos.	You executed one of your own.
+El gran canal marca el fin de estas tierras: no hay vado.	The great canal marks the end of these lands: there is no ford.
+El gran muro del cañón cierra el desierto: no hay paso.	The great canyon wall closes the desert: there is no way through.
 Explorador enemigo	Enemy scout
 F1 controles · Esc menú	F1 controls · Esc menu
+Flechas: girar e inclinar · F5 o Esc: volver	Arrows: rotate and tilt · F5 or Esc: back
 Galeria: %d objetos (%d con modelo).	Gallery: %d objects (%d with model).
 Liberaste a un prisionero.	You freed a prisoner.
 Marcaste este lugar en el mapa.	You marked this place on the map.
+Más allá solo hay mar abierto: la tropa no se aventura.	Beyond lies only open sea: the troop will not venture out.
 Partida cargada (hueco %d).	Game loaded (slot %d).
 Partida guardada en el hueco %d.	Game saved in slot %d.
 Puntería x%.2f  Monta x%.2f	Aim x%.2f  Riding x%.2f
@@ -1057,8 +1073,9 @@ Scavengers Thrive se juega con teclado físico (ratón o mando opcionales).	Scav
 Talla x%.2f  Rapidez x%.2f  Fuerza x%.2f  Aguante x%.2f	Size x%.2f  Speed x%.2f  Strength x%.2f  Stamina x%.2f
 Tomaste un prisionero.	You took a prisoner.
 Tropa %d	Band %d
-Tu tropa acampa en la estepa.	Your band camps on the steppe.
+Tu tropa acampa en la estepa (mundo %u).	Your troop camps on the steppe (world %u).
 Un gran guerrero se une: %s, %s.	A great warrior joins: %s, %s.
+Vista orbital · mundo %u · estás en: %s	Orbital view · world %u · you are in: %s
 · %d cautivo%s	· %d captive%s
 # --- src/sim/actions.c
 Arrojar el objeto que se lleva en la mano.	Throw the object in your hand.
@@ -1497,6 +1514,22 @@ ebrio perdido	blind drunk
 reseco	parched
 sin sed	not thirsty
 sobrio	sober
+# --- src/sim/world.c
+Jarlazgo de la Costa Helada	Jarldom of the Frozen Coast
+Principado de los Pinos Negros	Principality of the Black Pines
+Reino de los Oasis	Kingdom of the Oases
+Señorío del Glaciar	Lordship of the Glacier
+altiplano glaciar	glacial highland
+bosque de coníferas	conifer forest
+costa de fiordos	fjord coast
+desierto	desert
+estepa	steppe
 # --- src/world/gallery.c
 GALERIA  %d objetos  |  %d con modelo  |  %d pendientes	GALLERY  %d objects  |  %d with model  |  %d pending
 modelo cargado	model loaded
+# --- src/world/worldview.c
+Mundo %u	World %u
+agua: lagos, ríos, canal y mar	water: lakes, rivers, canal and sea
+campamento	camp
+capital · aldea	capital · village
+guarida de fieras	beast den

@@ -53,6 +53,7 @@ add_library(estepa_sim STATIC
   src/sim/travel.c
   src/sim/apparel.c
   src/sim/water.c
+  src/sim/world.c
   src/sim/anim_index.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
@@ -101,6 +102,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/travel_game.c
     src/game/apparel_game.c
     src/game/water_game.c
+    src/game/world_game.c
     src/game/title_menu.c
     src/game/inventory_game.c
     src/world/props.c
@@ -108,6 +110,7 @@ if(ESTEPA_BUILD_GAME)
     src/ui/minimap.c
     src/ui/icons.c
     src/world/terrain.c
+    src/world/worldview.c
     src/world/camp.c
     src/world/gallery.c
     src/world/sky.c

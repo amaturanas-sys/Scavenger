@@ -4,18 +4,13 @@
 #include <math.h>
 
 #include "noise.h"
+#include "world.h"
 
 static float clamp01(float x) { return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x); }
-static float smoothstep(float a, float b, float x) {
-    float t = clamp01((x - a) / (b - a));
-    return t * t * (3.0f - 2.0f * t);
-}
 
 float biome_desert(uint32_t seed, float x, float z) {
-    float d = sqrtf(x * x + z * z);
-    if (d < 220.0f) return 0.0f; // el campamento esta en la estepa
-    float region = smoothstep(0.12f, 0.42f, fbm2d(x * 0.0011f, z * 0.0011f, seed + 404u, 3));
-    return region * smoothstep(220.0f, 380.0f, d);
+    // El desierto es una de las cinco regiones del mundo (src/sim/world.h).
+    return world_region_weight(world_for_seed(seed), REGION_DESERT, x, z);
 }
 
 // --------------------------------------------------------------------- frio

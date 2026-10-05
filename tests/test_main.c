@@ -34,6 +34,7 @@
 #include "../src/sim/travel.h"
 #include "../src/sim/troop.h"
 #include "../src/sim/water.h"
+#include "../src/sim/world.h"
 
 static int g_failed = 0, g_checks = 0;
 
@@ -444,8 +445,8 @@ static void test_hazards_sinkholes_and_desert(void) {
     // El desierto nunca toca el campamento, pero existe lejos.
     CHECK(biome_desert(seed, 0, 0) == 0.0f && biome_desert(seed, 150.0f, 100.0f) == 0.0f);
     int desert = 0;
-    for (float x = -800; x <= 800; x += 40)
-        for (float z = -800; z <= 800; z += 40) desert += biome_desert(seed, x, z) > 0.6f;
+    for (float x = -2000; x <= 2000; x += 80)
+        for (float z = -2000; z <= 2000; z += 80) desert += biome_desert(seed, x, z) > 0.6f;
     CHECK(desert > 20);
     // Socavones: deterministas, dentro de su celda, y cambian de un dia al siguiente.
     int found = 0, moved = 0;
@@ -2472,6 +2473,89 @@ static void test_water_spirits_and_drink(void) {
     CHECK(a.thirst < 0.5f);
 }
 
+static void test_world_regions_borders_and_sites(void) {
+    static World a, b, c;
+    world_generate(&a, 1206u);
+    world_generate(&b, 1206u);
+    world_generate(&c, 77u);
+    // Determinista por semilla; otra semilla mueve rios, lagos y montañas.
+    CHECK(a.lake_count == b.lake_count && a.river_count == b.river_count && world_height(&a, 333.0f, -777.0f) == world_height(&b, 333.0f, -777.0f));
+    CHECK(a.lakes[1].x != c.lakes[1].x || a.rivers[0].x[0] != c.rivers[0].x[0]);
+    CHECK(a.river_count >= 4 && c.river_count >= 4 && a.lake_count >= 6);
+    const World *ws[2] = { &a, &c };
+    for (int k = 0; k < 2; k++) {
+        const World *w = ws[k];
+        // Las cinco regiones, siempre en el mismo orden; la estepa en el centro.
+        CHECK(world_region(w, 0.0f, 0.0f) == REGION_STEPPE && world_region(w, 300.0f, -200.0f) == REGION_STEPPE);
+        for (int r = 0; r < REGION_COUNT; r++) {
+            float x, z;
+            world_region_point(w, (Region)r, 0.7f * WORLD_RADIUS, &x, &z);
+            CHECK(world_region(w, x, z) == (Region)r);
+        }
+        // Altitud media estandarizada: la costa abajo, el altiplano arriba.
+        double sum[REGION_COUNT] = { 0 };
+        int n[REGION_COUNT] = { 0 };
+        for (float x = -2200.0f; x < 2200.0f; x += 60.0f)
+            for (float z = -2200.0f; z < 2200.0f; z += 60.0f) {
+                if (world_edge_distance(x, z) < 250.0f) continue;
+                float wt[REGION_COUNT];
+                Region r = world_region_weights(w, x, z, wt);
+                if (wt[r] < 0.9f) continue;
+                sum[r] += world_height(w, x, z), n[r]++;
+            }
+        float mean[REGION_COUNT];
+        for (int r = 0; r < REGION_COUNT; r++) {
+            CHECK(n[r] > 20);
+            mean[r] = n[r] ? (float)(sum[r] / n[r]) : 0.0f;
+        }
+        CHECK(mean[REGION_FJORD] < mean[REGION_DESERT] && mean[REGION_DESERT] < mean[REGION_STEPPE]);
+        CHECK(mean[REGION_STEPPE] < mean[REGION_FOREST] && mean[REGION_FOREST] < mean[REGION_HIGHLAND]);
+        // El borde: mar en la costa, un muro en el desierto, el gran canal en el resto.
+        float x, z;
+        world_region_point(w, REGION_FJORD, WORLD_RADIUS - 30.0f, &x, &z);
+        WaterKind wk;
+        CHECK(world_height(w, x, z) < SEA_LEVEL && world_water(w, x, z, 0.0f, &wk) == SEA_LEVEL && wk == WATER_SEA);
+        world_region_point(w, REGION_DESERT, WORLD_RADIUS - 30.0f, &x, &z);
+        CHECK(world_height(w, x, z) > mean[REGION_DESERT] + 80.0f);
+        float gx, gz; // el cañon al pie del muro
+        world_region_point(w, REGION_DESERT, WORLD_RADIUS - 118.0f, &gx, &gz);
+        CHECK(world_height(w, gx, gz) < world_height(w, x, z) - 100.0f);
+        for (int r = REGION_STEPPE; r <= REGION_HIGHLAND; r++) {
+            world_region_point(w, (Region)r, WORLD_RADIUS - 70.0f, &x, &z);
+            float lv = world_water(w, x, z, 0.0f, &wk);
+            CHECK(wk == WATER_CANAL && lv > world_height(w, x, z) + 1.0f);
+        }
+        // Los rios nacen en el canal y el agua baja hacia el.
+        for (int i = 0; i < w->river_count; i++) {
+            const River *rv = &w->rivers[i];
+            CHECK(rv->n >= 6 && fabsf(world_edge_distance(rv->x[0], rv->z[0]) - 70.0f) < 2.0f);
+            for (int j = 1; j < rv->n; j++) CHECK(rv->level[j] >= rv->level[j - 1]);
+        }
+        // Agua cerca del campamento; el campamento, en seco.
+        CHECK(sqrtf(w->lakes[0].x * w->lakes[0].x + w->lakes[0].z * w->lakes[0].z) < 260.0f);
+        CHECK(world_water(w, 0.0f, 0.0f, 3.0f, NULL) < world_height(w, 0.0f, 0.0f));
+        // Asentamientos y guaridas: de su region; una capital por reino; las fieras, de alli.
+        int capitals = 0;
+        for (int i = 0; i < w->settlement_count; i++) {
+            const Settlement *st = &w->settlements[i];
+            CHECK(world_region(w, st->x, st->z) == st->region && st->name[0]);
+            capitals += st->kind == SETTLE_CAPITAL;
+            for (int o = 0; o < i; o++) CHECK(strcmp(st->name, w->settlements[o].name) != 0);
+        }
+        CHECK(capitals == REGION_COUNT);
+        CHECK(w->den_count >= 20);
+        for (int i = 0; i < w->den_count; i++) {
+            const Den *d = &w->dens[i];
+            CHECK(world_region(w, d->x, d->z) == d->region);
+            CHECK(species_def((Species)d->species)->habitat & region_habitat(d->region));
+        }
+    }
+    // La frontera invisible.
+    float px = 3000.0f, pz = 0.0f;
+    CHECK(world_clamp(&px, &pz) && fabsf(px - WORLD_LIMIT) < 0.01f && !world_clamp(&px, &pz));
+    CHECK(world_for_seed(1206u) == world_for_seed(1206u) && world_for_seed(1206u)->seed == 1206u);
+}
+
 static void test_travel_dispatch_and_messengers(void) {
     // Riesgo: sin nadie que conozca el destino, casi seguro se pierden.
     CHECK(journey_risk(300.0f, 0.0f, 3, false) >= 0.89f);
@@ -2524,6 +2608,7 @@ int main(void) {
     RUN(test_travel_dispatch_and_messengers);
     RUN(test_apparel_and_climate);
     RUN(test_water_spirits_and_drink);
+    RUN(test_world_regions_borders_and_sites);
     RUN(test_hand_crafting_and_repairs);
     RUN(test_enemy_loot_and_mounted_momentum);
     RUN(test_banish_removes_from_active);

@@ -27,7 +27,7 @@ bool wg_water_near(const Terrain *t, float x, float z) {
     for (float r = 0.0f; r <= 60.0f; r += 15.0f)
         for (int k = 0; k < (r > 0.0f ? 8 : 1); k++) {
             float a = (float)k * 0.785398f, px = x + cosf(a) * r, pz = z + sinf(a) * r;
-            if (t->look.water_level > terrain_height(t, px, pz) + 0.1f) return true;
+            if (terrain_water(t, px, pz) > terrain_height(t, px, pz) + 0.1f) return true;
         }
     return false;
 }

@@ -66,6 +66,7 @@ Las partidas se guardan en `saves/` junto al ejecutable (en Android, en el almac
 | Inventario (bolsillos, mochila, alforjas, carreta, campamento) | I | — |
 | Esconderse | acechar (C) dentro de la hierba alta | — |
 | Beber / tomar hierbas contra los espíritus del agua | N / Mayús+N | — |
+| Vista orbital del mundo | F5 (flechas: girar e inclinar) | — |
 
 Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente · `Ctrl+N` adelantar dos minutos.
 
@@ -126,6 +127,16 @@ Ropa y clima:
 - **La tribu se cambia sola** según el tiempo, con la ropa de su mochila y, en su campamento, la del acopio. Sin ropa adecuada pasa frío o calor (un copo o un sol sobre la cabeza) y baja la moral.
 
 Prueba: `--ropa`.
+
+El mundo ([MUNDO.md](docs/MUNDO.md)):
+- **Un gran círculo con cinco regiones fijas:** la estepa en el centro (allí acampa la tribu) y, alrededor, el bosque de coníferas, el altiplano glaciar, la costa de fiordos y el desierto. Cada una tiene su altitud media: la costa, la más baja; el altiplano, el más alto.
+- **El borde:** el mar en la costa (con fiordos), un muro enorme tras un cañón en el desierto y un gran canal en el resto, del que salen ríos hacia adentro. No se puede salir.
+- **Cada partida nueva es otro mundo:** cambian los ríos, los lagos, las montañas, las fronteras entre regiones, los pueblos y las guaridas, siempre con las mismas reglas.
+- **Reinos vecinos:** uno por región, con su capital amurallada y sus aldeas al estilo de la región; al llegar quedan en el mapa.
+- **Guaridas:** de las fieras de cada región; cerca aparecen sus dueños.
+- **`F5`:** vista orbital del mundo entero (flechas: girar e inclinar).
+
+Pruebas: `--semilla N` fija el mundo; `--ir lugar` lleva a `estepa`, `bosque`, `altiplano`, `fiordos`, `desierto`, `canal`, `muro`, `mar`, `capital`, `aldea` o `guarida`; `--orbital [grados] [inclinación]`; `--mapa-mundo archivo.png` (con `--mapa-tam N`).
 
 El agua:
 - **La sed** baja con el tiempo, más con calor y corriendo. Con sed vas más lento y te cansas; con la sed a cero te desmayas y la tribu te lleva al campamento a beber.
@@ -188,7 +199,9 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --screenshot aviso.png --frames 60 --sin-teclado   # simula Android sin teclado
 ./build/estepa --galeria                                           # galería del inventario de assets
 ./build/estepa --dia 25 --minuto 14                                # noche de pleno invierno
-./build/estepa --dia 23 --pos -340 -130                            # glaciares en invierno
-./build/estepa --dia 25 --pos -148 -12 --trampa rescate            # minijuego: sacar a un compañero del hielo
+./build/estepa --dia 23 --ir altiplano                             # glaciares en invierno
+./build/estepa --dia 25 --lago --trampa rescate                    # minijuego: sacar a un compañero del hielo
+./build/estepa --semilla 42 --mapa-mundo mapa.png                  # mapa general del mundo 42
+./build/estepa --orbital 30 0.5                                    # vista orbital (grados, inclinación)
 ./build/estepa --pos 60 40 --enemigos bandidos --heridas            # combate y heridas
 ```

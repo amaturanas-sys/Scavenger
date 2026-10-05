@@ -40,7 +40,7 @@ void camp_init(Camp *c, const Terrain *t, const char *yurt_path) {
         float z = (rng_float(&rng) * 2.0f - 1.0f) * 110.0f;
         if (x * x + z * z < 30.0f * 30.0f) continue;
         float h = terrain_height(t, x, z);
-        if (h < t->lake_base + TERRAIN_LAKE_FLOOD + 0.2f) continue; // ni en los lagos ni en su orilla de crecida
+        if (terrain_water(t, x, z) + TERRAIN_LAKE_FLOOD + 0.2f > h) continue; // ni en los lagos ni en su orilla de crecida
         c->trees[c->tree_count] = (Vector3){ x, h, z };
         c->tree_h[c->tree_count] = 3.0f + rng_float(&rng) * 3.0f;
         c->tree_count++;

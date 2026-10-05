@@ -77,7 +77,7 @@ void ag_update(GameActions *ga, Troop *troop, const Climate *c, unsigned seed, f
         Npc *n = &ga->npcs[i];
         if (m->status != STATUS_ACTIVE || n->member_id != m->id || m->journey > 0) continue;
         float desert = biome_desert(seed, n->pos.x, n->pos.z);
-        float temp = local_temperature(c->temperature, sun_h, desert);
+        float temp = local_temperature(c->temperature, sun_h, desert) - (ga->terrain ? fmaxf(0.0f, n->pos.y - ga->terrain->plain) * 0.07f : 0.0f);
         float sun = sun_strength(sun_h, c->clouds, desert);
         Stockpile *stock = home_stock(ga, m, n->pos);
         int put = m->health.down ? -1 : dress(ga, m, stock, temp, c->wind, sun);

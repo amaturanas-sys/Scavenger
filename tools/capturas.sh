@@ -34,3 +34,17 @@ shot 13_equipo 30 --equipo --heridas
 shot 14_jinetes 40 --enemigos jinetes
 shot 15_botin 30 --botin
 shot 16_galeria 40 --galeria
+# El mundo (docs/MUNDO.md): a pie en cada sitio (verano, mediodia) y la vista orbital.
+for p in bosque altiplano mar desierto muro canal capital aldea guarida; do
+    shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p"
+done
+shot orbital_1206_30 40 --dia 11 --minuto 7 --orbital 30 0.5
+shot orbital_1206_150 40 --dia 11 --minuto 7 --orbital 150 0.3
+shot orbital_1206_250 40 --dia 11 --minuto 7 --orbital 250 0.9
+shot orbital_2024_300 40 --semilla 2024 --dia 11 --minuto 7 --orbital 300 0.5
+shot orbital_42_90 40 --semilla 42 --dia 11 --minuto 7 --orbital 90 0.65
+# Mapas generales de varias semillas.
+mkdir -p "$ROOT/docs/mundo"
+for s in 1206 7 42 1984 2024 31337; do
+    xvfb-run -a -s "-screen 0 1280x720x24" ./estepa --semilla "$s" --mapa-mundo "$ROOT/docs/mundo/mapa_$s.png" >/dev/null 2>&1 || true
+done

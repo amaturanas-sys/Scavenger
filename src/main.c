@@ -15,6 +15,7 @@
 // --sin-teclado simula un dispositivo Android sin teclado (prueba del aviso).
 #include <math.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -30,6 +31,7 @@
 #include "game/travel_game.h"
 #include "game/apparel_game.h"
 #include "game/water_game.h"
+#include "game/world_game.h"
 #include "game/title_menu.h"
 #include "game/hazards_game.h"
 #include "game/player.h"
@@ -51,6 +53,7 @@
 #include "world/sky.h"
 #include "world/weather.h"
 #include "world/terrain.h"
+#include "world/worldview.h"
 #include "sim/lang.h"
 
 #ifndef ESTEPA_VERSION
@@ -62,7 +65,7 @@
 
 #define VIRTUAL_W 640
 #define VIRTUAL_H 360
-#define WORLD_SEED 1206u // ano de la fundacion del Imperio mongol
+#define WORLD_SEED 1206u // ano de la fundacion del Imperio mongol: el mundo de las pruebas (--semilla cambia)
 #define MINIMAP_RADIUS 50
 
 static MemoryMap g_memory;
@@ -188,7 +191,7 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
         DayReport r = troop_process_day(t, rng);
         (*day)++;
         // Comida, recoleccion, efectos del campamento y trabajos de los NPCs.
-        ga_new_day(&g_actions, &g_props, terrain, t, &g_memory, world_time, *day, climate_at(world_time, WORLD_SEED).temp_mean, log, log_len);
+        ga_new_day(&g_actions, &g_props, terrain, t, &g_memory, world_time, *day, climate_at(world_time, terrain->seed).temp_mean, log, log_len);
         hz_new_day(&g_hazards, &g_climate, &g_actions, &g_props, t, log, log_len); // las noches heladas gastan lena
         cb_new_day(&g_combat, t); // el jugador tambien descansa y sana
         fg_new_day(&g_actions);   // el ganado se vuelve a ordeñar
@@ -209,7 +212,7 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
 static void apply_climate_look(Terrain *terrain, const Climate *c) {
     TerrainLook look = {
         .greenness = c->greenness, .autumn = c->autumn, .snow_cover = c->snow_cover, .wetness = c->wetness,
-        .snowline = terrain->plain + c->snowline, .water_level = terrain->lake_base + c->water_level, .ice = c->ice,
+        .snowline = terrain->plain + c->snowline, .flood = c->water_level, .ice = c->ice,
     };
     terrain_set_look(terrain, &look);
 }
@@ -278,8 +281,8 @@ static void draw_clock_bar(int cx, int y, int w, float world_time) {
 }
 
 // Tiempo y temperatura bajo el minimapa, alineados a la derecha.
-static void draw_weather_text(int right, int y, const Climate *c) {
-    const char *txt = TextFormat("%s · %d °C", weather_name(c->weather), (int)lroundf(c->temperature));
+static void draw_weather_text(int right, int y, const Climate *c, Region rg) {
+    const char *txt = TextFormat("%s · %s · %d °C", region_name(rg), weather_name(c->weather), (int)lroundf(c->temperature));
     Color col = c->snow > 0.3f || c->rain > 0.3f ? UI_TURQUOISE : UI_BONE;
     ui_text(txt, right - MeasureText(txt, 10), y, 10, col);
 }
@@ -318,13 +321,31 @@ static void draw_hud(const Troop *t, float world_time, const char *hands, const 
     ui_text(hint, VIRTUAL_W - 8 - MeasureText(hint, 10), VIRTUAL_H - 16, 10, Fade(UI_BONE_DIM, 0.8f));
 }
 
+// Cambia de mundo (otra semilla): el terreno y el campamento se rehacen.
+static void world_reset(Terrain *terrain, Camp *camp, unsigned seed) {
+    if (terrain->seed == seed) return;
+    terrain_unload(terrain);
+    TerrainLook look = terrain->look;
+    terrain_init(terrain, seed);
+    terrain_set_look(terrain, &look);
+    camp_unload(camp);
+    camp_init(camp, terrain, platform_asset_path("assets/models/estructura/vivienda/yurta_comun.glb"));
+}
+
+// Una semilla nueva para cada partida: el mismo mapa de regiones, otros rios, lagos y montañas.
+static unsigned fresh_seed(void) {
+    unsigned s = (unsigned)time(NULL) * 2654435761u ^ (unsigned)(GetTime() * 1000003.0);
+    return s ? s : WORLD_SEED;
+}
+
 // Una partida nueva: la tribu inicial en el campamento, a media mañana del dia pedido.
-static void game_new(GameState *g, Terrain *terrain, int start_day, float start_minute, char *log, size_t len) {
+static void game_new(GameState *g, Terrain *terrain, Camp *camp, unsigned seed, int start_day, float start_minute, char *log, size_t len) {
+    world_reset(terrain, camp, seed);
     player_init(g->player, terrain);
     kingdom_init_iron_khanate(g->overlord);
     troop_init(g->troop, g->overlord);
     seed_troop(g->troop);
-    rng_seed(g->rng, WORLD_SEED);
+    rng_seed(g->rng, seed);
     *g->world_time = (float)(start_day > 1 ? start_day - 1 : 0) * GAME_SECONDS_PER_DAY +
                      fmaxf(0.0f, fminf(start_minute * 60.0f, GAME_SECONDS_PER_DAY - 1.0f));
     *g->day = clock_day(*g->world_time);
@@ -334,14 +355,43 @@ static void game_new(GameState *g, Terrain *terrain, int start_day, float start_
     memmap_init(g->mem);
     g->props->count = 0; // los modelos cargados se conservan
     // El clima primero: los animales iniciales miran donde hay agua.
-    g_climate = climate_at(*g->world_time, WORLD_SEED);
+    g_climate = climate_at(*g->world_time, seed);
     apply_climate_look(terrain, &g_climate);
-    ga_init(g->ga, g->inv, g->props, terrain, WORLD_SEED);
-    hz_init(g->hz, WORLD_SEED);
-    cb_init(g->cb, WORLD_SEED);
-    dz_init(g->dz, WORLD_SEED);
+    ga_init(g->ga, g->inv, g->props, terrain, seed);
+    hz_init(g->hz, seed); // la semilla del mundo viaja en la partida guardada (Hazards.seed)
+    cb_init(g->cb, seed);
+    dz_init(g->dz, seed);
     g->hz->body = &g->cb->player; // caidas y congelacion hieren
-    snprintf(log, len, "%s", T("Tu tropa acampa en la estepa."));
+    snprintf(log, len, T("Tu tropa acampa en la estepa (mundo %u)."), seed);
+}
+
+// Prueba: lleva al jugador a un sitio del mundo, mirando hacia lo que interesa. Lugares:
+// estepa, bosque, altiplano, fiordos, desierto (en su region); canal, muro, mar (el borde);
+// capital, aldea, guarida (de la region del bosque, desierto y bosque).
+static void go_to(const Terrain *t, Player *p, const char *what) {
+    const World *w = t->world;
+    static const char *REG[REGION_COUNT] = { "estepa", "bosque", "altiplano", "fiordos", "desierto" };
+    float x = 0, z = 0, lx = 0, lz = 0; // donde y hacia donde mira
+    bool ok = false;
+    for (int r = 0; r < REGION_COUNT; r++)
+        if (!strcmp(what, REG[r])) world_region_point(w, (Region)r, 0.6f * WORLD_RADIUS, &x, &z), lx = x * 1.1f, lz = z * 1.1f, ok = true;
+    if (!strcmp(what, "canal")) world_region_point(w, REGION_FOREST, WORLD_RADIUS - 112.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    if (!strcmp(what, "muro")) world_region_point(w, REGION_DESERT, WORLD_RADIUS - 150.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    if (!strcmp(what, "mar")) world_region_point(w, REGION_FJORD, WORLD_RADIUS - 200.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    for (int i = 0; i < w->settlement_count && !ok; i++) {
+        const Settlement *s = &w->settlements[i];
+        bool want = (!strcmp(what, "capital") && s->kind == SETTLE_CAPITAL && s->region == REGION_FOREST) ||
+                    (!strcmp(what, "aldea") && s->kind == SETTLE_VILLAGE && s->region == REGION_DESERT);
+        if (want) x = s->x + 58.0f, z = s->z + 20.0f, lx = s->x, lz = s->z, ok = true;
+    }
+    for (int i = 0; i < w->den_count && !ok; i++)
+        if (!strcmp(what, "guarida") && w->dens[i].region == REGION_FOREST)
+            x = w->dens[i].x + 16.0f, z = w->dens[i].z + 6.0f, lx = w->dens[i].x, lz = w->dens[i].z, ok = true;
+    if (!ok) return;
+    p->pos = (Vector3){ x, terrain_height(t, x, z), z };
+    float water = terrain_water(t, x, z);
+    if (water > p->pos.y) p->pos.y = water;
+    p->yaw = atan2f(lx - x, lz - z);
 }
 
 static void draw_keyboard_notice(void) {
@@ -365,6 +415,13 @@ int main(int argc, char **argv) {
     bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
     MenuScreen start_menu_screen = MENU_TITLE;
     int start_help_page = 0; // prueba: --pagina N del instructivo
+    unsigned start_seed = WORLD_SEED; // --semilla N: el mundo (sin ella, cada partida nueva del menu sortea uno)
+    const char *map_path = NULL;      // --mapa-mundo archivo.png: el mapa general del mundo, y sale
+    const char *start_goto = NULL;    // --ir lugar: a un sitio del mundo (ver go_to)
+    int map_size = 1024;
+    bool start_orbital = false;       // --orbital [grados] [inclinacion]: la vista orbital
+    float start_orbit_deg = 30.0f, start_orbit_tilt = 0.55f;
+    bool seed_given = false;
     int start_save = -1, start_load = -1;
     int start_pause = 0;  // prueba: 1 pausa, 2 guardar, 3 controles (F1), sobre la partida
     int start_tab = -1;
@@ -385,6 +442,14 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--heridas")) start_wounds = true;
         else if (!strcmp(argv[i], "--apuntar")) start_aim = true;
         else if (!strcmp(argv[i], "--lago")) start_lake = true;
+        else if (!strcmp(argv[i], "--mapa-mundo") && i + 1 < argc) map_path = argv[++i];
+        else if (!strcmp(argv[i], "--ir") && i + 1 < argc) start_goto = argv[++i];
+        else if (!strcmp(argv[i], "--mapa-tam") && i + 1 < argc) map_size = atoi(argv[++i]);
+        else if (!strcmp(argv[i], "--orbital")) {
+            start_orbital = true;
+            if (i + 1 < argc && argv[i + 1][0] != '-') start_orbit_deg = (float)atof(argv[++i]);
+            if (i + 1 < argc && argv[i + 1][0] != '-') start_orbit_tilt = (float)atof(argv[++i]);
+        }
         else if (!strcmp(argv[i], "--incendio")) start_fire = true;
         else if (!strcmp(argv[i], "--menu")) start_menu = true;
         else if (!strcmp(argv[i], "--inventario")) start_inv = true;
@@ -406,6 +471,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--autoguardar") && i + 1 < argc) start_save = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--cargar") && i + 1 < argc) start_load = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--instructivo")) start_menu = true, start_menu_screen = MENU_HELP;
+        else if (!strcmp(argv[i], "--semilla") && i + 1 < argc) start_seed = (unsigned)strtoul(argv[++i], NULL, 10), seed_given = true;
         else if (!strcmp(argv[i], "--pagina") && i + 1 < argc) start_menu = true, start_menu_screen = MENU_HELP, start_help_page = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--huecos")) start_menu = true, start_menu_screen = MENU_LOAD;
         else if (!strcmp(argv[i], "--pos") && i + 2 < argc) {
@@ -427,9 +493,18 @@ int main(int argc, char **argv) {
     SetTextureFilter(lowres.texture, TEXTURE_FILTER_POINT); // pixeles nitidos al escalar
 
     Terrain terrain;
-    terrain_init(&terrain, WORLD_SEED);
+    terrain_init(&terrain, start_seed);
+    if (map_path) { // el mapa general del mundo (con la nieve de verano) y nada mas
+        bool ok = worldmap_export(terrain.world, map_path, map_size > 64 ? map_size : 1024, terrain.plain + 40.0f);
+        printf("%s %s\n", ok ? "Mapa escrito:" : "No se pudo escribir", map_path);
+        CloseWindow();
+        return ok ? 0 : 1;
+    }
     Camp camp;
     camp_init(&camp, &terrain, platform_asset_path("assets/models/estructura/vivienda/yurta_comun.glb"));
+    WorldView view = { 0 };
+    bool orbital = start_orbital;
+    float orbit_angle = start_orbit_deg * DEG2RAD, orbit_tilt = start_orbit_tilt;
     Player player;
     player_init(&player, &terrain);
 
@@ -458,7 +533,7 @@ int main(int argc, char **argv) {
     settings_init(); // idioma (y sus traducciones), antes del primer texto de la partida
     GameState gs = { &world_time, &day, &last_champion, &rig.yaw, &rng, &player, &overlord, &troop, &g_actions,
                      &g_props, &g_combat, &g_hazards, &g_dz, &g_memory, &g_inventory };
-    game_new(&gs, &terrain, start_day, start_minute, log, sizeof(log));
+    game_new(&gs, &terrain, &camp, start_seed, start_day, start_minute, log, sizeof(log));
     if (gallery_mode) world_time = 4.0f * 60.0f;
     if (start_pos) {
         player.pos = (Vector3){ start_x, terrain_height(&terrain, start_x, start_z), start_z };
@@ -468,10 +543,10 @@ int main(int argc, char **argv) {
             bool found = false;
             for (int k = 0; k < 24 && !found; k++) {
                 float a = (float)k * PI / 12.0f, x = cosf(a) * r, z = sinf(a) * r;
-                if (terrain.look.water_level < terrain_height(&terrain, x, z) + 2.0f) continue;
+                if (terrain_water(&terrain, x, z) < terrain_height(&terrain, x, z) + 2.0f) continue;
                 for (float back = 0.0f; back < r; back += 1.0f) { // hacia el campamento, hasta la orilla
                     float bx = cosf(a) * (r - back), bz = sinf(a) * (r - back);
-                    if (terrain.look.water_level < terrain_height(&terrain, bx, bz) - 0.1f) {
+                    if (terrain_water(&terrain, bx, bz) < terrain_height(&terrain, bx, bz) - 0.1f) {
                         player.pos = (Vector3){ bx, terrain_height(&terrain, bx, bz), bz };
                         player.yaw = atan2f(cosf(a), sinf(a));
                         found = true;
@@ -482,6 +557,8 @@ int main(int argc, char **argv) {
             if (found) break;
         }
     }
+
+    if (start_goto && !gallery_mode) go_to(&terrain, &player, start_goto);
 
     Gallery gallery = { 0 };
     if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
@@ -494,7 +571,7 @@ int main(int argc, char **argv) {
     }
 
     Camera3D cam = { .up = { 0, 1, 0 }, .fovy = 55.0f, .projection = CAMERA_PERSPECTIVE };
-    if (start_lake) rig.yaw = player.yaw; // mirando al agua
+    if (start_lake || start_goto) rig.yaw = player.yaw; // mirando al agua (o a lo que interesa)
 
     // Menu de entrada: al arrancar normalmente; las pruebas (--screenshot, --galeria...) van
     // directo a la partida salvo que pidan el menu (--menu, --instructivo, --huecos).
@@ -537,7 +614,7 @@ int main(int argc, char **argv) {
             start_pause = 0;
         }
         // Esc en la partida: pausa (antes, una foto para la partida guardada).
-        if (in_game && !gallery_mode && !menu_visible(&menu) && !ig_blocks_input(&g_actions) && IsKeyPressed(KEY_ESCAPE)) {
+        if (in_game && !gallery_mode && !orbital && !menu_visible(&menu) && !ig_blocks_input(&g_actions) && IsKeyPressed(KEY_ESCAPE)) {
             if (ga_menu_open(&g_actions)) {
                 g_actions.menu_open = false;
             } else {
@@ -549,13 +626,14 @@ int main(int argc, char **argv) {
         } else if (menu_visible(&menu) && has_keyboard) {
             switch (menu_update(&menu, dt)) {
             case MENU_NEW_GAME:
-                game_new(&gs, &terrain, 1, 4.0f, log, sizeof(log));
+                game_new(&gs, &terrain, &camp, seed_given ? start_seed : fresh_seed(), 1, 4.0f, log, sizeof(log));
                 in_game = true;
                 menu.screen = MENU_HIDDEN;
                 break;
             case MENU_CONTINUE: menu.screen = MENU_HIDDEN; break;
             case MENU_LOAD_SLOT:
                 if (save_read(menu.slot, &gs, err, sizeof(err))) {
+                    world_reset(&terrain, &camp, g_hazards.seed); // el mundo de esa partida
                     in_game = true;
                     menu.screen = MENU_HIDDEN;
                     snprintf(log, sizeof(log), T("Partida cargada (hueco %d)."), menu.slot + 1);
@@ -641,21 +719,43 @@ int main(int argc, char **argv) {
             start_loot = false;
         }
         if (start_load >= 0 && frame == 2) { // prueba: cargar un hueco al empezar
-            if (save_read(start_load, &gs, err, sizeof(err))) snprintf(log, sizeof(log), T("Partida cargada (hueco %d)."), start_load + 1);
+            if (save_read(start_load, &gs, err, sizeof(err))) {
+                world_reset(&terrain, &camp, g_hazards.seed);
+                snprintf(log, sizeof(log), T("Partida cargada (hueco %d)."), start_load + 1);
+            }
             else snprintf(log, sizeof(log), "%s", err);
             start_load = -1;
         }
         if (strcmp(log, last_log) != 0) snprintf(last_log, sizeof(last_log), "%s", log), log_age = 0.0f;
         log_age += dt;
         // Sin teclado el juego queda en pausa (Android: tablets sin teclado conectado); con el menu, tambien.
+        // F5: la vista orbital del mundo (las flechas la giran y la inclinan).
+        if (in_game && !menu_visible(&menu) && IsKeyPressed(KEY_F5)) orbital = !orbital;
+        if (orbital) {
+            orbit_angle += (IsKeyDown(KEY_RIGHT) ? 1.0f : IsKeyDown(KEY_LEFT) ? -1.0f : 0.06f) * dt;
+            if (IsKeyDown(KEY_UP)) orbit_tilt = fminf(1.0f, orbit_tilt + 0.5f * dt);
+            if (IsKeyDown(KEY_DOWN)) orbit_tilt = fmaxf(0.0f, orbit_tilt - 0.5f * dt);
+            if (IsKeyPressed(KEY_ESCAPE)) orbital = false;
+        }
         if (has_keyboard && in_game && !menu_visible(&menu)) {
             // Con el menu de acciones abierto el jugador no se mueve (las flechas eligen).
             bool menu = ga_menu_open(&g_actions);
-            bool blocked = ga_blocks_input(&g_actions) || hz_blocks_input(&g_hazards) || cb_blocks_input(&g_combat);
+            bool blocked = ga_blocks_input(&g_actions) || hz_blocks_input(&g_hazards) || cb_blocks_input(&g_combat) || orbital;
             PlayerInput in = blocked ? (PlayerInput){ 0 } : player_read_input();
             player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards) * cb_speed_scale(&g_combat);
             player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
             if (!g_actions.climbing) player_update(&player, &terrain, in, rig.yaw, dt);
+            if (world_clamp(&player.pos.x, &player.pos.z)) { // la frontera invisible del gran circulo
+                static float told = -100.0f;
+                if (world_time - told > 30.0f) {
+                    told = world_time;
+                    Region rg = terrain_region(&terrain, player.pos.x, player.pos.z);
+                    snprintf(log, sizeof(log), "%s",
+                             rg == REGION_FJORD    ? T("Más allá solo hay mar abierto: la tropa no se aventura.")
+                             : rg == REGION_DESERT ? T("El gran muro del cañón cierra el desierto: no hay paso.")
+                                                   : T("El gran canal marca el fin de estas tierras: no hay vado."));
+                }
+            }
             world_time += dt;
             int prev_champion = last_champion;
             if (!menu) debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log));
@@ -694,6 +794,7 @@ int main(int argc, char **argv) {
                 trv_update(&g_actions, &troop, &g_memory, &player, &terrain, clock_is_night(world_time),
                            !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             if (!gallery_mode) ag_update(&g_actions, &troop, &g_climate, g_hazards.seed, world_time, dt, log, sizeof(log));
+            if (!gallery_mode) wd_update(&g_actions, &terrain, &player, &g_memory, log, sizeof(log));
             if (!gallery_mode)
                 wg_update(&g_actions, &troop, &player, &g_props, &g_hazards, &g_climate, camp.fire, &terrain,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
@@ -755,7 +856,7 @@ int main(int argc, char **argv) {
         camera_update(&rig, &cam, &player, dt);
         terrain_update(&terrain, player.pos);
         // Clima: estacion, tiempo, nieve, lagos y glaciares (la galeria se ve siempre igual).
-        Climate climate = climate_at(world_time, WORLD_SEED);
+        Climate climate = climate_at(world_time, terrain.seed);
         if (gallery_mode) climate = (Climate){ .clouds = 0.1f, .temperature = 20.0f };
         if (!gallery_mode) {
             apply_climate_look(&terrain, &climate);
@@ -766,7 +867,15 @@ int main(int argc, char **argv) {
 
         BeginTextureMode(lowres);
         ClearBackground(sky_clear_color(climate.clouds));
-        if (in_game) {
+        if (in_game && orbital) { // el mundo entero desde lo alto
+            ClearBackground((Color){ 14, 18, 28, 255 });
+            worldview_build(&view, terrain.world, terrain.plain + 40.0f);
+            worldview_draw(&view, terrain.world, orbit_angle, orbit_tilt, player.pos, (float)GetTime());
+            char rg[48];
+            snprintf(rg, sizeof(rg), "%s", region_name(terrain_region(&terrain, player.pos.x, player.pos.z)));
+            ui_text(TextFormat(T("Vista orbital · mundo %u · estás en: %s"), terrain.seed, rg), 10, 10, 10, UI_GOLD_LIGHT);
+            ui_text(T("Flechas: girar e inclinar · F5 o Esc: volver"), 10, VIRTUAL_H - 18, 10, UI_BONE_DIM);
+        } else if (in_game) {
         BeginMode3D(cam);
         terrain_draw(&terrain);
         camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used, g_dz.tree_burn);
@@ -775,6 +884,7 @@ int main(int argc, char **argv) {
         if (gallery_mode) player_draw(&player);
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
+        if (!gallery_mode) wd_draw_world(&g_actions, &terrain, &player, (float)GetTime());
         if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());
         if (!gallery_mode) ig_draw_world(&g_actions, &terrain, (float)GetTime());
         if (!gallery_mode) trv_draw_world(&g_actions, &troop, (float)GetTime());
@@ -809,7 +919,7 @@ int main(int argc, char **argv) {
             minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
                          player.pos, rig.yaw, player.yaw, world_time);
             draw_clock_bar(VIRTUAL_W - MINIMAP_RADIUS - 10, 2 * MINIMAP_RADIUS + 19, 2 * MINIMAP_RADIUS - 8, world_time);
-            draw_weather_text(VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 27, &climate);
+            draw_weather_text(VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 27, &climate, terrain_region(&terrain, player.pos.x, player.pos.z));
             ga_draw_hud(&g_actions, &g_props, &troop, &player, VIRTUAL_W, VIRTUAL_H);
             hz_draw_hud(&g_hazards, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 40, VIRTUAL_W, VIRTUAL_H);
             cb_draw_hud(&g_combat, &g_actions, &troop, VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 63, VIRTUAL_W, VIRTUAL_H);

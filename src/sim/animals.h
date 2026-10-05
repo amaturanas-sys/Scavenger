@@ -72,8 +72,9 @@ typedef enum {
 
 typedef enum { CLASS_MOUNT, CLASS_TAMEABLE, CLASS_HOSTILE, CLASS_PREY, CLASS_LIVESTOCK } AnimalClass;
 
-// Donde vive (para que aparezca): estepa, desierto, frio (alto, cerca de la nieve).
-enum { HAB_STEPPE = 1, HAB_DESERT = 2, HAB_COLD = 4, HAB_WATER = 8 }; // agua: orillas de los lagos
+// Donde vive (para que aparezca), segun la region (src/sim/world.h): estepa, desierto, frio
+// (altiplano), bosque, costa de fiordos; agua: orillas de los lagos.
+enum { HAB_STEPPE = 1, HAB_DESERT = 2, HAB_COLD = 4, HAB_WATER = 8, HAB_FOREST = 16, HAB_COAST = 32 };
 
 typedef struct {
     const char *name;  // UTF-8
