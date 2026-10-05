@@ -151,6 +151,10 @@ float world_height(const World *w, float x, float z);
 // Superficie del agua en (x, z), o -1e9 si no hay. flood: crecida estacional de lagos y
 // rios (el mar no crece). kind (si no es NULL): que agua es.
 float world_water(const World *w, float x, float z, float flood, WaterKind *kind);
+// Orilla de rio: cuanto es (x, z) lecho de cantos rodados que el agua lava (1 en el cauce y la
+// orilla baja, 0 lejos), para rios de meandro, tributarios y arroyos; width (si no es NULL): el
+// ancho de ese rio. Los trenzados ya son de grava.
+float world_river_bank(const World *w, float x, float z, float *width);
 // El borde fractal: su radio en un angulo, y la distancia de (x, z) a el (positiva dentro).
 float world_edge_radius(const World *w, float angle);
 float world_edge_distance(const World *w, float x, float z);

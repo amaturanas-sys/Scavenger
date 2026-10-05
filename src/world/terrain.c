@@ -7,19 +7,20 @@
 #include "../sim/hazards.h"
 #include "../sim/noise.h"
 #include "platform.h"
+#include "world/voxstruct.h"
 #include "raymath.h"
 
 // Por triangulo: altura, pendiente, luz, mancha, y pesos de desierto, bosque, altiplano y
 // costa, distancia sobre el agua (para la orilla) y que es (suelo, copa o tronco).
-enum { A_H, A_SLOPE, A_LIGHT, A_PATCH, A_DESERT, A_FOREST, A_HIGH, A_FJORD, A_SHORE, A_EDGE, A_KIND, TRI_ATTRS };
+enum { A_H, A_SLOPE, A_LIGHT, A_PATCH, A_DESERT, A_FOREST, A_HIGH, A_FJORD, A_SHORE, A_EDGE, A_BANK, A_KIND, TRI_ATTRS };
 enum { KIND_GROUND, KIND_CANOPY, KIND_TRUNK, KIND_ROCK, KIND_BUSH };
-enum { W_LAKE, W_RIVER, W_SEA, W_GLACIAL }; // las mallas de agua de cada chunk
+enum { W_LAKE, W_RIVER, W_SEA, W_GLACIAL, W_FOAM, W_MESHES }; // las mallas de agua de cada chunk (la espuma: rompientes y rapidos)
 
 // Texturas del suelo (assets/terrain/texturas.png, tools/assets/texturas_terreno.py): un atlas
 // low-res de 4x4 celdas; cada celda cubre 8 m. El orden es fijo.
 typedef enum {
     TT_TUSSOCK, TT_TALLGRASS, TT_FOREST, TT_TUNDRA, TT_MOSS, TT_SAND, TT_STRATA, TT_GRAVEL,
-    TT_SNOW, TT_ROCK, TT_MUD, TT_ICE, TT_R12, TT_R13, TT_R14, TT_WHITE,
+    TT_SNOW, TT_ROCK, TT_MUD, TT_ICE, TT_BLACKSAND, TT_COBBLES, TT_SERAC, TT_WHITE,
 } TerrainTex;
 #define TEX_COLS 4
 #define TEX_SPAN 8.0f   // m de suelo por celda del atlas
@@ -98,6 +99,9 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
     if (above_water > 0.0f && above_water < TERRAIN_LAKE_FLOOD)
         c = above_water < 0.4f ? (a[A_FJORD] > 0.5f ? shingle : mud) : mixc(c, lakebed, 0.7f);
     if (!bare) c = mixc(c, mud, L->wetness * 0.35f * (1.0f - desert)); // suelo mojado (la arena no se embarra)
+    // La playa de los fiordos: arena volcanica negra; en los rios, cantos rodados claros sin pasto.
+    if (a[A_FJORD] > 0.5f && h_abs < SEA_LEVEL + 4.0f && slope < 0.6f) c = mixc(c, (Color){ 62, 60, 62, 255 }, Clamp((SEA_LEVEL + 4.0f - h_abs) * 0.6f, 0.0f, 1.0f));
+    if (a[A_BANK] > 0.0f && desert < 0.5f) c = mixc(c, (Color){ 168, 164, 154, 255 }, Clamp(a[A_BANK] * 1.6f - 0.3f, 0.0f, 1.0f));
     // Desierto: arena dorada con vetas; las mesetas y el muro, roca rojiza en estratos.
     if (desert > 0.0f) {
         const Color sand = { 214, 188, 134, 255 }, sand_dark = { 190, 160, 108, 255 }, redrock = { 178, 104, 70, 255 };
@@ -160,7 +164,9 @@ static Color shade(Color c, float light) {
 // Que textura lleva un triangulo de suelo (fija: la estacion la tiñe con el color).
 static TerrainTex ground_tex(const float *a, float slope) {
     float hi = a[A_HIGH], fo = a[A_FOREST], fj = a[A_FJORD], de = a[A_DESERT];
-    if (hi > 0.5f && a[A_EDGE] < 150.0f) return TT_ICE;
+    if (hi > 0.5f && a[A_EDGE] < 150.0f) return slope > 0.45f ? TT_SERAC : TT_ICE; // el frente del glaciar: seracs
+    if (fj > 0.5f && a[A_H] < SEA_LEVEL + 4.0f && slope < 0.6f) return TT_BLACKSAND; // la playa de arena volcanica
+    if (a[A_BANK] > 0.45f && de < 0.5f && slope < 0.6f) return TT_COBBLES;       // el lecho de cantos que el rio lava
     if (a[A_H] > g_perma_snow && slope < 0.7f) return TT_SNOW;
     if (a[A_SHORE] > 0.0f && a[A_SHORE] < 0.5f) return hi + fj > 0.5f ? TT_GRAVEL : TT_MUD;
     if (de > 0.5f) return slope > 0.45f ? TT_STRATA : TT_SAND;
@@ -359,8 +365,9 @@ static Model make_model(TriBuf *b) {
 static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
     enum { CELLS = CHUNK_CELLS / 2, MAXT = CELLS * CELLS * 2 };
     const float cell = CHUNK_SIZE / CELLS, ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
-    static float verts[4][MAXT * 9];
-    int count[4] = { 0, 0, 0, 0 };
+    static float verts[W_MESHES][MAXT * 9];
+    static unsigned char foam_alpha[MAXT * 3];
+    int count[W_MESHES] = { 0 };
     for (int iz = 0; iz < CELLS; iz++)
         for (int ix = 0; ix < CELLS; ix++) {
             float x0 = ox + ix * cell, z0 = oz + iz * cell, x1 = x0 + cell, z1 = z0 + cell;
@@ -374,8 +381,26 @@ static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
             float q[6][3] = { { x0, lv, z0 }, { x0, lv, z1 }, { x1, lv, z0 }, { x1, lv, z0 }, { x0, lv, z1 }, { x1, lv, z1 } };
             memcpy(&verts[m][count[m] * 9], q, sizeof(q));
             count[m] += 2;
+            // Espuma: el mar que rompe en la orilla y el agua rapida y baja de los rios con cantos
+            // (los trenzados no: su lecho es todo bajo). La opacidad sale de la profundidad en cada
+            // esquina, asi la franja blanca sigue la orilla sin costuras entre celdas.
+            bool surf = k == WATER_SEA ? lowest > lv - 2.0f
+                                       : k == WATER_RIVER && lowest > lv - 0.8f && world_river_bank(t->world, x0 + cell * 0.5f, z0 + cell * 0.5f, NULL) > 0.85f;
+            if (surf) {
+                float fq[6][3];
+                memcpy(fq, q, sizeof(q));
+                for (int v = 0; v < 6; v++) {
+                    fq[v][1] += 0.06f;
+                    float depth = lv - terrain_height(t, fq[v][0], fq[v][2]), reach = k == WATER_SEA ? 2.0f : 0.8f;
+                    float wob = 0.6f + 0.4f * noise2d(fq[v][0] * 0.15f, fq[v][2] * 0.15f, 777u); // jirones
+                    float a = Clamp(1.0f - depth / reach, 0.0f, 1.0f) * wob;
+                    foam_alpha[count[W_FOAM] * 3 + v] = (unsigned char)(230.0f * a);
+                }
+                memcpy(&verts[W_FOAM][count[W_FOAM] * 9], fq, sizeof(fq));
+                count[W_FOAM] += 2;
+            }
         }
-    for (int m = 0; m < 4; m++) {
+    for (int m = 0; m < W_MESHES; m++) {
         ch->has_water[m] = count[m] > 0;
         if (!count[m]) continue;
         Mesh mesh = { 0 };
@@ -385,6 +410,11 @@ static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
         mesh.normals = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
         memcpy(mesh.vertices, verts[m], mesh.vertexCount * 3 * sizeof(float));
         for (int i = 0; i < mesh.vertexCount; i++) mesh.normals[i * 3 + 1] = 1.0f;
+        if (m == W_FOAM) { // espuma moteada: blanca, con transparencia por vertice
+            mesh.colors = MemAlloc(mesh.vertexCount * 4);
+            for (int i = 0; i < mesh.vertexCount; i++)
+                mesh.colors[i * 4 + 0] = mesh.colors[i * 4 + 1] = mesh.colors[i * 4 + 2] = 255, mesh.colors[i * 4 + 3] = foam_alpha[i];
+        }
         UploadMesh(&mesh, false);
         ch->water[m] = LoadModelFromMesh(mesh);
     }
@@ -416,6 +446,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             float hm = (p00.y + p10.y + p01.y + p11.y) * 0.25f, wl = world_water(t->world, mx, mz, 0.0f, NULL);
             at[A_SHORE] = wl > -1e8f ? hm - wl : 99.0f;
             at[A_EDGE] = world_edge_distance(t->world, mx, mz);
+            at[A_BANK] = world_river_bank(t->world, mx, mz, NULL);
             at[A_KIND] = KIND_GROUND;
             // La celda del atlas se repite cada TEX_SPAN m: cuatro celdas del suelo por textura.
             const int per = (int)(TEX_SPAN / cell);
@@ -446,6 +477,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             float near_water = wl > -1e8f && y - wl < 6.0f ? 1.0f : 0.0f;
             if (r0 > tree_density(k, near_water)) continue;
             if (wl > y - 0.8f || y > t->look.snowline + 8.0f) continue; // en el agua o en el glaciar, no
+            if (world_river_bank(t->world, x, z, NULL) > 0.45f) continue; // el lecho que el rio lava
             float sx = terrain_height(t, x + 2.0f, z) - y, sz = terrain_height(t, x, z + 2.0f) - y;
             if (sx * sx + sz * sz > 2.2f) continue;
             float dist;
@@ -471,6 +503,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             float bd = bush_density(k, near_water);
             if (r0 > rd + bd) continue;
             if (wl > y - 0.4f) continue; // en el agua, no
+            if (world_river_bank(t->world, x, z, NULL) > 0.45f || (k[REGION_FJORD] > 0.5f && y < SEA_LEVEL + 4.0f)) continue; // ni en el lecho ni en la playa
             float dist;
             int si = world_nearest_settlement(t->world, x, z, &dist);
             if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? 70.0f : 40.0f)) continue;
@@ -488,6 +521,46 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             }
         }
     Chunk ch = { .loaded = true, .cx = cx, .cz = cz };
+    // Formaciones de voxeles (de las fotos de cada region), por casillas de 6 m:
+    //  - fiordos: roquerios de basalto en la playa negra y las rompientes, farallones en el mar;
+    //  - rios: cantos rodados claros en el cauce y la orilla;
+    //  - desierto: farallones en estratos junto al cañon, torres de arenisca y creta blanca;
+    //  - altiplano: seracs en el frente del glaciar y tempanos en los lagos de deshielo.
+    const int FS = 8;
+    const float fslot = CHUNK_SIZE / FS;
+    for (int iz = 0; iz < FS && ch.feat_count < CHUNK_FEATS; iz++)
+        for (int ix = 0; ix < FS && ch.feat_count < CHUNK_FEATS; ix++) {
+            uint32_t h = hash2(cx * FS + ix, cz * FS + iz, t->seed ^ 0xFEA7u);
+            float r0 = (float)(h & 0xFFFF) / 65535.0f, r1 = (float)((h >> 16) & 0xFF) / 255.0f, r2 = (float)(h >> 24) / 255.0f;
+            float x = ox + (ix + 0.15f + 0.7f * r1) * fslot, z = oz + (iz + 0.15f + 0.7f * r2) * fslot;
+            if (x * x + z * z < 90.0f * 90.0f || near_site(t->world, x, z)) continue;
+            float k[REGION_COUNT];
+            world_region_weights(t->world, x, z, k);
+            float y = terrain_height(t, x, z), e = world_edge_distance(t->world, x, z);
+            WaterKind wk;
+            float wl = world_water(t->world, x, z, 0.0f, &wk);
+            int kind = -1;
+            float scale = 0.8f + 0.5f * r1;
+            if (k[REGION_FJORD] > 0.5f && y > SEA_LEVEL - 4.0f && y < SEA_LEVEL + 3.0f) { // la orilla del mar
+                if (y < SEA_LEVEL - 1.5f && r0 < 0.06f) kind = VF_SEA_STACK;
+                else if (r0 < 0.22f) kind = VF_BASALT;
+            } else if (k[REGION_DESERT] < 0.5f && wk == WATER_RIVER && r0 < 0.3f && world_river_bank(t->world, x, z, NULL) > 0.5f) {
+                kind = VF_BOULDER; // en el cauce
+            } else if (k[REGION_DESERT] < 0.5f && wl < -1e8f && r0 < 0.22f && world_river_bank(t->world, x, z, NULL) > 0.6f) {
+                kind = VF_BOULDER; // en la orilla
+            } else if (k[REGION_DESERT] > 0.6f && wl < -1e8f) {
+                bool canyon = e > 85.0f && e < 260.0f; // el cañon al pie del muro de estratos
+                if (canyon && r0 < 0.07f) kind = VF_MESA, scale = 0.8f + 0.6f * r1;
+                else if (r0 < 0.012f) kind = VF_HOODOO;
+                else if (r0 < 0.02f) kind = VF_CHALK;
+                else if (r0 < 0.024f) kind = VF_MESA;
+            } else if (k[REGION_HIGHLAND] > 0.5f) {
+                if (e < 210.0f && wl < -1e8f && r0 < 0.28f) kind = VF_SERAC; // el frente del glaciar
+                else if (wk == WATER_LAKE && wl > y + 2.0f && r0 < 0.05f) kind = VF_ICEBERG, y = wl;
+            }
+            if (kind < 0) continue;
+            ch.feat[ch.feat_count++] = (ChunkFeature){ x, y, z, r2 * 2.0f * PI, scale, (unsigned char)kind, (unsigned char)(h >> 8) };
+        }
     ch.model = make_model(&b);
     ch.tri = MemAlloc(b.count * TRI_ATTRS * sizeof(float));
     memcpy(ch.tri, abuf, b.count * TRI_ATTRS * sizeof(float));
@@ -500,7 +573,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
 
 static void free_chunk(Chunk *c) {
     UnloadModel(c->model);
-    for (int m = 0; m < 4; m++)
+    for (int m = 0; m < W_MESHES; m++)
         if (c->has_water[m]) UnloadModel(c->water[m]);
     MemFree(c->tri);
     c->tri = NULL;
@@ -699,7 +772,16 @@ void terrain_draw_water(const Terrain *t, float time) {
     const Color water = { 52, 96, 128, 200 }, river = { 62, 112, 140, 200 }, sea = { 36, 72, 104, 220 }, ice = { 198, 220, 236, 240 };
     float ripple = 0.06f * sinf(time * 1.3f); // oleaje leve: el brillo del agua respira (el hielo no)
     const Color glacial = { 84, 168, 178, 210 };
-    for (int m = 0; m < 4; m++) {
+    for (int m = 0; m < W_MESHES; m++) {
+        if (m == W_FOAM) { // la espuma late con las olas; con hielo, no hay
+            float frozen = Clamp(t->look.ice, 0.0f, 1.0f);
+            unsigned char a = (unsigned char)(255.0f * (0.45f + 0.25f * sinf(time * 1.7f)) * (1.0f - 0.8f * frozen));
+            for (int i = 0; i < CHUNK_SLOTS; i++) {
+                const Chunk *ch = &t->slots[i];
+                if (ch->loaded && ch->has_water[m]) DrawModel(ch->water[m], (Vector3){ 0, 0.5f * t->look.flood, 0 }, 1.0f, (Color){ 255, 255, 255, a });
+            }
+            continue;
+        }
         Color col = m == W_SEA ? sea : m == W_RIVER ? river : m == W_GLACIAL ? glacial : water;
         float frozen = m == W_SEA ? 0.0f : Clamp(t->look.ice, 0.0f, 1.0f);
         Color c = mixc(col, ice, frozen);
@@ -749,10 +831,24 @@ void terrain_update(Terrain *t, Vector3 pos) {
     far_update(t);
 }
 
+// Las formaciones de voxeles de los chunks cargados (los tempanos suben con la crecida).
+static void draw_features(const Terrain *t) {
+    for (int i = 0; i < CHUNK_SLOTS; i++) {
+        const Chunk *ch = &t->slots[i];
+        if (!ch->loaded) continue;
+        for (int k = 0; k < ch->feat_count; k++) {
+            const ChunkFeature *f = &ch->feat[k];
+            Vector3 at = { f->x, f->y + (f->kind == VF_ICEBERG ? t->look.flood : 0.0f), f->z };
+            voxs_draw_feature((VoxFeature)f->kind, f->variant, at, f->yaw, f->scale, WHITE);
+        }
+    }
+}
+
 void terrain_draw(const Terrain *t) {
     if (g_far.ready && t->has_center) DrawModel(g_far.model, (Vector3){ 0, -0.4f, 0 }, 1.0f, WHITE); // bajo los chunks: sin costuras a la vista
     for (int i = 0; i < CHUNK_SLOTS; i++)
         if (t->slots[i].loaded) DrawModel(t->slots[i].model, (Vector3){ 0 }, 1.0f, WHITE);
+    draw_features(t);
 }
 
 void terrain_unload(Terrain *t) {

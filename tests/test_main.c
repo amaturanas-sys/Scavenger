@@ -1483,6 +1483,22 @@ static void test_world_tribes_and_sites(void) {
 
 // Voxeles: figuras, caras expuestas (lo de adentro no se malla), erosion, y nubes al modo de
 // Nubis (densidad por perfil y ruido) con la luz que baja hacia la sombra del sol.
+// Las orillas de los rios: lecho de cantos en el cauce, nada lejos; los trenzados no cuentan.
+static void test_world_river_banks(void) {
+    const World *w = world_for_seed(1206u);
+    int checked = 0;
+    for (int i = 0; i < w->river_count; i++) {
+        const River *rv = &w->rivers[i];
+        if (rv->kind == RIVER_BRAIDED) continue;
+        int k = rv->n / 2;
+        float width = 0.0f;
+        CHECK(world_river_bank(w, rv->x[k], rv->z[k], &width) > 0.9f && width > 0.0f);
+        checked++;
+    }
+    CHECK(checked > 0);
+    CHECK(world_river_bank(w, 0.0f, 0.0f, NULL) < 0.01f); // el campamento, lejos de los rios
+}
+
 static void test_voxels(void) {
     VoxGrid g;
     CHECK(vox_init(&g, 8, 8, 8, 0.5f));
@@ -2799,6 +2815,7 @@ int main(void) {
     RUN(test_animals_keep_out_of_lakes);
     RUN(test_world_tribes_and_sites);
     RUN(test_voxels);
+    RUN(test_world_river_banks);
     RUN(test_swarms);
     RUN(test_fire_spread_and_rain);
     RUN(test_weather_hazards_random);

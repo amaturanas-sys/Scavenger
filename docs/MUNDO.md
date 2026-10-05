@@ -60,6 +60,28 @@ El norte es −Z y el este +X.
   - **Matas y arbustos:** en la estepa (más junto al agua), sotobosque y saxaul; nunca en el glaciar.
   - **Flores** de la estepa en primavera.
   - **Bosque** más tupido y sotos junto a ríos y oasis.
+- **Paisajes de las fotos de referencia**: cada región tiene sus rasgos, sembrados por chunk y siempre iguales en el mismo sitio.
+  - **Fiordos:**
+    - playas anchas de **arena volcánica negra** que alternan por ruido con costas que caen al mar;
+    - **roqueríos de columnas de basalto** en la orilla y las rompientes, y **farallones** en el mar con gorro de hierba;
+    - **espuma** que sigue la orilla, porque su opacidad sale de la profundidad del agua en cada esquina.
+  - **Ríos** (meandros, tributarios, arroyos):
+    - el cauce y la orilla baja son un **lecho de cantos rodados** claros que el agua lava; allí no crecen pasto, matas ni árboles;
+    - **cantos** grandes en el agua y en la orilla, y **rápidos blancos** donde el agua es baja.
+  - **Desierto:**
+    - **farallones en estratos** con alero y cueva en el cañón al pie del muro;
+    - **torres de arenisca** con capas blandas angostas y sombrero de roca dura;
+    - formaciones de **creta blanca** comidas por el viento.
+  - **Altiplano:**
+    - el frente del glaciar es un caos de **seracs**, bloques de hielo con grietas azules;
+    - el muro lleva textura de seracs;
+    - hay **témpanos** en los lagos de deshielo.
+
+  Las formaciones son modelos de voxeles (`voxs_draw_feature`, 4 variantes de cada una); el suelo usa tres celdas nuevas del atlas: arena volcánica, cantos rodados y seracs.
+
+  ![Paisajes](mundo/paisajes.png)
+
+  *Farallones y basalto en los fiordos, roquerío con espuma, arroyo con cantos y rápidos · cañón con farallones en estratos, torre de arenisca y creta, frente de seracs.*
 - **Horizonte lejano:** una malla gruesa, de una celda por chunk, que llega a ~2,4 km bajo los chunks cargados. Deja un hueco donde están los chunks. Así se ven a lo lejos las montañas, los muros, el hielo y el mar. Lo lejano se pierde en una bruma del color del horizonte.
 - **Cielo** (`src/world/sky.c`):
   - un degradado del cenit al horizonte;

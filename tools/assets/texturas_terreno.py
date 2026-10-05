@@ -13,7 +13,8 @@ El orden de las celdas lo fija el juego (src/world/terrain.c, TerrainTex): no lo
 Inspiradas en fotos de referencia: las matas de pasto de la estepa (montículos), el pasto alto
 y seco, el suelo del bosque de alerces, la tundra de grava del altiplano, el musgo de la costa,
 las ondas de la arena, los estratos del muro del desierto, la grava de los rios trenzados, la
-nieve y las grietas del glaciar, la roca, el barro de las orillas y el muro de hielo.
+nieve y las grietas del glaciar, la roca, el barro de las orillas, el muro de hielo, la arena
+volcanica negra de los fiordos, los cantos rodados de los rios y los seracs del glaciar.
 """
 import math
 import os
@@ -32,7 +33,7 @@ NAMES = [
     "estepa_matas", "estepa_pasto_alto", "bosque_suelo", "altiplano_tundra",
     "costa_musgo", "desierto_arena", "estratos", "grava_trenzada",
     "nieve_glaciar", "roca", "barro_orilla", "muro_hielo",
-    "reservada_12", "reservada_13", "reservada_14", "blanco",
+    "arena_volcanica", "cantos_rodados", "hielo_seracs", "blanco",
 ]
 
 
@@ -219,12 +220,61 @@ def ice_wall():
     return f
 
 
+def volcanic_sand():
+    # Arena negra de la costa de fiordos: grano fino, ondas suaves del oleaje, guijarros claros sueltos.
+    n = wrap_noise(12, 8)
+
+    def f(x, y, rnd):
+        wave = math.sin((y + 3.0 * n(x, y)) * 2 * math.pi / 10.7)
+        v = 150 + 22 * wave + rnd.uniform(-22, 22)
+        if rnd.random() < 0.03:
+            v = 215  # guijarro claro
+        return gray(v, (0.98, 0.98, 1.0))
+
+    return f
+
+
+def cobbles():
+    # Cantos rodados de la orilla de los rios: piedras redondas con luz arriba y junta oscura.
+    rnd = random.Random(13)
+    stones = [(rnd.uniform(0, CELL), rnd.uniform(0, CELL), rnd.uniform(2.8, 4.8), rnd.uniform(0.85, 1.1)) for _ in range(48)]
+
+    def f(x, y, r):
+        v = 95 + r.uniform(-8, 8)  # la junta entre piedras
+        best = 1e9
+        for sx, sy, rad, tone in stones:
+            for ox in (-CELL, 0, CELL):
+                for oy in (-CELL, 0, CELL):
+                    dx, dy = x - sx - ox, y - sy - oy
+                    d = math.hypot(dx, dy) / rad
+                    if d < 1.0 and d < best:
+                        best = d
+                        v = (175 + 45 * (-(dx + dy) / (2 * rad)) - 25 * d * d) * tone
+        return gray(v + r.uniform(-6, 6), (1.0, 0.99, 0.96))
+
+    return f
+
+
+def ice_serac():
+    # El frente del glaciar: columnas de hielo con grietas verticales azules.
+    n = wrap_noise(14, 4)
+
+    def f(x, y, rnd):
+        col = math.sin((x + 3.0 * n(x, y)) * 2 * math.pi / 6.4)
+        v = 214 + 30 * col + rnd.uniform(-6, 6)
+        if col < -0.75:
+            v = 140  # grieta
+        return gray(v, (0.86, 0.97, 1.12))
+
+    return f
+
+
 def flat(v):
     return lambda x, y, rnd: (v, v, v)
 
 
 MAKERS = [steppe_tussock(), tall_grass(), forest_floor(), tundra(), moss(), sand(), strata(), braided_gravel(),
-          snow_glacier(), rock(), mud(), ice_wall(), flat(200), flat(200), flat(200), flat(255)]
+          snow_glacier(), rock(), mud(), ice_wall(), volcanic_sand(), cobbles(), ice_serac(), flat(255)]
 
 
 def build():

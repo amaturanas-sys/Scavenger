@@ -10,7 +10,9 @@
 // Materiales (indice de la paleta).
 enum {
     M_NONE, M_STONE, M_STONE_DARK, M_EARTH, M_WOOD, M_WOOD_DARK, M_FELT, M_FELT_ROOF, M_GRASS, M_ADOBE, M_TURF,
-    M_WATER, M_RED, M_BLUE, M_YELLOW, M_CARVE, M_STONE_LICHEN, M_COUNT
+    M_WATER, M_RED, M_BLUE, M_YELLOW, M_CARVE, M_STONE_LICHEN,
+    M_BASALT, M_BASALT_L, M_GRANITE, M_GRANITE_D, M_SAND1, M_SAND2, M_SAND3, M_CHALK, M_CHALK_D, M_ICE, M_ICE_B, M_ICE_D, M_MOSS,
+    M_COUNT
 };
 
 static const uint8_t PAL_BASE[M_COUNT][4] = {
@@ -20,6 +22,13 @@ static const uint8_t PAL_BASE[M_COUNT][4] = {
     [M_ADOBE] = { 196, 160, 112, 255 },  [M_TURF] = { 96, 120, 74, 255 },     [M_WATER] = { 52, 92, 128, 255 },
     [M_RED] = { 168, 46, 38, 255 },      [M_BLUE] = { 52, 96, 176, 255 },     [M_YELLOW] = { 222, 186, 60, 255 },
     [M_CARVE] = { 214, 200, 164, 255 },  [M_STONE_LICHEN] = { 120, 128, 104, 255 },
+    // De las fotos: basalto negro de la costa, granito claro de los cantos de rio, areniscas en
+    // bandas y creta blanca del desierto, hielo del glaciar con grietas azules.
+    [M_BASALT] = { 44, 43, 46, 255 },    [M_BASALT_L] = { 70, 68, 72, 255 },   [M_GRANITE] = { 190, 186, 174, 255 },
+    [M_GRANITE_D] = { 152, 148, 138, 255 }, [M_SAND1] = { 206, 164, 106, 255 }, [M_SAND2] = { 228, 200, 150, 255 },
+    [M_SAND3] = { 178, 128, 82, 255 },   [M_CHALK] = { 238, 232, 216, 255 },   [M_CHALK_D] = { 206, 192, 164, 255 },
+    [M_ICE] = { 214, 236, 244, 255 },    [M_ICE_B] = { 150, 204, 230, 255 },   [M_ICE_D] = { 92, 158, 206, 255 },
+    [M_MOSS] = { 92, 120, 70, 255 },
 };
 
 // El desierto: piedra arenisca rojiza; la costa: piedra con liquen.
@@ -244,13 +253,136 @@ static bool build_building(VoxBuilding b, VoxGrid *g) {
     }
 }
 
+// ------------------------------------------------------------------ formaciones del paisaje
+static float hrand(uint32_t *s) { // azar determinista de cada variante
+    *s = *s * 1664525u + 1013904223u;
+    return (float)(*s >> 8) / 16777216.0f;
+}
+
+// Erosion lateral: quita lo de la superficie donde el ruido es bajo (las formas se vuelven irregulares).
+static void erode_skin(VoxGrid *g, uint32_t seed, float freq, float cut) {
+    for (int y = 0; y < g->ny; y++)
+        for (int z = 0; z < g->nz; z++)
+            for (int x = 0; x < g->nx; x++) {
+                if (!vox_get(g, x, y, z)) continue;
+                bool skin = !vox_get(g, x + 1, y, z) || !vox_get(g, x - 1, y, z) || !vox_get(g, x, y, z + 1) || !vox_get(g, x, y, z - 1) || !vox_get(g, x, y + 1, z);
+                if (skin && vox_noise3(x * freq, y * freq, z * freq, seed) < cut) vox_set(g, x, y, z, 0);
+            }
+}
+
+// Estratos: el material de cada capa segun la altura (bandas de 1 a 3 celdas).
+static uint8_t stratum(int y, uint32_t seed) {
+    static const uint8_t BANDS[6] = { M_SAND1, M_SAND2, M_SAND1, M_SAND3, M_SAND2, M_SAND1 };
+    return BANDS[((unsigned)(y / 2) + seed) % 6];
+}
+
+static bool build_feature(VoxFeature f, int v, VoxGrid *g) {
+    uint32_t seed = 7000u + (uint32_t)f * 131u + (uint32_t)v * 17u, rs = seed;
+    switch (f) {
+    case VF_BASALT: { // columnas de basalto de alturas distintas, apretadas
+        if (!vox_init(g, 14, FOUND + 10, 14, 0.5f)) return false;
+        for (int i = 0; i < 9; i++) {
+            float cx = 3 + hrand(&rs) * 8, cz = 3 + hrand(&rs) * 8, r = 1.2f + hrand(&rs) * 1.6f;
+            int top = FOUND + 2 + (int)(hrand(&rs) * 7.0f);
+            vox_cylinder(g, cx, cz, 0, top, r, r * 0.9f, (i % 3) ? M_BASALT : M_BASALT_L);
+        }
+        erode_skin(g, seed, 0.5f, 0.25f);
+        return true;
+    }
+    case VF_SEA_STACK: { // farallon: pilar erosionado con hierba arriba
+        if (!vox_init(g, 12, FOUND + 22, 12, 1.0f)) return false;
+        float r = 3.6f + hrand(&rs) * 1.2f;
+        int top = FOUND + 12 + (int)(hrand(&rs) * 8.0f);
+        vox_cylinder(g, 6, 6, 0, top, r + 1.0f, r * 0.7f, M_BASALT);
+        for (int y = 0; y <= top; y += 3) vox_cylinder(g, 6, 6, y, y, r * 0.8f, r * 0.8f, M_BASALT_L);
+        erode_skin(g, seed, 0.35f, 0.32f);
+        for (int z = 0; z < g->nz; z++) // la hierba de la cima
+            for (int x = 0; x < g->nx; x++)
+                for (int y = g->ny - 1; y >= top - 1; y--)
+                    if (vox_get(g, x, y, z)) {
+                        vox_set(g, x, y, z, M_MOSS);
+                        break;
+                    }
+        return true;
+    }
+    case VF_BOULDER: { // canto rodado: elipsoide liso, gris claro con motas
+        if (!vox_init(g, 12, FOUND + 9, 12, 0.25f)) return false;
+        float rx = 3.5f + hrand(&rs) * 2.0f, ry = 2.5f + hrand(&rs) * 2.0f, rz = 3.0f + hrand(&rs) * 2.0f;
+        vox_ellipsoid(g, 6, FOUND, 6, rx, ry, rz, M_GRANITE, false);
+        for (int i = 0; i < g->nx * g->ny * g->nz; i++)
+            if (g->m[i] == M_GRANITE && vox_noise3((float)(i % 12) * 0.9f, (float)(i / 144) * 0.9f, (float)((i / 12) % 12) * 0.9f, seed) > 0.66f) g->m[i] = M_GRANITE_D;
+        return true;
+    }
+    case VF_HOODOO: { // torre de estratos: capas blandas angostas, duras anchas, sombrero de roca dura
+        if (!vox_init(g, 16, FOUND + 30, 16, 0.5f)) return false;
+        int top = FOUND + 18 + (int)(hrand(&rs) * 8.0f);
+        for (int y = 0; y <= top; y++) {
+            float r = 3.0f + 1.4f * sinf(y * 0.55f + hrand(&rs) * 0.3f) + (y < FOUND + 4 ? 2.0f : 0.0f);
+            vox_cylinder(g, 8, 8, y, y, r, r, stratum(y, seed));
+        }
+        vox_ellipsoid(g, 8, top + 1, 8, 6.5f, 2.2f, 5.5f, M_SAND3, false); // el sombrero
+        erode_skin(g, seed, 0.6f, 0.22f);
+        return true;
+    }
+    case VF_MESA: { // farallon estratificado: alero sobre una capa blanda y una cueva
+        if (!vox_init(g, 30, FOUND + 18, 22, 1.0f)) return false;
+        int top = FOUND + 12 + (int)(hrand(&rs) * 5.0f);
+        for (int y = 0; y <= top; y++) vox_box(g, 2, y, 2, 27, y, 19, stratum(y, seed));
+        vox_carve(g, 0, FOUND + 1, 0, 29, FOUND + 3, 4);             // el alero: la capa blanda se va
+        vox_carve(g, 10 + (int)(hrand(&rs) * 8), FOUND, 2, 15 + (int)(hrand(&rs) * 6), FOUND + 4, 9); // la cueva
+        erode_skin(g, seed, 0.25f, 0.3f);
+        return true;
+    }
+    case VF_CHALK: { // creta blanca: un bloque redondeado por el viento, con base mas angosta
+        if (!vox_init(g, 16, FOUND + 18, 14, 0.5f)) return false;
+        // Pilar angosto abajo que se ensancha arriba (el viento con arena come la base).
+        vox_cylinder(g, 8, 7, 0, FOUND + 5, 3.2f, 4.2f, M_CHALK_D);
+        vox_cylinder(g, 8, 7, FOUND + 6, FOUND + 12, 4.6f, 6.4f, M_CHALK);
+        vox_ellipsoid(g, 8, FOUND + 12, 7, 6.4f, 3.5f, 5.6f, M_CHALK, true);
+        for (int y = FOUND + 4; y < g->ny; y += 4) // vetas
+            for (int z = 0; z < g->nz; z++)
+                for (int x = 0; x < g->nx; x++)
+                    if (vox_get(g, x, y, z) == M_CHALK) vox_set(g, x, y, z, M_CHALK_D);
+        erode_skin(g, seed, 0.45f, 0.3f);
+        return true;
+    }
+    case VF_SERAC: { // bloques de hielo inclinados, de alturas distintas, con grietas azules
+        if (!vox_init(g, 16, FOUND + 16, 16, 0.75f)) return false;
+        for (int i = 0; i < 7; i++) {
+            int x0 = (int)(hrand(&rs) * 11), z0 = (int)(hrand(&rs) * 11), w = 3 + (int)(hrand(&rs) * 3), h = FOUND + 6 + (int)(hrand(&rs) * 9);
+            vox_box(g, x0, 0, z0, x0 + w, h, z0 + w - 1, M_ICE);
+        }
+        for (int y = 0; y < g->ny; y++)
+            for (int z = 0; z < g->nz; z++)
+                for (int x = 0; x < g->nx; x++) {
+                    if (!vox_get(g, x, y, z)) continue;
+                    float n = vox_noise3(x * 0.6f, y * 0.12f, z * 0.6f, seed); // grietas verticales
+                    if (n < 0.28f) vox_set(g, x, y, z, M_ICE_D);
+                    else if (n < 0.42f) vox_set(g, x, y, z, M_ICE_B);
+                }
+        erode_skin(g, seed, 0.4f, 0.25f);
+        return true;
+    }
+    case VF_ICEBERG: { // tempano: arriba plano, abajo hundido (se dibuja a ras del agua)
+        if (!vox_init(g, 14, 9, 10, 0.75f)) return false;
+        vox_ellipsoid(g, 7, 3, 5, 6.0f, 6.0f, 4.0f, M_ICE, false);
+        vox_carve(g, 0, 5 + (int)(hrand(&rs) * 2), 0, 13, 8, 9);
+        for (int i = 0; i < g->nx * g->ny * g->nz; i++)
+            if (g->m[i] && (i / (g->nx * g->nz)) < 3) g->m[i] = M_ICE_B;
+        erode_skin(g, seed, 0.5f, 0.2f);
+        return true;
+    }
+    default: return false;
+    }
+}
+
 // ------------------------------------------------------------------ cache de modelos
 #define SITE_SLOTS (SITE_KINDS * REGION_COUNT)
 static struct {
     bool tried, ok;
     Model model;
     float found_h; // m de cimiento (se dibuja hundido)
-} g_sites[SITE_SLOTS], g_builds[VB_KINDS];
+} g_sites[SITE_SLOTS], g_builds[VB_KINDS], g_feats[VF_KINDS * VF_VARIANTS];
 
 static bool to_model(VoxGrid *g, Region r, Model *out) {
     uint8_t pal[M_COUNT][4];
@@ -308,6 +440,21 @@ void voxs_draw_building(VoxBuilding b, Vector3 at, float yaw, float scale, Color
     if (g_builds[b].ok) draw_model(g_builds[b].model, g_builds[b].found_h, at, yaw, scale, tint);
 }
 
+void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float scale, Color tint) {
+    if ((unsigned)f >= VF_KINDS) return;
+    int i = (int)f * VF_VARIANTS + (variant & (VF_VARIANTS - 1));
+    if (!g_feats[i].tried) {
+        g_feats[i].tried = true;
+        VoxGrid g;
+        if (build_feature(f, variant & (VF_VARIANTS - 1), &g)) {
+            g_feats[i].ok = to_model(&g, REGION_STEPPE, &g_feats[i].model);
+            g_feats[i].found_h = (f == VF_ICEBERG ? 3 : FOUND) * g.size;
+            vox_free(&g);
+        }
+    }
+    if (g_feats[i].ok) draw_model(g_feats[i].model, g_feats[i].found_h, at, yaw, scale, tint);
+}
+
 VoxBuilding voxs_region_house(Region r) {
     switch (r) {
     case REGION_FOREST: return VB_LOG_CABIN;
@@ -323,6 +470,9 @@ void voxs_unload(void) {
         if (g_sites[i].ok) UnloadModel(g_sites[i].model);
     for (int i = 0; i < VB_KINDS; i++)
         if (g_builds[i].ok) UnloadModel(g_builds[i].model);
+    for (int i = 0; i < VF_KINDS * VF_VARIANTS; i++)
+        if (g_feats[i].ok) UnloadModel(g_feats[i].model);
+    memset(g_feats, 0, sizeof(g_feats));
     memset(g_sites, 0, sizeof(g_sites));
     memset(g_builds, 0, sizeof(g_builds));
 }
