@@ -109,6 +109,7 @@ El norte es −Z y el este +X.
   - **Color por región:** arenisca en el desierto, liquen en el bosque y la costa.
   - **Casas por región:** yurta de fieltro, cabaña de troncos, casa de piedra, casa larga con techo de turba y adobe con cúpula. Las capitales llevan torres de piedra o de madera.
   - **Claro:** alrededor de las estructuras y los campamentos no crecen árboles ni rocas.
+- **Barrancos del altiplano:** son permafrost; sus paredes son hielo (seracs) todo el año. Un lago o un río no flota sobre un cañón: donde el suelo cae muy por debajo de su nivel, manda el agua de abajo.
 - **Fogatas y hogueras** (`src/world/hearth.c`), a partir de fotos de fogatas reales:
   - corro de cantos grises de tamaños distintos, algunos tiznados, sobre ceniza y tierra quemada;
   - leños en tipi con la corteza abajo y la punta carbonizada, y dos troncos cruzados en el lecho;
@@ -117,6 +118,14 @@ El norte es −Z y el este +X.
   - **humo:** pequeñas bocanadas oscuras que salen sobre las llamas y suben en hilera; el viento las inclina y, al subir, crecen, se aclaran y se desvanecen. De noche se oscurecen con el cielo;
   - la **hoguera** es la misma fogata al doble de tamaño: más piedras, más leños, llamas más altas y una columna de humo más larga. La capital también tiene una;
   - las tribus y las aldeas tienen la suya. Con la lluvia, todas quedan apagadas: sin llamas ni humo.
+
+![Barrancos de permafrost](mundo/permafrost.png)
+
+*Un cañón del altiplano en verano y en invierno: sus paredes son hielo todo el año, y el río corre en el fondo (antes un lago de arriba quedaba flotando sobre el barranco).*
+
+![HUD](mundo/hud.png)
+
+*El HUD: el minimapa con la geografía (aquí, el meandro), la placa de las constantes, la barra rápida 1-9 y la columna de acciones.*
 
 ![Cielo](mundo/cielo.png)
 

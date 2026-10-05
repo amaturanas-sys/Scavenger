@@ -64,6 +64,10 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 
 ## Mapa de memoria
 - [x] Minimapa circular tipo brújula, que gira con la vista.
+- [x] Minimapa con la geografía (regiones, relieve, ríos, lagos, mar, nieve) y los lugares vistos.
+- [x] HUD de rol: placa de constantes (vida, calor, sed, aguante), barra rápida 1-9 y columna de acciones táctiles.
+- [x] Muerte y regreso al último lugar de descanso, con calavera y huesos donde se cae.
+- [x] Aves: no atacan a las personas; rapaces que cazan en picado y cuervos carroñeros.
 - [x] Memoria espacial: empieza negro, se ilumina al recorrer, lo frecuente brilla más y todo se olvida con el tiempo (lo familiar, más despacio). Con tests.
 - [x] Marcas de interés y de peligro.
 - [x] Cobertura de todo el mundo (memoria dispersa por páginas) y olvido medido en días de juego.
