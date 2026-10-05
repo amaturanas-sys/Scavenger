@@ -80,6 +80,38 @@ typedef struct {
     int species; // Species de src/sim/animals.h
 } Den;
 
+// Tribus nomadas (no son reinos): campamentos de yurtas con su actitud hacia la tuya.
+typedef enum { TRIBE_RIVAL, TRIBE_NEUTRAL, TRIBE_FRIENDLY, TRIBE_ATTITUDES } TribeAttitude;
+#define TRIBES_MAX 20
+typedef struct {
+    float x, z;
+    Region region;
+    TribeAttitude attitude;
+    char name[32];
+} TribeCamp;
+
+// Estructuras sueltas: ruinas de otros tiempos y construcciones en uso, al estilo de su region.
+typedef enum {
+    SITE_KURGAN,       // tumulo funerario
+    SITE_BALBALS,      // hilera de estelas de piedra
+    SITE_DEER_STONE,   // piedra de ciervos (monolito grabado)
+    SITE_RUINED_FORT,  // fortaleza derruida
+    SITE_BURIED_CITY,  // ciudad enterrada en la arena
+    SITE_PETROGLYPHS,  // rocas grabadas
+    SITE_CARAVANSERAI, // posada amurallada de las caravanas (en uso)
+    SITE_WATCHTOWER,   // torre de vigia (en uso)
+    SITE_OVOO,         // altar de piedras con cintas (en uso)
+    SITE_WELL,         // pozo (en uso)
+    SITE_HARBOR,       // embarcadero de la costa (en uso)
+    SITE_KINDS
+} SiteKind;
+#define SITES_MAX 64
+typedef struct {
+    float x, z, yaw;
+    Region region;
+    SiteKind kind;
+} WorldSite;
+
 typedef struct {
     uint32_t seed;
     float warp_phase;    // giro de las fronteras entre regiones
@@ -93,6 +125,10 @@ typedef struct {
     int settlement_count;
     Den dens[DENS_MAX];
     int den_count;
+    TribeCamp tribes[TRIBES_MAX];
+    int tribe_count;
+    WorldSite sites[SITES_MAX];
+    int site_count;
     float canal_level[CANAL_SAMPLES]; // nivel del agua del canal del bosque por grado
     float camp_height;                // altura del llano del campamento (origen)
 } World;
@@ -131,6 +167,9 @@ void world_edge_point(const World *w, Region rg, float inset, float *x, float *z
 
 // Reinos vecinos: uno por region (la estepa es del kanato al que la tribu rinde tributo).
 const char *world_kingdom_name(Region r); // UTF-8
+// Nombre de la clase de estructura (UTF-8, para el texto) y si es una ruina.
+const char *site_name(SiteKind k);
+bool site_is_ruin(SiteKind k);
 // Asentamiento mas cercano (indice) o -1; dist (si no es NULL) en m.
 int world_nearest_settlement(const World *w, float x, float z, float *dist);
 int world_nearest_den(const World *w, float x, float z, float *dist);

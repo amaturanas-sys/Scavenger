@@ -186,6 +186,18 @@ bool worldmap_export(const World *w, const char *path, int size, float snowline)
         int x = (int)((w->dens[i].x + ext) / px), y = (int)((w->dens[i].z + ext) / px);
         ImageDrawTriangle(&img, (Vector2){ (float)x, (float)y - 5 }, (Vector2){ (float)x - 4, (float)y + 3 }, (Vector2){ (float)x + 4, (float)y + 3 }, (Color){ 200, 40, 36, 255 });
     }
+    static const Color TRIBE_COL[TRIBE_ATTITUDES] = { { 200, 44, 40, 255 }, { 226, 220, 200, 255 }, { 70, 120, 210, 255 } };
+    for (int i = 0; i < w->site_count; i++) { // estructuras: rombo pardo (ruina) o gris (en uso)
+        int x = (int)((w->sites[i].x + ext) / px), y = (int)((w->sites[i].z + ext) / px);
+        Color c = site_is_ruin(w->sites[i].kind) ? (Color){ 150, 110, 70, 255 } : (Color){ 200, 200, 196, 255 };
+        ImageDrawTriangle(&img, (Vector2){ (float)x, (float)y - 4 }, (Vector2){ (float)x - 4, (float)y }, (Vector2){ (float)x + 4, (float)y }, c);
+        ImageDrawTriangle(&img, (Vector2){ (float)x - 4, (float)y }, (Vector2){ (float)x, (float)y + 4 }, (Vector2){ (float)x + 4, (float)y }, c);
+    }
+    for (int i = 0; i < w->tribe_count; i++) { // tribus: banderin del color de su actitud
+        int x = (int)((w->tribes[i].x + ext) / px), y = (int)((w->tribes[i].z + ext) / px);
+        ImageDrawRectangle(&img, x, y - 8, 1, 10, (Color){ 30, 20, 10, 255 });
+        ImageDrawRectangle(&img, x + 1, y - 8, 6, 4, TRIBE_COL[w->tribes[i].attitude]);
+    }
     for (int i = 0; i < w->settlement_count; i++) {
         const Settlement *s = &w->settlements[i];
         int x = (int)((s->x + ext) / px), y = (int)((s->z + ext) / px);
@@ -207,7 +219,7 @@ bool worldmap_export(const World *w, const char *path, int size, float snowline)
         { 176, 164, 96, 255 }, { 52, 92, 52, 255 }, { 142, 140, 112, 255 }, { 96, 122, 98, 255 }, { 214, 186, 130, 255 },
     };
     int ly = 12;
-    ImageDrawRectangle(&img, 8, 6, 250, 20 + REGION_COUNT * 16 + 66, (Color){ 12, 10, 8, 210 });
+    ImageDrawRectangle(&img, 8, 6, 250, 20 + REGION_COUNT * 16 + 98, (Color){ 12, 10, 8, 210 });
     ImageDrawText(&img, TextFormat(T("Mundo %u"), w->seed), 16, ly, fs + 4, (Color){ 255, 230, 150, 255 });
     ly += 22;
     for (int r = 0; r < REGION_COUNT; r++, ly += 16) {
@@ -222,6 +234,13 @@ bool worldmap_export(const World *w, const char *path, int size, float snowline)
     ly += 16;
     ImageDrawTriangle(&img, (Vector2){ 22, (float)ly - 1 }, (Vector2){ 18, (float)ly + 8 }, (Vector2){ 26, (float)ly + 8 }, (Color){ 200, 40, 36, 255 });
     ImageDrawText(&img, T("guarida de fieras"), 34, ly + 1, fs, (Color){ 235, 230, 220, 255 });
+    ly += 16;
+    for (int k = 0; k < TRIBE_ATTITUDES; k++) ImageDrawRectangle(&img, 17 + k * 5, ly + 1, 4, 8, TRIBE_COL[k]);
+    ImageDrawText(&img, T("tribu rival · neutral · amiga"), 34, ly + 1, fs, (Color){ 235, 230, 220, 255 });
+    ly += 16;
+    ImageDrawRectangle(&img, 17, ly + 2, 5, 6, (Color){ 150, 110, 70, 255 });
+    ImageDrawRectangle(&img, 23, ly + 2, 5, 6, (Color){ 200, 200, 196, 255 });
+    ImageDrawText(&img, T("ruina · estructura en uso"), 34, ly + 1, fs, (Color){ 235, 230, 220, 255 });
     bool ok = ExportImage(img, path);
     UnloadImage(img);
     return ok;

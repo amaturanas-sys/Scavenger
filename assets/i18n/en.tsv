@@ -1036,10 +1036,19 @@ No tienes nada que beber: llena el odre en la orilla (Tab) o bebe del río (N, m
 No tienes sed.	You are not thirsty.
 Te desmayaste de sed; la tribu te llevó al campamento y te dio de beber (moral -3).	You fainted from thirst; the tribe carried you to camp and gave you water (morale -3).
 # --- src/game/world_game.c
+El campamento de los %s (tribu %s): te observan, sin buscar pelea.	The camp of the %s (%s tribe): they watch you, without seeking a fight.
+Encuentras %s, de otros tiempos: queda en el mapa.	You find %s from other times: it is now on the map.
+Encuentras %s: queda en el mapa.	You find %s: it is now on the map.
 Entras en: %s (tierras del %s).	Entering: %s (lands of the %s).
 Llegas a %s, aldea del %s.	You reach %s, a village of the %s.
 Llegas a %s, capital del %s.	You reach %s, capital of the %s.
+Los %s, tribu amiga, te reciben junto a su fuego.	The %s, a friendly tribe, welcome you by their fire.
+Los %s, tribu amiga, te reciben y te señalan %s en el mapa.	The %s, a friendly tribe, welcome you and point out %s on the map.
 Una guarida (%s): queda marcada como peligro en el mapa.	A den (%s): marked as danger on the map.
+amiga	friendly
+neutral	neutral
+rival	rival
+¡Los %s, tribu rival, te salen al paso!	The %s, a rival tribe, come out to block your way!
 # --- src/main.c
 Arma: %s	Weapon: %s
 Assets cargados: %d · fallidos: %d	Assets loaded: %d · failed: %d
@@ -1533,6 +1542,17 @@ bosque de coníferas	conifer forest
 costa de fiordos	fjord coast
 desierto	desert
 estepa	steppe
+rocas grabadas	carved rocks
+un caravasar	a caravanserai
+un embarcadero	a jetty
+un kurgán	a kurgan
+un ovoo	an ovoo
+un pozo	a well
+una ciudad enterrada en la arena	a city buried in the sand
+una fortaleza en ruinas	a ruined fortress
+una hilera de balbales	a row of balbals
+una piedra de ciervos	a deer stone
+una torre de vigía	a watchtower
 # --- src/world/gallery.c
 GALERIA  %d objetos  |  %d con modelo  |  %d pendientes	GALLERY  %d objects  |  %d with model  |  %d pending
 modelo cargado	model loaded
@@ -1542,3 +1562,5 @@ agua: lagos, ríos, canal y mar	water: lakes, rivers, canal and sea
 campamento	camp
 capital · aldea	capital · village
 guarida de fieras	beast den
+ruina · estructura en uso	ruin · structure in use
+tribu rival · neutral · amiga	rival · neutral · friendly tribe

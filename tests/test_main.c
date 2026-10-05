@@ -1454,6 +1454,32 @@ static void test_health_venom(void) {
 
 // Acuaticos y venenosos: el cocodrilo no se aleja de su orilla; la tortuga se salva
 // en el agua; la vibora muerde con veneno pero no persigue.
+// Tribus (rivales, neutrales y amigables) y estructuras, cada una en su region y en seco.
+static void test_world_tribes_and_sites(void) {
+    static const uint32_t SEEDS[] = { 1206u, 7u, 42u, 2024u };
+    for (int si = 0; si < 4; si++) {
+        const World *w = world_for_seed(SEEDS[si]);
+        int att[TRIBE_ATTITUDES] = { 0 }, ruins = 0, used = 0;
+        CHECK(w->tribe_count >= 12);
+        for (int i = 0; i < w->tribe_count; i++) {
+            const TribeCamp *tc = &w->tribes[i];
+            att[tc->attitude]++;
+            CHECK(world_region(w, tc->x, tc->z) == tc->region && tc->name[0]);
+            CHECK(world_water(w, tc->x, tc->z, 0.0f, NULL) < world_height(w, tc->x, tc->z));
+        }
+        for (int k = 0; k < TRIBE_ATTITUDES; k++) CHECK(att[k] >= 3);
+        CHECK(w->site_count >= 35);
+        for (int i = 0; i < w->site_count; i++) {
+            const WorldSite *st = &w->sites[i];
+            CHECK(world_region(w, st->x, st->z) == st->region);
+            CHECK(world_water(w, st->x, st->z, 0.0f, NULL) < world_height(w, st->x, st->z));
+            if (site_is_ruin(st->kind)) ruins++;
+            else used++;
+        }
+        CHECK(ruins >= 15 && used >= 15);
+    }
+}
+
 // Un lago redondo de 20 m de radio y 2 m de hondo en el origen (orilla con pendiente).
 static float test_round_lake(void *ud, float x, float z) {
     (void)ud;
@@ -2721,6 +2747,7 @@ int main(void) {
     RUN(test_health_venom);
     RUN(test_animals_water_and_venom);
     RUN(test_animals_keep_out_of_lakes);
+    RUN(test_world_tribes_and_sites);
     RUN(test_swarms);
     RUN(test_fire_spread_and_rain);
     RUN(test_weather_hazards_random);

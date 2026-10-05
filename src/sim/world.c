@@ -712,6 +712,58 @@ void world_generate(World *w, uint32_t seed) {
             }
         }
     }
+    // Tribus nomadas: tres o cuatro por region, rivales, neutrales y amigables (de todo en cada
+    // region), lejos de los pueblos, del campamento y entre si.
+    for (int rg = 0; rg < REGION_COUNT; rg++) {
+        int n = rg == REGION_STEPPE ? 4 : 3, first = rng_range(&rng, TRIBE_ATTITUDES);
+        for (int k = 0, made = 0; k < n * 12 && made < n && w->tribe_count < TRIBES_MAX; k++) {
+            float x, z;
+            if (!find_spot(w, &rng, (Region)rg, 420.0f, &x, &z) || !far_from_settlements(w, x, z, 350.0f) || x * x + z * z < 600.0f * 600.0f) continue;
+            bool near = false;
+            for (int o = 0; o < w->tribe_count; o++) near |= (w->tribes[o].x - x) * (w->tribes[o].x - x) + (w->tribes[o].z - z) * (w->tribes[o].z - z) < 450.0f * 450.0f;
+            if (near) continue;
+            TribeCamp *tc = &w->tribes[w->tribe_count++];
+            tc->x = x, tc->z = z, tc->region = (Region)rg;
+            tc->attitude = (TribeAttitude)((first + made) % TRIBE_ATTITUDES);
+            make_name(&rng, (Region)rg, tc->name, (int)sizeof(tc->name));
+            made++;
+        }
+    }
+    // Estructuras: ruinas y construcciones en uso de cada region.
+    {
+        static const struct { Region rg; SiteKind kind; int n; } RULES[] = {
+            { REGION_STEPPE, SITE_KURGAN, 4 },       { REGION_STEPPE, SITE_BALBALS, 3 },     { REGION_STEPPE, SITE_DEER_STONE, 2 },
+            { REGION_STEPPE, SITE_OVOO, 2 },         { REGION_STEPPE, SITE_WATCHTOWER, 1 },  { REGION_STEPPE, SITE_WELL, 2 },
+            { REGION_STEPPE, SITE_CARAVANSERAI, 1 }, { REGION_FOREST, SITE_RUINED_FORT, 2 }, { REGION_FOREST, SITE_OVOO, 1 },
+            { REGION_FOREST, SITE_WATCHTOWER, 2 },   { REGION_FOREST, SITE_PETROGLYPHS, 1 }, { REGION_HIGHLAND, SITE_OVOO, 3 },
+            { REGION_HIGHLAND, SITE_DEER_STONE, 2 }, { REGION_HIGHLAND, SITE_RUINED_FORT, 1 }, { REGION_HIGHLAND, SITE_PETROGLYPHS, 2 },
+            { REGION_HIGHLAND, SITE_WATCHTOWER, 1 }, { REGION_FJORD, SITE_HARBOR, 2 },       { REGION_FJORD, SITE_KURGAN, 2 },
+            { REGION_FJORD, SITE_RUINED_FORT, 1 },   { REGION_FJORD, SITE_WATCHTOWER, 1 },   { REGION_FJORD, SITE_PETROGLYPHS, 1 },
+            { REGION_DESERT, SITE_BURIED_CITY, 2 },  { REGION_DESERT, SITE_CARAVANSERAI, 2 }, { REGION_DESERT, SITE_WELL, 3 },
+            { REGION_DESERT, SITE_RUINED_FORT, 1 },
+        };
+        for (size_t r = 0; r < sizeof(RULES) / sizeof(RULES[0]); r++) {
+            for (int k = 0, made = 0; k < RULES[r].n * 30 && made < RULES[r].n && w->site_count < SITES_MAX; k++) {
+                float x, z;
+                // El embarcadero, en la costa (junto al mar); lo demas, tierra adentro.
+                if (!find_spot(w, &rng, RULES[r].rg, RULES[r].kind == SITE_HARBOR ? 0.0f : 300.0f, &x, &z)) continue;
+                if (RULES[r].kind == SITE_HARBOR) {
+                    float e = world_edge_distance(w, x, z);
+                    if (e < SHORE_E - 30.0f || e > SHORE_E + 160.0f) continue;
+                }
+                if (!far_from_settlements(w, x, z, 140.0f) || x * x + z * z < 250.0f * 250.0f) continue;
+                bool near = false;
+                for (int o = 0; o < w->site_count; o++) near |= (w->sites[o].x - x) * (w->sites[o].x - x) + (w->sites[o].z - z) * (w->sites[o].z - z) < 160.0f * 160.0f;
+                for (int o = 0; o < w->tribe_count; o++) near |= (w->tribes[o].x - x) * (w->tribes[o].x - x) + (w->tribes[o].z - z) * (w->tribes[o].z - z) < 120.0f * 120.0f;
+                if (near) continue;
+                WorldSite *st = &w->sites[w->site_count++];
+                st->x = x, st->z = z, st->region = RULES[r].rg, st->kind = RULES[r].kind;
+                st->yaw = rng_float(&rng) * 2.0f * PI_F;
+                if (RULES[r].kind == SITE_HARBOR) st->yaw = atan2f(x, z); // mirando al mar
+                made++;
+            }
+        }
+    }
     // Guaridas de fieras: de las especies de cada region, lejos de la gente.
     for (int rg = 0; rg < REGION_COUNT; rg++) {
         int n = rg == REGION_STEPPE ? 7 : 11;
@@ -726,6 +778,15 @@ void world_generate(World *w, uint32_t seed) {
         }
     }
 }
+
+const char *site_name(SiteKind k) {
+    static const char *N[SITE_KINDS] = { N_("un kurgán"), N_("una hilera de balbales"), N_("una piedra de ciervos"),
+                                         N_("una fortaleza en ruinas"), N_("una ciudad enterrada en la arena"), N_("rocas grabadas"),
+                                         N_("un caravasar"), N_("una torre de vigía"), N_("un ovoo"), N_("un pozo"), N_("un embarcadero") };
+    return (unsigned)k < SITE_KINDS ? N[k] : "?";
+}
+
+bool site_is_ruin(SiteKind k) { return k <= SITE_PETROGLYPHS; }
 
 const World *world_for_seed(uint32_t seed) {
     static World cache[2];
