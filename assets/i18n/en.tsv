@@ -896,15 +896,16 @@ El mundo	The world
 En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
 En verano el pasto seco arde: los incendios corren con el viento.	In summer dry grass burns: wildfires run with the wind.
 Esa partida es de otra versión del juego.	That save is from another game version.
-Esc menú (guardar, cargar) · F1 controles en el juego	Esc menu (save, load) · F1 in-game controls
-Esc menú: guardar/cargar	Esc menu: save/load
+Esc, Atrás o Ctrl+P: menú (guardar, cargar) · F1 o Ctrl+H: controles en el juego	Esc, Back or Ctrl+P: menu (save, load) · F1 or Ctrl+H: in-game controls
+Esc/Atrás/Ctrl+P menú	Esc/Back/Ctrl+P menu
 Ese hueco tiene una partida: Enter otra vez para sobrescribirla.	That slot has a save: Enter again to overwrite it.
 Espacio saltar · Q/E girar la cámara · M marcar el mapa	Space jump · Q/E turn camera · M mark the map
 F junto al guardián: obras, escolta, reclutar, capacitar en un oficio, estado y disolver el campamento.	F next to the keeper: builds, escort, recruiting, training a trade, status and dissolving the camp.
 F tomar/botín · T lanzar	F take/loot · T throw
-F1 cerrar esta ayuda	F1 close this help
-F2, F3, F4: habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)	F2, F3, F4: active abilities · P gear: armour, jewels and tattoos (Q/E)
-F5: vista orbital del mundo entero (flechas para girar e inclinar). El sol, la luna y las estrellas cruzan el cielo; el viento lleva las nubes y las cumbres altas quedan entre ellas.	F5: orbital view of the whole world (arrows to turn and tilt). The sun, moon and stars cross the sky; the wind carries the clouds, and the high peaks stand among them.
+F1/Ctrl+H cerrar esta ayuda	F1/Ctrl+H close this help
+F2, F3, F4 (o Ctrl+1, 2, 3): habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)	F2, F3, F4 (or Ctrl+1, 2, 3): active abilities · P equipment: armor, jewelry and tattoos (Q/E)
+F5 o Ctrl+M: vista orbital del mundo entero (flechas para girar e inclinar). El sol, la luna y las estrellas cruzan el cielo; el viento lleva las nubes y las cumbres altas quedan entre ellas.	F5 or Ctrl+M: orbital view of the whole world (arrows to turn and tilt). The sun, moon and stars cross the sky; the wind carries the clouds, and the high peaks stand among them.
+F5/Ctrl+M vista orbital	F5/Ctrl+M orbital view
 Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.	Craft by hand: arrows (wood, feathers, flint), rope (sinew), ointment (herbs and honey), cuirass and boots (hides). Forged goods need a smith and a furnace.
 Fauna y caza	Wildlife and hunting
 G deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	G drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
@@ -1041,13 +1042,16 @@ Llegas a %s, capital del %s.	You reach %s, capital of the %s.
 Una guarida (%s): queda marcada como peligro en el mapa.	A den (%s): marked as danger on the map.
 # --- src/main.c
 Arma: %s	Weapon: %s
+Assets cargados: %d · fallidos: %d	Assets loaded: %d · failed: %d
 Capturaste a un gran guerrero: %s, %s.	You captured a great warrior: %s, %s.
 Cautivo	Captive
 Conecta un teclado para jugar	Connect a keyboard to play
+Ctrl+D: cerrar	Ctrl+D: close
 Desterraste a un integrante.	You banished a member.
 Dia %d: %d desertores, %d grandes guerreros.	Day %d: %d deserters, %d great warriors.
 Dia %d: %d desertores.	Day %d: %d deserters.
 Dia %d: REBELION encabezada por %s!	Day %d: REBELLION led by %s!
+Diagnóstico · OpenGL %s · %dx%d · %d fps	Diagnostics · OpenGL %s · %dx%d · %d fps
 Dones: 	Gifts: 
 Día %d · %s · %s (%d min)	Day %d · %s · %s (%d min)
 Ejecutaste a un prisionero.	You executed a prisoner.
@@ -1056,7 +1060,7 @@ El gran canal marca el fin de estas tierras: no hay vado.	The great canal marks 
 El gran muro del cañón cierra el desierto: no hay paso.	The great canyon wall closes the desert: there is no way through.
 El muro de hielo del glaciar cierra el altiplano: no hay paso.	The glacier's ice wall closes off the highland: there is no way through.
 Explorador enemigo	Enemy scout
-F1 controles · Esc menú	F1 controls · Esc menu
+F1 o Ctrl+H: controles · Esc o Ctrl+P: menú	F1 or Ctrl+H: controls · Esc or Ctrl+P: menu
 Flechas: girar e inclinar · F5 o Esc: volver	Arrows: rotate and tilt · F5 or Esc: back
 Galeria: %d objetos (%d con modelo).	Gallery: %d objects (%d with model).
 Liberaste a un prisionero.	You freed a prisoner.
@@ -1071,12 +1075,16 @@ Reclutaste un nuevo guerrero.	You recruited a new warrior.
 Repartiste el botin.	You shared out the loot.
 Riesgo de rebelión %d%%	Rebellion risk %d%%
 Scavengers Thrive se juega con teclado físico (ratón o mando opcionales).	Scavengers Thrive is played with a physical keyboard (mouse or gamepad optional).
+Si ya tienes uno, pulsa una tecla o toca la pantalla para jugar igual.	If you already have one, press a key or tap the screen to play anyway.
 Talla x%.2f  Rapidez x%.2f  Fuerza x%.2f  Aguante x%.2f	Size x%.2f  Speed x%.2f  Strength x%.2f  Stamina x%.2f
+Teclado: %s · última tecla: %d	Keyboard: %s · last key: %d
 Tomaste un prisionero.	You took a prisoner.
 Tropa %d	Band %d
 Tu tropa acampa en la estepa (mundo %u).	Your troop camps on the steppe (world %u).
 Un gran guerrero se une: %s, %s.	A great warrior joins: %s, %s.
 Vista orbital · mundo %u · estás en: %s	Orbital view · world %u · you are in: %s
+no	no
+sí	yes
 · %d cautivo%s	· %d captive%s
 # --- src/sim/actions.c
 Arrojar el objeto que se lleva en la mano.	Throw the object in your hand.

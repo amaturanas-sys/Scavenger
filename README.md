@@ -45,7 +45,7 @@ Toda la interfaz está en **español o inglés**. Se cambia con el botón del gl
 
 ## Menú y partidas
 
-Al abrir el juego aparece el **menú de entrada**: nueva partida, cargar partida, instructivo y salir. `Esc` en la partida la pausa: continuar, guardar, cargar, instructivo, volver al título. Hay tres huecos de guardado, cada uno con su minifoto, la fecha en que se guardó, el día de juego y la tribu. `F1` muestra los controles sin salir de la partida.
+Al abrir el juego aparece el **menú de entrada**: nueva partida, cargar partida, instructivo y salir. `Esc` (o el botón **Atrás**, o `Ctrl+P`) en la partida la pausa: continuar, guardar, cargar, instructivo, volver al título. Hay tres huecos de guardado, cada uno con su minifoto, la fecha en que se guardó, el día de juego y la tribu. `F1` (o `Ctrl+H`) muestra los controles sin salir de la partida.
 
 Las partidas se guardan en `saves/` junto al ejecutable (en Android, en el almacenamiento interno de la app). Pruebas: `--menu`, `--instructivo`, `--huecos` abren el menú; `--autoguardar N` guarda en el hueco N al terminar una captura; `--cargar N` carga el hueco N al empezar; `--inventario` y `--equipo` abren esos menús.
 
@@ -66,7 +66,9 @@ Las partidas se guardan en `saves/` junto al ejecutable (en Android, en el almac
 | Inventario (bolsillos, mochila, alforjas, carreta, campamento) | I | — |
 | Esconderse | acechar (C) dentro de la hierba alta | — |
 | Beber / tomar hierbas contra los espíritus del agua | N / Mayús+N | — |
-| Vista orbital del mundo | F5 (flechas: girar e inclinar) | — |
+| Vista orbital del mundo | F5 o Ctrl+M (flechas: girar e inclinar) | — |
+| Pausa / controles | Esc, Atrás o Ctrl+P / F1 o Ctrl+H | — |
+| Diagnóstico (OpenGL, teclado, assets) | Ctrl+D | — |
 
 Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente · `Ctrl+N` adelantar dos minutos.
 
@@ -136,7 +138,7 @@ El mundo ([MUNDO.md](docs/MUNDO.md)):
 - **Cada partida nueva es otro mundo:** cambian los ríos, los lagos, las montañas, las fronteras entre regiones, los pueblos y las guaridas, siempre con las mismas reglas.
 - **Reinos vecinos:** uno por región, con su capital amurallada y sus aldeas al estilo de la región; al llegar quedan en el mapa.
 - **Guaridas:** de las fieras de cada región; cerca aparecen sus dueños.
-- **`F5`:** vista orbital del mundo entero (flechas: girar e inclinar).
+- **`F5` o `Ctrl+M`:** vista orbital del mundo entero (flechas: girar e inclinar).
 
 Pruebas: `--semilla N` fija el mundo; `--ir lugar` lleva a `estepa`, `meandro`, `bosque`, `canal`, `altiplano`, `trenzado`, `hielo`, `cumbre`, `fiordos`, `mar`, `desierto`, `muro`, `capital`, `aldea` o `guarida`; `--camara inclinación` y `--rumbo grados` orientan la cámara; `--orbital [grados] [inclinación]`; `--mapa-mundo archivo.png` (con `--mapa-tam N`).
 
@@ -165,7 +167,7 @@ Tatuajes, joyas y nivel:
   - cava trincheras;
   - criba en la orilla (`Tab`, «Cribar en el agua»);
   - el lingote de bronce sale del horno de bronce.
-- **Habilidades activas:** `F2`, `F3`, `F4`.
+- **Habilidades activas:** `F2`, `F3`, `F4` (o `Ctrl+1`, `Ctrl+2`, `Ctrl+3`).
 - **Menú de equipo (`P`):** pestañas Armadura, Joyas y Tatuajes (`Q`/`E`).
 
 Pruebas: `--hablar druida|orfebre`, `--joyas`, `--tatuajes`.
@@ -177,6 +179,8 @@ Al reclutar o tomar prisioneros, a veces aparece un gran guerrero por azar.
 ## Android
 
 El port de Android ofrece la misma experiencia que en PC y **requiere teclado físico** (tablets o Chromebooks con teclado; ratón o mando opcionales). Si no hay teclado conectado, el juego se pausa con un aviso.
+
+Con teclados de tablet que no traen `Esc` ni teclas F, cada atajo tiene su alternativa con `Ctrl` (ver Controles), y abajo a la derecha hay dos botones táctiles: pausa y controles. Si la tablet no informa su teclado, basta pulsar una tecla o tocar el aviso para jugar igual. `Ctrl+D` abre el diagnóstico: versión de OpenGL, teclado detectado, última tecla recibida y assets que no cargaron (también en `adb logcat -s raylib`). Pruebas: `--tactil` muestra los botones en escritorio y `--diagnostico` abre el panel.
 
 ```bash
 # Requiere Android SDK + NDK (ANDROID_SDK_ROOT, ANDROID_NDK_ROOT), CMake, Ninja y Java.

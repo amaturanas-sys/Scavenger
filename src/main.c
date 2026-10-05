@@ -435,9 +435,11 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     p->yaw = atan2f(lx - x, lz - z);
 }
 
+static bool g_force_touch; // --tactil: los botones de Android tambien en escritorio (pruebas)
+
 static void draw_keyboard_notice(void) {
     DrawRectangle(0, 0, VIRTUAL_W, VIRTUAL_H, (Color){ 8, 6, 5, 200 });
-    const int w = 400, h = 76;
+    const int w = 480, h = 84;
     ui_panel((Rectangle){ (VIRTUAL_W - w) / 2, (VIRTUAL_H - h) / 2, w, h }, UI_METAL_GOLD);
     ui_text_centered(T("Conecta un teclado para jugar"), VIRTUAL_W / 2, VIRTUAL_H / 2 - 18, 20, UI_GOLD_LIGHT);
     ui_text_centered(T("Scavengers Thrive se juega con teclado físico (ratón o mando opcionales)."), VIRTUAL_W / 2,
@@ -507,6 +509,7 @@ int main(int argc, char **argv) {
     unsigned start_seed = WORLD_SEED; // --semilla N: el mundo (sin ella, cada partida nueva del menu sortea uno)
     const char *map_path = NULL;      // --mapa-mundo archivo.png: el mapa general del mundo, y sale
     const char *start_goto = NULL;    // --ir lugar: a un sitio del mundo (ver go_to)
+    bool start_diag = false;          // --diagnostico: el panel de Ctrl+D abierto
     float start_heading = -1.0f;      // --rumbo grados: hacia donde mira la camara (0 sur, 90 este, 180 norte, 270 oeste)
     float start_pitch = -1.0f;        // --camara inclinacion: 0.05 casi de canto (se ve el cielo), 1.25 desde arriba
     int map_size = 1024;
@@ -535,6 +538,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--lago")) start_lake = true;
         else if (!strcmp(argv[i], "--mapa-mundo") && i + 1 < argc) map_path = argv[++i];
         else if (!strcmp(argv[i], "--ir") && i + 1 < argc) start_goto = argv[++i];
+        else if (!strcmp(argv[i], "--diagnostico")) start_diag = true;
+        else if (!strcmp(argv[i], "--tactil")) g_force_touch = true;
         else if (!strcmp(argv[i], "--rumbo") && i + 1 < argc) start_heading = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--camara") && i + 1 < argc) start_pitch = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--mapa-tam") && i + 1 < argc) map_size = atoi(argv[++i]);
@@ -686,7 +691,7 @@ int main(int argc, char **argv) {
     int frame = 0;
     bool has_keyboard = platform_has_keyboard() && !simulate_no_keyboard;
     bool keyboard_override = false; // «jugar igual»: un toque sobre el aviso, o cualquier tecla que llegue
-    bool show_diag = false;
+    bool show_diag = start_diag;
     SetExitKey(KEY_NULL); // Esc abre el menu
     while (!WindowShouldClose() && !quit) {
         float dt = fminf(GetFrameTime(), 0.05f);
@@ -1049,7 +1054,7 @@ int main(int argc, char **argv) {
                              in_game ? TextFormat(" · %s: %+d", T(overlord.name), (int)overlord.relation) : ""),
                   VIRTUAL_W, VIRTUAL_H);
         ui_legend_draw(VIRTUAL_W, VIRTUAL_H); // la leyenda de lo que esta bajo el puntero
-        if (in_game && !menu_visible(&menu) && platform_touch_ui()) draw_touch_buttons();
+        if (in_game && !menu_visible(&menu) && (platform_touch_ui() || g_force_touch)) draw_touch_buttons();
         if (show_diag) draw_diagnostics(has_keyboard);
         if (!has_keyboard) draw_keyboard_notice();
         EndTextureMode();
