@@ -77,6 +77,7 @@ RPG de mundo abierto en 3D con gráficos pixel/low-res, ambientado en las estepa
 - **Duración de la luz según la estación:** en pleno invierno la noche alcanza **20 minutos** y el día 10; en pleno verano, al revés. En los equinoccios (mitad de la primavera y del otoño) son 15 y 15. El cambio es gradual día a día.
 - **Alba y ocaso:** penumbra de 90 segundos de juego con luz cálida; el sol bajo también entibia los colores.
 - **La noche se ve:** la escena se oscurece y azulea, aparecen las estrellas y los fuegos alumbran a su alrededor (fogata del campamento, fogatas, hogueras, hornos y la antorcha encendida en la mano).
+- **Logo:** el lobo y el tigre en su placa de bronce (`arte/logo/`, `tools/assets/logo.py`): icono de la app en Android y Windows, y el menú principal.
 - **HUD de rol:** bajo el minimapa, una placa con las constantes (vida, calor del cuerpo, sed y **aguante**); abajo a la izquierda, la **barra rápida 1-9** (cada casilla guarda un arma, un objeto o una habilidad; vacía, su tecla abre un selector; Mayús+número la cambia); en el borde izquierdo, una **columna de acciones** (menú, beber, vendar, fogata, tienda, lazo, trepa, hervir agua). Responde al ratón y a los toques. El aguante lo gastan correr, saltar y golpear; agotado, no se corre.
 - **HUD:** el panel dice el día, la estación, la fase y los minutos que faltan para el próximo cambio; bajo el minimapa, una barra muestra el reparto de luz (oro) y noche (lapislázuli) con la hora actual.
 - **Prueba:** `./build/estepa --dia 25 --minuto 14` arranca en una noche de pleno invierno.

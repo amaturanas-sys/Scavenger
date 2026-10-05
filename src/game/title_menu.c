@@ -136,7 +136,8 @@ static Texture2D load_tex(const char *rel) {
     Texture2D t = { 0 };
     const char *path = platform_asset_path(rel);
     if (platform_asset_exists(path)) t = LoadTexture(path);
-    if (t.id) SetTextureFilter(t, TEXTURE_FILTER_POINT);
+    // El logo se achica mucho (de 320 a ~170 px): con filtro bilineal no se pixela mal.
+    if (t.id) SetTextureFilter(t, strstr(rel, "logo") ? TEXTURE_FILTER_BILINEAR : TEXTURE_FILTER_POINT);
     platform_note_asset(rel, t.id != 0);
     return t;
 }
@@ -144,7 +145,7 @@ static Texture2D load_tex(const char *rel) {
 void menu_init(TitleMenu *m) {
     memset(m, 0, sizeof(*m));
     m->background = load_tex("assets/ui/fondo_titulo.png");
-    m->emblem = load_tex("assets/ui/emblema_ciervo.png");
+    m->emblem = load_tex("assets/ui/logo.png"); // el logo: el lobo y el tigre en su placa de bronce
     for (int i = 0; i < MENU_PLATES; i++) m->plates[i] = load_tex(PLATE_FILES[i]);
 }
 
@@ -470,17 +471,17 @@ void menu_draw(TitleMenu *m, bool in_game, const char *version, int w, int h) {
     case MENU_TITLE:
     case MENU_PAUSE: {
         bool title = m->screen == MENU_TITLE;
-        if (m->emblem.id) { // el ciervo de oro de astas de ave, con un brillo que va y viene
-            float k = 0.85f + 0.15f * sinf(m->time * 1.3f);
-            Color tint = { (unsigned char)(255 * k), (unsigned char)(255 * k), (unsigned char)(235 * k), 255 };
-            float ew = title ? 180.0f : 130.0f, eh = ew * (float)m->emblem.height / (float)m->emblem.width;
+        if (m->emblem.id) { // el logo (con el nombre del juego), con un brillo que va y viene
+            float k = 0.9f + 0.1f * sinf(m->time * 1.3f);
+            Color tint = { (unsigned char)(255 * k), (unsigned char)(255 * k), (unsigned char)(245 * k), 255 };
+            float ew = title ? 168.0f : 96.0f, eh = ew * (float)m->emblem.height / (float)m->emblem.width;
             DrawTexturePro(m->emblem, (Rectangle){ 0, 0, (float)m->emblem.width, (float)m->emblem.height },
-                           (Rectangle){ w / 2.0f - ew / 2.0f, title ? 18.0f : 16.0f, ew, eh }, (Vector2){ 0, 0 }, 0.0f, tint);
+                           (Rectangle){ w / 2.0f - ew / 2.0f, title ? 14.0f : 18.0f, ew, eh }, (Vector2){ 0, 0 }, 0.0f, tint);
         }
-        int ty = title ? 156 : 118;
-        // El nombre del juego no se traduce.
-        ui_text_centered(title ? GAME_TITLE : T("Pausa"), w / 2, ty, title ? 30 : 20, UI_GOLD_LIGHT);
-        if (title) ui_text_centered(GAME_SUBTITLE, w / 2, ty + 32, 10, UI_TURQ_LIGHT);
+        // El nombre del juego va en el logo; sin logo, en letras (no se traduce).
+        if (title && !m->emblem.id) ui_text_centered(GAME_TITLE, w / 2, 156, 30, UI_GOLD_LIGHT);
+        if (!title) ui_text_centered(T("Pausa"), w / 2, 120, 20, UI_GOLD_LIGHT);
+        if (title) ui_text_centered(GAME_SUBTITLE, w / 2, 190, 10, UI_TURQ_LIGHT);
         if (title) draw_items(m, TITLE_ITEMS, TITLE_ICONS, TITLE_HINTS, TITLE_COUNT);
         else draw_items(m, PAUSE_ITEMS, PAUSE_ICONS, PAUSE_HINTS, PAUSE_COUNT);
         if (version) ui_text(version, 16, h - 26, 10, UI_BONE_DIM);

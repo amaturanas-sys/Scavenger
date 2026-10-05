@@ -132,6 +132,10 @@ if(ESTEPA_BUILD_GAME)
     # Mantiene el punto de entrada que busca NativeActivity.
     target_link_options(estepa PRIVATE -u ANativeActivity_onCreate)
   else()
+    if(WIN32)
+      # El logo como icono del .exe (tools/windows/estepa.ico, de tools/assets/logo.py).
+      list(APPEND ESTEPA_GAME_SOURCES tools/windows/estepa.rc)
+    endif()
     add_executable(estepa ${ESTEPA_GAME_SOURCES})
     # Copia los assets junto al ejecutable.
     add_custom_command(TARGET estepa POST_BUILD

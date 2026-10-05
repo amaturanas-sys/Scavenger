@@ -19,6 +19,7 @@
 
     <application
         android:label="Scavengers Thrive"
+        android:icon="@mipmap/ic_launcher"
         android:hasCode="false"
         android:extractNativeLibs="true"
         android:isGame="true"

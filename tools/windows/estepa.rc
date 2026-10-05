@@ -1,0 +1,2 @@
+// El icono del juego en Windows (el logo; ver tools/assets/logo.py).
+IDI_ICON1 ICON "estepa.ico"
