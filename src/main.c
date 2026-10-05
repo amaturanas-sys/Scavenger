@@ -358,6 +358,7 @@ static unsigned fresh_seed(void) {
 static void game_new(GameState *g, Terrain *terrain, Camp *camp, unsigned seed, int start_day, float start_minute, char *log, size_t len) {
     world_reset(terrain, camp, seed);
     dg_reset(); // sin restos y con el campamento como lugar de descanso
+    hud_reset(); // la barra rapida de serie
     player_init(g->player, terrain);
     kingdom_init_iron_khanate(g->overlord);
     troop_init(g->troop, g->overlord);
@@ -548,6 +549,7 @@ int main(int argc, char **argv) {
     const char *map_path = NULL;      // --mapa-mundo archivo.png: el mapa general del mundo, y sale
     const char *start_goto = NULL;    // --ir lugar: a un sitio del mundo (ver go_to)
     bool start_diag = false;          // --diagnostico: el panel de Ctrl+D abierto
+    int start_picker = -1;
     float start_heading = -1.0f;      // --rumbo grados: hacia donde mira la camara (0 sur, 90 este, 180 norte, 270 oeste)
     float start_pitch = -1.0f;        // --camara inclinacion: 0.05 casi de canto (se ve el cielo), 1.25 desde arriba
     int map_size = 1024;
@@ -578,6 +580,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--ir") && i + 1 < argc) start_goto = argv[++i];
         else if (!strcmp(argv[i], "--diagnostico")) start_diag = true;
         else if (!strcmp(argv[i], "--tactil")) g_force_touch = true;
+        else if (!strcmp(argv[i], "--selector") && i + 1 < argc) start_picker = atoi(argv[++i]) - 1; // prueba: el selector de una casilla
         else if (!strcmp(argv[i], "--rumbo") && i + 1 < argc) start_heading = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--camara") && i + 1 < argc) start_pitch = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--mapa-tam") && i + 1 < argc) map_size = atoi(argv[++i]);
@@ -749,13 +752,21 @@ int main(int argc, char **argv) {
         { // el puntero (raton o dedo) en la pantalla virtual de 640x360
             float sw = (float)GetScreenWidth(), sh = (float)GetScreenHeight();
             float k = fminf(sw / VIRTUAL_W, sh / VIRTUAL_H);
-            Vector2 m = GetMousePosition(), d = GetMouseDelta();
+            Vector2 m = GetMousePosition();
             Vector2 v = { (m.x - (sw - VIRTUAL_W * k) * 0.5f) / k, (m.y - (sh - VIRTUAL_H * k) * 0.5f) / k };
-            ui_pointer_frame(v, d.x != 0.0f || d.y != 0.0f, IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
+            // Se movio si cambio de sitio desde el cuadro anterior (al menos medio pixel). No sirve
+            // GetMouseDelta: en Android raylib solo la renueva con cada evento tactil y queda fija
+            // en lo ultimo, asi que los menus creian que el puntero se movia siempre y le
+            // devolvian el cursor a lo que tenia debajo (las flechas parecian enloquecidas).
+            static Vector2 last_v = { -1000.0f, -1000.0f };
+            bool moved = fabsf(v.x - last_v.x) + fabsf(v.y - last_v.y) >= 0.5f && last_v.x > -999.0f;
+            last_v = v;
+            ui_pointer_frame(v, moved, IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
         }
         if (frame % 30 == 0) has_keyboard = (platform_has_keyboard() && !simulate_no_keyboard) || keyboard_override; // conexion en caliente
         frame++;
         hud_frame_begin();
+        if (start_picker >= 0 && frame == 10) hud_open_picker(start_picker), start_picker = -1;
         if (start_pause && frame == 10 && in_game) { // prueba: la pausa (o guardar) sobre la partida
             if (start_pause == 3) {
                 show_controls = true;
@@ -893,8 +904,8 @@ int main(int argc, char **argv) {
         }
         if (has_keyboard && in_game && !menu_visible(&menu)) {
             // Con el menu de acciones abierto el jugador no se mueve (las flechas eligen).
-            bool menu = ga_menu_open(&g_actions);
-            bool blocked = ga_blocks_input(&g_actions) || hz_blocks_input(&g_hazards) || cb_blocks_input(&g_combat) || orbital;
+            bool menu = ga_menu_open(&g_actions) || hud_picker_open();
+            bool blocked = hud_picker_open() || ga_blocks_input(&g_actions) || hz_blocks_input(&g_hazards) || cb_blocks_input(&g_combat) || orbital;
             PlayerInput in = blocked ? (PlayerInput){ 0 } : player_read_input();
             player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards) * cb_speed_scale(&g_combat);
             player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
@@ -915,6 +926,8 @@ int main(int argc, char **argv) {
             int prev_champion = last_champion;
             if (!menu && show_diag) debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log)); // teclas de prueba: con Ctrl+D
             g_actions.player_armor = &g_combat.armor; // para reparar lo que llevas puesto
+            if (!gallery_mode) // la barra rapida (1..9) y su selector, antes que las acciones
+                hud_update(&g_actions, &g_props, &player, !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), log, sizeof(log));
             if (!gallery_mode) ga_update(&g_actions, &g_props, &terrain, &player, &troop, dt, log, sizeof(log));
             if (!gallery_mode) ga_after_player(&g_actions, &g_props, &terrain, &player);
             if (start_trap && frame == 3 && !gallery_mode) { // prueba: la tribu ya esta ubicada
@@ -1100,12 +1113,13 @@ int main(int argc, char **argv) {
             hud_stamina(VIRTUAL_W - 14, vy + 66);
             // Barra rapida (1..9) abajo a la izquierda y la columna de acciones en el borde.
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions) && !g_actions.dlg.open) {
-                hud_quickbar(&g_actions, 6, VIRTUAL_H - 54);
+                hud_quickbar(&g_actions, &g_props, &player, 6, VIRTUAL_H - 54);
                 hud_action_column(&g_actions, 6, 68);
             }
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions)) tg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
+            hud_draw_picker(&g_actions, &g_props, &player, VIRTUAL_W, VIRTUAL_H); // elegir que va en una casilla
             tg_draw(&g_actions, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
             if (show_controls) menu_draw_controls(VIRTUAL_W / 2 - 200, 90, 400, 140);

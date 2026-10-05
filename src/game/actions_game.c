@@ -85,11 +85,12 @@ static void apply_preset(GameActions *ga) {
 }
 
 // ---------------------------------------------------------------- barra rapida
-// Las casillas 1..8 son las empuñaduras de PRESETS; la 9, la antorcha. Las pide el teclado
-// (1..9) o un toque en la barra del HUD (src/game/hud_game.c); se atienden en ga_update.
-static int g_quick_slot = -1;    // casilla pedida (0..8)
-static int g_quick_action = -1;  // accion pedida desde la columna del HUD
-static bool g_quick_menu;        // abrir el menu de acciones
+// La barra del HUD (src/game/hud_game.c) pide empuñaduras, objetos y acciones; se atienden en
+// ga_update, cuando el jugador esta libre.
+static int g_quick_grip = -1;          // empuñadura pedida (indice de PRESETS)
+static char g_quick_wield[INV_ID_LEN]; // arma o escudo pedido por id
+static int g_quick_action = -1;        // accion pedida
+static bool g_quick_menu;              // abrir el menu de acciones
 
 static bool preset_available(const GameActions *ga, int k) {
     for (int h = 0; h < 2; h++)
@@ -97,26 +98,22 @@ static bool preset_available(const GameActions *ga, int k) {
     return true;
 }
 
-int ga_quick_slots(const GameActions *ga, GaQuickSlot out[GA_QUICK_SLOTS]) {
-    for (int k = 0; k < GA_QUICK_SLOTS; k++) {
-        GaQuickSlot *q = &out[k];
-        memset(q, 0, sizeof(*q));
-        if (k < PRESET_COUNT && k < GA_QUICK_SLOTS - 1) {
-            const char *r = PRESETS[k][0], *l = PRESETS[k][1];
-            if (r && !strcmp(r, "arma.corta.sable")) r = best_sable(ga);
-            q->right = r, q->left = l;
-            q->available = preset_available(ga, k);
-            q->active = ga->preset == k && !ga->hands.sheathed && !ga->torch_lit;
-        } else if (k == GA_QUICK_SLOTS - 1) { // la antorcha
-            q->right = "utileria.objeto.antorcha";
-            q->available = has_item(ga, q->right);
-            q->active = ga->torch_lit;
-        }
-    }
-    return GA_QUICK_SLOTS;
+int ga_grip_count(void) { return PRESET_COUNT; }
+
+GaGrip ga_grip(const GameActions *ga, int k) {
+    GaGrip g = { 0 };
+    if (k < 0 || k >= PRESET_COUNT) return g;
+    g.right = PRESETS[k][0], g.left = PRESETS[k][1];
+    if (g.right && !strcmp(g.right, "arma.corta.sable")) g.right = best_sable(ga);
+    g.available = preset_available(ga, k);
+    g.active = ga->preset == k && !ga->hands.sheathed && !ga->torch_lit;
+    return g;
 }
 
-void ga_quick_request_slot(int slot) { g_quick_slot = slot; }
+bool ga_has_item(const GameActions *ga, const char *id) { return id && has_item(ga, id); }
+
+void ga_quick_request_grip(int k) { g_quick_grip = k; }
+void ga_quick_request_wield(const char *id) { snprintf(g_quick_wield, sizeof(g_quick_wield), "%s", id ? id : ""); }
 void ga_quick_request_action(ActionId a) { g_quick_action = (int)a; }
 void ga_quick_request_menu(void) { g_quick_menu = true; }
 
@@ -750,26 +747,34 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     bool other_menu = ga->inv_open || ga->equip_open || ga->dlg.open; // inventario, equipo o un dialogo
     if ((IsKeyPressed(KEY_TAB) || g_quick_menu) && !other_menu) ga->menu_open = !ga->menu_open;
     g_quick_menu = false;
-    // Teclas 1..9: la barra rapida (Ctrl+1..3 son las habilidades).
-    for (int k = 0; k < GA_QUICK_SLOTS; k++)
-        if (IsKeyPressed(KEY_ONE + k) && !input_ctrl() && !input_debug() && !other_menu && !ga->menu_open) g_quick_slot = k;
+    // Lo que pide la barra rapida del HUD (teclas 1..9 o toques).
     if (ga->doing < 0 && !ga->climbing && !other_menu && !ga->menu_open) {
-        if (g_quick_slot >= 0) {
-            GaQuickSlot q[GA_QUICK_SLOTS];
-            ga_quick_slots(ga, q);
-            int k = g_quick_slot;
-            if (!q[k].available) snprintf(log, log_len, T("No tienes %s."), item_name(ga, q[k].right ? q[k].right : q[k].left));
-            else if (k == GA_QUICK_SLOTS - 1) start_action(ga, ACTION_LIGHT_TORCH, props, p, log, log_len);
-            else if (q[k].active) start_action(ga, ACTION_SHEATHE, props, p, log, log_len); // otra vez: enfunda
+        if (g_quick_grip >= 0 && g_quick_grip < PRESET_COUNT) {
+            int k = g_quick_grip;
+            GaGrip g = ga_grip(ga, k);
+            if (!g.available) snprintf(log, log_len, T("No tienes %s."), item_name(ga, g.right ? g.right : g.left));
+            else if (g.active) start_action(ga, ACTION_SHEATHE, props, p, log, log_len); // otra vez: enfunda
             else {
                 if (ga->hands.sheathed) hands_toggle_sheathe(&ga->hands);
                 ga->preset = (k + PRESET_COUNT - 1) % PRESET_COUNT; // CHANGE_GRIP pasa a la siguiente: la pedida
                 start_action(ga, ACTION_CHANGE_GRIP, props, p, log, log_len);
             }
         }
+        if (g_quick_wield[0]) { // un arma o un escudo suelto: a su mano
+            const InvItem *it = inventory_find(ga->inv, g_quick_wield);
+            if (!it || it->hands == INV_HANDS_NONE) snprintf(log, log_len, T("%s no se empuña."), item_name(ga, g_quick_wield));
+            else {
+                if (ga->hands.sheathed) hands_toggle_sheathe(&ga->hands);
+                if (it->hands != INV_HANDS_SHIELD) ga->torch_lit = false;
+                hands_equip(&ga->hands, it, it->hands == INV_HANDS_SHIELD ? HAND_LEFT : HAND_RIGHT);
+                ga->swap_anim = 0.5f;
+                snprintf(log, log_len, T("Empuñas: %s."), item_name(ga, g_quick_wield));
+            }
+        }
         if (g_quick_action >= 0) start_action(ga, (ActionId)g_quick_action, props, p, log, log_len);
     }
-    g_quick_slot = g_quick_action = -1;
+    g_quick_grip = g_quick_action = -1;
+    g_quick_wield[0] = '\0';
     if (ga->menu_open) {
         // Pestañas (acciones, obras, fabricar, reparar): Q/E, Re Pág/Av Pág o un clic en su icono.
         if (IsKeyPressed(KEY_E) || IsKeyPressed(KEY_PAGE_DOWN)) ga->menu_tab = (ga->menu_tab + 1) % 4;

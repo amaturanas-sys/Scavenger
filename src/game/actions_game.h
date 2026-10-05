@@ -192,16 +192,18 @@ void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, 
 
 // Fuentes de luz para la noche (fogatas, hogueras, hornos y la antorcha encendida).
 // Llena pos y radius (metros de alcance); devuelve cuantas hay.
-// Barra rapida del HUD: casillas 1..9 (empuñaduras y la antorcha).
-#define GA_QUICK_SLOTS 9
+// Empuñaduras (las que recorre X): para la barra rapida del HUD (src/game/hud_game.c).
 typedef struct {
     const char *right, *left; // ids del inventario (NULL: mano vacia)
     bool available;           // lo tiene (equipo o acopio)
     bool active;              // es lo que empuña ahora
-} GaQuickSlot;
-int ga_quick_slots(const GameActions *ga, GaQuickSlot out[GA_QUICK_SLOTS]);
-// Pedidos del HUD (toques o clics), atendidos en el proximo ga_update.
-void ga_quick_request_slot(int slot);
+} GaGrip;
+int ga_grip_count(void);
+GaGrip ga_grip(const GameActions *ga, int k);
+bool ga_has_item(const GameActions *ga, const char *id); // en el equipo o en el acopio
+// Pedidos del HUD (teclas 1..9, toques o clics), atendidos en el proximo ga_update.
+void ga_quick_request_grip(int k);
+void ga_quick_request_wield(const char *id); // un arma o un escudo, a su mano
 void ga_quick_request_action(ActionId a);
 void ga_quick_request_menu(void);
 
