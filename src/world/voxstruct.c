@@ -485,6 +485,12 @@ VoxBuilding voxs_region_house(Region r) {
     }
 }
 
+void voxs_forget_gpu(void) {
+    memset(g_feats, 0, sizeof(g_feats));
+    memset(g_sites, 0, sizeof(g_sites));
+    memset(g_builds, 0, sizeof(g_builds));
+}
+
 void voxs_unload(void) {
     for (int i = 0; i < SITE_SLOTS; i++)
         if (g_sites[i].ok) UnloadModel(g_sites[i].model);

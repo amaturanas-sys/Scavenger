@@ -117,6 +117,13 @@ static void ensure_templates(Vector3 sun) {
     }
 }
 
+void clouds_forget_gpu(void) {
+    g_ready = g_vt_ready = false;
+    for (int i = 0; i < VT_COUNT; i++) g_vt[i].ok = false; // las rejillas se rehacen (fugan poco, una vez)
+    g_atlas = (Texture2D){ 0 };
+    g_atlas_tried = false;
+}
+
 void clouds_unload(void) {
     if (g_ready) UnloadModel(g_puff);
     g_ready = false;

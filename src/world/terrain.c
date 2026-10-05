@@ -110,6 +110,8 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
     }
     // El muro de hielo del altiplano: hielo azulado, mas en lo empinado.
     if (a[A_HIGH] > 0.5f && a[A_EDGE] < 150.0f) c = mixc(c, (Color){ 176, 206, 232, 255 }, 0.5f + 0.5f * Clamp(slope * 2.0f, 0.0f, 1.0f));
+    // Los barrancos del altiplano son permafrost: paredes de hielo todo el año, tambien en verano.
+    else if (a[A_HIGH] > 0.5f && slope > 0.6f) c = mixc(c, (Color){ 184, 210, 230, 255 }, 0.75f);
     // Nieve: cubre el llano segun la estacion (en manchas a medio cubrir); menos en lo empinado y en la arena.
     float cover = L->snow_cover * (slope > 0.75f ? 0.55f : 1.0f) * (1.0f - 0.6f * desert);
     if (patch < cover * 1.15f - 0.05f) c = snow;
@@ -165,6 +167,7 @@ static Color shade(Color c, float light) {
 static TerrainTex ground_tex(const float *a, float slope) {
     float hi = a[A_HIGH], fo = a[A_FOREST], fj = a[A_FJORD], de = a[A_DESERT];
     if (hi > 0.5f && a[A_EDGE] < 150.0f) return slope > 0.45f ? TT_SERAC : TT_ICE; // el frente del glaciar: seracs
+    if (hi > 0.5f && slope > 0.6f) return TT_SERAC;                                // barrancos de permafrost
     if (fj > 0.5f && a[A_H] < SEA_LEVEL + 4.0f && slope < 0.6f) return TT_BLACKSAND; // la playa de arena volcanica
     if (a[A_BANK] > 0.45f && de < 0.5f && slope < 0.6f) return TT_COBBLES;       // el lecho de cantos que el rio lava
     if (a[A_H] > g_perma_snow && slope < 0.7f) return TT_SNOW;
@@ -386,12 +389,20 @@ static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
     for (int j = 0; j < N; j++)
         for (int i = 0; i < N; i++) {
             const int ci[4][2] = { { i, j }, { i, j + 1 }, { i + 1, j }, { i + 1, j + 1 } };
-            float sum = 0.0f, lowest = 1e9f;
+            float sum = 0.0f, lowest = 1e9f, low_lv = 1e9f;
             int wet = 0, kind = WATER_NONE;
+            bool use[4] = { false, false, false, false };
             for (int c = 0; c < 4; c++) {
                 int x = ci[c][0], z = ci[c][1];
                 lowest = fminf(lowest, gh[z][x]);
-                if (wk[z][x] == WATER_NONE) continue;
+                if (wk[z][x] != WATER_NONE) low_lv = fminf(low_lv, lv[z][x]);
+            }
+            // Dos aguas a niveles muy distintos en una celda (un lago al borde de un cañon con su
+            // rio): solo la de abajo, que se mete bajo el barranco. Si no, una cortina de agua.
+            for (int c = 0; c < 4; c++) {
+                int x = ci[c][0], z = ci[c][1];
+                if (wk[z][x] == WATER_NONE || lv[z][x] > low_lv + 3.0f) continue;
+                use[c] = true;
                 sum += lv[z][x], wet++;
                 if (kind == WATER_NONE || wk[z][x] == WATER_SEA) kind = wk[z][x];
             }
@@ -404,7 +415,7 @@ static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
             float q[4][3];
             for (int c = 0; c < 4; c++) {
                 int x = ci[c][0], z = ci[c][1];
-                float y = wk[z][x] != WATER_NONE ? lv[z][x] : avg; // seco: el nivel de los vecinos, bajo la orilla
+                float y = use[c] ? lv[z][x] : avg; // seco: el nivel de los vecinos, bajo la orilla
                 q[c][0] = ox + x * cell, q[c][1] = y, q[c][2] = oz + z * cell;
             }
             const int tri[6] = { 0, 1, 2, 2, 1, 3 };
@@ -899,4 +910,16 @@ void terrain_unload(Terrain *t) {
     if (g_far.ready) UnloadModel(g_far.model);
     g_far.ready = g_far.valid = false;
     t->has_center = false;
+}
+
+void terrain_unload_gpu(void) {
+    if (g_atlas.id) UnloadTexture(g_atlas);
+    if (g_water_tex.id) UnloadTexture(g_water_tex);
+    terrain_forget_gpu();
+}
+
+void terrain_forget_gpu(void) {
+    g_atlas = (Texture2D){ 0 }, g_water_tex = (Texture2D){ 0 };
+    g_atlas_tried = g_water_tex_tried = false;
+    g_far.ready = g_far.valid = false;
 }

@@ -43,5 +43,6 @@ typedef enum {
 #define VF_VARIANTS 4
 void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float scale, Color tint);
 void voxs_unload(void);
+void voxs_forget_gpu(void); // ver terrain_forget_gpu
 
 #endif

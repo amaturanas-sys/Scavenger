@@ -25,6 +25,8 @@
 #define SHORE_E 230.0f    // la costa de los fiordos (sin contar los fiordos que entran)
 #define WALL_E 95.0f      // pie del muro de estratos del desierto
 #define GORGE_E 150.0f    // eje del cañon al pie del muro
+#define WATER_MAX_DEPTH_LAKE 9.0f  // las cuencas tienen ~5,6 m; mas hondo es un cañon ajeno
+#define WATER_MAX_DEPTH_RIVER 6.0f // los cauces, ~2,6 m
 #define ICE_E 120.0f      // pie del muro de hielo del altiplano
 
 static float clamp01(float v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); }
@@ -349,18 +351,29 @@ float world_water(const World *w, float x, float z, float flood, WaterKind *kind
             if (lv > best) best = lv, k = WATER_CANAL;
         }
     }
+    // Un lago o un rio no flota: donde el suelo cae muy por debajo de su nivel (un cañon que
+    // pasa junto a la cuenca) no hay agua suya, y manda la de abajo. Sin esto, el agua quedaba
+    // en el aire con paredes hasta el fondo (blancas de hielo en invierno, turquesa en verano).
+    float ground = 0.0f;
+    bool have_ground = false;
     for (int i = 0; i < w->lake_count; i++) {
         const Lake *l = &w->lakes[i];
         float dx = x - l->x, dz = z - l->z;
         if (dx * dx + dz * dz > l->r * l->r * 3.2f) continue;
-        if (lake_dist(w, l, x, z) < 1.3f && l->level + flood > best) best = l->level + flood, k = WATER_LAKE;
+        if (lake_dist(w, l, x, z) < 1.3f && l->level + flood > best) {
+            if (!have_ground) ground = world_height(w, x, z), have_ground = true;
+            if (l->level - ground < WATER_MAX_DEPTH_LAKE) best = l->level + flood, k = WATER_LAKE;
+        }
     }
     for (int i = 0; i < w->river_count; i++) {
         const River *r = &w->rivers[i];
         if (!river_box(r, x, z, r->width * 1.5f)) continue;
         float lv = 0.0f, d = river_dist(r, x, z, &lv, NULL, NULL);
         float reach = r->kind == RIVER_BRAIDED ? r->width : r->width * 1.25f;
-        if (d < reach && lv + 0.5f * flood > best) best = lv + 0.5f * flood, k = WATER_RIVER;
+        if (d < reach && lv + 0.5f * flood > best) {
+            if (!have_ground) ground = world_height(w, x, z), have_ground = true;
+            if (lv - ground < WATER_MAX_DEPTH_RIVER) best = lv + 0.5f * flood, k = WATER_RIVER;
+        }
     }
     if (kind) *kind = k;
     return best;

@@ -1499,6 +1499,25 @@ static void test_world_river_banks(void) {
     CHECK(world_river_bank(w, 0.0f, 0.0f, NULL) < 0.01f); // el campamento, lejos de los rios
 }
 
+// Ningun lago ni rio flota: junto a un cañon (el lago 16 de la semilla 1206 tiene uno al oeste)
+// el agua de arriba no sigue en el aire sobre el barranco.
+static void test_world_water_never_floats(void) {
+    const World *w = world_for_seed(1206u);
+    int wet = 0;
+    for (int i = 0; i < w->lake_count; i++) {
+        const Lake *l = &w->lakes[i];
+        for (float dx = -l->r * 1.6f; dx <= l->r * 1.6f; dx += 6.0f)
+            for (float dz = -l->r * 1.6f; dz <= l->r * 1.6f; dz += 6.0f) {
+                WaterKind k;
+                float lv = world_water(w, l->x + dx, l->z + dz, 0.0f, &k);
+                if (k != WATER_LAKE && k != WATER_RIVER) continue;
+                wet++;
+                CHECK(lv - world_height(w, l->x + dx, l->z + dz) < 9.0f);
+            }
+    }
+    CHECK(wet > 100);
+}
+
 static void test_voxels(void) {
     VoxGrid g;
     CHECK(vox_init(&g, 8, 8, 8, 0.5f));
@@ -2816,6 +2835,7 @@ int main(void) {
     RUN(test_world_tribes_and_sites);
     RUN(test_voxels);
     RUN(test_world_river_banks);
+    RUN(test_world_water_never_floats);
     RUN(test_swarms);
     RUN(test_fire_spread_and_rain);
     RUN(test_weather_hazards_random);

@@ -20,6 +20,7 @@
 
 void hearth_init(void); // la textura de las bocanadas (necesita la ventana)
 void hearth_unload(void);
+void hearth_forget_gpu(void); // ver terrain_forget_gpu
 
 void hearth_frame_begin(void);
 // Piedras, leños y ceniza en pos (el suelo). seed: variacion de cada fuego. lit: arde.

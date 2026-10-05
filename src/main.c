@@ -622,6 +622,11 @@ int main(int argc, char **argv) {
 #endif
     SetTargetFPS(60);
 
+    // Contexto nuevo: lo que los modulos guardaban de una corrida anterior (Android) ya no vale.
+    terrain_forget_gpu();
+    clouds_forget_gpu();
+    voxs_forget_gpu();
+    hearth_forget_gpu();
     RenderTexture2D lowres = LoadRenderTexture(VIRTUAL_W, VIRTUAL_H);
     SetTextureFilter(lowres.texture, TEXTURE_FILTER_POINT); // pixeles nitidos al escalar
 
@@ -1146,6 +1151,7 @@ int main(int argc, char **argv) {
     terrain_unload(&terrain);
     clouds_unload();
     hearth_unload();
+    terrain_unload_gpu();
     voxs_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();
