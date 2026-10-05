@@ -1454,6 +1454,45 @@ static void test_health_venom(void) {
 
 // Acuaticos y venenosos: el cocodrilo no se aleja de su orilla; la tortuga se salva
 // en el agua; la vibora muerde con veneno pero no persigue.
+// Un lago redondo de 20 m de radio y 2 m de hondo en el origen (orilla con pendiente).
+static float test_round_lake(void *ud, float x, float z) {
+    (void)ud;
+    float d = sqrtf(x * x + z * z);
+    return d < 20.0f ? fminf(2.0f, (20.0f - d) * 0.5f) : -1.0f;
+}
+
+// Los de tierra rodean el agua honda y, con sed, beben desde la orilla sin entrar.
+static void test_animals_keep_out_of_lakes(void) {
+    Rng r;
+    rng_seed(&r, 77);
+    FaunaHuman hu = { 500.0f, 500.0f, false, false, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 100, 100, false, test_round_lake, NULL, false };
+    Animal herd[4];
+    for (int i = 0; i < 4; i++) {
+        animal_init(&herd[i], i < 2 ? SPECIES_DEER : SPECIES_WOLF, 24.0f + i, 0.0f);
+        herd[i].home_x = herd[i].home_z = 0.0f; // su territorio esta centrado en el lago
+    }
+    float worst = 0.0f;
+    for (int t = 0; t < 6000; t++) { // 10 minutos
+        fauna_update(herd, 4, &c, &r, 0.1f, NULL);
+        for (int i = 0; i < 4; i++) worst = fmaxf(worst, test_round_lake(NULL, herd[i].x, herd[i].z));
+    }
+    CHECK(worst <= ANIMAL_WADE_MAX + 1e-3f);
+    // Con sed: va a la orilla, bebe y no entra.
+    Animal deer;
+    animal_init(&deer, SPECIES_DEER, 60.0f, 10.0f);
+    deer.thirst = 1.0f;
+    bool drank = false;
+    worst = 0.0f;
+    for (int t = 0; t < 1200 && !drank; t++) {
+        fauna_update(&deer, 1, &c, &r, 0.1f, NULL);
+        worst = fmaxf(worst, test_round_lake(NULL, deer.x, deer.z));
+        drank = deer.thirst < 0.1f;
+    }
+    CHECK(drank && worst <= 0.0f);
+    CHECK(sqrtf(deer.x * deer.x + deer.z * deer.z) < 26.0f); // en la orilla
+}
+
 static void test_animals_water_and_venom(void) {
     Rng r;
     rng_seed(&r, 31);
@@ -2681,6 +2720,7 @@ int main(void) {
     RUN(test_animals_body);
     RUN(test_health_venom);
     RUN(test_animals_water_and_venom);
+    RUN(test_animals_keep_out_of_lakes);
     RUN(test_swarms);
     RUN(test_fire_spread_and_rain);
     RUN(test_weather_hazards_random);
