@@ -141,6 +141,8 @@ El mundo ([MUNDO.md](docs/MUNDO.md)):
 - **Tribus nómadas:** las rivales salen al paso, las neutrales observan y las amigables te señalan sitios en el mapa.
 - **Estructuras:** kurganes, balbales, piedras de ciervos, fortalezas, ciudades enterradas, caravasares, torres, ovoos, pozos y embarcaderos; al verlas quedan en el mapa.
 - **Más vida:** arroyos, rocas, matas y flores; los animales rodean los lagos y beben desde la orilla.
+- **Agua:** una malla continua con el nivel en cada vértice: los ríos bajan en pendiente, sin escalones ni huecos en la orilla; textura de ondas y espuma en rompientes y rápidos.
+- **Pozos:** junto a un pozo (o la fuente de un caravasar) se bebe (N) y se llena el odre (Tab) con agua limpia, sin hervir.
 - **Paisajes de cada región:** playas de arena volcánica negra con roqueríos de basalto, farallones y espuma en los fiordos; lechos de cantos rodados y rápidos en los ríos; farallones en estratos, torres de arenisca y creta blanca en el desierto; seracs y témpanos en el glaciar.
 - **Voxeles:** las nubes son volúmenes de voxeles al modo de Nubis (perfil y erosión por ruido, luz del sol horneada) y las estructuras y casas son modelos de voxeles; las ruinas, erosionadas.
 - **`F5` o `Ctrl+M`:** vista orbital del mundo entero (flechas: girar e inclinar).
@@ -184,6 +186,8 @@ Al reclutar o tomar prisioneros, a veces aparece un gran guerrero por azar.
 ## Android
 
 El port de Android ofrece la misma experiencia que en PC y **requiere teclado físico** (tablets o Chromebooks con teclado; ratón o mando opcionales). Si no hay teclado conectado, el juego se pausa con un aviso.
+
+Los assets van en la raíz del AssetManager del APK (`aapt2 -A assets`): en Android `platform_asset_path()` quita el prefijo `assets/` (si no, no carga ninguna imagen ni modelo) y las partidas, minifotos y ajustes se leen y escriben con `fopen` en el almacenamiento interno.
 
 Con teclados de tablet que no traen `Esc` ni teclas F, cada atajo tiene su alternativa con `Ctrl` (ver Controles), y abajo a la derecha hay dos botones táctiles: pausa y controles. Si la tablet no informa su teclado, basta pulsar una tecla o tocar el aviso para jugar igual. `Ctrl+D` abre el diagnóstico: versión de OpenGL, teclado detectado, última tecla recibida y assets que no cargaron (también en `adb logcat -s raylib`). Pruebas: `--tactil` muestra los botones en escritorio y `--diagnostico` abre el panel.
 

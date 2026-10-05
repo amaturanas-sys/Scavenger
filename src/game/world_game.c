@@ -102,8 +102,11 @@ void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, M
         if ((ga->seen_sites >> i) & 1ull || dist_xz(st->x, st->z, p->pos.x, p->pos.z) > SITE_SEEN) continue;
         ga->seen_sites |= 1ull << i;
         memmap_toggle_marker(mem, st->x, st->z, MARKER_INTEREST, 4.0f);
-        snprintf(log, len, site_is_ruin(st->kind) ? T("Encuentras %s, de otros tiempos: queda en el mapa.") : T("Encuentras %s: queda en el mapa."),
-                 T(site_name(st->kind)));
+        if (st->kind == SITE_WELL || st->kind == SITE_CARAVANSERAI)
+            snprintf(log, len, T("Encuentras %s: agua limpia (Tab: llenar el odre · N: beber). Queda en el mapa."), T(site_name(st->kind)));
+        else
+            snprintf(log, len, site_is_ruin(st->kind) ? T("Encuentras %s, de otros tiempos: queda en el mapa.") : T("Encuentras %s: queda en el mapa."),
+                     T(site_name(st->kind)));
     }
 }
 
@@ -145,12 +148,16 @@ static void draw_settlement(const Terrain *t, const Settlement *s, int idx, floa
             float y = terrain_height(t, x, z);
             voxs_draw_building(s->region == REGION_STEPPE || s->region == REGION_FOREST ? VB_TOWER_WOOD : VB_TOWER_STONE, (Vector3){ x, y, z }, a, 1.0f, WHITE);
             float a2 = (float)(i + 1) / 12.0f * 2.0f * PI, x2 = s->x + cosf(a2) * 42.0f, z2 = s->z + sinf(a2) * 42.0f;
-            Vector3 m = { (x + x2) * 0.5f, (y + terrain_height(t, x2, z2)) * 0.5f + 2.2f, (z + z2) * 0.5f };
-            rlPushMatrix();
-            rlTranslatef(m.x, m.y, m.z);
-            rlRotatef(-atan2f(z2 - z, x2 - x) * RAD2DEG, 0, 1, 0);
-            if (i % 3) DrawCube((Vector3){ 0 }, dist_xz(x, z, x2, z2), 4.4f, 1.0f, stone); // deja puertas
-            rlPopMatrix();
+            // Los tramos entre torres: muralla de piedra o empalizada, de voxeles (deja puertas).
+            if (i % 3) {
+                float len = dist_xz(x, z, x2, z2), ang = -atan2f(z2 - z, x2 - x);
+                bool wood = s->region == REGION_STEPPE || s->region == REGION_FOREST;
+                for (int k = 0; k * 8.0f < len; k++) {
+                    float f = (k * 8.0f + 4.0f) / len, px = x + (x2 - x) * f, pz = z + (z2 - z) * f;
+                    voxs_draw_building(wood ? VB_PALISADE : VB_WALL_STONE, (Vector3){ px, terrain_height(t, px, pz), pz }, ang, 1.0f, WHITE);
+                }
+            }
+            (void)stone;
         }
         Vector3 pole = { s->x, ground, s->z };
         DrawCylinder(pole, 0.12f, 0.12f, 9.0f, 5, (Color){ 90, 70, 50, 255 });

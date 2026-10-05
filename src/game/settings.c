@@ -25,13 +25,17 @@ void settings_init(void) {
         }
     }
     Lang lang = LANG_ES;
-    char *txt = FileExists(settings_path()) ? LoadFileText(settings_path()) : NULL;
-    if (txt) {
+    // Con fopen (no LoadFileText): en Android raylib busca las lecturas en el APK.
+    char txt[256] = "";
+    FILE *f = fopen(settings_path(), "r");
+    if (f) {
+        size_t n = fread(txt, 1, sizeof(txt) - 1, f);
+        txt[n] = 0;
+        fclose(f);
         const char *k = strstr(txt, "idioma=");
         if (k)
             for (int l = 0; l < LANG_COUNT; l++)
                 if (!strncmp(k + 7, lang_code((Lang)l), 2)) lang = (Lang)l;
-        UnloadFileText(txt);
     }
     lang_set(lang);
 }

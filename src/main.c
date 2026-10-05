@@ -425,6 +425,14 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
             if (h > best) best = h, x = w->peaks[i].x + 6.0f, z = w->peaks[i].z, lx = 0.0f, lz = 0.0f, ok = true;
         }
     }
+    for (int i = 0; i < w->river_count && !ok; i++) { // rapidos: en la orilla de un arroyo, mirando aguas abajo
+        const River *rv = &w->rivers[i];
+        if (strcmp(what, "rapidos") || rv->kind != RIVER_CREEK || rv->n < 12) continue;
+        int k = rv->n / 3;
+        float dx = rv->x[k + 4] - rv->x[k], dz = rv->z[k + 4] - rv->z[k], l = sqrtf(dx * dx + dz * dz) + 1e-3f;
+        x = rv->x[k] - dz / l * (rv->width + 5.0f), z = rv->z[k] + dx / l * (rv->width + 5.0f);
+        lx = rv->x[k + 6], lz = rv->z[k + 6], ok = true;
+    }
     for (int i = 0; i < w->river_count && !ok; i++) { // un rio: a su orilla, mirandolo
         const River *rv = &w->rivers[i];
         bool want = (!strcmp(what, "meandro") && rv->kind == RIVER_MEANDER) || (!strcmp(what, "trenzado") && rv->kind == RIVER_BRAIDED) ||

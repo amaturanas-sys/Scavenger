@@ -359,47 +359,81 @@ static Model make_model(TriBuf *b) {
     return m;
 }
 
-// Agua de un chunk: un cuadro plano por celda donde el agua (con la crecida maxima) queda
-// sobre alguna esquina del suelo. Tres mallas: lagos, rios y canal, y mar; al dibujarlas,
-// los lagos suben con la crecida, los rios con la mitad, el mar nada.
+// Agua de un chunk: una malla continua sobre la rejilla del suelo (2 m), con el nivel del agua
+// en cada vertice. Los rios bajan en pendiente (sin escalones) y la orilla queda bajo el
+// suelo (sin huecos): un vertice seco toma el nivel de sus vecinos con agua, asi el borde del
+// agua se mete bajo la orilla. Mallas: lagos, rios y canal, mar, deshielo turquesa y espuma; al
+// dibujarlas, los lagos suben con la crecida, los rios con la mitad, el mar nada.
+static Texture2D g_water_tex;
+static bool g_water_tex_tried;
+
 static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
-    enum { CELLS = CHUNK_CELLS / 2, MAXT = CELLS * CELLS * 2 };
-    const float cell = CHUNK_SIZE / CELLS, ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
+    enum { N = CHUNK_CELLS, V = CHUNK_CELLS + 1, MAXT = N * N * 2 };
+    const float cell = CHUNK_SIZE / N, ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
+    static float lv[V][V], gh[V][V];
+    static unsigned char wk[V][V];
     static float verts[W_MESHES][MAXT * 9];
     static unsigned char foam_alpha[MAXT * 3];
     int count[W_MESHES] = { 0 };
-    for (int iz = 0; iz < CELLS; iz++)
-        for (int ix = 0; ix < CELLS; ix++) {
-            float x0 = ox + ix * cell, z0 = oz + iz * cell, x1 = x0 + cell, z1 = z0 + cell;
+    for (int j = 0; j < V; j++)
+        for (int i = 0; i < V; i++) {
+            float x = ox + i * cell, z = oz + j * cell;
             WaterKind k;
-            float lv = world_water(t->world, x0 + cell * 0.5f, z0 + cell * 0.5f, 0.0f, &k);
-            if (k == WATER_NONE) continue;
-            float lowest = fminf(fminf(terrain_height(t, x0, z0), terrain_height(t, x1, z0)), fminf(terrain_height(t, x0, z1), terrain_height(t, x1, z1)));
-            if (lv + (k == WATER_SEA ? 0.0f : TERRAIN_LAKE_FLOOD) < lowest) continue;
-            int m = k == WATER_SEA ? W_SEA : k == WATER_LAKE ? W_LAKE : W_RIVER;
-            if (m != W_SEA && world_region_weight(t->world, REGION_HIGHLAND, x0 + cell * 0.5f, z0 + cell * 0.5f) > 0.5f) m = W_GLACIAL; // deshielo turquesa
-            float q[6][3] = { { x0, lv, z0 }, { x0, lv, z1 }, { x1, lv, z0 }, { x1, lv, z0 }, { x0, lv, z1 }, { x1, lv, z1 } };
-            memcpy(&verts[m][count[m] * 9], q, sizeof(q));
+            lv[j][i] = world_water(t->world, x, z, 0.0f, &k);
+            wk[j][i] = (unsigned char)k;
+            gh[j][i] = terrain_height(t, x, z);
+        }
+    for (int j = 0; j < N; j++)
+        for (int i = 0; i < N; i++) {
+            const int ci[4][2] = { { i, j }, { i, j + 1 }, { i + 1, j }, { i + 1, j + 1 } };
+            float sum = 0.0f, lowest = 1e9f;
+            int wet = 0, kind = WATER_NONE;
+            for (int c = 0; c < 4; c++) {
+                int x = ci[c][0], z = ci[c][1];
+                lowest = fminf(lowest, gh[z][x]);
+                if (wk[z][x] == WATER_NONE) continue;
+                sum += lv[z][x], wet++;
+                if (kind == WATER_NONE || wk[z][x] == WATER_SEA) kind = wk[z][x];
+            }
+            if (!wet) continue;
+            float avg = sum / (float)wet;
+            if (avg + (kind == WATER_SEA ? 0.0f : TERRAIN_LAKE_FLOOD) < lowest) continue; // el agua no llega a esta celda
+            int m = kind == WATER_SEA ? W_SEA : kind == WATER_LAKE ? W_LAKE : W_RIVER;
+            float mx = ox + (i + 0.5f) * cell, mz = oz + (j + 0.5f) * cell;
+            if (m != W_SEA && world_region_weight(t->world, REGION_HIGHLAND, mx, mz) > 0.5f) m = W_GLACIAL; // deshielo turquesa
+            float q[4][3];
+            for (int c = 0; c < 4; c++) {
+                int x = ci[c][0], z = ci[c][1];
+                float y = wk[z][x] != WATER_NONE ? lv[z][x] : avg; // seco: el nivel de los vecinos, bajo la orilla
+                q[c][0] = ox + x * cell, q[c][1] = y, q[c][2] = oz + z * cell;
+            }
+            const int tri[6] = { 0, 1, 2, 2, 1, 3 };
+            for (int v = 0; v < 6; v++) memcpy(&verts[m][(count[m] * 3 + v) * 3], q[tri[v]], sizeof(q[0]));
             count[m] += 2;
-            // Espuma: el mar que rompe en la orilla y el agua rapida y baja de los rios con cantos
-            // (los trenzados no: su lecho es todo bajo). La opacidad sale de la profundidad en cada
-            // esquina, asi la franja blanca sigue la orilla sin costuras entre celdas.
-            bool surf = k == WATER_SEA ? lowest > lv - 2.0f
-                                       : k == WATER_RIVER && lowest > lv - 0.8f && world_river_bank(t->world, x0 + cell * 0.5f, z0 + cell * 0.5f, NULL) > 0.85f;
+            // Espuma: la rompiente del mar y los rapidos de los rios con cantos (no los trenzados);
+            // la opacidad sale de la profundidad en cada esquina: la franja sigue la orilla.
+            bool surf = kind == WATER_SEA ? lowest > avg - 2.0f
+                                          : kind == WATER_RIVER && lowest > avg - 0.8f && world_river_bank(t->world, mx, mz, NULL) > 0.85f;
             if (surf) {
-                float fq[6][3];
-                memcpy(fq, q, sizeof(q));
                 for (int v = 0; v < 6; v++) {
-                    fq[v][1] += 0.06f;
-                    float depth = lv - terrain_height(t, fq[v][0], fq[v][2]), reach = k == WATER_SEA ? 2.0f : 0.8f;
-                    float wob = 0.6f + 0.4f * noise2d(fq[v][0] * 0.15f, fq[v][2] * 0.15f, 777u); // jirones
-                    float a = Clamp(1.0f - depth / reach, 0.0f, 1.0f) * wob;
-                    foam_alpha[count[W_FOAM] * 3 + v] = (unsigned char)(230.0f * a);
+                    const float *p = q[tri[v]];
+                    int o = (count[W_FOAM] * 3 + v) * 3;
+                    verts[W_FOAM][o + 0] = p[0], verts[W_FOAM][o + 1] = p[1] + 0.06f, verts[W_FOAM][o + 2] = p[2];
+                    int gx = (int)roundf((p[0] - ox) / cell), gz = (int)roundf((p[2] - oz) / cell);
+                    float depth = p[1] - gh[gz][gx], reach = kind == WATER_SEA ? 2.0f : 0.8f;
+                    float wob = 0.6f + 0.4f * noise2d(p[0] * 0.15f, p[2] * 0.15f, 777u); // jirones
+                    foam_alpha[count[W_FOAM] * 3 + v] = (unsigned char)(230.0f * Clamp(1.0f - depth / reach, 0.0f, 1.0f) * wob);
                 }
-                memcpy(&verts[W_FOAM][count[W_FOAM] * 9], fq, sizeof(fq));
                 count[W_FOAM] += 2;
             }
         }
+    if (!g_water_tex_tried) { // la textura del agua (ondas), una vez
+        g_water_tex_tried = true;
+        const char *path = platform_asset_path("assets/terrain/agua.png");
+        if (platform_asset_exists(path)) g_water_tex = LoadTexture(path);
+        if (g_water_tex.id) SetTextureFilter(g_water_tex, TEXTURE_FILTER_POINT), SetTextureWrap(g_water_tex, TEXTURE_WRAP_REPEAT);
+        platform_note_asset("assets/terrain/agua.png", g_water_tex.id != 0);
+    }
     for (int m = 0; m < W_MESHES; m++) {
         ch->has_water[m] = count[m] > 0;
         if (!count[m]) continue;
@@ -408,15 +442,22 @@ static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
         mesh.vertexCount = count[m] * 3;
         mesh.vertices = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
         mesh.normals = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
+        mesh.texcoords = MemAlloc(mesh.vertexCount * 2 * sizeof(float));
         memcpy(mesh.vertices, verts[m], mesh.vertexCount * 3 * sizeof(float));
-        for (int i = 0; i < mesh.vertexCount; i++) mesh.normals[i * 3 + 1] = 1.0f;
-        if (m == W_FOAM) { // espuma moteada: blanca, con transparencia por vertice
+        for (int i = 0; i < mesh.vertexCount; i++) {
+            mesh.normals[i * 3 + 1] = 1.0f;
+            // Ondas cada 6 m (la textura se repite; en los rios, estirada a lo largo del agua).
+            mesh.texcoords[i * 2 + 0] = mesh.vertices[i * 3 + 0] / 6.0f;
+            mesh.texcoords[i * 2 + 1] = mesh.vertices[i * 3 + 2] / 6.0f;
+        }
+        if (m == W_FOAM) { // espuma: blanca, con transparencia por vertice
             mesh.colors = MemAlloc(mesh.vertexCount * 4);
             for (int i = 0; i < mesh.vertexCount; i++)
                 mesh.colors[i * 4 + 0] = mesh.colors[i * 4 + 1] = mesh.colors[i * 4 + 2] = 255, mesh.colors[i * 4 + 3] = foam_alpha[i];
         }
         UploadMesh(&mesh, false);
         ch->water[m] = LoadModelFromMesh(mesh);
+        if (m != W_FOAM && g_water_tex.id) ch->water[m].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = g_water_tex;
     }
 }
 

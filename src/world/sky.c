@@ -166,11 +166,15 @@ void sky_draw_lights(Camera3D cam, const Vector3 *pos, const float *radius, int 
         if (depth < 0.5f) continue; // detras de la camara
         Vector2 sp = GetWorldToScreenEx(pos[i], cam, w, h);
         float flick = 0.92f + 0.08f * sinf(time * 11.0f + i * 1.7f) * sinf(time * 6.1f + i);
-        float r = fminf(radius[i] * focal / depth, 280.0f) * flick;
-        if (r < 2.0f) continue;
-        unsigned char a = (unsigned char)(200.0f * dark);
-        DrawCircleGradient((int)sp.x, (int)sp.y, r, (Color){ 255, 150, 64, a }, (Color){ 255, 120, 40, 0 });
-        DrawCircleGradient((int)sp.x, (int)sp.y, r * 0.3f, (Color){ 255, 220, 140, a }, (Color){ 255, 170, 80, 0 });
+        // Un halo chico y tenue alrededor del fuego, y un punto brillante que se ve de lejos
+        // (aunque el halo ya no se note).
+        float r = fminf(radius[i] * 0.45f * focal / depth, 90.0f) * flick;
+        unsigned char a = (unsigned char)(110.0f * dark);
+        if (r >= 2.0f) DrawCircleGradient((int)sp.x, (int)sp.y, r, (Color){ 255, 150, 64, a }, (Color){ 255, 120, 40, 0 });
+        float core = fmaxf(1.5f, fminf(radius[i] * 0.06f * focal / depth, 6.0f)) * flick;
+        unsigned char ca = (unsigned char)(235.0f * fminf(1.0f, dark * 1.4f));
+        DrawCircle((int)sp.x, (int)sp.y, core, (Color){ 255, 214, 130, ca });
+        DrawCircle((int)sp.x, (int)sp.y, fmaxf(1.0f, core * 0.5f), (Color){ 255, 248, 220, ca });
     }
     EndBlendMode();
 }

@@ -9,6 +9,25 @@
 #include "sim/clock.h"
 #include "sim/lang.h"
 
+// La minifoto de un hueco: se lee con fopen (en Android, raylib manda las lecturas al
+// AssetManager y no veria el almacenamiento interno) y se decodifica desde memoria.
+static Texture2D load_thumb(const char *path) {
+    Texture2D t = { 0 };
+    FILE *f = fopen(path, "rb");
+    if (!f) return t;
+    fseek(f, 0, SEEK_END);
+    long n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    unsigned char *buf = n > 0 && n < 8 * 1024 * 1024 ? malloc((size_t)n) : NULL;
+    if (buf && fread(buf, 1, (size_t)n, f) == (size_t)n) {
+        Image img = LoadImageFromMemory(".png", buf, (int)n);
+        if (img.data) t = LoadTextureFromImage(img), UnloadImage(img);
+    }
+    free(buf);
+    fclose(f);
+    return t;
+}
+
 #define SAVE_MAGIC 0x50545345u // "ESTP"
 #define SAVE_VERSION 1u
 
@@ -99,7 +118,12 @@ bool save_write(int slot, const GameState *g, Image thumb, char *err, size_t len
     if (thumb.data) {
         Image t = ImageCopy(thumb);
         ImageResize(&t, SAVE_THUMB_W, SAVE_THUMB_H);
-        ExportImage(t, save_path(slot, true));
+        // A memoria y con fopen: ExportImage en Android escribiria en una ruta doble.
+        int n = 0;
+        unsigned char *png = ExportImageToMemory(t, ".png", &n);
+        FILE *f = png ? fopen(save_path(slot, true), "wb") : NULL;
+        if (f) fwrite(png, 1, (size_t)n, f), fclose(f);
+        MemFree(png);
         UnloadImage(t);
     }
     return true;
@@ -205,7 +229,7 @@ void save_list(SaveInfo out[SAVE_SLOTS]) {
             place_text(h.world_time, si->place, sizeof(si->place)); // en el idioma de ahora
         }
         fclose(f);
-        if (si->used && FileExists(save_path(s, true))) si->thumb = LoadTexture(save_path(s, true));
+        if (si->used) si->thumb = load_thumb(save_path(s, true));
     }
 }
 

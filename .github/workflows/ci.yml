@@ -82,6 +82,10 @@ jobs:
           # Debe apuntar a una version estable (numerica) para instalarse en dispositivos reales.
           grep -E "^targetSdkVersion:'[0-9]+'$" badging.txt
           unzip -l build-android/estepa.apk | grep -E "libestepa.so|yurta_comun.glb|inventario.tsv"
+          # El juego pide los assets sin el prefijo assets/ (src/platform.c): dentro del APK
+          # tienen que estar justo bajo assets/ (la raiz del AssetManager).
+          unzip -l build-android/estepa.apk | grep -E " assets/ui/iconos.png$"
+          unzip -l build-android/estepa.apk | grep -E " assets/terrain/texturas.png$"
       - uses: actions/upload-artifact@v4
         with:
           name: estepa-android
