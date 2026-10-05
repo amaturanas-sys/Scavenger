@@ -35,9 +35,12 @@ shot 14_jinetes 40 --enemigos jinetes
 shot 15_botin 30 --botin
 shot 16_galeria 40 --galeria
 # El mundo (docs/MUNDO.md): a pie en cada sitio (verano, mediodia) y la vista orbital.
-for p in bosque altiplano mar desierto muro canal capital aldea guarida; do
-    shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p"
+for p in estepa meandro bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida; do
+    shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.12
 done
+# El cielo: el ocaso al oeste, la luna al este y las estrellas.
+shot cielo_ocaso 60 --dia 5 --minuto 15.5 --ir estepa --camara 0.06 --rumbo 270
+shot cielo_luna 60 --dia 5 --minuto 18 --ir estepa --camara 0.06 --rumbo 90
 shot orbital_1206_30 40 --dia 11 --minuto 7 --orbital 30 0.5
 shot orbital_1206_150 40 --dia 11 --minuto 7 --orbital 150 0.3
 shot orbital_1206_250 40 --dia 11 --minuto 7 --orbital 250 0.9

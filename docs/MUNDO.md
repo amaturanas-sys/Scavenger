@@ -1,6 +1,8 @@
 # El mundo: reglas fijas y detalles al azar
 
-El mundo es un **gran círculo** de 2,4 km de radio. Cada partida nueva tira una **semilla**. Las reglas de abajo no cambian nunca; la semilla solo mueve los detalles. Todo sale de `src/sim/world.c` (C puro): la altura y el agua son funciones de (x, z) que consultan el terreno, la física, la fauna y los mapas.
+El mundo es una **gran tierra casi redonda** de 4,8 km de radio medio. Su borde es **fractal**: tiene entrantes y salientes, no es una circunferencia neta. Cada partida nueva tira una **semilla**. Las reglas de abajo no cambian nunca; la semilla solo mueve los detalles. Todo sale de `src/sim/world.c` (C puro): la altura y el agua son funciones de (x, z) que consultan el terreno, la física, la fauna y los mapas.
+
+El norte es −Z y el este +X.
 
 ![Seis semillas](mundo/semillas.png)
 
@@ -10,30 +12,60 @@ El mundo es un **gran círculo** de 2,4 km de radio. Cada partida nueva tira una
 
 | Regla | Qué hace |
 |---|---|
-| **Cinco regiones en sectores** | La estepa ocupa el centro (allí acampa la tribu) y un sector hasta el borde. Alrededor, siempre en este orden: bosque de coníferas, altiplano glaciar, costa de fiordos y desierto. |
-| **Altitud media por región** | Costa ~12 m · desierto ~28 m · estepa ~40 m · bosque ~55 m · altiplano ~70 m. Encima va el relieve propio de cada una: colinas suaves en la estepa, lomas en el bosque, meseta y cordilleras en el altiplano, costa abrupta en los fiordos, dunas y mesetas de borde cortado en el desierto. |
-| **El borde de la costa** | La tierra baja al **mar** (nivel 0). Fiordos estrechos entran hasta 500 m tierra adentro. |
-| **El borde del desierto** | Un **cañón** de 30 m de hondo y, detrás, un **muro** de seis estratos que sube 140 m. |
-| **El borde del resto** | Estepa, bosque y altiplano terminan en el **gran canal**, un cauce de 52 m de ancho. De él salen entre 6 y 9 **ríos tributarios** hacia el centro. |
-| **La frontera invisible** | A 2.330 m del centro nadie pasa. Un aviso explica por qué: el mar, el muro o el canal. |
-| **El agua corre hacia el canal** | Los ríos bajan desde el interior y su agua nunca queda sobre la orilla. Algunos acaban en un lago. Hay un lago siempre cerca del campamento. El desierto solo tiene oasis. |
-| **Cada región, su gente y sus fieras** | **Gente:** un reino vecino por región, con su capital amurallada y dos aldeas al estilo de la región. **Fieras:** guaridas de las especies de la región. La fauna que aparece es la del hábitat de la región. |
+| **La estepa en el centro** | Allí acampa la tribu. La rodean **ríos de meandros** (trayecto tortuoso) que la separan de las demás regiones. |
+| **Cuatro regiones alrededor** | **Noroeste:** bosque de coníferas muy tupido, con alerces que se doran en otoño. **Noreste:** desierto. **Sureste:** altiplano glaciar. **Suroeste:** costa de fiordos. |
+| **Altitud media por región** | Costa ~12 m · desierto ~28 m · estepa ~40 m · bosque ~55 m · altiplano ~70 m. Encima va el relieve propio de cada una: matas y colinas suaves en la estepa, lomas en el bosque, crestas afiladas y cumbres nevadas en el altiplano, costa abrupta en los fiordos, dunas y mesetas en el desierto. |
+| **El borde de los fiordos** | La tierra baja al **mar** (nivel 0). Los fiordos entran tierra adentro. |
+| **El borde del desierto** | Un **gran cañón** y, detrás, un **muro de siete estratos** de 160 m. |
+| **El borde del altiplano** | Un **muro de hielo glaciar** de 135 m, con grietas. Del altiplano bajan **ríos trenzados** por anchos lechos de grava; sus lagos son turquesa, de deshielo. |
+| **El borde del bosque** | Un **canal sigmoideo** (serpentea) de 60 m de ancho, del que salen **ríos tributarios** hacia adentro. |
+| **La frontera invisible** | Sigue el borde fractal, antes del mar abierto, del muro, del hielo o del canal. Un aviso explica por qué no se pasa. |
+| **El agua corre hacia abajo** | El nivel de cada río baja siempre y su agua nunca queda sobre la orilla. Hay un lago siempre cerca del campamento. El desierto solo tiene oasis. |
+| **Cada región, su gente y sus fieras** | **Gente:** un reino vecino por región, con su capital amurallada y tres aldeas al estilo de la región. **Fieras:** guaridas de las especies de la región. La fauna que aparece es la del hábitat de la región. |
 | **Reinos** | Estepa: **Kanato de Hierro** (al que la tribu rinde tributo). Bosque: **Principado de los Pinos Negros**. Altiplano: **Señorío del Glaciar**. Costa: **Jarlazgo de la Costa Helada**. Desierto: **Reino de los Oasis**. |
 
 ## Lo que cambia con cada semilla
 
-- **Fronteras entre regiones:** se tuercen con ruido y el conjunto gira hasta ±5°. Ninguna región sale de su sector.
-- **Ríos:** cuántos son, dónde nacen en el canal, cuánto serpentean y hasta dónde llegan.
-- **Lagos:** cuántos son, dónde están, su tamaño y la forma de su orilla. Algunos aparecen al final de un río.
+- **El borde:** el contorno fractal de la tierra.
+- **Fronteras entre regiones:** el radio de la estepa varía con ruido y las fronteras entre cuadrantes se tuercen. Ninguna región sale de su cuadrante.
+- **Ríos:**
+  - los meandros de la estepa: cuánto serpentean y su largo de onda;
+  - cuántos tributarios salen del canal (4 a 6) y dónde;
+  - los ríos trenzados del altiplano (3 a 4) y de los fiordos (1 a 2): su trazado y sus canales.
+- **Lagos:** 14 a 19, más 3 a 4 oasis; dónde están, su tamaño y la forma de su orilla.
 - **Montañas:** dónde se levantan los macizos y cuánto miden.
-  - En el altiplano, 4 a 7, con cumbres nevadas.
-  - En la costa, 3 a 5.
-  - En el bosque, 2 a 4.
-  - En la estepa, 1 a 3 lomas.
+  - En el altiplano, 8 a 12, con cumbres que llegan a las nubes.
+  - En la costa, 5 a 8.
+  - En el bosque, 4 a 6.
+  - En la estepa, 2 a 3 lomas.
 - **Pueblos y guaridas:** dónde caen, siempre dentro de su región, en seco y en llano.
   - Los pueblos quedan separados entre sí y lejos del campamento.
   - Las guaridas quedan lejos de los pueblos.
 - **Nombres de los pueblos:** se arman con sílabas de cada región, sin repetirse.
+
+## El suelo, el horizonte y el cielo
+
+- **Texturas del suelo** (`src/world/terrain.c`): un atlas low-res de 4×4 celdas de 32 px, `assets/terrain/texturas.png`. Cada celda cubre 8 m de suelo. Están inspiradas en fotos de la estepa y del Altai:
+  - matas y pasto alto de la estepa;
+  - suelo del bosque, tundra del altiplano y musgo de la costa;
+  - arena con ondas, estratos, grava de los ríos trenzados, nieve de glaciar, roca, barro cuarteado de las orillas y muro de hielo.
+
+  La celda lleva luces y sombras en grises; la región y la estación ponen el color. En las paredes la textura va de pie, para que los estratos queden horizontales. El atlas se rehace con `python3 tools/assets/texturas_terreno.py generar --forzar`; `guia` dibuja la guía con los nombres.
+- **Horizonte lejano:** una malla gruesa, de una celda por chunk, que llega a ~2,4 km bajo los chunks cargados. Deja un hueco donde están los chunks. Así se ven a lo lejos las montañas, los muros, el hielo y el mar. Lo lejano se pierde en una bruma del color del horizonte.
+- **Cielo** (`src/world/sky.c`):
+  - un degradado del cenit al horizonte;
+  - el **sol** sale por el este, pasa por el sur a mediodía y se pone por el oeste, con un resplandor cálido cuando está bajo;
+  - la **luna** recorre el mismo arco, retrasada según su fase (una luna cada 14 días: nueva junto al sol, llena opuesta);
+  - las **estrellas** giran alrededor del polo norte.
+- **Nubes** (`src/world/clouds.c`):
+  - una capa a altura fija, 80 m sobre el llano del campamento;
+  - el viento la arrastra, y cuántas nubes hay sale de la cobertura del clima;
+  - las cumbres altas del altiplano atraviesan la capa y llevan además su gorro de nubes;
+  - con la cámara dentro de una nube, la vista se cubre de niebla.
+
+![Cielo](mundo/cielo.png)
+
+*El ocaso al oeste y la luna creciente al este, de noche.*
 
 ## Parámetros para afinar
 
@@ -41,31 +73,37 @@ Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
 
 | Parámetro | Dónde | Efecto |
 |---|---|---|
-| `WORLD_RADIUS`, `WORLD_LIMIT` | `world.h` | Tamaño del círculo y frontera invisible. |
+| `WORLD_RADIUS` | `world.h` | Radio medio de la tierra. |
+| `world_edge_radius()` | borde | Lo fractal del borde: amplitud y octavas del ruido. |
+| `STEPPE_R` y su ruido | arriba | Radio de la estepa central. |
+| `SECTOR_ANGLE[]`, `SECTOR_HALF`, `SECTOR_BLEND` | arriba | El cuadrante de cada región y la transición entre ellas. |
 | `ALTITUDE[]` | arriba | Altitud media de cada región. |
-| `SECTOR_ANGLE[]`, `SECTOR_HALF`, `SECTOR_BLEND` | arriba | Dónde está cada región, el ancho de su sector y la transición entre regiones. |
-| `0.24R–0.34R` | `world_region_weights` | Radio de la estepa central. |
-| `region_detail()` | relieve | Relieve propio de cada región: amplitud de colinas, cordilleras, dunas y mesetas. |
+| `region_detail()` | relieve | Relieve propio de cada región. |
 | `PEAK_RULES[]` | `world_generate` | Montañas por región: cuántas, alturas y radios. |
-| `CANAL_E`, `CANAL_HALF`, `CANAL_DEPTH` | arriba | El gran canal. |
+| `CANAL_E`, `CANAL_SWING`, `CANAL_HALF`, `CANAL_DEPTH` | arriba | El canal sigmoideo del bosque. |
 | `SHORE_E`, `fjord_inlet()` | arriba | La costa y lo que entran los fiordos. |
-| `WALL_E`, `GORGE_E` y la altura del muro (140) | arriba y `land()` | El cañón y el muro del desierto. |
-| `6 + rng_range(4)` ríos, ancho 5–10 m | `world_generate` | Ríos tributarios. |
-| `7 + rng_range(5)` lagos, radio 30–75 m | `world_generate` | Lagos. |
-| Oasis 2–3, radio 12–20 m | `world_generate` | Oasis del desierto. |
-| 3 pueblos por región, 380 m entre ellos | `world_generate` | Pueblos. |
-| 5–7 guaridas por región, `den_species()` | `world_generate` | Guaridas y sus especies. |
-| `tree_density()` | `src/world/terrain.c` | Árboles por región. |
-| `ground_color()` | `src/world/terrain.c` | Colores del suelo por región. |
+| `WALL_E`, `GORGE_E` | arriba | El cañón y el muro de estratos del desierto. |
+| `ICE_E` | arriba | El muro de hielo del altiplano. |
+| `make_meanders()`, `make_radial()` | `world_generate` | Meandros, tributarios y ríos trenzados. |
+| Lagos 14–19, oasis 3–4 | `world_generate` | Lagos y oasis. |
+| `tree_density()` | `src/world/terrain.c` | Árboles por región (bosque tupido: 0,62). |
+| `ground_color()`, `ground_tex()` | `src/world/terrain.c` | Color y textura del suelo. |
+| `FAR_CELLS`, `FAR_HAZE_NEAR` | `src/world/terrain.c` | Alcance del horizonte lejano y su bruma. |
+| `SKY_LUNAR_DAYS`, `arc_dir()` | `src/world/sky.*` | Fases de la luna y arco del sol. |
+| `CLOUD_ABOVE_PLAIN`, `CLOUD_VIEW`, `CELL` | `src/world/clouds.*` | Altura de las nubes, alcance y tamaño de la celda de cada nube. |
 
 ## Cómo verlo
 
 ```bash
-./build/estepa --semilla 42 --mapa-mundo mapa.png        # mapa general (1024 px; --mapa-tam N cambia el tamaño)
-./build/estepa --semilla 42 --orbital 30 0.5             # vista orbital: grados alrededor e inclinación (0 de canto, 1 desde arriba)
-./build/estepa --semilla 42 --ir muro --dia 11 --minuto 7 # a pie de un sitio: estepa, bosque, altiplano, fiordos, desierto,
-                                                         # canal, muro, mar, capital, aldea, guarida
+./build/estepa --semilla 42 --mapa-mundo mapa.png         # mapa general (1024 px; --mapa-tam N cambia el tamaño)
+./build/estepa --semilla 42 --orbital 30 0.5              # vista orbital: grados alrededor e inclinación (0 de canto, 1 desde arriba)
+./build/estepa --semilla 42 --ir muro --dia 11 --minuto 7 # a pie de un sitio (ver la lista abajo)
+./build/estepa --ir estepa --dia 5 --minuto 18 --camara 0.06 --rumbo 90   # la luna al este, de noche
 ```
+
+Sitios de `--ir`: estepa, meandro, bosque, canal, altiplano, trenzado, hielo, cumbre, fiordos, mar, desierto, muro, capital, aldea y guarida.
+
+`--camara` fija la inclinación: 0,05 es casi de canto, con el cielo a la vista; 1,25 es desde arriba. `--rumbo` fija los grados: 0 sur, 90 este, 180 norte, 270 oeste.
 
 En el juego, **F5** abre la vista orbital (flechas: girar e inclinar).
 
@@ -82,8 +120,6 @@ En el juego, **F5** abre la vista orbital (flechas: girar e inclinar).
 
 ### A pie
 
-| | | |
-|---|---|---|
-| ![Bosque](capturas/mundo_bosque.png) | ![Altiplano](capturas/mundo_altiplano.png) | ![Mar](capturas/mundo_mar.png) |
-| ![Muro](capturas/mundo_muro.png) | ![Canal](capturas/mundo_canal.png) | ![Capital](capturas/mundo_capital.png) |
-| ![Aldea](capturas/mundo_aldea.png) | ![Guarida](capturas/mundo_guarida.png) | ![Desierto](capturas/mundo_desierto.png) |
+![A pie](mundo/a_pie.png)
+
+*Estepa, meandro, bosque, canal · altiplano, río trenzado, muro de hielo, cumbre entre las nubes · desierto, muro de estratos, mar y capital del bosque.*

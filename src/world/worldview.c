@@ -10,8 +10,7 @@
 #include "sim/animals.h"
 #include "sim/lang.h"
 
-#define VIEW_EXT (WORLD_RADIUS + 260.0f) // la malla cubre el circulo y un poco mas
-#define VIEW_N 220                       // vertices por lado
+#define VIEW_N 255                       // vertices por lado (indices de 16 bits: n*n <= 65535)
 #define VIEW_VSCALE 4.0f                 // el relieve, exagerado desde la orbita
 
 static Color mixc(Color a, Color b, float k) {
@@ -40,16 +39,23 @@ static Color world_color(const World *w, float x, float z, float h, float slope,
     return c;
 }
 
+// Lo que cubren la malla y el mapa: el borde fractal mas lejano y un margen (el muro, el hielo).
+static float view_ext(const World *w) {
+    float r = WORLD_RADIUS;
+    for (int a = 0; a < 720; a++) r = fmaxf(r, world_edge_radius(w, (float)a / 720.0f * 2.0f * PI));
+    return r + 320.0f;
+}
+
 void worldview_build(WorldView *v, const World *w, float snowline) {
     if (v->built && v->seed == w->seed) return;
     worldview_unload(v);
     const int n = VIEW_N;
-    const float step = 2.0f * VIEW_EXT / (n - 1);
+    const float ext = view_ext(w), step = 2.0f * ext / (n - 1);
     float *hs = malloc(sizeof(float) * n * n), *ws = malloc(sizeof(float) * n * n);
     WaterKind *kinds = malloc(sizeof(WaterKind) * n * n);
     for (int j = 0; j < n; j++)
         for (int i = 0; i < n; i++) {
-            float x = -VIEW_EXT + i * step, z = -VIEW_EXT + j * step;
+            float x = -ext + i * step, z = -ext + j * step;
             hs[j * n + i] = world_height(w, x, z);
             ws[j * n + i] = world_water(w, x, z, 0.0f, &kinds[j * n + i]);
         }
@@ -63,9 +69,9 @@ void worldview_build(WorldView *v, const World *w, float snowline) {
     for (int j = 0; j < n; j++)
         for (int i = 0; i < n; i++) {
             int id = j * n + i;
-            float x = -VIEW_EXT + i * step, z = -VIEW_EXT + j * step;
+            float x = -ext + i * step, z = -ext + j * step;
             float h = hs[id], top = fmaxf(h, kinds[id] != WATER_NONE ? ws[id] : -1e9f);
-            bool outside = world_edge_distance(x, z) < -150.0f; // fuera del gran circulo: el vacio
+            bool outside = world_edge_distance(w, x, z) < -150.0f; // fuera del gran circulo: el vacio
             if (outside) top = -400.0f; // el disco flota: fuera, el vacio (del color del fondo)
             float hx = hs[j * n + (i < n - 1 ? i + 1 : i)] - hs[j * n + (i > 0 ? i - 1 : i)];
             float hz = hs[(j < n - 1 ? j + 1 : j) * n + i] - hs[(j > 0 ? j - 1 : j) * n + i];
@@ -77,7 +83,7 @@ void worldview_build(WorldView *v, const World *w, float snowline) {
             // Luz horneada (el sol del noroeste) y fuera del circulo, mas oscuro.
             const Vector3 sun = Vector3Normalize((Vector3){ -0.5f, 0.8f, -0.4f });
             float light = 0.55f + 0.55f * fmaxf(0.0f, Vector3DotProduct(nor, sun));
-            if (world_edge_distance(x, z) < 0.0f) light *= 0.55f;
+            if (world_edge_distance(w, x, z) < 0.0f) light *= 0.55f;
             if (outside) c = (Color){ 14, 18, 28, 255 }, light = 1.0f;
             m.colors[id * 4 + 0] = (unsigned char)fminf(255.0f, c.r * light);
             m.colors[id * 4 + 1] = (unsigned char)fminf(255.0f, c.g * light);
@@ -152,7 +158,7 @@ static void mark(Image *img, int x, int y, int r, Color fill, Color edge) {
 bool worldmap_export(const World *w, const char *path, int size, float snowline) {
     Image img = GenImageColor(size, size, (Color){ 18, 22, 30, 255 });
     float *hs = malloc(sizeof(float) * size * size);
-    const float ext = VIEW_EXT, px = 2.0f * ext / size;
+    const float ext = view_ext(w), px = 2.0f * ext / size;
     for (int j = 0; j < size; j++)
         for (int i = 0; i < size; i++) hs[j * size + i] = world_height(w, -ext + (i + 0.5f) * px, -ext + (j + 0.5f) * px);
     for (int j = 0; j < size; j++)
@@ -164,14 +170,14 @@ bool worldmap_export(const World *w, const char *path, int size, float snowline)
             float slope = sqrtf(hx * hx + hz * hz) / px;
             Color c = world_color(w, x, z, h, slope, snowline, water, k);
             float light = k != WATER_NONE && water > h ? 1.0f : Clamp(1.0f + (hx + hz) / px * 1.4f, 0.45f, 1.45f);
-            if (world_edge_distance(x, z) < 0.0f) light *= 0.45f;
+            if (world_edge_distance(w, x, z) < 0.0f) light *= 0.45f;
             ImageDrawPixel(&img, i, j, (Color){ (unsigned char)fminf(255, c.r * light), (unsigned char)fminf(255, c.g * light), (unsigned char)fminf(255, c.b * light), 255 });
         }
     free(hs);
-    // El gran circulo.
-    int cx = size / 2, cy = size / 2, rr = (int)(WORLD_RADIUS / px);
-    for (int a = 0; a < 720; a++) {
-        float t = (float)a / 720.0f * 2.0f * PI;
+    // El borde fractal (la frontera de lo transitable).
+    int cx = size / 2, cy = size / 2;
+    for (int a = 0; a < 2880; a++) {
+        float t = (float)a / 2880.0f * 2.0f * PI, rr = world_edge_radius(w, t) / px;
         ImageDrawPixel(&img, cx + (int)(cosf(t) * rr), cy + (int)(sinf(t) * rr), (Color){ 240, 220, 160, 140 });
     }
     int fs = size >= 900 ? 10 : 8;

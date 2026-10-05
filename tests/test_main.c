@@ -2478,26 +2478,31 @@ static void test_world_regions_borders_and_sites(void) {
     world_generate(&a, 1206u);
     world_generate(&b, 1206u);
     world_generate(&c, 77u);
-    // Determinista por semilla; otra semilla mueve rios, lagos y montañas.
+    // Determinista por semilla; otra semilla mueve rios, lagos, montañas y el borde.
     CHECK(a.lake_count == b.lake_count && a.river_count == b.river_count && world_height(&a, 333.0f, -777.0f) == world_height(&b, 333.0f, -777.0f));
     CHECK(a.lakes[1].x != c.lakes[1].x || a.rivers[0].x[0] != c.rivers[0].x[0]);
-    CHECK(a.river_count >= 4 && c.river_count >= 4 && a.lake_count >= 6);
+    CHECK(world_edge_radius(&a, 1.0f) != world_edge_radius(&c, 1.0f));
     const World *ws[2] = { &a, &c };
     for (int k = 0; k < 2; k++) {
         const World *w = ws[k];
-        // Las cinco regiones, siempre en el mismo orden; la estepa en el centro.
-        CHECK(world_region(w, 0.0f, 0.0f) == REGION_STEPPE && world_region(w, 300.0f, -200.0f) == REGION_STEPPE);
-        for (int r = 0; r < REGION_COUNT; r++) {
-            float x, z;
-            world_region_point(w, (Region)r, 0.7f * WORLD_RADIUS, &x, &z);
-            CHECK(world_region(w, x, z) == (Region)r);
+        // El borde es fractal: varia alrededor del radio medio, sin saltos.
+        float rmin = 1e9f, rmax = 0.0f;
+        for (int i = 0; i < 720; i++) {
+            float r = world_edge_radius(w, (float)i * 0.5f * 0.0174533f);
+            rmin = fminf(rmin, r), rmax = fmaxf(rmax, r);
         }
+        CHECK(rmax - rmin > 0.05f * WORLD_RADIUS && rmin > 0.8f * WORLD_RADIUS && rmax < 1.2f * WORLD_RADIUS);
+        // La estepa al centro; el bosque al noroeste, el desierto al noreste, el altiplano al
+        // sureste y la costa al suroeste (el norte es -Z).
+        CHECK(world_region(w, 0.0f, 0.0f) == REGION_STEPPE && world_region(w, 500.0f, -400.0f) == REGION_STEPPE);
+        CHECK(world_region(w, -2600.0f, -2600.0f) == REGION_FOREST && world_region(w, 2600.0f, -2600.0f) == REGION_DESERT);
+        CHECK(world_region(w, 2600.0f, 2600.0f) == REGION_HIGHLAND && world_region(w, -2600.0f, 2600.0f) == REGION_FJORD);
         // Altitud media estandarizada: la costa abajo, el altiplano arriba.
         double sum[REGION_COUNT] = { 0 };
         int n[REGION_COUNT] = { 0 };
-        for (float x = -2200.0f; x < 2200.0f; x += 60.0f)
-            for (float z = -2200.0f; z < 2200.0f; z += 60.0f) {
-                if (world_edge_distance(x, z) < 250.0f) continue;
+        for (float x = -4400.0f; x < 4400.0f; x += 120.0f)
+            for (float z = -4400.0f; z < 4400.0f; z += 120.0f) {
+                if (world_edge_distance(w, x, z) < 600.0f) continue;
                 float wt[REGION_COUNT];
                 Region r = world_region_weights(w, x, z, wt);
                 if (wt[r] < 0.9f) continue;
@@ -2510,27 +2515,43 @@ static void test_world_regions_borders_and_sites(void) {
         }
         CHECK(mean[REGION_FJORD] < mean[REGION_DESERT] && mean[REGION_DESERT] < mean[REGION_STEPPE]);
         CHECK(mean[REGION_STEPPE] < mean[REGION_FOREST] && mean[REGION_FOREST] < mean[REGION_HIGHLAND]);
-        // El borde: mar en la costa, un muro en el desierto, el gran canal en el resto.
+        // Los bordes: el mar en la costa, el cañon y el muro de estratos en el desierto, el muro
+        // de hielo en el altiplano y el canal en el bosque.
         float x, z;
-        world_region_point(w, REGION_FJORD, WORLD_RADIUS - 30.0f, &x, &z);
         WaterKind wk;
+        world_edge_point(w, REGION_FJORD, 40.0f, &x, &z);
         CHECK(world_height(w, x, z) < SEA_LEVEL && world_water(w, x, z, 0.0f, &wk) == SEA_LEVEL && wk == WATER_SEA);
-        world_region_point(w, REGION_DESERT, WORLD_RADIUS - 30.0f, &x, &z);
-        CHECK(world_height(w, x, z) > mean[REGION_DESERT] + 80.0f);
-        float gx, gz; // el cañon al pie del muro
-        world_region_point(w, REGION_DESERT, WORLD_RADIUS - 118.0f, &gx, &gz);
-        CHECK(world_height(w, gx, gz) < world_height(w, x, z) - 100.0f);
-        for (int r = REGION_STEPPE; r <= REGION_HIGHLAND; r++) {
-            world_region_point(w, (Region)r, WORLD_RADIUS - 70.0f, &x, &z);
-            float lv = world_water(w, x, z, 0.0f, &wk);
-            CHECK(wk == WATER_CANAL && lv > world_height(w, x, z) + 1.0f);
-        }
-        // Los rios nacen en el canal y el agua baja hacia el.
+        world_edge_point(w, REGION_DESERT, 20.0f, &x, &z);
+        float wall = world_height(w, x, z);
+        CHECK(wall > mean[REGION_DESERT] + 100.0f);
+        world_edge_point(w, REGION_DESERT, 150.0f, &x, &z);
+        CHECK(world_height(w, x, z) < wall - 120.0f);
+        world_edge_point(w, REGION_HIGHLAND, 20.0f, &x, &z);
+        CHECK(world_height(w, x, z) > mean[REGION_HIGHLAND] + 80.0f);
+        float fa = 225.0f * 0.0174533f - w->warp_phase;
+        float cr = world_edge_radius(w, fa) - world_canal_offset(w, fa);
+        float lv = world_water(w, cosf(fa) * cr, sinf(fa) * cr, 0.0f, &wk);
+        CHECK(wk == WATER_CANAL && lv > world_height(w, cosf(fa) * cr, sinf(fa) * cr) + 1.0f);
+        // Los rios: meandros alrededor de la estepa; tributarios que nacen en el canal; trenzados
+        // en el altiplano; el agua siempre baja.
+        int kinds[3] = { 0, 0, 0 };
         for (int i = 0; i < w->river_count; i++) {
             const River *rv = &w->rivers[i];
-            CHECK(rv->n >= 6 && fabsf(world_edge_distance(rv->x[0], rv->z[0]) - 70.0f) < 2.0f);
-            for (int j = 1; j < rv->n; j++) CHECK(rv->level[j] >= rv->level[j - 1]);
+            kinds[rv->kind]++;
+            CHECK(rv->n >= 8);
+            if (rv->kind == RIVER_TRIBUTARY) {
+                float th = atan2f(rv->z[0], rv->x[0]);
+                CHECK(fabsf(world_edge_distance(w, rv->x[0], rv->z[0]) - world_canal_offset(w, th)) < 3.0f);
+                for (int j = 1; j < rv->n; j++) CHECK(rv->level[j] >= rv->level[j - 1]);
+            }
+            if (rv->kind == RIVER_BRAIDED)
+                for (int j = 1; j < rv->n; j++) CHECK(rv->level[j] <= rv->level[j - 1]);
+            if (rv->kind == RIVER_MEANDER) { // cerca del contorno de la estepa
+                float r0 = sqrtf(rv->x[rv->n / 2] * rv->x[rv->n / 2] + rv->z[rv->n / 2] * rv->z[rv->n / 2]);
+                CHECK(r0 > 0.2f * WORLD_RADIUS && r0 < 0.55f * WORLD_RADIUS);
+            }
         }
+        CHECK(kinds[RIVER_MEANDER] >= 4 && kinds[RIVER_TRIBUTARY] >= 3 && kinds[RIVER_BRAIDED] >= 3);
         // Agua cerca del campamento; el campamento, en seco.
         CHECK(sqrtf(w->lakes[0].x * w->lakes[0].x + w->lakes[0].z * w->lakes[0].z) < 260.0f);
         CHECK(world_water(w, 0.0f, 0.0f, 3.0f, NULL) < world_height(w, 0.0f, 0.0f));
@@ -2542,17 +2563,22 @@ static void test_world_regions_borders_and_sites(void) {
             capitals += st->kind == SETTLE_CAPITAL;
             for (int o = 0; o < i; o++) CHECK(strcmp(st->name, w->settlements[o].name) != 0);
         }
-        CHECK(capitals == REGION_COUNT);
-        CHECK(w->den_count >= 20);
+        CHECK(capitals == REGION_COUNT && w->settlement_count >= 15);
+        CHECK(w->den_count >= 30);
         for (int i = 0; i < w->den_count; i++) {
             const Den *d = &w->dens[i];
             CHECK(world_region(w, d->x, d->z) == d->region);
             CHECK(species_def((Species)d->species)->habitat & region_habitat(d->region));
         }
+        // La frontera invisible: no se pasa el mar abierto, el muro, el hielo ni el canal.
+        for (int r = REGION_FOREST; r < REGION_COUNT; r++) {
+            world_edge_point(w, (Region)r, -300.0f, &x, &z); // afuera
+            CHECK(world_clamp(w, &x, &z) && !world_clamp(w, &x, &z));
+            CHECK(world_edge_distance(w, x, z) > 30.0f);
+        }
+        float px = 100.0f, pz = 100.0f;
+        CHECK(!world_clamp(w, &px, &pz));
     }
-    // La frontera invisible.
-    float px = 3000.0f, pz = 0.0f;
-    CHECK(world_clamp(&px, &pz) && fabsf(px - WORLD_LIMIT) < 0.01f && !world_clamp(&px, &pz));
     CHECK(world_for_seed(1206u) == world_for_seed(1206u) && world_for_seed(1206u)->seed == 1206u);
 }
 

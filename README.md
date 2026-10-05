@@ -129,14 +129,16 @@ Ropa y clima:
 Prueba: `--ropa`.
 
 El mundo ([MUNDO.md](docs/MUNDO.md)):
-- **Un gran círculo con cinco regiones fijas:** la estepa en el centro (allí acampa la tribu) y, alrededor, el bosque de coníferas, el altiplano glaciar, la costa de fiordos y el desierto. Cada una tiene su altitud media: la costa, la más baja; el altiplano, el más alto.
-- **El borde:** el mar en la costa (con fiordos), un muro enorme tras un cañón en el desierto y un gran canal en el resto, del que salen ríos hacia adentro. No se puede salir.
+- **Una gran tierra casi redonda (4,8 km de radio, de borde fractal) con cinco regiones fijas:** la estepa en el centro (allí acampa la tribu), rodeada de ríos de meandros; el bosque de coníferas, muy tupido, al noroeste; el desierto al noreste; el altiplano glaciar al sureste; la costa de fiordos al suroeste. Cada una tiene su altitud media: la costa, la más baja; el altiplano, el más alto.
+- **El borde:** el mar tras los fiordos, un gran cañón y un muro de estratos en el desierto, un muro de hielo en el altiplano y un canal sinuoso en el bosque, del que salen ríos tributarios. Del altiplano bajan ríos trenzados por lechos de grava. No se puede salir.
+- **Texturas del suelo** low-res inspiradas en fotos de la estepa y del Altai (matas, pasto alto, tundra, grava, nieve, estratos, hielo): `tools/assets/texturas_terreno.py`.
+- **El cielo:** el sol sale por el este y se pone por el oeste; la luna cambia de fase (14 días) y las estrellas giran alrededor del polo. Las nubes van a una altura fija y el viento las lleva; las cumbres altas las atraviesan y quedan envueltas (dentro de una nube, niebla). A lo lejos se ve el horizonte: montañas, muros y mar a ~2,4 km.
 - **Cada partida nueva es otro mundo:** cambian los ríos, los lagos, las montañas, las fronteras entre regiones, los pueblos y las guaridas, siempre con las mismas reglas.
 - **Reinos vecinos:** uno por región, con su capital amurallada y sus aldeas al estilo de la región; al llegar quedan en el mapa.
 - **Guaridas:** de las fieras de cada región; cerca aparecen sus dueños.
 - **`F5`:** vista orbital del mundo entero (flechas: girar e inclinar).
 
-Pruebas: `--semilla N` fija el mundo; `--ir lugar` lleva a `estepa`, `bosque`, `altiplano`, `fiordos`, `desierto`, `canal`, `muro`, `mar`, `capital`, `aldea` o `guarida`; `--orbital [grados] [inclinación]`; `--mapa-mundo archivo.png` (con `--mapa-tam N`).
+Pruebas: `--semilla N` fija el mundo; `--ir lugar` lleva a `estepa`, `meandro`, `bosque`, `canal`, `altiplano`, `trenzado`, `hielo`, `cumbre`, `fiordos`, `mar`, `desierto`, `muro`, `capital`, `aldea` o `guarida`; `--camara inclinación` y `--rumbo grados` orientan la cámara; `--orbital [grados] [inclinación]`; `--mapa-mundo archivo.png` (con `--mapa-tam N`).
 
 El agua:
 - **La sed** baja con el tiempo, más con calor y corriendo. Con sed vas más lento y te cansas; con la sed a cero te desmayas y la tribu te lleva al campamento a beber.

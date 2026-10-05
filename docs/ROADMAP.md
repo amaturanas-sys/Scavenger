@@ -92,6 +92,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Ropa y clima: prendas por capas (abrigo, sombra, lluvia, peso), calor y golpe de calor, desierto que quema de día y hiela de noche, pieles de depredador que escarmientan, 20 recetas a mano, la tribu se cambia según el tiempo.
 - [x] El agua: sed (más con calor), espíritus malditos en el agua cruda (incubación y fiebre), hervir y el alcohol purifican, borrachera (torpe y fatigado), la tribu bebe cada día, los animales tienen sed.
 - [x] El mundo: gran círculo con cinco regiones fijas de altitud estandarizada; borde de mar con fiordos, muro con cañón y gran canal con tributarios; cada partida cambia ríos, lagos, montañas, pueblos y guaridas; reinos, aldeas, capitales y guaridas por región; vista orbital (F5) y mapa general.
+- [x] El mundo v2: radio doble y borde fractal; estepa central rodeada de meandros; bosque tupido al noroeste con canal sigmoideo y tributarios; desierto al noreste con gran cañón y muro de estratos; altiplano al sureste con muro de hielo y ríos trenzados; fiordos al suroeste. Texturas del suelo, horizonte lejano, cielo con sol, luna con fases y estrellas, y nubes con viento que envuelven las cumbres.
 - [x] Combate montado (golpe con inercia, lanza que derriba, arrollar, la montura recibe golpes, derribo que desmonta), jinetes bandidos y botín de los enemigos.
 - [ ] Trepar árboles y rocas sin trepa (Fase 2).
 

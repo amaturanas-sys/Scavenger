@@ -889,7 +889,7 @@ Dejar la partida (lo no guardado se pierde)	Leave the game (unsaved progress is 
 Día %d · %s · tribu de %d	Day %d · %s · tribe of %d
 El agua	Water
 El agua que corre por los suelos puede traer espíritus malditos: al rato, fiebre (más lento, más sed). Mayús+N: hierbas.	Water running on the ground may carry cursed spirits: after a while, fever (slower, thirstier). Shift+N: herbs.
-El borde: la costa da al mar, el desierto termina en un muro enorme tras un cañón, y el resto en un gran canal del que salen ríos.	The edge: the coast meets the sea, the desert ends at a huge wall behind a canyon, and the rest at a great canal from which rivers branch.
+El borde: los fiordos dan al mar, el desierto termina en un cañón y un muro de estratos, el altiplano en un muro de hielo y el bosque en un canal sinuoso del que salen ríos.	The edge: the fjords open onto the sea, the desert ends in a canyon and a layered rock wall, the highland in a wall of ice, and the forest in a winding canal that feeds rivers.
 El desierto quema de día y hiela de noche. Con calor te sofocas: busca sombra (las yurtas) o el agua; con golpe de calor te desmayas.	The desert burns by day and freezes by night. Heat overwhelms you: seek shade (the yurts) or water; with heatstroke you faint.
 El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Cold drains your warmth: seek fire and yurts; wet clothes chill you.
 El mundo	The world
@@ -904,7 +904,7 @@ F junto al guardián: obras, escolta, reclutar, capacitar en un oficio, estado y
 F tomar/botín · T lanzar	F take/loot · T throw
 F1 cerrar esta ayuda	F1 close this help
 F2, F3, F4: habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)	F2, F3, F4: active abilities · P gear: armour, jewels and tattoos (Q/E)
-F5: vista orbital del mundo entero (flechas para girar e inclinar).	F5: orbital view of the whole world (arrows to rotate and tilt).
+F5: vista orbital del mundo entero (flechas para girar e inclinar). El sol, la luna y las estrellas cruzan el cielo; el viento lleva las nubes y las cumbres altas quedan entre ellas.	F5: orbital view of the whole world (arrows to turn and tilt). The sun, moon and stars cross the sky; the wind carries the clouds, and the high peaks stand among them.
 Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.	Craft by hand: arrows (wood, feathers, flint), rope (sinew), ointment (herbs and honey), cuirass and boots (hides). Forged goods need a smith and a furnace.
 Fauna y caza	Wildlife and hunting
 G deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	G drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
@@ -972,7 +972,7 @@ Tatuajes y joyas	Tattoos and jewels
 Tu personaje no muere: abatido, tu escolta te levanta o despiertas en el campamento. Tus compañeros sí pueden morir.	Your character never dies: when downed, your escort lifts you or you wake up at camp. Your companions can die.
 U agarre y llave: arrancas el escudo, desarmas o tumbas	U grapple and lock: rip the shield away, disarm or throw down
 U agarre · O gancho	U grapple · O hook
-Un gran círculo con cinco regiones: la estepa en el centro y, alrededor, el bosque de coníferas, el altiplano glaciar, la costa de fiordos y el desierto.	A great circle with five regions: the steppe at the center and, around it, the conifer forest, the glacial highland, the fjord coast and the desert.
+Una gran tierra casi redonda con cinco regiones: la estepa en el centro, rodeada de ríos que serpentean; el bosque al noroeste, el desierto al noreste, el altiplano al sureste y los fiordos al suroeste.	A vast, nearly round land with five regions: the steppe at the center, ringed by winding rivers; the forest to the northwest, the desert to the northeast, the highland to the southeast and the fjords to the southwest.
 Una tienda o un refugio lejos de los demás campamentos funda uno nuevo: nombra guardián a alguien de tu escolta.	A tent or shelter far from other camps founds a new one: name someone from your escort its keeper.
 Una tribu nueva en la estepa	A new tribe on the steppe
 V golpe (mantener: pesado)	V strike (hold: heavy)
@@ -1054,6 +1054,7 @@ Ejecutaste a un prisionero.	You executed a prisoner.
 Ejecutaste a uno de los tuyos.	You executed one of your own.
 El gran canal marca el fin de estas tierras: no hay vado.	The great canal marks the end of these lands: there is no ford.
 El gran muro del cañón cierra el desierto: no hay paso.	The great canyon wall closes the desert: there is no way through.
+El muro de hielo del glaciar cierra el altiplano: no hay paso.	The glacier's ice wall closes off the highland: there is no way through.
 Explorador enemigo	Enemy scout
 F1 controles · Esc menú	F1 controls · Esc menu
 Flechas: girar e inclinar · F5 o Esc: volver	Arrows: rotate and tilt · F5 or Esc: back
