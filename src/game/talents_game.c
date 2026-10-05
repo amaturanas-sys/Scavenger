@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/input.h"
 #include "game/inventory_game.h"
 #include "raylib.h"
 #include "sim/lang.h"
@@ -494,12 +495,11 @@ void tg_update(GameActions *ga, Combat *cb, Troop *troop, Props *props, const Pl
         return;
     }
     if (!input_ok) return;
-    static const int KEYS[3] = { KEY_F2, KEY_F3, KEY_F4 };
     AbilityId act[3];
     float pot[3];
     int n = tg_actives(ga, act, pot, 3);
     for (int i = 0; i < n; i++)
-        if (IsKeyPressed(KEYS[i])) use_ability(ga, cb, act[i], pot[i], log, len);
+        if (input_pressed((InputAction)(IN_ABILITY1 + i))) use_ability(ga, cb, act[i], pot[i], log, len);
 }
 
 void tg_draw_hud(const GameActions *ga, int w, int h) {

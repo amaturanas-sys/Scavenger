@@ -81,18 +81,10 @@ static int load_slot(Props *p, const InvItem *item, int variant) {
     p->cache[slot].anims = NULL;
     p->cache[slot].anim_count = 0;
     if (item->texture) return slot;
-#if defined(__ANDROID__)
-    if (variant >= 0) { // en Android los assets viven en el APK: FileExists no los ve
-        int size = 0;
-        unsigned char *data = LoadFileData(full, &size);
-        if (!data) return slot;
-        UnloadFileData(data);
-    }
-#else
-    if (!FileExists(full)) return slot;
-#endif
+    if (!platform_asset_exists(full)) return slot; // en Android, dentro del APK
     p->cache[slot].model = LoadModel(full);
     p->cache[slot].loaded = p->cache[slot].model.meshCount > 0;
+    platform_note_asset(full, p->cache[slot].loaded);
     if (p->cache[slot].loaded) p->cache[slot].anims = LoadModelAnimations(full, &p->cache[slot].anim_count);
     return slot;
 }

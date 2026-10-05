@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/input.h"
 #include "raymath.h"
 #include "game/talents_game.h"
 #include "ui/icons.h"
@@ -736,8 +737,8 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
     pack_follow(ga, props);
     if (input_ok && IsKeyPressed(KEY_G) && !ga->inv_open && !ga->equip_open) pack_toggle(ga, props, p, log, len);
     if (input_ok && IsKeyPressed(KEY_I) && !ga->equip_open) ga->inv_open = !ga->inv_open;
-    if (input_ok && IsKeyPressed(KEY_P) && !ga->inv_open) ga->equip_open = !ga->equip_open;
-    if ((ga->inv_open || ga->equip_open) && IsKeyPressed(KEY_ESCAPE)) ga->inv_open = ga->equip_open = false;
+    if (input_ok && IsKeyPressed(KEY_P) && !input_ctrl() && !ga->inv_open) ga->equip_open = !ga->equip_open;
+    if ((ga->inv_open || ga->equip_open) && (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACK))) ga->inv_open = ga->equip_open = false;
     Cont conts[CONT_MAX];
     int nc = containers(ga, props, p, conts);
     if (ga->inv_open) {

@@ -62,7 +62,7 @@ bool gallery_init(Gallery *g, const Terrain *t, Vector3 origin) {
         char path[128];
         inventory_path(it, path, sizeof(path));
         const char *full = platform_asset_path(path);
-        if (!it->texture && FileExists(full)) {
+        if (!it->texture && platform_asset_exists(full)) {
             e->model = LoadModel(full);
             e->loaded = e->model.meshCount > 0;
             if (e->loaded) g->loaded++;

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/input.h"
 #include "platform.h"
 #include "sim/lang.h"
 #include "ui/icons.h"
@@ -43,7 +44,7 @@ static const HelpPage PAGES[] = {
         "",
         N_("WASD mover · Shift correr · C acechar (en la hierba alta te ocultas)"),
         N_("Espacio saltar · Q/E girar la cámara · M marcar el mapa"),
-        N_("Esc menú (guardar, cargar) · F1 controles en el juego"),
+        N_("Esc, Atrás o Ctrl+P: menú (guardar, cargar) · F1 o Ctrl+H: controles en el juego"),
         N_("G deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila"),
         N_("Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos."),
         "",
@@ -84,7 +85,7 @@ static const HelpPage PAGES[] = {
         "",
         N_("Joyas (cambiables): el orfebre (F) hace anillos (dos por mano), brazaletes, collar, aretes y hebilla con metal y una piedra; el druida las encanta con un efecto pasivo o activo."),
         N_("Piedras: rompe rocas a golpes, F en los corales del lago, cava trincheras o criba en la orilla (Tab)."),
-        N_("F2, F3, F4: habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)") } },
+        N_("F2, F3, F4 (o Ctrl+1, 2, 3): habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)") } },
     { N_("Fauna y caza"), 4,
       { N_("Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta y desmonta."),
         N_("Lobos, perros, tigres, pumas, halcones y cuervos: debilítalos peleando, échales el lazo y dales carne (K) para domarlos."),
@@ -119,7 +120,7 @@ static const HelpPage PAGES[] = {
         N_("Cada partida nueva cambia los ríos, los lagos, las montañas y dónde están los pueblos y las guaridas."),
         "",
         N_("Cada región tiene su reino, sus aldeas y su capital amurallada, y sus fieras: cerca de una guarida aparecen sus dueños."),
-        N_("F5: vista orbital del mundo entero (flechas para girar e inclinar). El sol, la luna y las estrellas cruzan el cielo; el viento lleva las nubes y las cumbres altas quedan entre ellas.") } },
+        N_("F5 o Ctrl+M: vista orbital del mundo entero (flechas para girar e inclinar). El sol, la luna y las estrellas cruzan el cielo; el viento lleva las nubes y las cumbres altas quedan entre ellas.") } },
     { N_("El agua"), 4,
       { N_("N bebe lo más seguro que tengas; en la orilla, sin nada, bebes del río. Con calor da más sed; sin agua te desmayas."),
         N_("El agua que corre por los suelos puede traer espíritus malditos: al rato, fiebre (más lento, más sed). Mayús+N: hierbas."),
@@ -134,8 +135,9 @@ static const HelpPage PAGES[] = {
 static Texture2D load_tex(const char *rel) {
     Texture2D t = { 0 };
     const char *path = platform_asset_path(rel);
-    if (FileExists(path)) t = LoadTexture(path);
+    if (platform_asset_exists(path)) t = LoadTexture(path);
     if (t.id) SetTextureFilter(t, TEXTURE_FILTER_POINT);
+    platform_note_asset(rel, t.id != 0);
     return t;
 }
 
@@ -214,7 +216,7 @@ MenuAction menu_update(TitleMenu *m, float dt) {
     if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W) || (row && (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A))))
         m->cursor = (m->cursor + n - 1) % n, m->slot = -1;
     bool enter = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE);
-    bool back = IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE);
+    bool back = input_pressed(IN_BACK);
     // Raton o dedo: pasar por encima elige; pulsar, entra.
     if (m->w > 0 && (row || m->screen == MENU_LOAD || m->screen == MENU_SAVE)) {
         for (int i = 0; i < n; i++) {
@@ -441,7 +443,7 @@ void menu_draw_controls(int x, int y, int w, int h) {
         { N_("WASD mover · Shift correr"), N_("C acechar · Espacio saltar"), N_("Q/E cámara · M marcar"), N_("V golpe (mantener: pesado)"),
           N_("J patada · Z cubrirse"), N_("U agarre · O gancho"), N_("B vendar · P equipo"), N_("L encender flecha"), N_("X/H empuñar/enfundar") },
         { N_("Tab acciones/fabricar"), N_("I inventario · Y escolta"), N_("F tomar/botín · T lanzar"), N_("R montar · K animal"), N_("G ficha · M mapa"),
-          N_("Mayús+X cambiar de mano"), N_("Esc menú: guardar/cargar"), N_("F1 cerrar esta ayuda"), "" },
+          N_("Mayús+X cambiar de mano"), N_("Esc/Atrás/Ctrl+P menú"), N_("F1/Ctrl+H cerrar esta ayuda"), N_("F5/Ctrl+M vista orbital") },
     };
     ui_text(T("Controles"), x + UI_PANEL_INSET + 2, y + UI_PANEL_INSET, 10, UI_GOLD_LIGHT);
     for (int c = 0; c < 2; c++)

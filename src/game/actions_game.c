@@ -1,5 +1,6 @@
 #include "game/actions_game.h"
 
+#include "game/input.h"
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
 #include "game/camp_game.h"
@@ -747,7 +748,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
                      grip_name(hands_grip(&ga->hands)));
             ga->swap_anim = 0.5f;
         } else if (IsKeyPressed(KEY_X)) start_action(ga, ACTION_CHANGE_GRIP, props, p, log, log_len);
-        if (IsKeyPressed(KEY_H)) start_action(ga, ACTION_SHEATHE, props, p, log, log_len);
+        if (IsKeyPressed(KEY_H) && !input_ctrl()) start_action(ga, ACTION_SHEATHE, props, p, log, log_len);
         if (IsKeyPressed(KEY_F) && !cg_try_talk(ga, troop, p) && !tg_try_talk(ga, troop, p, log, log_len)) // F: hablar o tomar
             start_action(ga, ACTION_TAKE, props, p, log, log_len);
         if (IsKeyPressed(KEY_T)) start_action(ga, ACTION_THROW, props, p, log, log_len);
