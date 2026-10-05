@@ -125,6 +125,9 @@ typedef struct {
     int last_region;
     uint32_t seen_settle;
     uint64_t seen_dens;
+    uint32_t seen_tribes;  // campamentos de tribus ya visitados
+    uint32_t raided_tribes; // tribus rivales que ya salieron al paso (se rearma al alejarse)
+    uint64_t seen_sites;   // estructuras (ruinas y en uso) ya vistas
     float ab_timer[ABIL_COUNT], ab_cd[ABIL_COUNT], ab_pot[ABIL_COUNT];
     float warmth_boost; // calor que devuelve una habilidad (lo consume src/game/hazards_game.c)
     // Dialogo con el druida o el orfebre (y luego el guardian del campamento).

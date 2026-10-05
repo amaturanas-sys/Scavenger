@@ -403,6 +403,20 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
         lx = x * 1.2f, lz = z * 1.2f, ok = true;
     }
     if (!strcmp(what, "hielo")) world_edge_point(w, REGION_HIGHLAND, 230.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    static const struct { const char *name; SiteKind kind; } SITE_PLACES[] = {
+        { "kurgan", SITE_KURGAN },       { "balbales", SITE_BALBALS },        { "piedra", SITE_DEER_STONE }, { "fortaleza", SITE_RUINED_FORT },
+        { "ciudad", SITE_BURIED_CITY },  { "petroglifos", SITE_PETROGLYPHS }, { "caravasar", SITE_CARAVANSERAI },
+        { "torre", SITE_WATCHTOWER },    { "ovoo", SITE_OVOO },               { "pozo", SITE_WELL },         { "embarcadero", SITE_HARBOR },
+    };
+    for (size_t k = 0; k < sizeof(SITE_PLACES) / sizeof(SITE_PLACES[0]) && !ok; k++) // una estructura: a unos pasos, mirandola
+        for (int i = 0; i < w->site_count && !ok; i++)
+            if (!strcmp(what, SITE_PLACES[k].name) && w->sites[i].kind == SITE_PLACES[k].kind)
+                x = w->sites[i].x + 22.0f, z = w->sites[i].z + 10.0f, lx = w->sites[i].x, lz = w->sites[i].z, ok = true;
+    for (int i = 0; i < w->tribe_count && !ok; i++) { // una tribu (tribu: amiga; rival; neutral), desde fuera de su alcance
+        TribeAttitude want = !strcmp(what, "rival") ? TRIBE_RIVAL : !strcmp(what, "neutral") ? TRIBE_NEUTRAL : TRIBE_FRIENDLY;
+        if ((!strcmp(what, "tribu") || !strcmp(what, "rival") || !strcmp(what, "neutral")) && w->tribes[i].attitude == want)
+            x = w->tribes[i].x + 30.0f, z = w->tribes[i].z + 12.0f, lx = w->tribes[i].x, lz = w->tribes[i].z, ok = true;
+    }
     if (!strcmp(what, "cumbre")) { // la cumbre mas alta (suele tocar las nubes)
         float best = -1e9f;
         for (int i = 0; i < w->peak_count; i++) {
@@ -902,7 +916,7 @@ int main(int argc, char **argv) {
                 trv_update(&g_actions, &troop, &g_memory, &player, &terrain, clock_is_night(world_time),
                            !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             if (!gallery_mode) ag_update(&g_actions, &troop, &g_climate, g_hazards.seed, world_time, dt, log, sizeof(log));
-            if (!gallery_mode) wd_update(&g_actions, &terrain, &player, &g_memory, log, sizeof(log));
+            if (!gallery_mode) wd_update(&g_actions, &g_combat, &terrain, &player, &g_memory, log, sizeof(log));
             if (!gallery_mode)
                 wg_update(&g_actions, &troop, &player, &g_props, &g_hazards, &g_climate, camp.fire, &terrain,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));

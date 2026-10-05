@@ -12,10 +12,18 @@
 #define SETTLE_DRAW 280.0f // m: se dibujan los asentamientos a esta distancia
 #define SETTLE_ARRIVE 90.0f
 #define DEN_DRAW 180.0f
+#define TRIBE_DRAW 260.0f
+#define TRIBE_ARRIVE 70.0f
+#define TRIBE_RAID 120.0f  // las rivales salen al paso a esta distancia
+#define TRIBE_REARM 600.0f // alejarse rearma la emboscada
+#define SITE_DRAW 240.0f
+#define SITE_SEEN 45.0f
 
 static float dist_xz(float ax, float az, float bx, float bz) { return sqrtf((ax - bx) * (ax - bx) + (az - bz) * (az - bz)); }
 
-void wd_update(GameActions *ga, const Terrain *t, const Player *p, MemoryMap *mem, char *log, size_t len) {
+static const char *ATTITUDE_TEXT[TRIBE_ATTITUDES] = { N_("rival"), N_("neutral"), N_("amiga") };
+
+void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, MemoryMap *mem, char *log, size_t len) {
     const World *w = t->world;
     // Otra region: su nombre y quien la gobierna.
     Region rg = world_region(w, p->pos.x, p->pos.z);
@@ -48,6 +56,53 @@ void wd_update(GameActions *ga, const Terrain *t, const Player *p, MemoryMap *me
         snprintf(who, sizeof(who), "%s", T(species_def((Species)d->species)->name));
         if (who[0] >= 'A' && who[0] <= 'Z') who[0] = (char)(who[0] - 'A' + 'a');
         snprintf(log, len, T("Una guarida (%s): queda marcada como peligro en el mapa."), who);
+    }
+
+    // Las tribus nomadas.
+    for (int i = 0; i < w->tribe_count && i < 32; i++) {
+        const TribeCamp *tc = &w->tribes[i];
+        float d = dist_xz(tc->x, tc->z, p->pos.x, p->pos.z);
+        if (tc->attitude == TRIBE_RIVAL) {
+            if (d > TRIBE_REARM) ga->raided_tribes &= ~(1u << i);
+            if (d < TRIBE_RAID && !((ga->raided_tribes >> i) & 1u)) { // salen al paso
+                ga->raided_tribes |= 1u << i;
+                char tmp[160];
+                cb_spawn_group(cb, ga, i % 2 ? "jinetes" : "bandidos", p, t, 45.0f, tmp, sizeof(tmp));
+                memmap_toggle_marker(mem, tc->x, tc->z, MARKER_DANGER, 4.0f);
+                ga->seen_tribes |= 1u << i;
+                snprintf(log, len, T("¡Los %s, tribu rival, te salen al paso!"), tc->name);
+                continue;
+            }
+        }
+        if ((ga->seen_tribes >> i) & 1u || d > TRIBE_ARRIVE) continue;
+        ga->seen_tribes |= 1u << i;
+        if (tc->attitude == TRIBE_FRIENDLY) { // comparten noticias: la estructura mas cercana sin ver, al mapa
+            int best = -1;
+            float bd = 1e18f;
+            for (int k = 0; k < w->site_count && k < 64; k++) {
+                float sd = dist_xz(w->sites[k].x, w->sites[k].z, tc->x, tc->z);
+                if (!((ga->seen_sites >> k) & 1ull) && sd < bd) bd = sd, best = k;
+            }
+            memmap_toggle_marker(mem, tc->x, tc->z, MARKER_INTEREST, 4.0f);
+            if (best >= 0) {
+                memmap_toggle_marker(mem, w->sites[best].x, w->sites[best].z, MARKER_INTEREST, 4.0f);
+                snprintf(log, len, T("Los %s, tribu amiga, te reciben y te señalan %s en el mapa."), tc->name, T(site_name(w->sites[best].kind)));
+            } else {
+                snprintf(log, len, T("Los %s, tribu amiga, te reciben junto a su fuego."), tc->name);
+            }
+        } else {
+            memmap_toggle_marker(mem, tc->x, tc->z, tc->attitude == TRIBE_RIVAL ? MARKER_DANGER : MARKER_INTEREST, 4.0f);
+            snprintf(log, len, T("El campamento de los %s (tribu %s): te observan, sin buscar pelea."), tc->name, T(ATTITUDE_TEXT[tc->attitude]));
+        }
+    }
+    // Las estructuras: al verlas, al mapa.
+    for (int i = 0; i < w->site_count && i < 64; i++) {
+        const WorldSite *st = &w->sites[i];
+        if ((ga->seen_sites >> i) & 1ull || dist_xz(st->x, st->z, p->pos.x, p->pos.z) > SITE_SEEN) continue;
+        ga->seen_sites |= 1ull << i;
+        memmap_toggle_marker(mem, st->x, st->z, MARKER_INTEREST, 4.0f);
+        snprintf(log, len, site_is_ruin(st->kind) ? T("Encuentras %s, de otros tiempos: queda en el mapa.") : T("Encuentras %s: queda en el mapa."),
+                 T(site_name(st->kind)));
     }
 }
 
@@ -159,6 +214,141 @@ static void draw_den(const Terrain *t, const Den *d) {
         DrawCube((Vector3){ d->x + 4.0f + (float)i * 0.5f, y + 0.05f, d->z - 1.0f + (float)i * 0.7f }, 0.6f, 0.08f, 0.12f, (Color){ 226, 220, 200, 255 });
 }
 
+// Un campamento de tribu: yurtas (o las casas de su region) en corro, el estandarte del color
+// de su actitud (rojo rival, crudo neutral, azul amiga), fogata, gente y caballos.
+static void draw_tribe(const Terrain *t, const TribeCamp *tc, int idx, float time) {
+    static const Color BANNER[TRIBE_ATTITUDES] = { { 168, 36, 32, 255 }, { 214, 206, 186, 255 }, { 52, 98, 176, 255 } };
+    float ground = terrain_height(t, tc->x, tc->z);
+    for (int i = 0; i < 5; i++) {
+        float a = (float)i / 5.0f * 2.0f * PI + idx, x = tc->x + cosf(a) * 13.0f, z = tc->z + sinf(a) * 13.0f;
+        building(tc->region == REGION_DESERT ? REGION_STEPPE : tc->region, (Vector3){ x, terrain_height(t, x, z), z }, -a, 0.9f);
+    }
+    Vector3 pole = { tc->x + 3.0f, ground, tc->z };
+    DrawCylinder(pole, 0.1f, 0.1f, 6.5f, 5, (Color){ 90, 70, 50, 255 });
+    float wave = sinf(time * 2.3f + idx) * 0.25f;
+    DrawCube((Vector3){ pole.x + 0.8f, ground + 5.8f + wave * 0.2f, pole.z }, 1.6f, 1.0f, 0.08f, BANNER[tc->attitude]);
+    DrawCylinder((Vector3){ tc->x, ground + 0.1f, tc->z }, 0.0f, 0.4f, 0.8f, 5, (Color){ 240, 140, 40, 255 });
+    for (int k = 0; k < 3; k++) {
+        float a = time * 0.04f + (float)k * 2.1f + idx, r = 5.0f;
+        Vector3 pos = { tc->x + cosf(a) * r, 0, tc->z + sinf(a) * r };
+        pos.y = terrain_height(t, pos.x, pos.z);
+        BodyPose pose;
+        BodyPoseParams bp = { .walk_phase = time * 6.0f + k, .walk = 0.0f, .scale = 1.0f };
+        body_pose(&pose, &bp);
+        BodyColors bc = { { 200, 160, 120, 255 }, k == 0 ? BANNER[tc->attitude] : folk_color(tc->region, k), { 84, 64, 46, 255 } };
+        body_draw(&pose, pos, a + PI, bc, NULL);
+    }
+    for (int k = 0; k < 2; k++) { // caballos atados
+        float x = tc->x - 8.0f + (float)k * 2.5f, z = tc->z + 9.0f;
+        cb_draw_horse((Vector3){ x, terrain_height(t, x, z), z }, 0.3f * (float)k, 0.0f, time + k, false);
+    }
+}
+
+static void slab(Vector3 at, float w, float h, float d, float yaw, Color c) {
+    rlPushMatrix();
+    rlTranslatef(at.x, at.y, at.z);
+    rlRotatef(yaw * RAD2DEG, 0, 1, 0);
+    DrawCube((Vector3){ 0, h * 0.5f, 0 }, w, h, d, c);
+    rlPopMatrix();
+}
+
+// Una estructura, con piezas simples (low-poly) al estilo de su region.
+static void draw_site(const Terrain *t, const WorldSite *st, float time) {
+    float y = terrain_height(t, st->x, st->z);
+    Vector3 c = { st->x, y, st->z };
+    const Color stone = st->region == REGION_DESERT ? (Color){ 186, 150, 104, 255 } : (Color){ 132, 128, 120, 255 };
+    const Color dark = { 96, 92, 86, 255 }, wood = { 108, 80, 54, 255 };
+    float cs = cosf(st->yaw), sn = sinf(st->yaw);
+#define AT(dx, dz) ((Vector3){ c.x + (dx) * cs - (dz) * sn, terrain_height(t, c.x + (dx) * cs - (dz) * sn, c.z + (dx) * sn + (dz) * cs), c.z + (dx) * sn + (dz) * cs })
+    switch (st->kind) {
+    case SITE_KURGAN: // tumulo de tierra con piedras alrededor
+        rlPushMatrix();
+        rlTranslatef(c.x, y - 1.0f, c.z);
+        rlScalef(1.0f, 0.35f, 1.0f);
+        DrawSphereEx((Vector3){ 0 }, 9.0f, 6, 10, st->region == REGION_FJORD ? (Color){ 92, 118, 80, 255 } : (Color){ 122, 128, 76, 255 });
+        rlPopMatrix();
+        for (int i = 0; i < 10; i++) {
+            float a = (float)i / 10.0f * 2.0f * PI;
+            DrawSphereEx(AT(cosf(a) * 10.5f, sinf(a) * 10.5f), 0.6f, 3, 5, stone);
+        }
+        break;
+    case SITE_BALBALS: // hilera de estelas mirando al este
+        for (int i = 0; i < 6; i++) slab(AT((float)i * 2.2f - 5.5f, 0.0f), 0.5f, 1.4f + 0.3f * (float)(i % 3), 0.35f, st->yaw, stone);
+        break;
+    case SITE_DEER_STONE: // monolito alto con bandas grabadas
+        slab(c, 0.8f, 3.6f, 0.45f, st->yaw, dark);
+        for (int i = 0; i < 3; i++) slab((Vector3){ c.x, y + 0.9f + i * 0.9f, c.z }, 0.84f, 0.12f, 0.5f, st->yaw, (Color){ 150, 146, 136, 255 });
+        break;
+    case SITE_RUINED_FORT: // muros derruidos y una torre rota
+        for (int i = 0; i < 4; i++) {
+            float a = (float)i * PI * 0.5f, h = 1.5f + 2.0f * (float)((i * 7) % 3) / 2.0f;
+            Vector3 m = AT(cosf(a) * 11.0f, sinf(a) * 11.0f);
+            slab(m, i % 2 ? 1.2f : 16.0f, h, i % 2 ? 16.0f : 1.2f, st->yaw, stone);
+        }
+        DrawCylinder(AT(11.0f, 11.0f), 2.2f, 2.4f, 6.0f, 7, stone);
+        break;
+    case SITE_BURIED_CITY: // cupulas y muros asomando de la arena
+        for (int i = 0; i < 5; i++) {
+            Vector3 m = AT((float)(i % 3) * 9.0f - 9.0f, (float)(i / 3) * 10.0f - 5.0f);
+            slab((Vector3){ m.x, m.y - 1.0f, m.z }, 5.0f, 2.2f, 5.0f, st->yaw, stone);
+            if (i % 2 == 0) DrawSphereEx((Vector3){ m.x, m.y + 1.0f, m.z }, 2.0f, 5, 8, (Color){ 200, 166, 118, 255 });
+        }
+        break;
+    case SITE_PETROGLYPHS: // peñas con grabados claros
+        for (int i = 0; i < 3; i++) {
+            Vector3 m = AT((float)i * 3.0f - 3.0f, (float)(i % 2) * 2.0f);
+            DrawSphereEx((Vector3){ m.x, m.y + 0.8f, m.z }, 1.6f, 4, 6, dark);
+            slab((Vector3){ m.x, m.y + 1.0f, m.z - 1.45f }, 1.0f, 0.5f, 0.06f, st->yaw, (Color){ 210, 196, 160, 255 });
+        }
+        break;
+    case SITE_CARAVANSERAI: // patio amurallado con portada y camellos
+        for (int i = 0; i < 4; i++) {
+            float a = (float)i * PI * 0.5f;
+            slab(AT(cosf(a) * 12.0f, sinf(a) * 12.0f), i % 2 ? 1.0f : 24.0f, 4.0f, i % 2 ? 24.0f : 1.0f, st->yaw, stone);
+        }
+        slab(AT(12.5f, 0.0f), 2.0f, 6.0f, 6.0f, st->yaw, (Color){ 168, 132, 92, 255 }); // portada
+        slab(AT(0.0f, 0.0f), 3.0f, 0.4f, 3.0f, st->yaw, (Color){ 60, 90, 120, 255 });     // la fuente
+        break;
+    case SITE_WATCHTOWER: // torre de madera (o piedra) con techo
+        if (st->region == REGION_FOREST || st->region == REGION_STEPPE) {
+            for (int i = 0; i < 4; i++) DrawCylinder(AT(i % 2 ? 1.4f : -1.4f, i / 2 ? 1.4f : -1.4f), 0.15f, 0.15f, 8.0f, 4, wood);
+            slab((Vector3){ c.x, y + 8.0f, c.z }, 3.6f, 0.3f, 3.6f, st->yaw, wood);
+            DrawCylinder((Vector3){ c.x, y + 8.3f, c.z }, 0.0f, 2.6f, 1.6f, 4, (Color){ 84, 66, 48, 255 });
+        } else {
+            DrawCylinder(c, 2.0f, 2.3f, 9.0f, 8, stone);
+            DrawCylinder((Vector3){ c.x, y + 9.0f, c.z }, 2.5f, 2.5f, 0.8f, 8, dark);
+        }
+        break;
+    case SITE_OVOO: { // cono de piedras con un palo y cintas que ondean
+        DrawCylinder(c, 0.4f, 2.2f, 1.8f, 7, stone);
+        DrawCylinder((Vector3){ c.x, y + 1.6f, c.z }, 0.06f, 0.06f, 2.6f, 4, wood);
+        static const Color RIB[3] = { { 60, 110, 200, 255 }, { 230, 230, 220, 255 }, { 220, 190, 60, 255 } };
+        for (int i = 0; i < 3; i++) {
+            float wv = sinf(time * 3.0f + i) * 0.3f;
+            DrawCube((Vector3){ c.x + 0.4f + wv * 0.2f, y + 3.6f - i * 0.3f, c.z + (float)i * 0.1f }, 0.8f, 0.12f, 0.03f, RIB[i]);
+        }
+        break;
+    }
+    case SITE_WELL: // brocal de piedra con travesaño y cubo
+        DrawCylinder(c, 1.1f, 1.1f, 0.9f, 8, stone);
+        DrawCylinder((Vector3){ c.x, y + 0.85f, c.z }, 0.8f, 0.8f, 0.08f, 8, (Color){ 40, 60, 80, 255 });
+        DrawCylinder(AT(-1.0f, 0.0f), 0.08f, 0.08f, 2.2f, 4, wood);
+        DrawCylinder(AT(1.0f, 0.0f), 0.08f, 0.08f, 2.2f, 4, wood);
+        slab((Vector3){ c.x, y + 2.1f, c.z }, 2.2f, 0.12f, 0.12f, st->yaw, wood);
+        break;
+    case SITE_HARBOR: // muelle de tablas hacia el agua y una barca
+        for (int i = 0; i < 5; i++) {
+            Vector3 m = AT(0.0f, (float)i * 3.0f);
+            slab((Vector3){ m.x, y + 0.6f, m.z }, 2.4f, 0.2f, 3.0f, st->yaw, wood);
+            DrawCylinder((Vector3){ m.x + 1.1f * cs, m.y - 1.0f, m.z + 1.1f * sn }, 0.12f, 0.12f, 1.9f, 4, (Color){ 80, 60, 44, 255 });
+        }
+        slab(AT(3.0f, 10.0f), 1.6f, 0.6f, 6.0f, st->yaw, (Color){ 96, 70, 48, 255 });
+        break;
+    default: break;
+    }
+#undef AT
+}
+
 void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, float time) {
     (void)ga;
     const World *w = t->world;
@@ -166,4 +356,8 @@ void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, flo
         if (dist_xz(w->settlements[i].x, w->settlements[i].z, p->pos.x, p->pos.z) < SETTLE_DRAW) draw_settlement(t, &w->settlements[i], i, time);
     for (int i = 0; i < w->den_count; i++)
         if (dist_xz(w->dens[i].x, w->dens[i].z, p->pos.x, p->pos.z) < DEN_DRAW) draw_den(t, &w->dens[i]);
+    for (int i = 0; i < w->tribe_count; i++)
+        if (dist_xz(w->tribes[i].x, w->tribes[i].z, p->pos.x, p->pos.z) < TRIBE_DRAW) draw_tribe(t, &w->tribes[i], i, time);
+    for (int i = 0; i < w->site_count; i++)
+        if (dist_xz(w->sites[i].x, w->sites[i].z, p->pos.x, p->pos.z) < SITE_DRAW) draw_site(t, &w->sites[i], time);
 }
