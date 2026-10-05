@@ -27,13 +27,22 @@ typedef struct {
     float ice;         // lagos y rios congelados (el mar no se hiela)
 } TerrainLook;
 
+// Formaciones de cada region, de voxeles (src/world/voxstruct.h), sembradas por chunk.
+#define CHUNK_FEATS 28
+typedef struct {
+    float x, y, z, yaw, scale;
+    unsigned char kind, variant;
+} ChunkFeature;
+
 typedef struct {
     bool loaded;
     int cx, cz;
+    ChunkFeature feat[CHUNK_FEATS];
+    int feat_count;
     Model model;
     float *tri;             // por triangulo: lo que hace falta para recolorear con la estacion
-    Model water[4];         // lagos, rios y canal, mar, agua glaciar (cada una sube distinto con la crecida)
-    bool has_water[4];
+    Model water[5];         // lagos, rios y canal, mar, agua glaciar, espuma (cada una sube distinto con la crecida)
+    bool has_water[5];
 } Chunk;
 
 typedef struct {

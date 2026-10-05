@@ -221,6 +221,13 @@ static float land(const World *w, float x, float z) {
             float t = smooth(shore + 70.0f, shore - 30.0f, e);
             float sea = -6.0f - 16.0f * smooth(shore, shore - 260.0f, e);
             h = lerpf(h, lerpf(h, sea, t), q[REGION_FJORD]);
+            // Playas de arena volcanica que alternan con roquerios: donde el ruido lo dice, la
+            // franja cerca del nivel del mar se aplana (una playa ancha); en lo demas, la costa cae.
+            float beach = smooth(-0.05f, 0.25f, noise2d(x * 0.004f, z * 0.004f, w->seed + 97u)) * q[REGION_FJORD];
+            if (beach > 0.0f && h > SEA_LEVEL - 3.0f && h < SEA_LEVEL + 9.0f) {
+                float flat = SEA_LEVEL - 0.3f + (h - SEA_LEVEL) * 0.25f; // agua baja de rompiente y arena suave
+                h = lerpf(h, lerpf(flat, h, smooth(SEA_LEVEL + 3.0f, SEA_LEVEL + 9.0f, h)), beach);
+            }
         }
         if (q[REGION_DESERT] > 0.0f) { // un cañon al pie y un muro de siete estratos
             float g = (e - GORGE_E) / 45.0f;
@@ -356,6 +363,22 @@ float world_water(const World *w, float x, float z, float flood, WaterKind *kind
         if (d < reach && lv + 0.5f * flood > best) best = lv + 0.5f * flood, k = WATER_RIVER;
     }
     if (kind) *kind = k;
+    return best;
+}
+
+float world_river_bank(const World *w, float x, float z, float *width) {
+    float best = 0.0f;
+    for (int i = 0; i < w->river_count; i++) {
+        const River *r = &w->rivers[i];
+        if (r->kind == RIVER_BRAIDED || !river_box(r, x, z, r->width * 3.0f)) continue;
+        float lv = 0.0f, d = river_dist(r, x, z, &lv, NULL, NULL);
+        // Barras de cantos: el cauce y una orilla de hasta 2,6 anchos, mas ancha en los rios grandes.
+        float b = 1.0f - smooth(r->width * 1.3f, r->width * 2.6f + 3.0f, d);
+        if (b > best) {
+            best = b;
+            if (width) *width = r->width;
+        }
+    }
     return best;
 }
 

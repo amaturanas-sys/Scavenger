@@ -141,6 +141,7 @@ El mundo ([MUNDO.md](docs/MUNDO.md)):
 - **Tribus nómadas:** las rivales salen al paso, las neutrales observan y las amigables te señalan sitios en el mapa.
 - **Estructuras:** kurganes, balbales, piedras de ciervos, fortalezas, ciudades enterradas, caravasares, torres, ovoos, pozos y embarcaderos; al verlas quedan en el mapa.
 - **Más vida:** arroyos, rocas, matas y flores; los animales rodean los lagos y beben desde la orilla.
+- **Paisajes de cada región:** playas de arena volcánica negra con roqueríos de basalto, farallones y espuma en los fiordos; lechos de cantos rodados y rápidos en los ríos; farallones en estratos, torres de arenisca y creta blanca en el desierto; seracs y témpanos en el glaciar.
 - **Voxeles:** las nubes son volúmenes de voxeles al modo de Nubis (perfil y erosión por ruido, luz del sol horneada) y las estructuras y casas son modelos de voxeles; las ruinas, erosionadas.
 - **`F5` o `Ctrl+M`:** vista orbital del mundo entero (flechas: girar e inclinar).
 

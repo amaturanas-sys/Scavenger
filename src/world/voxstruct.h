@@ -26,6 +26,20 @@ void voxs_draw_site(SiteKind kind, Region region, Vector3 at, float yaw, Color t
 void voxs_draw_building(VoxBuilding b, Vector3 at, float yaw, float scale, Color tint);
 // La casa tipica de una region.
 VoxBuilding voxs_region_house(Region r);
+// Formaciones del paisaje (de las fotos de referencia de cada region), en 4 variantes:
+typedef enum {
+    VF_BASALT,    // roquerio de columnas de basalto en la playa negra y las rompientes (fiordos)
+    VF_SEA_STACK, // farallon de basalto en el mar, con un gorro de hierba
+    VF_BOULDER,   // canto rodado claro en el cauce y la orilla de los rios
+    VF_HOODOO,    // torre de arenisca en estratos con sombrero mas duro (desierto)
+    VF_MESA,      // farallon estratificado con alero y cueva (cañones del desierto)
+    VF_CHALK,     // formacion de creta blanca erosionada por el viento (desierto)
+    VF_SERAC,     // bloques de hielo del frente del glaciar, con grietas azules
+    VF_ICEBERG,   // tempano en los lagos de deshielo
+    VF_KINDS
+} VoxFeature;
+#define VF_VARIANTS 4
+void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float scale, Color tint);
 void voxs_unload(void);
 
 #endif
