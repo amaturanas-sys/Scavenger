@@ -119,7 +119,7 @@ static const HelpPage PAGES[] = {
         N_("El borde: los fiordos dan al mar, el desierto termina en un cañón y un muro de estratos, el altiplano en un muro de hielo y el bosque en un canal sinuoso del que salen ríos."),
         N_("Cada partida nueva cambia los ríos, los lagos, las montañas y dónde están los pueblos y las guaridas."),
         "",
-        N_("Cada región tiene su reino, sus aldeas y su capital amurallada, y sus fieras: cerca de una guarida aparecen sus dueños."),
+        N_("Cada región tiene su reino, sus aldeas y su capital amurallada, sus fieras y sus tribus nómadas: rivales, neutrales o amigas. Ruinas y estructuras quedan en el mapa al verlas."),
         N_("F5 o Ctrl+M: vista orbital del mundo entero (flechas para girar e inclinar). El sol, la luna y las estrellas cruzan el cielo; el viento lleva las nubes y las cumbres altas quedan entre ellas.") } },
     { N_("El agua"), 4,
       { N_("N bebe lo más seguro que tengas; en la orilla, sin nada, bebes del río. Con calor da más sed; sin agua te desmayas."),

@@ -444,6 +444,14 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
         if (!strcmp(what, "guarida") && w->dens[i].region == REGION_FOREST)
             x = w->dens[i].x + 16.0f, z = w->dens[i].z + 6.0f, lx = w->dens[i].x, lz = w->dens[i].z, ok = true;
     if (!ok) return;
+    // En seco: si cayo en el agua, el punto seco mas cercano (en espiral).
+    for (float r = 0.0f; r < 400.0f && terrain_water(t, x, z) > terrain_height(t, x, z) - 0.2f; r += 6.0f) {
+        bool found = false;
+        for (int k = 0; k < 12 && !found; k++) {
+            float a = (float)k / 12.0f * 2.0f * PI, nx = x + cosf(a) * r, nz = z + sinf(a) * r;
+            if (terrain_water(t, nx, nz) <= terrain_height(t, nx, nz) - 0.2f) lx += nx - x, lz += nz - z, x = nx, z = nz, found = true;
+        }
+    }
     p->pos = (Vector3){ x, terrain_height(t, x, z), z };
     float water = terrain_water(t, x, z);
     if (water > p->pos.y) p->pos.y = water;

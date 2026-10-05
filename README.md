@@ -138,9 +138,12 @@ El mundo ([MUNDO.md](docs/MUNDO.md)):
 - **Cada partida nueva es otro mundo:** cambian los ríos, los lagos, las montañas, las fronteras entre regiones, los pueblos y las guaridas, siempre con las mismas reglas.
 - **Reinos vecinos:** uno por región, con su capital amurallada y sus aldeas al estilo de la región; al llegar quedan en el mapa.
 - **Guaridas:** de las fieras de cada región; cerca aparecen sus dueños.
+- **Tribus nómadas:** las rivales salen al paso, las neutrales observan y las amigables te señalan sitios en el mapa.
+- **Estructuras:** kurganes, balbales, piedras de ciervos, fortalezas, ciudades enterradas, caravasares, torres, ovoos, pozos y embarcaderos; al verlas quedan en el mapa.
+- **Más vida:** arroyos, rocas, matas y flores; los animales rodean los lagos y beben desde la orilla.
 - **`F5` o `Ctrl+M`:** vista orbital del mundo entero (flechas: girar e inclinar).
 
-Pruebas: `--semilla N` fija el mundo; `--ir lugar` lleva a `estepa`, `meandro`, `bosque`, `canal`, `altiplano`, `trenzado`, `hielo`, `cumbre`, `fiordos`, `mar`, `desierto`, `muro`, `capital`, `aldea` o `guarida`; `--camara inclinación` y `--rumbo grados` orientan la cámara; `--orbital [grados] [inclinación]`; `--mapa-mundo archivo.png` (con `--mapa-tam N`).
+Pruebas: `--semilla N` fija el mundo; `--ir lugar` lleva a `estepa`, `meandro`, `arroyo`, `bosque`, `canal`, `altiplano`, `trenzado`, `hielo`, `cumbre`, `fiordos`, `mar`, `desierto`, `muro`, `capital`, `aldea`, `guarida`, `tribu`, `rival`, `neutral` o a una estructura (`kurgan`, `caravasar`, `ovoo`…); `--camara inclinación` y `--rumbo grados` orientan la cámara; `--orbital [grados] [inclinación]`; `--mapa-mundo archivo.png` (con `--mapa-tam N`).
 
 El agua:
 - **La sed** baja con el tiempo, más con calor y corriendo. Con sed vas más lento y te cansas; con la sed a cero te desmayas y la tribu te lleva al campamento a beber.
