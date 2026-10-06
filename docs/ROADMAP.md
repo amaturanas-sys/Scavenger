@@ -1,5 +1,7 @@
 # Roadmap
 
+Próxima gran actualización (combate de cuatro botones, tribu, economía, caballos, armas y asentamientos agrarios): [PLAN_GRAN_ACTUALIZACION.md](PLAN_GRAN_ACTUALIZACION.md).
+
 Enfoque: **rebanadas verticales**. Cada fase deja algo jugable y verificado, en vez de construir todos los sistemas a medias.
 
 ## Fase 0 — Fundaciones (hecha)
