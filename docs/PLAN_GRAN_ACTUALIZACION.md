@@ -2,8 +2,10 @@
 
 > **Estado:** plan, sin empezar. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
 
-Pedido (5 de octubre de 2026):
-- combate más ágil, con selector de objetivo y cuatro botones;
+Pedido (5 y 6 de octubre de 2026):
+- combate más ágil, con selector de objetivo y cuatro botones (H J K L);
+- un mapa de teclas nuevo: C sigilo, X agacharse, 1-9 empuñar y enfundar, F interactuar con todo;
+- obras ubicadas en una vista aérea del campamento;
 - golpes por la espalda;
 - abatidos que despiertan y huyen;
 - seguidores y guardias que pelean;
@@ -44,12 +46,38 @@ Casi todas las fases agregan estado a estructuras que se guardan (`Combat`, `Gam
 
 | Botón | Tecla | Con arma cuerpo a cuerpo | Con arma a distancia |
 |---|---|---|---|
-| 1 Ataque | V / clic izq. | golpe (combo; mantener: pesado) | tensar y disparar al objetivo |
-| 2 Bloqueo | Z / clic der. | con escudo, cubre el frente; sin escudo, para con el arma (menos eficaz, cansa) | bajar el arma (se cubre si lleva escudo) |
-| 3 Parry / contra | **C**¹ | en la ventana justa (≈0,25 s antes del golpe enemigo): engancha el escudo y lo arranca (`HOOK`), hace una llave y tumba (`GRAPPLE`) o desarma, según el arma | — |
-| 4 Carga / patada | J | con escudo: carga que empuja (`SHIELD_CHARGE`); sin escudo: patada (`KICK` o `RUN_KICK`) | patada |
+| 1 Ataque | **H** / clic izq. | golpe (combo; mantener: pesado) | tensar y disparar al objetivo |
+| 2 Bloqueo | **J** | con escudo, cubre el frente; sin escudo, para con el arma (menos eficaz, cansa) | bajar el arma (se cubre si lleva escudo) |
+| 3 Parry / contra | **K** | en la ventana justa (≈0,25 s antes del golpe enemigo): engancha el escudo y lo arranca (`HOOK`), hace una llave y tumba (`GRAPPLE`) o desarma, según el arma | — |
+| 4 Carga / patada | **L** | con escudo: carga que empuja (`SHIELD_CHARGE`); sin escudo: patada (`KICK` o `RUN_KICK`) | patada |
 
-¹ La C hoy alterna el sigilo. Propuesta: el sigilo pasa a Ctrl, sin tecla de alternar. La tecla definitiva se decide en la fase, revisando `input.c`.
+### Mapa de teclas nuevo (decidido el 6 de octubre de 2026)
+
+Va en esta misma fase, porque los cuatro botones ocupan teclas que hoy hacen otras cosas.
+
+| Tecla | Hace | Hoy hace |
+|---|---|---|
+| **C** | sigilo (alternar, como ahora) | igual |
+| **X** | **agacharse** (nuevo): más bajo y lento, se esconde tras rocas, matas y la hierba alta, y es más difícil de ver que de pie; el sigilo suma | cambiar empuñadura |
+| **H J K L** | los cuatro botones de combate (tabla de arriba) | enfundar · patada · animales · encender flecha |
+| **1 a 9** | empuñar el arma de esa casilla de la barra rápida; la misma tecla otra vez **enfunda** (ya funciona así desde la v0.4.2) | igual |
+| **F** | **interactuar** con todo: hablar con personas; tomar objetos y botín; usar estructuras (pozo, horno, guardián del campamento); rescatar; y lo que hoy hace la K con los animales (alimentar, ordeñar, despiezar, sacar miel) | hablar o tomar |
+| **G** | agarrar: rehén o escudo humano (fase 2) | mochila |
+| clic izq. | ataque (como H) | golpe |
+| clic der. | bloqueo mientras se mantiene, si no se arrastra; **arrastrar** sigue girando la cámara | girar la cámara |
+
+**Lo que se mueve a otro sitio:**
+- **V** (golpe), **Z** (cubrirse), **U** (agarre) y **O** (gancho): quedan libres. El agarre y el gancho pasan a ser resultados del parry (K).
+- **Enfundar** (H): con los números.
+- **Cambiar empuñadura** (X): con los números. **Pasar el arma de mano** (Mayús+X): Mayús+número.
+- **Animales** (K): con F. El sacrificio (Mayús+K) pasa a Mayús+F junto a un animal.
+- **Encender la flecha** (L): sale de la columna de acciones del HUD o con Mayús+L.
+- **Mochila** (G): Mayús+G y la columna de acciones.
+
+**Cosas que revisar:**
+- **Pruebas de reacción ante peligros:** usan J K L U I O. Solo aparecen atrapado (hielo, nieve, arenas), no peleando, así que no chocan; se revisa que no se disparen golpes a la vez.
+- **Textos y documentos:** actualizar el instructivo, la pantalla de controles (F1), `input.c` (`input_keys_text`), las leyendas del HUD, `docs/` y las traducciones.
+- **Tests de entrada:** cada acción responde a su tecla nueva y no a la vieja.
 
 **Trabajo:**
 - **`sim/melee`** (puro, con tests):
@@ -60,7 +88,7 @@ Casi todas las fases agregan estado a estructuras que se guardan (`Combat`, `Gam
   - Fuera de la ventana, el jugador queda expuesto.
   - **Bloqueo con arma:** absorbe el 50 % y gasta aguante.
 - **Selector de objetivo (`combat_game`):**
-  - **Tab** pasa al enemigo siguiente, ya que en combate el menú de acciones va a I/Esc; la tecla se revisa en la fase. En tableta, se toca al enemigo.
+  - Una tecla pasa al enemigo siguiente (propuesta: **Tab** en combate, con el menú de acciones en la columna del HUD; o la **Q/E** con Mayús). En tableta, se toca al enemigo.
   - Un anillo bajo el elegido y su barra de vida resaltada. Se pierde a 25 m o si muere.
   - Las armas a distancia apuntan al objetivo con la caída calculada: el arco no exige mirar con la cámara.
   - Sin objetivo, se usa el más cercano delante (como hoy).
@@ -78,14 +106,14 @@ Casi todas las fases agregan estado a estructuras que se guardan (`Combat`, `Gam
 
 - **Ganar la espalda:** el jugador está a menos de 2 m, en el cono trasero de 70° del enemigo, y no fue notado (sigilo, `noise` bajo) o el enemigo está aturdido.
   - Se marca con un ícono de daga sobre el enemigo.
-  - **(3) Parry:** **ejecución silenciosa**. Muerte en el acto, sin alerta a más de 6 m y con animación `apunalar_espalda`.
+  - **(3) Parry, K:** **ejecución silenciosa**. Muerte en el acto, sin alerta a más de 6 m y con animación `apunalar_espalda`.
   - **G (Agarrar):** **rehén / escudo humano**. Estado `EN_HOSTAGE`:
     - el enemigo camina delante del jugador, sujeto por el cuello;
     - los suyos no disparan (o fallan más) y retroceden;
     - se suelta con G, se ejecuta con (3) o se empuja con (4);
     - el jugador va lento y con una sola mano;
     - si recibe un golpe fuerte, lo suelta.
-  - La G hoy es la mochila, que pasa a la columna de acciones del HUD y a Mayús+G.
+  - La mochila pasa a Mayús+G y a la columna de acciones del HUD (mapa de teclas de la fase 1).
 - **Abatidos (knock out) contra muertos:**
   - **Hoy:** `EN_DEAD` es final.
   - **Estado nuevo `EN_DOWN`:** los golpes contundentes (maza, patada, escudo) y la vida que cae por debajo de 0 sin herida letal tumban al enemigo en vez de matarlo.
@@ -143,6 +171,27 @@ Casi todas las fases agregan estado a estructuras que se guardan (`Combat`, `Gam
 - **Tests:** cada tarea produce lo esperado. Ir acompañado reduce el riesgo, y el pastoreo baja la sed del ganado.
 
 **Costo:** medio.
+
+## Fase 4b — Obras ubicadas en una vista aérea del campamento (v0.6.2)
+
+**Lo que hay:** al mandar una obra (Tab → Obras), el proyecto se planta 6 m delante del jugador (`start_build`: `ground_ahead(t, p, 6.0f)` en `src/game/actions_game.c`). Hay que caminar hasta el sitio antes de ordenarla.
+
+**Trabajo:**
+- **Vista aérea:** al elegir una obra (desde el menú o desde el jefe del campamento de la fase 4), la cámara sube a una vista cenital del campamento: unos 60 m de radio, centrada en el campamento elegido, no en el jugador. Se ven las yurtas, la fogata, las obras en curso y el borde del campamento. Es como la vista orbital, pero local.
+- **Fantasma de la obra:** su huella (el volumen del inventario o el modelo, translúcido) sigue al puntero, al dedo o a WASD.
+  - **Q/E** la giran.
+  - **Verde** si el sitio vale: dentro del radio del campamento, en seco, con poca pendiente y sin pisar yurtas, fuegos, otras obras ni caminos.
+  - **Rojo** si no vale, con el motivo en la leyenda ("en el agua", "demasiado empinado", "encima de la yurta del jefe").
+- **Confirmar:** Enter o un toque coloca la obra; Esc cancela. Los constructores (`NPC`) caminan hasta ese sitio, como hoy.
+- **Ajustes útiles:**
+  - las cercas y murallas se trazan con dos puntos, de un extremo al otro;
+  - una rejilla opcional (Mayús) alinea las obras.
+- **Tests (en `sim/` puro):**
+  - la validación del sitio: agua, pendiente, solapes y radio;
+  - el giro de la huella;
+  - la obra queda donde se señaló.
+
+**Costo:** medio. La cámara cenital y el fantasma son nuevos; el resto, la cola de obras y los constructores, ya existe.
 
 ## Fase 5 — Economía de los campamentos y artesanías (v0.7.0)
 
@@ -265,10 +314,11 @@ Casi todas las fases agregan estado a estructuras que se guardan (`Combat`, `Gam
 | Versión | Fase | Depende de |
 |---|---|---|
 | v0.4.4 | 0 · partidas por bloques | — |
-| v0.5.0 | 1 · cuatro botones y objetivo | 0 |
+| v0.5.0 | 1 · cuatro botones, objetivo y mapa de teclas | 0 |
 | v0.5.1 | 2 · espalda, rehenes, abatidos | 1 |
 | v0.6.0 | 3 · escolta y guardias que pelean | 1, 2 |
 | v0.6.1 | 4 · tareas de la tribu | 0 (y 3 para guardia) |
+| v0.6.2 | 4b · obras en vista aérea | 4 (el jefe también las manda) |
 | v0.7.0 | 5 · economía y artesanías | 4 |
 | v0.7.1 | 6 · caballos y migración | 1, 4, 5 |
 | v0.8.0 | 7 · armas y forja | 1, 5 |
