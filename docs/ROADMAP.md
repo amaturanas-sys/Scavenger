@@ -2,6 +2,8 @@
 
 Próxima gran actualización (combate de cuatro botones, tribu, economía, caballos, armas y asentamientos agrarios): [PLAN_GRAN_ACTUALIZACION.md](PLAN_GRAN_ACTUALIZACION.md).
 
+Herramientas de generación (edificios con un kit de piezas, animaciones desde videos con GRAIL o alternativas, modelos desde imágenes con TRELLIS.2): [PLAN_HERRAMIENTAS_IA.md](PLAN_HERRAMIENTAS_IA.md).
+
 Enfoque: **rebanadas verticales**. Cada fase deja algo jugable y verificado, en vez de construir todos los sistemas a medias.
 
 ## Fase 0 — Fundaciones (hecha)
