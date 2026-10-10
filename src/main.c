@@ -495,15 +495,17 @@ static Vector2 virtual_pointer(void) {
     return (Vector2){ (m.x - (sw - VIRTUAL_W * k) * 0.5f) / k, (m.y - (sh - VIRTUAL_H * k) * 0.5f) / k };
 }
 
-// Android: dos botones tactiles en la esquina (pausa y controles), por si el teclado de la
-// tablet no trae Esc ni F1. Un toque inyecta la accion (se lee en el proximo cuadro).
+// Android: dos botones tactiles arriba, junto al minimapa (pausa y controles), por si el teclado
+// de la tablet no trae Esc ni F1. Abajo a la derecha van los botones de combate. Un toque
+// inyecta la accion (se lee en el proximo cuadro).
 static void draw_touch_buttons(void) {
-    const int s = 22, y = VIRTUAL_H - 46;
-    const Rectangle pause = { VIRTUAL_W - 8 - s, (float)y, (float)s, (float)s }, help = { VIRTUAL_W - 14 - 2 * s, (float)y, (float)s, (float)s };
+    const int s = 22, y = 6, x = VIRTUAL_W - 2 * MINIMAP_RADIUS - 16 - s;
+    const Rectangle pause = { (float)x, (float)y, (float)s, (float)s }, help = { (float)(x - 6 - s), (float)y, (float)s, (float)s };
     Vector2 m = virtual_pointer();
     bool tap = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     for (int i = 0; i < 2; i++) {
         Rectangle r = i ? help : pause;
+        hud_hover(r); // un toque aqui no es un golpe
         bool over = CheckCollisionPointRec(m, r);
         DrawRectangleRec(r, Fade((Color){ 20, 16, 12, 255 }, over ? 0.85f : 0.6f));
         DrawRectangleLinesEx(r, 1.0f, UI_GOLD);
@@ -543,6 +545,7 @@ int main(int argc, char **argv) {
     bool start_pos = false;
     const char *start_trap = NULL, *start_enemies = NULL;
     bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
+    bool start_crouch = false, start_target = false;
     MenuScreen start_menu_screen = MENU_TITLE;
     int start_help_page = 0; // prueba: --pagina N del instructivo
     unsigned start_seed = WORLD_SEED; // --semilla N: el mundo (sin ella, cada partida nueva del menu sortea uno)
@@ -578,6 +581,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--enemigos") && i + 1 < argc) start_enemies = argv[++i];
         else if (!strcmp(argv[i], "--heridas")) start_wounds = true;
         else if (!strcmp(argv[i], "--apuntar")) start_aim = true;
+        else if (!strcmp(argv[i], "--agachado")) start_crouch = true;
+        else if (!strcmp(argv[i], "--objetivo")) start_target = true;
         else if (!strcmp(argv[i], "--lago")) start_lake = true;
         else if (!strcmp(argv[i], "--mapa-mundo") && i + 1 < argc) map_path = argv[++i];
         else if (!strcmp(argv[i], "--ir") && i + 1 < argc) start_goto = argv[++i];
@@ -1005,6 +1010,10 @@ int main(int argc, char **argv) {
             if (!gallery_mode)
                 tg_update(&g_actions, &g_combat, &troop, &g_props, &player,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
+            // Un clic o un toque sobre un enemigo (no sobre el HUD) lo elige como objetivo.
+            if (!gallery_mode && !menu && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !hud_pointer_over() &&
+                !ig_blocks_input(&g_actions) && !g_actions.dlg.open)
+                cb_pick_target(&g_combat, cam, virtual_pointer(), VIRTUAL_W, VIRTUAL_H, log, sizeof(log));
             if (!gallery_mode)
                 cb_update(&g_combat, &player, &g_actions, &troop, &g_props, &terrain, camp.fire,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), clock_is_night(world_time),
@@ -1027,9 +1036,16 @@ int main(int argc, char **argv) {
                 g_combat.aim_pitch = 0.12f;
                 player.yaw = rig.yaw;
             }
+            if (start_target && frame == 30 && !gallery_mode) // prueba: como pulsar Tab con enemigos cerca
+                cb_cycle_target(&g_combat, &player, 1, log, sizeof(log));
+            if (start_crouch && !gallery_mode) { // prueba: agachado (X), de perfil para ver la postura
+                player.crouching = true;
+                if (frame == 3) player.yaw = rig.yaw + PI / 2;
+            }
             if (last_champion != prev_champion) show_card = true; // ficha al conocerlo
             advance_days(&troop, &rng, &day, world_time, &terrain, log, sizeof(log));
-            if (input_action_pressed(KA_CARD)) show_card = !show_card && last_champion >= 0; // U: la ficha del gran guerrero
+            if (input_action_pressed(KA_CARD) && !ig_blocks_input(&g_actions)) // U: la ficha del gran guerrero (en el inventario, U cambia la mochila)
+                show_card = !show_card && last_champion >= 0;
             memmap_visit(&g_memory, player.pos.x, player.pos.z, dt, world_time);
             { // la vista (tatuajes del grifo, lapislazuli): el mapa se descubre mas lejos
                 static float reveal_t = 0.0f;
@@ -1039,7 +1055,7 @@ int main(int argc, char **argv) {
                     memmap_reveal(&g_memory, player.pos.x, player.pos.z, 30.0f * per, 30.0f, world_time);
                 }
             }
-            if (input_action_pressed(KA_MARK)) { // Ctrl+M: la vista orbital
+            if (input_action_pressed(KA_MARK)) { // M: marcar el lugar (Ctrl+M es la vista orbital)
                 MarkerKind kind = IsKeyDown(KEY_LEFT_SHIFT) ? MARKER_DANGER : MARKER_INTEREST;
                 bool placed = memmap_toggle_marker(&g_memory, player.pos.x, player.pos.z, kind, 6.0f);
                 snprintf(log, sizeof(log), "%s", placed ? T("Marcaste este lugar en el mapa.") : T("Quitaste la marca."));
@@ -1139,6 +1155,7 @@ int main(int argc, char **argv) {
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions) && !g_actions.dlg.open) {
                 hud_quickbar(&g_actions, &g_props, &player, 6, VIRTUAL_H - 54);
                 hud_action_column(&g_actions, 6, 68);
+                cb_draw_buttons(&g_combat, &g_actions, VIRTUAL_W, VIRTUAL_H); // H J K L, abajo a la derecha
             }
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);

@@ -125,14 +125,16 @@ typedef struct {
 void cb_init(Combat *cb, unsigned seed);
 // Un clic o un toque sobre un enemigo lo elige como objetivo (y ese clic no es un golpe).
 // pointer: en la pantalla virtual de w x h. true si eligio a alguien.
-bool cb_pick_target(Combat *cb, Camera3D cam, Vector2 pointer, int w, int h);
+bool cb_pick_target(Combat *cb, Camera3D cam, Vector2 pointer, int w, int h, char *log, size_t len);
+// Tab: el objetivo siguiente (dir 1) o el anterior (-1), en orden alrededor del jugador.
+void cb_cycle_target(Combat *cb, const Player *p, int dir, char *log, size_t len);
 // El enemigo elegido (o NULL).
 const Enemy *cb_target(const Combat *cb);
-// Las casillas de combate del HUD (src/game/hud_game.c): lo que se pide se atiende en el
-// proximo cb_update. attack_down y block: mantenidos este cuadro.
-void cb_hud_buttons(bool attack_press, bool attack_down, bool block, bool parry, bool charge);
 // Hay un golpe enemigo en la ventana del parry (la casilla destella).
 bool cb_parry_cue(const Combat *cb);
+// Los cuatro botones de combate, abajo a la derecha (ataque, bloqueo, parry, carga o patada):
+// dibuja y atiende los toques y clics, que valen como H J K L en el proximo cb_update.
+void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h);
 bool cb_blocks_input(const Combat *cb); // abatido
 float cb_speed_scale(const Combat *cb);
 // input_ok: el jugador puede atacar/vendar (sin menu ni minijuego). night/winter: cambian lo que aparece.
@@ -147,7 +149,8 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
 // Barras de vida sobre enemigos y companeros heridos. Fuera de BeginMode3D.
 void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop, Camera3D cam, int w, int h);
 // Vida del jugador (bajo el calor), panel de heridas (P) y aviso de abatido.
-void cb_request_bandage(void); // como pulsar B (desde el HUD)
+void cb_request_bandage(void);     // como pulsar B (desde el HUD)
+void cb_request_light_arrow(void); // como Mayus+L (desde la columna del HUD)
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h);
 // Prueba: hace aparecer enemigos cerca del jugador ("bandidos", "culto", "arqueros"),
 // o fieras por nombre ("lobos", "tigre", "jabali"...).

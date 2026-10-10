@@ -3168,6 +3168,7 @@ static void test_keymap_four_buttons(void) {
     CHECK(keymap_matches(KA_LIGHT_ARROW, 'L', KM_SHIFT) && !keymap_matches(KA_LIGHT_ARROW, 'L', 0));
     CHECK(keymap_matches(KA_CARD, 'U', 0) && keymap_matches(KA_TARGET, KM_KEY_TAB, KM_SHIFT));
     CHECK(!keymap_matches(KA_EQUIPMENT, 'P', KM_CTRL) && !keymap_matches(KA_MARK, 'M', KM_CTRL)); // Ctrl+P pausa, Ctrl+M orbital
+    CHECK(keymap_matches(KA_ESCORT, 'Y', 0) && !keymap_matches(KA_ESCORT, 'Y', KM_SHIFT) && keymap_matches(KA_DISPATCH, 'Y', KM_SHIFT));
     // Las teclas viejas quedan libres: V, Z y O no hacen nada.
     for (int a = 0; a < KA_COUNT; a++)
         CHECK(!keymap_matches((KeyAction)a, 'V', 0) && !keymap_matches((KeyAction)a, 'Z', 0) && !keymap_matches((KeyAction)a, 'O', 0));

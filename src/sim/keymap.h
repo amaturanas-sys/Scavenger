@@ -37,7 +37,8 @@ typedef enum {
     KA_MOUNT,       // R: montar y desmontar
     KA_BANDAGE,     // B: vendar
     KA_DRINK,       // N: beber (Mayus+N: con hierbas)
-    KA_ESCORT,      // Y: escolta (Mayus+Y: despachar)
+    KA_ESCORT,      // Y: escolta
+    KA_DISPATCH,    // Mayus+Y: despachar a la tribu (viajes, mensajes)
     KA_MARK,        // M: marcar el mapa (Mayus+M: peligro)
     KA_MENU,        // Tab fuera de combate: acciones, obras, fabricar, reparar
     KA_INVENTORY,   // I

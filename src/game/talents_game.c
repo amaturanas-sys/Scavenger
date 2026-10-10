@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/hud_game.h"
 #include "game/input.h"
 #include "game/inventory_game.h"
 #include "raylib.h"
@@ -506,11 +507,13 @@ void tg_draw_hud(const GameActions *ga, int w, int h) {
     AbilityId act[3];
     float pot[3];
     int n = tg_actives(ga, act, pot, 3);
-    for (int i = 0; i < n; i++) { // abajo a la derecha, sobre la ayuda de teclas
-        Rectangle r = { (float)(w - 8 - (n - i) * 30), (float)(h - 52), 26, 26 };
+    for (int i = 0; i < n; i++) { // abajo a la derecha, sobre los botones de combate
+        Rectangle r = { (float)(w - 4 - (n - i) * 30), (float)(h - 82), 26, 26 };
         AbilityId a = act[i];
         bool on = ga->ab_timer[a] > 0.0f, ready = ga->ab_cd[a] <= 0.0f;
+        hud_hover(r); // un toque la usa (y no es un golpe)
         bool hover = ui_tile(r, ICON_NIVEL, on, ready);
+        if (ui_click(r)) input_inject((InputAction)(IN_ABILITY1 + i));
         if (!ready) { // la espera: se vacia de arriba abajo
             float f = ga->ab_cd[a] / fmaxf(1.0f, ability_def(a)->cooldown);
             DrawRectangle((int)r.x + 1, (int)r.y + 1, (int)r.width - 2, (int)((r.height - 2) * f), (Color){ 10, 8, 6, 170 });
