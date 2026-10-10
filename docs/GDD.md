@@ -159,41 +159,41 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
 - **Efectos:** heridas en las piernas frenan (y se cojea), en los brazos debilitan los golpes; poca sangre afecta a todo.
 - **Curar:** las heridas sanan con el tiempo, más rápido vendadas y en reposo; las fracturas solo sanan entablilladas. `B` venda con **hierbas curativas** del acopio (a uno mismo o a un compañero cercano; a uno abatido lo levanta). El **curandero** del campamento atiende al jugador cuando está cerca y, cada amanecer, trata y cura a toda la tribu; los grandes guerreros aguantan más (vida según talla y aguante).
 - **Muerte y regreso:** abatido, su escolta lo levanta y lo venda. Si muere (desangrado, o abatido sin nadie que lo socorra), en el suelo quedan una calavera y unos huesos, y vuelve a su **último lugar de descanso**: el último campamento, tienda o casa de la tribu donde se quedó unos segundos (moral −8, pierde lo que cargaba). Los compañeros mueren para siempre (luto: moral −6).
-- **Combate cuerpo a cuerpo** (`src/sim/melee.*`). Las mismas reglas valen para el jugador, la escolta y los enemigos:
-  - **Golpes y combos:** `V` (o clic izquierdo) golpea con el arma empuñada. El daño, el alcance y la cadencia dependen del arma: dagas rápidas, mazas que rompen huesos, lanzas de largo alcance; el bronce, el acero y las armas especiales cortan más. Tres golpes seguidos encadenan un **combo** (el tercero remata). Las armas cortas encadenan más rápido; con las largas (lanza, espada, guja) el remate puede tumbar.
-  - **Golpe pesado:** mantener `V` medio segundo. Más daño, desequilibra y rompe la guardia del escudo (algo de daño pasa).
-  - **Escudo:** `Z` cubre de frente (para casi todos los golpes ligeros; sin escudo, se para peor con el arma). `Z` + `V` da un **golpe de escudo** que aturde (escudo contra escudo, los dos se tambalean). Corriendo + `Z` es la **carga con escudo**, que arrolla y puede tumbar.
-  - **Patada:** `J` o botón central del ratón. Aparta y desequilibra; contra un escudo en guardia solo le quita la guardia. **A la carrera, con inercia**, tumba incluso al que se cubre con escudo.
-  - **Agarre y llave:** `U`. Agarra lo que el rival ofrece:
-    - el escudo con el que se cubre (se lo arranca);
-    - el brazo con el que golpea (lo desarma y lo tumba);
-    - una extremidad (lo tumba con una llave).
-    Es un pulso de fuerza, vida y peso de la armadura. Si falla, el que agarra queda expuesto.
-  - **Gancho:** `O`, con un arma con gancho (hacha, guja, alabarda). Engancha el escudo enemigo y se lo hace soltar.
+- **Combate cuerpo a cuerpo** (`src/sim/melee.*`). Las mismas reglas valen para el jugador, la escolta y los enemigos. El jugador pelea con **cuatro botones** (v0.5.0): `H` ataque, `J` bloqueo, `K` parry y `L` carga o patada, con teclado o con las cuatro casillas de abajo a la derecha (tableta):
+  - **Golpes y combos:** `H` (o clic izquierdo) golpea con el arma empuñada. El daño, el alcance y la cadencia dependen del arma: dagas rápidas, mazas que rompen huesos, lanzas de largo alcance; el bronce, el acero y las armas especiales cortan más. Tres golpes seguidos encadenan un **combo** (el tercero remata). Las armas cortas encadenan más rápido; con las largas (lanza, espada, guja) el remate puede tumbar.
+  - **Golpe pesado:** mantener `H` medio segundo. Más daño, desequilibra y rompe la guardia del escudo (algo de daño pasa).
+  - **Bloqueo:** mantener `J` (o el clic derecho sin arrastrar; arrastrar sigue girando la cámara). Con escudo cubre de frente (para casi todos los golpes ligeros). Sin escudo se para con el arma: aguanta la mitad del golpe y gasta aguante; agotado no se puede, y contra flechas no sirve. `J` + `H` con escudo da un **golpe de escudo** que aturde (escudo contra escudo, los dos se tambalean).
+  - **Parry:** `K`. El rival anuncia el golpe: se detiene (el jinete no, que sigue al galope) y levanta el arma 0,4 s antes de pegar (más en el pesado, menos con armas cortas). En los últimos 0,25 s, un rombo dorado destella sobre él y en la casilla; el parry ahí le gana según el arma del jugador:
+    - hacha o guja: **engancha el escudo** y se lo arranca (sin escudo, puede desarmarlo);
+    - sin armas o con daga: **llave y derribo**, que lo desarma; es un pulso de fuerza, vida y peso de la armadura, y si falla, el que agarra queda desequilibrado;
+    - las demás: **desvío**, que lo deja abierto un segundo.
+    A destiempo (o sin golpe que parar) el jugador queda **expuesto** 0,6 s: ni se cubre ni ataca.
+  - **Carga o patada:** `L`. Con escudo, **carga** que empuja y arrolla al primero que encuentra. Sin escudo, **patada**: aparta y desequilibra; contra un escudo en guardia solo le quita la guardia. **A la carrera, con inercia**, tumba incluso al que se cubre con escudo.
+  - **Objetivo:** `Tab` en combate pasa al enemigo siguiente, en orden alrededor del jugador desde el que tiene delante (`Mayús+Tab`, al anterior); un clic o un toque sobre un enemigo lo elige. Un anillo dorado lo marca y su barra de vida se resalta. Los golpes van a él (el jugador se vuelve hacia él) y las armas a distancia le apuntan solas, con la caída calculada. Se pierde a 25 m o si muere; sin objetivo, se golpea al más cercano delante. Fuera de combate, `Tab` abre el menú de acciones.
   - **En el suelo** (derribado unos 2,5 s) no se cubre ni ataca, y recibe más daño. **Desequilibrado**, no se puede cubrir. La armadura pesada cuesta más de tumbar.
-  - **Lo que sueltan los enemigos** (escudos, armas) queda en el suelo. Si te lo arrancan a ti, `X` vuelve a empuñar.
+  - **Lo que sueltan los enemigos** (escudos, armas) queda en el suelo. Si te lo arrancan a ti, su número (1 a 9) vuelve a empuñar.
 - **Armas de mano:**
-  - `H` enfunda y desenfunda; `X` cambia de empuñadura.
-  - `Mayús+X` pasa el arma a la otra mano. Con el escudo o un arma a dos manos no se puede. Con la izquierda sola se golpea peor.
+  - Los números (1 a 9) empuñan lo que haya en esa casilla de la barra rápida; la misma tecla otra vez enfunda.
+  - `Mayús+número` pasa el arma a la otra mano. Con el escudo o un arma a dos manos no se puede. Con la izquierda sola se golpea peor.
   - Con un arma en cada mano, el combo alterna derecha e izquierda.
-- **IA:** los bandidos y los captores llevan escudo a veces y se cubren cuando vas a golpear. Contra tu escudo en guardia patean (a la carrera si vienen corriendo), agarran o enganchan (los fanáticos llevan hacha). Si estás en el suelo, rematan. La escolta pelea igual (los grandes guerreros, con guja).
+- **IA:** los bandidos y los captores llevan escudo a veces y se cubren cuando vas a golpear (no mientras anuncian su golpe). Contra tu escudo en guardia patean (a la carrera si vienen corriendo), agarran o enganchan (los fanáticos llevan hacha); contra tu arma en guardia patean o golpean pesado. Si estás en el suelo, rematan. La escolta pelea igual (los grandes guerreros, con guja).
 - **Enemigos:** bandidos, arqueros, fanáticos y captores del culto. Ven al jugador según la distancia (acechando cuesta más), persiguen, golpean y huyen malheridos (los fanáticos nunca). Lejos del campamento aparecen bandidos o el culto de día. Se desangran también. Las fieras (lobos, osos, hienas...) son fauna: ver «Fauna».
 - **Escolta:** pelea a tu lado y puede caer herida.
 - **Peligros que hieren:** caer al hielo golpea, un socavón de nieve puede romper una pierna y la hipotermia congela manos y pies.
 - **HUD:** vida y sangre bajo el calor; `P` abre el panel de heridas (tuyas y de la tribu); barras de vida sobre enemigos y compañeros heridos.
 - **Animación:**
   - Clips nuevos de salud: `abatido`, `cojear` y `vendar`.
-  - Clips nuevos cuerpo a cuerpo: `ataque_pesado`, `patada`, `patada_carrera`, `golpe_escudo`, `carga_escudo`, `enganchar_escudo`, `derribado` y `cambiar_mano`.
+  - Clips nuevos cuerpo a cuerpo: `ataque_pesado`, `patada`, `patada_carrera`, `golpe_escudo`, `carga_escudo`, `enganchar_escudo`, `derribado` y `cambiar_mano`; con los cuatro botones, `parry` y `desvio`.
   - Se usan además `ataque_*`, `estocada_lanza`, `bloquear`, `agarre`, `recibir_golpe` y `morir`.
-  - Sin modelos, el cuerpo articulado muestra la patada, el agarre y el escudo.
-- **Prueba:** `9` hace aparecer bandidos delante (`Shift+9` lobos, `Ctrl+9` culto); `--enemigos bandidos|culto|arqueros|lobos|<animal>` (p. ej. `tigre`, `jabali`) y `--heridas` al arrancar.
+  - Sin modelos, el cuerpo articulado muestra la patada, el agarre, el escudo, el parry y al jugador agachado.
+- **Prueba:** `9` hace aparecer bandidos delante (`Shift+9` lobos, `Ctrl+9` culto); `--enemigos bandidos|culto|arqueros|lobos|<animal>` (p. ej. `tigre`, `jabali`), `--heridas` y `--objetivo` (como pulsar Tab) al arrancar.
 
 **Pendiente:** combate montado, captores que se llevan prisioneros, botín de los enemigos.
 
 ### Zonas del cuerpo, armas a distancia y armadura (implementado — `src/sim/body.*`, `src/sim/ballistics.*`, `src/sim/armor.*`)
 - **Cuerpo por zonas:** cabeza, cuello, tórax, abdomen, pelvis, brazos y antebrazos, muslos y piernas, para el jugador y todos los humanos. Cada zona multiplica el daño distinto (cuello ×2.2, cabeza ×1.8, abdomen ×1.25, tórax ×1.15, pelvis ×1, muslo ×0.85, brazo ×0.7, pierna ×0.6, antebrazo ×0.55) y sangra distinto (cuello, vientre y muslo, más). Las fieras usan las mismas zonas con nombres de animal.
 - **Modelado simple y articulado:** mientras no hay modelos, cada humano se dibuja con una cápsula por zona; brazos y piernas se balancean al andar, el brazo derecho golpea, los brazos tensan el arco, y el cuerpo se tiende al caer. La misma geometría decide dónde impacta un proyectil.
-- **Armas a distancia:** arco compuesto, arco largo, ballesta, honda y mosquete (y las especiales). La velocidad de salida sale de la **potencia del arma y la masa del proyectil** (v = √(2E/m)); en vuelo actúan la gravedad y la resistencia del aire (más fuerte para lo liviano), así cada tiro describe su curva y cae con la distancia. El daño sale de la energía que llega al blanco. Mantener `V` (o clic) tensa el arco (más tensión, más alcance y precisión) y al soltar dispara; la ballesta y el mosquete disparan al pulsar y luego recargan. La cámara alza o baja la mira y se dibuja la **curva** que hará el proyectil y dónde caerá. Consume munición del acopio (flechas, virotes, piedras); las flechas se clavan en el suelo.
+- **Armas a distancia:** arco compuesto, arco largo, ballesta, honda y mosquete (y las especiales). La velocidad de salida sale de la **potencia del arma y la masa del proyectil** (v = √(2E/m)); en vuelo actúan la gravedad y la resistencia del aire (más fuerte para lo liviano), así cada tiro describe su curva y cae con la distancia. El daño sale de la energía que llega al blanco. Mantener `H` (o clic) tensa el arco (más tensión, más alcance y precisión) y al soltar dispara; la ballesta y el mosquete disparan al pulsar y luego recargan. Con objetivo, la mira se calcula sola; sin él, la cámara alza o baja la mira. Se dibuja la **curva** que hará el proyectil y dónde caerá. `J` baja el arma y `L` patea. Consume munición del acopio (flechas, virotes, piedras); las flechas se clavan en el suelo.
 - **Arqueros enemigos:** guardan distancia y calculan el ángulo del tiro (con más error a mayor distancia). La escolta también puede recibir flechas.
 - **Armadura por piezas:** casco (cabeza), gorjal (cuello), coraza (tórax y abdomen), hombreras (brazos), brazales y guanteletes (antebrazos), faldar (pelvis y muslos), grebas y botas (piernas). Cada material para distinto el filo, el golpe y la punta (fieltro, cuero laminar, bronce, hierro, acero, oro; la malla para menos las flechas) y tiene su **durabilidad y dureza**: cada impacto la gasta y, rota, ya no protege. Un corte que la armadura casi detiene llega como golpe. Las piezas pesan y frenan. El campamento las remienda cada día (mucho más con herrero).
 - **Quién lleva qué:** el jugador empieza con cuero laminar; la tribu con fieltro y cuero, los grandes guerreros con escamas de hierro; los bandidos con fieltro y el culto con bronce. `P` muestra las piezas y su estado.
@@ -332,7 +332,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
 - **Forjado:** las armas y armaduras de metal piden su horno y un herrero, y las hace la tribu.
 - **Ingredientes recolectables:**
   - matas de hierbas y pedernal en el campo (F; Mayús+F recoge todo lo cercano);
-  - plumas de las aves, hueso y tendones del resto de animales al despiezarlos (K);
+  - plumas de las aves, hueso y tendones del resto de animales al despiezarlos (F);
   - miel de las colmenas.
 - **Reparar:** la pestaña lista las piezas gastadas que llevas puestas y las de tus contenedores cercanos, con su estado.
   - El fieltro y el cuero se remiendan con pieles (y cuerda), en cualquier sitio.
@@ -349,8 +349,8 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   | Grande | 40 kg | 28 | ×0,9, aun vacía |
 
   - Se cambia de mochila con `U` sobre otra en el inventario; lo que llevas tiene que caber.
-  - `G` la deja en el suelo y la recoge al momento: útil para pelear más ligero.
-  - Junto a la carreta, o a una mula, burro, camello, caballo o buey ensillado, `G` la carga en ellos; la mochila sigue al animal o al carro.
+  - `Mayús+G` (o la casilla de la columna) la deja en el suelo y la recoge al momento: útil para pelear más ligero.
+  - Junto a la carreta, o a una mula, burro, camello, caballo o buey ensillado, `Mayús+G` la carga en ellos; la mochila sigue al animal o al carro.
 - **La gente también lleva mochila** (`Member.pack`, `Member.bag`):
   - las de la escolta que está al lado son contenedores en el inventario;
   - una mochila grande frena a la escolta;
@@ -359,7 +359,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - el hambre sube con el tiempo;
   - los herbívoros pastan solos si hay pasto (sin nieve);
   - los carnívoros con hambre cazan presas de su talla cerca;
-  - si no, hay que alimentarlos con `K`: forraje para los herbívoros, carne para los carnívoros;
+  - si no, hay que alimentarlos con `F`: forraje para los herbívoros, carne para los carnívoros;
   - los pastores alimentan con el acopio a los que están en su campamento y juntan forraje cada día;
   - con mucha hambre adelgazan, y al final abandonan a la tribu y vuelven a ser salvajes;
   - aviso en el registro y un cuenco sobre la cabeza del animal.
@@ -405,7 +405,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
 - **Hervir** (acción junto a un fuego, una leña, hasta 4 tragos) y **el alcohol** purifican.
 - **Borrachera** [0, 2]: alegre (> 0.3), borracho (> 0.8), ebrio perdido (> 1.4). Torpeza (golpes −35 %, puntería ×2.5 de dispersión), aguante a la mitad, se tambalea. Se pasa con el tiempo.
 - **La tribu** (`water_daily`): una ración por persona y día del acopio (lo seguro primero). Si falta y hay agua a menos de 60 m del campamento: hervida mientras haya leña (una cada cuatro), cruda si no (fiebre: −20 de vida y −6 de ánimo a quien le toque). Sin agua: −15 de vida y −12 de ánimo. La vida no baja del 30 %.
-- **Animales:** los de la tribu tienen sed (de 0 a 2); junto al agua beben solos; `K` con agua o los pastores con el acopio. Con sed > 1 adelgazan; > 2, se van.
+- **Animales:** los de la tribu tienen sed (de 0 a 2); junto al agua beben solos; `F` con agua o los pastores con el acopio. Con sed > 1 adelgazan; > 2, se van.
 
 ### Órdenes a la escolta: despachar y mensajeros (implementado — `src/sim/travel.*`, en juego `src/game/travel_game.*`)
 - **Despachar (`Mayús+Y`):** a un campamento o a un sitio marcado en el mapa. Al menos uno de los despachados tiene que conocer el destino (`Member.known`: un bit por sitio; se aprende al pasar a menos de 35 m).
@@ -485,7 +485,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
 ### Fauna (implementado — `src/sim/animals.*`, en juego `src/game/fauna_game.*`)
 - **Cinco clases de animales:**
   - **Monturas** (caballo, mula, burro, buey, camello, elefante): presas que se doman con el lazo (probabilidad propia de cada especie) y se montan con silla. Montado vas más rápido: caballo ×2,4, mula ×1,8, camello ×1,7, elefante ×1,6, burro ×1,5, buey ×1,3.
-  - **Depredadores domables** (lobo, perro asilvestrado, tigre, puma, halcón, cuervo): hostiles. Se doman peleando hasta debilitarlos (menos del 40 % de vida; una marca dorada lo indica), echándoles el lazo (quedan atados a una estaca y dejan de sangrar) y dándoles carne con `K` antes de 60 s. Si no comen, se sueltan. Domados, defienden al jugador de fieras y enemigos. El halcón caza liebres para la tribu; el cuervo vuela en círculos y revela el mapa.
+  - **Depredadores domables** (lobo, perro asilvestrado, tigre, puma, halcón, cuervo): hostiles. Se doman peleando hasta debilitarlos (menos del 40 % de vida; una marca dorada lo indica), echándoles el lazo (quedan atados a una estaca y dejan de sangrar) y dándoles carne con `F` antes de 60 s. Si no comen, se sueltan. Domados, defienden al jugador de fieras y enemigos. El halcón caza liebres para la tribu; el cuervo vuela en círculos y revela el mapa.
   - **Siempre hostiles** (oso, hiena, coyote, jabalí): atacan a las personas que ven y no se doman.
   - **Presas salvajes** (antílope saiga, reno, gacela, ciervo, liebre, íbice): se cazan y no se doman.
   - **Ganado** (cabra, becerro): de la tribu desde el principio.
@@ -495,8 +495,8 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - **Huida:** las presas huyen de los cazadores que notan (de noche notan menos) y la alarma se contagia a su grupo. De las personas solo huyen si les hicieron daño, a ellas o a su grupo (durante 60 s). Depredadores y hostiles no huyen: contraatacan a quien los hiere y solo escapan con la vida crítica (menos del 20 %). Bueyes y elefantes heridos embisten en vez de huir.
   - Los animales atacan a cualquier persona: jugador, tribu y enemigos. La armadura y las zonas del cuerpo cuentan igual que en el combate. Nadie entra al agua profunda salvo las aves.
 - **Aparición:** por bioma (estepa, desierto, frío de alta montaña), a 70–110 m del jugador y nunca junto al campamento. Hay unos 16 animales salvajes alrededor; de noche, el doble de cazadores. Los que quedan lejos desaparecen.
-- **Caza y despiece:** golpes y proyectiles hieren por zonas de fiera (cada especie con su talla; las aves, en el aire). Con `K` junto a un cadáver se despieza: carne fresca y pieles (menos si otros se lo comieron).
-- **Ganado:** sigue al jugador que camina cerca (pastoreo) y se queda donde lo dejas. `K` ordeña la cabra una vez al día; `Mayús+K` sacrifica (carne y piel).
+- **Caza y despiece:** golpes y proyectiles hieren por zonas de fiera (cada especie con su talla; las aves, en el aire). Con `F` junto a un cadáver se despieza: carne fresca y pieles (menos si otros se lo comieron).
+- **Ganado:** sigue al jugador que camina cerca (pastoreo) y se queda donde lo dejas. `F` ordeña la cabra una vez al día; `Mayús+F` (quieto, junto al animal) sacrifica (carne y piel).
 - **Acuáticos y anfibios:**
   - El cocodrilo espera medio sumergido junto a la orilla. Embosca a quien se acerca (personas o presas), pero no se aleja más de 9 m de su guarida.
   - La tortuga marina es una presa lenta en tierra: huye hacia el agua, donde los cazadores que no nadan no la alcanzan.
@@ -506,7 +506,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - Su mordedura deja **veneno**: quita vida poco a poco, y mientras dura no se recupera. Las hierbas (`B`) lo cortan a la mitad. El HUD dice «envenenado».
 - **Enjambres** (`src/sim/swarms.*`; cada celda de 40 m del mundo tiene siempre el mismo enjambre):
   - **Peces:** bancos que nadan bajo la superficie de los lagos (bajo el hielo no se ven) y huyen de quien se mete en el agua. Se pescan con un golpe hacia el agua (la lanza acierta más) o con una flecha que cae entre ellos, y dan carne fresca.
-  - **Abejas:** tranquilas alrededor de su colmena salvo que la golpees o metas la mano sin humo. Con la antorcha encendida, el humo las calma y `K` toma la miel (una vez al día). De noche están en la colmena.
+  - **Abejas:** tranquilas alrededor de su colmena salvo que la golpees o metas la mano sin humo. Con la antorcha encendida, el humo las calma y `F` toma la miel (una vez al día). De noche están en la colmena.
   - **Avispas:** se enfadan con solo acercarte a menos de 4 m del avispero. Pican más fuerte y con más veneno.
   - **Mosquitos:** junto al agua, con calor, al atardecer y de noche. Encuentran a quien pase cerca; el fuego de la antorcha los espanta.
   - **Moscas:** zumban sobre los cadáveres sin despiezar.
@@ -528,9 +528,10 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
 - Armas **cortas** (cuchillo, sable) y **largas** (lanza, guja).
 - Armas **a distancia**: arcos, ballestas, mosquetes, cañones.
 
-### 4. Movimiento (caminar, correr, acechar y saltar implementados)
-- **Implementado:** caminar, correr, acechar (más lento, emite menos ruido) y saltar. El "ruido" de cada postura queda expuesto para la IA de detección.
-- **Pendiente:** esconderse (hierba alta, interiores), trepar árboles y muros.
+### 4. Movimiento (caminar, correr, sigilo, agacharse y saltar implementados)
+- **Implementado:** caminar, correr, sigilo (`C`: más lento, emite menos ruido), agacharse (`X`: más bajo y lento, 2,2 m/s; con sigilo, 1,2 m/s) y saltar (`Espacio`; agachado, se levanta). Correr o montar cancelan el agacharse. El "ruido" de cada postura queda expuesto para la IA de detección.
+- **Esconderse:** agachado tras rocas o matas, o con sigilo (o agachado) en la hierba alta. Lo que ven los enemigos se multiplica: de pie ×1; sigilo ×0,45; agachado ×0,6; agachado con sigilo ×0,3; a cubierto, ×0,4 más.
+- **Pendiente:** esconderse en interiores, trepar árboles y muros.
 - **Monturas:** caballo (velocidad), camello (resistencia, desierto), elefante (fuerza, asedio); cada una con habilidades propias.
 
 ### 5. Vehículos (fase 2)

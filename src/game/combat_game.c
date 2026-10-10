@@ -1117,7 +1117,8 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
                     }
                 }
             } else {
-                if (best > def->reach * 0.9f && e->windup <= 0.0f) // anunciando el golpe, se planta
+                // Anunciando el golpe, se planta; el jinete no, que pega con la inercia del galope.
+                if (best > def->reach * 0.9f && (e->windup <= 0.0f || e->mounted))
                     goal = tpos, speed = def->speed * (best > 4.0f && best < 9.0f ? 1.25f : 1.0f);
                 // Con escudo, se cubre cuando el jugador va a golpear de frente.
                 bool threat = target == 0 && (cb->attack_anim > 0.0f || cb->v_hold > 0.15f || cb->charge_timer > 0.0f);

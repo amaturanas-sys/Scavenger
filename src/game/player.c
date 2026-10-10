@@ -127,7 +127,7 @@ void player_update(Player *p, const Terrain *t, PlayerInput in, float cam_yaw, f
 float player_eye_height(const Player *p) { return p->crouching ? 1.0f : p->sneaking ? 1.4f : 1.6f; }
 
 float player_visibility(const Player *p, bool cover) {
-    float v = p->crouching && p->sneaking ? 0.35f : p->crouching ? 0.6f : p->sneaking ? 0.55f : 1.0f;
+    float v = p->crouching && p->sneaking ? 0.3f : p->crouching ? 0.6f : p->sneaking ? 0.45f : 1.0f;
     return cover ? v * 0.4f : v; // a cubierto: tras la hierba alta, una roca o una mata
 }
 

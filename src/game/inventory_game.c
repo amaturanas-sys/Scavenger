@@ -98,7 +98,7 @@ static int containers(GameActions *ga, const Props *props, const Player *p, Cont
     bool pack_here = ga->pack_size > PACK_NONE && (ga->pack_where == PACKW_WORN || dist_xz(p->pos, ga->pack_pos.x, ga->pack_pos.z) < PACK_REACH);
     out[n++] = (Cont){ C_BAG, pack_here ? &ga->backpack : &no_pack, "", ga->pack_size == PACK_LARGE ? ICON_MOCHILA_GRANDE : ICON_MOCHILA };
     snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s",
-             !pack_here ? T("Sin mochila a mano (G para recogerla)") : ga->pack_where == PACKW_WORN ? pack_name((PackSize)ga->pack_size)
+             !pack_here ? T("Sin mochila a mano (Mayús+G para recogerla)") : ga->pack_where == PACKW_WORN ? pack_name((PackSize)ga->pack_size)
                                                                                                   : T("Tu mochila (dejada aquí)"));
     for (int k = 0; k < GA_PACKS; k++) {
         if (!pack_near(ga, k, p)) continue;
@@ -593,7 +593,7 @@ static void pack_toggle(GameActions *ga, const Props *props, const Player *p, ch
     if (near_cart(props, p)) {
         ga->pack_where = PACKW_CART;
         pack_follow(ga, props);
-        snprintf(log, len, "%s", T("Cargas tu mochila en la carreta (G junto a ella para recogerla)."));
+        snprintf(log, len, "%s", T("Cargas tu mochila en la carreta (Mayús+G junto a ella para recogerla)."));
         return;
     }
     for (int i = 0; i < ga->animal_count; i++) {
@@ -607,7 +607,7 @@ static void pack_toggle(GameActions *ga, const Props *props, const Player *p, ch
     }
     ga->pack_where = PACKW_GROUND;
     ga->pack_pos = p->pos;
-    snprintf(log, len, "%s", T("Dejas la mochila en el suelo: vas más ligero (G para recogerla)."));
+    snprintf(log, len, "%s", T("Dejas la mochila en el suelo: vas más ligero (Mayús+G para recogerla)."));
 }
 
 // U en el inventario sobre una mochila: cambiar de mochila (si lo que llevas cabe en la nueva).
