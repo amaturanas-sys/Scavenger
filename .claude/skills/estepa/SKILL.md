@@ -17,6 +17,7 @@ Las skills genéricas de juego (Unity/Unreal, ECS, multijugador) se aplican con 
 - El jugador nunca muere. Los compañeros sí.
 - Toda la interfaz pasa por `T("...")` / `N_("...")`; traducciones en `assets/i18n/en.tsv`.
 - Objetos nuevos: `assets/inventario.tsv`. Iconos: `tools/assets/iconos.py generar`.
+- Partidas guardadas: al cambiar un struct que se guarda, `python3 tools/save/esquema.py`; si un campo nuevo no debe empezar en cero (o cambia de significado), subir la version de su bloque y migrar en `migrate()` (docs/PARTIDAS.md). Los enums crecen al final.
 - Ghidra solo sobre nuestros propios builds.
 
 ## Antes de subir
@@ -24,6 +25,7 @@ Las skills genéricas de juego (Unity/Unreal, ECS, multijugador) se aplican con 
 cmake --build build && ./build/sim_tests
 python3 tools/assets/i18n.py extraer && python3 tools/assets/i18n.py check
 python3 tools/assets/inventario.py check && python3 tools/assets/iconos.py check
+python3 tools/save/esquema.py check
 ```
 
 ## Qué skill usar

@@ -67,13 +67,6 @@ void hud_stamina(int right_x, int y) {
 // ------------------------------------------------------------------ barra rapida
 // Cada casilla guarda una empuñadura (las de X), un objeto del inventario (arma, escudo,
 // antorcha, agua, ungüento, hierbas) o una habilidad activa. Vacia, su tecla abre un selector.
-typedef enum { QB_EMPTY, QB_GRIP, QB_ITEM, QB_SKILL } QbKind;
-typedef struct {
-    int kind;                // QbKind
-    int grip;                // QB_GRIP: indice de la empuñadura; QB_SKILL: AbilityId
-    char id[INV_ID_LEN];     // QB_ITEM
-} QbSlot;
-
 static QbSlot g_slots[HUD_QUICK_SLOTS];
 static bool g_slots_set;      // si no, las de serie
 static int g_picking = -1;    // casilla que se esta eligiendo (-1: selector cerrado)
@@ -98,6 +91,11 @@ static void default_slots(void) {
 void hud_reset(void) {
     default_slots();
     g_picking = -1;
+}
+
+const QbSlot *hud_slots(void) {
+    if (!g_slots_set) default_slots();
+    return g_slots;
 }
 
 // Para que sirve un objeto en la barra: beber, vendar, la antorcha o empuñarlo.
@@ -349,25 +347,20 @@ void hud_draw_picker(GameActions *ga, const Props *props, const Player *p, int w
     ui_text_centered(T("Flechas: elegir · Enter: asignar · Esc: cerrar"), w / 2, y0 + ph - 14, 10, UI_BONE_DIM);
 }
 
-// Bloque guardado (al final de la partida, tras el de src/game/death_game.c).
-#define QB_MAGIC 0x31524251u // "QBR1"
-bool hud_write(FILE *f) {
-    unsigned magic = QB_MAGIC;
-    return fwrite(&magic, sizeof(magic), 1, f) == 1 && fwrite(g_slots, sizeof(g_slots), 1, f) == 1;
-}
-
-void hud_read(FILE *f) {
+// Una partida cargada (src/game/save_game.c): las casillas guardadas, si tienen sentido.
+void hud_load(const QbSlot *s, int n) {
     hud_reset();
-    unsigned magic = 0;
-    QbSlot s[HUD_QUICK_SLOTS];
-    if (fread(&magic, sizeof(magic), 1, f) != 1 || magic != QB_MAGIC || fread(s, sizeof(s), 1, f) != 1) return;
-    for (int k = 0; k < HUD_QUICK_SLOTS; k++) {
+    if (!s || n < 1) return;
+    QbSlot slots[HUD_QUICK_SLOTS];
+    memcpy(slots, g_slots, sizeof(slots));
+    for (int k = 0; k < HUD_QUICK_SLOTS && k < n; k++) {
         if (s[k].kind < QB_EMPTY || s[k].kind > QB_SKILL) return;
         if (s[k].kind == QB_GRIP && (s[k].grip < 0 || s[k].grip >= ga_grip_count())) return;
         if (s[k].kind == QB_SKILL && (s[k].grip < 0 || s[k].grip >= ABIL_COUNT)) return;
-        s[k].id[INV_ID_LEN - 1] = '\0';
+        slots[k] = s[k];
+        slots[k].id[INV_ID_LEN - 1] = '\0';
     }
-    memcpy(g_slots, s, sizeof(g_slots));
+    memcpy(g_slots, slots, sizeof(g_slots));
 }
 
 // ------------------------------------------------------------------ columna de acciones

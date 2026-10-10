@@ -1,6 +1,6 @@
 # Plan: la gran actualización (v0.5 a v0.9)
 
-> **Estado:** plan, sin empezar. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
+> **Estado:** fase 0 hecha (v0.4.4); las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
 
 Pedido (5 y 6 de octubre de 2026):
 - combate más ágil, con selector de objetivo y cuatro botones (H J K L);
@@ -21,7 +21,7 @@ Pedido (5 y 6 de octubre de 2026):
 
 Casi todas las fases agregan estado a estructuras que se guardan (`Combat`, `GameActions`, `Troop`, `Enemy`, `CampSite`). Hoy la partida se rechaza si cambia el tamaño de cualquiera de ellas (`layout_hash` en `src/game/save_game.c`). Con tantos cambios, las partidas se perderían en cada versión.
 
-**Fase 0 — Formato de partida por bloques (v0.4.4):**
+**Fase 0 — Formato de partida por bloques (v0.4.4) — hecha:** el formato, las reglas para cambiar un struct que se guarda y las partidas de referencia están en [PARTIDAS.md](PARTIDAS.md). Cada bloque lleva el esquema de sus campos, así que agregar, quitar o mover campos (a cualquier profundidad) no pierde partidas. La versión del bloque queda para las migraciones que el esquema no resuelve solo.
 - **Formato:** la partida pasa a ser una lista de bloques `{etiqueta de 4 letras, versión, tamaño, datos}`, como los bloques opcionales que ya usan `death_game` (`DGT1`) y `hud_game` (`QBR1`).
 - **Lectura:** cada módulo lee su bloque. Si la versión es vieja, la migra o completa con valores por defecto; si el bloque no está, arranca de cero.
 - **Compatibilidad:** las partidas actuales (formato plano) se leen con el lector viejo y se reescriben en el nuevo al guardar.

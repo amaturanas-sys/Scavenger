@@ -3,13 +3,12 @@
 //    jugador se quedo unos segundos. Al empezar, el campamento de la tribu.
 //  - Al morir (desangrado, o abatido sin nadie que lo socorra), en el suelo quedan una calavera y
 //    un par de huesos, y el jugador vuelve a su lugar de descanso.
-// El estado va en un bloque opcional al final de la partida guardada: las partidas de antes
-// siguen cargando (sin restos, con el campamento como lugar de descanso).
+// El estado va en su bloque de la partida guardada (MUER): las partidas que no lo traen cargan
+// sin restos y con el campamento como lugar de descanso.
 #ifndef ESTEPA_DEATH_GAME_H
 #define ESTEPA_DEATH_GAME_H
 
 #include <stdbool.h>
-#include <stdio.h>
 
 #include "game/actions_game.h"
 #include "raylib.h"
@@ -18,6 +17,20 @@
 
 #define DG_REMAINS_MAX 16
 #define DG_REST_SECONDS 5.0f // s quieto (o cerca) en un campamento o una tienda para descansar alli
+
+typedef struct {
+    float x, y, z, yaw;
+} Remains;
+
+// Lo que se guarda en la partida: lugar de descanso, muertes y restos.
+typedef struct {
+    int has_rest;      // si no, el campamento de la tribu
+    float rest_x, rest_z;
+    char rest_name[48];
+    int deaths;
+    int count, next;   // restos en el suelo (anillo: los mas viejos se pierden)
+    Remains remains[DG_REMAINS_MAX];
+} DeathSave;
 
 void dg_reset(void);
 // Sigue donde descansa el jugador (vivo): campamentos y viviendas de la tribu.
@@ -29,10 +42,10 @@ const char *dg_rest_name(void);
 void dg_leave_remains(Vector3 pos, float yaw);
 int dg_remains_count(void);
 int dg_deaths(void);
+const DeathSave *dg_state(void); // lo que se guarda (src/game/save_game.c)
 void dg_draw_world(const Terrain *t);
 
-// Bloque opcional de la partida guardada.
-bool dg_write(FILE *f);
-void dg_read(FILE *f); // si no esta (partida vieja), queda en dg_reset
+// Una partida cargada: lo guardado (NULL o dañado: de cero, como en dg_reset).
+void dg_load(const DeathSave *s);
 
 #endif

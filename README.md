@@ -49,6 +49,8 @@ Al abrir el juego aparece el **menú de entrada**: nueva partida, cargar partida
 
 Las partidas se guardan en `saves/` junto al ejecutable (en Android, en el almacenamiento interno de la app). Pruebas: `--menu`, `--instructivo`, `--huecos` abren el menú; `--autoguardar N` guarda en el hueco N al terminar una captura; `--cargar N` carga el hueco N al empezar; `--inventario` y `--equipo` abren esos menús.
 
+Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloque de la partida lleva el esquema de sus campos ([docs/PARTIDAS.md](docs/PARTIDAS.md)). `--probar-partidas tests/partidas` carga las partidas de referencia y verifica que den el estado esperado (CI). `--convertir-partida a.sav b.sav` reescribe una partida en el formato de hoy.
+
 ## Controles (Fase 0)
 
 | Acción | Teclado | Mando |

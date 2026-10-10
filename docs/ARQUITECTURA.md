@@ -35,6 +35,7 @@ src/
     storage.*    contenedores: bolsillos, mochila, alforjas, carreta, acopio; peso y estado de las piezas
     loadout.*    amuletos (y tatuajes) con sus efectos
     anim_index.* que clip de animacion corresponde a cada estado
+    save_format.* partida por bloques con esquema: escribir, leer y convertir campo por campo
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
     camp.*       campamento, props
@@ -50,7 +51,10 @@ src/
     combat_game.*   combate (a pie y montado), enemigos, botin, vendajes, salud de la tribu y del jugador
     fauna_game.*    fauna en el mundo: aparicion por bioma, ataques, K (comer, despiezar, ordeñar)
     disasters_game.* fuego, rayos, lluvia torrencial, fogatas apagadas por la lluvia
-    save_game.*     partidas guardadas: tres huecos versionados con minifoto y fecha
+    save_game.*     partidas guardadas: tres huecos con minifoto y fecha, por bloques (docs/PARTIDAS.md)
+    save_schema.inc esquema de lo que se guarda (generado por tools/save/esquema.py)
+    save_v1.inc     esquema congelado de las partidas planas (hasta la v0.4.3)
+    save_check.c    resumen del estado y partidas de referencia (--probar-partidas)
     title_menu.*    menu de entrada y de pausa, huecos, instructivo (arte en assets/ui/)
     inventory_game.* inventario (I) y equipo (P): contenedores a mano, armadura, amuletos, reparar, bolsas de botin
   ui/       Interfaz (raylib)

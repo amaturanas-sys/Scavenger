@@ -11,7 +11,6 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 
 #include "game/actions_game.h"
 #include "raylib.h"
@@ -28,15 +27,21 @@ void hud_stamina(int right_x, int y);
 // o una habilidad. Su tecla (1..9) o un toque la usa; vacia (o Mayus+tecla, o clic derecho)
 // abre el selector. hud_update atiende el teclado; hud_quickbar dibuja y atiende los toques.
 #define HUD_QUICK_SLOTS 9
+typedef enum { QB_EMPTY, QB_GRIP, QB_ITEM, QB_SKILL } QbKind;
+typedef struct {
+    int kind;            // QbKind
+    int grip;            // QB_GRIP: indice de la empuñadura; QB_SKILL: AbilityId
+    char id[INV_ID_LEN]; // QB_ITEM
+} QbSlot;
 void hud_reset(void); // las casillas de serie (partida nueva)
+const QbSlot *hud_slots(void); // las casillas, para guardarlas (src/game/save_game.c)
 void hud_update(GameActions *ga, const Props *props, const Player *p, bool input_ok, char *log, size_t len);
 void hud_quickbar(GameActions *ga, const Props *props, const Player *p, int x, int y);
 bool hud_picker_open(void);
 void hud_open_picker(int slot); // 0..8 (prueba: --selector N)
 void hud_draw_picker(GameActions *ga, const Props *props, const Player *p, int w, int h);
-// Bloque opcional de la partida guardada (las casillas).
-bool hud_write(FILE *f);
-void hud_read(FILE *f);
+// Una partida cargada: sus n casillas (NULL o dañadas: las de serie).
+void hud_load(const QbSlot *s, int n);
 // Columna de acciones (borde izquierdo): dibuja y atiende los clics o toques.
 void hud_action_column(const GameActions *ga, int x, int y);
 // El puntero esta sobre una casilla del HUD (ese clic no es un golpe).

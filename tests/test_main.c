@@ -28,6 +28,7 @@
 #include "../src/sim/memory_map.h"
 #include "../src/sim/noise.h"
 #include "../src/sim/rng.h"
+#include "../src/sim/save_format.h"
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
 #include "../src/sim/melee.h"
@@ -2827,6 +2828,328 @@ static void test_travel_dispatch_and_messengers(void) {
     CHECK(site_learn(known, SITES_MAX) == known && !site_known(known, -1));
 }
 
+// ---------------------------------------------------------------- partidas por bloques
+// Un struct en dos versiones, como cambiaria de una version del juego a la siguiente.
+typedef struct {
+    float x, y, z;
+} TPos;
+typedef struct {
+    int a;
+    float b;
+} TInner1;
+typedef struct {
+    float b;
+    short c; // nuevo
+    int a;   // movido
+} TInner2;
+
+typedef struct {
+    int id;
+    char name[8];
+    TInner1 in[3];
+    bool flag;
+    float gone;          // ya no esta en la version 2
+    unsigned char small; // pasa a int
+    double wide;         // pasa a float
+    int ratio;           // pasa a float
+    TPos pos;            // opaco
+    int *ptr;            // puntero: no se guarda
+} TRootV1;
+
+typedef struct {
+    double extra; // nuevo, al principio
+    TPos pos;
+    int id;
+    char name[4];  // mas corto: el texto se recorta
+    TInner2 in[5]; // mas elementos, y cada uno con otro esquema
+    bool flag;
+    int small;
+    float wide;
+    float ratio;
+} TRootV2;
+
+static const SfField F_TInner1[] = { SF_ONE(TInner1, a, "int", SF_INT, NULL), SF_ONE(TInner1, b, "float", SF_FLOAT, NULL) };
+static const SfType T_TInner1 = SF_TYPE(TInner1, F_TInner1);
+static const SfField F_TInner2[] = { SF_ONE(TInner2, b, "float", SF_FLOAT, NULL), SF_ONE(TInner2, c, "short", SF_INT, NULL),
+                                     SF_ONE(TInner2, a, "int", SF_INT, NULL) };
+static const SfType T_TInner2 = SF_TYPE(TInner2, F_TInner2);
+static const SfField F_TRootV1[] = {
+    SF_ONE(TRootV1, id, "int", SF_INT, NULL),
+    SF_ARR(TRootV1, name, "char", SF_TEXT, NULL),
+    SF_ARR(TRootV1, in, "TInner1", SF_STRUCT, &T_TInner1),
+    SF_ONE(TRootV1, flag, "bool", SF_BOOL, NULL),
+    SF_ONE(TRootV1, gone, "float", SF_FLOAT, NULL),
+    SF_ONE(TRootV1, small, "unsigned char", SF_UINT, NULL),
+    SF_ONE(TRootV1, wide, "double", SF_FLOAT, NULL),
+    SF_ONE(TRootV1, ratio, "int", SF_INT, NULL),
+    SF_ONE(TRootV1, pos, "TPos", SF_BYTES, NULL),
+};
+static const SfType T_TRootV1 = SF_TYPE(TRootV1, F_TRootV1);
+static const SfField F_TRootV2[] = {
+    SF_ONE(TRootV2, extra, "double", SF_FLOAT, NULL),
+    SF_ONE(TRootV2, pos, "TPos", SF_BYTES, NULL),
+    SF_ONE(TRootV2, id, "int", SF_INT, NULL),
+    SF_ARR(TRootV2, name, "char", SF_TEXT, NULL),
+    SF_ARR(TRootV2, in, "TInner2", SF_STRUCT, &T_TInner2),
+    SF_ONE(TRootV2, flag, "bool", SF_BOOL, NULL),
+    SF_ONE(TRootV2, small, "int", SF_INT, NULL),
+    SF_ONE(TRootV2, wide, "float", SF_FLOAT, NULL),
+    SF_ONE(TRootV2, ratio, "float", SF_FLOAT, NULL),
+};
+static const SfType T_TRootV2 = SF_TYPE(TRootV2, F_TRootV2);
+
+#define SF_TEST_PATH "prueba_bloques.tmp"
+
+static unsigned char *sf_test_read(const char *path, size_t *len) {
+    FILE *f = fopen(path, "rb");
+    *len = 0;
+    if (!f) return NULL;
+    fseek(f, 0, SEEK_END);
+    long n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    unsigned char *buf = malloc(n > 0 ? (size_t)n : 1);
+    if (buf) *len = fread(buf, 1, (size_t)n, f);
+    fclose(f);
+    return buf;
+}
+
+// Escribe un bloque con n elementos y devuelve el archivo entero (malloc).
+static unsigned char *sf_test_file(const char *tag, uint32_t version, const SfType *t, const void *elems, int n, size_t *len) {
+    FILE *f = fopen(SF_TEST_PATH, "wb");
+    SfWriter w;
+    sf_write_begin(&w, f);
+    sf_block(&w, tag, version, t, elems, n);
+    bool ok = sf_write_end(&w);
+    if (f) fclose(f);
+    CHECK(ok);
+    unsigned char *buf = sf_test_read(SF_TEST_PATH, len);
+    remove(SF_TEST_PATH);
+    return buf;
+}
+
+static void sf_test_fill_v1(TRootV1 *v, int i) {
+    v->id = 10 + i;
+    snprintf(v->name, sizeof(v->name), "%s", i ? "abcdefg" : "ab");
+    for (int k = 0; k < 3; k++) v->in[k] = (TInner1){ 100 * i + k, 0.5f * (float)k };
+    v->flag = i == 1;
+    v->gone = 3.0f;
+    v->small = 200;
+    v->wide = 2.75;
+    v->ratio = -7;
+    v->pos = (TPos){ 1.0f, 2.0f, 3.0f + (float)i };
+    v->ptr = &v->id;
+}
+
+static void test_save_blocks_newer_structs(void) {
+    TRootV1 v1[2];
+    memset(v1, 0xAB, sizeof(v1)); // basura en el relleno: no tiene que llegar al archivo
+    for (int i = 0; i < 2; i++) sf_test_fill_v1(&v1[i], i);
+    size_t len;
+    unsigned char *buf = sf_test_file("PRUE", 3, &T_TRootV1, v1, 2, &len);
+    SfFile file;
+    CHECK(buf && sf_parse(&file, buf, len));
+    const SfBlock *b = sf_find(&file, "PRUE");
+    CHECK(b && b->version == 3 && sf_count(b) == 2 && !sf_find(&file, "NADA"));
+    if (!b) return;
+    // Con la version siguiente del struct: los valores por defecto, y encima lo guardado.
+    TRootV2 v2[2];
+    memset(v2, 0, sizeof(v2));
+    for (int i = 0; i < 2; i++) {
+        v2[i].extra = 7.5;
+        for (int k = 0; k < 5; k++) v2[i].in[k].c = 9;
+    }
+    CHECK(sf_read(b, &T_TRootV2, v2, 2) == 2);
+    CHECK(v2[0].id == 10 && v2[1].id == 11);
+    CHECK(!strcmp(v2[0].name, "ab") && !strcmp(v2[1].name, "abc")); // recortado, y termina en cero
+    CHECK(v2[1].in[2].a == 102 && v2[1].in[2].b == 1.0f && v2[1].in[2].c == 9); // por nombre; lo nuevo, por defecto
+    CHECK(v2[1].in[3].a == 0 && v2[1].in[3].c == 9 && v2[1].in[4].c == 9);   // elementos nuevos: por defecto
+    CHECK(!v2[0].flag && v2[1].flag);
+    CHECK(v2[0].small == 200 && v2[0].wide == 2.75f && v2[0].ratio == -7.0f); // los numeros cambian de tipo
+    CHECK(v2[0].pos.x == 1.0f && v2[1].pos.z == 4.0f);
+    CHECK(v2[0].extra == 7.5 && v2[1].extra == 7.5);
+    TRootV2 one;
+    memset(&one, 0, sizeof(one));
+    CHECK(sf_read(b, &T_TRootV2, &one, 1) == 2 && one.id == 10); // mas guardados que lugar: lee lo que cabe
+    free(buf);
+
+    // Y al reves: una partida mas nueva en un juego mas viejo.
+    TRootV2 n2;
+    memset(&n2, 0, sizeof(n2));
+    n2.id = 5;
+    snprintf(n2.name, sizeof(n2.name), "xyz");
+    for (int k = 0; k < 5; k++) n2.in[k] = (TInner2){ 0.25f * (float)k, 3, 40 + k };
+    n2.flag = true;
+    n2.small = 300;   // no entra en un unsigned char: el maximo
+    n2.wide = 1.5f;
+    n2.ratio = -2.9f; // a int: se trunca
+    n2.pos = (TPos){ 4.0f, 5.0f, 6.0f };
+    buf = sf_test_file("PRUE", 1, &T_TRootV2, &n2, 1, &len);
+    CHECK(buf && sf_parse(&file, buf, len));
+    TRootV1 o1;
+    memset(&o1, 0, sizeof(o1));
+    o1.gone = 4.0f;
+    CHECK(sf_read(sf_find(&file, "PRUE"), &T_TRootV1, &o1, 1) == 1);
+    CHECK(o1.id == 5 && !strcmp(o1.name, "xyz") && o1.flag);
+    CHECK(o1.in[0].a == 40 && o1.in[2].a == 42 && o1.in[2].b == 0.5f); // los primeros tres de cinco
+    CHECK(o1.small == 255 && o1.wide == 1.5 && o1.ratio == -2 && o1.gone == 4.0f && o1.pos.y == 5.0f);
+    free(buf);
+}
+
+static void test_save_blocks_same_struct(void) {
+    // El mismo struct con distinta basura en el relleno: los mismos bytes en el archivo.
+    TRootV1 a, b;
+    memset(&a, 0x11, sizeof(a));
+    memset(&b, 0x77, sizeof(b));
+    sf_test_fill_v1(&a, 1);
+    sf_test_fill_v1(&b, 1);
+    b.ptr = NULL;
+    size_t la, lb;
+    unsigned char *fa = sf_test_file("PRUE", 1, &T_TRootV1, &a, 1, &la);
+    unsigned char *fb = sf_test_file("PRUE", 1, &T_TRootV1, &b, 1, &lb);
+    CHECK(fa && fb && la == lb && !memcmp(fa, fb, la));
+    // Se lee igual de una vez (mismo esquema) que campo por campo.
+    SfFile file;
+    CHECK(fa && sf_parse(&file, fa, la));
+    TRootV1 fast, slow;
+    memset(&fast, 0, sizeof(fast));
+    memset(&slow, 0, sizeof(slow));
+    CHECK(sf_read(sf_find(&file, "PRUE"), &T_TRootV1, &fast, 1) == 1);
+    sf_set_slow(true);
+    CHECK(sf_read(sf_find(&file, "PRUE"), &T_TRootV1, &slow, 1) == 1);
+    sf_set_slow(false);
+    CHECK(!memcmp(&fast, &slow, sizeof(fast)) && fast.id == 11 && !strcmp(fast.name, "abcdefg") && fast.in[1].a == 101);
+    CHECK(fast.ptr == NULL); // los punteros no se guardan
+    free(fa), free(fb);
+}
+
+// Tipos compartidos: la hoja esta en dos lugares del arbol (el esquema la lleva una vez).
+typedef struct {
+    int v;
+} TLeaf;
+typedef struct {
+    TLeaf l;
+    float f;
+} TMid;
+typedef struct {
+    TLeaf a;
+    TMid m;
+    TLeaf b[2];
+} TTop;
+static const SfField F_TLeaf[] = { SF_ONE(TLeaf, v, "int", SF_INT, NULL) };
+static const SfType T_TLeaf = SF_TYPE(TLeaf, F_TLeaf);
+static const SfField F_TMid[] = { SF_ONE(TMid, l, "TLeaf", SF_STRUCT, &T_TLeaf), SF_ONE(TMid, f, "float", SF_FLOAT, NULL) };
+static const SfType T_TMid = SF_TYPE(TMid, F_TMid);
+static const SfField F_TTop[] = { SF_ONE(TTop, a, "TLeaf", SF_STRUCT, &T_TLeaf), SF_ONE(TTop, m, "TMid", SF_STRUCT, &T_TMid),
+                                  SF_ARR(TTop, b, "TLeaf", SF_STRUCT, &T_TLeaf) };
+static const SfType T_TTop = SF_TYPE(TTop, F_TTop);
+
+static void test_save_blocks_nested_and_frozen(void) {
+    TTop t = { { 1 }, { { 2 }, 2.5f }, { { 3 }, { 4 } } }, r;
+    size_t len;
+    unsigned char *buf = sf_test_file("ARBO", 1, &T_TTop, &t, 1, &len);
+    SfFile file;
+    CHECK(buf && sf_parse(&file, buf, len));
+    sf_set_slow(true);
+    memset(&r, 0, sizeof(r));
+    CHECK(sf_read(sf_find(&file, "ARBO"), &T_TTop, &r, 1) == 1);
+    sf_set_slow(false);
+    CHECK(r.a.v == 1 && r.m.l.v == 2 && r.m.f == 2.5f && r.b[0].v == 3 && r.b[1].v == 4);
+    free(buf);
+    // Un esquema congelado: C con los numeros fijos, cada tipo una vez y antes de usarse.
+    FILE *f = fopen(SF_TEST_PATH, "wb");
+    const SfType *roots[] = { &T_TTop, &T_TMid };
+    if (f) sf_dump_c(f, roots, 2, "V9"), fclose(f);
+    char *text = (char *)sf_test_read(SF_TEST_PATH, &len);
+    remove(SF_TEST_PATH);
+    if (text) text[len ? len - 1 : 0] = '\0';
+    const char *leaf = text ? strstr(text, "static const SfType V9_T_TLeaf = { \"TLeaf\", 4, 1, V9_F_TLeaf };") : NULL;
+    const char *top = text ? strstr(text, "static const SfType V9_T_TTop") : NULL;
+    CHECK(leaf && top && leaf < top && !strstr(leaf + 21, "V9_T_TLeaf = {")); // definida una vez, antes de usarla
+    CHECK(text && strstr(text, "{ \"b\", \"TLeaf\", SF_STRUCT, 12, 4, 2, &V9_T_TLeaf },"));
+    free(text);
+}
+
+static void test_save_blocks_reject_damage(void) {
+    TRootV1 v[2];
+    memset(v, 0, sizeof(v));
+    sf_test_fill_v1(&v[0], 0);
+    sf_test_fill_v1(&v[1], 1);
+    size_t len;
+    unsigned char *buf = sf_test_file("PRUE", 1, &T_TRootV1, v, 2, &len);
+    SfFile file;
+    CHECK(buf && sf_parse(&file, buf, len));
+    CHECK(!sf_parse(&file, buf, len - 1));  // cortado
+    CHECK(!sf_parse(&file, buf, len - 12)); // sin la marca de fin
+    CHECK(!sf_parse(&file, buf, 0) && !sf_parse(&file, NULL, 0));
+    // La cantidad no coincide con los datos: dañado, y el destino queda sin tocar.
+    sf_parse(&file, buf, len);
+    const SfBlock *b = sf_find(&file, "PRUE");
+    unsigned char *count = buf + (b->data - buf) + b->size - 2 * sizeof(TRootV1) - 4;
+    count[0] = 3;
+    TRootV2 dst[3];
+    memset(dst, 0x5A, sizeof(dst));
+    CHECK(sf_count(b) == -1 && sf_read(b, &T_TRootV2, dst, 3) == -1 && dst[0].id == 0x5A5A5A5A);
+    count[0] = 2;
+    // Cada byte cambiado, uno por uno: nunca se lee fuera de lo guardado (o se rechaza o se lee algo).
+    int rejected = 0, read = 0;
+    for (size_t i = 0; i < len; i++) {
+        unsigned char *bad = malloc(len);
+        memcpy(bad, buf, len);
+        bad[i] ^= (unsigned char)(0x5A + i);
+        SfFile f2;
+        if (sf_parse(&f2, bad, len) && f2.count > 0) {
+            int n = sf_read(&f2.blocks[0], &T_TRootV2, dst, 3);
+            if (n < 0) rejected++;
+            else read++;
+        } else {
+            rejected++;
+        }
+        free(bad);
+    }
+    CHECK(rejected > 0 && read > 0 && rejected + read == (int)len);
+    free(buf);
+}
+
+// Los numeros pasan de un tipo a otro por su valor (recortado al rango del destino).
+typedef struct {
+    int a;
+    float b;
+    double c;
+    bool d;
+    int64_t e;
+    uint64_t f;
+} TNum1;
+typedef struct {
+    signed char a;
+    int b;
+    float c;
+    float d;
+    unsigned e;
+    int f;
+} TNum2;
+static const SfField F_TNum1[] = { SF_ONE(TNum1, a, "int", SF_INT, NULL),       SF_ONE(TNum1, b, "float", SF_FLOAT, NULL),
+                                   SF_ONE(TNum1, c, "double", SF_FLOAT, NULL),  SF_ONE(TNum1, d, "bool", SF_BOOL, NULL),
+                                   SF_ONE(TNum1, e, "int64_t", SF_INT, NULL),   SF_ONE(TNum1, f, "uint64_t", SF_UINT, NULL) };
+static const SfType T_TNum1 = SF_TYPE(TNum1, F_TNum1);
+static const SfField F_TNum2[] = { SF_ONE(TNum2, a, "signed char", SF_INT, NULL), SF_ONE(TNum2, b, "int", SF_INT, NULL),
+                                   SF_ONE(TNum2, c, "float", SF_FLOAT, NULL),     SF_ONE(TNum2, d, "float", SF_FLOAT, NULL),
+                                   SF_ONE(TNum2, e, "unsigned", SF_UINT, NULL),   SF_ONE(TNum2, f, "int", SF_INT, NULL) };
+static const SfType T_TNum2 = SF_TYPE(TNum2, F_TNum2);
+
+static void test_save_blocks_numbers_change_type(void) {
+    TNum1 in[2] = { { 300, -3.9f, 0.1, true, -1, 5000000000ull }, { -300, 7.2f, -2.5, false, 42, 7 } };
+    TNum2 out[2];
+    memset(out, 0, sizeof(out));
+    sf_convert(&T_TNum1, in, 2, &T_TNum2, out);
+    CHECK(out[0].a == 127 && out[1].a == -128); // recortado al rango
+    CHECK(out[0].b == -3 && out[1].b == 7);     // truncado
+    CHECK(out[0].c == 0.1f && out[1].c == -2.5f);
+    CHECK(out[0].d == 1.0f && out[1].d == 0.0f);
+    CHECK(out[0].e == 0 && out[1].e == 42);           // negativo a sin signo: cero
+    CHECK(out[0].f == 2147483647 && out[1].f == 7);   // no entra en un int: el maximo
+    CHECK(sf_same(&T_TNum1, &T_TNum1) && !sf_same(&T_TNum1, &T_TNum2) && !sf_same(&T_TRootV1, &T_TRootV2));
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -2913,6 +3236,11 @@ int main(void) {
     RUN(test_body_zones_raycast);
     RUN(test_armor_pieces_materials);
     RUN(test_ballistics_trajectories);
+    RUN(test_save_blocks_newer_structs);
+    RUN(test_save_blocks_same_struct);
+    RUN(test_save_blocks_nested_and_frozen);
+    RUN(test_save_blocks_reject_damage);
+    RUN(test_save_blocks_numbers_change_type);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }
