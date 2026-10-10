@@ -1,6 +1,7 @@
 #include "game/death_game.h"
 
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "raymath.h"
@@ -9,19 +10,9 @@
 
 #define REST_NEAR_CAMP 10.0f // m del fuego o del centro de un campamento
 #define REST_NEAR_HOME 4.0f  // m de una tienda, yurta o casa de la tribu
-#define TAIL_MAGIC 0x31544744u // "DGT1"
-
-typedef struct {
-    float x, y, z, yaw;
-} Remains;
 
 static struct {
-    bool has_rest;     // si no, el campamento de la tribu
-    float rest_x, rest_z;
-    char rest_name[48];
-    int deaths;
-    int count, next;   // restos en el suelo (anillo: los mas viejos se pierden)
-    Remains remains[DG_REMAINS_MAX];
+    DeathSave s;
     // Sin guardar: el candidato a lugar de descanso y cuanto lleva el jugador alli.
     float cand_x, cand_z, cand_t;
     char cand_name[48];
@@ -55,14 +46,14 @@ void dg_track_rest(const GameActions *ga, const Props *props, Vector3 pos, Vecto
     snprintf(g.cand_name, sizeof(g.cand_name), "%s", name);
     g.cand_t += dt;
     if (g.cand_t >= DG_REST_SECONDS) {
-        g.has_rest = true;
-        g.rest_x = x, g.rest_z = z;
-        snprintf(g.rest_name, sizeof(g.rest_name), "%s", g.cand_name);
+        g.s.has_rest = true;
+        g.s.rest_x = x, g.s.rest_z = z;
+        snprintf(g.s.rest_name, sizeof(g.s.rest_name), "%s", g.cand_name);
     }
 }
 
 Vector3 dg_rest_point(const Terrain *t, Vector3 camp_fire) {
-    float x = g.has_rest ? g.rest_x : camp_fire.x, z = g.has_rest ? g.rest_z : camp_fire.z;
+    float x = g.s.has_rest ? g.s.rest_x : camp_fire.x, z = g.s.has_rest ? g.s.rest_z : camp_fire.z;
     // Junto al lugar (no encima del fuego ni de la tienda), y en seco.
     for (int k = 0; k < 16; k++) {
         float a = (float)k * PI / 8.0f, r = 2.5f + 0.25f * (float)k;
@@ -72,17 +63,18 @@ Vector3 dg_rest_point(const Terrain *t, Vector3 camp_fire) {
     return (Vector3){ x - 2.5f, terrain_height(t, x - 2.5f, z), z };
 }
 
-const char *dg_rest_name(void) { return g.has_rest && g.rest_name[0] ? g.rest_name : T("el campamento"); }
+const char *dg_rest_name(void) { return g.s.has_rest && g.s.rest_name[0] ? g.s.rest_name : T("el campamento"); }
 
 void dg_leave_remains(Vector3 pos, float yaw) {
-    g.remains[g.next] = (Remains){ pos.x, pos.y, pos.z, yaw };
-    g.next = (g.next + 1) % DG_REMAINS_MAX;
-    if (g.count < DG_REMAINS_MAX) g.count++;
-    g.deaths++;
+    g.s.remains[g.s.next] = (Remains){ pos.x, pos.y, pos.z, yaw };
+    g.s.next = (g.s.next + 1) % DG_REMAINS_MAX;
+    if (g.s.count < DG_REMAINS_MAX) g.s.count++;
+    g.s.deaths++;
 }
 
-int dg_remains_count(void) { return g.count; }
-int dg_deaths(void) { return g.deaths; }
+int dg_remains_count(void) { return g.s.count; }
+int dg_deaths(void) { return g.s.deaths; }
+const DeathSave *dg_state(void) { return &g.s; }
 
 // Una calavera (cráneo, cuencas y mandibula) y dos huesos largos cruzados.
 static void draw_remains(const Remains *r, float ground) {
@@ -111,41 +103,17 @@ static void draw_remains(const Remains *r, float ground) {
 }
 
 void dg_draw_world(const Terrain *t) {
-    for (int i = 0; i < g.count; i++) {
-        const Remains *r = &g.remains[i];
+    for (int i = 0; i < g.s.count; i++) {
+        const Remains *r = &g.s.remains[i];
         draw_remains(r, terrain_height(t, r->x, r->z));
     }
 }
 
-// Bloque guardado: marca, lugar de descanso, muertes y restos.
-typedef struct {
-    unsigned magic;
-    int has_rest;
-    float rest_x, rest_z;
-    char rest_name[48];
-    int deaths, count, next;
-    Remains remains[DG_REMAINS_MAX];
-} Tail;
-
-bool dg_write(FILE *f) {
-    Tail tl;
-    memset(&tl, 0, sizeof(tl));
-    tl.magic = TAIL_MAGIC, tl.has_rest = g.has_rest, tl.rest_x = g.rest_x, tl.rest_z = g.rest_z;
-    tl.deaths = g.deaths, tl.count = g.count, tl.next = g.next;
-    memcpy(tl.rest_name, g.rest_name, sizeof(tl.rest_name));
-    memcpy(tl.remains, g.remains, sizeof(tl.remains));
-    return fwrite(&tl, sizeof(tl), 1, f) == 1;
-}
-
-void dg_read(FILE *f) {
+// Una partida cargada (src/game/save_game.c): lo guardado, si tiene sentido; si no, de cero.
+void dg_load(const DeathSave *s) {
     dg_reset();
-    Tail tl;
-    if (fread(&tl, sizeof(tl), 1, f) != 1 || tl.magic != TAIL_MAGIC) return;
-    if (tl.count < 0 || tl.count > DG_REMAINS_MAX || tl.next < 0 || tl.next >= DG_REMAINS_MAX) return;
-    g.has_rest = tl.has_rest != 0;
-    g.rest_x = tl.rest_x, g.rest_z = tl.rest_z;
-    memcpy(g.rest_name, tl.rest_name, sizeof(g.rest_name));
-    g.rest_name[sizeof(g.rest_name) - 1] = '\0';
-    g.deaths = tl.deaths, g.count = tl.count, g.next = tl.next;
-    memcpy(g.remains, tl.remains, sizeof(g.remains));
+    if (!s || s->count < 0 || s->count > DG_REMAINS_MAX || s->next < 0 || s->next >= DG_REMAINS_MAX) return;
+    g.s = *s;
+    g.s.has_rest = s->has_rest != 0;
+    g.s.rest_name[sizeof(g.s.rest_name) - 1] = '\0';
 }

@@ -55,7 +55,8 @@ add_library(estepa_sim STATIC
   src/sim/apparel.c
   src/sim/water.c
   src/sim/world.c
-  src/sim/anim_index.c)
+  src/sim/anim_index.c
+  src/sim/save_format.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)
@@ -95,6 +96,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/fauna_game.c
     src/game/disasters_game.c
     src/game/save_game.c
+    src/game/save_check.c
     src/game/settings.c
     src/game/dialog.c
     src/game/talents_game.c

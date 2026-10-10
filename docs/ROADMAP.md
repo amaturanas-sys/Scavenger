@@ -88,6 +88,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Fauna: 24 especies en 5 clases (monturas, depredadores domables, hostiles, presas, ganado); manadas, acecho, rivalidad y huida; caza, despiece, ordeño y pastoreo.
 - [x] Inventario por contenedores (bolsillos, mochila, alforjas, carreta, acopio y armería) con peso y estado; menú de equipo con armadura por piezas y amuletos.
 - [x] Menú de entrada (nueva partida, cargar con minifoto y fecha, instructivo), pausa con guardar y cargar, HUD limpio (F1 controles).
+- [x] Partidas por bloques con el esquema de sus campos (v0.4.4): las versiones nuevas cargan las partidas de las anteriores aunque cambien los structs; partidas de referencia en CI ([PARTIDAS.md](PARTIDAS.md)).
 - [x] Cuerpo a cuerpo para todos: combos con armas cortas y largas, golpe pesado, patada y patada con inercia, escudo (bloqueo, golpe, carga), agarre y llave, gancho al escudo; enfundar, empuñar y cambiar de mano.
 - [x] Clima con azar: incendios forestales en verano, rayos que queman árboles y estructuras, derrumbes por lluvia torrencial sin mantenimiento; la lluvia apaga todo fuego. Flechas encendidas.
 - [x] Animales acuáticos y anfibios (peces, cocodrilos, tortugas), venenosos (víbora, escorpión, araña) con veneno, e insectos en enjambre (abejas con miel, avispas, mosquitos, moscas).

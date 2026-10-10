@@ -24,12 +24,20 @@ jobs:
           python3 tools/assets/animaciones.py doc --verificar
           python3 tools/assets/iconos.py check
           python3 tools/assets/i18n.py check
+      - name: Esquema de la partida guardada al dia
+        run: python3 tools/save/esquema.py check
       - name: Configurar
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
       - name: Compilar
         run: cmake --build build
       - name: Tests del nucleo
         run: ctest --test-dir build --output-on-failure
+      - name: Partidas de referencia (las de versiones anteriores siguen cargando igual)
+        run: |
+          cd build
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" \
+            ./estepa --probar-partidas ../tests/partidas 2>/dev/null | grep -v "^INFO\|^WARNING"
+          test "${PIPESTATUS[0]}" -eq 0
       - name: Captura del render (Xvfb, OpenGL por software)
         run: |
           cd build

@@ -830,6 +830,7 @@ corriendo	running
 # --- src/game/save_game.c
 Ese hueco está vacío.	That slot is empty.
 La partida es de otra versión del juego y no se puede cargar.	That save is from another game version and can't be loaded.
+La partida es de una versión más nueva del juego.	That save is from a newer version of the game.
 La partida está dañada (archivo incompleto).	The save is damaged (incomplete file).
 No se pudo escribir en %s.	Could not write to %s.
 No se pudo guardar la partida (disco lleno o sin permiso).	Could not save the game (disk full or no permission).

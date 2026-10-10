@@ -557,6 +557,9 @@ int main(int argc, char **argv) {
     float start_orbit_deg = 30.0f, start_orbit_tilt = 0.55f;
     bool seed_given = false;
     int start_save = -1, start_load = -1;
+    const char *selftest_dir = NULL; // --probar-partidas dir: las partidas de referencia (tests/partidas), y sale
+    bool selftest_rewrite = false;   // --rehacer-resumenes: reescribe los resumenes esperados
+    const char *convert_from = NULL, *convert_to = NULL; // --convertir-partida a b: la reescribe en el formato de hoy, y sale
     int start_pause = 0;  // prueba: 1 pausa, 2 guardar, 3 controles (F1), sobre la partida
     int start_tab = -1;
     int start_talk = 0;      // prueba: 1 hablar con el druida, 2 con el orfebre
@@ -609,6 +612,9 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--equipo")) start_equip = true;
         else if (!strcmp(argv[i], "--autoguardar") && i + 1 < argc) start_save = atoi(argv[++i]) - 1;
         else if (!strcmp(argv[i], "--cargar") && i + 1 < argc) start_load = atoi(argv[++i]) - 1;
+        else if (!strcmp(argv[i], "--probar-partidas") && i + 1 < argc) selftest_dir = argv[++i];
+        else if (!strcmp(argv[i], "--rehacer-resumenes")) selftest_rewrite = true;
+        else if (!strcmp(argv[i], "--convertir-partida") && i + 2 < argc) convert_from = argv[++i], convert_to = argv[++i];
         else if (!strcmp(argv[i], "--instructivo")) start_menu = true, start_menu_screen = MENU_HELP;
         else if (!strcmp(argv[i], "--semilla") && i + 1 < argc) start_seed = (unsigned)strtoul(argv[++i], NULL, 10), seed_given = true;
         else if (!strcmp(argv[i], "--pagina") && i + 1 < argc) start_menu = true, start_menu_screen = MENU_HELP, start_help_page = atoi(argv[++i]) - 1;
@@ -683,6 +689,20 @@ int main(int argc, char **argv) {
     GameState gs = { &world_time, &day, &last_champion, &rig.yaw, &rng, &player, &overlord, &troop, &g_actions,
                      &g_props, &g_combat, &g_hazards, &g_dz, &g_memory, &g_inventory };
     game_new(&gs, &terrain, &camp, start_seed, start_day, start_minute, log, sizeof(log));
+    if (selftest_dir) { // prueba: las partidas de referencia cargan igual que siempre
+        int fails = save_selftest(selftest_dir, &gs, selftest_rewrite);
+        CloseWindow();
+        return fails ? 1 : 0;
+    }
+    if (convert_from) { // una partida (de cualquier version que este build lea) al formato de hoy
+        SaveInfo info;
+        char err[256] = "";
+        bool ok = save_peek(convert_from, &info) && save_read_file(convert_from, &gs, err, sizeof(err)) &&
+                  save_write_file(convert_to, &gs, info.saved_at, err, sizeof(err));
+        printf("%s %s -> %s %s\n", ok ? "Convertida:" : "No se pudo convertir:", convert_from, convert_to, err);
+        CloseWindow();
+        return ok ? 0 : 1;
+    }
     if (gallery_mode) world_time = 4.0f * 60.0f;
     if (start_pos) {
         player.pos = (Vector3){ start_x, terrain_height(&terrain, start_x, start_z), start_z };

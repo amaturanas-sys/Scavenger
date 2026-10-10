@@ -1,0 +1,180 @@
+partida: dia 121 tiempo 216008.109 campeon -1 camara 3.1416 rng 777
+jugador: (120.000, 36.844, 40.000) rumbo 3.1416 vy 0.000 postura 0 sigilo 0 suelo 1 escala 0.734 alzado 0.000
+reino: Kanato de Hierro relacion 12.000
+tropa: 8 integrantes, proximo id 9, 0 campeones, rebelion 1.000
+  1 Subotai funcion 7 estado 0 rasgos 16 moral 69.000 lealtad 50.000 campeon -1 campamento 0 mochila 2 viaje 0 conoce 1 vida 100.000/100.000 sangre 1.000 veneno 0.000 heridas 0 armadura.casco.laminar_cuero 90.000 armadura.torso.fieltro 60.000
+    bolsa: tipo 1 carga 25.00 casillas 18 n 1: vestimenta.pies.botas_fieltro x1 1.000
+  2 Borte funcion 6 estado 0 rasgos 9 moral 68.000 lealtad 50.000 campeon -1 campamento 0 mochila 1 viaje 0 conoce 1 vida 100.000/100.000 sangre 1.000 veneno 0.000 heridas 0 armadura.torso.fieltro 60.000
+    bolsa: tipo 1 carga 15.00 casillas 12 n 1: vestimenta.pies.botas_fieltro x1 1.000
+  3 Jebe funcion 2 estado 0 rasgos 2 moral 68.000 lealtad 50.000 campeon -1 campamento 0 mochila 2 viaje 0 conoce 1 vida 100.000/100.000 sangre 1.000 veneno 0.000 heridas 0 armadura.casco.laminar_cuero 90.000 armadura.torso.fieltro 60.000 armadura.brazales.laminar_cuero 90.000
+    bolsa: tipo 1 carga 25.00 casillas 18 n 1: vestimenta.pies.botas_fieltro x1 1.000
+  4 Khasar funcion 1 estado 0 rasgos 4 moral 66.000 lealtad 50.000 campeon -1 campamento 0 mochila 1 viaje 0 conoce 1 vida 100.000/100.000 sangre 1.000 veneno 0.000 heridas 0 armadura.torso.fieltro 60.000
+    bolsa: tipo 1 carga 15.00 casillas 12 n 1: vestimenta.pies.botas_fieltro x1 1.000
+  5 Temulun funcion 3 estado 0 rasgos 0 moral 65.000 lealtad 50.000 campeon -1 campamento 0 mochila 1 viaje 0 conoce 1 vida 100.000/100.000 sangre 1.000 veneno 0.000 heridas 0 armadura.casco.laminar_cuero 90.000 armadura.torso.fieltro 60.000
+    bolsa: tipo 1 carga 15.00 casillas 12 n 1: vestimenta.pies.botas_fieltro x1 1.000
+  6 Ulagan funcion 10 estado 0 rasgos 8 moral 64.000 lealtad 50.000 campeon -1 campamento 0 mochila 1 viaje 0 conoce 1 vida 100.000/100.000 sangre 1.000 veneno 0.000 heridas 0 armadura.torso.fieltro 60.000 armadura.brazales.laminar_cuero 90.000
+    bolsa: tipo 1 carga 15.00 casillas 12 n 1: vestimenta.pies.botas_fieltro x1 1.000
+  7 Altani funcion 11 estado 0 rasgos 0 moral 63.000 lealtad 50.000 campeon -1 campamento 0 mochila 1 viaje 0 conoce 1 vida 100.000/100.000 sangre 1.000 veneno 0.000 heridas 0 armadura.casco.laminar_cuero 90.000 armadura.torso.fieltro 60.000
+    bolsa: tipo 1 carga 15.00 casillas 12 n 1: vestimenta.pies.botas_fieltro x1 1.000
+  8 Explorador enemigo funcion 0 estado 1 rasgos 0 moral 60.000 lealtad 10.000 campeon -1 campamento 0 mochila 0 viaje 0 conoce 0 vida 100.000/100.000 sangre 1.000 veneno 0.000 heridas 0
+acciones: rng 4193510102 preset 0 antorcha 0 haciendo -1 (0.000) objetivo -1 aqui -1 montado -1 grupo 9 forja -1 (0.000)
+  manos: [arma.corta.sable] [escudo.mano.mimbre] enfundado 0 lleva []
+  campamento 0 Campamento de las estelas (0.00, 0.00) guardian 1 fundado 1 tareas 0 acopio 29: utileria.consumible.carne_seca x10 utileria.objeto.lena x8 utileria.consumible.hierbas x4 proyectil.flecha.comun x24 proyectil.virote.comun x10 proyectil.piedra.honda x15 utileria.material.troncos x16 utileria.material.piedra x11 utileria.material.barro x9 utileria.material.pieles x7 utileria.material.cuerda x6 utileria.material.carbon x4 utileria.material.cobre x3 utileria.material.estano x2 utileria.material.hierro x2 utileria.consumible.agua_hervida x0 utileria.consumible.cerveza x4 utileria.consumible.airag x3 utileria.consumible.vino x2 vestimenta.espalda.capa x3 vestimenta.torso.deel_invierno x2 vestimenta.espalda.abrigo_cabra x2 vestimenta.cabeza.gorro_piel x3 vestimenta.cabeza.sombrero x0 vestimenta.torso.tunica_seda x0 vestimenta.cuello.panuelo_desierto x0 vestimenta.pies.sandalias x0 vestimenta.pies.botas_piel x1 vestimenta.torso.deel x7
+  animal 0 especie 22 estado 2 modo 0 (-19.97, 12.02) alto 0.00 grupo 1 hambre 0.181 sed 0.022 vida 30.000/30.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 1 especie 22 estado 2 modo 0 (-17.22, 13.85) alto 0.00 grupo 1 hambre 0.000 sed 0.022 vida 30.000/30.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 2 especie 22 estado 2 modo 0 (-23.54, 15.52) alto 0.00 grupo 1 hambre 0.516 sed 0.022 vida 30.000/30.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 3 especie 23 estado 2 modo 0 (-25.15, 4.55) alto 0.00 grupo 2 hambre 0.455 sed 0.022 vida 45.000/45.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 4 especie 23 estado 2 modo 0 (-24.06, 5.91) alto 0.00 grupo 2 hambre 0.362 sed 0.022 vida 45.000/45.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 5 especie 23 estado 2 modo 0 (-23.37, 7.92) alto 0.00 grupo 2 hambre 0.486 sed 0.022 vida 45.000/45.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 6 especie 23 estado 2 modo 0 (-25.08, 6.32) alto 0.00 grupo 2 hambre 0.495 sed 0.022 vida 45.000/45.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 7 especie 0 estado 0 modo 0 (55.00, 25.00) alto 0.00 grupo 3 hambre 0.594 sed 0.022 vida 120.000/120.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 8 especie 0 estado 0 modo 0 (52.15, 25.39) alto 0.00 grupo 3 hambre 0.506 sed 0.022 vida 120.000/120.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 9 especie 0 estado 0 modo 0 (60.83, 28.18) alto 0.00 grupo 3 hambre 0.250 sed 0.022 vida 120.000/120.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 10 especie 0 estado 0 modo 0 (52.66, 22.35) alto 0.00 grupo 3 hambre 0.377 sed 0.022 vida 120.000/120.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 11 especie 0 estado 0 modo 0 (56.34, 26.10) alto 0.00 grupo 3 hambre 0.158 sed 0.022 vida 120.000/120.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 12 especie 0 estado 0 modo 0 (47.15, 29.00) alto 0.00 grupo 3 hambre 0.389 sed 0.022 vida 120.000/120.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 13 especie 19 estado 0 modo 0 (-55.00, 40.00) alto 0.00 grupo 4 hambre 0.255 sed 0.022 vida 60.000/60.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 14 especie 19 estado 0 modo 0 (-51.13, 36.58) alto 0.00 grupo 4 hambre 0.127 sed 0.022 vida 60.000/60.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 15 especie 19 estado 0 modo 0 (-58.53, 47.83) alto 0.00 grupo 4 hambre 0.355 sed 0.022 vida 60.000/60.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 16 especie 19 estado 0 modo 0 (-57.10, 44.10) alto 0.00 grupo 4 hambre 0.108 sed 0.022 vida 60.000/60.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 17 especie 19 estado 0 modo 0 (-52.69, 39.56) alto 0.00 grupo 4 hambre 0.114 sed 0.022 vida 60.000/60.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 18 especie 16 estado 0 modo 0 (74.73, 72.24) alto 0.00 grupo 5 hambre 0.384 sed 0.022 vida 50.000/50.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 19 especie 16 estado 0 modo 0 (73.88, 75.66) alto 0.00 grupo 5 hambre 0.429 sed 0.022 vida 50.000/50.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 20 especie 16 estado 0 modo 0 (71.31, 68.13) alto 0.00 grupo 5 hambre 0.030 sed 0.022 vida 50.000/50.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 21 especie 16 estado 0 modo 0 (76.28, 66.97) alto 0.00 grupo 5 hambre 0.257 sed 0.022 vida 50.000/50.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 22 especie 16 estado 0 modo 0 (70.42, 66.61) alto 0.00 grupo 5 hambre 0.598 sed 0.022 vida 50.000/50.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 23 especie 16 estado 0 modo 0 (72.67, 70.48) alto 0.00 grupo 5 hambre 0.326 sed 0.022 vida 50.000/50.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 24 especie 20 estado 0 modo 0 (31.01, 27.47) alto 0.00 grupo -1 hambre 0.118 sed 0.022 vida 8.000/8.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 25 especie 2 estado 0 modo 0 (-48.37, -44.56) alto 0.00 grupo 6 hambre 0.039 sed 0.022 vida 80.000/80.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 26 especie 2 estado 0 modo 0 (-45.47, -50.23) alto 0.00 grupo 6 hambre 0.073 sed 0.022 vida 80.000/80.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 27 especie 6 estado 0 modo 0 (69.43, -91.41) alto 0.00 grupo 7 hambre 0.131 sed 0.022 vida 45.000/45.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 28 especie 6 estado 0 modo 0 (68.96, -82.57) alto 0.00 grupo 7 hambre 0.506 sed 0.022 vida 45.000/45.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 29 especie 6 estado 0 modo 0 (70.63, -87.42) alto 0.00 grupo 7 hambre 0.369 sed 0.022 vida 45.000/45.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 30 especie 6 estado 0 modo 0 (65.11, -82.28) alto 0.00 grupo 7 hambre 0.549 sed 0.022 vida 45.000/45.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 31 especie 15 estado 0 modo 0 (-85.00, -25.00) alto 0.00 grupo 8 hambre 0.213 sed 0.022 vida 70.000/70.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 32 especie 15 estado 0 modo 0 (-85.85, -25.04) alto 0.00 grupo 8 hambre 0.502 sed 0.022 vida 70.000/70.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 33 especie 15 estado 0 modo 0 (-86.55, -32.40) alto 0.00 grupo 8 hambre 0.208 sed 0.022 vida 70.000/70.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 34 especie 15 estado 0 modo 0 (-83.74, -29.42) alto 0.00 grupo 8 hambre 0.483 sed 0.022 vida 70.000/70.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 35 especie 15 estado 0 modo 0 (-82.53, -23.27) alto 0.00 grupo 8 hambre 0.599 sed 0.022 vida 70.000/70.000 sangre 1.000 veneno 0.000 heridas 0
+  animal 36 especie 28 estado 0 modo 0 (126.26, 152.64) alto 0.00 grupo -1 hambre 0.462 sed 0.008 vida 2.000/2.000 sangre 1.000 veneno 0.000 heridas 0
+  animales: 37 en uso de 37
+  npc 0 integrante 1 (-0.77, -11.74) obra -1 trabajo 4 escolta 0 casa 1
+  npc 1 integrante 2 (36.11, 17.21) obra -1 trabajo -1 escolta 1 casa 1
+  npc 2 integrante 3 (39.30, 7.74) obra -1 trabajo -1 escolta 1 casa 1
+  npc 3 integrante 4 (3.35, 4.36) obra -1 trabajo -1 escolta 0 casa 1
+  npc 4 integrante 5 (-6.89, -1.22) obra -1 trabajo -1 escolta 0 casa 1
+  npc 5 integrante 6 (7.17, -4.56) obra -1 trabajo -1 escolta 0 casa 1
+  npc 6 integrante 7 (-1.43, 5.31) obra -1 trabajo -1 escolta 0 casa 1
+  npc 7 integrante 8 (-3.23, -6.21) obra -1 trabajo -1 escolta 0 casa 1
+  enjambres: 10
+  bolsillos: tipo 0 carga 2.00 casillas 6 n 2: utileria.consumible.hierbas x1 1.000 utileria.gema.turquesa x1 1.000
+  mochila: tipo 1 carga 25.00 casillas 18 n 9: proyectil.flecha.comun x12 1.000 proyectil.virote.comun x6 1.000 proyectil.piedra.honda x10 1.000 utileria.consumible.hierbas x2 1.000 utileria.consumible.carne_seca x2 1.000 utileria.objeto.odre x1 1.000 utileria.consumible.agua_hervida x2 1.000 accesorio.amuleto.lobo x1 1.000 accesorio.amuleto.ciervo x1 1.000
+  carreta: tipo 3 carga 400.00 casillas 32 n 4: utileria.material.troncos x4 1.000 utileria.material.pieles x4 1.000 utileria.material.cuerda x2 1.000 utileria.mochila.pequena x1 1.000
+  armeria: tipo 4 carga 100000.00 casillas 32 n 6: armadura.casco.escamas_hierro x1 0.600 armadura.torso.malla x1 0.800 armadura.hombreras.fieltro x1 1.000 armadura.grebas.laminar_cuero x1 1.000 accesorio.amuleto.aguila_ibice x1 1.000 utileria.mochila.grande x1 1.000
+  mochila: tamano 2 donde 0 animal 0
+  nivel 1 xp 0.000 agua 99.466 ebrio 0.000 maldicion 0.000 region 1 vistos 0 0 0 0 0
+  ropa: 0 -1 7 13 22 tatuajes: -1 -1 -1 -1 -1 -1 -1 -1 joyas: [] [] [] [] [] [] [] [] []
+  dialogo: La tribu, 3 opciones
+combate: semilla 777 rng 50110 vida 100.000/100.000 sangre 1.000 veneno 0.000 heridas 0 armadura.casco.laminar_cuero 90.000 armadura.torso.laminar_cuero 90.000 armadura.brazales.laminar_cuero 90.000 armadura.botas.fieltro 60.000
+  proyectiles: 0, caballos sueltos 0
+peligros: semilla 777 rng 18724 calor 100.000 mojado 0.000 sensacion 33.234 trampa 0 agujeros 0 victima 0 escolta 0
+desastres: rng 279055613 fuegos 0 quemaduras 0 arboles 0.000
+objetos: 90
+  utileria.objeto.odre (-2.200, 42.571, 17.400) rumbo 0.0000 estado 1.000
+  utileria.objeto.cofre (-3.500, 42.571, 15.500) rumbo 0.6000 estado 1.000
+  utileria.objeto.caldero (1.400, 42.571, 3.000) rumbo 0.0000 estado 1.000
+  estructura.campamento.empalizada (9.000, 42.571, 14.000) rumbo 1.5700 estado 0.950
+  utileria.objeto.lena (16.951, 42.571, 5.265) rumbo 1.7619 estado 1.000
+  utileria.objeto.lena (13.148, 42.571, 10.826) rumbo 4.1933 estado 1.000
+  utileria.objeto.lena (-12.498, 42.571, -6.871) rumbo 5.1705 estado 1.000
+  utileria.objeto.lena (-17.416, 42.571, -5.204) rumbo 5.7990 estado 1.000
+  utileria.objeto.lena (0.475, 42.571, -15.536) rumbo 2.1260 estado 1.000
+  utileria.objeto.lena (12.573, 42.571, -12.242) rumbo 5.9720 estado 1.000
+  utileria.material.piedra (-26.805, 42.063, -23.749) rumbo 0.8972 estado 1.000
+  utileria.material.piedra (-17.897, 41.713, 24.813) rumbo 0.6341 estado 1.000
+  utileria.material.piedra (25.844, 42.041, 3.331) rumbo 2.4859 estado 1.000
+  utileria.material.piedra (23.801, 42.290, 2.165) rumbo 1.9278 estado 1.000
+  utileria.material.barro (-30.577, 41.820, 6.045) rumbo 3.0588 estado 1.000
+  utileria.material.barro (29.901, 41.284, 11.715) rumbo 5.4609 estado 1.000
+  utileria.material.barro (-8.442, 42.584, -24.646) rumbo 6.2712 estado 1.000
+  mapa.vegetacion.hierba_alta (29.991, 40.878, -23.278) rumbo 3.4255 estado 1.000
+  mapa.vegetacion.hierba_alta (-40.162, 41.063, 13.283) rumbo 4.1411 estado 1.000
+  mapa.vegetacion.hierba_alta (-35.718, 41.722, 5.845) rumbo 0.3625 estado 1.000
+  mapa.vegetacion.hierba_alta (-8.352, 42.550, -22.452) rumbo 5.1852 estado 1.000
+  mapa.vegetacion.hierba_alta (-22.403, 42.521, 3.205) rumbo 0.4039 estado 1.000
+  mapa.vegetacion.hierba_alta (-33.568, 41.995, -0.097) rumbo 4.0753 estado 1.000
+  mapa.vegetacion.hierba_alta (24.347, 42.115, -15.090) rumbo 3.2680 estado 1.000
+  mapa.vegetacion.hierba_alta (27.650, 40.197, 30.249) rumbo 5.1170 estado 1.000
+  mapa.vegetacion.hierba_alta (-12.666, 42.571, -12.866) rumbo 1.3138 estado 1.000
+  mapa.vegetacion.hierba_alta (26.901, 40.897, 21.002) rumbo 2.2761 estado 1.000
+  mapa.vegetacion.hierba_alta (-25.529, 42.342, 11.603) rumbo 1.2305 estado 1.000
+  mapa.vegetacion.hierba_alta (8.985, 41.735, -34.893) rumbo 6.1631 estado 1.000
+  mapa.vegetacion.hierba_alta (18.785, 42.538, -7.780) rumbo 2.9789 estado 1.000
+  mapa.vegetacion.hierba_alta (27.431, 41.817, -3.709) rumbo 1.1029 estado 1.000
+  mapa.vegetacion.hierba_alta (-18.299, 42.571, -0.615) rumbo 0.2208 estado 1.000
+  mapa.vegetacion.hierba_alta (-29.714, 41.911, 7.291) rumbo 2.6106 estado 1.000
+  mapa.vegetacion.hierba_alta (41.118, 39.505, 6.876) rumbo 1.2898 estado 1.000
+  mapa.vegetacion.hierba_alta (-18.819, 42.566, -20.827) rumbo 1.0545 estado 1.000
+  mapa.vegetacion.hierba_alta (22.039, 42.408, -5.429) rumbo 2.1362 estado 1.000
+  mapa.vegetacion.hierba_alta (30.214, 40.913, -30.366) rumbo 5.6940 estado 1.000
+  mapa.vegetacion.hierba_alta (10.323, 42.545, 18.080) rumbo 0.0369 estado 1.000
+  mapa.vegetacion.hierba_alta (3.016, 41.640, 30.636) rumbo 4.9064 estado 1.000
+  mapa.vegetacion.hierba_alta (35.889, 39.686, 24.799) rumbo 5.7243 estado 1.000
+  mapa.vegetacion.hierba_alta (21.944, 40.251, 32.431) rumbo 6.0819 estado 1.000
+  mapa.vegetacion.hierba_alta (24.011, 42.299, -3.261) rumbo 1.7813 estado 1.000
+  mapa.vegetacion.hierba_alta (31.641, 41.153, -2.129) rumbo 2.8640 estado 1.000
+  mapa.vegetacion.hierba_alta (-17.642, 40.665, 33.761) rumbo 6.2377 estado 1.000
+  mapa.vegetacion.hierba_alta (-22.669, 42.461, -8.140) rumbo 3.4351 estado 1.000
+  mapa.vegetacion.mata_hierbas (-29.597, 41.878, -25.802) rumbo 4.2491 estado 1.000
+  mapa.vegetacion.mata_hierbas (-33.066, 39.370, 52.408) rumbo 5.6506 estado 1.000
+  mapa.vegetacion.mata_hierbas (-6.433, 40.576, 35.534) rumbo 1.8138 estado 1.000
+  mapa.vegetacion.mata_hierbas (46.617, 38.596, -5.228) rumbo 3.8801 estado 1.000
+  mapa.vegetacion.mata_hierbas (-24.777, 41.824, -57.348) rumbo 5.7757 estado 1.000
+  mapa.vegetacion.mata_hierbas (26.304, 38.283, 52.517) rumbo 0.6631 estado 1.000
+  mapa.vegetacion.mata_hierbas (-58.195, 40.830, 14.306) rumbo 3.5568 estado 1.000
+  mapa.vegetacion.mata_hierbas (61.703, 38.818, 17.410) rumbo 2.3097 estado 1.000
+  mapa.vegetacion.mata_hierbas (-13.627, 39.142, 59.962) rumbo 0.0405 estado 1.000
+  mapa.vegetacion.mata_hierbas (29.001, 39.930, 27.675) rumbo 5.0832 estado 1.000
+  mapa.vegetacion.mata_hierbas (-57.131, 40.966, -35.717) rumbo 4.7544 estado 1.000
+  mapa.vegetacion.mata_hierbas (-26.236, 42.112, -23.396) rumbo 0.1770 estado 1.000
+  utileria.material.pedernal (49.403, 38.945, 46.959) rumbo 3.1594 estado 1.000
+  utileria.material.pedernal (-20.968, 40.184, 37.977) rumbo 3.1921 estado 1.000
+  utileria.material.pedernal (26.412, 40.055, -56.789) rumbo 1.4435 estado 1.000
+  utileria.material.pedernal (33.305, 40.164, -23.618) rumbo 1.0212 estado 1.000
+  utileria.material.pedernal (-9.436, 42.151, -31.824) rumbo 1.7490 estado 1.000
+  utileria.material.pedernal (60.718, 38.384, -10.291) rumbo 2.6353 estado 1.000
+  utileria.material.pedernal (36.882, 38.278, 52.481) rumbo 4.8046 estado 1.000
+  utileria.material.pedernal (31.140, 40.706, -30.210) rumbo 5.6109 estado 1.000
+  mapa.roca.mediana (-56.325, 40.636, -10.493) rumbo 2.3733 estado 1.000
+  mapa.roca.pequena (-71.510, 39.964, 60.026) rumbo 4.0132 estado 1.000
+  mapa.roca.pequena (-25.761, 42.287, -2.112) rumbo 0.6579 estado 1.000
+  mapa.roca.mediana (68.782, 38.589, -9.749) rumbo 3.0837 estado 1.000
+  mapa.roca.pequena (29.606, 38.829, 100.460) rumbo 3.2444 estado 1.000
+  mapa.roca.pequena (15.908, 40.838, -90.050) rumbo 4.5691 estado 1.000
+  mapa.roca.mediana (47.520, 38.411, 3.800) rumbo 4.3878 estado 1.000
+  mapa.roca.pequena (-86.726, 40.362, 57.566) rumbo 2.6000 estado 1.000
+  mapa.roca.pequena (-44.092, 40.108, 71.060) rumbo 5.0020 estado 1.000
+  mapa.roca.mediana (43.681, 40.565, -70.198) rumbo 0.3681 estado 1.000
+  mapa.roca.pequena (74.267, 38.744, -62.048) rumbo 3.8872 estado 1.000
+  mapa.roca.pequena (19.358, 41.535, 25.018) rumbo 0.4408 estado 1.000
+  mapa.roca.mediana (32.624, 41.028, 10.358) rumbo 1.1297 estado 1.000
+  mapa.roca.pequena (-68.564, 41.275, -60.668) rumbo 2.0788 estado 1.000
+  mapa.agua.coral (101.957, 39.282, -87.358) rumbo 3.2736 estado 1.000
+  mapa.agua.coral (67.000, 39.447, -173.548) rumbo 3.1674 estado 1.000
+  mapa.agua.coral (155.226, 39.802, -129.030) rumbo 1.3209 estado 1.000
+  mapa.agua.coral (76.889, 39.771, -95.538) rumbo 3.1020 estado 1.000
+  mapa.agua.coral (61.389, 39.447, -168.465) rumbo 2.8437 estado 1.000
+  mapa.agua.coral (67.485, 39.709, -175.431) rumbo 1.3246 estado 1.000
+  mapa.agua.coral (87.274, 39.516, -201.661) rumbo 3.0506 estado 1.000
+  mapa.agua.coral (72.643, 39.812, -187.347) rumbo 3.1486 estado 1.000
+  mapa.agua.coral (74.800, 39.964, -193.245) rumbo 3.1746 estado 1.000
+  mapa.agua.coral (72.880, 39.664, -97.535) rumbo 4.8720 estado 1.000
+  vehiculo.tierra.carreta_bueyes (-12.000, 42.220, 24.000) rumbo 0.6000 estado 1.000
+memoria: 5 paginas, 0 marcas
+  pagina (-1, -1) luz 0.065 familiaridad 0.010 instantes 5399978.5
+  pagina (-1, 0) luz 0.693 familiaridad 0.111 instantes 28295887.4
+  pagina (0, -1) luz 0.065 familiaridad 0.010 instantes 5399978.5
+  pagina (0, 0) luz 34.436 familiaridad 9.465 instantes 71065493.1
+  pagina (1, 0) luz 17.294 familiaridad 4.332 instantes 25488956.9
+muerte: descanso 0  (0.00, 0.00) muertes 0 restos 0 proximo 0
+barra: [1 0 ] [1 3 ] [1 6 ] [2 0 utileria.objeto.antorcha] [0 0 ] [0 0 ] [0 0 ] [0 0 ] [0 0 ]

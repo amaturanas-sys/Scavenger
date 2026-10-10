@@ -21,3 +21,7 @@ __pycache__/
 # text-to-cad (cadgen): entorno local y fotos de revision
 .venv-cad
 build/cad/
+
+# Pruebas de partidas (quedan solo si fallan)
+tests/partidas/*.obtenido.txt
+tests/partidas/*.tmp
