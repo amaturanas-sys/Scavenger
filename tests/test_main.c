@@ -29,6 +29,8 @@
 #include "../src/sim/noise.h"
 #include "../src/sim/rng.h"
 #include "../src/sim/save_format.h"
+#include "../src/sim/keymap.h"
+#include "../src/sim/targeting.h"
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
 #include "../src/sim/melee.h"
@@ -3150,6 +3152,120 @@ static void test_save_blocks_numbers_change_type(void) {
     CHECK(sf_same(&T_TNum1, &T_TNum1) && !sf_same(&T_TNum1, &T_TNum2) && !sf_same(&T_TRootV1, &T_TRootV2));
 }
 
+// ---------------------------------------------------------------- fase 1: teclas, parry, bloqueo, objetivo
+static void test_keymap_four_buttons(void) {
+    // Los cuatro botones de combate: H J K L (con Mayus, corriendo, tambien), no las teclas viejas.
+    CHECK(keymap_matches(KA_ATTACK, 'H', 0) && keymap_matches(KA_ATTACK, 'H', KM_SHIFT));
+    CHECK(!keymap_matches(KA_ATTACK, 'V', 0) && !keymap_matches(KA_ATTACK, 'H', KM_CTRL)); // Ctrl+H: los controles
+    CHECK(keymap_matches(KA_BLOCK, 'J', 0) && !keymap_matches(KA_BLOCK, 'Z', 0));
+    CHECK(keymap_matches(KA_PARRY, 'K', 0) && !keymap_matches(KA_PARRY, 'U', 0) && !keymap_matches(KA_PARRY, 'O', 0));
+    CHECK(keymap_matches(KA_CHARGE, 'L', 0) && keymap_matches(KA_CHARGE, 'L', KM_SHIFT) && !keymap_matches(KA_CHARGE, 'J', 0));
+    // El mapa nuevo: X agacharse, C sigilo, F todo, Mayus+G mochila, Mayus+L flecha, U ficha.
+    CHECK(keymap_matches(KA_CROUCH, 'X', 0) && keymap_matches(KA_SNEAK, 'C', 0));
+    CHECK(keymap_matches(KA_INTERACT, 'F', 0) && keymap_matches(KA_INTERACT, 'F', KM_SHIFT) && !keymap_matches(KA_INTERACT, 'K', 0));
+    CHECK(keymap_matches(KA_BACKPACK, 'G', KM_SHIFT) && !keymap_matches(KA_BACKPACK, 'G', 0));
+    CHECK(keymap_matches(KA_GRAB, 'G', 0) && !keymap_matches(KA_GRAB, 'G', KM_SHIFT));
+    CHECK(keymap_matches(KA_LIGHT_ARROW, 'L', KM_SHIFT) && !keymap_matches(KA_LIGHT_ARROW, 'L', 0));
+    CHECK(keymap_matches(KA_CARD, 'U', 0) && keymap_matches(KA_TARGET, KM_KEY_TAB, KM_SHIFT));
+    CHECK(!keymap_matches(KA_EQUIPMENT, 'P', KM_CTRL) && !keymap_matches(KA_MARK, 'M', KM_CTRL)); // Ctrl+P pausa, Ctrl+M orbital
+    // Las teclas viejas quedan libres: V, Z y O no hacen nada.
+    for (int a = 0; a < KA_COUNT; a++)
+        CHECK(!keymap_matches((KeyAction)a, 'V', 0) && !keymap_matches((KeyAction)a, 'Z', 0) && !keymap_matches((KeyAction)a, 'O', 0));
+    // Ninguna tecla hace dos cosas, salvo los pares que decide el contexto: Tab (objetivo en
+    // combate, menu fuera) y Mayus+L (con arco enciende la flecha; con arma de mano, carga).
+    const int keys[] = { 'A', 'B', 'C', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z', KM_KEY_TAB, KM_KEY_SPACE };
+    const unsigned mods[] = { 0, KM_SHIFT, KM_CTRL, KM_ALT, KM_SHIFT | KM_ALT };
+    int clashes = 0;
+    for (size_t k = 0; k < sizeof(keys) / sizeof(keys[0]); k++)
+        for (size_t m = 0; m < sizeof(mods) / sizeof(mods[0]); m++)
+            for (int a = 0; a < KA_COUNT; a++)
+                for (int b = a + 1; b < KA_COUNT; b++) {
+                    if (!keymap_matches((KeyAction)a, keys[k], mods[m]) || !keymap_matches((KeyAction)b, keys[k], mods[m])) continue;
+                    bool ok = (a == KA_TARGET && b == KA_MENU) || (a == KA_CHARGE && b == KA_LIGHT_ARROW);
+                    if (!ok) clashes++;
+                }
+    CHECK(clashes == 0);
+    CHECK(!strcmp(keymap_text(KA_ATTACK), "H") && !strcmp(keymap_text(KA_BACKPACK), "Mayús+G") && !strcmp(keymap_text(KA_TARGET), "Tab"));
+}
+
+static void test_melee_parry_window(void) {
+    Rng rng;
+    rng_seed(&rng, 7);
+    // El rival anuncia el golpe (0,4 s) y el parry gana en los ultimos 0,25 s.
+    CHECK(!melee_parry_in_window(MELEE_WINDUP) && melee_parry_in_window(0.2f) && melee_parry_in_window(PARRY_WINDOW));
+    CHECK(!melee_parry_in_window(0.0f) && !melee_parry_in_window(0.3f));
+    // Segun el arma: hacha o guja enganchan; manos o daga, llave; las demas, desvio.
+    CHECK(melee_parry_kind("arma.corta.hacha") == PARRY_HOOK && melee_parry_kind("arma.larga.guja") == PARRY_HOOK);
+    CHECK(melee_parry_kind("") == PARRY_GRAPPLE && melee_parry_kind("arma.corta.daga") == PARRY_GRAPPLE);
+    CHECK(melee_parry_kind("arma.corta.sable") == PARRY_DEFLECT && melee_parry_kind("arma.larga.lanza") == PARRY_DEFLECT);
+    Fighter me = { .armed = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f };
+    Fighter foe = { .shield = true, .attacking = true, .armed = true, .facing = 1.0f, .strength = 1.0f, .weight = 10.0f, .health = 1.0f };
+    // En la ventana con hacha: le arranca el escudo.
+    MeleeResult r = melee_parry(PARRY_HOOK, &me, &foe, &rng);
+    CHECK(r.landed && r.shield_dropped && r.staggered && r.damage == 0.0f);
+    // Con las manos o una daga: la llave lo tumba y lo desarma (casi siempre, contra un rival parejo).
+    int down = 0;
+    for (int i = 0; i < 200; i++) {
+        MeleeResult g = melee_parry(PARRY_GRAPPLE, &me, &foe, &rng);
+        down += g.knocked_down && g.disarmed;
+    }
+    CHECK(down > 180);
+    // Con sable: desvio, el rival queda abierto.
+    r = melee_parry(PARRY_DEFLECT, &me, &foe, &rng);
+    CHECK(r.staggered && !r.knocked_down && !r.shield_dropped);
+    // A destiempo el que para queda expuesto (desequilibrado, sin guardia): el golpe entra entero.
+    Fighter exposed = { .blocking = true, .staggered = true, .armed = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f };
+    MeleeResult hit = melee_resolve(MOVE_LIGHT, &foe, &exposed, "arma.corta.sable", 1, &rng);
+    CHECK(hit.landed && !hit.blocked && hit.damage > 0.0f);
+    CHECK(!strcmp(move_def(MOVE_PARRY)->clip, "parry") && !strcmp(move_def(MOVE_DEFLECT)->clip, "desvio"));
+}
+
+static void test_melee_weapon_block_costs_stamina(void) {
+    Rng rng;
+    rng_seed(&rng, 9);
+    Fighter att = { .armed = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f };
+    Fighter open = { .armed = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f };
+    Fighter def = open;
+    def.blocking = true;
+    MeleeResult clean = melee_resolve(MOVE_LIGHT, &att, &open, "arma.corta.sable", 1, &rng);
+    MeleeResult guard = melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sable", 1, &rng);
+    // Parar con el arma: siempre aguanta la mitad, y cansa.
+    CHECK(guard.blocked && fabsf(guard.damage - clean.damage * 0.5f) < 1e-4f && guard.guard_cost > 0.05f);
+    CHECK(clean.guard_cost == 0.0f);
+    MeleeResult heavy = melee_resolve(MOVE_HEAVY, &att, &def, "arma.corta.sable", 1, &rng);
+    CHECK(heavy.blocked && heavy.staggered && heavy.guard_cost > guard.guard_cost); // el pesado desequilibra y cansa mas
+    // Con escudo para del todo y cansa menos.
+    def.shield = true;
+    MeleeResult sh = melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sable", 1, &rng);
+    for (int i = 0; i < 50 && !sh.blocked; i++) sh = melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sable", 1, &rng);
+    CHECK(sh.blocked && sh.damage == 0.0f && sh.guard_cost < guard.guard_cost);
+    // De espaldas no hay guardia que valga.
+    def.shield = false, def.facing = -1.0f;
+    MeleeResult back = melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sable", 1, &rng);
+    CHECK(!back.blocked && back.guard_cost == 0.0f);
+}
+
+static void test_target_cycle(void) {
+    // El jugador en el origen mirando a +Z: uno delante, uno a cada lado, uno muerto y uno lejos.
+    TargetCand c[5] = { { 0.0f, 6.0f, true }, { 5.0f, 3.0f, true }, { -5.0f, 3.0f, true }, { 1.0f, 4.0f, false }, { 0.0f, 40.0f, true } };
+    int t = target_cycle(c, 5, 0.0f, 0.0f, 0.0f, -1, 1);
+    CHECK(t == 0); // sin objetivo: el de delante
+    int seen[5] = { 0 };
+    for (int i = 0; i < 6; i++) {
+        seen[t]++;
+        t = target_cycle(c, 5, 0.0f, 0.0f, 0.0f, t, 1);
+    }
+    CHECK(seen[0] == 2 && seen[1] == 2 && seen[2] == 2 && seen[3] == 0 && seen[4] == 0); // cicla entre los vivos a tiro
+    int a = target_cycle(c, 5, 0.0f, 0.0f, 0.0f, 0, 1);
+    CHECK(target_cycle(c, 5, 0.0f, 0.0f, 0.0f, a, -1) == 0); // y vuelve hacia atras
+    // Se pierde si muere o se aleja.
+    CHECK(target_keep(c, 5, 1, 0.0f, 0.0f) && !target_keep(c, 5, 3, 0.0f, 0.0f) && !target_keep(c, 5, 4, 0.0f, 0.0f));
+    c[1].alive = false;
+    CHECK(!target_keep(c, 5, 1, 0.0f, 0.0f) && target_cycle(c, 5, 0.0f, 0.0f, 0.0f, 1, 1) == 0);
+    TargetCand far[1] = { { 0.0f, 50.0f, true } };
+    CHECK(target_cycle(far, 1, 0.0f, 0.0f, 0.0f, -1, 1) == -1); // nadie a tiro
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -3241,6 +3357,10 @@ int main(void) {
     RUN(test_save_blocks_nested_and_frozen);
     RUN(test_save_blocks_reject_damage);
     RUN(test_save_blocks_numbers_change_type);
+    RUN(test_keymap_four_buttons);
+    RUN(test_melee_parry_window);
+    RUN(test_melee_weapon_block_costs_stamina);
+    RUN(test_target_cycle);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

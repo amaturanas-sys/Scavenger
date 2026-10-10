@@ -89,13 +89,13 @@ typedef struct {
 } CameraRig;
 
 static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const Terrain *t, float dt) {
-    // Orbita: Q/E o arrastre con boton derecho; rueda para el zoom.
+    // Orbita: Q/E o arrastre con boton derecho (sin arrastrar, el derecho cubre); rueda para el zoom.
     if (IsKeyDown(KEY_Q)) rig->yaw += 1.8f * dt;
     if (IsKeyDown(KEY_E)) rig->yaw -= 1.8f * dt;
-    if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-        Vector2 d = GetMouseDelta();
-        rig->yaw -= d.x * 0.006f;
-        rig->pitch = Clamp(rig->pitch + d.y * 0.004f, 0.05f, 1.25f);
+    float dx, dy;
+    if (input_right_drag(&dx, &dy)) {
+        rig->yaw -= dx * 0.006f;
+        rig->pitch = Clamp(rig->pitch + dy * 0.004f, 0.05f, 1.25f);
     }
     rig->dist = Clamp(rig->dist - GetMouseWheelMove() * 0.8f, 3.0f, 16.0f);
 
@@ -1029,7 +1029,7 @@ int main(int argc, char **argv) {
             }
             if (last_champion != prev_champion) show_card = true; // ficha al conocerlo
             advance_days(&troop, &rng, &day, world_time, &terrain, log, sizeof(log));
-            if (IsKeyPressed(KEY_G) && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) show_card = !show_card && last_champion >= 0;
+            if (input_action_pressed(KA_CARD)) show_card = !show_card && last_champion >= 0; // U: la ficha del gran guerrero
             memmap_visit(&g_memory, player.pos.x, player.pos.z, dt, world_time);
             { // la vista (tatuajes del grifo, lapislazuli): el mapa se descubre mas lejos
                 static float reveal_t = 0.0f;
@@ -1039,7 +1039,7 @@ int main(int argc, char **argv) {
                     memmap_reveal(&g_memory, player.pos.x, player.pos.z, 30.0f * per, 30.0f, world_time);
                 }
             }
-            if (IsKeyPressed(KEY_M) && !input_ctrl()) { // Ctrl+M: la vista orbital
+            if (input_action_pressed(KA_MARK)) { // Ctrl+M: la vista orbital
                 MarkerKind kind = IsKeyDown(KEY_LEFT_SHIFT) ? MARKER_DANGER : MARKER_INTEREST;
                 bool placed = memmap_toggle_marker(&g_memory, player.pos.x, player.pos.z, kind, 6.0f);
                 snprintf(log, sizeof(log), "%s", placed ? T("Marcaste este lugar en el mapa.") : T("Quitaste la marca."));

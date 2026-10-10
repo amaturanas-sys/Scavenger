@@ -1,9 +1,15 @@
 #include "input.h"
 
+#include <math.h>
+
 #include "raylib.h"
+
+#define DRAG_PIXELS 6.0f // lo que se mueve el raton con el boton derecho antes de girar la camara
 
 static bool g_injected[IN_COUNT];
 static int g_last_key;
+static bool g_right_drag; // el boton derecho ya arrastra (gira la camara)
+static float g_right_moved;
 
 bool input_ctrl(void) { return IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL); }
 
@@ -13,6 +19,40 @@ void input_inject(InputAction a) {
 
 void input_update(void) {
     for (int k = GetKeyPressed(); k; k = GetKeyPressed()) g_last_key = k;
+    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) g_right_drag = false, g_right_moved = 0.0f;
+    if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+        Vector2 d = GetMouseDelta();
+        g_right_moved += fabsf(d.x) + fabsf(d.y);
+        if (g_right_moved > DRAG_PIXELS) g_right_drag = true;
+    } else {
+        g_right_drag = false;
+    }
+}
+
+unsigned input_mods(void) {
+    unsigned m = 0;
+    if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) m |= KM_SHIFT;
+    if (input_ctrl()) m |= KM_CTRL;
+    if (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) m |= KM_ALT;
+    return m;
+}
+
+static bool action_key(KeyAction a, bool (*test)(int)) {
+    const KeyBind *b = keymap_bind(a);
+    return test(b->key) && keymap_matches(a, b->key, input_mods());
+}
+
+bool input_action_pressed(KeyAction a) { return action_key(a, IsKeyPressed); }
+bool input_action_down(KeyAction a) { return action_key(a, IsKeyDown); }
+bool input_action_released(KeyAction a) { return action_key(a, IsKeyReleased); }
+
+bool input_right_hold(void) { return IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !g_right_drag; }
+
+bool input_right_drag(float *dx, float *dy) {
+    if (!g_right_drag || !IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) return false;
+    Vector2 d = GetMouseDelta();
+    *dx = d.x, *dy = d.y;
+    return true;
 }
 
 int input_last_key(void) { return g_last_key; }

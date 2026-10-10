@@ -13,6 +13,8 @@ static const MoveDef MOVES[MOVE_COUNT] = {
     [MOVE_SHIELD_CHARGE] = { N_("Carga con escudo"), "carga_escudo", 1.6f, 7.0f, 1.2f, WOUND_BRUISE },
     [MOVE_GRAPPLE] = { N_("Agarre"), "agarre", 1.1f, 6.0f, 1.2f, WOUND_BRUISE },
     [MOVE_HOOK] = { N_("Gancho al escudo"), "enganchar_escudo", 0.0f, 0.0f, 0.9f, WOUND_CUT },
+    [MOVE_PARRY] = { N_("Parry"), "parry", 0.0f, 0.0f, 0.5f, WOUND_CUT },
+    [MOVE_DEFLECT] = { N_("Desvío"), "desvio", 0.0f, 0.0f, 0.5f, WOUND_CUT },
 };
 
 const MoveDef *move_def(MeleeMove m) { return &MOVES[(unsigned)m < MOVE_COUNT ? m : 0]; }
@@ -67,9 +69,12 @@ MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, c
             r.blocked = heavy || roll(rng) < 0.85f;
             if (heavy) r.staggered = true, dmg *= 0.3f; // el pesado rompe la guardia
             else if (r.blocked) dmg = 0.0f;
-        } else if (guard) { // parada con el arma
-            r.blocked = roll(rng) < (heavy ? 0.15f : 0.4f);
-            if (r.blocked) dmg *= 0.15f;
+            if (r.blocked) r.guard_cost = heavy ? 0.08f : 0.03f;
+        } else if (guard) { // parada con el arma: aguanta la mitad y cansa; el pesado, ademas, desequilibra
+            r.blocked = true;
+            dmg *= 0.5f;
+            r.guard_cost = heavy ? 0.18f : 0.1f;
+            if (heavy) r.staggered = true;
         }
         r.damage = dmg * down_k;
         if (!r.blocked) {
@@ -151,6 +156,46 @@ MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, c
         break;
     }
     default: break;
+    }
+    return r;
+}
+
+ParryKind melee_parry_kind(const char *weapon) {
+    if (weapon_can_hook(weapon)) return PARRY_HOOK;
+    if (!weapon || !weapon[0] || has(weapon, "daga") || has(weapon, "cuchillo")) return PARRY_GRAPPLE;
+    return PARRY_DEFLECT;
+}
+
+bool melee_parry_in_window(float windup_left) { return windup_left > 0.0f && windup_left <= PARRY_WINDOW; }
+
+MeleeResult melee_parry(ParryKind k, const Fighter *me, const Fighter *foe, Rng *rng) {
+    MeleeResult r;
+    memset(&r, 0, sizeof(r));
+    r.landed = true;
+    r.wound = WOUND_BRUISE;
+    switch (k) {
+    case PARRY_HOOK: // el filo curvo se mete tras el escudo y tira; sin escudo, del arma
+        r.staggered = true;
+        if (foe->shield) r.shield_dropped = true;
+        else r.disarmed = foe->armed && roll(rng) < 0.5f;
+        break;
+    case PARRY_GRAPPLE: { // le toma el brazo armado en mitad del golpe: casi siempre entra
+        float a = me->strength * (0.9f + 0.6f * roll(rng)) * (0.5f + 0.5f * me->health);
+        float d = foe->strength * (0.3f + 0.4f * roll(rng)) * (0.4f + 0.6f * foe->health) * (1.0f + foe->weight / 80.0f);
+        if (a <= d) { // se zafa: el que para queda expuesto
+            r.landed = false;
+            r.attacker_staggered = true;
+            break;
+        }
+        r.grab = GRAB_WEAPON_ARM;
+        r.disarmed = foe->armed;
+        r.knocked_down = true;
+        r.damage = move_def(MOVE_GRAPPLE)->damage * me->strength;
+        break;
+    }
+    default: // el golpe resbala por el arma y el rival queda abierto
+        r.staggered = true;
+        break;
     }
     return r;
 }

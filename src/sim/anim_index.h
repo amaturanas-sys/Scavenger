@@ -15,7 +15,8 @@
 
 typedef struct {
     bool moving, running, sneaking, grounded;
-    bool hidden;      // agachado en la hierba alta
+    bool crouching;   // agachado (X)
+    bool hidden;      // agachado tras la hierba alta, una roca o una mata
     bool climbing;    // subiendo por la cuerda de la trepa
     bool climb_top;   // pasando por encima del muro
     bool mounted;

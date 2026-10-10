@@ -36,6 +36,8 @@ typedef struct {
     float kick;       // [0, 1] patada: la pierna derecha arriba y adelante
     float grab;       // [0, 1] agarre: los dos brazos al frente
     float guard;      // [0, 1] escudo en alto (cubrirse) o empujando (golpe de escudo)
+    float parry;      // [0, 1] parry: el brazo del arma al frente y el antebrazo arriba
+    float crouch;     // [0, 1] agachado: rodillas dobladas, mas bajo e inclinado
 } BodyPoseParams;
 
 void body_pose(BodyPose *out, const BodyPoseParams *p);

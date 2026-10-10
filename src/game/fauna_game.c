@@ -255,7 +255,7 @@ void fg_hurt(GameActions *ga, int idx, float dmg, WoundKind w, int part, int att
     char who[48], dsc[96];
     lower(T(d->name), who, sizeof(who));
     if (a->state == ANIMAL_DEAD) {
-        snprintf(log, len, T("Abatiste: %s. K para despiezarlo."), who);
+        snprintf(log, len, T("Abatiste: %s. F para despiezarlo."), who);
         tg_xp(ga, XP_HUNT, log, len);
     } else if (d->cls == CLASS_TAMEABLE && a->weakened && was_strong && a->state == ANIMAL_WILD) {
         snprintf(log, len, T("El %s está débil: ¡lánzale el lazo (menú) y dale carne!"), who);
@@ -446,8 +446,8 @@ static Swarm *hive_near(GameActions *ga, const Player *p) {
     return NULL;
 }
 
-// ------------------------------------------------------------------ interaccion (K)
-static int nearest_interactable(const GameActions *ga, const Player *p, int *what) {
+// ------------------------------------------------------------------ interaccion (F)
+static int nearest_interactable(const GameActions *ga, const Player *p, int *what, float *dist) {
     // what: 1 atado (dar de comer), 2 cadaver (despiezar), 3 ganado (ordeñar / sacrificar)
     int best = -1;
     float bd = INTERACT_RANGE;
@@ -464,6 +464,7 @@ static int nearest_interactable(const GameActions *ga, const Player *p, int *wha
         float d = adist(a, p->pos) - species_def(a->species)->size * 0.3f;
         if (d < bd) bd = d, best = i, *what = w;
     }
+    if (dist) *dist = bd;
     return best;
 }
 
@@ -499,7 +500,14 @@ static void butcher(GameActions *ga, const Player *p, Animal *a, char *log, size
     }
 }
 
-static void interact(GameActions *ga, const Player *p, bool shift, char *log, size_t len) {
+float fg_interact_dist(GameActions *ga, const Player *p) {
+    if (hive_near(ga, p)) return 0.0f;
+    int what = 0;
+    float d;
+    return nearest_interactable(ga, p, &what, &d) >= 0 ? fmaxf(0.0f, d) : 1e9f;
+}
+
+void fg_interact(GameActions *ga, const Player *p, bool shift, char *log, size_t len) {
     Swarm *hive = hive_near(ga, p);
     if (hive) { // la miel: con humo, las abejas se calman
         if (ga->torch_lit && !ga->hands.sheathed) {
@@ -517,7 +525,7 @@ static void interact(GameActions *ga, const Player *p, bool shift, char *log, si
         }
         return;
     }
-    int what = 0, i = nearest_interactable(ga, p, &what);
+    int what = 0, i = nearest_interactable(ga, p, &what, NULL);
     if (i < 0) {
         snprintf(log, len, "%s", T("No hay ningún animal con el que hacer algo aquí."));
         return;
@@ -565,30 +573,30 @@ static void interact(GameActions *ga, const Player *p, bool shift, char *log, si
             snprintf(log, len, T("Ordeñas la %s: +%d leche."), who, milk);
         } else {
             snprintf(log, len, "%s", species_def(a->species)->milk > 0 ? T("Ya ordeñaste hoy a este animal.")
-                                                                 : T("Este animal no da leche (Mayús+K: sacrificar)."));
+                                                                 : T("Este animal no da leche (Mayús+F: sacrificar)."));
         }
     }
 }
 
 static void update_hint(GameActions *ga, const Player *p) {
-    int what = 0, i = nearest_interactable(ga, p, &what);
+    int what = 0, i = nearest_interactable(ga, p, &what, NULL);
     g_hint[0] = '\0';
     if (hive_near(ga, p)) {
-        snprintf(g_hint, sizeof(g_hint), "%s", ga->torch_lit ? T("K: tomar miel (el humo calma a las abejas)")
+        snprintf(g_hint, sizeof(g_hint), "%s", ga->torch_lit ? T("F: tomar miel (el humo calma a las abejas)")
                                                        : T("Colmena: enciende la antorcha (humo) antes de tomar la miel"));
         return;
     }
     if (i < 0) return;
     char who[48];
     lower(T(species_def(ga->animals[i].species)->name), who, sizeof(who));
-    if (what == 1) snprintf(g_hint, sizeof(g_hint), T("K: dar de comer al %s atado (%.0f s)"), who, ga->animals[i].bound_timer);
-    else if (what == 2) snprintf(g_hint, sizeof(g_hint), T("K: despiezar (%s)"), who);
-    else if (what == 5) snprintf(g_hint, sizeof(g_hint), T("K: dar de beber al %s (tiene sed)"), who);
+    if (what == 1) snprintf(g_hint, sizeof(g_hint), T("F: dar de comer al %s atado (%.0f s)"), who, ga->animals[i].bound_timer);
+    else if (what == 2) snprintf(g_hint, sizeof(g_hint), T("F: despiezar (%s)"), who);
+    else if (what == 5) snprintf(g_hint, sizeof(g_hint), T("F: dar de beber al %s (tiene sed)"), who);
     else if (what == 4)
-        snprintf(g_hint, sizeof(g_hint), species_eats_meat(ga->animals[i].species) ? T("K: dar carne al %s (tiene hambre)") : T("K: dar forraje al %s (tiene hambre)"), who);
+        snprintf(g_hint, sizeof(g_hint), species_eats_meat(ga->animals[i].species) ? T("F: dar carne al %s (tiene hambre)") : T("F: dar forraje al %s (tiene hambre)"), who);
     else if (species_def(ga->animals[i].species)->milk > 0 && !ga->animals[i].milked)
-        snprintf(g_hint, sizeof(g_hint), T("K: ordeñar · Mayús+K: sacrificar (%s)"), who);
-    else snprintf(g_hint, sizeof(g_hint), T("Mayús+K: sacrificar (%s)"), who);
+        snprintf(g_hint, sizeof(g_hint), T("F: ordeñar · Mayús+F: sacrificar (%s)"), who);
+    else snprintf(g_hint, sizeof(g_hint), T("Mayús+F: sacrificar (%s)"), who);
 }
 
 // ------------------------------------------------------------------ actualizacion
@@ -598,7 +606,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
     // Las personas que ven los animales.
     FaunaHuman hu[MAX_HUMANS];
     int n = 0;
-    hu[n] = (FaunaHuman){ p->pos.x, p->pos.z, cb->player.down, p->sneaking || ga->hidden, false,
+    hu[n] = (FaunaHuman){ p->pos.x, p->pos.z, cb->player.down, p->sneaking || p->crouching || ga->hidden, false,
                           cb->player.hp < 0.6f * cb->player.hp_max || health_bleeding(&cb->player) };
     g_refs[n++] = (HumanRef){ 0, 0 };
     for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
@@ -665,12 +673,12 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
             if (adist(a, p->pos) < 60.0f) snprintf(log, len, T("Se soltó del lazo sin comer: %s. ¡Cuidado!"), who);
             break;
         case FEV_HUNGRY:
-            snprintf(log, len, species_eats_meat(a->species) ? T("El %s de la tribu tiene hambre: dale carne (K) o déjalo cazar.")
-                                                           : T("El %s de la tribu tiene hambre: llévalo a pastar o dale forraje (K)."),
+            snprintf(log, len, species_eats_meat(a->species) ? T("El %s de la tribu tiene hambre: dale carne (F) o déjalo cazar.")
+                                                           : T("El %s de la tribu tiene hambre: llévalo a pastar o dale forraje (F)."),
                      who);
             break;
         case FEV_STARVED: snprintf(log, len, T("El %s se fue: pasó demasiada hambre y vuelve a ser salvaje."), who); break;
-        case FEV_THIRSTY: snprintf(log, len, T("El %s de la tribu tiene sed: llévalo al agua o dale de beber (K, con agua)."), who); break;
+        case FEV_THIRSTY: snprintf(log, len, T("El %s de la tribu tiene sed: llévalo al agua o dale de beber (F, con agua)."), who); break;
         case FEV_PARCHED: snprintf(log, len, T("El %s se fue: pasó demasiada sed y vuelve a ser salvaje."), who); break;
         default: break;
         }
@@ -740,8 +748,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
     populate(ga, p, t, night, dt);
     update_swarms(ga, cb, p, t, now, temp, dt, log, len);
 
-    if (input_ok && ga->mounted < 0 && IsKeyPressed(KEY_K))
-        interact(ga, p, IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT), log, len);
+    (void)input_ok; // F (src/game/actions_game.c) llama a fg_interact
     update_hint(ga, p);
 }
 

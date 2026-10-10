@@ -91,6 +91,9 @@ static int g_quick_grip = -1;          // empuñadura pedida (indice de PRESETS)
 static char g_quick_wield[INV_ID_LEN]; // arma o escudo pedido por id
 static int g_quick_action = -1;        // accion pedida
 static bool g_quick_menu;              // abrir el menu de acciones
+static bool g_quick_swap;              // pasar el arma a la otra mano (Mayus + numero)
+static int g_target_req;               // Tab en combate: 1 el enemigo siguiente, -1 el anterior
+static bool g_combat_near;             // hay enemigos a tiro de objetivo (lo pone src/game/combat_game.c)
 
 static bool preset_available(const GameActions *ga, int k) {
     for (int h = 0; h < 2; h++)
@@ -116,6 +119,13 @@ void ga_quick_request_grip(int k) { g_quick_grip = k; }
 void ga_quick_request_wield(const char *id) { snprintf(g_quick_wield, sizeof(g_quick_wield), "%s", id ? id : ""); }
 void ga_quick_request_action(ActionId a) { g_quick_action = (int)a; }
 void ga_quick_request_menu(void) { g_quick_menu = true; }
+void ga_quick_request_swap(void) { g_quick_swap = true; }
+void ga_set_combat_near(bool near) { g_combat_near = near; }
+int ga_take_target_request(void) {
+    int r = g_target_req;
+    g_target_req = 0;
+    return r;
+}
 
 static Vector3 forward_of(float yaw) { return (Vector3){ sinf(yaw), 0.0f, cosf(yaw) }; }
 
@@ -299,7 +309,7 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
             return;
         }
         if (!hands_can_take(&ga->hands)) {
-            snprintf(log, len, "%s", T("Necesitas una mano libre (H para enfundar)."));
+            snprintf(log, len, "%s", T("Necesitas una mano libre (enfunda con la tecla de su casilla, 1 a 9)."));
             return;
         }
         if (near < 0) {
@@ -482,7 +492,7 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         switch (animal_lasso(an, &ga->rng, ga->mounted >= 0 ? 0.1f : 0.0f, 0.0f, 0.0f)) {
         case TAME_OK:
             if (an->state == ANIMAL_BOUND)
-                snprintf(log, len, T("¡Atrapaste al %s con el lazo! Dale carne (K) antes de que se suelte."), who);
+                snprintf(log, len, T("¡Atrapaste al %s con el lazo! Dale carne (F) antes de que se suelte."), who);
             else {
                 snprintf(log, len, T("¡Domaste: %s! Ahora sigue a la tribu%s."), who, sd->rideable ? T(" (silla para montarlo)") : "");
                 tg_xp(ga, XP_TAME, log, len);
@@ -736,6 +746,38 @@ static Rectangle grid_rect(int i, int first_row) {
 }
 
 // ---------------------------------------------------------------- actualizacion
+// Un horno o una fundicion de la tribu a mano (para fabricar).
+static bool oven_near(const Props *props, const Player *p) {
+    for (int i = 0; i < props->count; i++)
+        if (strstr(props->items[i].item->id, "estructura.campamento.horno") && dist2d(p->pos, props->items[i].pos) < 3.0f) return true;
+    return false;
+}
+
+// F: interactuar con lo que haya. Hablar con la gente (el guardian, el druida, el orfebre); los
+// animales y las colmenas (src/game/fauna_game.c; Mayus+F, quieto junto al ganado, lo sacrifica);
+// tomar objetos y botin (Mayus: todo lo de alrededor); el pozo (sacar agua) y el horno (fabricar).
+static void interact(GameActions *ga, Troop *troop, Props *props, const Terrain *t, Player *p, char *log, size_t len) {
+    if (cg_try_talk(ga, troop, p) || tg_try_talk(ga, troop, p, log, len)) return;
+    int near = props_nearest(props, p->pos, REACH, true);
+    float prop_d = near >= 0 ? dist2d(p->pos, props->items[near].pos) : 1e9f;
+    float animal_d = ga->mounted < 0 ? fg_interact_dist(ga, p) : 1e9f;
+    if (animal_d < 1e8f && animal_d <= prop_d) { // el animal esta mas cerca que lo que hay para tomar
+        fg_interact(ga, p, (input_mods() & KM_SHIFT) && !p->moving, log, len);
+        return;
+    }
+    if (near < 0 && t && wg_at_well(t, p->pos.x, p->pos.z)) {
+        start_action(ga, ACTION_FILL_WATER, props, p, log, len);
+        return;
+    }
+    if (near < 0 && oven_near(props, p)) {
+        ga->menu_open = true;
+        ga->menu_tab = 2;
+        snprintf(log, len, "%s", T("El horno: elige qué fabricar."));
+        return;
+    }
+    start_action(ga, ACTION_TAKE, props, p, log, len);
+}
+
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
                size_t log_len) {
     ga->terrain = t;
@@ -745,7 +787,10 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     sync_npcs(ga, troop, t);
     ga->swap_anim = fmaxf(0.0f, ga->swap_anim - dt);
     bool other_menu = ga->inv_open || ga->equip_open || ga->dlg.open; // inventario, equipo o un dialogo
-    if ((IsKeyPressed(KEY_TAB) || g_quick_menu) && !other_menu) ga->menu_open = !ga->menu_open;
+    // Tab: en combate elige el objetivo (con Mayus, el anterior); si no, el menu de acciones.
+    bool tab = input_action_pressed(KA_MENU);
+    if (tab && g_combat_near && !ga->menu_open && !other_menu) g_target_req = input_mods() & KM_SHIFT ? -1 : 1;
+    else if ((tab || g_quick_menu) && !other_menu) ga->menu_open = !ga->menu_open;
     g_quick_menu = false;
     // Lo que pide la barra rapida del HUD (teclas 1..9 o toques).
     if (ga->doing < 0 && !ga->climbing && !other_menu && !ga->menu_open) {
@@ -772,9 +817,16 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             }
         }
         if (g_quick_action >= 0) start_action(ga, (ActionId)g_quick_action, props, p, log, log_len);
+        if (g_quick_swap) { // Mayus + numero: el arma empuñada, a la otra mano
+            snprintf(log, log_len, hands_swap(&ga->hands) ? T("Pasas el arma a la otra mano: %s.")
+                                                         : T("No se puede: el escudo va en el brazo izquierdo y las armas a dos manos, en las dos (%s)."),
+                     grip_name(hands_grip(&ga->hands)));
+            ga->swap_anim = 0.5f;
+        }
     }
     g_quick_grip = g_quick_action = -1;
     g_quick_wield[0] = '\0';
+    g_quick_swap = false;
     if (ga->menu_open) {
         // Pestañas (acciones, obras, fabricar, reparar): Q/E, Re Pág/Av Pág o un clic en su icono.
         if (IsKeyPressed(KEY_E) || IsKeyPressed(KEY_PAGE_DOWN)) ga->menu_tab = (ga->menu_tab + 1) % 4;
@@ -812,17 +864,9 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             }
         }
     } else if (ga->doing < 0 && !ga->climbing && !other_menu) {
-        if (IsKeyPressed(KEY_X) && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) { // cambiar de mano
-            snprintf(log, log_len, hands_swap(&ga->hands) ? T("Pasas el arma a la otra mano: %s.")
-                                                         : T("No se puede: el escudo va en el brazo izquierdo y las armas a dos manos, en las dos (%s)."),
-                     grip_name(hands_grip(&ga->hands)));
-            ga->swap_anim = 0.5f;
-        } else if (IsKeyPressed(KEY_X)) start_action(ga, ACTION_CHANGE_GRIP, props, p, log, log_len);
-        if (IsKeyPressed(KEY_H) && !input_ctrl()) start_action(ga, ACTION_SHEATHE, props, p, log, log_len);
-        if (IsKeyPressed(KEY_F) && !cg_try_talk(ga, troop, p) && !tg_try_talk(ga, troop, p, log, log_len)) // F: hablar o tomar
-            start_action(ga, ACTION_TAKE, props, p, log, log_len);
-        if (IsKeyPressed(KEY_T)) start_action(ga, ACTION_THROW, props, p, log, log_len);
-        if (IsKeyPressed(KEY_R)) { // montar / desmontar
+        if (input_action_pressed(KA_INTERACT)) interact(ga, troop, props, t, p, log, log_len);
+        if (input_action_pressed(KA_THROW)) start_action(ga, ACTION_THROW, props, p, log, log_len);
+        if (input_action_pressed(KA_MOUNT)) { // montar / desmontar
             if (ga->mounted >= 0) {
                 ga->animals[ga->mounted].ridden = false;
                 ga->mounted = -1;
@@ -961,16 +1005,20 @@ void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p)
         a->z = p->pos.z;
         a->yaw = p->yaw;
     }
-    // Esconderse: acechando dentro de la hierba alta no se hace ruido.
+    // Esconderse: agachado junto a la hierba alta, una roca o una mata (o en sigilo dentro de la
+    // hierba alta) no se hace ruido y cuesta mucho verlo (player_visibility).
     ga->hidden = false;
-    if (p->sneaking && ga->mounted < 0) {
-        for (int i = 0; i < props->count; i++)
-            if (!strcmp(props->items[i].item->id, "mapa.vegetacion.hierba_alta") &&
-                dist2d(p->pos, props->items[i].pos) < 1.3f) {
+    if ((p->sneaking || p->crouching) && ga->mounted < 0) {
+        for (int i = 0; i < props->count; i++) {
+            const char *id = props->items[i].item->id;
+            bool grass = !strcmp(id, "mapa.vegetacion.hierba_alta");
+            bool cover = grass || (p->crouching && (!strncmp(id, "mapa.roca.", 10) || !strncmp(id, "mapa.vegetacion.mata", 20)));
+            if (cover && dist2d(p->pos, props->items[i].pos) < (grass ? 1.3f : 1.6f)) {
                 ga->hidden = true;
                 p->noise = 0.0f;
                 break;
             }
+        }
     }
     (void)t;
 }
@@ -1179,7 +1227,7 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) 
     const InvItem *body = inventory_find(ga->inv, "personaje.narrativo.protagonista");
     if (!body || !props_has_model(props, body)) return false;
     HumanoidState hs = {
-        .moving = p->moving, .running = p->stance == STANCE_RUN, .sneaking = p->sneaking, .grounded = p->grounded,
+        .moving = p->moving, .running = p->stance == STANCE_RUN, .sneaking = p->sneaking, .crouching = p->crouching, .grounded = p->grounded,
         .hidden = ga->hidden, .climbing = ga->climbing, .climb_top = ga->climbing && ga->climb_t > 1.6f,
         .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = ga->hands.sheathed,
         .grip = hands_grip(&ga->hands), .doing = ga->doing, .building = -1,

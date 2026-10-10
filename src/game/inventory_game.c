@@ -730,14 +730,20 @@ static Rectangle equip_item_rect(const GameActions *ga, int i) {
     return ga->equip_tab == TAB_ARMOR ? equip_rect(i) : ga->equip_tab == TAB_WEAR ? wear_rect(i) : ga->equip_tab == TAB_JEWELS ? jewel_rect(i) : node_rect(i);
 }
 
+static bool g_pack_req; // la mochila pedida desde la columna del HUD
+void ig_request_pack(void) { g_pack_req = true; }
+
 void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool input_ok, char *log, size_t len) {
     sync_packs(ga, log, len);
     for (int i = 0; i < GA_LOOT; i++) // el botin no se queda para siempre
         if (ga->loot_age[i] >= 0.0f && (ga->loot_age[i] += GetFrameTime()) > LOOT_SECONDS) ga->loot_age[i] = -1.0f;
     pack_follow(ga, props);
-    if (input_ok && IsKeyPressed(KEY_G) && !ga->inv_open && !ga->equip_open) pack_toggle(ga, props, p, log, len);
-    if (input_ok && IsKeyPressed(KEY_I) && !ga->equip_open) ga->inv_open = !ga->inv_open;
-    if (input_ok && IsKeyPressed(KEY_P) && !input_ctrl() && !ga->inv_open) ga->equip_open = !ga->equip_open;
+    // Mayus+G: dejar o recoger la mochila (y G sola, hasta que agarrar llegue con la fase 2).
+    bool pack = input_action_pressed(KA_BACKPACK) || input_action_pressed(KA_GRAB) || g_pack_req;
+    g_pack_req = false;
+    if (input_ok && pack && !ga->inv_open && !ga->equip_open) pack_toggle(ga, props, p, log, len);
+    if (input_ok && input_action_pressed(KA_INVENTORY) && !ga->equip_open) ga->inv_open = !ga->inv_open;
+    if (input_ok && input_action_pressed(KA_EQUIPMENT) && !ga->inv_open) ga->equip_open = !ga->equip_open;
     if ((ga->inv_open || ga->equip_open) && (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACK))) ga->inv_open = ga->equip_open = false;
     Cont conts[CONT_MAX];
     int nc = containers(ga, props, p, conts);
@@ -890,7 +896,7 @@ static void draw_inventory(const GameActions *ga, const Props *props, const Play
     if (heavy) ui_icon(ICON_VELOCIDAD, wr.x + 70, wr.y + 1, 16, UI_CARNELIAN);
     if (ui_hover(wr)) ui_legend(T("Llevas encima"), heavy ? TextFormat(T("%.1f kg: pesado, andas más lento (más de %.0f kg)"), kg, CARRY_LIMIT)
                                                     : TextFormat(T("%.1f kg (hasta %.0f sin frenarte)"), kg, CARRY_LIMIT));
-    ui_legend_default(T("Inventario"), T("Flechas: elegir · Q/E: contenedor · Enter: pasar · U: cambiar de mochila · G: dejarla o recogerla"));
+    ui_legend_default(T("Inventario"), T("Flechas: elegir · Q/E: contenedor · Enter: pasar · U: cambiar de mochila · Mayús+G: dejarla o recogerla"));
 }
 
 static IconId motif_icon(Motif m) {

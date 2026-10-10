@@ -64,6 +64,7 @@ bool ig_take_loot(GameActions *ga, const Props *props, const Player *p, char *lo
 void ig_draw_world(const GameActions *ga, const Terrain *t, float time);
 
 void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool input_ok, char *log, size_t len);
+void ig_request_pack(void); // dejar o recoger la mochila (desde la columna del HUD), en el proximo ig_update
 void ig_draw(const GameActions *ga, const Combat *cb, const Props *props, const Player *p, int w, int h);
 
 #endif

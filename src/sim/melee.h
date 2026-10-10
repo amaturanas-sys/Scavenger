@@ -1,13 +1,21 @@
-// Combate cuerpo a cuerpo (C puro): golpes, combos, patadas, escudos, agarres y
-// ganchos. Las mismas reglas valen para el jugador, la tribu y los enemigos.
-//  - golpe ligero (V) y combos: tres golpes seguidos en la ventana; con armas
+// Combate cuerpo a cuerpo (C puro): golpes, combos, patadas, escudos, agarres,
+// ganchos y parry. Las mismas reglas valen para el jugador, la tribu y los enemigos.
+// El jugador pelea con cuatro botones (H ataque, J bloqueo, K parry, L carga o patada):
+//  - golpe ligero (H) y combos: tres golpes seguidos en la ventana; con armas
 //    cortas (daga, cuchillo, sable) los combos son mas rapidos; con largas (lanza,
 //    espada, guja) llegan mas lejos y el remate puede tumbar;
-//  - golpe pesado (mantener V): mas daño y rompe la guardia del escudo;
-//  - patada: aparta y desequilibra; a la carrera (con inercia) tumba incluso a
+//  - golpe pesado (mantener H): mas daño y rompe la guardia del escudo;
+//  - bloqueo (J): con escudo cubre el frente; sin escudo para con el arma, que aguanta
+//    la mitad del golpe y cansa (gasta aguante);
+//  - parry (K): el rival anuncia su golpe (levanta el arma un momento); en la ventana
+//    justa, antes de que caiga, el parry le gana: con hacha o guja le engancha el
+//    escudo y se lo arranca, con las manos o una daga le hace una llave y lo tumba
+//    (desarmado), con las demas armas desvia el golpe y lo deja abierto; a destiempo,
+//    el que para queda expuesto;
+//  - carga o patada (L): con escudo, carga que empuja y puede tumbar; sin escudo,
+//    patada que aparta y desequilibra; a la carrera, con inercia, tumba incluso a
 //    quien se cubre con escudo;
-//  - escudo: bloquear (Z, de frente), golpe de escudo (Z + V: aturde), carga
-//    (corriendo + Z: embiste y puede tumbar);
+//  - golpe de escudo: cubriendose con el escudo (J) y atacando (H): aturde;
 //  - agarre: del escudo (se lo arranca), del brazo armado (lo desarma) o de una
 //    extremidad, y lo tumba con una llave; si falla, el que agarra queda expuesto;
 //  - gancho: un arma con gancho (hacha, guja, alabarda) engancha el escudo enemigo
@@ -31,6 +39,8 @@ typedef enum {
     MOVE_SHIELD_CHARGE,// carga con escudo
     MOVE_GRAPPLE,      // agarre y llave
     MOVE_HOOK,         // enganchar el escudo
+    MOVE_PARRY,        // parry (K): el intento, hasta saber como sale
+    MOVE_DEFLECT,      // desvio: el golpe del rival resbala por el arma
     MOVE_COUNT
 } MeleeMove;
 
@@ -70,6 +80,7 @@ typedef struct {
     bool disarmed;       // solto el arma
     bool attacker_staggered; // fallo el agarre o choco con otro escudo
     GrabTarget grab;
+    float guard_cost;    // aguante que gasta el que se cubrio (parar con el arma cansa)
 } MeleeResult;
 
 const MoveDef *move_def(MeleeMove m);
@@ -86,6 +97,26 @@ float melee_combo_cooldown(const char *inv_id, float base, int step);
 // Resuelve un movimiento de att contra def. weapon: el arma usada en los golpes.
 MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, const char *weapon, int combo_step,
                           Rng *rng);
+
+// Parry. El rival anuncia el golpe durante MELEE_WINDUP s (levanta el arma); el parry gana si
+// llega cuando al golpe le quedan PARRY_WINDOW s o menos. A destiempo, el que para queda
+// expuesto PARRY_EXPOSED s (ni se cubre ni ataca).
+#define MELEE_WINDUP 0.4f
+#define PARRY_WINDOW 0.25f
+#define PARRY_EXPOSED 0.6f
+
+typedef enum {
+    PARRY_HOOK,    // hacha, guja, alabarda: engancha el escudo y se lo arranca
+    PARRY_GRAPPLE, // manos o daga: le toma el brazo armado, lo desarma y lo tumba
+    PARRY_DEFLECT, // las demas: desvia el golpe y el rival queda abierto
+} ParryKind;
+
+ParryKind melee_parry_kind(const char *weapon);
+// El parry llega a tiempo: al golpe del rival le quedan windup_left s (0: no hay golpe en camino).
+bool melee_parry_in_window(float windup_left);
+// Un parry a tiempo de me contra foe (el que golpeaba): el resultado es para foe. Un agarre que
+// no entra deja expuesto al que para (attacker_staggered).
+MeleeResult melee_parry(ParryKind k, const Fighter *me, const Fighter *foe, Rng *rng);
 
 // Manos: pasar el arma a la otra mano (no con escudo ni a dos manos).
 bool hands_swap(Hands *h);

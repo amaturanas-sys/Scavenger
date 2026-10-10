@@ -53,5 +53,9 @@ void fg_draw_overlay(const GameActions *ga, const Terrain *t, Camera3D cam, int 
 void fg_draw_hud(const GameActions *ga, int w, int h);
 // F junto a la hierba alta: cortar forraje. true si habia hierba que cortar.
 bool fg_cut_grass(GameActions *ga, Props *props, const Player *p, char *log, size_t len);
+// F junto a un animal (o una colmena): dar de comer o de beber, despiezar, ordeñar, la miel;
+// shift junto al ganado: sacrificarlo. fg_interact_dist: a que distancia esta (1e9 si no hay).
+float fg_interact_dist(GameActions *ga, const Player *p);
+void fg_interact(GameActions *ga, const Player *p, bool shift, char *log, size_t len);
 
 #endif

@@ -2,14 +2,18 @@
 // src/sim/combat.h con el jugador, la tribu, los enemigos y la interfaz:
 //  - salud del jugador: vida, sangre y heridas; abatido, lo levanta la escolta
 //    o despierta en el campamento;
-//  - cuerpo a cuerpo (src/sim/melee.h): V golpe y combos (mantener: pesado),
-//    J o botón central patada (corriendo: con inercia), Z cubrirse (con escudo:
-//    Z + V golpe de escudo; corriendo + Z carga), U agarre y llave, O enganchar el
-//    escudo enemigo con el arma; los enemigos y la escolta usan lo mismo;
-//  - armas a distancia: mantener V (o clic) para tensar y soltar para disparar;
-//    la camara alza o baja la mira y se ve la curva que hara el proyectil;
-//    L junto a un fuego enciende la flecha: quema al que alcanza y prende el pasto,
-//    los arboles y las estructuras donde cae (la lluvia la apaga);
+//  - cuerpo a cuerpo (src/sim/melee.h) con cuatro botones: H ataque (combo;
+//    mantener: pesado), J bloqueo (escudo, o el arma, que cansa), K parry en la
+//    ventana justa del golpe que anuncia el rival (engancha, hace la llave o
+//    desvia, segun el arma), L carga con escudo o patada; J + H golpe de escudo;
+//    los enemigos y la escolta usan las mismas reglas;
+//  - objetivo: Tab (en combate) pasa al enemigo siguiente, un toque o un clic lo
+//    elige; anillo bajo los pies y su barra de vida resaltada; se pierde a 25 m;
+//  - armas a distancia: mantener H (o clic) para tensar y soltar para disparar;
+//    con objetivo, la mira calcula la caida sola; sin el, la camara alza o baja
+//    la mira y se ve la curva que hara el proyectil; J baja el arma;
+//    Mayus+L junto a un fuego enciende la flecha: quema al que alcanza y prende el
+//    pasto, los arboles y las estructuras donde cae (la lluvia la apaga);
 //  - armadura por piezas en todos los humanos (src/sim/armor.h);
 //  - cuerpo humano articulado por zonas (src/sim/body.h): los proyectiles
 //    impactan en la zona que tocan;
@@ -64,6 +68,8 @@ typedef struct {
     bool mounted;      // a caballo (jinete): derribado, pierde el caballo
     bool loot_dropped; // ya dejo su botin al caer
     bool awed;         // ya tiro el escarmiento al ver a su objetivo (pieles de depredador)
+    float windup;      // s que le quedan al golpe que anuncia (levanta el arma); 0: ninguno
+    int windup_move;   // el golpe anunciado (MeleeMove + 1)
 } Enemy;
 
 typedef struct {
@@ -110,9 +116,23 @@ typedef struct {
     Vector3 loose_horse[4]; // caballos de jinetes derribados (los suelta la fauna)
     float loose_yaw[4];
     int loose_n;
+    // Los cuatro botones.
+    int target_lock;   // enemigo elegido + 1 (0: ninguno)
+    float parry_cd;    // espera hasta el proximo parry
+    float exposed;     // s expuesto tras un parry a destiempo (ni se cubre ni ataca)
 } Combat;
 
 void cb_init(Combat *cb, unsigned seed);
+// Un clic o un toque sobre un enemigo lo elige como objetivo (y ese clic no es un golpe).
+// pointer: en la pantalla virtual de w x h. true si eligio a alguien.
+bool cb_pick_target(Combat *cb, Camera3D cam, Vector2 pointer, int w, int h);
+// El enemigo elegido (o NULL).
+const Enemy *cb_target(const Combat *cb);
+// Las casillas de combate del HUD (src/game/hud_game.c): lo que se pide se atiende en el
+// proximo cb_update. attack_down y block: mantenidos este cuadro.
+void cb_hud_buttons(bool attack_press, bool attack_down, bool block, bool parry, bool charge);
+// Hay un golpe enemigo en la ventana del parry (la casilla destella).
+bool cb_parry_cue(const Combat *cb);
 bool cb_blocks_input(const Combat *cb); // abatido
 float cb_speed_scale(const Combat *cb);
 // input_ok: el jugador puede atacar/vendar (sin menu ni minijuego). night/winter: cambian lo que aparece.
