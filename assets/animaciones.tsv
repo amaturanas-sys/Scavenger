@@ -4,8 +4,8 @@ rig	clip	descripcion	bucle	aplica	prioridad	acciones
 humanoide	idle	De pie, respirando.	si	*	obligatoria	quieto
 humanoide	caminar	Caminar.	si	*	obligatoria	moverse
 humanoide	correr	Correr.	si	*	obligatoria	moverse+Shift
-humanoide	acechar	Agachado, avance sigiloso.	si	*	obligatoria	acechar (C)
-humanoide	acechar_idle	Agachado, quieto (escondido en la hierba).	si	*	obligatoria	esconderse
+humanoide	acechar	Agachado, avance (con sigilo, más lento).	si	*	obligatoria	agacharse (X)
+humanoide	acechar_idle	Agachado, quieto (tras la hierba alta, una roca o una mata).	si	*	obligatoria	agacharse (X), esconderse
 humanoide	saltar	Impulso del salto.	no	*	obligatoria	saltar
 humanoide	caer	En el aire, cayendo.	si	*	obligatoria	saltar
 humanoide	aterrizar	Contacto con el suelo.	no	*	obligatoria	saltar
@@ -26,9 +26,9 @@ humanoide	empunar_doble	Postura con un arma en cada mano.	si	*	obligatoria	empu�
 humanoide	empunar_dos_manos	Postura con arma a dos manos.	si	*	obligatoria	empuñadura
 humanoide	empunar_escudo	Postura con arma y escudo.	si	*	obligatoria	empuñadura
 humanoide	empunar_arco	Postura con arco o ballesta.	si	*	obligatoria	empuñadura
-humanoide	cambiar_empunadura	Cambiar de arma.	no	*	obligatoria	cambiar empuñadura (X)
-humanoide	enfundar	Guardar las armas.	no	*	obligatoria	enfundar (H)
-humanoide	desenfundar	Sacar las armas.	no	*	obligatoria	enfundar (H)
+humanoide	cambiar_empunadura	Cambiar de arma.	no	*	obligatoria	barra rápida (1 a 9)
+humanoide	enfundar	Guardar las armas.	no	*	obligatoria	enfundar (1 a 9: la misma casilla otra vez)
+humanoide	desenfundar	Sacar las armas.	no	*	obligatoria	empuñar (1 a 9)
 humanoide	agacharse_trabajar	Agachado trabajando en el suelo (fogata, tienda).	si	*	obligatoria	instalar fogata, instalar tienda
 humanoide	cavar	Cavar con pala.	si	*	obligatoria	cavar trinchera
 humanoide	lanzar_trepa	Voltear y lanzar el gancho con cuerda.	no	*	obligatoria	lanzar trepa
@@ -47,16 +47,18 @@ humanoide	ataque_dos_1	Combo a dos manos, golpe 1.	no	*	obligatoria	combate
 humanoide	ataque_dos_2	Combo a dos manos, golpe 2.	no	*	obligatoria	combate
 humanoide	ataque_dos_3	Combo a dos manos, golpe 3.	no	*	obligatoria	combate
 humanoide	estocada_lanza	Estocada con lanza.	no	*	obligatoria	combate
-humanoide	bloquear	Cubrirse con el escudo o el arma.	si	*	obligatoria	combate
-humanoide	agarre	Agarrar al rival (grappling).	no	*	obligatoria	combate
-humanoide	derribo	Derribar al rival agarrado.	no	*	obligatoria	combate
+humanoide	bloquear	Cubrirse con el escudo o el arma.	si	*	obligatoria	bloqueo (J)
+humanoide	agarre	Agarrar al rival (grappling).	no	*	obligatoria	parry (K) con las manos o una daga
+humanoide	derribo	Derribar al rival agarrado.	no	*	obligatoria	parry (K) con las manos o una daga
 humanoide	proyeccion	Proyectar al rival por encima.	no	*	obligatoria	combate
 humanoide	ataque_pesado	Golpe pesado: carga y descarga (rompe la guardia).	no	*	obligatoria	combate cuerpo a cuerpo
-humanoide	patada	Patada frontal (aparta, desequilibra).	no	*	obligatoria	combate cuerpo a cuerpo
-humanoide	patada_carrera	Patada a la carrera, con inercia (tumba aun con escudo).	no	*	obligatoria	combate cuerpo a cuerpo
-humanoide	golpe_escudo	Empujón con el escudo (aturde).	no	*	obligatoria	combate cuerpo a cuerpo
-humanoide	carga_escudo	Carga a la carrera tras el escudo.	no	*	obligatoria	combate cuerpo a cuerpo
-humanoide	enganchar_escudo	Enganchar el escudo enemigo con el arma y tirar.	no	*	obligatoria	combate cuerpo a cuerpo
+humanoide	patada	Patada frontal (aparta, desequilibra).	no	*	obligatoria	carga o patada (L)
+humanoide	patada_carrera	Patada a la carrera, con inercia (tumba aun con escudo).	no	*	obligatoria	carga o patada (L) corriendo
+humanoide	golpe_escudo	Empujón con el escudo (aturde).	no	*	obligatoria	bloqueo + ataque (J y H)
+humanoide	carga_escudo	Carga tras el escudo, que empuja.	no	*	obligatoria	carga o patada (L) con escudo
+humanoide	enganchar_escudo	Enganchar el escudo enemigo con el arma y tirar.	no	*	obligatoria	parry (K) con hacha o guja
+humanoide	parry	Parry: el arma se cruza ante el golpe que llega (en la ventana justa).	no	*	obligatoria	parry (K)
+humanoide	desvio	Desvío: el golpe enemigo resbala por el arma y el rival queda abierto.	no	*	obligatoria	parry (K) con otras armas
 humanoide	derribado	Derribado: en el suelo un momento y levantarse.	no	*	obligatoria	combate cuerpo a cuerpo
 humanoide	cambiar_mano	Pasar el arma a la otra mano.	no	*	obligatoria	combate cuerpo a cuerpo
 humanoide	disparar_arco	Tensar y soltar.	no	*	obligatoria	combate a distancia

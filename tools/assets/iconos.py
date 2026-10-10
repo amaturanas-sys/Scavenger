@@ -1227,6 +1227,65 @@ def _(p):
     p.ell(52, 82, 8, c=K)
 
 
+# -- combate de cuatro botones (v0.5.0)
+@icon("parada", "Parry: dos hojas que se cruzan y chispean")
+def _(p):
+    for sx in (1, -1):  # dos hojas en aspa, puntas arriba
+        x0, x1 = 64 - 40 * sx, 64 + 36 * sx
+        p.thick(x0, 104, x1, 14, 9)
+        p.poly([(x1 - 6 * sx, 12), (x1 + 6 * sx, 4), (x1 + 4 * sx, 20)])  # la punta
+        p.thick(x0 - 9 * sx, 96, x0 + 9 * sx, 112, 7)  # la guarda, de traves
+        p.thick(x0, 104, x0 - 13 * sx, 120, 8)  # el puño
+    for a in (0, 90, 180, 270):  # la chispa del cruce
+        x0, y0 = 64 + math.cos(math.radians(a)) * 14, 56 + math.sin(math.radians(a)) * 14
+        x1, y1 = 64 + math.cos(math.radians(a)) * 27, 56 + math.sin(math.radians(a)) * 27
+        p.thick(x0, y0, x1, y1, 6)
+
+
+@icon("patada", "Patada: pierna y bota")
+def _(p):
+    p.thick(30, 14, 44, 64, 20)  # muslo
+    p.thick(44, 64, 92, 76, 18)  # pierna, estirada
+    p.poly([(86, 62), (112, 64), (120, 78), (112, 92), (88, 90)])  # bota
+    for y in (44, 60, 76):  # el golpe
+        p.thick(100, y - 18, 122, y - 26, 4)
+
+
+@icon("carga", "Carga con escudo: escudo y lineas de velocidad")
+def _(p):
+    p.ell(78, 64, 40)
+    p.ring(78, 64, 30, 5, K)
+    p.ell(78, 64, 9, c=K)
+    for y, x0 in ((36, 8), (64, 4), (92, 8)):
+        p.thick(x0, y, x0 + 26, y, 7)
+
+
+@icon("objetivo", "Objetivo: anillo con mira")
+def _(p):
+    p.ring(64, 64, 40, 10)
+    p.ell(64, 64, 10)
+    for a in (0, 90, 180, 270):
+        x0, y0 = 64 + math.cos(math.radians(a)) * 28, 64 + math.sin(math.radians(a)) * 28
+        x1, y1 = 64 + math.cos(math.radians(a)) * 58, 64 + math.sin(math.radians(a)) * 58
+        p.thick(x0, y0, x1, y1, 8)
+
+
+@icon("flecha_encendida", "Encender la flecha: flecha con llama")
+def _(p):
+    p.thick(18, 110, 92, 36, 6)
+    p.poly([(18, 110), (10, 92), (24, 96)])
+    p.poly([(18, 110), (36, 118), (32, 104)])
+    flame(p, 96, 44, 0.9)
+
+
+@icon("agacharse", "Agacharse: figura encogida")
+def _(p):
+    p.ell(70, 34, 15)
+    p.poly([(44, 52), (82, 52), (92, 80), (80, 84), (74, 70), (64, 88), (88, 94), (92, 118), (78, 118), (74, 104),
+            (40, 100), (36, 84)])
+    p.thick(8, 120, 120, 120, 6)  # el suelo
+
+
 # ------------------------------------------------------------------ atlas
 def render(fn):
     pen = Pen()

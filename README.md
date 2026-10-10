@@ -51,51 +51,61 @@ Las partidas se guardan en `saves/` junto al ejecutable (en Android, en el almac
 
 Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloque de la partida lleva el esquema de sus campos ([docs/PARTIDAS.md](docs/PARTIDAS.md)). `--probar-partidas tests/partidas` carga las partidas de referencia y verifica que den el estado esperado (CI). `--convertir-partida a.sav b.sav` reescribe una partida en el formato de hoy.
 
-## Controles (Fase 0)
+## Controles
 
 | Acción | Teclado | Mando |
 |---|---|---|
 | Moverse | WASD / flechas | Stick izquierdo |
 | Correr | Shift | LB |
-| Acechar (sigilo) | C / Ctrl | Click stick derecho |
+| Sigilo | C | Click stick derecho |
+| Agacharse (más bajo y lento) | X | — |
 | Saltar | Espacio | A |
 | Cámara | Q / E, clic derecho + arrastrar, rueda | — |
 | Marcar sitio de interés / de peligro | M / Shift+M | — |
 | Menú de acciones, obras, fabricar y reparar | Tab (flechas + Enter; Q/E cambia de pestaña) | — |
-| Cambiar empuñadura / enfundar | X / H | — |
-| Tomar / lanzar objetos, recoger botín | F (Mayús+F: todo lo cercano) / T | — |
+| Empuñar / enfundar (barra rápida) | 1 a 9 (otra vez: enfunda; Mayús+número: a la otra mano; Alt+número: elegir qué va) | — |
+| Interactuar: hablar, tomar, botín, pozo, horno, rescatar, animales | F (Mayús+F: todo lo cercano, o sacrificar junto al ganado) | — |
+| Lanzar lo que llevas en brazos | T | — |
+| Mochila (dejarla o recogerla) | Mayús+G (o la columna del HUD) | — |
+| Ficha del gran guerrero | U | — |
 | Montar / desmontar | R | — |
 | Inventario (bolsillos, mochila, alforjas, carreta, campamento) | I | — |
-| Esconderse | acechar (C) dentro de la hierba alta | — |
+| Esconderse | agachado (X) tras rocas o matas; con sigilo (C) o agachado, en la hierba alta | — |
 | Beber / tomar hierbas contra los espíritus del agua | N / Mayús+N | — |
 | Vista orbital del mundo | F5 o Ctrl+M (flechas: girar e inclinar) | — |
 | Pausa / controles | Esc, Atrás o Ctrl+P / F1 o Ctrl+H | — |
 | Diagnóstico (OpenGL, teclado, assets) | Ctrl+D | — |
 
-Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `G` ficha del último gran guerrero · `Enter` saltar al día siguiente · `Ctrl+N` adelantar dos minutos.
+Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `U` ficha del último gran guerrero · `Enter` saltar al día siguiente · `Ctrl+N` adelantar dos minutos.
 
 Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañero atrapado para rescatarlo · `J K L U I O` en el minijuego de rescate.
 
 Menús: son **iconos**. Pasa el ratón por encima (o elige con las flechas) y su nombre aparece en la leyenda de la base de la pantalla; un clic elige y otro clic (o Enter) lo usa. En el inventario, `Q`/`E` cambia de contenedor y por el borde de la cuadrícula se pasa a la otra columna. En el equipo, el clic derecho (o `Supr`) quita la pieza.
 
-Combate y salud: `V` o clic izquierdo golpear (tres seguidos: combo; mantener: golpe pesado; con arco u honda: mantener para tensar y soltar para disparar; la cámara alza la mira) · `J` o botón central del ratón patada (corriendo: con inercia) · `Z` cubrirse (con escudo: `Z`+`V` golpe de escudo, corriendo + `Z` carga) · `U` agarre y llave · `O` enganchar el escudo enemigo (hacha, guja, alabarda) · `Mayús+X` cambiar el arma de mano · `B` vendar (a ti o a un compañero cercano) · `L` encender la flecha junto a un fuego · `P` equipo (armadura, amuletos y heridas) · `I` inventario · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
+Combate de cuatro botones (las teclas o las cuatro casillas de abajo a la derecha, que se tocan en tableta):
+- **`H` o clic izquierdo, ataque:** golpe; tres seguidos, combo; mantener, golpe pesado. Con arco, ballesta u honda: mantener para tensar y soltar para disparar; con objetivo, la mira calcula sola la caída; sin él, la cámara alza la mira.
+- **`J` o clic derecho sin arrastrar, bloqueo (mantener):** con escudo cubre el frente (`J`+`H`: golpe de escudo); sin escudo paras con el arma, que aguanta la mitad del golpe y cansa. Con arma a distancia, `J` la baja.
+- **`K`, parry:** justo antes del golpe enemigo (el rival anuncia el golpe; en la ventana justa destella un rombo dorado sobre él y la casilla). Con hacha o guja le arrancas el escudo; sin armas o con daga, llave y derribo (lo desarmas); con las demás, desvías y queda abierto. A destiempo quedas expuesto un momento.
+- **`L`, carga o patada:** con escudo, carga que empuja y tumba al primero que encuentra; sin escudo, patada (corriendo, con inercia).
+- **Objetivo:** `Tab` en combate pasa al enemigo siguiente (`Mayús+Tab`, al anterior); también se elige con un clic o un toque. Un anillo dorado lo marca y su barra se resalta; los golpes van a él y las flechas lo buscan. Se pierde a 25 m o si muere. Fuera de combate, `Tab` abre el menú.
+- **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+L` encender la flecha junto a un fuego (o la casilla de la columna) · `P` equipo (armadura, amuletos y heridas) · `I` inventario · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
 
-Combate montado: a caballo solo se golpea con el arma (`V`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo; a distancia, la carrera dispersa el tiro (el amuleto del caballo lo corrige). Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
+Combate montado: a caballo solo se golpea con el arma (`H`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo; a distancia, la carrera dispersa el tiro (el amuleto del caballo lo corrige). Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
 
-Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro; lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`K`). Reparar: fieltro y cuero con pieles; bronce, hierro y acero con herrero, horno y metal.
+Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro; lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles; bronce, hierro y acero con herrero, horno y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.
 
 Mochilas:
 - **Tamaños:** pequeña (15 kg, 12 huecos), mediana (25 kg, 18) o grande (40 kg, 28). La grande frena aun vacía.
-- **`G`:** deja la mochila (en la carreta o en el lomo de una mula, burro, camello, caballo o buey ensillado si están al lado; si no, en el suelo) y la recoge. Sin ella vas más ligero para pelear.
+- **`Mayús+G` (o la casilla de la columna):** deja la mochila (en la carreta o en el lomo de una mula, burro, camello, caballo o buey ensillado si están al lado; si no, en el suelo) y la recoge. Sin ella vas más ligero para pelear.
 - **`U` sobre una mochila en el inventario:** cambias de mochila (lo que llevas tiene que caber).
 - **La escolta lleva mochila:** las de quien esté a tu lado aparecen como contenedores en el inventario. Al disolver un campamento, la gente carga lo que quepa.
 
 Animales de la tribu:
 - **Comen.** Los herbívoros pastan solos si hay pasto. Con nieve hay que darles forraje: `F` corta hierba alta y los pastores lo juntan cada día.
 - **Los carnívoros** comen carne o cazan presas cercanas cuando tienen hambre.
-- **`K`** da de comer al animal hambriento que tengas al lado. Los pastores alimentan, con el acopio, a los que están en su campamento.
+- **`F`** da de comer al animal hambriento que tengas al lado. Los pastores alimentan, con el acopio, a los que están en su campamento.
 - **El hambre:** sobre la cabeza aparece un cuenco. Con mucha hambre adelgazan y al final se van y vuelven a ser salvajes.
 
 Campamentos:
@@ -159,7 +169,7 @@ El agua:
 - **El exceso de alcohol** emborracha: torpe (menos daño y peor puntería), fatigado y te tambaleas al andar. Se pasa con el tiempo.
 - **Fabricar:** agua con vino (2 de agua y 1 de vino), airag (2 de leche) y cerveza de pan. El vino y la cerveza también salen del botín de jinetes y bandidos.
 - **La tribu bebe cada día** del acopio. Si falta, del río cercano: hervida si hay leña (una cada cuatro); si no, cruda, y a algunos les caen los espíritus (fiebre: baja la vida y el ánimo). Sin agua cerca, pasan sed.
-- **Los animales de la tribu beben** solos junto al agua. Con sed, una gota sobre la cabeza: llévalos al agua o dales de beber (`K` con agua); los pastores les dan del acopio. Con mucha sed se van.
+- **Los animales de la tribu beben** solos junto al agua. Con sed, una gota sobre la cabeza: llévalos al agua o dales de beber (`F` con agua); los pastores les dan del acopio. Con mucha sed se van.
 
 Tatuajes, joyas y nivel:
 - **Nivel:** subes peleando, cazando, fabricando, construyendo y domando.
@@ -181,7 +191,7 @@ Tatuajes, joyas y nivel:
 
 Pruebas: `--hablar druida|orfebre`, `--joyas`, `--tatuajes`.
 
-Fauna: lazo (menú) para domar monturas o atar un depredador debilitado · `K` dar de comer al atado, despiezar un cadáver u ordeñar · `Mayús+K` sacrificar ganado · caminar cerca del ganado lo pastorea · golpear hacia el agua (o una flecha) pesca · `K` en una colmena con la antorcha encendida: miel. Prueba: `--lago` arranca en la orilla de un lago.
+Fauna: lazo (menú) para domar monturas o atar un depredador debilitado · `F` dar de comer al atado, despiezar un cadáver u ordeñar · `Mayús+F` sacrificar ganado · caminar cerca del ganado lo pastorea · golpear hacia el agua (o una flecha) pesca · `F` en una colmena con la antorcha encendida: miel. Prueba: `--lago` arranca en la orilla de un lago.
 
 Al reclutar o tomar prisioneros, a veces aparece un gran guerrero por azar.
 
@@ -191,7 +201,7 @@ El port de Android ofrece la misma experiencia que en PC y **requiere teclado f�
 
 Los assets van en la raíz del AssetManager del APK (`aapt2 -A assets`): en Android `platform_asset_path()` quita el prefijo `assets/` (si no, no carga ninguna imagen ni modelo) y las partidas, minifotos y ajustes se leen y escriben con `fopen` en el almacenamiento interno.
 
-Con teclados de tablet que no traen `Esc` ni teclas F, cada atajo tiene su alternativa con `Ctrl` (ver Controles), y abajo a la derecha hay dos botones táctiles: pausa y controles. Si la tablet no informa su teclado, basta pulsar una tecla o tocar el aviso para jugar igual. `Ctrl+D` abre el diagnóstico: versión de OpenGL, teclado detectado, última tecla recibida y assets que no cargaron (también en `adb logcat -s raylib`). Pruebas: `--tactil` muestra los botones en escritorio y `--diagnostico` abre el panel.
+Con teclados de tablet que no traen `Esc` ni teclas F, cada atajo tiene su alternativa con `Ctrl` (ver Controles); arriba, junto al minimapa, hay dos botones táctiles (pausa y controles), y abajo a la derecha, los cuatro botones de combate. Si la tablet no informa su teclado, basta pulsar una tecla o tocar el aviso para jugar igual. `Ctrl+D` abre el diagnóstico: versión de OpenGL, teclado detectado, última tecla recibida y assets que no cargaron (también en `adb logcat -s raylib`). Pruebas: `--tactil` muestra los botones en escritorio y `--diagnostico` abre el panel.
 
 ```bash
 # Requiere Android SDK + NDK (ANDROID_SDK_ROOT, ANDROID_NDK_ROOT), CMake, Ninja y Java.
@@ -223,4 +233,6 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --semilla 42 --mapa-mundo mapa.png                  # mapa general del mundo 42
 ./build/estepa --orbital 30 0.5                                    # vista orbital (grados, inclinación)
 ./build/estepa --pos 60 40 --enemigos bandidos --heridas            # combate y heridas
+./build/estepa --enemigos bandidos --objetivo --tactil             # objetivo elegido (anillo) y botones táctiles
+./build/estepa --agachado --camara 0.2                             # agachado (X), de perfil
 ```

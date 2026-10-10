@@ -81,7 +81,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Manos: empuñaduras (una mano, una en cada mano, dos manos, arma y escudo), enfundar y desenfundar, tomar y lanzar. Con tests.
 - [x] Acciones individuales para el jugador y los NPCs: fogata, tienda, trinchera, trepa, lazo, antorcha, montura.
 - [x] Construcciones en grupo con cuadrilla mínima, oficios y habilidad (función, dones, moral). Con tests.
-- [x] En juego: menú de acciones (Tab), atajos (X, H, F, T), barra de progreso, obras que avanzan con la tribu.
+- [x] En juego: menú de acciones (Tab), atajos (1 a 9, F, T), barra de progreso, obras que avanzan con la tribu.
 - [x] NPCs que caminan a las obras e instalan fogatas y tiendas por su cuenta.
 - [x] Acopio de materiales y comida, recolección diaria por función, efectos de cada construcción y forja de bronce y acero.
 - [x] Animales: deambular y huir, doma con el lazo, ensillar y montar.
@@ -89,6 +89,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Inventario por contenedores (bolsillos, mochila, alforjas, carreta, acopio y armería) con peso y estado; menú de equipo con armadura por piezas y amuletos.
 - [x] Menú de entrada (nueva partida, cargar con minifoto y fecha, instructivo), pausa con guardar y cargar, HUD limpio (F1 controles).
 - [x] Partidas por bloques con el esquema de sus campos (v0.4.4): las versiones nuevas cargan las partidas de las anteriores aunque cambien los structs; partidas de referencia en CI ([PARTIDAS.md](PARTIDAS.md)).
+- [x] Combate de cuatro botones (v0.5.0): H ataque, J bloqueo (escudo o arma), K parry en la ventana justa (enganche, llave o desvío), L carga o patada; los rivales anuncian el golpe; selector de objetivo (Tab o un toque) con anillo y puntería sola a distancia; agacharse (X) y esconderse tras rocas, matas y hierba alta; mapa de teclas nuevo (F interactúa con todo) y casillas táctiles de combate.
 - [x] Cuerpo a cuerpo para todos: combos con armas cortas y largas, golpe pesado, patada y patada con inercia, escudo (bloqueo, golpe, carga), agarre y llave, gancho al escudo; enfundar, empuñar y cambiar de mano.
 - [x] Clima con azar: incendios forestales en verano, rayos que queman árboles y estructuras, derrumbes por lluvia torrencial sin mantenimiento; la lluvia apaga todo fuego. Flechas encendidas.
 - [x] Animales acuáticos y anfibios (peces, cocodrilos, tortugas), venenosos (víbora, escorpión, araña) con veneno, e insectos en enjambre (abejas con miel, avispas, mosquitos, moscas).
@@ -96,7 +97,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Interfaz en español e inglés (botón de idioma; `assets/i18n/en.tsv`).
 - [x] Nivel y experiencia; árbol de tatuajes permanentes (5 motivos × 3 grados con ramas excluyentes, 8 zonas del cuerpo) hechos por el druida; joyas (anillos, brazaletes, collar, aretes, hebilla) del orfebre con metal y piedra, encantadas por el druida (pasivo o activo); piedras de rocas, corales, excavaciones y ríos.
 - [x] Campamentos: fundar con una estructura básica y un guardián; acopio y gente por campamento; diálogo del guardián (obras, escolta, reclutar, capacitar en 7 oficios, estado, disolver con fuego y carga en carretas).
-- [x] Mochilas de tres tamaños (frenan las grandes), dejarlas y recogerlas (G), cargarlas en carretas y animales; mochilas de la escolta. Los animales de la tribu comen: pastan, cazan o se les da forraje o carne; los pastores los alimentan; con hambre se van.
+- [x] Mochilas de tres tamaños (frenan las grandes), dejarlas y recogerlas (Mayús+G), cargarlas en carretas y animales; mochilas de la escolta. Los animales de la tribu comen: pastan, cazan o se les da forraje o carne; los pastores los alimentan; con hambre se van.
 - [x] Órdenes a la escolta (Mayús+Y): despachar seguidores a campamentos o sitios marcados que alguno conozca, con riesgo según conocimiento, distancia, grupo y noche; mensajeros que vuelven con refuerzos.
 - [x] Ropa y clima: prendas por capas (abrigo, sombra, lluvia, peso), calor y golpe de calor, desierto que quema de día y hiela de noche, pieles de depredador que escarmientan, 20 recetas a mano, la tribu se cambia según el tiempo.
 - [x] El agua: sed (más con calor), espíritus malditos en el agua cruda (incubación y fiebre), hervir y el alcohol purifican, borrachera (torpe y fatigado), la tribu bebe cada día, los animales tienen sed.

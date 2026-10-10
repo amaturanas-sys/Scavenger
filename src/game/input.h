@@ -6,6 +6,8 @@
 
 #include <stdbool.h>
 
+#include "sim/keymap.h"
+
 typedef enum {
     IN_PAUSE,    // Esc · Atras · Ctrl+P · boton tactil de pausa
     IN_BACK,     // cerrar un menu: Esc · Atras · Retroceso
@@ -31,5 +33,15 @@ int input_last_key(void);
 void input_update(void); // una vez por cuadro, antes de leer acciones
 // Nombre de las teclas de una accion ("Esc / Atrás / Ctrl+P"), UTF-8.
 const char *input_keys_text(InputAction a);
+
+// Las acciones del juego (src/sim/keymap.h): pulsada en este cuadro, mantenida, soltada.
+unsigned input_mods(void); // KM_SHIFT | KM_CTRL | KM_ALT apretados
+bool input_action_pressed(KeyAction a);
+bool input_action_down(KeyAction a);
+bool input_action_released(KeyAction a);
+// El boton derecho: mantenido sin arrastrar es cubrirse; arrastrado, gira la camara (dx, dy:
+// lo que se movio el raton en este cuadro).
+bool input_right_hold(void);
+bool input_right_drag(float *dx, float *dy);
 
 #endif

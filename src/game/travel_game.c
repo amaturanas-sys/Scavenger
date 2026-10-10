@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "game/combat_game.h"
+#include "game/input.h"
 #include "raylib.h"
 #include "sim/lang.h"
 #include "ui/icons.h"
@@ -413,7 +414,7 @@ void trv_update(GameActions *ga, Troop *troop, const MemoryMap *mem, const Playe
     if ((learn_t += dt) > 2.0f) learn_t = 0.0f, learn_sites(ga, troop, mem);
     tick_leaving(ga, troop, t, dt);
     tick_journeys(ga, troop, mem, p, t, night, dt, log, len);
-    if (input_ok && !ga->dlg.open && IsKeyPressed(KEY_Y) && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) {
+    if (input_ok && !ga->dlg.open && input_action_pressed(KA_DISPATCH)) {
         ga->talk_mode = TV_ROOT;
         ga->talk_member = -1;
         ga->dlg.cursor = 0;

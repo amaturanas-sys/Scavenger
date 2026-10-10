@@ -13,7 +13,7 @@ static V3 limb(V3 from, float len, float angle) { return add(from, v3(0.0f, -cos
 
 void body_pose(BodyPose *out, const BodyPoseParams *p) {
     BodySeg *s = out->seg;
-    float sw = p->walk * sinf(p->walk_phase);
+    float sw = p->walk * sinf(p->walk_phase) * (1.0f - 0.6f * p->crouch); // agachado, pasos cortos
     // Tronco.
     s[PART_HEAD] = (BodySeg){ v3(0, 1.61f, 0.01f), v3(0, 1.67f, 0.01f), 0.10f };
     s[PART_NECK] = (BodySeg){ v3(0, 1.45f, 0), v3(0, 1.54f, 0), 0.06f };
@@ -38,6 +38,11 @@ void body_pose(BodyPose *out, const BodyPoseParams *p) {
         arm_l = arm_l + (1.45f - arm_l) * p->grab, arm_r = arm_r + (1.45f - arm_r) * p->grab;
         fore_l = fore_r = 0.2f;
     }
+    if (p->parry > 0.0f) { // parry: el brazo del arma al frente y el antebrazo arriba, cruzado ante el golpe
+        arm_r = arm_r + (1.15f - arm_r) * p->parry;
+        fore_r = fore_r + (1.3f - fore_r) * p->parry;
+        arm_l = arm_l + (0.6f - arm_l) * p->parry;
+    }
     V3 sh_l = v3(0.22f, 1.40f, 0), sh_r = v3(-0.22f, 1.40f, 0);
     V3 el_l = limb(sh_l, 0.30f, arm_l), el_r = limb(sh_r, 0.30f, arm_r);
     s[PART_UPPER_ARM_L] = (BodySeg){ sh_l, el_l, 0.055f };
@@ -49,7 +54,22 @@ void body_pose(BodyPose *out, const BodyPoseParams *p) {
     if (p->kick > 0.0f) leg_r = leg_r + (1.5f - leg_r) * p->kick, leg_l *= 1.0f - p->kick; // patada al frente
     float knee_l = -fmaxf(0.0f, -leg_l) * 1.2f, knee_r = -fmaxf(0.0f, -leg_r) * 1.2f;
     if (p->kick > 0.0f) knee_r = -0.2f * p->kick; // la pierna estirada al golpear
-    V3 hip_l = v3(0.10f, 0.88f, 0), hip_r = v3(-0.10f, 0.88f, 0);
+    // Agachado: los muslos al frente y las rodillas dobladas; las caderas bajan lo justo para que
+    // los pies sigan en el suelo, y el tronco se inclina.
+    float drop = 0.0f, lean = 0.0f;
+    if (p->crouch > 0.0f) {
+        float thigh = 1.25f * p->crouch, bend = 2.3f * p->crouch;
+        leg_l += thigh, leg_r += thigh, knee_l -= bend, knee_r -= bend;
+        drop = 0.86f - 0.43f * (cosf(thigh) + cosf(thigh - bend));
+        lean = 0.12f * p->crouch;
+        for (int i = PART_HEAD; i <= PART_PELVIS; i++) {
+            float k = i == PART_PELVIS ? 0.0f : i == PART_ABDOMEN ? 0.4f : 1.0f; // la cabeza y el pecho, mas adelante
+            s[i].a = add(s[i].a, v3(0.0f, -drop, lean * k)), s[i].b = add(s[i].b, v3(0.0f, -drop, lean * k));
+        }
+        for (int i = PART_UPPER_ARM_L; i <= PART_FOREARM_R; i++)
+            s[i].a = add(s[i].a, v3(0.0f, -drop, lean)), s[i].b = add(s[i].b, v3(0.0f, -drop, lean));
+    }
+    V3 hip_l = v3(0.10f, 0.88f - drop, 0), hip_r = v3(-0.10f, 0.88f - drop, 0);
     V3 kn_l = limb(hip_l, 0.43f, leg_l), kn_r = limb(hip_r, 0.43f, leg_r);
     s[PART_THIGH_L] = (BodySeg){ hip_l, kn_l, 0.075f };
     s[PART_THIGH_R] = (BodySeg){ hip_r, kn_r, 0.075f };

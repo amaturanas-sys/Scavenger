@@ -24,6 +24,7 @@ static const SfField SF_F_Player[] = {
     SF_ONE(Player, vy, "float", SF_FLOAT, NULL),
     SF_ONE(Player, grounded, "bool", SF_BOOL, NULL),
     SF_ONE(Player, sneaking, "bool", SF_BOOL, NULL),
+    SF_ONE(Player, crouching, "bool", SF_BOOL, NULL),
     SF_ONE(Player, moving, "bool", SF_BOOL, NULL),
     SF_ONE(Player, stance, "Stance", SF_INT, NULL),
     SF_ONE(Player, noise, "float", SF_FLOAT, NULL),
@@ -572,6 +573,8 @@ static const SfField SF_F_Enemy[] = {
     SF_ONE(Enemy, mounted, "bool", SF_BOOL, NULL),
     SF_ONE(Enemy, loot_dropped, "bool", SF_BOOL, NULL),
     SF_ONE(Enemy, awed, "bool", SF_BOOL, NULL),
+    SF_ONE(Enemy, windup, "float", SF_FLOAT, NULL),
+    SF_ONE(Enemy, windup_move, "int", SF_INT, NULL),
 };
 static const SfType SF_T_Enemy = SF_TYPE(Enemy, SF_F_Enemy);
 
@@ -643,6 +646,9 @@ static const SfField SF_F_Combat[] = {
     SF_ARR(Combat, loose_horse, "Vector3", SF_BYTES, NULL),
     SF_ARR(Combat, loose_yaw, "float", SF_FLOAT, NULL),
     SF_ONE(Combat, loose_n, "int", SF_INT, NULL),
+    SF_ONE(Combat, target_lock, "int", SF_INT, NULL),
+    SF_ONE(Combat, parry_cd, "float", SF_FLOAT, NULL),
+    SF_ONE(Combat, exposed, "float", SF_FLOAT, NULL),
 };
 static const SfType SF_T_Combat = SF_TYPE(Combat, SF_F_Combat);
 

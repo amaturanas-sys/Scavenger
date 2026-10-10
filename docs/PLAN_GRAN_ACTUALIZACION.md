@@ -1,6 +1,6 @@
 # Plan: la gran actualización (v0.5 a v0.9)
 
-> **Estado:** fase 0 hecha (v0.4.4); las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
+> **Estado:** fases 0 (v0.4.4) y 1 (v0.5.0) hechas; las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
 
 Pedido (5 y 6 de octubre de 2026):
 - combate más ágil, con selector de objetivo y cuatro botones (H J K L);
@@ -30,7 +30,20 @@ Casi todas las fases agregan estado a estructuras que se guardan (`Combat`, `Gam
 
 ---
 
-## Fase 1 — Combate de cuatro botones y selector de objetivo (v0.5.0)
+## Fase 1 — Combate de cuatro botones y selector de objetivo (v0.5.0) — hecha
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **Mapa de teclas en un solo lugar:** `src/sim/keymap.c` (C puro, con tests). El juego pregunta por acciones (`input_action_pressed`), no por teclas. Ctrl+letra queda para los atajos del sistema (Ctrl+H, Ctrl+P, Ctrl+M).
+- **El golpe enemigo se anuncia:** el rival se detiene (el jinete no, para no perder la inercia del galope) y levanta el arma 0,4 s antes de pegar (más en el golpe pesado, menos con armas cortas). El parry gana en los últimos 0,25 s: un rombo dorado destella sobre el rival y en la casilla K. A destiempo, 0,6 s expuesto; entre parry y parry, 0,8 s.
+- **Llave del parry:** sin armas o con daga es una prueba de fuerza; si el rival gana, el jugador queda desequilibrado.
+- **Objetivo:** `Tab` en combate (algún enemigo vivo a menos de 25 m); fuera de combate, `Tab` sigue abriendo el menú. Un clic o un toque sobre un enemigo lo elige; un clic sobre el elegido es un golpe. Se guarda como índice + 1 (0: ninguno), así que no hizo falta migrar partidas.
+- **Barra rápida:** Mayús+número pasa el arma a la otra mano; Alt+número (o el clic derecho, o una casilla vacía) elige qué va.
+- **G sola** sigue siendo la mochila hasta la fase 2 (agarrar); Mayús+G es la tecla de la mochila. La ficha del gran guerrero pasó a **U** (en el inventario, U sigue cambiando de mochila).
+- **Mayús+F** junto al ganado, quieto, lo sacrifica; si no, toma todo lo cercano.
+- **HUD:** las cuatro casillas abajo a la derecha (cambian con el arma: arco, escudo); las habilidades, una fila más arriba y se pueden tocar. La columna suma Mochila y, con arco o ballesta en la mano, Encender la flecha. En tableta, los botones de pausa y controles subieron junto al minimapa.
+- **Agacharse:** 2,2 m/s (1,2 con sigilo); visibilidad ×0,6 (×0,3 con sigilo; el sigilo solo, ×0,45 como antes) y ×0,4 más a cubierto (rocas y matas a 1,6 m, hierba alta a 1,3 m). Correr, saltar o montar lo cancelan.
+- **Pruebas:** `--objetivo` (como pulsar Tab con enemigos cerca) y `--agachado`.
+
 
 **Lo que hay:**
 - **Golpes en `src/sim/melee.h`:** `MOVE_LIGHT`, `HEAVY`, `KICK`, `RUN_KICK`, `SHIELD_BASH`, `SHIELD_CHARGE`, `GRAPPLE`, `HOOK`.

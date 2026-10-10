@@ -54,17 +54,17 @@ const char *anim_humanoid(const HumanoidState *s) {
     if (s->swapping) return "cambiar_mano";
     if (s->ranged) return s->ranged == 2 ? "disparar_ballesta" : s->ranged == 3 ? "disparar_mosquete" : "disparar_arco";
     if (s->blocking) return "bloquear";
-    if (s->hidden) return "acechar_idle";
+    if (s->hidden && !s->moving) return "acechar_idle";
     if (s->moving) {
         if (s->carrying) return "llevar";
-        if (s->sneaking) return "acechar";
+        if (s->crouching) return "acechar"; // agachado (con sigilo, el mismo clip mas lento)
         if (s->limping) return "cojear";
-        return s->running ? "correr" : "caminar";
+        return s->running ? "correr" : "caminar"; // en sigilo de pie: caminar, mas despacio
     }
     if (s->forging) return "forjar";
     if (s->building >= 0) return "construir";
     if (s->carrying) return "llevar";
-    if (s->sneaking) return "acechar_idle";
+    if (s->crouching) return "acechar_idle";
     return anim_grip(s->grip, s->sheathed);
 }
 

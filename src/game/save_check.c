@@ -40,6 +40,7 @@ void save_summary(const GameState *g, FILE *o) {
     const Player *p = g->player;
     fprintf(o, "jugador: (%.3f, %.3f, %.3f) rumbo %.4f vy %.3f postura %d sigilo %d suelo %d escala %.3f alzado %.3f\n", p->pos.x, p->pos.y,
             p->pos.z, p->yaw, p->vy, (int)p->stance, p->sneaking, p->grounded, p->speed_scale, p->draw_lift);
+    fprintf(o, "  agachado %d\n", p->crouching); // v0.5.0
     fprintf(o, "reino: %s relacion %.3f\n", g->overlord->name, g->overlord->relation);
 
     const Troop *t = g->troop;
@@ -128,6 +129,7 @@ void save_summary(const GameState *g, FILE *o) {
     sum_health(o, &cb->player);
     sum_armor(o, &cb->armor);
     fputc('\n', o);
+    fprintf(o, "  elegido %d parry %.3f expuesto %.3f\n", cb->target_lock, cb->parry_cd, cb->exposed); // v0.5.0
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
         const Enemy *e = &cb->enemies[i];
         if (!e->used) continue;
@@ -135,6 +137,7 @@ void save_summary(const GameState *g, FILE *o) {
         sum_health(o, &e->h);
         sum_armor(o, &e->armor);
         fputc('\n', o);
+        if (e->windup > 0.0f) fprintf(o, "    anuncia el golpe %d: %.3f s\n", e->windup_move, e->windup); // v0.5.0
     }
     int shots = 0;
     for (int i = 0; i < CB_MAX_SHOTS; i++) shots += cb->shots[i].p.alive || cb->shots[i].stuck;

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "game/hud_game.h"
+#include "game/input.h"
 #include "raymath.h"
 #include "sim/clock.h"
 #include "ui/theme.h"
@@ -345,7 +346,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
     bool roll = hz->ice_roll >= 0.5f; // tiradas de riesgo dos veces por segundo
     if (roll) hz->ice_roll = 0.0f;
 
-    if (IsKeyPressed(KEY_Y) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT) && hz->trap == TRAP_NONE) toggle_escort(hz, ga, troop, p, 60.0f, log, log_len);
+    if (input_action_pressed(KA_ESCORT) && hz->trap == TRAP_NONE) toggle_escort(hz, ga, troop, p, 60.0f, log, log_len);
     update_escort(hz, ga, troop, t, p, day, dt, roll, log, log_len);
 
     // Minijuego en curso.
@@ -375,7 +376,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
             hz->victim = 0;
             if (hz->qte_rescue) hz->qte.state = QTE_IDLE, hz->qte_rescue = false;
         } else if (hz->trap == TRAP_NONE && hz->qte.state != QTE_RUNNING && dist2(vn->pos, p->pos) < RESCUE_RANGE &&
-                   IsKeyPressed(KEY_F)) {
+                   input_action_pressed(KA_INTERACT)) {
             start_rescue(hz, troop, log, log_len);
         }
     }

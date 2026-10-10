@@ -68,15 +68,17 @@ Reglas:
 
 ## Las partidas de referencia
 
-`tests/partidas/` guarda partidas de versiones anteriores, cada una con el resumen de su estado (`NOMBRE.txt`). Hay dos de cada tipo:
+`tests/partidas/` guarda partidas de versiones anteriores, cada una con el resumen de su estado (`NOMBRE.txt`):
 - **`v0.4.3-*.sav`:** el formato plano de antes. Se crearon con la v0.4.3 y su resumen se escribió con el lector de entonces.
 - **`v0.4.4-*.sav`:** las mismas partidas en el formato por bloques. Tienen el mismo resumen.
+- **`v0.5.0-*.sav`:** las mismas, con los structs de la v0.5.0 (agacharse, objetivo, parry y golpe anunciado), y una nueva, `parry`.
 
 | Partida | Qué tiene |
 |---|---|
 | `combate` | El jugador abatido con heridas, bandidos alrededor y bolsas de botín. |
 | `fundar` | Un campamento por fundar, con su diálogo abierto, y la escolta. |
 | `descanso` | Una marca en el mapa, órdenes a la escolta, un lugar de descanso, restos y una barra rápida personalizada. |
+| `parry` (v0.5.0) | El jugador agachado, con un bandido elegido de objetivo y otro anunciando el golpe, dentro de la ventana del parry. |
 
 `estepa --probar-partidas tests/partidas` (CI, en el job de Linux) hace esto con cada una:
 - la carga;
@@ -95,6 +97,8 @@ En la v0.4.4 se probó una versión futura simulada:
 - 24 enemigos en vez de 16.
 
 Las seis partidas de referencia cargaron con el mismo resumen.
+
+La v0.5.0 agregó campos de verdad (`Player.crouching`; `Enemy.windup` y `windup_move`; `Combat.target_lock`, `parry_cd` y `exposed`) sin migraciones: las partidas viejas cargan con esos campos en cero. El objetivo se guarda como índice + 1, así el cero de las partidas viejas significa «ninguno». El resumen sumó dos líneas (`agachado`, `elegido ... parry ... expuesto`) y la del golpe anunciado de cada enemigo, si lo hay.
 
 ## El esquema congelado de las partidas planas
 

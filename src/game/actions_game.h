@@ -206,6 +206,11 @@ void ga_quick_request_grip(int k);
 void ga_quick_request_wield(const char *id); // un arma o un escudo, a su mano
 void ga_quick_request_action(ActionId a);
 void ga_quick_request_menu(void);
+void ga_quick_request_swap(void); // pasar el arma empuñada a la otra mano
+// Tab en combate (src/game/combat_game.c): hay enemigos a tiro de objetivo (Tab elige objetivo en
+// vez de abrir el menu); el pedido de Tab (1 el siguiente, -1 el anterior, 0 nada).
+void ga_set_combat_near(bool near);
+int ga_take_target_request(void);
 
 int ga_lights(const GameActions *ga, const Props *props, const Player *p, Vector3 *pos, float *radius, int max);
 

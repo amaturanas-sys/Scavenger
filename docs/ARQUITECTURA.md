@@ -31,7 +31,9 @@ src/
     animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado, anfibios
     swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
     fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
-    melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, cambiar de mano
+    melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano
+    keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H J K L, F, X...)
+    targeting.*  el selector de objetivo: el siguiente alrededor del jugador, se pierde a 25 m
     storage.*    contenedores: bolsillos, mochila, alforjas, carreta, acopio; peso y estado de las piezas
     loadout.*    amuletos (y tatuajes) con sus efectos
     anim_index.* que clip de animacion corresponde a cada estado

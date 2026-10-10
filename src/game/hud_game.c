@@ -15,28 +15,40 @@
 
 #define VITAL_BAR 80   // px de cada barra de la placa
 #define QUICK_TILE 26  // px de cada casilla de la barra rapida
-#define COLUMN_TILE 24 // px de cada casilla de la columna
+#define COLUMN_TILE 22 // px de cada casilla de la columna
+#define COLUMN_GAP 1
 #define TILE_GAP 3
 
-static bool g_over, g_over_next; // el puntero sobre el HUD (el del cuadro anterior)
+// Lo que ocupo el HUD en el cuadro anterior: un clic (o un toque, que llega sin pasar antes por
+// encima) que cae ahi es del HUD y no un golpe.
+#define HUD_RECTS 48
+static Rectangle g_rects[2][HUD_RECTS];
+static int g_nrects[2], g_cur;
 
 void hud_frame_begin(void) {
-    g_over = g_over_next;
-    g_over_next = false;
+    g_cur ^= 1;
+    g_nrects[g_cur] = 0;
 }
 
-bool hud_pointer_over(void) { return g_over; }
+bool hud_pointer_over(void) {
+    const int prev = g_cur ^ 1;
+    for (int i = 0; i < g_nrects[prev]; i++)
+        if (ui_hover(g_rects[prev][i])) return true;
+    return false;
+}
 
 static bool hover(Rectangle r) {
-    bool h = ui_hover(r);
-    g_over_next |= h;
-    return h;
+    if (g_nrects[g_cur] < HUD_RECTS) g_rects[g_cur][g_nrects[g_cur]++] = r;
+    return ui_hover(r);
 }
+
+bool hud_hover(Rectangle r) { return hover(r); }
 
 // ------------------------------------------------------------------ placas
 // Una placa de cuero oscuro con borde de oro y granulado en las esquinas, como las placas de
 // cinturon de los kurganes.
 static void plate(int x, int y, int w, int h) {
+    hover((Rectangle){ (float)x, (float)y, (float)w, (float)h }); // entre casillas tampoco es un golpe
     DrawRectangle(x, y, w, h, (Color){ 20, 14, 10, 170 });
     DrawRectangleLines(x, y, w, h, Fade(UI_GOLD_DARK, 0.9f));
     ui_granule(x + 2, y + 2, UI_METAL_GOLD);
@@ -44,6 +56,8 @@ static void plate(int x, int y, int w, int h) {
     ui_granule(x + 2, y + h - 3, UI_METAL_GOLD);
     ui_granule(x + w - 3, y + h - 3, UI_METAL_GOLD);
 }
+
+void hud_plate(int x, int y, int w, int h) { plate(x, y, w, h); }
 
 void hud_vitals_frame(int right_x, int y, int rows) {
     const int w = VITAL_BAR + 40, h = rows * 22 + 6;
@@ -152,6 +166,11 @@ static QbOption describe(const GameActions *ga, const Props *props, const Player
     default: o.icon = ICON_FALTA, o.title = T("Casilla vacía");
     }
     return o;
+}
+
+// La casilla guarda algo que se empuña (una empuñadura o un arma suelta).
+static bool wields(const GameActions *ga, const QbSlot *s) {
+    return s->kind == QB_GRIP || (s->kind == QB_ITEM && item_use(ga, s->id) == USE_WIELD);
 }
 
 static bool slot_active(const GameActions *ga, const QbSlot *s) {
@@ -267,11 +286,15 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
         return;
     }
     if (!input_ok || input_debug() || input_ctrl() || ga->menu_open) return;
-    bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+    unsigned mods = input_mods();
     for (int k = 0; k < HUD_QUICK_SLOTS; k++) {
         if (!IsKeyPressed(KEY_ONE + k)) continue;
-        if (shift || g_slots[k].kind == QB_EMPTY) g_picking = k, g_pick_cursor = 0; // vacia (o Mayús): elegir
-        else use_slot(ga, props, p, k, log, len);
+        const QbSlot *s = &g_slots[k];
+        if ((mods & KM_ALT) || s->kind == QB_EMPTY) g_picking = k, g_pick_cursor = 0; // vacia (o Alt): elegir
+        else if ((mods & KM_SHIFT) && wields(ga, s)) { // Mayús: el arma empuñada, a la otra mano
+            if (slot_active(ga, s)) ga_quick_request_swap();
+            else snprintf(log, len, T("Empuña primero el arma de la casilla %d (tecla %d) para pasarla de mano."), k + 1, k + 1);
+        } else use_slot(ga, props, p, k, log, len);
     }
 }
 
@@ -304,10 +327,12 @@ void hud_quickbar(GameActions *ga, const Props *props, const Player *p, int x, i
         DrawRectangle((int)r.x + 1, (int)r.y + 1, 7, 9, (Color){ 16, 12, 9, 200 });
         DrawText(TextFormat("%d", k + 1), (int)r.x + 2, (int)r.y + 1, 10, active ? UI_TURQ_LIGHT : UI_GOLD_LIGHT);
         if (g_picking == k) DrawRectangleLines((int)r.x - 1, (int)r.y - 1, (int)r.width + 2, (int)r.height + 2, UI_TURQUOISE);
-        if (h)
-            ui_legend(empty ? T("Casilla vacía") : o.title,
-                      empty ? TextFormat(T("Tecla %d: elegir un arma, un objeto o una habilidad."), k + 1)
-                            : TextFormat(T("Tecla %d: usar. Mayús+%d o clic derecho: cambiar."), k + 1, k + 1));
+        if (h) {
+            const char *how = empty          ? TextFormat(T("Tecla %d: elegir un arma, un objeto o una habilidad."), k + 1)
+                              : wields(ga, s) ? TextFormat(T("Tecla %d: empuñar o enfundar. Mayús+%d: a la otra mano. Alt+%d o clic derecho: cambiar."), k + 1, k + 1, k + 1)
+                                              : TextFormat(T("Tecla %d: usar. Alt+%d o clic derecho: cambiar."), k + 1, k + 1);
+            ui_legend(empty ? T("Casilla vacía") : o.title, how);
+        }
         bool right = IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && ui_hover(r);
         if (ui_click(r) || right) {
             if (empty || right) g_picking = k, g_pick_cursor = 0;
@@ -364,7 +389,7 @@ void hud_load(const QbSlot *s, int n) {
 }
 
 // ------------------------------------------------------------------ columna de acciones
-typedef enum { COL_MENU, COL_DRINK, COL_BANDAGE, COL_ACTION } ColumnKind;
+typedef enum { COL_MENU, COL_DRINK, COL_BANDAGE, COL_ACTION, COL_PACK, COL_ARROW } ColumnKind;
 typedef struct {
     IconId icon;
     ColumnKind kind;
@@ -381,26 +406,44 @@ static const ColumnEntry COLUMN[] = {
     { ICON_LAZO, COL_ACTION, ACTION_THROW_LASSO, "" },
     { ICON_TREPA, COL_ACTION, ACTION_THROW_GRAPPLE, "" },
     { ICON_HERVIR, COL_ACTION, ACTION_BOIL, "" },
+    { ICON_MOCHILA, COL_PACK, 0, "" },           // Mayus+G (no cabe en la casilla: va en la leyenda)
+    { ICON_FLECHA_ENCENDIDA, COL_ARROW, 0, "" }, // Mayus+L; solo con arco o ballesta en la mano
 };
 #define COLUMN_COUNT ((int)(sizeof(COLUMN) / sizeof(COLUMN[0])))
 
+// Con un arma que dispara flechas o virotes en la mano (se pueden encender).
+static bool arrows_in_hand(const GameActions *ga) {
+    const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);
+    return rd && (rd->projectile == PROJ_ARROW || rd->projectile == PROJ_BOLT);
+}
+
 void hud_action_column(const GameActions *ga, int x, int y) {
-    plate(x - 3, y - 3, COLUMN_TILE + 6, COLUMN_COUNT * (COLUMN_TILE + TILE_GAP) + 3);
-    for (int i = 0; i < COLUMN_COUNT; i++) {
-        const ColumnEntry *e = &COLUMN[i];
-        Rectangle r = { (float)x, (float)(y + i * (COLUMN_TILE + TILE_GAP)), COLUMN_TILE, COLUMN_TILE };
+    const ColumnEntry *shown[COLUMN_COUNT];
+    int n = 0;
+    for (int i = 0; i < COLUMN_COUNT; i++)
+        if (COLUMN[i].kind != COL_ARROW || arrows_in_hand(ga)) shown[n++] = &COLUMN[i];
+    plate(x - 3, y - 3, COLUMN_TILE + 6, n * (COLUMN_TILE + COLUMN_GAP) - COLUMN_GAP + 6);
+    for (int i = 0; i < n; i++) {
+        const ColumnEntry *e = shown[i];
+        Rectangle r = { (float)x, (float)(y + i * (COLUMN_TILE + COLUMN_GAP)), COLUMN_TILE, COLUMN_TILE };
         bool busy = ga->doing >= 0 && e->kind == COL_ACTION;
         bool selected = e->kind == COL_MENU ? ga->menu_open : e->kind == COL_ACTION && ga->doing == (int)e->action;
+        bool usable = e->kind == COL_ARROW ? ga->fire_near && !ga->raining : !busy || selected;
         hover(r);
-        bool h = ui_tile(r, e->icon, selected, !busy || selected);
+        bool h = ui_tile(r, e->icon, selected, usable);
         if (e->key[0]) ui_tile_badge(r, e->key, UI_GOLD_LIGHT);
         if (h) {
-            const char *title = e->kind == COL_MENU ? T("Acciones, obras y fabricar") : e->kind == COL_DRINK ? T("Beber")
+            const char *title = e->kind == COL_MENU      ? T("Acciones, obras y fabricar")
+                                : e->kind == COL_DRINK   ? T("Beber")
                                 : e->kind == COL_BANDAGE ? T("Vendar")
+                                : e->kind == COL_PACK    ? T("Mochila")
+                                : e->kind == COL_ARROW   ? T("Encender la flecha")
                                                          : T(action_def(e->action)->name);
-            const char *detail = e->kind == COL_MENU    ? T("Tab: el menú de acciones, obras, fabricar y reparar.")
-                                 : e->kind == COL_DRINK ? T("N: bebe lo más seguro que tengas, o del río en la orilla.")
+            const char *detail = e->kind == COL_MENU      ? T("Tab: el menú de acciones, obras, fabricar y reparar.")
+                                 : e->kind == COL_DRINK   ? T("N: bebe lo más seguro que tengas, o del río en la orilla.")
                                  : e->kind == COL_BANDAGE ? T("B: venda tus heridas (o levanta a un compañero abatido).")
+                                 : e->kind == COL_PACK    ? T("Mayús+G: deja la mochila en el suelo para moverte ligero, o recógela.")
+                                 : e->kind == COL_ARROW   ? T("Mayús+L: enciende la flecha en un fuego cercano (no con lluvia).")
                                                           : T(action_def(e->action)->desc);
             ui_legend(title, detail);
         }
@@ -409,6 +452,8 @@ void hud_action_column(const GameActions *ga, int x, int y) {
         case COL_MENU: ga_quick_request_menu(); break;
         case COL_DRINK: wg_request_drink(); break;
         case COL_BANDAGE: cb_request_bandage(); break;
+        case COL_PACK: ig_request_pack(); break;
+        case COL_ARROW: cb_request_light_arrow(); break;
         default: ga_quick_request_action(e->action); break;
         }
     }

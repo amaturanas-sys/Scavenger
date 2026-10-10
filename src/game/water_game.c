@@ -6,6 +6,7 @@
 
 #include "game/gems_game.h"
 #include "game/hud_game.h"
+#include "game/input.h"
 #include "game/inventory_game.h"
 #include "sim/lang.h"
 #include "ui/icons.h"
@@ -115,8 +116,8 @@ void wg_update(GameActions *ga, Troop *troop, Player *p, const Props *props, con
     bool was_sick = hydration_sick(&ga->hydro);
     ThirstLevel was_thirst = thirst_level(&ga->hydro);
     hydration_update(&ga->hydro, heat_thirst_scale(&hz->heat) * (p->stance == STANCE_RUN && p->moving ? 1.3f : 1.0f), !p->moving, dt);
-    bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT), ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
-    if (input_ok && ((!ctrl && IsKeyPressed(KEY_N)) || g_drink_req)) {
+    bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+    if (input_ok && (input_action_pressed(KA_DRINK) || g_drink_req)) {
         if (shift && !g_drink_req) herbs(ga, props, p, log, len);
         else drink(ga, props, p, hz, c, log, len);
     }
