@@ -159,6 +159,9 @@ typedef enum {
     ICON_OBJETIVO,         // el objetivo (Tab en combate)
     ICON_FLECHA_ENCENDIDA, // encender la flecha (Mayus+L)
     ICON_AGACHARSE,        // agacharse (X)
+    ICON_GIRAR_IZQ,        // ubicar una obra: girar a la izquierda (Q)
+    ICON_GIRAR_DER,        // y a la derecha (E)
+    ICON_REJILLA,          // la rejilla (Mayus)
     ICON_COUNT
 } IconId;
 

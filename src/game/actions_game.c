@@ -5,6 +5,7 @@
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
 #include "game/camp_game.h"
+#include "game/place_game.h"
 #include "game/gems_game.h"
 #include "game/water_game.h"
 #include "game/talents_game.h"
@@ -258,7 +259,9 @@ Stockpile *ga_stock(GameActions *ga) {
 }
 
 const Stockpile *ga_stock_c(const GameActions *ga) { return ga_stock((GameActions *)ga); }
-bool ga_blocks_input(const GameActions *ga) { return ga->menu_open || ga->climbing || ga->inv_open || ga->equip_open || ga->dlg.open; }
+bool ga_blocks_input(const GameActions *ga) {
+    return ga->menu_open || ga->climbing || ga->inv_open || ga->equip_open || ga->dlg.open || pg_active(); // ubicando una obra: la vista aerea
+}
 
 float ga_speed_scale(const GameActions *ga) {
     // Montado, la montura (y el amuleto del caballo); a pie, cuanto pesa lo que llevas.
@@ -551,7 +554,9 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
     }
 }
 
+// Tab -> Obras: si alcanza el acopio, la camara sube para ubicarla (src/game/place_game.c); se paga al colocarla.
 static void start_build(GameActions *ga, BuildId b, const Terrain *t, const Player *p, char *log, size_t len) {
+    (void)t;
     const BuildDef *d = build_def(b);
     if (ga->project_count >= GA_MAX_PROJECTS) {
         snprintf(log, len, "%s", T("Demasiadas obras a la vez."));
@@ -563,13 +568,11 @@ static void start_build(GameActions *ga, BuildId b, const Terrain *t, const Play
                  stock_count(ga_stock_c(ga), miss->id), miss->count);
         return;
     }
-    stock_take_all(ga_stock(ga), d->mats);
-    Vector3 at = ground_ahead(t, p, 6.0f);
-    ga->projects[ga->project_count++] = (BuildProject){ b, at.x, at.z, 0.0f, false };
-    snprintf(log, len, T("Obra iniciada: %s. La cuadrilla va en camino."), T(d->name));
+    pg_begin(ga, b, ga->here >= 0 && ga->here < CAMPS_MAX && ga->camps[ga->here].used ? ga->here : -1, p->pos.x, p->pos.z);
 }
 
-bool ga_order_build(GameActions *ga, BuildId b, int camp, const Props *props, char *log, size_t len) {
+// Desde el guardian: la obra va en su campamento, con su acopio.
+bool ga_order_build(GameActions *ga, BuildId b, int camp, char *log, size_t len) {
     const BuildDef *d = build_def(b);
     if (camp < 0 || camp >= CAMPS_MAX || !ga->camps[camp].used) return false;
     if (ga->project_count >= GA_MAX_PROJECTS) {
@@ -582,25 +585,7 @@ bool ga_order_build(GameActions *ga, BuildId b, int camp, const Props *props, ch
         snprintf(log, len, T("Falta en el acopio: %s (%d de %d)."), item_name(ga, miss->id), stock_count(st, miss->id), miss->count);
         return false;
     }
-    // Un sitio libre en el campamento: en anillos alrededor del fuego.
-    const CampSite *c = &ga->camps[camp];
-    float bx = c->x + 14.0f, bz = c->z;
-    for (int tries = 0; tries < 48; tries++) {
-        float ang = (float)tries * 2.39996f, r = 12.0f + (float)(tries / 8) * 4.0f;
-        float x = c->x + cosf(ang) * r, z = c->z + sinf(ang) * r;
-        bool free = true;
-        for (int i = 0; i < props->count && free; i++)
-            if (dist2d(props->items[i].pos, (Vector3){ x, 0, z }) < 5.0f) free = false;
-        for (int i = 0; i < ga->project_count && free; i++)
-            if (dist2d((Vector3){ ga->projects[i].x, 0, ga->projects[i].z }, (Vector3){ x, 0, z }) < 6.0f) free = false;
-        if (free) {
-            bx = x, bz = z;
-            break;
-        }
-    }
-    stock_take_all(st, d->mats);
-    ga->projects[ga->project_count++] = (BuildProject){ b, bx, bz, 0.0f, false };
-    snprintf(log, len, T("Obra iniciada: %s. La cuadrilla va en camino."), T(d->name));
+    pg_begin(ga, b, camp, ga->camps[camp].x, ga->camps[camp].z);
     return true;
 }
 
@@ -979,7 +964,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             ga->crew_present[i] += present[k];
         }
         if (build_advance(bp, build_rate_present(d, &plan, present), dt)) {
-            props_add(props, d->produces, ground_at(t, bp->x, bp->z), 0.0f);
+            props_add(props, d->produces, ground_at(t, bp->x, bp->z), bp->yaw);
             snprintf(log, log_len, T("Obra terminada: %s."), T(d->name));
             if (bp->def == BUILD_SHELTER) cg_basic_structure(ga, bp->x, bp->z);
             tg_xp(ga, XP_BUILD, log, log_len);
@@ -1148,7 +1133,7 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
     for (int i = 0; i < ga->project_count; i++) {
         const BuildProject *bp = &ga->projects[i];
         const InvItem *it = inventory_find(ga->inv, build_def(bp->def)->produces);
-        if (it) props_draw_item(props, it, ground_at(t, bp->x, bp->z), 0.0f, bp->progress);
+        if (it) props_draw_item(props, it, ground_at(t, bp->x, bp->z), bp->yaw, bp->progress);
     }
 
     // Integrantes de la tribu: capsulas del color de su funcion; los grandes guerreros, a su talla.

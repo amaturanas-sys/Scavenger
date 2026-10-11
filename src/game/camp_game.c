@@ -620,7 +620,7 @@ static void choose(GameActions *ga, Troop *troop, Props *props, const Terrain *t
         break;
     case CG_BUILD:
         if (v == 0) set_mode(ga, CG_ROOT);
-        else if (ga_order_build(ga, (BuildId)(v - 10), k, props, log, len)) dlg_close(&ga->dlg);
+        else if (ga_order_build(ga, (BuildId)(v - 10), k, log, len)) dlg_close(&ga->dlg); // a ubicarla, desde arriba
         break;
     case CG_ESCORT:
         if (v == 0) {

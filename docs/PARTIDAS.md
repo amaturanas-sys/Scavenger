@@ -75,6 +75,7 @@ Reglas:
 - **`v0.5.1-rehen.sav`:** una sola, con lo de la v0.5.1 (rehén, abatido y alerta).
 - **`v0.6.0-asalto.sav`:** un asalto al campamento, con la escolta en «defender».
 - **`v0.6.1-tribu.sav`:** la tribu trabajando, con la ventana de pobladores abierta.
+- **`v0.6.2-obras.sav`:** obras ubicadas con su giro.
 
 | Partida | Qué tiene |
 |---|---|
@@ -85,6 +86,7 @@ Reglas:
 | `rehen` (v0.5.1) | El jugador con un bandido de rehén, otro abatido en el suelo y un jinete alertado. |
 | `asalto` (v0.6.0) | Fanáticos asaltando el campamento: un soldado de guardia, pobladores escondidos en las yurtas y la escolta en «defender». |
 | `tribu` (v0.6.1) | Dos de caza (fuera, no se ven), uno pastoreando, los informes del explorador y de la guardia, dos marcas nuevas en el mapa y la ventana de pobladores abierta con uno elegido. |
+| `obras` (v0.6.2) | Un refugio girado 45° y un muro de empalizada de dos tramos, con sus cuadrillas trabajando. |
 
 `estepa --probar-partidas tests/partidas` (CI, en el job de Linux) hace esto con cada una:
 - la carga;
@@ -116,6 +118,8 @@ La v0.6.1 agregó tareas al final de `CampTaskKind` y `CampTask.member2`, el aco
 - sus informes (`CampNews`, un struct para que el esquema no tenga arreglos de tres dimensiones).
 
 El texto de los diálogos creció de 320 a 1024. El resumen sumó, por campamento, sus tareas, el pasto y los informes, y los elegidos de la ventana.
+
+La v0.6.2 agregó `BuildProject.yaw` (cero: como antes, sin girar) y `GA_MAX_PROJECTS` pasó de 8 a 24 (el arreglo crece). El resumen suma el giro de cada obra si no es cero.
 
 ## El esquema congelado de las partidas planas
 

@@ -148,3 +148,6 @@ indice	nombre	columna	fila	descripcion
 144	objetivo	0	9	Objetivo: anillo con mira
 145	flecha_encendida	1	9	Encender la flecha: flecha con llama
 146	agacharse	2	9	Agacharse: figura encogida
+147	girar_izq	3	9	Girar a la izquierda: flecha en arco
+148	girar_der	4	9	Girar a la derecha: flecha en arco
+149	rejilla	5	9	Rejilla: cuadricula

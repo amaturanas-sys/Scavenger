@@ -27,6 +27,7 @@
 #include "../src/sim/talents.h"
 #include "../src/sim/memory_map.h"
 #include "../src/sim/noise.h"
+#include "../src/sim/placement.h"
 #include "../src/sim/rng.h"
 #include "../src/sim/save_format.h"
 #include "../src/sim/keymap.h"
@@ -1055,7 +1056,7 @@ static void test_build_skill_morale_and_champions(void) {
 }
 
 static void test_build_advance(void) {
-    BuildProject p = { BUILD_BONFIRE, 0, 0, 0.0f, false };
+    BuildProject p = { BUILD_BONFIRE, 0, 0, 0.0f, false, 0.0f };
     float work = build_def(BUILD_BONFIRE)->work;
     CHECK(!build_advance(&p, 0.0f, 10.0f) && p.progress == 0.0f); // sin cuadrilla no avanza
     CHECK(!build_advance(&p, 2.0f, work / 4.0f) && p.progress > 0.49f && p.progress < 0.51f);
@@ -3588,6 +3589,108 @@ static void test_tribe_herding_lowers_thirst(void) {
     CHECK(herd_loss_chance(1, 0, true) > herd_loss_chance(1, 0, false));
 }
 
+// ---------------------------------------------------------------- ubicar obras (fase 4b)
+static float flat_ground(void *ud, float x, float z) { (void)ud, (void)x, (void)z; return 10.0f; }
+static float ramp_ground(void *ud, float x, float z) { (void)ud, (void)z; return 0.5f * x; }  // 50 % de pendiente
+static float bumpy_ground(void *ud, float x, float z) { (void)ud, (void)z; return x > 0.0f ? 0.3f : 0.0f; }
+static float lake_east(void *ud, float x, float z) { (void)ud, (void)z; return x > 10.0f ? 1.0f : -1.0f; } // agua al este de x = 10
+
+static void test_place_footprint_and_rotation(void) {
+    // La huella: largo en X local, ancho en Z local; girada 90 grados, cambian de eje.
+    Footprint f = footprint_make(0.0f, 0.0f, 0.0f, 4.0f, 2.0f, 0.0f);
+    float c[4][2];
+    footprint_corners(&f, c);
+    float maxx = 0.0f, maxz = 0.0f;
+    for (int i = 0; i < 4; i++) maxx = fmaxf(maxx, fabsf(c[i][0])), maxz = fmaxf(maxz, fabsf(c[i][1]));
+    CHECK(fabsf(maxx - 2.0f) < 1e-4f && fabsf(maxz - 1.0f) < 1e-4f);
+    f.yaw = 1.5707963f;
+    footprint_corners(&f, c);
+    maxx = maxz = 0.0f;
+    for (int i = 0; i < 4; i++) maxx = fmaxf(maxx, fabsf(c[i][0])), maxz = fmaxf(maxz, fabsf(c[i][1]));
+    CHECK(fabsf(maxx - 1.0f) < 1e-4f && fabsf(maxz - 2.0f) < 1e-4f);
+    // Q/E: de a 15 grados; una vuelta entera vuelve al principio; hacia atras da la vuelta.
+    float y = 0.0f;
+    for (int i = 0; i < 24; i++) y = place_rotate(y, 1);
+    CHECK(fabsf(y) < 1e-4f);
+    CHECK(fabsf(place_rotate(0.0f, -1) - (6.2831853f - PLACE_ROT_STEP)) < 1e-4f);
+    CHECK(fabsf(place_rotate(0.2f, 0) - PLACE_ROT_STEP) < 1e-4f && fabsf(place_rotate(0.1f, 0)) < 1e-4f); // al paso mas cercano
+    CHECK(fabsf(place_rotate(1.5707963f, 2) - 2.0943951f) < 1e-4f);
+    // La rejilla: el centro cae cada 2 m desde el campamento.
+    CHECK(fabsf(place_snap(3.1f, 0.0f, PLACE_GRID) - 4.0f) < 1e-4f && fabsf(place_snap(-0.9f, 0.0f, PLACE_GRID)) < 1e-4f &&
+          fabsf(place_snap(5.2f, 1.0f, PLACE_GRID) - 5.0f) < 1e-4f && place_snap(5.2f, 0.0f, 0.0f) == 5.2f);
+    // Se pisan o no (rectangulos girados): separados, tocandose y encimados.
+    Footprint a = footprint_make(0.0f, 0.0f, 0.0f, 2.0f, 2.0f, 0.0f), b = footprint_make(3.0f, 0.0f, 0.0f, 2.0f, 2.0f, 0.0f);
+    CHECK(!footprints_overlap(&a, &b));
+    b.x = 2.0f;
+    CHECK(!footprints_overlap(&a, &b)); // se tocan: no se pisan
+    b.x = 1.5f;
+    CHECK(footprints_overlap(&a, &b) && footprints_overlap(&b, &a));
+    // Un rombo junto a la esquina: las cajas alineadas se pisarian, las giradas no.
+    Footprint d = footprint_make(1.9f, 1.9f, 0.7853982f, 2.0f, 2.0f, 0.0f);
+    CHECK(!footprints_overlap(&a, &d));
+    d.x = d.z = 1.6f;
+    CHECK(footprints_overlap(&a, &d));
+}
+
+static void test_place_site_rules(void) {
+    PlaceGround flat = { flat_ground, NULL, NULL }, wet = { flat_ground, lake_east, NULL }, ramp = { ramp_ground, NULL, NULL },
+                bumpy = { bumpy_ground, NULL, NULL };
+    Footprint f = footprint_make(5.0f, 0.0f, 0.0f, 4.0f, 4.0f, 0.0f);
+    // En seco, llano y dentro del campamento: vale (y queda donde se señalo).
+    PlaceCheck r = place_check(&f, 0.0f, 0.0f, 45.0f, &flat, NULL, 0);
+    CHECK(r.res == PLACE_OK && r.hit == -1 && f.x == 5.0f && f.z == 0.0f);
+    // Fuera del radio (una esquina basta); sin radio (fundando un campamento) no hay limite.
+    f.x = 42.0f; // la esquina mas lejana, a 44,05 m: todavia adentro
+    CHECK(place_check(&f, 0.0f, 0.0f, 45.0f, &flat, NULL, 0).res == PLACE_OK);
+    f.x = 43.5f;
+    CHECK(place_check(&f, 0.0f, 0.0f, 45.0f, &flat, NULL, 0).res == PLACE_OUTSIDE);
+    CHECK(place_check(&f, 0.0f, 0.0f, 0.0f, &flat, NULL, 0).res == PLACE_OK);
+    // En el agua: cualquier parte de la huella.
+    f.x = 9.0f; // la esquina este llega a x = 11
+    CHECK(place_check(&f, 0.0f, 0.0f, 45.0f, &wet, NULL, 0).res == PLACE_WATER);
+    f.x = 7.0f;
+    CHECK(place_check(&f, 0.0f, 0.0f, 45.0f, &wet, NULL, 0).res == PLACE_OK);
+    // La pendiente: un 50 % no vale; un escalon chico, si.
+    CHECK(place_check(&f, 0.0f, 0.0f, 45.0f, &ramp, NULL, 0).res == PLACE_STEEP);
+    CHECK(place_check(&f, 0.0f, 0.0f, 45.0f, &bumpy, NULL, 0).res == PLACE_OK);
+    // Encima de algo: dice que (el indice del obstaculo); tocarlo de costado vale.
+    Footprint obs[2] = { footprint_make(-11.0f, 0.0f, 0.0f, 4.8f, 4.8f, 0.0f), footprint_make(11.0f, 0.0f, 0.0f, 4.8f, 4.8f, 0.0f) };
+    f.x = 9.0f;
+    r = place_check(&f, 0.0f, 0.0f, 45.0f, &flat, obs, 2);
+    CHECK(r.res == PLACE_OVERLAP && r.hit == 1);
+    f.x = 6.6f; // la huella llega a 8.6 y la yurta empieza en 8.6
+    CHECK(place_check(&f, 0.0f, 0.0f, 45.0f, &flat, obs, 2).res == PLACE_OK);
+    // El orden: fuera del campamento antes que en el agua o encima de algo.
+    f.x = 44.0f;
+    CHECK(place_check(&f, 0.0f, 0.0f, 45.0f, &wet, obs, 2).res == PLACE_OUTSIDE);
+    // Girada, la misma obra puede entrar donde derecha no entra.
+    Footprint wall = footprint_make(0.0f, 6.0f, 0.0f, 0.4f, 8.0f, 0.0f); // 8 m a lo largo de Z
+    Footprint post = footprint_make(0.0f, 9.0f, 0.0f, 1.0f, 1.0f, 0.0f);
+    CHECK(place_check(&wall, 0.0f, 0.0f, 45.0f, &flat, &post, 1).res == PLACE_OVERLAP);
+    wall.yaw = place_rotate(wall.yaw, 6); // 90 grados: ahora va a lo largo de X
+    CHECK(place_check(&wall, 0.0f, 0.0f, 45.0f, &flat, &post, 1).res == PLACE_OK);
+}
+
+static void test_place_wall_two_points(void) {
+    // Un muro de 10 m con tramos de 4 m: tres tramos, sin huecos, de un extremo al otro.
+    Footprint seg[16];
+    int n = place_wall(0.0f, 0.0f, 0.0f, 10.0f, 4.0f, 0.4f, seg, 16);
+    CHECK(n == 3);
+    for (int i = 0; i < n; i++) CHECK(fabsf(seg[i].x) < 1e-4f && fabsf(seg[i].yaw) < 1e-4f && fabsf(seg[i].hw - 2.0f) < 1e-4f);
+    for (int i = 1; i < n; i++) CHECK(seg[i].z - seg[i - 1].z <= 4.0f + 1e-4f); // sin huecos
+    CHECK(seg[0].z - seg[0].hw <= 0.0f + 1e-4f && seg[n - 1].z + seg[n - 1].hw >= 10.0f - 1e-4f); // cubre de A a B
+    // Justo 8 m: dos tramos que no se enciman.
+    n = place_wall(0.0f, 0.0f, 8.0f, 0.0f, 4.0f, 0.4f, seg, 16);
+    CHECK(n == 2 && fabsf(seg[0].x - 2.0f) < 1e-4f && fabsf(seg[1].x - 6.0f) < 1e-4f && fabsf(seg[0].yaw - 1.5707963f) < 1e-4f);
+    CHECK(!footprints_overlap(&seg[0], &seg[1]));
+    // En diagonal, girados a lo largo de la linea; un solo punto: un tramo.
+    n = place_wall(0.0f, 0.0f, 6.0f, 6.0f, 4.0f, 0.4f, seg, 16);
+    CHECK(n == 3 && fabsf(seg[1].yaw - 0.7853982f) < 1e-4f && fabsf(seg[1].x - 3.0f) < 1e-4f && fabsf(seg[1].z - 3.0f) < 1e-4f);
+    CHECK(place_wall(5.0f, 5.0f, 5.0f, 5.0f, 4.0f, 0.4f, seg, 16) == 1 && seg[0].x == 5.0f && seg[0].z == 5.0f);
+    // Demasiado largo para los lugares que quedan: dice cuantos harian falta, llena los que caben.
+    CHECK(place_wall(0.0f, 0.0f, 0.0f, 100.0f, 4.0f, 0.4f, seg, 4) == 25);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -3696,6 +3799,9 @@ int main(void) {
     RUN(test_tribe_scouting_reveals_sites);
     RUN(test_tribe_hunting_by_region_and_season);
     RUN(test_tribe_herding_lowers_thirst);
+    RUN(test_place_footprint_and_rotation);
+    RUN(test_place_site_rules);
+    RUN(test_place_wall_two_points);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

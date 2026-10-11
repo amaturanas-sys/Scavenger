@@ -130,6 +130,7 @@ Animales de la tribu:
 Campamentos:
 - **Fundar:** al levantar una tienda (`Tab`, «Instalar tienda») o un refugio lejos (más de 70 m) de los demás campamentos, nace uno nuevo. Hay que nombrar guardián a alguien de la escolta, que se queda a administrarlo.
 - **Lo propio de cada campamento:** su acopio y su gente. Las obras las levantan los del lugar; fuera de todo campamento, la escolta.
+- **Ubicar una obra:** al elegirla (`Tab` → Obras, o el guardián), la cámara sube sobre el campamento. La obra sigue al puntero, al dedo o a `WASD`; `Q`/`E` la giran, `Mayús` la alinea a una rejilla de 2 m. Verde: el sitio vale; rojo: no, y abajo dice por qué (fuera del campamento, en el agua, demasiado empinado o encima de algo). `Enter` o un clic sobre ella la coloca; `Esc` cancela sin gastar. Las cercas y los muros se marcan de un extremo al otro y se levantan por tramos de 4 m. Prueba: `--ubicar refugio|empalizada|muro|hoguera|totem|horno|bronce|acero|torre|corral`.
 - **El guardián (`F` junto a él):**
   - ordenar obras con el acopio del campamento;
   - elegir quién sale de escolta;

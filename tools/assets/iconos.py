@@ -1286,6 +1286,25 @@ def _(p):
     p.thick(8, 120, 120, 120, 6)  # el suelo
 
 
+@icon("girar_izq", "Girar a la izquierda: flecha en arco")
+def _(p):
+    p.arc(64, 64, 40, 90, 360, 12)
+    p.poly([(88, 104), (62, 88), (62, 120)])  # punta, hacia la derecha por abajo
+
+
+@icon("girar_der", "Girar a la derecha: flecha en arco")
+def _(p):
+    p.arc(64, 64, 40, 180, 450, 12)
+    p.poly([(40, 104), (66, 88), (66, 120)])  # punta, hacia la izquierda por abajo
+
+
+@icon("rejilla", "Rejilla: cuadricula")
+def _(p):
+    for k in (20, 49, 79, 108):
+        p.thick(k, 14, k, 114, 7)
+        p.thick(14, k, 114, k, 7)
+
+
 # ------------------------------------------------------------------ atlas
 def render(fn):
     pen = Pen()

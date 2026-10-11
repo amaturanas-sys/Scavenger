@@ -265,6 +265,11 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
 - Los prisioneros no trabajan. El jugador suma una persona si está cerca de la obra.
 - Nueva función de tropa: **constructor**.
 - **La cuadrilla camina a la obra:** cada obra elige a sus trabajadores, sin repetir gente entre obras. La obra solo avanza con los que ya llegaron, y espera mientras no se junte el mínimo. El panel muestra cuántos hay en la obra (p. ej. «3/4»).
+- **Ubicar la obra** (v0.6.2, `src/sim/placement.*`, en juego `src/game/place_game.*`): al elegir una obra (Tab → Obras, o el guardián), la cámara sube sobre el campamento (a la vista entran unos 50 m de radio; fuera de todo campamento, alrededor del jugador). La obra se ve como un fantasma translúcido con su huella:
+  - sigue al puntero, al dedo o a WASD; Q/E la giran de a 15°; Mayús (o la casilla) alinea su centro a una rejilla de 2 m desde el centro del campamento;
+  - **verde** si el sitio vale; **roja** si no, con el motivo abajo: fuera del campamento (alguna esquina a más de 45 m del centro), en el agua, demasiado empinado (desnivel de más de 0,4 m y más del 30 % del largo) o encima de algo (una yurta, la fogata, un árbol, otra estructura u otra obra; la huella lleva 0,2 m de margen);
+  - **cercas y muros** (empalizada y muro de piedra): se marca un extremo y después el otro; van por tramos de 4 m sin huecos (si el largo no da justo, se enciman un poco) y cada tramo es una obra con su costo. Los muros pueden juntarse y cruzarse con otros muros;
+  - Enter, un clic sobre la obra (en la tablet: tocar otro lugar la mueve, tocarla la coloca) o la casilla de aceptar la colocan y se paga el acopio; Esc cancela sin gastar. El giro queda en la obra y en la estructura terminada.
 
 ### Campamento: acopio, comida y efectos (implementado — `src/sim/economy.*`)
 - **Acopio de la tribu:** materiales y comida compartidos.

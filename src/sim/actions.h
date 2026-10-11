@@ -152,6 +152,7 @@ typedef struct {
     float x, z;     // donde se levanta
     float progress; // [0, 1]
     bool done;
+    float yaw;      // su giro (rad), el que se eligio al ubicarla (src/game/place_game.c)
 } BuildProject;
 
 // Avanza la obra. Devuelve true en el paso en que se completa.
