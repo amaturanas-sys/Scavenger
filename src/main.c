@@ -27,6 +27,7 @@
 #include "game/save_game.h"
 #include "game/settings.h"
 #include "game/camp_game.h"
+#include "game/place_game.h"
 #include "game/talents_game.h"
 #include "game/travel_game.h"
 #include "game/apparel_game.h"
@@ -569,6 +570,7 @@ int main(int argc, char **argv) {
     int start_pause = 0;  // prueba: 1 pausa, 2 guardar, 3 controles (F1), sobre la partida
     int start_tab = -1;
     bool start_tasks = false; // prueba: la tribu sale a cazar, explorar, pastorear y hacer guardia
+    const char *start_place = NULL; // prueba: ubicar una obra en el campamento inicial (la vista aerea)
     int start_talk = 0;      // prueba: 1 hablar con el druida, 2 con el orfebre
     int start_equip_tab = -1; // prueba: pestaña del equipo (1 ropa, 2 joyas, 3 tatuajes)   // prueba: menu Tab abierto en esa pestaña
     bool start_loot = false; // prueba: bolsas de botin delante
@@ -625,6 +627,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--despachar")) start_talk = 6;
         else if (!strcmp(argv[i], "--pobladores")) start_talk = 7;
         else if (!strcmp(argv[i], "--tareas")) start_tasks = true;
+        else if (!strcmp(argv[i], "--ubicar") && i + 1 < argc) start_place = argv[++i]; // refugio, empalizada, muro, torre...
         else if (!strcmp(argv[i], "--ropa")) start_equip = true, start_equip_tab = 1;
         else if (!strcmp(argv[i], "--joyas")) start_equip = true, start_equip_tab = 2;
         else if (!strcmp(argv[i], "--tatuajes")) start_equip = true, start_equip_tab = 3;
@@ -897,6 +900,12 @@ int main(int argc, char **argv) {
             g_actions.dlg.open = true;
             start_talk = 0;
         }
+        if (start_place && frame == 6) { // prueba: la vista aerea, ubicando una obra en el campamento inicial
+            static const char *NAMES[BUILD_COUNT] = { "refugio", "empalizada", "muro", "hoguera", "totem", "horno", "bronce", "acero", "torre", "corral" };
+            for (int b = 0; b < BUILD_COUNT; b++)
+                if (!strcmp(start_place, NAMES[b])) pg_begin(&g_actions, (BuildId)b, 0, player.pos.x, player.pos.z);
+            start_place = NULL;
+        }
         if (start_tasks && frame == 6) { // prueba: dos a cazar, uno a explorar, uno a pastorear y uno de guardia
             int free[5], nf = 0;
             for (int k = 0; k < troop.count && k < TROOP_MAX && nf < 5; k++)
@@ -1118,7 +1127,15 @@ int main(int argc, char **argv) {
                 snprintf(log, sizeof(log), "%s", placed ? T("Marcaste este lugar en el mapa.") : T("Quitaste la marca."));
             }
         }
-        camera_update(&rig, &cam, &player, &terrain, dt);
+        if (pg_active() && (g_combat.player.down || g_combat.player.dead)) pg_cancel(); // abatido: se acabo el ubicar
+        if (pg_active()) { // ubicando una obra: la vista aerea del campamento (src/game/place_game.c)
+            pg_camera(&cam);
+            pg_set_world(camp.yurts, camp.yurt_count, camp.fire, g_actions.camps[0].used, camp.trees, camp.tree_count);
+            pg_update(&g_actions, &g_props, &terrain, cam, VIRTUAL_W, VIRTUAL_H, dt, log, sizeof(log));
+            pg_camera(&cam);
+        } else {
+            camera_update(&rig, &cam, &player, &terrain, dt);
+        }
         terrain_update(&terrain, player.pos);
         // Clima: estacion, tiempo, nieve, lagos y glaciares (la galeria se ve siempre igual).
         Climate climate = climate_at(world_time, terrain.seed);
@@ -1162,6 +1179,7 @@ int main(int argc, char **argv) {
         if (!gallery_mode) trv_draw_world(&g_actions, &troop, (float)GetTime());
         if (!gallery_mode) dz_draw_world(&g_dz, &terrain, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
+        if (!gallery_mode) pg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime()); // la obra por ubicar, translucida
         hearth_draw_smoke(cam, (float)GetTime(), climate.wind, gallery_mode ? 1.0f : clock_light(world_time)); // el humo, oscurecido de noche como todo
         if (gallery_mode) hearth_draw_flames((float)GetTime(), climate.wind);
         if (!gallery_mode) hz_draw_world(&g_hazards, &terrain, &g_actions, &troop, (float)GetTime());
@@ -1171,7 +1189,9 @@ int main(int argc, char **argv) {
             // Dentro de una nube (en una cumbre alta): niebla.
             clouds_draw_mist(clouds_mist(&terrain, cam.position, world_time, climate.clouds), VIRTUAL_W, VIRTUAL_H);
             // Noche: se oscurece todo y se suman las estrellas, las llamas y el brillo de los fuegos.
-            sky_apply_tint(world_time, climate.clouds, VIRTUAL_W, VIRTUAL_H);
+            // Desde arriba, para ubicar una obra, se ve como de dia.
+            sky_apply_tint(pg_active() ? (float)(clock_day(world_time) - 1) * GAME_SECONDS_PER_DAY + 400.0f : world_time, climate.clouds,
+                           VIRTUAL_W, VIRTUAL_H);
             BeginMode3D(cam);
             sky_draw_stars(&sky, cam, world_time, climate.clouds);
             sky_draw_moon(cam, world_time, climate.clouds);
@@ -1193,6 +1213,8 @@ int main(int argc, char **argv) {
         rlSetClipPlanes(RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
         if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
+        } else if (!menu_visible(&menu) && pg_active()) {
+            pg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H); // la vista aerea: solo lo de la obra
         } else if (!menu_visible(&menu)) {
             draw_hud(&troop, world_time, ga_hands_text(&g_actions), log, log_age,
                      g_actions.menu_open || g_actions.inv_open || g_actions.equip_open);

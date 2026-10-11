@@ -156,6 +156,21 @@ void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, floa
     rlPopMatrix();
 }
 
+void props_draw_ghost(Props *p, const InvItem *item, Vector3 pos, float yaw, Color tint) {
+    Model *m = cached_model(p, item);
+    if (m) {
+        DrawModelEx(*m, pos, (Vector3){ 0, 1, 0 }, yaw * RAD2DEG, (Vector3){ 1, 1, 1 }, tint);
+        return;
+    }
+    rlPushMatrix();
+    rlTranslatef(pos.x, pos.y, pos.z);
+    rlRotatef(yaw * RAD2DEG, 0, 1, 0);
+    Vector3 size = { fmaxf(item->l, 0.05f), fmaxf(item->h, 0.05f), fmaxf(item->w, 0.05f) };
+    DrawCubeV((Vector3){ 0, size.y * 0.5f, 0 }, size, tint);
+    DrawCubeWiresV((Vector3){ 0, size.y * 0.5f, 0 }, size, ColorAlpha(tint, 1.0f));
+    rlPopMatrix();
+}
+
 bool props_is_fire(const InvItem *item, float *scale) {
     if (!item) return false;
     bool bon = !strcmp(item->id, "estructura.campamento.hoguera");

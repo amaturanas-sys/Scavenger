@@ -36,6 +36,7 @@ src/
     targeting.*  el selector de objetivo: el siguiente alrededor del jugador, se pierde a 25 m
     stealth.*    la espalda (cono trasero, lo que ve un enemigo segun de donde vienes), el rehen que tapa el tiro y los abatidos
     squad.*      la escolta con ordenes, la ronda de los guardias y la alarma de los pobladores
+    placement.*  ubicar una obra: la huella girada, si el sitio vale (radio, agua, pendiente, lo que pisa), la rejilla y los muros de dos puntos
     camps.*      campamentos y sus tareas: capacitar, y las de la tribu (reclutas, explorar, cazar, pastorear, guardia) con su riesgo y lo que traen
     travel.*     viajes de la tribu fuera de la vista: despachar, mensajeros, sitios conocidos
     storage.*    contenedores: bolsillos, mochila, alforjas, carreta, acopio; peso y estado de las piezas
@@ -53,6 +54,7 @@ src/
   game/     Jugador e input
     player.*
     actions_game.*  menu de acciones, atajos, obras en curso
+    place_game.*    la vista aerea para ubicar una obra: la huella verde o roja, girar, rejilla, muros de dos puntos
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates
     combat_game.*   combate (a pie y montado), enemigos, botin, vendajes, salud de la tribu y del jugador
     fauna_game.*    fauna en el mundo: aparicion por bioma, ataques, K (comer, despiezar, ordeñar)

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "game/input.h"
+#include "game/place_game.h"
 #include "raymath.h"
 #include "game/talents_game.h"
 #include "ui/icons.h"
@@ -61,7 +62,7 @@ void ig_init(GameActions *ga, Props *props, const Terrain *t) {
     bag_add(&ga->cart, inv, "utileria.mochila.pequena", 1, 1.0f);
 }
 
-bool ig_blocks_input(const GameActions *ga) { return ga->inv_open || ga->equip_open || ga->dlg.open; }
+bool ig_blocks_input(const GameActions *ga) { return ga->inv_open || ga->equip_open || ga->dlg.open || pg_active(); }
 
 // ------------------------------------------------------------------ contenedores a mano
 typedef enum { C_BAG, C_CAMP } ContType;

@@ -60,7 +60,8 @@ add_library(estepa_sim STATIC
   src/sim/keymap.c
   src/sim/targeting.c
   src/sim/stealth.c
-  src/sim/squad.c)
+  src/sim/squad.c
+  src/sim/placement.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)
@@ -106,6 +107,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/talents_game.c
     src/game/gems_game.c
     src/game/camp_game.c
+    src/game/place_game.c
     src/game/travel_game.c
     src/game/apparel_game.c
     src/game/water_game.c

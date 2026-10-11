@@ -1,6 +1,6 @@
 # Plan: la gran actualización (v0.5 a v0.9)
 
-> **Estado:** fases 0 (v0.4.4), 1 (v0.5.0), 2 (v0.5.1), 3 (v0.6.0) y 4 (v0.6.1) hechas; las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
+> **Estado:** fases 0 (v0.4.4), 1 (v0.5.0), 2 (v0.5.1), 3 (v0.6.0), 4 (v0.6.1) y 4b (v0.6.2) hechas; las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
 
 Pedido (5 y 6 de octubre de 2026):
 - combate más ágil, con selector de objetivo y cuatro botones (H J K L);
@@ -220,7 +220,18 @@ Va en esta misma fase, porque los cuatro botones ocupan teclas que hoy hacen otr
 
 **Costo:** medio.
 
-## Fase 4b — Obras ubicadas en una vista aérea del campamento (v0.6.2)
+## Fase 4b — Obras ubicadas en una vista aérea del campamento (v0.6.2) — hecha
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **Reglas puras** en `src/sim/placement.c` (con tests): la huella es un rectángulo girado con las medidas del inventario; el sitio se revisa en orden (radio, agua, pendiente, lo que pisa) y se dice el primer motivo. Los solapes se prueban con ejes separados (rectángulos girados, no cajas).
+- **La cámara:** una vista en perspectiva desde arriba, un poco inclinada hacia el norte (el norte queda arriba), a unos 83 m del centro: entra el campamento entero (45 m de radio). Es fija; la huella no se aleja más de 48 m. De noche se ve como de día.
+- **Fuera de todo campamento** (para fundar uno con un refugio o una tienda), la vista se centra en el jugador y no hay radio.
+- **Lo que no se puede pisar:** las yurtas y la fogata del campamento inicial, los árboles, las estructuras, los tótems y los carros, y las obras en curso. No hay caminos en el campamento todavía; las cenizas no cuentan.
+- **Muros:** cada tramo de 4 m es una obra (con su costo), así que `GA_MAX_PROJECTS` pasó de 8 a 24. Los muros pueden juntarse y cruzarse con otros muros (para hacer esquinas).
+- **Tocar o hacer clic:** con el ratón, la obra va bajo el puntero y el clic la coloca. En la tablet, tocar otro lugar la mueve y tocarla la coloca. Las casillas de abajo a la derecha giran, alinean, aceptan y cancelan, con íconos nuevos.
+- **El giro se guarda** en `BuildProject.yaw` y la estructura terminada lo conserva (antes todas miraban al mismo lado).
+- **Ayuda:** una página nueva, «Las obras».
+- **Prueba:** `--ubicar <obra>`.
 
 **Lo que hay:** al mandar una obra (Tab → Obras), el proyecto se planta 6 m delante del jugador (`start_build`: `ground_ahead(t, p, 6.0f)` en `src/game/actions_game.c`). Hay que caminar hasta el sitio antes de ordenarla.
 

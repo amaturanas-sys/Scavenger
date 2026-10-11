@@ -34,7 +34,7 @@
 #include "world/props.h"
 #include "world/terrain.h"
 
-#define GA_MAX_PROJECTS 8
+#define GA_MAX_PROJECTS 24 // los muros van por tramos: cada uno es una obra
 #define GA_MAX_ANIMALS 64
 #define GA_MAX_SWARMS 24
 #define GA_PACKS 4 // monturas con alforjas
@@ -191,7 +191,7 @@ Stockpile *ga_stock(GameActions *ga);
 const Stockpile *ga_stock_c(const GameActions *ga);
 Stockpile *ga_stock_at(GameActions *ga, float x, float z);
 // El guardian ordena una obra en su campamento (con su acopio), en un sitio libre.
-bool ga_order_build(GameActions *ga, BuildId b, int camp, const Props *props, char *log, size_t len);
+bool ga_order_build(GameActions *ga, BuildId b, int camp, char *log, size_t len);
 // El jugador no controla el movimiento (menu abierto o trepando).
 bool ga_blocks_input(const GameActions *ga);
 bool ga_menu_open(const GameActions *ga);

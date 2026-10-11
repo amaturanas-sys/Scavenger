@@ -407,7 +407,6 @@ No te caben más hierbas.	No room for more herbs.
 No tienes %s.	You don't have %s.
 No tienes agua cruda que hervir (llena el odre en la orilla).	You have no raw water to boil (fill the waterskin at the shore).
 No tienes armas que enfundar.	You have no weapons to sheathe.
-Obra iniciada: %s. La cuadrilla va en camino.	Work started: %s. The crew is on its way.
 Obra terminada: %s.	Work finished: %s.
 Obras	Works
 Para cribar hay que estar en la orilla, mirando al agua.	To pan you must stand on the shore, facing the water.
@@ -991,6 +990,34 @@ un %d %%	by %d %%
 vacío · Enter: ponerte ropa que tengas a mano	empty · Enter: put on clothing you have at hand
 vacío · Enter: ponerte una joya que tengas a mano	empty · Enter: wear a jewel you have at hand
 vacío · Enter: ponerte una pieza a mano	empty · Enter: wear a piece at hand
+# --- src/game/place_game.c
+Aquí vale (%d tramos): Enter o clic para colocar	Good spot (%d sections): Enter or click to place
+Aquí vale: Enter o clic para colocar	Good spot: Enter or click to place
+Cancelar	Cancel
+Cerca o muro: marca un extremo y después el otro · Mayús: rejilla · Esc: cancelar	Fence or wall: mark one end, then the other · Shift: grid · Esc: cancel
+Colocar	Place
+Demasiado empinado	Too steep
+Demasiado largo: %d tramos (caben %d)	Too long: %d sections (room for %d)
+En el agua	In the water
+Encima de %s	On top of %s
+Enter o clic sobre la obra	Enter or click on the building
+Fuera del campamento	Outside the camp
+Girar a la derecha	Turn right
+Girar a la izquierda	Turn left
+Lleva: %s	Takes: %s
+Marca el otro extremo · Esc: volver al primero	Mark the other end · Esc: back to the first
+Marca el primer extremo: Enter o clic	Mark the first end: Enter or click
+Mayús	Shift
+Obra cancelada: no se gastó nada.	Work cancelled: nothing was spent.
+Obra iniciada: %s (%d tramos). La cuadrilla va en camino.	Work started: %s (%d sections). The crew is on its way.
+Obra iniciada: %s. La cuadrilla va en camino.	Work started: %s. The crew is on its way.
+Puntero o WASD: mover · Q/E: girar · Mayús: rejilla · Enter o clic: colocar · Esc: cancelar	Pointer or WASD: move · Q/E: turn · Shift: grid · Enter or click: place · Esc: cancel
+Rejilla	Grid
+Ubicar: %s	Place: %s
+la fogata	the campfire
+otra obra (%s)	another work (%s)
+un árbol	a tree
+una yurta	a yurt
 # --- src/game/player.c
 caminando	walking
 corriendo	running
@@ -1087,9 +1114,11 @@ Camina cerca del ganado para llevarlo (pastoreo).	Walk near livestock to drive t
 Cargar	Load
 Cargar partida	Load game
 Cazar: carne, pieles, huesos, tendones y grasa, según la región y la estación (en invierno escasea; en otoño hay más grasa).	Hunting: meat, hides, bones, sinew and fat, by region and season (scarce in winter, fatter in autumn).
+Cercas y muros: marca un extremo y después el otro. Se levantan por tramos de 4 m, uno tras otro.	Fences and walls: mark one end, then the other. They go up in 4 m sections, one after another.
 Cerrar el juego	Close the game
 Clima y peligros	Weather and hazards
 Combate cuerpo a cuerpo	Melee combat
+Construyen los del campamento que no tienen tarea; el que sabe el oficio trabaja el doble.	The camp's idle people do the building; whoever knows the trade works twice as fast.
 Continuar	Continue
 Contra el frío, pieles y abrigos: oso, reno, lobo, tigre, cabra. Contra el sol, sombrero, pañuelo del desierto, túnica de seda blanca y manto blanco.	Against the cold, furs and coats: bear, reindeer, wolf, tiger, goat. Against the sun, a hat, a desert scarf, a white silk tunic and a white mantle.
 Controles	Controls
@@ -1106,6 +1135,7 @@ El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Col
 El mundo	The world
 En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
 En verano el pasto seco arde: los incendios corren con el viento.	In summer dry grass burns: wildfires run with the wind.
+Enter, un clic sobre la obra o la casilla de aceptar la coloca y paga el acopio; Esc cancela sin gastar nada.	Enter, a click on the building or the accept tile places it and pays from the stores; Esc cancels without spending anything.
 Esa partida es de otra versión del juego.	That save is from another game version.
 Esc, Atrás o Ctrl+P: menú (guardar, cargar) · F1 o Ctrl+H: controles en el juego	Esc, Back or Ctrl+P: menu (save, load) · F1 or Ctrl+H: in-game controls
 Esc/Atrás/Ctrl+P menú	Esc/Back/Ctrl+P menu
@@ -1158,6 +1188,7 @@ La tribu se cambia sola según el tiempo con la ropa de su mochila y del acopio;
 La tribu y el campamento	The tribe and the camp
 Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.	Structures wear out: the tribe repairs them with logs every day. Without upkeep, torrential rain brings them down.
 Las mazas, las patadas y los escudos tumban sin matar, y también una herida que no es mortal: el enemigo queda abatido en el suelo. A los 30-90 s despierta, herido, y huye a avisar a los suyos.	Maces, kicks and shields knock down without killing, and so does a wound that isn't mortal: the enemy lies downed. After 30-90 s they wake up, wounded, and run off to warn their own.
+Las obras	Building works
 Las partidas guardadas, con su foto y su fecha	Saved games, with their picture and date
 Las pieles de depredador (lobo, oso, tigre, puma, hiena) dan escarmiento: el enemigo se espanta o huye antes.	Predator pelts (wolf, bear, tiger, puma, hyena) give dread: the enemy is frightened or flees sooner.
 Lobos, perros, tigres, pumas, halcones y cuervos: debilítalos peleando, échales el lazo y dales carne (F) para domarlos.	Wolves, dogs, tigers, pumas, hawks and ravens: weaken them by fighting, lasso them and give them meat (F) to tame them.
@@ -1172,6 +1203,7 @@ M mapa · N beber · U ficha	M map · N drink · U card
 Mayús+G (o la columna) deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	Shift+G (or the column) drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
 Mayús+L (o la columna) junto a un fuego enciende la flecha: quema y prende lo que toca.	Shift+L (or the column) by a fire lights the arrow: it burns and sets alight what it hits.
 Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta y desmonta.	Mounts (horse, mule, donkey, ox, camel, elephant): lasso and saddle; R mounts and dismounts.
+Mueve la obra con el puntero, el dedo o WASD; Q/E la giran; Mayús (o la casilla) la alinea a una rejilla de 2 m.	Move the building with the pointer, your finger or WASD; Q/E turn it; Shift (or the tile) snaps it to a 2 m grid.
 N bebe lo más seguro que tengas; en la orilla, sin nada, bebes del río. Con calor da más sed; sin agua te desmayas.	N drinks the safest thing you have; at the shore, with nothing, you drink from the river. Heat makes you thirstier; without water you faint.
 Nueva partida	New game
 Osos, hienas, coyotes y jabalíes: siempre hostiles.	Bears, hyenas, coyotes and boars: always hostile.
@@ -1198,6 +1230,7 @@ Tab acciones/fabricar	Tab actions/craft
 Tab en combate: el objetivo siguiente (Mayús+Tab, el anterior), o toca al enemigo. Un anillo dorado lo marca y los golpes y las flechas van a él.	Tab in combat: the next target (Shift+Tab, the previous one), or tap the enemy. A gold ring marks it and blows and arrows go to it.
 Tab objetivo · Y+1-3 escolta	Tab target · Y+1-3 escort
 Tab, Llenar el odre en la orilla: agua cruda (3 tragos por odre). Fabricar: agua con vino, airag y cerveza de pan.	Tab, Fill the waterskin at the shore: raw water (3 sips per waterskin). Craft: watered wine, airag and bread beer.
+Tab, Obras (o el guardián, F) elige una obra: la cámara sube sobre el campamento.	Tab, Works (or the keeper, F) picks a building: the camera rises above the camp.
 Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario	Tab: actions, works, craft and repair (Q/E switches tab) · I: inventory
 Tatuajes (para siempre): habla (F) con el druida, elige motivo y zona. Lobo, ciervo, grifo, tamga y olas suben en tres grados; el tercero se bifurca y elegir una rama cierra la otra. La zona del cuerpo cambia a qué va el bonus.	Tattoos (forever): talk (F) to the druid, choose motif and zone. Wolf, deer, griffin, tamga and waves rise in three tiers; the third branches and choosing one closes the other. The body zone changes what the bonus goes to.
 Tatuajes y joyas	Tattoos and jewels
@@ -1205,6 +1238,7 @@ Una gran tierra casi redonda con cinco regiones: la estepa en el centro, rodeada
 Una tienda o un refugio lejos de los demás campamentos funda uno nuevo: nombra guardián a alguien de tu escolta.	A tent or shelter far from other camps founds a new one: name someone from your escort its keeper.
 Una tribu nueva en la estepa	A new tribe on the steppe
 Vacío: no hay partida	Empty: no save
+Verde: el sitio vale. Rojo: fuera del campamento, en el agua, demasiado empinado o encima de algo (abajo dice qué).	Green: the spot is good. Red: outside the camp, in the water, too steep or on top of something (the bottom line says what).
 Volver a una partida guardada	Return to a saved game
 Volver al juego (Esc)	Back to the game (Esc)
 WASD mover · Shift correr	WASD move · Shift run

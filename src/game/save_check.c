@@ -79,9 +79,12 @@ void save_summary(const GameState *g, FILE *o) {
     }
     if (ga->people_pick[0] || ga->people_pick[1] || ga->people_page)
         fprintf(o, "  pobladores: elegidos %d %d pagina %d\n", ga->people_pick[0], ga->people_pick[1], ga->people_page); // v0.6.1
-    for (int i = 0; i < ga->project_count && i < GA_MAX_PROJECTS; i++)
-        fprintf(o, "  obra %d (%.2f, %.2f) avance %.3f%s\n", (int)ga->projects[i].def, ga->projects[i].x, ga->projects[i].z,
+    for (int i = 0; i < ga->project_count && i < GA_MAX_PROJECTS; i++) {
+        fprintf(o, "  obra %d (%.2f, %.2f) avance %.3f%s", (int)ga->projects[i].def, ga->projects[i].x, ga->projects[i].z,
                 ga->projects[i].progress, ga->projects[i].done ? " hecha" : "");
+        if (ga->projects[i].yaw != 0.0f) fprintf(o, " giro %.3f", ga->projects[i].yaw); // v0.6.2
+        fputc('\n', o);
+    }
     int animals = 0;
     for (int i = 0; i < ga->animal_count && i < GA_MAX_ANIMALS; i++) {
         const Animal *a = &ga->animals[i];

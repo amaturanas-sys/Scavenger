@@ -232,6 +232,7 @@ static const SfField SF_F_BuildProject[] = {
     SF_ONE(BuildProject, z, "float", SF_FLOAT, NULL),
     SF_ONE(BuildProject, progress, "float", SF_FLOAT, NULL),
     SF_ONE(BuildProject, done, "bool", SF_BOOL, NULL),
+    SF_ONE(BuildProject, yaw, "float", SF_FLOAT, NULL),
 };
 static const SfType SF_T_BuildProject = SF_TYPE(BuildProject, SF_F_BuildProject);
 
