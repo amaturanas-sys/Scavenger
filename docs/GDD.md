@@ -273,7 +273,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
 
 ### Campamento: acopio, comida y efectos (implementado — `src/sim/economy.*`)
 - **Acopio de la tribu:** materiales y comida compartidos.
-  - Materiales: leña, troncos, piedra, barro, pieles, cuerda, carbón y minerales de cobre, estaño y hierro.
+  - Materiales: leña, troncos, piedra, barro, pieles, cuerda, carbón y minerales de cobre, estaño y hierro; y los trabajados (v0.7.0): cuero, fieltro, madera labrada, adobe, puntas de hueso y piezas de arco, con la grasa, el hueso y los tendones de la caza.
   - Las acciones y las obras consumen sus materiales al empezar. Si falta algo, se avisa qué y cuánto.
   - Los recursos que el jugador toma del suelo (`F`) van directo al acopio.
   - `I` muestra el acopio.
@@ -287,6 +287,19 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   | Herrero | carbón |
   | Constructor | cuerda |
 
+- **Producción por oficio** (v0.7.0, `economy_daily_work`): además de lo que traen, cada día los del campamento con oficio trabajan lo que sobra del acopio, una tanda por persona. Cada receta guarda una reserva de lo que usa (no se come el acopio entero) y lo hecho sale en los informes del campamento:
+
+  | Oficio | Toma | Hace |
+  |---|---|---|
+  | Cazador | 2 pieles (deja 2) | 1 cuero |
+  | Cazador | 1 hueso (deja 1) | 4 puntas de hueso |
+  | Pastor | 2 pieles de cabra | 1 fieltro |
+  | Constructor | 2 troncos (deja 6) | 1 madera labrada |
+  | Constructor | 2 de barro y 1 de forraje (deja 2) | 2 adobes |
+  | Cocinero | 1 grasa | 3 velas de sebo |
+  | Curandero | 2 hierbas y 1 miel (deja 2) | 1 ungüento |
+  | Orfebre | 1 hueso (deja 1) | 1 peine |
+
 - **Comida:** cada integrante come una ración por día. Con cocinero se ahorra una ración cada tres bocas. Si falta comida, la moral de todos cae.
 - **Efectos diarios de lo construido** (dentro de 45 m del campamento):
   - Hoguera: +3 de moral.
@@ -294,7 +307,8 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - Horno de cocina: +2 de moral.
   - Tótem de protección: el riesgo de rebelión baja a la mitad.
   - Torre de vigilancia: revela 80 m del mapa de memoria cada día.
-  - Refugios, tiendas y yurtas: dan techo.
+  - Refugios, tiendas y yurtas: dan techo (refugio y tienda 1, choza de fieltro 2, casa de adobe y cabaña de troncos 3, yurta 4).
+- **Obras duraderas** (v0.7.0): la casa de adobe (12 adobes y 2 de madera labrada), la cabaña de troncos (8 de madera labrada y 2 troncos) y la choza de fieltro (4 de fieltro, 2 troncos y cuerda). El adobe y la piedra se desgastan a 0,4 del ritmo normal y los troncos a 0,6 (`structure_wear_scale`).
 - **Los NPCs actúan solos:** usan las mismas acciones que el jugador. Si no hay fogata, un integrante libre instala una; si faltan techos, otro instala una tienda.
 - **Forja:**
 
@@ -344,16 +358,30 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - piedras de honda (8);
   - cuerda de tendones;
   - ungüento: hierbas y miel (cierra las heridas, corta el veneno y devuelve algo de vida al vendar con B);
-  - coraza laminar de cuero (pieles y cuerda) y botas de fieltro (pieles).
+  - coraza laminar de cuero (pieles y cuerda) y botas y gorro de fieltro (fieltro);
+  - talabartería (v0.7.0): cuero (2 pieles), silla de montar, brida, alforjas, aljaba y casco, brazales y grebas laminares de cuero;
+  - hueso y asta: puntas de hueso (4), flechas con punta de hueso (5), peine, piezas de arco (hueso y tendón) y el arco compuesto (madera labrada, piezas de arco y tendón);
+  - grasa y leche: velas de sebo (3), antorchas (leña y grasa) y queso seco (2 de leche);
+  - para las obras: fieltro (2 pieles de cabra), madera labrada (2 troncos) y adobe (barro y forraje).
 - **Forjado:** las armas y armaduras de metal piden su horno y un herrero, y las hace la tribu.
 - **Ingredientes recolectables:**
   - matas de hierbas y pedernal en el campo (F; Mayús+F recoge todo lo cercano);
   - plumas de las aves, hueso y tendones del resto de animales al despiezarlos (F);
   - miel de las colmenas.
 - **Reparar:** la pestaña lista las piezas gastadas que llevas puestas y las de tus contenedores cercanos, con su estado.
-  - El fieltro y el cuero se remiendan con pieles (y cuerda), en cualquier sitio.
+  - El fieltro y el cuero se remiendan con pieles (y cuerda), en cualquier sitio. Sin pieles, se untan con grasa (v0.7.0): devuelve el 30 %.
   - El bronce, el hierro y el acero piden herrero, su horno en el campamento y metal con carbón.
   - Cada reparación devuelve parte del estado (60 % el cuero, 80 % el metal).
+
+### Valor, comercio, caravanas y saqueo (implementado en v0.7.0 — `src/sim/trade.*`, en juego `src/game/trade_game.*`)
+- **El valor:** cada bien vale una cantidad de plata (`item_value`), la moneda de la estepa (`utileria.material.plata`, 50 g la unidad). Lo trabajado vale más que su materia prima (el cuero, 10; las pieles, 4; una silla de montar, 40). Las joyas valen por su metal; el agua, las estructuras, los animales y los tatuajes no se comercian. El estado del guardián y el inventario dicen cuánto vale el acopio (`stock_value`) y la leyenda de cada objeto, cuánto vale uno.
+- **El precio cambia con la región** (`price_factor`): lo que allí abunda vale ×0,7 y lo que escasea, ×1,5 (las especias y la seda abundan en el desierto; la madera, en el bosque; los metales, en el altiplano). Quien vende cobra el 80 % y quien compra paga el 125 %: lo que se queda el mercader. Comprar donde abunda y vender donde escasea deja ganancia.
+- **Mercados** (`F` junto a ellos; abajo aparece «F: comerciar con...»): las tribus amigas y neutrales (a 18 m de su fuego), las aldeas (22 m), las capitales (30 m), los caravasares (14 m) y las caravanas (8 m). Cada uno vende lo propio (`market_goods`: la tribu, carne seca, queso, airag, cuero y fieltro; la aldea, pan, cerveza, cuerda, velas y flechas; la capital, sables de acero, escudos, cascos, bronce, vino y sillas; la caravana, seda, vino, especias, gemas y oro) y lo de su región.
+  - **Vender:** lo que llevas encima, en las alforjas, la carreta o las mochilas de la escolta cercanas (no lo puesto ni el acopio); lo más caro primero. Enter o clic vende uno; con Mayús, todos.
+  - **Comprar:** el precio en la casilla; Enter o clic compra uno, con Mayús cinco. La plata que no cabe, o lo comprado que no cabe, queda a tus pies.
+- **Caravanas** (`caravan_routes`, `caravan_at`): una por caravasar, hasta cuatro, va y vuelve al paso de los camellos (1,1 m/s) hasta la capital más cercana, cada una a otra hora. Se ven tres camellos cargados, el mercader a pie y dos jinetes de escolta. Se detienen mientras se comercia con ellas.
+  - **Asaltarla** (una opción del diálogo): su escolta (dos jinetes, un bandido y un arquero) desenvaina y la relación con el reino baja 10. Vencida (nadie en pie a 60 m del asalto ni a 40 m del jugador), la carga queda en el suelo: 3 de seda, 2 de especias, 2 de vino, 30-60 de plata, 1 de oro y una turquesa. La caravana descansa dos días y vuelve a salir de su caravasar. Si te alejas más de 200 m, sigue su camino.
+- **Saquear un campamento rival:** cuando sus guerreros ya salieron al paso, `F` junto a su fuego (a 20 m) lo saquea si no queda nadie en pie a 40 m: 2 de cuero, 1 de fieltro, 4 de carne seca, 3 pieles y 15-35 de plata. Se puede volver a saquear tras alejarse 600 m (como la emboscada, se rearma).
 
 ### Mochilas y alimentación de los animales (implementado — `src/sim/storage.*`, `src/sim/animals.*`)
 - **Mochilas, tres tamaños:**

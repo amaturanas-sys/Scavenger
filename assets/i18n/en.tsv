@@ -23,7 +23,6 @@ Anillo de oro	Gold ring
 Anillo de plata	Silver ring
 Antorcha	Torch
 Arbusto estepario	Steppe shrub
-Arco compuesto	Composite bow
 Arco compuesto de cuerno	Horn composite bow
 Arco largo	Longbow
 Aretes de bronce	Bronze earrings
@@ -62,12 +61,10 @@ Brazales (par) ritual del culto	Cult ritual bracers (pair)
 Brazalete de bronce	Bronze bracelet
 Brazalete de oro	Gold bracelet
 Brazalete de plata	Silver bracelet
-Brida y riendas	Bridle and reins
 Bufanda / velo contra la arena	Sand scarf / veil
 Buitre	Vulture
 Burócrata	Bureaucrat
 Caballo de guerra	Warhorse
-Cabaña de troncos	Log cabin
 Cadalso de ejecución pública	Public execution scaffold
 Caldero	Cauldron
 Campamento abandonado del padre	Father's abandoned camp
@@ -80,14 +77,12 @@ Carreta de mercancías	Goods wagon
 Carro con yurta montada (kibitka)	Yurt wagon (kibitka)
 Carruaje imperial	Imperial carriage
 Casa campesina	Peasant house
-Casa de adobe	Adobe house
 Casa larga de los fiordos	Fjord longhouse
 Casa urbana de dos plantas	Two-storey town house
 Casco de escamas de hierro	Iron scale helmet
 Casco de fieltro acolchado	Padded felt helmet
 Casco de malla	Mail helmet
 Casco de oro del padre	Father's gold helmet
-Casco laminar de cuero	Leather lamellar helmet
 Casco ritual del culto	Cult ritual helmet
 Catapulta	Catapult
 Cazador del bosque	Forest hunter
@@ -95,7 +90,6 @@ Cañón de campaña	Field cannon
 Cenizas de una estructura	Ashes of a structure
 Cerveza	Beer
 Chamán	Shaman
-Choza de fieltro	Felt hut
 Cinturón con placa de estilo animal	Animal-style plaque belt
 Cofre de botín	Loot chest
 Collar de bronce	Bronze necklace
@@ -113,6 +107,7 @@ Cornalina	Carnelian
 Corral de cuerdas y estacas	Rope and stake corral
 Cuartel	Barracks
 Cuchillo de hueso y hierro	Bone and iron knife
+Cuero	Leather
 Cuerpo base: adulto común	Base body: common adult
 Cuerpo base: adulto robusto	Base body: sturdy adult
 Cuerpo base: anciano	Base body: elder
@@ -135,6 +130,7 @@ Escudo de madera con umbo	Bossed wooden shield
 Escudo redondo de mimbre	Round wicker shield
 Espada ceremonial del padre	Father's ceremonial sword
 Espada larga	Longsword
+Especias	Spices
 Estandarte con la tamga del padre	Banner with father's tamga
 Estribos (par)	Stirrups (pair)
 Explorador	Scout
@@ -197,6 +193,7 @@ Jaula de prisioneros	Prisoner cage
 Jinete arquero	Horse archer
 Kurgán (túmulo funerario)	Kurgan (burial mound)
 La madre	The mother
+Ladrillos de adobe	Adobe bricks
 Lana de cabra	Goat wool
 Lanza	Spear
 Lanza de caballería de doble punta	Double-tipped cavalry lance
@@ -273,7 +270,7 @@ Poste tótem del clan	Clan totem pole
 Prisionero	Prisoner
 Protagonista ({NOMBRE})	Protagonist ({NOMBRE})
 Puerta de la ciudad	City gate
-Queso seco	Dried cheese
+Puntas de hueso	Bone points
 Refugiado	Refugee
 Refugio de ramas y pieles	Branch and hide shelter
 Refugio excavado en la nieve	Snow dugout shelter
@@ -288,7 +285,6 @@ Saco de grano	Sack of grain
 Saxaúl (arbusto del desierto)	Saxaul (desert shrub)
 Secadero de carne	Meat drying rack
 Seda	Silk
-Silla de montar	Saddle
 Soldado ballestero	Crossbow soldier
 Soldado lancero	Spear soldier
 Suelo: Altiplano glaciar	Ground: glacial plateau
@@ -325,6 +321,7 @@ Tótem del águila	Eagle totem
 Túnica campesina	Peasant tunic
 Túnica del culto	Cult robe
 Uniforme imperial	Imperial uniform
+Velas de sebo	Tallow candles
 Velero	Sailboat
 Verdugo	Executioner
 Vino	Wine
@@ -346,6 +343,7 @@ Zorro	Fox
  (enfundado)	 (sheathed)
  (lo que no cabe, al acopio)	 (the rest goes to the store)
  (silla para montarlo)	 (saddle it to ride)
+ Los oficios: %d tandas.	 Trades: %d batches.
  · OCULTO	 · HIDDEN
  · montado	 · mounted
 %d bebieron agua cruda y les cayeron los espíritus malditos (hace falta leña para hervirla).	%d drank raw water and the cursed spirits fell upon them (firewood is needed to boil it).
@@ -389,6 +387,7 @@ Hierves el agua: +%d agua hervida, sin espíritus malditos.	You boil the water: 
 La trepa se engancha: ¡a escalar!	The grapple holds: climb!
 Lanzaste: %s.	You threw: %s.
 Llenas el odre: +%d agua cruda. Hiérvela junto a un fuego antes de beberla (o bebe con riesgo).	You fill the waterskin: +%d raw water. Boil it by a fire before drinking (or drink at your own risk).
+Lo que hicieron los oficios:	What the trades made:
 Montaste el %s.	You mount the %s.
 Montura instalada: R para montar.	Saddle on: R to ride.
 Nada que reparar	Nothing to repair
@@ -498,7 +497,7 @@ y un %s en la tribu	and a %s in the tribe
 , grasa %d.	, fat %d.
 . Lo marcan en tu mapa (M).	. They mark it on your map (M).
 A %s	To %s
-Acopio: 	Store: 
+Acopio (vale %d de plata): 	Store (worth %d silver): 
 Adiós	Farewell
 Aprender un oficio en el campamento	Learn a trade in the camp
 Aquí podría nacer un campamento, pero no tienes escolta para nombrar un guardián (Y).	A camp could be born here, but you have no escort to name a keeper (Y).
@@ -734,6 +733,7 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡Fanáticos del culto! Buscan prisioneros para el sacrificio.	Cult fanatics! They seek prisoners for sacrifice.
 ¡Golpeaste el nido! Ahí vienen...	You hit the nest! Here they come...
 ¡Jinetes bandidos al galope! Derríbalos del caballo.	Bandit riders galloping in! Knock them off their horses.
+¡La escolta de la caravana desenvaina!	The caravan's escort draws steel!
 ¡Parry! El %s queda abierto.	Parry! The %s is wide open.
 ¡Te muerde un %s: veneno! Véndate con hierbas (B).	A %s bites you: poison! Bind it with herbs (B).
 ¡Un %s derriba a %s! Acércate y pulsa B.	A %s knocks down %s! Get close and press B.
@@ -918,6 +918,7 @@ descansado	rested
 %s · Enter: cambiar · Supr: quitar	%s · Enter: change · Del: remove
 %s · Supr: quitar	%s · Del: remove
 %s · nivel %d%s	%s · level %d%s
+%s · vale %s de plata	%s · worth %s silver
 Acopio y armería del campamento	Camp store and armory
 Alforjas (%s)	Saddlebags (%s)
 Armadura	Armour
@@ -975,6 +976,7 @@ Tu mochila va en la carreta: acércate a ella.	Your backpack is on the cart: go 
 Tu mochila va en un animal de carga: acércate a él.	Your backpack is on a pack animal: go to it.
 Un tatuaje es para siempre: la zona del cuerpo cambia a qué va el bonus. El tercer grado se bifurca: elegir una rama cierra la otra.	A tattoo is forever: the body zone changes what the bonus goes to. The third tier branches: choosing one branch closes the other.
 Un tatuaje no se puede quitar.	A tattoo can't be removed.
+Untas con grasa: %s (%d %% -> %d %%).	Greased: %s (%d %% -> %d %%).
 Vida	Health
 abriga %+.0f°	warmth %+.0f°
 abrigo %+.0f°	warmth %+.0f°
@@ -990,6 +992,7 @@ un %d %%	by %d %%
 vacío · Enter: ponerte ropa que tengas a mano	empty · Enter: put on clothing you have at hand
 vacío · Enter: ponerte una joya que tengas a mano	empty · Enter: wear a jewel you have at hand
 vacío · Enter: ponerte una pieza a mano	empty · Enter: wear a piece at hand
+vale %d de plata	worth %d silver
 # --- src/game/place_game.c
 Aquí vale (%d tramos): Enter o clic para colocar	Good spot (%d sections): Enter or click to place
 Aquí vale: Enter o clic para colocar	Good spot: Enter or click to place
@@ -1106,6 +1109,7 @@ B vendar · Mayús+L encender	B bandage · Shift+L light
 Beber de más emborracha: torpe con las armas, cansado y te tambaleas.	Drinking too much gets you drunk: clumsy with weapons, tired and staggering.
 Buscar reclutas, explorar y cazar son salidas: se van, no se los ve, y vuelven a los pocos minutos con su suerte. De noche es más peligroso.	Finding recruits, scouting and hunting are trips: they go out of sight and return a few minutes later, for better or worse. Night is riskier.
 C sigilo · X agacharse	C sneak · X crouch
+Cada día, los del campamento con oficio trabajan lo que sobra del acopio: el cazador curte pieles y talla puntas de hueso, el pastor hace fieltro, el constructor labra madera y hace adobe, el cocinero velas de sebo, el curandero ungüento y el orfebre peines.	Every day, camp folk with a trade work the store's surplus: the hunter tans hides and carves bone points, the herder makes felt, the builder dresses timber and makes adobe, the cook tallow candles, the healer salve and the goldsmith combs.
 Cada partida nueva cambia los ríos, los lagos, las montañas y dónde están los pueblos y las guaridas.	Each new game changes the rivers, lakes, mountains and where villages and dens are.
 Cada región tiene su altura: la costa, la más baja; el altiplano, el más alto. Hace más frío cuanto más alto.	Each region has its own altitude: the coast is the lowest, the highland the highest. The higher, the colder.
 Cada región tiene su reino, sus aldeas y su capital amurallada, sus fieras y sus tribus nómadas: rivales, neutrales o amigas. Ruinas y estructuras quedan en el mapa al verlas.	Each region has its kingdom, its villages and walled capital, its beasts and its nomad tribes: rival, neutral or friendly. Ruins and structures go on the map once you see them.
@@ -1118,6 +1122,7 @@ Cercas y muros: marca un extremo y después el otro. Se levantan por tramos de 4
 Cerrar el juego	Close the game
 Clima y peligros	Weather and hazards
 Combate cuerpo a cuerpo	Melee combat
+Con eso se fabrica (Tab, Fabricar): sillas, bridas, alforjas, aljabas, armadura laminar de cuero y el arco compuesto. Y se construye más duradero: casa de adobe, cabaña de troncos, choza de fieltro.	With that you craft (Tab, Craft): saddles, bridles, saddlebags, quivers, leather lamellar armor and the composite bow. And build to last: adobe house, log cabin, felt hut.
 Construyen los del campamento que no tienen tarea; el que sabe el oficio trabaja el doble.	The camp's idle people do the building; whoever knows the trade works twice as fast.
 Continuar	Continue
 Contra el frío, pieles y abrigos: oso, reno, lobo, tigre, cabra. Contra el sol, sombrero, pañuelo del desierto, túnica de seda blanca y manto blanco.	Against the cold, furs and coats: bear, reindeer, wolf, tiger, goat. Against the sun, a hat, a desert scarf, a white silk tunic and a white mantle.
@@ -1145,7 +1150,8 @@ Espacio saltar · Q/E cámara	Space jump · Q/E camera
 Explorar: marcan en tu mapa (M) agua, pastos junto a los ríos, campamentos rivales y ciudadelas, y aprenden el camino para que los despaches allí (Mayús+Y).	Scouting: they mark water, riverside pastures, rival camps and citadels on your map (M) and learn the way there (Shift+Y dispatches).
 F despieza un cadáver, ordeña la cabra · Mayús+F sacrifica el ganado.	F butchers a carcass, milks the goat · Shift+F slaughters livestock.
 F hablar/tomar/animales	F talk/take/animals
-F hace casi todo: hablar, tomar y recoger botín, el pozo y el horno, rescatar y atender a los animales	F does almost everything: talk, take and pick up loot, the well and the oven, rescue and tend the animals
+F hace casi todo: hablar y comerciar, tomar y recoger botín, el pozo y el horno, rescatar y atender a los animales	F does almost everything: talk and trade, take and pick up loot, the well and the oven, rescue and tend the animals
+F junto a una tribu amiga o neutral, una aldea, una capital, un caravasar o una caravana: vende lo que llevas (encima, en las alforjas, en la carreta) y compra lo suyo. Lo que abunda en la región vale menos; lo que escasea, más.	F by a friendly or neutral tribe, a village, a capital, a caravanserai or a caravan: sell what you carry (on you, in the saddlebags, in the cart) and buy their goods. What abounds in the region is cheaper; what is scarce, dearer.
 F junto al guardián, Pobladores: la gente del campamento con su oficio, salud, ánimo y lo que hace. Elige a uno o dos y «Dar una tarea».	F next to the keeper, Villagers: the camp's people with trade, health, morale and task. Pick one or two and «Give a task».
 F junto al guardián: obras, escolta, pobladores (sus tareas), capacitar en un oficio, estado y disolver el campamento.	F next to the keeper: builds, escort, villagers (their tasks), training a trade, status and dissolving the camp.
 F1/Ctrl+H cerrar esta ayuda	F1/Ctrl+H close this help
@@ -1186,6 +1192,7 @@ La tribu bebe del acopio o del río cercano (hervida si hay leña). Los animales
 La tribu come carne fresca y leche antes que la seca; con hambre baja la moral.	The tribe eats fresh meat and milk before dried food; hunger lowers morale.
 La tribu se cambia sola según el tiempo con la ropa de su mochila y del acopio; sin ropa adecuada pasa frío o calor y baja la moral.	The tribe changes clothes on its own with the weather, from their packs and the stockpile; without suitable clothing they suffer cold or heat and morale drops.
 La tribu y el campamento	The tribe and the camp
+Las caravanas van y vuelven entre cada caravasar y la capital más cercana. Si la asaltas, su escolta pelea; vencida, la carga queda en el suelo, y el reino se entera.	Caravans go back and forth between each caravanserai and the nearest capital. Raid one and its escort fights; once beaten, the cargo is left on the ground, and the kingdom hears of it.
 Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.	Structures wear out: the tribe repairs them with logs every day. Without upkeep, torrential rain brings them down.
 Las mazas, las patadas y los escudos tumban sin matar, y también una herida que no es mortal: el enemigo queda abatido en el suelo. A los 30-90 s despierta, herido, y huye a avisar a los suyos.	Maces, kicks and shields knock down without killing, and so does a wound that isn't mortal: the enemy lies downed. After 30-90 s they wake up, wounded, and run off to warn their own.
 Las obras	Building works
@@ -1206,6 +1213,7 @@ Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta 
 Mueve la obra con el puntero, el dedo o WASD; Q/E la giran; Mayús (o la casilla) la alinea a una rejilla de 2 m.	Move the building with the pointer, your finger or WASD; Q/E turn it; Shift (or the tile) snaps it to a 2 m grid.
 N bebe lo más seguro que tengas; en la orilla, sin nada, bebes del río. Con calor da más sed; sin agua te desmayas.	N drinks the safest thing you have; at the shore, with nothing, you drink from the river. Heat makes you thirstier; without water you faint.
 Nueva partida	New game
+Oficios y comercio	Crafts and commerce
 Osos, hienas, coyotes y jabalíes: siempre hostiles.	Bears, hyenas, coyotes and boars: always hostile.
 P equipo, pestaña Ropa: cabeza, cuello y cara, cuerpo, capa o abrigo y pies. Cada prenda abriga, da sombra o frena la lluvia.	P equipment, Clothing tab: head, neck and face, body, cloak or coat, and feet. Each garment gives warmth, shade or keeps the rain off.
 Partida de otra versión del juego	Save from another game version
@@ -1217,7 +1225,7 @@ Página anterior	Previous page
 Página siguiente	Next page
 R montar · T lanzar · Y escolta	R mount · T throw · Y escort
 Reclutar, liberar o ejecutar prisioneros cambia la relación con el reino.	Recruiting, freeing or executing prisoners changes your standing with the kingdom.
-Reparar: el cuero y el fieltro con pieles; el bronce y el hierro, herrero, horno y metal.	Repair: leather and felt with hides; bronze and iron need a smith, a furnace and metal.
+Reparar: el cuero y el fieltro con pieles (sin pieles, se untan con grasa); el bronce y el hierro, herrero, horno y metal.	Repair: leather and felt with hides (without hides, grease them); bronze and iron need a smith, a furnace and metal.
 Ropa y calor	Clothing and heat
 Salir	Quit
 Salir al título	Back to title
@@ -1234,6 +1242,8 @@ Tab, Obras (o el guardián, F) elige una obra: la cámara sube sobre el campamen
 Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario	Tab: actions, works, craft and repair (Q/E switches tab) · I: inventory
 Tatuajes (para siempre): habla (F) con el druida, elige motivo y zona. Lobo, ciervo, grifo, tamga y olas suben en tres grados; el tercero se bifurca y elegir una rama cierra la otra. La zona del cuerpo cambia a qué va el bonus.	Tattoos (forever): talk (F) to the druid, choose motif and zone. Wolf, deer, griffin, tamga and waves rise in three tiers; the third branches and choosing one closes the other. The body zone changes what the bonus goes to.
 Tatuajes y joyas	Tattoos and jewels
+Todo vale plata: el guardián (Estado) y el inventario dicen cuánto vale el acopio.	Everything is worth silver: the warden (Status) and the inventory tell what the store is worth.
+Un campamento rival cuyos guerreros ya salieron a tu encuentro se saquea con F, si no queda nadie en pie alrededor.	A rival camp whose warriors already rode out against you can be plundered with F, if no one is left standing around.
 Una gran tierra casi redonda con cinco regiones: la estepa en el centro, rodeada de ríos que serpentean; el bosque al noroeste, el desierto al noreste, el altiplano al sureste y los fiordos al suroeste.	A vast, nearly round land with five regions: the steppe at the center, ringed by winding rivers; the forest to the northwest, the desert to the northeast, the highland to the southeast and the fjords to the southwest.
 Una tienda o un refugio lejos de los demás campamentos funda uno nuevo: nombra guardián a alguien de tu escolta.	A tent or shelter far from other camps founds a new one: name someone from your escort its keeper.
 Una tribu nueva en la estepa	A new tribe on the steppe
@@ -1246,6 +1256,38 @@ WASD mover · Shift correr · C sigilo · X agacharse (tras rocas, matas o hierb
 Y llama a dos integrantes de escolta (Y otra vez: vuelven al campamento). Pelean a tu lado con las mismas reglas que tú.	Y calls two members as an escort (Y again: back to camp). They fight by your side by the same rules as you.
 Y: dos integrantes te escoltan · Mayús+Y: despachar o mandar un mensajero · U: ficha del gran guerrero	Y: two members escort you · Shift+Y: dispatch or send a messenger · U: great warrior card
 Órdenes (Y+1, Y+2, Y+3, o las casillas sobre la barra rápida): atacar, defender o seguir.	Orders (Y+1, Y+2, Y+3, or the tiles above the quick bar): attack, defend or follow.
+# --- src/game/trade_game.c
+ · aquí abunda	 · plentiful here
+ · aquí escasea	 · scarce here
+%d de plata cada uno · llevas %d%s	%d silver each · you carry %d%s
+%d de plata%s	%d silver%s
+Asaltar la caravana	Raid the caravan
+Aún quedan guerreros de los %s en pie: no puedes saquear.	Warriors of the %s are still standing: you can't plunder.
+Cae la escolta: la carga queda en el suelo (%d de plata y más). F: tomarla.	The escort falls: the cargo lies on the ground (%d silver and more). F: take it.
+Comprar	Buy
+Compras %d × %s por %d de plata.	You buy %d × %s for %d silver.
+El caravasar	The caravanserai
+F: comerciar con la caravana (o asaltarla)	F: trade with the caravan (or raid it)
+F: comerciar con los %s	F: trade with the %s
+F: comerciar en %s	F: trade in %s
+F: comerciar en el caravasar	F: trade at the caravanserai
+F: saquear el campamento de los %s	F: plunder the camp of the %s
+Llevas %d de plata. Enter o clic: compras uno; con Mayús, cinco.	You carry %d silver. Enter or click: buy one; with Shift, five.
+Llevas %d de plata. Enter o clic: vendes uno; con Mayús, todos.	You carry %d silver. Enter or click: sell one; with Shift, all.
+Llevas %d de plata; lo que cargas vale %d aquí.\nEn las tierras del %s, lo que abunda vale menos y lo que escasea, más. %s	You carry %d silver; your goods are worth %d here.\nIn the lands of the %s, what abounds is cheaper and what is scarce, dearer. %s
+Lo que llevas encima, en las alforjas, la carreta o las mochilas de la escolta: te pagan en plata.	What you carry on you, in the saddlebags, the cart or your escort's packs: they pay in silver.
+Lo suyo, a pagar en plata.	Their goods, paid in silver.
+Los %s	The %s
+Más (%d/%d)	More (%d/%d)
+No te alcanza: cuesta %d de plata y llevas %d.	Not enough: it costs %d silver and you carry %d.
+Saqueas a los %s: %d de plata y más, a tus pies (F).	You plunder the %s: %d silver and more, at your feet (F).
+Seda, especias y vino de tierras lejanas; la escolta no les quita el ojo a los camellos.	Silk, spices and wine from distant lands; the escort never takes its eyes off the camels.
+Su escolta pelea; vencida, la carga es tuya. El reino se enterará.	Its escort fights; once beaten, the cargo is yours. The kingdom will hear of it.
+Te alejas: la caravana sigue su camino.	You ride off: the caravan goes on its way.
+Una caravana	A caravan
+Vender	Sell
+Vendes %d × %s por %d de plata.	You sell %d × %s for %d silver.
+¡Asaltas la caravana! El %s se enterará (−%d).	You raid the caravan! The %s will hear of it (−%d).
 # --- src/game/travel_game.c
 %.0f m · ida y vuelta ~%.0f s · %d libres allí	%.0f m · round trip ~%.0f s · %d free there
 %.0f m · ~%.0f s · lo conocen %d de %d · riesgo %d%%	%.0f m · ~%.0f s · %d of %d know it · risk %d%%
@@ -1359,8 +1401,11 @@ sí	yes
 # --- src/sim/actions.c
 Arrojar el objeto que se lleva en la mano.	Throw the object in your hand.
 Atrapar un animal salvaje: una montura queda domada; un depredador debilitado queda atado hasta que le des carne (F).	Catch a wild animal: a mount is tamed; a weakened predator stays tied until you give it meat (F).
+Cabaña de troncos	Log cabin
 Cambiar empuñadura	Change grip
+Casa de adobe	Adobe house
 Cavar trinchera	Dig trench
+Choza de fieltro	Felt hut
 Cobertura contra flechas y cargas. Requiere pala.	Cover against arrows and charges. Needs a shovel.
 Corral	Corral
 Cribar en el agua	Pan in the water
@@ -1566,36 +1611,55 @@ Abrigo de piel de reno	Reindeer fur coat
 Abrigo de piel de tigre	Tiger fur coat
 Agua con vino (3)	Watered wine (3)
 Airag (leche de yegua fermentada)	Airag (fermented mare's milk)
+Alforjas	Saddlebags
+Aljaba de cuero	Leather quiver
+Antorchas (2)	Torches (2)
+Arco compuesto	Composite bow
 Botas de fieltro	Felt boots
 Botas de piel de reno	Reindeer fur boots
+Brazales laminares de cuero	Leather lamellar bracers
+Brida y riendas	Bridle and reins
 Bufanda de piel de zorro	Fox fur scarf
 Capa de lana	Wool cloak
 Capa de piel de hiena	Hyena fur cloak
 Capa de piel de lobo	Wolf fur cloak
 Capa de piel de puma	Puma fur cloak
 Casco de bronce	Bronze helmet
+Casco laminar de cuero	Leather lamellar helmet
 Cerveza de pan (2)	Bread beer (2)
 Coraza de escamas de acero	Steel scale cuirass
 Coraza laminar de cuero	Lamellar leather cuirass
 Cuerda de tendones	Sinew rope
+Cuero (curtir pieles)	Leather (tan hides)
 Deel de invierno con piel	Fur winter deel
 Escudo de láminas de hierro	Iron-plated shield
+Fieltro	Felt
 Flechas (5)	Arrows (5)
+Flechas con punta de hueso (5)	Bone-tipped arrows (5)
 Gorro de cabeza de lobo	Wolf head hat
 Gorro de fieltro de punta	Pointed felt hat
 Gorro de piel	Fur hat
+Grebas laminares de cuero	Leather lamellar greaves
+Ladrillos de adobe (2)	Adobe bricks (2)
 Lanza de punta de bronce	Bronze-tipped spear
 Lingote de bronce	Bronze ingot
+Madera labrada	Dressed timber
 Manto blanco del desierto	White desert mantle
 Pañuelo del desierto	Desert scarf
+Peine de hueso	Bone comb
 Piedras de honda (8)	Sling stones (8)
+Piezas de arco (asta y tendón)	Bow parts (horn and sinew)
+Puntas de hueso (4)	Bone points (4)
+Queso seco	Dried cheese
 Sable de acero	Steel sabre
 Sable de bronce	Bronze sabre
 Sandalias de cuero	Leather sandals
+Silla de montar	Saddle
 Sombrero de ala ancha	Wide-brimmed hat
 Túnica de lana	Wool tunic
 Túnica de seda blanca	White silk tunic
 Ungüento de hierbas y miel	Herb and honey ointment
+Velas de sebo (3)	Tallow candles (3)
 Virotes (4)	Bolts (4)
 # --- src/sim/hazards.c
 abrigado	warm
@@ -1687,7 +1751,6 @@ Desvío	Deflect
 Gancho al escudo	Shield hook
 # --- src/sim/storage.c
 Acopio del campamento	Camp store
-Alforjas	Saddlebags
 Carreta	Cart
 mochila grande	large backpack
 mochila mediana	medium backpack

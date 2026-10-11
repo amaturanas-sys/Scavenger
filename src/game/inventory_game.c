@@ -438,9 +438,14 @@ static bool building_near(const Props *props, const char *id, const Player *p) {
     return false;
 }
 
+const RepairDef *ig_repair_way(GameActions *ga, const Props *props, const Player *p, const RepairItem *it) {
+    const RepairDef *d = repair_def(it->material), *g = repair_grease(it->material);
+    return g && ig_first_missing(ga, props, p, d->mats) && !ig_first_missing(ga, props, p, g->mats) ? g : d;
+}
+
 bool ig_can_repair(GameActions *ga, const Props *props, const Player *p, const Troop *troop, const RepairItem *it, char *why,
                    size_t len) {
-    const RepairDef *d = repair_def(it->material);
+    const RepairDef *d = ig_repair_way(ga, props, p, it);
     if (d->building && !building_near(props, d->building, p)) {
         snprintf(why, len, T("Hace falta: %s (cerca)."), item_name(ga, d->building));
         return false;
@@ -465,7 +470,8 @@ bool ig_repair(GameActions *ga, const Props *props, const Player *p, const Troop
         snprintf(log, len, T("No se puede reparar: %s"), why);
         return false;
     }
-    const RepairDef *d = repair_def(it->material);
+    const RepairDef *d = ig_repair_way(ga, props, p, it);
+    bool grease = d == repair_grease(it->material);
     ig_use_all(ga, props, p, d->mats);
     float cond = fminf(1.0f, it->cond + d->restore);
     if (it->worn && ga->player_armor) {
@@ -478,8 +484,42 @@ bool ig_repair(GameActions *ga, const Props *props, const Player *p, const Troop
                 break;
             }
     }
-    snprintf(log, len, T("Reparas: %s (%d %% -> %d %%)."), item_name(ga, it->id), (int)(it->cond * 100), (int)(cond * 100));
+    snprintf(log, len, grease ? T("Untas con grasa: %s (%d %% -> %d %%).") : T("Reparas: %s (%d %% -> %d %%)."), item_name(ga, it->id),
+             (int)(it->cond * 100), (int)(cond * 100));
     return true;
+}
+
+// ------------------------------------------------------------------ lo que llevas (el comercio)
+int ig_carried_count(GameActions *ga, const Props *props, const Player *p, const char *id) {
+    Cont c[CONT_MAX];
+    int k = containers(ga, props, p, c), n = 0;
+    for (int i = 0; i < k; i++)
+        if (c[i].type == C_BAG && c[i].bag) n += bag_count(c[i].bag, id);
+    return n;
+}
+
+int ig_take_carried(GameActions *ga, const Props *props, const Player *p, const char *id, int n) {
+    Cont c[CONT_MAX];
+    int k = containers(ga, props, p, c), taken = 0;
+    for (int i = 0; i < k && taken < n; i++)
+        if (c[i].type == C_BAG && c[i].bag) taken += bag_take(c[i].bag, id, n - taken, NULL);
+    return taken;
+}
+
+int ig_carried_list(GameActions *ga, const Props *props, const Player *p, const char **ids, int *counts, int max) {
+    Cont c[CONT_MAX];
+    int k = containers(ga, props, p, c), n = 0;
+    for (int i = 0; i < k; i++) {
+        if (c[i].type != C_BAG || !c[i].bag) continue;
+        const Bag *b = c[i].bag;
+        for (int s = 0; s < b->n; s++) {
+            int j = 0;
+            while (j < n && strcmp(ids[j], b->s[s].id) != 0) j++;
+            if (j < n) counts[j] += b->s[s].count;
+            else if (n < max) ids[n] = b->s[s].id, counts[n++] = b->s[s].count;
+        }
+    }
+    return n;
 }
 
 // ------------------------------------------------------------------ botin
@@ -856,8 +896,10 @@ static void draw_pane(const GameActions *ga, const Cont *conts, int nc, int k) {
         ui_text(cap, ix + iw - MeasureText(cap, 10), hy, 10, full ? UI_CARNELIAN : UI_BONE_DIM);
         if (ui_hover((Rectangle){ (float)ix, (float)hy - 4, (float)iw, 14 }))
             ui_legend(ct->label, TextFormat(T("%.1f de %.0f kg · %d de %d huecos"), kg, ct->bag->cap_kg, ct->bag->n, ct->bag->slots));
-    } else {
+    } else { // el acopio: lo que vale todo, en plata (src/sim/trade.h)
         ui_text(ct->label, ix, hy, 10, UI_BONE_DIM);
+        const char *worth = TextFormat(T("vale %d de plata"), (int)stock_value(ga_stock_c(ga)));
+        ui_text(worth, ix + iw - MeasureText(worth, 10), hy, 10, UI_GOLD);
     }
     Row rows[64];
     int n = rows_of(ga, ct, rows, 64);
@@ -872,8 +914,10 @@ static void draw_pane(const GameActions *ga, const Cont *conts, int nc, int k) {
         if (gear && rows[i].cond < 0.999f) ui_tile_bar(r, rows[i].cond, rows[i].cond < 0.3f ? UI_CARNELIAN : UI_GOLD);
         if (hover || sel) {
             const InvItem *it = inventory_find(ga->inv, rows[i].id);
+            float worth = item_value(rows[i].id); // en plata, cada uno (src/sim/trade.h)
             const char *d = TextFormat(T("%d · %.1f kg%s · Enter o clic: pasar (Mayús: todo)"), rows[i].count, item_kg(it) * (float)rows[i].count,
                                        gear ? TextFormat(T(" · estado %d %%"), (int)(rows[i].cond * 100)) : "");
+            if (worth > 0.0f) d = TextFormat(T("%s · vale %s de plata"), d, TextFormat(worth < 10.0f ? "%.1f" : "%.0f", worth));
             if (hover) ui_legend(it ? T(it->name) : rows[i].id, d);
             else ui_legend_default(it ? T(it->name) : rows[i].id, d);
         }

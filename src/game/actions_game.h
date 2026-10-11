@@ -27,6 +27,7 @@
 #include "sim/jewelry.h"
 #include "sim/loadout.h"
 #include "sim/talents.h"
+#include "sim/trade.h"
 #include "sim/travel.h"
 #include "sim/storage.h"
 #include "sim/squad.h"
@@ -183,6 +184,13 @@ typedef struct {
     int people_page;    // pagina de la lista
     Vector3 herd_at[CAMPS_MAX]; // donde pasta el ganado de cada campamento (en un turno de pastoreo)
     CampNews news[CAMPS_MAX]; // los ultimos informes de cada campamento
+    // El comercio y las caravanas (src/game/trade_game.c).
+    int market_kind, market_idx, market_region; // con quien se comercia: MarketKind, su indice y la Region
+    float caravan_delay[CARAVANS_MAX]; // s que lleva detenida cada caravana (comerciando o asaltada)
+    float caravan_rest[CARAVANS_MAX];  // s de juego: hasta cuando no sale (la asaltaron)
+    int caravan_raid;                  // la caravana que se asalta + 1 (0: ninguna)
+    Vector3 caravan_raid_at;           // donde se detuvo
+    unsigned tribe_looted;             // campamentos rivales ya saqueados (un bit por tribu)
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);

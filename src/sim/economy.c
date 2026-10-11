@@ -1,4 +1,5 @@
 #include "sim/economy.h"
+#include "sim/armor.h"
 #include "sim/lang.h"
 
 #include <stdio.h>
@@ -143,6 +144,55 @@ UpkeepReport economy_daily_upkeep(Stockpile *s, Troop *t) {
     return r;
 }
 
+// ---------------------------------------------------------------- el trabajo de cada oficio
+// Lo que hace cada oficio por dia con lo que hay en el acopio (sin tocar la reserva): una tanda.
+typedef struct {
+    Role role;
+    Ingredient in[3];
+    const char *out;
+    int amount;
+    int keep; // lo que no toca de cada insumo (los troncos de las reparaciones, por ejemplo)
+} WorkRule;
+
+static const WorkRule WORK[] = {
+    { ROLE_HUNTER, { { "utileria.material.pieles", 2 }, { NULL, 0 } }, "utileria.material.cuero", 1, 2 },
+    { ROLE_HUNTER, { { "utileria.material.hueso", 1 }, { NULL, 0 } }, "utileria.material.puntas_hueso", 4, 1 },
+    { ROLE_HERDER, { { "utileria.piel.cabra", 2 }, { NULL, 0 } }, "utileria.material.fieltro", 1, 0 },
+    { ROLE_BUILDER, { { "utileria.material.troncos", 2 }, { NULL, 0 } }, "utileria.material.madera_labrada", 1, 6 },
+    { ROLE_BUILDER, { { "utileria.material.barro", 2 }, { "utileria.consumible.forraje", 1 }, { NULL, 0 } }, "utileria.material.adobe", 2, 2 },
+    { ROLE_COOK, { { "utileria.material.grasa", 1 }, { NULL, 0 } }, "utileria.objeto.vela", 3, 0 },
+    { ROLE_HEALER, { { "utileria.consumible.hierbas", 2 }, { "utileria.consumible.miel", 1 }, { NULL, 0 } }, "utileria.consumible.unguento", 1, 2 },
+    { ROLE_GOLDSMITH, { { "utileria.material.hueso", 1 }, { NULL, 0 } }, "utileria.objeto.peine", 1, 1 },
+};
+
+static bool work_ready(const Stockpile *s, const WorkRule *w) {
+    for (const Ingredient *m = w->in; m->id; m++)
+        if (stock_count(s, m->id) < m->count + w->keep) return false;
+    return true;
+}
+
+WorkReport economy_daily_work(Stockpile *s, const Troop *t) {
+    WorkReport r;
+    memset(&r, 0, sizeof(r));
+    for (int i = 0; i < t->count; i++) {
+        const Member *m = &t->members[i];
+        if (m->status != STATUS_ACTIVE) continue;
+        for (size_t k = 0; k < sizeof(WORK) / sizeof(WORK[0]); k++) {
+            const WorkRule *w = &WORK[k];
+            if (w->role != m->role || !work_ready(s, w)) continue;
+            for (const Ingredient *in = w->in; in->id; in++) stock_take(s, in->id, in->count);
+            stock_add(s, w->out, w->amount);
+            r.batches++;
+            int j = 0;
+            while (j < r.n && strcmp(r.made[j].id, w->out) != 0) j++;
+            if (j == r.n && r.n < WORK_OUTPUTS_MAX) r.made[r.n++] = (WorkOutput){ w->out, 0 };
+            if (j < r.n) r.made[j].count += w->amount;
+            break; // una tanda por persona y por dia
+        }
+    }
+    return r;
+}
+
 // ---------------------------------------------------------------- efectos de las construcciones
 CampEffects camp_effects(const char *const *ids, int n) {
     CampEffects e = { 0.0f, 1.0f, 0.0f, 0 };
@@ -156,6 +206,8 @@ CampEffects camp_effects(const char *const *ids, int n) {
         else if (!strcmp(id, "totem.proteccion.guardian")) totem = true;
         else if (!strcmp(id, "estructura.campamento.atalaya")) e.reveal_radius = 80.0f;
         if (!strcmp(id, "estructura.campamento.refugio") || !strcmp(id, "estructura.vivienda.tienda_ligera")) e.shelters += 1;
+        else if (!strcmp(id, "estructura.vivienda.choza_fieltro")) e.shelters += 2;
+        else if (!strcmp(id, "estructura.vivienda.casa_adobe") || !strcmp(id, "estructura.vivienda.cabana_troncos")) e.shelters += 3;
         else if (!strncmp(id, "estructura.vivienda.yurta", 25)) e.shelters += 4;
     }
     if (bonfire) e.morale_per_day += 3.0f;        // calor y reunion
@@ -203,12 +255,12 @@ static const CraftDef CRAFTS[CRAFT_COUNT] = {
     [CRAFT_LEATHER_CUIRASS] = { N_("Coraza laminar de cuero"), "armadura.torso.laminar_cuero", NULL, ROLE_NONE,
                                 { { "utileria.material.pieles", 3 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } }, 90.0f, 1 },
     [CRAFT_FELT_BOOTS] = { N_("Botas de fieltro"), "armadura.botas.fieltro", NULL, ROLE_NONE,
-                           { { "utileria.material.pieles", 2 }, { NULL, 0 } }, 45.0f, 1 },
+                           { { "utileria.material.fieltro", 2 }, { NULL, 0 } }, 45.0f, 1 },
     [CRAFT_BRONZE_INGOT] = { N_("Lingote de bronce"), "utileria.material.bronce", BRONZE, ROLE_SMITH,
                              { { "utileria.material.cobre", 2 }, { "utileria.material.estano", 1 }, { "utileria.material.carbon", 1 }, { NULL, 0 } },
                              60.0f, 1 },
     [CRAFT_FUR_HAT] = { N_("Gorro de piel"), "vestimenta.cabeza.gorro_piel", NULL, ROLE_NONE, { { "utileria.material.pieles", 1 }, { NULL, 0 } }, 20.0f, 1 },
-    [CRAFT_FELT_HAT] = { N_("Gorro de fieltro de punta"), "vestimenta.cabeza.gorro_punta", NULL, ROLE_NONE, { { "utileria.piel.cabra", 1 }, { NULL, 0 } }, 20.0f, 1 },
+    [CRAFT_FELT_HAT] = { N_("Gorro de fieltro de punta"), "vestimenta.cabeza.gorro_punta", NULL, ROLE_NONE, { { "utileria.material.fieltro", 1 }, { NULL, 0 } }, 20.0f, 1 },
     [CRAFT_SUN_HAT] = { N_("Sombrero de ala ancha"), "vestimenta.cabeza.sombrero", NULL, ROLE_NONE, { { "utileria.piel.cabra", 2 }, { NULL, 0 } }, 25.0f, 1 },
     [CRAFT_WOLF_HAT] = { N_("Gorro de cabeza de lobo"), "vestimenta.cabeza.gorro_lobo", NULL, ROLE_NONE, { { "utileria.piel.lobo", 1 }, { "utileria.material.tendones", 1 }, { NULL, 0 } }, 30.0f, 1 },
     [CRAFT_DESERT_SCARF] = { N_("Pañuelo del desierto"), "vestimenta.cuello.panuelo_desierto", NULL, ROLE_NONE, { { "utileria.material.seda", 1 }, { NULL, 0 } }, 15.0f, 1 },
@@ -233,6 +285,40 @@ static const CraftDef CRAFTS[CRAFT_COUNT] = {
     [CRAFT_BEER] = { N_("Cerveza de pan (2)"), "utileria.consumible.cerveza", NULL, ROLE_NONE,
                      { { "utileria.consumible.pan", 1 }, { "utileria.consumible.agua", 1 }, { NULL, 0 } }, 40.0f, 2 },
     [CRAFT_SANDALS] = { N_("Sandalias de cuero"), "vestimenta.pies.sandalias", NULL, ROLE_NONE, { { "utileria.material.pieles", 1 }, { NULL, 0 } }, 15.0f, 1 },
+    // Talabarteria: las pieles se curten y se trabajan.
+    [CRAFT_LEATHER] = { N_("Cuero (curtir pieles)"), "utileria.material.cuero", NULL, ROLE_NONE, { { "utileria.material.pieles", 2 }, { NULL, 0 } }, 40.0f, 1 },
+    [CRAFT_SADDLE] = { N_("Silla de montar"), "accesorio.arreo.silla_montar", NULL, ROLE_NONE,
+                       { { "utileria.material.cuero", 3 }, { "utileria.material.madera_labrada", 1 }, { NULL, 0 } }, 120.0f, 1 },
+    [CRAFT_BRIDLE] = { N_("Brida y riendas"), "accesorio.arreo.brida", NULL, ROLE_NONE,
+                       { { "utileria.material.cuero", 1 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } }, 50.0f, 1 },
+    [CRAFT_SADDLEBAGS] = { N_("Alforjas"), "accesorio.arreo.alforjas", NULL, ROLE_NONE, { { "utileria.material.cuero", 2 }, { NULL, 0 } }, 60.0f, 1 },
+    [CRAFT_QUIVER] = { N_("Aljaba de cuero"), "utileria.objeto.aljaba", NULL, ROLE_NONE, { { "utileria.material.cuero", 1 }, { NULL, 0 } }, 35.0f, 1 },
+    [CRAFT_LEATHER_HELMET] = { N_("Casco laminar de cuero"), "armadura.casco.laminar_cuero", NULL, ROLE_NONE,
+                               { { "utileria.material.cuero", 2 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } }, 60.0f, 1 },
+    [CRAFT_LEATHER_BRACERS] = { N_("Brazales laminares de cuero"), "armadura.brazales.laminar_cuero", NULL, ROLE_NONE,
+                                { { "utileria.material.cuero", 1 }, { NULL, 0 } }, 40.0f, 1 },
+    [CRAFT_LEATHER_GREAVES] = { N_("Grebas laminares de cuero"), "armadura.grebas.laminar_cuero", NULL, ROLE_NONE,
+                                { { "utileria.material.cuero", 1 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } }, 45.0f, 1 },
+    // Hueso y asta.
+    [CRAFT_BONE_POINTS] = { N_("Puntas de hueso (4)"), "utileria.material.puntas_hueso", NULL, ROLE_NONE, { { "utileria.material.hueso", 1 }, { NULL, 0 } }, 15.0f, 4 },
+    [CRAFT_BONE_ARROWS] = { N_("Flechas con punta de hueso (5)"), "proyectil.flecha.comun", NULL, ROLE_NONE,
+                            { { "utileria.objeto.lena", 1 }, { "utileria.material.plumas", 1 }, { "utileria.material.puntas_hueso", 2 }, { NULL, 0 } }, 20.0f, 5 },
+    [CRAFT_COMB] = { N_("Peine de hueso"), "utileria.objeto.peine", NULL, ROLE_NONE, { { "utileria.material.hueso", 1 }, { NULL, 0 } }, 25.0f, 1 },
+    [CRAFT_BOW_PARTS] = { N_("Piezas de arco (asta y tendón)"), "utileria.material.piezas_arco", NULL, ROLE_NONE,
+                          { { "utileria.material.hueso", 2 }, { "utileria.material.tendones", 1 }, { NULL, 0 } }, 40.0f, 1 },
+    [CRAFT_COMPOSITE_BOW] = { N_("Arco compuesto"), "arma.distancia.arco_compuesto", NULL, ROLE_NONE,
+                              { { "utileria.material.madera_labrada", 1 }, { "utileria.material.piezas_arco", 2 }, { "utileria.material.tendones", 1 }, { NULL, 0 } },
+                              150.0f, 1 },
+    // Grasa: velas y antorchas.
+    [CRAFT_CANDLES] = { N_("Velas de sebo (3)"), "utileria.objeto.vela", NULL, ROLE_NONE, { { "utileria.material.grasa", 1 }, { NULL, 0 } }, 20.0f, 3 },
+    [CRAFT_TORCH] = { N_("Antorchas (2)"), "utileria.objeto.antorcha", NULL, ROLE_NONE,
+                      { { "utileria.objeto.lena", 1 }, { "utileria.material.grasa", 1 }, { NULL, 0 } }, 15.0f, 2 },
+    // Leche, lana, madera y barro.
+    [CRAFT_CHEESE] = { N_("Queso seco"), "utileria.consumible.queso_seco", NULL, ROLE_NONE, { { "utileria.consumible.leche", 2 }, { NULL, 0 } }, 20.0f, 1 },
+    [CRAFT_FELT] = { N_("Fieltro"), "utileria.material.fieltro", NULL, ROLE_NONE, { { "utileria.piel.cabra", 2 }, { NULL, 0 } }, 40.0f, 1 },
+    [CRAFT_WORKED_WOOD] = { N_("Madera labrada"), "utileria.material.madera_labrada", NULL, ROLE_NONE, { { "utileria.material.troncos", 2 }, { NULL, 0 } }, 30.0f, 1 },
+    [CRAFT_ADOBE] = { N_("Ladrillos de adobe (2)"), "utileria.material.adobe", NULL, ROLE_NONE,
+                      { { "utileria.material.barro", 2 }, { "utileria.consumible.forraje", 1 }, { NULL, 0 } }, 30.0f, 2 },
 };
 
 bool craft_by_hand(const CraftDef *c) { return c->role == ROLE_NONE; }
@@ -246,6 +332,10 @@ static const RepairDef REPAIRS[] = {
     { { { "utileria.material.hierro", 1 }, { "utileria.material.carbon", 2 }, { NULL, 0 } }, STEEL, ROLE_SMITH, 0.8f },
     { { { "utileria.material.carbon", 1 }, { NULL, 0 } }, BRONZE, ROLE_SMITH, 0.8f },
 };
+
+static const RepairDef GREASE = { { { "utileria.material.grasa", 1 }, { NULL, 0 } }, NULL, ROLE_NONE, 0.3f };
+
+const RepairDef *repair_grease(int material) { return material == MAT_FELT || material == MAT_LEATHER ? &GREASE : NULL; }
 
 const RepairDef *repair_def(int material) {
     return &REPAIRS[material >= 0 && material < (int)(sizeof(REPAIRS) / sizeof(REPAIRS[0])) ? material : 0];

@@ -60,6 +60,25 @@ typedef struct {
 // comida, la moral de todos cae.
 UpkeepReport economy_daily_upkeep(Stockpile *s, Troop *t);
 
+// ---------------------------------------------------------------- el trabajo de cada oficio
+#define WORK_OUTPUTS_MAX 8
+typedef struct {
+    const char *id; // lo que hicieron
+    int count;
+} WorkOutput;
+
+typedef struct {
+    WorkOutput made[WORK_OUTPUTS_MAX];
+    int n;
+    int batches; // tandas: una por persona que trabajo
+} WorkReport;
+
+// Cada integrante con oficio hace una tanda por dia con el acopio de su campamento, si alcanza
+// sin tocar la reserva: el cazador curte pieles (o hace puntas de hueso), el pastor abatana la
+// lana en fieltro, el constructor labra troncos (o hace adobe), el cocinero hace velas, el
+// curandero unguento y el orfebre peines de hueso.
+WorkReport economy_daily_work(Stockpile *s, const Troop *t);
+
 // ---------------------------------------------------------------- efectos de las construcciones
 typedef struct {
     float morale_per_day;  // animo que suma el campamento cada dia
@@ -113,6 +132,26 @@ typedef enum {
     CRAFT_WATERED_WINE,
     CRAFT_AIRAG,
     CRAFT_BEER,
+    // Las cadenas de produccion (fase 5): talabarteria, hueso y asta, grasa, leche, fieltro, madera y adobe.
+    CRAFT_LEATHER,
+    CRAFT_SADDLE,
+    CRAFT_BRIDLE,
+    CRAFT_SADDLEBAGS,
+    CRAFT_QUIVER,
+    CRAFT_LEATHER_HELMET,
+    CRAFT_LEATHER_BRACERS,
+    CRAFT_LEATHER_GREAVES,
+    CRAFT_BONE_POINTS,
+    CRAFT_BONE_ARROWS,
+    CRAFT_COMB,
+    CRAFT_BOW_PARTS,
+    CRAFT_COMPOSITE_BOW,
+    CRAFT_CANDLES,
+    CRAFT_TORCH,
+    CRAFT_CHEESE,
+    CRAFT_FELT,
+    CRAFT_WORKED_WOOD,
+    CRAFT_ADOBE,
     CRAFT_COUNT
 } CraftId;
 
@@ -143,5 +182,8 @@ typedef struct {
 } RepairDef;
 
 const RepairDef *repair_def(int material);
+// Untar con grasa: el fieltro y el cuero se mantienen con grasa cuando falta con que repararlos
+// (devuelve menos). NULL para los demas materiales.
+const RepairDef *repair_grease(int material);
 
 #endif

@@ -276,6 +276,9 @@ utileria.objeto.cadenas	Grilletes y cadenas	material:hierro	0.4x0.1x0.4	80	pendi
 utileria.objeto.yunque	Yunque	material:hierro	0.6x0.5x0.3	80	pendiente	
 utileria.objeto.telar	Telar de fieltro	faccion:nomada,material:madera	1.5x1.2x1	150	pendiente	
 utileria.objeto.tamboril_chaman	Tambor chamánico	faccion:nomada,material:cuero	0.5x0.1x0.5	100	pendiente	
+utileria.objeto.vela	Velas de sebo	uso:recolectable	0.05x0.15x0.05	20	pendiente	De la grasa animal: luz para las noches largas y bien de trueque.
+utileria.objeto.peine	Peine de hueso	uso:recolectable,material:hueso	0.1x0.02x0.08	20	pendiente	Labrado en hueso: bien de trueque.
+utileria.objeto.aljaba	Aljaba de cuero	uso:recolectable,material:cuero	0.15x0.7x0.15	60	pendiente	Para las flechas; se paga bien en la estepa.
 utileria.consumible.carne_seca	Carne seca	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.airag	Odre de airag (leche de yegua)	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
 utileria.consumible.queso_seco	Queso seco	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	
@@ -286,6 +289,7 @@ utileria.consumible.carne_fresca	Carne fresca	uso:recolectable,uso:consumible	0.
 utileria.consumible.leche	Leche	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	Del ordeño diario del ganado.
 utileria.consumible.miel	Miel silvestre	uso:recolectable,uso:consumible	0.15x0.15x0.15	40	pendiente	De las colmenas, con humo.
 utileria.consumible.unguento	Ungüento de hierbas y miel	uso:recolectable,uso:consumible	0.1x0.1x0.1	30	pendiente	Cura más que las hierbas: corta el veneno y cierra las heridas.
+utileria.consumible.especias	Especias	uso:recolectable,uso:consumible	0.15x0.1x0.15	20	pendiente	De las caravanas del desierto: valen su peso en plata.
 utileria.herramienta.pala	Pala	uso:equipable,manos:dos,material:hierro	0.25x1.2x0.05	60	pendiente	Para cavar trincheras.
 utileria.herramienta.gancho_trepa	Trepa (gancho con cuerda)	uso:equipable,manos:una,material:hierro	0.3x0.4x0.3	80	pendiente	Se lanza para escalar muros en los asedios.
 utileria.objeto.lena	Haz de leña	uso:recolectable,material:madera	0.5x0.3x0.8	40	pendiente	Material de fogatas, hogueras y hornos.
@@ -302,6 +306,12 @@ utileria.material.plumas	Plumas	uso:recolectable,uso:material	0.2x0.05x0.3	20	pe
 utileria.material.hueso	Huesos	uso:recolectable,uso:material,material:hueso	0.3x0.1x0.3	30	pendiente	Del despiece: puntas de virote.
 utileria.material.tendones	Tendones	uso:recolectable,uso:material	0.2x0.05x0.3	20	pendiente	Del despiece: cuerda.
 utileria.material.grasa	Grasa animal	uso:recolectable,uso:material	0.2x0.1x0.2	20	pendiente	De la caza (más en otoño): sebo para lámparas, ungüentos y para engrasar el cuero.
+utileria.material.cuero	Cuero	uso:recolectable,uso:material,material:cuero	0.6x0.1x0.8	40	pendiente	De curtir y trabajar las pieles (talabartería): arreos, sillas, aljabas y armaduras.
+utileria.material.fieltro	Fieltro	uso:recolectable,uso:material,material:fieltro	0.6x0.1x0.8	40	pendiente	De abatanar la lana de cabra: chozas, gorros y botas.
+utileria.material.madera_labrada	Madera labrada	uso:recolectable,uso:material,material:madera	0.3x0.2x1.5	40	pendiente	Troncos desbastados y escuadrados: sillas, arcos y casas que duran.
+utileria.material.adobe	Ladrillos de adobe	uso:recolectable,uso:material,material:barro	0.4x0.2x0.3	30	pendiente	Barro y paja secados al sol: casas que duran.
+utileria.material.puntas_hueso	Puntas de hueso	uso:recolectable,uso:material,material:hueso	0.1x0.05x0.1	20	pendiente	Para las flechas, cuando no hay pedernal.
+utileria.material.piezas_arco	Piezas de arco (asta y tendón)	uso:recolectable,uso:material,material:hueso	0.1x0.05x0.6	30	pendiente	Láminas de asta y tendón: el arco compuesto.
 utileria.material.pedernal	Pedernal	uso:recolectable,uso:material,material:piedra	0.15x0.1x0.15	30	pendiente	Se recoge en la estepa: puntas de flecha.
 personaje.base.cuerpo_nino	Cuerpo base: niño	rig:humanoide,talla:pequena	0.35x1.2x0.25	800	pendiente	Malla base modular: ropa y armadura encajan encima.
 personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.5x1.7x0.3	1200	pendiente	

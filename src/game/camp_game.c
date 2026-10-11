@@ -68,7 +68,8 @@ static IconId role_icon(Role r) {
 
 static IconId build_icon(BuildId b) {
     static const IconId I[BUILD_COUNT] = { ICON_REFUGIO, ICON_OBRAS, ICON_MURO_PIEDRA, ICON_HOGUERA, ICON_TOTEM,
-                                           ICON_HORNO,   ICON_FUNDICION, ICON_FUNDICION, ICON_TORRE, ICON_CORRAL };
+                                           ICON_HORNO,   ICON_FUNDICION, ICON_FUNDICION, ICON_TORRE, ICON_CORRAL,
+                                           ICON_ESTRUCTURA, ICON_REFUGIO, ICON_TIENDA };
     return b >= 0 && b < BUILD_COUNT ? I[b] : ICON_OBRAS;
 }
 
@@ -336,7 +337,7 @@ static void build_dialog(GameActions *ga, const Troop *troop, const Props *props
         break;
     }
     case CG_STATUS: {
-        char txt[320];
+        char txt[640];
         int n = 0, people = 0;
         for (int i = 0; i < troop->count && i < TROOP_MAX; i++) people += troop->members[i].status == STATUS_ACTIVE && troop->members[i].camp == k;
         n += snprintf(txt + n, sizeof(txt) - (size_t)n, T("Gente: %d. "), people);
@@ -349,7 +350,8 @@ static void build_dialog(GameActions *ga, const Troop *troop, const Props *props
             else
                 n += snprintf(txt + n, sizeof(txt) - (size_t)n, "%s, %s: %d%%. ", names_of(troop, ids, ct->member2 ? 2 : 1), task_doing(ct->kind), pct);
         }
-        n += snprintf(txt + n, sizeof(txt) - (size_t)n, "%s", T("Acopio: "));
+        if (n < (int)sizeof(txt)) // lo que vale todo, en plata (src/sim/trade.h)
+            n += snprintf(txt + n, sizeof(txt) - (size_t)n, T("Acopio (vale %d de plata): "), c ? (int)stock_value(&c->stock) : 0);
         for (int e = 0, shown = 0; c && e < c->stock.n && shown < 8 && n < (int)sizeof(txt); e++)
             if (c->stock.e[e].count > 0)
                 n += snprintf(txt + n, sizeof(txt) - (size_t)n, "%s%s %d", shown++ ? ", " : "", item_name(ga, c->stock.e[e].id), c->stock.e[e].count);
@@ -592,6 +594,12 @@ static void start_task(GameActions *ga, Troop *troop, const Terrain *t, int k, C
     case TASK_GUARD: snprintf(log, len, n > 1 ? T("%s hacen guardia.") : T("%s hace guardia."), who); break;
     default: break;
     }
+}
+
+void cg_news(GameActions *ga, int k, const char *text) {
+    if (k < 0 || k >= CAMPS_MAX) return;
+    for (int i = GA_NEWS - 1; i > 0; i--) memcpy(ga->news[k].line[i], ga->news[k].line[i - 1], sizeof(ga->news[k].line[i]));
+    copy_utf8(ga->news[k].line[0], sizeof(ga->news[k].line[0]), text);
 }
 
 void cg_show_people(GameActions *ga, int a, int b) {

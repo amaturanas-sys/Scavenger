@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**400 objetos** · 1 con modelo · 399 pendientes.
+**410 objetos** · 1 con modelo · 409 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 65 | 65 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 75 | 75 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -442,6 +442,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.objeto.yunque` | Yunque | 0.6x0.5x0.3 | 80 | pendiente | `material:hierro` |  |
 | `utileria.objeto.telar` | Telar de fieltro | 1.5x1.2x1 | 150 | pendiente | `faccion:nomada` `material:madera` |  |
 | `utileria.objeto.tamboril_chaman` | Tambor chamánico | 0.5x0.1x0.5 | 100 | pendiente | `faccion:nomada` `material:cuero` |  |
+| `utileria.objeto.vela` | Velas de sebo | 0.05x0.15x0.05 | 20 | pendiente | `uso:recolectable` | De la grasa animal: luz para las noches largas y bien de trueque. |
+| `utileria.objeto.peine` | Peine de hueso | 0.1x0.02x0.08 | 20 | pendiente | `uso:recolectable` `material:hueso` | Labrado en hueso: bien de trueque. |
+| `utileria.objeto.aljaba` | Aljaba de cuero | 0.15x0.7x0.15 | 60 | pendiente | `uso:recolectable` `material:cuero` | Para las flechas; se paga bien en la estepa. |
 | `utileria.consumible.carne_seca` | Carne seca | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.airag` | Odre de airag (leche de yegua) | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.queso_seco` | Queso seco | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
@@ -452,6 +455,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.consumible.leche` | Leche | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | Del ordeño diario del ganado. |
 | `utileria.consumible.miel` | Miel silvestre | 0.15x0.15x0.15 | 40 | pendiente | `uso:recolectable` `uso:consumible` | De las colmenas, con humo. |
 | `utileria.consumible.unguento` | Ungüento de hierbas y miel | 0.1x0.1x0.1 | 30 | pendiente | `uso:recolectable` `uso:consumible` | Cura más que las hierbas: corta el veneno y cierra las heridas. |
+| `utileria.consumible.especias` | Especias | 0.15x0.1x0.15 | 20 | pendiente | `uso:recolectable` `uso:consumible` | De las caravanas del desierto: valen su peso en plata. |
 | `utileria.herramienta.pala` | Pala | 0.25x1.2x0.05 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Para cavar trincheras. |
 | `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
 | `utileria.objeto.lena` | Haz de leña | 0.5x0.3x0.8 | 40 | pendiente | `uso:recolectable` `material:madera` | Material de fogatas, hogueras y hornos. |
@@ -468,6 +472,12 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.material.hueso` | Huesos | 0.3x0.1x0.3 | 30 | pendiente | `uso:recolectable` `uso:material` `material:hueso` | Del despiece: puntas de virote. |
 | `utileria.material.tendones` | Tendones | 0.2x0.05x0.3 | 20 | pendiente | `uso:recolectable` `uso:material` | Del despiece: cuerda. |
 | `utileria.material.grasa` | Grasa animal | 0.2x0.1x0.2 | 20 | pendiente | `uso:recolectable` `uso:material` | De la caza (más en otoño): sebo para lámparas, ungüentos y para engrasar el cuero. |
+| `utileria.material.cuero` | Cuero | 0.6x0.1x0.8 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | De curtir y trabajar las pieles (talabartería): arreos, sillas, aljabas y armaduras. |
+| `utileria.material.fieltro` | Fieltro | 0.6x0.1x0.8 | 40 | pendiente | `uso:recolectable` `uso:material` `material:fieltro` | De abatanar la lana de cabra: chozas, gorros y botas. |
+| `utileria.material.madera_labrada` | Madera labrada | 0.3x0.2x1.5 | 40 | pendiente | `uso:recolectable` `uso:material` `material:madera` | Troncos desbastados y escuadrados: sillas, arcos y casas que duran. |
+| `utileria.material.adobe` | Ladrillos de adobe | 0.4x0.2x0.3 | 30 | pendiente | `uso:recolectable` `uso:material` `material:barro` | Barro y paja secados al sol: casas que duran. |
+| `utileria.material.puntas_hueso` | Puntas de hueso | 0.1x0.05x0.1 | 20 | pendiente | `uso:recolectable` `uso:material` `material:hueso` | Para las flechas, cuando no hay pedernal. |
+| `utileria.material.piezas_arco` | Piezas de arco (asta y tendón) | 0.1x0.05x0.6 | 30 | pendiente | `uso:recolectable` `uso:material` `material:hueso` | Láminas de asta y tendón: el arco compuesto. |
 | `utileria.material.pedernal` | Pedernal | 0.15x0.1x0.15 | 30 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Se recoge en la estepa: puntas de flecha. |
 | `utileria.gema.turquesa` | Turquesa | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
 | `utileria.gema.cornalina` | Cornalina | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |

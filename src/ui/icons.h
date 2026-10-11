@@ -162,6 +162,9 @@ typedef enum {
     ICON_GIRAR_IZQ,        // ubicar una obra: girar a la izquierda (Q)
     ICON_GIRAR_DER,        // y a la derecha (E)
     ICON_REJILLA,          // la rejilla (Mayus)
+    ICON_MONEDAS,          // la plata: con ella se comercia
+    ICON_BALANZA,          // comerciar (src/game/trade_game.c)
+    ICON_CAMELLO,          // una caravana
     ICON_COUNT
 } IconId;
 

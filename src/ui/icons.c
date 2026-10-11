@@ -10,7 +10,7 @@
 
 #define CELL 32
 
-static const char *ICON_NAMES[ICON_COUNT] = { "nueva", "cargar", "guardar", "instructivo", "salir", "continuar", "titulo", "acciones", "obras", "fabricar", "reparar", "tomar", "lanzar", "empunar", "enfundar", "fogata", "tienda", "trinchera", "trepa", "lazo", "antorcha", "ensillar", "refugio", "muro_piedra", "hoguera", "totem", "horno", "fundicion", "torre", "corral", "bolsillo", "mochila", "alforjas", "carreta", "campamento", "botin", "casco", "cuello", "torso", "hombreras", "brazales", "guantes", "faldar", "grebas", "botas", "amuleto", "tatuaje", "sable", "daga", "hacha", "maza", "lanza", "guja", "espada", "arco", "ballesta", "honda", "mosquete", "escudo", "paves", "flecha", "virote", "piedras_honda", "bala", "lena", "piedra", "pieles", "plumas", "hueso", "tendones", "pedernal", "cuerda", "mineral", "lingote", "carbon", "carne", "carne_seca", "hierbas", "miel", "leche", "unguento", "agua", "herramienta", "mensaje", "bulto", "estructura", "animal", "persona", "corte", "golpe", "punta", "cobertura", "vida", "sangre", "veneno", "peso", "tiempo", "ok", "falta", "tribu", "velocidad", "idioma", "druida", "orfebre", "anillo", "brazalete", "collar", "arete", "hebilla", "gema", "guardian", "reclutar", "entrenar", "disolver", "mochila_grande", "soltar", "recoger", "mensajero", "despachar", "lugar", "alimentar", "pastar", "soldado", "pastor", "cazador", "explorador", "nivel", "bloqueado", "dialogo", "mapa", "frio", "sol", "ropa", "sombrero", "capa", "escarmiento", "hervir", "jarra", "vino", "espiritus", "beber", "parada", "patada", "carga", "objetivo", "flecha_encendida", "agacharse", "girar_izq", "girar_der", "rejilla" };
+static const char *ICON_NAMES[ICON_COUNT] = { "nueva", "cargar", "guardar", "instructivo", "salir", "continuar", "titulo", "acciones", "obras", "fabricar", "reparar", "tomar", "lanzar", "empunar", "enfundar", "fogata", "tienda", "trinchera", "trepa", "lazo", "antorcha", "ensillar", "refugio", "muro_piedra", "hoguera", "totem", "horno", "fundicion", "torre", "corral", "bolsillo", "mochila", "alforjas", "carreta", "campamento", "botin", "casco", "cuello", "torso", "hombreras", "brazales", "guantes", "faldar", "grebas", "botas", "amuleto", "tatuaje", "sable", "daga", "hacha", "maza", "lanza", "guja", "espada", "arco", "ballesta", "honda", "mosquete", "escudo", "paves", "flecha", "virote", "piedras_honda", "bala", "lena", "piedra", "pieles", "plumas", "hueso", "tendones", "pedernal", "cuerda", "mineral", "lingote", "carbon", "carne", "carne_seca", "hierbas", "miel", "leche", "unguento", "agua", "herramienta", "mensaje", "bulto", "estructura", "animal", "persona", "corte", "golpe", "punta", "cobertura", "vida", "sangre", "veneno", "peso", "tiempo", "ok", "falta", "tribu", "velocidad", "idioma", "druida", "orfebre", "anillo", "brazalete", "collar", "arete", "hebilla", "gema", "guardian", "reclutar", "entrenar", "disolver", "mochila_grande", "soltar", "recoger", "mensajero", "despachar", "lugar", "alimentar", "pastar", "soldado", "pastor", "cazador", "explorador", "nivel", "bloqueado", "dialogo", "mapa", "frio", "sol", "ropa", "sombrero", "capa", "escarmiento", "hervir", "jarra", "vino", "espiritus", "beber", "parada", "patada", "carga", "objetivo", "flecha_encendida", "agacharse", "girar_izq", "girar_der", "rejilla", "monedas", "balanza", "camello" };
 
 static Texture2D g_atlas, g_atlas_small; // nitido (32 px y mas) y con mipmaps (16 px)
 static int g_cell[ICON_COUNT]; // celda del atlas de cada icono
@@ -86,7 +86,7 @@ static const IconRule RULES[] = {
     { "amuleto", ICON_AMULETO },     { "tatuaje", ICON_TATUAJE },      { "mensaje", ICON_MENSAJE },
     { "anillo", ICON_ANILLO },       { "brazalete", ICON_BRAZALETE },  { "collar", ICON_COLLAR },
     { "aretes", ICON_ARETE },        { "hebilla", ICON_HEBILLA },      { "gema", ICON_GEMA },
-    { "agua.coral", ICON_GEMA },     { "material.oro", ICON_LINGOTE }, { "material.plata", ICON_LINGOTE },
+    { "agua.coral", ICON_GEMA },     { "material.oro", ICON_MONEDAS }, { "material.plata", ICON_MONEDAS },
     { "material.bronce", ICON_LINGOTE },
     { "arreo.alforjas", ICON_ALFORJAS }, { "arreo", ICON_ENSILLAR },  { "armadura.montura", ICON_ENSILLAR },
     { "sombrero", ICON_SOMBRERO },   { "gorro", ICON_SOMBRERO },       { "espalda", ICON_CAPA },
@@ -114,6 +114,9 @@ static const IconRule RULES[] = {
     { "pan", ICON_CARNE_SECA },      { "hierbas", ICON_HIERBAS },      { "mata_hierbas", ICON_HIERBAS },
     { "miel", ICON_MIEL },           { "leche", ICON_LECHE },          { "airag", ICON_LECHE },
     { "unguento", ICON_UNGUENTO },   { "grasa", ICON_UNGUENTO },       { "agua_hervida", ICON_HERVIR },
+    { "cuero", ICON_PIELES },        { "fieltro", ICON_PIELES },       { "madera_labrada", ICON_LENA },
+    { "adobe", ICON_PIEDRA },        { "objeto.vela", ICON_ANTORCHA }, { "peine", ICON_HUESO },
+    { "aljaba", ICON_FLECHA },       { "especias", ICON_HIERBAS },
     { "vino", ICON_VINO },
     { "cerveza", ICON_JARRA },       { "agua", ICON_AGUA },            { "odre", ICON_AGUA },
     { "antorcha", ICON_ANTORCHA },   { "pala", ICON_TRINCHERA },       { "gancho_trepa", ICON_TREPA },

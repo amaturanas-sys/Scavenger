@@ -1305,6 +1305,41 @@ def _(p):
         p.thick(14, k, 114, k, 7)
 
 
+@icon("monedas", "Monedas: plata para comerciar")
+def _(p):
+    for k, (x, y) in enumerate(((34, 96), (34, 80), (34, 64), (86, 100), (86, 84))):  # dos pilas
+        p.ell(x, y, 26, 10)
+        p.ell(x, y - 4, 26, 10, K)
+        p.ell(x, y - 6, 24, 8)
+    p.ell(84, 44, 26)  # una moneda de canto, con su sello
+    p.ring(84, 44, 15, 6, K)
+    p.rect(80, 36, 88, 52, K)
+
+
+@icon("balanza", "Comercio: balanza de dos platillos")
+def _(p):
+    p.thick(64, 18, 64, 112, 9)  # el fiel
+    p.thick(30, 112, 98, 112, 10)  # el pie
+    p.thick(18, 32, 110, 32, 8)  # la cruz
+    p.ell(64, 20, 9)
+    for x in (26, 102):  # los platillos, colgados de sus cuerdas
+        p.line([(x, 34), (x - 16, 74)], 4)
+        p.line([(x, 34), (x + 16, 74)], 4)
+        p.d.chord((x - 24, 56, x + 24, 92), 0, 180, fill=W)
+
+
+@icon("camello", "Caravana: camello cargado")
+def _(p):
+    p.ell(60, 66, 34, 20)  # el cuerpo
+    p.ell(50, 46, 14, 14)  # la joroba (con la carga)
+    p.rect(36, 30, 70, 50, r=4)
+    p.thick(90, 62, 104, 30, 10)  # el cuello
+    p.ell(108, 26, 11, 8)  # la cabeza
+    for x in (36, 48, 76, 88):  # las patas
+        p.thick(x, 76, x + (2 if x < 60 else -2), 118, 8)
+    p.line([(26, 62), (16, 84)], 5)  # la cola
+
+
 # ------------------------------------------------------------------ atlas
 def render(fn):
     pen = Pen()

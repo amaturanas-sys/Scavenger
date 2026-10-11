@@ -9,6 +9,7 @@
 #include "game/gems_game.h"
 #include "game/water_game.h"
 #include "game/talents_game.h"
+#include "game/trade_game.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -732,7 +733,8 @@ static const IconId ACTION_ICONS[ACTION_COUNT] = { ICON_TOMAR,   ICON_LANZAR,   
                                                    ICON_LAZO,    ICON_ANTORCHA, ICON_ENSILLAR, ICON_GEMA,
                                                    ICON_AGUA,    ICON_HERVIR };
 static const IconId BUILD_ICONS[BUILD_COUNT] = { ICON_REFUGIO, ICON_OBRAS, ICON_MURO_PIEDRA, ICON_HOGUERA, ICON_TOTEM,
-                                                 ICON_HORNO,   ICON_FUNDICION, ICON_FUNDICION, ICON_TORRE, ICON_CORRAL };
+                                                 ICON_HORNO,   ICON_FUNDICION, ICON_FUNDICION, ICON_TORRE, ICON_CORRAL,
+                                                 ICON_ESTRUCTURA, ICON_REFUGIO, ICON_TIENDA };
 
 static Rectangle tab_rect(int t) {
     return (Rectangle){ (float)(TAB_X + TAB_PAD + t * 32), (float)(TAB_Y + TAB_PAD), 28, 28 };
@@ -760,7 +762,9 @@ static bool oven_near(const Props *props, const Player *p) {
 // F: interactuar con lo que haya. Hablar con la gente (el guardian, el druida, el orfebre); un
 // enemigo abatido (lo toma prisionero, src/game/combat_game.c); los animales y las colmenas
 // (src/game/fauna_game.c; Mayus+F, quieto junto al ganado, lo sacrifica); tomar objetos y botin
-// (Mayus: todo lo de alrededor); el pozo (sacar agua) y el horno (fabricar).
+// (Mayus: todo lo de alrededor); comerciar con una tribu, una aldea, una capital, un caravasar o una
+// caravana, o saquear un campamento rival (src/game/trade_game.c); el pozo (sacar agua) y el horno
+// (fabricar).
 static void interact(GameActions *ga, Troop *troop, Props *props, const Terrain *t, Player *p, char *log, size_t len) {
     if (cg_try_talk(ga, troop, p) || tg_try_talk(ga, troop, p, log, len)) return;
     int near = props_nearest(props, p->pos, REACH, true);
@@ -775,6 +779,7 @@ static void interact(GameActions *ga, Troop *troop, Props *props, const Terrain 
         fg_interact(ga, p, (input_mods() & KM_SHIFT) && !p->moving, log, len);
         return;
     }
+    if (near < 0 && td_try_talk(ga, t, p)) return;
     if (near < 0 && t && wg_at_well(t, p->pos.x, p->pos.z)) {
         start_action(ga, ACTION_FILL_WATER, props, p, log, len);
         return;
@@ -1041,6 +1046,7 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
     // tiene casa) come de lo del campamento mas cercano al jugador.
     UpkeepReport up = { 0, 0, 0 };
     WaterReport wr = { 0, 0, 0, 0, 0 };
+    int work_batches = 0;
     int near_camp = camp_nearest(ga->camps, CAMPS_MAX, ga->player_pos.x, ga->player_pos.z, NULL);
     static Troop sub; // grande: fuera de la pila
     for (int k = 0; k < CAMPS_MAX; k++) {
@@ -1057,6 +1063,17 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
         }
         if (!sub.count) continue;
         UpkeepReport r = economy_daily_upkeep(&ga->camps[k].stock, &sub);
+        // Los oficios: cada uno, una tanda con lo que haya (src/sim/economy.h). Va a los informes del campamento.
+        WorkReport wk = economy_daily_work(&ga->camps[k].stock, &sub);
+        if (wk.batches) {
+            char rep[240];
+            int rl = snprintf(rep, sizeof(rep), "%s", T("Lo que hicieron los oficios:"));
+            for (int j = 0; j < wk.n && rl < (int)sizeof(rep); j++)
+                rl += snprintf(rep + rl, sizeof(rep) - (size_t)rl, "%s %s %d", j ? "," : "", item_name(ga, wk.made[j].id), wk.made[j].count);
+            if (rl < (int)sizeof(rep)) snprintf(rep + rl, sizeof(rep) - (size_t)rl, ".");
+            cg_news(ga, k, rep);
+            work_batches += wk.batches;
+        }
         // El agua: del acopio, o del rio cercano (hervida si hay leña; cruda, con los espiritus).
         CampSite *cs = &ga->camps[k];
         WaterReport w = water_daily(&cs->stock, &sub, wg_water_near(t, cs->x, cs->z), water_spirit_chance(temp_mean, false), &ga->rng);
@@ -1093,6 +1110,8 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
     snprintf(log, log_len, T("Día %d: comieron %d%s, recolectaron %d. Ánimo del campamento %+.0f."), day, up.eaten,
              up.hungry ? TextFormat(T(" (%d sin ración)"), up.hungry) : "", up.gathered, fx.morale_per_day);
     size_t used = strlen(log);
+    if (work_batches && !wr.sick && !wr.dry && used < log_len)
+        snprintf(log + used, log_len - used, T(" Los oficios: %d tandas."), work_batches), used = strlen(log);
     if (wr.sick || wr.dry) // el agua: solo si algo salio mal
         snprintf(log + used, log_len - used, " %s",
                  wr.dry ? TextFormat(T("%d pasaron sed: no hay agua cerca ni en el acopio."), wr.dry)
@@ -1426,7 +1445,7 @@ static void draw_menu(const GameActions *ga, const Props *props, const Troop *tr
     }
     default: {
         const RepairItem *r = &rep[cur];
-        const RepairDef *d = repair_def(r->material);
+        const RepairDef *d = ig_repair_way((GameActions *)ga, props, p, r); // sin pieles, el cuero y el fieltro se untan con grasa
         char why[128];
         bool ok = ig_can_repair((GameActions *)ga, props, p, troop, r, why, sizeof(why));
         ui_tile(big, icon_for_item(r->id), true, ok);

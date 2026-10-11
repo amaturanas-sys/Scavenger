@@ -131,6 +131,10 @@ static Enemy *spawn_enemy(Combat *cb, EnemyKind kind, Vector3 pos, const Terrain
 static void spawn_party(Combat *cb, const char *what, Vector3 c, float ang, const Terrain *t, const Vector3 *home, char *log,
                         size_t len);
 
+void cb_spawn_party_at(Combat *cb, const char *what, Vector3 at, const Terrain *t, char *log, size_t len) {
+    spawn_party(cb, what, at, rng_float(&cb->rng) * 2.0f * PI, t, NULL, log, len);
+}
+
 void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
                     size_t len) {
     // Fieras: las pone la fauna (src/game/fauna_game.c).
@@ -158,6 +162,12 @@ static void spawn_party(Combat *cb, const char *what, Vector3 c, float ang, cons
         n = 2;
         kinds[0] = kinds[1] = ENEMY_ARCHER;
         snprintf(log, len, "%s", T("¡Arqueros! Busca cubrirte o acércate rápido."));
+    } else if (!strcmp(what, "caravana")) { // la escolta de una caravana (src/game/trade_game.c)
+        n = 4;
+        kinds[0] = kinds[1] = ENEMY_RIDER;
+        kinds[2] = ENEMY_BANDIT;
+        kinds[3] = ENEMY_ARCHER;
+        snprintf(log, len, "%s", T("¡La escolta de la caravana desenvaina!"));
     } else if (!strcmp(what, "jinetes")) {
         n = 2 + rng_range(&cb->rng, 2);
         for (int i = 0; i < n; i++) kinds[i] = ENEMY_RIDER;

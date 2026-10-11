@@ -108,6 +108,9 @@ typedef enum {
     BUILD_FURNACE_STEEL,  // horno de fundicion de acero
     BUILD_WATCHTOWER,     // torre de vigilancia
     BUILD_CORRAL,         // corral
+    BUILD_ADOBE_HOUSE,    // casa de adobe: dura mucho (fase 5)
+    BUILD_LOG_CABIN,      // cabaña de troncos labrados: dura
+    BUILD_FELT_HUT,       // choza de fieltro
     BUILD_COUNT
 } BuildId;
 

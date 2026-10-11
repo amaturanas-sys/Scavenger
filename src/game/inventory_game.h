@@ -47,6 +47,9 @@ typedef struct {
 
 // Las piezas gastadas a mano: las que llevas puestas y las de tus contenedores cercanos.
 int ig_repair_list(GameActions *ga, const Props *props, const Player *p, RepairItem *out, int max);
+// La forma de reparar la pieza: la de su material o, si falta con que, untarla con grasa (fieltro y
+// cuero, src/sim/economy.h: repair_grease).
+const RepairDef *ig_repair_way(GameActions *ga, const Props *props, const Player *p, const RepairItem *it);
 // Que falta para reparar (NULL si se puede). Escribe el motivo en why.
 bool ig_can_repair(GameActions *ga, const Props *props, const Player *p, const Troop *troop, const RepairItem *it, char *why,
                    size_t len);
@@ -55,6 +58,14 @@ bool ig_repair(GameActions *ga, const Props *props, const Player *p, const Troop
 // Ingredientes: ¿hay todo a mano (encima, cerca o en el campamento)? Devuelve el primero que falta.
 const Ingredient *ig_first_missing(GameActions *ga, const Props *props, const Player *p, const Ingredient *mats);
 void ig_use_all(GameActions *ga, const Props *props, const Player *p, const Ingredient *mats);
+
+// ---------------------------------------------------------------- lo que llevas (el comercio)
+// Lo que llevas encima y en las alforjas, la carreta y las mochilas de la escolta cercanas (no el
+// acopio del campamento): cuantos hay de un objeto, tomarlos (devuelve cuantos) y la lista de lo
+// que hay (ids distintos con su cantidad; devuelve cuantos, hasta max).
+int ig_carried_count(GameActions *ga, const Props *props, const Player *p, const char *id);
+int ig_take_carried(GameActions *ga, const Props *props, const Player *p, const char *id, int n);
+int ig_carried_list(GameActions *ga, const Props *props, const Player *p, const char **ids, int *counts, int max);
 
 // ---------------------------------------------------------------- botin
 // Deja una bolsa de botin en pos con esos objetos. false si no habia hueco.

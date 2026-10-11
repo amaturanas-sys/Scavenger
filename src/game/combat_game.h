@@ -183,6 +183,8 @@ void cb_request_light_arrow(void); // como Mayus+L (desde la columna del HUD)
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h);
 // Prueba: hace aparecer enemigos cerca del jugador ("bandidos", "culto", "arqueros"),
 // o fieras por nombre ("lobos", "tigre", "jabali"...).
+// Una banda en at (bandidos, culto, arqueros, jinetes o «caravana»: la escolta de una caravana).
+void cb_spawn_party_at(Combat *cb, const char *what, Vector3 at, const Terrain *t, char *log, size_t len);
 void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
                     size_t len);
 // Un animal ataca a una persona: kind 0 el jugador, 1 el integrante id, 2 el enemigo id (indice).

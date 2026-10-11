@@ -151,3 +151,6 @@ indice	nombre	columna	fila	descripcion
 147	girar_izq	3	9	Girar a la izquierda: flecha en arco
 148	girar_der	4	9	Girar a la derecha: flecha en arco
 149	rejilla	5	9	Rejilla: cuadricula
+150	monedas	6	9	Monedas: plata para comerciar
+151	balanza	7	9	Comercio: balanza de dos platillos
+152	camello	8	9	Caravana: camello cargado

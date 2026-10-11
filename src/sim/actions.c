@@ -146,6 +146,12 @@ static const BuildDef BUILDS[BUILD_COUNT] = {
         { { "utileria.material.piedra", 14 }, { "utileria.material.carbon", 8 }, { "utileria.material.hierro", 2 }, { NULL, 0 } } },
     [BUILD_WATCHTOWER] = { N_("Torre de vigilancia"), "estructura.campamento.atalaya", 1500.0f, 3, 6, ROLE_NONE, ROLE_BUILDER,
         { { "utileria.material.troncos", 12 }, { "utileria.material.cuerda", 3 }, { NULL, 0 } } },
+    [BUILD_ADOBE_HOUSE] = { N_("Casa de adobe"), "estructura.vivienda.casa_adobe", 2400.0f, 3, 6, ROLE_NONE, ROLE_BUILDER,
+        { { "utileria.material.adobe", 12 }, { "utileria.material.madera_labrada", 2 }, { NULL, 0 } } },
+    [BUILD_LOG_CABIN] = { N_("Cabaña de troncos"), "estructura.vivienda.cabana_troncos", 2100.0f, 3, 6, ROLE_NONE, ROLE_BUILDER,
+        { { "utileria.material.madera_labrada", 8 }, { "utileria.material.troncos", 2 }, { NULL, 0 } } },
+    [BUILD_FELT_HUT] = { N_("Choza de fieltro"), "estructura.vivienda.choza_fieltro", 700.0f, 2, 4, ROLE_NONE, ROLE_HERDER,
+        { { "utileria.material.fieltro", 4 }, { "utileria.material.troncos", 2 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } } },
     [BUILD_CORRAL] = { N_("Corral"), "estructura.campamento.corral", 600.0f, 2, 4, ROLE_NONE, ROLE_HUNTER,
         { { "utileria.material.troncos", 6 }, { "utileria.material.cuerda", 3 }, { NULL, 0 } } },
 };

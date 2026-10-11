@@ -420,7 +420,7 @@ void trv_update(GameActions *ga, Troop *troop, const MemoryMap *mem, const Playe
         ga->dlg.cursor = 0;
         ga->dlg.open = true;
     }
-    if (!ga->dlg.open || ga->talk_mode < TV_ROOT) return;
+    if (!ga->dlg.open || ga->talk_mode < TV_ROOT || ga->talk_mode >= 300) return; // los >= 300: src/game/trade_game.c
     build_dialog(ga, troop, mem, p, night);
     int v = dlg_update(&ga->dlg);
     if (v == DLG_BACK) {

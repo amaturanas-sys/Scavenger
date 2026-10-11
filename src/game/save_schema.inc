@@ -558,6 +558,14 @@ static const SfField SF_F_GameActions[] = {
     SF_ONE(GameActions, people_page, "int", SF_INT, NULL),
     SF_ARR(GameActions, herd_at, "Vector3", SF_BYTES, NULL),
     SF_ARR(GameActions, news, "CampNews", SF_STRUCT, &SF_T_CampNews),
+    SF_ONE(GameActions, market_kind, "int", SF_INT, NULL),
+    SF_ONE(GameActions, market_idx, "int", SF_INT, NULL),
+    SF_ONE(GameActions, market_region, "int", SF_INT, NULL),
+    SF_ARR(GameActions, caravan_delay, "float", SF_FLOAT, NULL),
+    SF_ARR(GameActions, caravan_rest, "float", SF_FLOAT, NULL),
+    SF_ONE(GameActions, caravan_raid, "int", SF_INT, NULL),
+    SF_ONE(GameActions, caravan_raid_at, "Vector3", SF_BYTES, NULL),
+    SF_ONE(GameActions, tribe_looted, "unsigned", SF_UINT, NULL),
 };
 static const SfType SF_T_GameActions = SF_TYPE(GameActions, SF_F_GameActions);
 
