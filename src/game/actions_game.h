@@ -191,10 +191,14 @@ typedef struct {
     int caravan_raid;                  // la caravana que se asalta + 1 (0: ninguna)
     Vector3 caravan_raid_at;           // donde se detuvo
     unsigned tribe_looted;             // campamentos rivales ya saqueados (un bit por tribu)
+    // La migracion (src/game/camp_game.c): las yurtas del campamento inicial (src/world/camp.h), que
+    // no son objetos del mundo; las cuenta main cada cuadro, para cargarlas al levantarlo.
+    int start_yurts;
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);
-// El acopio del campamento donde esta el jugador (o del mas cercano; uno vacio si no queda ninguno).
+// El acopio del campamento donde esta el jugador (en marcha, el que va cargado en la columna; si
+// no, el del mas cercano; uno vacio si no queda ninguno).
 Stockpile *ga_stock(GameActions *ga);
 const Stockpile *ga_stock_c(const GameActions *ga);
 Stockpile *ga_stock_at(GameActions *ga, float x, float z);
@@ -206,6 +210,8 @@ bool ga_menu_open(const GameActions *ga);
 // Fuera del mundo: de viaje (src/game/travel_game.c) o en una salida del campamento (buscar
 // reclutas, explorar, cazar: src/game/camp_game.c). No se le ve (salvo mientras se aleja).
 bool ga_away(const GameActions *ga, const Member *m);
+// El campamento que va en marcha detras del jugador (migrando: src/game/camp_game.c), o -1.
+int ga_marching(const GameActions *ga);
 // Multiplicador de velocidad del jugador (montado: el de la montura).
 float ga_speed_scale(const GameActions *ga);
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,

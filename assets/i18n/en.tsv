@@ -354,6 +354,9 @@ Zorro	Fox
 , antorcha	, torch
 , lleva algo	, carrying
 Acciones	Actions
+Cambia la estación (%s): aquí el pasto no alcanza y el ganado pasará hambre. Conviene migrar.	The season turns (%s): the grass here is not enough and the herd will go hungry. Better to migrate.
+Cambia la estación (%s): aquí hay buen pasto; los pastores juntan más forraje.	The season turns (%s): the grass is good here; the herders gather more fodder.
+Cambia la estación (%s): el pasto de aquí alcanza.	The season turns (%s): the grass here is enough.
 Campamento de las estelas	Camp of the Stelae
 Cuadrilla de %d · se levanta 6 m delante de ti	Crew of %d · built 6 m ahead of you
 Demasiadas obras a la vez.	Too many works at once.
@@ -501,6 +504,8 @@ A %s	To %s
 Acopio (vale %d de plata): 	Store (worth %d silver): 
 Adiós	Farewell
 Aprender un oficio en el campamento	Learn a trade in the camp
+Aquí no se puede plantar: busca un sitio en seco, llano y lejos de los demás campamentos.	The camp cannot be pitched here: find a dry, level spot away from the other camps.
+Aquí no: agua o demasiada pendiente	Not here: water or too steep
 Aquí podría nacer un campamento, pero no tienes escolta para nombrar un guardián (Y).	A camp could be born here, but you have no escort to name a keeper (Y).
 Aquí puede nacer un campamento. Hace falta un guardián que lo administre: ¿a quién de tu escolta nombras?	A camp can be born here. It needs a keeper to run it: whom from your escort do you name?
 Buscar reclutas	Find recruits
@@ -509,10 +514,12 @@ Capacitar	Train
 Cazar	Hunt
 Construir	Build
 Dar una tarea	Give a task
+Demasiado cerca de otro campamento (a menos de %.0f m)	Too close to another camp (less than %.0f m)
 Disolver	Dissolve
 Disolver el campamento	Dissolve the camp
 El campamento está en orden. Somos %d (%d sin tarea) y hay %d tareas en marcha. ¿Qué ordenas?	The camp is in order. We are %d (%d idle) with %d tasks under way. Your orders?
 Elige primero a quién	First choose who
+En marcha con %s · F junto a %s: plantar el campamento	On the march with %s · F next to %s: pitch the camp
 Enseñar un oficio a alguien sin tarea	Teach a trade to someone idle
 Escolta	Escort
 Estado	Status
@@ -524,22 +531,30 @@ Hay demasiadas tareas en marcha	Too many tasks under way
 Hay demasiadas tareas en marcha en este campamento.	Too many tasks under way in this camp.
 Informes	Reports
 Junto al campamento · %.0f s · %d animales · leche	Near the camp · %.0f s · %d animals · milk
+La gente que está de salida vuelve al sitio nuevo	The people who are away come back to the new site
 La ronda del campamento · %.0f s	The camp patrol · %.0f s
 La tribu	The tribe
 La tribu está llena	The tribe is full
+Levantar el campamento	Strike the camp
+Levantar el campamento y llevarlo a otro sitio, con la gente, el acopio y el rebaño	Strike the camp and take it somewhere else, with the people, the store and the herd
 Listo	Done
 Lo que contaron los últimos que volvieron	What the last ones back reported
 Lo que contaron los últimos que volvieron a %s:	What the last ones back at %s reported:
+Migrar	Migrate
 Más gente	More people
 Nace %s. %s queda de guardián: háblale (F) para administrarlo.	%s is born. %s stays as keeper: talk to them (F) to run it.
 No alcanza el acopio de %s para eso.	The stores of %s are not enough for that.
 No fundar	Don't found
 No hay ganado suelto en el campamento	No free livestock in the camp
+No queda nadie de %s: la caravana se pierde con su carga.	No one is left of %s: the caravan is lost with its load.
 No se puede deshacer	It can't be undone
 No volvieron de su salida: %s. La tribu está de luto.	They did not come back: %s. The tribe is in mourning.
 No volvió de su salida: %s. La tribu está de luto.	Did not come back: %s. The tribe is in mourning.
 Nombrar guardián a %s (se queda aquí)	Name %s keeper (stays here)
 Pastorear	Herd
+Plantan %s aquí: arman %d viviendas (%d no caben: siguen cargadas). El acopio y la gente llegaron con ellos.	They pitch %s here: %d dwellings go up (%d do not fit: they stay loaded). The store and the people came with them.
+Plantan %s aquí: arman %d viviendas. El acopio y la gente llegaron con ellos.	They pitch %s here: %d dwellings go up. The store and the people came with them.
+Plantar el campamento aquí	Pitch the camp here
 Pobladores	Villagers
 Página %d de %d	Page %d of %d
 Quién hace qué: buscar reclutas, explorar, pastorear, cazar o hacer guardia	Who does what: find recruits, scout, herd, hunt or stand guard
@@ -547,11 +562,15 @@ Quién sale contigo del campamento	Who leaves the camp with you
 Salida ~%.0f s · riesgo %d%% · %s, %s · llevan: %s	Trip ~%.0f s · risk %d%% · %s, %s · they take: %s
 Salida ~%.0f s · riesgo %d%% · hasta %.1f km · llevan: %s	Trip ~%.0f s · risk %d%% · up to %.1f km · they take: %s
 Salida ~%.0f s · riesgo %d%% · llevan: %s	Trip ~%.0f s · risk %d%% · they take: %s
+Se arman las viviendas en corro y la gente se queda	The dwellings go up in a ring and the people stay
 Se disuelve %s: arden las estructuras y se pierde todo el acopio (%d cosas): no había carreta ni alforjas cerca.	%s is dissolved: the structures burn and the whole store is lost (%d things): no cart or saddlebags nearby.
 Se disuelve %s: arden las estructuras; cargan %d cosas, se pierden %d.	%s is dissolved: the structures burn; %d things loaded, %d lost.
+Se levanta %s: cargan %d viviendas y el acopio; %d te siguen. Donde quieras plantarlo, háblale a %s.	%s is struck: %d dwellings and the store are loaded; %d follow you. Wherever you want to pitch it, talk to %s.
 Se queman las estructuras y la gente te sigue	The structures burn and the people follow you
+Seguir la marcha	Keep marching
 Somos %d en %s. Elige a uno o dos y dales una tarea: acompañados corren menos riesgo y rinden más.	We are %d in %s. Choose one or two and give them a task: in pairs they risk less and achieve more.
 Una obra con el acopio de este campamento	A work using this camp's store
+Vamos en marcha con todo cargado (%d viviendas y el acopio). ¿Plantamos aquí el campamento?	We are on the march with everything loaded (%d dwellings and the store). Shall we pitch the camp here?
 Volver	Back
 agua	water
 aprende %s (%d%%)	learning %s (%d%%)
@@ -559,6 +578,7 @@ aprendiendo un oficio	learning a trade
 buscando reclutas	finding recruits
 cazando	hunting
 de guardia	on guard
+el guardián	the keeper
 en una obra	at a building site
 explorando	scouting
 hace la ronda	on patrol
@@ -578,6 +598,7 @@ un campamento rival (%s)	a rival camp (%s)
 ¿A quién capacitamos? Mientras aprende no hace otra cosa.	Whom shall we train? While learning they do nothing else.
 ¿Disolvemos el campamento? No hay carreta cerca: solo se llevará lo que quepa en las alforjas y en nuestras mochilas. El resto arderá.	Dissolve the camp? There's no cart nearby: only what fits in the saddlebags and our backpacks goes. The rest will burn.
 ¿Disolvemos el campamento? Quemaremos las estructuras, cargaremos en la carreta y en nuestras mochilas lo que quepa y te seguiremos.	Dissolve the camp? We'll burn the structures, load what fits in the cart and our backpacks, and follow you.
+¿Levantamos el campamento? Desarmaremos %d viviendas (yurtas, tiendas y chozas de fieltro) y las cargaremos con el acopio; las demás obras quedan. Te seguiremos en columna con el rebaño: donde quieras plantarlo, háblame.	Shall we strike the camp? We will take down %d dwellings (yurts, tents and felt huts) and load them with the store; the other works stay. We will follow you in a column with the herd: wherever you want to pitch it, talk to me.
 ¿Quién sale contigo? Los marcados ya te siguen. La escolta no trabaja en las obras.	Who comes with you? The marked ones already follow you. The escort doesn't work on builds.
 ¿Qué hace %s? Si va con alguien, corre menos riesgo y rinde más.	What does %s do? Going with someone, they risk less and achieve more.
 ¿Qué hacen %s? Acompañados corren menos riesgo y rinden más.	What do %s do? In pairs they risk less and achieve more.
@@ -863,7 +884,9 @@ Se te escapa %s de las manos. ¡Inténtalo otra vez (F)!	%s slips from your hand
 Tardaste en salir del socavón: el frío te caló.	You took too long in the sinkhole: the cold got to you.
 Te acompañan %s (Y: volver).	%s go with you (Y: send back).
 Te arrastraste fuera de la arena movediza.	You crawled out of the quicksand.
+Te desmayaste de frío; en la columna te abrigaron (moral -3).	You fainted from cold; the column wrapped you up (morale -3).
 Te desmayaste de frío; la tribu te llevó junto al fuego (moral -3).	You fainted from cold; the tribe carried you to the fire (morale -3).
+Te desmayaste por el calor; en la columna te dieron sombra (moral -3). Cúbrete del sol y bebe.	You fainted from the heat; the column gave you shade (morale -3). Cover up from the sun and drink.
 Te desmayaste por el calor; la tribu te llevó a la sombra (moral -3). Cúbrete del sol y bebe.	You fainted from the heat; the tribe carried you into the shade (morale -3). Cover up from the sun and drink.
 Tiras de %s: ¡no lo sueltes!	You pull %s: don't let go!
 Trepaste fuera del socavón.	You climbed out of the sinkhole.
@@ -947,6 +970,7 @@ montura con sed	mount thirsty
 %s · nivel %d%s	%s · level %d%s
 %s · vale %s de plata	%s · worth %s silver
 Acopio y armería del campamento	Camp store and armory
+Acopio y armería, cargados en la columna	Store and armory, loaded in the column
 Alforjas (%s)	Saddlebags (%s)
 Armadura	Armour
 Bolsillos	Pockets
@@ -1170,6 +1194,7 @@ El caballo se cansa al galope: su barra reemplaza a la tuya. Agotado no galopa h
 El desierto quema de día y hiela de noche. Con calor te sofocas: busca sombra (las yurtas) o el agua; con golpe de calor te desmayas.	The desert burns by day and freezes by night. Heat overwhelms you: seek shade (the yurts) or water; with heatstroke you faint.
 El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Cold drains your warmth: seek fire and yurts; wet clothes chill you.
 El mundo	The world
+El pasto sigue a las estaciones: la estepa en primavera y otoño, las montañas en verano, el desierto en invierno. Sin pasto, el ganado pasa hambre.	Grass follows the seasons: steppe in spring and autumn, mountains in summer, desert in winter. Without it, the herd goes hungry.
 En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
 En verano el pasto seco arde: los incendios corren con el viento.	In summer dry grass burns: wildfires run with the wind.
 Enter, un clic sobre la obra o la casilla de aceptar la coloca y paga el acopio; Esc cancela sin gastar nada.	Enter, a click on the building or the accept tile places it and pays from the stores; Esc cancels without spending anything.
@@ -1185,7 +1210,7 @@ F hablar/tomar/animales	F talk/take/animals
 F hace casi todo: hablar y comerciar, tomar y recoger botín, el pozo y el horno, rescatar y atender a los animales	F does almost everything: talk and trade, take and pick up loot, the well and the oven, rescue and tend the animals
 F junto a una tribu amiga o neutral, una aldea, una capital, un caravasar o una caravana: vende lo que llevas (encima, en las alforjas, en la carreta) y compra lo suyo. Lo que abunda en la región vale menos; lo que escasea, más.	F by a friendly or neutral tribe, a village, a capital, a caravanserai or a caravan: sell what you carry (on you, in the saddlebags, in the cart) and buy their goods. What abounds in the region is cheaper; what is scarce, dearer.
 F junto al guardián, Pobladores: la gente del campamento con su oficio, salud, ánimo y lo que hace. Elige a uno o dos y «Dar una tarea».	F next to the keeper, Villagers: the camp's people with trade, health, morale and task. Pick one or two and «Give a task».
-F junto al guardián: obras, escolta, pobladores (sus tareas), capacitar en un oficio, estado y disolver el campamento.	F next to the keeper: builds, escort, villagers (their tasks), training a trade, status and dissolving the camp.
+F junto al guardián: obras, escolta, pobladores (sus tareas), capacitar en un oficio, estado, migrar y disolver el campamento.	F next to the keeper: builds, escort, villagers (their tasks), training a trade, status, migrating and dissolving the camp.
 F1/Ctrl+H cerrar esta ayuda	F1/Ctrl+H close this help
 F2, F3, F4 (o Ctrl+1, 2, 3): habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)	F2, F3, F4 (or Ctrl+1, 2, 3): active abilities · P equipment: armor, jewelry and tattoos (Q/E)
 F5 o Ctrl+M: vista orbital del mundo entero (flechas para girar e inclinar). El sol, la luna y las estrellas cruzan el cielo; el viento lleva las nubes y las cumbres altas quedan entre ellas.	F5 or Ctrl+M: orbital view of the whole world (arrows to turn and tilt). The sun, moon and stars cross the sky; the wind carries the clouds, and the high peaks stand among them.
@@ -1243,6 +1268,7 @@ Los soldados que se quedan en el campamento hacen la guardia: rondan un anillo a
 M mapa · N beber · U ficha	M map · N drink · U card
 Mayús+G (o la columna) deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	Shift+G (or the column) drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
 Mayús+L (o la columna) junto a un fuego enciende la flecha: quema y prende lo que toca.	Shift+L (or the column) by a fire lights the arrow: it burns and sets alight what it hits.
+Migrar: cargan yurtas, tiendas, chozas y el acopio, y te siguen con el rebaño; F junto al guardián lo planta donde quieras.	Migrate: yurts, tents, huts and the store are loaded and follow you with the herd; F next to the keeper pitches it anywhere.
 Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta y desmonta.	Mounts (horse, mule, donkey, ox, camel, elephant): lasso and saddle; R mounts and dismounts.
 Mueve la obra con el puntero, el dedo o WASD; Q/E la giran; Mayús (o la casilla) la alinea a una rejilla de 2 m.	Move the building with the pointer, your finger or WASD; Q/E turn it; Shift (or the tile) snaps it to a 2 m grid.
 N bebe lo más seguro que tengas; en la orilla, sin nada, bebes del río. Con calor da más sed; sin agua te desmayas.	N drinks the safest thing you have; at the shore, with nothing, you drink from the river. Heat makes you thirstier; without water you faint.
@@ -1371,6 +1397,7 @@ No tienes hierbas para echar a los espíritus. Descansa y bebe agua hervida.	You
 No tienes los espíritus del agua: guarda las hierbas.	You don't have the water spirits: save the herbs.
 No tienes nada que beber: llena el odre en la orilla (Tab) o bebe del río (N, mirando al agua).	You have nothing to drink: fill the waterskin at the shore (Tab) or drink from the river (N, facing the water).
 No tienes sed.	You are not thirsty.
+Te desmayaste de sed; en la columna te dieron de beber (moral -3).	You fainted from thirst; the column gave you water (morale -3).
 Te desmayaste de sed; la tribu te llevó al campamento y te dio de beber (moral -3).	You fainted from thirst; the tribe carried you to camp and gave you water (morale -3).
 # --- src/game/world_game.c
 El campamento de los %s (tribu %s): te observan, sin buscar pelea.	The camp of the %s (%s tribe): they watch you, without seeking a fight.

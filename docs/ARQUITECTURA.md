@@ -30,7 +30,7 @@ src/
     economy.*    acopio, comida y recoleccion diaria, produccion por oficio, efectos del campamento, forja, fabricar a mano, reparar (y untar con grasa)
     trade.*      el valor de las cosas en plata, precios por region, lo que vende cada mercado y las rutas de las caravanas
     riding.*     la monta: el tiro a caballo (y el disparo parto), la lanza en ristre, el cansancio de la montura y la maniobra de los arqueros a caballo
-    animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado, anfibios, cria (sexo, herencia, preñez)
+    animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado (y el rebaño que sigue a la caravana), anfibios, cria (sexo, herencia, preñez)
     swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
     fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano
@@ -39,7 +39,7 @@ src/
     stealth.*    la espalda (cono trasero, lo que ve un enemigo segun de donde vienes), el rehen que tapa el tiro y los abatidos
     squad.*      la escolta con ordenes, la ronda de los guardias y la alarma de los pobladores
     placement.*  ubicar una obra: la huella girada, si el sitio vale (radio, agua, pendiente, lo que pisa), la rejilla y los muros de dos puntos
-    camps.*      campamentos y sus tareas: capacitar, y las de la tribu (reclutas, explorar, cazar, pastorear, guardia) con su riesgo y lo que traen
+    camps.*      campamentos y sus tareas: capacitar, y las de la tribu (reclutas, explorar, cazar, pastorear, guardia) con su riesgo y lo que traen; migrar (levantar y plantar) y los pastos de cada region y estacion
     travel.*     viajes de la tribu fuera de la vista: despachar, mensajeros, sitios conocidos
     storage.*    contenedores: bolsillos, mochila, alforjas, carreta, acopio; peso y estado de las piezas
     loadout.*    amuletos (y tatuajes) con sus efectos
@@ -56,6 +56,7 @@ src/
   game/     Jugador e input
     player.*
     actions_game.*  menu de acciones, atajos, obras en curso
+    camp_game.*     el guardian (F): obras, escolta, pobladores y sus tareas, capacitar, migrar (levantar, la columna, plantar) y disolver
     place_game.*    la vista aerea para ubicar una obra: la huella verde o roja, girar, rejilla, muros de dos puntos
     trade_game.*    comerciar (F en tribus, aldeas, capitales, caravasares y caravanas), las caravanas con su escolta, asaltarlas y saquear campamentos rivales
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates

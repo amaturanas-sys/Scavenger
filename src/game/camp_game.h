@@ -28,6 +28,12 @@ void cg_update(GameActions *ga, Troop *troop, Props *props, const Player *p, con
                size_t len);
 // Un informe para la ventana de pobladores del campamento k (el mas nuevo primero).
 void cg_news(GameActions *ga, int k, const char *text);
+// La tribu en marcha (migrando, src/sim/camps.h): ¿ese integrante va en la columna? Y el aviso
+// arriba de la pantalla (con quien se planta).
+bool cg_marching(const GameActions *ga, const Member *m);
+void cg_draw_hud(const GameActions *ga, const Troop *troop, int w);
+// Prueba (--migrar): step 1 levanta el campamento inicial; 2 lo planta donde esta el jugador.
+void cg_test_migrate(GameActions *ga, Troop *troop, Props *props, const Terrain *t, const Player *p, int step, char *log, size_t len);
 // Para el HUD: el campamento donde esta el jugador ("" fuera).
 const char *cg_here_name(const GameActions *ga);
 // Pruebas (--pobladores, --tareas): abrir la ventana de pobladores con a y b elegidos (ids; 0:

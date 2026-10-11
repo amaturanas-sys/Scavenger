@@ -82,7 +82,9 @@ static bool near_cart(const Props *props, const Player *p) {
     return false;
 }
 
-static bool near_camp(const GameActions *ga, const Player *p) { return camp_at(ga->camps, CAMPS_MAX, p->pos.x, p->pos.z) >= 0; }
+static bool in_camp(const GameActions *ga, const Player *p) { return camp_at(ga->camps, CAMPS_MAX, p->pos.x, p->pos.z) >= 0; }
+// En un campamento, o en marcha con uno (su acopio va cargado en la columna, contigo).
+static bool near_camp(const GameActions *ga, const Player *p) { return in_camp(ga, p) || ga_marching(ga) >= 0; }
 
 static bool pack_near(const GameActions *ga, int k, const Player *p) {
     int a = ga->pack_animal[k];
@@ -113,7 +115,8 @@ static int containers(GameActions *ga, const Props *props, const Player *p, Cont
     }
     if (near_camp(ga, p)) {
         out[n++] = (Cont){ C_CAMP, NULL, "", ICON_CAMPAMENTO };
-        snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s", T("Acopio y armería del campamento"));
+        snprintf(out[n - 1].label, sizeof(out[n - 1].label), "%s",
+                 in_camp(ga, p) ? T("Acopio y armería del campamento") : T("Acopio y armería, cargados en la columna"));
     }
     // Las mochilas de la escolta que este a tu lado: se les puede pasar carga.
     const Troop *troop = ga->troop_ref;

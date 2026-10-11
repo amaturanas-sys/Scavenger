@@ -26,11 +26,12 @@ void dg_track_rest(const GameActions *ga, const Props *props, Vector3 pos, Vecto
     // Donde esta ahora: el campamento de la tribu, otro campamento suyo o una vivienda.
     float x = 0.0f, z = 0.0f;
     const char *name = NULL;
-    if (Vector2Distance((Vector2){ pos.x, pos.z }, (Vector2){ camp_fire.x, camp_fire.z }) < REST_NEAR_CAMP)
+    bool marching = ga->camps[0].used && ga->camps[0].migrating; // en marcha, alli ya no hay campamento
+    if (!marching && Vector2Distance((Vector2){ pos.x, pos.z }, (Vector2){ camp_fire.x, camp_fire.z }) < REST_NEAR_CAMP)
         x = camp_fire.x, z = camp_fire.z, name = T("el campamento");
     for (int k = 0; k < CAMPS_MAX && !name; k++) {
         const CampSite *c = &ga->camps[k];
-        if (c->used && Vector2Distance((Vector2){ pos.x, pos.z }, (Vector2){ c->x, c->z }) < REST_NEAR_CAMP) x = c->x, z = c->z, name = c->name;
+        if (c->used && !c->migrating && Vector2Distance((Vector2){ pos.x, pos.z }, (Vector2){ c->x, c->z }) < REST_NEAR_CAMP) x = c->x, z = c->z, name = c->name;
     }
     for (int i = 0; i < props->count && !name; i++) {
         const Prop *pr = &props->items[i];

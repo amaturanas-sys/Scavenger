@@ -651,7 +651,8 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
         g_refs[n++] = (HumanRef){ 2, e };
     }
     g_ref_count = n;
-    FaunaCtx ctx = { hu, n, p->pos.x, p->pos.z, p->moving && ga->mounted < 0, 0.0f, 0.0f, night, water_depth_cb, (void *)t, ga->grass };
+    bool caravan = ga_marching(ga) >= 0; // la tribu migra: el rebaño va con ella (src/sim/camps.h)
+    FaunaCtx ctx = { hu, n, p->pos.x, p->pos.z, p->moving && ga->mounted < 0, 0.0f, 0.0f, night, water_depth_cb, (void *)t, ga->grass, caravan };
 
     float ox[GA_MAX_ANIMALS], oz[GA_MAX_ANIMALS];
     for (int i = 0; i < ga->animal_count; i++) ox[i] = ga->animals[i].x, oz[i] = ga->animals[i].z;
@@ -717,7 +718,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
         herd_t = 0.0f;
         for (int k = 0; k < CAMPS_MAX; k++) {
             CampSite *c = &ga->camps[k];
-            if (!c->used) continue;
+            if (!c->used || c->migrating) continue; // en marcha, los pastores van en la columna
             int herders = 0;
             for (int m = 0; m < troop->count; m++)
                 herders += troop->members[m].status == STATUS_ACTIVE && troop->members[m].camp == k && troop->members[m].role == ROLE_HERDER;
@@ -743,7 +744,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
         for (int k = 0; k < CAMPS_MAX && !first; k++) {
             CampSite *c = &ga->camps[k];
             bool herder = false;
-            for (int m = 0; c->used && m < troop->count; m++)
+            for (int m = 0; c->used && !c->migrating && m < troop->count; m++)
                 herder |= troop->members[m].status == STATUS_ACTIVE && troop->members[m].camp == k && troop->members[m].role == ROLE_HERDER;
             for (int i = 0; herder && i < ga->animal_count; i++) {
                 const Animal *a = &ga->animals[i];
@@ -791,7 +792,7 @@ static int breed_day(GameActions *ga) {
     for (int i = 0; i < ga->animal_count; i++) domestic += alive(&ga->animals[i]) && animal_domestic(&ga->animals[i]);
     for (int k = 0; k < CAMPS_MAX; k++) {
         const CampSite *c = &ga->camps[k];
-        if (!c->used) continue;
+        if (!c->used || c->migrating) continue; // en marcha no se crian
         int idx[GA_MAX_ANIMALS], n = 0;
         bool was_pregnant[GA_MAX_ANIMALS], was_foal[GA_MAX_ANIMALS];
         for (int i = 0; i < ga->animal_count; i++) {

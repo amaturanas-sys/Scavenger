@@ -12,6 +12,7 @@
 #include "sim/lang.h"
 #include "sim/world.h"
 #include "ui/icons.h"
+#include "ui/theme.h"
 
 #define TALK_RANGE 3.0f
 #define CART_ID "vehiculo.tierra.carreta_bueyes"
@@ -36,6 +37,7 @@ typedef enum {
     CG_PEOPLE, // la ventana de pobladores: quien hace que
     CG_TASK,   // la tarea para los elegidos
     CG_NEWS,   // los ultimos informes de los que volvieron
+    CG_MIGRATE, // levantar el campamento y llevarlo a otro sitio (src/sim/camps.h)
 } CampTalk;
 
 static const Role TRAINABLE[] = { ROLE_SOLDIER, ROLE_SMITH, ROLE_DRUID, ROLE_GOLDSMITH, ROLE_HERDER, ROLE_HUNTER, ROLE_SCOUT };
@@ -257,6 +259,8 @@ static int skilled_of(const Troop *troop, const int *ids, int n, CampTaskKind ki
     return s;
 }
 
+static bool site_ok(const Terrain *t, float x, float z); // se puede plantar ahi (migrar)
+
 // ---------------------------------------------------------------- dialogo
 static void build_dialog(GameActions *ga, const Troop *troop, const Props *props, const Terrain *t, int day, float now) {
     Dialog *d = &ga->dlg;
@@ -270,6 +274,20 @@ static void build_dialog(GameActions *ga, const Troop *troop, const Props *props
     snprintf(back, sizeof(back), "%s", T("Volver"));
     switch (ga->talk_mode) {
     case CG_ROOT: {
+        if (c && c->migrating) { // en marcha: plantar el campamento aqui
+            int loads = 0;
+            for (int j = 0; j < LOAD_KINDS; j++) loads += c->load[j];
+            bool far = camp_far_enough(ga->camps, CAMPS_MAX, ga->player_pos.x, ga->player_pos.z), ok = far && site_ok(t, ga->player_pos.x, ga->player_pos.z);
+            dlg_begin(d, speaker, ICON_GUARDIAN,
+                      TextFormat(T("Vamos en marcha con todo cargado (%d viviendas y el acopio). ¿Plantamos aquí el campamento?"), loads));
+            dlg_option(d, ICON_CAMPAMENTO, T("Plantar el campamento aquí"),
+                       ok ? T("Se arman las viviendas en corro y la gente se queda") : !far ? TextFormat(T("Demasiado cerca de otro campamento (a menos de %.0f m)"), CAMP_MIN_APART)
+                                                                                     : T("Aquí no: agua o demasiada pendiente"),
+                       ok, 7);
+            dlg_option(d, ICON_MAPA, T("Estado"), T("Gente, tareas y acopio"), true, 5);
+            dlg_option(d, ICON_SALIR, T("Seguir la marcha"), "", true, 0);
+            break;
+        }
         int idle = 0, people = 0;
         for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
             people += troop->members[i].status == STATUS_ACTIVE && troop->members[i].camp == k;
@@ -283,6 +301,7 @@ static void build_dialog(GameActions *ga, const Troop *troop, const Props *props
         dlg_option(d, ICON_RECLUTAR, T("Pobladores"), T("Quién hace qué: buscar reclutas, explorar, pastorear, cazar o hacer guardia"), true, 3);
         dlg_option(d, ICON_ENTRENAR, T("Capacitar"), T("Enseñar un oficio a alguien sin tarea"), true, 4);
         dlg_option(d, ICON_MAPA, T("Estado"), T("Gente, tareas y acopio"), true, 5);
+        dlg_option(d, ICON_CARRETA, T("Migrar"), T("Levantar el campamento y llevarlo a otro sitio, con la gente, el acopio y el rebaño"), true, 8);
         dlg_option(d, ICON_DISOLVER, T("Disolver el campamento"), T("Se queman las estructuras y la gente te sigue"), true, 6);
         dlg_option(d, ICON_SALIR, T("Adiós"), "", true, 0);
         break;
@@ -367,6 +386,19 @@ static void build_dialog(GameActions *ga, const Troop *troop, const Props *props
                   cart ? T("¿Disolvemos el campamento? Quemaremos las estructuras, cargaremos en la carreta y en nuestras mochilas lo que quepa y te seguiremos.")
                        : T("¿Disolvemos el campamento? No hay carreta cerca: solo se llevará lo que quepa en las alforjas y en nuestras mochilas. El resto arderá."));
         dlg_option(d, ICON_DISOLVER, T("Disolver"), T("No se puede deshacer"), true, 1);
+        dlg_option(d, ICON_TITULO, back, "", true, 0);
+        break;
+    }
+    case CG_MIGRATE: {
+        int loads = 0;
+        for (int i = 0; c && i < props->count; i++)
+            loads += camp_load_kind(props->items[i].item->id) >= 0 && dist_xz(props->items[i].pos, c->x, c->z) <= CAMP_RADIUS_M;
+        if (k == 0) loads += ga->start_yurts;
+        dlg_begin(d, speaker, ICON_GUARDIAN,
+                  TextFormat(T("¿Levantamos el campamento? Desarmaremos %d viviendas (yurtas, tiendas y chozas de fieltro) y las cargaremos con el acopio; "
+                               "las demás obras quedan. Te seguiremos en columna con el rebaño: donde quieras plantarlo, háblame."),
+                             loads));
+        dlg_option(d, ICON_CARRETA, T("Levantar el campamento"), T("La gente que está de salida vuelve al sitio nuevo"), true, 1);
         dlg_option(d, ICON_TITULO, back, "", true, 0);
         break;
     }
@@ -501,6 +533,122 @@ static void build_dialog(GameActions *ga, const Troop *troop, const Props *props
     }
 }
 
+// ---------------------------------------------------------------- migrar (src/sim/camps.h)
+bool cg_marching(const GameActions *ga, const Member *m) {
+    return m->camp >= 0 && m->camp < CAMPS_MAX && ga->camps[m->camp].used && ga->camps[m->camp].migrating;
+}
+
+// ¿Se puede plantar una vivienda (o el campamento) en (x, z)? En seco y sin mucha pendiente.
+static bool site_ok(const Terrain *t, float x, float z) {
+    if (!t) return true;
+    float h = terrain_height(t, x, z);
+    if (terrain_water(t, x, z) > h - 0.1f) return false;
+    float dx = terrain_height(t, x + 2.0f, z) - terrain_height(t, x - 2.0f, z), dz = terrain_height(t, x, z + 2.0f) - terrain_height(t, x, z - 2.0f);
+    return fabsf(dx) < 1.4f && fabsf(dz) < 1.4f;
+}
+
+// Levantar el campamento k: se desarman y se cargan las viviendas (yurtas, tiendas, chozas de
+// fieltro); las demas obras quedan, y las tareas del lugar (capacitar, pastorear, la guardia) se
+// dejan. La gente (la que no esta de salida) te sigue en columna, y el rebaño con ella.
+static void migrate(GameActions *ga, Troop *troop, Props *props, int k, char *log, size_t len) {
+    CampSite *c = &ga->camps[k];
+    float x0 = c->x, z0 = c->z;
+    if (!camp_migrate(c)) return;
+    int packed = 0;
+    for (int i = props->count - 1; i >= 0; i--) {
+        int kind = camp_load_kind(props->items[i].item->id);
+        if (kind < 0 || dist_xz(props->items[i].pos, x0, z0) > CAMP_RADIUS_M) continue;
+        if (c->load[kind] < 255) c->load[kind]++;
+        props_remove(props, i);
+        packed++;
+    }
+    if (k == 0 && ga->start_yurts > 0) { // las yurtas del campamento inicial (src/world/camp.h): main las quita
+        c->load[LOAD_YURT] = (unsigned char)fminf(255.0f, (float)c->load[LOAD_YURT] + (float)ga->start_yurts);
+        packed += ga->start_yurts;
+    }
+    int keep = 0; // las salidas siguen; lo del lugar se deja
+    for (int j = 0; j < c->ntask; j++)
+        if (task_away(c->task[j].kind)) c->task[keep++] = c->task[j];
+    c->ntask = keep;
+    ga->herd_at[k] = (Vector3){ 0 }; // el pasto de antes queda atras
+    int people = 0;
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
+        Member *m = &troop->members[i];
+        if (m->camp != k || m->status != STATUS_ACTIVE || ga_away(ga, m)) continue;
+        Npc *n = &ga->npcs[i];
+        n->escort = true, n->project = n->job = -1, n->guarding = false, n->sheltered = false;
+        people++;
+    }
+    const Member *g = troop_find(troop, c->guardian);
+    snprintf(log, len, T("Se levanta %s: cargan %d viviendas y el acopio; %d te siguen. Donde quieras plantarlo, háblale a %s."), c->name, packed,
+             people, g ? g->name : T("el guardián"));
+}
+
+// Plantar el campamento en marcha donde esta el jugador: las viviendas cargadas se arman en corro
+// (en seco y sin mucha pendiente), se enciende una fogata y la gente y el rebaño se quedan.
+static void settle(GameActions *ga, Troop *troop, Props *props, const Terrain *t, int k, char *log, size_t len) {
+    if (k < 0) return;
+    CampSite *c = &ga->camps[k];
+    float x = ga->player_pos.x, z = ga->player_pos.z;
+    if (!site_ok(t, x, z) || !camp_settle(ga->camps, CAMPS_MAX, k, x, z)) {
+        snprintf(log, len, "%s", T("Aquí no se puede plantar: busca un sitio en seco, llano y lejos de los demás campamentos."));
+        return;
+    }
+    int placed = 0, slot = 0, total = 0;
+    for (int kind = 0; kind < LOAD_KINDS; kind++) total += c->load[kind];
+    for (int kind = 0; kind < LOAD_KINDS; kind++) {
+        int n = c->load[kind];
+        for (int j = 0; j < n; j++, slot++) { // en corro: de a 8 por vuelta, la segunda mas afuera
+            int ring = slot / 8, in_ring = total - ring * 8 < 8 ? total - ring * 8 : 8;
+            float r = 12.0f + 6.0f * (float)ring, a0 = (float)(slot % 8) * 6.2831853f / (float)in_ring + (float)ring * 0.39f;
+            for (int tr = 0; tr < 12; tr++) {
+                float a = a0 + (float)tr * 0.26f, px = x + cosf(a) * r, pz = z + sinf(a) * r;
+                if (!site_ok(t, px, pz)) continue;
+                props_add(props, camp_load_id(kind), (Vector3){ px, t ? terrain_height(t, px, pz) : 0.0f, pz },
+                          atan2f(x - px, z - pz) - PI / 2.0f); // la puerta (+X del modelo) hacia el fuego, como en src/world/camp.c
+                c->load[kind]--;
+                placed++;
+                break;
+            }
+        }
+    }
+    bool fire = false;
+    for (int i = 0; i < props->count && !fire; i++)
+        fire = (strstr(props->items[i].item->id, "fogata") || strstr(props->items[i].item->id, "hoguera")) && dist_xz(props->items[i].pos, x, z) < 8.0f;
+    if (!fire) props_add(props, "estructura.campamento.fogata", (Vector3){ x + 2.0f, t ? terrain_height(t, x + 2.0f, z) : 0.0f, z }, 0.0f);
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++)
+        if (troop->members[i].camp == k) ga->npcs[i].escort = false, ga->npcs[i].home_camp = 0; // a sus casas nuevas
+    for (int i = 0; i < ga->animal_count; i++) { // el rebaño que vino contigo pasta en el sitio nuevo
+        Animal *a = &ga->animals[i];
+        if (!a->used || !animal_domestic(a) || a->ridden || dist_xz((Vector3){ a->x, 0.0f, a->z }, x, z) > 90.0f) continue;
+        a->home_x = a->tx = x + (a->x - x) * 0.3f, a->home_z = a->tz = z + (a->z - z) * 0.3f;
+        if (a->mode == MODE_FOLLOW) a->mode = MODE_GRAZE;
+    }
+    int left = 0;
+    for (int j = 0; j < LOAD_KINDS; j++) left += c->load[j];
+    snprintf(log, len, left ? T("Plantan %s aquí: arman %d viviendas (%d no caben: siguen cargadas). El acopio y la gente llegaron con ellos.")
+                            : T("Plantan %s aquí: arman %d viviendas. El acopio y la gente llegaron con ellos."),
+             c->name, placed, left);
+    dlg_close(&ga->dlg);
+}
+
+void cg_test_migrate(GameActions *ga, Troop *troop, Props *props, const Terrain *t, const Player *p, int step, char *log, size_t len) {
+    ga->player_pos = p->pos;
+    if (step == 1) migrate(ga, troop, props, 0, log, len);
+    else settle(ga, troop, props, t, 0, log, len);
+}
+
+void cg_draw_hud(const GameActions *ga, const Troop *troop, int w) {
+    for (int k = 0; k < CAMPS_MAX; k++) {
+        const CampSite *c = &ga->camps[k];
+        if (!c->used || !c->migrating) continue;
+        const Member *g = troop_find((Troop *)troop, c->guardian);
+        ui_text_centered(TextFormat(T("En marcha con %s · F junto a %s: plantar el campamento"), c->name, g ? g->name : T("el guardián")), w / 2, 56, 10,
+                         UI_GOLD);
+        return;
+    }
+}
+
 static void dissolve(GameActions *ga, Troop *troop, Props *props, int k, char *log, size_t len) {
     CampSite *c = &ga->camps[k];
     // A la carreta (si esta cerca) y a las alforjas de las monturas cercanas.
@@ -623,8 +771,13 @@ static void choose(GameActions *ga, Troop *troop, Props *props, const Terrain *t
     switch (ga->talk_mode) {
     case CG_ROOT:
         if (v == 0) dlg_close(&ga->dlg);
-        else set_mode(ga, v == 1 ? CG_BUILD : v == 2 ? CG_ESCORT : v == 3 ? CG_PEOPLE : v == 4 ? CG_TRAIN_WHO : v == 5 ? CG_STATUS : CG_DISSOLVE);
+        else if (v == 7) settle(ga, troop, props, t, k, log, len);
+        else set_mode(ga, v == 1 ? CG_BUILD : v == 2 ? CG_ESCORT : v == 3 ? CG_PEOPLE : v == 4 ? CG_TRAIN_WHO : v == 5 ? CG_STATUS : v == 8 ? CG_MIGRATE : CG_DISSOLVE);
         if (v == 3) ga->people_pick[0] = ga->people_pick[1] = 0, ga->people_page = 0;
+        break;
+    case CG_MIGRATE:
+        if (v == 0) set_mode(ga, CG_ROOT);
+        else if (k >= 0) migrate(ga, troop, props, k, log, len), dlg_close(&ga->dlg);
         break;
     case CG_BUILD:
         if (v == 0) set_mode(ga, CG_ROOT);
@@ -692,6 +845,7 @@ static void choose(GameActions *ga, Troop *troop, Props *props, const Terrain *t
         int mi = member_index(troop, v - 100);
         int nk = mi >= 0 ? camp_found(ga->camps, CAMPS_MAX, ga->found_x, ga->found_z, day) : -1;
         if (nk >= 0) {
+            if (nk == 0) ga->camps[0].moved = true; // en el hueco del inicial: sus yurtas ya no estan (src/main.c)
             snprintf(ga->camps[nk].name, CAMP_NAME_LEN, T("Campamento %d"), nk + 1);
             ga->camps[nk].guardian = troop->members[mi].id;
             troop->members[mi].camp = nk;
@@ -713,6 +867,13 @@ static void choose(GameActions *ga, Troop *troop, Props *props, const Terrain *t
 // Vuelve de una salida: aparece en el borde del campamento, por donde se fue, y camina a su casa.
 static void come_back(GameActions *ga, const Terrain *t, int mi, const CampSite *c, int j) {
     Npc *n = &ga->npcs[mi];
+    if (c->migrating) { // la tribu esta en marcha: alcanza la columna
+        n->pos = (Vector3){ ga->player_pos.x - 6.0f - (float)j * 1.5f, 0.0f, ga->player_pos.z - 4.0f };
+        if (t) n->pos.y = terrain_height(t, n->pos.x, n->pos.z);
+        n->leave_t = 0.0f;
+        n->escort = true;
+        return;
+    }
     float dx = n->leave_dir.x, dz = n->leave_dir.z, l = sqrtf(dx * dx + dz * dz);
     if (l < 0.1f) dx = 0.0f, dz = 1.0f, l = 1.0f;
     dx /= l, dz /= l;
@@ -1113,6 +1274,15 @@ void cg_update(GameActions *ga, Troop *troop, Props *props, const Player *p, con
         for (int i = 0; i < troop->count && c->guardian < 0; i++) // uno que este en el campamento (no de salida)
             if (troop->members[i].status == STATUS_ACTIVE && troop->members[i].camp == k && !ga_away(ga, &troop->members[i]))
                 c->guardian = troop->members[i].id;
+        if (c->guardian >= 0 || !c->migrating) continue;
+        // En marcha y sin nadie de la columna (los de salida vuelven a ella): la caravana se pierde.
+        bool anyone = false;
+        for (int i = 0; i < troop->count && !anyone; i++) anyone = troop->members[i].status == STATUS_ACTIVE && troop->members[i].camp == k;
+        if (anyone) continue;
+        snprintf(log, len, T("No queda nadie de %s: la caravana se pierde con su carga."), c->name);
+        stock_init(&c->stock);
+        memset(c->load, 0, sizeof c->load);
+        c->migrating = false, c->used = false, c->ntask = 0, c->founded_day = 0;
     }
     tick_tasks(ga, troop, t, mem, day, now, dt, log, len);
     tick_trips(ga, troop, t, dt);
