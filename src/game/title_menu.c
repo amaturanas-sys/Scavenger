@@ -74,6 +74,14 @@ static const HelpPage PAGES[] = {
         N_("Mayús+G (o la columna) deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila"),
         N_("Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se queda)."),
         N_("Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales.") } },
+    { N_("La espalda, rehenes y abatidos"), 4,
+      { N_("Por detrás solo te oyen: en sigilo o agachado te acercas sin que te noten; caminando o corriendo, te oyen antes."),
+        N_("A menos de 2 m por la espalda de uno que no te vio (o aturdido), una daga aparece sobre él:"),
+        N_("K lo mata en silencio: solo lo oyen los que están a menos de 6 m."),
+        N_("G lo agarra de rehén: te cubres con él, los suyos no se acercan ni disparan si los tapa (y si disparan, fallan más). Vas lento y con una sola mano. G lo suelta, K lo ejecuta, L lo empuja; un golpe fuerte te lo quita."),
+        "",
+        N_("Las mazas, las patadas y los escudos tumban sin matar, y también una herida que no es mortal: el enemigo queda abatido en el suelo. A los 30-90 s despierta, herido, y huye a avisar a los suyos."),
+        N_("Junto a un abatido: F lo toma prisionero (lo que lleva queda en el suelo); H o K lo rematan. A la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran.") } },
     { N_("Arcos, flechas y armaduras"), 5,
       { N_("Arco, ballesta u honda: mantén H (o el clic) para tensar y suelta para disparar. Con objetivo, la mira se calcula sola; sin él, la cámara alza la mira: la curva amarilla muestra dónde caerá. J baja el arma; L, patada."),
         N_("Mayús+L (o la columna) junto a un fuego enciende la flecha: quema y prende lo que toca."),
@@ -448,7 +456,7 @@ void menu_draw_controls(int x, int y, int w, int h) {
           N_("J/clic der. cubrirse"), N_("K parry · L carga o patada"), N_("Tab objetivo (en combate)"), N_("1-9 empuñar · Mayús+n.º mano"),
           N_("B vendar · Mayús+L encender") },
         { N_("Tab acciones/fabricar"), N_("F hablar/tomar/animales"), N_("I inventario · P equipo"), N_("R montar · T lanzar · Y escolta"),
-          N_("Mayús+G mochila · U ficha"), N_("M marcar el mapa · N beber"), N_("Esc/Atrás/Ctrl+P menú"), N_("F1/Ctrl+H cerrar esta ayuda"),
+          N_("G agarrar · Mayús+G mochila"), N_("M mapa · N beber · U ficha"), N_("Esc/Atrás/Ctrl+P menú"), N_("F1/Ctrl+H cerrar esta ayuda"),
           N_("F5/Ctrl+M vista orbital") },
     };
     ui_text(T("Controles"), x + UI_PANEL_INSET + 2, y + UI_PANEL_INSET, 10, UI_GOLD_LIGHT);

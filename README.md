@@ -66,6 +66,7 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Empuñar / enfundar (barra rápida) | 1 a 9 (otra vez: enfunda; Mayús+número: a la otra mano; Alt+número: elegir qué va) | — |
 | Interactuar: hablar, tomar, botín, pozo, horno, rescatar, animales | F (Mayús+F: todo lo cercano, o sacrificar junto al ganado) | — |
 | Lanzar lo que llevas en brazos | T | — |
+| Agarrar por la espalda (rehén) | G | — |
 | Mochila (dejarla o recogerla) | Mayús+G (o la columna del HUD) | — |
 | Ficha del gran guerrero | U | — |
 | Montar / desmontar | R | — |
@@ -88,6 +89,9 @@ Combate de cuatro botones (las teclas o las cuatro casillas de abajo a la derech
 - **`K`, parry:** justo antes del golpe enemigo (el rival anuncia el golpe; en la ventana justa destella un rombo dorado sobre él y la casilla). Con hacha o guja le arrancas el escudo; sin armas o con daga, llave y derribo (lo desarmas); con las demás, desvías y queda abierto. A destiempo quedas expuesto un momento.
 - **`L`, carga o patada:** con escudo, carga que empuja y tumba al primero que encuentra; sin escudo, patada (corriendo, con inercia).
 - **Objetivo:** `Tab` en combate pasa al enemigo siguiente (`Mayús+Tab`, al anterior); también se elige con un clic o un toque. Un anillo dorado lo marca y su barra se resalta; los golpes van a él y las flechas lo buscan. Se pierde a 25 m o si muere. Fuera de combate, `Tab` abre el menú.
+- **La espalda:** por detrás los enemigos solo te oyen (en sigilo o agachado casi nada). A menos de 2 m de la espalda de uno que no te vio (o aturdido) aparece una daga sobre él: `K` lo mata en silencio (solo lo oyen los que están a menos de 6 m) y `G` lo toma de rehén.
+- **Rehén:** te cubres con él; los suyos no se acercan y no disparan si los tapa (si disparan, fallan más). Vas lento y con una sola mano. `G` lo suelta, `K` lo ejecuta y `L` lo empuja; un golpe fuerte te lo quita.
+- **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar. El abatido despierta a los 30-90 s, herido, y huye a avisar a los suyos. Junto a él, `F` lo toma prisionero y `H` o `K` lo rematan (a la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran).
 - **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+L` encender la flecha junto a un fuego (o la casilla de la columna) · `P` equipo (armadura, amuletos y heridas) · `I` inventario · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
 
 Combate montado: a caballo solo se golpea con el arma (`H`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo; a distancia, la carrera dispersa el tiro (el amuleto del caballo lo corrige). Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
@@ -235,4 +239,6 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --pos 60 40 --enemigos bandidos --heridas            # combate y heridas
 ./build/estepa --enemigos bandidos --objetivo --tactil             # objetivo elegido (anillo) y botones táctiles
 ./build/estepa --agachado --camara 0.2                             # agachado (X), de perfil
+./build/estepa --enemigos bandidos --espalda                       # a la espalda de un bandido (la daga)
+./build/estepa --enemigos bandidos --rehen                         # con un bandido de rehén
 ```

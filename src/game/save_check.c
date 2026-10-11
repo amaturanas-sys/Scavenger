@@ -130,6 +130,7 @@ void save_summary(const GameState *g, FILE *o) {
     sum_armor(o, &cb->armor);
     fputc('\n', o);
     fprintf(o, "  elegido %d parry %.3f expuesto %.3f\n", cb->target_lock, cb->parry_cd, cb->exposed); // v0.5.0
+    fprintf(o, "  rehen %d\n", cb->hostage); // v0.5.1
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
         const Enemy *e = &cb->enemies[i];
         if (!e->used) continue;
@@ -138,6 +139,8 @@ void save_summary(const GameState *g, FILE *o) {
         sum_armor(o, &e->armor);
         fputc('\n', o);
         if (e->windup > 0.0f) fprintf(o, "    anuncia el golpe %d: %.3f s\n", e->windup_move, e->windup); // v0.5.0
+        if (e->alert > 0.0f) fprintf(o, "    alerta %.3f s\n", e->alert);                                  // v0.5.1
+        if (e->state == EN_DOWN) fprintf(o, "    abatido: despierta en %.3f s\n", e->timer);               // v0.5.1
     }
     int shots = 0;
     for (int i = 0; i < CB_MAX_SHOTS; i++) shots += cb->shots[i].p.alive || cb->shots[i].stuck;

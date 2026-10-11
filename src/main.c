@@ -546,6 +546,7 @@ int main(int argc, char **argv) {
     const char *start_trap = NULL, *start_enemies = NULL;
     bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
     bool start_crouch = false, start_target = false;
+    int start_back = 0; // prueba: 1 a la espalda del primer enemigo, 2 ademas con el de rehen
     MenuScreen start_menu_screen = MENU_TITLE;
     int start_help_page = 0; // prueba: --pagina N del instructivo
     unsigned start_seed = WORLD_SEED; // --semilla N: el mundo (sin ella, cada partida nueva del menu sortea uno)
@@ -583,6 +584,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--apuntar")) start_aim = true;
         else if (!strcmp(argv[i], "--agachado")) start_crouch = true;
         else if (!strcmp(argv[i], "--objetivo")) start_target = true;
+        else if (!strcmp(argv[i], "--espalda")) start_back = 1;
+        else if (!strcmp(argv[i], "--rehen")) start_back = 2;
         else if (!strcmp(argv[i], "--lago")) start_lake = true;
         else if (!strcmp(argv[i], "--mapa-mundo") && i + 1 < argc) map_path = argv[++i];
         else if (!strcmp(argv[i], "--ir") && i + 1 < argc) start_goto = argv[++i];
@@ -1038,6 +1041,8 @@ int main(int argc, char **argv) {
             }
             if (start_target && frame == 30 && !gallery_mode) // prueba: como pulsar Tab con enemigos cerca
                 cb_cycle_target(&g_combat, &player, 1, log, sizeof(log));
+            if (start_back && frame == 30 && !gallery_mode) // prueba: la espalda ganada (y el rehen)
+                cb_test_back(&g_combat, &player, start_back == 2, log, sizeof(log));
             if (start_crouch && !gallery_mode) { // prueba: agachado (X), de perfil para ver la postura
                 player.crouching = true;
                 if (frame == 3) player.yaw = rig.yaw + PI / 2;

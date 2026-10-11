@@ -142,6 +142,9 @@ void cb_init(Combat *cb, unsigned seed);
 // Un clic o un toque sobre un enemigo lo elige como objetivo (y ese clic no es un golpe).
 // pointer: en la pantalla virtual de w x h. true si eligio a alguien.
 bool cb_pick_target(Combat *cb, Camera3D cam, Vector2 pointer, int w, int h, char *log, size_t len);
+// Prueba (--espalda, --rehen): el jugador, en sigilo, a la espalda del primer enemigo, que no lo
+// vio; con hostage, ademas lo toma de rehen.
+void cb_test_back(Combat *cb, Player *p, bool hostage, char *log, size_t len);
 // Tab: el objetivo siguiente (dir 1) o el anterior (-1), en orden alrededor del jugador.
 void cb_cycle_target(Combat *cb, const Player *p, int dir, char *log, size_t len);
 // El enemigo elegido (o NULL).

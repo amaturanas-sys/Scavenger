@@ -1,6 +1,6 @@
 # Plan: la gran actualización (v0.5 a v0.9)
 
-> **Estado:** fases 0 (v0.4.4) y 1 (v0.5.0) hechas; las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
+> **Estado:** fases 0 (v0.4.4), 1 (v0.5.0) y 2 (v0.5.1) hechas; las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
 
 Pedido (5 y 6 de octubre de 2026):
 - combate más ágil, con selector de objetivo y cuatro botones (H J K L);
@@ -115,7 +115,21 @@ Va en esta misma fase, porque los cuatro botones ocupan teclas que hoy hacen otr
 
 **Costo:** alto. Es la fase más grande de combate.
 
-## Fase 2 — Espalda, ejecución silenciosa y rehenes (v0.5.1)
+## Fase 2 — Espalda, ejecución silenciosa y rehenes (v0.5.1) — hecha
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **Reglas puras en `src/sim/stealth.c`**, con tests: el cono trasero, lo que ve un enemigo según de dónde vienes, la ejecución que solo se oye a 6 m, el rehén que tapa el tiro y cuándo un golpe tumba en vez de matar.
+- **Ver y oír:** para que la espalda se pueda ganar, la vista de un enemigo ahora depende de dónde viene el jugador: de frente, entera; de lado, menos; por detrás solo oye (según el ruido: correr se oye, el sigilo casi nada). Un bandido nota al que llega en sigilo por detrás recién a ~1 m.
+- **Notado** quiere decir que el enemigo lo tiene de objetivo; **aturdido**, desequilibrado o derribado. A caballo no se gana la espalda.
+- **Letal:** mata una herida abierta (corte, mordida, quemadura) grave en la cabeza o el cuello, o muy grave en el pecho o el vientre, o quedarse casi sin sangre. Lo contundente nunca mata al tumbar. El abatido sigue sangrando en el suelo y puede morir.
+- **Avisar a los suyos:** al despertar, los enemigos a menos de 30 m van a por el jugador 25 s aunque no lo vean. La huida dura 45 s.
+- **Los suyos** son los del mismo bando (bandidos o culto): el culto no respeta a un rehén bandido. Retroceden a 4,5 m de cara al jugador.
+- **Rematar** suma una acción de campamento nueva (`ACT_FINISH_DOWNED`), más leve que ejecutar a un prisionero; también cuenta rematarlo de un flechazo. El Kanato de Hierro lo aprueba un poco y la Dinastía de Jade lo reprueba.
+- **Capturar:** el prisionero entra a la tribu con el nombre de su tipo y su número; lo que llevaba queda en el suelo como botín.
+- **HUD:** sobre el enemigo con la espalda ganada, una daga; una casilla G a la izquierda de las cuatro (agarrar o soltar); K pasa a «Por la espalda», «Ejecutar al rehén» o «Rematar», L a «Empujar» y H a «Rematar» según el caso. Sobre los abatidos, una barra gris con lo que les falta para despertar.
+- **G sola** agarra; la mochila queda en Mayús+G (y la columna).
+- **Pruebas:** `--espalda` y `--rehen`.
+
 
 - **Ganar la espalda:** el jugador está a menos de 2 m, en el cono trasero de 70° del enemigo, y no fue notado (sigilo, `noise` bajo) o el enemigo está aturdido.
   - Se marca con un ícono de daga sobre el enemigo.

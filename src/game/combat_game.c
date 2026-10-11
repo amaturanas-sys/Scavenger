@@ -332,8 +332,21 @@ static void take_hostage(Combat *cb, Player *p, Enemy *e, char *log, size_t len)
     cb->blocking = false, cb->aiming = false, cb->draw = 0.0f, cb->v_hold = 0.0f;
     p->yaw = atan2f(e->pos.x - p->pos.x, e->pos.z - p->pos.z);
     char who[48];
-    snprintf(log, len, T("Agarras al %s por el cuello: es tu rehén. G lo suelta, K lo ejecuta, L lo empuja."),
+    snprintf(log, len, T("Agarras al %s por el cuello: es tu rehén."),
              lower_name(T(enemy_def(e->kind)->name), who, sizeof(who)));
+}
+
+void cb_test_back(Combat *cb, Player *p, bool hostage, char *log, size_t len) {
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) {
+        Enemy *e = &cb->enemies[i];
+        if (!standing(e) || e->mounted) continue;
+        e->state = EN_WANDER, e->target = -1, e->alert = 0.0f, e->timer = 30.0f, e->wander_to = e->pos;
+        p->pos.x = e->pos.x - sinf(e->yaw) * 1.4f, p->pos.z = e->pos.z - cosf(e->yaw) * 1.4f;
+        p->yaw = e->yaw;
+        p->sneaking = true;
+        if (hostage) take_hostage(cb, p, e, log, len);
+        return;
+    }
 }
 
 // ------------------------------------------------------------------- cuerpo a cuerpo
@@ -1209,6 +1222,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             }
             continue;
         }
+        if (e->state == EN_HOSTAGE && cb->hostage != i + 1) e->state = EN_CHASE; // nadie lo sujeta: vuelve a pelear
         if (e->state == EN_HOSTAGE) { // rehen: delante del jugador, sujeto por el cuello
             e->pos.x = p->pos.x + sinf(p->yaw) * HOSTAGE_AHEAD;
             e->pos.z = p->pos.z + cosf(p->yaw) * HOSTAGE_AHEAD;

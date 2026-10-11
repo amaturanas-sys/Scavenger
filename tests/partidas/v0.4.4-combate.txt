@@ -79,6 +79,7 @@ acciones: rng 256595152 preset 0 antorcha 0 haciendo -1 (0.000) objetivo -1 aqui
   ropa: 0 -1 7 13 22 tatuajes: -1 -1 -1 -1 -1 -1 -1 -1 joyas: [] [] [] [] [] [] [] [] []
 combate: semilla 4242 rng 14043295 vida -7.594/100.000 sangre 0.888 veneno 0.000 heridas 6 abatido [1 8 0.002] [0 2 0.576 sangra] [0 1 0.532 sangra] [0 11 0.197] [0 3 0.236 sangra] [1 11 0.039] armadura.casco.laminar_cuero 90.000 armadura.torso.laminar_cuero 24.348 armadura.brazales.laminar_cuero 90.000 armadura.botas.fieltro 60.000
   elegido 0 parry 0.000 expuesto 0.000
+  rehen 0
   enemigo 0 tipo 0 estado 0 (7.48, 17.51) objetivo -1 vida 51.190/70.000 sangre 0.982 veneno 0.000 heridas 1 [0 7 0.461 sangra] armadura.casco.fieltro 60.000 armadura.torso.fieltro 60.000
   enemigo 1 tipo 0 estado 0 (3.69, 19.43) objetivo -1 vida 44.876/70.000 sangre 0.967 veneno 0.000 heridas 1 [0 2 0.608 sangra] armadura.casco.fieltro 60.000 armadura.torso.fieltro 40.020
   enemigo 2 tipo 3 estado 0 (-2.88, 8.86) objetivo -1 vida 60.000/60.000 sangre 1.000 veneno 0.000 heridas 0 armadura.casco.fieltro 60.000
