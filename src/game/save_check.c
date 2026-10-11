@@ -85,6 +85,15 @@ void save_summary(const GameState *g, FILE *o) {
         if (ga->projects[i].yaw != 0.0f) fprintf(o, " giro %.3f", ga->projects[i].yaw); // v0.6.2
         fputc('\n', o);
     }
+    // v0.7.0: el comercio, las caravanas y el saqueo (solo si hay algo: los resumenes viejos no cambian).
+    if (ga->market_kind || ga->market_idx || ga->market_region)
+        fprintf(o, "  mercado %d indice %d region %d\n", ga->market_kind, ga->market_idx, ga->market_region);
+    for (int i = 0; i < CARAVANS_MAX; i++)
+        if (ga->caravan_delay[i] != 0.0f || ga->caravan_rest[i] != 0.0f)
+            fprintf(o, "  caravana %d demora %.3f descansa hasta %.3f\n", i, ga->caravan_delay[i], ga->caravan_rest[i]);
+    if (ga->caravan_raid)
+        fprintf(o, "  asalto a la caravana %d en (%.2f, %.2f)\n", ga->caravan_raid - 1, ga->caravan_raid_at.x, ga->caravan_raid_at.z);
+    if (ga->tribe_looted) fprintf(o, "  campamentos rivales saqueados %#x\n", ga->tribe_looted);
     int animals = 0;
     for (int i = 0; i < ga->animal_count && i < GA_MAX_ANIMALS; i++) {
         const Animal *a = &ga->animals[i];

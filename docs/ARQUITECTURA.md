@@ -27,7 +27,8 @@ src/
     ballistics.* armas a distancia y trayectoria de proyectiles
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
-    economy.*    acopio, comida y recoleccion diaria, efectos del campamento, forja, fabricar a mano, reparar
+    economy.*    acopio, comida y recoleccion diaria, produccion por oficio, efectos del campamento, forja, fabricar a mano, reparar (y untar con grasa)
+    trade.*      el valor de las cosas en plata, precios por region, lo que vende cada mercado y las rutas de las caravanas
     animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado, anfibios
     swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
     fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
@@ -55,6 +56,7 @@ src/
     player.*
     actions_game.*  menu de acciones, atajos, obras en curso
     place_game.*    la vista aerea para ubicar una obra: la huella verde o roja, girar, rejilla, muros de dos puntos
+    trade_game.*    comerciar (F en tribus, aldeas, capitales, caravasares y caravanas), las caravanas con su escolta, asaltarlas y saquear campamentos rivales
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates
     combat_game.*   combate (a pie y montado), enemigos, botin, vendajes, salud de la tribu y del jugador
     fauna_game.*    fauna en el mundo: aparicion por bioma, ataques, K (comer, despiezar, ordeñar)

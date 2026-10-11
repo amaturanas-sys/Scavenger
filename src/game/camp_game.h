@@ -26,6 +26,8 @@ void cg_basic_structure(GameActions *ga, float x, float z);
 // los exploradores marcan lo que encuentran.
 void cg_update(GameActions *ga, Troop *troop, Props *props, const Player *p, const Terrain *t, MemoryMap *mem, float now, float dt, char *log,
                size_t len);
+// Un informe para la ventana de pobladores del campamento k (el mas nuevo primero).
+void cg_news(GameActions *ga, int k, const char *text);
 // Para el HUD: el campamento donde esta el jugador ("" fuera).
 const char *cg_here_name(const GameActions *ga);
 // Pruebas (--pobladores, --tareas): abrir la ventana de pobladores con a y b elegidos (ids; 0:

@@ -252,7 +252,21 @@ Va en esta misma fase, porque los cuatro botones ocupan teclas que hoy hacen otr
 
 **Costo:** medio. La cámara cenital y el fantasma son nuevos; el resto, la cola de obras y los constructores, ya existe.
 
-## Fase 5 — Economía de los campamentos y artesanías (v0.7.0)
+## Fase 5 — Economía de los campamentos y artesanías (v0.7.0) — hecha
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **El bien de referencia es la plata** (`utileria.material.plata`), no las cabezas de ganado: los animales no se guardan en bolsas y la plata sí. Para que sirva de moneda pesa 50 g la unidad (antes, 4 kg como un lingote); el oro, igual. Las reglas son puras (`src/sim/trade.c`, con tests): el valor de cada bien (una tabla por id o prefijo; las joyas, por su metal), el del acopio, el precio por región (×0,7 donde abunda, ×1,5 donde escasea) y lo que se queda el mercader (paga el 80 %, cobra el 125 %).
+- **Materias nuevas:** cuero, fieltro, madera labrada, adobe, puntas de hueso y piezas de arco; velas de sebo, peine, aljaba y especias. La grasa, el hueso, los tendones, el forraje, el airag y el queso seco ya estaban.
+- **Recetas** (todas a mano, `CRAFT_*` al final del enum): cuero; silla, brida, alforjas, aljaba y casco, brazales y grebas laminares de cuero; puntas y flechas de hueso, peine, piezas de arco y el arco compuesto; velas, antorchas, queso seco, fieltro, madera labrada y adobe. Las botas y el gorro de fieltro ahora piden fieltro.
+- **Producción por oficio** (`economy_daily_work`): cada día, una tanda por persona con oficio, de lo que sobra del acopio de su campamento y guardando una reserva (cazador: cuero y puntas; pastor: fieltro; constructor: madera labrada y adobe; cocinero: velas; curandero: ungüento; orfebre: peines). Sale en los informes del campamento y en el registro del día.
+- **Obras duraderas:** casa de adobe, cabaña de troncos y choza de fieltro (`BUILD_*` al final). Abrigan a más gente y se desgastan menos (`structure_wear_scale`: adobe y piedra 0,4, troncos 0,6).
+- **Comercio** (`src/game/trade_game.*`): `F` junto a tribus amigas o neutrales, aldeas, capitales, caravasares y caravanas abre un diálogo de vender y comprar. Se vende lo que se lleva (encima, alforjas, carreta, mochilas de la escolta), no lo puesto ni el acopio: lo que sobra en el campamento hay que cargarlo. Cada mercado vende lo suyo y lo de su región. Una pista abajo dice con quién se comercia.
+- **Caravanas:** una por caravasar (hasta cuatro), entre él y la capital más cercana, al paso de los camellos; cada una sale a otra hora. Se dibujan con primitivas (camellos de cápsulas con jorobas y fardos, el mercader a pie y dos jinetes). Se detienen al comerciar. Asaltarlas es una opción del diálogo: aparece su escolta (un grupo nuevo de `cb_spawn_party_at`, «caravana»), baja la relación con el reino y, vencida, la carga queda en el suelo; descansa dos días y vuelve a salir de su caravasar.
+- **Saqueo de campamentos rivales:** cuando sus guerreros ya salieron al paso (la emboscada de siempre), `F` junto a su fuego lo saquea si no queda nadie en pie a 40 m. Se rearma al alejarse 600 m, como la emboscada.
+- **El valor a la vista:** el estado del guardián, el panel del acopio en el inventario y la leyenda de cada objeto dicen cuánto vale en plata.
+- **Untar con grasa:** quedó como mantenimiento del cuero y el fieltro (si faltan pieles para repararlos, la grasa devuelve el 30 %). Untar las armas y que se gasten menos queda para la fase 7, con la forja.
+- **Íconos nuevos:** monedas, balanza y camello. **Ayuda:** una página nueva, «Oficios y comercio».
+- **Pruebas:** `--comerciar raiz|vender|comprar|cerca|caravana|asaltar|saquear`.
 
 **Lo que hay:**
 - el acopio (`Stockpile`) por campamento;

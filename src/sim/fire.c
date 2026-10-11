@@ -158,6 +158,13 @@ float fire_lightning_ignite_chance(float dryness, float rain) {
 
 float structure_daily_wear(bool rained) { return rained ? 0.09f : 0.05f; }
 
+float structure_wear_scale(const char *id) {
+    if (!id) return 1.0f;
+    if (strstr(id, "adobe") || strstr(id, "piedra")) return 0.4f;
+    if (strstr(id, "cabana_troncos")) return 0.6f;
+    return 1.0f;
+}
+
 float structure_collapse_chance(float condition, float rain, float dt) {
     if (rain < RAIN_TORRENTIAL || condition >= STRUCTURE_NEGLECTED) return 0.0f;
     float neglect = (STRUCTURE_NEGLECTED - condition) / STRUCTURE_NEGLECTED; // (0, 1]

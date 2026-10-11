@@ -88,6 +88,9 @@ float fire_lightning_ignite_chance(float dryness, float rain);
 // Mantenimiento de las estructuras: cada dia se desgastan (mas si llovio); la lluvia
 // torrencial derrumba las descuidadas (condicion baja).
 float structure_daily_wear(bool rained);
+// Cuanto se gasta cada estructura segun de que esta hecha: el adobe y la piedra, mucho menos; la
+// madera labrada, menos; lo demas (ramas, pieles, fieltro), como siempre (1).
+float structure_wear_scale(const char *id);
 float structure_collapse_chance(float condition, float rain, float dt); // probabilidad en dt
 #define STRUCTURE_NEGLECTED 0.35f // por debajo, la lluvia torrencial puede derrumbarla
 #define RAIN_TORRENTIAL 0.75f

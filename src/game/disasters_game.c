@@ -256,7 +256,7 @@ void dz_new_day(Disasters *dz, Props *props, GameActions *ga, const Troop *troop
     for (int i = 0; i < props->count; i++) {
         Prop *pr = &props->items[i];
         if (!is_structure(pr)) continue;
-        pr->condition = fmaxf(0.0f, pr->condition - structure_daily_wear(rained));
+        pr->condition = fmaxf(0.0f, pr->condition - structure_daily_wear(rained) * structure_wear_scale(pr->item->id));
         structures++;
     }
     if (!structures) return;

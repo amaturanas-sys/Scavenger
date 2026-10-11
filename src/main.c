@@ -30,6 +30,7 @@
 #include "game/place_game.h"
 #include "game/talents_game.h"
 #include "game/travel_game.h"
+#include "game/trade_game.h"
 #include "game/apparel_game.h"
 #include "game/water_game.h"
 #include "game/world_game.h"
@@ -555,6 +556,7 @@ int main(int argc, char **argv) {
     unsigned start_seed = WORLD_SEED; // --semilla N: el mundo (sin ella, cada partida nueva del menu sortea uno)
     const char *map_path = NULL;      // --mapa-mundo archivo.png: el mapa general del mundo, y sale
     const char *start_goto = NULL;    // --ir lugar: a un sitio del mundo (ver go_to)
+    const char *start_trade = NULL;   // --comerciar: raiz, vender, comprar, caravana, asaltar o saquear (src/game/trade_game.h)
     bool start_diag = false;          // --diagnostico: el panel de Ctrl+D abierto
     int start_picker = -1;
     float start_heading = -1.0f;      // --rumbo grados: hacia donde mira la camara (0 sur, 90 este, 180 norte, 270 oeste)
@@ -619,6 +621,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--inventario")) start_inv = true;
         else if (!strcmp(argv[i], "--pestana") && i + 1 < argc) start_tab = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--botin")) start_loot = true;
+        else if (!strcmp(argv[i], "--comerciar") && i + 1 < argc) start_trade = argv[++i];
         else if (!strcmp(argv[i], "--hablar") && i + 1 < argc) {
             i++;
             start_talk = !strcmp(argv[i], "orfebre") ? 2 : !strcmp(argv[i], "guardian") ? 3 : 1;
@@ -901,7 +904,8 @@ int main(int argc, char **argv) {
             start_talk = 0;
         }
         if (start_place && frame == 6) { // prueba: la vista aerea, ubicando una obra en el campamento inicial
-            static const char *NAMES[BUILD_COUNT] = { "refugio", "empalizada", "muro", "hoguera", "totem", "horno", "bronce", "acero", "torre", "corral" };
+            static const char *NAMES[BUILD_COUNT] = { "refugio", "empalizada", "muro",   "hoguera", "totem", "horno", "bronce",
+                                                      "acero",   "torre",      "corral", "adobe",   "cabana", "choza" };
             for (int b = 0; b < BUILD_COUNT; b++)
                 if (!strcmp(start_place, NAMES[b])) pg_begin(&g_actions, (BuildId)b, 0, player.pos.x, player.pos.z);
             start_place = NULL;
@@ -920,6 +924,13 @@ int main(int argc, char **argv) {
             }
             start_tasks = false;
         }
+        if (start_trade && frame == 6) { // prueba: el comercio, una caravana, su asalto o el saqueo de un campamento rival
+            td_test(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, start_trade, log, sizeof(log));
+            rig.yaw = player.yaw;
+        }
+        if (start_trade && !strcmp(start_trade, "asaltar") && frame == 200) // prueba: la escolta de la caravana, vencida
+            for (int k = 0; k < CB_MAX_ENEMIES; k++)
+                if (g_combat.enemies[k].used) g_combat.enemies[k].h.down = g_combat.enemies[k].h.dead = true;
         if (start_talk == 7 && frame == 6) { // prueba: la ventana de pobladores, con dos elegidos
             int pick[2] = { 0, 0 }, np = 0;
             for (int k = 0; k < troop.count && k < TROOP_MAX; k++) {
@@ -1044,6 +1055,7 @@ int main(int argc, char **argv) {
             if (!gallery_mode)
                 trv_update(&g_actions, &troop, &g_memory, &player, &terrain, clock_is_night(world_time),
                            !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
+            if (!gallery_mode) td_update(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, world_time, dt, log, sizeof(log));
             if (!gallery_mode) ag_update(&g_actions, &troop, &g_climate, g_hazards.seed, world_time, dt, log, sizeof(log));
             if (!gallery_mode) wd_update(&g_actions, &g_combat, &terrain, &player, &g_memory, log, sizeof(log));
             if (!gallery_mode)
@@ -1177,6 +1189,7 @@ int main(int argc, char **argv) {
         if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());
         if (!gallery_mode) ig_draw_world(&g_actions, &terrain, (float)GetTime());
         if (!gallery_mode) trv_draw_world(&g_actions, &troop, (float)GetTime());
+        if (!gallery_mode) td_draw_world(&g_actions, &g_props, &terrain, &player, (float)GetTime()); // las caravanas
         if (!gallery_mode) dz_draw_world(&g_dz, &terrain, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
         if (!gallery_mode) pg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime()); // la obra por ubicar, translucida
@@ -1239,6 +1252,7 @@ int main(int argc, char **argv) {
                 cb_draw_buttons(&g_combat, &g_actions, VIRTUAL_W, VIRTUAL_H); // H J K L, abajo a la derecha
             }
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
+            td_draw_hud(VIRTUAL_W, VIRTUAL_H);
             ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions)) tg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             hud_draw_picker(&g_actions, &g_props, &player, VIRTUAL_W, VIRTUAL_H); // elegir que va en una casilla

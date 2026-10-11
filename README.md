@@ -111,7 +111,7 @@ Combate de cuatro botones (las teclas o las cuatro casillas de abajo a la derech
 
 Combate montado: a caballo solo se golpea con el arma (`H`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo; a distancia, la carrera dispersa el tiro (el amuleto del caballo lo corrige). Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
 
-Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro; lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles; bronce, hierro y acero con herrero, horno y metal.
+Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.
 
@@ -130,19 +130,30 @@ Animales de la tribu:
 Campamentos:
 - **Fundar:** al levantar una tienda (`Tab`, «Instalar tienda») o un refugio lejos (más de 70 m) de los demás campamentos, nace uno nuevo. Hay que nombrar guardián a alguien de la escolta, que se queda a administrarlo.
 - **Lo propio de cada campamento:** su acopio y su gente. Las obras las levantan los del lugar; fuera de todo campamento, la escolta.
-- **Ubicar una obra:** al elegirla (`Tab` → Obras, o el guardián), la cámara sube sobre el campamento. La obra sigue al puntero, al dedo o a `WASD`; `Q`/`E` la giran, `Mayús` la alinea a una rejilla de 2 m. Verde: el sitio vale; rojo: no, y abajo dice por qué (fuera del campamento, en el agua, demasiado empinado o encima de algo). `Enter` o un clic sobre ella la coloca; `Esc` cancela sin gastar. Las cercas y los muros se marcan de un extremo al otro y se levantan por tramos de 4 m. Prueba: `--ubicar refugio|empalizada|muro|hoguera|totem|horno|bronce|acero|torre|corral`.
+- **Ubicar una obra:** al elegirla (`Tab` → Obras, o el guardián), la cámara sube sobre el campamento. La obra sigue al puntero, al dedo o a `WASD`; `Q`/`E` la giran, `Mayús` la alinea a una rejilla de 2 m. Verde: el sitio vale; rojo: no, y abajo dice por qué (fuera del campamento, en el agua, demasiado empinado o encima de algo). `Enter` o un clic sobre ella la coloca; `Esc` cancela sin gastar. Las cercas y los muros se marcan de un extremo al otro y se levantan por tramos de 4 m. Prueba: `--ubicar refugio|empalizada|muro|hoguera|totem|horno|bronce|acero|torre|corral|adobe|cabana|choza`.
 - **El guardián (`F` junto a él):**
   - ordenar obras con el acopio del campamento;
   - elegir quién sale de escolta;
   - reclutar gente nueva: alguien sale a buscarla con comida;
   - capacitar en un oficio: soldado, herrero, druida, orfebre, pastor, cazador o explorador;
-  - ver el estado (gente, tareas, acopio);
+  - ver el estado (gente, tareas, acopio y lo que vale en plata);
   - disolver el campamento.
 - **Tareas:** gastan recursos y ocupan gente. Avanzan más rápido con más gente sin tarea (hasta ×2) y mucho más con un maestro del oficio (+60 % cada uno).
 - **Disolver:** se queman las estructuras (y las yurtas del campamento inicial). Lo del acopio se carga en la carreta y en las alforjas que estén cerca; lo que no cabe se pierde. La gente sigue al jugador.
 - **El campamento inicial:** su guardián es el lugarteniente.
 
 Pruebas: `--hablar guardian`, `--fundar`.
+
+Oficios, comercio y saqueo:
+- **Los oficios trabajan cada día** lo que sobra del acopio de su campamento, una tanda por persona y guardando una reserva: el cazador curte pieles (cuero) y talla puntas de hueso; el pastor hace fieltro con pieles de cabra; el constructor labra madera y hace adobe; el cocinero, velas de sebo; el curandero, ungüento; el orfebre, peines. Lo que hicieron sale en los informes del campamento.
+- **Fabricar a mano (`Tab`, Fabricar):** cuero (2 pieles), silla de montar, brida, alforjas, aljaba, casco, brazales y grebas laminares de cuero; puntas y flechas de hueso, peine, piezas de arco (hueso y tendón) y el arco compuesto; velas, antorchas, queso seco, fieltro, madera labrada y adobe.
+- **Obras duraderas:** casa de adobe, cabaña de troncos y choza de fieltro. Abrigan a más gente que un refugio y se desgastan menos (el adobe, como la piedra).
+- **El valor:** todo se mide en plata, la moneda (50 g la unidad). El estado del guardián y el inventario dicen cuánto vale el acopio, y la leyenda de cada objeto, cuánto vale uno.
+- **Comerciar (`F`):** junto a una tribu amiga o neutral, una aldea, una capital, un caravasar o una caravana (abajo aparece «F: comerciar con...»). Vendes lo que llevas encima, en las alforjas, en la carreta o en las mochilas de la escolta (`Mayús`: todo de una vez) y compras lo suyo (`Mayús`: cinco). Cada mercado vende lo propio y lo de su región; lo que abunda en la región vale menos (×0,7) y lo que escasea, más (×1,5). Te pagan el 80 % del valor y te cobran el 125 %.
+- **Caravanas:** van y vuelven, al paso de los camellos, entre cada caravasar y la capital más cercana, con dos jinetes de escolta; se detienen a comerciar. **Asaltarla** baja 10 la relación con el reino: su escolta (dos jinetes, un bandido y un arquero) pelea y, vencida, la carga queda en el suelo (seda, especias, vino, plata, oro y una turquesa). La caravana vuelve a salir de su caravasar a los dos días.
+- **Saquear:** un campamento rival cuyos guerreros ya salieron al paso se saquea con `F` junto a su fuego si no queda nadie en pie a 40 m: cuero, fieltro, carne seca, pieles y plata. Se rearma al alejarte 600 m.
+
+Pruebas: `--comerciar raiz|vender|comprar|cerca` (el mercado más cercano: con `--ir aldea`, `--ir tribu`...), `--comerciar caravana|asaltar|saquear`.
 
 Órdenes a la escolta (`Mayús+Y`):
 - **Despachar:** marcas quiénes salen y eliges el destino: un campamento o un sitio marcado en el mapa (`M`). Al menos uno tiene que conocerlo (haber estado allí). Cuantos más lo conozcan, menos riesgo; también influyen la distancia, el tamaño del grupo y la noche.

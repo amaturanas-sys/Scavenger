@@ -38,6 +38,7 @@
 #include "../src/sim/fire.h"
 #include "../src/sim/melee.h"
 #include "../src/sim/storage.h"
+#include "../src/sim/trade.h"
 #include "../src/sim/travel.h"
 #include "../src/sim/troop.h"
 #include "../src/sim/water.h"
@@ -2274,6 +2275,10 @@ static void test_hand_crafting_and_repairs(void) {
     for (int m = 0; m < MAT_COUNT; m++) CHECK(repair_def(m) && repair_def(m)->mats[0].id && repair_def(m)->restore > 0.0f);
     CHECK(repair_def(MAT_LEATHER)->role == ROLE_NONE && repair_def(MAT_IRON)->role == ROLE_SMITH);
     CHECK(repair_def(MAT_IRON)->building != NULL && repair_def(-1) == repair_def(MAT_FELT)); // fuera de rango: fieltro
+    // Untar con grasa: solo el fieltro y el cuero, y devuelve menos que repararlos.
+    CHECK(repair_grease(MAT_FELT) && repair_grease(MAT_LEATHER) && !repair_grease(MAT_IRON) && !repair_grease(MAT_GOLD));
+    CHECK(!strcmp(repair_grease(MAT_LEATHER)->mats[0].id, "utileria.material.grasa") && !repair_grease(MAT_LEATHER)->mats[1].id);
+    CHECK(repair_grease(MAT_LEATHER)->restore > 0.0f && repair_grease(MAT_LEATHER)->restore < repair_def(MAT_LEATHER)->restore);
 }
 
 static void test_enemy_loot_and_mounted_momentum(void) {
@@ -3691,6 +3696,151 @@ static void test_place_wall_two_points(void) {
     CHECK(place_wall(0.0f, 0.0f, 0.0f, 100.0f, 4.0f, 0.4f, seg, 4) == 25);
 }
 
+// ---------------------------------------------------------------- comercio (fase 5)
+static void test_trade_values_and_regional_prices(void) {
+    // La plata vale 1 en todas partes; lo trabajado vale mas que su materia prima.
+    CHECK(item_value(SILVER_ID) == 1.0f && item_value("utileria.material.oro") == 10.0f);
+    CHECK(item_value("utileria.material.cuero") > 2.0f * item_value("utileria.material.pieles"));
+    CHECK(item_value("estructura.vivienda.yurta_comun") == 0.0f && item_value("animal.montura.caballo_estepario") == 0.0f &&
+          item_value("utileria.consumible.agua_hervida") == 0.0f && item_value("accesorio.tatuaje.lobo") == 0.0f);
+    CHECK(item_value("accesorio.anillo.oro") > item_value("accesorio.anillo.plata") && item_value("accesorio.anillo.plata") > item_value("accesorio.anillo.bronce"));
+    CHECK(item_value("utileria.piel.oso") > 0.0f && item_value("arma.corta.sable_bronce") > 0.0f && item_value("proyectil.flecha.comun") > 0.0f);
+    // El valor del acopio (lo que no se comercia no suma).
+    Stockpile s;
+    stock_init(&s);
+    stock_add(&s, "utileria.material.pieles", 3);
+    stock_add(&s, SILVER_ID, 10);
+    stock_add(&s, "estructura.campamento.refugio", 1);
+    CHECK(fabsf(stock_value(&s) - 22.0f) < 1e-4f);
+    // Por region: las pieles, baratas en el bosque y caras en el desierto; la seda, al reves.
+    CHECK(price_factor("utileria.material.pieles", REGION_FOREST) == PRICE_CHEAP && price_factor("utileria.material.pieles", REGION_DESERT) == PRICE_DEAR);
+    CHECK(trade_sell_price("utileria.material.pieles", REGION_DESERT) > trade_sell_price("utileria.material.pieles", REGION_FOREST));
+    CHECK(trade_buy_price("utileria.material.seda", REGION_DESERT) < trade_buy_price("utileria.material.seda", REGION_FJORD));
+    CHECK(price_factor(SILVER_ID, REGION_DESERT) == 1.0f && trade_sell_price(SILVER_ID, REGION_FOREST) == 1 && trade_buy_price(SILVER_ID, REGION_FOREST) == 1);
+    // El mercader gana: vende mas caro de lo que compra, en todas las regiones; lo barato vale al menos 1.
+    for (int r = 0; r < REGION_COUNT; r++) {
+        CHECK(trade_buy_price("utileria.material.cuero", (Region)r) > trade_sell_price("utileria.material.cuero", (Region)r));
+        CHECK(trade_sell_price("utileria.material.puntas_hueso", (Region)r) >= 1);
+        CHECK(trade_sell_price("estructura.vivienda.yurta_comun", (Region)r) == 0 && trade_buy_price("animal.ganado.cabra", (Region)r) == 0);
+    }
+    // Comprar donde abunda y vender donde escasea deja ganancia: el negocio de las caravanas.
+    CHECK(trade_sell_price("utileria.material.seda", REGION_FOREST) > trade_buy_price("utileria.material.seda", REGION_DESERT));
+    // La plata es moneda: treinta caben en los bolsillos (no pesa como un lingote).
+    Inventory inv;
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    inventory_parse(&inv, text);
+    Bag pockets;
+    bag_init(&pockets, BAG_POCKETS, 0.0f);
+    CHECK(item_kg(inventory_find(&inv, SILVER_ID)) <= 0.05f && item_kg(inventory_find(&inv, "utileria.material.oro")) <= 0.05f);
+    CHECK(bag_add(&pockets, &inv, SILVER_ID, 30, 1.0f) == 30 && bag_count(&pockets, SILVER_ID) == 30);
+    free(text);
+}
+
+static void test_trade_markets_and_caravans(void) {
+    const char *g[16];
+    int n = market_goods(MARKET_TRIBE, REGION_STEPPE, g, 16);
+    bool leather = false, cheese = false;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < i; j++) CHECK(strcmp(g[i], g[j]) != 0); // sin repetir
+        leather |= !strcmp(g[i], "utileria.material.cuero"), cheese |= !strcmp(g[i], "utileria.consumible.queso_seco");
+    }
+    CHECK(n > 5 && leather && cheese);
+    for (int k = 0; k < MARKET_KINDS; k++)
+        for (int r = 0; r < REGION_COUNT; r++) {
+            n = market_goods((MarketKind)k, (Region)r, g, 16);
+            CHECK(n >= 6);
+            for (int i = 0; i < n; i++) CHECK(item_value(g[i]) > 0.0f && trade_buy_price(g[i], (Region)r) > 0);
+        }
+    CHECK(market_goods(MARKET_CARAVAN, REGION_DESERT, g, 3) == 3); // respeta el maximo
+    // Las caravanas: de un caravasar a una capital.
+    const World *w = world_for_seed(20261011u);
+    CaravanRoute rt[CARAVANS_MAX];
+    int nr = caravan_routes(w, rt, CARAVANS_MAX);
+    CHECK(nr >= 1);
+    for (int i = 0; i < nr; i++) {
+        bool site = false, capital = false;
+        for (int k = 0; k < w->site_count; k++) site |= w->sites[k].kind == SITE_CARAVANSERAI && w->sites[k].x == rt[i].ax && w->sites[k].z == rt[i].az;
+        for (int k = 0; k < w->settlement_count; k++)
+            capital |= w->settlements[k].kind == SETTLE_CAPITAL && w->settlements[k].x == rt[i].bx && w->settlements[k].z == rt[i].bz;
+        CHECK(site && capital);
+    }
+    // Van y vuelven, al paso, mirando hacia donde van.
+    CaravanRoute r0 = { 0.0f, 0.0f, 0.0f, 1100.0f, 0.0f };
+    float x, z, yaw;
+    caravan_at(&r0, 0.0f, &x, &z, &yaw);
+    CHECK(fabsf(x) < 1e-3f && fabsf(z) < 1e-3f && fabsf(yaw) < 1e-3f);
+    caravan_at(&r0, 500.0f, &x, &z, &yaw);
+    CHECK(fabsf(z - 500.0f * CARAVAN_SPEED) < 0.01f);
+    caravan_at(&r0, 1100.0f / CARAVAN_SPEED + 500.0f, &x, &z, &yaw); // de vuelta
+    CHECK(fabsf(z - (1100.0f - 500.0f * CARAVAN_SPEED)) < 0.05f && fabsf(fabsf(yaw) - 3.1415927f) < 1e-3f);
+    caravan_at(&r0, 2.0f * 1100.0f / CARAVAN_SPEED, &x, &z, &yaw); // otra vez en el caravasar
+    CHECK(fabsf(z) < 0.05f);
+}
+
+static void test_crafts_chains_add_value(void) {
+    // Las cadenas de produccion: lo que sale vale mas que lo que entra.
+    for (int c = CRAFT_LEATHER; c < CRAFT_COUNT; c++) {
+        const CraftDef *d = craft_def((CraftId)c);
+        float in = 0.0f;
+        for (const Ingredient *m = d->mats; m->id; m++) in += item_value(m->id) * (float)m->count;
+        float out = item_value(d->produces) * (float)(d->amount > 0 ? d->amount : 1);
+        CHECK(in > 0.0f && out > in);
+        if (!(out > in)) fprintf(stderr, "    receta %d: %s vale %.1f y lleva %.1f\n", c, d->produces, out, in);
+    }
+    // Las botas y el gorro de fieltro, de fieltro (y el fieltro, de lana).
+    CHECK(!strcmp(craft_def(CRAFT_FELT_BOOTS)->mats[0].id, "utileria.material.fieltro") && !strcmp(craft_def(CRAFT_FELT)->mats[0].id, "utileria.piel.cabra"));
+}
+
+static void test_daily_work_by_trade(void) {
+    Troop t;
+    troop_init(&t, NULL);
+    int hunter = troop_recruit(&t, "Jebe", 0), herder = troop_recruit(&t, "Temulun", 0), builder = troop_recruit(&t, "Boroqul", 0),
+        cook = troop_recruit(&t, "Sorkan", 0), idle = troop_recruit(&t, "Muqali", 0);
+    troop_assign_role(&t, hunter, ROLE_HUNTER);
+    troop_assign_role(&t, herder, ROLE_HERDER);
+    troop_assign_role(&t, builder, ROLE_BUILDER);
+    troop_assign_role(&t, cook, ROLE_COOK);
+    (void)idle;
+    Stockpile s;
+    stock_init(&s);
+    stock_add(&s, "utileria.material.pieles", 4);
+    stock_add(&s, "utileria.piel.cabra", 2);
+    stock_add(&s, "utileria.material.troncos", 8);
+    stock_add(&s, "utileria.material.grasa", 1);
+    WorkReport r = economy_daily_work(&s, &t);
+    // Cada uno, una tanda, exacta: el cazador curte, el pastor abatana, el constructor labra, el cocinero hace velas.
+    CHECK(r.batches == 4);
+    CHECK(stock_count(&s, "utileria.material.pieles") == 2 && stock_count(&s, "utileria.material.cuero") == 1);
+    CHECK(stock_count(&s, "utileria.piel.cabra") == 0 && stock_count(&s, "utileria.material.fieltro") == 1);
+    CHECK(stock_count(&s, "utileria.material.troncos") == 6 && stock_count(&s, "utileria.material.madera_labrada") == 1);
+    CHECK(stock_count(&s, "utileria.material.grasa") == 0 && stock_count(&s, "utileria.objeto.vela") == 3);
+    int velas = 0;
+    for (int i = 0; i < r.n; i++) velas += !strcmp(r.made[i].id, "utileria.objeto.vela") ? r.made[i].count : 0;
+    CHECK(velas == 3);
+    // Al otro dia: la reserva no se toca (2 pieles y 6 troncos quedan); el cazador pasa a los huesos si hay.
+    r = economy_daily_work(&s, &t);
+    CHECK(r.batches == 0 && stock_count(&s, "utileria.material.pieles") == 2 && stock_count(&s, "utileria.material.troncos") == 6);
+    stock_add(&s, "utileria.material.hueso", 2);
+    stock_add(&s, "utileria.material.barro", 4);
+    stock_add(&s, "utileria.consumible.forraje", 3);
+    r = economy_daily_work(&s, &t);
+    CHECK(r.batches == 2 && stock_count(&s, "utileria.material.puntas_hueso") == 4 && stock_count(&s, "utileria.material.hueso") == 1);
+    CHECK(stock_count(&s, "utileria.material.adobe") == 2 && stock_count(&s, "utileria.material.barro") == 2 && stock_count(&s, "utileria.consumible.forraje") == 2);
+    // Sin oficio no se procesa nada; los que no estan activos, tampoco.
+    Troop none;
+    troop_init(&none, NULL);
+    troop_recruit(&none, "Nadie", 0);
+    CHECK(economy_daily_work(&s, &none).batches == 0);
+    // Las casas de adobe y de troncos labrados se gastan menos y dan techo.
+    CHECK(structure_wear_scale("estructura.vivienda.casa_adobe") < structure_wear_scale("estructura.vivienda.cabana_troncos") &&
+          structure_wear_scale("estructura.vivienda.cabana_troncos") < structure_wear_scale("estructura.campamento.refugio") &&
+          structure_wear_scale("estructura.campamento.refugio") == 1.0f && structure_wear_scale("estructura.defensa.muro_piedra") < 1.0f);
+    const char *homes[3] = { "estructura.vivienda.casa_adobe", "estructura.vivienda.cabana_troncos", "estructura.vivienda.choza_fieltro" };
+    CHECK(camp_effects(homes, 3).shelters == 8);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -3802,6 +3952,10 @@ int main(void) {
     RUN(test_place_footprint_and_rotation);
     RUN(test_place_site_rules);
     RUN(test_place_wall_two_points);
+    RUN(test_trade_values_and_regional_prices);
+    RUN(test_trade_markets_and_caravans);
+    RUN(test_crafts_chains_add_value);
+    RUN(test_daily_work_by_trade);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }
