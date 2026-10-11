@@ -160,6 +160,7 @@ typedef struct {
     bool hidden;
     // Estado de combate y salud del jugador para la animacion (lo pone src/game/combat_game.c).
     bool pl_down, pl_hit, pl_blocking, pl_limping, pl_spear, pl_knocked;
+    bool pl_holding; // sujeta a un rehen (src/game/combat_game.c)
     int pl_attacking, pl_ranged, pl_move;
     float swap_anim;    // pasando el arma de mano
 } GameActions;

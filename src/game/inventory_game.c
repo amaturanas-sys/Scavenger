@@ -738,8 +738,8 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
     for (int i = 0; i < GA_LOOT; i++) // el botin no se queda para siempre
         if (ga->loot_age[i] >= 0.0f && (ga->loot_age[i] += GetFrameTime()) > LOOT_SECONDS) ga->loot_age[i] = -1.0f;
     pack_follow(ga, props);
-    // Mayus+G: dejar o recoger la mochila (y G sola, hasta que agarrar llegue con la fase 2).
-    bool pack = input_action_pressed(KA_BACKPACK) || input_action_pressed(KA_GRAB) || g_pack_req;
+    // Mayus+G: dejar o recoger la mochila (G sola agarra: src/game/combat_game.c).
+    bool pack = input_action_pressed(KA_BACKPACK) || g_pack_req;
     g_pack_req = false;
     if (input_ok && pack && !ga->inv_open && !ga->equip_open) pack_toggle(ga, props, p, log, len);
     if (input_ok && input_action_pressed(KA_INVENTORY) && !ga->equip_open) ga->inv_open = !ga->inv_open;

@@ -2234,6 +2234,9 @@ static void test_anim_index_names_exist(void) {
         // Cuerpo a cuerpo: cada movimiento, derribado, cambiar de mano.
         s.move = bits % (MOVE_COUNT + 1), s.knocked = bits % 19 == 0, s.swapping = bits % 23 == 0;
         CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
+        // La espalda y los rehenes: quien sujeta y quien es sujetado.
+        s.holding = bits % 29 == 0, s.held = bits % 31 == 0;
+        CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
     }
     for (int sp = 0; sp < SPECIES_COUNT; sp++) {
         Animal a;

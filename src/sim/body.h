@@ -38,6 +38,8 @@ typedef struct {
     float guard;      // [0, 1] escudo en alto (cubrirse) o empujando (golpe de escudo)
     float parry;      // [0, 1] parry: el brazo del arma al frente y el antebrazo arriba
     float crouch;     // [0, 1] agachado: rodillas dobladas, mas bajo e inclinado
+    float hold;       // [0, 1] sujeta a un rehen: el brazo izquierdo al frente, rodeando el cuello
+    float held;       // [0, 1] es el rehen: las dos manos al brazo que le aprieta el cuello
 } BodyPoseParams;
 
 void body_pose(BodyPose *out, const BodyPoseParams *p);

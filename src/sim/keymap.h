@@ -30,7 +30,7 @@ typedef enum {
     KA_JUMP,   // Espacio
     // El mundo.
     KA_INTERACT,    // F: hablar, tomar, botin, animales, pozo, horno (Mayus+F: tomar todo o sacrificar)
-    KA_GRAB,        // G: agarrar (la fase 2); por ahora, la mochila
+    KA_GRAB,        // G: agarrar por la espalda (rehen o escudo humano) y soltarlo
     KA_BACKPACK,    // Mayus+G: dejar o recoger la mochila
     KA_LIGHT_ARROW, // Mayus+L: encender la flecha junto a un fuego
     KA_THROW,       // T: lanzar lo que se lleva en brazos

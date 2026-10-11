@@ -1239,7 +1239,7 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) 
         .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = ga->hands.sheathed,
         .grip = hands_grip(&ga->hands), .doing = ga->doing, .building = -1,
         .down = ga->pl_down, .hit = ga->pl_hit, .attacking = ga->pl_attacking, .spear = ga->pl_spear,
-        .blocking = ga->pl_blocking, .limping = ga->pl_limping, .ranged = ga->pl_ranged, .move = ga->pl_move,
+        .blocking = ga->pl_blocking, .limping = ga->pl_limping, .ranged = ga->pl_ranged, .move = ga->pl_move, .holding = ga->pl_holding,
         .knocked = ga->pl_knocked, .swapping = ga->swap_anim > 0.0f,
     };
     if (hs.mounted) hs.mount_speed = p->moving ? (p->stance == STANCE_RUN ? 8.5f : 4.0f) * ga_speed_scale(ga) : 0.0f;
