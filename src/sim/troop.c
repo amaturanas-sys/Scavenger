@@ -28,6 +28,7 @@ static const ActionEffect EFFECTS[ACT_COUNT] = {
     [ACT_EXECUTE_MEMBER]   = { .morale = -8.0f, .loyalty = -4.0f, .merciful = -10.0f, .bloodthirsty = +6.0f, .loyalist = -3.0f },
     [ACT_EXECUTE_PRISONER] = { .morale = -2.0f, .merciful = -6.0f, .bloodthirsty = +4.0f, .devout = -3.0f },
     [ACT_SHARE_LOOT]       = { .morale = +5.0f, .loyalty = +3.0f, .ambitious = +3.0f },
+    [ACT_FINISH_DOWNED]    = { .morale = -1.0f, .merciful = -4.0f, .bloodthirsty = +3.0f, .devout = -2.0f },
 };
 
 // Umbrales de desercion y rebelion.
@@ -174,6 +175,8 @@ bool troop_release_prisoner(Troop *t, int id) {
 
 void troop_share_loot(Troop *t) { apply_action(t, ACT_SHARE_LOOT); }
 
+void troop_finish_downed(Troop *t) { apply_action(t, ACT_FINISH_DOWNED); }
+
 void troop_adjust_morale(Troop *t, float delta) {
     for (int i = 0; i < t->count; i++)
         if (t->members[i].status == STATUS_ACTIVE)
@@ -284,6 +287,7 @@ void kingdom_init_iron_khanate(Kingdom *k) {
     k->stance[ACT_RELEASE_PRISONER] = -4.0f;
     k->stance[ACT_TAKE_PRISONER] = +2.0f;
     k->stance[ACT_BANISH] = +1.0f;
+    k->stance[ACT_FINISH_DOWNED] = +1.0f;
 }
 
 void kingdom_init_jade_dynasty(Kingdom *k) {
@@ -295,6 +299,7 @@ void kingdom_init_jade_dynasty(Kingdom *k) {
     k->stance[ACT_RELEASE_PRISONER] = +4.0f;
     k->stance[ACT_TAKE_PRISONER] = +1.0f;
     k->stance[ACT_SHARE_LOOT] = +1.0f;
+    k->stance[ACT_FINISH_DOWNED] = -2.0f;
 }
 
 const char *role_name(Role r) {

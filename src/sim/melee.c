@@ -15,6 +15,8 @@ static const MoveDef MOVES[MOVE_COUNT] = {
     [MOVE_HOOK] = { N_("Gancho al escudo"), "enganchar_escudo", 0.0f, 0.0f, 0.9f, WOUND_CUT },
     [MOVE_PARRY] = { N_("Parry"), "parry", 0.0f, 0.0f, 0.5f, WOUND_CUT },
     [MOVE_DEFLECT] = { N_("Desvío"), "desvio", 0.0f, 0.0f, 0.5f, WOUND_CUT },
+    [MOVE_BACKSTAB] = { N_("Por la espalda"), "apunalar_espalda", 0.0f, 0.0f, 0.9f, WOUND_CUT },
+    [MOVE_FINISH] = { N_("Rematar"), "rematar", 0.0f, 0.0f, 0.9f, WOUND_CUT },
 };
 
 const MoveDef *move_def(MeleeMove m) { return &MOVES[(unsigned)m < MOVE_COUNT ? m : 0]; }

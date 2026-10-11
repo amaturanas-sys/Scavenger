@@ -41,6 +41,8 @@ typedef enum {
     MOVE_HOOK,         // enganchar el escudo
     MOVE_PARRY,        // parry (K): el intento, hasta saber como sale
     MOVE_DEFLECT,      // desvio: el golpe del rival resbala por el arma
+    MOVE_BACKSTAB,     // por la espalda (K): ejecucion silenciosa (src/sim/stealth.h)
+    MOVE_FINISH,       // rematar a un abatido (H o K)
     MOVE_COUNT
 } MeleeMove;
 

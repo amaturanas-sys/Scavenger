@@ -1,5 +1,6 @@
 #include "game/actions_game.h"
 
+#include "game/combat_game.h"
 #include "game/input.h"
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
@@ -753,14 +754,20 @@ static bool oven_near(const Props *props, const Player *p) {
     return false;
 }
 
-// F: interactuar con lo que haya. Hablar con la gente (el guardian, el druida, el orfebre); los
-// animales y las colmenas (src/game/fauna_game.c; Mayus+F, quieto junto al ganado, lo sacrifica);
-// tomar objetos y botin (Mayus: todo lo de alrededor); el pozo (sacar agua) y el horno (fabricar).
+// F: interactuar con lo que haya. Hablar con la gente (el guardian, el druida, el orfebre); un
+// enemigo abatido (lo toma prisionero, src/game/combat_game.c); los animales y las colmenas
+// (src/game/fauna_game.c; Mayus+F, quieto junto al ganado, lo sacrifica); tomar objetos y botin
+// (Mayus: todo lo de alrededor); el pozo (sacar agua) y el horno (fabricar).
 static void interact(GameActions *ga, Troop *troop, Props *props, const Terrain *t, Player *p, char *log, size_t len) {
     if (cg_try_talk(ga, troop, p) || tg_try_talk(ga, troop, p, log, len)) return;
     int near = props_nearest(props, p->pos, REACH, true);
     float prop_d = near >= 0 ? dist2d(p->pos, props->items[near].pos) : 1e9f;
     float animal_d = ga->mounted < 0 ? fg_interact_dist(ga, p) : 1e9f;
+    float downed_d = ga->mounted < 0 ? cb_capture_dist() : 1e9f;
+    if (downed_d <= CB_DOWNED_REACH && downed_d <= prop_d && downed_d <= animal_d) { // un abatido: prisionero
+        cb_request_capture();
+        return;
+    }
     if (animal_d < 1e8f && animal_d <= prop_d) { // el animal esta mas cerca que lo que hay para tomar
         fg_interact(ga, p, (input_mods() & KM_SHIFT) && !p->moving, log, len);
         return;

@@ -66,6 +66,7 @@ typedef enum {
     ACT_EXECUTE_MEMBER,
     ACT_EXECUTE_PRISONER,
     ACT_SHARE_LOOT,
+    ACT_FINISH_DOWNED, // rematar a un enemigo abatido (src/sim/stealth.h)
     ACT_COUNT
 } CampAction;
 
@@ -136,6 +137,9 @@ bool troop_assign_role(Troop *t, int id, Role role);
 bool troop_banish(Troop *t, int id);
 bool troop_execute(Troop *t, int id); // integrante activo o prisionero
 bool troop_release_prisoner(Troop *t, int id);
+// El jugador remata a un enemigo abatido: la tribu lo ve como una ejecucion menor (los
+// compasivos y los devotos lo reprueban; los sanguinarios lo celebran).
+void troop_finish_downed(Troop *t);
 // Un integrante activo muere (accidente, frio...): sale de la tropa y el resto
 // lo llora (baja la moral de todos). Devuelve false si no estaba activo.
 bool troop_mourn(Troop *t, int id, float morale_loss);
