@@ -162,6 +162,12 @@ typedef struct {
     bool milked;          // ordeñado hoy
     bool weakened;        // con poca vida: el lazo puede atarlo
     bool killed_by_human; // muerto a manos de una persona (para el registro)
+    // La cria (v0.7.1): sexo, lo heredado, la edad y la preñez. En cero en las partidas viejas.
+    unsigned char sex;    // SEX_UNSET (se asigna solo en fauna_update), SEX_FEMALE o SEX_MALE
+    float pace;           // velocidad heredada: +-TRAIT_MAX sobre la de su especie (montado)
+    float grit;           // aguante heredado: +-TRAIT_MAX (montado, se cansa menos)
+    float foal;           // dias que le faltan para ser adulto (0: adulto); el potro no se monta
+    float pregnant;       // dias que le faltan para parir (0: no esta preñada)
 } Animal;
 
 // Personas cerca de la fauna (jugador, tribu, enemigos). El indice 0 suele ser el jugador.
@@ -265,6 +271,34 @@ bool animal_slaughter(Animal *a);
 bool animal_butcher(Animal *a, int *meat, int *hide);
 // Nuevo dia: se puede volver a ordeñar.
 void animal_new_day(Animal *a);
+
+// ---------------------------------------------------------------- cria (v0.7.1)
+// Las monturas (menos la mula, que no se cria, y el elefante) y el ganado se crian en el
+// campamento: una hembra adulta, bien comida y sin preñar, con un macho adulto de su especie,
+// queda preñada; a los GESTATION_DAYS pare un potro que tarda FOAL_DAYS en ser adulto. El potro
+// hereda la velocidad y el aguante de sus padres (el promedio, con algo de azar).
+enum { SEX_UNSET, SEX_FEMALE, SEX_MALE };
+#define TRAIT_MAX 0.25f       // lo mas que se aparta de su especie (+-25 %)
+#define TRAIT_NOISE 0.05f     // el azar de cada cria
+#define GESTATION_DAYS 3.0f
+#define FOAL_DAYS 4.0f
+#define BREED_CHANCE 0.35f    // por dia, si se dan las condiciones
+
+bool species_breeds(Species s);
+bool animal_adult(const Animal *a);
+// Sexo y rasgos de un animal nuevo (salvaje o de partidas viejas), a partir de una semilla.
+void animal_roll_traits(Animal *a, uint32_t seed);
+// ¿Puede quedar preñada esta hembra de ese macho? (misma especie, adultos, de la tribu, bien comidos)
+bool animal_can_conceive(const Animal *mother, const Animal *father);
+// Lo que hereda un potro: el promedio de los padres mas un poco de azar (sin pasar de TRAIT_MAX).
+void animal_foal_traits(const Animal *mother, const Animal *father, Rng *rng, float *pace, float *grit);
+// El potro recien nacido junto a su madre: de la tribu, con lo heredado y sexo al azar.
+void animal_birth(Animal *foal, const Animal *mother, const Animal *father, Rng *rng);
+// Un dia de cria en un rebaño (idx: los animales de a que estan en el campamento): los potros
+// crecen, las preñadas cuentan (las que llegan a cero paren: sus potros van a births, hasta
+// max_births, y no paren si no hay lugar) y las hembras listas pueden quedar preñadas del mejor
+// macho. Devuelve cuantos nacieron.
+int herd_breed_day(Animal *a, const int *idx, int nidx, Rng *rng, float chance, Animal *births, int max_births);
 
 // Cuerpo aproximado para los impactos (zonas de fiera), segun su talla.
 // Local: +Y arriba, +Z hacia delante (src/sim/body.h).

@@ -92,6 +92,9 @@ void animal_init(Animal *a, Species s, float x, float z) {
     a->hunger = 0.3f;
     a->stamina = 1.0f;
     health_init_beast(&a->h, d->hp);
+    // Sexo y rasgos: de donde nacio (determinista, sin tocar el azar de la partida).
+    uint32_t seed = (uint32_t)(int32_t)floorf(x * 7.0f) * 73856093u ^ (uint32_t)(int32_t)floorf(z * 7.0f) * 19349663u ^ (uint32_t)s * 83492791u;
+    animal_roll_traits(a, seed);
 }
 
 // ------------------------------------------------------------------ utilidades
@@ -845,6 +848,7 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
     for (int i = 0; i < n; i++) {
         Animal *a = &all[i];
         if (!a->used) continue;
+        if (a->sex == SEX_UNSET) animal_roll_traits(a, (uint32_t)i * 2654435761u ^ (uint32_t)(a->x * 13.0f) ^ ((uint32_t)a->species << 20)); // partidas viejas
         a->clock += dt;
         a->cooldown = fmaxf(0.0f, a->cooldown - dt);
         a->attack_anim = fmaxf(0.0f, a->attack_anim - dt);
@@ -1004,16 +1008,16 @@ bool animal_feed(Animal *a, float camp_x, float camp_z) {
 }
 
 bool animal_saddle(Animal *a) {
-    if (a->state != ANIMAL_TAMED || !SPECIES[a->species].rideable) return false;
+    if (a->state != ANIMAL_TAMED || !SPECIES[a->species].rideable || !animal_adult(a)) return false; // el potro, todavia no
     a->state = ANIMAL_SADDLED;
     return true;
 }
 
-bool animal_can_ride(const Animal *a) { return a->used && a->state == ANIMAL_SADDLED; }
+bool animal_can_ride(const Animal *a) { return a->used && a->state == ANIMAL_SADDLED && animal_adult(a); }
 
 int animal_milk(Animal *a) {
     const SpeciesDef *d = &SPECIES[a->species];
-    if (!alive(a) || a->state == ANIMAL_WILD || a->state == ANIMAL_BOUND || d->milk <= 0 || a->milked) return 0;
+    if (!alive(a) || a->state == ANIMAL_WILD || a->state == ANIMAL_BOUND || d->milk <= 0 || a->milked || !animal_adult(a)) return 0;
     a->milked = true;
     return d->milk;
 }
@@ -1035,11 +1039,86 @@ bool animal_butcher(Animal *a, int *meat, int *hide) {
 
 void animal_new_day(Animal *a) { a->milked = false; }
 
+// ------------------------------------------------------------------ cria
+bool species_breeds(Species s) {
+    if (s < 0 || s >= SPECIES_COUNT || s == SPECIES_MULE || s == SPECIES_ELEPHANT) return false; // la mula no se cria
+    return SPECIES[s].cls == CLASS_MOUNT || SPECIES[s].cls == CLASS_LIVESTOCK;
+}
+
+bool animal_adult(const Animal *a) { return a->foal <= 0.0f; }
+
+static float trait_clamp(float v) { return fminf(TRAIT_MAX, fmaxf(-TRAIT_MAX, v)); }
+
+void animal_roll_traits(Animal *a, uint32_t seed) {
+    Rng r;
+    rng_seed(&r, seed ^ 0x5bd1e995u);
+    rng_next(&r);
+    a->sex = rng_next(&r) & 1u ? SEX_MALE : SEX_FEMALE;
+    a->pace = trait_clamp((rng_float(&r) - 0.5f) * 0.2f); // los salvajes: +-10 %
+    a->grit = trait_clamp((rng_float(&r) - 0.5f) * 0.2f);
+}
+
+bool animal_can_conceive(const Animal *mother, const Animal *father) {
+    if (!alive(mother) || !alive(father) || mother->species != father->species || !species_breeds(mother->species)) return false;
+    if (mother->sex != SEX_FEMALE || father->sex != SEX_MALE || !animal_adult(mother) || !animal_adult(father)) return false;
+    if (!animal_domestic(mother) || !animal_domestic(father) || mother->pregnant > 0.0f) return false;
+    return mother->hunger < 0.8f && mother->thirst < 1.0f; // bien comida y sin sed
+}
+
+void animal_foal_traits(const Animal *mother, const Animal *father, Rng *rng, float *pace, float *grit) {
+    *pace = trait_clamp(0.5f * (mother->pace + father->pace) + (rng_float(rng) - 0.5f) * 2.0f * TRAIT_NOISE);
+    *grit = trait_clamp(0.5f * (mother->grit + father->grit) + (rng_float(rng) - 0.5f) * 2.0f * TRAIT_NOISE);
+}
+
+void animal_birth(Animal *foal, const Animal *mother, const Animal *father, Rng *rng) {
+    float a = rng_float(rng) * 6.2831853f;
+    animal_init(foal, mother->species, mother->x + cosf(a) * 1.2f, mother->z + sinf(a) * 1.2f);
+    foal->state = ANIMAL_TAMED;
+    foal->mode = mother->mode == MODE_FOLLOW ? MODE_FOLLOW : MODE_GRAZE;
+    foal->home_x = mother->home_x, foal->home_z = mother->home_z;
+    foal->group = mother->group;
+    foal->hunger = 0.2f;
+    foal->foal = FOAL_DAYS;
+    foal->sex = rng_next(rng) & 1u ? SEX_MALE : SEX_FEMALE;
+    animal_foal_traits(mother, father, rng, &foal->pace, &foal->grit);
+}
+
+int herd_breed_day(Animal *a, const int *idx, int nidx, Rng *rng, float chance, Animal *births, int max_births) {
+    int born = 0;
+    for (int k = 0; k < nidx; k++) { // los potros crecen
+        Animal *x = &a[idx[k]];
+        if (alive(x) && x->foal > 0.0f) x->foal = fmaxf(0.0f, x->foal - 1.0f);
+    }
+    for (int k = 0; k < nidx; k++) {
+        Animal *m = &a[idx[k]];
+        if (!alive(m) || m->sex != SEX_FEMALE || !animal_domestic(m)) continue;
+        // El mejor macho adulto de su especie en el rebaño (el que mas corre y aguanta).
+        const Animal *sire = NULL;
+        for (int j = 0; j < nidx; j++) {
+            const Animal *f = &a[idx[j]];
+            if (f == m || !alive(f) || f->species != m->species || f->sex != SEX_MALE || !animal_adult(f) || !animal_domestic(f)) continue;
+            if (!sire || f->pace + f->grit > sire->pace + sire->grit) sire = f;
+        }
+        if (m->pregnant > 0.0f) {
+            m->pregnant = fmaxf(0.0f, m->pregnant - 1.0f);
+            if (m->pregnant > 0.0f) continue;
+            if (born >= max_births) { // no hay lugar: espera un dia mas
+                m->pregnant = 1.0f;
+                continue;
+            }
+            animal_birth(&births[born++], m, sire ? sire : m, rng); // sin el padre a mano, hereda de la madre
+            continue;
+        }
+        if (sire && animal_can_conceive(m, sire) && rng_float(rng) < chance) m->pregnant = GESTATION_DAYS;
+    }
+    return born;
+}
+
 // ------------------------------------------------------------------ cuerpo
 void animal_body(const Animal *a, BodyPose *b) {
     const SpeciesDef *d = &SPECIES[a->species];
     memset(b, 0, sizeof(*b));
-    float s = d->size / 1.3f; // las medidas de abajo, para una fiera de 1.3 m
+    float s = d->size / 1.3f * (animal_adult(a) ? 1.0f : 0.6f); // las medidas de abajo, para una fiera de 1.3 m (el potro, mas chico)
     float y0 = a->alt; // aves en vuelo, y la presa que lleva una rapaz
     if (d->flier) { // un ave: cuerpo y cabeza
         b->seg[PART_THORAX] = (BodySeg){ { 0, y0 + 0.1f, -0.15f }, { 0, y0 + 0.1f, 0.1f }, 0.09f };

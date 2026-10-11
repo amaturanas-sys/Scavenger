@@ -103,6 +103,8 @@ void save_summary(const GameState *g, FILE *o) {
                 (int)a->state, (int)a->mode, a->x, a->z, a->alt, a->group, a->hunger, a->thirst);
         sum_health(o, &a->h);
         fputc('\n', o);
+        if (a->sex || a->pace != 0.0f || a->grit != 0.0f || a->foal > 0.0f || a->pregnant > 0.0f) // v0.7.1: la cria
+            fprintf(o, "    cria: sexo %d velocidad %.3f aguante %.3f potro %.2f preñez %.2f\n", (int)a->sex, a->pace, a->grit, a->foal, a->pregnant);
     }
     fprintf(o, "  animales: %d en uso de %d\n", animals, ga->animal_count);
     for (int i = 0; i < TROOP_MAX; i++) {
@@ -165,10 +167,15 @@ void save_summary(const GameState *g, FILE *o) {
         if (e->windup > 0.0f) fprintf(o, "    anuncia el golpe %d: %.3f s\n", e->windup_move, e->windup); // v0.5.0
         if (e->alert > 0.0f) fprintf(o, "    alerta %.3f s\n", e->alert);                                  // v0.5.1
         if (e->state == EN_DOWN) fprintf(o, "    abatido: despierta en %.3f s\n", e->timer);               // v0.5.1
+        if (e->ride_yaw != 0.0f || e->orbit_dir != 0.0f || e->retreating) // v0.7.1: la montura y la maniobra
+            fprintf(o, "    montura: rumbo %.3f giro %.0f alejandose %d\n", e->ride_yaw, e->orbit_dir, e->retreating);
     }
+    if (cb->couch > 0.0f || cb->couch_cd > 0.0f) fprintf(o, "  lanza en ristre %.3f espera %.3f\n", cb->couch, cb->couch_cd); // v0.7.1
     int shots = 0;
-    for (int i = 0; i < CB_MAX_SHOTS; i++) shots += cb->shots[i].p.alive || cb->shots[i].stuck;
+    int parthian = 0;
+    for (int i = 0; i < CB_MAX_SHOTS; i++) shots += cb->shots[i].p.alive || cb->shots[i].stuck, parthian += cb->shots[i].parthian;
     fprintf(o, "  proyectiles: %d, caballos sueltos %d\n", shots, cb->loose_n);
+    if (parthian) fprintf(o, "  disparos partos: %d\n", parthian); // v0.7.1
 
     const Hazards *hz = g->hz;
     fprintf(o, "peligros: semilla %u rng %u calor %.3f mojado %.3f sensacion %.3f trampa %d agujeros %d victima %d escolta %d\n", hz->seed,

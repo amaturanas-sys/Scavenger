@@ -38,6 +38,9 @@ const EnemyDef *enemy_def(EnemyKind k) {
         [ENEMY_RIDER] = { N_("Jinete bandido"), "personaje.npc.bandido", false, 75.0f, 14.0f, 2.0f, 1.1f, 8.5f, 40.0f, WOUND_CUT, 0.25f,
                           NULL, { "armadura.torso.laminar_cuero", "armadura.casco.laminar_cuero" }, "arma.corta.sable", NULL, 0.0f,
                           true },
+        [ENEMY_HORSE_ARCHER] = { N_("Arquero a caballo"), "personaje.npc.bandido", false, 65.0f, 8.0f, 1.6f, 1.1f, 9.0f, 46.0f, WOUND_CUT,
+                                 0.3f, "arma.distancia.arco_compuesto", { "armadura.casco.laminar_cuero", "armadura.torso.fieltro" },
+                                 "arma.corta.daga", NULL, 0.0f, true },
     };
     return &defs[(unsigned)k < ENEMY_COUNT ? k : 0];
 }
@@ -75,6 +78,13 @@ int enemy_loot(EnemyKind k, bool armed, bool shield, Rng *rng, LootItem *out, in
         if (rng_float(rng) < 0.5f) add(out, &n, max, d->ranged, 1, wear);
         if (rng_float(rng) < 0.9f) add(out, &n, max, "proyectil.flecha.comun", 3 + rng_range(rng, 7), 1.0f);
         if (rng_float(rng) < 0.08f) add(out, &n, max, "accesorio.amuleto.aguila_ibice", 1, 1.0f);
+        break;
+    case ENEMY_HORSE_ARCHER:
+        if (rng_float(rng) < 0.5f) add(out, &n, max, d->ranged, 1, wear);
+        if (rng_float(rng) < 0.9f) add(out, &n, max, "proyectil.flecha.comun", 4 + rng_range(rng, 8), 1.0f);
+        if (rng_float(rng) < 0.4f) add(out, &n, max, "utileria.objeto.aljaba", 1, 1.0f);
+        if (rng_float(rng) < 0.5f) add(out, &n, max, "utileria.consumible.carne_seca", 2, 1.0f);
+        if (rng_float(rng) < 0.12f) add(out, &n, max, "accesorio.amuleto.caballo", 1, 1.0f);
         break;
     case ENEMY_RIDER:
         if (rng_float(rng) < 0.6f) add(out, &n, max, "utileria.consumible.carne_seca", 2, 1.0f);

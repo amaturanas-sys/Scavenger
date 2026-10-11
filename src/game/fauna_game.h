@@ -31,7 +31,13 @@ bool fg_spawn_named(GameActions *ga, const char *what, const Player *p, float di
 // temp: °C ahora (los insectos y mosquitos dependen del calor); la noche y el atardecer salen de now.
 void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terrain *t, MemoryMap *mem, float now,
                float temp, bool input_ok, float dt, char *log, size_t len);
-void fg_new_day(GameActions *ga);
+// Un dia nuevo: se vuelve a ordeñar, los de la tribu sanan y se crian (preñeces, partos y potros
+// que crecen: src/sim/animals.h); los nacimientos se suman al registro del dia.
+void fg_new_day(GameActions *ga, char *log, size_t len);
+// La montura (src/sim/riding.h): agotada no galopa (el jugador no corre) hasta recobrar el aliento.
+bool fg_mount_winded(void);
+// Sexo y lo heredado de un animal, para leer: «hembra · velocidad +12 % · aguante −3 %».
+const char *fg_traits_text(const Animal *a);
 
 // Para el combate: el animal al alcance de un golpe delante de pos (o -1).
 int fg_melee_target(const GameActions *ga, const Terrain *t, Vector3 pos, float yaw, float reach, float *dist);

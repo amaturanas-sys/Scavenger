@@ -10,6 +10,7 @@
 #include "game/water_game.h"
 #include "game/talents_game.h"
 #include "game/trade_game.h"
+#include "sim/riding.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -266,8 +267,10 @@ bool ga_blocks_input(const GameActions *ga) {
 
 float ga_speed_scale(const GameActions *ga) {
     // Montado, la montura (y el amuleto del caballo); a pie, cuanto pesa lo que llevas.
-    if (ga->mounted >= 0)
-        return species_def(ga->animals[ga->mounted].species)->ride_speed * (1.0f + 0.5f * ig_stat(ga, STAT_RIDING));
+    if (ga->mounted >= 0) { // lo heredado, y con hambre o sed corre menos (src/sim/riding.h)
+        const Animal *m = &ga->animals[ga->mounted];
+        return species_def(m->species)->ride_speed * (1.0f + 0.5f * ig_stat(ga, STAT_RIDING)) * mount_speed_scale(m->pace, m->hunger, m->thirst);
+    }
     return ig_speed_scale(ga) * (1.0f + ig_stat(ga, STAT_SPEED)) * wg_speed_scale(ga); // a pie: la carga, tatuajes y joyas, la sed
 }
 
@@ -394,6 +397,10 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
         }
         if (!species_def(ga->animals[ga->target].species)->rideable) {
             snprintf(log, len, T("Un %s no se puede montar."), T(species_def(ga->animals[ga->target].species)->name));
+            return;
+        }
+        if (!animal_adult(&ga->animals[ga->target])) {
+            snprintf(log, len, T("Es un potro: todavía no se ensilla (crece en %.0f días)."), ceilf(ga->animals[ga->target].foal));
             return;
         }
         break;
@@ -896,7 +903,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
                 if (a >= 0) {
                     ga->mounted = a;
                     ga->animals[a].ridden = true;
-                    snprintf(log, log_len, T("Montaste el %s."), T(species_def(ga->animals[a].species)->name));
+                    snprintf(log, log_len, T("Montaste el %s (%s)."), T(species_def(ga->animals[a].species)->name), fg_traits_text(&ga->animals[a]));
                 } else {
                     snprintf(log, log_len, "%s", T("No hay una montura ensillada cerca (lazo + silla)."));
                 }
@@ -1014,12 +1021,16 @@ void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p)
         p->vy = 0.0f;
         p->grounded = !ga->climbing;
     }
-    // Montado: el animal va debajo del jugador.
+    // Montado: el animal va debajo del jugador y mira hacia donde va (su rumbo), aunque el jinete
+    // se gire en la montura para apuntar (el disparo parto: src/sim/riding.h). Quieto, gira con el.
     if (ga->mounted >= 0) {
         Animal *a = &ga->animals[ga->mounted];
+        float dx = p->pos.x - a->x, dz = p->pos.z - a->z, step2 = dx * dx + dz * dz;
+        float want = step2 > 1e-4f && step2 < 25.0f ? atan2f(dx, dz) : p->moving ? a->yaw : p->yaw;
+        a->yaw += atan2f(sinf(want - a->yaw), cosf(want - a->yaw)) * 0.35f;
+        a->yaw = atan2f(sinf(a->yaw), cosf(a->yaw)); // en [-pi, pi]
         a->x = p->pos.x;
         a->z = p->pos.z;
-        a->yaw = p->yaw;
     }
     // Esconderse: agachado junto a la hierba alta, una roca o una mata (o en sigilo dentro de la
     // hierba alta) no se hace ruido y cuesta mucho verlo (player_visibility).

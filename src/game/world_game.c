@@ -69,7 +69,7 @@ void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, M
             if (d < TRIBE_RAID && !((ga->raided_tribes >> i) & 1u)) { // salen al paso
                 ga->raided_tribes |= 1u << i;
                 char tmp[160];
-                cb_spawn_group(cb, ga, i % 2 ? "jinetes" : "bandidos", p, t, 45.0f, tmp, sizeof(tmp));
+                cb_spawn_group(cb, ga, i % 3 == 2 ? "arqueros_caballo" : i % 2 ? "jinetes" : "bandidos", p, t, 45.0f, tmp, sizeof(tmp)); // nomadas: a caballo
                 memmap_toggle_marker(mem, tc->x, tc->z, MARKER_DANGER, 4.0f);
                 ga->seen_tribes |= 1u << i;
                 snprintf(log, len, T("¡Los %s, tribu rival, te salen al paso!"), tc->name);

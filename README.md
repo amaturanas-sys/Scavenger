@@ -109,7 +109,18 @@ Combate de cuatro botones (las teclas o las cuatro casillas de abajo a la derech
 - **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar. El abatido despierta a los 30-90 s, herido, y huye a avisar a los suyos. Junto a él, `F` lo toma prisionero y `H` o `K` lo rematan (a la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran).
 - **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+L` encender la flecha junto a un fuego (o la casilla de la columna) · `P` equipo (armadura, amuletos y heridas) · `I` inventario · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
 
-Combate montado: a caballo solo se golpea con el arma (`H`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo; a distancia, la carrera dispersa el tiro (el amuleto del caballo lo corrige). Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
+Combate montado: a caballo se golpea con el arma (`H`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo. Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
+
+A caballo (v0.7.1):
+- **El rumbo:** el caballo va hacia donde lo llevas; el jinete puede girarse en la montura para apuntar.
+- **Lanza en ristre (`L` con una lanza):** al galope (desde 5 m/s), el primero que tengas delante recibe la carrera entera: hasta ×2,5 de daño, y casi siempre cae (un escudo que la para la frena). Un golpe por carga.
+- **Arco a caballo:** la carrera abre el tiro, y hacia atrás más: el **disparo parto**, alejándote al galope del que te persigue (con objetivo, `Tab`, apuntas solo; el aviso «¡Disparo parto!» sale si acierta). La monta (amuleto del caballo, tatuajes, joyas) y la puntería lo corrigen.
+- **El cansancio:** el galope gasta el aguante del caballo (unos 45 s); al paso y quieto se repone. Su barra reemplaza a la tuya bajo el minimapa. Agotado no galopa hasta recobrar el 35 %. Con hambre o sed se cansa antes y corre menos.
+- **Lo heredado:** cada caballo tiene su velocidad y su aguante (±25 %); al montar se ven («macho · velocidad +8 % · aguante +2 %»).
+- **Cría:** una hembra y un macho adultos de la tribu, bien comidos, en el campamento: la hembra queda preñada y a los 3 días nace la cría, que hereda el promedio de sus padres con algo de azar. A los 4 días es adulta (antes no se ensilla, ni da leche). La mula y el elefante no se crían. Los informes del guardián lo cuentan.
+- **Arqueros a caballo:** rodean a unos 24 m y tiran al galope; si te acercas a menos de 11 m, se alejan (tirando hacia atrás) y vuelven. Salen de las tribus rivales, con los jinetes y en la escolta de las caravanas.
+
+Pruebas: `--montado lanza|parto|agotado` (galopa solo hacia delante), `--cria` (con `--minuto 29.9`: nace una cría al amanecer), `--enemigos arqueros_caballo`.
 
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno y metal.
 

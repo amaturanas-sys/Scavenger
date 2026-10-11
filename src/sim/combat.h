@@ -20,7 +20,16 @@ typedef struct {
 // Estadisticas del arma por id del inventario ("" o NULL: a puño limpio).
 WeaponStats weapon_stats(const char *inv_id);
 
-typedef enum { ENEMY_BANDIT, ENEMY_FANATIC, ENEMY_CAPTOR, ENEMY_ARCHER, ENEMY_RIDER, ENEMY_COUNT } EnemyKind;
+// Crecen al final (se guardan como numeros, docs/PARTIDAS.md).
+typedef enum {
+    ENEMY_BANDIT,
+    ENEMY_FANATIC,
+    ENEMY_CAPTOR,
+    ENEMY_ARCHER,
+    ENEMY_RIDER,
+    ENEMY_HORSE_ARCHER, // arquero a caballo: hostiga, rodea y se aleja tirando (src/sim/riding.h)
+    ENEMY_COUNT
+} EnemyKind;
 
 typedef struct {
     const char *name;  // UTF-8
