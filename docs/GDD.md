@@ -182,7 +182,14 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
   - Con un arma en cada mano, el combo alterna derecha e izquierda.
 - **IA:** los bandidos y los captores llevan escudo a veces y se cubren cuando vas a golpear (no mientras anuncian su golpe). Contra tu escudo en guardia patean (a la carrera si vienen corriendo), agarran o enganchan (los fanáticos llevan hacha); contra tu arma en guardia patean o golpean pesado. Si estás en el suelo, rematan. La escolta pelea igual (los grandes guerreros, con guja).
 - **Enemigos:** bandidos, arqueros, fanáticos y captores del culto. Ven al jugador según la distancia (acechando cuesta más), persiguen, golpean y huyen malheridos (los fanáticos nunca). Lejos del campamento aparecen bandidos o el culto de día. Se desangran también. Las fieras (lobos, osos, hienas...) son fauna: ver «Fauna».
-- **Escolta:** pelea a tu lado y puede caer herida.
+- **Escolta** (v0.6.0, `src/sim/squad.*`): dos integrantes (`Y`) pelean a tu lado con las mismas reglas que el jugador y pueden caer heridos. Órdenes con `Y+1..3` o las casillas sobre la barra rápida:
+  - **atacar:** al objetivo del jugador (si está a menos de 30 m de él) o al enemigo más cercano (14 m);
+  - **defender:** solo contra quien se acerca a menos de 4 m del jugador; no se alejan de su lado;
+  - **seguir:** no pelean.
+  Con menos del 30 % de vida se retiran detrás del jugador. Los soldados (y los guardias) pegan un 30 % más fuerte.
+- **La guardia del campamento:** los soldados que se quedan en su campamento (no el guardián, ni quien trabaja en una obra) hacen la ronda: un anillo de 40 a 60 m con puntos que rotan 30°. Salen al encuentro de los enemigos y las fieras que cruzan el anillo (a 35 m de ellos) y vuelven a defender si alguien entra al campamento. De noche llevan antorcha (luz).
+- **Asaltos:** con el jugador a menos de 150 m de un campamento (y tras los primeros 10 minutos), cada minuto hay un 2,5 % de día y un 6 % de noche de que una banda (bandidos o el culto) salga a 70 m y vaya hacia él. Los enemigos atacan a cualquier integrante a la vista; los pobladores corren a las yurtas, tiendas y refugios y quedan escondidos (no se los ve ni se los ataca) mientras haya peligro a 30 m.
+- **Rendimiento:** la IA de la gente del campamento a más de 150 m del jugador corre cada medio segundo y no se dibuja.
 - **Peligros que hieren:** caer al hielo golpea, un socavón de nieve puede romper una pierna y la hipotermia congela manos y pies.
 - **HUD:** vida y sangre bajo el calor; `P` abre el panel de heridas (tuyas y de la tribu); barras de vida sobre enemigos y compañeros heridos.
 - **Animación:**

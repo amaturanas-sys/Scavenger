@@ -258,6 +258,12 @@ static const SfField SF_F_Npc[] = {
     SF_ONE(Npc, leave_t, "float", SF_FLOAT, NULL),
     SF_ONE(Npc, leave_dir, "Vector3", SF_BYTES, NULL),
     SF_ONE(Npc, comfort, "signed char", SF_INT, NULL),
+    SF_ONE(Npc, guarding, "bool", SF_BOOL, NULL),
+    SF_ONE(Npc, patrol_a, "float", SF_FLOAT, NULL),
+    SF_ONE(Npc, patrol_step, "int", SF_INT, NULL),
+    SF_ONE(Npc, alarm, "float", SF_FLOAT, NULL),
+    SF_ONE(Npc, sheltered, "bool", SF_BOOL, NULL),
+    SF_ONE(Npc, hide_at, "Vector3", SF_BYTES, NULL),
 };
 static const SfType SF_T_Npc = SF_TYPE(Npc, SF_F_Npc);
 
@@ -535,6 +541,7 @@ static const SfField SF_F_GameActions[] = {
     SF_ONE(GameActions, pl_spear, "bool", SF_BOOL, NULL),
     SF_ONE(GameActions, pl_knocked, "bool", SF_BOOL, NULL),
     SF_ONE(GameActions, pl_holding, "bool", SF_BOOL, NULL),
+    SF_ONE(GameActions, escort_order, "int", SF_INT, NULL),
     SF_ONE(GameActions, pl_attacking, "int", SF_INT, NULL),
     SF_ONE(GameActions, pl_ranged, "int", SF_INT, NULL),
     SF_ONE(GameActions, pl_move, "int", SF_INT, NULL),

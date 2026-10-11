@@ -67,6 +67,7 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Interactuar: hablar, tomar, botín, pozo, horno, rescatar, animales | F (Mayús+F: todo lo cercano, o sacrificar junto al ganado) | — |
 | Lanzar lo que llevas en brazos | T | — |
 | Agarrar por la espalda (rehén) | G | — |
+| Escolta: llamar o despedir / órdenes | Y / Y+1 atacar, Y+2 defender, Y+3 seguir (o las casillas sobre la barra rápida) | — |
 | Mochila (dejarla o recogerla) | Mayús+G (o la columna del HUD) | — |
 | Ficha del gran guerrero | U | — |
 | Montar / desmontar | R | — |
@@ -78,6 +79,13 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Diagnóstico (OpenGL, teclado, assets) | Ctrl+D | — |
 
 Teclas de prueba de la política del campamento: `1` reclutar · `2` tomar prisionero · `3` ejecutar prisionero · `4` ejecutar integrante · `5` desterrar · `6` repartir botín · `7` liberar prisionero · `8` encontrar un gran guerrero · `U` ficha del último gran guerrero · `Enter` saltar al día siguiente · `Ctrl+N` adelantar dos minutos.
+
+La escolta y la guardia:
+- **La escolta** (`Y`): dos integrantes te acompañan y pelean con las mismas reglas que tú. Órdenes: `Y+1` atacar (van a tu objetivo o al enemigo más cercano), `Y+2` defender (se quedan a tu lado y paran a quien se te acerque), `Y+3` seguir sin pelear; también con las tres casillas que aparecen sobre la barra rápida. Heridos, se retiran detrás de ti. Los soldados pegan más fuerte.
+- **La guardia:** los soldados que se quedan en el campamento rondan un anillo a 40-60 m (puntos que rotan), salen al encuentro de quien lo cruza y vuelven si alguien entra. De noche llevan antorcha.
+- **Asaltos:** con el jugador cerca de un campamento, a veces una banda de bandidos o del culto va hacia él (más de noche). Los enemigos atacan a cualquiera de la tribu que vean; los que no pelean corren a esconderse en las yurtas, las tiendas y los refugios.
+
+Pruebas: `--escolta [atacar|defender|seguir]`, `--guardias` (dos soldados de guardia), `--asalto`.
 
 Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañero atrapado para rescatarlo · `J K L U I O` en el minijuego de rescate.
 

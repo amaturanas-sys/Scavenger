@@ -74,6 +74,14 @@ static const HelpPage PAGES[] = {
         N_("Mayús+G (o la columna) deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila"),
         N_("Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se queda)."),
         N_("Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales.") } },
+    { N_("La escolta y la guardia"), 6,
+      { N_("Y llama a dos integrantes de escolta (Y otra vez: vuelven al campamento). Pelean a tu lado con las mismas reglas que tú."),
+        N_("Órdenes (Y+1, Y+2, Y+3, o las casillas sobre la barra rápida): atacar, defender o seguir."),
+        N_("Atacar: van a tu objetivo (Tab) o al enemigo más cercano. Defender: se quedan a tu lado y paran a quien se te acerque. Seguir: no pelean."),
+        N_("Heridos, se retiran detrás de ti; abatidos, B los levanta. Los soldados pegan más fuerte."),
+        "",
+        N_("Los soldados que se quedan en el campamento hacen la guardia: rondan un anillo a 40-60 m, salen al encuentro de quien lo cruce y vuelven si alguien entra. De noche llevan antorcha. El guardián (F) capacita soldados."),
+        N_("A veces una banda asalta el campamento, más de noche: los que no pelean corren a esconderse en las yurtas y las tiendas.") } },
     { N_("La espalda, rehenes y abatidos"), 4,
       { N_("Por detrás solo te oyen: en sigilo o agachado te acercas sin que te noten; caminando o corriendo, te oyen antes."),
         N_("A menos de 2 m por la espalda de uno que no te vio (o aturdido), una daga aparece sobre él:"),
@@ -453,7 +461,7 @@ void menu_draw_controls(int x, int y, int w, int h) {
     ui_panel((Rectangle){ (float)x, (float)y, (float)w, (float)h }, UI_METAL_GOLD);
     static const char *cols[2][9] = {
         { N_("WASD mover · Shift correr"), N_("C sigilo · X agacharse"), N_("Espacio saltar · Q/E cámara"), N_("H/clic golpe (mantén: pesado)"),
-          N_("J/clic der. cubrirse"), N_("K parry · L carga o patada"), N_("Tab objetivo (en combate)"), N_("1-9 empuñar · Mayús+n.º mano"),
+          N_("J/clic der. cubrirse"), N_("K parry · L carga o patada"), N_("Tab objetivo · Y+1-3 escolta"), N_("1-9 empuñar · Mayús+n.º mano"),
           N_("B vendar · Mayús+L encender") },
         { N_("Tab acciones/fabricar"), N_("F hablar/tomar/animales"), N_("I inventario · P equipo"), N_("R montar · T lanzar · Y escolta"),
           N_("G agarrar · Mayús+G mochila"), N_("M mapa · N beber · U ficha"), N_("Esc/Atrás/Ctrl+P menú"), N_("F1/Ctrl+H cerrar esta ayuda"),

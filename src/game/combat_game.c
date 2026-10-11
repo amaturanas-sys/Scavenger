@@ -1488,9 +1488,18 @@ static void member_fight(Combat *cb, GameActions *ga, Troop *troop, Props *props
 
 // Donde se esconde un poblador: la yurta, la casa, la tienda o el refugio mas cercano de su
 // campamento (o, sin ninguno, junto al fuego).
+static const Vector3 *g_shelters;
+static int g_nshelters;
+void cb_set_shelters(const Vector3 *pos, int n) { g_shelters = pos, g_nshelters = pos ? n : 0; }
+
 static Vector3 shelter_near(const Props *props, Vector3 from, float cx, float cz) {
     Vector3 best = { cx, from.y, cz };
     float bd = 1e9f;
+    for (int i = 0; i < g_nshelters; i++) { // las yurtas del campamento inicial
+        if (Vector2Distance((Vector2){ g_shelters[i].x, g_shelters[i].z }, (Vector2){ cx, cz }) > 35.0f) continue;
+        float d = dist2(from, g_shelters[i]);
+        if (d < bd) bd = d, best = g_shelters[i];
+    }
     for (int i = 0; i < props->count; i++) {
         const Prop *pr = &props->items[i];
         const char *id = pr->item->id;

@@ -1024,6 +1024,7 @@ int main(int argc, char **argv) {
             if (!gallery_mode)
                 tg_update(&g_actions, &g_combat, &troop, &g_props, &player,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
+            cb_set_shelters(camp.yurts, camp.yurt_count); // en un asalto, los pobladores corren a las yurtas
             // Un clic o un toque sobre un enemigo (no sobre el HUD) lo elige como objetivo.
             if (!gallery_mode && !menu && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !hud_pointer_over() &&
                 !ig_blocks_input(&g_actions) && !g_actions.dlg.open)
