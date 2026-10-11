@@ -38,8 +38,9 @@ SquadChoice squad_escort_choose(SquadOrder order, float nx, float nz, float px, 
 // alterna entre los dos bordes del anillo y avanza 30 grados por punto.
 void squad_patrol_point(float cx, float cz, float start, int step, float *x, float *z);
 // A quien sale a interceptar un guardia en (gx, gz) del campamento en (cx, cz): el mas cercano
-// de los que cruzaron el anillo (a menos de SQUAD_RING_MAX + 10 m del campamento) y a menos de
-// SQUAD_GUARD_REACT m del guardia; -1 si ninguno.
+// de los que cruzaron el anillo (a menos de SQUAD_RING_MAX + 10 m del campamento) y estan a
+// menos de SQUAD_GUARD_REACT m del guardia; o, si ya entraron al campamento (a menos de
+// SQUAD_RING_MIN m del centro), vuelve a defenderlo desde donde este. -1 si ninguno.
 int squad_guard_intercept(float gx, float gz, float cx, float cz, const TargetCand *foes, int n);
 // Hay que esconderse: algun enemigo a menos de SQUAD_ALARM m del campamento o del poblador.
 bool squad_villager_alarm(float vx, float vz, float cx, float cz, const TargetCand *foes, int n);

@@ -32,6 +32,10 @@
 #define DOWN_WAKE_SECONDS 25.0f // abatido y solo: muere y vuelve a su lugar de descanso
 #define DOWN_HELP_SECONDS 5.0f  // con la escolta cerca: lo levantan
 #define CORPSE_SECONDS 30.0f
+#define NPC_FAR 150.0f      // m: mas lejos, la IA del campamento va a menos frecuencia (y no se dibuja)
+#define GUARD_WALK 1.8f     // m/s haciendo la ronda
+#define RAID_NEAR 150.0f    // m: con el jugador asi de cerca de un campamento puede haber asaltos
+#define RAID_FROM 70.0f     // m: de donde sale la banda
 #define HOSTAGE_AHEAD 0.55f    // m delante del jugador
 #define HOSTAGE_SPEED 0.55f    // el jugador, con un rehen, va mas lento
 #define HOSTAGE_KEEP_AWAY 4.5f // m: los suyos no se acercan mas
@@ -124,6 +128,9 @@ static Enemy *spawn_enemy(Combat *cb, EnemyKind kind, Vector3 pos, const Terrain
     return NULL;
 }
 
+static void spawn_party(Combat *cb, const char *what, Vector3 c, float ang, const Terrain *t, const Vector3 *home, char *log,
+                        size_t len);
+
 void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
                     size_t len) {
     // Fieras: las pone la fauna (src/game/fauna_game.c).
@@ -133,6 +140,13 @@ void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player 
     float ang = rng_float(&cb->rng) * 2.0f * PI;
     if (dist < 25.0f) ang = p->yaw + (rng_float(&cb->rng) - 0.5f) * 0.8f; // pruebas: delante del jugador
     Vector3 c = { p->pos.x + sinf(ang) * dist, 0, p->pos.z + cosf(ang) * dist };
+    spawn_party(cb, what, c, ang, t, NULL, log, len);
+}
+
+// Una banda en c (ang: de donde viene, para dejar atras a los arqueros). home: a donde va (un
+// asalto: el campamento), o NULL.
+static void spawn_party(Combat *cb, const char *what, Vector3 c, float ang, const Terrain *t, const Vector3 *home, char *log,
+                        size_t len) {
     EnemyKind kinds[5];
     int n = 0;
     if (!strcmp(what, "culto")) {
@@ -160,8 +174,29 @@ void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player 
         float back = kinds[i] == ENEMY_ARCHER ? 8.0f : 0.0f; // los arqueros se quedan atras
         Vector3 at = { c.x + cosf(a) * 2.5f + sinf(ang) * back, 0, c.z + sinf(a) * 2.5f + cosf(ang) * back };
         Enemy *e = spawn_enemy(cb, kinds[i], at, t);
-        if (e) e->yaw = ang + PI;
+        if (!e) continue;
+        e->yaw = ang + PI;
+        if (home) e->home = e->wander_to = *home, e->timer = 90.0f; // van al campamento
     }
+}
+
+static void raid(Combat *cb, const CampSite *c, const Terrain *t, char *log, size_t len);
+
+void cb_test_raid(Combat *cb, const GameActions *ga, const Player *p, const Terrain *t, char *log, size_t len) {
+    float d;
+    int k = camp_nearest(ga->camps, CAMPS_MAX, p->pos.x, p->pos.z, &d);
+    if (k >= 0) raid(cb, &ga->camps[k], t, log, len);
+}
+
+// Un asalto: una banda sale a RAID_FROM m del campamento y va hacia el; ataca a quien vea. Los
+// guardias le salen al encuentro y los pobladores se esconden (camp_member).
+static void raid(Combat *cb, const CampSite *c, const Terrain *t, char *log, size_t len) {
+    float ang = rng_float(&cb->rng) * 2.0f * PI;
+    Vector3 at = { c->x + sinf(ang) * RAID_FROM, 0, c->z + cosf(ang) * RAID_FROM }, home = { c->x, 0, c->z };
+    bool cultists = rng_float(&cb->rng) < 0.3f;
+    char tmp[8];
+    spawn_party(cb, cultists ? "culto" : "bandidos", at, ang, t, &home, tmp, sizeof(tmp));
+    snprintf(log, len, cultists ? T("¡Asalto! Fanáticos del culto van hacia %s.") : T("¡Asalto! Una banda va hacia %s."), c->name);
 }
 
 // Lejos del campamento aparecen bandidos o el culto de dia (las fieras, src/game/fauna_game.c).
@@ -170,10 +205,20 @@ static void natural_spawns(Combat *cb, GameActions *ga, const Player *p, const T
     cb->spawn_timer += dt;
     if (cb->spawn_timer < 60.0f) return;
     cb->spawn_timer = 0.0f;
-    if (dist2(p->pos, camp_fire) < 90.0f) return;
     int alive = 0;
     for (int i = 0; i < CB_MAX_ENEMIES; i++) alive += cb->enemies[i].used && cb->enemies[i].state != EN_DEAD;
     if (alive > 6) return;
+    // Asaltos: con el jugador cerca de un campamento de la tribu, a veces (mas de noche), pero no
+    // en los primeros minutos de juego.
+    static float played = 0.0f;
+    played += 60.0f;
+    for (int k = 0; k < CAMPS_MAX && played > 600.0f; k++) {
+        const CampSite *c = &ga->camps[k];
+        if (!c->used || Vector2Distance((Vector2){ p->pos.x, p->pos.z }, (Vector2){ c->x, c->z }) > RAID_NEAR) continue;
+        if (rng_float(&cb->rng) < (night ? 0.06f : 0.025f)) raid(cb, c, t, log, len);
+        return;
+    }
+    if (dist2(p->pos, camp_fire) < 90.0f) return;
     float r = rng_float(&cb->rng);
     if (!night && r < 0.12f) {
         float k = rng_float(&cb->rng);
@@ -1260,7 +1305,8 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
             const Npc *n = &ga->npcs[k];
             const Member *m = &troop->members[k];
-            if (m->status != STATUS_ACTIVE || m->health.down || n->member_id != m->id || !n->escort) continue;
+            // Cualquiera a la vista: la escolta, los guardias, los pobladores que no se escondieron.
+            if (m->status != STATUS_ACTIVE || m->health.down || n->member_id != m->id || n->sheltered || m->journey > 0) continue;
             float d = dist2(e->pos, n->pos);
             if (d < def->sight && d < best) best = d, target = m->id, tpos = n->pos;
         }
@@ -1340,7 +1386,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
                 e->timer = 4.0f + rng_float(&cb->rng) * 5.0f;
             }
             goal = e->wander_to;
-            speed = def->speed * 0.3f;
+            speed = def->speed * (dist2(e->pos, e->home) > 20.0f ? 0.7f : 0.3f); // lejos de su sitio (o yendo a asaltar), a paso firme
         }
         speed *= health_speed_scale(&e->h) * armor_speed_scale(&e->armor);
         float d = dist2(e->pos, goal);
@@ -1373,6 +1419,163 @@ static void outfit(Member *m, const Troop *troop) {
     m->outfitted = true;
 }
 
+// Un integrante pelea contra un enemigo (best) o una fiera (an >= 0): se acerca y golpea con las
+// mismas reglas que el jugador (src/sim/melee.h). Lo usan la escolta y los guardias.
+static void member_fight(Combat *cb, GameActions *ga, Troop *troop, Props *props, const Player *p, const Terrain *t, int k,
+                         Enemy *best, int an, float dt, char *log, size_t len) {
+    Npc *n = &ga->npcs[k];
+    Member *m = &troop->members[k];
+    if (an >= 0) {
+        const Animal *a = &ga->animals[an];
+        Vector3 apos = { a->x, n->pos.y, a->z };
+        float d = dist2(n->pos, apos);
+        n->fighting = true;
+        n->yaw = atan2f(apos.x - n->pos.x, apos.z - n->pos.z);
+        n->moving = d > 1.6f;
+        if (n->moving) {
+            float speed = 5.0f * health_speed_scale(&m->health) * armor_speed_scale(&m->armor);
+            float step = fminf(speed * dt, d - 1.5f), x0 = n->pos.x, z0 = n->pos.z;
+            n->pos.x += (apos.x - n->pos.x) / d * step;
+            n->pos.z += (apos.z - n->pos.z) / d * step;
+            terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z);
+            n->pos.y = surface_y(t, n->pos.x, n->pos.z);
+        } else if (cb->comp_cd[k] <= 0.0f) {
+            const Champion *c = troop_champion(troop, m->id);
+            float dmg = combat_damage(COMPANION_DAMAGE, c ? c->stats.strength : 1.0f, health_attack_scale(&m->health),
+                                      false, &cb->rng);
+            fg_hurt(ga, an, dmg, WOUND_CUT, PART_RANDOM, m->id, NULL, 0);
+            cb->comp_cd[k] = COMPANION_COOLDOWN;
+            n->fight_anim = 0.4f;
+        }
+        return;
+    }
+    if (!best) return;
+    n->fighting = true;
+    float d = dist2(n->pos, best->pos);
+    n->yaw = atan2f(best->pos.x - n->pos.x, best->pos.z - n->pos.z);
+    float speed = 5.0f * health_speed_scale(&m->health) * armor_speed_scale(&m->armor);
+    n->moving = d > 1.5f;
+    if (n->moving) {
+        float step = fminf(speed * dt, d - 1.4f), x0 = n->pos.x, z0 = n->pos.z;
+        n->pos.x += (best->pos.x - n->pos.x) / d * step;
+        n->pos.z += (best->pos.z - n->pos.z) / d * step;
+        terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z);
+        n->pos.y = surface_y(t, n->pos.x, n->pos.z);
+    } else if (cb->comp_cd[k] <= 0.0f && n->stagger <= 0.0f) {
+        // Las mismas reglas que el jugador: combos, patadas, agarres y ganchos segun lo que haga el rival.
+        const char *weapon = member_weapon(m);
+        Fighter me = fighter_member(n, m, troop, best->pos), foe = fighter_enemy(best, n->pos);
+        me.strength *= health_attack_scale(&m->health);
+        if (ga->ab_timer[ABIL_WAR_CRY] > 0.0f && dist2(n->pos, p->pos) < 20.0f) me.strength *= 1.0f + 0.3f * ga->ab_pot[ABIL_WAR_CRY];
+        MeleeMove mv = ai_choose(&cb->rng, &me, &foe, weapon, false, d);
+        if (mv == MOVE_SHIELD_BASH || (mv == MOVE_HOOK && !weapon_can_hook(weapon))) mv = MOVE_HEAVY;
+        if (mv == MOVE_LIGHT) n->combo = n->combo % 3 + 1;
+        MeleeResult r = melee_resolve(mv, &me, &foe, weapon, mv == MOVE_LIGHT ? n->combo : 1, &cb->rng);
+        if (r.attacker_staggered) n->stagger = STAGGER_SECONDS;
+        hit_enemy(cb, best, mv, &r, props, m->id, NULL, 0);
+        cb->comp_cd[k] = mv == MOVE_LIGHT ? melee_combo_cooldown(weapon, COMPANION_COOLDOWN, n->combo) : move_def(mv)->recovery + 0.5f;
+        n->fight_anim = mv == MOVE_LIGHT || mv == MOVE_HEAVY ? 0.4f : 0.0f;
+        n->move = (int)mv + 1;
+        n->move_anim = 0.45f;
+        char who[48];
+        lower_name(T(enemy_def(best->kind)->name), who, sizeof(who));
+        if (best->state == EN_DEAD) snprintf(log, len, T("%s mató a un %s."), m->name, who);
+        else if (best->state == EN_DOWN && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s tumbó a un %s: queda abatido."), m->name, who);
+        else if (r.knocked_down && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s: %s derriba al %s."), move_verb(mv), m->name, who);
+        else if (r.shield_dropped && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s le arranca el escudo al %s."), m->name, who);
+    }
+}
+
+// Donde se esconde un poblador: la yurta, la casa, la tienda o el refugio mas cercano de su
+// campamento (o, sin ninguno, junto al fuego).
+static Vector3 shelter_near(const Props *props, Vector3 from, float cx, float cz) {
+    Vector3 best = { cx, from.y, cz };
+    float bd = 1e9f;
+    for (int i = 0; i < props->count; i++) {
+        const Prop *pr = &props->items[i];
+        const char *id = pr->item->id;
+        if (strncmp(id, "estructura.vivienda.", 20) && !strstr(id, ".tienda") && !strstr(id, ".refugio")) continue;
+        if (Vector2Distance((Vector2){ pr->pos.x, pr->pos.z }, (Vector2){ cx, cz }) > 35.0f) continue;
+        float d = dist2(from, pr->pos);
+        if (d < bd) bd = d, best = pr->pos;
+    }
+    return best;
+}
+
+static void npc_step(Npc *n, const Terrain *t, Vector3 to, float speed, float dt) {
+    float d = dist2(n->pos, to);
+    n->moving = d > 0.4f;
+    if (!n->moving) return;
+    float step = fminf(speed * dt, d), x0 = n->pos.x, z0 = n->pos.z;
+    n->pos.x += (to.x - n->pos.x) / d * step;
+    n->pos.z += (to.z - n->pos.z) / d * step;
+    terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z);
+    n->pos.y = surface_y(t, n->pos.x, n->pos.z);
+    n->yaw = atan2f(to.x - n->pos.x, to.z - n->pos.z);
+}
+
+// Los que se quedan en el campamento (src/sim/squad.h): los soldados (y los guardias) hacen la
+// ronda en el anillo y salen al encuentro de quien lo cruza; los demas corren a esconderse en
+// las yurtas cuando hay enemigos o fieras cerca. Lejos del jugador, a menos frecuencia.
+static float g_slow[TROOP_MAX]; // dt juntado de los lejanos
+static void camp_member(Combat *cb, GameActions *ga, Troop *troop, Props *props, const Player *p, const Terrain *t, int k,
+                        const TargetCand *foes, int nfoes, float dt, char *log, size_t len) {
+    Npc *n = &ga->npcs[k];
+    Member *m = &troop->members[k];
+    n->alarm = fmaxf(0.0f, n->alarm - dt);
+    int ci = m->camp;
+    if (ci < 0 || ci >= CAMPS_MAX || !ga->camps[ci].used || m->journey > 0) {
+        n->guarding = n->sheltered = false;
+        return;
+    }
+    if (dist2(n->pos, p->pos) > NPC_FAR) { // lejos: cada medio segundo, con el tiempo juntado
+        if ((g_slow[k] += dt) < 0.5f) return;
+        dt = g_slow[k];
+    }
+    g_slow[k] = 0.0f;
+    const CampSite *c = &ga->camps[ci];
+    Vector3 center = { c->x, n->pos.y, c->z };
+    bool guard = (m->role == ROLE_SOLDIER || m->role == ROLE_GUARD) && c->guardian != m->id && n->project < 0 && n->job < 0;
+    if (guard) {
+        n->sheltered = false;
+        n->alarm = 0.0f;
+        if (!n->guarding) n->guarding = true, n->patrol_a = (float)k * 2.39996f, n->patrol_step = 0;
+        int foe = squad_guard_intercept(n->pos.x, n->pos.z, c->x, c->z, foes, nfoes);
+        float bd;
+        int an = fg_threat_near(ga, n->pos, SQUAD_GUARD_REACT, &bd);
+        if (an >= 0 && Vector2Distance((Vector2){ ga->animals[an].x, ga->animals[an].z }, (Vector2){ c->x, c->z }) > SQUAD_RING_MAX + 10.0f)
+            an = -1; // la fiera aun no cruzo el anillo
+        if (foe >= 0 || an >= 0) { // sale al encuentro
+            Enemy *e = foe >= 0 ? &cb->enemies[foe] : NULL;
+            if (an >= 0 && e && bd >= dist2(n->pos, e->pos)) an = -1;
+            member_fight(cb, ga, troop, props, p, t, k, an >= 0 ? NULL : e, an, dt, log, len);
+            return;
+        }
+        float px, pz; // la ronda: de punto en punto por el anillo
+        squad_patrol_point(c->x, c->z, n->patrol_a, n->patrol_step, &px, &pz);
+        Vector3 to = { px, 0.0f, pz };
+        if (dist2(n->pos, to) < 1.5f) n->patrol_step++;
+        npc_step(n, t, to, GUARD_WALK, dt);
+        return;
+    }
+    n->guarding = false;
+    // Pobladores: con enemigos (o fieras) cerca, a esconderse.
+    bool beast = fg_threat_near(ga, center, SQUAD_ALARM, NULL) >= 0;
+    if (squad_villager_alarm(n->pos.x, n->pos.z, c->x, c->z, foes, nfoes) || beast) {
+        if (n->alarm <= 0.0f) n->hide_at = shelter_near(props, n->pos, c->x, c->z);
+        n->alarm = 15.0f;
+    }
+    if (n->alarm <= 0.0f) {
+        n->sheltered = false;
+        return;
+    }
+    if (!n->sheltered) {
+        npc_step(n, t, n->hide_at, 4.5f, dt);
+        if (dist2(n->pos, n->hide_at) < 1.6f) n->sheltered = true, n->moving = false;
+    }
+    (void)log, (void)len;
+}
+
 static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *props, const Player *p, const Terrain *t,
                               float dt, char *log, size_t len) {
     float healer = troop_healer_skill(troop);
@@ -1398,7 +1601,12 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *
             n->escort = false;
             continue;
         }
-        if (!n->escort || m->health.down || n->member_id != m->id || n->knock > 0.0f) continue;
+        if (m->health.down || n->member_id != m->id || n->knock > 0.0f) continue;
+        if (!n->escort) { // en el campamento: guardias y pobladores
+            camp_member(cb, ga, troop, props, p, t, k, foes, nfoes, dt, log, len);
+            continue;
+        }
+        n->guarding = n->sheltered = false, n->alarm = 0.0f;
         // La escolta pelea segun la orden (src/sim/squad.h): atacar (al objetivo del jugador o al
         // mas cercano), defender (solo a quien se le acerca al jugador) o seguir sin pelear; herida,
         // se retira detras del jugador (src/game/hazards_game.c la lleva).
@@ -1411,65 +1619,9 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *
         // Tambien las fieras que amenazan (defendiendo, solo las que llegan al jugador).
         float ad;
         int an = fg_threat_near(ga, order == ORDER_DEFEND ? p->pos : n->pos, best_d, &ad);
-        if (an >= 0 && (!best || ad < dist2(n->pos, best->pos))) {
-            const Animal *a = &ga->animals[an];
-            Vector3 apos = { a->x, n->pos.y, a->z };
-            float d = dist2(n->pos, apos);
-            n->fighting = true;
-            n->yaw = atan2f(apos.x - n->pos.x, apos.z - n->pos.z);
-            n->moving = d > 1.6f;
-            if (n->moving) {
-                float speed = 5.0f * health_speed_scale(&m->health) * armor_speed_scale(&m->armor);
-                float step = fminf(speed * dt, d - 1.5f), x0 = n->pos.x, z0 = n->pos.z;
-                n->pos.x += (apos.x - n->pos.x) / d * step;
-                n->pos.z += (apos.z - n->pos.z) / d * step;
-                terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z);
-                n->pos.y = surface_y(t, n->pos.x, n->pos.z);
-            } else if (cb->comp_cd[k] <= 0.0f) {
-                const Champion *c = troop_champion(troop, m->id);
-                float dmg = combat_damage(COMPANION_DAMAGE, c ? c->stats.strength : 1.0f, health_attack_scale(&m->health),
-                                          false, &cb->rng);
-                fg_hurt(ga, an, dmg, WOUND_CUT, PART_RANDOM, m->id, NULL, 0);
-                cb->comp_cd[k] = COMPANION_COOLDOWN;
-                n->fight_anim = 0.4f;
-            }
-            continue;
-        }
-        if (!best) continue;
-        n->fighting = true;
-        float d = dist2(n->pos, best->pos);
-        n->yaw = atan2f(best->pos.x - n->pos.x, best->pos.z - n->pos.z);
-        float speed = 5.0f * health_speed_scale(&m->health) * armor_speed_scale(&m->armor);
-        n->moving = d > 1.5f;
-        if (n->moving) {
-            float step = fminf(speed * dt, d - 1.4f), x0 = n->pos.x, z0 = n->pos.z;
-            n->pos.x += (best->pos.x - n->pos.x) / d * step;
-            n->pos.z += (best->pos.z - n->pos.z) / d * step;
-            terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z);
-            n->pos.y = surface_y(t, n->pos.x, n->pos.z);
-        } else if (cb->comp_cd[k] <= 0.0f && n->stagger <= 0.0f) {
-            // Las mismas reglas que el jugador: combos, patadas, agarres y ganchos segun lo que haga el rival.
-            const char *weapon = member_weapon(m);
-            Fighter me = fighter_member(n, m, troop, best->pos), foe = fighter_enemy(best, n->pos);
-            me.strength *= health_attack_scale(&m->health);
-            if (ga->ab_timer[ABIL_WAR_CRY] > 0.0f && dist2(n->pos, p->pos) < 20.0f) me.strength *= 1.0f + 0.3f * ga->ab_pot[ABIL_WAR_CRY];
-            MeleeMove mv = ai_choose(&cb->rng, &me, &foe, weapon, false, d);
-            if (mv == MOVE_SHIELD_BASH || (mv == MOVE_HOOK && !weapon_can_hook(weapon))) mv = MOVE_HEAVY;
-            if (mv == MOVE_LIGHT) n->combo = n->combo % 3 + 1;
-            MeleeResult r = melee_resolve(mv, &me, &foe, weapon, mv == MOVE_LIGHT ? n->combo : 1, &cb->rng);
-            if (r.attacker_staggered) n->stagger = STAGGER_SECONDS;
-            hit_enemy(cb, best, mv, &r, props, m->id, NULL, 0);
-            cb->comp_cd[k] = mv == MOVE_LIGHT ? melee_combo_cooldown(weapon, COMPANION_COOLDOWN, n->combo) : move_def(mv)->recovery + 0.5f;
-            n->fight_anim = mv == MOVE_LIGHT || mv == MOVE_HEAVY ? 0.4f : 0.0f;
-            n->move = (int)mv + 1;
-            n->move_anim = 0.45f;
-            char who[48];
-            lower_name(T(enemy_def(best->kind)->name), who, sizeof(who));
-            if (best->state == EN_DEAD) snprintf(log, len, T("%s mató a un %s."), m->name, who);
-            else if (best->state == EN_DOWN && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s tumbó a un %s: queda abatido."), m->name, who);
-            else if (r.knocked_down && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s: %s derriba al %s."), move_verb(mv), m->name, who);
-            else if (r.shield_dropped && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s le arranca el escudo al %s."), m->name, who);
-        }
+        if (an >= 0 && (!best || ad < dist2(n->pos, best->pos))) best = NULL;
+        else an = -1;
+        member_fight(cb, ga, troop, props, p, t, k, best, an, dt, log, len);
     }
 }
 

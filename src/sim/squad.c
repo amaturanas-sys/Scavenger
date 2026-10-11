@@ -40,9 +40,10 @@ int squad_guard_intercept(float gx, float gz, float cx, float cz, const TargetCa
     int best = -1;
     float bd = SQUAD_GUARD_REACT;
     for (int i = 0; i < n; i++) {
-        if (!foes[i].alive || dist(foes[i].x, foes[i].z, cx, cz) > SQUAD_RING_MAX + 10.0f) continue; // aun fuera del anillo
+        float to_camp = dist(foes[i].x, foes[i].z, cx, cz);
+        if (!foes[i].alive || to_camp > SQUAD_RING_MAX + 10.0f) continue; // aun fuera del anillo
         float d = dist(foes[i].x, foes[i].z, gx, gz);
-        if (d < bd) bd = d, best = i;
+        if (d < bd || (to_camp < SQUAD_RING_MIN && best < 0)) bd = d, best = i; // dentro del campamento: siempre
     }
     return best;
 }

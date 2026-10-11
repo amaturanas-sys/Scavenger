@@ -62,6 +62,13 @@ typedef struct {
     float leave_t;     // despachado: s que lleva alejandose hacia el horizonte (luego desaparece)
     Vector3 leave_dir;
     signed char comfort; // con su ropa: -1 pasa frio, 1 pasa calor, 0 a gusto (src/game/apparel_game.c)
+    // Defensa del campamento (src/game/combat_game.c, src/sim/squad.h).
+    bool guarding;     // de guardia: hace la ronda (o sale al encuentro)
+    float patrol_a;    // angulo donde empezo su ronda
+    int patrol_step;   // punto de la ronda al que va
+    float alarm;       // s de alarma: corre a esconderse
+    bool sheltered;    // escondido en una yurta o tienda (no se ve ni se le ataca)
+    Vector3 hide_at;   // donde se esconde
 } Npc;
 
 typedef struct {
@@ -186,7 +193,7 @@ void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p)
 // Un dia nuevo: comida y recoleccion, efectos de las construcciones, trabajos de los NPCs.
 void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day, float temp_mean,
                 char *log, size_t log_len);
-void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time);
+void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time, bool night);
 // Dibuja al jugador con el modelo del protagonista y su animacion, si ya fue
 // importado. Devuelve false si no (el juego dibuja el marcador de siempre).
 bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time);
@@ -218,6 +225,7 @@ void ga_request_escort_order(int order); // desde el HUD, atendida en el proximo
 void ga_set_combat_near(bool near);
 int ga_take_target_request(void);
 
-int ga_lights(const GameActions *ga, const Props *props, const Player *p, Vector3 *pos, float *radius, int max);
+int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, const Player *p, bool night, Vector3 *pos, float *radius,
+              int max);
 
 #endif

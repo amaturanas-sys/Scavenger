@@ -3407,6 +3407,9 @@ static void test_squad_guard_patrol_and_intercept(void) {
     CHECK(squad_guard_intercept(50.0f, 0.0f, 0.0f, 0.0f, f, 1) == 0);
     f[0] = (TargetCand){ -50.0f, 0.0f, true };
     CHECK(squad_guard_intercept(50.0f, 0.0f, 0.0f, 0.0f, f, 1) == -1);
+    // Pero si ya entro al campamento, todos los guardias vuelven a defenderlo.
+    f[0] = (TargetCand){ -10.0f, 5.0f, true };
+    CHECK(squad_guard_intercept(50.0f, 0.0f, 0.0f, 0.0f, f, 1) == 0);
 }
 
 static void test_squad_villagers_hide(void) {
