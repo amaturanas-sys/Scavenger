@@ -76,6 +76,7 @@ acciones: rng 1950919918 preset 0 antorcha 0 haciendo -1 (0.000) objetivo -1 aqu
   dialogo: Órdenes a la escolta, 3 opciones
 combate: semilla 99 rng 49364 vida 100.000/100.000 sangre 1.000 veneno 0.000 heridas 0 armadura.casco.laminar_cuero 90.000 armadura.torso.laminar_cuero 90.000 armadura.brazales.laminar_cuero 90.000 armadura.botas.fieltro 60.000
   elegido 0 parry 0.000 expuesto 0.000
+  rehen 0
   proyectiles: 0, caballos sueltos 0
 peligros: semilla 99 rng 19022 calor 100.000 mojado 0.000 sensacion 16.658 trampa 0 agujeros 0 victima 0 escolta 0
 desastres: rng 726292539 fuegos 0 quemaduras 0 arboles 0.000

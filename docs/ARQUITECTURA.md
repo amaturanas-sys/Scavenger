@@ -34,6 +34,7 @@ src/
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano
     keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H J K L, F, X...)
     targeting.*  el selector de objetivo: el siguiente alrededor del jugador, se pierde a 25 m
+    stealth.*    la espalda (cono trasero, lo que ve un enemigo segun de donde vienes), el rehen que tapa el tiro y los abatidos
     storage.*    contenedores: bolsillos, mochila, alforjas, carreta, acopio; peso y estado de las piezas
     loadout.*    amuletos (y tatuajes) con sus efectos
     anim_index.* que clip de animacion corresponde a cada estado

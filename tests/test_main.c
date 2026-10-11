@@ -31,6 +31,7 @@
 #include "../src/sim/save_format.h"
 #include "../src/sim/keymap.h"
 #include "../src/sim/targeting.h"
+#include "../src/sim/stealth.h"
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
 #include "../src/sim/melee.h"
@@ -2233,6 +2234,9 @@ static void test_anim_index_names_exist(void) {
         // Cuerpo a cuerpo: cada movimiento, derribado, cambiar de mano.
         s.move = bits % (MOVE_COUNT + 1), s.knocked = bits % 19 == 0, s.swapping = bits % 23 == 0;
         CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
+        // La espalda y los rehenes: quien sujeta y quien es sujetado.
+        s.holding = bits % 29 == 0, s.held = bits % 31 == 0;
+        CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
     }
     for (int sp = 0; sp < SPECIES_COUNT; sp++) {
         Animal a;
@@ -3267,6 +3271,96 @@ static void test_target_cycle(void) {
     CHECK(target_cycle(far, 1, 0.0f, 0.0f, 0.0f, -1, 1) == -1); // nadie a tiro
 }
 
+static void test_stealth_back_cone(void) {
+    // El enemigo en el origen mira al +Z (yaw 0): su espalda es -Z.
+    CHECK(stealth_behind(0.0f, 0.0f, 0.0f, 0.0f, -1.5f));  // justo detras, a 1,5 m
+    CHECK(stealth_behind(0.0f, 0.0f, 0.0f, 0.5f, -1.5f));  // 18 grados del eje: dentro del cono de 70
+    CHECK(!stealth_behind(0.0f, 0.0f, 0.0f, 1.2f, -1.2f)); // 45 grados: fuera del cono
+    CHECK(!stealth_behind(0.0f, 0.0f, 0.0f, 0.0f, -2.5f)); // demasiado lejos
+    CHECK(!stealth_behind(0.0f, 0.0f, 0.0f, 0.0f, 1.5f));  // de frente
+    CHECK(stealth_behind(0.0f, 0.0f, 1.5708f, -1.5f, 0.0f) && !stealth_behind(0.0f, 0.0f, 1.5708f, 1.5f, 0.0f)); // girado al +X
+    // Si te noto, no hay espalda que ganar, salvo que este aturdido (y aun asi, por detras).
+    CHECK(stealth_backstab(0.0f, 0.0f, 0.0f, 0.0f, -1.5f, false, false));
+    CHECK(!stealth_backstab(0.0f, 0.0f, 0.0f, 0.0f, -1.5f, true, false));
+    CHECK(stealth_backstab(0.0f, 0.0f, 0.0f, 0.0f, -1.5f, true, true));
+    CHECK(!stealth_backstab(0.0f, 0.0f, 0.0f, 1.5f, 0.0f, false, true));
+    // Lo que ve: de frente todo; por detras solo oye (correr se oye, el sigilo casi nada).
+    float front = stealth_sight_scale(1.0f, 0.5f), side = stealth_sight_scale(0.0f, 0.5f);
+    float back_sneak = stealth_sight_scale(-1.0f, 0.15f), back_run = stealth_sight_scale(-1.0f, 1.0f);
+    CHECK(front == 1.0f && side < front && back_sneak < 0.15f && back_run > 0.4f && back_sneak < back_run);
+    // Un bandido (22 m de vista) no nota al que llega en sigilo (vista x0,45) por detras hasta que
+    // ya esta a tiro de la espalda; caminando, lo nota antes.
+    CHECK(22.0f * 0.45f * back_sneak < BACKSTAB_RANGE);
+    CHECK(22.0f * stealth_sight_scale(-1.0f, 0.5f) > BACKSTAB_RANGE);
+}
+
+static void test_stealth_silent_kill_alerts_near_only(void) {
+    CHECK(stealth_hears_kill(3.0f) && stealth_hears_kill(SILENT_ALERT_RANGE));
+    CHECK(!stealth_hears_kill(SILENT_ALERT_RANGE + 0.5f) && !stealth_hears_kill(20.0f));
+    // De tres enemigos a 3, 5,9 y 8 m, la oyen los dos primeros.
+    const float d[3] = { 3.0f, 5.9f, 8.0f };
+    int heard = 0;
+    for (int i = 0; i < 3; i++) heard += stealth_hears_kill(d[i]);
+    CHECK(heard == 2);
+}
+
+static void test_hostage_blocks_shot(void) {
+    // El jugador en el origen mira al +Z con el rehen 0,55 m delante.
+    CHECK(hostage_blocks_shot(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.55f));  // el arquero delante: tapa
+    CHECK(hostage_blocks_shot(0.3f, 20.0f, 0.0f, 0.0f, 0.0f, 0.55f));  // casi en linea: tapa
+    CHECK(!hostage_blocks_shot(15.0f, 3.0f, 0.0f, 0.0f, 0.0f, 0.55f)); // desde un lado: no tapa
+    CHECK(!hostage_blocks_shot(0.0f, -20.0f, 0.0f, 0.0f, 0.0f, 0.55f)); // por la espalda del jugador: no
+}
+
+static void test_downed_wakes_and_lethal(void) {
+    Rng rng;
+    rng_seed(&rng, 3);
+    for (int i = 0; i < 200; i++) {
+        float w = down_wake_seconds(&rng);
+        CHECK(w >= DOWN_WAKE_MIN && w <= DOWN_WAKE_MAX);
+    }
+    // Un mazazo en el pecho tumba sin matar; un tajo grave en el cuello mata.
+    Health h;
+    health_init(&h, 70.0f);
+    health_hit(&h, &rng, 80.0f, WOUND_BRUISE, PART_THORAX);
+    CHECK(h.down && !h.dead && !down_is_lethal(&h));
+    Health k;
+    health_init(&k, 70.0f);
+    health_hit(&k, &rng, 40.0f, WOUND_CUT, PART_NECK);
+    CHECK(k.down && !k.dead && down_is_lethal(&k));
+    // El abatido despierta una sola vez al cumplirse su tiempo, y queda en pie para huir.
+    float wake = 45.0f;
+    int woke = 0, steps = 0;
+    for (; steps < 200; steps++) woke += down_tick(&wake, 0.5f);
+    CHECK(woke == 1);
+    health_revive(&h);
+    CHECK(!h.down && health_speed_scale(&h) > 0.0f);
+}
+
+static void test_finish_downed_costs_morale_by_trait(void) {
+    Kingdom iron, jade;
+    kingdom_init_iron_khanate(&iron);
+    kingdom_init_jade_dynasty(&jade);
+    Troop t;
+    troop_init(&t, &jade);
+    int merciful = troop_recruit(&t, "Compasiva", TRAIT_MERCIFUL);
+    int brute = troop_recruit(&t, "Sanguinario", TRAIT_BLOODTHIRSTY);
+    float m0 = troop_find(&t, merciful)->morale, b0 = troop_find(&t, brute)->morale, j0 = jade.relation;
+    troop_finish_downed(&t);
+    CHECK(troop_find(&t, merciful)->morale < m0 - 3.0f); // a la compasiva le pesa
+    CHECK(troop_find(&t, brute)->morale > b0);           // al sanguinario le gusta
+    CHECK(jade.relation < j0);                           // la dinastia piadosa lo reprueba
+    // Rematar pesa menos que ejecutar a un prisionero.
+    Troop u;
+    troop_init(&u, &iron);
+    int a = troop_recruit(&u, "Compasiva", TRAIT_MERCIFUL);
+    int prisoner = troop_take_prisoner(&u, "Cautivo", 0);
+    float a0 = troop_find(&u, a)->morale;
+    troop_execute(&u, prisoner);
+    float exec_cost = a0 - troop_find(&u, a)->morale;
+    CHECK(exec_cost > m0 - troop_find(&t, merciful)->morale);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -3362,6 +3456,11 @@ int main(void) {
     RUN(test_melee_parry_window);
     RUN(test_melee_weapon_block_costs_stamina);
     RUN(test_target_cycle);
+    RUN(test_stealth_back_cone);
+    RUN(test_stealth_silent_kill_alerts_near_only);
+    RUN(test_hostage_blocks_shot);
+    RUN(test_downed_wakes_and_lethal);
+    RUN(test_finish_downed_costs_morale_by_trait);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

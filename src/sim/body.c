@@ -43,6 +43,14 @@ void body_pose(BodyPose *out, const BodyPoseParams *p) {
         fore_r = fore_r + (1.3f - fore_r) * p->parry;
         arm_l = arm_l + (0.6f - arm_l) * p->parry;
     }
+    if (p->hold > 0.0f) { // sujeta a un rehen: el brazo izquierdo al frente, el antebrazo doblado hacia el cuello
+        arm_l = arm_l + (1.35f - arm_l) * p->hold;
+        fore_l = fore_l + (0.9f - fore_l) * p->hold;
+    }
+    if (p->held > 0.0f) { // rehen: los brazos suben y las manos van al cuello
+        arm_l = arm_l + (0.5f - arm_l) * p->held, arm_r = arm_r + (0.5f - arm_r) * p->held;
+        fore_l = fore_l + (2.3f - fore_l) * p->held, fore_r = fore_r + (2.3f - fore_r) * p->held;
+    }
     V3 sh_l = v3(0.22f, 1.40f, 0), sh_r = v3(-0.22f, 1.40f, 0);
     V3 el_l = limb(sh_l, 0.30f, arm_l), el_r = limb(sh_r, 0.30f, arm_r);
     s[PART_UPPER_ARM_L] = (BodySeg){ sh_l, el_l, 0.055f };

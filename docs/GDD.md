@@ -170,6 +170,10 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
     A destiempo (o sin golpe que parar) el jugador queda **expuesto** 0,6 s: ni se cubre ni ataca.
   - **Carga o patada:** `L`. Con escudo, **carga** que empuja y arrolla al primero que encuentra. Sin escudo, **patada**: aparta y desequilibra; contra un escudo en guardia solo le quita la guardia. **A la carrera, con inercia**, tumba incluso al que se cubre con escudo.
   - **Objetivo:** `Tab` en combate pasa al enemigo siguiente, en orden alrededor del jugador desde el que tiene delante (`Mayús+Tab`, al anterior); un clic o un toque sobre un enemigo lo elige. Un anillo dorado lo marca y su barra de vida se resalta. Los golpes van a él (el jugador se vuelve hacia él) y las armas a distancia le apuntan solas, con la caída calculada. Se pierde a 25 m o si muere; sin objetivo, se golpea al más cercano delante. Fuera de combate, `Tab` abre el menú de acciones.
+  - **La espalda** (v0.5.1, `src/sim/stealth.*`): de frente te ven; de lado, menos; por detrás solo te oyen (el ruido: correr se oye, el sigilo casi nada). A menos de 2 m, en el cono trasero de 70° de uno que no te notó (o aturdido), aparece una daga sobre él:
+    - `K`: **ejecución silenciosa**, muerte en el acto; solo la oyen los que están a menos de 6 m.
+    - `G`: **rehén**. Va delante del jugador, sujeto por el cuello. Los de su bando (bandidos o culto) no se acercan a menos de 4,5 m ni atacan; el arquero no tira si el rehén le tapa el blanco, y si tira, falla más. El jugador va lento y con una sola mano (sin escudo ni armas a dos manos). `G` lo suelta, `K` lo ejecuta delante de los suyos y `L` lo empuja al suelo; un golpe fuerte (o caer, o montar) lo suelta.
+  - **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar (mata una herida abierta grave en la cabeza o el cuello, muy grave en el pecho o el vientre, o desangrarse). El abatido queda en el suelo, con una barra gris de lo que le falta para despertar; a los 30-90 s se levanta herido, huye y avisa a los suyos (los de cerca van a por el jugador aunque no lo vean). `F` lo toma prisionero (lo que lleva queda en el suelo, como botín); `H` o `K` lo rematan, y a la tribu le pesa como una ejecución menor (los compasivos y los devotos lo reprueban, los sanguinarios lo celebran; el reino también opina).
   - **En el suelo** (derribado unos 2,5 s) no se cubre ni ataca, y recibe más daño. **Desequilibrado**, no se puede cubrir. La armadura pesada cuesta más de tumbar.
   - **Lo que sueltan los enemigos** (escudos, armas) queda en el suelo. Si te lo arrancan a ti, su número (1 a 9) vuelve a empuñar.
 - **Armas de mano:**
@@ -183,10 +187,10 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
 - **HUD:** vida y sangre bajo el calor; `P` abre el panel de heridas (tuyas y de la tribu); barras de vida sobre enemigos y compañeros heridos.
 - **Animación:**
   - Clips nuevos de salud: `abatido`, `cojear` y `vendar`.
-  - Clips nuevos cuerpo a cuerpo: `ataque_pesado`, `patada`, `patada_carrera`, `golpe_escudo`, `carga_escudo`, `enganchar_escudo`, `derribado` y `cambiar_mano`; con los cuatro botones, `parry` y `desvio`.
+  - Clips nuevos cuerpo a cuerpo: `ataque_pesado`, `patada`, `patada_carrera`, `golpe_escudo`, `carga_escudo`, `enganchar_escudo`, `derribado` y `cambiar_mano`; con los cuatro botones, `parry` y `desvio`; con la espalda y los abatidos, `apunalar_espalda`, `sujetar_rehen`, `rehen` y `rematar`.
   - Se usan además `ataque_*`, `estocada_lanza`, `bloquear`, `agarre`, `recibir_golpe` y `morir`.
   - Sin modelos, el cuerpo articulado muestra la patada, el agarre, el escudo, el parry y al jugador agachado.
-- **Prueba:** `9` hace aparecer bandidos delante (`Shift+9` lobos, `Ctrl+9` culto); `--enemigos bandidos|culto|arqueros|lobos|<animal>` (p. ej. `tigre`, `jabali`), `--heridas` y `--objetivo` (como pulsar Tab) al arrancar.
+- **Prueba:** `9` hace aparecer bandidos delante (`Shift+9` lobos, `Ctrl+9` culto); `--enemigos bandidos|culto|arqueros|lobos|<animal>` (p. ej. `tigre`, `jabali`), `--heridas`, `--objetivo` (como pulsar Tab), `--espalda` (a la espalda del primero) y `--rehen` (con él de rehén) al arrancar.
 
 **Pendiente:** combate montado, captores que se llevan prisioneros, botín de los enemigos.
 

@@ -502,14 +502,15 @@ te sigue · clic: que se quede	follows you · click: stay
  · recargando	 · reloading
  · sangra	 · bleeding
 %s Mueres. Vuelves en %s; tus huesos quedan donde caíste (moral -8).	%s You die. You return at %s; your bones stay where you fell (morale -8).
-%s abatió a un %s.	%s brought down a %s.
 %s del %s contra tu guardia: la pierdes.	%s from the %s against your guard: you lose it.
 %s del %s: ¡te derriba!	%s by the %s: you go down!
 %s del %s: ¡te tira del caballo!	%s by the %s: you're thrown from your horse!
 %s le arranca el escudo al %s.	%s rips the shield from the %s.
+%s mató a un %s.	%s killed a %s.
 %s murió de sus heridas. La tribu está de luto (moral -6).	%s died of their wounds. The tribe mourns (morale -6).
 %s te levanta y te venda. ¡Sigue en pie!	%s lifts you up and binds you. Keep going!
 %s te venda las heridas.	%s binds your wounds.
+%s tumbó a un %s: queda abatido.	%s knocked down a %s: it lies downed.
 %s: %s derriba al %s.	%s: %s knocks down the %s.
 %s: el %s se tambalea.	%s: the %s staggers.
 %s: ¡derribas al %s del caballo!	%s: you unhorse the %s!
@@ -519,48 +520,70 @@ te sigue · clic: que se quede	follows you · click: stay
 A caballo no hay parry.	No parry on horseback.
 A caballo no: solo golpe (H) y golpe pesado (mantener H).	Not on horseback: only strike (H) and heavy strike (hold H).
 A caballo no: solo golpe y golpe pesado.	Not on horseback: only strike and heavy strike.
-Abatiste al %s: deja botín (F para recogerlo).	You brought down the %s: it drops loot (F to pick up).
+Abatido: F lo toma prisionero · H o K lo rematan	Downed: F takes them prisoner · H or K finishes them
 Acércate a un fuego (fogata, hoguera o algo que arda) para encender la flecha.	Get near a fire (campfire, bonfire or anything burning) to light the arrow.
+Agarrar: rehén	Grab: hostage
+Agarras al %s por el cuello: es tu rehén.	You grab the %s by the neck: your hostage.
 Agarre	Grapple
 Arma	Weapon
+Arrollas al %s con el caballo: queda abatido.	You ride down the %s: it lies downed.
 Arrollas al %s con el caballo: queda en el suelo. Deja botín (F).	You ride down the %s: it stays down. Loot dropped (F).
 Atacar	Attack
+Atas al %s y lo tomas prisionero; lo que llevaba queda en el suelo (F).	You tie up the %s and take them prisoner; what they carried stays on the ground (F).
 Bajar el arma	Lower the weapon
 Carga con escudo	Shield charge
 Con esta lluvia la flecha no prende.	The arrow won't light in this rain.
+Con un arma a distancia en las manos no puedes agarrar a nadie.	You can't grab anyone with a ranged weapon in your hands.
 Con un arma a distancia no hay parry.	No parry with a ranged weapon.
+Con un rehén solo tienes una mano libre.	With a hostage you only have one free hand.
 Cubrirse	Guard
 Desvías el golpe del %s: ¡queda abierto!	You deflect the %s's blow: it's wide open!
 Disparar	Shoot
+Ejecutar al rehén	Execute the hostage
+Ejecutas al %s delante de los suyos.	You execute the %s in front of their own.
+El %s cae abatido: F lo toma prisionero; H lo remata.	The %s goes down: F takes them prisoner; H finishes them.
 El %s deja botín (F para recogerlo).	The %s drops loot (F to pick up).
+El %s despierta y huye a avisar a los suyos.	The %s wakes up and runs off to warn their own.
 El %s para tu %s%s.	The %s blocks your %s%s.
 El %s se espanta ante las pieles de fiera y retrocede.	The %s is frightened by the beast pelts and backs off.
 El %s se zafa del agarre: ¡quedas expuesto!	The %s breaks the hold: you're exposed!
 El golpe del %s alcanza a tu montura.	The %s's blow hits your mount.
+Empujar al rehén	Shove the hostage
+Empujas al %s: cae de bruces.	You shove the %s: they fall flat on their face.
 Escudo contra escudo: los dos os tambaleáis.	Shield against shield: you both stagger.
 Estás abatido	You are down
 Flecha encendida: dispara antes de que se apague.	Arrow lit: shoot before it goes out.
+G agarra por la espalda (sin que te vean, o a uno aturdido). La mochila va con Mayús+G.	G grabs from behind (unseen, or a stunned foe). The backpack is Shift+G.
+G: lo agarras por el cuello y te cubres con él; los suyos no se acercan ni disparan.	G: grab them by the neck and shield yourself; their own won't come closer or shoot.
+G: lo sueltas.	G: let them go.
 Gancho	Hook
 Golpe	Strike
 Golpe de escudo	Shield bash
 Golpe pesado	Heavy strike
+H junto a un abatido: lo rematas (a la tribu no le es indiferente).	H next to a downed foe: you finish them (the tribe cares).
 H o clic: golpe (encadena hasta tres). Mantener: golpe pesado.	H or click: strike (chains up to three). Hold: heavy strike.
 H o clic: tensa y suelta. Apunta al objetivo (o al más cercano delante).	H or click: draw and release. Aims at the target (or the nearest one ahead).
 J o clic derecho, mantener: el escudo cubre el frente. Con H, golpe de escudo.	J or right click, hold: the shield covers your front. With H, shield bash.
 J o clic derecho, mantener: paras con el arma; aguanta la mitad y cansa.	J or right click, hold: parry with your weapon; it stops half and tires you.
 J: baja el arma (si llevas escudo, te cubre).	J: lower the weapon (with a shield, it covers you).
+K junto a un abatido: lo rematas (a la tribu no le es indiferente).	K next to a downed foe: you finish them (the tribe cares).
 K justo antes del golpe enemigo: desvías y queda abierto un segundo. A destiempo, quedas expuesto.	K just before the enemy's blow: you deflect and leave it open for a second. Mistimed, you're exposed.
 K justo antes del golpe enemigo: enganchas su escudo y se lo arrancas. A destiempo, quedas expuesto.	K just before the enemy's blow: you hook its shield and tear it away. Mistimed, you're exposed.
 K justo antes del golpe enemigo: llave y derribo, y lo desarmas. A destiempo, quedas expuesto.	K just before the enemy's blow: lock and takedown, and you disarm it. Mistimed, you're exposed.
+K: lo ejecutas delante de los suyos.	K: you execute them in front of their own.
+K: lo matas en silencio; solo lo oyen los que están a menos de 6 m.	K: a silent kill; only those within 6 m hear it.
 L: carga con el escudo; empuja y tumba al primero que encuentra.	L: shield charge; shoves and knocks down the first one in the way.
+L: lo empujas y cae de bruces.	L: you shove them and they fall flat.
 L: patada que empuja y desequilibra. Corriendo, patada a la carrera.	L: a kick that shoves and staggers. Running, a running kick.
 La flecha encendida se apagó.	The fire arrow went out.
 La flecha ya arde: ¡dispara!	The arrow is burning: shoot!
 La lluvia apaga la flecha.	The rain puts out the arrow.
+La tribu no tiene sitio para más gente.	The tribe has no room for more people.
 Le agarras el brazo armado y lo desarmas con una llave: ¡el %s cae!	You seize the weapon arm and disarm with a lock: the %s falls!
 Le das al %s: %s.	You hit the %s: %s.
 Levantas a %s, pero sin hierbas sigue sangrando.	You lift %s, but without herbs the bleeding goes on.
 Levantas y vendas a %s.	You lift and bind %s.
+Matas al %s: deja botín (F para recogerlo).	You kill the %s: it leaves loot (F to pick it up).
 Nadie llega a socorrerte.	No one comes to help you.
 No hay heridas que vendar.	No wounds to bind.
 No llevas hierbas curativas (I: inventario).	You carry no healing herbs (I: inventory).
@@ -577,9 +600,20 @@ Parry a destiempo: ¡quedas expuesto!	Mistimed parry: you're exposed!
 Parry al aire: nadie te está golpeando. Quedas expuesto.	Parry at thin air: no one is striking you. You're exposed.
 Patada	Kick
 Patada a la carrera	Running kick
+Por la espalda	From behind
+Por la espalda: K lo ejecuta en silencio · G lo toma de rehén	From behind: K kills silently · G takes a hostage
+Por la espalda: el %s cae sin un grito.	From behind: the %s falls without a cry.
+Por la espalda: el %s cae sin un grito... pero alguien lo oyó.	From behind: the %s falls without a cry... but someone heard it.
+Rehén: G lo suelta · K lo ejecuta · L lo empuja	Hostage: G lets go · K executes · L shoves
+Rematar	Finish off
+Rematas al %s de un flechazo. Deja botín (F).	You finish the %s with an arrow. It leaves loot (F).
+Rematas al %s: deja botín (F). La tribu lo ve.	You finish the %s: it leaves loot (F). The tribe sees it.
 Si tu escolta está cerca, te levantará; si no, la tribu te buscará.	If your escort is near, they'll lift you; if not, the tribe will find you.
 Sin escudo no puedes hacer eso.	You can't do that without a shield.
 Solo las flechas y los virotes se encienden.	Only arrows and bolts can be lit.
+Soltar al rehén	Let the hostage go
+Sueltas al %s.	You let the %s go.
+Sueltas al rehén para montar.	You let the hostage go to mount.
 Te ataca un %s: %s.	A %s attacks you: %s.
 Te desangras.	You bleed out.
 Te hieren: %s.	You're wounded: %s.
@@ -589,7 +623,8 @@ Te vendas %d herida%s con hierbas curativas.	You bind %d wound%s with healing he
 Te zafas del agarre del %s.	You break the %s's hold.
 Tu arma no tiene gancho (hacha, guja o alabarda).	Your weapon has no hook (axe, glaive or halberd).
 Tu golpe pesado rompe la guardia del %s.	Your heavy strike breaks the %s's guard.
-Un %s abate a un %s.	A %s brings down a %s.
+Un %s mata a un %s.	A %s kills a %s.
+Un %s tumba a un %s.	A %s knocks down a %s.
 Una %s alcanza a %s en %s.	A %s hits %s in %s.
 Vendas las heridas de %s.	You bind %s's wounds.
 golpe	strike
@@ -599,7 +634,9 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡Arqueros! Busca cubrirte o acércate rápido.	Archers! Take cover or close in fast.
 ¡Arrollas al %s con el caballo!	You ride down the %s!
 ¡Bandidos! Vienen a por tu botín.	Bandits! They're after your loot.
-¡Diana! Abatiste al %s (%s).	Bullseye! You brought down the %s (%s).
+¡Con el golpe se te escapa el rehén!	The blow makes you lose your hostage!
+¡Diana! El %s cae abatido (%s).	Bullseye! The %s goes down (%s).
+¡Diana! Matas al %s (%s).	Bullseye! You kill the %s (%s).
 ¡El %s te arranca el escudo! (1 a 9 para volver a empuñar)	The %s tears your shield away! (1 to 9 to wield again)
 ¡El %s te desarma con una llave! (1 a 9 para volver a empuñar)	The %s disarms you with a lock! (1 to 9 to wield again)
 ¡Fanáticos del culto! Buscan prisioneros para el sacrificio.	Cult fanatics! They seek prisoners for sacrifice.
@@ -928,6 +965,7 @@ tienes %d, hacen falta %d · potencia x%.2f	you have %d, %d needed · power x%.2
 1-9 empuñar · Mayús+n.º mano	1-9 wield · Shift+no. hand
 A / D o flechas	A / D or arrows
 A caballo: H golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo.	On horseback: H strikes with more reach and the gallop's momentum; the lance knocks down; at a gallop you trample. A knockdown throws you off the horse.
+A menos de 2 m por la espalda de uno que no te vio (o aturdido), una daga aparece sobre él:	Within 2 m behind someone who hasn't seen you (or is stunned), a dagger appears above them:
 Abatido, tu escolta te levanta. Si mueres (desangrado o sin socorro), vuelves a tu último lugar de descanso (campamento o tienda) y tus huesos quedan donde caíste. Tus compañeros mueren para siempre.	When downed, your escort lifts you. If you die (bled out or with no help), you return to your last resting place (camp or tent) and your bones stay where you fell. Your companions die for good.
 Abejas: con la antorcha encendida, el humo las calma y F toma la miel.	Bees: with the torch lit, the smoke calms them and F takes the honey.
 Al caer: pulsa la serie de teclas (J K L U I O) a tiempo.	When you fall: press the key sequence (J K L U I O) in time.
@@ -980,6 +1018,8 @@ F5 o Ctrl+M: vista orbital del mundo entero (flechas para girar e inclinar). El 
 F5/Ctrl+M vista orbital	F5/Ctrl+M orbital view
 Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.	Craft by hand: arrows (wood, feathers, flint), rope (sinew), ointment (herbs and honey), cuirass and boots (hides). Forged goods need a smith and a furnace.
 Fauna y caza	Wildlife and hunting
+G agarrar · Mayús+G mochila	G grab · Shift+G backpack
+G lo agarra de rehén: te cubres con él, los suyos no se acercan ni disparan si los tapa (y si disparan, fallan más). Vas lento y con una sola mano. G lo suelta, K lo ejecuta, L lo empuja; un golpe fuerte te lo quita.	G takes them hostage: you shield yourself with them; their own won't come closer or shoot if covered (and if they shoot, they miss more). You move slowly, with one hand. G lets go, K executes, L shoves; a strong blow frees them.
 Golpea hacia el agua o tira una flecha para pescar.	Strike at the water or shoot an arrow to fish.
 Guardar en	Save to
 Guardar partida	Save game
@@ -993,10 +1033,13 @@ Instructivo	Guide
 J o clic derecho sin arrastrar, mantener: con escudo cubre el frente (J + H: golpe de escudo); sin escudo paras con el arma: aguanta la mitad y cansa	J or right click without dragging, hold: with a shield it covers your front (J + H: shield bash); without one you parry with the weapon: it stops half and tires you
 J/clic der. cubrirse	J/right click guard
 Joyas (cambiables): el orfebre (F) hace anillos (dos por mano), brazaletes, collar, aretes y hebilla con metal y una piedra; el druida las encanta con un efecto pasivo o activo.	Jewels (swappable): the goldsmith (F) makes rings (two per hand), bracelets, necklace, earrings and buckle from metal and a gem; the druid enchants them with a passive or active effect.
+Junto a un abatido: F lo toma prisionero (lo que lleva queda en el suelo); H o K lo rematan. A la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran.	Next to a downed foe: F takes them prisoner (what they carry stays on the ground); H or K finishes them. The tribe cares: the merciful and the devout disapprove, the bloodthirsty cheer.
 K justo antes del golpe enemigo (el rombo dorado destella): hacha o guja le arrancan el escudo; manos o daga, llave y derribo; las demás desvían. A destiempo quedas expuesto.	K just before the enemy's blow (the gold diamond flashes): axe or glaive tear its shield away; hands or dagger, lock and takedown; the others deflect. Mistimed, you're exposed.
+K lo mata en silencio: solo lo oyen los que están a menos de 6 m.	K kills silently: only those within 6 m hear it.
 K parry · L carga o patada	K parry · L charge or kick
 L: con escudo, carga que empuja; sin escudo, patada (corriendo, con inercia: tumba aun con escudo)	L: with a shield, a charge that shoves; without one, a kick (running, with momentum: knocks down even a shield bearer)
 La armadura va por piezas (casco, gorjal, coraza, hombreras, brazales, guantes, faldar, grebas, botas). Cada material para distinto el corte, el golpe y la flecha, y se gasta con los impactos.	Armour comes in pieces (helmet, gorget, cuirass, pauldrons, bracers, gauntlets, skirt, greaves, boots). Each material stops cuts, blows and arrows differently, and wears with hits.
+La espalda, rehenes y abatidos	Backstabs, hostages and the downed
 La estepa	The steppe
 La lluvia apaga todo fuego: antorchas, fogatas, hornos y flechas.	Rain puts out every fire: torches, campfires, furnaces and arrows.
 La moral y la lealtad deciden si la tribu se rebela.	Morale and loyalty decide whether the tribe rebels.
@@ -1005,6 +1048,7 @@ La tribu come carne fresca y leche antes que la seca; con hambre baja la moral.	
 La tribu se cambia sola según el tiempo con la ropa de su mochila y del acopio; sin ropa adecuada pasa frío o calor y baja la moral.	The tribe changes clothes on its own with the weather, from their packs and the stockpile; without suitable clothing they suffer cold or heat and morale drops.
 La tribu y el campamento	The tribe and the camp
 Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.	Structures wear out: the tribe repairs them with logs every day. Without upkeep, torrential rain brings them down.
+Las mazas, las patadas y los escudos tumban sin matar, y también una herida que no es mortal: el enemigo queda abatido en el suelo. A los 30-90 s despierta, herido, y huye a avisar a los suyos.	Maces, kicks and shields knock down without killing, and so does a wound that isn't mortal: the enemy lies downed. After 30-90 s they wake up, wounded, and run off to warn their own.
 Las partidas guardadas, con su foto y su fecha	Saved games, with their picture and date
 Las pieles de depredador (lobo, oso, tigre, puma, hiena) dan escarmiento: el enemigo se espanta o huye antes.	Predator pelts (wolf, bear, tiger, puma, hyena) give dread: the enemy is frightened or flees sooner.
 Lobos, perros, tigres, pumas, halcones y cuervos: debilítalos peleando, échales el lazo y dales carne (F) para domarlos.	Wolves, dogs, tigers, pumas, hawks and ravens: weaken them by fighting, lasso them and give them meat (F) to tame them.
@@ -1013,9 +1057,8 @@ Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se 
 Los lagos helados se cruzan, pero el hielo puede romperse.	Frozen lakes can be crossed, but the ice may break.
 Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.	Menus are icons: hover with the mouse (or pick with the arrows) and the name shows below; click or Enter to use them.
 Los rayos caen sobre lo alto durante las tormentas.	Lightning strikes high ground during storms.
-M marcar el mapa · N beber	M mark the map · N drink
+M mapa · N beber · U ficha	M map · N drink · U card
 Mayús+G (o la columna) deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	Shift+G (or the column) drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
-Mayús+G mochila · U ficha	Shift+G backpack · U card
 Mayús+L (o la columna) junto a un fuego enciende la flecha: quema y prende lo que toca.	Shift+L (or the column) by a fire lights the arrow: it burns and sets alight what it hits.
 Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta y desmonta.	Mounts (horse, mule, donkey, ox, camel, elephant): lasso and saddle; R mounts and dismounts.
 N bebe lo más seguro que tengas; en la orilla, sin nada, bebes del río. Con calor da más sed; sin agua te desmayas.	N drinks the safest thing you have; at the shore, with nothing, you drink from the river. Heat makes you thirstier; without water you faint.
@@ -1025,6 +1068,7 @@ P equipo, pestaña Ropa: cabeza, cuello y cara, cuerpo, capa o abrigo y pies. Ca
 Partida de otra versión del juego	Save from another game version
 Pausa	Pause
 Piedras: rompe rocas a golpes, F en los corales del lago, cava trincheras o criba en la orilla (Tab).	Gems: break rocks with blows, F at lake corals, dig trenches or pan on the shore (Tab).
+Por detrás solo te oyen: en sigilo o agachado te acercas sin que te noten; caminando o corriendo, te oyen antes.	From behind they can only hear you: sneaking or crouching you get close unnoticed; walking or running, they hear you sooner.
 Página anterior	Previous page
 Página siguiente	Next page
 R montar · T lanzar · Y escolta	R mount · T throw · Y escort

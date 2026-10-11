@@ -38,6 +38,8 @@ typedef struct {
     int move;         // movimiento cuerpo a cuerpo en curso: 0 ninguno, MeleeMove + 1 (src/sim/melee.h)
     bool knocked;     // derribado: en el suelo un momento (patada, llave, carga)
     bool swapping;    // pasando el arma a la otra mano
+    bool holding;     // sujeta a un rehen por el cuello (G con la espalda ganada)
+    bool held;        // es el rehen: sujetado por el cuello
 } HumanoidState;
 
 // Clip para un humano (jugador o NPC) segun lo que esta haciendo.

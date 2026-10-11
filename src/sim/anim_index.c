@@ -38,6 +38,7 @@ const char *anim_humanoid(const HumanoidState *s) {
     if (s->dead) return "morir";
     if (s->down) return "abatido";
     if (s->knocked) return "derribado";
+    if (s->held) return "rehen";
     if (s->hit) return "recibir_golpe";
     if (s->climbing) return s->climb_top ? "trepar_cima" : "trepar_cuerda";
     if (s->mounted) return s->mount_speed > 6.0f ? "jinete_galope" : s->mount_speed > 0.3f ? "jinete_paso" : "jinete_idle";
@@ -52,6 +53,7 @@ const char *anim_humanoid(const HumanoidState *s) {
         return s->grip == GRIP_TWO_HANDED ? two[k] : one[k];
     }
     if (s->swapping) return "cambiar_mano";
+    if (s->holding) return "sujetar_rehen";
     if (s->ranged) return s->ranged == 2 ? "disparar_ballesta" : s->ranged == 3 ? "disparar_mosquete" : "disparar_arco";
     if (s->blocking) return "bloquear";
     if (s->hidden && !s->moving) return "acechar_idle";

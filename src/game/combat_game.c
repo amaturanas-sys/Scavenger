@@ -20,6 +20,7 @@
 #include "sim/body.h"
 #include "sim/hazards.h"
 #include "sim/melee.h"
+#include "sim/stealth.h"
 #include "sim/targeting.h"
 #include "ui/theme.h"
 #include "world/body_draw.h"
@@ -30,6 +31,10 @@
 #define DOWN_WAKE_SECONDS 25.0f // abatido y solo: muere y vuelve a su lugar de descanso
 #define DOWN_HELP_SECONDS 5.0f  // con la escolta cerca: lo levantan
 #define CORPSE_SECONDS 30.0f
+#define HOSTAGE_AHEAD 0.55f    // m delante del jugador
+#define HOSTAGE_SPEED 0.55f    // el jugador, con un rehen, va mas lento
+#define HOSTAGE_KEEP_AWAY 4.5f // m: los suyos no se acercan mas
+#define HOSTAGE_JOLT 12.0f     // un golpe que pasa de esto suelta al rehen
 #define DESPAWN_DIST 160.0f
 #define COMPANION_DAMAGE 10.0f
 #define COMPANION_COOLDOWN 1.2f
@@ -47,7 +52,8 @@
 static float dist2(Vector3 a, Vector3 b) { return Vector2Distance((Vector2){ a.x, a.z }, (Vector2){ b.x, b.z }); }
 
 // Lo que piden las casillas de combate del HUD (se atiende en el proximo cb_update).
-static bool g_hud_attack_press, g_hud_attack_down, g_hud_block, g_hud_parry, g_hud_charge;
+static bool g_hud_attack_press, g_hud_attack_down, g_hud_block, g_hud_parry, g_hud_charge, g_hud_grab;
+static int g_back; // el enemigo con la espalda ganada + 1 (la daga sobre el; 0: ninguno)
 static bool g_click_used; // ese clic eligio un objetivo: no es un golpe
 
 static V3 to_v3(Vector3 v) { return (V3){ v.x, v.y, v.z }; }
@@ -72,6 +78,7 @@ float cb_speed_scale(const Combat *cb) {
     if (cb->charge_timer > 0.0f) return s * 1.5f; // la carga con escudo, a toda carrera
     if (cb->blocking || cb->aiming) s *= 0.5f;
     if (cb->stagger > 0.0f) s *= 0.6f;
+    if (cb->hostage) s *= HOSTAGE_SPEED; // con un rehen a cuestas
     return cb->player.down ? 1.0f : s;
 }
 
@@ -186,10 +193,159 @@ static void describe_hit(const Health *h, int w, float absorbed, bool broke, cha
     snprintf(out, len, "%s%s%s", d, absorbed > 0.5f ? T(" (la armadura amortigua)") : "", broke ? T("; se rompe la pieza") : "");
 }
 
-static void enemy_down_check(Enemy *e) {
-    if (e->h.down || e->h.dead) {
+// En pie: ni muerto, ni abatido, ni rehen (lo que pelea, se elige y se golpea).
+static bool standing(const Enemy *e) {
+    return e->used && e->state != EN_DEAD && e->state != EN_DOWN && e->state != EN_HOSTAGE;
+}
+
+// El jinete cae del caballo, que queda suelto (la fauna lo suelta en el mundo).
+static void unhorse(Combat *cb, Enemy *e) {
+    e->mounted = false;
+    e->kind = ENEMY_BANDIT;
+    if (cb->loose_n < 4) cb->loose_yaw[cb->loose_n] = e->yaw, cb->loose_horse[cb->loose_n++] = e->pos;
+}
+
+// Un enemigo herido cae: muerto si lo que lo tumbo es letal (o se desangro); si no, abatido,
+// en el suelo hasta que despierta a los 30-90 s (src/sim/stealth.h).
+static void enemy_down_check(Combat *cb, Enemy *e) {
+    if (e->state == EN_DEAD || !(e->h.down || e->h.dead)) return;
+    e->windup = 0.0f, e->windup_move = 0;
+    e->blocking = false;
+    if (cb->hostage == (int)(e - cb->enemies) + 1) cb->hostage = 0; // el rehen cae: se suelta
+    if (e->mounted) unhorse(cb, e);
+    if (e->h.dead || down_is_lethal(&e->h)) {
         e->state = EN_DEAD;
         e->corpse = CORPSE_SECONDS;
+    } else if (e->state != EN_DOWN) {
+        e->state = EN_DOWN;
+        e->timer = down_wake_seconds(&cb->rng);
+    }
+}
+
+// Los de cerca se enteran: van a por el jugador un rato aunque no lo vean.
+static void alert_near(Combat *cb, Vector3 at, float radius, float seconds) {
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) {
+        Enemy *o = &cb->enemies[i];
+        if (!standing(o) || dist2(o->pos, at) > radius) continue;
+        o->alert = fmaxf(o->alert, seconds);
+        o->shown = 6.0f;
+    }
+}
+
+// El abatido mas cercano a menos de reach (o NULL).
+static Enemy *downed_near(Combat *cb, Vector3 pos, float reach) {
+    Enemy *best = NULL;
+    float bd = reach;
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) {
+        Enemy *e = &cb->enemies[i];
+        if (!e->used || e->state != EN_DOWN) continue;
+        float d = dist2(pos, e->pos);
+        if (d < bd) bd = d, best = e;
+    }
+    return best;
+}
+
+// ------------------------------------------------------------------- la espalda y los rehenes
+
+static bool g_jolt; // el jugador recibio un golpe fuerte en este cuadro (suelta al rehen)
+
+// Los del mismo bando: el culto (fanaticos y captores) o los bandidos (a pie, arqueros, jinetes).
+static bool cult(EnemyKind k) { return k == ENEMY_FANATIC || k == ENEMY_CAPTOR; }
+static bool same_side(EnemyKind a, EnemyKind b) { return cult(a) == cult(b); }
+
+static Enemy *hostage_of(Combat *cb) {
+    int i = cb->hostage - 1;
+    return i >= 0 && i < CB_MAX_ENEMIES && cb->enemies[i].used && cb->enemies[i].state == EN_HOSTAGE ? &cb->enemies[i] : NULL;
+}
+
+// La espalda ganada: el enemigo en pie mas cercano con el jugador en su cono trasero, a tiro, que no
+// lo noto (o esta aturdido). A caballo no se le gana (src/sim/stealth.h).
+static Enemy *back_open(Combat *cb, const Player *p) {
+    Enemy *best = NULL;
+    float bd = BACKSTAB_RANGE;
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) {
+        Enemy *e = &cb->enemies[i];
+        if (!standing(e) || e->mounted) continue;
+        float d = dist2(e->pos, p->pos);
+        bool noticed = e->target == 0, stunned = e->stagger > 0.0f || e->knock > 0.0f;
+        if (d < bd && stealth_backstab(e->pos.x, e->pos.z, e->yaw, p->pos.x, p->pos.z, noticed, stunned)) bd = d, best = e;
+    }
+    return best;
+}
+
+// Suelta al rehen (G, un golpe fuerte, o al caer). push: L lo empuja y cae al suelo.
+static void release_hostage(Combat *cb, const Player *p, bool push, char *log, size_t len) {
+    Enemy *e = hostage_of(cb);
+    cb->hostage = 0;
+    if (!e) return;
+    e->state = EN_CHASE;
+    e->target = 0;
+    e->cooldown = 1.0f;
+    char who[48];
+    lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
+    if (push) {
+        e->pos.x += sinf(p->yaw) * 1.2f, e->pos.z += cosf(p->yaw) * 1.2f;
+        e->knock = KNOCKDOWN_SECONDS;
+        snprintf(log, len, T("Empujas al %s: cae de bruces."), who);
+    } else {
+        e->stagger = STAGGER_SECONDS;
+        if (log) snprintf(log, len, T("Sueltas al %s."), who);
+    }
+}
+
+// K con la espalda ganada (o con el rehen): lo mata en el acto. Por la espalda, solo lo oyen los que
+// estan a menos de SILENT_ALERT_RANGE m; al rehen lo ven ejecutar todos los suyos que miran.
+static void player_backstab(Combat *cb, Player *p, Enemy *e, char *log, size_t len) {
+    bool hostage = e->state == EN_HOSTAGE;
+    if (hostage) cb->hostage = 0;
+    p->yaw = atan2f(e->pos.x - p->pos.x, e->pos.z - p->pos.z);
+    cb->move = MOVE_BACKSTAB + 1;
+    cb->move_anim = 0.9f;
+    cb->attack_anim = 0.45f;
+    cb->attack_cd = move_def(MOVE_BACKSTAB)->recovery;
+    e->h.down = e->h.dead = true;
+    e->state = EN_DEAD;
+    e->corpse = CORPSE_SECONDS;
+    e->windup = 0.0f, e->windup_move = 0;
+    int heard = 0;
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) {
+        Enemy *o = &cb->enemies[i];
+        if (!standing(o)) continue;
+        float d = dist2(o->pos, e->pos);
+        if (stealth_hears_kill(d) || (hostage && same_side(o->kind, e->kind) && d < 25.0f)) o->alert = 15.0f, o->shown = 6.0f, heard++;
+    }
+    char who[48];
+    lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
+    if (hostage) snprintf(log, len, T("Ejecutas al %s delante de los suyos."), who);
+    else if (heard) snprintf(log, len, T("Por la espalda: el %s cae sin un grito... pero alguien lo oyó."), who);
+    else snprintf(log, len, T("Por la espalda: el %s cae sin un grito."), who);
+}
+
+// G con la espalda ganada: lo agarra por el cuello y lo usa de escudo.
+static void take_hostage(Combat *cb, Player *p, Enemy *e, char *log, size_t len) {
+    cb->hostage = (int)(e - cb->enemies) + 1;
+    if (cb->target_lock == cb->hostage) cb->target_lock = 0;
+    e->state = EN_HOSTAGE;
+    e->target = 0;
+    e->windup = 0.0f, e->windup_move = 0, e->attack_anim = 0.0f;
+    e->blocking = false, e->block_timer = 0.0f;
+    cb->blocking = false, cb->aiming = false, cb->draw = 0.0f, cb->v_hold = 0.0f;
+    p->yaw = atan2f(e->pos.x - p->pos.x, e->pos.z - p->pos.z);
+    char who[48];
+    snprintf(log, len, T("Agarras al %s por el cuello: es tu rehén."),
+             lower_name(T(enemy_def(e->kind)->name), who, sizeof(who)));
+}
+
+void cb_test_back(Combat *cb, Player *p, bool hostage, char *log, size_t len) {
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) {
+        Enemy *e = &cb->enemies[i];
+        if (!standing(e) || e->mounted) continue;
+        e->state = EN_WANDER, e->target = -1, e->alert = 0.0f, e->timer = 30.0f, e->wander_to = e->pos;
+        p->pos.x = e->pos.x - sinf(e->yaw) * 1.4f, p->pos.z = e->pos.z - cosf(e->yaw) * 1.4f;
+        p->yaw = e->yaw;
+        p->sneaking = true;
+        if (hostage) take_hostage(cb, p, e, log, len);
+        return;
     }
 }
 
@@ -229,7 +385,7 @@ static Fighter fighter_enemy(const Enemy *e, Vector3 from) {
     Fighter f = { 0 };
     f.shield = e->shield;
     f.blocking = e->blocking;
-    f.down = e->knock > 0.0f || e->state == EN_DEAD;
+    f.down = e->knock > 0.0f || e->state == EN_DEAD || e->state == EN_DOWN;
     f.staggered = e->stagger > 0.0f;
     f.attacking = e->attack_anim > 0.0f || e->windup > 0.0f;
     f.armed = e->armed;
@@ -311,20 +467,16 @@ static void hit_enemy(Combat *cb, Enemy *e, MeleeMove m, const MeleeResult *r, P
     if (r->staggered) e->stagger = STAGGER_SECONDS, e->blocking = false;
     if (r->knocked_down) e->knock = KNOCKDOWN_SECONDS, e->blocking = false;
     bool unhorsed = false;
-    if (r->knocked_down && e->mounted) { // derribado: cae del caballo, que queda suelto
-        e->mounted = false;
-        e->kind = ENEMY_BANDIT;
-        unhorsed = true;
-        if (cb->loose_n < 4) cb->loose_yaw[cb->loose_n] = e->yaw, cb->loose_horse[cb->loose_n++] = e->pos;
-    }
+    if (r->knocked_down && e->mounted) unhorse(cb, e), unhorsed = true; // derribado: cae del caballo, que queda suelto
     if (r->shield_dropped && e->shield) e->shield = false, drop_item(props, def->shield, e->pos);
     if (r->disarmed && e->armed) e->armed = false, drop_item(props, def->weapon, e->pos);
     if (e->target < 0 && attacker == 0) e->target = 0; // ahora sabe donde estas
-    enemy_down_check(e);
+    enemy_down_check(cb, e);
     if (attacker != 0 || !log) return;
     char who[48], d[128];
     lower_name(T(def->name), who, sizeof(who));
-    if (e->state == EN_DEAD) snprintf(log, len, T("Abatiste al %s: deja botín (F para recogerlo)."), who);
+    if (e->state == EN_DEAD) snprintf(log, len, T("Matas al %s: deja botín (F para recogerlo)."), who);
+    else if (e->state == EN_DOWN) snprintf(log, len, T("El %s cae abatido: F lo toma prisionero; H lo remata."), who);
     else if (unhorsed) snprintf(log, len, T("%s: ¡derribas al %s del caballo!"), move_verb(m), who);
     else if (r->attacker_staggered && m == MOVE_GRAPPLE) snprintf(log, len, T("El %s se zafa del agarre: ¡quedas expuesto!"), who);
     else if (!r->landed && m == MOVE_HOOK) snprintf(log, len, "%s", T("Tu arma no tiene gancho (hacha, guja o alabarda)."));
@@ -353,6 +505,7 @@ static void hit_player(Combat *cb, GameActions *ga, MeleeMove m, const MeleeResu
     if (r->staggered) cb->stagger = STAGGER_SECONDS;
     if (r->knocked_down) cb->knock = KNOCKDOWN_SECONDS, cb->charge_timer = 0.0f;
     if (r->guard_cost > 0.0f) player_stamina_spend(r->guard_cost); // cubrirse cansa (con el arma, mas)
+    if (r->damage >= HOSTAGE_JOLT || r->knocked_down || r->staggered) g_jolt = true; // un golpe fuerte suelta al rehen
     bool unhorsed = r->knocked_down && ga->mounted >= 0;
     if (unhorsed) ga->animals[ga->mounted].ridden = false, ga->mounted = -1; // te tira del caballo
     // Lo que se suelta queda en la mano de la tribu: la barra rapida (1 a 9) lo vuelve a empuñar.
@@ -390,7 +543,7 @@ static Enemy *enemy_in_front(Combat *cb, Vector3 pos, float yaw, float reach, fl
     float bd = reach;
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
         Enemy *e = &cb->enemies[i];
-        if (!e->used || e->state == EN_DEAD) continue;
+        if (!standing(e)) continue;
         float d = dist2(pos, e->pos);
         if (d < bd && (d < 0.8f || facing_to(pos, yaw, e->pos) > 0.3f)) bd = d, best = e;
     }
@@ -401,7 +554,7 @@ static Enemy *enemy_in_front(Combat *cb, Vector3 pos, float yaw, float reach, fl
 // ------------------------------------------------------------------- objetivo
 static Enemy *locked(Combat *cb) {
     int i = cb->target_lock - 1;
-    return i >= 0 && i < CB_MAX_ENEMIES && cb->enemies[i].used && cb->enemies[i].state != EN_DEAD ? &cb->enemies[i] : NULL;
+    return i >= 0 && i < CB_MAX_ENEMIES && standing(&cb->enemies[i]) ? &cb->enemies[i] : NULL;
 }
 
 const Enemy *cb_target(const Combat *cb) { return locked((Combat *)cb); }
@@ -409,7 +562,7 @@ const Enemy *cb_target(const Combat *cb) { return locked((Combat *)cb); }
 static int target_cands(const Combat *cb, TargetCand *c) {
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
         const Enemy *e = &cb->enemies[i];
-        c[i] = (TargetCand){ e->pos.x, e->pos.z, e->used && e->state != EN_DEAD };
+        c[i] = (TargetCand){ e->pos.x, e->pos.z, standing(e) };
     }
     return CB_MAX_ENEMIES;
 }
@@ -435,7 +588,7 @@ bool cb_pick_target(Combat *cb, Camera3D cam, Vector2 pointer, int w, int h, cha
     float bd = 18.0f; // px de la pantalla virtual
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
         const Enemy *e = &cb->enemies[i];
-        if (!e->used || e->state == EN_DEAD) continue;
+        if (!standing(e)) continue;
         Vector3 torso = { e->pos.x, e->pos.y + (e->mounted ? 2.1f : 1.1f), e->pos.z };
         Vector3 to = Vector3Subtract(torso, cam.position);
         if (Vector3DotProduct(to, Vector3Subtract(cam.target, cam.position)) <= 0.0f || Vector3Length(to) > TARGET_RANGE + 12.0f) continue;
@@ -606,7 +759,7 @@ static Enemy *incoming(Combat *cb, const Player *p) {
     Enemy *best = NULL;
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
         Enemy *e = &cb->enemies[i];
-        if (!e->used || e->state == EN_DEAD || e->target != 0 || e->windup <= 0.0f) continue;
+        if (!standing(e) || e->target != 0 || e->windup <= 0.0f) continue;
         if (dist2(e->pos, p->pos) > enemy_def(e->kind)->reach + 0.6f) continue;
         if (!best || e->windup < best->windup) best = e;
     }
@@ -616,7 +769,7 @@ static Enemy *incoming(Combat *cb, const Player *p) {
 bool cb_parry_cue(const Combat *cb) {
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
         const Enemy *e = &cb->enemies[i];
-        if (e->used && e->state != EN_DEAD && e->target == 0 && melee_parry_in_window(e->windup)) return true;
+        if (standing(e) && e->target == 0 && melee_parry_in_window(e->windup)) return true;
     }
     return false;
 }
@@ -700,10 +853,12 @@ void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int k
     combat_apply_hit(&e->h, &e->armor, &cb->rng, dmg, wound, PART_RANDOM, false, NULL, NULL);
     e->hit_anim = 0.3f;
     e->shown = 6.0f;
-    enemy_down_check(e);
-    if (e->state == EN_DEAD && dist2(e->pos, p->pos) < 40.0f) {
+    EnemyState before = e->state;
+    enemy_down_check(cb, e);
+    if (e->state != before && (e->state == EN_DEAD || e->state == EN_DOWN) && dist2(e->pos, p->pos) < 40.0f) {
         char en[48];
-        snprintf(log, len, T("Un %s abate a un %s."), name, lower_name(T(enemy_def(e->kind)->name), en, sizeof(en)));
+        snprintf(log, len, e->state == EN_DEAD ? T("Un %s mata a un %s.") : T("Un %s tumba a un %s."), name,
+                 lower_name(T(enemy_def(e->kind)->name), en, sizeof(en)));
     }
 }
 
@@ -765,13 +920,15 @@ static void pose_move(BodyPoseParams *pp, int move, float anim, bool guard) {
     if (move == MOVE_GRAPPLE + 1) pp->grab = k, pp->attack = 0.0f;
     if (move == MOVE_SHIELD_BASH + 1 || move == MOVE_SHIELD_CHARGE + 1) pp->guard = 1.0f, pp->attack = 0.0f;
     if (move == MOVE_PARRY + 1 || move == MOVE_DEFLECT + 1 || move == MOVE_HOOK + 1) pp->parry = k, pp->attack = 0.0f;
+    if (move == MOVE_BACKSTAB + 1) pp->hold = k, pp->attack = k; // tapa la boca y apuñala
+    if (move == MOVE_FINISH + 1) pp->crouch = fmaxf(pp->crouch, 0.6f * k), pp->attack = k; // rodilla en tierra
     if (guard) pp->guard = fmaxf(pp->guard, 0.8f);
 }
 
 static void pose_player(BodyPose *b, const Combat *cb, const Player *p, float time) {
     BodyPoseParams pp = { .walk_phase = time * 9.0f, .walk = p->moving ? 1.0f : 0.0f, .attack = cb->attack_anim / 0.4f,
                           .aiming = cb->aiming, .down = cb->player.down || cb->knock > 0.0f, .scale = 1.0f,
-                          .crouch = p->crouching ? 1.0f : p->sneaking ? 0.3f : 0.0f };
+                          .crouch = p->crouching ? 1.0f : p->sneaking ? 0.3f : 0.0f, .hold = cb->hostage ? 1.0f : 0.0f };
     pose_move(&pp, cb->move, cb->move_anim, cb->blocking || cb->charge_timer > 0.0f);
     body_pose(b, &pp);
 }
@@ -781,7 +938,8 @@ static void pose_enemy(BodyPose *b, const Enemy *e, float time, int i) {
     float attack = e->windup > 0.0f ? fmaxf(0.0f, 1.0f - e->windup / MELEE_WINDUP) : e->attack_anim / 0.45f;
     BodyPoseParams pp = { .walk_phase = time * 9.0f + (float)i, .walk = e->speed > 0.2f && !e->mounted ? 1.0f : 0.0f,
                           .attack = attack, .aiming = enemy_def(e->kind)->ranged && e->target >= 0 && e->speed < 0.2f,
-                          .down = e->state == EN_DEAD || e->knock > 0.0f, .scale = 1.0f };
+                          .down = e->state == EN_DEAD || e->state == EN_DOWN || e->knock > 0.0f, .scale = 1.0f,
+                          .held = e->state == EN_HOSTAGE ? 1.0f : 0.0f };
     pose_move(&pp, e->move, e->move_anim, e->blocking);
     body_pose(b, &pp);
 }
@@ -814,6 +972,7 @@ static void shot_hits_player(Combat *cb, Shot *s, int part, Player *p, const Gam
     bool broke = false;
     int wi = combat_apply_hit(&cb->player, &cb->armor, &cb->rng, dmg, pd->wound, part, true, &absorbed, &broke);
     cb->hit_anim = 0.3f;
+    if (dmg >= HOSTAGE_JOLT) g_jolt = true; // un flechazo fuerte suelta al rehen
     char d[128], what[32];
     describe_hit(&cb->player, wi, absorbed, broke, d, sizeof(d));
     snprintf(log, len, T("¡Una %s te alcanza! %s."), lower_name(T(pd->name), what, sizeof(what)), d);
@@ -904,11 +1063,16 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
                 e->hit_anim = 0.3f;
                 e->shown = 6.0f;
                 if (s->owner == 0 && e->target < 0) e->target = 0;
-                enemy_down_check(e);
+                bool was_down = e->state == EN_DOWN;
+                enemy_down_check(cb, e);
                 if (s->owner == 0) {
                     char dsc[128], who[48];
                     lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
-                    if (e->state == EN_DEAD) snprintf(log, len, T("¡Diana! Abatiste al %s (%s)."), who, part_name((BodyPart)part, e->h.beast));
+                    if (was_down && e->state == EN_DEAD) { // rematar de un flechazo tambien es rematar
+                        troop_finish_downed(troop);
+                        snprintf(log, len, T("Rematas al %s de un flechazo. Deja botín (F)."), who);
+                    } else if (e->state == EN_DEAD) snprintf(log, len, T("¡Diana! Matas al %s (%s)."), who, part_name((BodyPart)part, e->h.beast));
+                    else if (e->state == EN_DOWN && !was_down) snprintf(log, len, T("¡Diana! El %s cae abatido (%s)."), who, part_name((BodyPart)part, e->h.beast));
                     else describe_hit(&e->h, wi, absorbed, broke, dsc, sizeof(dsc)), snprintf(log, len, T("Le das al %s: %s."), who, dsc);
                 }
             }
@@ -1037,10 +1201,34 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             continue;
         }
         health_update(&e->h, &cb->rng, dt, false, 0.0f);
-        enemy_down_check(e); // se desangro
+        enemy_down_check(cb, e); // se desangro
         if (e->state == EN_DEAD) continue;
         if (dist2(e->pos, p->pos) > DESPAWN_DIST) {
             e->used = false;
+            continue;
+        }
+        e->alert = fmaxf(0.0f, e->alert - dt);
+        if (e->state == EN_DOWN) { // abatido: en el suelo hasta despertar; despierta herido, huye y avisa a los suyos
+            e->speed = 0.0f;
+            if (down_tick(&e->timer, dt)) {
+                health_revive(&e->h);
+                e->state = EN_FLEE;
+                e->timer = 45.0f;
+                e->knock = 0.0f;
+                alert_near(cb, e->pos, 30.0f, 25.0f);
+                char who[48];
+                if (dist2(e->pos, p->pos) < 30.0f && !log[0])
+                    snprintf(log, len, T("El %s despierta y huye a avisar a los suyos."), lower_name(T(def->name), who, sizeof(who)));
+            }
+            continue;
+        }
+        if (e->state == EN_HOSTAGE && cb->hostage != i + 1) e->state = EN_CHASE; // nadie lo sujeta: vuelve a pelear
+        if (e->state == EN_HOSTAGE) { // rehen: delante del jugador, sujeto por el cuello
+            e->pos.x = p->pos.x + sinf(p->yaw) * HOSTAGE_AHEAD;
+            e->pos.z = p->pos.z + cosf(p->yaw) * HOSTAGE_AHEAD;
+            e->pos.y = surface_y(t, e->pos.x, e->pos.z);
+            e->yaw = p->yaw;
+            e->speed = p->moving ? 1.0f : 0.0f;
             continue;
         }
         e->cooldown = fmaxf(0.0f, e->cooldown - dt);
@@ -1058,12 +1246,14 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         // Objetivo: el mas cercano que vea (al acechar cuesta mas verte; los lobos ven de noche).
         float sight = def->sight * player_visibility(p, ga->hidden) * (night && !def->beast ? 0.7f : 1.0f) *
                       (1.0f - 0.5f * ig_stat(ga, STAT_STEALTH)); // el amuleto del lobo: cuesta mas verte
+        // De donde vienes: de frente te ve; por detras solo te oye (src/sim/stealth.h).
+        sight *= stealth_sight_scale(stealth_facing(e->pos.x, e->pos.z, e->yaw, p->pos.x, p->pos.z), p->noise);
         Vector3 tpos = { 0 };
         float best = 1e9f;
         int target = -1;
         if (!cb->player.down) {
             float d = dist2(e->pos, p->pos);
-            if (d < sight || (e->target == 0 && d < sight * 1.5f)) best = d, target = 0, tpos = p->pos;
+            if (d < sight || (e->target == 0 && d < sight * 1.5f) || (e->alert > 0.0f && d < 60.0f)) best = d, target = 0, tpos = p->pos;
         }
         for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
             const Npc *n = &ga->npcs[k];
@@ -1090,6 +1280,10 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             }
         }
         if (target >= 0 && def->flee_at > 0.0f && e->h.hp < (def->flee_at + 0.6f * dread) * e->h.hp_max) e->state = EN_FLEE, e->timer = 8.0f;
+        // El jugador tiene de rehen a uno de los suyos: no se le acercan, no pegan, y el arquero no tira
+        // si el rehen le tapa el blanco (y si tira, falla mas).
+        const Enemy *hostage = hostage_of(cb);
+        bool hold_back = hostage && target == 0 && same_side(e->kind, hostage->kind);
         if (e->state == EN_FLEE) {
             if (e->timer <= 0.0f) e->state = EN_WANDER;
             Vector3 from = target >= 0 ? tpos : p->pos;
@@ -1104,17 +1298,24 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
                 Vector3 dir = Vector3Normalize((Vector3){ tpos.x - e->pos.x, 0, tpos.z - e->pos.z });
                 if (best > 28.0f) goal = tpos, speed = def->speed;
                 else if (best < 10.0f) goal = (Vector3){ e->pos.x - dir.x * 4.0f, 0, e->pos.z - dir.z * 4.0f }, speed = def->speed;
-                if (e->reload <= 0.0f && best < 45.0f) {
+                bool covered = hold_back && hostage_blocks_shot(e->pos.x, e->pos.z, p->pos.x, p->pos.z, hostage->pos.x, hostage->pos.z);
+                if (e->reload <= 0.0f && best < 45.0f && !covered) {
                     Vector3 from = aim_origin(e->pos, e->yaw);
                     Vector3 aim = { tpos.x, tpos.y + 1.2f, tpos.z };
                     float pitch;
                     if (ballistic_solve(rd->projectile, to_v3(from), to_v3(aim), ranged_muzzle_speed(rd, 1.0f), &pitch)) {
-                        float err = 0.015f + best * 0.0008f; // a mayor distancia, peor punteria
+                        float err = (0.015f + best * 0.0008f) * (hold_back ? 2.5f : 1.0f); // a mayor distancia, peor punteria; nervioso, peor
                         fire(cb, rd, from, e->yaw + (rng_float(&cb->rng) - 0.5f) * err * 2.0f, pitch + (rng_float(&cb->rng) - 0.5f) * err,
                              1.0f, -(1 + i), false, 1.0f);
                         e->reload = rd->reload + 1.4f + rng_float(&cb->rng);
                         e->attack_anim = 0.3f;
                     }
+                }
+            } else if (hold_back) { // retroceden hasta HOSTAGE_KEEP_AWAY, de cara al jugador
+                e->blocking = false;
+                if (best < HOSTAGE_KEEP_AWAY) {
+                    Vector3 away = Vector3Normalize((Vector3){ e->pos.x - tpos.x, 0, e->pos.z - tpos.z });
+                    goal = (Vector3){ e->pos.x + away.x * 2.0f, 0, e->pos.z + away.z * 2.0f }, speed = def->speed * 0.6f;
                 }
             } else {
                 // Anunciando el golpe, se planta; el jinete no, que pega con la inercia del galope.
@@ -1199,7 +1400,7 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *
         float best_d = 14.0f;
         for (int i = 0; i < CB_MAX_ENEMIES; i++) {
             Enemy *e = &cb->enemies[i];
-            if (!e->used || e->state == EN_DEAD) continue;
+            if (!standing(e)) continue;
             float d = fminf(dist2(n->pos, e->pos), dist2(p->pos, e->pos));
             if (d < best_d) best_d = d, best = e;
         }
@@ -1260,7 +1461,8 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *
             n->move_anim = 0.45f;
             char who[48];
             lower_name(T(enemy_def(best->kind)->name), who, sizeof(who));
-            if (best->state == EN_DEAD) snprintf(log, len, T("%s abatió a un %s."), m->name, who);
+            if (best->state == EN_DEAD) snprintf(log, len, T("%s mató a un %s."), m->name, who);
+            else if (best->state == EN_DOWN && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s tumbó a un %s: queda abatido."), m->name, who);
             else if (r.knocked_down && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s: %s derriba al %s."), move_verb(mv), m->name, who);
             else if (r.shield_dropped && dist2(n->pos, p->pos) < 25.0f) snprintf(log, len, T("%s le arranca el escudo al %s."), m->name, who);
         }
@@ -1400,8 +1602,54 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
 // Los cuatro botones con un arma de mano (o sin armas): H ataque (suelta pronto, golpe y combo;
 // mantenida, golpe pesado), J bloqueo (lo lee cb_update), K parry, L carga con escudo o patada
 // (a la carrera, con inercia). Cubriendose con escudo, H es golpe de escudo.
-static void player_melee_input(Combat *cb, Player *p, GameActions *ga, const Terrain *t, Props *props, bool can_fight,
-                               float dt, char *log, size_t len) {
+// H o K junto a un abatido: rematarlo. A la tribu le pesa segun sus rasgos (src/sim/troop.h).
+static void player_finish(Combat *cb, Player *p, Troop *troop, Enemy *e, char *log, size_t len) {
+    p->yaw = atan2f(e->pos.x - p->pos.x, e->pos.z - p->pos.z);
+    cb->move = MOVE_FINISH + 1;
+    cb->move_anim = 0.9f;
+    cb->attack_anim = 0.45f;
+    cb->attack_cd = move_def(MOVE_FINISH)->recovery;
+    e->h.down = e->h.dead = true;
+    e->state = EN_DEAD;
+    e->corpse = CORPSE_SECONDS;
+    troop_finish_downed(troop);
+    char who[48];
+    snprintf(log, len, T("Rematas al %s: deja botín (F). La tribu lo ve."), lower_name(T(enemy_def(e->kind)->name), who, sizeof(who)));
+}
+
+// F junto a un abatido: lo ata y lo toma prisionero; lo que llevaba queda en el suelo, como botin.
+static bool g_capture_req;
+static float g_capture_d = 1e9f; // al abatido mas cercano, en el ultimo cuadro
+float cb_capture_dist(void) { return g_capture_d; }
+void cb_request_capture(void) { g_capture_req = true; }
+
+static void capture(Combat *cb, GameActions *ga, Troop *troop, Player *p, char *log, size_t len) {
+    Enemy *e = downed_near(cb, p->pos, CB_DOWNED_REACH);
+    if (!e) return;
+    const EnemyDef *def = enemy_def(e->kind);
+    char name[NAME_LEN], who[48];
+    lower_name(T(def->name), who, sizeof(who));
+    snprintf(name, sizeof(name), "%s %d", T(def->name), troop->next_id);
+    if (troop_take_prisoner(troop, name, 0) < 0) {
+        snprintf(log, len, "%s", T("La tribu no tiene sitio para más gente."));
+        return;
+    }
+    p->yaw = atan2f(e->pos.x - p->pos.x, e->pos.z - p->pos.z);
+    cb->move = MOVE_GRAPPLE + 1;
+    cb->move_anim = 0.6f;
+    drop_loot(cb, ga, e, p, log, len);
+    e->used = false;
+    snprintf(log, len, T("Atas al %s y lo tomas prisionero; lo que llevaba queda en el suelo (F)."), who);
+}
+
+// Lo que pide la ventana del parry: un golpe enemigo a punto de caer sobre el jugador.
+static bool parry_due(Combat *cb, const Player *p) {
+    const Enemy *e = incoming(cb, p);
+    return e && melee_parry_in_window(e->windup);
+}
+
+static void player_melee_input(Combat *cb, Player *p, GameActions *ga, Troop *troop, const Terrain *t, Props *props,
+                               bool can_fight, float dt, char *log, size_t len) {
     bool shield = player_has_shield(ga);
     bool running = p->stance == STANCE_RUN && p->moving;
     bool click = !hud_pointer_over() && !g_click_used; // un clic en el HUD, o el que eligio objetivo, no es un golpe
@@ -1419,6 +1667,41 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, const Ter
     if (riding && ready && (k_press || l_press || (cb->blocking && h_press))) {
         snprintf(log, len, "%s", T("A caballo no: solo golpe (H) y golpe pesado (mantener H)."));
         return;
+    }
+    // Con un rehen: K lo ejecuta, L lo empuja; H golpea con la mano libre (no con un arma a dos manos).
+    Enemy *hostage = hostage_of(cb);
+    if (hostage) {
+        if (ready && k_press) {
+            player_backstab(cb, p, hostage, log, len);
+            return;
+        }
+        if (ready && l_press) {
+            release_hostage(cb, p, true, log, len);
+            cb->move = MOVE_KICK + 1, cb->move_anim = 0.45f, cb->attack_cd = 0.6f;
+            return;
+        }
+        if (h_press && ga->hands.right.kind == INV_HANDS_TWO) {
+            snprintf(log, len, "%s", T("Con un rehén solo tienes una mano libre."));
+            return;
+        }
+        if (k_press || l_press) return;
+    } else if (ready && !riding && k_press && cb->charge_timer <= 0.0f && !parry_due(cb, p)) {
+        // K con la espalda ganada: ejecucion silenciosa.
+        Enemy *b = back_open(cb, p);
+        if (b) {
+            player_backstab(cb, p, b, log, len);
+            return;
+        }
+    }
+    // H o K junto a un abatido, sin nadie en pie a tiro (ni un golpe que parar): rematarlo.
+    if (ready && !riding && (h_press || k_press) && cb->charge_timer <= 0.0f) {
+        Enemy *dn = downed_near(cb, p->pos, CB_DOWNED_REACH);
+        float reach = weapon_stats(hands_attack_weapon(&ga->hands, 1, NULL)).reach;
+        bool foe_up = h_press && enemy_in_front(cb, p->pos, p->yaw, reach + 0.3f, NULL);
+        if (dn && !foe_up && !(k_press && parry_due(cb, p))) {
+            player_finish(cb, p, troop, dn, log, len);
+            return;
+        }
     }
     if (k_press && cb->parry_cd <= 0.0f && cb->charge_timer <= 0.0f) {
         player_parry(cb, p, ga, props, log, len);
@@ -1485,12 +1768,14 @@ static void trample(Combat *cb, Player *p, GameActions *ga, Props *props, char *
     lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
     hit_enemy(cb, e, MOVE_RUN_KICK, &r, props, 0, NULL, 0);
     if (e->state == EN_DEAD) snprintf(log, len, T("Arrollas al %s con el caballo: queda en el suelo. Deja botín (F)."), who);
+    else if (e->state == EN_DOWN) snprintf(log, len, T("Arrollas al %s con el caballo: queda abatido."), who);
     else snprintf(log, len, T("¡Arrollas al %s con el caballo!"), who);
     if (e->target < 0) e->target = 0;
     cb->trample_cd = 1.2f;
     (void)ga;
 }
 
+static char g_hint[96]; // lo que se puede hacer ahi (junto a un abatido, con la espalda ganada...)
 static bool g_bandage_req; // vendar pedido desde el HUD
 void cb_request_bandage(void) { g_bandage_req = true; }
 static bool g_light_req; // encender la flecha, pedido desde la columna del HUD
@@ -1523,6 +1808,16 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     cb->loose_n = 0;
     bool can_act = input_ok && !cb->player.down && !ga->climbing && cb->knock <= 0.0f;
     const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);
+    // Abatidos: F junto a uno lo toma prisionero (src/game/actions_game.c lo pide); el aviso de teclas.
+    {
+        Enemy *dn = downed_near(cb, p->pos, 1e9f);
+        g_capture_d = dn ? dist2(dn->pos, p->pos) : 1e9f;
+        if (g_capture_req && input_ok) capture(cb, ga, troop, p, log, log_len);
+        g_capture_req = false;
+        g_hint[0] = '\0';
+        if (g_capture_d <= CB_DOWNED_REACH + 0.8f && ga->mounted < 0)
+            snprintf(g_hint, sizeof(g_hint), "%s", T("Abatido: F lo toma prisionero · H o K lo rematan"));
+    }
     // El objetivo se pierde a TARGET_RANGE o si muere; Tab (en combate) pasa al siguiente.
     keep_target(cb, p);
     int req = ga_take_target_request();
@@ -1532,8 +1827,27 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     bool shield = player_has_shield(ga);
     bool melee_weapon = !rd && hands_attack_weapon(&ga->hands, 1, NULL)[0] != '\0';
     bool guard_key = input_action_down(KA_BLOCK) || input_right_hold() || g_hud_block;
-    cb->blocking = can_act && guard_key && !ga->hands.sheathed && cb->stagger <= 0.0f && cb->exposed <= 0.0f &&
+    cb->blocking = can_act && guard_key && !ga->hands.sheathed && cb->stagger <= 0.0f && cb->exposed <= 0.0f && !cb->hostage &&
                    (shield || (melee_weapon && !player_winded()));
+    // G: agarrar por la espalda (rehen) o soltarlo. Un golpe fuerte, caer o montar lo sueltan.
+    Enemy *back = !cb->hostage && ga->mounted < 0 ? back_open(cb, p) : NULL;
+    g_back = back ? (int)(back - cb->enemies) + 1 : 0;
+    bool grab = (input_action_pressed(KA_GRAB) || g_hud_grab) && input_ok;
+    if (cb->hostage && (g_jolt || cb->knock > 0.0f || cb->player.down || ga->mounted >= 0 || !hostage_of(cb))) {
+        bool had = hostage_of(cb) != NULL;
+        release_hostage(cb, p, false, NULL, 0);
+        if (had) snprintf(log, log_len, "%s", ga->mounted >= 0 ? T("Sueltas al rehén para montar.") : T("¡Con el golpe se te escapa el rehén!"));
+    } else if (grab && cb->hostage) {
+        release_hostage(cb, p, false, log, log_len);
+    } else if (grab && back && can_act && !rd) {
+        take_hostage(cb, p, back, log, log_len);
+    } else if (grab) {
+        snprintf(log, log_len, "%s", rd ? T("Con un arma a distancia en las manos no puedes agarrar a nadie.")
+                                        : T("G agarra por la espalda (sin que te vean, o a uno aturdido). La mochila va con Mayús+G."));
+    }
+    g_jolt = false;
+    if (cb->hostage) snprintf(g_hint, sizeof(g_hint), "%s", T("Rehén: G lo suelta · K lo ejecuta · L lo empuja"));
+    else if (back) snprintf(g_hint, sizeof(g_hint), "%s", T("Por la espalda: K lo ejecuta en silencio · G lo toma de rehén"));
     if (rd && can_act && (input_action_pressed(KA_LIGHT_ARROW) || g_light_req)) light_arrow(cb, ga, rd, log, log_len);
     g_light_req = false;
     if (cb->arrow_lit) {
@@ -1545,14 +1859,14 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     }
     if (rd) {
         if (guard_key && can_act) cb->aiming = false, cb->draw = 0.0f; // J baja el arma
-        else player_ranged(cb, p, ga, props, rd, can_act && cb->exposed <= 0.0f, cam_yaw, cam_pitch, dt, log, log_len);
+        else player_ranged(cb, p, ga, props, rd, can_act && cb->exposed <= 0.0f && !cb->hostage, cam_yaw, cam_pitch, dt, log, log_len);
         // L con el arma a distancia (sin Mayus, que enciende la flecha): patada.
         bool kick = (input_action_pressed(KA_CHARGE) && !(input_mods() & KM_SHIFT)) || g_hud_charge;
         if (kick && can_act && cb->attack_cd <= 0.0f && cb->stagger <= 0.0f && ga->mounted < 0)
             player_move(cb, p, ga, t, props, MOVE_KICK, log, log_len);
     } else {
         cb->aiming = false;
-        player_melee_input(cb, p, ga, t, props, can_act && cb->stagger <= 0.0f && cb->exposed <= 0.0f, dt, log, log_len);
+        player_melee_input(cb, p, ga, troop, t, props, can_act && cb->stagger <= 0.0f && cb->exposed <= 0.0f, dt, log, log_len);
     }
     if (input_ok && (input_action_pressed(KA_BANDAGE) || g_bandage_req)) bandage(cb, ga, troop, props, p, log, log_len);
     g_bandage_req = false;
@@ -1579,12 +1893,13 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     ga->pl_move = cb->move_anim > 0.0f ? cb->move : 0;
     ga->pl_limping = health_speed_scale(&cb->player) < 0.85f;
     ga->pl_ranged = cb->aiming ? ranged_anim(rd) : 0;
+    ga->pl_holding = cb->hostage != 0;
     // En combate (algun enemigo vivo a tiro de objetivo), Tab elige objetivo en vez de abrir el menu.
     bool near = false;
     for (int i = 0; i < CB_MAX_ENEMIES && !near; i++)
-        near = cb->enemies[i].used && cb->enemies[i].state != EN_DEAD && dist2(cb->enemies[i].pos, p->pos) < TARGET_RANGE;
+        near = standing(&cb->enemies[i]) && dist2(cb->enemies[i].pos, p->pos) < TARGET_RANGE;
     ga_set_combat_near(near);
-    g_hud_attack_press = g_hud_attack_down = g_hud_block = g_hud_parry = g_hud_charge = false;
+    g_hud_attack_press = g_hud_attack_down = g_hud_block = g_hud_parry = g_hud_charge = g_hud_grab = false;
     g_click_used = false;
 }
 
@@ -1661,7 +1976,7 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         const EnemyDef *def = enemy_def(e->kind);
         const InvItem *it = inventory_find(ga->inv, def->model);
         if (!it) continue;
-        bool dead = e->state == EN_DEAD;
+        bool dead = e->state == EN_DEAD, downed = e->state == EN_DOWN;
         Vector3 at = e->pos;
         if (e->mounted && !dead) { // a caballo: el jinete va encima
             cb_draw_horse(e->pos, e->yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
@@ -1670,12 +1985,13 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         if (props_has_model(props, it)) {
             HumanoidState hs = { .moving = e->speed > 0.2f, .running = e->speed > 3.5f, .grounded = true, .doing = -1,
                                  .mounted = e->mounted && !dead,
-                                 .building = -1, .dead = dead, .hit = e->hit_anim > 0.0f,
+                                 .building = -1, .dead = dead, .down = downed, .hit = e->hit_anim > 0.0f,
                                  .attacking = (e->attack_anim > 0.0f || e->windup > 0.0f) && !def->ranged ? 1 + i % 3 : 0,
                                  .ranged = def->ranged && e->target >= 0 && e->speed < 0.2f ? 1 : 0,
                                  .limping = health_speed_scale(&e->h) < 0.85f,
                                  .grip = e->shield ? GRIP_WEAPON_SHIELD : e->armed ? GRIP_ONE_HANDED : GRIP_EMPTY,
-                                 .blocking = e->blocking, .move = e->move_anim > 0.0f ? e->move : 0, .knocked = e->knock > 0.0f };
+                                 .blocking = e->blocking, .move = e->move_anim > 0.0f ? e->move : 0, .knocked = e->knock > 0.0f,
+                                 .held = e->state == EN_HOSTAGE };
             const char *clip = anim_humanoid(&hs);
             // Muerto: el clip se queda en su ultimo tramo en vez de repetirse.
             float tt = dead ? fminf(CORPSE_SECONDS - e->corpse, 1.2f) : time + (float)i * 0.31f;
@@ -1745,7 +2061,12 @@ void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
         const Enemy *e = &cb->enemies[i];
         bool target = e == te;
-        if (!e->used || e->state == EN_DEAD || (!target && e->shown <= 0.0f && e->target < 0)) continue;
+        if (!e->used || e->state == EN_DEAD) continue;
+        if (e->state == EN_DOWN) { // abatido: una barra gris con lo que le falta para despertar
+            bar_at(cam, e->pos, 0.7f, e->timer / DOWN_WAKE_MAX, UI_BONE_DIM, w, h, false);
+            continue;
+        }
+        if (!target && e->shown <= 0.0f && e->target < 0) continue;
         float top = e->mounted ? 3.1f : 2.0f;
         if (!bar_at(cam, e->pos, top, e->h.hp / e->h.hp_max, UI_CARNELIAN, w, h, target)) continue;
         // Su golpe esta en la ventana del parry: un rombo que destella sobre la barra (K).
@@ -1755,6 +2076,12 @@ void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop
             DrawTriangle((Vector2){ s.x, s.y - 5 }, (Vector2){ s.x - 4, s.y }, (Vector2){ s.x + 4, s.y }, c);
             DrawTriangle((Vector2){ s.x - 4, s.y }, (Vector2){ s.x, s.y + 5 }, (Vector2){ s.x + 4, s.y }, c);
         }
+    }
+    // La espalda ganada: una daga sobre su cabeza (K lo ejecuta, G lo toma de rehen).
+    if (g_back > 0 && g_back <= CB_MAX_ENEMIES && standing(&cb->enemies[g_back - 1])) {
+        const Enemy *e = &cb->enemies[g_back - 1];
+        Vector2 s = GetWorldToScreenEx((Vector3){ e->pos.x, e->pos.y + 2.25f, e->pos.z }, cam, w, h);
+        ui_icon(ICON_DAGA, s.x - 8.0f, s.y - 8.0f, 16.0f, Fade(UI_GOLD_LIGHT, 0.75f + 0.25f * blink));
     }
     for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
         const Member *m = &troop->members[k];
@@ -1790,6 +2117,8 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
             ui_bar(w / 2 - 50, h - 70, 100, fminf(1.0f, cb->draw / rd->draw_time), UI_GOLD, UI_METAL_GOLD);
     }
 
+    if (g_hint[0] && !ph->down) ui_text_centered(g_hint, w / 2, h - 96, 10, UI_TURQUOISE);
+
     if (ph->down) {
         DrawRectangle(0, 0, w, h, (Color){ 60, 0, 0, 90 });
         ui_text_centered(T("Estás abatido"), w / 2, h / 2 - 30, 20, UI_CARNELIAN);
@@ -1809,6 +2138,20 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
     bool shield = player_has_shield(ga), riding = ga->mounted >= 0;
     bool free = !cb->player.down && cb->knock <= 0.0f && !ga->climbing && cb->stagger <= 0.0f && cb->exposed <= 0.0f;
     bool ready = free && cb->attack_cd <= 0.0f, cue = !rd && !riding && cb_parry_cue(cb);
+    // La fase 2: con un rehen, K lo ejecuta y L lo empuja; con la espalda ganada, K ejecuta en
+    // silencio; junto a un abatido, H y K lo rematan. G (agarrar o soltar) aparece a la izquierda.
+    bool holding = cb->hostage != 0, back = g_back > 0, downed = g_capture_d <= CB_DOWNED_REACH && !riding;
+    if (holding || back) {
+        Rectangle g = { (float)(x0 - tile - gap - 6), (float)y, (float)tile, (float)tile };
+        hud_plate((int)g.x - 3, y - 3, tile + 6, tile + 6);
+        bool hv = hud_hover(g);
+        ui_tile(g, ICON_GUANTES, holding, free && !rd);
+        ui_tile_badge(g, keymap_text(KA_GRAB), UI_GOLD_LIGHT);
+        if (hv)
+            ui_legend(holding ? T("Soltar al rehén") : T("Agarrar: rehén"),
+                      holding ? T("G: lo sueltas.") : T("G: lo agarras por el cuello y te cubres con él; los suyos no se acercan ni disparan."));
+        g_hud_grab |= ui_click(g);
+    }
     hud_plate(x0 - 3, y - 3, n * tile + (n - 1) * gap + 6, tile + 6);
     for (int i = 0; i < n; i++) {
         Rectangle r = { (float)(x0 + i * (tile + gap)), (float)y, (float)tile, (float)tile };
@@ -1819,9 +2162,10 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
             key = keymap_text(KA_ATTACK);
             icon = rd ? icon_for_item(rd->weapon) : weapon[0] ? icon_for_item(weapon) : ICON_GOLPE;
             on = cb->attack_anim > 0.0f || cb->aiming;
-            title = rd ? T("Disparar") : T("Atacar");
-            detail = rd ? T("H o clic: tensa y suelta. Apunta al objetivo (o al más cercano delante).")
-                        : T("H o clic: golpe (encadena hasta tres). Mantener: golpe pesado.");
+            title = downed && !rd ? T("Rematar") : rd ? T("Disparar") : T("Atacar");
+            detail = downed && !rd ? T("H junto a un abatido: lo rematas (a la tribu no le es indiferente).")
+                     : rd ? T("H o clic: tensa y suelta. Apunta al objetivo (o al más cercano delante).")
+                          : T("H o clic: golpe (encadena hasta tres). Mantener: golpe pesado.");
         } else if (i == 1) { // J: bloqueo
             key = keymap_text(KA_BLOCK);
             icon = shield ? ICON_ESCUDO : ICON_COBERTURA;
@@ -1831,6 +2175,14 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
             detail = rd       ? T("J: baja el arma (si llevas escudo, te cubre).")
                      : shield ? T("J o clic derecho, mantener: el escudo cubre el frente. Con H, golpe de escudo.")
                               : T("J o clic derecho, mantener: paras con el arma; aguanta la mitad y cansa.");
+        } else if (i == 2 && (holding || back || (downed && !cue))) { // K: ejecutar o rematar
+            key = keymap_text(KA_PARRY);
+            icon = ICON_DAGA;
+            on = holding || back;
+            title = holding ? T("Ejecutar al rehén") : back ? T("Por la espalda") : T("Rematar");
+            detail = holding ? T("K: lo ejecutas delante de los suyos.")
+                     : back  ? T("K: lo matas en silencio; solo lo oyen los que están a menos de 6 m.")
+                             : T("K junto a un abatido: lo rematas (a la tribu no le es indiferente).");
         } else if (i == 2) { // K: parry
             key = keymap_text(KA_PARRY);
             icon = ICON_PARADA;
@@ -1845,6 +2197,11 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
                      : k == PARRY_GRAPPLE
                          ? T("K justo antes del golpe enemigo: llave y derribo, y lo desarmas. A destiempo, quedas expuesto.")
                          : T("K justo antes del golpe enemigo: desvías y queda abierto un segundo. A destiempo, quedas expuesto.");
+        } else if (holding) { // L: empujar al rehen
+            key = keymap_text(KA_CHARGE);
+            icon = ICON_PATADA;
+            title = T("Empujar al rehén");
+            detail = T("L: lo empujas y cae de bruces.");
         } else { // L: carga o patada
             key = keymap_text(KA_CHARGE);
             bool charge = shield && !rd;

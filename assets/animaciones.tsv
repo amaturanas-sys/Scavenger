@@ -59,6 +59,10 @@ humanoide	carga_escudo	Carga tras el escudo, que empuja.	no	*	obligatoria	carga 
 humanoide	enganchar_escudo	Enganchar el escudo enemigo con el arma y tirar.	no	*	obligatoria	parry (K) con hacha o guja
 humanoide	parry	Parry: el arma se cruza ante el golpe que llega (en la ventana justa).	no	*	obligatoria	parry (K)
 humanoide	desvio	Desvío: el golpe enemigo resbala por el arma y el rival queda abierto.	no	*	obligatoria	parry (K) con otras armas
+humanoide	apunalar_espalda	Por la espalda: tapa la boca y apuñala; el otro cae sin un grito.	no	*	obligatoria	K con la espalda ganada; K con un rehén
+humanoide	sujetar_rehen	Sujeta a un rehén por el cuello, delante, con el brazo libre.	si	*	obligatoria	G con la espalda ganada
+humanoide	rehen	Rehén: sujetado por el cuello, las manos al brazo que lo aprieta, arrastra los pies.	si	*	obligatoria	G (lo sufre el enemigo)
+humanoide	rematar	Rematar a un abatido: rodilla en tierra y golpe hacia abajo.	no	*	obligatoria	H o K junto a un abatido
 humanoide	derribado	Derribado: en el suelo un momento y levantarse.	no	*	obligatoria	combate cuerpo a cuerpo
 humanoide	cambiar_mano	Pasar el arma a la otra mano.	no	*	obligatoria	combate cuerpo a cuerpo
 humanoide	disparar_arco	Tensar y soltar.	no	*	obligatoria	combate a distancia

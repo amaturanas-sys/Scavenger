@@ -28,7 +28,12 @@
 //    delante; los golpes enemigos a veces dan a la montura y un derribo te tira;
 //    a distancia, la velocidad dispersa el tiro (la monta lo corrige);
 //  - jinetes bandidos: derribados pierden el caballo (queda suelto);
-//  - botin: los enemigos abatidos dejan una bolsa (F) con lo suyo.
+//  - abatidos: lo que tumba sin herida letal (mazas, patadas, escudos) deja al enemigo en el
+//    suelo; despierta a los 30-90 s y huye a avisar a los suyos. F lo toma prisionero; H o K lo
+//    rematan (a la tribu le pesa segun sus rasgos);
+//  - la espalda (src/sim/stealth.h): por detras y sin que te note (o aturdido), una daga sobre
+//    el enemigo: K lo ejecuta en silencio, G lo toma de rehen (escudo humano);
+//  - botin: los enemigos muertos dejan una bolsa (F) con lo suyo.
 #ifndef ESTEPA_COMBAT_GAME_H
 #define ESTEPA_COMBAT_GAME_H
 
@@ -47,7 +52,15 @@
 #define CB_MAX_ENEMIES 16
 #define CB_MAX_SHOTS 48
 
-typedef enum { EN_WANDER, EN_CHASE, EN_FLEE, EN_DEAD } EnemyState;
+// Los estados crecen al final (se guardan como numeros, docs/PARTIDAS.md).
+typedef enum {
+    EN_WANDER,
+    EN_CHASE,
+    EN_FLEE,
+    EN_DEAD,
+    EN_DOWN,    // abatido: en el suelo, vivo; despierta a los 30-90 s y huye (src/sim/stealth.h)
+    EN_HOSTAGE, // rehen del jugador: sujeto por el cuello, delante de el
+} EnemyState;
 
 typedef struct {
     bool used;
@@ -56,7 +69,7 @@ typedef struct {
     float yaw, speed;
     Health h;
     EnemyState state;
-    float timer, cooldown, attack_anim, hit_anim, corpse, shown, reload;
+    float timer, cooldown, attack_anim, hit_anim, corpse, shown, reload; // timer: abatido, lo que falta para despertar
     int target; // 0 jugador, >0 id del integrante, -1 nadie
     Armor armor;
     // Cuerpo a cuerpo (src/sim/melee.h).
@@ -70,6 +83,7 @@ typedef struct {
     bool awed;         // ya tiro el escarmiento al ver a su objetivo (pieles de depredador)
     float windup;      // s que le quedan al golpe que anuncia (levanta el arma); 0: ninguno
     int windup_move;   // el golpe anunciado (MeleeMove + 1)
+    float alert;       // s que busca al jugador aunque no lo vea (lo avisaron: un abatido que huyo, un grito)
 } Enemy;
 
 typedef struct {
@@ -120,12 +134,17 @@ typedef struct {
     int target_lock;   // enemigo elegido + 1 (0: ninguno)
     float parry_cd;    // espera hasta el proximo parry
     float exposed;     // s expuesto tras un parry a destiempo (ni se cubre ni ataca)
+    // La espalda y los rehenes (fase 2).
+    int hostage;       // enemigo tomado de rehen + 1 (0: ninguno)
 } Combat;
 
 void cb_init(Combat *cb, unsigned seed);
 // Un clic o un toque sobre un enemigo lo elige como objetivo (y ese clic no es un golpe).
 // pointer: en la pantalla virtual de w x h. true si eligio a alguien.
 bool cb_pick_target(Combat *cb, Camera3D cam, Vector2 pointer, int w, int h, char *log, size_t len);
+// Prueba (--espalda, --rehen): el jugador, en sigilo, a la espalda del primer enemigo, que no lo
+// vio; con hostage, ademas lo toma de rehen.
+void cb_test_back(Combat *cb, Player *p, bool hostage, char *log, size_t len);
 // Tab: el objetivo siguiente (dir 1) o el anterior (-1), en orden alrededor del jugador.
 void cb_cycle_target(Combat *cb, const Player *p, int dir, char *log, size_t len);
 // El enemigo elegido (o NULL).
@@ -149,6 +168,11 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
 // Barras de vida sobre enemigos y companeros heridos. Fuera de BeginMode3D.
 void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop, Camera3D cam, int w, int h);
 // Vida del jugador (bajo el calor), panel de heridas (P) y aviso de abatido.
+// Capturar con F a un abatido (src/game/actions_game.c decide si F va a el o a otra cosa):
+// la distancia al abatido mas cercano en el ultimo cuadro, y el pedido.
+#define CB_DOWNED_REACH 1.8f // m: F lo toma prisionero; H o K lo rematan
+float cb_capture_dist(void);
+void cb_request_capture(void);
 void cb_request_bandage(void);     // como pulsar B (desde el HUD)
 void cb_request_light_arrow(void); // como Mayus+L (desde la columna del HUD)
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h);
