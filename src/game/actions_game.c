@@ -47,7 +47,7 @@ static const char *PRESETS[][2] = {
 };
 #define PRESET_COUNT ((int)(sizeof(PRESETS) / sizeof(PRESETS[0])))
 #define REACH 2.2f          // m: alcance para tomar objetos
-#define TARGET_RANGE 14.0f  // m: alcance de la trepa y el lazo
+#define LASSO_RANGE 14.0f  // m: alcance de la trepa y el lazo
 #define SADDLE_RANGE 4.0f   // m: para ensillar o montar
 #define HELP_RANGE 8.0f     // m: el jugador ayuda en una obra si esta cerca
 #define AT_SITE 2.6f        // m: un NPC ya esta en la obra
@@ -121,6 +121,16 @@ void ga_quick_request_wield(const char *id) { snprintf(g_quick_wield, sizeof(g_q
 void ga_quick_request_action(ActionId a) { g_quick_action = (int)a; }
 void ga_quick_request_menu(void) { g_quick_menu = true; }
 void ga_quick_request_swap(void) { g_quick_swap = true; }
+static int g_order_req = -1; // orden a la escolta pedida desde el HUD
+void ga_request_escort_order(int order) { g_order_req = order; }
+
+void ga_escort_order(GameActions *ga, int order, char *log, size_t len) {
+    if (order < 0 || order >= ORDER_COUNT) return;
+    ga->escort_order = order;
+    snprintf(log, len, "%s", order == ORDER_ATTACK   ? T("Escolta: ¡al ataque! Van a tu objetivo o al enemigo más cercano.")
+                             : order == ORDER_DEFEND ? T("Escolta: te defienden; no se alejan de tu lado.")
+                                                     : T("Escolta: te siguen sin pelear."));
+}
 void ga_set_combat_near(bool near) { g_combat_near = near; }
 int ga_take_target_request(void) {
     int r = g_target_req;
@@ -262,7 +272,7 @@ static int wall_ahead(const Props *props, const Player *p) {
     for (int i = 0; i < props->count; i++) {
         const char *id = props->items[i].item->id;
         if (!strstr(id, "empalizada") && !strstr(id, "muro") && !strstr(id, "muralla")) continue;
-        if (in_front(p, props->items[i].pos.x, props->items[i].pos.z, TARGET_RANGE)) return i;
+        if (in_front(p, props->items[i].pos.x, props->items[i].pos.z, LASSO_RANGE)) return i;
     }
     return -1;
 }
@@ -342,7 +352,7 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
         }
         break;
     case ACTION_THROW_LASSO:
-        if ((ga->target = animal_ahead(ga, p, ANIMAL_WILD, TARGET_RANGE, true)) < 0) {
+        if ((ga->target = animal_ahead(ga, p, ANIMAL_WILD, LASSO_RANGE, true)) < 0) {
             snprintf(log, len, "%s", T("No hay un animal salvaje a tiro de lazo delante."));
             return;
         }
@@ -691,6 +701,7 @@ static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const T
         Npc *n = &ga->npcs[i];
         const Member *m = &troop->members[i];
         if (m->status != STATUS_ACTIVE || n->escort || m->journey > 0) continue; // de viaje: lo mueve src/game/travel_game.c
+        if (n->guarding || n->alarm > 0.0f) continue; // de guardia o escondiendose: lo mueve src/game/combat_game.c
         if (n->project >= 0 && n->project < ga->project_count) {
             const BuildProject *bp = &ga->projects[n->project];
             float ang = (float)i * 1.3f; // cada uno en su lado de la obra
@@ -794,6 +805,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     sync_npcs(ga, troop, t);
     ga->swap_anim = fmaxf(0.0f, ga->swap_anim - dt);
     bool other_menu = ga->inv_open || ga->equip_open || ga->dlg.open; // inventario, equipo o un dialogo
+    if (g_order_req >= 0) ga_escort_order(ga, g_order_req, log, log_len), g_order_req = -1;
     // Tab: en combate elige el objetivo (con Mayus, el anterior); si no, el menu de acciones.
     bool tab = input_action_pressed(KA_MENU);
     if (tab && g_combat_near && !ga->menu_open && !other_menu) g_target_req = input_mods() & KM_SHIFT ? -1 : 1;
@@ -1118,7 +1130,7 @@ static Color role_color(Role r) {
     }
 }
 
-void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time) {
+void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time, bool night) {
     props_draw(props);
     for (int i = 0; i < props->count; i++) { // fogatas y hogueras: piedras, leños, llamas y humo
         const Prop *pr = &props->items[i];
@@ -1138,6 +1150,7 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         const Npc *n = &ga->npcs[i];
         if (m->status != STATUS_ACTIVE || n->member_id != m->id) continue;
         if (m->journey > 0 && n->leave_t >= 14.0f) continue; // ya se perdio en el horizonte
+        if (n->sheltered || dist2d(n->pos, p->pos) > 150.0f) continue; // escondido en una yurta, o lejos (no se ve)
         float s = m->champion >= 0 ? troop->champions[m->champion].stats.size : 1.0f;
         bool working = n->project >= 0 && n->project < ga->project_count &&
                        dist2d(n->pos, (Vector3){ ga->projects[n->project].x, 0, ga->projects[n->project].z }) < AT_SITE;
@@ -1173,6 +1186,15 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         if (m->health.down) continue;
         if (m->champion >= 0) DrawSphere((Vector3){ base.x, base.y + 1.85f * s, base.z }, 0.08f, UI_GOLD);
     }
+    // De noche, los guardias hacen la ronda con antorcha (su luz la da ga_lights).
+    for (int i = 0; i < troop->count && i < TROOP_MAX && night; i++) {
+        const Npc *n = &ga->npcs[i];
+        if (!n->guarding || troop->members[i].status != STATUS_ACTIVE || dist2d(n->pos, p->pos) > 150.0f) continue;
+        Vector3 hand = { n->pos.x + cosf(n->yaw) * 0.3f, n->pos.y + 1.05f, n->pos.z - sinf(n->yaw) * 0.3f };
+        DrawCylinderEx(hand, (Vector3){ hand.x, hand.y + 0.55f, hand.z }, 0.025f, 0.03f, 5, (Color){ 96, 70, 44, 255 });
+        float flick = 0.8f + 0.2f * sinf(time * 17.0f + (float)i);
+        DrawSphere((Vector3){ hand.x, hand.y + 0.62f, hand.z }, 0.1f * flick, (Color){ 250, 160, 50, 255 });
+    }
 
     // Lo que el jugador tiene en las manos.
     rlPushMatrix();
@@ -1207,7 +1229,8 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
     if (ga->climbing) DrawLine3D(ga->climb_top, (Vector3){ p->pos.x, p->pos.y + 1.2f, p->pos.z }, (Color){ 140, 110, 70, 255 });
 }
 
-int ga_lights(const GameActions *ga, const Props *props, const Player *p, Vector3 *pos, float *radius, int max) {
+int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, const Player *p, bool night, Vector3 *pos, float *radius,
+              int max) {
     static const struct { const char *id; float radius, height; } emitters[] = {
         { "estructura.campamento.fogata", 9.0f, 0.4f },      { "estructura.campamento.hoguera", 16.0f, 0.8f },
         { "estructura.campamento.horno_cocina", 4.0f, 0.6f }, { "estructura.campamento.horno_bronce", 7.0f, 1.0f },
@@ -1225,6 +1248,13 @@ int ga_lights(const GameActions *ga, const Props *props, const Player *p, Vector
     }
     if (ga->torch_lit && !ga->hands.sheathed && n < max) {
         pos[n] = (Vector3){ p->pos.x, p->pos.y + p->draw_lift + 1.6f, p->pos.z };
+        radius[n++] = 6.0f;
+    }
+    // Las antorchas de los guardias de noche (las cercanas: hay pocas luces).
+    for (int i = 0; i < troop->count && i < TROOP_MAX && night && n < max; i++) {
+        const Npc *g = &ga->npcs[i];
+        if (!g->guarding || troop->members[i].status != STATUS_ACTIVE || dist2d(g->pos, p->pos) > 80.0f) continue;
+        pos[n] = (Vector3){ g->pos.x, g->pos.y + 1.7f, g->pos.z };
         radius[n++] = 6.0f;
     }
     return n;

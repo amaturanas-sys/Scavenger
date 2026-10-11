@@ -1,6 +1,6 @@
 # Plan: la gran actualización (v0.5 a v0.9)
 
-> **Estado:** fases 0 (v0.4.4), 1 (v0.5.0) y 2 (v0.5.1) hechas; las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
+> **Estado:** fases 0 (v0.4.4), 1 (v0.5.0), 2 (v0.5.1) y 3 (v0.6.0) hechas; las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
 
 Pedido (5 y 6 de octubre de 2026):
 - combate más ágil, con selector de objetivo y cuatro botones (H J K L);
@@ -155,7 +155,18 @@ Va en esta misma fase, porque los cuatro botones ocupan teclas que hoy hacen otr
 
 **Costo:** medio.
 
-## Fase 3 — Seguidores, escolta y guardias que pelean (v0.6.0)
+## Fase 3 — Seguidores, escolta y guardias que pelean (v0.6.0) — hecha
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **La escolta ya peleaba** (desde antes); ahora lo hace según la orden, con las reglas puras en `src/sim/squad.c` (con tests).
+- **Órdenes:** `Y+1`, `Y+2`, `Y+3`. Para que no choquen, la `Y` sola llama o despide a la escolta al soltarla, y mientras está apretada los números no usan la barra rápida. Las casillas van en fila sobre la barra rápida, solo con la escolta fuera. La orden se guarda en la partida (cero: atacar, como hasta ahora).
+- **Guardias:** nadie tenía `ROLE_GUARD` (no se podía capacitar), así que hacen la guardia los **soldados** que se quedan en el campamento (y `ROLE_GUARD` si alguien lo tiene), salvo el guardián y quien trabaja en una obra. Los soldados pegan un 30 % más fuerte.
+- **Interceptar:** salen a 35 m de su punto de la ronda; si un enemigo entra al campamento (a menos de 40 m del centro), vuelven todos.
+- **Asaltos (nuevo):** sin ellos los guardias no tenían a quién enfrentar, porque los enemigos solo aparecían lejos del campamento. Con el jugador a menos de 150 m de un campamento y tras 10 minutos de juego: 2,5 % por minuto de día y 6 % de noche. Los enemigos ahora atacan a cualquier integrante a la vista, no solo a la escolta.
+- **Pobladores:** con un enemigo (o una fiera) a 30 m del campamento o de ellos, corren a la yurta, tienda o refugio más cercano y quedan escondidos (ni se ven ni se los ataca). Las yurtas del campamento inicial no son objetos del mundo; el juego le pasa sus posiciones al combate.
+- **Rendimiento:** la gente del campamento a más de 150 m del jugador se actualiza cada medio segundo y no se dibuja. Los enemigos ya desaparecían a 160 m.
+- **Pruebas:** `--escolta [atacar|defender|seguir]`, `--guardias` y `--asalto`.
+
 
 **Lo que hay:**
 - la escolta (Y) sigue al jugador y lo levanta si cae;

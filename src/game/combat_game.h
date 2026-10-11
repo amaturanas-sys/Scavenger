@@ -142,6 +142,11 @@ void cb_init(Combat *cb, unsigned seed);
 // Un clic o un toque sobre un enemigo lo elige como objetivo (y ese clic no es un golpe).
 // pointer: en la pantalla virtual de w x h. true si eligio a alguien.
 bool cb_pick_target(Combat *cb, Camera3D cam, Vector2 pointer, int w, int h, char *log, size_t len);
+// Las yurtas del campamento inicial (src/world/camp.h), que no son objetos del mundo: alli se
+// esconden los pobladores en un asalto (con las tiendas, refugios y casas).
+void cb_set_shelters(const Vector3 *pos, int n);
+// Prueba (--asalto): un asalto al campamento mas cercano al jugador.
+void cb_test_raid(Combat *cb, const GameActions *ga, const Player *p, const Terrain *t, char *log, size_t len);
 // Prueba (--espalda, --rehen): el jugador, en sigilo, a la espalda del primer enemigo, que no lo
 // vio; con hostage, ademas lo toma de rehen.
 void cb_test_back(Combat *cb, Player *p, bool hostage, char *log, size_t len);

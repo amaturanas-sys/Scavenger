@@ -59,7 +59,8 @@ add_library(estepa_sim STATIC
   src/sim/save_format.c
   src/sim/keymap.c
   src/sim/targeting.c
-  src/sim/stealth.c)
+  src/sim/stealth.c
+  src/sim/squad.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)

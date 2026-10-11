@@ -547,6 +547,8 @@ int main(int argc, char **argv) {
     bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
     bool start_crouch = false, start_target = false;
     int start_back = 0; // prueba: 1 a la espalda del primer enemigo, 2 ademas con el de rehen
+    int start_escort = -1; // prueba: con la escolta fuera y esa orden (SquadOrder)
+    bool start_raid = false, start_guards = false; // prueba: un asalto al campamento; dos soldados de guardia
     MenuScreen start_menu_screen = MENU_TITLE;
     int start_help_page = 0; // prueba: --pagina N del instructivo
     unsigned start_seed = WORLD_SEED; // --semilla N: el mundo (sin ella, cada partida nueva del menu sortea uno)
@@ -586,6 +588,15 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--objetivo")) start_target = true;
         else if (!strcmp(argv[i], "--espalda")) start_back = 1;
         else if (!strcmp(argv[i], "--rehen")) start_back = 2;
+        else if (!strcmp(argv[i], "--asalto")) start_raid = true;
+        else if (!strcmp(argv[i], "--guardias")) start_guards = true;
+        else if (!strcmp(argv[i], "--escolta")) { // [atacar|defender|seguir]
+            start_escort = ORDER_ATTACK;
+            if (i + 1 < argc && argv[i + 1][0] != '-') {
+                const char *o = argv[++i];
+                start_escort = !strcmp(o, "defender") ? ORDER_DEFEND : !strcmp(o, "seguir") ? ORDER_FOLLOW : ORDER_ATTACK;
+            }
+        }
         else if (!strcmp(argv[i], "--lago")) start_lake = true;
         else if (!strcmp(argv[i], "--mapa-mundo") && i + 1 < argc) map_path = argv[++i];
         else if (!strcmp(argv[i], "--ir") && i + 1 < argc) start_goto = argv[++i];
@@ -1013,6 +1024,7 @@ int main(int argc, char **argv) {
             if (!gallery_mode)
                 tg_update(&g_actions, &g_combat, &troop, &g_props, &player,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
+            cb_set_shelters(camp.yurts, camp.yurt_count); // en un asalto, los pobladores corren a las yurtas
             // Un clic o un toque sobre un enemigo (no sobre el HUD) lo elige como objetivo.
             if (!gallery_mode && !menu && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !hud_pointer_over() &&
                 !ig_blocks_input(&g_actions) && !g_actions.dlg.open)
@@ -1041,6 +1053,15 @@ int main(int argc, char **argv) {
             }
             if (start_target && frame == 30 && !gallery_mode) // prueba: como pulsar Tab con enemigos cerca
                 cb_cycle_target(&g_combat, &player, 1, log, sizeof(log));
+            if (start_guards && frame == 3 && !gallery_mode) // prueba: dos integrantes sin oficio clave pasan a soldados
+                for (int i = 0, k = 0; i < troop.count && k < 2; i++)
+                    if (troop.members[i].role == ROLE_COOK || troop.members[i].role == ROLE_SCOUT || troop.members[i].role == ROLE_NONE)
+                        troop_assign_role(&troop, troop.members[i].id, ROLE_SOLDIER), k++;
+            if (start_raid && frame == 30 && !gallery_mode) cb_test_raid(&g_combat, &g_actions, &player, &terrain, log, sizeof(log));
+            if (start_escort >= 0 && frame == 5 && !gallery_mode) { // prueba: la escolta fuera, con su orden
+                hz_force(&g_hazards, "escolta", &player, &g_actions, &troop, &terrain);
+                g_actions.escort_order = start_escort;
+            }
             if (start_back && frame == 30 && !gallery_mode) // prueba: la espalda ganada (y el rehen)
                 cb_test_back(&g_combat, &player, start_back == 2, log, sizeof(log));
             if (start_crouch && !gallery_mode) { // prueba: agachado (X), de perfil para ver la postura
@@ -1102,7 +1123,7 @@ int main(int argc, char **argv) {
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
         if (gallery_mode) player_draw(&player);
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
-        if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime());
+        if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime(), clock_is_night(world_time));
         if (!gallery_mode) wd_draw_world(&g_actions, &terrain, &player, (float)GetTime());
         if (!gallery_mode) dg_draw_world(&terrain); // calaveras y huesos donde murio el jugador
         if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());
@@ -1130,7 +1151,8 @@ int main(int argc, char **argv) {
             float light_radius[SKY_MAX_LIGHTS];
             light_pos[0] = (Vector3){ camp.fire.x, camp.fire.y + 0.4f, camp.fire.z };
             light_radius[0] = g_actions.fires_out ? 0.0f : 9.0f; // la lluvia apaga la fogata
-            int lights = 1 + ga_lights(&g_actions, &g_props, &player, light_pos + 1, light_radius + 1, SKY_MAX_LIGHTS - 1);
+            int lights = 1 + ga_lights(&g_actions, &g_props, &troop, &player, clock_is_night(world_time), light_pos + 1, light_radius + 1,
+                                       SKY_MAX_LIGHTS - 1);
             sky_draw_lights(cam, light_pos, light_radius, lights, world_time, (float)GetTime(), VIRTUAL_W, VIRTUAL_H);
             weather_draw_screen(&weather, &climate, VIRTUAL_W, VIRTUAL_H);
             cb_draw_overlay(&g_combat, &g_actions, &troop, cam, VIRTUAL_W, VIRTUAL_H);
@@ -1160,6 +1182,7 @@ int main(int argc, char **argv) {
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions) && !g_actions.dlg.open) {
                 hud_quickbar(&g_actions, &g_props, &player, 6, VIRTUAL_H - 54);
                 hud_action_column(&g_actions, 6, 68);
+                hud_escort_orders(&g_actions, &troop, 42, VIRTUAL_H - 84); // atacar, defender, seguir (con la escolta fuera)
                 cb_draw_buttons(&g_combat, &g_actions, VIRTUAL_W, VIRTUAL_H); // H J K L, abajo a la derecha
             }
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);

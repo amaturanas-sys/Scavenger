@@ -370,6 +370,9 @@ Empuñas: %s.	You wield: %s.
 Empuñe: %s%s%s%s%s%s	Grip: %s%s%s%s%s%s
 Encendiste la antorcha (mano izquierda).	You light the torch (left hand).
 Enfundaste las armas: manos libres.	Weapons sheathed: hands free.
+Escolta: te defienden; no se alejan de tu lado.	Escort: they defend you; they won't leave your side.
+Escolta: te siguen sin pelear.	Escort: they follow you without fighting.
+Escolta: ¡al ataque! Van a tu objetivo o al enemigo más cercano.	Escort: attack! They go for your target or the nearest enemy.
 Fabricando: %s.	Crafting: %s.
 Fabricar	Craft
 Falta en el acopio: %s (%d de %d).	Missing from the store: %s (%d of %d).
@@ -633,6 +636,8 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡%s cae herido! Acércate y pulsa B para levantarlo.	%s is down! Get close and press B to lift them.
 ¡Arqueros! Busca cubrirte o acércate rápido.	Archers! Take cover or close in fast.
 ¡Arrollas al %s con el caballo!	You ride down the %s!
+¡Asalto! Fanáticos del culto van hacia %s.	Raid! Cult fanatics are heading for %s.
+¡Asalto! Una banda va hacia %s.	Raid! A band is heading for %s.
 ¡Bandidos! Vienen a por tu botín.	Bandits! They're after your loot.
 ¡Con el golpe se te escapa el rehén!	The blow makes you lose your hostage!
 ¡Diana! El %s cae abatido (%s).	Bullseye! The %s goes down (%s).
@@ -786,6 +791,9 @@ Empuña primero el arma de la casilla %d (tecla %d) para pasarla de mano.	First 
 Encender la flecha	Light the arrow
 Enter o un toque: asignar · Esc: cerrar	Enter or a tap: assign · Esc: close
 Esa habilidad ya no está activa.	That skill is no longer active.
+Escolta: atacar	Escort: attack
+Escolta: defender	Escort: defend
+Escolta: seguir	Escort: follow
 Flechas: elegir · Enter: asignar · Esc: cerrar	Arrows: choose · Enter: assign · Esc: close
 Manos libres	Empty hands
 Mayús+G: deja la mochila en el suelo para moverte ligero, o recógela.	Shift+G: drop the backpack to move light, or pick it up.
@@ -798,6 +806,9 @@ Tecla %d: empuñar o enfundar. Mayús+%d: a la otra mano. Alt+%d o clic derecho:
 Tecla %d: usar. Alt+%d o clic derecho: cambiar.	Key %d: use. Alt+%d or right click: change.
 Vaciar la casilla	Clear the slot
 Vendar	Bandage
+Y+1: van a tu objetivo o al enemigo más cercano.	Y+1: they go for your target or the nearest enemy.
+Y+2: se quedan a tu lado y paran a quien se te acerque.	Y+2: they stay by your side and stop whoever comes close.
+Y+3: te siguen sin pelear.	Y+3: they follow you without fighting.
 agotado	exhausted
 cansado	tired
 con aliento	breathing hard
@@ -966,12 +977,14 @@ tienes %d, hacen falta %d · potencia x%.2f	you have %d, %d needed · power x%.2
 A / D o flechas	A / D or arrows
 A caballo: H golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo.	On horseback: H strikes with more reach and the gallop's momentum; the lance knocks down; at a gallop you trample. A knockdown throws you off the horse.
 A menos de 2 m por la espalda de uno que no te vio (o aturdido), una daga aparece sobre él:	Within 2 m behind someone who hasn't seen you (or is stunned), a dagger appears above them:
+A veces una banda asalta el campamento, más de noche: los que no pelean corren a esconderse en las yurtas y las tiendas.	Sometimes a band raids the camp, more often at night: those who don't fight run to hide in the yurts and tents.
 Abatido, tu escolta te levanta. Si mueres (desangrado o sin socorro), vuelves a tu último lugar de descanso (campamento o tienda) y tus huesos quedan donde caíste. Tus compañeros mueren para siempre.	When downed, your escort lifts you. If you die (bled out or with no help), you return to your last resting place (camp or tent) and your bones stay where you fell. Your companions die for good.
 Abejas: con la antorcha encendida, el humo las calma y F toma la miel.	Bees: with the torch lit, the smoke calms them and F takes the honey.
 Al caer: pulsa la serie de teclas (J K L U I O) a tiempo.	When you fall: press the key sequence (J K L U I O) in time.
 Arco, ballesta u honda: mantén H (o el clic) para tensar y suelta para disparar. Con objetivo, la mira se calcula sola; sin él, la cámara alza la mira: la curva amarilla muestra dónde caerá. J baja el arma; L, patada.	Bow, crossbow or sling: hold H (or click) to draw and release to shoot. With a target, the aim is computed for you; without one, the camera raises the aim: the yellow curve shows where it will land. J lowers the weapon; L, kick.
 Arcos, flechas y armaduras	Bows, arrows and armour
 Armas, aguante y heridas	Weapons, stamina and wounds
+Atacar: van a tu objetivo (Tab) o al enemigo más cercano. Defender: se quedan a tu lado y paran a quien se te acerque. Seguir: no pelean.	Attack: they go for your target (Tab) or the nearest enemy. Defend: they stay by your side and stop whoever comes close. Follow: they don't fight.
 B venda heridas con hierbas (o ungüento) · P equipo y heridas · I inventario	B bandages wounds with herbs (or ointment) · P gear and wounds · I inventory
 B vendar · Mayús+L encender	B bandage · Shift+L light
 Beber de más emborracha: torpe con las armas, cansado y te tambaleas.	Drinking too much gets you drunk: clumsy with weapons, tired and staggering.
@@ -1026,6 +1039,7 @@ Guardar partida	Save game
 Guías una tropa nómada por la estepa: caza, construye, pelea y sobrevive a las estaciones. Un día dura 30 minutos; en invierno las noches son largas.	You lead a nomad band across the steppe: hunt, build, fight and survive the seasons. A day lasts 30 minutes; winter nights are long.
 H o clic: golpe; tres seguidos: combo · mantener: golpe pesado (rompe guardias)	H or click: strike; three in a row: combo · hold: heavy strike (breaks guards)
 H/clic golpe (mantén: pesado)	H/click strike (hold: heavy)
+Heridos, se retiran detrás de ti; abatidos, B los levanta. Los soldados pegan más fuerte.	Wounded, they fall back behind you; downed, B gets them up. Soldiers hit harder.
 Hervirla los echa (Tab, Hervir agua, junto a un fuego). El alcohol también: cerveza, vino, airag y agua con vino son seguros.	Boiling drives them out (Tab, Boil water, by a fire). So does alcohol: beer, wine, airag and watered wine are safe.
 I inventario · P equipo	I inventory · P equipment
 Idioma	Language
@@ -1039,6 +1053,7 @@ K lo mata en silencio: solo lo oyen los que están a menos de 6 m.	K kills silen
 K parry · L carga o patada	K parry · L charge or kick
 L: con escudo, carga que empuja; sin escudo, patada (corriendo, con inercia: tumba aun con escudo)	L: with a shield, a charge that shoves; without one, a kick (running, with momentum: knocks down even a shield bearer)
 La armadura va por piezas (casco, gorjal, coraza, hombreras, brazales, guantes, faldar, grebas, botas). Cada material para distinto el corte, el golpe y la flecha, y se gasta con los impactos.	Armour comes in pieces (helmet, gorget, cuirass, pauldrons, bracers, gauntlets, skirt, greaves, boots). Each material stops cuts, blows and arrows differently, and wears with hits.
+La escolta y la guardia	The escort and the guard
 La espalda, rehenes y abatidos	Backstabs, hostages and the downed
 La estepa	The steppe
 La lluvia apaga todo fuego: antorchas, fogatas, hornos y flechas.	Rain puts out every fire: torches, campfires, furnaces and arrows.
@@ -1057,6 +1072,7 @@ Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se 
 Los lagos helados se cruzan, pero el hielo puede romperse.	Frozen lakes can be crossed, but the ice may break.
 Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.	Menus are icons: hover with the mouse (or pick with the arrows) and the name shows below; click or Enter to use them.
 Los rayos caen sobre lo alto durante las tormentas.	Lightning strikes high ground during storms.
+Los soldados que se quedan en el campamento hacen la guardia: rondan un anillo a 40-60 m, salen al encuentro de quien lo cruce y vuelven si alguien entra. De noche llevan antorcha. El guardián (F) capacita soldados.	Soldiers who stay at the camp keep watch: they patrol a ring 40-60 m out, go out to meet whoever crosses it and come back if someone gets in. At night they carry torches. The keeper (F) trains soldiers.
 M mapa · N beber · U ficha	M map · N drink · U card
 Mayús+G (o la columna) deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	Shift+G (or the column) drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
 Mayús+L (o la columna) junto a un fuego enciende la flecha: quema y prende lo que toca.	Shift+L (or the column) by a fire lights the arrow: it burns and sets alight what it hits.
@@ -1084,7 +1100,7 @@ Socavones de nieve y arena movediza aparecen cada día en otro lugar.	Snow sinkh
 Subes de nivel peleando, cazando, fabricando, construyendo y domando.	You level up by fighting, hunting, crafting, building and taming.
 Tab acciones/fabricar	Tab actions/craft
 Tab en combate: el objetivo siguiente (Mayús+Tab, el anterior), o toca al enemigo. Un anillo dorado lo marca y los golpes y las flechas van a él.	Tab in combat: the next target (Shift+Tab, the previous one), or tap the enemy. A gold ring marks it and blows and arrows go to it.
-Tab objetivo (en combate)	Tab target (in combat)
+Tab objetivo · Y+1-3 escolta	Tab target · Y+1-3 escort
 Tab, Llenar el odre en la orilla: agua cruda (3 tragos por odre). Fabricar: agua con vino, airag y cerveza de pan.	Tab, Fill the waterskin at the shore: raw water (3 sips per waterskin). Craft: watered wine, airag and bread beer.
 Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario	Tab: actions, works, craft and repair (Q/E switches tab) · I: inventory
 Tatuajes (para siempre): habla (F) con el druida, elige motivo y zona. Lobo, ciervo, grifo, tamga y olas suben en tres grados; el tercero se bifurca y elegir una rama cierra la otra. La zona del cuerpo cambia a qué va el bonus.	Tattoos (forever): talk (F) to the druid, choose motif and zone. Wolf, deer, griffin, tamga and waves rise in three tiers; the third branches and choosing one closes the other. The body zone changes what the bonus goes to.
@@ -1097,7 +1113,9 @@ Volver a una partida guardada	Return to a saved game
 Volver al juego (Esc)	Back to the game (Esc)
 WASD mover · Shift correr	WASD move · Shift run
 WASD mover · Shift correr · C sigilo · X agacharse (tras rocas, matas o hierba alta te ocultas)	WASD move · Shift run · C sneak · X crouch (you hide behind rocks, bushes or tall grass)
+Y llama a dos integrantes de escolta (Y otra vez: vuelven al campamento). Pelean a tu lado con las mismas reglas que tú.	Y calls two members as an escort (Y again: back to camp). They fight by your side by the same rules as you.
 Y: dos integrantes te escoltan · Mayús+Y: despachar o mandar un mensajero · U: ficha del gran guerrero	Y: two members escort you · Shift+Y: dispatch or send a messenger · U: great warrior card
+Órdenes (Y+1, Y+2, Y+3, o las casillas sobre la barra rápida): atacar, defender o seguir.	Orders (Y+1, Y+2, Y+3, or the tiles above the quick bar): attack, defend or follow.
 # --- src/game/travel_game.c
 %.0f m · ida y vuelta ~%.0f s · %d libres allí	%.0f m · round trip ~%.0f s · %d free there
 %.0f m · ~%.0f s · lo conocen %d de %d · riesgo %d%%	%.0f m · ~%.0f s · %d of %d know it · risk %d%%

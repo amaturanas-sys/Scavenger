@@ -62,6 +62,7 @@ void save_summary(const GameState *g, FILE *o) {
             (unsigned)ga->rng.state, ga->preset, ga->torch_lit, ga->doing, ga->timer, ga->target, ga->here, ga->mounted, ga->next_group,
             ga->crafting, ga->craft_timer);
     fprintf(o, "  manos: [%s] [%s] enfundado %d lleva [%s]\n", ga->hands.right.id, ga->hands.left.id, ga->hands.sheathed, ga->hands.carried);
+    fprintf(o, "  orden a la escolta %d\n", ga->escort_order); // v0.6.0
     for (int k = 0; k < CAMPS_MAX; k++) {
         const CampSite *c = &ga->camps[k];
         if (!c->used) continue;
@@ -89,6 +90,9 @@ void save_summary(const GameState *g, FILE *o) {
         if (n->member_id)
             fprintf(o, "  npc %d integrante %d (%.2f, %.2f) obra %d trabajo %d escolta %d casa %d\n", i, n->member_id, n->pos.x, n->pos.z,
                     n->project, n->job, n->escort, n->home_camp);
+        if (n->member_id && (n->guarding || n->alarm > 0.0f || n->sheltered)) // v0.6.0
+            fprintf(o, "    guardia %d ronda %.3f punto %d alarma %.3f escondido %d en (%.2f, %.2f)\n", n->guarding, n->patrol_a, n->patrol_step,
+                    n->alarm, n->sheltered, n->hide_at.x, n->hide_at.z);
     }
     int swarms = 0;
     for (int i = 0; i < GA_MAX_SWARMS; i++) swarms += ga->swarms[i].used;

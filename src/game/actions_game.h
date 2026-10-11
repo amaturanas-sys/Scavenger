@@ -29,6 +29,7 @@
 #include "sim/talents.h"
 #include "sim/travel.h"
 #include "sim/storage.h"
+#include "sim/squad.h"
 #include "sim/swarms.h"
 #include "world/props.h"
 #include "world/terrain.h"
@@ -61,6 +62,13 @@ typedef struct {
     float leave_t;     // despachado: s que lleva alejandose hacia el horizonte (luego desaparece)
     Vector3 leave_dir;
     signed char comfort; // con su ropa: -1 pasa frio, 1 pasa calor, 0 a gusto (src/game/apparel_game.c)
+    // Defensa del campamento (src/game/combat_game.c, src/sim/squad.h).
+    bool guarding;     // de guardia: hace la ronda (o sale al encuentro)
+    float patrol_a;    // angulo donde empezo su ronda
+    int patrol_step;   // punto de la ronda al que va
+    float alarm;       // s de alarma: corre a esconderse
+    bool sheltered;    // escondido en una yurta o tienda (no se ve ni se le ataca)
+    Vector3 hide_at;   // donde se esconde
 } Npc;
 
 typedef struct {
@@ -161,6 +169,7 @@ typedef struct {
     // Estado de combate y salud del jugador para la animacion (lo pone src/game/combat_game.c).
     bool pl_down, pl_hit, pl_blocking, pl_limping, pl_spear, pl_knocked;
     bool pl_holding; // sujeta a un rehen (src/game/combat_game.c)
+    int escort_order; // SquadOrder (src/sim/squad.h): la escolta ataca, defiende o sigue sin pelear (Y+1..3)
     int pl_attacking, pl_ranged, pl_move;
     float swap_anim;    // pasando el arma de mano
 } GameActions;
@@ -184,7 +193,7 @@ void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p)
 // Un dia nuevo: comida y recoleccion, efectos de las construcciones, trabajos de los NPCs.
 void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day, float temp_mean,
                 char *log, size_t log_len);
-void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time);
+void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time, bool night);
 // Dibuja al jugador con el modelo del protagonista y su animacion, si ya fue
 // importado. Devuelve false si no (el juego dibuja el marcador de siempre).
 bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time);
@@ -208,11 +217,15 @@ void ga_quick_request_wield(const char *id); // un arma o un escudo, a su mano
 void ga_quick_request_action(ActionId a);
 void ga_quick_request_menu(void);
 void ga_quick_request_swap(void); // pasar el arma empuñada a la otra mano
+// La orden a la escolta (SquadOrder: Y+1..3 o las casillas del HUD), con su aviso.
+void ga_escort_order(GameActions *ga, int order, char *log, size_t len);
+void ga_request_escort_order(int order); // desde el HUD, atendida en el proximo ga_update
 // Tab en combate (src/game/combat_game.c): hay enemigos a tiro de objetivo (Tab elige objetivo en
 // vez de abrir el menu); el pedido de Tab (1 el siguiente, -1 el anterior, 0 nada).
 void ga_set_combat_near(bool near);
 int ga_take_target_request(void);
 
-int ga_lights(const GameActions *ga, const Props *props, const Player *p, Vector3 *pos, float *radius, int max);
+int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, const Player *p, bool night, Vector3 *pos, float *radius,
+              int max);
 
 #endif

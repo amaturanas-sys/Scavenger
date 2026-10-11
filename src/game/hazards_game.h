@@ -90,7 +90,8 @@ void hz_new_day(Hazards *hz, const Climate *c, GameActions *ga, const Props *pro
 void hz_draw_world(const Hazards *hz, const Terrain *t, const GameActions *ga, const Troop *troop, float time);
 // Calor corporal (bajo el minimapa, en right_x/y), minijuego y avisos.
 void hz_draw_hud(const Hazards *hz, const Troop *troop, int right_x, int y, int width, int height);
-// Prueba: arranca en una trampa ("hielo", "nieve", "arena") o con un companero en el hielo ("rescate").
+// Prueba: arranca en una trampa ("hielo", "nieve", "arena"), con un companero en el hielo
+// ("rescate") o con la escolta fuera ("escolta").
 void hz_force(Hazards *hz, const char *what, Player *p, GameActions *ga, Troop *troop, const Terrain *t);
 
 #endif
