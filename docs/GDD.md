@@ -525,7 +525,10 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - la montura suma 80 kg contra los derribos;
   - el 35 % de los golpes que pasan los recibe el caballo;
   - un derribo tira al jinete del caballo.
-- **A distancia montado:** la velocidad dispersa el tiro; la monta (amuleto del caballo) lo corrige.
+- **A distancia montado** (v0.7.1, `src/sim/riding.*`): la dispersión crece con la velocidad (×2,5 a galope tendido sin práctica) y hacia atrás algo más (×1,4 a galope: el **disparo parto**, a más de 100° del rumbo del caballo); la monta (amuletos, tatuajes, joyas) y la puntería lo corrigen. Quieto y hacia delante, como a pie. El caballo mira hacia donde va y el jinete se gira en la montura.
+- **Lanza en ristre** (v0.7.1): con una lanza, L la baja 3 s. Desde 5 m/s, el primero delante del caballo recibe el golpe con la carrera entera (×1 a 5 m/s, hasta ×2,5) y cae el 55-95 % de las veces (un 35 % de eso si lo para con el escudo). Un golpe por carga y 2 s de espera.
+- **El cansancio de la montura** (v0.7.1): el galope gasta su aguante (unos 45 s); al paso se repone en un minuto y quieta en 25 s. Agotada no galopa hasta recobrar el 35 %. Con hambre se cansa un 50 % más rápido y con sed otro 50 % (y se repone más lento), y corre un 15 % menos por cada una. Lo heredado cambia la velocidad y el aguante (±25 %).
+- **Arqueros a caballo** (v0.7.1): rodean al blanco a 24 m y tiran al galope; a menos de 11 m se alejan al galope (tirando hacia atrás) hasta 38 m y vuelven. Vienen en grupos de 2 o 3, entre los jinetes, con las tribus rivales y en la escolta de las caravanas.
 - **Jinetes bandidos:** rápidos, con sable y cuero.
   - Aparecen en grupo o acompañando a los bandidos.
   - Derribados, caen del caballo, que queda suelto y se puede domar con el lazo.
@@ -535,6 +538,14 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - rara vez un amuleto;
   - la mitad de sus piezas de armadura no rotas, con su desgaste.
 - **Recoger el botín:** F junto a la bolsa guarda lo que quepa; el resto se queda en ella. Las bolsas desaparecen a los 15 minutos.
+
+### Cría (implementado en v0.7.1 — `src/sim/animals.*`, en juego `src/game/fauna_game.c`)
+- **Quién se cría:** las monturas (caballo, burro, buey, camello) y el ganado (cabra, becerro). La mula y el elefante, no.
+- **Sexo y lo heredado:** cada animal nace con sexo y con dos rasgos: velocidad y aguante, que solo cuentan montado. Los salvajes, ±10 % (salen de dónde nacieron); los criados, el promedio de sus padres ±5 %, sin pasar de ±25 %.
+- **Preñez y parto:** cada día, en cada campamento, una hembra adulta de la tribu, bien comida y sin sed, con un macho adulto de su especie, queda preñada el 35 % de las veces (del mejor macho del rebaño). A los 3 días pare junto a ella.
+- **Las crías:** tardan 4 días en ser adultas; mientras, son más chicas, no se ensillan ni se montan, ni dan leche. Las que andan fuera del campamento también crecen.
+- **Tope:** como mucho 24 animales de la tribu entre todos y 14 por campamento; sin lugar, la madre espera.
+- **Informes:** la preñez, el nacimiento (con lo heredado) y la cría que ya es adulta salen en los informes del guardián, y los nacimientos en el registro del día.
 
 ### Fauna (implementado — `src/sim/animals.*`, en juego `src/game/fauna_game.*`)
 - **Cinco clases de animales:**

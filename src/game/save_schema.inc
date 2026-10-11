@@ -310,6 +310,11 @@ static const SfField SF_F_Animal[] = {
     SF_ONE(Animal, milked, "bool", SF_BOOL, NULL),
     SF_ONE(Animal, weakened, "bool", SF_BOOL, NULL),
     SF_ONE(Animal, killed_by_human, "bool", SF_BOOL, NULL),
+    SF_ONE(Animal, sex, "unsigned char", SF_UINT, NULL),
+    SF_ONE(Animal, pace, "float", SF_FLOAT, NULL),
+    SF_ONE(Animal, grit, "float", SF_FLOAT, NULL),
+    SF_ONE(Animal, foal, "float", SF_FLOAT, NULL),
+    SF_ONE(Animal, pregnant, "float", SF_FLOAT, NULL),
 };
 static const SfType SF_T_Animal = SF_TYPE(Animal, SF_F_Animal);
 
@@ -604,6 +609,9 @@ static const SfField SF_F_Enemy[] = {
     SF_ONE(Enemy, windup, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, windup_move, "int", SF_INT, NULL),
     SF_ONE(Enemy, alert, "float", SF_FLOAT, NULL),
+    SF_ONE(Enemy, ride_yaw, "float", SF_FLOAT, NULL),
+    SF_ONE(Enemy, orbit_dir, "float", SF_FLOAT, NULL),
+    SF_ONE(Enemy, retreating, "bool", SF_BOOL, NULL),
 };
 static const SfType SF_T_Enemy = SF_TYPE(Enemy, SF_F_Enemy);
 
@@ -632,6 +640,7 @@ static const SfField SF_F_Shot[] = {
     SF_ONE(Shot, stuck, "bool", SF_BOOL, NULL),
     SF_ONE(Shot, dir, "V3", SF_STRUCT, &SF_T_V3),
     SF_ONE(Shot, burning, "bool", SF_BOOL, NULL),
+    SF_ONE(Shot, parthian, "bool", SF_BOOL, NULL),
 };
 static const SfType SF_T_Shot = SF_TYPE(Shot, SF_F_Shot);
 
@@ -679,6 +688,8 @@ static const SfField SF_F_Combat[] = {
     SF_ONE(Combat, parry_cd, "float", SF_FLOAT, NULL),
     SF_ONE(Combat, exposed, "float", SF_FLOAT, NULL),
     SF_ONE(Combat, hostage, "int", SF_INT, NULL),
+    SF_ONE(Combat, couch, "float", SF_FLOAT, NULL),
+    SF_ONE(Combat, couch_cd, "float", SF_FLOAT, NULL),
 };
 static const SfType SF_T_Combat = SF_TYPE(Combat, SF_F_Combat);
 

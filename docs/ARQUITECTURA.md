@@ -29,7 +29,8 @@ src/
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, produccion por oficio, efectos del campamento, forja, fabricar a mano, reparar (y untar con grasa)
     trade.*      el valor de las cosas en plata, precios por region, lo que vende cada mercado y las rutas de las caravanas
-    animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado, anfibios
+    riding.*     la monta: el tiro a caballo (y el disparo parto), la lanza en ristre, el cansancio de la montura y la maniobra de los arqueros a caballo
+    animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado, anfibios, cria (sexo, herencia, preñez)
     swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
     fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano

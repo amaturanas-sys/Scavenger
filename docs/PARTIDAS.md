@@ -77,6 +77,7 @@ Reglas:
 - **`v0.6.1-tribu.sav`:** la tribu trabajando, con la ventana de pobladores abierta.
 - **`v0.6.2-obras.sav`:** obras ubicadas con su giro.
 - **`v0.7.0-caravana.sav`:** el asalto a una caravana, con su escolta peleando.
+- **`v0.7.1-caballos.sav`:** a caballo, con arqueros a caballo alrededor y la cría en el campamento.
 
 | Partida | Qué tiene |
 |---|---|
@@ -89,6 +90,7 @@ Reglas:
 | `tribu` (v0.6.1) | Dos de caza (fuera, no se ven), uno pastoreando, los informes del explorador y de la guardia, dos marcas nuevas en el mapa y la ventana de pobladores abierta con uno elegido. |
 | `obras` (v0.6.2) | Un refugio girado 45° y un muro de empalizada de dos tramos, con sus cuadrillas trabajando. |
 | `caravana` (v0.7.0) | El asalto a una caravana del desierto: la caravana detenida, su escolta (dos jinetes, un bandido y un arquero) peleando con el jugador y el mercado de la caravana como último con quien se habló. |
+| `caballos` (v0.7.1) | El jugador a caballo tras una carga con lanza (la espera de la próxima), arqueros a caballo alejándose al galope, una yegua preñada, un semental y una cría en el campamento. |
 
 `estepa --probar-partidas tests/partidas` (CI, en el job de Linux) hace esto con cada una:
 - la carga;
@@ -122,6 +124,14 @@ La v0.6.1 agregó tareas al final de `CampTaskKind` y `CampTask.member2`, el aco
 El texto de los diálogos creció de 320 a 1024. El resumen sumó, por campamento, sus tareas, el pasto y los informes, y los elegidos de la ventana.
 
 La v0.6.2 agregó `BuildProject.yaw` (cero: como antes, sin girar) y `GA_MAX_PROJECTS` pasó de 8 a 24 (el arreglo crece). El resumen suma el giro de cada obra si no es cero.
+
+La v0.7.1 agregó, al final de cada struct, sin migraciones:
+- a `Animal`: el sexo, la velocidad y el aguante heredados, los días de cría y de preñez. Un sexo en cero (partidas viejas) se asigna solo al primer paso de la fauna (`fauna_update`), con rasgos de ±10 %;
+- a `Enemy`: el rumbo del caballo, el sentido en que rodea y si se aleja;
+- a `Combat`: la lanza en ristre y su espera;
+- a `Shot`: si es un disparo parto.
+
+Además, `ENEMY_HORSE_ARCHER` va al final de `EnemyKind`. El resumen suma la línea de la cría de cada animal, la de la montura de cada enemigo, la lanza en ristre y los disparos partos, solo si no son cero.
 
 La v0.7.0 agregó al final de `CraftId` y `BuildId` las recetas y obras nuevas, y a `GameActions` el comercio y las caravanas: el último mercado (`market_kind`, `market_idx`, `market_region`), la demora y el descanso de cada caravana, el asalto en curso (`caravan_raid`, índice + 1, y dónde) y los campamentos rivales saqueados (`tribe_looted`, un bit por tribu). Todo en cero en las partidas viejas: las caravanas salen a su hora y nada está saqueado. El resumen suma esas líneas solo si no son cero. La plata y el oro pesan menos (50 g la unidad): las partidas viejas cargan igual, solo cambia lo que pesa lo que llevan.
 

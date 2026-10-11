@@ -38,6 +38,7 @@
 #include "../src/sim/fire.h"
 #include "../src/sim/melee.h"
 #include "../src/sim/storage.h"
+#include "../src/sim/riding.h"
 #include "../src/sim/trade.h"
 #include "../src/sim/travel.h"
 #include "../src/sim/troop.h"
@@ -3793,6 +3794,160 @@ static void test_crafts_chains_add_value(void) {
     CHECK(!strcmp(craft_def(CRAFT_FELT_BOOTS)->mats[0].id, "utileria.material.fieltro") && !strcmp(craft_def(CRAFT_FELT)->mats[0].id, "utileria.piel.cabra"));
 }
 
+static void test_mounted_archery_and_lance(void) {
+    // Quieto y hacia delante, a caballo se tira como a pie (la punteria aparte).
+    CHECK(fabsf(mounted_shot_spread(0.0f, 0.0f, 0.0f, 0.0f) - 1.0f) < 1e-5f);
+    CHECK(fabsf(mounted_shot_spread(0.0f, 0.0f, 0.0f, 1.0f) - 0.4f) < 1e-5f);
+    // La carrera abre el tiro; al galope tendido, mucho mas.
+    CHECK(mounted_shot_spread(3.0f, 0.0f, 0.0f, 0.0f) > 1.2f);
+    CHECK(mounted_shot_spread(9.0f, 0.0f, 0.0f, 0.0f) > mounted_shot_spread(3.0f, 0.0f, 0.0f, 0.0f) + 0.5f);
+    // Hacia atras (el disparo parto) se abre mas que hacia delante o de costado, a la misma velocidad.
+    float fwd = mounted_shot_spread(8.0f, 0.2f, 0.0f, 0.0f), side = mounted_shot_spread(8.0f, 1.5f, 0.0f, 0.0f);
+    float back = mounted_shot_spread(8.0f, 3.1f, 0.0f, 0.0f), back2 = mounted_shot_spread(8.0f, -3.0f, 0.0f, 0.0f);
+    CHECK(fabsf(fwd - side) < 1e-5f && back > fwd * 1.3f && fabsf(back - back2) < 1e-5f);
+    // La monta lo corrige (mas al galope que quieto), y la punteria tambien.
+    CHECK(mounted_shot_spread(8.0f, 3.1f, 1.0f, 0.0f) < back * 0.6f);
+    CHECK(mounted_shot_spread(8.0f, 3.1f, 0.0f, 1.0f) < back);
+    CHECK(shot_is_parthian(8.0f, 3.0f) && shot_is_parthian(7.0f, -2.2f) && !shot_is_parthian(8.0f, 0.5f) && !shot_is_parthian(3.0f, 3.0f));
+    // La lanza en ristre: sin velocidad no hay carga; al galope pesa mas cuanto mas rapido.
+    CHECK(lance_charge_damage(20.0f, 4.0f) == 0.0f && lance_charge_knock(4.0f, false) == 0.0f);
+    CHECK(lance_charge_damage(20.0f, 6.0f) > 20.0f && lance_charge_damage(20.0f, 9.0f) > lance_charge_damage(20.0f, 6.0f));
+    CHECK(lance_charge_damage(20.0f, 30.0f) <= 50.0f + 1e-4f); // hasta x2,5
+    CHECK(lance_charge_knock(9.0f, false) > lance_charge_knock(6.0f, false) && lance_charge_knock(9.0f, false) <= 0.95f);
+    CHECK(lance_charge_knock(9.0f, true) < 0.4f * lance_charge_knock(9.0f, false)); // un escudo que la para
+}
+
+static void test_mount_stamina(void) {
+    // El galope gasta el aguante (unos 45 s); el paso y el descanso lo devuelven.
+    float s = 1.0f;
+    for (int i = 0; i < 300; i++) s = mount_stamina_step(s, true, true, 0.0f, 0.0f, 0.0f, 0.1f);
+    CHECK(s > 0.2f && s < 0.4f); // 30 s al galope
+    float g = s;
+    for (int i = 0; i < 300; i++) g = mount_stamina_step(g, true, true, 0.0f, 0.0f, 0.0f, 0.1f);
+    CHECK(g == 0.0f && mount_winded(g, false));
+    float rest = mount_stamina_step(0.0f, false, false, 0.0f, 0.0f, 0.0f, 10.0f), walk = mount_stamina_step(0.0f, false, true, 0.0f, 0.0f, 0.0f, 10.0f);
+    CHECK(rest > walk && walk > 0.0f);
+    // Agotado, no galopa hasta recobrarse; despues si.
+    CHECK(mount_winded(0.2f, true) && !mount_winded(0.2f, false) && !mount_winded(MOUNT_RECOVER + 0.01f, true));
+    // Con hambre o sed se cansa antes y se repone peor; el aguante heredado lo ayuda.
+    float fed = mount_stamina_step(1.0f, true, true, 0.2f, 0.2f, 0.0f, 10.0f), starved = mount_stamina_step(1.0f, true, true, 1.5f, 1.5f, 0.0f, 10.0f);
+    CHECK(starved < fed);
+    CHECK(mount_stamina_step(0.0f, false, false, 1.5f, 0.0f, 0.0f, 5.0f) < mount_stamina_step(0.0f, false, false, 0.0f, 0.0f, 0.0f, 5.0f));
+    CHECK(mount_stamina_step(1.0f, true, true, 0.0f, 0.0f, 0.2f, 10.0f) > fed && mount_stamina_step(1.0f, true, true, 0.0f, 0.0f, -0.2f, 10.0f) < fed);
+    // Lo heredado lo hace mas rapido; con hambre o sed corre menos.
+    CHECK(mount_speed_scale(0.0f, 0.0f, 0.0f) == 1.0f && mount_speed_scale(0.2f, 0.0f, 0.0f) > 1.19f);
+    CHECK(mount_speed_scale(0.0f, 1.5f, 0.0f) < 1.0f && mount_speed_scale(0.0f, 1.5f, 1.5f) < mount_speed_scale(0.0f, 1.5f, 0.0f));
+}
+
+static void test_horse_archer_harass(void) {
+    float gx, gz, d0, d1;
+    bool retreat = false;
+    // En la orbita: va de costado, sin acercarse ni alejarse mucho.
+    horse_archer_goal(HA_ORBIT, 0.0f, 0.0f, 0.0f, 1.0f, &retreat, &gx, &gz);
+    d1 = sqrtf(gx * gx + gz * gz);
+    CHECK(!retreat && fabsf(d1 - HA_ORBIT) < 3.0f && fabsf(gz) > 5.0f);
+    // El sentido del giro cambia de lado.
+    float gx2, gz2;
+    horse_archer_goal(HA_ORBIT, 0.0f, 0.0f, 0.0f, -1.0f, &retreat, &gx2, &gz2);
+    CHECK(gz * gz2 < 0.0f);
+    // Lejos, se acerca (en espiral).
+    horse_archer_goal(70.0f, 0.0f, 0.0f, 0.0f, 1.0f, &retreat, &gx, &gz);
+    CHECK(!retreat && sqrtf(gx * gx + gz * gz) < 70.0f - 3.0f);
+    // Si el blanco se le acerca, se aleja al galope; sigue alejandose hasta HA_FAR y vuelve.
+    retreat = false;
+    horse_archer_goal(8.0f, 0.0f, 0.0f, 0.0f, 1.0f, &retreat, &gx, &gz);
+    CHECK(retreat && gx > 8.0f + 5.0f);
+    d0 = 30.0f;
+    horse_archer_goal(d0, 0.0f, 0.0f, 0.0f, 1.0f, &retreat, &gx, &gz);
+    CHECK(retreat && gx > d0);
+    horse_archer_goal(HA_FAR + 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, &retreat, &gx, &gz);
+    CHECK(!retreat && sqrtf(gx * gx + gz * gz) < HA_FAR + 1.0f);
+}
+
+static void test_breeding_and_foals(void) {
+    // Quien se cria: monturas y ganado, no la mula ni el elefante, ni las fieras.
+    CHECK(species_breeds(SPECIES_HORSE) && species_breeds(SPECIES_GOAT) && species_breeds(SPECIES_CAMEL));
+    CHECK(!species_breeds(SPECIES_MULE) && !species_breeds(SPECIES_ELEPHANT) && !species_breeds(SPECIES_WOLF) && !species_breeds(SPECIES_DEER));
+    // Al nacer en el mundo, cada animal tiene sexo y rasgos (+-10 %), siempre los mismos en el mismo sitio.
+    Animal a, b;
+    int males = 0;
+    for (int i = 0; i < 40; i++) {
+        animal_init(&a, SPECIES_HORSE, (float)i * 3.1f, 5.0f);
+        animal_init(&b, SPECIES_HORSE, (float)i * 3.1f, 5.0f);
+        CHECK(a.sex == b.sex && a.pace == b.pace && a.grit == b.grit && (a.sex == SEX_MALE || a.sex == SEX_FEMALE));
+        CHECK(fabsf(a.pace) <= 0.1f + 1e-5f && fabsf(a.grit) <= 0.1f + 1e-5f && animal_adult(&a));
+        males += a.sex == SEX_MALE;
+    }
+    CHECK(males > 8 && males < 32);
+    // Una yegua y un semental de la tribu, bien comidos: puede quedar preñada.
+    Animal herd[4];
+    animal_init(&herd[0], SPECIES_HORSE, 0.0f, 0.0f);
+    animal_init(&herd[1], SPECIES_HORSE, 2.0f, 0.0f);
+    herd[0].state = herd[1].state = ANIMAL_TAMED;
+    herd[0].sex = SEX_FEMALE, herd[1].sex = SEX_MALE;
+    herd[0].pace = 0.20f, herd[0].grit = 0.10f;
+    herd[1].pace = 0.24f, herd[1].grit = 0.20f;
+    herd[0].hunger = herd[1].hunger = 0.1f;
+    CHECK(animal_can_conceive(&herd[0], &herd[1]) && !animal_can_conceive(&herd[1], &herd[0]));
+    herd[0].hunger = 1.2f;
+    CHECK(!animal_can_conceive(&herd[0], &herd[1])); // con hambre, no
+    herd[0].hunger = 0.1f;
+    // Con una mula (otra especie), un potro o un salvaje, no.
+    animal_init(&herd[2], SPECIES_MULE, 1.0f, 1.0f);
+    herd[2].state = ANIMAL_TAMED, herd[2].sex = SEX_MALE;
+    CHECK(!animal_can_conceive(&herd[0], &herd[2]));
+    herd[1].foal = 2.0f;
+    CHECK(!animal_can_conceive(&herd[0], &herd[1]));
+    herd[1].foal = 0.0f;
+    herd[1].state = ANIMAL_WILD;
+    CHECK(!animal_can_conceive(&herd[0], &herd[1]));
+    herd[1].state = ANIMAL_SADDLED; // ensillado sigue siendo de la tribu
+    CHECK(animal_can_conceive(&herd[0], &herd[1]));
+    // Un dia tras otro: queda preñada, a los GESTATION_DAYS pare un potro que hereda de los dos.
+    Rng rng;
+    rng_seed(&rng, 7u);
+    int idx[3] = { 0, 1, 2 }, born = 0, days = 0;
+    Animal births[2];
+    while (!herd[0].pregnant && days < 60) herd_breed_day(herd, idx, 3, &rng, 1.0f, births, 2), days++;
+    CHECK(herd[0].pregnant == GESTATION_DAYS && days == 1); // con chance 1: el primer dia
+    for (int d = 0; d < (int)GESTATION_DAYS && !born; d++) born = herd_breed_day(herd, idx, 3, &rng, 1.0f, births, 2);
+    CHECK(born == 1 && herd[0].pregnant == 0.0f);
+    const Animal *f = &births[0];
+    CHECK(f->used && f->species == SPECIES_HORSE && f->state == ANIMAL_TAMED && f->foal == FOAL_DAYS && !animal_adult(f));
+    CHECK(f->pace > 0.22f - TRAIT_NOISE - 1e-4f && f->pace < 0.22f + TRAIT_NOISE + 1e-4f); // el promedio, con algo de azar
+    CHECK(f->grit > 0.15f - TRAIT_NOISE - 1e-4f && f->grit < 0.15f + TRAIT_NOISE + 1e-4f);
+    CHECK(f->sex == SEX_MALE || f->sex == SEX_FEMALE);
+    // El potro no se ensilla, no se monta y no da leche hasta crecer; el cuerpo es mas chico.
+    Animal colt = *f;
+    CHECK(!animal_saddle(&colt) && !animal_can_ride(&colt));
+    BodyPose small, big;
+    animal_body(&colt, &small);
+    animal_body(&herd[0], &big);
+    CHECK(small.seg[PART_THORAX].radius < big.seg[PART_THORAX].radius * 0.7f);
+    herd[3] = colt;
+    int idx4[4] = { 0, 1, 2, 3 };
+    for (int d = 0; d < (int)FOAL_DAYS; d++) herd_breed_day(herd, idx4, 4, &rng, 0.0f, births, 2);
+    CHECK(animal_adult(&herd[3]) && animal_saddle(&herd[3]) && animal_can_ride(&herd[3]));
+    // Lo heredado nunca pasa de TRAIT_MAX, aunque los padres esten en el tope.
+    herd[0].pace = herd[1].pace = TRAIT_MAX, herd[0].grit = herd[1].grit = -TRAIT_MAX;
+    for (int i = 0; i < 50; i++) {
+        float p, g;
+        animal_foal_traits(&herd[0], &herd[1], &rng, &p, &g);
+        CHECK(p <= TRAIT_MAX && p >= TRAIT_MAX - 2.0f * TRAIT_NOISE && g >= -TRAIT_MAX);
+    }
+    // Sin lugar para el potro, la madre espera (no se pierde).
+    herd[0].pregnant = 1.0f;
+    CHECK(herd_breed_day(herd, idx, 2, &rng, 0.0f, births, 0) == 0 && herd[0].pregnant > 0.0f);
+    CHECK(herd_breed_day(herd, idx, 2, &rng, 0.0f, births, 1) == 1);
+    // Una cabra (ganado) tambien; la cabrita no da leche.
+    Animal goat;
+    animal_init(&goat, SPECIES_GOAT, 0.0f, 0.0f);
+    goat.foal = 1.0f;
+    CHECK(animal_milk(&goat) == 0);
+    goat.foal = 0.0f;
+    CHECK(animal_milk(&goat) > 0);
+}
+
 static void test_daily_work_by_trade(void) {
     Troop t;
     troop_init(&t, NULL);
@@ -3956,6 +4111,10 @@ int main(void) {
     RUN(test_trade_markets_and_caravans);
     RUN(test_crafts_chains_add_value);
     RUN(test_daily_work_by_trade);
+    RUN(test_mounted_archery_and_lance);
+    RUN(test_mount_stamina);
+    RUN(test_horse_archer_harass);
+    RUN(test_breeding_and_foals);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

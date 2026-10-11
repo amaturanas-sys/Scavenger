@@ -1,5 +1,7 @@
 #include "game/fauna_game.h"
+#include "sim/riding.h"
 
+#include "game/camp_game.h"
 #include "game/inventory_game.h"
 
 #define FODDER_ID "utileria.consumible.forraje"
@@ -578,6 +580,31 @@ void fg_interact(GameActions *ga, const Player *p, bool shift, char *log, size_t
     }
 }
 
+// ------------------------------------------------------------------ la montura
+static bool g_mount_winded;
+bool fg_mount_winded(void) { return g_mount_winded; }
+
+const char *fg_traits_text(const Animal *a) {
+    static char buf[96];
+    snprintf(buf, sizeof(buf), T("%s · velocidad %+d %% · aguante %+d %%"), a->sex == SEX_MALE ? T("macho") : T("hembra"),
+             (int)lroundf(a->pace * 100.0f), (int)lroundf(a->grit * 100.0f));
+    return buf;
+}
+
+// El caballo montado se cansa al galope y se repone al paso (src/sim/riding.h).
+static void ride_tick(GameActions *ga, const Player *p, float dt, char *log, size_t len) {
+    if (ga->mounted < 0) {
+        g_mount_winded = false;
+        return;
+    }
+    Animal *a = &ga->animals[ga->mounted];
+    bool was = g_mount_winded;
+    a->stamina = mount_stamina_step(a->stamina, p->moving && p->stance == STANCE_RUN, p->moving, a->hunger, a->thirst, a->grit, dt);
+    g_mount_winded = mount_winded(a->stamina, was);
+    if (g_mount_winded && !was) snprintf(log, len, "%s", T("Tu montura está agotada: no galopa hasta recobrar el aliento."));
+    else if (was && !g_mount_winded) snprintf(log, len, "%s", T("Tu montura recobró el aliento."));
+}
+
 static void update_hint(GameActions *ga, const Player *p) {
     int what = 0, i = nearest_interactable(ga, p, &what, NULL);
     g_hint[0] = '\0';
@@ -749,16 +776,70 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
     update_swarms(ga, cb, p, t, now, temp, dt, log, len);
 
     (void)input_ok; // F (src/game/actions_game.c) llama a fg_interact
+    ride_tick(ga, p, dt, log, len);
     update_hint(ga, p);
 }
 
-void fg_new_day(GameActions *ga) {
+#define DOMESTIC_MAX 24  // los de la tribu, entre todos (el resto del arreglo queda para la fauna)
+#define CAMP_HERD_MAX 14 // por campamento: con mas, no paren (esperan lugar)
+
+// La cria (src/sim/animals.h): un dia del rebaño de cada campamento, con sus informes. Los potros
+// que andan fuera de los campamentos (siguiendote) tambien crecen. Devuelve cuantos nacieron.
+static int breed_day(GameActions *ga) {
+    bool in_camp[GA_MAX_ANIMALS] = { false };
+    int domestic = 0, born_all = 0;
+    for (int i = 0; i < ga->animal_count; i++) domestic += alive(&ga->animals[i]) && animal_domestic(&ga->animals[i]);
+    for (int k = 0; k < CAMPS_MAX; k++) {
+        const CampSite *c = &ga->camps[k];
+        if (!c->used) continue;
+        int idx[GA_MAX_ANIMALS], n = 0;
+        bool was_pregnant[GA_MAX_ANIMALS], was_foal[GA_MAX_ANIMALS];
+        for (int i = 0; i < ga->animal_count; i++) {
+            const Animal *a = &ga->animals[i];
+            if (!alive(a) || !animal_domestic(a) || a->ridden || in_camp[i] || dist_xz(a->x, a->z, c->x, c->z) > CAMP_RADIUS_M + 15.0f) continue;
+            was_pregnant[n] = a->pregnant > 0.0f, was_foal[n] = a->foal > 0.0f;
+            in_camp[i] = true;
+            idx[n++] = i;
+        }
+        if (!n) continue;
+        int room = DOMESTIC_MAX - domestic < CAMP_HERD_MAX - n ? DOMESTIC_MAX - domestic : CAMP_HERD_MAX - n;
+        Animal births[4];
+        int born = herd_breed_day(ga->animals, idx, n, &ga->rng, BREED_CHANCE, births, room < 0 ? 0 : room > 4 ? 4 : room);
+        char who[48];
+        for (int j = 0; j < n; j++) {
+            const Animal *a = &ga->animals[idx[j]];
+            lower(T(species_def(a->species)->name), who, sizeof(who));
+            if (!was_pregnant[j] && a->pregnant > 0.0f)
+                cg_news(ga, k, TextFormat(T("Quedó preñada una hembra de %s: pare en %.0f días."), who, ceilf(a->pregnant)));
+            if (was_foal[j] && animal_adult(a))
+                cg_news(ga, k, TextFormat(species_def(a->species)->rideable ? T("La cría de %s ya es adulta: se puede ensillar.") : T("La cría de %s ya es adulta."), who));
+        }
+        for (int b = 0; b < born; b++) {
+            int s = free_slot(ga);
+            if (s < 0) break;
+            ga->animals[s] = births[b];
+            domestic++, born_all++;
+            lower(T(species_def(births[b].species)->name), who, sizeof(who));
+            cg_news(ga, k, TextFormat(T("Nació una cría de %s (%s)."), who, fg_traits_text(&births[b])));
+        }
+    }
+    for (int i = 0; i < ga->animal_count; i++) { // los potros de viaje tambien crecen
+        Animal *a = &ga->animals[i];
+        if (!in_camp[i] && alive(a) && a->foal > 0.0f) a->foal = fmaxf(0.0f, a->foal - 1.0f);
+    }
+    return born_all;
+}
+
+void fg_new_day(GameActions *ga, char *log, size_t len) {
     for (int i = 0; i < GA_MAX_SWARMS; i++) ga->swarms[i].honey_taken = false;
     for (int i = 0; i < ga->animal_count; i++)
         if (alive(&ga->animals[i])) {
             animal_new_day(&ga->animals[i]);
             if (ga->animals[i].state != ANIMAL_WILD) health_daily(&ga->animals[i].h, 0.0f); // los de la tribu sanan
         }
+    int born = breed_day(ga);
+    size_t used = log ? strlen(log) : 0;
+    if (born && log && used < len) snprintf(log + used, len - used, T(" Nacieron %d crías (informes del guardián)."), born);
 }
 
 // ------------------------------------------------------------------ dibujo

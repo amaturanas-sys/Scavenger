@@ -299,7 +299,19 @@ Va en esta misma fase, porque los cuatro botones ocupan teclas que hoy hacen otr
 
 **Costo:** alto, sobre todo por el contenido (recetas, ids, iconos y traducciones).
 
-## Fase 6 — Caballos: marcialidad y migración (v0.7.1)
+## Fase 6 — Caballos: marcialidad y cría (v0.7.1) — hecha
+
+La fase era grande y se partió en dos, como la 4: los caballos aquí (v0.7.1) y la migración en la fase 6b (v0.7.2).
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **Reglas puras** en `src/sim/riding.c` (con tests): la dispersión del tiro a caballo, la lanza en ristre, el cansancio de la montura y la maniobra de los arqueros a caballo. La cría, en `src/sim/animals.c`.
+- **El rumbo del caballo:** antes el caballo miraba siempre hacia donde miraba el jinete; ahora mira hacia donde va, y el jinete se gira en la montura al apuntar. Así se puede galopar alejándose y tirar hacia atrás. Arrollar va por el rumbo del caballo.
+- **Disparo parto:** no es un botón: es tirar al galope (desde 6 m/s) a más de 100° del rumbo. Abre más el tiro (×1,4 sin práctica) y, si acierta, el registro lo dice. El objetivo elegido (Tab) se pierde a 25 m, así que sirve contra el que persigue de cerca.
+- **Carga con lanza:** L a caballo con una lanza la pone en ristre 3 s (antes, L a caballo no hacía nada). El primero delante del caballo recibe el golpe con el peso de la carrera. Se ve la lanza bajada.
+- **Cuidado del caballo:** el aguante de la montura (`Animal.stamina`) se gasta al galope y su barra reemplaza a la del jugador. El hambre y la sed ya existían: ahora la cansan y la frenan. El forraje de invierno y el pastoreo de la fase 4 siguen igual.
+- **Cría:** campos nuevos al final de `Animal` (sexo, velocidad y aguante heredados, días de cría y de preñez). En las partidas viejas el sexo se asigna solo. Hay preñez (3 días) antes del parto, y la cría tarda 4 días en ser adulta. Las monturas y el ganado se crían, menos la mula y el elefante. Lo heredado solo cuenta montado.
+- **Arqueros a caballo:** `ENEMY_HORSE_ARCHER` al final del enum. Hostigan como pedía el plan y tiran peor hacia atrás. Salen de las tribus rivales, con los jinetes y en la escolta de las caravanas (en vez del arquero a pie). Los jinetes enemigos también miran hacia donde van.
+- **Pruebas:** `--montado lanza|parto|agotado`, `--cria`, `--enemigos arqueros_caballo`. **Ayuda:** una página nueva, «A caballo».
 
 **Lo que hay:**
 - monturas domables (lazo, silla, montar con R);
@@ -312,14 +324,23 @@ Va en esta misma fase, porque los cuatro botones ocupan teclas que hoy hacen otr
 - **Carga con lanza:** a galope tendido, la lanza derriba y hace daño por la velocidad.
 - **Cuidado del caballo:** hambre, sed y cansancio (`Animal.stamina` ya existe). El forraje en invierno y el pastoreo de la fase 4.
 - **Cría:** potros que crecen en el campamento. La calidad (velocidad, aguante) se hereda.
+- **Enemigos montados:** los jinetes ya existen; se suman arqueros a caballo que hostigan y se alejan.
+- **Tests:** el disparo a caballo pierde precisión con la velocidad.
+
+**Costo:** alto.
+
+## Fase 6b — Migración en caravana (v0.7.2)
+
+**Lo que hay:** campamentos con su acopio y su gente; fundar uno nuevo con una tienda o un refugio lejos; disolverlo (se queman las estructuras y la gente sigue al jugador); la carreta y las alforjas; la escolta que sigue al jugador.
+
+**Trabajo:**
 - **Migración en caravana:** mover el campamento entero.
   - Se levantan las yurtas, se cargan en carretas y caballos (ya hay `carreta` y alforjas) y la tribu viaja en columna detrás del jugador.
   - Al llegar se planta el campamento nuevo y el acopio viaja con ellos.
   - Es la respuesta a la estación: pastos de verano en el altiplano, de invierno en el llano.
-- **Enemigos montados:** los jinetes ya existen; se suman arqueros a caballo que hostigan y se alejan.
-- **Tests:** el disparo a caballo pierde precisión con la velocidad; la migración conserva el acopio y a la gente.
+- **Tests:** la migración conserva el acopio y a la gente.
 
-**Costo:** alto.
+**Costo:** medio.
 
 ## Fase 7 — Armas icónicas de la estepa y su forja (v0.8.0)
 
@@ -393,7 +414,8 @@ Va en esta misma fase, porque los cuatro botones ocupan teclas que hoy hacen otr
 | v0.6.1 | 4 · tareas de la tribu | 0 (y 3 para guardia) |
 | v0.6.2 | 4b · obras en vista aérea | 4 (el jefe también las manda) |
 | v0.7.0 | 5 · economía y artesanías | 4 |
-| v0.7.1 | 6 · caballos y migración | 1, 4, 5 |
+| v0.7.1 | 6 · caballos y cría | 1, 4, 5 |
+| v0.7.2 | 6b · migración en caravana | 4, 6 |
 | v0.8.0 | 7 · armas y forja | 1, 5 |
 | v0.9.0 | 8 · asentamientos agrarios | 3, 5, 6, 7 |
 

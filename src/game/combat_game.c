@@ -119,6 +119,7 @@ static Enemy *spawn_enemy(Combat *cb, EnemyKind kind, Vector3 pos, const Terrain
         else health_init(&e->h, def->hp);
         e->armed = true;
         e->mounted = def->mounted;
+        e->orbit_dir = rng_float(&cb->rng) < 0.5f ? -1.0f : 1.0f;
         e->shield = def->shield && rng_float(&cb->rng) < def->shield_chance;
         // Su armadura: la primera pieza siempre, las demas a veces.
         for (int k = 0; k < 4; k++)
@@ -139,7 +140,7 @@ void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player 
                     size_t len) {
     // Fieras: las pone la fauna (src/game/fauna_game.c).
     if (strcmp(what, "bandidos") && strcmp(what, "culto") && strcmp(what, "arqueros") && strcmp(what, "jinetes") &&
-        fg_spawn_named(ga, what, p, dist, log, len))
+        strcmp(what, "arqueros_caballo") && fg_spawn_named(ga, what, p, dist, log, len))
         return;
     float ang = rng_float(&cb->rng) * 2.0f * PI;
     if (dist < 25.0f) ang = p->yaw + (rng_float(&cb->rng) - 0.5f) * 0.8f; // pruebas: delante del jugador
@@ -166,11 +167,16 @@ static void spawn_party(Combat *cb, const char *what, Vector3 c, float ang, cons
         n = 4;
         kinds[0] = kinds[1] = ENEMY_RIDER;
         kinds[2] = ENEMY_BANDIT;
-        kinds[3] = ENEMY_ARCHER;
+        kinds[3] = ENEMY_HORSE_ARCHER;
         snprintf(log, len, "%s", T("¡La escolta de la caravana desenvaina!"));
+    } else if (!strcmp(what, "arqueros_caballo")) { // hostigan: rodean y tiran, y se alejan si te acercas
+        n = 2 + rng_range(&cb->rng, 2);
+        for (int i = 0; i < n; i++) kinds[i] = ENEMY_HORSE_ARCHER;
+        snprintf(log, len, "%s", T("¡Arqueros a caballo! Rodean y tiran; si te acercas, se alejan al galope."));
     } else if (!strcmp(what, "jinetes")) {
         n = 2 + rng_range(&cb->rng, 2);
         for (int i = 0; i < n; i++) kinds[i] = ENEMY_RIDER;
+        if (n == 3) kinds[2] = ENEMY_HORSE_ARCHER; // a veces, uno tira desde el caballo
         snprintf(log, len, "%s", T("¡Jinetes bandidos al galope! Derríbalos del caballo."));
     } else {
         n = 2 + rng_range(&cb->rng, 2);
@@ -185,7 +191,7 @@ static void spawn_party(Combat *cb, const char *what, Vector3 c, float ang, cons
         Vector3 at = { c.x + cosf(a) * 2.5f + sinf(ang) * back, 0, c.z + sinf(a) * 2.5f + cosf(ang) * back };
         Enemy *e = spawn_enemy(cb, kinds[i], at, t);
         if (!e) continue;
-        e->yaw = ang + PI;
+        e->yaw = e->ride_yaw = ang + PI;
         if (home) e->home = e->wander_to = *home, e->timer = 90.0f; // van al campamento
     }
 }
@@ -232,8 +238,8 @@ static void natural_spawns(Combat *cb, GameActions *ga, const Player *p, const T
     float r = rng_float(&cb->rng);
     if (!night && r < 0.12f) {
         float k = rng_float(&cb->rng);
-        cb_spawn_group(cb, ga, k < 0.25f ? "culto" : k < 0.4f ? "jinetes" : "bandidos", p, t, k < 0.4f && k >= 0.25f ? 60.0f : 35.0f,
-                       log, len);
+        cb_spawn_group(cb, ga, k < 0.25f ? "culto" : k < 0.4f ? "jinetes" : k < 0.5f ? "arqueros_caballo" : "bandidos", p, t,
+                       k < 0.5f && k >= 0.25f ? 60.0f : 35.0f, log, len);
     }
 }
 
@@ -926,10 +932,10 @@ static Shot *new_shot(Combat *cb) {
     return NULL;
 }
 
-static void fire(Combat *cb, const RangedDef *rd, Vector3 from, float yaw, float pitch, float charge, int owner, bool burning,
-                 float steady) {
+static Shot *fire(Combat *cb, const RangedDef *rd, Vector3 from, float yaw, float pitch, float charge, int owner, bool burning,
+                  float steady) {
     Shot *s = new_shot(cb);
-    if (!s) return;
+    if (!s) return NULL;
     float spread = rd->spread * (1.5f - 0.5f * charge) * steady; // poco tenso, menos preciso
     yaw += (rng_float(&cb->rng) - 0.5f) * 2.0f * spread;
     pitch += (rng_float(&cb->rng) - 0.5f) * 2.0f * spread;
@@ -937,6 +943,7 @@ static void fire(Combat *cb, const RangedDef *rd, Vector3 from, float yaw, float
     projectile_launch(&s->p, rd->projectile, to_v3(from), yaw, pitch, ranged_muzzle_speed(rd, charge));
     s->owner = owner;
     s->burning = burning;
+    return s;
 }
 
 // L: encender la flecha en un fuego cercano.
@@ -1131,6 +1138,11 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
                     } else if (e->state == EN_DEAD) snprintf(log, len, T("¡Diana! Matas al %s (%s)."), who, part_name((BodyPart)part, e->h.beast));
                     else if (e->state == EN_DOWN && !was_down) snprintf(log, len, T("¡Diana! El %s cae abatido (%s)."), who, part_name((BodyPart)part, e->h.beast));
                     else describe_hit(&e->h, wi, absorbed, broke, dsc, sizeof(dsc)), snprintf(log, len, T("Le das al %s: %s."), who, dsc);
+                    if (s->parthian) { // al galope y de espaldas al blanco
+                        char said[200];
+                        snprintf(said, sizeof(said), "%s", log);
+                        snprintf(log, len, T("¡Disparo parto! %s"), said);
+                    }
                 }
             }
             continue;
@@ -1203,12 +1215,15 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
         float charge = rd->draw_time > 0.0f ? fminf(1.0f, cb->draw / rd->draw_time) : 1.0f;
         aim_at_target(cb, p, rd, charge);
         ig_use(ga, props, p, ammo, 1);
-        // Punteria (amuleto del aguila): menos dispersion.
-        float steady = (1.0f - 0.6f * fminf(1.0f, ig_stat(ga, STAT_ARCHERY))) * (1.0f + 1.5f * wg_clumsy(ga)); // borracho, torpe
-        // A caballo, la carrera dispersa el tiro; la monta (amuletos) lo corrige.
-        if (ga->mounted >= 0)
-            steady *= 1.0f + fminf(cb->pl_speed, 12.0f) / 6.0f * (1.0f - 0.6f * fminf(1.0f, ig_stat(ga, STAT_RIDING)));
-        fire(cb, rd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0, cb->arrow_lit, steady);
+        // Punteria (amuleto del aguila): menos dispersion. A caballo, la carrera la abre, y mas hacia
+        // atras (el disparo parto); la monta la corrige (src/sim/riding.h). Borracho, torpe.
+        bool riding = ga->mounted >= 0;
+        float rel = riding ? p->yaw - ga->animals[ga->mounted].yaw : 0.0f; // lo que se aparta del rumbo del caballo
+        float steady = riding ? mounted_shot_spread(cb->pl_speed, rel, ig_stat(ga, STAT_RIDING), ig_stat(ga, STAT_ARCHERY))
+                              : 1.0f - 0.6f * fminf(1.0f, ig_stat(ga, STAT_ARCHERY));
+        steady *= 1.0f + 1.5f * wg_clumsy(ga);
+        Shot *sh = fire(cb, rd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0, cb->arrow_lit, steady);
+        if (sh && riding && shot_is_parthian(cb->pl_speed, rel)) sh->parthian = true;
         cb->arrow_lit = false;
         cb->reload = rd->reload;
         cb->draw = 0.0f;
@@ -1351,7 +1366,29 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         } else if (target >= 0) {
             e->state = EN_CHASE;
             e->yaw = atan2f(tpos.x - e->pos.x, tpos.z - e->pos.z);
-            if (rd && best > def->reach) {
+            if (rd && e->mounted) {
+                // Arquero a caballo: rodea al blanco a distancia de tiro y tira al galope; si se le
+                // acercan, se aleja tirando hacia atras (el disparo parto) y vuelve (src/sim/riding.h).
+                if (e->orbit_dir == 0.0f) e->orbit_dir = (i & 1) ? 1.0f : -1.0f;
+                horse_archer_goal(e->pos.x, e->pos.z, tpos.x, tpos.z, e->orbit_dir, &e->retreating, &goal.x, &goal.z);
+                speed = def->speed * (e->retreating ? 1.0f : 0.8f);
+                bool covered = hold_back && hostage_blocks_shot(e->pos.x, e->pos.z, p->pos.x, p->pos.z, hostage->pos.x, hostage->pos.z);
+                if (e->reload <= 0.0f && best < 40.0f && !covered) {
+                    Vector3 from = aim_origin(e->pos, e->yaw);
+                    from.y += RIDER_LIFT;
+                    Vector3 aim = { tpos.x, tpos.y + 1.2f, tpos.z };
+                    float pitch;
+                    if (ballistic_solve(rd->projectile, to_v3(from), to_v3(aim), ranged_muzzle_speed(rd, 1.0f), &pitch)) {
+                        // Jinetes de toda la vida: tiran bien al galope, peor hacia atras y de lejos.
+                        float err = (0.015f + best * 0.0008f) * mounted_shot_spread(e->speed, e->yaw - e->ride_yaw, 0.7f, 0.2f) *
+                                    (hold_back ? 2.5f : 1.0f);
+                        fire(cb, rd, from, e->yaw + (rng_float(&cb->rng) - 0.5f) * err * 2.0f, pitch + (rng_float(&cb->rng) - 0.5f) * err,
+                             1.0f, -(1 + i), false, 1.0f);
+                        e->reload = rd->reload + 1.0f + 1.2f * rng_float(&cb->rng);
+                        e->attack_anim = 0.3f;
+                    }
+                }
+            } else if (rd && best > def->reach) {
                 // Arquero: guarda distancia y dispara con la curva calculada (y algo de error).
                 Vector3 dir = Vector3Normalize((Vector3){ tpos.x - e->pos.x, 0, tpos.z - e->pos.z });
                 if (best > 28.0f) goal = tpos, speed = def->speed;
@@ -1408,7 +1445,14 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             terrain_dry_step(t, x0, z0, &e->pos.x, &e->pos.z);
             if (e->state != EN_CHASE) e->yaw = atan2f(goal.x - e->pos.x, goal.z - e->pos.z);
             e->speed = speed;
+            if (e->mounted) { // el caballo mira hacia donde va; el jinete, a su blanco
+                float want = atan2f(e->pos.x - x0, e->pos.z - z0);
+                e->ride_yaw += atan2f(sinf(want - e->ride_yaw), cosf(want - e->ride_yaw)) * fminf(1.0f, dt * 6.0f);
+            }
+        } else if (e->mounted) {
+            e->ride_yaw += atan2f(sinf(e->yaw - e->ride_yaw), cosf(e->yaw - e->ride_yaw)) * fminf(1.0f, dt * 3.0f);
         }
+        if (e->mounted) e->ride_yaw = atan2f(sinf(e->ride_yaw), cosf(e->ride_yaw)); // en [-pi, pi]
         e->pos.y = surface_y(t, e->pos.x, e->pos.z);
     }
 }
@@ -1821,6 +1865,11 @@ static void capture(Combat *cb, GameActions *ga, Troop *troop, Player *p, char *
     snprintf(log, len, T("Atas al %s y lo tomas prisionero; lo que llevaba queda en el suelo (F)."), who);
 }
 
+// ¿Lleva una lanza (un arma de asta) en la mano del arma?
+static bool lance_in_hand(const GameActions *ga) {
+    return !ga->hands.sheathed && ga->hands.right.id[0] && weapon_stats(ga->hands.right.id).spear;
+}
+
 // Lo que pide la ventana del parry: un golpe enemigo a punto de caer sobre el jugador.
 static bool parry_due(Combat *cb, const Player *p) {
     const Enemy *e = incoming(cb, p);
@@ -1842,9 +1891,17 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, Troop *tr
     }
     bool ready = cb->attack_cd <= 0.0f;
     bool riding = ga->mounted >= 0;
-    // A caballo solo se golpea con el arma (H); el parry, las cargas y las patadas, a pie.
+    // A caballo: con una lanza, L la pone en ristre (la carga); el parry, la carga con escudo y las
+    // patadas, a pie.
+    if (riding && l_press && lance_in_hand(ga)) {
+        if (cb->couch <= 0.0f && cb->couch_cd <= 0.0f) {
+            cb->couch = LANCE_COUCH_SECONDS;
+            snprintf(log, len, "%s", cb->pl_speed >= LANCE_MIN_SPEED ? T("¡Lanza en ristre!") : T("Lanza en ristre: ¡al galope (Mayús)!"));
+        }
+        return;
+    }
     if (riding && ready && (k_press || l_press || (cb->blocking && h_press))) {
-        snprintf(log, len, "%s", T("A caballo no: solo golpe (H) y golpe pesado (mantener H)."));
+        snprintf(log, len, "%s", T("A caballo: golpe (H) y golpe pesado (mantener H); con una lanza, L la pone en ristre."));
         return;
     }
     // Con un rehen: K lo ejecuta, L lo empuja; H golpea con la mano libre (no con un arma a dos manos).
@@ -1937,7 +1994,7 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, Troop *tr
 // Al galope, el caballo arrolla al que este delante (salvo otro jinete, que aguanta mejor).
 static void trample(Combat *cb, Player *p, GameActions *ga, Props *props, char *log, size_t len) {
     float d;
-    Enemy *e = enemy_in_front(cb, p->pos, p->yaw, 1.8f, &d);
+    Enemy *e = enemy_in_front(cb, p->pos, ga->animals[ga->mounted].yaw, 1.8f, &d); // delante del caballo, no del jinete
     if (!e || e->knock > 0.0f) return;
     float k = mounted_momentum(cb->pl_speed);
     MeleeResult r = { .landed = true, .damage = 10.0f * k, .wound = WOUND_BRUISE };
@@ -1951,7 +2008,64 @@ static void trample(Combat *cb, Player *p, GameActions *ga, Props *props, char *
     else snprintf(log, len, T("¡Arrollas al %s con el caballo!"), who);
     if (e->target < 0) e->target = 0;
     cb->trample_cd = 1.2f;
-    (void)ga;
+}
+
+// La lanza en ristre (L a caballo): al galope, el primero que este delante del caballo recibe el
+// golpe con todo el peso de la carrera (src/sim/riding.h); casi siempre cae. Un golpe por carga.
+static void lance_charge(Combat *cb, Player *p, GameActions *ga, const Terrain *t, Props *props, char *log, size_t len) {
+    float speed = cb->pl_speed;
+    if (speed < LANCE_MIN_SPEED) return;
+    float heading = ga->animals[ga->mounted].yaw;
+    const char *weapon = ga->hands.right.id;
+    WeaponStats w = weapon_stats(weapon);
+    float reach = w.reach + MOUNT_REACH + 0.6f, d, ad;
+    Enemy *e = enemy_in_front(cb, p->pos, heading, reach, &d);
+    int an = fg_melee_target(ga, t, p->pos, heading, reach, &ad);
+    if (!e && an < 0) return;
+    cb->couch = 0.0f, cb->couch_cd = 2.0f, cb->attack_cd = 0.8f;
+    cb->move = MOVE_HEAVY + 1, cb->move_anim = 0.45f, cb->attack_anim = 0.4f;
+    ga->pl_spear = true;
+    if (an >= 0 && (!e || ad < d)) { // un animal: la caza a caballo
+        fg_hurt(ga, an, lance_charge_damage(w.damage, speed) * (1.0f + ig_stat(ga, STAT_MELEE)), w.wound, PART_RANDOM, 0, log, len);
+        return;
+    }
+    Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
+    me.strength *= lance_charge_damage(1.0f, speed) * health_attack_scale(&cb->player) * (1.0f + ig_stat(ga, STAT_MELEE));
+    MeleeResult r = melee_resolve(MOVE_HEAVY, &me, &foe, weapon, 1, &cb->rng);
+    if (r.landed) r.knocked_down = rng_float(&cb->rng) < lance_charge_knock(speed, r.blocked);
+    char who[48];
+    lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
+    hit_enemy(cb, e, MOVE_HEAVY, &r, props, 0, NULL, 0);
+    if (e->target < 0) e->target = 0;
+    if (!r.landed) snprintf(log, len, T("El %s esquiva la lanza."), who);
+    else if (e->state == EN_DEAD) snprintf(log, len, T("¡Carga con lanza! Atraviesas al %s. Deja botín (F)."), who);
+    else if (r.blocked && !r.knocked_down) snprintf(log, len, T("El %s para la lanza con el escudo."), who);
+    else if (r.knocked_down) snprintf(log, len, T("¡Carga con lanza! El %s cae al suelo."), who);
+    else snprintf(log, len, T("¡Carga con lanza! Alcanzas al %s."), who);
+}
+
+static int g_test_hold; // prueba (--montado parto): cuadros que se mantiene H antes de soltar
+
+bool cb_test_ride(Combat *cb, GameActions *ga, Player *p, const Terrain *t, const char *what, char *log, size_t len) {
+    int i = fg_spawn_one(ga, SPECIES_HORSE, p->pos.x, p->pos.z, p->yaw);
+    if (i < 0) return false;
+    Animal *a = &ga->animals[i];
+    a->state = ANIMAL_SADDLED, a->ridden = true, a->yaw = p->yaw;
+    ga->mounted = i;
+    Vector3 f = { sinf(p->yaw), 0.0f, cosf(p->yaw) };
+    bool lance = !strcmp(what, "lanza"), parthian = !strcmp(what, "parto");
+    if (lance || parthian) {
+        hands_equip(&ga->hands, inventory_find(ga->inv, lance ? "arma.larga.lanza" : "arma.distancia.arco_compuesto"), HAND_RIGHT);
+        ga->hands.sheathed = false;
+        float k = lance ? 18.0f : -7.0f; // delante, o detras (a tiro: el objetivo se pierde a 25 m)
+        Enemy *e = spawn_enemy(cb, ENEMY_BANDIT, (Vector3){ p->pos.x + f.x * k, 0.0f, p->pos.z + f.z * k }, t);
+        if (e && parthian) cb->target_lock = (int)(e - cb->enemies) + 1;
+        if (lance) cb->couch = LANCE_COUCH_SECONDS;
+        else g_test_hold = 16;
+    }
+    if (!strcmp(what, "agotado")) a->stamina = 0.02f;
+    snprintf(log, len, T("Montaste el %s (%s)."), T(species_def(a->species)->name), fg_traits_text(a));
+    return true;
 }
 
 static char g_hint[96]; // lo que se puede hacer ahi (junto a un abatido, con la espalda ganada...)
@@ -1979,13 +2093,21 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     cb->pl_speed = dt > 0.0f && moved < 5.0f ? Lerp(cb->pl_speed, moved / dt, fminf(1.0f, dt * 8.0f)) : 0.0f;
     cb->last_pos = p->pos;
     cb->trample_cd = fmaxf(0.0f, cb->trample_cd - dt);
-    if (ga->mounted >= 0 && cb->pl_speed > GALLOP_SPEED && cb->trample_cd <= 0.0f && !cb->player.down) trample(cb, p, ga, props, log, log_len);
+    cb->couch_cd = fmaxf(0.0f, cb->couch_cd - dt);
+    if (cb->couch > 0.0f) { // la lanza en ristre: se baja sola al rato, al desmontar o sin lanza
+        if (ga->mounted < 0 || cb->player.down || !lance_in_hand(ga)) cb->couch = 0.0f;
+        else if ((cb->couch -= dt) > 0.0f) lance_charge(cb, p, ga, t, props, log, log_len);
+        else cb->couch = 0.0f;
+    }
+    if (ga->mounted >= 0 && cb->pl_speed > GALLOP_SPEED && cb->trample_cd <= 0.0f && !cb->player.down && cb->couch <= 0.0f)
+        trample(cb, p, ga, props, log, log_len);
     for (int i = 0; i < cb->loose_n; i++) { // los caballos de los jinetes derribados quedan sueltos
         Vector3 h = cb->loose_horse[i];
         fg_spawn_one(ga, SPECIES_HORSE, h.x + sinf(cb->loose_yaw[i]) * 2.0f, h.z + cosf(cb->loose_yaw[i]) * 2.0f, cb->loose_yaw[i]);
     }
     cb->loose_n = 0;
     bool can_act = input_ok && !cb->player.down && !ga->climbing && cb->knock <= 0.0f;
+    if (g_test_hold > 0) g_hud_attack_down = --g_test_hold > 0; // prueba: H mantenida, y suelta
     const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);
     // Abatidos: F junto a uno lo toma prisionero (src/game/actions_game.c lo pide); el aviso de teclas.
     {
@@ -2097,6 +2219,7 @@ static BodyColors enemy_colors(EnemyKind k, bool hit) {
     else if (k == ENEMY_CAPTOR) c.cloth = (Color){ 60, 18, 30, 255 };
     else if (k == ENEMY_ARCHER) c.cloth = (Color){ 104, 98, 66, 255 };
     else if (k == ENEMY_RIDER) c.cloth = (Color){ 52, 66, 92, 255 };
+    else if (k == ENEMY_HORSE_ARCHER) c.cloth = (Color){ 132, 92, 40, 255 };
     if (hit) c.cloth = (Color){ 236, 226, 214, 255 };
     return c;
 }
@@ -2158,7 +2281,7 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         bool dead = e->state == EN_DEAD, downed = e->state == EN_DOWN;
         Vector3 at = e->pos;
         if (e->mounted && !dead) { // a caballo: el jinete va encima
-            cb_draw_horse(e->pos, e->yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
+            cb_draw_horse(e->pos, e->ride_yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
             at.y += RIDER_LIFT;
         }
         if (props_has_model(props, it)) {
@@ -2202,6 +2325,15 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         body_draw(&b, pos, p->yaw, c, &cb->armor);
         body_draw_outfit(&b, pos, p->yaw, &ga->outfit);
         if (player_has_shield(ga)) draw_shield_on(&b, pos, p->yaw, (Color){ 150, 112, 70, 255 });
+    }
+    // La lanza en ristre: larga, bajo el brazo, hacia donde va el caballo (y la punta, de hierro).
+    if (cb->couch > 0.0f && ga->mounted >= 0) {
+        float h = ga->animals[ga->mounted].yaw, y = p->pos.y + p->draw_lift + 1.25f;
+        Vector3 f = { sinf(h), 0.0f, cosf(h) }, r = { cosf(h), 0.0f, -sinf(h) };
+        Vector3 a = { p->pos.x - f.x * 0.9f + r.x * 0.3f, y + 0.1f, p->pos.z - f.z * 0.9f + r.z * 0.3f };
+        Vector3 b = { p->pos.x + f.x * 3.3f + r.x * 0.3f, y - 0.25f, p->pos.z + f.z * 3.3f + r.z * 0.3f };
+        DrawCylinderEx(a, b, 0.035f, 0.025f, 5, (Color){ 120, 86, 54, 255 });
+        DrawCylinderEx(b, (Vector3){ b.x + f.x * 0.35f, b.y - 0.03f, b.z + f.z * 0.35f }, 0.045f, 0.0f, 5, (Color){ 190, 190, 196, 255 });
     }
     // La mira: la curva que hara el proyectil con la tension actual.
     const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);
@@ -2381,6 +2513,13 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
             icon = ICON_PATADA;
             title = T("Empujar al rehén");
             detail = T("L: lo empujas y cae de bruces.");
+        } else if (riding && lance_in_hand(ga)) { // L a caballo con lanza: en ristre
+            key = keymap_text(KA_CHARGE);
+            icon = ICON_LANZA;
+            on = cb->couch > 0.0f;
+            ok = cb->couch_cd <= 0.0f;
+            title = T("Lanza en ristre");
+            detail = T("L: bajas la lanza. Al galope, el primero que tengas delante recibe todo el peso de la carrera y casi siempre cae.");
         } else { // L: carga o patada
             key = keymap_text(KA_CHARGE);
             bool charge = shield && !rd;
@@ -2388,7 +2527,7 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
             on = cb->charge_timer > 0.0f;
             ok = ready && !riding;
             title = charge ? T("Carga con escudo") : T("Patada");
-            detail = riding   ? T("A caballo no: solo golpe y golpe pesado.")
+            detail = riding   ? T("A caballo: golpe y golpe pesado; con una lanza, L la pone en ristre.")
                      : charge ? T("L: carga con el escudo; empuja y tumba al primero que encuentra.")
                               : T("L: patada que empuja y desequilibra. Corriendo, patada a la carrera.");
         }

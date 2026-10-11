@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "game/combat_game.h"
+#include "game/fauna_game.h"
 #include "game/input.h"
 #include "game/inventory_game.h"
 #include "game/talents_game.h"
@@ -76,6 +77,18 @@ void hud_stamina(int right_x, int y) {
     const char *txt = winded ? T("agotado") : s < 0.35f ? T("cansado") : s < 0.8f ? T("con aliento") : T("descansado");
     Color col = winded ? UI_CARNELIAN : s < 0.35f ? UI_GOLD_LIGHT : UI_BONE;
     hud_vital(ICON_VELOCIDAD, txt, col, s, winded ? UI_CARNELIAN : UI_GOLD, right_x, y);
+}
+
+void hud_mount(const GameActions *ga, int right_x, int y) {
+    const Animal *a = &ga->animals[ga->mounted];
+    float s = a->stamina;
+    bool winded = fg_mount_winded();
+    const char *txt = winded ? T("montura agotada") : a->thirst > 1.0f ? T("montura con sed") : a->hunger > 1.0f ? T("montura con hambre")
+                    : s < 0.35f ? T("montura cansada") : T("montura con aliento");
+    Color col = winded || a->thirst > 1.0f || a->hunger > 1.0f ? UI_CARNELIAN : s < 0.35f ? UI_GOLD_LIGHT : UI_BONE;
+    hud_vital(ICON_ENSILLAR, txt, col, s, winded ? UI_CARNELIAN : UI_TURQUOISE, right_x, y);
+    if (ui_hover((Rectangle){ (float)(right_x - VITAL_BAR - 18), (float)y, (float)(VITAL_BAR + 18), 20.0f }))
+        ui_legend(T(species_def(a->species)->name), fg_traits_text(a));
 }
 
 // ------------------------------------------------------------------ barra rapida

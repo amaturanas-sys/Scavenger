@@ -212,7 +212,7 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
         ga_new_day(&g_actions, &g_props, terrain, t, &g_memory, world_time, *day, climate_at(world_time, terrain->seed).temp_mean, log, log_len);
         hz_new_day(&g_hazards, &g_climate, &g_actions, &g_props, t, log, log_len); // las noches heladas gastan lena
         cb_new_day(&g_combat, t); // el jugador tambien descansa y sana
-        fg_new_day(&g_actions);   // el ganado se vuelve a ordeñar
+        fg_new_day(&g_actions, log, log_len); // el ganado se vuelve a ordeñar y se cria
         dz_new_day(&g_dz, &g_props, &g_actions, t, g_climate.wetness > 0.4f, log, log_len); // desgaste y reparaciones
         if (r.rebellion) {
             const Member *m = troop_find(t, r.rebellion_leader);
@@ -557,6 +557,8 @@ int main(int argc, char **argv) {
     const char *map_path = NULL;      // --mapa-mundo archivo.png: el mapa general del mundo, y sale
     const char *start_goto = NULL;    // --ir lugar: a un sitio del mundo (ver go_to)
     const char *start_trade = NULL;   // --comerciar: raiz, vender, comprar, caravana, asaltar o saquear (src/game/trade_game.h)
+    const char *start_ride = NULL;    // --montado: lanza, parto o agotado (src/game/combat_game.h); galopa solo hacia delante
+    bool start_breed = false;         // --cria: en el campamento inicial, una yegua por parir, un semental y un potro por crecer
     bool start_diag = false;          // --diagnostico: el panel de Ctrl+D abierto
     int start_picker = -1;
     float start_heading = -1.0f;      // --rumbo grados: hacia donde mira la camara (0 sur, 90 este, 180 norte, 270 oeste)
@@ -622,6 +624,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--pestana") && i + 1 < argc) start_tab = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--botin")) start_loot = true;
         else if (!strcmp(argv[i], "--comerciar") && i + 1 < argc) start_trade = argv[++i];
+        else if (!strcmp(argv[i], "--montado") && i + 1 < argc) start_ride = argv[++i];
+        else if (!strcmp(argv[i], "--cria")) start_breed = true;
         else if (!strcmp(argv[i], "--hablar") && i + 1 < argc) {
             i++;
             start_talk = !strcmp(argv[i], "orfebre") ? 2 : !strcmp(argv[i], "guardian") ? 3 : 1;
@@ -924,6 +928,24 @@ int main(int argc, char **argv) {
             }
             start_tasks = false;
         }
+        if (start_breed && frame == 4) { // prueba: la cria (con --minuto 29.9, el dia cambia enseguida)
+            static const float AT[3][2] = { { 14.0f, -16.0f }, { 17.0f, -14.0f }, { 12.0f, -12.0f } };
+            for (int k = 0; k < 3; k++) {
+                int i = fg_spawn_one(&g_actions, SPECIES_HORSE, AT[k][0], AT[k][1], 0.6f * (float)k);
+                if (i < 0) continue;
+                Animal *a = &g_actions.animals[i];
+                a->state = ANIMAL_TAMED, a->hunger = 0.1f;
+                a->sex = k == 1 ? SEX_MALE : SEX_FEMALE;
+                a->pace = 0.12f, a->grit = 0.06f;
+                if (k == 0) a->pregnant = 1.0f; // pare al amanecer
+                if (k == 2) a->foal = 1.0f;     // y este crece
+            }
+            start_breed = false;
+        }
+        if (start_ride && frame == 6) { // prueba: a caballo (la lanza en ristre, el disparo parto o la montura agotada)
+            rig.yaw = player.yaw;
+            cb_test_ride(&g_combat, &g_actions, &player, &terrain, start_ride, log, sizeof(log));
+        }
         if (start_trade && frame == 6) { // prueba: el comercio, una caravana, su asalto o el saqueo de un campamento rival
             td_test(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, start_trade, log, sizeof(log));
             rig.yaw = player.yaw;
@@ -1001,6 +1023,8 @@ int main(int argc, char **argv) {
             bool menu = ga_menu_open(&g_actions) || hud_picker_open();
             bool blocked = hud_picker_open() || ga_blocks_input(&g_actions) || hz_blocks_input(&g_hazards) || cb_blocks_input(&g_combat) || orbital;
             PlayerInput in = blocked ? (PlayerInput){ 0 } : player_read_input();
+            if (start_ride && frame > 6 && g_actions.mounted >= 0) in.move_z = 1.0f, in.run = true; // prueba: al galope
+            if (g_actions.mounted >= 0 && fg_mount_winded()) in.run = false; // la montura agotada no galopa
             player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards) * cb_speed_scale(&g_combat);
             player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
             if (!g_actions.climbing) player_update(&player, &terrain, in, rig.yaw, dt);
@@ -1243,7 +1267,8 @@ int main(int argc, char **argv) {
             cb_draw_hud(&g_combat, &g_actions, &troop, VIRTUAL_W - 14, vy, VIRTUAL_W, VIRTUAL_H);
             hz_draw_hud(&g_hazards, &troop, VIRTUAL_W - 14, vy + 22, VIRTUAL_W, VIRTUAL_H);
             wg_draw_hud(&g_actions, VIRTUAL_W - 14, vy + 44);
-            hud_stamina(VIRTUAL_W - 14, vy + 66);
+            if (g_actions.mounted >= 0) hud_mount(&g_actions, VIRTUAL_W - 14, vy + 66); // a caballo corre la montura
+            else hud_stamina(VIRTUAL_W - 14, vy + 66);
             // Barra rapida (1..9) abajo a la izquierda y la columna de acciones en el borde.
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions) && !g_actions.dlg.open) {
                 hud_quickbar(&g_actions, &g_props, &player, 6, VIRTUAL_H - 54);

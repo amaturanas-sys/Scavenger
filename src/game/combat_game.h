@@ -45,6 +45,7 @@
 #include "sim/ballistics.h"
 #include "sim/combat.h"
 #include "sim/health.h"
+#include "sim/riding.h"
 #include "sim/troop.h"
 #include "world/props.h"
 #include "world/terrain.h"
@@ -84,6 +85,10 @@ typedef struct {
     float windup;      // s que le quedan al golpe que anuncia (levanta el arma); 0: ninguno
     int windup_move;   // el golpe anunciado (MeleeMove + 1)
     float alert;       // s que busca al jugador aunque no lo vea (lo avisaron: un abatido que huyo, un grito)
+    // La monta (fase 6, src/sim/riding.h): el rumbo del caballo y la maniobra del arquero a caballo.
+    float ride_yaw;    // hacia donde va el caballo (el jinete mira a su blanco)
+    float orbit_dir;   // sentido en que rodea al blanco (+1 o -1; 0: sin elegir)
+    bool retreating;   // se aleja al galope (y tira hacia atras)
 } Enemy;
 
 typedef struct {
@@ -93,6 +98,7 @@ typedef struct {
     bool stuck; // clavado en el suelo
     V3 dir;     // direccion al clavarse (para dibujarlo)
     bool burning; // flecha encendida: quema y prende lo que toca
+    bool parthian; // del jugador, al galope y hacia atras: el disparo parto (src/sim/riding.h)
 } Shot;
 
 typedef struct {
@@ -136,6 +142,9 @@ typedef struct {
     float exposed;     // s expuesto tras un parry a destiempo (ni se cubre ni ataca)
     // La espalda y los rehenes (fase 2).
     int hostage;       // enemigo tomado de rehen + 1 (0: ninguno)
+    // La monta (fase 6, src/sim/riding.h): la lanza en ristre.
+    float couch;       // s que le quedan a la lanza en ristre (L a caballo, con una lanza)
+    float couch_cd;    // espera hasta la proxima carga
 } Combat;
 
 void cb_init(Combat *cb, unsigned seed);
@@ -145,6 +154,10 @@ bool cb_pick_target(Combat *cb, Camera3D cam, Vector2 pointer, int w, int h, cha
 // Las yurtas del campamento inicial (src/world/camp.h), que no son objetos del mundo: alli se
 // esconden los pobladores en un asalto (con las tiendas, refugios y casas).
 void cb_set_shelters(const Vector3 *pos, int n);
+// Prueba (--montado): a caballo, con lo que pide what. "lanza": la lanza en ristre y un bandido
+// delante; "parto": el arco tenso, un bandido detras elegido de objetivo y el tiro al rato (el
+// disparo parto, si va al galope); "agotado": la montura sin aguante. true si monto.
+bool cb_test_ride(Combat *cb, GameActions *ga, Player *p, const Terrain *t, const char *what, char *log, size_t len);
 // Prueba (--asalto): un asalto al campamento mas cercano al jugador.
 void cb_test_raid(Combat *cb, const GameActions *ga, const Player *p, const Terrain *t, char *log, size_t len);
 // Prueba (--espalda, --rehen): el jugador, en sigilo, a la espalda del primer enemigo, que no lo

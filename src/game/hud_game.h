@@ -24,6 +24,8 @@ void hud_vitals_frame(int right_x, int y, int rows);
 void hud_vital(IconId icon, const char *text, Color text_col, float value01, Color bar_col, int right_x, int y);
 // La fila del aguante (src/game/player.c).
 void hud_stamina(int right_x, int y);
+// A caballo, en vez del aguante del jugador: el de la montura (y si tiene hambre o sed).
+void hud_mount(const GameActions *ga, int right_x, int y);
 
 // Barra rapida (abajo a la izquierda): 9 casillas con una empuñadura, un objeto del inventario
 // o una habilidad. Su tecla (1..9) o un toque la usa (un arma: empuñar; otra vez, enfundar);
