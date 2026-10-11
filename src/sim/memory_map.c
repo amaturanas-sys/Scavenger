@@ -159,6 +159,16 @@ bool memmap_toggle_marker(MemoryMap *m, float x, float z, MarkerKind kind, float
     return true;
 }
 
+int memmap_add_marker(MemoryMap *m, float x, float z, MarkerKind kind, float radius) {
+    for (int i = 0; i < m->marker_count; i++) {
+        float dx = m->markers[i].x - x, dz = m->markers[i].z - z;
+        if (dx * dx + dz * dz <= radius * radius) return i;
+    }
+    if (m->marker_count >= MEMMAP_MAX_MARKERS) return -1;
+    m->markers[m->marker_count] = (MapMarker){ x, z, kind };
+    return m->marker_count++;
+}
+
 const MemoryPage *memmap_page_slot(const MemoryMap *m, int i) {
     return i >= 0 && i < m->capacity ? m->slots[i] : NULL;
 }

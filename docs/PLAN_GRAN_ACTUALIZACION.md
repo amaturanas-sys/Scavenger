@@ -1,6 +1,6 @@
 # Plan: la gran actualización (v0.5 a v0.9)
 
-> **Estado:** fases 0 (v0.4.4), 1 (v0.5.0), 2 (v0.5.1) y 3 (v0.6.0) hechas; las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
+> **Estado:** fases 0 (v0.4.4), 1 (v0.5.0), 2 (v0.5.1), 3 (v0.6.0) y 4 (v0.6.1) hechas; las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
 
 Pedido (5 y 6 de octubre de 2026):
 - combate más ágil, con selector de objetivo y cuatro botones (H J K L);
@@ -191,7 +191,17 @@ Va en esta misma fase, porque los cuatro botones ocupan teclas que hoy hacen otr
 
 **Costo:** alto.
 
-## Fase 4 — Administrar la tribu desde el jefe del campamento (v0.6.1)
+## Fase 4 — Administrar la tribu desde el jefe del campamento (v0.6.1) — hecha
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **Nombres:** `TASK_RECRUIT` queda como está (es «explorar en busca de reclutas»); al final de `CampTaskKind` se sumaron `TASK_SCOUT_RESOURCES`, `TASK_HERD`, `TASK_HUNT` y `TASK_GUARD`. El acompañante es `CampTask.member2` (cero: va solo) y `CAMP_TASKS` pasó de 6 a 8. Las reglas son puras (`src/sim/camps.c`, con tests).
+- **Ventana de pobladores:** es una página del diálogo del guardián (reemplaza a «Reclutar»): una casilla por persona con su oficio, y en la leyenda su salud, ánimo y tarea. Se marcan uno o dos y «Dar una tarea»; desde ahí también se capacita. Si hay más de 20 personas, «Más gente» pasa de página.
+- **Salidas** (reclutas, exploración, caza): se resuelven por tiempo, como los viajes, pero sin `Journey` (no ocupan sus 8 lugares): quien está en una salida «no está en el mundo» (`ga_away`), igual que de viaje. Se los ve alejarse 14 s, y al volver aparecen en el borde del campamento por donde se fueron. Los que salen no aceleran con ayudantes: duran lo que duran.
+- **Explorar** marca en el mapa sitios del mundo que todavía no están marcados: agua (orillas de lagos y pozos), pastos (vegas junto a los ríos que no son de grava), campamentos rivales y capitales («ciudadelas»). Los de peligro llevan `MARKER_DANGER`. Las marcas nuevas no alternan (`memmap_add_marker`) y los que fueron aprenden el camino.
+- **Cazar** necesitó un objeto nuevo: `utileria.material.grasa`. La carne fresca, como la del sacrificio, se come primero o se seca al día siguiente.
+- **Pastorear y guardia** se ven: los pastores rondan un pasto a 28 m del fuego y el ganado pasta con ellos; quien tiene un turno de guardia hace la ronda de la fase 3 aunque no sea soldado (y un soldado con otra tarea no hace guardia).
+- **Informes:** en corto al registro y completo a la ventana (los últimos cuatro por campamento, en la partida). El texto de los diálogos admite saltos de línea.
+- **Pruebas:** `--pobladores` (la ventana abierta, con alguien elegido) y `--tareas` (dos a cazar, uno a explorar, uno a pastorear y uno de guardia).
 
 **Lo que hay:**
 - el guardián del campamento (F) abre un diálogo con reclutar y capacitar (`CampTaskKind`: `TASK_RECRUIT`, `TASK_TRAIN`);

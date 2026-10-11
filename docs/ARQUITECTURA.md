@@ -36,6 +36,8 @@ src/
     targeting.*  el selector de objetivo: el siguiente alrededor del jugador, se pierde a 25 m
     stealth.*    la espalda (cono trasero, lo que ve un enemigo segun de donde vienes), el rehen que tapa el tiro y los abatidos
     squad.*      la escolta con ordenes, la ronda de los guardias y la alarma de los pobladores
+    camps.*      campamentos y sus tareas: capacitar, y las de la tribu (reclutas, explorar, cazar, pastorear, guardia) con su riesgo y lo que traen
+    travel.*     viajes de la tribu fuera de la vista: despachar, mensajeros, sitios conocidos
     storage.*    contenedores: bolsillos, mochila, alforjas, carreta, acopio; peso y estado de las piezas
     loadout.*    amuletos (y tatuajes) con sus efectos
     anim_index.* que clip de animacion corresponde a cada estado

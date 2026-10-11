@@ -160,8 +160,7 @@ static int wrap(const char *text, int x, int y, int width, int size, Color color
     const int line_h = size + 2;
     const char *p = text;
     while (*p) {
-        const char *end = strchr(p, ' ');
-        size_t wlen = end ? (size_t)(end - p) : strlen(p);
+        size_t wlen = strcspn(p, " \n");
         if (line[0]) snprintf(candidate, sizeof(candidate), "%s %.*s", line, (int)wlen, p);
         else snprintf(candidate, sizeof(candidate), "%.*s", (int)wlen, p);
         if (line[0] && MeasureText(candidate, size) > width) {
@@ -172,6 +171,12 @@ static int wrap(const char *text, int x, int y, int width, int size, Color color
             memcpy(line, candidate, sizeof(line));
         }
         p += wlen;
+        if (*p == '\n') { // salto de linea
+            if (draw && line[0]) ui_text(line, x, y + lines * line_h, size, color);
+            lines++;
+            line[0] = '\0';
+            p++;
+        }
         while (*p == ' ') p++;
     }
     if (line[0]) {

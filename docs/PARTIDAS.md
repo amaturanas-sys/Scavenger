@@ -74,6 +74,7 @@ Reglas:
 - **`v0.5.0-*.sav`:** las mismas, con los structs de la v0.5.0 (agacharse, objetivo, parry y golpe anunciado), y una nueva, `parry`.
 - **`v0.5.1-rehen.sav`:** una sola, con lo de la v0.5.1 (rehén, abatido y alerta).
 - **`v0.6.0-asalto.sav`:** un asalto al campamento, con la escolta en «defender».
+- **`v0.6.1-tribu.sav`:** la tribu trabajando, con la ventana de pobladores abierta.
 
 | Partida | Qué tiene |
 |---|---|
@@ -83,6 +84,7 @@ Reglas:
 | `parry` (v0.5.0) | El jugador agachado, con un bandido elegido de objetivo y otro anunciando el golpe, dentro de la ventana del parry. |
 | `rehen` (v0.5.1) | El jugador con un bandido de rehén, otro abatido en el suelo y un jinete alertado. |
 | `asalto` (v0.6.0) | Fanáticos asaltando el campamento: un soldado de guardia, pobladores escondidos en las yurtas y la escolta en «defender». |
+| `tribu` (v0.6.1) | Dos de caza (fuera, no se ven), uno pastoreando, los informes del explorador y de la guardia, dos marcas nuevas en el mapa y la ventana de pobladores abierta con uno elegido. |
 
 `estepa --probar-partidas tests/partidas` (CI, en el job de Linux) hace esto con cada una:
 - la carga;
@@ -107,6 +109,13 @@ La v0.5.0 agregó campos de verdad (`Player.crouching`; `Enemy.windup` y `windup
 La v0.5.1 agregó dos estados de enemigo al final de `EnemyState` (`EN_DOWN`, abatido, y `EN_HOSTAGE`, rehén), `Enemy.alert`, `Combat.hostage` (índice + 1) y una acción de campamento al final de `CampAction` (`ACT_FINISH_DOWNED`), que agranda `Kingdom.stance`: las partidas viejas cargan con el valor nuevo en cero. El resumen sumó `rehen`, y por enemigo, su alerta y lo que le falta para despertar si está abatido.
 
 La v0.6.0 agregó `GameActions.escort_order` (cero: atacar, como antes) y a cada `Npc` su guardia, su ronda, su alarma y dónde se esconde. El resumen sumó la orden a la escolta y, por NPC, esos datos si está de guardia o escondido.
+
+La v0.6.1 agregó tareas al final de `CampTaskKind` y `CampTask.member2`, el acompañante (cero: va solo). `CAMP_TASKS` pasó de 6 a 8: el arreglo crece y las partidas viejas cargan con los huecos en cero. `GameActions` sumó tres cosas:
+- los elegidos de la ventana de pobladores;
+- el pasto de cada campamento;
+- sus informes (`CampNews`, un struct para que el esquema no tenga arreglos de tres dimensiones).
+
+El texto de los diálogos creció de 320 a 1024. El resumen sumó, por campamento, sus tareas, el pasto y los informes, y los elegidos de la ventana.
 
 ## El esquema congelado de las partidas planas
 

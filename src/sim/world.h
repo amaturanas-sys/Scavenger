@@ -142,6 +142,8 @@ Region world_region_weights(const World *w, float x, float z, float out[REGION_C
 Region world_region(const World *w, float x, float z);
 float world_region_weight(const World *w, Region r, float x, float z);
 const char *region_name(Region r);      // UTF-8 ("estepa", ...)
+// Hacia donde queda (dx, dz) desde donde uno esta: "norte", "noreste"... (-Z es el norte). UTF-8.
+const char *world_compass(float dx, float dz);
 float region_altitude(Region r);        // altitud media (m sobre el mar)
 // Habitat de la fauna de cada region (HAB_* de src/sim/animals.h).
 int region_habitat(Region r);

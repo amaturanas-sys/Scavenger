@@ -568,6 +568,7 @@ int main(int argc, char **argv) {
     const char *convert_from = NULL, *convert_to = NULL; // --convertir-partida a b: la reescribe en el formato de hoy, y sale
     int start_pause = 0;  // prueba: 1 pausa, 2 guardar, 3 controles (F1), sobre la partida
     int start_tab = -1;
+    bool start_tasks = false; // prueba: la tribu sale a cazar, explorar, pastorear y hacer guardia
     int start_talk = 0;      // prueba: 1 hablar con el druida, 2 con el orfebre
     int start_equip_tab = -1; // prueba: pestaña del equipo (1 ropa, 2 joyas, 3 tatuajes)   // prueba: menu Tab abierto en esa pestaña
     bool start_loot = false; // prueba: bolsas de botin delante
@@ -622,6 +623,8 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[i], "--fundar")) start_talk = 4;
         else if (!strcmp(argv[i], "--ordenes")) start_talk = 5;
         else if (!strcmp(argv[i], "--despachar")) start_talk = 6;
+        else if (!strcmp(argv[i], "--pobladores")) start_talk = 7;
+        else if (!strcmp(argv[i], "--tareas")) start_tasks = true;
         else if (!strcmp(argv[i], "--ropa")) start_equip = true, start_equip_tab = 1;
         else if (!strcmp(argv[i], "--joyas")) start_equip = true, start_equip_tab = 2;
         else if (!strcmp(argv[i], "--tatuajes")) start_equip = true, start_equip_tab = 3;
@@ -894,6 +897,34 @@ int main(int argc, char **argv) {
             g_actions.dlg.open = true;
             start_talk = 0;
         }
+        if (start_tasks && frame == 6) { // prueba: dos a cazar, uno a explorar, uno a pastorear y uno de guardia
+            int free[5], nf = 0;
+            for (int k = 0; k < troop.count && k < TROOP_MAX && nf < 5; k++)
+                if (troop.members[k].status == STATUS_ACTIVE && troop.members[k].camp == 0 && troop.members[k].id != g_actions.camps[0].guardian &&
+                    !camp_member_busy(&g_actions.camps[0], troop.members[k].id))
+                    free[nf++] = troop.members[k].id;
+            static const CampTaskKind KINDS[] = { TASK_HUNT, TASK_SCOUT_RESOURCES, TASK_HERD, TASK_GUARD };
+            stock_add(&g_actions.camps[0].stock, "utileria.consumible.carne_seca", 6); // provisiones
+            for (int j = 0, f = 0; j < 4 && f < nf; j++) {
+                int a = free[f++], b = j == 0 && f < nf ? free[f++] : 0;
+                cg_start_task(&g_actions, &troop, &terrain, 0, KINDS[j], a, b, log, sizeof(log));
+            }
+            start_tasks = false;
+        }
+        if (start_talk == 7 && frame == 6) { // prueba: la ventana de pobladores, con dos elegidos
+            int pick[2] = { 0, 0 }, np = 0;
+            for (int k = 0; k < troop.count && k < TROOP_MAX; k++) {
+                const Member *m = &troop.members[k];
+                if (m->id == g_actions.camps[0].guardian) {
+                    Vector3 at = g_actions.npcs[k].pos;
+                    player.pos = (Vector3){ at.x + 1.5f, terrain_height(&terrain, at.x + 1.5f, at.z), at.z };
+                } else if (np < 2 && m->status == STATUS_ACTIVE && m->camp == 0 && !camp_member_busy(&g_actions.camps[0], m->id)) {
+                    pick[np++] = m->id;
+                }
+            }
+            if (cg_try_talk(&g_actions, &troop, &player)) cg_show_people(&g_actions, pick[0], pick[1]);
+            start_talk = 0;
+        }
         if (start_talk == 3 && frame == 6) { // prueba: hablando con el guardian del campamento inicial
             for (int k = 0; k < troop.count && k < TROOP_MAX; k++)
                 if (troop.members[k].id == g_actions.camps[0].guardian) {
@@ -1000,7 +1031,7 @@ int main(int argc, char **argv) {
             if (!gallery_mode)
                 ig_update(&g_actions, &g_combat, &g_props, &player, !menu && !hz_blocks_input(&g_hazards) && !g_actions.dlg.open, log,
                           sizeof(log));
-            if (!gallery_mode) cg_update(&g_actions, &troop, &g_props, &player, day, dt, log, sizeof(log));
+            if (!gallery_mode) cg_update(&g_actions, &troop, &g_props, &player, &terrain, &g_memory, world_time, dt, log, sizeof(log));
             if (!gallery_mode)
                 trv_update(&g_actions, &troop, &g_memory, &player, &terrain, clock_is_night(world_time),
                            !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));

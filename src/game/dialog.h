@@ -25,7 +25,7 @@ typedef struct {
     bool open;
     char speaker[48];
     IconId portrait;
-    char text[320];
+    char text[1024];
     DlgOption opt[DLG_OPTIONS];
     int n, cursor;
 } Dialog;

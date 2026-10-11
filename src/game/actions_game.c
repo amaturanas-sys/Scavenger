@@ -634,6 +634,13 @@ static void start_craft(GameActions *ga, CraftId c, const Props *props, const Pl
 }
 
 // ---------------------------------------------------------------- NPCs
+bool ga_away(const GameActions *ga, const Member *m) {
+    if (m->journey > 0) return true;
+    if (m->camp < 0 || m->camp >= CAMPS_MAX || !ga->camps[m->camp].used) return false;
+    const CampTask *t = camp_task_of(&ga->camps[m->camp], m->id); // los que salen siguen siendo de su campamento
+    return t && task_away(t->kind);
+}
+
 // Mantiene un NPC por integrante activo de la tropa (los nuevos aparecen junto al fuego).
 static void sync_npcs(GameActions *ga, const Troop *troop, const Terrain *t) {
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
@@ -700,7 +707,7 @@ static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const T
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
         Npc *n = &ga->npcs[i];
         const Member *m = &troop->members[i];
-        if (m->status != STATUS_ACTIVE || n->escort || m->journey > 0) continue; // de viaje: lo mueve src/game/travel_game.c
+        if (m->status != STATUS_ACTIVE || n->escort || ga_away(ga, m)) continue; // de viaje o de salida: src/game/travel_game.c, camp_game.c
         if (n->guarding || n->alarm > 0.0f) continue; // de guardia o escondiendose: lo mueve src/game/combat_game.c
         if (n->project >= 0 && n->project < ga->project_count) {
             const BuildProject *bp = &ga->projects[n->project];
@@ -1149,7 +1156,7 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         const Member *m = &troop->members[i];
         const Npc *n = &ga->npcs[i];
         if (m->status != STATUS_ACTIVE || n->member_id != m->id) continue;
-        if (m->journey > 0 && n->leave_t >= 14.0f) continue; // ya se perdio en el horizonte
+        if (ga_away(ga, m) && n->leave_t >= 14.0f) continue; // ya se perdio en el horizonte
         if (n->sheltered || dist2d(n->pos, p->pos) > 150.0f) continue; // escondido en una yurta, o lejos (no se ve)
         float s = m->champion >= 0 ? troop->champions[m->champion].stats.size : 1.0f;
         bool working = n->project >= 0 && n->project < ga->project_count &&

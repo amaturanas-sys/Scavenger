@@ -385,14 +385,24 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
 - **Guardián (diálogo con opciones en iconos):**
   - construir: la obra se ubica sola en un sitio libre del campamento;
   - escolta: quién sale con el jugador; los marcados ya lo siguen;
-  - reclutar: alguien sin tarea sale con carne seca y vuelve con un integrante nuevo;
+  - pobladores: la ventana de la tribu (ver abajo);
   - capacitar: un oficio para alguien sin tarea, con su coste y tiempo (soldado, herrero, druida, orfebre, pastor, cazador, explorador);
   - estado;
   - disolver.
 - **Recursos humanos:**
-  - quien se capacita o recluta queda ocupado y no trabaja en obras ni sale de escolta;
-  - la gente ociosa del campamento acelera las tareas (+25 % cada uno, hasta ×2);
+  - quien tiene una tarea queda ocupado y no trabaja en obras ni sale de escolta;
+  - la gente ociosa del campamento acelera la capacitación (+25 % cada uno, hasta ×2);
   - cada maestro del oficio suma +60 %.
+- **Pobladores** (v0.6.1): la gente del campamento (menos el guardián) con su oficio, salud, ánimo y tarea. Se elige a uno o dos y se les da una tarea; el número en cada casilla dice cuántos saben el oficio. Las tareas duran un tiempo fijo:
+  - **salidas** (no se los ve: se alejan unos segundos y desaparecen; al volver aparecen en el borde del campamento):
+    - buscar reclutas (240 s, 3 de carne seca por persona): vuelve con 0 a 2 personas (un explorador y un acompañante ayudan);
+    - explorar recursos (300 s, 2 de carne seca por persona): marca en el mapa de memoria de 1 a 4 sitios nuevos, primero uno de cada clase y después los más cercanos: agua (lagos y pozos), pastos junto a los ríos, campamentos rivales y ciudadelas (estos dos, como peligro). Llegan a 0,9 km, +0,4 km por explorador y +0,3 km acompañados, y aprenden el camino (para despacharlos allí);
+    - cazar (300 s, 1 de carne seca por persona): presas de la región (las del hábitat, según lo comunes que son), más con cazadores y acompañados; en invierno escasean (×0,55) y en otoño abundan (×1,25). Traen carne fresca, pieles (la piel con nombre de la presa, si tiene), huesos, tendones y grasa (en otoño, el doble; en primavera, nada).
+    - el riesgo de cada salida (10 % reclutas, 14 % explorar, 20 % cazar) baja un 40 % por cada uno que sabe el oficio y un 45 % acompañados, y sube un 50 % de noche. Con un percance, cada uno vuelve herido o no vuelve (solos, el 35 % muere; acompañados, no siempre les toca a los dos y mueren menos).
+  - **en el campamento** (se los ve):
+    - pastorear (300 s): llevan el ganado de la tribu (herbívoros domados sueltos en el campamento) a un pasto a 28 m y lo rondan; el ganado come y bebe (con dos pastores, un 50 % más rápido; sin pasto, come la mitad) y al volver da leche (+1 por animal con dos pastores). Las fieras pueden llevarse un animal: 18 % solo, 7 % con dos pastores, menos con un pastor de oficio y más de noche;
+    - guardia (600 s): hace la ronda de los soldados, sea cual sea su oficio.
+  - **informes:** al volver cuentan qué pasó, en corto en el registro y completo en la ventana (último informe y la página «Informes» con los cuatro últimos).
 - **Disolver:**
   - las estructuras arden y quedan cenizas;
   - el acopio se carga en la carreta y en las alforjas cercanas, y lo que no cabe se pierde;

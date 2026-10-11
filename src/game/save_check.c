@@ -70,7 +70,15 @@ void save_summary(const GameState *g, FILE *o) {
                 c->founded_day, c->ntask, c->stock.n);
         for (int i = 0; i < c->stock.n && i < STOCK_MAX; i++) fprintf(o, " %s x%d", c->stock.e[i].id, c->stock.e[i].count);
         fputc('\n', o);
+        for (int j = 0; j < c->ntask && j < CAMP_TASKS; j++) // v0.6.1
+            fprintf(o, "    tarea %d tipo %d integrante %d acompanante %d oficio %d (%.3f de %.3f)\n", j, (int)c->task[j].kind, c->task[j].member,
+                    c->task[j].member2, (int)c->task[j].role, c->task[j].done, c->task[j].work);
+        if (ga->herd_at[k].x != 0.0f || ga->herd_at[k].z != 0.0f) fprintf(o, "    pasto (%.2f, %.2f)\n", ga->herd_at[k].x, ga->herd_at[k].z); // v0.6.1
+        for (int i = 0; i < GA_NEWS; i++)
+            if (ga->news[k].line[i][0]) fprintf(o, "    informe %d: %s\n", i, ga->news[k].line[i]); // v0.6.1
     }
+    if (ga->people_pick[0] || ga->people_pick[1] || ga->people_page)
+        fprintf(o, "  pobladores: elegidos %d %d pagina %d\n", ga->people_pick[0], ga->people_pick[1], ga->people_page); // v0.6.1
     for (int i = 0; i < ga->project_count && i < GA_MAX_PROJECTS; i++)
         fprintf(o, "  obra %d (%.2f, %.2f) avance %.3f%s\n", (int)ga->projects[i].def, ga->projects[i].x, ga->projects[i].z,
                 ga->projects[i].progress, ga->projects[i].done ? " hecha" : "");

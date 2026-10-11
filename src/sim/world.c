@@ -52,6 +52,14 @@ const char *region_name(Region r) {
     return r >= 0 && r < REGION_COUNT ? T(names[r]) : "?";
 }
 
+const char *world_compass(float dx, float dz) {
+    static const char *names[8] = { N_("este"), N_("noreste"), N_("norte"), N_("noroeste"), N_("oeste"), N_("suroeste"), N_("sur"),
+                                    N_("sureste") };
+    float a = atan2f(-dz, dx); // -Z es el norte
+    int o = (int)floorf(a / (PI_F / 4.0f) + 0.5f);
+    return T(names[(o % 8 + 8) % 8]);
+}
+
 const char *world_kingdom_name(Region r) {
     static const char *names[REGION_COUNT] = { N_("Kanato de Hierro"), N_("Principado de los Pinos Negros"), N_("Señorío del Glaciar"),
                                                N_("Jarlazgo de la Costa Helada"), N_("Reino de los Oasis") };

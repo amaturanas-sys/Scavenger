@@ -241,7 +241,7 @@ static void toggle_escort(Hazards *hz, GameActions *ga, const Troop *troop, cons
         float best_d = reach;
         for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
             const Npc *n = &ga->npcs[i];
-            if (troop->members[i].status != STATUS_ACTIVE || n->escort || n->project >= 0 || n->job >= 0 || troop->members[i].journey > 0) continue;
+            if (troop->members[i].status != STATUS_ACTIVE || n->escort || n->project >= 0 || n->job >= 0 || ga_away(ga, &troop->members[i])) continue;
             float d = dist2(n->pos, p->pos);
             if (d < best_d) best_d = d, best = i;
         }

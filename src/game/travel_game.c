@@ -325,7 +325,7 @@ static void tick_journeys(GameActions *ga, Troop *troop, const MemoryMap *mem, c
                     int group[JOURNEY_PEOPLE] = { jr->people[0] }, n = 1;
                     for (int i = 0; i < troop->count && i < TROOP_MAX && n <= jr->request && n < JOURNEY_PEOPLE; i++) {
                         Member *m = &troop->members[i];
-                        if (m->status != STATUS_ACTIVE || m->camp != jr->site || ga->npcs[i].escort || trv_away(m) ||
+                        if (m->status != STATUS_ACTIVE || m->camp != jr->site || ga->npcs[i].escort || ga_away(ga, m) || camp_member_busy(&ga->camps[jr->site], m->id) ||
                             m->id == ga->camps[jr->site].guardian || m->health.down)
                             continue;
                         group[n++] = m->id;
@@ -384,7 +384,7 @@ static void learn_sites(GameActions *ga, Troop *troop, const MemoryMap *mem) {
     int ns = sites(ga, mem, all, CAMPS_MAX + 32);
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
         Member *m = &troop->members[i];
-        if (m->status != STATUS_ACTIVE || trv_away(m) || ga->npcs[i].member_id != m->id) continue;
+        if (m->status != STATUS_ACTIVE || ga_away(ga, m) || ga->npcs[i].member_id != m->id) continue;
         if (m->camp >= 0 && m->camp < CAMPS_MAX) m->known = site_learn(m->known, SITE_CAMP(m->camp));
         for (int s = 0; s < ns; s++)
             if (dist_xz(ga->npcs[i].pos.x, ga->npcs[i].pos.z, all[s].x, all[s].z) < LEARN_RADIUS) m->known = site_learn(m->known, all[s].id);
