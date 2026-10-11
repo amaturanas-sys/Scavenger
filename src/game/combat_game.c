@@ -1056,7 +1056,7 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
         for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
             const Npc *n = &ga->npcs[k];
             const Member *m = &troop->members[k];
-            if (m->status != STATUS_ACTIVE || n->member_id != m->id || s->owner == m->id || dist2(mid, n->pos) > reach) continue;
+            if (m->status != STATUS_ACTIVE || n->member_id != m->id || s->owner == m->id || ga_away(ga, m) || dist2(mid, n->pos) > reach) continue;
             BodyPose b;
             pose_member(&b, n, m, troop, time, k);
             float tt;
@@ -1306,7 +1306,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             const Npc *n = &ga->npcs[k];
             const Member *m = &troop->members[k];
             // Cualquiera a la vista: la escolta, los guardias, los pobladores que no se escondieron.
-            if (m->status != STATUS_ACTIVE || m->health.down || n->member_id != m->id || n->sheltered || m->journey > 0) continue;
+            if (m->status != STATUS_ACTIVE || m->health.down || n->member_id != m->id || n->sheltered || ga_away(ga, m)) continue;
             float d = dist2(e->pos, n->pos);
             if (d < def->sight && d < best) best = d, target = m->id, tpos = n->pos;
         }
@@ -1533,7 +1533,7 @@ static void camp_member(Combat *cb, GameActions *ga, Troop *troop, Props *props,
     Member *m = &troop->members[k];
     n->alarm = fmaxf(0.0f, n->alarm - dt);
     int ci = m->camp;
-    if (ci < 0 || ci >= CAMPS_MAX || !ga->camps[ci].used || m->journey > 0) {
+    if (ci < 0 || ci >= CAMPS_MAX || !ga->camps[ci].used || ga_away(ga, m)) {
         n->guarding = n->sheltered = false;
         return;
     }
@@ -1544,7 +1544,11 @@ static void camp_member(Combat *cb, GameActions *ga, Troop *troop, Props *props,
     g_slow[k] = 0.0f;
     const CampSite *c = &ga->camps[ci];
     Vector3 center = { c->x, n->pos.y, c->z };
-    bool guard = (m->role == ROLE_SOLDIER || m->role == ROLE_GUARD) && c->guardian != m->id && n->project < 0 && n->job < 0;
+    // De guardia: los soldados (y los guardias) sin otra tarea, y quien tenga un turno de guardia
+    // (la ventana de pobladores, src/game/camp_game.c).
+    const CampTask *task = camp_task_of(c, m->id);
+    bool guard = task ? task->kind == TASK_GUARD
+                      : (m->role == ROLE_SOLDIER || m->role == ROLE_GUARD) && c->guardian != m->id && n->project < 0 && n->job < 0;
     if (guard) {
         n->sheltered = false;
         n->alarm = 0.0f;

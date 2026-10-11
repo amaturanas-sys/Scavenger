@@ -75,7 +75,7 @@ void ag_update(GameActions *ga, Troop *troop, const Climate *c, unsigned seed, f
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
         Member *m = &troop->members[i];
         Npc *n = &ga->npcs[i];
-        if (m->status != STATUS_ACTIVE || n->member_id != m->id || m->journey > 0) continue;
+        if (m->status != STATUS_ACTIVE || n->member_id != m->id || ga_away(ga, m)) continue;
         float desert = biome_desert(seed, n->pos.x, n->pos.z);
         float temp = local_temperature(c->temperature, sun_h, desert) - (ga->terrain ? fmaxf(0.0f, n->pos.y - ga->terrain->plain) * 0.07f : 0.0f);
         float sun = sun_strength(sun_h, c->clouds, desert);
@@ -105,7 +105,7 @@ void ag_draw_overlay(const GameActions *ga, const Troop *troop, Camera3D cam, in
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
         const Member *m = &troop->members[i];
         const Npc *n = &ga->npcs[i];
-        if (m->status != STATUS_ACTIVE || n->member_id != m->id || m->journey > 0 || !n->comfort || m->health.down) continue;
+        if (m->status != STATUS_ACTIVE || n->member_id != m->id || ga_away(ga, m) || !n->comfort || m->health.down) continue;
         Vector3 pos = { n->pos.x, n->pos.y + 2.25f, n->pos.z };
         Vector3 to = Vector3Subtract(pos, cam.position);
         if (Vector3DotProduct(to, Vector3Subtract(cam.target, cam.position)) <= 0.0f || Vector3Length(to) > 30.0f) continue;

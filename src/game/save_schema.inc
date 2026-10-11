@@ -207,6 +207,7 @@ static const SfField SF_F_CampTask[] = {
     SF_ONE(CampTask, role, "Role", SF_INT, NULL),
     SF_ONE(CampTask, work, "float", SF_FLOAT, NULL),
     SF_ONE(CampTask, done, "float", SF_FLOAT, NULL),
+    SF_ONE(CampTask, member2, "int", SF_INT, NULL),
 };
 static const SfType SF_T_CampTask = SF_TYPE(CampTask, SF_F_CampTask);
 
@@ -428,6 +429,12 @@ static const SfField SF_F_Journey[] = {
 };
 static const SfType SF_T_Journey = SF_TYPE(Journey, SF_F_Journey);
 
+// CampNews (src/game/actions_game.h)
+static const SfField SF_F_CampNews[] = {
+    SF_ARR2(CampNews, line, "char", SF_TEXT, NULL),
+};
+static const SfType SF_T_CampNews = SF_TYPE(CampNews, SF_F_CampNews);
+
 // GameActions (src/game/actions_game.h)
 static const SfField SF_F_GameActions[] = {
     // inv: puntero, no se guarda
@@ -546,6 +553,10 @@ static const SfField SF_F_GameActions[] = {
     SF_ONE(GameActions, pl_ranged, "int", SF_INT, NULL),
     SF_ONE(GameActions, pl_move, "int", SF_INT, NULL),
     SF_ONE(GameActions, swap_anim, "float", SF_FLOAT, NULL),
+    SF_ARR(GameActions, people_pick, "int", SF_INT, NULL),
+    SF_ONE(GameActions, people_page, "int", SF_INT, NULL),
+    SF_ARR(GameActions, herd_at, "Vector3", SF_BYTES, NULL),
+    SF_ARR(GameActions, news, "CampNews", SF_STRUCT, &SF_T_CampNews),
 };
 static const SfType SF_T_GameActions = SF_TYPE(GameActions, SF_F_GameActions);
 

@@ -301,6 +301,7 @@ utileria.material.hierro	Mineral de hierro	uso:recolectable,uso:material,materia
 utileria.material.plumas	Plumas	uso:recolectable,uso:material	0.2x0.05x0.3	20	pendiente	De las aves cazadas: para emplumar flechas.
 utileria.material.hueso	Huesos	uso:recolectable,uso:material,material:hueso	0.3x0.1x0.3	30	pendiente	Del despiece: puntas de virote.
 utileria.material.tendones	Tendones	uso:recolectable,uso:material	0.2x0.05x0.3	20	pendiente	Del despiece: cuerda.
+utileria.material.grasa	Grasa animal	uso:recolectable,uso:material	0.2x0.1x0.2	20	pendiente	De la caza (más en otoño): sebo para lámparas, ungüentos y para engrasar el cuero.
 utileria.material.pedernal	Pedernal	uso:recolectable,uso:material,material:piedra	0.15x0.1x0.15	30	pendiente	Se recoge en la estepa: puntas de flecha.
 personaje.base.cuerpo_nino	Cuerpo base: niño	rig:humanoide,talla:pequena	0.35x1.2x0.25	800	pendiente	Malla base modular: ropa y armadura encajan encima.
 personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.5x1.7x0.3	1200	pendiente	

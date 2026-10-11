@@ -155,6 +155,7 @@ Gorjal / cofia laminar de cuero	Leather lamellar gorget
 Gorjal / cofia ritual del culto	Cult ritual gorget
 Granate	Garnet
 Granero	Granary
+Grasa animal	Animal fat
 Grebas (par) de escamas de hierro	Iron scale greaves (pair)
 Grebas (par) de malla	Mail greaves (pair)
 Grebas (par) laminar de cuero	Leather lamellar greaves (pair)
@@ -445,55 +446,142 @@ y un %s en la tribu	and a %s in the tribe
 # --- src/game/apparel_game.c
 %s se pone: %s.	%s puts on: %s.
 # --- src/game/camp_game.c
-%s aprende %s: 	%s learns %s: 
+\nÚltimo informe: %s	\nLatest report: %s
+ %s no volvió: la tribu está de luto.	 %s did not come back: the tribe is in mourning.
+ %s volvieron con heridas.	 %s came back wounded.
+ %s volvió con heridas.	 %s came back wounded.
+ Las fieras atacaron el rebaño: perdieron un animal (%s).	 Beasts attacked the herd: an animal was lost (%s).
+ Las fieras se llevaron un animal (%s).	 Beasts took an animal (%s).
+ y 	 and 
+%d m	%d m
+%d,%d km	%d.%d km
+%s a %s al %s	%s %s to the %s
+%s aprende %s: %d%%. 	%s is learning %s: %d%%. 
 %s empieza a aprender el oficio de %s.	%s starts learning the %s trade.
-%s sale a buscar gente nueva para %s.	%s sets out to find new people for %s.
-%s vuelve con %s: se une a %s.	%s returns with %s, who joins %s.
+%s hace guardia.	%s stands guard.
+%s hacen guardia.	%s stand guard.
+%s saca el ganado a pastar.	%s takes the herd out to graze.
+%s sacan el ganado a pastar.	%s take the herd out to graze.
+%s sale a buscar gente nueva.	%s sets out to find new people.
+%s sale a cazar.	%s goes out hunting.
+%s sale a explorar los alrededores.	%s sets out to scout the surroundings.
+%s salen a buscar gente nueva.	%s set out to find new people.
+%s salen a cazar.	%s go out hunting.
+%s salen a explorar los alrededores.	%s set out to scout the surroundings.
+%s se une a %s.	%s joins %s.
+%s se unen a %s.	%s join %s.
+%s termina su turno de guardia.	%s finishes the guard shift.
+%s terminan su turno de guardia.	%s finish the guard shift.
+%s vuelve con gente nueva: 	%s comes back with new people: 
+%s vuelve con gente, pero la tribu está llena.	%s comes back with people, but the tribe is full.
+%s vuelve de cazar con las manos vacías.	%s comes back from the hunt empty-handed.
+%s vuelve de cazar: %d presas (%s).	%s comes back from the hunt: %d kills (%s).
+%s vuelve de cazar: %d presas (%s). Carne %d, pieles %d, huesos %d, tendones %d	%s comes back from the hunt: %d kills (%s). Meat %d, hides %d, bones %d, sinew %d
+%s vuelve de explorar: 	%s comes back from scouting: 
+%s vuelve de explorar: %d hallazgos, marcados en tu mapa (M).	%s comes back from scouting: %d finds, marked on your map (M).
+%s vuelve de pastorear: %d animales comieron y bebieron; leche %d.	%s comes back from herding: %d animals ate and drank; milk %d.
+%s vuelve de pastorear: leche %d.	%s comes back from herding: milk %d.
+%s vuelve sin nadie: nadie quiso venir.	%s comes back alone: nobody wanted to come.
+%s vuelven con gente nueva: 	%s come back with new people: 
+%s vuelven con gente, pero la tribu está llena.	%s come back with people, but the tribe is full.
+%s vuelven de cazar con las manos vacías.	%s come back from the hunt empty-handed.
+%s vuelven de cazar: %d presas (%s).	%s come back from the hunt: %d kills (%s).
+%s vuelven de cazar: %d presas (%s). Carne %d, pieles %d, huesos %d, tendones %d	%s come back from the hunt: %d kills (%s). Meat %d, hides %d, bones %d, sinew %d
+%s vuelven de explorar: 	%s come back from scouting: 
+%s vuelven de explorar: %d hallazgos, marcados en tu mapa (M).	%s come back from scouting: %d finds, marked on your map (M).
+%s vuelven de pastorear: %d animales comieron y bebieron; leche %d.	%s come back from herding: %d animals ate and drank; milk %d.
+%s vuelven de pastorear: leche %d.	%s come back from herding: milk %d.
+%s vuelven sin nadie: nadie quiso venir.	%s come back alone: nobody wanted to come.
 %s ya es %s (%s).	%s is now a %s (%s).
 %s · %.0f s · maestros: %d	%s · %.0f s · masters: %d
+%s · salud %d%% · ánimo %d · %s	%s · health %d%% · morale %d · %s
 %s, guardián de %s	%s, keeper of %s
+, grasa %d.	, fat %d.
+. Lo marcan en tu mapa (M).	. They mark it on your map (M).
+A %s	To %s
 Acopio: 	Store: 
 Adiós	Farewell
-Alguien sin tarea puede salir a buscar gente por los campamentos de la estepa. Lleva: %s. Tarda unos %.0f s.	Someone without a task can go looking for people across the steppe camps. Takes: %s. Lasts about %.0f s.
+Aprender un oficio en el campamento	Learn a trade in the camp
 Aquí podría nacer un campamento, pero no tienes escolta para nombrar un guardián (Y).	A camp could be born here, but you have no escort to name a keeper (Y).
 Aquí puede nacer un campamento. Hace falta un guardián que lo administre: ¿a quién de tu escolta nombras?	A camp can be born here. It needs a keeper to run it: whom from your escort do you name?
+Buscar reclutas	Find recruits
 Campamento %d	Camp %d
 Capacitar	Train
+Cazar	Hunt
 Construir	Build
+Dar una tarea	Give a task
 Disolver	Dissolve
 Disolver el campamento	Dissolve the camp
 El campamento está en orden. Somos %d (%d sin tarea) y hay %d tareas en marcha. ¿Qué ordenas?	The camp is in order. We are %d (%d idle) with %d tasks under way. Your orders?
+Elige primero a quién	First choose who
 Enseñar un oficio a alguien sin tarea	Teach a trade to someone idle
 Escolta	Escort
 Estado	Status
+Explorar recursos	Scout for resources
 Gente, tareas y acopio	People, tasks and store
 Gente: %d. 	People: %d. 
-Irá %s	%s will go
+Guardia	Guard
+Hay demasiadas tareas en marcha	Too many tasks under way
+Hay demasiadas tareas en marcha en este campamento.	Too many tasks under way in this camp.
+Informes	Reports
+Junto al campamento · %.0f s · %d animales · leche	Near the camp · %.0f s · %d animals · milk
+La ronda del campamento · %.0f s	The camp patrol · %.0f s
 La tribu	The tribe
+La tribu está llena	The tribe is full
 Listo	Done
-Mandar a alguien a buscar gente nueva	Send someone to find new people
+Lo que contaron los últimos que volvieron	What the last ones back reported
+Lo que contaron los últimos que volvieron a %s:	What the last ones back at %s reported:
+Más gente	More people
 Nace %s. %s queda de guardián: háblale (F) para administrarlo.	%s is born. %s stays as keeper: talk to them (F) to run it.
+No alcanza el acopio de %s para eso.	The stores of %s are not enough for that.
 No fundar	Don't found
-No hay nadie sin tarea	Nobody is idle
+No hay ganado suelto en el campamento	No free livestock in the camp
 No se puede deshacer	It can't be undone
+No volvieron de su salida: %s. La tribu está de luto.	They did not come back: %s. The tribe is in mourning.
+No volvió de su salida: %s. La tribu está de luto.	Did not come back: %s. The tribe is in mourning.
 Nombrar guardián a %s (se queda aquí)	Name %s keeper (stays here)
-Que salga a reclutar	Send out to recruit
+Pastorear	Herd
+Pobladores	Villagers
+Página %d de %d	Page %d of %d
+Quién hace qué: buscar reclutas, explorar, pastorear, cazar o hacer guardia	Who does what: find recruits, scout, herd, hunt or stand guard
 Quién sale contigo del campamento	Who leaves the camp with you
-Reclutando: 	Recruiting: 
-Reclutar	Recruit
+Salida ~%.0f s · riesgo %d%% · %s, %s · llevan: %s	Trip ~%.0f s · risk %d%% · %s, %s · they take: %s
+Salida ~%.0f s · riesgo %d%% · hasta %.1f km · llevan: %s	Trip ~%.0f s · risk %d%% · up to %.1f km · they take: %s
+Salida ~%.0f s · riesgo %d%% · llevan: %s	Trip ~%.0f s · risk %d%% · they take: %s
 Se disuelve %s: arden las estructuras y se pierde todo el acopio (%d cosas): no había carreta ni alforjas cerca.	%s is dissolved: the structures burn and the whole store is lost (%d things): no cart or saddlebags nearby.
 Se disuelve %s: arden las estructuras; cargan %d cosas, se pierden %d.	%s is dissolved: the structures burn; %d things loaded, %d lost.
 Se queman las estructuras y la gente te sigue	The structures burn and the people follow you
+Somos %d en %s. Elige a uno o dos y dales una tarea: acompañados corren menos riesgo y rinden más.	We are %d in %s. Choose one or two and give them a task: in pairs they risk less and achieve more.
 Una obra con el acopio de este campamento	A work using this camp's store
 Volver	Back
-Volvió sin nadie: la tribu está llena.	Came back alone: the tribe is full.
+agua	water
+aprende %s (%d%%)	learning %s (%d%%)
+aprendiendo un oficio	learning a trade
+buscando reclutas	finding recruits
+cazando	hunting
+de guardia	on guard
+en una obra	at a building site
+explorando	scouting
+hace la ronda	on patrol
+la ciudadela de %s	the citadel of %s
+malherido	badly hurt
 nada	nothing
+nada nuevo a la vista.	nothing new in sight.
 ocupado en una tarea	busy with a task
+pastoreando	herding
+pastos junto al río	pastures by the river
+sin tarea	idle
+te escolta	escorting you
 te sigue · clic: que se quede	follows you · click: stay
+trabajando	working
+tu mapa ya no tiene lugar para más marcas.	your map has no room for more marks.
+un campamento rival (%s)	a rival camp (%s)
 ¿A quién capacitamos? Mientras aprende no hace otra cosa.	Whom shall we train? While learning they do nothing else.
 ¿Disolvemos el campamento? No hay carreta cerca: solo se llevará lo que quepa en las alforjas y en nuestras mochilas. El resto arderá.	Dissolve the camp? There's no cart nearby: only what fits in the saddlebags and our backpacks goes. The rest will burn.
 ¿Disolvemos el campamento? Quemaremos las estructuras, cargaremos en la carreta y en nuestras mochilas lo que quepa y te seguiremos.	Dissolve the camp? We'll burn the structures, load what fits in the cart and our backpacks, and follow you.
 ¿Quién sale contigo? Los marcados ya te siguen. La escolta no trabaja en las obras.	Who comes with you? The marked ones already follow you. The escort doesn't work on builds.
+¿Qué hace %s? Si va con alguien, corre menos riesgo y rinde más.	What does %s do? Going with someone, they risk less and achieve more.
+¿Qué hacen %s? Acompañados corren menos riesgo y rinden más.	What do %s do? In pairs they risk less and achieve more.
 ¿Qué levantamos? La cuadrilla sale de la gente sin tarea de este campamento.	What shall we raise? The crew comes from this camp's idle people.
 ¿Qué oficio aprende %s? Un maestro del oficio en el campamento lo acelera mucho.	Which trade does %s learn? A master of the trade in camp speeds it up a lot.
 # --- src/game/combat_game.c
@@ -733,7 +821,6 @@ Solo arena y guijarros. Prueba otra vez.	Only sand and pebbles. Try again.
 Solo coral quebradizo, sin valor	Only brittle, worthless coral
 ¡La roca se parte y brilla algo!	The rock splits and something gleams!
 # --- src/game/hazards_game.c
- y 	 and 
  · barro	 · mud
  · hielo	 · ice
  · mojado	 · wet
@@ -980,7 +1067,9 @@ A menos de 2 m por la espalda de uno que no te vio (o aturdido), una daga aparec
 A veces una banda asalta el campamento, más de noche: los que no pelean corren a esconderse en las yurtas y las tiendas.	Sometimes a band raids the camp, more often at night: those who don't fight run to hide in the yurts and tents.
 Abatido, tu escolta te levanta. Si mueres (desangrado o sin socorro), vuelves a tu último lugar de descanso (campamento o tienda) y tus huesos quedan donde caíste. Tus compañeros mueren para siempre.	When downed, your escort lifts you. If you die (bled out or with no help), you return to your last resting place (camp or tent) and your bones stay where you fell. Your companions die for good.
 Abejas: con la antorcha encendida, el humo las calma y F toma la miel.	Bees: with the torch lit, the smoke calms them and F takes the honey.
+Acompañados corren menos riesgo y rinden más, y también el que sabe el oficio (explorador, cazador, pastor, soldado o guardia): el número en la casilla dice cuántos lo saben.	In pairs, or knowing the trade (scout, hunter, herder, soldier, guard), they risk less and do better: the tile's number says how many know it.
 Al caer: pulsa la serie de teclas (J K L U I O) a tiempo.	When you fall: press the key sequence (J K L U I O) in time.
+Al volver cuentan qué pasó: en el registro y en la ventana (Informes).	On their return they report: in the log and in the window (Reports).
 Arco, ballesta u honda: mantén H (o el clic) para tensar y suelta para disparar. Con objetivo, la mira se calcula sola; sin él, la cámara alza la mira: la curva amarilla muestra dónde caerá. J baja el arma; L, patada.	Bow, crossbow or sling: hold H (or click) to draw and release to shoot. With a target, the aim is computed for you; without one, the camera raises the aim: the yellow curve shows where it will land. J lowers the weapon; L, kick.
 Arcos, flechas y armaduras	Bows, arrows and armour
 Armas, aguante y heridas	Weapons, stamina and wounds
@@ -988,6 +1077,7 @@ Atacar: van a tu objetivo (Tab) o al enemigo más cercano. Defender: se quedan a
 B venda heridas con hierbas (o ungüento) · P equipo y heridas · I inventario	B bandages wounds with herbs (or ointment) · P gear and wounds · I inventory
 B vendar · Mayús+L encender	B bandage · Shift+L light
 Beber de más emborracha: torpe con las armas, cansado y te tambaleas.	Drinking too much gets you drunk: clumsy with weapons, tired and staggering.
+Buscar reclutas, explorar y cazar son salidas: se van, no se los ve, y vuelven a los pocos minutos con su suerte. De noche es más peligroso.	Finding recruits, scouting and hunting are trips: they go out of sight and return a few minutes later, for better or worse. Night is riskier.
 C sigilo · X agacharse	C sneak · X crouch
 Cada partida nueva cambia los ríos, los lagos, las montañas y dónde están los pueblos y las guaridas.	Each new game changes the rivers, lakes, mountains and where villages and dens are.
 Cada región tiene su altura: la costa, la más baja; el altiplano, el más alto. Hace más frío cuanto más alto.	Each region has its own altitude: the coast is the lowest, the highland the highest. The higher, the colder.
@@ -996,6 +1086,7 @@ Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales.	Each bo
 Camina cerca del ganado para llevarlo (pastoreo).	Walk near livestock to drive them (herding).
 Cargar	Load
 Cargar partida	Load game
+Cazar: carne, pieles, huesos, tendones y grasa, según la región y la estación (en invierno escasea; en otoño hay más grasa).	Hunting: meat, hides, bones, sinew and fat, by region and season (scarce in winter, fatter in autumn).
 Cerrar el juego	Close the game
 Clima y peligros	Weather and hazards
 Combate cuerpo a cuerpo	Melee combat
@@ -1021,10 +1112,12 @@ Esc/Atrás/Ctrl+P menú	Esc/Back/Ctrl+P menu
 Ese hueco tiene una partida: Enter otra vez para sobrescribirla.	That slot has a save: Enter again to overwrite it.
 Espacio saltar (o levantarse) · Q/E o arrastrar con el clic derecho: girar la cámara · M marcar el mapa	Space jump (or stand up) · Q/E or right-click drag: turn the camera · M mark the map
 Espacio saltar · Q/E cámara	Space jump · Q/E camera
+Explorar: marcan en tu mapa (M) agua, pastos junto a los ríos, campamentos rivales y ciudadelas, y aprenden el camino para que los despaches allí (Mayús+Y).	Scouting: they mark water, riverside pastures, rival camps and citadels on your map (M) and learn the way there (Shift+Y dispatches).
 F despieza un cadáver, ordeña la cabra · Mayús+F sacrifica el ganado.	F butchers a carcass, milks the goat · Shift+F slaughters livestock.
 F hablar/tomar/animales	F talk/take/animals
 F hace casi todo: hablar, tomar y recoger botín, el pozo y el horno, rescatar y atender a los animales	F does almost everything: talk, take and pick up loot, the well and the oven, rescue and tend the animals
-F junto al guardián: obras, escolta, reclutar, capacitar en un oficio, estado y disolver el campamento.	F next to the keeper: builds, escort, recruiting, training a trade, status and dissolving the camp.
+F junto al guardián, Pobladores: la gente del campamento con su oficio, salud, ánimo y lo que hace. Elige a uno o dos y «Dar una tarea».	F next to the keeper, Villagers: the camp's people with trade, health, morale and task. Pick one or two and «Give a task».
+F junto al guardián: obras, escolta, pobladores (sus tareas), capacitar en un oficio, estado y disolver el campamento.	F next to the keeper: builds, escort, villagers (their tasks), training a trade, status and dissolving the camp.
 F1/Ctrl+H cerrar esta ayuda	F1/Ctrl+H close this help
 F2, F3, F4 (o Ctrl+1, 2, 3): habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)	F2, F3, F4 (or Ctrl+1, 2, 3): active abilities · P equipment: armor, jewelry and tattoos (Q/E)
 F5 o Ctrl+M: vista orbital del mundo entero (flechas para girar e inclinar). El sol, la luna y las estrellas cruzan el cielo; el viento lleva las nubes y las cumbres altas quedan entre ellas.	F5 or Ctrl+M: orbital view of the whole world (arrows to turn and tilt). The sun, moon and stars cross the sky; the wind carries the clouds, and the high peaks stand among them.
@@ -1036,6 +1129,7 @@ G lo agarra de rehén: te cubres con él, los suyos no se acercan ni disparan si
 Golpea hacia el agua o tira una flecha para pescar.	Strike at the water or shoot an arrow to fish.
 Guardar en	Save to
 Guardar partida	Save game
+Guardia: un turno haciendo la ronda del campamento, como los soldados.	Guard: a shift patrolling the camp, like the soldiers.
 Guías una tropa nómada por la estepa: caza, construye, pelea y sobrevive a las estaciones. Un día dura 30 minutos; en invierno las noches son largas.	You lead a nomad band across the steppe: hunt, build, fight and survive the seasons. A day lasts 30 minutes; winter nights are long.
 H o clic: golpe; tres seguidos: combo · mantener: golpe pesado (rompe guardias)	H or click: strike; three in a row: combo · hold: heavy strike (breaks guards)
 H/clic golpe (mantén: pesado)	H/click strike (hold: heavy)
@@ -1071,6 +1165,7 @@ Los animales de la tribu comen: los herbívoros pastan solos si hay pasto; con n
 Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se queda).	Fallen enemies drop a loot bag: F picks it up (what doesn't fit stays).
 Los lagos helados se cruzan, pero el hielo puede romperse.	Frozen lakes can be crossed, but the ice may break.
 Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.	Menus are icons: hover with the mouse (or pick with the arrows) and the name shows below; click or Enter to use them.
+Los pobladores y sus tareas	Villagers and their tasks
 Los rayos caen sobre lo alto durante las tormentas.	Lightning strikes high ground during storms.
 Los soldados que se quedan en el campamento hacen la guardia: rondan un anillo a 40-60 m, salen al encuentro de quien lo cruce y vuelven si alguien entra. De noche llevan antorcha. El guardián (F) capacita soldados.	Soldiers who stay at the camp keep watch: they patrol a ring 40-60 m out, go out to meet whoever crosses it and come back if someone gets in. At night they carry torches. The keeper (F) trains soldiers.
 M mapa · N beber · U ficha	M map · N drink · U card
@@ -1082,6 +1177,7 @@ Nueva partida	New game
 Osos, hienas, coyotes y jabalíes: siempre hostiles.	Bears, hyenas, coyotes and boars: always hostile.
 P equipo, pestaña Ropa: cabeza, cuello y cara, cuerpo, capa o abrigo y pies. Cada prenda abriga, da sombra o frena la lluvia.	P equipment, Clothing tab: head, neck and face, body, cloak or coat, and feet. Each garment gives warmth, shade or keeps the rain off.
 Partida de otra versión del juego	Save from another game version
+Pastorear: sacan el ganado a comer y a beber cerca del campamento y vuelven con leche. Con dos pastores se pierden menos animales ante las fieras.	Herding: they take the livestock to eat and drink near the camp and come back with milk. With two herders fewer animals are lost to beasts.
 Pausa	Pause
 Piedras: rompe rocas a golpes, F en los corales del lago, cava trincheras o criba en la orilla (Tab).	Gems: break rocks with blows, F at lake corals, dig trenches or pan on the shore (Tab).
 Por detrás solo te oyen: en sigilo o agachado te acercas sin que te noten; caminando o corriendo, te oyen antes.	From behind they can only hear you: sneaking or crouching you get close unnoticed; walking or running, they hear you sooner.
@@ -1267,7 +1363,6 @@ Una en cada mano, a dos manos, arma y escudo...	One in each hand, two-handed, we
 Una fogata pequeña para una persona o dos.	A small campfire for one or two people.
 a dos manos	two-handed
 a una mano	one-handed
-agua	water
 animal salvaje	wild animal
 arma y escudo	weapon and shield
 desarmado	unarmed
@@ -1515,7 +1610,6 @@ la pelvis	the pelvis
 la pierna derecha	the right leg
 la pierna izquierda	the left leg
 leve	light
-malherido	badly hurt
 moderada	moderate
 muerto	dead
 sano	healthy
@@ -1676,8 +1770,16 @@ altiplano glaciar	glacial highland
 bosque de coníferas	conifer forest
 costa de fiordos	fjord coast
 desierto	desert
+este	east
 estepa	steppe
+noreste	northeast
+noroeste	northwest
+norte	north
+oeste	west
 rocas grabadas	carved rocks
+sur	south
+sureste	southeast
+suroeste	southwest
 un caravasar	a caravanserai
 un embarcadero	a jetty
 un kurgán	a kurgan

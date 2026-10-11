@@ -39,6 +39,12 @@
 #define GA_MAX_SWARMS 24
 #define GA_PACKS 4 // monturas con alforjas
 #define GA_LOOT 8  // bolsas de botin en el suelo
+#define GA_NEWS 4  // informes que recuerda cada campamento
+
+// Los informes de los que vuelven a un campamento (src/game/camp_game.c), el mas nuevo primero.
+typedef struct {
+    char line[GA_NEWS][240];
+} CampNews;
 
 enum { PACKW_WORN, PACKW_GROUND, PACKW_CART, PACKW_ANIMAL };
 
@@ -172,6 +178,11 @@ typedef struct {
     int escort_order; // SquadOrder (src/sim/squad.h): la escolta ataca, defiende o sigue sin pelear (Y+1..3)
     int pl_attacking, pl_ranged, pl_move;
     float swap_anim;    // pasando el arma de mano
+    // La tribu (src/game/camp_game.c): la ventana de pobladores y los informes de quienes vuelven.
+    int people_pick[2]; // los elegidos (id; 0: nadie)
+    int people_page;    // pagina de la lista
+    Vector3 herd_at[CAMPS_MAX]; // donde pasta el ganado de cada campamento (en un turno de pastoreo)
+    CampNews news[CAMPS_MAX]; // los ultimos informes de cada campamento
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);
@@ -184,6 +195,9 @@ bool ga_order_build(GameActions *ga, BuildId b, int camp, const Props *props, ch
 // El jugador no controla el movimiento (menu abierto o trepando).
 bool ga_blocks_input(const GameActions *ga);
 bool ga_menu_open(const GameActions *ga);
+// Fuera del mundo: de viaje (src/game/travel_game.c) o en una salida del campamento (buscar
+// reclutas, explorar, cazar: src/game/camp_game.c). No se le ve (salvo mientras se aleja).
+bool ga_away(const GameActions *ga, const Member *m);
 // Multiplicador de velocidad del jugador (montado: el de la montura).
 float ga_speed_scale(const GameActions *ga);
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,

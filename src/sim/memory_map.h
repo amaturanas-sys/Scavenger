@@ -74,5 +74,8 @@ float memmap_familiarity(const MemoryMap *m, float x, float z);
 // Marca un sitio. Si ya hay una marca a menos de radius metros, la quita
 // (alternar). Devuelve true si la marca queda puesta.
 bool memmap_toggle_marker(MemoryMap *m, float x, float z, MarkerKind kind, float radius);
+// Pone una marca sin quitar ninguna (lo que traen los exploradores, src/sim/camps.h): si ya hay
+// una a menos de radius metros, deja esa. Devuelve el indice de la marca, o -1 si no hay hueco.
+int memmap_add_marker(MemoryMap *m, float x, float z, MarkerKind kind, float radius);
 
 #endif

@@ -612,7 +612,7 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
     for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
         const Member *m = &troop->members[k];
         const Npc *np = &ga->npcs[k];
-        if (m->status != STATUS_ACTIVE || np->member_id != m->id || m->journey > 0) continue; // de viaje: fuera del mundo
+        if (m->status != STATUS_ACTIVE || np->member_id != m->id || ga_away(ga, m)) continue; // de viaje o de salida: fuera del mundo
         hu[n] = (FaunaHuman){ np->pos.x, np->pos.z, m->health.down, false, false,
                               m->health.hp < 0.6f * m->health.hp_max || health_bleeding(&m->health) };
         g_refs[n++] = (HumanRef){ 1, m->id };

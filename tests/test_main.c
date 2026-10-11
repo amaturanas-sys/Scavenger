@@ -3421,6 +3421,173 @@ static void test_squad_villagers_hide(void) {
     CHECK(!squad_villager_alarm(5.0f, 0.0f, 0.0f, 0.0f, f, 1));
 }
 
+// ---------------------------------------------------------------- la tribu (fase 4)
+static void test_tribe_tasks_with_companion(void) {
+    CampSite c[CAMPS_MAX];
+    camps_init(c, CAMPS_MAX);
+    camp_found(c, CAMPS_MAX, 0.0f, 0.0f, 1);
+    // Dos a cazar: los dos quedan ocupados; el acompañante no puede salir a otra cosa.
+    CHECK(camp_add_task2(&c[0], TASK_HUNT, 3, 4, ROLE_NONE));
+    CHECK(camp_member_busy(&c[0], 3) && camp_member_busy(&c[0], 4) && !camp_member_busy(&c[0], 5));
+    CHECK(camp_task_of(&c[0], 4) && camp_task_of(&c[0], 4)->kind == TASK_HUNT && camp_task_of(&c[0], 4)->member == 3);
+    CHECK(!camp_add_task(&c[0], TASK_GUARD, 4, ROLE_NONE) && !camp_add_task2(&c[0], TASK_HERD, 5, 3, ROLE_NONE));
+    CHECK(!camp_add_task2(&c[0], TASK_HERD, 5, 5, ROLE_NONE)); // no se acompaña a si mismo
+    CHECK(camp_task_of(&c[0], 0) == NULL);                     // 0: nadie (un solo, sin acompañante)
+    // Capacitar es de a uno.
+    CHECK(camp_add_task2(&c[0], TASK_TRAIN, 6, 7, ROLE_SMITH) && !camp_member_busy(&c[0], 7));
+    // Salidas (no se les ve) y tareas del campamento; cada una dura lo suyo.
+    CHECK(task_away(TASK_RECRUIT) && task_away(TASK_SCOUT_RESOURCES) && task_away(TASK_HUNT));
+    CHECK(!task_away(TASK_HERD) && !task_away(TASK_GUARD) && !task_away(TASK_TRAIN));
+    for (int k = 0; k < TASK_KINDS; k++) CHECK(task_work((CampTaskKind)k, ROLE_SMITH) > 0.0f);
+    CHECK(task_work(TASK_GUARD, ROLE_NONE) > task_work(TASK_HERD, ROLE_NONE) && task_work(TASK_TRAIN, ROLE_SMITH) == train_work(ROLE_SMITH));
+    CHECK(role_suits(TASK_HUNT, ROLE_HUNTER) && role_suits(TASK_GUARD, ROLE_SOLDIER) && role_suits(TASK_SCOUT_RESOURCES, ROLE_SCOUT) &&
+          !role_suits(TASK_HUNT, ROLE_SCOUT) && !role_suits(TASK_TRAIN, ROLE_NONE));
+    // Al terminar, la tarea sale con su acompañante.
+    CampTask done[CAMP_TASKS];
+    float rates[CAMP_TASKS] = { 1.0f, 1.0f };
+    CHECK(camp_tick(&c[0], TASK_HUNT_WORK, rates, done, CAMP_TASKS) == 1 && done[0].kind == TASK_HUNT && done[0].member2 == 4);
+    CHECK(!camp_member_busy(&c[0], 4) && camp_member_busy(&c[0], 6));
+    // Caben mas tareas que antes.
+    int added = 0;
+    for (int id = 20; id < 40; id++) added += camp_add_task(&c[0], TASK_GUARD, id, ROLE_NONE);
+    CHECK(added == CAMP_TASKS - 1 && c[0].ntask == CAMP_TASKS);
+    // Las provisiones son por persona; si no alcanza, no se toca el acopio.
+    Stockpile st;
+    stock_init(&st);
+    stock_add(&st, "utileria.consumible.carne_seca", 3);
+    CHECK(!task_pay(&st, TASK_SCOUT_RESOURCES, ROLE_NONE, 2) && stock_count(&st, "utileria.consumible.carne_seca") == 3);
+    CHECK(task_pay(&st, TASK_SCOUT_RESOURCES, ROLE_NONE, 1) && stock_count(&st, "utileria.consumible.carne_seca") == 1);
+    CHECK(task_pay(&st, TASK_GUARD, ROLE_NONE, 2) && task_pay(&st, TASK_HERD, ROLE_NONE, 2)); // no cuestan nada
+}
+
+static void test_tribe_companion_lowers_risk(void) {
+    // Acompañado, con el oficio y de dia: menos riesgo. En el campamento no hay riesgo abstracto.
+    CHECK(task_risk(TASK_HUNT, 0, 2, false) < task_risk(TASK_HUNT, 0, 1, false));
+    CHECK(task_risk(TASK_HUNT, 1, 1, false) < task_risk(TASK_HUNT, 0, 1, false));
+    CHECK(task_risk(TASK_SCOUT_RESOURCES, 0, 1, true) > task_risk(TASK_SCOUT_RESOURCES, 0, 1, false));
+    CHECK(task_risk(TASK_RECRUIT, 0, 1, false) > 0.0f && task_risk(TASK_HUNT, 2, 2, true) < 0.9f);
+    CHECK(task_risk(TASK_GUARD, 0, 1, true) == 0.0f && task_risk(TASK_HERD, 0, 1, true) == 0.0f && task_risk(TASK_TRAIN, 0, 1, true) == 0.0f);
+    // Tiradas: solo mueren mas (por persona) que acompañados.
+    Rng rng;
+    rng_seed(&rng, 41);
+    int dead_alone = 0, dead_pair = 0, hurt_alone = 0, trips = 4000;
+    for (int i = 0; i < trips; i++) {
+        Fate f[2];
+        task_fates(TASK_HUNT, 0, 1, true, &rng, f);
+        dead_alone += f[0] == FATE_DEAD, hurt_alone += f[0] == FATE_WOUNDED;
+        task_fates(TASK_HUNT, 0, 2, true, &rng, f);
+        dead_pair += (f[0] == FATE_DEAD) + (f[1] == FATE_DEAD);
+    }
+    CHECK(dead_alone > 0 && hurt_alone > dead_alone && (float)dead_alone / (float)trips > 2.0f * (float)dead_pair / (2.0f * (float)trips));
+    Fate f[2] = { FATE_DEAD, FATE_DEAD };
+    task_fates(TASK_GUARD, 0, 2, true, &rng, f);
+    CHECK(f[0] == FATE_OK && f[1] == FATE_OK);
+    // Buscar reclutas: acompañados y con un explorador vuelven con mas gente (0 a 2).
+    int alone = 0, pair = 0, scout = 0;
+    for (int i = 0; i < 2000; i++) {
+        int a = recruit_found(0, 1, &rng), b = recruit_found(0, 2, &rng);
+        CHECK(a >= 0 && a <= 2 && b >= 0 && b <= 2);
+        alone += a, pair += b, scout += recruit_found(1, 1, &rng);
+    }
+    CHECK(pair > alone && scout > alone);
+}
+
+static void test_tribe_scouting_reveals_sites(void) {
+    CHECK(scout_radius(1, 1) > scout_radius(0, 1) && scout_radius(0, 2) > scout_radius(0, 1));
+    Rng rng;
+    rng_seed(&rng, 7);
+    int few = 0, many = 0;
+    for (int i = 0; i < 1000; i++) {
+        int a = scout_finds(0, 1, &rng), b = scout_finds(1, 2, &rng);
+        CHECK(a >= 1 && a <= 4 && b >= 1 && b <= 4);
+        few += a, many += b;
+    }
+    CHECK(many > few);
+    // Primero el mas cercano de cada clase; lo ya marcado y lo que queda lejos, no.
+    ScoutCand c[6] = {
+        { 300.0f, 0.0f, FIND_WATER },   { 0.0f, -200.0f, FIND_WATER }, { -500.0f, 0.0f, FIND_PASTURE },
+        { 0.0f, 800.0f, FIND_RIVAL },   { 100.0f, 0.0f, FIND_RIVAL },  { 2000.0f, 0.0f, FIND_CITADEL },
+    };
+    bool known[6] = { false, false, false, false, true, false };
+    int out[6];
+    CHECK(scout_pick(c, 6, known, 0.0f, 0.0f, 900.0f, 3, out) == 3 && out[0] == 1 && out[1] == 2 && out[2] == 3);
+    CHECK(scout_pick(c, 6, known, 0.0f, 0.0f, 900.0f, 6, out) == 4 && out[3] == 0);
+    CHECK(scout_pick(c, 6, known, 0.0f, 0.0f, 2500.0f, 6, out) == 5);
+    CHECK(find_danger(FIND_RIVAL) && find_danger(FIND_CITADEL) && !find_danger(FIND_WATER) && !find_danger(FIND_PASTURE));
+    // Las marcas de los exploradores no quitan las que hay (no alternan).
+    MemoryMap m;
+    memmap_init(&m);
+    int a = memmap_add_marker(&m, 10.0f, 10.0f, MARKER_DANGER, 40.0f);
+    CHECK(a == 0 && memmap_add_marker(&m, 20.0f, 10.0f, MARKER_INTEREST, 40.0f) == 0 && m.marker_count == 1);
+    for (int i = 1; i < MEMMAP_MAX_MARKERS; i++) memmap_add_marker(&m, 100.0f * (float)i, 0.0f, MARKER_INTEREST, 5.0f);
+    CHECK(m.marker_count == MEMMAP_MAX_MARKERS && memmap_add_marker(&m, -500.0f, 0.0f, MARKER_INTEREST, 5.0f) == -1);
+    memmap_free(&m);
+    // Rumbos para el informe (-Z es el norte).
+    CHECK(!strcmp(world_compass(0.0f, -10.0f), "norte") && !strcmp(world_compass(10.0f, 0.0f), "este") &&
+          !strcmp(world_compass(0.0f, 10.0f), "sur") && !strcmp(world_compass(-10.0f, -10.0f), "noroeste") &&
+          !strcmp(world_compass(10.0f, 9.0f), "sureste"));
+}
+
+static void test_tribe_hunting_by_region_and_season(void) {
+    Rng rng;
+    rng_seed(&rng, 99);
+    // La presa vive en la region.
+    for (int r = 0; r < REGION_COUNT; r++) {
+        int hab = region_habitat((Region)r);
+        for (int i = 0; i < 50; i++) {
+            int s = hunt_prey(hab, &rng);
+            CHECK(s >= 0 && (species_def((Species)s)->habitat & hab) && species_def((Species)s)->cls == CLASS_PREY);
+        }
+    }
+    CHECK(hunt_prey(0, &rng) == -1);
+    // Lo que traen: con cazador y acompañante, mas; en invierno, menos; la grasa, en otoño.
+    int hab = region_habitat(REGION_STEPPE);
+    long autumn = 0, winter = 0, alone = 0, skilled = 0, fat_autumn = 0, fat_spring = 0;
+    for (int i = 0; i < 1500; i++) {
+        HuntBag b = hunt_bag(hab, SEASON_AUTUMN, 1, 2, &rng);
+        const SpeciesDef *d = species_def((Species)b.prey);
+        CHECK(b.meat == b.kills * d->meat && b.hides == b.kills * d->hide && b.sinew == b.kills && b.bones >= b.kills);
+        autumn += b.kills, fat_autumn += b.fat;
+        winter += hunt_bag(hab, SEASON_WINTER, 1, 2, &rng).kills;
+        alone += hunt_bag(hab, SEASON_SUMMER, 0, 1, &rng).kills;
+        skilled += hunt_bag(hab, SEASON_SUMMER, 1, 1, &rng).kills;
+        fat_spring += hunt_bag(hab, SEASON_SPRING, 1, 2, &rng).fat;
+    }
+    CHECK(autumn > winter && skilled > alone && fat_autumn > 0 && fat_spring == 0);
+    HuntBag b = hunt_bag(hab, SEASON_AUTUMN, 2, 2, &rng);
+    CHECK(b.kills >= 1 && b.meat > 0 && b.hides > 0 && b.bones > 0 && b.sinew > 0 && b.fat > 0);
+}
+
+static void test_tribe_herding_lowers_thirst(void) {
+    Animal goat, goat2, wild, wolf;
+    animal_init(&goat, SPECIES_GOAT, 0.0f, 0.0f);
+    goat.state = ANIMAL_TAMED;
+    goat.thirst = 1.5f, goat.hunger = 1.2f;
+    goat2 = goat;
+    wild = goat, wild.state = ANIMAL_WILD;
+    animal_init(&wolf, SPECIES_WOLF, 0.0f, 0.0f);
+    wolf.state = ANIMAL_TAMED, wolf.hunger = 1.0f;
+    // El pastoreo baja la sed y el hambre del ganado de la tribu; con dos pastores, mas.
+    CHECK(herd_graze(&goat, 60.0f, 1, true) && goat.thirst < 1.0f && goat.hunger < 1.0f);
+    CHECK(herd_graze(&goat2, 60.0f, 2, true) && goat2.thirst < goat.thirst && goat2.hunger < goat.hunger);
+    CHECK(!herd_graze(&wild, 60.0f, 1, true) && wild.thirst == 1.5f);   // no es de la tribu
+    CHECK(!herd_graze(&wolf, 60.0f, 1, true) && wolf.hunger == 1.0f);   // come carne
+    Animal snow = goat2;
+    snow.hunger = goat2.hunger = 1.0f;
+    herd_graze(&snow, 30.0f, 1, false), herd_graze(&goat2, 30.0f, 1, true);
+    CHECK(snow.hunger > goat2.hunger); // sin pasto, come menos
+    // Un turno largo deja al rebaño sin sed.
+    goat.thirst = 2.0f;
+    for (int i = 0; i < 30; i++) herd_graze(&goat, TASK_HERD_WORK / 30.0f, 1, true);
+    CHECK(goat.thirst == 0.0f);
+    // Leche: una vez al dia; con dos pastores, un poco mas.
+    int milk = herd_milk(&goat, 2);
+    CHECK(milk == species_def(SPECIES_GOAT)->milk + 1 && goat.milked && herd_milk(&goat, 2) == 0 && herd_milk(&wild, 2) == 0);
+    // Dos pastores (o uno de oficio) pierden menos animales ante las fieras; de noche, mas.
+    CHECK(herd_loss_chance(2, 0, false) < herd_loss_chance(1, 0, false) && herd_loss_chance(1, 1, false) < herd_loss_chance(1, 0, false));
+    CHECK(herd_loss_chance(1, 0, true) > herd_loss_chance(1, 0, false));
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -3524,6 +3691,11 @@ int main(void) {
     RUN(test_squad_escort_orders);
     RUN(test_squad_guard_patrol_and_intercept);
     RUN(test_squad_villagers_hide);
+    RUN(test_tribe_tasks_with_companion);
+    RUN(test_tribe_companion_lowers_risk);
+    RUN(test_tribe_scouting_reveals_sites);
+    RUN(test_tribe_hunting_by_region_and_season);
+    RUN(test_tribe_herding_lowers_thirst);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

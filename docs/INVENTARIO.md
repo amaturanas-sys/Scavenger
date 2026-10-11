@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**399 objetos** · 1 con modelo · 398 pendientes.
+**400 objetos** · 1 con modelo · 399 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 64 | 64 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 65 | 65 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -467,6 +467,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.material.plumas` | Plumas | 0.2x0.05x0.3 | 20 | pendiente | `uso:recolectable` `uso:material` | De las aves cazadas: para emplumar flechas. |
 | `utileria.material.hueso` | Huesos | 0.3x0.1x0.3 | 30 | pendiente | `uso:recolectable` `uso:material` `material:hueso` | Del despiece: puntas de virote. |
 | `utileria.material.tendones` | Tendones | 0.2x0.05x0.3 | 20 | pendiente | `uso:recolectable` `uso:material` | Del despiece: cuerda. |
+| `utileria.material.grasa` | Grasa animal | 0.2x0.1x0.2 | 20 | pendiente | `uso:recolectable` `uso:material` | De la caza (más en otoño): sebo para lámparas, ungüentos y para engrasar el cuero. |
 | `utileria.material.pedernal` | Pedernal | 0.15x0.1x0.15 | 30 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Se recoge en la estepa: puntas de flecha. |
 | `utileria.gema.turquesa` | Turquesa | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
 | `utileria.gema.cornalina` | Cornalina | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |

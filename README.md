@@ -87,6 +87,13 @@ La escolta y la guardia:
 
 Pruebas: `--escolta [atacar|defender|seguir]`, `--guardias` (dos soldados de guardia), `--asalto`.
 
+La tribu (`F` junto al guardián → **Pobladores**): la gente del campamento con su oficio, salud, ánimo y tarea. Elige a uno o dos y dales una tarea:
+- **Salidas** (se van y no se los ve hasta que vuelven): buscar reclutas, explorar recursos (marcan en el mapa agua, pastos, campamentos rivales y ciudadelas) y cazar (carne, pieles, huesos, tendones y grasa, según la región y la estación).
+- **En el campamento:** pastorear (el ganado come y bebe y da leche; con dos pastores se pierden menos animales) y guardia (un turno haciendo la ronda).
+- Acompañados, y si saben el oficio, corren menos riesgo y rinden más. Al volver cuentan qué pasó: en el registro y en la ventana («Informes»).
+
+Pruebas: `--pobladores` (la ventana abierta), `--tareas` (dos a cazar, uno a explorar, uno a pastorear y uno de guardia).
+
 Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañero atrapado para rescatarlo · `J K L U I O` en el minijuego de rescate.
 
 Menús: son **iconos**. Pasa el ratón por encima (o elige con las flechas) y su nombre aparece en la leyenda de la base de la pantalla; un clic elige y otro clic (o Enter) lo usa. En el inventario, `Q`/`E` cambia de contenedor y por el borde de la cuadrícula se pasa a la otra columna. En el equipo, el clic derecho (o `Supr`) quita la pieza.
