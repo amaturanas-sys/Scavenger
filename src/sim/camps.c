@@ -10,9 +10,12 @@ void camps_init(CampSite *c, int n) {
 
 static float dist(float ax, float az, float bx, float bz) { return sqrtf((ax - bx) * (ax - bx) + (az - bz) * (az - bz)); }
 
+// En un sitio: usado y no en marcha.
+static bool placed(const CampSite *c) { return c->used && !c->migrating; }
+
 bool camp_far_enough(const CampSite *c, int n, float x, float z) {
     for (int i = 0; i < n; i++)
-        if (c[i].used && dist(c[i].x, c[i].z, x, z) < CAMP_MIN_APART) return false;
+        if (placed(&c[i]) && dist(c[i].x, c[i].z, x, z) < CAMP_MIN_APART) return false;
     return true;
 }
 
@@ -35,7 +38,7 @@ int camp_at(const CampSite *c, int n, float x, float z) {
     int best = -1;
     float bd = CAMP_RADIUS_M;
     for (int i = 0; i < n; i++) {
-        if (!c[i].used) continue;
+        if (!placed(&c[i])) continue;
         float d = dist(c[i].x, c[i].z, x, z);
         if (d < bd) bd = d, best = i;
     }
@@ -46,13 +49,56 @@ int camp_nearest(const CampSite *c, int n, float x, float z, float *out) {
     int best = -1;
     float bd = 1e30f;
     for (int i = 0; i < n; i++) {
-        if (!c[i].used) continue;
+        if (!placed(&c[i])) continue;
         float d = dist(c[i].x, c[i].z, x, z);
         if (d < bd) bd = d, best = i;
     }
     if (out) *out = bd;
     return best;
 }
+
+// ---------------------------------------------------------------- migrar
+static const char *const LOAD_IDS[LOAD_KINDS] = { "estructura.vivienda.yurta_comun", "estructura.vivienda.yurta_jefe",
+                                                  "estructura.vivienda.tienda_ligera", "estructura.vivienda.choza_fieltro" };
+
+int camp_load_kind(const char *id) {
+    for (int k = 0; id && k < LOAD_KINDS; k++)
+        if (!strcmp(id, LOAD_IDS[k])) return k;
+    return -1;
+}
+
+const char *camp_load_id(int kind) { return kind >= 0 && kind < LOAD_KINDS ? LOAD_IDS[kind] : NULL; }
+
+bool camp_migrate(CampSite *c) {
+    if (!c->used || c->migrating) return false;
+    c->migrating = true;
+    c->moved = true;
+    return true;
+}
+
+bool camp_settle(CampSite *c, int n, int k, float x, float z) {
+    if (k < 0 || k >= n || !c[k].used || !c[k].migrating || !camp_far_enough(c, n, x, z)) return false;
+    c[k].x = x, c[k].z = z;
+    c[k].migrating = false;
+    return true;
+}
+
+// ---------------------------------------------------------------- pastos por estacion
+float pasture_quality(Region r, Season s) {
+    static const float Q[REGION_COUNT][SEASON_COUNT] = {
+        [REGION_STEPPE] = { 1.0f, 0.7f, 0.8f, 0.45f },  // el llano: aguanta el invierno; en verano se seca un poco
+        [REGION_FOREST] = { 0.8f, 0.9f, 0.7f, 0.3f },
+        [REGION_HIGHLAND] = { 0.6f, 1.2f, 0.5f, 0.1f }, // los pastos de verano; en invierno, nieve
+        [REGION_FJORD] = { 0.7f, 0.9f, 0.6f, 0.2f },
+        [REGION_DESERT] = { 0.6f, 0.2f, 0.5f, 0.6f },   // en verano, seco; en invierno, los oasis
+    };
+    if ((int)r < 0 || r >= REGION_COUNT || (int)s < 0 || s >= SEASON_COUNT) return 0.5f;
+    return Q[r][s];
+}
+
+float pasture_hunger(float q) { return q >= 0.6f ? 0.0f : (0.6f - q) * 0.8f; }
+
+int pasture_forage(float q) { return q >= 1.0f ? 2 : q >= 0.8f ? 1 : 0; }
 
 int camps_count(const CampSite *c, int n) {
     int k = 0;

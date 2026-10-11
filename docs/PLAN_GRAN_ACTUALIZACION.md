@@ -329,7 +329,16 @@ La fase era grande y se partió en dos, como la 4: los caballos aquí (v0.7.1) y
 
 **Costo:** alto.
 
-## Fase 6b — Migración en caravana (v0.7.2)
+## Fase 6b — Migración en caravana (v0.7.2) — hecha
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **Reglas puras** en `src/sim/camps.c` (con tests): qué vivienda se desarma (`camp_load_kind`), levantar y plantar (`camp_migrate`, `camp_settle`) y los pastos de cada región y estación (`pasture_quality`, `pasture_hunger`, `pasture_forage`). El rebaño de la caravana, en `src/sim/animals.c` (`FaunaCtx.caravan`).
+- **La carga es abstracta:** no hace falta carreta ni alforjas. Las viviendas portátiles (yurtas, tiendas ligeras y chozas de fieltro) se cuentan en `CampSite.load` y las yurtas del campamento inicial se suman a la carga. Las obras fijas quedan en el sitio viejo. La carreta y las alforjas siguen para lo que lleva el jugador.
+- **La columna** es la escolta de siempre: la gente del campamento pasa a escolta mientras dura la marcha (Y no la despide), y el rebaño sigue de más lejos y aunque el jugador esté quieto. Las salidas siguen y, al volver, alcanzan la columna; los despachados al campamento, también.
+- **En marcha:** el acopio va en la columna (inventario, comida y agua). No hay asaltos ni descanso en el sitio viejo, y un desmayo se atiende donde estás. Si muere toda la columna, la caravana se pierde.
+- **Plantar:** `F` junto al guardián, donde esté el jugador (seco, llano y a más de 70 m de los demás campamentos). Las viviendas se arman en corro con la puerta hacia un fogón nuevo. Si es el campamento inicial, el fuego de la tribu pasa a ese fogón.
+- **La respuesta a la estación** son los pastos: el guardián avisa al cambiar la estación, los pastores juntan forraje con buen pasto y el ganado pasa hambre con pasto pobre.
+- **Pruebas:** `--migrar marcha|plantar`. **Ayuda:** dos líneas en «La tribu y el campamento».
 
 **Lo que hay:** campamentos con su acopio y su gente; fundar uno nuevo con una tienda o un refugio lejos; disolverlo (se queman las estructuras y la gente sigue al jugador); la carreta y las alforjas; la escolta que sigue al jugador.
 

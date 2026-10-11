@@ -257,6 +257,8 @@ Stockpile *ga_stock_at(GameActions *ga, float x, float z) {
 
 Stockpile *ga_stock(GameActions *ga) {
     if (ga->here >= 0 && ga->camps[ga->here].used) return &ga->camps[ga->here].stock;
+    int k = ga_marching(ga); // en marcha, el acopio va cargado en la columna, contigo
+    if (k >= 0) return &ga->camps[k].stock;
     return ga_stock_at(ga, ga->player_pos.x, ga->player_pos.z);
 }
 
@@ -627,6 +629,12 @@ static void start_craft(GameActions *ga, CraftId c, const Props *props, const Pl
 }
 
 // ---------------------------------------------------------------- NPCs
+int ga_marching(const GameActions *ga) {
+    for (int k = 0; k < CAMPS_MAX; k++)
+        if (ga->camps[k].used && ga->camps[k].migrating) return k;
+    return -1;
+}
+
 bool ga_away(const GameActions *ga, const Member *m) {
     if (m->journey > 0) return true;
     if (m->camp < 0 || m->camp >= CAMPS_MAX || !ga->camps[m->camp].used) return false;
@@ -1058,7 +1066,8 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
     UpkeepReport up = { 0, 0, 0 };
     WaterReport wr = { 0, 0, 0, 0, 0 };
     int work_batches = 0;
-    int near_camp = camp_nearest(ga->camps, CAMPS_MAX, ga->player_pos.x, ga->player_pos.z, NULL);
+    int near_camp = ga_marching(ga); // en marcha, la escolta y la columna comen de lo que va cargado
+    if (near_camp < 0) near_camp = camp_nearest(ga->camps, CAMPS_MAX, ga->player_pos.x, ga->player_pos.z, NULL);
     static Troop sub; // grande: fuera de la pila
     for (int k = 0; k < CAMPS_MAX; k++) {
         if (!ga->camps[k].used) continue;
@@ -1087,20 +1096,44 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
         }
         // El agua: del acopio, o del rio cercano (hervida si hay leña; cruda, con los espiritus).
         CampSite *cs = &ga->camps[k];
-        WaterReport w = water_daily(&cs->stock, &sub, wg_water_near(t, cs->x, cs->z), water_spirit_chance(temp_mean, false), &ga->rng);
+        float wx = cs->migrating ? ga->player_pos.x : cs->x, wz = cs->migrating ? ga->player_pos.z : cs->z; // en marcha: donde va la columna
+        WaterReport w = water_daily(&cs->stock, &sub, wg_water_near(t, wx, wz), water_spirit_chance(temp_mean, false), &ga->rng);
         for (int j = 0; j < sub.count; j++) { // el hambre, la sed y la fiebre bajan el animo (y la vida)
             troop->members[idx[j]].morale = sub.members[j].morale;
             troop->members[idx[j]].health.hp = sub.members[j].health.hp;
         }
         up.eaten += r.eaten, up.hungry += r.hungry, up.gathered += r.gathered;
         wr.safe += w.safe, wr.boiled += w.boiled, wr.raw += w.raw, wr.sick += w.sick, wr.dry += w.dry;
+        // Los pastos de la estacion (src/sim/camps.h): pobres, el ganado del campamento pasa hambre;
+        // buenos, los pastores juntan mas forraje. Al cambiar la estacion, el guardian avisa.
+        if (!cs->migrating && t && t->world) {
+            Season season = clock_season(day);
+            float q = pasture_quality(world_region(t->world, cs->x, cs->z), season), hunger = pasture_hunger(q);
+            int herders = 0;
+            for (int j = 0; j < sub.count; j++) herders += sub.members[j].role == ROLE_HERDER && sub.members[j].status == STATUS_ACTIVE;
+            if (pasture_forage(q) * herders > 0) stock_add(&cs->stock, "utileria.consumible.forraje", pasture_forage(q) * herders);
+            for (int i = 0; hunger > 0.0f && i < ga->animal_count; i++) {
+                Animal *an = &ga->animals[i];
+                if (an->used && animal_domestic(an) && !species_eats_meat(an->species) &&
+                    dist2d((Vector3){ an->x, 0.0f, an->z }, (Vector3){ cs->x, 0.0f, cs->z }) < CAMP_RADIUS_M + 15.0f)
+                    an->hunger += hunger;
+            }
+            if (day > 1 && clock_season(day - 1) != season)
+                cg_news(ga, k, TextFormat(hunger > 0.0f ? T("Cambia la estación (%s): aquí el pasto no alcanza y el ganado pasará hambre. Conviene migrar.")
+                                          : pasture_forage(q) > 0 ? T("Cambia la estación (%s): aquí hay buen pasto; los pastores juntan más forraje.")
+                                                                  : T("Cambia la estación (%s): el pasto de aquí alcanza."),
+                                          T(season_name(season))));
+        }
     }
     // Efectos de lo construido en el campamento.
     const char *ids[PROPS_MAX + 8];
     int n = 0;
-    for (int i = 0; i < CAMP_YURTS; i++) ids[n++] = "estructura.vivienda.yurta_comun";
-    for (int i = 0; i < props->count; i++)
-        if (dist2d(props->items[i].pos, (Vector3){ 0, 0, 0 }) < CAMP_RADIUS) ids[n++] = props->items[i].item->id;
+    // Las yurtas del campamento inicial (si no migro: entonces son objetos en su sitio nuevo). En marcha, nada.
+    for (int i = 0; i < CAMP_YURTS && !ga->camps[0].moved; i++) ids[n++] = "estructura.vivienda.yurta_comun";
+    bool marching = ga->camps[0].used && ga->camps[0].migrating;
+    Vector3 c0 = ga->camps[0].used ? (Vector3){ ga->camps[0].x, 0.0f, ga->camps[0].z } : (Vector3){ 0, 0, 0 };
+    for (int i = 0; i < props->count && !marching; i++)
+        if (dist2d(props->items[i].pos, c0) < CAMP_RADIUS) ids[n++] = props->items[i].item->id;
     CampEffects fx = camp_effects(ids, n);
     troop_adjust_morale(troop, fx.morale_per_day);
     troop->rebellion_scale = fx.rebellion_scale;
@@ -1111,10 +1144,10 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
     // Trabajos de los NPCs: una fogata si no hay ninguna, una tienda si faltan techos.
     int active = troop_count_with_status(troop, STATUS_ACTIVE);
     float a = (float)day * 1.7f;
-    if (count_props(props, "estructura.campamento.fogata") == 0)
-        npc_assign_job(ga, troop, t, ACTION_PLACE_FIRE, (Vector3){ cosf(a) * 12.0f, 0, sinf(a) * 12.0f });
-    if (fx.shelters < active)
-        npc_assign_job(ga, troop, t, ACTION_PLACE_TENT, (Vector3){ cosf(a + 1.0f) * 16.0f, 0, sinf(a + 1.0f) * 16.0f });
+    if (!marching && count_props(props, "estructura.campamento.fogata") == 0) // alrededor del campamento inicial (donde este)
+        npc_assign_job(ga, troop, t, ACTION_PLACE_FIRE, (Vector3){ c0.x + cosf(a) * 12.0f, 0, c0.z + sinf(a) * 12.0f });
+    if (!marching && fx.shelters < active)
+        npc_assign_job(ga, troop, t, ACTION_PLACE_TENT, (Vector3){ c0.x + cosf(a + 1.0f) * 16.0f, 0, c0.z + sinf(a + 1.0f) * 16.0f });
     // Carisma de los amuletos: la tribu confia mas en quien los lleva.
     float charisma = ig_stat(ga, STAT_CHARISMA);
     if (charisma > 0.0f) troop_adjust_morale(troop, charisma * 10.0f);

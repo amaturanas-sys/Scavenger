@@ -222,6 +222,9 @@ static const SfField SF_F_CampSite[] = {
     SF_ONE(CampSite, stock, "Stockpile", SF_STRUCT, &SF_T_Stockpile),
     SF_ARR(CampSite, task, "CampTask", SF_STRUCT, &SF_T_CampTask),
     SF_ONE(CampSite, ntask, "int", SF_INT, NULL),
+    SF_ONE(CampSite, migrating, "bool", SF_BOOL, NULL),
+    SF_ARR(CampSite, load, "unsigned char", SF_UINT, NULL),
+    SF_ONE(CampSite, moved, "bool", SF_BOOL, NULL),
 };
 static const SfType SF_T_CampSite = SF_TYPE(CampSite, SF_F_CampSite);
 
@@ -571,6 +574,7 @@ static const SfField SF_F_GameActions[] = {
     SF_ONE(GameActions, caravan_raid, "int", SF_INT, NULL),
     SF_ONE(GameActions, caravan_raid_at, "Vector3", SF_BYTES, NULL),
     SF_ONE(GameActions, tribe_looted, "unsigned", SF_UINT, NULL),
+    SF_ONE(GameActions, start_yurts, "int", SF_INT, NULL),
 };
 static const SfType SF_T_GameActions = SF_TYPE(GameActions, SF_F_GameActions);
 

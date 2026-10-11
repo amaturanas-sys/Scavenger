@@ -316,6 +316,11 @@ static void tick_journeys(GameActions *ga, Troop *troop, const MemoryMap *mem, c
                     Member *m = &troop->members[mi];
                     m->journey = 0;
                     m->camp = dest.camp && jr->site < CAMPS_MAX && ga->camps[jr->site].used ? jr->site : -1;
+                    if (m->camp >= 0 && ga->camps[m->camp].migrating) { // va en marcha: alcanzan la columna, detras del jugador
+                        spawn_at(ga, t, mi, p->pos.x - sinf(p->yaw) * 6.0f, p->pos.z - cosf(p->yaw) * 6.0f, k++);
+                        ga->npcs[mi].escort = true;
+                        continue;
+                    }
                     spawn_at(ga, t, mi, dest.x, dest.z, k++);
                 }
             } else if (jr->kind == JOURNEY_MESSENGER) {
@@ -363,7 +368,8 @@ static void tick_journeys(GameActions *ga, Troop *troop, const MemoryMap *mem, c
             }
         }
         // El jugador se entera de como les fue al llegar al destino.
-        if (jr->arrived && jr->kind == JOURNEY_DISPATCH && dist_xz(p->pos.x, p->pos.z, dest.x, dest.z) < REPORT_RADIUS) {
+        bool column = has_dest && dest.camp && jr->site < CAMPS_MAX && ga->camps[jr->site].migrating; // llegaron a la columna, contigo
+        if (jr->arrived && jr->kind == JOURNEY_DISPATCH && (column || dist_xz(p->pos.x, p->pos.z, dest.x, dest.z) < REPORT_RADIUS)) {
             int ok = 0, hurt = 0;
             for (int i = 0; i < jr->n; i++) ok += jr->fate[i] != FATE_DEAD, hurt += jr->fate[i] == FATE_WOUNDED;
             if (ok == jr->n && !hurt) snprintf(log, len, T("En %s: los %d despachados llegaron bien."), has_dest ? dest.name : "?", ok);

@@ -137,11 +137,13 @@ void wg_update(GameActions *ga, Troop *troop, Player *p, const Props *props, con
     if (ga->hydro.water <= 0.0f) {
         if ((ga->dry_t += dt) > DRY_FAINT) {
             ga->dry_t = 0.0f;
-            p->pos = (Vector3){ camp_fire.x + 2.0f, terrain_height(t, camp_fire.x + 2.0f, camp_fire.z - 2.0f), camp_fire.z - 2.0f };
+            bool column = ga_marching(ga) >= 0; // en marcha, la columna te atiende ahi mismo
+            if (!column) p->pos = (Vector3){ camp_fire.x + 2.0f, terrain_height(t, camp_fire.x + 2.0f, camp_fire.z - 2.0f), camp_fire.z - 2.0f };
             p->vy = 0.0f;
             ga->hydro.water = 60.0f;
             troop_adjust_morale(troop, -3.0f);
-            snprintf(log, len, "%s", T("Te desmayaste de sed; la tribu te llevó al campamento y te dio de beber (moral -3)."));
+            snprintf(log, len, "%s", column ? T("Te desmayaste de sed; en la columna te dieron de beber (moral -3).")
+                                            : T("Te desmayaste de sed; la tribu te llevó al campamento y te dio de beber (moral -3)."));
         }
     } else {
         ga->dry_t = 0.0f;

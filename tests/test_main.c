@@ -1211,7 +1211,7 @@ static void test_animals_flee_and_wander(void) {
     Animal herd[3];
     for (int i = 0; i < 3; i++) animal_init(&herd[i], SPECIES_DEER, (float)i * 2.0f, 0), herd[i].group = 7;
     FaunaHuman hu = { 5.0f, 0.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 5.0f, 0.0f, false, 100.0f, 100.0f, false, NULL, NULL, false };
+    FaunaCtx c = { &hu, 1, 5.0f, 0.0f, false, 100.0f, 100.0f, false, NULL, NULL, false, false };
     animal_hurt(herd, 3, 2, &r, 10.0f, WOUND_CUT, PART_THORAX, true, 0);
     CHECK(herd[2].fear_humans > 0.0f && herd[0].fear_humans > 0.0f && herd[1].fear_humans > 0.0f);
     float before = an_dist(&herd[0], 5.0f, 0.0f);
@@ -1231,7 +1231,7 @@ static void test_animals_birds(void) {
         animal_init(&b, sp, 0, 0);
         b.hunger = 1.0f;
         FaunaHuman hu = { 1.0f, 0.0f, false, false, false, true };
-        FaunaCtx c = { &hu, 1, 1.0f, 0.0f, false, 0, 0, false, NULL, NULL, false };
+        FaunaCtx c = { &hu, 1, 1.0f, 0.0f, false, 0, 0, false, NULL, NULL, false, false };
         FaunaEvents ev = { .n = 0 };
         int bites = 0;
         for (int i = 0; i < 600; i++) {
@@ -1248,7 +1248,7 @@ static void test_animals_birds(void) {
     animal_init(&z[1], SPECIES_HARE, 25.0f, 0);
     z[0].hunger = 1.0f;
     FaunaHuman far = { 500.0f, 500.0f, false, false, false, false };
-    FaunaCtx c = { &far, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false };
+    FaunaCtx c = { &far, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false, false };
     bool dived = false, killed = false, carried = false;
     for (int i = 0; i < 900 && z[1].used; i++) {
         fauna_update(z, 2, &c, &r, 0.05f, NULL);
@@ -1268,7 +1268,7 @@ static void test_animals_birds(void) {
     Animal rv;
     animal_init(&rv, SPECIES_RAVEN, 0, 0);
     FaunaHuman hurt = { 20.0f, 0.0f, false, false, false, true };
-    FaunaCtx ch = { &hurt, 1, 20.0f, 0.0f, false, 0, 0, false, NULL, NULL, false };
+    FaunaCtx ch = { &hurt, 1, 20.0f, 0.0f, false, 0, 0, false, NULL, NULL, false, false };
     for (int i = 0; i < 400; i++) fauna_update(&rv, 1, &ch, &r, 0.05f, NULL);
     CHECK(rv.mode == MODE_STALK && an_dist(&rv, 20.0f, 0.0f) < 13.0f && rv.alt > 3.0f);
 }
@@ -1316,7 +1316,7 @@ static void test_animals_tame_predator(void) {
     Animal w2 = w;
     FaunaEvents ev = { .n = 0 };
     FaunaHuman hu = { 50.0f, 50.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 50.0f, 50.0f, false, 0, 0, false, NULL, NULL, false };
+    FaunaCtx c = { &hu, 1, 50.0f, 50.0f, false, 0, 0, false, NULL, NULL, false, false };
     for (int i = 0; i < 650 && w2.state == ANIMAL_BOUND; i++) fauna_update(&w2, 1, &c, &r, 0.1f, &ev);
     CHECK(w2.state == ANIMAL_WILD && ev.n > 0 && ev.ev[ev.n - 1].kind == FEV_BREAK_FREE);
     // Con carne: de la tribu.
@@ -1325,7 +1325,7 @@ static void test_animals_tame_predator(void) {
     Animal pack[1] = { w };
     pack[0].x = 0, pack[0].z = 0;
     FaunaHuman people[2] = { { 0.0f, 0.0f, false, false, false, false }, { 6.0f, 0.0f, false, false, true, false } };
-    FaunaCtx c2 = { people, 2, 0.0f, 0.0f, false, 0, 0, false, NULL, NULL, false };
+    FaunaCtx c2 = { people, 2, 0.0f, 0.0f, false, 0, 0, false, NULL, NULL, false, false };
     ev.n = 0;
     bool bit_enemy = false;
     for (int i = 0; i < 60; i++) {
@@ -1347,7 +1347,7 @@ static void test_animals_pack_hunt(void) {
     }
     for (int i = 3; i < 7; i++) animal_init(&a[i], SPECIES_DEER, (float)(i - 3) * 2.0f, 3.0f), a[i].group = 2;
     FaunaHuman hu = { 500.0f, 500.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false, false };
     bool shared = false, alarmed = false, killed = false, ate = false;
     for (int step = 0; step < 1800 && !(killed && ate); step++) {
         FaunaEvents ev = { .n = 0 };
@@ -1373,7 +1373,7 @@ static void test_animals_stalk_and_rivals(void) {
     Rng r;
     rng_seed(&r, 13);
     FaunaHuman hu = { 500.0f, 500.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false, false };
     Animal a[2];
     animal_init(&a[0], SPECIES_TIGER, 0, 0);
     animal_init(&a[1], SPECIES_DEER, 25.0f, 0);
@@ -1409,7 +1409,7 @@ static void test_animals_flee_only_critical(void) {
     Rng r;
     rng_seed(&r, 17);
     FaunaHuman hu = { 3.0f, 0.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 3.0f, 0.0f, false, 50, 50, false, NULL, NULL, false };
+    FaunaCtx c = { &hu, 1, 3.0f, 0.0f, false, 50, 50, false, NULL, NULL, false, false };
     Animal w;
     animal_init(&w, SPECIES_BEAR, 0, 0);
     animal_hurt(&w, 1, 0, &r, 60.0f, WOUND_CUT, PART_THORAX, true, 0);
@@ -1447,7 +1447,7 @@ static void test_animals_livestock(void) {
     CHECK(g[0].state == ANIMAL_TAMED && g[1].state == ANIMAL_TAMED); // de la tribu desde el principio
     // El pastor camina cerca: lo siguen; se para: se quedan donde estan.
     FaunaHuman hu = { 4.0f, 0.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 4.0f, 0.0f, true, 0, 0, false, NULL, NULL, false };
+    FaunaCtx c = { &hu, 1, 4.0f, 0.0f, true, 0, 0, false, NULL, NULL, false, false };
     for (int i = 0; i < 300; i++) {
         hu.x = c.px = 4.0f + (float)i * 0.1f; // 1 m/s
         fauna_update(g, 2, &c, &r, 0.1f, NULL);
@@ -1639,7 +1639,7 @@ static void test_animals_keep_out_of_lakes(void) {
     Rng r;
     rng_seed(&r, 77);
     FaunaHuman hu = { 500.0f, 500.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 100, 100, false, test_round_lake, NULL, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 100, 100, false, test_round_lake, NULL, false, false };
     Animal herd[4];
     for (int i = 0; i < 4; i++) {
         animal_init(&herd[i], i < 2 ? SPECIES_DEER : SPECIES_WOLF, 24.0f + i, 0.0f);
@@ -1670,7 +1670,7 @@ static void test_animals_water_and_venom(void) {
     Rng r;
     rng_seed(&r, 31);
     FaunaHuman hu = { 6.0f, 0.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 6.0f, 0.0f, false, 100, 100, false, test_lake, NULL, false };
+    FaunaCtx c = { &hu, 1, 6.0f, 0.0f, false, 100, 100, false, test_lake, NULL, false, false };
     Animal croc;
     animal_init(&croc, SPECIES_CROCODILE, -2.0f, 0.0f); // en el agua, junto a la orilla
     FaunaEvents ev = { .n = 0 };
@@ -2484,7 +2484,7 @@ static void test_backpacks_and_feeding(void) {
     animal_init(&herd[1], SPECIES_DOG, 3.0f, 0.0f);
     herd[1].state = ANIMAL_TAMED;
     FaunaHuman hu = { 200.0f, 200.0f, false, false, false, false };
-    FaunaCtx bare = { &hu, 1, 200.0f, 200.0f, false, 0.0f, 0.0f, false, NULL, NULL, false };
+    FaunaCtx bare = { &hu, 1, 200.0f, 200.0f, false, 0.0f, 0.0f, false, NULL, NULL, false, false };
     herd[0].hunger = herd[1].hunger = 0.5f;
     for (int i = 0; i < 600; i++) fauna_update(herd, 2, &bare, &rng, 0.5f, NULL); // 5 minutos sin pasto
     CHECK(herd[0].hunger > 0.6f);
@@ -3948,6 +3948,75 @@ static void test_breeding_and_foals(void) {
     CHECK(animal_milk(&goat) > 0);
 }
 
+static void test_camp_migration_and_pastures(void) {
+    // Que se desarma: yurtas, tiendas y chozas de fieltro; las obras fijas quedan.
+    CHECK(camp_load_kind("estructura.vivienda.yurta_comun") == LOAD_YURT && camp_load_kind("estructura.vivienda.yurta_jefe") == LOAD_CHIEF_YURT);
+    CHECK(camp_load_kind("estructura.vivienda.tienda_ligera") == LOAD_TENT && camp_load_kind("estructura.vivienda.choza_fieltro") == LOAD_FELT_HUT);
+    CHECK(camp_load_kind("estructura.vivienda.casa_adobe") < 0 && camp_load_kind("estructura.campamento.fogata") < 0 && camp_load_kind(NULL) < 0);
+    for (int k = 0; k < LOAD_KINDS; k++) CHECK(camp_load_kind(camp_load_id(k)) == k);
+    // Dos campamentos; el 0, con su gente y su acopio, migra.
+    CampSite c[CAMPS_MAX];
+    camps_init(c, CAMPS_MAX);
+    int a = camp_found(c, CAMPS_MAX, 0.0f, 0.0f, 1), b = camp_found(c, CAMPS_MAX, 200.0f, 0.0f, 2);
+    CHECK(a == 0 && b == 1);
+    snprintf(c[a].name, CAMP_NAME_LEN, "Estelas");
+    c[a].guardian = 7;
+    stock_add(&c[a].stock, "utileria.material.troncos", 12);
+    stock_add(&c[a].stock, "utileria.consumible.carne_seca", 9);
+    Troop troop;
+    troop_init(&troop, NULL);
+    troop_recruit(&troop, "Batu", 0);
+    troop_recruit(&troop, "Sorgan", 0);
+    troop_recruit(&troop, "Altan", 0);
+    for (int i = 0; i < troop.count; i++) troop.members[i].camp = a;
+    int people = troop.count;
+    CHECK(camp_migrate(&c[a]) && !camp_migrate(&c[a]) && c[a].migrating && c[a].moved);
+    // En marcha no esta en ningun sitio: no abarca nada, no es el mas cercano y no estorba para fundar.
+    CHECK(camp_at(c, CAMPS_MAX, 0.0f, 0.0f) == -1 && camp_nearest(c, CAMPS_MAX, 1.0f, 1.0f, NULL) == b);
+    CHECK(camp_far_enough(c, CAMPS_MAX, 10.0f, 10.0f));
+    // No se planta pegado a otro campamento.
+    CHECK(!camp_settle(c, CAMPS_MAX, a, 230.0f, 10.0f) && c[a].migrating);
+    // Lejos, si: el acopio, el nombre, el guardian y la gente siguen siendo los suyos.
+    CHECK(camp_settle(c, CAMPS_MAX, a, -400.0f, 300.0f) && !c[a].migrating && c[a].moved);
+    CHECK(c[a].x == -400.0f && c[a].z == 300.0f && camp_at(c, CAMPS_MAX, -395.0f, 305.0f) == a);
+    CHECK(stock_count(&c[a].stock, "utileria.material.troncos") == 12 && stock_count(&c[a].stock, "utileria.consumible.carne_seca") == 9);
+    CHECK(!strcmp(c[a].name, "Estelas") && c[a].guardian == 7);
+    int still = 0;
+    for (int i = 0; i < troop.count; i++) still += troop.members[i].camp == a;
+    CHECK(still == people && people > 0);
+    CHECK(!camp_settle(c, CAMPS_MAX, a, 900.0f, 900.0f)); // ya plantado: no se vuelve a plantar
+    // Los pastos: el altiplano, lo mejor en verano y casi nada en invierno; el llano aguanta.
+    CHECK(pasture_quality(REGION_HIGHLAND, SEASON_SUMMER) > pasture_quality(REGION_STEPPE, SEASON_SUMMER));
+    CHECK(pasture_quality(REGION_HIGHLAND, SEASON_WINTER) < pasture_quality(REGION_STEPPE, SEASON_WINTER));
+    CHECK(pasture_quality(REGION_DESERT, SEASON_SUMMER) < pasture_quality(REGION_DESERT, SEASON_WINTER));
+    for (int r = 0; r < REGION_COUNT; r++)
+        for (int s = 0; s < SEASON_COUNT; s++) CHECK(pasture_quality((Region)r, (Season)s) >= 0.0f && pasture_quality((Region)r, (Season)s) <= 1.2f);
+    // Con pasto pobre el ganado pasa hambre; con buen pasto los pastores juntan mas forraje.
+    CHECK(pasture_hunger(1.0f) == 0.0f && pasture_hunger(0.6f) == 0.0f && pasture_hunger(0.1f) > pasture_hunger(0.45f) && pasture_hunger(0.45f) > 0.0f);
+    CHECK(pasture_forage(1.2f) == 2 && pasture_forage(0.9f) == 1 && pasture_forage(0.5f) == 0);
+    // Lo que dice la ayuda: la estepa rinde en primavera y otoño, las montañas en verano y el
+    // desierto en invierno; la estepa en invierno y el desierto en verano no alcanzan.
+    CHECK(pasture_forage(pasture_quality(REGION_STEPPE, SEASON_SPRING)) > 0 && pasture_forage(pasture_quality(REGION_STEPPE, SEASON_AUTUMN)) > 0);
+    CHECK(pasture_forage(pasture_quality(REGION_HIGHLAND, SEASON_SUMMER)) == 2);
+    CHECK(pasture_hunger(pasture_quality(REGION_DESERT, SEASON_WINTER)) == 0.0f);
+    CHECK(pasture_hunger(pasture_quality(REGION_STEPPE, SEASON_WINTER)) > 0.0f && pasture_hunger(pasture_quality(REGION_DESERT, SEASON_SUMMER)) > 0.0f);
+    CHECK(pasture_hunger(pasture_quality(REGION_HIGHLAND, SEASON_WINTER)) > pasture_hunger(pasture_quality(REGION_STEPPE, SEASON_WINTER)));
+    // En marcha, el ganado de la tribu sigue al jugador aunque pare, y desde mas lejos; sin marcha, se queda.
+    FaunaHuman hu = { 0.0f, 0.0f, false, false, false, false };
+    float dist_end[2];
+    for (int caravan = 0; caravan < 2; caravan++) {
+        Animal goat;
+        animal_init(&goat, SPECIES_GOAT, 30.0f, 0.0f);
+        goat.hunger = goat.thirst = 0.0f;
+        Rng r;
+        rng_seed(&r, 11u);
+        FaunaCtx fc = { &hu, 1, 0.0f, 0.0f, false, 0.0f, 0.0f, false, NULL, NULL, true, caravan == 1 };
+        for (int i = 0; i < 200; i++) fauna_update(&goat, 1, &fc, &r, 0.1f, NULL);
+        dist_end[caravan] = sqrtf(goat.x * goat.x + goat.z * goat.z);
+    }
+    CHECK(dist_end[1] < 10.0f && dist_end[0] > 18.0f);
+}
+
 static void test_daily_work_by_trade(void) {
     Troop t;
     troop_init(&t, NULL);
@@ -4115,6 +4184,7 @@ int main(void) {
     RUN(test_mount_stamina);
     RUN(test_horse_archer_harass);
     RUN(test_breeding_and_foals);
+    RUN(test_camp_migration_and_pastures);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

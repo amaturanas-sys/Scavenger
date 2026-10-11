@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/camp_game.h"
 #include "game/hud_game.h"
 #include "game/input.h"
 #include "raymath.h"
@@ -228,8 +229,8 @@ static void victim_trapped(Hazards *hz, const Troop *troop, int member_id, TrapK
 static void toggle_escort(Hazards *hz, GameActions *ga, const Troop *troop, const Player *p, float reach, char *log,
                           size_t len) {
     if (hz->escort_on) {
-        for (int i = 0; i < TROOP_MAX; i++)
-            if (ga->npcs[i].member_id != hz->victim) ga->npcs[i].escort = false;
+        for (int i = 0; i < TROOP_MAX; i++) // la tribu en marcha (migrando) sigue en la columna
+            if (ga->npcs[i].member_id != hz->victim && !(i < troop->count && cg_marching(ga, &troop->members[i]))) ga->npcs[i].escort = false;
         hz->escort_on = false;
         snprintf(log, len, "%s", T("La escolta vuelve al campamento."));
         return;
@@ -316,7 +317,7 @@ static void update_escort(Hazards *hz, GameActions *ga, Troop *troop, const Terr
 }
 
 // ----------------------------------------------------------------------- frio
-static float fire_warmth(const Props *props, Vector3 camp_fire, Vector3 p) {
+static float fire_warmth(const Props *props, Vector3 camp_fire, bool camp_lit, Vector3 p) {
     float best = 0.0f;
     struct { const char *id; float reach; } fires[] = {
         { "estructura.campamento.fogata", 6.0f },       { "estructura.campamento.hoguera", 10.0f },
@@ -324,7 +325,7 @@ static float fire_warmth(const Props *props, Vector3 camp_fire, Vector3 p) {
         { "estructura.campamento.horno_acero", 4.0f },
     };
     float d = dist2(camp_fire, p);
-    if (d < 6.0f) best = 30.0f * (1.0f - d / 6.0f);
+    if (camp_lit && d < 6.0f) best = 30.0f * (1.0f - d / 6.0f);
     for (int i = 0; i < props->count; i++)
         for (size_t f = 0; f < sizeof(fires) / sizeof(fires[0]); f++) {
             if (strcmp(props->items[i].item->id, fires[f].id) != 0) continue;
@@ -451,8 +452,11 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
     }
 
     // Frio y calor: sensacion termica con la ropa que lleva, el sol y el fuego.
-    hz->fire = ga->fires_out ? 0.0f : fire_warmth(props, camp_fire, p->pos); // apagados por la lluvia, no calientan
-    float shelter = dist2(p->pos, camp_fire) < 14.0f ? 6.0f : 0.0f; // las yurtas cortan el viento
+    // Disuelto o migrado, el fogon del campamento inicial quedo apagado: calienta el que arman al
+    // plantarlo (un objeto mas). En marcha no hay yurtas que corten el viento.
+    bool camp_lit = ga->camps[0].used && !ga->camps[0].moved, marching = ga->camps[0].used && ga->camps[0].migrating;
+    hz->fire = ga->fires_out ? 0.0f : fire_warmth(props, camp_fire, camp_lit, p->pos); // apagados por la lluvia, no calientan
+    float shelter = !marching && dist2(p->pos, camp_fire) < 14.0f ? 6.0f : 0.0f; // las yurtas cortan el viento
     float torch = ga->torch_lit && !ga->hands.sheathed ? 4.0f : 0.0f;
     float wind = c->wind * (shelter > 0.0f ? 0.5f : 1.0f);
     float sun_h = clock_sun_height(world_time);
@@ -480,13 +484,15 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
         hz->faint_timer += dt;
         if (hz->faint_timer > FAINT_SECONDS) {
             dismount(ga);
-            p->pos = (Vector3){ camp_fire.x + 2.5f, terrain_height(t, camp_fire.x + 2.5f, camp_fire.z), camp_fire.z };
+            bool column = ga_marching(ga) >= 0; // en marcha, la columna te atiende ahi mismo
+            if (!column) p->pos = (Vector3){ camp_fire.x + 2.5f, terrain_height(t, camp_fire.x + 2.5f, camp_fire.z), camp_fire.z };
             p->vy = 0.0f;
             hz->warmth.heat = 35.0f;
             hz->warmth.wet = 0.0f;
             hz->faint_timer = 0.0f;
             troop_adjust_morale(troop, -3.0f);
-            snprintf(log, log_len, "%s", T("Te desmayaste de frío; la tribu te llevó junto al fuego (moral -3)."));
+            snprintf(log, log_len, "%s", column ? T("Te desmayaste de frío; en la columna te abrigaron (moral -3).")
+                                                : T("Te desmayaste de frío; la tribu te llevó junto al fuego (moral -3)."));
         }
     } else {
         hz->faint_timer = 0.0f;
@@ -496,12 +502,14 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
         hz->heat_faint += dt;
         if (hz->heat_faint > FAINT_SECONDS) {
             dismount(ga);
-            p->pos = (Vector3){ camp_fire.x - 3.0f, terrain_height(t, camp_fire.x - 3.0f, camp_fire.z), camp_fire.z };
+            bool column = ga_marching(ga) >= 0; // en marcha, la columna te atiende ahi mismo
+            if (!column) p->pos = (Vector3){ camp_fire.x - 3.0f, terrain_height(t, camp_fire.x - 3.0f, camp_fire.z), camp_fire.z };
             p->vy = 0.0f;
             hz->heat.load = 40.0f;
             hz->heat_faint = 0.0f;
             troop_adjust_morale(troop, -3.0f);
-            snprintf(log, log_len, "%s", T("Te desmayaste por el calor; la tribu te llevó a la sombra (moral -3). Cúbrete del sol y bebe."));
+            snprintf(log, log_len, "%s", column ? T("Te desmayaste por el calor; en la columna te dieron sombra (moral -3). Cúbrete del sol y bebe.")
+                                                : T("Te desmayaste por el calor; la tribu te llevó a la sombra (moral -3). Cúbrete del sol y bebe."));
         }
     } else {
         hz->heat_faint = 0.0f;
@@ -513,7 +521,7 @@ void hz_new_day(Hazards *hz, const Climate *c, GameActions *ga, const Props *pro
     (void)hz;
     if (c->temp_mean >= 0.0f) return;
     // Cada fuego del campamento gasta lena en las noches heladas (el doble con frio extremo).
-    int fires = 1;
+    int fires = ga->camps[0].used && !ga->camps[0].moved ? 1 : 0; // el fogon del campamento inicial (si sigue encendido)
     for (int i = 0; i < props->count; i++) {
         const char *id = props->items[i].item->id;
         if (!strcmp(id, "estructura.campamento.fogata")) fires += 1;

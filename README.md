@@ -148,12 +148,20 @@ Campamentos:
   - reclutar gente nueva: alguien sale a buscarla con comida;
   - capacitar en un oficio: soldado, herrero, druida, orfebre, pastor, cazador o explorador;
   - ver el estado (gente, tareas, acopio y lo que vale en plata);
+  - migrar: llevar el campamento a otro sitio;
   - disolver el campamento.
 - **Tareas:** gastan recursos y ocupan gente. Avanzan más rápido con más gente sin tarea (hasta ×2) y mucho más con un maestro del oficio (+60 % cada uno).
 - **Disolver:** se queman las estructuras (y las yurtas del campamento inicial). Lo del acopio se carga en la carreta y en las alforjas que estén cerca; lo que no cabe se pierde. La gente sigue al jugador.
 - **El campamento inicial:** su guardián es el lugarteniente.
 
-Pruebas: `--hablar guardian`, `--fundar`.
+Migrar (v0.7.2):
+- **Levantar el campamento (el guardián, «Migrar»):** desarman las yurtas, las tiendas y las chozas de fieltro y las cargan con el acopio. Las demás obras (pozos, hornos, corrales, cercas) quedan donde estaban.
+- **La columna:** la gente del campamento te sigue como escolta, y el rebaño también, desde más lejos (hasta 60 m) y aunque estés quieto. Los que estaban de salida vuelven a la columna; los que despaches allí la alcanzan.
+- **En marcha:** el acopio va con la columna. Lo usas desde el inventario, y de él comen la escolta y la columna. Si te desmayas, la columna te atiende ahí mismo. Si muere toda la columna, la caravana se pierde con su carga.
+- **Plantarlo:** `F` junto al guardián, en un sitio seco y llano a más de 70 m de los demás campamentos. Las viviendas se arman en corro alrededor de un fogón, con la puerta hacia él, y la gente y el rebaño se quedan. Si es el campamento inicial, el fuego de la tribu pasa a ser ese fogón: ahí te llevan si te desmayas.
+- **Los pastos de cada estación:** el pasto rinde según la región y la estación. La estepa rinde en primavera (y algo en otoño), las montañas en verano y el desierto en invierno. Con buen pasto, cada pastor junta 1 o 2 de forraje por día; con poco, el ganado del campamento pasa hambre. Al cambiar la estación, el guardián avisa en sus informes si conviene migrar.
+
+Pruebas: `--hablar guardian`, `--fundar`, `--migrar marcha|plantar` (`plantar`: lo lleva 170 m y lo planta).
 
 Oficios, comercio y saqueo:
 - **Los oficios trabajan cada día** lo que sobra del acopio de su campamento, una tanda por persona y guardando una reserva: el cazador curte pieles (cuero) y talla puntas de hueso; el pastor hace fieltro con pieles de cabra; el constructor labra madera y hace adobe; el cocinero, velas de sebo; el curandero, ungüento; el orfebre, peines. Lo que hicieron sale en los informes del campamento.

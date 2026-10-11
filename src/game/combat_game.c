@@ -230,7 +230,7 @@ static void natural_spawns(Combat *cb, GameActions *ga, const Player *p, const T
     played += 60.0f;
     for (int k = 0; k < CAMPS_MAX && played > 600.0f; k++) {
         const CampSite *c = &ga->camps[k];
-        if (!c->used || Vector2Distance((Vector2){ p->pos.x, p->pos.z }, (Vector2){ c->x, c->z }) > RAID_NEAR) continue;
+        if (!c->used || c->migrating || Vector2Distance((Vector2){ p->pos.x, p->pos.z }, (Vector2){ c->x, c->z }) > RAID_NEAR) continue;
         if (rng_float(&cb->rng) < (night ? 0.06f : 0.025f)) raid(cb, c, t, log, len);
         return;
     }

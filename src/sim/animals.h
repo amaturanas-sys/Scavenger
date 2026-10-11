@@ -190,6 +190,7 @@ typedef struct {
     float (*water_depth)(void *ud, float x, float z);
     void *water_ud;
     bool grass;         // hay pasto (sin nieve): los herbivoros domados pastan solos
+    bool caravan;       // la tribu va en marcha (migra): el ganado y las monturas de la tribu la siguen
 } FaunaCtx;
 
 typedef enum {

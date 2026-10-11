@@ -76,6 +76,13 @@ void save_summary(const GameState *g, FILE *o) {
         if (ga->herd_at[k].x != 0.0f || ga->herd_at[k].z != 0.0f) fprintf(o, "    pasto (%.2f, %.2f)\n", ga->herd_at[k].x, ga->herd_at[k].z); // v0.6.1
         for (int i = 0; i < GA_NEWS; i++)
             if (ga->news[k].line[i][0]) fprintf(o, "    informe %d: %s\n", i, ga->news[k].line[i]); // v0.6.1
+        int load = 0;
+        for (int i = 0; i < LOAD_KINDS; i++) load += c->load[i];
+        if (c->migrating || c->moved || load) { // v0.7.2: la migracion
+            fprintf(o, "    en marcha %d movido %d carga", c->migrating, c->moved);
+            for (int i = 0; i < LOAD_KINDS; i++) fprintf(o, " %d", c->load[i]);
+            fputc('\n', o);
+        }
     }
     if (ga->people_pick[0] || ga->people_pick[1] || ga->people_page)
         fprintf(o, "  pobladores: elegidos %d %d pagina %d\n", ga->people_pick[0], ga->people_pick[1], ga->people_page); // v0.6.1

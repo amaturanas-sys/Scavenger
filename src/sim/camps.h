@@ -14,6 +14,10 @@
 //    (src/sim/travel.h): los que van no se ven hasta que vuelven, con su suerte y lo que traen.
 //    El pastoreo y la guardia se ven cerca del campamento. Ir acompañado y saber el oficio
 //    bajan el riesgo y rinden mas.
+//  - migrar (fase 6b): el campamento entero se levanta y viaja con la tribu; las viviendas que
+//    se desarman (yurtas, tiendas, chozas de fieltro) van cargadas, el acopio con ellos y la
+//    gente detras del jugador, en columna. Al llegar, se planta en otro sitio. Es la respuesta
+//    a la estacion: el pasto de cada region cambia con ella.
 #ifndef ESTEPA_CAMPS_H
 #define ESTEPA_CAMPS_H
 
@@ -25,6 +29,7 @@
 #include "rng.h"
 #include "travel.h"
 #include "troop.h"
+#include "world.h"
 
 #define CAMPS_MAX 6
 #define CAMP_TASKS 8
@@ -51,6 +56,9 @@ typedef struct {
     int member2; // el acompañante (id), o 0: va solo
 } CampTask;
 
+// Las viviendas que se desarman y viajan cargadas al migrar (crecen al final).
+typedef enum { LOAD_YURT, LOAD_CHIEF_YURT, LOAD_TENT, LOAD_FELT_HUT, LOAD_KINDS } LoadKind;
+
 typedef struct {
     bool used;
     char name[CAMP_NAME_LEN];
@@ -60,16 +68,41 @@ typedef struct {
     Stockpile stock;
     CampTask task[CAMP_TASKS];
     int ntask;
+    // La migracion (v0.7.2): en marcha, lo que va cargado y si ya dejo su primer sitio.
+    bool migrating;                 // levantado: no esta en ningun sitio hasta plantarlo
+    unsigned char load[LOAD_KINDS]; // viviendas cargadas
+    bool moved;                     // dejo su primer sitio (migro; el inicial, tambien si se disolvio): sus yurtas ya no estan alli
 } CampSite;
 
 void camps_init(CampSite *c, int n);
 // Funda uno en (x, z); devuelve su indice o -1 (sin hueco o demasiado cerca de otro).
 int camp_found(CampSite *c, int n, float x, float z, int day);
-// El campamento que abarca (x, z), o -1.
+// El campamento que abarca (x, z), o -1. Los que estan en marcha no abarcan nada (tampoco cuentan
+// para camp_nearest ni camp_far_enough).
 int camp_at(const CampSite *c, int n, float x, float z);
 int camp_nearest(const CampSite *c, int n, float x, float z, float *dist);
 int camps_count(const CampSite *c, int n);
 bool camp_far_enough(const CampSite *c, int n, float x, float z);
+
+// ---------------------------------------------------------------- migrar (v0.7.2)
+// La vivienda que se desarma (LoadKind) segun su id del inventario, o -1 (las obras fijas quedan).
+int camp_load_kind(const char *id);
+const char *camp_load_id(int kind);
+// Levanta el campamento: queda en marcha (false si no existe o ya lo estaba). Lo cargado lo
+// suma el juego (camp.load), que es quien desarma las viviendas.
+bool camp_migrate(CampSite *c);
+// Lo planta en (x, z): false si queda demasiado cerca de otro campamento (o no estaba en marcha).
+// El acopio, el nombre, el guardian y las tareas siguen siendo los suyos.
+bool camp_settle(CampSite *c, int n, int k, float x, float z);
+
+// ---------------------------------------------------------------- pastos por estacion (v0.7.2)
+// Lo que da el pasto de una region en una estacion [0, 1.2]: el altiplano, lo mejor en verano y
+// casi nada en invierno (nevado); el llano aguanta el invierno; el desierto en verano, seco.
+float pasture_quality(Region r, Season s);
+// Hambre que suma cada dia al ganado de un campamento con pasto pobre (0 si alcanza).
+float pasture_hunger(float q);
+// Forraje de mas que junta cada pastor con buen pasto.
+int pasture_forage(float q);
 
 // Oficios que se pueden enseñar en el campamento (soldado, herrero, druida, orfebre,
 // pastor, cazador, explorador), lo que cuesta y cuanto tarda.

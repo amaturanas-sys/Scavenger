@@ -322,6 +322,9 @@ static void draw_hud(const Troop *t, float world_time, const char *hands, const 
     float rebellion = troop_rebellion_chance(t);
     if (rebellion > 0.0f) ui_text(TextFormat(T("Riesgo de rebelión %d%%"), (int)(rebellion * 100)), x, 54, 10, UI_CARNELIAN);
     // Registro: abajo a la izquierda, se desvanece a los 8 s.
+    const char *hint = T("F1 o Ctrl+H: controles · Esc o Ctrl+P: menú");
+    int hx = VIRTUAL_W - 8 - MeasureText(hint, 10);
+    bool hint_free = true;
     if (log[0] && log_age < 8.0f) {
         float a = log_age < 6.0f ? 1.0f : (8.0f - log_age) / 2.0f;
         int lw = MeasureText(log, 10);
@@ -333,10 +336,10 @@ static void draw_hud(const Troop *t, float world_time, const char *hands, const 
         BeginScissorMode(lx, ly, lw + 14, 18);
         ui_text(log, lx + 7, ly + 4, 10, Fade(UI_BONE, a));
         EndScissorMode();
+        hint_free = lx + lw + 14 + 6 <= hx; // un registro largo tapa la leyenda mientras dura
     }
-    if (menu) return;
-    const char *hint = T("F1 o Ctrl+H: controles · Esc o Ctrl+P: menú");
-    ui_text(hint, VIRTUAL_W - 8 - MeasureText(hint, 10), VIRTUAL_H - 16, 10, Fade(UI_BONE_DIM, 0.8f));
+    if (menu || !hint_free) return;
+    ui_text(hint, hx, VIRTUAL_H - 16, 10, Fade(UI_BONE_DIM, 0.8f));
 }
 
 // Cambia de mundo (otra semilla): el terreno y el campamento se rehacen.
@@ -559,6 +562,7 @@ int main(int argc, char **argv) {
     const char *start_trade = NULL;   // --comerciar: raiz, vender, comprar, caravana, asaltar o saquear (src/game/trade_game.h)
     const char *start_ride = NULL;    // --montado: lanza, parto o agotado (src/game/combat_game.h); galopa solo hacia delante
     bool start_breed = false;         // --cria: en el campamento inicial, una yegua por parir, un semental y un potro por crecer
+    const char *start_migrate = NULL; // --migrar: marcha (levanta el campamento inicial y camina) o plantar (y lo planta a 170 m)
     bool start_diag = false;          // --diagnostico: el panel de Ctrl+D abierto
     int start_picker = -1;
     float start_heading = -1.0f;      // --rumbo grados: hacia donde mira la camara (0 sur, 90 este, 180 norte, 270 oeste)
@@ -626,6 +630,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--comerciar") && i + 1 < argc) start_trade = argv[++i];
         else if (!strcmp(argv[i], "--montado") && i + 1 < argc) start_ride = argv[++i];
         else if (!strcmp(argv[i], "--cria")) start_breed = true;
+        else if (!strcmp(argv[i], "--migrar") && i + 1 < argc) start_migrate = argv[++i];
         else if (!strcmp(argv[i], "--hablar") && i + 1 < argc) {
             i++;
             start_talk = !strcmp(argv[i], "orfebre") ? 2 : !strcmp(argv[i], "guardian") ? 3 : 1;
@@ -928,6 +933,22 @@ int main(int argc, char **argv) {
             }
             start_tasks = false;
         }
+        if (start_migrate && frame == 6) { // prueba: levantar el campamento inicial
+            rig.yaw = player.yaw;
+            cg_test_migrate(&g_actions, &troop, &g_props, &terrain, &player, 1, log, sizeof(log));
+        }
+        if (start_migrate && !strcmp(start_migrate, "plantar") && frame == 10) { // la tribu (y el rebaño) a 170 m, al este
+            float dx = 170.0f;
+            player.pos.x += dx, player.pos.y = terrain_height(&terrain, player.pos.x, player.pos.z);
+            for (int k = 0; k < troop.count && k < TROOP_MAX; k++)
+                if (g_actions.npcs[k].escort) g_actions.npcs[k].pos.x += dx;
+            for (int k = 0; k < g_actions.animal_count; k++)
+                if (g_actions.animals[k].used && animal_domestic(&g_actions.animals[k])) g_actions.animals[k].x += dx;
+        }
+        if (start_migrate && !strcmp(start_migrate, "plantar") && frame == 40) {
+            cg_test_migrate(&g_actions, &troop, &g_props, &terrain, &player, 2, log, sizeof(log));
+            rig.yaw = player.yaw = PI;
+        }
         if (start_breed && frame == 4) { // prueba: la cria (con --minuto 29.9, el dia cambia enseguida)
             static const float AT[3][2] = { { 14.0f, -16.0f }, { 17.0f, -14.0f }, { 12.0f, -12.0f } };
             for (int k = 0; k < 3; k++) {
@@ -1024,6 +1045,7 @@ int main(int argc, char **argv) {
             bool blocked = hud_picker_open() || ga_blocks_input(&g_actions) || hz_blocks_input(&g_hazards) || cb_blocks_input(&g_combat) || orbital;
             PlayerInput in = blocked ? (PlayerInput){ 0 } : player_read_input();
             if (start_ride && frame > 6 && g_actions.mounted >= 0) in.move_z = 1.0f, in.run = true; // prueba: al galope
+            if (start_migrate && !strcmp(start_migrate, "marcha") && frame > 8) in.move_z = 1.0f; // prueba: en marcha, al paso
             if (g_actions.mounted >= 0 && fg_mount_winded()) in.run = false; // la montura agotada no galopa
             player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards) * cb_speed_scale(&g_combat);
             player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
@@ -1069,12 +1091,23 @@ int main(int argc, char **argv) {
                 g_actions.equip_open = true;
                 start_wounds = false;
             }
+            // El fuego de la tribu (calor, abrigo, adonde te lleva la tribu, descanso): el del campamento
+            // inicial; si migro, el fogon que arman en su sitio nuevo (src/game/camp_game.c).
+            Vector3 tribe_fire = camp.fire;
+            if (g_actions.camps[0].used && g_actions.camps[0].moved) {
+                float fx = g_actions.camps[0].x + 2.0f, fz = g_actions.camps[0].z;
+                tribe_fire = (Vector3){ fx, terrain_height(&terrain, fx, fz), fz };
+            }
             if (!gallery_mode)
-                hz_update(&g_hazards, &g_climate, &terrain, &player, &g_actions, &g_props, &troop, camp.fire, world_time,
+                hz_update(&g_hazards, &g_climate, &terrain, &player, &g_actions, &g_props, &troop, tribe_fire, world_time,
                           dt, log, sizeof(log));
             if (!gallery_mode)
                 ig_update(&g_actions, &g_combat, &g_props, &player, !menu && !hz_blocks_input(&g_hazards) && !g_actions.dlg.open, log,
                           sizeof(log));
+            // El campamento inicial levantado (migro) o ya quemado: sus yurtas ya no estan alli (van cargadas,
+            // en el sitio nuevo o en cenizas).
+            if (g_actions.camps[0].moved && camp.yurt_count) camp.yurt_count = 0;
+            g_actions.start_yurts = camp.yurt_count; // para cargarlas al levantar el campamento (src/game/camp_game.c)
             if (!gallery_mode) cg_update(&g_actions, &troop, &g_props, &player, &terrain, &g_memory, world_time, dt, log, sizeof(log));
             if (!gallery_mode)
                 trv_update(&g_actions, &troop, &g_memory, &player, &terrain, clock_is_night(world_time),
@@ -1083,7 +1116,7 @@ int main(int argc, char **argv) {
             if (!gallery_mode) ag_update(&g_actions, &troop, &g_climate, g_hazards.seed, world_time, dt, log, sizeof(log));
             if (!gallery_mode) wd_update(&g_actions, &g_combat, &terrain, &player, &g_memory, log, sizeof(log));
             if (!gallery_mode)
-                wg_update(&g_actions, &troop, &player, &g_props, &g_hazards, &g_climate, camp.fire, &terrain,
+                wg_update(&g_actions, &troop, &player, &g_props, &g_hazards, &g_climate, tribe_fire, &terrain,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             if (!g_actions.camps[0].used && camp.yurt_count) { // el campamento inicial se disolvio: sus yurtas arden
                 for (int i = 0; i < camp.yurt_count; i++) {
@@ -1096,6 +1129,7 @@ int main(int argc, char **argv) {
                     if (g_actions.ignite_n < 8) g_actions.ignite_at[g_actions.ignite_n++] = camp.yurts[i];
                 }
                 camp.yurt_count = 0;
+                g_actions.camps[0].moved = true; // ya no estan: al cargar la partida no vuelven a arder
             }
             if (!gallery_mode)
                 tg_update(&g_actions, &g_combat, &troop, &g_props, &player,
@@ -1106,7 +1140,7 @@ int main(int argc, char **argv) {
                 !ig_blocks_input(&g_actions) && !g_actions.dlg.open)
                 cb_pick_target(&g_combat, cam, virtual_pointer(), VIRTUAL_W, VIRTUAL_H, log, sizeof(log));
             if (!gallery_mode)
-                cb_update(&g_combat, &player, &g_actions, &troop, &g_props, &terrain, camp.fire,
+                cb_update(&g_combat, &player, &g_actions, &troop, &g_props, &terrain, tribe_fire,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), clock_is_night(world_time),
                           g_climate.temp_mean < 0.0f,
                           rig.yaw, rig.pitch, dt, log, sizeof(log));
@@ -1202,7 +1236,8 @@ int main(int argc, char **argv) {
         hearth_frame_begin();
         BeginMode3D(cam);
         terrain_draw(&terrain);
-        camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used, g_dz.tree_burn);
+        camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used && !g_actions.camps[0].moved,
+                  g_dz.tree_burn); // migrado, su fogata queda apagada
         if (gallery_mode) gallery_draw(&gallery);
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
         if (gallery_mode) player_draw(&player);
@@ -1238,7 +1273,8 @@ int main(int argc, char **argv) {
             Vector3 light_pos[SKY_MAX_LIGHTS];
             float light_radius[SKY_MAX_LIGHTS];
             light_pos[0] = (Vector3){ camp.fire.x, camp.fire.y + 0.4f, camp.fire.z };
-            light_radius[0] = g_actions.fires_out ? 0.0f : 9.0f; // la lluvia apaga la fogata
+            // Como se dibuja: la lluvia apaga la fogata; disuelto o migrado, quedo apagada.
+            light_radius[0] = !g_actions.fires_out && g_actions.camps[0].used && !g_actions.camps[0].moved ? 9.0f : 0.0f;
             int lights = 1 + ga_lights(&g_actions, &g_props, &troop, &player, clock_is_night(world_time), light_pos + 1, light_radius + 1,
                                        SKY_MAX_LIGHTS - 1);
             sky_draw_lights(cam, light_pos, light_radius, lights, world_time, (float)GetTime(), VIRTUAL_W, VIRTUAL_H);
@@ -1277,6 +1313,7 @@ int main(int argc, char **argv) {
                 cb_draw_buttons(&g_combat, &g_actions, VIRTUAL_W, VIRTUAL_H); // H J K L, abajo a la derecha
             }
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
+            cg_draw_hud(&g_actions, &troop, VIRTUAL_W); // la tribu en marcha
             td_draw_hud(VIRTUAL_W, VIRTUAL_H);
             ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions)) tg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);

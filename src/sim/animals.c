@@ -48,6 +48,8 @@ static const SpeciesDef SPECIES[SPECIES_COUNT] = {
 #define FOLLOW_RANGE 30.0f   // m: los domados siguen al jugador si esta a menos
 #define HERD_RANGE 10.0f     // m: el ganado sigue al jugador que camina cerca
 #define HERD_LOSE 18.0f      // m: si el pastor se aleja, el rebaño se queda
+#define CARAVAN_RANGE 60.0f  // m: en marcha (migrando), los de la tribu siguen al jugador desde mas lejos
+#define CARAVAN_LOSE 90.0f
 #define GROUP_SPREAD 9.0f    // m: un animal social vuelve con su grupo si se aleja
 #define FEAR_SECONDS 60.0f   // s: una presa herida por personas les teme
 #define ALARM_RADIUS 25.0f   // m: hasta donde se contagia la alarma en un grupo
@@ -799,12 +801,13 @@ static void update_tamed(Animal *a, int i, Animal *all, int n, const FaunaCtx *c
     }
     // Ganado: pastoreo. Sigue al jugador que camina cerca; si se aleja, se queda donde lo dejo.
     if (d->cls == CLASS_LIVESTOCK) {
-        if (a->mode == MODE_FOLLOW && (dp > HERD_LOSE || !c->player_moving)) {
+        bool lead = c->player_moving || c->caravan; // en marcha, el rebaño va con la tribu aunque el jugador pare
+        if (a->mode == MODE_FOLLOW && (dp > (c->caravan ? CARAVAN_LOSE : HERD_LOSE) || !lead)) {
             a->mode = MODE_GRAZE;
             a->home_x = a->tx = a->x;
             a->home_z = a->tz = a->z;
         }
-        if (dp < HERD_RANGE && c->player_moving) a->mode = MODE_FOLLOW;
+        if (dp < (c->caravan ? CARAVAN_RANGE : HERD_RANGE) && lead) a->mode = MODE_FOLLOW;
         if (a->mode == MODE_FOLLOW) {
             float gap = 3.0f + (float)(i % 4);
             if (dp > gap) {
@@ -816,8 +819,8 @@ static void update_tamed(Animal *a, int i, Animal *all, int n, const FaunaCtx *c
         if (!keep_with_group(a, i, all, n, dt)) wander(a, rng, 10.0f, dt);
         return;
     }
-    // Domados: siguen al jugador si esta cerca; si no, pastan en el campamento.
-    if (dp > FOLLOW_GAP && dp < FOLLOW_RANGE) {
+    // Domados: siguen al jugador si esta cerca (en marcha, desde mas lejos); si no, pastan en el campamento.
+    if (dp > FOLLOW_GAP && dp < (c->caravan ? CARAVAN_RANGE : FOLLOW_RANGE)) {
         a->mode = MODE_FOLLOW;
         float dx = a->x - c->px, dz = a->z - c->pz;
         move_towards(a, c->px + dx / dp * FOLLOW_GAP, c->pz + dz / dp * FOLLOW_GAP, d->speed * 0.6f, dt);
@@ -931,7 +934,7 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
 
 void animal_update(Animal *a, float dt, float px, float pz, Rng *rng) {
     FaunaHuman h = { px, pz, false, false, false, false };
-    FaunaCtx c = { &h, 1, px, pz, false, 0.0f, 0.0f, false, NULL, NULL, false };
+    FaunaCtx c = { &h, 1, px, pz, false, 0.0f, 0.0f, false, NULL, NULL, false, false };
     fauna_update(a, 1, &c, rng, dt, NULL);
 }
 

@@ -96,7 +96,7 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 - **Modelos por estación:** un modelo puede traer variantes junto al base (`yurta_comun@invierno.glb`, `@primavera`, `@verano`, `@otono`); el juego usa la de la estación si existe.
 - **Prueba:** `--dia N --minuto M` elige el momento, `--pos X Z` el lugar e `--ir lugar` un sitio del mundo (p. ej. `--dia 23 --ir altiplano`: glaciares en invierno; `--dia 7 --lago`: un lago crecido).
 
-**Pendiente:** cosechas y pasto para el ganado según la estación, ríos.
+**Pendiente:** cosechas y ríos. El pasto para el ganado según la estación ya está (v0.7.2, en «Campamentos y guardián»).
 
 ### El mundo (implementado — `src/sim/world.*`, en juego `src/game/world_game.*` y `src/world/worldview.*`)
 Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
@@ -421,6 +421,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - pobladores: la ventana de la tribu (ver abajo);
   - capacitar: un oficio para alguien sin tarea, con su coste y tiempo (soldado, herrero, druida, orfebre, pastor, cazador, explorador);
   - estado;
+  - migrar (v0.7.2, ver abajo);
   - disolver.
 - **Recursos humanos:**
   - quien tiene una tarea queda ocupado y no trabaja en obras ni sale de escolta;
@@ -441,7 +442,25 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - el acopio se carga en la carreta y en las alforjas cercanas, y lo que no cabe se pierde;
   - la gente queda sin casa y sigue al jugador;
   - la escolta sin casa se queda en el próximo campamento que se funde (o en el campamento del guardián al dejar de escoltar).
-- **Comida:** cada campamento alimenta a su gente con su acopio. La escolta come del campamento más cercano al jugador.
+- **Comida:** cada campamento alimenta a su gente con su acopio. La escolta come del campamento más cercano al jugador (en marcha, del que va cargado en la columna).
+- **Migrar** (v0.7.2; reglas en `src/sim/camps.c`, en juego `src/game/camp_game.c`):
+  - **levantar:** el guardián desarma las viviendas portátiles (yurta común, yurta del jefe, tienda ligera y choza de fieltro) y las cuenta en `CampSite.load`. El campamento queda en marcha (`migrating`) y no cuenta para `camp_at`, `camp_nearest` ni la distancia mínima. Las obras fijas quedan en el sitio viejo;
+  - **la columna:** la gente que está en el campamento pasa a escolta, sin obra, trabajo ni guardia; las salidas siguen y, al volver, alcanzan la columna. El rebaño sigue al jugador desde más lejos (`CARAVAN_RANGE` 60 m, lo pierde a 90 m) aunque esté quieto;
+  - **en marcha:** el acopio es el de la columna (el inventario lo muestra, de ahí comen la escolta y la columna, y el agua se busca donde va el jugador). En el sitio viejo ya no hay asaltos, descanso, cría ni faenas de los pastores. Si el jugador se desmaya, la columna lo atiende donde está. Si muere toda la columna, la caravana se pierde con su carga;
+  - **plantar:** `F` junto al guardián, en seco, sin mucha pendiente y a más de 70 m de los demás. Las viviendas se arman en corros de 8 (a 12 m, la segunda vuelta a 18 m), con la puerta hacia el fogón que encienden si no hay uno. La gente vuelve a sus casas alrededor del fuego y el rebaño cercano pasta allí. Lo que no cabe sigue cargado. Si es el campamento inicial, su fuego pasa a ser el nuevo (calor, abrigo, adonde te llevan al desmayarte) y sus yurtas de origen ya no están.
+- **Pastos de cada estación** (v0.7.2, `pasture_quality`): un valor entre 0,1 y 1,2 por región y estación.
+
+  | Región | Primavera | Verano | Otoño | Invierno |
+  |---|---|---|---|---|
+  | Estepa | 1,0 | 0,7 | 0,8 | 0,45 |
+  | Bosque | 0,8 | 0,9 | 0,7 | 0,3 |
+  | Altiplano | 0,6 | 1,2 | 0,5 | 0,1 |
+  | Fiordos | 0,7 | 0,9 | 0,6 | 0,2 |
+  | Desierto | 0,6 | 0,2 | 0,5 | 0,6 |
+
+  - **Forraje:** cada día, cada pastor del campamento junta forraje de más: 1 desde 0,8 y 2 desde 1,0.
+  - **Hambre:** por debajo de 0,6, el ganado herbívoro del campamento suma (0,6 − pasto) × 0,8 de hambre por día.
+  - **Aviso:** al cambiar la estación, el guardián dice en sus informes si el pasto alcanza, si es bueno o si conviene migrar.
 
 ### Ropa y clima (implementado — `src/sim/apparel.*`, en juego `src/game/apparel_game.*`)
 - **Capas:** cabeza, cuello y cara, cuerpo, capa o abrigo, pies. Cada prenda tiene abrigo (grados de sensación térmica), sombra [0, 1], protección de lluvia [0, 1], peso (frena) y escarmiento.
