@@ -47,6 +47,9 @@ void hud_draw_picker(GameActions *ga, const Props *props, const Player *p, int w
 void hud_load(const QbSlot *s, int n);
 // Columna de acciones (borde izquierdo): dibuja y atiende los clics o toques.
 void hud_action_column(const GameActions *ga, int x, int y);
+// Ordenes a la escolta (atacar, defender, seguir), solo con la escolta fuera: tres casillas en
+// fila desde (x, y). Lo mismo que Y+1..3.
+void hud_escort_orders(const GameActions *ga, const Troop *troop, int x, int y);
 // El puntero esta sobre una casilla del HUD (ese clic no es un golpe): lo que el HUD ocupo en
 // el cuadro anterior.
 bool hud_pointer_over(void);

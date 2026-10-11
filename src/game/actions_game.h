@@ -29,6 +29,7 @@
 #include "sim/talents.h"
 #include "sim/travel.h"
 #include "sim/storage.h"
+#include "sim/squad.h"
 #include "sim/swarms.h"
 #include "world/props.h"
 #include "world/terrain.h"
@@ -161,6 +162,7 @@ typedef struct {
     // Estado de combate y salud del jugador para la animacion (lo pone src/game/combat_game.c).
     bool pl_down, pl_hit, pl_blocking, pl_limping, pl_spear, pl_knocked;
     bool pl_holding; // sujeta a un rehen (src/game/combat_game.c)
+    int escort_order; // SquadOrder (src/sim/squad.h): la escolta ataca, defiende o sigue sin pelear (Y+1..3)
     int pl_attacking, pl_ranged, pl_move;
     float swap_anim;    // pasando el arma de mano
 } GameActions;
@@ -208,6 +210,9 @@ void ga_quick_request_wield(const char *id); // un arma o un escudo, a su mano
 void ga_quick_request_action(ActionId a);
 void ga_quick_request_menu(void);
 void ga_quick_request_swap(void); // pasar el arma empuñada a la otra mano
+// La orden a la escolta (SquadOrder: Y+1..3 o las casillas del HUD), con su aviso.
+void ga_escort_order(GameActions *ga, int order, char *log, size_t len);
+void ga_request_escort_order(int order); // desde el HUD, atendida en el proximo ga_update
 // Tab en combate (src/game/combat_game.c): hay enemigos a tiro de objetivo (Tab elige objetivo en
 // vez de abrir el menu); el pedido de Tab (1 el siguiente, -1 el anterior, 0 nada).
 void ga_set_combat_near(bool near);

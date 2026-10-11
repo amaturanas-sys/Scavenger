@@ -346,7 +346,13 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
     bool roll = hz->ice_roll >= 0.5f; // tiradas de riesgo dos veces por segundo
     if (roll) hz->ice_roll = 0.0f;
 
-    if (input_action_pressed(KA_ESCORT) && hz->trap == TRAP_NONE) toggle_escort(hz, ga, troop, p, 60.0f, log, log_len);
+    // Y sola (al soltarla) llama o despide a la escolta; Y+1, Y+2, Y+3: atacar, defender, seguir.
+    static bool chord;
+    if (input_action_pressed(KA_ESCORT)) chord = false;
+    if (input_action_down(KA_ESCORT))
+        for (int k = 0; k < ORDER_COUNT; k++)
+            if (IsKeyPressed(KEY_ONE + k)) ga_escort_order(ga, k, log, log_len), chord = true;
+    if (input_action_released(KA_ESCORT) && !chord && hz->trap == TRAP_NONE) toggle_escort(hz, ga, troop, p, 60.0f, log, log_len);
     update_escort(hz, ga, troop, t, p, day, dt, roll, log, log_len);
 
     // Minijuego en curso.
@@ -639,7 +645,11 @@ void hz_force(Hazards *hz, const char *what, Player *p, GameActions *ga, Troop *
     if (!strcmp(what, "hielo")) start_self_trap(hz, TRAP_ICE, p, ga, troop, log, sizeof(log));
     else if (!strcmp(what, "nieve")) start_self_trap(hz, TRAP_SNOW, p, ga, troop, log, sizeof(log));
     else if (!strcmp(what, "arena")) start_self_trap(hz, TRAP_QUICKSAND, p, ga, troop, log, sizeof(log));
-    else if (!strcmp(what, "rescate")) {
+    else if (!strcmp(what, "escolta")) {
+        toggle_escort(hz, ga, troop, p, 1e9f, log, sizeof(log));
+        for (int i = 0, k = 0; i < troop->count && i < TROOP_MAX; i++) // ya a su lado
+            if (ga->npcs[i].escort) ga->npcs[i].pos = (Vector3){ p->pos.x + (k++ ? -1.3f : 1.3f), p->pos.y, p->pos.z - 2.2f };
+    } else if (!strcmp(what, "rescate")) {
         toggle_escort(hz, ga, troop, p, 1e9f, log, sizeof(log));
         for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
             Npc *n = &ga->npcs[i];

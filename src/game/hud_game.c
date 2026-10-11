@@ -286,6 +286,7 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
         return;
     }
     if (!input_ok || input_debug() || input_ctrl() || ga->menu_open) return;
+    if (input_action_down(KA_ESCORT)) return; // Y+1..3: ordenes a la escolta (src/game/hazards_game.c)
     unsigned mods = input_mods();
     for (int k = 0; k < HUD_QUICK_SLOTS; k++) {
         if (!IsKeyPressed(KEY_ONE + k)) continue;
@@ -415,6 +416,26 @@ static const ColumnEntry COLUMN[] = {
 static bool arrows_in_hand(const GameActions *ga) {
     const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);
     return rd && (rd->projectile == PROJ_ARROW || rd->projectile == PROJ_BOLT);
+}
+
+void hud_escort_orders(const GameActions *ga, const Troop *troop, int x, int y) {
+    bool out = false;
+    for (int i = 0; i < troop->count && i < TROOP_MAX && !out; i++) out = ga->npcs[i].escort && troop->members[i].status == STATUS_ACTIVE;
+    if (!out) return;
+    static const IconId ICONS[ORDER_COUNT] = { ICON_SOLDADO, ICON_ESCUDO, ICON_TRIBU };
+    plate(x - 3, y - 3, ORDER_COUNT * (COLUMN_TILE + TILE_GAP) - TILE_GAP + 6, COLUMN_TILE + 6);
+    for (int k = 0; k < ORDER_COUNT; k++) {
+        Rectangle r = { (float)(x + k * (COLUMN_TILE + TILE_GAP)), (float)y, COLUMN_TILE, COLUMN_TILE };
+        hover(r);
+        bool h = ui_tile(r, ICONS[k], ga->escort_order == k, true);
+        ui_tile_badge(r, TextFormat("%d", k + 1), UI_GOLD_LIGHT);
+        if (h)
+            ui_legend(k == ORDER_ATTACK ? T("Escolta: atacar") : k == ORDER_DEFEND ? T("Escolta: defender") : T("Escolta: seguir"),
+                      k == ORDER_ATTACK   ? T("Y+1: van a tu objetivo o al enemigo más cercano.")
+                      : k == ORDER_DEFEND ? T("Y+2: se quedan a tu lado y paran a quien se te acerque.")
+                                          : T("Y+3: te siguen sin pelear."));
+        if (ui_click(r)) ga_request_escort_order(k);
+    }
 }
 
 void hud_action_column(const GameActions *ga, int x, int y) {

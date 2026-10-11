@@ -20,6 +20,7 @@
 #include "sim/body.h"
 #include "sim/hazards.h"
 #include "sim/melee.h"
+#include "sim/squad.h"
 #include "sim/stealth.h"
 #include "sim/targeting.h"
 #include "ui/theme.h"
@@ -409,6 +410,7 @@ static Fighter fighter_member(const Npc *n, const Member *m, const Troop *troop,
     f.armed = true;
     f.facing = facing_to(n->pos, n->yaw, from);
     f.strength = (c ? c->stats.strength : 1.0f) * COMPANION_DAMAGE / weapon_stats("arma.corta.sable").damage;
+    if (m->role == ROLE_SOLDIER || m->role == ROLE_GUARD) f.strength *= 1.3f; // el oficio de las armas
     f.weight = armor_kg(&m->armor);
     f.health = fmaxf(0.0f, m->health.hp / m->health.hp_max);
     return f;
@@ -1374,6 +1376,8 @@ static void outfit(Member *m, const Troop *troop) {
 static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *props, const Player *p, const Terrain *t,
                               float dt, char *log, size_t len) {
     float healer = troop_healer_skill(troop);
+    TargetCand foes[CB_MAX_ENEMIES];
+    int nfoes = target_cands(cb, foes);
     for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
         Npc *n = &ga->npcs[k];
         Member *m = &troop->members[k];
@@ -1395,18 +1399,18 @@ static void update_companions(Combat *cb, GameActions *ga, Troop *troop, Props *
             continue;
         }
         if (!n->escort || m->health.down || n->member_id != m->id || n->knock > 0.0f) continue;
-        // La escolta pelea: va al enemigo mas cercano (a ella o al jugador).
-        Enemy *best = NULL;
-        float best_d = 14.0f;
-        for (int i = 0; i < CB_MAX_ENEMIES; i++) {
-            Enemy *e = &cb->enemies[i];
-            if (!standing(e)) continue;
-            float d = fminf(dist2(n->pos, e->pos), dist2(p->pos, e->pos));
-            if (d < best_d) best_d = d, best = e;
-        }
-        // Tambien las fieras que amenazan.
+        // La escolta pelea segun la orden (src/sim/squad.h): atacar (al objetivo del jugador o al
+        // mas cercano), defender (solo a quien se le acerca al jugador) o seguir sin pelear; herida,
+        // se retira detras del jugador (src/game/hazards_game.c la lleva).
+        SquadOrder order = (SquadOrder)ga->escort_order;
+        SquadChoice ch = squad_escort_choose(order, n->pos.x, n->pos.z, p->pos.x, p->pos.z, fmaxf(0.0f, m->health.hp) / m->health.hp_max,
+                                             foes, nfoes, cb->target_lock - 1);
+        if (ch.retreat || order == ORDER_FOLLOW) continue;
+        Enemy *best = ch.foe >= 0 ? &cb->enemies[ch.foe] : NULL;
+        float best_d = best ? dist2(n->pos, best->pos) : order == ORDER_DEFEND ? SQUAD_DEFEND_RADIUS : SQUAD_ATTACK_RANGE;
+        // Tambien las fieras que amenazan (defendiendo, solo las que llegan al jugador).
         float ad;
-        int an = fg_threat_near(ga, n->pos, best_d, &ad);
+        int an = fg_threat_near(ga, order == ORDER_DEFEND ? p->pos : n->pos, best_d, &ad);
         if (an >= 0 && (!best || ad < dist2(n->pos, best->pos))) {
             const Animal *a = &ga->animals[an];
             Vector3 apos = { a->x, n->pos.y, a->z };

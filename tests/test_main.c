@@ -32,6 +32,7 @@
 #include "../src/sim/keymap.h"
 #include "../src/sim/targeting.h"
 #include "../src/sim/stealth.h"
+#include "../src/sim/squad.h"
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
 #include "../src/sim/melee.h"
@@ -3361,6 +3362,62 @@ static void test_finish_downed_costs_morale_by_trait(void) {
     CHECK(exec_cost > m0 - troop_find(&t, merciful)->morale);
 }
 
+static void test_squad_escort_orders(void) {
+    // El jugador en el origen; un integrante de la escolta a su lado; tres enemigos.
+    TargetCand f[3] = { { 9.0f, 0.0f, true }, { 0.0f, 3.0f, true }, { 0.0f, 25.0f, true } };
+    // Atacar: va al que eligio el jugador (aunque haya otros mas cerca), si no esta lejos.
+    CHECK(squad_escort_choose(ORDER_ATTACK, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, f, 3, 2).foe == 2);
+    // Sin objetivo: al mas cercano (a el o al jugador).
+    CHECK(squad_escort_choose(ORDER_ATTACK, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, f, 3, -1).foe == 1);
+    f[1].alive = false;
+    CHECK(squad_escort_choose(ORDER_ATTACK, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, f, 3, -1).foe == 0); // el muerto no cuenta
+    // Defender: solo el que se le acerca al jugador; el de 9 m no lo saca de su lado.
+    CHECK(squad_escort_choose(ORDER_DEFEND, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, f, 3, 2).foe == -1);
+    f[1].alive = true;
+    CHECK(squad_escort_choose(ORDER_DEFEND, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, f, 3, -1).foe == 1);
+    // Seguir: no ataca a nadie. Herido: se retira, con cualquier orden.
+    CHECK(squad_escort_choose(ORDER_FOLLOW, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, f, 3, 1).foe == -1);
+    SquadChoice hurt = squad_escort_choose(ORDER_ATTACK, 1.0f, 0.0f, 0.0f, 0.0f, 0.2f, f, 3, 1);
+    CHECK(hurt.retreat && hurt.foe == -1);
+    // Defendiendo no se aleja: con enemigos por todas partes, nunca elige a uno lejos del jugador.
+    Rng rng;
+    rng_seed(&rng, 11);
+    bool far = false;
+    for (int t = 0; t < 300; t++) {
+        TargetCand r[4];
+        for (int i = 0; i < 4; i++) r[i] = (TargetCand){ (rng_float(&rng) - 0.5f) * 40.0f, (rng_float(&rng) - 0.5f) * 40.0f, true };
+        int c = squad_escort_choose(ORDER_DEFEND, 1.5f, -1.0f, 0.0f, 0.0f, 1.0f, r, 4, 0).foe;
+        if (c >= 0 && sqrtf(r[c].x * r[c].x + r[c].z * r[c].z) > SQUAD_DEFEND_RADIUS) far = true;
+    }
+    CHECK(!far);
+}
+
+static void test_squad_guard_patrol_and_intercept(void) {
+    // La ronda alterna entre los dos bordes del anillo y avanza 30 grados por punto.
+    float x0, z0, x1, z1;
+    squad_patrol_point(0.0f, 0.0f, 0.0f, 0, &x0, &z0);
+    squad_patrol_point(0.0f, 0.0f, 0.0f, 1, &x1, &z1);
+    CHECK(fabsf(sqrtf(x0 * x0 + z0 * z0) - SQUAD_RING_MIN) < 0.01f && fabsf(sqrtf(x1 * x1 + z1 * z1) - SQUAD_RING_MAX) < 0.01f);
+    CHECK(fabsf(atan2f(z1, x1) - 0.5236f) < 0.01f);
+    // El guardia en su ronda (50 m al este del campamento): el enemigo de afuera no lo saca; el que
+    // cruza el anillo, si; el que cruza del otro lado, lo atiende otro guardia.
+    TargetCand f[1] = { { 100.0f, 0.0f, true } };
+    CHECK(squad_guard_intercept(50.0f, 0.0f, 0.0f, 0.0f, f, 1) == -1);
+    f[0] = (TargetCand){ 55.0f, 18.0f, true };
+    CHECK(squad_guard_intercept(50.0f, 0.0f, 0.0f, 0.0f, f, 1) == 0);
+    f[0] = (TargetCand){ -50.0f, 0.0f, true };
+    CHECK(squad_guard_intercept(50.0f, 0.0f, 0.0f, 0.0f, f, 1) == -1);
+}
+
+static void test_squad_villagers_hide(void) {
+    TargetCand f[1] = { { 80.0f, 0.0f, true } };
+    CHECK(!squad_villager_alarm(5.0f, 0.0f, 0.0f, 0.0f, f, 1)); // lejos: siguen con lo suyo
+    f[0].x = 25.0f;
+    CHECK(squad_villager_alarm(5.0f, 0.0f, 0.0f, 0.0f, f, 1)); // cerca del campamento: a las yurtas
+    f[0].alive = false;
+    CHECK(!squad_villager_alarm(5.0f, 0.0f, 0.0f, 0.0f, f, 1));
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -3461,6 +3518,9 @@ int main(void) {
     RUN(test_hostage_blocks_shot);
     RUN(test_downed_wakes_and_lethal);
     RUN(test_finish_downed_costs_morale_by_trait);
+    RUN(test_squad_escort_orders);
+    RUN(test_squad_guard_patrol_and_intercept);
+    RUN(test_squad_villagers_hide);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }
