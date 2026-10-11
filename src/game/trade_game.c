@@ -55,6 +55,7 @@ typedef struct {
 static CaravanRoute g_routes[CARAVANS_MAX];
 static int g_nroutes;
 static const World *g_routes_world;
+static uint32_t g_routes_seed; // world_for_seed reusa sus huecos: el mismo puntero puede ser otro mundo
 static Caravan g_car[CARAVANS_MAX];
 static bool g_talk_req; // F pidio comerciar (lo atiende td_update)
 static char g_hint[96];  // «F: comerciar...» al alcance
@@ -64,8 +65,9 @@ static float dist_xz(float ax, float az, float bx, float bz) { return sqrtf((ax 
 static float route_len(const CaravanRoute *r) { return dist_xz(r->ax, r->az, r->bx, r->bz); }
 
 static void ensure_routes(const World *w) {
-    if (g_routes_world == w) return;
+    if (g_routes_world == w && (!w || g_routes_seed == w->seed)) return;
     g_routes_world = w;
+    g_routes_seed = w ? w->seed : 0;
     g_nroutes = w ? caravan_routes(w, g_routes, CARAVANS_MAX) : 0;
 }
 
