@@ -161,6 +161,20 @@ Ciudades y reinos (v0.9.0):
 
 Pruebas: `--ir kanato|campos`, `--comerciar ciudad|campos` (con `--ir kanato`: la página de la ciudad o el saqueo de sus campos) y `--dron <m>`, la cámara lejos para ver una ciudad entera.
 
+Ejército y asedio (v0.9.1):
+- **El ejército de los reinos:** infantes pesados con pavés, lanza y escamas de hierro, en formación cerrada que marcha junta; soldados, arqueros y ballesteros detrás; carros de guerra por los flancos. Lo que sale depende de la guarnición y del tesoro, que paga la campaña: una ciudad pobre manda poco, y sin plata no manda nadie.
+  - **El pavés** para casi todas las flechas de frente: hay que flanquearlos. Con la mitad de sus filas caídas, la formación se rompe y cada uno pelea por su cuenta.
+  - **El carro de guerra** (dos caballos, conductor y arquero) vuela en el llano y se arrastra en la cuesta y en el agua. Hace pasadas: su arquero tira al acercarse y arrolla a quien se le cruza. Derribado, vuelca y sus caballos quedan sueltos.
+- **Las expediciones de castigo:** con la relación con el kanato en −40 (o con mucho rencor en una ciudad), sale un ejército contra tu campamento, si su tesoro lo paga. Si estás cerca lo ves llegar; si llega, saquea el acopio (comida, grano y plata) y se vuelve, y el enojo se calma. Si estás lejos, el guardián te lo cuenta.
+- **La guerra:** con la relación por el suelo o con mucho rencor, la ciudad cierra su mercado y sus puertas. La muralla corta el paso, y su guarnición sale a pelear cuando te acercas.
+- **El asedio:**
+  - se entra trepando (la trepa, `Tab`), por una escala de asedio (se hace a mano con troncos y cuerda; `F` la apoya en la muralla y `F` sube) o quemando una puerta con flechas encendidas o con la antorcha (`F`);
+  - un campamento de la tribu cerca de la ciudad la cerca: no entra grano. Las flechas encendidas que caen adentro queman su granero;
+  - «Exigir la rendición» (en el palacio, o hablando con la guardia de una puerta): se rinde sin soldados, sin grano o en revuelta. «Pagar la paz» la vuelve a abrir.
+- **La ciudad tomada** te paga tributo cada estación (al acopio del campamento inicial) y su fundición es tu taller: dentro de su muralla se forja y se templa como en el taller del herrero. Si tomas la capital del kanato, ya no le debes tributo.
+
+Pruebas: `--asedio puerta|trepa|escala|fuego|quemada|salida|rendicion|tomada` (la capital del kanato en guerra), `--asedio expedicion` (la expedición de castigo contra el campamento), `--asedio ejercito|carro` (un ejército en formación, o un carro, delante) y `--asedio partida` (lo de la partida de referencia).
+
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.

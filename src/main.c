@@ -588,6 +588,7 @@ int main(int argc, char **argv) {
     const char *map_path = NULL;      // --mapa-mundo archivo.png: el mapa general del mundo, y sale
     const char *start_goto = NULL;    // --ir lugar: a un sitio del mundo (ver go_to)
     const char *start_trade = NULL;   // --comerciar: raiz, vender, comprar, ciudad, caravana, asaltar, saquear o campos (src/game/trade_game.h)
+    const char *start_siege = NULL;   // --asedio: puerta, trepa, escala, fuego, quemada, salida, rendicion, tomada, expedicion o ejercito (src/game/city_game.h)
     const char *start_ride = NULL;    // --montado: lanza, pesada, parto o agotado (src/game/combat_game.h); galopa solo hacia delante
     bool start_breed = false;         // --cria: en el campamento inicial, una yegua por parir, un semental y un potro por crecer
     bool start_forge = false;         // --forja: la forja movil, hierro, carbon y un sable fragil empuñado; pica la veta y hace puntas
@@ -658,6 +659,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--pestana") && i + 1 < argc) start_tab = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--botin")) start_loot = true;
         else if (!strcmp(argv[i], "--comerciar") && i + 1 < argc) start_trade = argv[++i];
+        else if (!strcmp(argv[i], "--asedio") && i + 1 < argc) start_siege = argv[++i];
         else if (!strcmp(argv[i], "--montado") && i + 1 < argc) start_ride = argv[++i];
         else if (!strcmp(argv[i], "--cria")) start_breed = true;
         else if (!strcmp(argv[i], "--forja")) start_forge = true; // con --ir veta, la pica
@@ -1013,6 +1015,12 @@ int main(int argc, char **argv) {
             td_test(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, start_trade, clock_day(world_time), log, sizeof(log));
             rig.yaw = player.yaw;
         }
+        if (start_siege && frame == 6) { // prueba: el ejercito y el asedio (la capital del kanato en guerra)
+            ct_test(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, start_siege, clock_day(world_time), log, sizeof(log));
+            rig.yaw = player.yaw;
+        }
+        if (start_siege && !strcmp(start_siege, "trepa") && frame == 60) // la trepa, ya cargada la ciudad (un cuadro lento no la salta)
+            ct_test(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, "trepar", clock_day(world_time), log, sizeof(log));
         if (start_trade && !strcmp(start_trade, "asaltar") && frame == 200) // prueba: la escolta de la caravana, vencida
             for (int k = 0; k < CB_MAX_ENEMIES; k++)
                 if (g_combat.enemies[k].used) g_combat.enemies[k].h.down = g_combat.enemies[k].h.dead = true;
@@ -1157,7 +1165,6 @@ int main(int argc, char **argv) {
             if (!gallery_mode) td_update(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, world_time, dt, log, sizeof(log));
             if (!gallery_mode) ag_update(&g_actions, &troop, &g_climate, g_hazards.seed, world_time, dt, log, sizeof(log));
             if (!gallery_mode) forge_update(&terrain, &player, &g_memory, world_time, log, sizeof(log)); // las vetas de hierro que pasas
-            if (!gallery_mode) ct_update(&g_actions, &g_combat, &terrain); // las ciudades: armarlas y las bajas de su guardia
             if (!gallery_mode) wd_update(&g_actions, &g_combat, &terrain, &player, &g_memory, log, sizeof(log));
             if (!gallery_mode)
                 wg_update(&g_actions, &troop, &player, &g_props, &g_hazards, &g_climate, tribe_fire, &terrain,
@@ -1188,6 +1195,8 @@ int main(int argc, char **argv) {
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), clock_is_night(world_time),
                           g_climate.temp_mean < 0.0f,
                           rig.yaw, rig.pitch, dt, log, sizeof(log));
+            if (!gallery_mode) // las ciudades: armarlas, sus bajas, la expedicion de castigo, la guarnicion que sale, la muralla y el fuego
+                ct_update(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, clock_day(world_time), dt, log, sizeof(log));
             g_actions.grass = g_climate.snow_cover < 0.3f; // con nieve no hay pasto
             if (!gallery_mode)
                 fg_update(&g_actions, &g_combat, &player, &troop, &terrain, &g_memory, world_time, g_climate.temperature,
@@ -1361,6 +1370,7 @@ int main(int argc, char **argv) {
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             cg_draw_hud(&g_actions, &troop, VIRTUAL_W); // la tribu en marcha
             td_draw_hud(VIRTUAL_W, VIRTUAL_H);
+            ct_draw_hud(VIRTUAL_W, VIRTUAL_H); // F junto a la muralla: la escala, la puerta
             forge_draw_hud(&terrain, &player, VIRTUAL_W, VIRTUAL_H); // F junto a una veta
             ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions)) tg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);

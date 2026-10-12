@@ -109,6 +109,20 @@ void save_summary(const GameState *g, FILE *o) {
                 i, c->people, c->grain, c->silver, c->arms, c->fields, c->unrest, c->soldiers, c->mercs, c->grudge, c->raided, c->raided_lot);
     }
     if (ga->tribute_season || ga->tribute_checked) fprintf(o, "  tributo: pagado %d revisado %d\n", ga->tribute_season, ga->tribute_checked);
+    // v0.9.1: el asedio, la expedicion de castigo y el tributo de las ciudades tomadas (solo si hay algo).
+    for (int i = 0; i < SETTLEMENTS_MAX; i++) {
+        const City *c = &ga->cities[i];
+        if (c->taken || c->gates_burnt || c->besieged || c->ladders || c->expedition)
+            fprintf(o, "  ciudad %d asedio: tomada %d puertas quemadas %#x cercada %d escalas %#x expedicion %d\n", i, c->taken, c->gates_burnt,
+                    c->besieged, c->ladders, c->expedition);
+    }
+    if (ga->expedition_city) {
+        const ArmyComp *a = &ga->expedition_army;
+        fprintf(o, "  expedicion de castigo: ciudad %d campamento %d pesados %d soldados %d arqueros %d ballesteros %d carros %d caidos %d afuera %d saqueo %d\n",
+                ga->expedition_city - 1, ga->expedition_camp - 1, a->n[ARMY_HEAVY], a->n[ARMY_SOLDIER], a->n[ARMY_ARCHER], a->n[ARMY_CROSSBOW],
+                a->n[ARMY_CHARIOT], ga->expedition_lost, ga->expedition_out, ga->expedition_sacked);
+    }
+    if (ga->vassal_season) fprintf(o, "  tributo de las ciudades tomadas: estacion %d\n", ga->vassal_season);
     int animals = 0;
     for (int i = 0; i < ga->animal_count && i < GA_MAX_ANIMALS; i++) {
         const Animal *a = &ga->animals[i];
@@ -185,6 +199,13 @@ void save_summary(const GameState *g, FILE *o) {
         if (e->ride_yaw != 0.0f || e->orbit_dir != 0.0f || e->retreating) // v0.7.1: la montura y la maniobra
             fprintf(o, "    montura: rumbo %.3f giro %.0f alejandose %d\n", e->ride_yaw, e->orbit_dir, e->retreating);
         if (e->city) fprintf(o, "    guardia de la ciudad %d\n", e->city - 1); // v0.9.0
+        if (e->formation || e->punitive) fprintf(o, "    formacion %d lugar %d castigo %d\n", e->formation, e->slot, e->punitive); // v0.9.1
+    }
+    for (int i = 0; i < CB_FORMATIONS; i++) { // v0.9.1: el ejercito de los reinos
+        const Formation *f = &cb->formations[i];
+        if (f->used)
+            fprintf(o, "  formacion %d en (%.2f, %.2f) hacia (%.2f, %.2f) rumbo %.3f columnas %d filas de %d ciudad %d rota %d\n", i, f->center.x,
+                    f->center.z, f->goal.x, f->goal.z, f->yaw, f->cols, f->size, f->city - 1, f->broken);
     }
     if (cb->couch > 0.0f || cb->couch_cd > 0.0f) fprintf(o, "  lanza en ristre %.3f espera %.3f\n", cb->couch, cb->couch_cd); // v0.7.1
     int shots = 0;

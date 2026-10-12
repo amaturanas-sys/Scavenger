@@ -457,8 +457,19 @@ static const SfField SF_F_City[] = {
     SF_ONE(City, grudge, "float", SF_FLOAT, NULL),
     SF_ONE(City, raided, "int32_t", SF_INT, NULL),
     SF_ONE(City, raided_lot, "int32_t", SF_INT, NULL),
+    SF_ONE(City, taken, "int32_t", SF_INT, NULL),
+    SF_ONE(City, gates_burnt, "int32_t", SF_INT, NULL),
+    SF_ONE(City, besieged, "int32_t", SF_INT, NULL),
+    SF_ONE(City, ladders, "int32_t", SF_INT, NULL),
+    SF_ONE(City, expedition, "int32_t", SF_INT, NULL),
 };
 static const SfType SF_T_City = SF_TYPE(City, SF_F_City);
+
+// ArmyComp (src/sim/army.h)
+static const SfField SF_F_ArmyComp[] = {
+    SF_ARR(ArmyComp, n, "int", SF_INT, NULL),
+};
+static const SfType SF_T_ArmyComp = SF_TYPE(ArmyComp, SF_F_ArmyComp);
 
 // GameActions (src/game/actions_game.h)
 static const SfField SF_F_GameActions[] = {
@@ -594,6 +605,13 @@ static const SfField SF_F_GameActions[] = {
     SF_ARR(GameActions, cities, "City", SF_STRUCT, &SF_T_City),
     SF_ONE(GameActions, tribute_season, "int", SF_INT, NULL),
     SF_ONE(GameActions, tribute_checked, "int", SF_INT, NULL),
+    SF_ONE(GameActions, expedition_city, "int", SF_INT, NULL),
+    SF_ONE(GameActions, expedition_camp, "int", SF_INT, NULL),
+    SF_ONE(GameActions, expedition_army, "ArmyComp", SF_STRUCT, &SF_T_ArmyComp),
+    SF_ONE(GameActions, expedition_lost, "int", SF_INT, NULL),
+    SF_ONE(GameActions, expedition_out, "bool", SF_BOOL, NULL),
+    SF_ONE(GameActions, expedition_sacked, "bool", SF_BOOL, NULL),
+    SF_ONE(GameActions, vassal_season, "int", SF_INT, NULL),
 };
 static const SfType SF_T_GameActions = SF_TYPE(GameActions, SF_F_GameActions);
 
@@ -636,6 +654,9 @@ static const SfField SF_F_Enemy[] = {
     SF_ONE(Enemy, orbit_dir, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, retreating, "bool", SF_BOOL, NULL),
     SF_ONE(Enemy, city, "int", SF_INT, NULL),
+    SF_ONE(Enemy, formation, "int", SF_INT, NULL),
+    SF_ONE(Enemy, slot, "int", SF_INT, NULL),
+    SF_ONE(Enemy, punitive, "bool", SF_BOOL, NULL),
 };
 static const SfType SF_T_Enemy = SF_TYPE(Enemy, SF_F_Enemy);
 
@@ -667,6 +688,21 @@ static const SfField SF_F_Shot[] = {
     SF_ONE(Shot, parthian, "bool", SF_BOOL, NULL),
 };
 static const SfType SF_T_Shot = SF_TYPE(Shot, SF_F_Shot);
+
+// Formation (src/game/combat_game.h)
+static const SfField SF_F_Formation[] = {
+    SF_ONE(Formation, used, "bool", SF_BOOL, NULL),
+    SF_ONE(Formation, center, "Vector3", SF_BYTES, NULL),
+    SF_ONE(Formation, goal, "Vector3", SF_BYTES, NULL),
+    SF_ONE(Formation, yaw, "float", SF_FLOAT, NULL),
+    SF_ONE(Formation, cols, "int", SF_INT, NULL),
+    SF_ONE(Formation, size, "int", SF_INT, NULL),
+    SF_ONE(Formation, city, "int", SF_INT, NULL),
+    SF_ONE(Formation, broken, "bool", SF_BOOL, NULL),
+    SF_ONE(Formation, foe_seen, "bool", SF_BOOL, NULL),
+    SF_ONE(Formation, foe, "Vector3", SF_BYTES, NULL),
+};
+static const SfType SF_T_Formation = SF_TYPE(Formation, SF_F_Formation);
 
 // Combat (src/game/combat_game.h)
 static const SfField SF_F_Combat[] = {
@@ -714,6 +750,7 @@ static const SfField SF_F_Combat[] = {
     SF_ONE(Combat, hostage, "int", SF_INT, NULL),
     SF_ONE(Combat, couch, "float", SF_FLOAT, NULL),
     SF_ONE(Combat, couch_cd, "float", SF_FLOAT, NULL),
+    SF_ARR(Combat, formations, "Formation", SF_STRUCT, &SF_T_Formation),
 };
 static const SfType SF_T_Combat = SF_TYPE(Combat, SF_F_Combat);
 

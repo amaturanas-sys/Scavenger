@@ -65,7 +65,8 @@ add_library(estepa_sim STATIC
   src/sim/trade.c
   src/sim/riding.c
   src/sim/forge.c
-  src/sim/city.c)
+  src/sim/city.c
+  src/sim/army.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)

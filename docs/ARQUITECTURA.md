@@ -21,7 +21,7 @@ src/
     climate.*    clima: temperatura, tiempo, nieve, lagos, glaciares
     hazards.*    frio, barro, hielo, socavones, desierto, minijuego (QTE)
     health.*     vida, sangre y heridas (jugador, tribu, enemigos)
-    combat.*     armas y sus rasgos (pico, maza, martillo, sable, lanza pesada, daga de anillo; templada o fragil), enemigos (y jinetes, y el soldado del reino), reglas de cada golpe y su paso por la armadura, botin, inercia montada y armas que se traban
+    combat.*     armas y sus rasgos (pico, maza, martillo, sable, lanza pesada, daga de anillo; templada o fragil), enemigos (y jinetes, el soldado del reino y su ejercito: infante pesado, arquero, ballestero y carro de guerra), reglas de cada golpe y su paso por la armadura, botin, inercia montada y armas que se traban
     body.*       cuerpo humano articulado por zonas (dibujo e impactos)
     armor.*      armadura por piezas: materiales, cobertura, durabilidad
     ballistics.* armas a distancia (y cuanto les pesa la montura) y trayectoria de proyectiles
@@ -29,6 +29,7 @@ src/
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, produccion por oficio, efectos del campamento, forja, fabricar a mano (y el secado en el acopio), reparar (y untar con grasa)
     city.*       las ciudades y aldeas: su economia por dia (gente, cosechas, granero, impuestos, talleres, tesoro, soldados y mercenarios), el saqueo de sus campos, sus precios, el tributo al kanato y el trazado que crece desde el centro
+    army.*       el ejercito de los reinos y el asedio: lo que sale de la guarnicion segun el tesoro, la formacion cerrada, la velocidad del carro de guerra, las expediciones de castigo y su saqueo, la muralla y sus puertas, la guerra, el cerco, el fuego, la rendicion y la ciudad tomada
     forge.*      la forja: las vetas de hierro y el hierro de pantano de cada mundo (de la semilla), que estacion sirve para cada receta (forja movil, hornos, taller) y la probabilidad del temple
     trade.*      el valor de las cosas en plata, precios por region, lo que vende cada mercado y las rutas de las caravanas
     riding.*     la monta: el tiro a caballo segun el arco (y el disparo parto), la lanza en ristre (y la pesada), el cansancio de la montura y la maniobra de los arqueros a caballo
@@ -60,11 +61,11 @@ src/
     actions_game.*  menu de acciones, atajos, obras en curso
     camp_game.*     el guardian (F): obras, escolta, pobladores y sus tareas, capacitar, migrar (levantar, la columna, plantar) y disolver
     place_game.*    la vista aerea para ubicar una obra: la huella verde o roja, girar, rejilla, muros de dos puntos
-    city_game.*     las ciudades en el juego: la economia de cada dia, el tributo, las bajas de su guardia, su informe y el dibujo (palacio, barrios, casas, campos segun la estacion, corrales, labradores y guardias)
+    city_game.*     las ciudades en el juego: la economia de cada dia, el tributo, las bajas de su guardia, su informe y el dibujo (palacio, barrios, casas, campos segun la estacion, corrales, labradores y guardias); y el asedio (la guerra, la muralla que corta el paso, las puertas que arden, las escalas, la guarnicion que sale, el cerco, la rendicion y la ciudad tomada) y las expediciones de castigo
     forge_game.*    la forja en el juego: las vetas que se ven, se marcan al pasar y se pican (F), la estacion a mano (forja movil, hornos, taller) y la tirada del temple
     trade_game.*    comerciar (F en tribus, aldeas, capitales, caravasares y caravanas; con el tesoro y los precios de cada ciudad, y el tributo al kanato), las caravanas con su escolta, asaltarlas, saquear campamentos rivales y los campos de las ciudades
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates
-    combat_game.*   combate (a pie y montado), enemigos, botin, vendajes, salud de la tribu y del jugador
+    combat_game.*   combate (a pie y montado), enemigos (y el ejercito de los reinos: la formacion cerrada, el pavés que para flechas, el carro de guerra que hace pasadas y arrolla), botin, vendajes, salud de la tribu y del jugador
     fauna_game.*    fauna en el mundo: aparicion por bioma, ataques, K (comer, despiezar, ordeñar)
     disasters_game.* fuego, rayos, lluvia torrencial, fogatas apagadas por la lluvia
     save_game.*     partidas guardadas: tres huecos con minifoto y fecha, por bloques (docs/PARTIDAS.md)

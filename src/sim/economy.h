@@ -180,6 +180,8 @@ typedef enum {
     CRAFT_TEMPER_SABLE,
     CRAFT_TEMPER_WOOTZ,
     CRAFT_TEMPER_DAGGER,
+    // El asedio (fase 8b, src/sim/army.h): la escala para la muralla.
+    CRAFT_SIEGE_LADDER,
     CRAFT_COUNT
 } CraftId;
 

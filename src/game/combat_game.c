@@ -9,6 +9,7 @@
 #include "game/inventory_game.h"
 #include "game/gems_game.h"
 #include "game/talents_game.h"
+#include "game/city_game.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -52,6 +53,10 @@
 #define GALLOP_SPEED 6.0f     // m/s: por encima, la lanza derriba y se arrolla
 #define RIDER_LIFT 1.1f       // altura del jinete sobre el suelo
 #define LOOT_MAX 16
+#define CHARIOT_TURN 1.3f     // rad/s: el carro gira abierto
+#define CHARIOT_LIFT 0.8f     // la plataforma del carro: alli van el conductor y el arquero
+#define CHARIOT_PASS 22.0f    // m que sigue de largo despues de pasar a su blanco
+#define FORMATION_LEASH 3.0f  // m que un hombre de la formacion se aparta de su lugar para pelear
 
 static float dist2(Vector3 a, Vector3 b) { return Vector2Distance((Vector2){ a.x, a.z }, (Vector2){ b.x, b.z }); }
 
@@ -120,9 +125,10 @@ static Enemy *spawn_enemy(Combat *cb, EnemyKind kind, Vector3 pos, const Terrain
         e->mounted = def->mounted;
         e->orbit_dir = rng_float(&cb->rng) < 0.5f ? -1.0f : 1.0f;
         e->shield = def->shield && rng_float(&cb->rng) < def->shield_chance;
-        // Su armadura: la primera pieza siempre, las demas a veces.
+        // Su armadura: la primera pieza siempre, las demas a veces (la infanteria pesada, entera).
+        bool full = kind == ENEMY_HEAVY_INFANTRY;
         for (int k = 0; k < 4; k++)
-            if (def->armor[k] && (k == 0 || rng_float(&cb->rng) < 0.6f)) armor_equip(&e->armor, def->armor[k]);
+            if (def->armor[k] && (k == 0 || full || rng_float(&cb->rng) < 0.6f)) armor_equip(&e->armor, def->armor[k]);
         return e;
     }
     return NULL;
@@ -143,6 +149,54 @@ int cb_spawn_city_guard(Combat *cb, const Terrain *t, int city, int n, Vector3 f
         e->yaw = atan2f(to.x - e->pos.x, to.z - e->pos.z);
         made++;
     }
+    return made;
+}
+
+static EnemyKind army_enemy(ArmyUnit u) {
+    static const EnemyKind K[ARMY_UNIT_KINDS] = { ENEMY_HEAVY_INFANTRY, ENEMY_SOLDIER, ENEMY_ROYAL_ARCHER, ENEMY_CROSSBOWMAN, ENEMY_CHARIOT };
+    return (unsigned)u < ARMY_UNIT_KINDS ? K[u] : ENEMY_SOLDIER;
+}
+
+int cb_spawn_army(Combat *cb, const Terrain *t, int city, const ArmyComp *a, Vector3 from, Vector3 goal, bool punitive) {
+    int fi = 0;
+    while (fi < CB_FORMATIONS && cb->formations[fi].used) fi++;
+    if (fi >= CB_FORMATIONS) return 0;
+    Formation *f = &cb->formations[fi];
+    memset(f, 0, sizeof(*f));
+    int ranked = a->n[ARMY_HEAVY] + a->n[ARMY_SOLDIER] + a->n[ARMY_CROSSBOW] + a->n[ARMY_ARCHER];
+    f->used = true;
+    f->center = from, f->goal = goal;
+    f->yaw = atan2f(goal.x - from.x, goal.z - from.z);
+    f->cols = (ranked + 1) / 2 < 1 ? 1 : (ranked + 1) / 2 > 5 ? 5 : (ranked + 1) / 2;
+    f->city = city + 1;
+    // En filas: los paveses delante; despues los soldados, los ballesteros y los arqueros.
+    static const ArmyUnit RANKS[4] = { ARMY_HEAVY, ARMY_SOLDIER, ARMY_CROSSBOW, ARMY_ARCHER };
+    int made = 0, slot = 0;
+    for (int r = 0; r < 4; r++)
+        for (int k = 0; k < a->n[RANKS[r]]; k++) {
+            float x, z;
+            formation_slot(slot, ranked, f->cols, FORMATION_SPACING, from.x, from.z, f->yaw, &x, &z);
+            Enemy *e = spawn_enemy(cb, army_enemy(RANKS[r]), (Vector3){ x, 0.0f, z }, t);
+            if (!e) break;
+            e->formation = fi + 1, e->slot = slot++, e->city = city + 1, e->punitive = punitive;
+            e->yaw = f->yaw;
+            e->home = e->wander_to = goal;
+            made++;
+        }
+    f->size = slot;
+    // Los carros, por los flancos.
+    float fx = sinf(f->yaw), fz = cosf(f->yaw);
+    for (int k = 0; k < a->n[ARMY_CHARIOT]; k++) {
+        float side = (k % 2 ? 1.0f : -1.0f) * (7.0f + 4.0f * (float)(k / 2));
+        Vector3 at = { from.x + fz * side - fx * 3.0f, 0.0f, from.z - fx * side - fz * 3.0f };
+        Enemy *e = spawn_enemy(cb, ENEMY_CHARIOT, at, t);
+        if (!e) break;
+        e->formation = fi + 1, e->slot = -1, e->city = city + 1, e->punitive = punitive;
+        e->yaw = e->ride_yaw = f->yaw;
+        e->home = e->wander_to = goal;
+        made++;
+    }
+    if (made == 0) f->used = false;
     return made;
 }
 
@@ -274,11 +328,31 @@ static bool standing(const Enemy *e) {
     return e->used && e->state != EN_DEAD && e->state != EN_DOWN && e->state != EN_HOSTAGE;
 }
 
-// El jinete cae del caballo, que queda suelto (la fauna lo suelta en el mundo).
+// Cuanto mas arriba del suelo va su cuerpo: el jinete, en la silla; el carro, en su plataforma.
+static float enemy_lift(const Enemy *e) {
+    if (e->state == EN_DEAD || e->state == EN_DOWN) return 0.0f;
+    return e->kind == ENEMY_CHARIOT ? CHARIOT_LIFT : e->mounted ? RIDER_LIFT : 0.0f;
+}
+
+// El pavés: de frente para casi todas las flechas (se clavan en la madera); en alto, mas.
+static bool pavise_blocks(Combat *cb, const Enemy *e, V3 d) {
+    const char *sh = enemy_def(e->kind)->shield;
+    if (!e->shield || !sh || !strstr(sh, "paves") || e->knock > 0.0f || e->stagger > 0.0f || !standing(e)) return false;
+    float l = sqrtf(d.x * d.x + d.z * d.z);
+    if (l < 1e-4f) return false;
+    float facing = -(sinf(e->yaw) * d.x + cosf(e->yaw) * d.z) / l; // la flecha viene de frente
+    return facing > 0.35f && rng_float(&cb->rng) < (e->blocking ? 0.9f : 0.6f);
+}
+
+// El jinete cae del caballo, que queda suelto (la fauna lo suelta en el mundo). El carro de guerra
+// vuelca: sus dos caballos se sueltan y queda un soldado a pie.
 static void unhorse(Combat *cb, Enemy *e) {
+    bool chariot = e->kind == ENEMY_CHARIOT;
     e->mounted = false;
-    e->kind = ENEMY_BANDIT;
-    if (cb->loose_n < 4) cb->loose_yaw[cb->loose_n] = e->yaw, cb->loose_horse[cb->loose_n++] = e->pos;
+    e->kind = chariot ? ENEMY_SOLDIER : ENEMY_BANDIT;
+    e->slot = -1;
+    for (int k = 0; k < (chariot ? 2 : 1) && cb->loose_n < 4; k++)
+        cb->loose_yaw[cb->loose_n] = e->ride_yaw + (float)k * 1.3f, cb->loose_horse[cb->loose_n++] = e->pos;
 }
 
 // Un enemigo herido cae: muerto si lo que lo tumbo es letal (o se desangro); si no, abatido,
@@ -321,13 +395,53 @@ static Enemy *downed_near(Combat *cb, Vector3 pos, float reach) {
     return best;
 }
 
+int cb_punitive_alive(const Combat *cb) {
+    int n = 0;
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) n += cb->enemies[i].used && cb->enemies[i].punitive && cb->enemies[i].state != EN_DEAD;
+    return n;
+}
+
+bool cb_punitive_near(const Combat *cb, Vector3 at, float r) {
+    for (int i = 0; i < CB_MAX_ENEMIES; i++)
+        if (cb->enemies[i].punitive && standing(&cb->enemies[i]) && dist2(cb->enemies[i].pos, at) < r) return true;
+    return false;
+}
+
+void cb_punitive_withdraw(Combat *cb, Vector3 to) {
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) {
+        Enemy *e = &cb->enemies[i];
+        if (!e->used || !e->punitive) continue;
+        e->home = e->wander_to = to;
+        e->alert = 0.0f;
+        if (e->formation > 0 && e->formation <= CB_FORMATIONS) cb->formations[e->formation - 1].goal = to;
+    }
+}
+
+int cb_city_standing(const Combat *cb, int city) {
+    int n = 0;
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) n += standing(&cb->enemies[i]) && cb->enemies[i].city == city + 1;
+    return n;
+}
+
 // ------------------------------------------------------------------- la espalda y los rehenes
 
 static bool g_jolt; // el jugador recibio un golpe fuerte en este cuadro (suelta al rehen)
 
-// Los del mismo bando: el culto (fanaticos y captores) o los bandidos (a pie, arqueros, jinetes).
-static bool cult(EnemyKind k) { return k == ENEMY_FANATIC || k == ENEMY_CAPTOR; }
-static bool same_side(EnemyKind a, EnemyKind b) { return cult(a) == cult(b); }
+// Los del mismo bando: el culto (fanaticos y captores), los reinos (sus soldados y su ejercito) o los
+// bandidos (a pie, arqueros, jinetes).
+static int side(EnemyKind k) {
+    switch (k) {
+    case ENEMY_FANATIC:
+    case ENEMY_CAPTOR: return 1;
+    case ENEMY_SOLDIER:
+    case ENEMY_HEAVY_INFANTRY:
+    case ENEMY_ROYAL_ARCHER:
+    case ENEMY_CROSSBOWMAN:
+    case ENEMY_CHARIOT: return 2;
+    default: return 0;
+    }
+}
+static bool same_side(EnemyKind a, EnemyKind b) { return side(a) == side(b); }
 
 static Enemy *hostage_of(Combat *cb) {
     int i = cb->hostage - 1;
@@ -552,7 +666,7 @@ static void hit_enemy(Combat *cb, Enemy *e, MeleeMove m, const MeleeResult *r, P
     if (r->landed) e->hit_anim = 0.3f, e->shown = 6.0f;
     if (r->staggered) e->stagger = STAGGER_SECONDS, e->blocking = false;
     if (r->knocked_down) e->knock = KNOCKDOWN_SECONDS, e->blocking = false;
-    bool unhorsed = false;
+    bool unhorsed = false, chariot = e->kind == ENEMY_CHARIOT;
     if (r->knocked_down && e->mounted) unhorse(cb, e), unhorsed = true; // derribado: cae del caballo, que queda suelto
     if (r->shield_dropped && e->shield) e->shield = false, drop_item(props, def->shield, e->pos);
     if (r->disarmed && e->armed) e->armed = false, drop_item(props, def->weapon, e->pos);
@@ -563,6 +677,7 @@ static void hit_enemy(Combat *cb, Enemy *e, MeleeMove m, const MeleeResult *r, P
     lower_name(T(def->name), who, sizeof(who));
     if (e->state == EN_DEAD) snprintf(log, len, T("Matas al %s: deja botín (F para recogerlo)."), who);
     else if (e->state == EN_DOWN) snprintf(log, len, T("El %s cae abatido: F lo toma prisionero; H lo remata."), who);
+    else if (unhorsed && chariot) snprintf(log, len, T("%s: ¡vuelcas el carro de guerra!"), move_verb(m));
     else if (unhorsed) snprintf(log, len, T("%s: ¡derribas al %s del caballo!"), move_verb(m), who);
     else if (r->attacker_staggered && m == MOVE_GRAPPLE) snprintf(log, len, T("El %s se zafa del agarre: ¡quedas expuesto!"), who);
     else if (!r->landed && m == MOVE_HOOK) snprintf(log, len, "%s", T("Tu arma no tiene gancho (hacha, guja o alabarda)."));
@@ -1089,7 +1204,8 @@ static void shot_hits_player(Combat *cb, Shot *s, int part, Player *p, const Gam
     if (hostage_jolted(dmg, false, false, player_ring(ga))) g_jolt = true; // un flechazo fuerte suelta al rehen
     char d[128], what[32];
     describe_hit(&cb->player, wi, absorbed, broke, d, sizeof(d));
-    snprintf(log, len, T("¡Una %s te alcanza! %s."), lower_name(T(pd->name), what, sizeof(what)), d);
+    if (s->p.kind == PROJ_BOLT) snprintf(log, len, T("¡Un virote te alcanza! %s."), d); // el unico masculino
+    else snprintf(log, len, T("¡Una %s te alcanza! %s."), lower_name(T(pd->name), what, sizeof(what)), d);
 }
 
 static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, const Terrain *t, float time, float dt,
@@ -1137,7 +1253,9 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             float tt;
             BodyPose b;
             pose_enemy(&b, e, time, i);
-            int hp = body_raycast(&b, body_to_local(a, to_v3(e->pos), e->yaw), body_dir_to_local(d, e->yaw), 1.0f, &tt);
+            V3 base = to_v3(e->pos);
+            base.y += enemy_lift(e);
+            int hp = body_raycast(&b, body_to_local(a, base, e->yaw), body_dir_to_local(d, e->yaw), 1.0f, &tt);
             if (hp >= 0 && tt < best_t) best_t = tt, kind = 2, idx = i, part = hp;
         }
         // Animales.
@@ -1150,6 +1268,17 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             // Retrocede hasta el punto del impacto para el daño (la energia de ese instante).
             s->p.alive = false;
             const ProjectileDef *pd = projectile_def(s->p.kind);
+            if (kind == 2 && pavise_blocks(cb, &cb->enemies[idx], d)) { // se clava en el pavés
+                Enemy *e = &cb->enemies[idx];
+                if (e->target < 0 && s->owner == 0) e->target = 0;
+                if (s->owner == 0) {
+                    char who[48], what[32];
+                    lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
+                    if (s->p.kind == PROJ_BOLT) snprintf(log, len, T("El virote se clava en el pavés del %s."), who);
+                    else snprintf(log, len, T("La %s se clava en el pavés del %s."), lower_name(T(pd->name), what, sizeof(what)), who);
+                }
+                continue;
+            }
             if (s->burning) { // la flecha encendida tambien quema
                 if (kind == 0) health_hit(&cb->player, &cb->rng, FIRE_ARROW_BURN, WOUND_BURN, part);
                 else if (kind == 1) health_hit(&troop->members[idx].health, &cb->rng, FIRE_ARROW_BURN, WOUND_BURN, part);
@@ -1163,8 +1292,10 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
                 combat_apply_hit(&m->health, &m->armor, &cb->rng, projectile_damage(&s->p), pd->wound, part, true, NULL, NULL);
                 ga->npcs[idx].hurt_anim = 0.3f;
                 char what[32];
-                snprintf(log, len, T("Una %s alcanza a %s en %s."), lower_name(T(pd->name), what, sizeof(what)), m->name,
-                         part_name((BodyPart)part, false));
+                if (s->p.kind == PROJ_BOLT) snprintf(log, len, T("Un virote alcanza a %s en %s."), m->name, part_name((BodyPart)part, false));
+                else
+                    snprintf(log, len, T("Una %s alcanza a %s en %s."), lower_name(T(pd->name), what, sizeof(what)), m->name,
+                             part_name((BodyPart)part, false));
             } else if (kind == 3) {
                 int owner = s->owner > 0 ? s->owner : s->owner == 0 ? 0 : -1;
                 fg_hurt(ga, idx, projectile_damage(&s->p), pd->wound, part, owner, s->owner == 0 ? log : NULL, len);
@@ -1195,6 +1326,17 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
                     }
                 }
             }
+            continue;
+        }
+        // La muralla de una capital (o una puerta cerrada): se clava en ella; encendida, prende la puerta
+        // (src/game/city_game.c).
+        Vector3 wall_at;
+        if (ct_shot_wall(ga, t, to_vec(a), to_vec(s->p.pos), s->burning, &wall_at)) {
+            float l = sqrtf(d.x * d.x + d.y * d.y + d.z * d.z);
+            s->dir = l > 1e-4f ? (V3){ d.x / l, d.y / l, d.z / l } : (V3){ 0, -1, 0 };
+            s->p.pos = to_v3(wall_at);
+            s->stuck = true;
+            s->life = 0.0f;
             continue;
         }
         // Suelo: se clava (o se hunde en el agua).
@@ -1303,6 +1445,143 @@ static void drop_loot(Combat *cb, GameActions *ga, Enemy *e, const Player *p, ch
     }
 }
 
+// ------------------------------------------------------------------- el ejercito (fase 8b)
+// El carro de guerra arrolla a quien se le cruce delante (el jugador o uno de la tribu).
+static bool in_chariot_path(const Enemy *e, Vector3 at) {
+    float fx = sinf(e->ride_yaw), fz = cosf(e->ride_yaw), dx = at.x - e->pos.x, dz = at.z - e->pos.z;
+    float along = dx * fx + dz * fz, across = dx * fz - dz * fx;
+    return along > -1.0f && along < 3.3f && fabsf(across) < 1.3f; // la caja y los dos caballos
+}
+
+static void chariot_trample(Combat *cb, Enemy *e, Player *p, GameActions *ga, Troop *troop, char *log, size_t len) {
+    MeleeResult r = { .landed = true, .damage = 12.0f * mounted_momentum(e->speed), .wound = WOUND_BRUISE, .knocked_down = true };
+    if (!cb->player.down && cb->knock <= 0.0f && !ga->climbing && in_chariot_path(e, p->pos)) {
+        char tmp[160];
+        hit_player(cb, ga, MOVE_RUN_KICK, &r, T(enemy_def(e->kind)->name), tmp, sizeof(tmp));
+        snprintf(log, len, "%s", T("¡El carro de guerra te arrolla!"));
+        e->cooldown = 2.5f;
+        return;
+    }
+    for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
+        Npc *n = &ga->npcs[k];
+        Member *m = &troop->members[k];
+        if (m->status != STATUS_ACTIVE || m->health.down || n->member_id != m->id || n->sheltered || ga_away(ga, m) || n->knock > 0.0f) continue;
+        if (!in_chariot_path(e, n->pos)) continue;
+        hit_member(cb, ga, troop, m, &r, log, len);
+        if (!m->health.down) snprintf(log, len, T("¡El carro de guerra arrolla a %s!"), m->name);
+        e->cooldown = 2.5f;
+        return;
+    }
+}
+
+// El carro de guerra: pasadas al galope contra su blanco (sigue de largo y da la vuelta), el arquero
+// tira al acercarse y arrolla a quien se le cruza. No gira en el lugar: va hacia donde apuntan los
+// caballos. En el llano vuela; en lo roto y en el agua, se arrastra (src/sim/army.h: chariot_speed).
+static void chariot_step(Combat *cb, Enemy *e, int i, const EnemyDef *def, Player *p, GameActions *ga, Troop *troop, const Terrain *t,
+                         int target, float best, Vector3 tpos, bool covered, float dt, char *log, size_t len) {
+    const RangedDef *rd = ranged_def(def->ranged);
+    Vector3 goal;
+    float pace = 1.0f;
+    if (e->state == EN_FLEE) {
+        if (e->timer <= 0.0f) e->state = EN_WANDER;
+        Vector3 from = target >= 0 ? tpos : p->pos;
+        goal = (Vector3){ e->pos.x * 2.0f - from.x, 0.0f, e->pos.z * 2.0f - from.z };
+    } else if (target >= 0) {
+        e->state = EN_CHASE;
+        e->yaw = atan2f(tpos.x - e->pos.x, tpos.z - e->pos.z); // el arquero mira a su blanco
+        if (e->timer <= 0.0f || dist2(e->pos, e->wander_to) < 5.0f) { // otra pasada: hacia el blanco y de largo
+            float dx = tpos.x - e->pos.x, dz = tpos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz) + 1e-3f;
+            e->wander_to = (Vector3){ tpos.x + dx / d * CHARIOT_PASS, 0.0f, tpos.z + dz / d * CHARIOT_PASS };
+            e->timer = 9.0f;
+        }
+        goal = e->wander_to;
+        if (rd && e->reload <= 0.0f && best < 40.0f && best > 7.0f && !covered) { // de cerca se agarra para arrollar
+            Vector3 from = aim_origin(e->pos, e->yaw);
+            from.y += CHARIOT_LIFT;
+            Vector3 aim = { tpos.x, tpos.y + 1.2f, tpos.z };
+            float pitch;
+            if (ballistic_solve(rd->projectile, to_v3(from), to_v3(aim), ranged_muzzle_speed(rd, 1.0f), &pitch)) {
+                float err = (0.02f + best * 0.0009f) * mounted_shot_spread(e->speed, e->yaw - e->ride_yaw, 0.6f, 0.2f);
+                fire(cb, rd, from, e->yaw + (rng_float(&cb->rng) - 0.5f) * err * 2.0f, pitch + (rng_float(&cb->rng) - 0.5f) * err, 1.0f,
+                     -(1 + i), false, 1.0f);
+                e->reload = rd->reload + 1.2f + 1.2f * rng_float(&cb->rng);
+                e->attack_anim = 0.3f;
+            }
+        }
+    } else {
+        e->state = EN_WANDER;
+        if (e->timer <= 0.0f) {
+            float a = rng_float(&cb->rng) * 2.0f * PI, r = 10.0f + rng_float(&cb->rng) * 20.0f;
+            e->wander_to = (Vector3){ e->home.x + cosf(a) * r, 0.0f, e->home.z + sinf(a) * r };
+            e->timer = 8.0f + rng_float(&cb->rng) * 6.0f;
+        }
+        goal = e->wander_to;
+        pace = dist2(e->pos, e->home) > 30.0f ? 0.6f : 0.3f;
+    }
+    goal = ct_route(ga, t, e->pos, goal); // la muralla de una capital: por sus puertas
+    // Los caballos giran hacia la meta (abierto) y el carro va hacia donde apuntan.
+    float want = atan2f(goal.x - e->pos.x, goal.z - e->pos.z), turn = atan2f(sinf(want - e->ride_yaw), cosf(want - e->ride_yaw));
+    float max_turn = CHARIOT_TURN * dt;
+    e->ride_yaw += fmaxf(-max_turn, fminf(max_turn, turn));
+    e->ride_yaw = atan2f(sinf(e->ride_yaw), cosf(e->ride_yaw));
+    if (target < 0) e->yaw = e->ride_yaw;
+    float fx = sinf(e->ride_yaw), fz = cosf(e->ride_yaw), h0 = terrain_height(t, e->pos.x, e->pos.z);
+    float slope = fmaxf(fabsf(terrain_height(t, e->pos.x + fx * 1.5f, e->pos.z + fz * 1.5f) - h0) / 1.5f,
+                        fabsf(terrain_height(t, e->pos.x + fz, e->pos.z - fx) - h0)); // de frente y de costado
+    float wl = terrain_water(t, e->pos.x, e->pos.z), wade = wl > h0 ? wl - h0 : 0.0f;
+    float vmax = chariot_speed(def->speed * pace, slope, wade) * health_speed_scale(&e->h);
+    if (fabsf(turn) > 1.2f) vmax *= 0.6f; // en la vuelta cerrada, frena
+    e->speed += (vmax - e->speed) * fminf(1.0f, dt * 1.2f);
+    float x0 = e->pos.x, z0 = e->pos.z;
+    e->pos.x += fx * e->speed * dt, e->pos.z += fz * e->speed * dt;
+    terrain_dry_step(t, x0, z0, &e->pos.x, &e->pos.z);
+    e->pos.y = surface_y(t, e->pos.x, e->pos.z);
+    if (e->speed > 4.0f && e->cooldown <= 0.0f && e->state != EN_FLEE) chariot_trample(cb, e, p, ga, troop, log, len);
+}
+
+// Las formaciones: marchan hacia su meta (o hacia el enemigo que ven sus hombres) al paso del mas
+// lento y, frente al enemigo, se plantan. Con la mitad de sus filas caidas, se rompen.
+static void update_formations(Combat *cb, const Terrain *t, float dt) {
+    for (int fi = 0; fi < CB_FORMATIONS; fi++) {
+        Formation *f = &cb->formations[fi];
+        if (!f->used) continue;
+        int alive = 0, ranked = 0;
+        float pace = 1e9f;
+        for (int i = 0; i < CB_MAX_ENEMIES; i++) {
+            const Enemy *e = &cb->enemies[i];
+            if (!e->used || e->formation != fi + 1 || e->state == EN_DEAD) continue;
+            alive++;
+            if (e->slot < 0 || !standing(e)) continue;
+            ranked++;
+            pace = fminf(pace, enemy_def(e->kind)->speed);
+        }
+        if (alive == 0) {
+            f->used = false;
+            continue;
+        }
+        if (!f->broken && ranked * 2 < f->size) { // rota: cada uno pelea por su cuenta
+            f->broken = true;
+            for (int i = 0; i < CB_MAX_ENEMIES; i++)
+                if (cb->enemies[i].used && cb->enemies[i].formation == fi + 1) cb->enemies[i].slot = -1;
+        }
+        bool seen = f->foe_seen;
+        f->foe_seen = false; // sus hombres lo vuelven a poner en este cuadro
+        if (f->broken || ranked == 0) continue;
+        Vector3 want = seen ? f->foe : f->goal;
+        float dx = want.x - f->center.x, dz = want.z - f->center.z, d = sqrtf(dx * dx + dz * dz);
+        if (d > 0.5f) { // gira despacio hacia donde va
+            float turn = atan2f(sinf(atan2f(dx, dz) - f->yaw), cosf(atan2f(dx, dz) - f->yaw)), max_turn = 1.0f * dt;
+            f->yaw += fmaxf(-max_turn, fminf(max_turn, turn));
+        }
+        float stop = seen ? 2.0f : 1.0f; // frente al enemigo, el frente a dos pasos
+        if (d > stop) {
+            float step = fminf(pace * 0.8f * dt, d - stop);
+            f->center.x += dx / d * step, f->center.z += dz / d * step;
+        }
+        f->center.y = surface_y(t, f->center.x, f->center.z);
+    }
+}
+
 static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *props, const Terrain *t, bool night,
                            float dt, char *log, size_t len) {
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
@@ -1408,6 +1687,11 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         // si el rehen le tapa el blanco (y si tira, falla mas).
         const Enemy *hostage = hostage_of(cb);
         bool hold_back = hostage && target == 0 && same_side(e->kind, hostage->kind);
+        if (e->kind == ENEMY_CHARIOT) { // el carro de guerra se mueve a su manera
+            bool covered = hold_back && hostage_blocks_shot(e->pos.x, e->pos.z, p->pos.x, p->pos.z, hostage->pos.x, hostage->pos.z);
+            chariot_step(cb, e, i, def, p, ga, troop, t, target, best, tpos, covered, dt, log, len);
+            continue;
+        }
         if (e->state == EN_FLEE) {
             if (e->timer <= 0.0f) e->state = EN_WANDER;
             Vector3 from = target >= 0 ? tpos : p->pos;
@@ -1487,6 +1771,27 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             goal = e->wander_to;
             speed = def->speed * (dist2(e->pos, e->home) > 20.0f ? 0.7f : 0.3f); // lejos de su sitio (o yendo a asaltar), a paso firme
         }
+        // En la formacion (fase 8b): no se aparta de su lugar mas de FORMATION_LEASH para pelear; sin
+        // enemigo a mano vuelve a el y mira al frente, con el pavés en alto. Si huye, deja las filas.
+        Formation *fm = e->formation > 0 && e->formation <= CB_FORMATIONS && e->slot >= 0 ? &cb->formations[e->formation - 1] : NULL;
+        if (fm && (!fm->used || fm->broken || e->state == EN_FLEE)) e->slot = -1, fm = NULL;
+        bool face_front = false;
+        if (fm) {
+            if (target >= 0) fm->foe_seen = true, fm->foe = tpos;
+            float sx, sz;
+            formation_slot(e->slot, fm->size, fm->cols, FORMATION_SPACING, fm->center.x, fm->center.z, fm->yaw, &sx, &sz);
+            bool engaged = target >= 0 && !rd && best < def->reach + 2.5f;
+            if (!engaged) {
+                goal = (Vector3){ sx, 0.0f, sz };
+                speed = def->speed;
+                face_front = !rd || target < 0;
+                if (e->shield && !rd) e->blocking = e->windup <= 0.0f && e->stagger <= 0.0f; // el muro de paveses
+            } else {
+                float lx = goal.x - sx, lz = goal.z - sz, ld = sqrtf(lx * lx + lz * lz);
+                if (ld > FORMATION_LEASH) goal.x = sx + lx / ld * FORMATION_LEASH, goal.z = sz + lz / ld * FORMATION_LEASH;
+            }
+        }
+        goal = ct_route(ga, t, e->pos, goal); // la muralla de una capital: por sus puertas
         speed *= health_speed_scale(&e->h) * armor_speed_scale(&e->armor);
         float d = dist2(e->pos, goal);
         e->speed = 0.0f;
@@ -1505,6 +1810,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             e->ride_yaw += atan2f(sinf(e->yaw - e->ride_yaw), cosf(e->yaw - e->ride_yaw)) * fminf(1.0f, dt * 3.0f);
         }
         if (e->mounted) e->ride_yaw = atan2f(sinf(e->ride_yaw), cosf(e->ride_yaw)); // en [-pi, pi]
+        if (face_front && d < 1.0f) e->yaw = fm->yaw;
         e->pos.y = surface_y(t, e->pos.x, e->pos.z);
     }
 }
@@ -1914,6 +2220,7 @@ static void capture(Combat *cb, GameActions *ga, Troop *troop, Player *p, char *
     cb->move_anim = 0.6f;
     drop_loot(cb, ga, e, p, log, len);
     if (e->city > 0 && e->city <= SETTLEMENTS_MAX) city_lose_soldiers(&ga->cities[e->city - 1], 1); // un soldado menos en su ciudad
+    if (e->punitive) ga->expedition_lost++; // uno menos en la expedicion de castigo
     e->used = false;
     snprintf(log, len, T("Atas al %s y lo tomas prisionero; lo que llevaba queda en el suelo (F)."), who);
 }
@@ -2270,6 +2577,7 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     }
     natural_spawns(cb, ga, p, t, camp_fire, night, dt, log, log_len);
     (void)winter;
+    update_formations(cb, t, dt);
     update_enemies(cb, p, ga, troop, props, t, night, dt, log, log_len);
     update_shots(cb, p, ga, troop, t, time, dt, log, log_len);
     update_companions(cb, ga, troop, props, p, t, dt, log, log_len);
@@ -2311,6 +2619,10 @@ static BodyColors enemy_colors(EnemyKind k, bool hit) {
     else if (k == ENEMY_RIDER) c.cloth = (Color){ 52, 66, 92, 255 };
     else if (k == ENEMY_HORSE_ARCHER) c.cloth = (Color){ 132, 92, 40, 255 };
     else if (k == ENEMY_SOLDIER) c.cloth = (Color){ 150, 40, 36, 255 }, c.legs = (Color){ 70, 52, 40, 255 }; // el rojo del reino
+    else if (k == ENEMY_HEAVY_INFANTRY) c.cloth = (Color){ 116, 28, 30, 255 }, c.legs = (Color){ 58, 44, 36, 255 };
+    else if (k == ENEMY_ROYAL_ARCHER) c.cloth = (Color){ 170, 72, 48, 255 }, c.legs = (Color){ 96, 74, 52, 255 };
+    else if (k == ENEMY_CROSSBOWMAN) c.cloth = (Color){ 138, 52, 44, 255 }, c.legs = (Color){ 88, 68, 50, 255 };
+    else if (k == ENEMY_CHARIOT) c.cloth = (Color){ 150, 40, 36, 255 }, c.legs = (Color){ 70, 52, 40, 255 };
     if (hit) c.cloth = (Color){ 236, 226, 214, 255 };
     return c;
 }
@@ -2361,6 +2673,61 @@ static void draw_shot(const Shot *s) {
     DrawCylinderEx(tail, Vector3Lerp(tail, tip, 0.15f), 0.03f, 0.012f, 4, (Color){ 220, 214, 200, 255 }); // plumas
 }
 
+// El pavés: un tablero alto delante del cuerpo, del lado del brazo izquierdo (en alto, mas adelante).
+static void draw_pavise_on(Vector3 pos, float yaw, bool raised) {
+    rlPushMatrix();
+    rlTranslatef(pos.x, pos.y, pos.z);
+    rlRotatef(yaw * RAD2DEG, 0.0f, 1.0f, 0.0f);
+    Vector3 c = { 0.12f, raised ? 0.82f : 0.72f, raised ? 0.45f : 0.32f };
+    DrawCube(c, 0.72f, 1.35f, 0.07f, (Color){ 150, 44, 38, 255 });
+    DrawCube((Vector3){ c.x, c.y, c.z + 0.045f }, 0.14f, 1.3f, 0.02f, (Color){ 214, 182, 96, 255 }); // la franja del reino
+    DrawCubeWires(c, 0.72f, 1.35f, 0.07f, (Color){ 60, 40, 30, 255 });
+    rlPopMatrix();
+}
+
+// El carro de guerra: dos caballos lado a lado, la lanza del tiro y el yugo, la caja de mimbre sobre
+// dos ruedas que giran con la marcha, el conductor delante y el arquero detras.
+static void draw_chariot(const Enemy *e, int i, float time) {
+    static const Color WOOD = { 112, 80, 50, 255 }, DARK = { 66, 46, 32, 255 }, WICKER = { 156, 122, 74, 255 };
+    bool hit = e->hit_anim > 0.0f;
+    float y = e->ride_yaw;
+    Vector3 f = { sinf(y), 0.0f, cosf(y) }, r = { cosf(y), 0.0f, -sinf(y) }, pos = e->pos;
+    for (int k = -1; k <= 1; k += 2)
+        cb_draw_horse((Vector3){ pos.x + f.x * 2.4f + r.x * 0.6f * (float)k, pos.y, pos.z + f.z * 2.4f + r.z * 0.6f * (float)k }, y, e->speed,
+                      time + (float)k * 0.4f, hit);
+    Vector3 pole0 = { pos.x + f.x * 0.5f, pos.y + 0.7f, pos.z + f.z * 0.5f }, pole1 = { pos.x + f.x * 3.1f, pos.y + 1.2f, pos.z + f.z * 3.1f };
+    DrawCylinderEx(pole0, pole1, 0.05f, 0.05f, 4, WOOD);
+    DrawCylinderEx((Vector3){ pole1.x - r.x * 0.8f, pole1.y + 0.05f, pole1.z - r.z * 0.8f },
+                   (Vector3){ pole1.x + r.x * 0.8f, pole1.y + 0.05f, pole1.z + r.z * 0.8f }, 0.045f, 0.045f, 4, DARK);
+    rlPushMatrix();
+    rlTranslatef(pos.x, pos.y, pos.z);
+    rlRotatef(y * RAD2DEG, 0.0f, 1.0f, 0.0f);
+    DrawCube((Vector3){ 0.0f, 0.7f, 0.0f }, 1.3f, 0.08f, 1.0f, WOOD);        // el piso
+    DrawCube((Vector3){ 0.0f, 1.0f, 0.48f }, 1.3f, 0.55f, 0.06f, WICKER);    // la baranda de adelante
+    DrawCube((Vector3){ 0.63f, 0.95f, 0.05f }, 0.06f, 0.45f, 0.9f, WICKER);  // y las de los costados
+    DrawCube((Vector3){ -0.63f, 0.95f, 0.05f }, 0.06f, 0.45f, 0.9f, WICKER);
+    DrawCube((Vector3){ 0.0f, 0.6f, 0.0f }, 1.8f, 0.08f, 0.08f, DARK);       // el eje
+    rlPopMatrix();
+    float spin = e->speed > 0.2f ? time * e->speed / 0.6f : 0.0f;
+    for (int k = -1; k <= 1; k += 2) {
+        Vector3 c = { pos.x + r.x * 0.85f * (float)k, pos.y + 0.6f, pos.z + r.z * 0.85f * (float)k };
+        DrawCylinderEx((Vector3){ c.x - r.x * 0.04f, c.y, c.z - r.z * 0.04f }, (Vector3){ c.x + r.x * 0.04f, c.y, c.z + r.z * 0.04f }, 0.6f, 0.6f,
+                       14, DARK);
+        Vector3 o = { c.x + r.x * 0.05f * (float)k, c.y, c.z + r.z * 0.05f * (float)k };
+        for (int sp = 0; sp < 3; sp++) { // los rayos
+            float a = spin + (float)sp * PI / 3.0f, ca = cosf(a) * 0.55f, sa = sinf(a) * 0.55f;
+            DrawLine3D((Vector3){ o.x - f.x * ca, o.y - sa, o.z - f.z * ca }, (Vector3){ o.x + f.x * ca, o.y + sa, o.z + f.z * ca }, WICKER);
+        }
+    }
+    BodyColors bc = enemy_colors(e->kind, hit);
+    BodyPose b;
+    BodyPoseParams pp = { .scale = 1.0f };
+    body_pose(&b, &pp);
+    body_draw(&b, (Vector3){ pos.x + f.x * 0.3f, pos.y + CHARIOT_LIFT, pos.z + f.z * 0.3f }, y, bc, &e->armor);
+    pose_enemy(&b, e, time, i);
+    body_draw(&b, (Vector3){ pos.x - f.x * 0.3f, pos.y + CHARIOT_LIFT, pos.z - f.z * 0.3f }, e->yaw, bc, &e->armor);
+}
+
 void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const Terrain *t, const Player *p,
                    bool player_has_model, float time) {
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
@@ -2370,6 +2737,10 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         const InvItem *it = inventory_find(ga->inv, def->model);
         if (!it) continue;
         bool dead = e->state == EN_DEAD, downed = e->state == EN_DOWN;
+        if (e->kind == ENEMY_CHARIOT) { // el carro, sus caballos y los dos que van en el
+            draw_chariot(e, i, time + (float)i);
+            continue;
+        }
         Vector3 at = e->pos;
         if (e->mounted && !dead) { // a caballo: el jinete va encima
             cb_draw_horse(e->pos, e->ride_yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
@@ -2395,12 +2766,13 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         BodyPose b;
         pose_enemy(&b, e, time, i);
         body_draw(&b, at, e->yaw, enemy_colors(e->kind, e->hit_anim > 0.0f), &e->armor);
-        if (e->shield && !dead) draw_shield_on(&b, at, e->yaw, (Color){ 168, 134, 84, 255 });
+        if (e->shield && !dead && !downed && def->shield && strstr(def->shield, "paves")) draw_pavise_on(at, e->yaw, e->blocking);
+        else if (e->shield && !dead) draw_shield_on(&b, at, e->yaw, (Color){ 168, 134, 84, 255 });
     }
     // El objetivo: un anillo dorado a sus pies, que late.
     const Enemy *te = cb_target(cb);
     if (te) {
-        float pulse = 0.88f + 0.12f * sinf(time * 6.0f), r = (te->mounted ? 1.3f : 0.75f) * pulse;
+        float pulse = 0.88f + 0.12f * sinf(time * 6.0f), r = (te->kind == ENEMY_CHARIOT ? 1.9f : te->mounted ? 1.3f : 0.75f) * pulse;
         Vector3 c = { te->pos.x, te->pos.y + 0.06f, te->pos.z };
         for (int k = 0; k < 3; k++) DrawCircle3D(c, r - 0.04f * (float)k, (Vector3){ 1.0f, 0.0f, 0.0f }, 90.0f, (Color){ 232, 196, 92, 255 });
     }

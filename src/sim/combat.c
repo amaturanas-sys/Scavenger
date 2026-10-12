@@ -60,6 +60,17 @@ const EnemyDef *enemy_def(EnemyKind k) {
         [ENEMY_SOLDIER] = { N_("Soldado del reino"), "personaje.npc.lancero", false, 85.0f, 13.0f, 2.4f, 1.3f, 4.0f, 30.0f, WOUND_CUT, 0.15f,
                             NULL, { "armadura.casco.bronce", "armadura.torso.escamas_hierro", "armadura.faldar.laminar_cuero", "armadura.grebas.laminar_cuero" },
                             "arma.larga.lanza", "escudo.mano.lamina", 0.8f }, // lanza, escudo de laminas y escamas: la guardia de los campos
+        [ENEMY_HEAVY_INFANTRY] = { N_("Infante pesado"), "personaje.npc.oficial", false, 120.0f, 15.0f, 2.6f, 1.4f, 3.4f, 30.0f, WOUND_CUT, 0.08f,
+                                   NULL, { "armadura.casco.escamas_hierro", "armadura.torso.escamas_hierro", "armadura.faldar.escamas_hierro", "armadura.grebas.escamas_hierro" },
+                                   "arma.larga.lanza", "escudo.grande.paves", 1.0f }, // el muro de paveses
+        [ENEMY_ROYAL_ARCHER] = { N_("Arquero del reino"), "personaje.npc.lancero", false, 65.0f, 8.0f, 1.3f, 1.0f, 4.2f, 40.0f, WOUND_CUT, 0.25f,
+                                 "arma.distancia.arco_compuesto", { "armadura.casco.laminar_cuero", "armadura.torso.fieltro" }, "arma.corta.daga", NULL, 0.0f },
+        [ENEMY_CROSSBOWMAN] = { N_("Ballestero"), "personaje.npc.ballestero", false, 75.0f, 9.0f, 1.3f, 1.1f, 3.8f, 42.0f, WOUND_CUT, 0.2f,
+                                "arma.distancia.ballesta", { "armadura.casco.bronce", "armadura.torso.laminar_cuero", "armadura.brazales.laminar_cuero" },
+                                "arma.corta.daga", NULL, 0.0f },
+        [ENEMY_CHARIOT] = { N_("Carro de guerra"), "personaje.npc.lancero", false, 130.0f, 13.0f, 2.6f, 1.2f, 10.0f, 50.0f, WOUND_CUT, 0.2f,
+                            "arma.distancia.arco_compuesto", { "armadura.casco.bronce", "armadura.torso.escamas_hierro", "armadura.hombreras.escamas_hierro" },
+                            "arma.larga.lanza", NULL, 0.0f, true }, // dos caballos, el conductor y el arquero (vida: la de los dos)
     };
     return &defs[(unsigned)k < ENEMY_COUNT ? k : 0];
 }
@@ -130,6 +141,26 @@ int enemy_loot(EnemyKind k, bool armed, bool shield, Rng *rng, LootItem *out, in
         if (rng_float(rng) < 0.7f) add(out, &n, max, "utileria.material.plata", 2 + rng_range(rng, 5), 1.0f);
         if (rng_float(rng) < 0.5f) add(out, &n, max, "utileria.consumible.pan", 1 + rng_range(rng, 2), 1.0f);
         if (rng_float(rng) < 0.2f) add(out, &n, max, "utileria.consumible.vino", 1, 1.0f);
+        break;
+    case ENEMY_HEAVY_INFANTRY: // la paga de la campaña
+        if (rng_float(rng) < 0.7f) add(out, &n, max, "utileria.material.plata", 3 + rng_range(rng, 6), 1.0f);
+        if (rng_float(rng) < 0.5f) add(out, &n, max, "utileria.consumible.pan", 1 + rng_range(rng, 2), 1.0f);
+        break;
+    case ENEMY_ROYAL_ARCHER:
+        if (rng_float(rng) < 0.5f) add(out, &n, max, d->ranged, 1, wear);
+        if (rng_float(rng) < 0.9f) add(out, &n, max, "proyectil.flecha.comun", 4 + rng_range(rng, 8), 1.0f);
+        if (rng_float(rng) < 0.4f) add(out, &n, max, "utileria.material.plata", 2 + rng_range(rng, 4), 1.0f);
+        break;
+    case ENEMY_CROSSBOWMAN:
+        if (rng_float(rng) < 0.4f) add(out, &n, max, d->ranged, 1, wear);
+        if (rng_float(rng) < 0.9f) add(out, &n, max, "proyectil.virote.comun", 4 + rng_range(rng, 8), 1.0f);
+        if (rng_float(rng) < 0.5f) add(out, &n, max, "utileria.material.plata", 2 + rng_range(rng, 5), 1.0f);
+        break;
+    case ENEMY_CHARIOT:
+        if (rng_float(rng) < 0.8f) add(out, &n, max, "utileria.material.plata", 4 + rng_range(rng, 7), 1.0f);
+        if (rng_float(rng) < 0.6f) add(out, &n, max, "proyectil.flecha.comun", 4 + rng_range(rng, 8), 1.0f);
+        if (rng_float(rng) < 0.3f) add(out, &n, max, "utileria.consumible.vino", 1, 1.0f);
+        if (rng_float(rng) < 0.15f) add(out, &n, max, "accesorio.amuleto.caballo", 1, 1.0f);
         break;
     case ENEMY_RIDER:
         if (rng_float(rng) < 0.6f) add(out, &n, max, "utileria.consumible.carne_seca", 2, 1.0f);

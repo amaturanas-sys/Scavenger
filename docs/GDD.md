@@ -604,7 +604,8 @@ Cada arma tiene sus rasgos en `WeaponStats` (y los arcos, `RangedDef.saddle`):
   - frágil: ×1,1, pero se quiebra en un golpe que entra el 5 % de las veces (el 12 % si se lo paran) y se pierde (`weapon_break_chance`).
 - **El acero wootz** pega ×1,4 (el acero, ×1,3). La empuñadura del sable toma el mejor que tengas: wootz templado, wootz, acero templado, acero, bronce y el de la estepa. Nunca uno frágil: ese se empuña a mano.
 - **Comercio:** las caravanas venden acero wootz (40 de plata) y las capitales, hojas de sable de acero (30). La forja móvil vale 70, el mineral 0,5 y las puntas de hierro 1,5. El sable wootz templado vale 160; uno frágil, menos que uno sin templar.
-- **Lo que no entró:** el taller en una ciudad tomada (cuando haya ciudades que tomar, en la fase 8) y untar las armas con grasa (las armas todavía no se gastan con el uso).
+- **El taller de una ciudad tomada** (v0.9.1): dentro de la muralla de una capital que la tribu tomó, su fundición hace de taller y de los dos hornos (`ct_workshop_at`).
+- **Lo que no entró:** untar las armas con grasa (las armas todavía no se gastan con el uso).
 
 ### Ciudades y reinos (v0.9.0 — `src/sim/city.*`, en juego `src/game/city_game.*` y `src/game/trade_game.*`)
 Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su economía, un día a la vez (`city_day`), en `GameActions.cities`.
@@ -640,7 +641,53 @@ Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su e
   - en su capital (la de la estepa), «Pagar el tributo» cuesta 4 de plata más 4 por integrante, una vez por estación; sube la relación (+10), y la plata va a su tesoro;
   - al empezar una estación, si la anterior pasó sin pagarlo, la relación baja (−6) y lo cuenta el guardián del campamento inicial (la primera revisión solo se anota);
   - con la relación en −30 o menos, el kanato no comercia contigo.
-- **Fase 8b (v0.9.1):** el ejército del reino en el mundo (infantería pesada con paveses en formación cerrada, arqueros y ballesteros, carros de guerra), las expediciones de castigo si la relación cae y el asedio de las ciudadelas. Tomar una ciudad da su taller permanente (fase 7b).
+
+### Ejército y asedio (v0.9.1 — `src/sim/army.*`, en juego `src/game/city_game.*`, `src/game/combat_game.c` y `src/game/trade_game.c`)
+- **El ejército que sale** (`army_compose`):
+  - de la guarnición (soldados y mercenarios); un tercio se queda de guardia;
+  - en campaña lo paga el tesoro, con la mitad de lo que tiene: 6 de plata por hombre, 9 por infante pesado y 30 por carro. Sin plata no sale nadie;
+  - en este orden: el frente de paveses, soldados, ballesteros, arqueros y carros. Las aldeas no tienen paveses ni carros. Una salida en defensa de la ciudad no lleva carros ni la paga el tesoro.
+- **Las tropas** (al final de `EnemyKind`):
+  - el infante pesado (`ENEMY_HEAVY_INFANTRY`): pavés, lanza y escamas de hierro enteras (casco, coraza, faldar y grebas); 120 de vida, lento (3,4 m/s);
+  - el arquero del reino (arco reflejo) y el ballestero (ballesta: tira lento y fuerte);
+  - el carro de guerra (`ENEMY_CHARIOT`): dos caballos, conductor y arquero; 130 de vida, la de los dos. Va a 10 m/s en el llano (`chariot_speed`): pasada una cuesta de 0,06, pierde 3,5 veces lo que sube (le queda al menos el 20 %), y vadeando, más de la mitad.
+    - Hace pasadas contra su blanco: sigue 22 m de largo y da la vuelta, girando a 1,3 rad/s.
+    - Su arquero tira al acercarse. Arrolla a quien se le cruza delante: lo derriba y lo golpea según la velocidad.
+    - Derribado, vuelca: sus caballos quedan sueltos y queda un soldado a pie.
+- **La formación cerrada** (`Combat.formations`, `formation_slot`):
+  - filas de hasta 5, a 1,4 m; los paveses delante y los tiradores detrás;
+  - marcha hacia su meta (o hacia el enemigo que ven sus hombres) al paso del más lento y gira despacio; frente al enemigo se planta a dos pasos;
+  - cada hombre se aparta de su lugar 3 m como mucho para pelear;
+  - los paveses van en alto: paran el 90 % de las flechas que llegan de frente (el 60 % si no están en alto);
+  - con la mitad de sus filas caídas, se rompe y cada uno pelea por su cuenta;
+  - los carros van sueltos, por los flancos.
+- **Las expediciones de castigo** (`punitive_due`):
+  - salen al empezar el día con la relación con el kanato en −40 o menos (de su capital) o con 80 de rencor (de cualquier ciudad); no más de una por estación de cada ciudad, y una a la vez;
+  - van contra el campamento que el jugador tiene cerca (a 150 m). Salen a la vista a 80 m, del lado de su ciudad: hasta 12 figuras;
+  - si llegan al campamento, lo saquean (`stock_plunder`): se llevan comida, grano y plata, del 10 al 60 % (`punitive_share`: más con más hombres, menos con defensores). Después se vuelven, y el enojo se calma: la relación sube 25 y el rencor baja 40;
+  - si cae la mitad, la expedición cae. Si el jugador se aleja, llega igual;
+  - lejos del jugador, el guardián cuenta el saqueo.
+- **La guerra** (`city_at_war`): con 60 de rencor o, en la estepa, con la relación en −30 o menos (mientras el kanato no caiga), la ciudad cierra el mercado y las puertas. En paz, rehace las puertas quemadas y quita las escalas.
+- **La muralla** (`city_wall_blocks`):
+  - doce tramos rectos entre las torres; cada tercer tramo es una puerta: 6 m de paso entre dos lienzos de muro;
+  - corta el paso del jugador (que desliza a lo largo), de las flechas (se clavan) y de los enemigos, que entran y salen por las puertas (`ct_route`);
+  - en guerra, las puertas están cerradas.
+- **Cómo entrar:**
+  - trepando: la trepa (`Tab`), a 3,5 m de la muralla y mirándola;
+  - por una escala de asedio (a mano: 2 troncos y 2 cuerdas; pesa 12 kg). `F` junto a un tramo de muro, desde afuera, la apoya. `F` al pie, de cualquier lado, sube y pasa;
+  - quemando una puerta, con una flecha encendida que se clave en ella o con la antorcha (`F`). Arde 20 s y queda abierta; la lluvia la apaga.
+- **La guarnición sale** (`ct_update`): a 45 m de la muralla (o del centro de la aldea), si no hay nadie suyo afuera. Sale de la puerta más cercana (del cuartel, si ya estás adentro): hasta 6 (8 adentro), una vez por minuto.
+- **El cerco y el hambre:**
+  - con un campamento de la tribu a 220 m, la ciudad en guerra queda cercada (`city_siege_day`): no cosecha, la gente del campo se refugia adentro y come (media ración más por alma), entra la mitad de los impuestos y crece el descontento;
+  - cada flecha encendida que cae adentro quema un techo (`city_burn_grain`): el 3 % del granero (al menos 40 raciones), y asusta.
+- **La rendición** («Exigir la rendición», en el palacio o hablando con la guardia de una puerta): se rinde con la guarnición en la quinta parte de la que quiere tener (al menos 2), con grano para menos de 5 días o en revuelta (descontento del 90 %). Si no, dice cuánto le falta.
+- **La paz** («Pagar la paz»): cuesta 3 tributos. El rencor baja a 30 y la relación con el kan sube a −20.
+- **La ciudad tomada** (`City.taken`):
+  - sin ejército, sin rencor y abierta: comercia contigo;
+  - cada estación paga de tributo la mitad de lo que cobran sus escribas en la estación, al acopio del campamento inicial;
+  - su fundición es tu taller, con los hornos de bronce y acero: dentro de su muralla se forja y se templa;
+  - su estandarte, rojo y oro;
+  - tomar la capital del kanato acaba con el tributo y con la relación.
 
 ### Cría (implementado en v0.7.1 — `src/sim/animals.*`, en juego `src/game/fauna_game.c`)
 - **Quién se cría:** las monturas (caballo, burro, buey, camello) y el ganado (cabra, becerro). La mula y el elefante, no.

@@ -11,6 +11,7 @@
 #include "game/talents_game.h"
 #include "game/trade_game.h"
 #include "game/forge_game.h"
+#include "game/city_game.h"
 #include "sim/riding.h"
 
 #include <math.h>
@@ -306,6 +307,8 @@ float ga_speed_scale(const GameActions *ga) {
 }
 
 // ---------------------------------------------------------------- objetivos
+#define GRAPPLE_CITY_WALL (-2) // ga->target de la trepa: la muralla de una ciudad (src/game/city_game.c)
+
 static int wall_ahead(const Props *props, const Player *p) {
     for (int i = 0; i < props->count; i++) {
         const char *id = props->items[i].item->id;
@@ -389,6 +392,11 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
             return;
         }
         if ((ga->target = wall_ahead(props, p)) < 0) {
+            Vector3 top, over, to;
+            if (ga->terrain && ct_wall_ahead(ga, ga->terrain, p, &top, &over, &to)) { // la muralla de una ciudad
+                ga->target = GRAPPLE_CITY_WALL;
+                break;
+            }
             snprintf(log, len, "%s", T("No hay un muro a tiro de trepa delante."));
             return;
         }
@@ -450,6 +458,15 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
     stock_take_all(ga_stock(ga), d->mats);
     ga->doing = a;
     ga->timer = 0.0f;
+}
+
+void ga_climb(GameActions *ga, const Player *p, Vector3 top, Vector3 over, Vector3 to) {
+    ga->climbing = true;
+    ga->climb_t = 0.0f;
+    ga->climb_from = p->pos;
+    ga->climb_top = top;
+    ga->climb_over = over;
+    ga->climb_to = to;
 }
 
 static void start_climb(GameActions *ga, const Props *props, const Terrain *t, const Player *p, int wall) {
@@ -540,7 +557,13 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         snprintf(log, len, "%s", T("Encendiste la antorcha (mano izquierda)."));
         break;
     case ACTION_THROW_GRAPPLE:
-        if (ga->target >= 0 && ga->target < props->count) {
+        if (ga->target == GRAPPLE_CITY_WALL) {
+            Vector3 top, over, to;
+            if (ct_wall_ahead(ga, t, p, &top, &over, &to)) {
+                ga_climb(ga, p, top, over, to);
+                snprintf(log, len, "%s", T("La trepa se engancha en las almenas: ¡a escalar la muralla!"));
+            }
+        } else if (ga->target >= 0 && ga->target < props->count) {
             start_climb(ga, props, t, p, ga->target);
             snprintf(log, len, "%s", T("La trepa se engancha: ¡a escalar!"));
         }
@@ -855,6 +878,7 @@ static void interact(GameActions *ga, Troop *troop, Props *props, const Terrain 
         fg_interact(ga, p, (input_mods() & KM_SHIFT) && !p->moving, log, len);
         return;
     }
+    if (near < 0 && t && ct_try_interact(ga, props, t, p, log, len)) return; // la escala, la puerta (src/game/city_game.c)
     if (near < 0 && td_try_talk(ga, t, p)) return;
     if (near < 0 && t && wg_at_well(t, p->pos.x, p->pos.z)) {
         start_action(ga, ACTION_FILL_WATER, props, p, log, len);

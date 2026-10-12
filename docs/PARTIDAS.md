@@ -82,6 +82,7 @@ Reglas:
 - **`v0.8.0-lanza.sav`:** una carga con la lanza pesada que rompió una fila de bandidos.
 - **`v0.8.1-forja.sav`:** junto a una veta de hierro, con la forja móvil, el mineral recién picado y una receta de la forja a medio hacer.
 - **`v0.9.0-campos.sav`:** los campos del kanato recién saqueados, con su guardia saliendo de la ciudad.
+- **`v0.9.1-asedio.sav`:** una expedición de castigo del kanato que marcha en formación sobre el campamento, con la capital en guerra a medio asediar y una aldea tomada.
 
 | Partida | Qué tiene |
 |---|---|
@@ -98,6 +99,7 @@ Reglas:
 | `migracion` (v0.7.2) | El campamento inicial levantado y en marcha: las cinco yurtas cargadas, la gente en columna detrás del jugador y el rebaño siguiéndolo. |
 | `lanza` (v0.8.0) | El jugador a caballo con la lanza pesada, justo después de una carga que alcanzó a dos bandidos de una fila de tres (el primero cayó muerto). |
 | `forja` (v0.8.1) | El jugador junto a una veta del altiplano, ya marcada en el mapa, con el sable de acero frágil empuñado. En la mochila (la grande), la forja móvil y 2 de mineral recién picado, y las puntas de flecha de hierro a medio hacer (`CRAFT_IRON_POINTS`, una receta nueva). |
+| `asedio` (v0.9.1) | La relación con el kanato en −50: su capital en guerra (la ciudad 0), con una puerta quemada, una escala apoyada en un tramo de la muralla y cercada el día anterior; una aldea (la ciudad 1) ya tomada por la tribu. Una expedición de castigo de la capital marcha sobre el campamento inicial: diez hombres en formación cerrada (cuatro infantes pesados con pavés delante, dos soldados, dos ballesteros y dos arqueros) y dos carros de guerra que ya cargan contra el jugador. |
 | `campos` (v0.9.0) | El jugador en un campo del kanato que acaba de saquear el último día de la primavera: el campo quemado, 5 sacos de grano en el suelo y cuatro soldados del reino (`ENEMY_SOLDIER`, de la guardia de la ciudad 0) que salen por la puerta. Ya empezó el verano: la economía de las ciudades corrió un día y la revisión del tributo quedó anotada. |
 
 `estepa --probar-partidas tests/partidas` (CI, en el job de Linux) hace esto con cada una:
@@ -154,6 +156,14 @@ La v0.9.0 agregó, al final de cada struct, sin migraciones:
 - a `Enemy`, `city`: de qué asentamiento es su guardia, más uno.
 
 En las partidas viejas todo queda en cero. Una ciudad con la gente en cero se arma sola en el primer cuadro (`ct_update`), y la primera revisión del tributo solo se anota: no castiga. `ENEMY_SOLDIER` va al final de `EnemyKind` y `TD_CITY` al final de los modos del diálogo del mercado. El resumen suma, solo si no son cero, la línea de cada ciudad, la del tributo y la de la guardia de cada enemigo.
+
+La v0.9.1 agregó, también al final y sin migraciones:
+- a `City`, el asedio: `taken` (el día en que la tribu la tomó), `gates_burnt` (las puertas quemadas, un bit por puerta), `besieged` (el último día que pasó cercada), `ladders` (las escalas apoyadas, un bit por tramo de la muralla) y `expedition` (el día de su última expedición de castigo);
+- a `Enemy`, `formation` (su formación más uno), `slot` (su lugar en ella; −1, fuera de filas) y `punitive` (es de la expedición de castigo en marcha);
+- a `Combat`, `formations` (cuatro `Formation`: el centro del frente, la meta, el rumbo, las columnas, cuántos formaron, la ciudad, si se rompió y el enemigo que ven sus hombres);
+- a `GameActions`, la expedición en marcha (`expedition_city`, `expedition_camp`, `expedition_army`, un `ArmyComp` con cuántos de cada clase salieron, `expedition_lost`, `expedition_out` y `expedition_sacked`) y `vassal_season`, la última estación en que pagaron tributo las ciudades tomadas (más uno).
+
+Además, `CB_MAX_ENEMIES` pasó de 16 a 24: el arreglo crece y las partidas viejas cargan con los huecos en cero. Los enemigos nuevos (`ENEMY_HEAVY_INFANTRY`, `ENEMY_ROYAL_ARCHER`, `ENEMY_CROSSBOWMAN` y `ENEMY_CHARIOT`) van al final de `EnemyKind`, y la receta de la escala (`CRAFT_SIEGE_LADDER`), al final de `CraftId`. El resumen suma, solo si no son cero, la línea del asedio de cada ciudad, la de la expedición, la del tributo de las tomadas, la de la formación de cada enemigo y la de cada formación.
 
 ## El esquema congelado de las partidas planas
 
