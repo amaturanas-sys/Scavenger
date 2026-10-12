@@ -631,6 +631,22 @@ una veta de hierro	an iron vein
 ¿Qué hacen %s? Acompañados corren menos riesgo y rinden más.	What do %s do? In pairs they risk less and achieve more.
 ¿Qué levantamos? La cuadrilla sale de la gente sin tarea de este campamento.	What shall we raise? The crew comes from this camp's idle people.
 ¿Qué oficio aprende %s? Un maestro del oficio en el campamento lo acelera mucho.	Which trade does %s learn? A master of the trade in camp speeds it up a lot.
+# --- src/game/city_game.c
+%s: %d almas. El granero da para %d días. %s	%s: %d souls. The granary holds %d days of food. %s
+El %s no recibió tu tributo la estación pasada: la relación baja (−%d). Se paga en su capital.	The %s got no tribute from you last season: your standing drops (−%d). It is paid in its capital.
+El tributo de esta estación, pagado.	This season's tribute: paid.
+El tributo de esta estación, sin pagar (en su capital).	This season's tribute: unpaid (pay it in its capital).
+En invierno los campos no dan.	In winter the fields yield nothing.
+Guarnición: %d soldados y %d mercenarios.	Garrison: %d soldiers and %d mercenaries.
+Guarnición: %d soldados.	Garrison: %d soldiers.
+La cosecha de esta estación viene buena.	This season's harvest looks good.
+La cosecha de esta estación viene mala.	This season's harvest looks poor.
+La cosecha viene como siempre.	The harvest looks as usual.
+Los campos están arrasados.	The fields lie ravaged.
+No comercian contigo: les saqueaste los campos.	They won't trade with you: you plundered their fields.
+Relación con el %s: %d.	Standing with the %s: %d.
+Te guardan rencor por los saqueos.	They bear you a grudge for the raids.
+Tesoro: %d de plata (los escribas cobran %d al día). Armería: %d juegos de armas.	Treasury: %d silver (the scribes collect %d a day). Armory: %d sets of arms.
 # --- src/game/combat_game.c
  (la armadura amortigua)	 (armor softens it)
  con el arma	 with the weapon
@@ -1206,6 +1222,7 @@ Cada día, los del campamento con oficio trabajan lo que sobra del acopio: el ca
 Cada partida nueva cambia los ríos, los lagos, las montañas y dónde están los pueblos y las guaridas.	Each new game changes the rivers, lakes, mountains and where villages and dens are.
 Cada región tiene su altura: la costa, la más baja; el altiplano, el más alto. Hace más frío cuanto más alto.	Each region has its own altitude: the coast is the lowest, the highland the highest. The higher, the colder.
 Cada región tiene su reino, sus aldeas y su capital amurallada, sus fieras y sus tribus nómadas: rivales, neutrales o amigas. Ruinas y estructuras quedan en el mapa al verlas.	Each region has its kingdom, its villages and walled capital, its beasts and its nomad tribes: rival, neutral or friendly. Ruins and structures go on the map once you see them.
+Cada reino tiene su capital amurallada y sus aldeas. Viven de sus campos: la cosecha, en otoño; en invierno, el granero. En paz y bien comidas, crecen.	Each kingdom has its walled capital and its villages. They live off their fields: the harvest in autumn; in winter, the granary. At peace and well fed, they grow.
 Cada zona del cuerpo recibe distinto daño: cabeza y cuello son letales.	Each body zone takes different damage: head and neck are lethal.
 Camina cerca del ganado para llevarlo (pastoreo).	Walk near livestock to drive them (herding).
 Cargar	Load
@@ -1213,6 +1230,7 @@ Cargar partida	Load game
 Cazar: carne, pieles, huesos, tendones y grasa, según la región y la estación (en invierno escasea; en otoño hay más grasa).	Hunting: meat, hides, bones, sinew and fat, by region and season (scarce in winter, fatter in autumn).
 Cercas y muros: marca un extremo y después el otro. Se levantan por tramos de 4 m, uno tras otro.	Fences and walls: mark one end, then the other. They go up in 4 m sections, one after another.
 Cerrar el juego	Close the game
+Ciudades y reinos	Cities and kingdoms
 Clima y peligros	Weather and hazards
 Combate cuerpo a cuerpo	Melee combat
 Con eso se fabrica (Tab, Fabricar): sillas, bridas, alforjas, aljabas, armadura laminar de cuero y el arco compuesto. Y se construye más duradero: casa de adobe, cabaña de troncos, choza de fieltro.	With that you craft (Tab, Craft): saddles, bridles, saddlebags, quivers, leather lamellar armor and the composite bow. And build to last: adobe house, log cabin, felt hut.
@@ -1236,6 +1254,8 @@ El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Col
 El mundo	The world
 El pasto sigue a las estaciones: la estepa en primavera y otoño, las montañas en verano, el desierto en invierno. Sin pasto, el ganado pasa hambre.	Grass follows the seasons: steppe in spring and autumn, mountains in summer, desert in winter. Without it, the herd goes hungry.
 El reflejo se hace en tres etapas (Tab, Fabricar): el alma de madera; el asta y el tendón con cola de hueso, que secan dos días colgados en el acopio; y la cola que lo termina.	The reflex bow takes three stages (Tab, Craft): the wooden core; horn and sinew with bone glue, which dry for two days hanging in the store; and the glue that finishes it.
+El tributo al Kanato de Hierro se paga en su capital, una vez por estación. Si una estación pasa sin pagarlo, la relación baja.	The tribute to the Iron Khanate is paid in its capital, once a season. If a season passes unpaid, your standing drops.
+En la capital, el palacio y, alrededor, la fundición, el cuartel y la carpintería. Afuera, los campos y los corrales.	In the capital, the palace and, around it, the foundry, the barracks and the carpentry. Outside, the fields and the corrals.
 En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
 En verano el pasto seco arde: los incendios corren con el viento.	In summer dry grass burns: wildfires run with the wind.
 Enter, un clic sobre la obra o la casilla de aceptar la coloca y paga el acopio; Esc cancela sin gastar nada.	Enter, a click on the building or the accept tile places it and pays from the stores; Esc cancels without spending anything.
@@ -1247,6 +1267,7 @@ Espacio saltar (o levantarse) · Q/E o arrastrar con el clic derecho: girar la c
 Espacio saltar · Q/E cámara	Space jump · Q/E camera
 Explorar: marcan en tu mapa (M) agua, pastos junto a los ríos, campamentos rivales y ciudadelas, y aprenden el camino para que los despaches allí (Mayús+Y).	Scouting: they mark water, riverside pastures, rival camps and citadels on your map (M) and learn the way there (Shift+Y dispatches).
 F despieza un cadáver, ordeña la cabra · Mayús+F sacrifica el ganado.	F butchers a carcass, milks the goat · Shift+F slaughters livestock.
+F en un campo: lo saqueas (sacos de grano, que la tribu come) y sale su guardia. Les queda rencor: con mucho, no comercian contigo.	F in a field: you plunder it (sacks of grain, which the tribe eats) and its guard marches out. They hold a grudge: a big one, and they won't trade.
 F hablar/tomar/animales	F talk/take/animals
 F hace casi todo: hablar y comerciar, tomar y recoger botín, el pozo y el horno, rescatar y atender a los animales	F does almost everything: talk and trade, take and pick up loot, the well and the oven, rescue and tend the animals
 F junto a una tribu amiga o neutral, una aldea, una capital, un caravasar o una caravana: vende lo que llevas (encima, en las alforjas, en la carreta) y compra lo suyo. Lo que abunda en la región vale menos; lo que escasea, más.	F by a friendly or neutral tribe, a village, a capital, a caravanserai or a caravan: sell what you carry (on you, in the saddlebags, in the cart) and buy their goods. What abounds in the region is cheaper; what is scarce, dearer.
@@ -1309,6 +1330,7 @@ Las pieles de depredador (lobo, oso, tigre, puma, hiena) dan escarmiento: el ene
 Lobos, perros, tigres, pumas, halcones y cuervos: debilítalos peleando, échales el lazo y dales carne (F) para domarlos.	Wolves, dogs, tigers, pumas, hawks and ravens: weaken them by fighting, lasso them and give them meat (F) to tame them.
 Los animales de la tribu comen: los herbívoros pastan solos si hay pasto; con nieve, forraje (F corta hierba alta). Los carnívoros, carne o cazan. F les da de comer; los pastores lo hacen en el campamento.	The tribe's animals eat: herbivores graze on their own if there is pasture; with snow, fodder (F cuts tall grass). Carnivores eat meat or hunt. F feeds them; herders do it at the camp.
 Los enemigos abatidos dejan una bolsa de botín: F la recoge (lo que no cabe se queda).	Fallen enemies drop a loot bag: F picks it up (what doesn't fit stays).
+Los escribas cobran impuestos para el tesoro, que paga a los soldados. Con plata de sobra contratan mercenarios; sin paga, se van.	The scribes collect taxes for the treasury, which pays the soldiers. With silver to spare they hire mercenaries; unpaid, they leave.
 Los lagos helados se cruzan, pero el hielo puede romperse.	Frozen lakes can be crossed, but the ice may break.
 Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.	Menus are icons: hover with the mouse (or pick with the arrows) and the name shows below; click or Enter to use them.
 Los pobladores y sus tareas	Villagers and their tasks
@@ -1345,6 +1367,7 @@ Salir del juego	Quit game
 Se fabrican a mano (Tab, Fabricar) con las pieles del despiece, la lana de las cabras (los pastores las esquilan) y la seda del botín.	Made by hand (Tab, Craft) from butchered pelts, goat wool (herders shear the goats) and looted silk.
 Serpientes, escorpiones, arañas y avispas envenenan: véndate (B).	Snakes, scorpions, spiders and wasps are venomous: bandage yourself (B).
 Socavones de nieve y arena movediza aparecen cada día en otro lugar.	Snow sinkholes and quicksand appear somewhere new every day.
+Su mercado (F): con el granero vacío, la comida vale más; con la armería llena, las armas, menos. Su tesoro paga lo que vendes. «La ciudad» dice cómo está.	Its market (F): with an empty granary, food costs more; with a full armory, weapons cost less. Its treasury pays for what you sell. 'The city' tells how it fares.
 Subes de nivel peleando, cazando, fabricando, construyendo y domando.	You level up by fighting, hunting, crafting, building and taming.
 Tab acciones/fabricar	Tab actions/craft
 Tab en combate: el objetivo siguiente (Mayús+Tab, el anterior), o toca al enemigo. Un anillo dorado lo marca y los golpes y las flechas van a él.	Tab in combat: the next target (Shift+Tab, the previous one), or tap the enemy. A gold ring marks it and blows and arrows go to it.
@@ -1381,27 +1404,42 @@ Cae la escolta: la carga queda en el suelo (%d de plata y más). F: tomarla.	The
 Comprar	Buy
 Compras %d × %s por %d de plata.	You buy %d × %s for %d silver.
 El caravasar	The caravanserai
+El tesoro de la ciudad no tiene plata para pagarte.	The city's treasury has no silver to pay you.
 F: comerciar con la caravana (o asaltarla)	F: trade with the caravan (or raid it)
 F: comerciar con los %s	F: trade with the %s
 F: comerciar en %s	F: trade in %s
 F: comerciar en el caravasar	F: trade at the caravanserai
 F: saquear el campamento de los %s	F: plunder the camp of the %s
+F: saquear los campos de %s	F: plunder the fields of %s
+La ciudad	The city
+La relación con el kan sube (+%d). Si una estación pasa sin tributo, baja.	Your standing with the khan rises (+%d). If a season passes without tribute, it drops.
 Llevas %d de plata. Enter o clic: compras uno; con Mayús, cinco.	You carry %d silver. Enter or click: buy one; with Shift, five.
 Llevas %d de plata. Enter o clic: vendes uno; con Mayús, todos.	You carry %d silver. Enter or click: sell one; with Shift, all.
 Llevas %d de plata; lo que cargas vale %d aquí.\nEn las tierras del %s, lo que abunda vale menos y lo que escasea, más. %s	You carry %d silver; your goods are worth %d here.\nIn the lands of the %s, what abounds is cheaper and what is scarce, dearer. %s
 Lo que llevas encima, en las alforjas, la carreta o las mochilas de la escolta: te pagan en plata.	What you carry on you, in the saddlebags, the cart or your escort's packs: they pay in silver.
 Lo suyo, a pagar en plata.	Their goods, paid in silver.
 Los %s	The %s
+Los campos de %s ya están arrasados: no queda nada que llevarse.	The fields of %s are already ravaged: nothing left to take.
 Más (%d/%d)	More (%d/%d)
+No comercian con quien les arrasó los campos.	They don't trade with whoever ravaged their fields.
+No comercian con quien no paga el tributo al kan.	They don't trade with whoever withholds tribute from the khan.
 No te alcanza: cuesta %d de plata y llevas %d.	Not enough: it costs %d silver and you carry %d.
+No te alcanza: el tributo es de %d de plata y llevas %d.	Not enough: the tribute is %d silver and you carry %d.
+Pagar el tributo (%d de plata)	Pay the tribute (%d silver)
+Pagas el tributo al %s: %d de plata. La relación sube (+%d).	You pay the tribute to the %s: %d silver. Your standing rises (+%d).
 Saqueas a los %s: %d de plata y más, a tus pies (F).	You plunder the %s: %d silver and more, at your feet (F).
 Seda, especias y vino de tierras lejanas; la escolta no les quita el ojo a los camellos.	Silk, spices and wine from distant lands; the escort never takes its eyes off the camels.
 Su escolta pelea; vencida, la carga es tuya. El reino se enterará.	Its escort fights; once beaten, the cargo is yours. The kingdom will hear of it.
+Su gente, el granero, el tesoro y la guarnición.	Its people, granary, treasury and garrison.
+Su tesoro tiene %d de plata para pagarte.	Its treasury holds %d silver to pay you.
 Te alejas: la caravana sigue su camino.	You ride off: the caravan goes on its way.
 Una caravana	A caravan
 Vender	Sell
 Vendes %d × %s por %d de plata.	You sell %d × %s for %d silver.
+Ya pagaste el de esta estación.	You already paid this season's.
 ¡Asaltas la caravana! El %s se enterará (−%d).	You raid the caravan! The %s will hear of it (−%d).
+¡Campos de %s arrasados: %d sacos de grano (F)! Nadie los defiende.	Fields of %s ravaged: %d sacks of grain (F)! No one defends them.
+¡Campos de %s arrasados: %d sacos de grano (F)! Salen %d soldados.	Fields of %s ravaged: %d sacks of grain (F)! %d soldiers march out.
 # --- src/game/travel_game.c
 %.0f m · ida y vuelta ~%.0f s · %d libres allí	%.0f m · round trip ~%.0f s · %d free there
 %.0f m · ~%.0f s · lo conocen %d de %d · riesgo %d%%	%.0f m · ~%.0f s · %d of %d know it · risk %d%%
@@ -1724,6 +1762,7 @@ Bandido	Bandit
 Captor del culto	Cult captor
 Fanático del culto	Cult fanatic
 Jinete bandido	Bandit rider
+Soldado del reino	Kingdom soldier
 # --- src/sim/economy.c
 Abrigo de lana de cabra	Goat wool coat
 Abrigo de piel de oso	Bear fur coat

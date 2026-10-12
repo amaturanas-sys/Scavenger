@@ -89,6 +89,9 @@ typedef struct {
     float ride_yaw;    // hacia donde va el caballo (el jinete mira a su blanco)
     float orbit_dir;   // sentido en que rodea al blanco (+1 o -1; 0: sin elegir)
     bool retreating;   // se aleja al galope (y tira hacia atras)
+    // Las ciudades (fase 8a, src/sim/city.h): de que asentamiento es + 1 (0: de ninguno). Si cae, ese
+    // asentamiento pierde un soldado.
+    int city;
 } Enemy;
 
 typedef struct {
@@ -198,6 +201,9 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
 // Prueba: hace aparecer enemigos cerca del jugador ("bandidos", "culto", "arqueros"),
 // o fieras por nombre ("lobos", "tigre", "jabali"...).
 // Una banda en at (bandidos, culto, arqueros, jinetes o «caravana»: la escolta de una caravana).
+// La guardia de la ciudad idx (src/sim/city.h): n soldados que salen de from hacia to, sabiendo donde
+// esta el jugador. Si caen, la ciudad los pierde (src/game/city_game.c). Devuelve cuantos salieron.
+int cb_spawn_city_guard(Combat *cb, const Terrain *t, int city, int n, Vector3 from, Vector3 to);
 void cb_spawn_party_at(Combat *cb, const char *what, Vector3 at, const Terrain *t, char *log, size_t len);
 void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
                     size_t len);

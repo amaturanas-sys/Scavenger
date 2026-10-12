@@ -269,6 +269,79 @@ static bool build_building(VoxBuilding b, VoxGrid *g) {
     }
 }
 
+// La ciudad: el palacio y los barrios, con los materiales de su region (muro, techo y adorno).
+static bool build_city(VoxBuilding b, Region r, VoxGrid *g) {
+    static const uint8_t WALL[REGION_COUNT] = { M_FELT, M_WOOD_DARK, M_STONE, M_WOOD_DARK, M_ADOBE };
+    static const uint8_t ROOF[REGION_COUNT] = { M_YELLOW, M_WOOD, M_STONE_DARK, M_TURF, M_ADOBE };
+    static const uint8_t TRIM[REGION_COUNT] = { M_RED, M_RED, M_WOOD_DARK, M_RED, M_BLUE };
+    int ri = (unsigned)r < REGION_COUNT ? (int)r : 0;
+    uint8_t wall = WALL[ri], roof = ROOF[ri], trim = TRIM[ri];
+    switch (b) {
+    case VB_PALACE: // la puerta mira a +x
+        if (!vox_init(g, 30, FOUND + 22, 26, 0.5f)) return false;
+        vox_box(g, 1, 0, 1, 26, FOUND + 1, 24, M_STONE);                // la terraza
+        vox_box(g, 27, 0, 10, 27, FOUND, 15, M_STONE_DARK);             // el escalon
+        vox_box(g, 4, FOUND + 2, 4, 21, FOUND + 9, 21, wall);           // la sala
+        vox_carve(g, 5, FOUND + 2, 5, 20, FOUND + 9, 20);
+        vox_carve(g, 21, FOUND + 2, 11, 21, FOUND + 6, 14);             // la puerta
+        for (int z = 7; z <= 18; z += 11) vox_carve(g, 21, FOUND + 5, z, 21, FOUND + 6, z + 1); // ventanas
+        for (int x = 8; x <= 16; x += 8) vox_carve(g, x, FOUND + 5, 4, x + 1, FOUND + 6, 4), vox_carve(g, x, FOUND + 5, 21, x + 1, FOUND + 6, 21);
+        for (int z = 5; z <= 20; z += 5) vox_box(g, 24, FOUND + 2, z, 24, FOUND + 9, z, trim); // el porche de columnas
+        vox_box(g, 21, FOUND + 10, 3, 25, FOUND + 10, 22, roof);
+        if (r == REGION_DESERT) { // cupula de adobe con remate azul
+            vox_box(g, 3, FOUND + 10, 3, 22, FOUND + 10, 22, M_ADOBE);
+            vox_ellipsoid(g, 12.5f, (float)(FOUND + 11), 12.5f, 7.5f, 8.0f, 7.5f, M_ADOBE, true);
+            vox_box(g, 12, FOUND + 19, 12, 13, FOUND + 20, 13, M_BLUE);
+        } else { // techo a cuatro aguas, en gradas
+            for (int k = 0; k < 7; k++) vox_box(g, 3 + k, FOUND + 10 + k, 3 + k, 22 - k, FOUND + 10 + k, 22 - k, roof);
+            vox_box(g, 12, FOUND + 17, 12, 13, FOUND + 19, 13, trim); // el remate
+        }
+        stones_mixed(g, 21u);
+        return true;
+    case VB_FORGE: // abierta al frente (+x)
+        if (!vox_init(g, 14, FOUND + 18, 12, 0.5f)) return false;
+        vox_box(g, 1, 0, 1, 10, FOUND + 5, 10, M_STONE);
+        vox_carve(g, 2, FOUND, 2, 9, FOUND + 5, 9);
+        vox_carve(g, 10, FOUND, 3, 10, FOUND + 4, 8);
+        vox_box(g, 0, FOUND + 6, 0, 11, FOUND + 6, 11, M_WOOD_DARK);    // el techo
+        vox_box(g, 2, FOUND, 2, 5, FOUND + 2, 5, M_STONE_DARK);         // el horno
+        vox_box(g, 4, FOUND + 1, 5, 5, FOUND + 1, 5, M_RED);             // la brasa
+        vox_box(g, 2, FOUND + 6, 2, 4, FOUND + 15, 4, M_STONE_DARK);    // la chimenea
+        vox_box(g, 12, FOUND, 5, 12, FOUND + 1, 6, M_STONE_DARK);       // el yunque
+        vox_ellipsoid(g, 12.0f, (float)FOUND, 9.5f, 1.6f, 1.2f, 1.6f, M_BASALT, true); // el carbon
+        stones_mixed(g, 23u);
+        return true;
+    case VB_BARRACKS: // la puerta a +x, el armero delante
+        if (!vox_init(g, 22, FOUND + 10, 10, 0.5f)) return false;
+        vox_box(g, 1, 0, 1, 19, FOUND, 8, M_STONE);
+        vox_box(g, 1, FOUND + 1, 1, 19, FOUND + 4, 8, r == REGION_DESERT ? M_ADOBE : M_WOOD_DARK);
+        vox_carve(g, 2, FOUND + 1, 2, 18, FOUND + 4, 7);
+        vox_carve(g, 19, FOUND + 1, 4, 19, FOUND + 3, 5);
+        for (int k = 0; k < 4; k++) vox_box(g, 0, FOUND + 5 + k, k, 20, FOUND + 5 + k, 9 - k, roof == M_YELLOW ? M_WOOD : roof);
+        for (int z = 1; z <= 8; z += 2) { // lanzas en el armero
+            vox_box(g, 21, FOUND, z, 21, FOUND + 4, z, M_WOOD);
+            vox_set(g, 21, FOUND + 5, z, M_STONE_DARK);
+        }
+        vox_box(g, 21, FOUND + 2, 0, 21, FOUND + 2, 9, M_WOOD_DARK);
+        stones_mixed(g, 25u);
+        return true;
+    case VB_CARPENTRY: // cobertizo abierto, troncos apilados y un caballete delante (+x)
+        if (!vox_init(g, 14, FOUND + 9, 12, 0.5f)) return false;
+        for (int x = 1; x <= 10; x += 9)
+            for (int z = 1; z <= 10; z += 9) vox_box(g, x, FOUND, z, x, FOUND + 5, z, M_WOOD_DARK);
+        vox_box(g, 0, FOUND + 6, 0, 11, FOUND + 6, 11, roof == M_YELLOW ? M_WOOD : roof);
+        vox_box(g, 3, FOUND, 3, 8, FOUND, 8, M_WOOD);
+        vox_box(g, 3, FOUND + 1, 4, 8, FOUND + 1, 7, M_WOOD_DARK);
+        vox_box(g, 3, FOUND + 2, 5, 8, FOUND + 2, 6, M_WOOD);
+        vox_box(g, 12, FOUND, 4, 12, FOUND + 1, 4, M_WOOD_DARK);
+        vox_box(g, 12, FOUND, 7, 12, FOUND + 1, 7, M_WOOD_DARK);
+        vox_box(g, 12, FOUND + 2, 3, 12, FOUND + 2, 8, M_WOOD);
+        vox_box(g, 10, FOUND, 9, 12, FOUND, 10, M_CARVE); // tablas y viruta
+        return true;
+    default: return false;
+    }
+}
+
 // ------------------------------------------------------------------ formaciones del paisaje
 static float hrand(uint32_t *s) { // azar determinista de cada variante
     *s = *s * 1664525u + 1013904223u;
@@ -398,7 +471,7 @@ static struct {
     bool tried, ok;
     Model model;
     float found_h; // m de cimiento (se dibuja hundido)
-} g_sites[SITE_SLOTS], g_builds[VB_KINDS], g_feats[VF_KINDS * VF_VARIANTS];
+} g_sites[SITE_SLOTS], g_builds[VB_KINDS], g_feats[VF_KINDS * VF_VARIANTS], g_city[VB_KINDS * REGION_COUNT];
 
 static bool to_model(VoxGrid *g, Region r, Model *out, bool refine) {
     // Estructuras y casas: el doble de resolucion (cada celda en 2x2x2, con las esquinas
@@ -460,6 +533,21 @@ void voxs_draw_building(VoxBuilding b, Vector3 at, float yaw, float scale, Color
     if (g_builds[b].ok) draw_model(g_builds[b].model, g_builds[b].found_h, at, yaw, scale, tint);
 }
 
+void voxs_draw_city(VoxBuilding b, Region region, Vector3 at, float yaw, float scale, Color tint) {
+    if ((unsigned)b >= VB_KINDS || (unsigned)region >= REGION_COUNT) return;
+    int i = (int)b * REGION_COUNT + (int)region;
+    if (!g_city[i].tried) {
+        g_city[i].tried = true;
+        VoxGrid g;
+        if (build_city(b, region, &g)) {
+            g_city[i].found_h = FOUND * g.size;
+            g_city[i].ok = to_model(&g, region, &g_city[i].model, true);
+            vox_free(&g);
+        }
+    }
+    if (g_city[i].ok) draw_model(g_city[i].model, g_city[i].found_h, at, yaw, scale, tint);
+}
+
 void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float scale, Color tint) {
     if ((unsigned)f >= VF_KINDS) return;
     int i = (int)f * VF_VARIANTS + (variant & (VF_VARIANTS - 1));
@@ -486,6 +574,7 @@ VoxBuilding voxs_region_house(Region r) {
 }
 
 void voxs_forget_gpu(void) {
+    memset(g_city, 0, sizeof(g_city));
     memset(g_feats, 0, sizeof(g_feats));
     memset(g_sites, 0, sizeof(g_sites));
     memset(g_builds, 0, sizeof(g_builds));
@@ -498,6 +587,9 @@ void voxs_unload(void) {
         if (g_builds[i].ok) UnloadModel(g_builds[i].model);
     for (int i = 0; i < VF_KINDS * VF_VARIANTS; i++)
         if (g_feats[i].ok) UnloadModel(g_feats[i].model);
+    for (int i = 0; i < VB_KINDS * REGION_COUNT; i++)
+        if (g_city[i].ok) UnloadModel(g_city[i].model);
+    memset(g_city, 0, sizeof(g_city));
     memset(g_feats, 0, sizeof(g_feats));
     memset(g_sites, 0, sizeof(g_sites));
     memset(g_builds, 0, sizeof(g_builds));

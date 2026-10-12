@@ -133,6 +133,14 @@ UpkeepReport economy_daily_upkeep(Stockpile *s, Troop *t) {
         stock_take(s, FOODS[f], take);
         r.eaten += take;
     }
+    // Despues, el grano (de los campos saqueados o del mercado): un saco da para GRAIN_SACK_RATIONS.
+    int rest = need - r.eaten, sacks = stock_count(s, GRAIN_SACK_ID);
+    if (rest > 0 && sacks > 0) {
+        int use = (rest + GRAIN_SACK_RATIONS - 1) / GRAIN_SACK_RATIONS;
+        if (use > sacks) use = sacks;
+        stock_take(s, GRAIN_SACK_ID, use);
+        r.eaten += use * GRAIN_SACK_RATIONS < rest ? use * GRAIN_SACK_RATIONS : rest;
+    }
     r.hungry = need - r.eaten;
     // Lo fresco que sobra: la mitad de la carne se seca, la leche se cuaja en queso; el resto se pierde.
     int fresh = stock_count(s, FRESH_MEAT_ID), milk = stock_count(s, MILK_ID);

@@ -404,7 +404,22 @@ La fase era grande y se partió en dos, como la 4 y la 6: las armas aquí (v0.8.
 
 **Costo:** medio.
 
-## Fase 8 — Asentamientos agrarios: economía, ciudad y ejército (v0.9.0)
+## Fase 8a — Asentamientos agrarios: ciudad y economía (v0.9.0) — hecha
+
+La fase era muy grande y se partió en dos, como la 4, la 6 y la 7: la ciudad y su economía aquí (v0.9.0), y el ejército y el asedio en la fase 8b (v0.9.1).
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **La economía, en `src/sim/city.*`** (con tests): `City` por asentamiento, en `GameActions.cities`, y un día a la vez (`city_day`). La cosecha depende de la estación, la región y la suerte de la estación (de la semilla). Pasada su tierra, más gente no da más cosecha. Hay granero, crecimiento y hambre, impuestos según los escribas, talleres de armas, soldados que se arman en la armería y mercenarios que llegan con la plata de sobra y se van sin paga. Las ciudades se arman al empezar (o al cargar una partida vieja).
+- **El trazado** (`city_layout`, de la semilla y de la gente): los campos y los corrales tienen huecos fijos, para que la ciudad crezca sin mover lo que ya había, y evitan el agua y las cuestas. Los edificios nuevos son `VB_PALACE`, `VB_FORGE`, `VB_BARRACKS` y `VB_CARPENTRY` (`VB_WORKSHOP` del plan es la carpintería), con los materiales de cada región. Los campos con surcos son cubos que siguen el terreno, no vóxeles. El dibujo dejó `world_game.c` y pasó a `src/game/city_game.c`.
+- **La relación con la tribu, la parte de la 8a:**
+  - el comercio, con los precios y el tesoro de la ciudad;
+  - el tributo: se paga en la capital del kanato, una vez por estación; si una estación pasa sin pagarlo, la relación baja;
+  - el saqueo de los campos, con la guardia que sale: `ENEMY_SOLDIER`, el soldado del reino, que es la base del ejército de la 8b. Sus bajas se descuentan de la ciudad;
+  - el rencor por ciudad, que cierra su mercado.
+  - El saqueo de las caravanas ya estaba (fase 5).
+- **Con la relación ya pasa algo:** el kanato no comercia con quien la tiene en −30 o menos. En la 8b, además, enviará expediciones de castigo.
+- **La tribu come grano:** un saco, diez raciones, después de la carne y la leche.
+- **Pruebas:** `--ir kanato|campos`, `--comerciar ciudad|campos` y `--dron <m>`. **Ayuda:** una página nueva, «Ciudades y reinos».
 
 **Lo que hay:**
 - **Asentamientos en `world.h`:** `Settlement`, con `SETTLE_VILLAGE` y `SETTLE_CAPITAL`, reino, nombre y región.
@@ -439,7 +454,22 @@ La fase era grande y se partió en dos, como la 4 y la 6: las armas aquí (v0.8.
   - el tesoro limita el ejército;
   - el carro pierde velocidad en terreno roto.
 
-**Costo:** muy alto. Conviene partirla en 8a (ciudad y economía) y 8b (ejército y asedio).
+**Costo:** muy alto. Se partió en 8a (ciudad y economía, arriba) y 8b (ejército y asedio).
+
+## Fase 8b — Ejército y asedio (v0.9.1)
+
+**Lo que hay:** las ciudades de la 8a con su economía, su tesoro y su guarnición (soldados y mercenarios, números); el soldado del reino (`ENEMY_SOLDIER`), que sale a defender los campos; la relación con el kanato (tributo y comercio) y el rencor de cada ciudad.
+
+**Trabajo:** lo que quedó de la fase 8:
+- **El ejército en el mundo**, que sale de la guarnición y del tesoro:
+  - infantería pesada con paveses (`escudo.grande.paves` ya existe), en formación cerrada que se mueve junta;
+  - arqueros y ballesteros;
+  - carros de guerra: una entidad nueva, con dos caballos, un conductor y un arquero o lancero. Rápidos en el llano y lentos en terreno roto o vadeando.
+- **Las expediciones de castigo:** si la relación con el kanato cae (o el rencor de una ciudad es mucho), sale una contra el campamento, con infantería y carros.
+- **El asedio de las ciudadelas:** con escalas, la trepa que ya existe, el fuego y el hambre. Tomar una ciudad da su taller permanente (fase 7b).
+- **Tests:** el tesoro limita el ejército que sale; el carro pierde velocidad en terreno roto; la expedición sale con la relación baja.
+
+**Costo:** alto.
 
 ---
 
@@ -458,7 +488,8 @@ La fase era grande y se partió en dos, como la 4 y la 6: las armas aquí (v0.8.
 | v0.7.2 | 6b · migración en caravana | 4, 6 |
 | v0.8.0 | 7 · armas de la estepa | 1, 5 |
 | v0.8.1 | 7b · la forja | 6b, 7 |
-| v0.9.0 | 8 · asentamientos agrarios | 3, 5, 6, 7 |
+| v0.9.0 | 8a · ciudad y economía | 3, 5, 6, 7 |
+| v0.9.1 | 8b · ejército y asedio | 8a |
 
 **Por sesión:** cada fase (o media fase, en las grandes) cabe en una sesión de trabajo, con PR, CI, versión y prueba en la tablet. La fase 0 conviene hacerla primero y sola: es corta y evita perder partidas en todas las demás.
 

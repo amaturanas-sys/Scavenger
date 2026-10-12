@@ -101,6 +101,14 @@ void save_summary(const GameState *g, FILE *o) {
     if (ga->caravan_raid)
         fprintf(o, "  asalto a la caravana %d en (%.2f, %.2f)\n", ga->caravan_raid - 1, ga->caravan_raid_at.x, ga->caravan_raid_at.z);
     if (ga->tribe_looted) fprintf(o, "  campamentos rivales saqueados %#x\n", ga->tribe_looted);
+    // v0.9.0: las ciudades y el tributo (solo si hay algo: los resumenes viejos no cambian).
+    for (int i = 0; i < SETTLEMENTS_MAX; i++) {
+        const City *c = &ga->cities[i];
+        if (c->people <= 0.0f) continue;
+        fprintf(o, "  ciudad %d gente %.3f granero %.3f tesoro %.3f armas %.3f campos %.3f descontento %.3f soldados %d mercenarios %d rencor %.3f saqueada %d campo %d\n",
+                i, c->people, c->grain, c->silver, c->arms, c->fields, c->unrest, c->soldiers, c->mercs, c->grudge, c->raided, c->raided_lot);
+    }
+    if (ga->tribute_season || ga->tribute_checked) fprintf(o, "  tributo: pagado %d revisado %d\n", ga->tribute_season, ga->tribute_checked);
     int animals = 0;
     for (int i = 0; i < ga->animal_count && i < GA_MAX_ANIMALS; i++) {
         const Animal *a = &ga->animals[i];
@@ -176,6 +184,7 @@ void save_summary(const GameState *g, FILE *o) {
         if (e->state == EN_DOWN) fprintf(o, "    abatido: despierta en %.3f s\n", e->timer);               // v0.5.1
         if (e->ride_yaw != 0.0f || e->orbit_dir != 0.0f || e->retreating) // v0.7.1: la montura y la maniobra
             fprintf(o, "    montura: rumbo %.3f giro %.0f alejandose %d\n", e->ride_yaw, e->orbit_dir, e->retreating);
+        if (e->city) fprintf(o, "    guardia de la ciudad %d\n", e->city - 1); // v0.9.0
     }
     if (cb->couch > 0.0f || cb->couch_cd > 0.0f) fprintf(o, "  lanza en ristre %.3f espera %.3f\n", cb->couch, cb->couch_cd); // v0.7.1
     int shots = 0;

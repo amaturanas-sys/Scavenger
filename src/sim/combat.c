@@ -57,6 +57,9 @@ const EnemyDef *enemy_def(EnemyKind k) {
         [ENEMY_HORSE_ARCHER] = { N_("Arquero a caballo"), "personaje.npc.bandido", false, 65.0f, 8.0f, 1.6f, 1.1f, 9.0f, 46.0f, WOUND_CUT,
                                  0.3f, "arma.distancia.arco_compuesto", { "armadura.casco.laminar_cuero", "armadura.torso.fieltro" },
                                  "arma.corta.daga_anillo", NULL, 0.0f, true }, // el arco reflejo y la daga sarmata
+        [ENEMY_SOLDIER] = { N_("Soldado del reino"), "personaje.npc.lancero", false, 85.0f, 13.0f, 2.4f, 1.3f, 4.0f, 30.0f, WOUND_CUT, 0.15f,
+                            NULL, { "armadura.casco.bronce", "armadura.torso.escamas_hierro", "armadura.faldar.laminar_cuero", "armadura.grebas.laminar_cuero" },
+                            "arma.larga.lanza", "escudo.mano.lamina", 0.8f }, // lanza, escudo de laminas y escamas: la guardia de los campos
     };
     return &defs[(unsigned)k < ENEMY_COUNT ? k : 0];
 }
@@ -122,6 +125,11 @@ int enemy_loot(EnemyKind k, bool armed, bool shield, Rng *rng, LootItem *out, in
         if (rng_float(rng) < 0.4f) add(out, &n, max, "utileria.objeto.aljaba", 1, 1.0f);
         if (rng_float(rng) < 0.5f) add(out, &n, max, "utileria.consumible.carne_seca", 2, 1.0f);
         if (rng_float(rng) < 0.12f) add(out, &n, max, "accesorio.amuleto.caballo", 1, 1.0f);
+        break;
+    case ENEMY_SOLDIER: // la paga y la racion del dia
+        if (rng_float(rng) < 0.7f) add(out, &n, max, "utileria.material.plata", 2 + rng_range(rng, 5), 1.0f);
+        if (rng_float(rng) < 0.5f) add(out, &n, max, "utileria.consumible.pan", 1 + rng_range(rng, 2), 1.0f);
+        if (rng_float(rng) < 0.2f) add(out, &n, max, "utileria.consumible.vino", 1, 1.0f);
         break;
     case ENEMY_RIDER:
         if (rng_float(rng) < 0.6f) add(out, &n, max, "utileria.consumible.carne_seca", 2, 1.0f);

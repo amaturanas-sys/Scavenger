@@ -32,6 +32,7 @@
 #include "game/travel_game.h"
 #include "game/trade_game.h"
 #include "game/forge_game.h"
+#include "game/city_game.h"
 #include "game/apparel_game.h"
 #include "game/water_game.h"
 #include "game/world_game.h"
@@ -91,6 +92,8 @@ typedef struct {
     float yaw, pitch, dist;
 } CameraRig;
 
+static float g_drone; // --dron: la camara a tantos metros (pruebas y capturas de una ciudad entera)
+
 static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const Terrain *t, float dt) {
     // Orbita: Q/E o arrastre con boton derecho (sin arrastrar, el derecho cubre); rueda para el zoom.
     if (IsKeyDown(KEY_Q)) rig->yaw += 1.8f * dt;
@@ -100,7 +103,7 @@ static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const 
         rig->yaw -= dx * 0.006f;
         rig->pitch = Clamp(rig->pitch + dy * 0.004f, 0.05f, 1.25f);
     }
-    rig->dist = Clamp(rig->dist - GetMouseWheelMove() * 0.8f, 3.0f, 16.0f);
+    rig->dist = g_drone > 0.0f ? g_drone : Clamp(rig->dist - GetMouseWheelMove() * 0.8f, 3.0f, 16.0f);
 
     Vector3 target = { p->pos.x, p->pos.y + player_eye_height(p), p->pos.z };
     Vector3 back = { -sinf(rig->yaw) * cosf(rig->pitch), sinf(rig->pitch), -cosf(rig->yaw) * cosf(rig->pitch) };
@@ -214,6 +217,7 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
         hz_new_day(&g_hazards, &g_climate, &g_actions, &g_props, t, log, log_len); // las noches heladas gastan lena
         cb_new_day(&g_combat, t); // el jugador tambien descansa y sana
         fg_new_day(&g_actions, log, log_len); // el ganado se vuelve a ordeñar y se cria
+        ct_new_day(&g_actions, terrain, t, *day, log, log_len); // la economia de las ciudades y el tributo
         dz_new_day(&g_dz, &g_props, &g_actions, t, g_climate.wetness > 0.4f, log, log_len); // desgaste y reparaciones
         if (r.rebellion) {
             const Member *m = troop_find(t, r.rebellion_leader);
@@ -466,6 +470,19 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
         float off = rv->width + 25.0f;
         x = rv->x[k] - dz / l * off, z = rv->z[k] + dx / l * off, lx = rv->x[k], lz = rv->z[k], ok = true;
     }
+    for (int i = 0; i < w->settlement_count && !ok; i++) { // el kanato (la capital de la estepa) y sus campos (src/sim/city.h)
+        const Settlement *s = &w->settlements[i];
+        if (s->kind != SETTLE_CAPITAL || s->region != REGION_STEPPE) continue;
+        CityLot lots[CITY_LOTS_MAX];
+        int n = city_layout(w, i, NULL, lots, CITY_LOTS_MAX), f = 0;
+        if (!strcmp(what, "kanato") && n > 0) { // en la plaza, mirando al palacio (lots[0]: su puerta mira a la puerta principal)
+            x = s->x + cosf(lots[0].yaw) * 24.0f, z = s->z + sinf(lots[0].yaw) * 24.0f, lx = s->x, lz = s->z, ok = true;
+        }
+        if (!strcmp(what, "campos")) { // en el primer campo, mirando a la ciudad
+            while (f < n && lots[f].kind != LOT_FIELD) f++;
+            if (f < n) x = lots[f].x + cosf(lots[f].yaw) * 3.0f, z = lots[f].z + sinf(lots[f].yaw) * 3.0f, lx = s->x, lz = s->z, ok = true;
+        }
+    }
     for (int i = 0; i < w->settlement_count && !ok; i++) {
         const Settlement *s = &w->settlements[i];
         bool want = (!strcmp(what, "capital") && s->kind == SETTLE_CAPITAL && s->region == REGION_FOREST) ||
@@ -570,7 +587,7 @@ int main(int argc, char **argv) {
     unsigned start_seed = WORLD_SEED; // --semilla N: el mundo (sin ella, cada partida nueva del menu sortea uno)
     const char *map_path = NULL;      // --mapa-mundo archivo.png: el mapa general del mundo, y sale
     const char *start_goto = NULL;    // --ir lugar: a un sitio del mundo (ver go_to)
-    const char *start_trade = NULL;   // --comerciar: raiz, vender, comprar, caravana, asaltar o saquear (src/game/trade_game.h)
+    const char *start_trade = NULL;   // --comerciar: raiz, vender, comprar, ciudad, caravana, asaltar, saquear o campos (src/game/trade_game.h)
     const char *start_ride = NULL;    // --montado: lanza, pesada, parto o agotado (src/game/combat_game.h); galopa solo hacia delante
     bool start_breed = false;         // --cria: en el campamento inicial, una yegua por parir, un semental y un potro por crecer
     bool start_forge = false;         // --forja: la forja movil, hierro, carbon y un sable fragil empuñado; pica la veta y hace puntas
@@ -628,6 +645,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--selector") && i + 1 < argc) start_picker = atoi(argv[++i]) - 1; // prueba: el selector de una casilla
         else if (!strcmp(argv[i], "--rumbo") && i + 1 < argc) start_heading = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--camara") && i + 1 < argc) start_pitch = (float)atof(argv[++i]);
+        else if (!strcmp(argv[i], "--dron") && i + 1 < argc) g_drone = (float)atof(argv[++i]); // la camara lejos, para ver una ciudad entera
         else if (!strcmp(argv[i], "--mapa-tam") && i + 1 < argc) map_size = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--orbital")) {
             start_orbital = true;
@@ -992,7 +1010,7 @@ int main(int argc, char **argv) {
             cb_test_ride(&g_combat, &g_actions, &player, &terrain, start_ride, log, sizeof(log));
         }
         if (start_trade && frame == 6) { // prueba: el comercio, una caravana, su asalto o el saqueo de un campamento rival
-            td_test(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, start_trade, log, sizeof(log));
+            td_test(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, start_trade, clock_day(world_time), log, sizeof(log));
             rig.yaw = player.yaw;
         }
         if (start_trade && !strcmp(start_trade, "asaltar") && frame == 200) // prueba: la escolta de la caravana, vencida
@@ -1139,6 +1157,7 @@ int main(int argc, char **argv) {
             if (!gallery_mode) td_update(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, world_time, dt, log, sizeof(log));
             if (!gallery_mode) ag_update(&g_actions, &troop, &g_climate, g_hazards.seed, world_time, dt, log, sizeof(log));
             if (!gallery_mode) forge_update(&terrain, &player, &g_memory, world_time, log, sizeof(log)); // las vetas de hierro que pasas
+            if (!gallery_mode) ct_update(&g_actions, &g_combat, &terrain); // las ciudades: armarlas y las bajas de su guardia
             if (!gallery_mode) wd_update(&g_actions, &g_combat, &terrain, &player, &g_memory, log, sizeof(log));
             if (!gallery_mode)
                 wg_update(&g_actions, &troop, &player, &g_props, &g_hazards, &g_climate, tribe_fire, &terrain,
@@ -1270,6 +1289,7 @@ int main(int argc, char **argv) {
         if (!gallery_mode) forge_draw_world(&terrain, player.pos); // las vetas de hierro cercanas
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime(), clock_is_night(world_time));
         if (!gallery_mode) wd_draw_world(&g_actions, &terrain, &player, (float)GetTime());
+        if (!gallery_mode) ct_draw_world(&g_actions, &terrain, &player, (float)GetTime(), world_time); // las ciudades y aldeas
         if (!gallery_mode) dg_draw_world(&terrain); // calaveras y huesos donde murio el jugador
         if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());
         if (!gallery_mode) ig_draw_world(&g_actions, &terrain, (float)GetTime());

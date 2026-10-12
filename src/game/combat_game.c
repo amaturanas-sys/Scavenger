@@ -131,6 +131,21 @@ static Enemy *spawn_enemy(Combat *cb, EnemyKind kind, Vector3 pos, const Terrain
 static void spawn_party(Combat *cb, const char *what, Vector3 c, float ang, const Terrain *t, const Vector3 *home, char *log,
                         size_t len);
 
+int cb_spawn_city_guard(Combat *cb, const Terrain *t, int city, int n, Vector3 from, Vector3 to) {
+    int made = 0;
+    for (int i = 0; i < n; i++) {
+        float a = (float)i * 2.1f;
+        Enemy *e = spawn_enemy(cb, ENEMY_SOLDIER, (Vector3){ from.x + cosf(a) * 2.0f, 0.0f, from.z + sinf(a) * 2.0f }, t);
+        if (!e) break;
+        e->city = city + 1;
+        e->home = e->wander_to = to; // van a los campos
+        e->alert = 40.0f;            // y saben quien los arraso
+        e->yaw = atan2f(to.x - e->pos.x, to.z - e->pos.z);
+        made++;
+    }
+    return made;
+}
+
 void cb_spawn_party_at(Combat *cb, const char *what, Vector3 at, const Terrain *t, char *log, size_t len) {
     spawn_party(cb, what, at, rng_float(&cb->rng) * 2.0f * PI, t, NULL, log, len);
 }
@@ -1898,6 +1913,7 @@ static void capture(Combat *cb, GameActions *ga, Troop *troop, Player *p, char *
     cb->move = MOVE_GRAPPLE + 1;
     cb->move_anim = 0.6f;
     drop_loot(cb, ga, e, p, log, len);
+    if (e->city > 0 && e->city <= SETTLEMENTS_MAX) city_lose_soldiers(&ga->cities[e->city - 1], 1); // un soldado menos en su ciudad
     e->used = false;
     snprintf(log, len, T("Atas al %s y lo tomas prisionero; lo que llevaba queda en el suelo (F)."), who);
 }
@@ -2294,6 +2310,7 @@ static BodyColors enemy_colors(EnemyKind k, bool hit) {
     else if (k == ENEMY_ARCHER) c.cloth = (Color){ 104, 98, 66, 255 };
     else if (k == ENEMY_RIDER) c.cloth = (Color){ 52, 66, 92, 255 };
     else if (k == ENEMY_HORSE_ARCHER) c.cloth = (Color){ 132, 92, 40, 255 };
+    else if (k == ENEMY_SOLDIER) c.cloth = (Color){ 150, 40, 36, 255 }, c.legs = (Color){ 70, 52, 40, 255 }; // el rojo del reino
     if (hit) c.cloth = (Color){ 236, 226, 214, 255 };
     return c;
 }
