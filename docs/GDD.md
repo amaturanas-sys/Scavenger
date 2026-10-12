@@ -204,7 +204,7 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
 ### Zonas del cuerpo, armas a distancia y armadura (implementado — `src/sim/body.*`, `src/sim/ballistics.*`, `src/sim/armor.*`)
 - **Cuerpo por zonas:** cabeza, cuello, tórax, abdomen, pelvis, brazos y antebrazos, muslos y piernas, para el jugador y todos los humanos. Cada zona multiplica el daño distinto (cuello ×2.2, cabeza ×1.8, abdomen ×1.25, tórax ×1.15, pelvis ×1, muslo ×0.85, brazo ×0.7, pierna ×0.6, antebrazo ×0.55) y sangra distinto (cuello, vientre y muslo, más). Las fieras usan las mismas zonas con nombres de animal.
 - **Modelado simple y articulado:** mientras no hay modelos, cada humano se dibuja con una cápsula por zona; brazos y piernas se balancean al andar, el brazo derecho golpea, los brazos tensan el arco, y el cuerpo se tiende al caer. La misma geometría decide dónde impacta un proyectil.
-- **Armas a distancia:** arco compuesto, arco largo, ballesta, honda y mosquete (y las especiales). La velocidad de salida sale de la **potencia del arma y la masa del proyectil** (v = √(2E/m)); en vuelo actúan la gravedad y la resistencia del aire (más fuerte para lo liviano), así cada tiro describe su curva y cae con la distancia. El daño sale de la energía que llega al blanco. Mantener `H` (o clic) tensa el arco (más tensión, más alcance y precisión) y al soltar dispara; la ballesta y el mosquete disparan al pulsar y luego recargan. Con objetivo, la mira se calcula sola; sin él, la cámara alza o baja la mira. Se dibuja la **curva** que hará el proyectil y dónde caerá. `J` baja el arma y `L` patea. Consume munición del acopio (flechas, virotes, piedras); las flechas se clavan en el suelo.
+- **Armas a distancia:** arco simple, arco compuesto reflejo, arco largo, ballesta, honda y mosquete (y las especiales). La velocidad de salida sale de la **potencia del arma y la masa del proyectil** (v = √(2E/m)); en vuelo actúan la gravedad y la resistencia del aire (más fuerte para lo liviano), así cada tiro describe su curva y cae con la distancia. El daño sale de la energía que llega al blanco. Mantener `H` (o clic) tensa el arco (más tensión, más alcance y precisión) y al soltar dispara; la ballesta y el mosquete disparan al pulsar y luego recargan. Con objetivo, la mira se calcula sola; sin él, la cámara alza o baja la mira. Se dibuja la **curva** que hará el proyectil y dónde caerá. `J` baja el arma y `L` patea. Consume munición del acopio (flechas, virotes, piedras); las flechas se clavan en el suelo.
 - **Arqueros enemigos:** guardan distancia y calculan el ángulo del tiro (con más error a mayor distancia). La escolta también puede recibir flechas.
 - **Armadura por piezas:** casco (cabeza), gorjal (cuello), coraza (tórax y abdomen), hombreras (brazos), brazales y guanteletes (antebrazos), faldar (pelvis y muslos), grebas y botas (piernas). Cada material para distinto el filo, el golpe y la punta (fieltro, cuero laminar, bronce, hierro, acero, oro; la malla para menos las flechas) y tiene su **durabilidad y dureza**: cada impacto la gasta y, rota, ya no protege. Un corte que la armadura casi detiene llega como golpe. Las piezas pesan y frenan. El campamento las remienda cada día (mucho más con herrero).
 - **Quién lleva qué:** el jugador empieza con cuero laminar; la tribu con fieltro y cuero, los grandes guerreros con escamas de hierro; los bandidos con fieltro y el culto con bronce. `P` muestra las piezas y su estado.
@@ -360,7 +360,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - ungüento: hierbas y miel (cierra las heridas, corta el veneno y devuelve algo de vida al vendar con B);
   - coraza laminar de cuero (pieles y cuerda) y botas y gorro de fieltro (fieltro);
   - talabartería (v0.7.0): cuero (2 pieles), silla de montar, brida, alforjas, aljaba y casco, brazales y grebas laminares de cuero;
-  - hueso y asta: puntas de hueso (4), flechas con punta de hueso (5), peine, piezas de arco (hueso y tendón) y el arco compuesto (madera labrada, piezas de arco y tendón);
+  - hueso y asta: puntas de hueso (4), flechas con punta de hueso (5), peine y piezas de arco (hueso y tendón). Desde la v0.8.0 el arco compuesto reflejo se hace en tres etapas (abajo, «Las armas de la estepa»);
   - grasa y leche: velas de sebo (3), antorchas (leña y grasa) y queso seco (2 de leche);
   - para las obras: fieltro (2 pieles de cabra), madera labrada (2 troncos) y adobe (barro y forraje).
 - **Forjado:** las armas y armaduras de metal piden su horno y un herrero, y las hace la tribu.
@@ -557,6 +557,31 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - rara vez un amuleto;
   - la mitad de sus piezas de armadura no rotas, con su desgaste.
 - **Recoger el botín:** F junto a la bolsa guarda lo que quepa; el resto se queda en ella. Las bolsas desaparecen a los 15 minutos.
+
+### Las armas de la estepa (v0.8.0 — `src/sim/combat.*`, `melee.*`, `riding.*`, `stealth.*`, `economy.*`)
+Cada arma tiene sus rasgos en `WeaponStats` (y los arcos, `RangedDef.saddle`):
+
+| Arma | Rasgos |
+|---|---|
+| **Arco simple** (`arco_simple`) | El de siempre (75 J). A caballo se abre el tiro como en la v0.7.1. Es el del equipo inicial y el de los arqueros bandidos. |
+| **Arco compuesto reflejo** (`arco_compuesto`) | 95 J y menos dispersión. Corto: a caballo tira como a pie, también hacia atrás (`saddle` 0). Lo llevan los arqueros a caballo. El arco largo, en cambio, sufre la montura ×1,6. |
+| **Sable de la estepa** (y los de bronce, acero y damasquinado) | Corte limpio: a caballo aprovecha la carrera entera y un 10 % más al galope, y nunca se traba. |
+| **Akinakes** | La espada corta recta de los escitas: 15 de daño, combos rápidos. |
+| **Lanza ligera** | La de siempre, a pie y a caballo. |
+| **Lanza pesada** (4 m, a dos manos) | Solo a caballo (a pie no golpea). En ristre derriba el 70-98 % (un 60 % de eso con escudo) y rompe la formación: alcanza a 2 más en la línea de la carga, a menos de 4 m uno de otro, con la mitad de fuerza cada vez. |
+| **Sagaris de pico** | El pico entra como una punta: la armadura lo para como a un proyectil (y la malla peor). Engancha escudos (golpe y parry). |
+| **Sagaris de martillo** | Contundente: si entra, aturde. Engancha escudos. |
+| **Maza** | Abate: +12 % de derribo con el golpe (30 % con el pesado) y, en la cabeza, el casco para la mitad. Los golpes contundentes no matan al abatido. |
+| **Daga de anillo** (sármata) | En la mano torpe pega como en la buena. Con ella en cualquier mano: las llaves (agarre y parry) entran con ×1,35 de fuerza; un rehén solo se suelta si te tumban o con el doble de daño; la ejecución silenciosa se oye a 3 m (no a 6). La llevan los arqueros a caballo. |
+
+- **A caballo, las demás armas:** la carrera les suma la mitad, y al galope (desde 3 m/s, del todo a 6) el hacha, la espada o la daga se traban un 25 % de las veces y la maza un 15 %: el próximo golpe tarda 0,9 s más.
+- **El arco reflejo, en tres etapas** (a mano, Tab → Fabricar):
+  1. el alma de madera (madera labrada);
+  2. el arco encolado: el alma, dos piezas de arco (asta y tendón), dos tendones y cola de hueso (huesos hervidos). Se cuelga en el acopio del campamento y seca **2 días** (`stock_dry_day`, cada día nuevo); el guardián avisa cuando está seco;
+  3. la cola de hueso y un tendón que lo terminan.
+- **Forjadas por el herrero:** akinakes, sagaris (de pico y de martillo), maza y lanza pesada en el horno de bronce; la daga de anillo, en el de acero.
+- **Dónde se consiguen:** las tribus venden el arco reflejo, el sagaris, la akinakes, la daga de anillo y la lanza pesada; las aldeas, el arco simple y la maza. Del botín: el arco simple de los arqueros y el arco reflejo y la daga de anillo de los arqueros a caballo.
+- **La forja** (forja móvil, taller, hierro de las minas y del pantano, wootz y temple) queda para la fase 7b (v0.8.1).
 
 ### Cría (implementado en v0.7.1 — `src/sim/animals.*`, en juego `src/game/fauna_game.c`)
 - **Quién se cría:** las monturas (caballo, burro, buey, camello) y el ganado (cabra, becerro). La mula y el elefante, no.

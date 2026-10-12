@@ -31,6 +31,14 @@ float stealth_sight_scale(float facing, float noise) {
 
 bool stealth_hears_kill(float dist) { return dist <= SILENT_ALERT_RANGE; }
 
+bool stealth_hears_kill_with(float dist, bool ring) { return dist <= (ring ? RING_ALERT_RANGE : SILENT_ALERT_RANGE); }
+
+bool hostage_jolted(float damage, bool knocked_down, bool staggered, bool ring) {
+    if (knocked_down) return true;
+    if (ring) return damage >= 2.0f * HOSTAGE_JOLT;
+    return staggered || damage >= HOSTAGE_JOLT;
+}
+
 bool hostage_blocks_shot(float sx, float sz, float tx, float tz, float hx, float hz) {
     float dx = tx - sx, dz = tz - sz, len2 = dx * dx + dz * dz;
     if (len2 < 1e-6f) return false;

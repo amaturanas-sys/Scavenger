@@ -120,7 +120,20 @@ A caballo (v0.7.1):
 - **Cría:** una hembra y un macho adultos de la tribu, bien comidos, en el campamento: la hembra queda preñada y a los 3 días nace la cría, que hereda el promedio de sus padres con algo de azar. A los 4 días es adulta (antes no se ensilla, ni da leche). La mula y el elefante no se crían. Los informes del guardián lo cuentan.
 - **Arqueros a caballo:** rodean a unos 24 m y tiran al galope; si te acercas a menos de 11 m, se alejan (tirando hacia atrás) y vuelven. Salen de las tribus rivales, con los jinetes y en la escolta de las caravanas.
 
-Pruebas: `--montado lanza|parto|agotado` (galopa solo hacia delante), `--cria` (con `--minuto 29.9`: nace una cría al amanecer), `--enemigos arqueros_caballo`.
+Pruebas: `--montado lanza|pesada|parto|agotado` (galopa solo hacia delante), `--cria` (con `--minuto 29.9`: nace una cría al amanecer), `--enemigos arqueros_caballo`.
+
+Las armas de la estepa (v0.8.0):
+- **Arco simple y arco compuesto reflejo:** el simple es el de siempre (el del equipo inicial). El reflejo tira más fuerte y es corto: a caballo tira como a pie, también el disparo parto. La empuñadura del arco toma el reflejo si lo tienes.
+- **El arco reflejo, en tres etapas (Tab, Fabricar):** el alma de madera; el asta y el tendón, pegados con cola de hueso (huesos hervidos), que se cuelgan a secar 2 días en el acopio del campamento (el guardián avisa cuando están secos); y la cola de hueso y un tendón que lo terminan.
+- **Sable de la estepa:** a caballo corta limpio, suma toda la carrera y nunca se traba. Las demás armas aprovechan la mitad, y al galope el hacha, la espada, la daga o la maza a veces se traban: el próximo golpe tarda más. La **akinakes**, la espada corta de los escitas, es rápida en los combos.
+- **Lanza ligera y lanza pesada:** la ligera, a pie y a caballo. La pesada (4 m, a dos manos) solo sirve a caballo: en ristre (`L`) derriba casi siempre y rompe la formación, porque sigue en los que vienen detrás en la línea de la carga.
+- **Sagaris:** el de pico perfora la armadura (la para como a una flecha); el de martillo aturde. Los dos enganchan el escudo en el golpe y en el parry.
+- **Maza:** abate más de lo que mata, y en la cabeza el casco para la mitad.
+- **Daga de anillo:** en la mano torpe pega como en la buena. Con ella en la mano, las llaves son más firmes, el rehén no se te suelta con cualquier golpe y la ejecución silenciosa solo se oye a 3 m.
+- **Dónde se consiguen:**
+  - las forja el herrero: akinakes, sagaris, maza y lanza pesada en el horno de bronce; la daga de anillo, en el de acero;
+  - las venden las tribus (arco reflejo, sagaris, akinakes, daga de anillo y lanza pesada) y las aldeas (arco simple y maza);
+  - del botín: los arqueros dejan el arco simple, y los arqueros a caballo, el arco reflejo y la daga de anillo.
 
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno y metal.
 

@@ -12,7 +12,7 @@
 
 // ---------------------------------------------------------------- acopio
 #define STOCK_MAX 64
-#define MAT_MAX 4
+#define MAT_MAX 5 // ingredientes por receta, con el { NULL, 0 } que cierra la lista
 
 typedef struct {
     char id[INV_ID_LEN];
@@ -152,6 +152,19 @@ typedef enum {
     CRAFT_FELT,
     CRAFT_WORKED_WOOD,
     CRAFT_ADOBE,
+    // Las armas de la estepa (fase 7). El arco compuesto reflejo se hace en tres etapas: el alma de
+    // madera, el asta y el tendon encolados (secan BOW_DRY_DAYS dias en el acopio) y la cola de
+    // hueso que lo termina (CRAFT_COMPOSITE_BOW).
+    CRAFT_SIMPLE_BOW,
+    CRAFT_BONE_GLUE,
+    CRAFT_BOW_CORE,
+    CRAFT_BOW_GLUED,
+    CRAFT_AKINAKES,
+    CRAFT_SAGARIS,
+    CRAFT_SAGARIS_HAMMER,
+    CRAFT_MACE,
+    CRAFT_RING_DAGGER,
+    CRAFT_HEAVY_LANCE,
     CRAFT_COUNT
 } CraftId;
 
@@ -163,6 +176,7 @@ typedef struct {
     Ingredient mats[MAT_MAX];
     float work;           // segundos de juego para un artesano
     int amount;           // cuantos salen (0 = 1)
+    bool to_stock;        // lo hecho se cuelga en el acopio del campamento (a secar), no va a la mochila
 } CraftDef;
 
 const CraftDef *craft_def(CraftId c);
@@ -170,6 +184,11 @@ const CraftDef *craft_def(CraftId c);
 // Lo que se hace a mano (ROLE_NONE) lo hace el jugador: siempre se puede.
 float craft_seconds(const CraftDef *c, const Troop *t);
 bool craft_by_hand(const CraftDef *c);
+
+// El secado: lo que se deja en el acopio de un campamento avanza una etapa cada dia (el arco
+// encolado tarda BOW_DRY_DAYS en secarse). Devuelve cuantas piezas cambiaron.
+#define BOW_DRY_DAYS 2
+int stock_dry_day(Stockpile *s);
 
 // ---------------------------------------------------------------- reparaciones
 // Lo que cuesta reparar una pieza de armadura segun su material (src/sim/armor.h):

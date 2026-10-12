@@ -99,6 +99,7 @@ static const IconRule RULES[] = {
     { "escudo.grande", ICON_PAVES }, { "escudo", ICON_ESCUDO },
     { "proyectil.flecha", ICON_FLECHA }, { "virote", ICON_VIROTE },   { "proyectil.piedra", ICON_PIEDRAS_HONDA },
     { "proyectil.bala", ICON_BALA },
+    { "sagaris_martillo", ICON_MAZA }, { "sagaris", ICON_HACHA },     { "akinakes", ICON_ESPADA },
     { "daga", ICON_DAGA },           { "cuchillo", ICON_DAGA },        { "hacha", ICON_HACHA },
     { "maza", ICON_MAZA },           { "guja", ICON_GUJA },            { "alabarda", ICON_GUJA },
     { "espada", ICON_ESPADA },       { "sable", ICON_SABLE },          { "lanza", ICON_LANZA },

@@ -39,7 +39,6 @@
 #define HOSTAGE_AHEAD 0.55f    // m delante del jugador
 #define HOSTAGE_SPEED 0.55f    // el jugador, con un rehen, va mas lento
 #define HOSTAGE_KEEP_AWAY 4.5f // m: los suyos no se acercan mas
-#define HOSTAGE_JOLT 12.0f     // un golpe que pasa de esto suelta al rehen
 #define DESPAWN_DIST 160.0f
 #define COMPANION_DAMAGE 10.0f
 #define COMPANION_COOLDOWN 1.2f
@@ -357,7 +356,8 @@ static void release_hostage(Combat *cb, const Player *p, bool push, char *log, s
 
 // K con la espalda ganada (o con el rehen): lo mata en el acto. Por la espalda, solo lo oyen los que
 // estan a menos de SILENT_ALERT_RANGE m; al rehen lo ven ejecutar todos los suyos que miran.
-static void player_backstab(Combat *cb, Player *p, Enemy *e, char *log, size_t len) {
+// ring: con la daga de anillo en la mano, la ejecucion se oye aun menos (src/sim/stealth.h).
+static void player_backstab(Combat *cb, Player *p, Enemy *e, bool ring, char *log, size_t len) {
     bool hostage = e->state == EN_HOSTAGE;
     if (hostage) cb->hostage = 0;
     p->yaw = atan2f(e->pos.x - p->pos.x, e->pos.z - p->pos.z);
@@ -374,7 +374,7 @@ static void player_backstab(Combat *cb, Player *p, Enemy *e, char *log, size_t l
         Enemy *o = &cb->enemies[i];
         if (!standing(o)) continue;
         float d = dist2(o->pos, e->pos);
-        if (stealth_hears_kill(d) || (hostage && same_side(o->kind, e->kind) && d < 25.0f)) o->alert = 15.0f, o->shown = 6.0f, heard++;
+        if (stealth_hears_kill_with(d, ring) || (hostage && same_side(o->kind, e->kind) && d < 25.0f)) o->alert = 15.0f, o->shown = 6.0f, heard++;
     }
     char who[48];
     lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
@@ -425,8 +425,14 @@ static bool player_has_shield(const GameActions *ga) {
     return !ga->hands.sheathed && ga->hands.left.kind == INV_HANDS_SHIELD && ga->hands.left.id[0];
 }
 
+// La daga de anillo en alguna mano (desenvainada): llaves, rehen y ejecucion (src/sim/stealth.h).
+static bool player_ring(const GameActions *ga) {
+    return !ga->hands.sheathed && (weapon_stats(ga->hands.right.id).ring || weapon_stats(ga->hands.left.id).ring);
+}
+
 static Fighter fighter_player(const Combat *cb, const Player *p, const GameActions *ga, Vector3 from) {
     Fighter f = { 0 };
+    f.ring = player_ring(ga);
     f.shield = player_has_shield(ga);
     f.blocking = cb->blocking || cb->charge_timer > 0.0f;
     f.down = cb->player.down || cb->knock > 0.0f;
@@ -457,6 +463,7 @@ static Fighter fighter_enemy(const Enemy *e, Vector3 from) {
     f.strength = wd > 0.0f ? def->damage / wd : 1.0f;
     f.weight = armor_kg(&e->armor) + (e->mounted ? MOUNT_WEIGHT : 0.0f);
     f.health = fmaxf(0.0f, e->h.hp / e->h.hp_max);
+    f.ring = e->armed && weapon_stats(def->weapon).ring;
     return f;
 }
 
@@ -525,7 +532,8 @@ static void hit_enemy(Combat *cb, Enemy *e, MeleeMove m, const MeleeResult *r, P
     float absorbed = 0.0f;
     bool broke = false;
     int wi = -1;
-    if (r->damage > 0.5f) wi = combat_apply_hit(&e->h, &e->armor, &cb->rng, r->damage, r->wound, PART_RANDOM, false, &absorbed, &broke);
+    if (r->damage > 0.5f)
+        wi = combat_apply_strike(&e->h, &e->armor, &cb->rng, r->damage, r->wound, PART_RANDOM, r->pierce, r->crush, &absorbed, &broke);
     if (r->landed) e->hit_anim = 0.3f, e->shown = 6.0f;
     if (r->staggered) e->stagger = STAGGER_SECONDS, e->blocking = false;
     if (r->knocked_down) e->knock = KNOCKDOWN_SECONDS, e->blocking = false;
@@ -563,12 +571,12 @@ static void hit_player(Combat *cb, GameActions *ga, MeleeMove m, const MeleeResu
     bool broke = false;
     int wi = -1;
     if (r->damage > 0.5f)
-        wi = combat_apply_hit(&cb->player, &cb->armor, &cb->rng, r->damage, r->wound, PART_RANDOM, false, &absorbed, &broke);
+        wi = combat_apply_strike(&cb->player, &cb->armor, &cb->rng, r->damage, r->wound, PART_RANDOM, r->pierce, r->crush, &absorbed, &broke);
     if (r->landed) cb->hit_anim = 0.3f;
     if (r->staggered) cb->stagger = STAGGER_SECONDS;
     if (r->knocked_down) cb->knock = KNOCKDOWN_SECONDS, cb->charge_timer = 0.0f;
     if (r->guard_cost > 0.0f) player_stamina_spend(r->guard_cost); // cubrirse cansa (con el arma, mas)
-    if (r->damage >= HOSTAGE_JOLT || r->knocked_down || r->staggered) g_jolt = true; // un golpe fuerte suelta al rehen
+    if (hostage_jolted(r->damage, r->knocked_down, r->staggered, player_ring(ga))) g_jolt = true; // un golpe fuerte suelta al rehen
     bool unhorsed = r->knocked_down && ga->mounted >= 0;
     if (unhorsed) ga->animals[ga->mounted].ridden = false, ga->mounted = -1; // te tira del caballo
     // Lo que se suelta queda en la mano de la tribu: la barra rapida (1 a 9) lo vuelve a empuñar.
@@ -589,7 +597,8 @@ static void hit_player(Combat *cb, GameActions *ga, MeleeMove m, const MeleeResu
 }
 
 static void hit_member(Combat *cb, GameActions *ga, Troop *troop, Member *m, const MeleeResult *r, char *log, size_t len) {
-    if (r->damage > 0.5f) combat_apply_hit(&m->health, &m->armor, &cb->rng, r->damage, r->wound, PART_RANDOM, false, NULL, NULL);
+    if (r->damage > 0.5f)
+        combat_apply_strike(&m->health, &m->armor, &cb->rng, r->damage, r->wound, PART_RANDOM, r->pierce, r->crush, NULL, NULL);
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
         Npc *n = &ga->npcs[i];
         if (n->member_id != m->id) continue;
@@ -693,7 +702,15 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     const MoveDef *md = move_def(m);
     float reach = md->reach > 0.0f ? md->reach : w.reach;
     bool riding = ga->mounted >= 0;
-    float momentum = riding ? mounted_momentum(cb->pl_speed) : 1.0f; // la inercia del galope
+    bool strike = m == MOVE_LIGHT || m == MOVE_HEAVY;
+    if (strike && w.mounted_only && !riding) { // la lanza pesada: cuatro metros de asta, solo desde la silla
+        snprintf(log, len, "%s", T("La lanza pesada solo sirve a caballo: monta (R) y ponla en ristre (L)."));
+        cb->attack_cd = 0.4f;
+        return;
+    }
+    // La inercia del galope: el sable la aprovecha entera, las demas, la mitad (src/sim/combat.h).
+    float momentum = riding ? weapon_mounted_scale(weapon, cb->pl_speed) : 1.0f;
+    float hand = off && !w.ring ? 0.8f : 1.0f; // la mano torpe; la daga de anillo esta hecha para ella
     if (riding) reach += MOUNT_REACH;
     cb->attack_cd = m == MOVE_LIGHT ? melee_combo_cooldown(weapon, w.cooldown, step) : m == MOVE_HEAVY ? w.cooldown * 1.6f
                                                                                                      : md->recovery;
@@ -710,7 +727,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     int an = m == MOVE_GRAPPLE || m == MOVE_HOOK || m == MOVE_SHIELD_BASH ? -1 : fg_melee_target(ga, t, p->pos, p->yaw, reach, &ad);
     if (an >= 0 && (!e || ad < ed)) {
         float base = m == MOVE_LIGHT || m == MOVE_HEAVY ? w.damage * (m == MOVE_HEAVY ? 1.8f : melee_combo_scale(step)) : md->damage;
-        float dmg = combat_damage(base, (off ? 0.8f : 1.0f) * momentum * (1.0f + ig_stat(ga, STAT_MELEE)) * (1.0f - 0.35f * wg_clumsy(ga)), health_attack_scale(&cb->player),
+        float dmg = combat_damage(base, hand * momentum * (1.0f + ig_stat(ga, STAT_MELEE)) * (1.0f - 0.35f * wg_clumsy(ga)), health_attack_scale(&cb->player),
                                   false, &cb->rng);
         fg_hurt(ga, an, dmg, m == MOVE_LIGHT || m == MOVE_HEAVY ? w.wound : WOUND_BRUISE, PART_RANDOM, 0, log, len);
         return;
@@ -725,7 +742,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
         return;
     }
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
-    me.strength *= health_attack_scale(&cb->player) * (off ? 0.8f : 1.0f);
+    me.strength *= health_attack_scale(&cb->player) * hand;
     if (m == MOVE_GRAPPLE) me.strength *= 1.0f + ig_stat(ga, STAT_GRAPPLE_POWER); // amuletos del tigre y del oso
     me.strength *= momentum * (1.0f + ig_stat(ga, STAT_MELEE)) * (1.0f - 0.35f * wg_clumsy(ga)); // tatuajes, joyas, el aullido; borracho, menos
     MeleeResult r = melee_resolve(m, &me, &foe, weapon, step, &cb->rng);
@@ -734,6 +751,14 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
         r.knocked_down = true;
     if (r.attacker_staggered) cb->stagger = STAGGER_SECONDS;
     hit_enemy(cb, e, m, &r, props, 0, log, len);
+    // Al galope, el hacha o la espada se traban en el golpe y se pierde el ritmo; el sable corta limpio.
+    if (riding && strike && r.landed && !r.blocked && e->state != EN_DEAD && rng_float(&cb->rng) < weapon_snag_chance(weapon, cb->pl_speed)) {
+        const InvItem *it = inventory_find(ga->inv, weapon);
+        char what[48];
+        cb->attack_cd += SNAG_SECONDS;
+        snprintf(log, len, T("Tu %s se traba en el golpe: pierdes el ritmo (el sable corta limpio)."),
+                 lower_name(it ? T(it->name) : T("Arma"), what, sizeof(what)));
+    }
 }
 
 // Quien recibe el golpe de un enemigo: el jugador (target 0) o un integrante de la escolta.
@@ -792,7 +817,7 @@ static void enemy_strike(Combat *cb, Enemy *e, Player *p, GameActions *ga, Troop
     }
     const char *weapon = enemy_weapon(e);
     if (mv == MOVE_LIGHT) e->combo = e->combo % 3 + 1;
-    me.strength *= health_attack_scale(&e->h) * (e->mounted ? mounted_momentum(e->speed) : 1.0f);
+    me.strength *= health_attack_scale(&e->h) * (e->mounted ? weapon_mounted_scale(weapon, e->speed) : 1.0f);
     MeleeResult r = melee_resolve(mv, &me, &foe, weapon, mv == MOVE_LIGHT ? e->combo : 1, &cb->rng);
     // Montado: a veces el golpe se lo lleva el caballo.
     if (!m && ga->mounted >= 0 && r.damage > 0.5f && !r.blocked && rng_float(&cb->rng) < 0.35f) {
@@ -1036,7 +1061,7 @@ static void shot_hits_player(Combat *cb, Shot *s, int part, Player *p, const Gam
     bool broke = false;
     int wi = combat_apply_hit(&cb->player, &cb->armor, &cb->rng, dmg, pd->wound, part, true, &absorbed, &broke);
     cb->hit_anim = 0.3f;
-    if (dmg >= HOSTAGE_JOLT) g_jolt = true; // un flechazo fuerte suelta al rehen
+    if (hostage_jolted(dmg, false, false, player_ring(ga))) g_jolt = true; // un flechazo fuerte suelta al rehen
     char d[128], what[32];
     describe_hit(&cb->player, wi, absorbed, broke, d, sizeof(d));
     snprintf(log, len, T("¡Una %s te alcanza! %s."), lower_name(T(pd->name), what, sizeof(what)), d);
@@ -1216,10 +1241,11 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
         aim_at_target(cb, p, rd, charge);
         ig_use(ga, props, p, ammo, 1);
         // Punteria (amuleto del aguila): menos dispersion. A caballo, la carrera la abre, y mas hacia
-        // atras (el disparo parto); la monta la corrige (src/sim/riding.h). Borracho, torpe.
+        // atras (el disparo parto); la monta la corrige y el arco compuesto reflejo no la sufre
+        // (src/sim/riding.h). Borracho, torpe.
         bool riding = ga->mounted >= 0;
         float rel = riding ? p->yaw - ga->animals[ga->mounted].yaw : 0.0f; // lo que se aparta del rumbo del caballo
-        float steady = riding ? mounted_shot_spread(cb->pl_speed, rel, ig_stat(ga, STAT_RIDING), ig_stat(ga, STAT_ARCHERY))
+        float steady = riding ? mounted_bow_spread(cb->pl_speed, rel, ig_stat(ga, STAT_RIDING), ig_stat(ga, STAT_ARCHERY), rd->saddle)
                               : 1.0f - 0.6f * fminf(1.0f, ig_stat(ga, STAT_ARCHERY));
         steady *= 1.0f + 1.5f * wg_clumsy(ga);
         Shot *sh = fire(cb, rd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0, cb->arrow_lit, steady);
@@ -1379,7 +1405,8 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
                     Vector3 aim = { tpos.x, tpos.y + 1.2f, tpos.z };
                     float pitch;
                     if (ballistic_solve(rd->projectile, to_v3(from), to_v3(aim), ranged_muzzle_speed(rd, 1.0f), &pitch)) {
-                        // Jinetes de toda la vida: tiran bien al galope, peor hacia atras y de lejos.
+                        // Jinetes de toda la vida: tiran bien al galope, peor hacia atras y de lejos (su punteria
+                        // es la de la IA: no depende del arco, src/sim/riding.h).
                         float err = (0.015f + best * 0.0008f) * mounted_shot_spread(e->speed, e->yaw - e->ride_yaw, 0.7f, 0.2f) *
                                     (hold_back ? 2.5f : 1.0f);
                         fire(cb, rd, from, e->yaw + (rng_float(&cb->rng) - 0.5f) * err * 2.0f, pitch + (rng_float(&cb->rng) - 0.5f) * err,
@@ -1908,7 +1935,7 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, Troop *tr
     Enemy *hostage = hostage_of(cb);
     if (hostage) {
         if (ready && k_press) {
-            player_backstab(cb, p, hostage, log, len);
+            player_backstab(cb, p, hostage, player_ring(ga), log, len);
             return;
         }
         if (ready && l_press) {
@@ -1925,7 +1952,7 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, Troop *tr
         // K con la espalda ganada: ejecucion silenciosa.
         Enemy *b = back_open(cb, p);
         if (b) {
-            player_backstab(cb, p, b, log, len);
+            player_backstab(cb, p, b, player_ring(ga), log, len);
             return;
         }
     }
@@ -2010,8 +2037,25 @@ static void trample(Combat *cb, Player *p, GameActions *ga, Props *props, char *
     cb->trample_cd = 1.2f;
 }
 
+// El siguiente en la linea de la carga: de pie, delante de from (en el rumbo) a menos de depth m,
+// y que no este en hit (los ya alcanzados).
+static Enemy *next_in_line(Combat *cb, Vector3 from, float heading, float depth, Enemy *const *hit, int nhit) {
+    Enemy *best = NULL;
+    float bd = depth;
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) {
+        Enemy *e = &cb->enemies[i];
+        bool done = false;
+        for (int j = 0; j < nhit; j++) done |= hit[j] == e;
+        if (done || !standing(e)) continue;
+        float d = dist2(from, e->pos);
+        if (d < bd && facing_to(from, heading, e->pos) > 0.5f) bd = d, best = e;
+    }
+    return best;
+}
+
 // La lanza en ristre (L a caballo): al galope, el primero que este delante del caballo recibe el
 // golpe con todo el peso de la carrera (src/sim/riding.h); casi siempre cae. Un golpe por carga.
+// La lanza pesada derriba mas y rompe la formacion: sigue en los que esten detras, en la linea.
 static void lance_charge(Combat *cb, Player *p, GameActions *ga, const Terrain *t, Props *props, char *log, size_t len) {
     float speed = cb->pl_speed;
     if (speed < LANCE_MIN_SPEED) return;
@@ -2023,6 +2067,7 @@ static void lance_charge(Combat *cb, Player *p, GameActions *ga, const Terrain *
     int an = fg_melee_target(ga, t, p->pos, heading, reach, &ad);
     if (!e && an < 0) return;
     cb->couch = 0.0f, cb->couch_cd = 2.0f, cb->attack_cd = 0.8f;
+    cb->trample_cd = fmaxf(cb->trample_cd, 1.2f); // el golpe ya fue la lanza: el caballo no arrolla enseguida
     cb->move = MOVE_HEAVY + 1, cb->move_anim = 0.45f, cb->attack_anim = 0.4f;
     ga->pl_spear = true;
     if (an >= 0 && (!e || ad < d)) { // un animal: la caza a caballo
@@ -2032,12 +2077,28 @@ static void lance_charge(Combat *cb, Player *p, GameActions *ga, const Terrain *
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
     me.strength *= lance_charge_damage(1.0f, speed) * health_attack_scale(&cb->player) * (1.0f + ig_stat(ga, STAT_MELEE));
     MeleeResult r = melee_resolve(MOVE_HEAVY, &me, &foe, weapon, 1, &cb->rng);
-    if (r.landed) r.knocked_down = rng_float(&cb->rng) < lance_charge_knock(speed, r.blocked);
+    bool heavy = w.mounted_only; // la lanza pesada
+    if (r.landed) r.knocked_down = rng_float(&cb->rng) < (heavy ? heavy_lance_knock(speed, r.blocked) : lance_charge_knock(speed, r.blocked));
     char who[48];
     lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
     hit_enemy(cb, e, MOVE_HEAVY, &r, props, 0, NULL, 0);
     if (e->target < 0) e->target = 0;
-    if (!r.landed) snprintf(log, len, T("El %s esquiva la lanza."), who);
+    // Rompe la formacion: la carga sigue de largo, cada vez con la mitad de fuerza.
+    Enemy *hit[1 + HEAVY_LANCE_BREAK] = { e };
+    int nhit = 1;
+    for (int j = 0; heavy && r.landed && !r.blocked && j < HEAVY_LANCE_BREAK; j++) {
+        Enemy *n = next_in_line(cb, hit[nhit - 1]->pos, heading, HEAVY_LANCE_DEPTH, hit, nhit);
+        if (!n) break;
+        Fighter me2 = me, foe2 = fighter_enemy(n, p->pos);
+        me2.strength *= 1.0f / (float)(2 << j); // la mitad, la cuarta parte
+        MeleeResult r2 = melee_resolve(MOVE_HEAVY, &me2, &foe2, weapon, 1, &cb->rng);
+        if (r2.landed) r2.knocked_down = rng_float(&cb->rng) < heavy_lance_knock(speed, r2.blocked) * (0.8f - 0.2f * (float)j);
+        hit_enemy(cb, n, MOVE_HEAVY, &r2, props, 0, NULL, 0);
+        if (n->target < 0) n->target = 0;
+        hit[nhit++] = n;
+    }
+    if (nhit > 1) snprintf(log, len, T("¡La lanza pesada rompe la formación! Alcanzas a %d de una sola carga."), nhit);
+    else if (!r.landed) snprintf(log, len, T("El %s esquiva la lanza."), who);
     else if (e->state == EN_DEAD) snprintf(log, len, T("¡Carga con lanza! Atraviesas al %s. Deja botín (F)."), who);
     else if (r.blocked && !r.knocked_down) snprintf(log, len, T("El %s para la lanza con el escudo."), who);
     else if (r.knocked_down) snprintf(log, len, T("¡Carga con lanza! El %s cae al suelo."), who);
@@ -2053,12 +2114,15 @@ bool cb_test_ride(Combat *cb, GameActions *ga, Player *p, const Terrain *t, cons
     a->state = ANIMAL_SADDLED, a->ridden = true, a->yaw = p->yaw;
     ga->mounted = i;
     Vector3 f = { sinf(p->yaw), 0.0f, cosf(p->yaw) };
-    bool lance = !strcmp(what, "lanza"), parthian = !strcmp(what, "parto");
+    bool heavy = !strcmp(what, "pesada"), lance = heavy || !strcmp(what, "lanza"), parthian = !strcmp(what, "parto");
     if (lance || parthian) {
-        hands_equip(&ga->hands, inventory_find(ga->inv, lance ? "arma.larga.lanza" : "arma.distancia.arco_compuesto"), HAND_RIGHT);
+        const char *id = heavy ? "arma.larga.lanza_pesada" : lance ? "arma.larga.lanza" : "arma.distancia.arco_compuesto";
+        hands_equip(&ga->hands, inventory_find(ga->inv, id), HAND_RIGHT);
         ga->hands.sheathed = false;
         float k = lance ? 18.0f : -7.0f; // delante, o detras (a tiro: el objetivo se pierde a 25 m)
         Enemy *e = spawn_enemy(cb, ENEMY_BANDIT, (Vector3){ p->pos.x + f.x * k, 0.0f, p->pos.z + f.z * k }, t);
+        for (int j = 1; heavy && j <= HEAVY_LANCE_BREAK; j++) // pesada: una fila de bandidos, uno tras otro
+            spawn_enemy(cb, ENEMY_BANDIT, (Vector3){ p->pos.x + f.x * (k + 2.2f * (float)j), 0.0f, p->pos.z + f.z * (k + 2.2f * (float)j) }, t);
         if (e && parthian) cb->target_lock = (int)(e - cb->enemies) + 1;
         if (lance) cb->couch = LANCE_COUCH_SECONDS;
         else g_test_hold = 16;

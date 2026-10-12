@@ -20,6 +20,9 @@
 // lo que se aparta el tiro del rumbo del caballo (rad); riding y archery en [0, 1] (amuletos,
 // tatuajes y joyas). Quieto y hacia delante da lo mismo que a pie.
 float mounted_shot_spread(float speed, float rel_yaw, float riding, float archery);
+// Lo mismo con el arco en la mano: saddle (RangedDef, src/sim/ballistics.h) escala lo que abre la
+// montura. Con 0 (el arco compuesto reflejo) a caballo se tira como a pie; con 1, mounted_shot_spread.
+float mounted_bow_spread(float speed, float rel_yaw, float riding, float archery, float saddle);
 // ¿Es un disparo parto? (al galope y hacia atras)
 bool shot_is_parthian(float speed, float rel_yaw);
 
@@ -30,6 +33,12 @@ bool shot_is_parthian(float speed, float rel_yaw);
 float lance_charge_damage(float base, float speed);
 // La probabilidad de derribar: alta al galope; un escudo que la para la baja mucho.
 float lance_charge_knock(float speed, bool blocked);
+// La lanza pesada (4 m, solo a caballo) derriba aun mas y rompe la formacion: tras el primero,
+// alcanza a HEAVY_LANCE_BREAK mas que esten en la linea de la carga (a menos de HEAVY_LANCE_DEPTH m
+// detras de el), cada uno con la mitad de la fuerza que el anterior.
+#define HEAVY_LANCE_BREAK 2
+#define HEAVY_LANCE_DEPTH 4.0f
+float heavy_lance_knock(float speed, bool blocked);
 
 // ---------------------------------------------------------------- el cansancio del caballo
 #define MOUNT_GALLOP_COST (1.0f / 45.0f) // ~45 s de galope tendido

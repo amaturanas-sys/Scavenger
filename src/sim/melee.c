@@ -24,11 +24,11 @@ const MoveDef *move_def(MeleeMove m) { return &MOVES[(unsigned)m < MOVE_COUNT ? 
 static bool has(const char *id, const char *what) { return id && strstr(id, what); }
 
 bool weapon_can_hook(const char *id) {
-    return has(id, "hacha") || has(id, "guja") || has(id, "alabarda") || has(id, "gancho") || has(id, "bisarma");
+    return has(id, "hacha") || has(id, "guja") || has(id, "alabarda") || has(id, "gancho") || has(id, "bisarma") || has(id, "sagaris");
 }
 
 bool weapon_is_short(const char *id) {
-    return has(id, "daga") || has(id, "cuchillo") || has(id, "sable") || has(id, "maza") || !id || !id[0];
+    return has(id, "daga") || has(id, "cuchillo") || has(id, "sable") || has(id, "maza") || has(id, "akinakes") || !id || !id[0];
 }
 
 bool weapon_is_long(const char *id) {
@@ -65,6 +65,7 @@ MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, c
         WeaponStats w = weapon_stats(weapon);
         bool heavy = m == MOVE_HEAVY;
         r.wound = w.wound;
+        r.pierce = w.pierce, r.crush = w.crush;
         float dmg = w.damage * att->strength * (heavy ? 1.8f : melee_combo_scale(combo_step));
         r.landed = true;
         if (shield_guard) {
@@ -84,6 +85,9 @@ MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, c
             // El remate de un arma larga puede tumbar.
             if (!heavy && combo_step >= 3 && weapon_is_long(weapon) && roll(rng) < 0.3f / mass) r.knocked_down = true;
             if (heavy && roll(rng) < 0.2f / mass) r.knocked_down = true;
+            // La maza abate mas de lo que mata; el martillo aturde.
+            if (w.crush && !r.knocked_down && roll(rng) < (heavy ? 0.3f : 0.12f) / mass) r.knocked_down = true;
+            if (w.stun) r.staggered = true;
         }
         break;
     }
@@ -125,7 +129,7 @@ MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, c
     case MOVE_GRAPPLE: {
         // Que agarra: el escudo con el que se cubre, el brazo con el que golpea, o una extremidad.
         r.grab = def->shield && def->blocking ? GRAB_SHIELD : def->attacking && def->armed ? GRAB_WEAPON_ARM : GRAB_LIMB;
-        float a = att->strength * (0.6f + 0.6f * roll(rng)) * (0.5f + 0.5f * att->health);
+        float a = att->strength * (0.6f + 0.6f * roll(rng)) * (0.5f + 0.5f * att->health) * (att->ring ? RING_GRAPPLE : 1.0f);
         float d = def->strength * (0.5f + 0.6f * roll(rng)) * (0.4f + 0.6f * def->health) * (1.0f + def->weight / 80.0f);
         if (def->staggered) d *= 0.6f;
         if (!def->down && a <= d) { // se zafa: el que agarra queda expuesto
@@ -182,7 +186,7 @@ MeleeResult melee_parry(ParryKind k, const Fighter *me, const Fighter *foe, Rng 
         else r.disarmed = foe->armed && roll(rng) < 0.5f;
         break;
     case PARRY_GRAPPLE: { // le toma el brazo armado en mitad del golpe: casi siempre entra
-        float a = me->strength * (0.9f + 0.6f * roll(rng)) * (0.5f + 0.5f * me->health);
+        float a = me->strength * (0.9f + 0.6f * roll(rng)) * (0.5f + 0.5f * me->health) * (me->ring ? RING_GRAPPLE : 1.0f);
         float d = foe->strength * (0.3f + 0.4f * roll(rng)) * (0.4f + 0.6f * foe->health) * (1.0f + foe->weight / 80.0f);
         if (a <= d) { // se zafa: el que para queda expuesto
             r.landed = false;

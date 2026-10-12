@@ -16,13 +16,14 @@ const ProjectileDef *projectile_def(ProjectileKind k) {
 
 const RangedDef *ranged_def(const char *id) {
     static const RangedDef defs[] = {
-        { "arma.distancia.arco_compuesto", PROJ_ARROW, 75.0f, 0.8f, 0.6f, 0.012f },
-        { "arma.distancia.arco_largo", PROJ_ARROW, 95.0f, 1.0f, 0.7f, 0.010f },
-        { "arma.especial.arco_cuerno", PROJ_ARROW, 105.0f, 0.9f, 0.6f, 0.008f },
-        { "arma.distancia.ballesta", PROJ_BOLT, 130.0f, 0.0f, 3.0f, 0.008f },
-        { "arma.especial.ballesta_repeticion", PROJ_BOLT, 70.0f, 0.0f, 0.7f, 0.020f },
-        { "arma.distancia.honda", PROJ_STONE, 40.0f, 0.6f, 0.9f, 0.025f },
-        { "arma.distancia.mosquete", PROJ_BALL, 1500.0f, 0.0f, 8.0f, 0.020f },
+        { "arma.distancia.arco_simple", PROJ_ARROW, 75.0f, 0.8f, 0.6f, 0.012f, 1.0f },
+        { "arma.distancia.arco_compuesto", PROJ_ARROW, 95.0f, 0.8f, 0.6f, 0.010f, 0.0f }, // reflejo: asta, madera y tendon
+        { "arma.distancia.arco_largo", PROJ_ARROW, 95.0f, 1.0f, 0.7f, 0.010f, 1.6f },
+        { "arma.especial.arco_cuerno", PROJ_ARROW, 105.0f, 0.9f, 0.6f, 0.008f, 0.0f },
+        { "arma.distancia.ballesta", PROJ_BOLT, 130.0f, 0.0f, 3.0f, 0.008f, 1.0f },
+        { "arma.especial.ballesta_repeticion", PROJ_BOLT, 70.0f, 0.0f, 0.7f, 0.020f, 1.0f },
+        { "arma.distancia.honda", PROJ_STONE, 40.0f, 0.6f, 0.9f, 0.025f, 1.0f },
+        { "arma.distancia.mosquete", PROJ_BALL, 1500.0f, 0.0f, 8.0f, 0.020f, 1.0f },
     };
     if (!id || !id[0]) return NULL;
     for (size_t i = 0; i < sizeof(defs) / sizeof(defs[0]); i++)

@@ -6,14 +6,19 @@ static float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ?
 static float wrap_angle(float a) { return atan2f(sinf(a), cosf(a)); }
 
 // ---------------------------------------------------------------- arqueria montada
-float mounted_shot_spread(float speed, float rel_yaw, float riding, float archery) {
+float mounted_bow_spread(float speed, float rel_yaw, float riding, float archery, float saddle) {
     riding = clampf(riding, 0.0f, 1.0f), archery = clampf(archery, 0.0f, 1.0f);
-    speed = clampf(speed, 0.0f, 12.0f);
-    float s = 1.0f - 0.6f * archery;                         // la punteria (amuleto del aguila...)
-    s *= 1.0f + speed / RIDE_GALLOP * (1.0f - 0.6f * riding); // la carrera; la monta la corrige
+    speed = clampf(speed, 0.0f, 12.0f), saddle = clampf(saddle, 0.0f, 2.0f);
+    float s = 1.0f - 0.6f * archery;                                  // la punteria (amuleto del aguila...)
+    s *= 1.0f + saddle * speed / RIDE_GALLOP * (1.0f - 0.6f * riding); // la carrera; la monta la corrige
     // Hacia atras, girado en la montura: cuanto mas rapido, mas cuesta (quieto, se gira el caballo).
-    if (fabsf(wrap_angle(rel_yaw)) > PARTHIAN_ANGLE) s *= 1.0f + 0.4f * fminf(1.0f, speed / RIDE_GALLOP) * (1.0f - 0.5f * riding);
+    if (fabsf(wrap_angle(rel_yaw)) > PARTHIAN_ANGLE)
+        s *= 1.0f + saddle * 0.4f * fminf(1.0f, speed / RIDE_GALLOP) * (1.0f - 0.5f * riding);
     return s;
+}
+
+float mounted_shot_spread(float speed, float rel_yaw, float riding, float archery) {
+    return mounted_bow_spread(speed, rel_yaw, riding, archery, 1.0f);
 }
 
 bool shot_is_parthian(float speed, float rel_yaw) { return speed >= RIDE_GALLOP && fabsf(wrap_angle(rel_yaw)) > PARTHIAN_ANGLE; }
@@ -28,6 +33,12 @@ float lance_charge_knock(float speed, bool blocked) {
     if (speed < LANCE_MIN_SPEED) return 0.0f;
     float p = clampf(0.55f + 0.08f * (speed - LANCE_MIN_SPEED), 0.0f, 0.95f);
     return blocked ? p * 0.35f : p;
+}
+
+float heavy_lance_knock(float speed, bool blocked) {
+    if (speed < LANCE_MIN_SPEED) return 0.0f;
+    float p = clampf(0.7f + 0.08f * (speed - LANCE_MIN_SPEED), 0.0f, 0.98f);
+    return blocked ? p * 0.6f : p; // cuatro metros de asta: el escudo apenas la frena
 }
 
 // ---------------------------------------------------------------- el cansancio del caballo

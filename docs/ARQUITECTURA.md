@@ -21,22 +21,22 @@ src/
     climate.*    clima: temperatura, tiempo, nieve, lagos, glaciares
     hazards.*    frio, barro, hielo, socavones, desierto, minijuego (QTE)
     health.*     vida, sangre y heridas (jugador, tribu, enemigos)
-    combat.*     armas, enemigos (y jinetes), reglas de cada golpe, botin, inercia montada
+    combat.*     armas y sus rasgos (pico, maza, martillo, sable, lanza pesada, daga de anillo), enemigos (y jinetes), reglas de cada golpe y su paso por la armadura, botin, inercia montada y armas que se traban
     body.*       cuerpo humano articulado por zonas (dibujo e impactos)
     armor.*      armadura por piezas: materiales, cobertura, durabilidad
-    ballistics.* armas a distancia y trayectoria de proyectiles
+    ballistics.* armas a distancia (y cuanto les pesa la montura) y trayectoria de proyectiles
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
-    economy.*    acopio, comida y recoleccion diaria, produccion por oficio, efectos del campamento, forja, fabricar a mano, reparar (y untar con grasa)
+    economy.*    acopio, comida y recoleccion diaria, produccion por oficio, efectos del campamento, forja, fabricar a mano (y el secado en el acopio), reparar (y untar con grasa)
     trade.*      el valor de las cosas en plata, precios por region, lo que vende cada mercado y las rutas de las caravanas
-    riding.*     la monta: el tiro a caballo (y el disparo parto), la lanza en ristre, el cansancio de la montura y la maniobra de los arqueros a caballo
+    riding.*     la monta: el tiro a caballo segun el arco (y el disparo parto), la lanza en ristre (y la pesada), el cansancio de la montura y la maniobra de los arqueros a caballo
     animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado (y el rebaño que sigue a la caravana), anfibios, cria (sexo, herencia, preñez)
     swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
     fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano
     keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H J K L, F, X...)
     targeting.*  el selector de objetivo: el siguiente alrededor del jugador, se pierde a 25 m
-    stealth.*    la espalda (cono trasero, lo que ve un enemigo segun de donde vienes), el rehen que tapa el tiro y los abatidos
+    stealth.*    la espalda (cono trasero, lo que ve un enemigo segun de donde vienes), el rehen que tapa el tiro (y cuando se suelta) y los abatidos
     squad.*      la escolta con ordenes, la ronda de los guardias y la alarma de los pobladores
     placement.*  ubicar una obra: la huella girada, si el sitio vale (radio, agua, pendiente, lo que pisa), la rejilla y los muros de dos puntos
     camps.*      campamentos y sus tareas: capacitar, y las de la tribu (reclutas, explorar, cazar, pastorear, guardia) con su riesgo y lo que traen; migrar (levantar y plantar) y los pastos de cada region y estacion

@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**410 objetos** · 1 con modelo · 409 pendientes.
+**421 objetos** · 1 con modelo · 420 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -15,7 +15,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Estructuras](#estructura) | 42 | 41 | 1 | 0 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 46 | 46 | 0 | 0 | 0 |
-| [Armas](#arma) | 30 | 30 | 0 | 0 | 0 |
+| [Armas](#arma) | 36 | 36 | 0 | 0 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
 | [Escudos](#escudo) | 6 | 6 | 0 | 0 | 0 |
 | [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 75 | 75 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 80 | 80 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -211,15 +211,15 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 |---|---|---|---|---|---|---|
 | `arma.corta.cuchillo` | Cuchillo de hueso y hierro | 0.05x0.3x0.03 | 60 | pendiente | `uso:equipable` `manos:una` |  |
 | `arma.corta.daga` | Daga | 0.05x0.4x0.03 | 80 | pendiente | `uso:equipable` `manos:una` |  |
-| `arma.corta.sable` | Sable curvo | 0.08x0.9x0.03 | 120 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` |  |
+| `arma.corta.sable` | Sable de la estepa | 0.08x0.9x0.03 | 120 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` | Curvo y de un filo: a caballo corta limpio, no se traba y suma la carrera. |
 | `arma.corta.hacha_mano` | Hacha de mano | 0.15x0.6x0.04 | 100 | pendiente | `uso:equipable` `manos:una` |  |
 | `arma.corta.maza` | Maza | 0.1x0.7x0.1 | 100 | pendiente | `uso:equipable` `manos:una` |  |
-| `arma.larga.lanza` | Lanza | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.larga.lanza` | Lanza ligera | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` | A pie y a caballo; en ristre (L), la carga. |
 | `arma.larga.guja` | Guja | 0.2x2.2x0.05 | 120 | pendiente | `uso:equipable` `manos:dos` |  |
 | `arma.larga.pica` | Pica imperial | 0.1x4.5x0.1 | 80 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
 | `arma.larga.alabarda` | Alabarda | 0.3x2.2x0.05 | 140 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
 | `arma.larga.espada_larga` | Espada larga | 0.2x1.2x0.03 | 120 | pendiente | `uso:equipable` `manos:una` |  |
-| `arma.distancia.arco_compuesto` | Arco compuesto | 0.1x1.2x0.05 | 150 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:nomada` `manos:dos` |  |
+| `arma.distancia.arco_compuesto` | Arco compuesto reflejo | 0.1x1.2x0.05 | 150 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:nomada` `manos:dos` | Asta, madera y tendón: corto y potente, a caballo tira como a pie. Se hace en tres etapas. |
 | `arma.distancia.arco_largo` | Arco largo | 0.08x1.8x0.05 | 120 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
 | `arma.distancia.ballesta` | Ballesta | 0.7x0.25x0.9 | 250 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
 | `arma.distancia.mosquete` | Mosquete de mecha | 0.1x0.25x1.5 | 300 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:imperio` `manos:dos` |  |
@@ -239,6 +239,12 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `arma.corta.sable_bronce` | Sable de bronce | 0.08x0.9x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:bronce` | Se forja en el horno de bronce. |
 | `arma.corta.sable_acero` | Sable de acero | 0.08x0.95x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se forja en el horno de acero. |
 | `arma.larga.lanza_bronce` | Lanza de punta de bronce | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` `material:bronce` | Se forja en el horno de bronce. |
+| `arma.distancia.arco_simple` | Arco simple | 0.08x1.4x0.04 | 120 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` | De una pieza de madera: a caballo se abre el tiro. |
+| `arma.corta.akinakes` | Akinakes | 0.07x0.6x0.03 | 100 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` `material:bronce` | La espada corta recta de los escitas: rápida en los combos. |
+| `arma.corta.sagaris` | Sagaris de pico | 0.2x0.7x0.04 | 110 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` | Hacha de pico: perfora la armadura y engancha escudos. |
+| `arma.corta.sagaris_martillo` | Sagaris de martillo | 0.2x0.7x0.06 | 110 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` | Hacha de martillo: aturde y engancha escudos. |
+| `arma.corta.daga_anillo` | Daga de anillo | 0.05x0.4x0.03 | 80 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` `material:hierro` | La daga sármata: para la mano torpe, las llaves, el rehén y la ejecución. |
+| `arma.larga.lanza_pesada` | Lanza pesada | 0.1x4x0.1 | 90 | pendiente | `uso:equipable` `faccion:nomada` `manos:dos` | Cuatro metros de asta: solo a caballo. En ristre derriba y rompe la formación. |
 
 <a id="proyectil"></a>
 
@@ -478,6 +484,11 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.material.adobe` | Ladrillos de adobe | 0.4x0.2x0.3 | 30 | pendiente | `uso:recolectable` `uso:material` `material:barro` | Barro y paja secados al sol: casas que duran. |
 | `utileria.material.puntas_hueso` | Puntas de hueso | 0.1x0.05x0.1 | 20 | pendiente | `uso:recolectable` `uso:material` `material:hueso` | Para las flechas, cuando no hay pedernal. |
 | `utileria.material.piezas_arco` | Piezas de arco (asta y tendón) | 0.1x0.05x0.6 | 30 | pendiente | `uso:recolectable` `uso:material` `material:hueso` | Láminas de asta y tendón: el arco compuesto. |
+| `utileria.material.alma_arco` | Alma de arco (madera) | 0.05x0.05x1.1 | 30 | pendiente | `uso:material` `material:madera` | La primera etapa del arco compuesto reflejo. |
+| `utileria.material.cola_hueso` | Cola de hueso | 0.1x0.1x0.1 | 20 | pendiente | `uso:material` `material:hueso` | Huesos hervidos: pega el asta y el tendón del arco. |
+| `utileria.material.arco_encolado` | Arco encolado (secando: faltan 2 días) | 0.1x0.05x1.1 | 40 | pendiente | `uso:material` `material:madera` | Se seca en el acopio de un campamento. |
+| `utileria.material.arco_oreado` | Arco encolado (secando: falta 1 día) | 0.1x0.05x1.1 | 40 | pendiente | `uso:material` `material:madera` | Se seca en el acopio de un campamento. |
+| `utileria.material.arco_seco` | Arco seco (sin terminar) | 0.1x0.05x1.1 | 40 | pendiente | `uso:material` `material:madera` | Falta la cola de hueso que lo termina. |
 | `utileria.material.pedernal` | Pedernal | 0.15x0.1x0.15 | 30 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Se recoge en la estepa: puntas de flecha. |
 | `utileria.gema.turquesa` | Turquesa | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
 | `utileria.gema.cornalina` | Cornalina | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |

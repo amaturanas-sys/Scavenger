@@ -351,7 +351,20 @@ La fase era grande y se partió en dos, como la 4: los caballos aquí (v0.7.1) y
 
 **Costo:** medio.
 
-## Fase 7 — Armas icónicas de la estepa y su forja (v0.8.0)
+## Fase 7 — Armas icónicas de la estepa (v0.8.0) — hecha
+
+La fase era grande y se partió en dos, como la 4 y la 6: las armas aquí (v0.8.0) y la forja en la fase 7b (v0.8.1).
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **Los rasgos van en `WeaponStats`** (`src/sim/combat.h`, campos nuevos que no se guardan): `pierce` (el pico), `crush` (la maza), `stun` (el martillo), `clean_cut` (el sable), `mounted_only` (la lanza pesada) y `ring` (la daga de anillo). Los arcos llevan `RangedDef.saddle`: cuánto les pesa la montura. Las reglas, en `combat.c`, `melee.c`, `riding.c` y `stealth.c`, con tests.
+- **Los ids:** el arco de antes es ahora `arco_simple`, y el id `arco_compuesto` pasó a ser el **reflejo**. En las partidas viejas, el arco que llevaba el jugador queda mejorado hasta que cambia de empuñadura: el equipo inicial trae el simple, y la empuñadura del arco toma el reflejo si lo tienes. El sable y la lanza de siempre se llaman ahora «sable de la estepa» y «lanza ligera». Son nuevos `arco_simple`, `akinakes`, `sagaris`, `sagaris_martillo`, `daga_anillo` y `lanza_pesada`.
+- **Sable:** «no se traba» es una regla nueva: a caballo, las demás armas aprovechan la mitad de la carrera, y al galope se traban (el próximo golpe tarda 0,9 s más). El sable la aprovecha entera, más un 10 %.
+- **Lanza pesada:** a pie no golpea. En ristre derriba más y, si no la paran, sigue hasta en 2 más en la línea de la carga, con la mitad de fuerza cada vez.
+- **Sagaris y maza:** el pico pasa por la armadura como una punta (la malla peor). La maza tumba más y, en la cabeza, el casco para la mitad. El martillo aturde siempre que entra. Los dos sagaris enganchan escudos, en el golpe y en el parry.
+- **Daga de anillo:** sin castigo en la mano torpe. Con ella en cualquier mano, las llaves son más firmes, el rehén no se suelta con un golpe cualquiera y la ejecución se oye a 3 m. La llevan los arqueros a caballo; los arqueros a pie pasan al arco simple.
+- **El arco reflejo en tres etapas:** alma de madera; asta y tendón con cola de hueso, que seca 2 días en el acopio de un campamento (`CraftDef.to_stock`, `stock_dry_day`, el guardián avisa); y la cola de hueso que lo termina. Las armas de metal se forjan por ahora en los hornos que ya había; la forja móvil y el taller son de la 7b.
+- **Dónde se consiguen:** recetas, botín, las tribus (arco reflejo, sagaris, akinakes, daga de anillo, lanza pesada) y las aldeas (arco simple, maza).
+- **Pruebas:** `--montado pesada` (tres bandidos en fila); `--montado parto`, ahora con el arco reflejo. **Ayuda:** una página nueva, «Las armas de la estepa».
 
 **Armas** (ids nuevos en el inventario, estadísticas en `weapon_stats` y `ranged_def`):
 
@@ -364,14 +377,22 @@ La fase era grande y se partió en dos, como la 4: los caballos aquí (v0.7.1) y
 | **Maza** | Contundente: abate (KO) más de lo que mata, y es buena contra cascos. |
 | **Daga de empuñadura de anillo** (sármata) | Arma de mano secundaria. Mejor en llaves, rehenes y ejecución silenciosa (fase 2). |
 
+**Tests:** el disparo a caballo con el arco reflejo no pierde precisión; las recetas por etapas.
+
+**Costo:** medio-alto. Es sobre todo contenido y datos; los modelos 3D son trabajo aparte en Nomad o Kiln.
+
+## Fase 7b — La forja (v0.8.1)
+
+**Lo que hay:** las armas de la fase 7; los hornos de bronce y de acero con herrero; reparar con el horno; el hierro, el cobre y el estaño como materiales del altiplano y del comercio; la exploración que marca sitios en el mapa (fase 4); la migración (fase 6b).
+
 **Forja:**
 - **Forja móvil:** fuelle de cuero y hogar de carbón que se carga en un caballo. Repara y hace puntas de flecha y herramientas pequeñas en cualquier sitio, también durante la migración.
 - **Taller permanente** (campamento grande o ciudad tomada): sables, puntas de lanza y armas de asta.
 - **Hierro:** de minas a cielo abierto o hierro de pantano (vetas en el mapa, que se descubren al explorar en la fase 4), o comerciado o tributado como lingotes, **acero wootz** u hojas terminadas.
 - **Temple:** un paso de forja con riesgo. Martillar y templar da filo duro y lomo flexible: más daño y menos rotura. Si sale mal, el arma es frágil. El resultado depende del herrero (rol y talento).
-- **Tests:** las recetas por etapas; el temple modifica las estadísticas; el arco compuesto a caballo no tiene penalización.
+- **Tests:** el temple modifica las estadísticas; la forja móvil viaja con la caravana.
 
-**Costo:** medio-alto. Es sobre todo contenido y datos; los modelos 3D son trabajo aparte en Nomad o Kiln.
+**Costo:** medio.
 
 ## Fase 8 — Asentamientos agrarios: economía, ciudad y ejército (v0.9.0)
 
@@ -425,7 +446,8 @@ La fase era grande y se partió en dos, como la 4: los caballos aquí (v0.7.1) y
 | v0.7.0 | 5 · economía y artesanías | 4 |
 | v0.7.1 | 6 · caballos y cría | 1, 4, 5 |
 | v0.7.2 | 6b · migración en caravana | 4, 6 |
-| v0.8.0 | 7 · armas y forja | 1, 5 |
+| v0.8.0 | 7 · armas de la estepa | 1, 5 |
+| v0.8.1 | 7b · la forja | 6b, 7 |
 | v0.9.0 | 8 · asentamientos agrarios | 3, 5, 6, 7 |
 
 **Por sesión:** cada fase (o media fase, en las grandes) cabe en una sesión de trabajo, con PR, CI, versión y prueba en la tablet. La fase 0 conviene hacerla primero y sola: es corta y evita perder partidas en todas las demás.

@@ -131,15 +131,15 @@ animal.insecto.mosquitos	Mosquito (nube)	faccion:salvaje,rig:ninguno	0.01x0.01x0
 animal.insecto.moscas	Mosca (nube)	faccion:salvaje,rig:ninguno	0.01x0.01x0.01	10	pendiente	Sobre los cadáveres.
 arma.corta.cuchillo	Cuchillo de hueso y hierro	uso:equipable,manos:una	0.05x0.3x0.03	60	pendiente	
 arma.corta.daga	Daga	uso:equipable,manos:una	0.05x0.4x0.03	80	pendiente	
-arma.corta.sable	Sable curvo	uso:equipable,faccion:nomada,manos:una	0.08x0.9x0.03	120	pendiente	
+arma.corta.sable	Sable de la estepa	uso:equipable,faccion:nomada,manos:una	0.08x0.9x0.03	120	pendiente	Curvo y de un filo: a caballo corta limpio, no se traba y suma la carrera.
 arma.corta.hacha_mano	Hacha de mano	uso:equipable,manos:una	0.15x0.6x0.04	100	pendiente	
 arma.corta.maza	Maza	uso:equipable,manos:una	0.1x0.7x0.1	100	pendiente	
-arma.larga.lanza	Lanza	uso:equipable,manos:una	0.1x2.4x0.1	80	pendiente	
+arma.larga.lanza	Lanza ligera	uso:equipable,manos:una	0.1x2.4x0.1	80	pendiente	A pie y a caballo; en ristre (L), la carga.
 arma.larga.guja	Guja	uso:equipable,manos:dos	0.2x2.2x0.05	120	pendiente	
 arma.larga.pica	Pica imperial	uso:equipable,faccion:imperio,manos:dos	0.1x4.5x0.1	80	pendiente	
 arma.larga.alabarda	Alabarda	uso:equipable,faccion:imperio,manos:dos	0.3x2.2x0.05	140	pendiente	
 arma.larga.espada_larga	Espada larga	uso:equipable,manos:una	0.2x1.2x0.03	120	pendiente	
-arma.distancia.arco_compuesto	Arco compuesto	uso:equipable,requiere:proyectil,faccion:nomada,manos:dos	0.1x1.2x0.05	150	pendiente	
+arma.distancia.arco_compuesto	Arco compuesto reflejo	uso:equipable,requiere:proyectil,faccion:nomada,manos:dos	0.1x1.2x0.05	150	pendiente	Asta, madera y tendón: corto y potente, a caballo tira como a pie. Se hace en tres etapas.
 arma.distancia.arco_largo	Arco largo	uso:equipable,requiere:proyectil,manos:dos	0.08x1.8x0.05	120	pendiente	
 arma.distancia.ballesta	Ballesta	uso:equipable,requiere:proyectil,manos:dos	0.7x0.25x0.9	250	pendiente	
 arma.distancia.mosquete	Mosquete de mecha	uso:equipable,requiere:proyectil,faccion:imperio,manos:dos	0.1x0.25x1.5	300	pendiente	
@@ -159,6 +159,12 @@ arma.especial.espada_padre	Espada ceremonial del padre	uso:equipable,acto:3,espe
 arma.corta.sable_bronce	Sable de bronce	uso:equipable,manos:una,material:bronce	0.08x0.9x0.03	120	pendiente	Se forja en el horno de bronce.
 arma.corta.sable_acero	Sable de acero	uso:equipable,manos:una,material:hierro	0.08x0.95x0.03	120	pendiente	Se forja en el horno de acero.
 arma.larga.lanza_bronce	Lanza de punta de bronce	uso:equipable,manos:una,material:bronce	0.1x2.4x0.1	80	pendiente	Se forja en el horno de bronce.
+arma.distancia.arco_simple	Arco simple	uso:equipable,requiere:proyectil,manos:dos	0.08x1.4x0.04	120	pendiente	De una pieza de madera: a caballo se abre el tiro.
+arma.corta.akinakes	Akinakes	uso:equipable,faccion:nomada,manos:una,material:bronce	0.07x0.6x0.03	100	pendiente	La espada corta recta de los escitas: rápida en los combos.
+arma.corta.sagaris	Sagaris de pico	uso:equipable,faccion:nomada,manos:una	0.2x0.7x0.04	110	pendiente	Hacha de pico: perfora la armadura y engancha escudos.
+arma.corta.sagaris_martillo	Sagaris de martillo	uso:equipable,faccion:nomada,manos:una	0.2x0.7x0.06	110	pendiente	Hacha de martillo: aturde y engancha escudos.
+arma.corta.daga_anillo	Daga de anillo	uso:equipable,faccion:nomada,manos:una,material:hierro	0.05x0.4x0.03	80	pendiente	La daga sármata: para la mano torpe, las llaves, el rehén y la ejecución.
+arma.larga.lanza_pesada	Lanza pesada	uso:equipable,faccion:nomada,manos:dos	0.1x4x0.1	90	pendiente	Cuatro metros de asta: solo a caballo. En ristre derriba y rompe la formación.
 proyectil.flecha.comun	Flecha	uso:municion	0.02x0.8x0.02	20	pendiente	
 proyectil.flecha.silbadora	Flecha silbadora (señales)	uso:municion,faccion:nomada	0.03x0.8x0.03	30	pendiente	
 proyectil.virote.comun	Virote de ballesta	uso:municion	0.02x0.4x0.02	20	pendiente	
@@ -312,6 +318,11 @@ utileria.material.madera_labrada	Madera labrada	uso:recolectable,uso:material,ma
 utileria.material.adobe	Ladrillos de adobe	uso:recolectable,uso:material,material:barro	0.4x0.2x0.3	30	pendiente	Barro y paja secados al sol: casas que duran.
 utileria.material.puntas_hueso	Puntas de hueso	uso:recolectable,uso:material,material:hueso	0.1x0.05x0.1	20	pendiente	Para las flechas, cuando no hay pedernal.
 utileria.material.piezas_arco	Piezas de arco (asta y tendón)	uso:recolectable,uso:material,material:hueso	0.1x0.05x0.6	30	pendiente	Láminas de asta y tendón: el arco compuesto.
+utileria.material.alma_arco	Alma de arco (madera)	uso:material,material:madera	0.05x0.05x1.1	30	pendiente	La primera etapa del arco compuesto reflejo.
+utileria.material.cola_hueso	Cola de hueso	uso:material,material:hueso	0.1x0.1x0.1	20	pendiente	Huesos hervidos: pega el asta y el tendón del arco.
+utileria.material.arco_encolado	Arco encolado (secando: faltan 2 días)	uso:material,material:madera	0.1x0.05x1.1	40	pendiente	Se seca en el acopio de un campamento.
+utileria.material.arco_oreado	Arco encolado (secando: falta 1 día)	uso:material,material:madera	0.1x0.05x1.1	40	pendiente	Se seca en el acopio de un campamento.
+utileria.material.arco_seco	Arco seco (sin terminar)	uso:material,material:madera	0.1x0.05x1.1	40	pendiente	Falta la cola de hueso que lo termina.
 utileria.material.pedernal	Pedernal	uso:recolectable,uso:material,material:piedra	0.15x0.1x0.15	30	pendiente	Se recoge en la estepa: puntas de flecha.
 personaje.base.cuerpo_nino	Cuerpo base: niño	rig:humanoide,talla:pequena	0.35x1.2x0.25	800	pendiente	Malla base modular: ropa y armadura encajan encima.
 personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.5x1.7x0.3	1200	pendiente	
