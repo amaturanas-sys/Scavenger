@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/city_game.h"
 #include "game/input.h"
 #include "game/inventory_game.h"
 #include "raylib.h"
@@ -33,7 +34,7 @@
 #define SELL_PAGE (DLG_OPTIONS - 3) // con «Más» y «Volver»
 #define WARES_MAX 64
 
-typedef enum { TD_ROOT = 300, TD_SELL, TD_BUY } TradeTalk;
+typedef enum { TD_ROOT = 300, TD_SELL, TD_BUY, TD_CITY } TradeTalk;
 
 // Donde va cada caravana este cuadro (lo pone td_update).
 typedef struct {
@@ -43,7 +44,7 @@ typedef struct {
 } Caravan;
 
 typedef struct {
-    int kind, idx; // MarketKind (-1: un campamento rival que saquear) y su indice
+    int kind, idx; // MarketKind (-1: un campamento rival que saquear; -2: los campos de una ciudad) y su indice
     Region region;
 } Market;
 
@@ -96,8 +97,10 @@ static int standing_near(const Combat *cb, float x, float z, float r) {
     return n;
 }
 
-// Lo que hay al alcance de F: 1 un mercado, 2 un campamento rival que saquear, 0 nada.
-static int market_near(const GameActions *ga, const World *w, const Player *p, Market *m) {
+// Lo que hay al alcance de F: 1 un mercado, 2 un campamento rival que saquear, 3 los campos de una
+// ciudad o una aldea (saquearlos, src/game/city_game.h), 0 nada.
+static int market_near(const GameActions *ga, const Terrain *t, const Player *p, Market *m) {
+    const World *w = t->world;
     float px = p->pos.x, pz = p->pos.z;
     for (int i = 0; i < g_nroutes; i++) {
         const Caravan *c = &g_car[i];
@@ -131,6 +134,11 @@ static int market_near(const GameActions *ga, const World *w, const Player *p, M
         *m = (Market){ MARKET_TRIBE, i, tc->region };
         return 1;
     }
+    int fi = ct_field_at(ga, t, px, pz, NULL);
+    if (fi >= 0) {
+        *m = (Market){ -2, fi, w->settlements[fi].region };
+        return 3;
+    }
     return 0;
 }
 
@@ -144,17 +152,19 @@ bool td_try_talk(GameActions *ga, const Terrain *t, const Player *p) {
     if (!t || !t->world || loot_at_hand(ga, p)) return false; // el botin a tus pies se toma primero
     ensure_routes(t->world);
     Market m;
-    if (!market_near(ga, t->world, p, &m)) return false;
+    if (!market_near(ga, t, p, &m)) return false;
     g_talk_req = true;
     return true;
 }
 
 // La pista de F: con quien se comercia (o que se saquea) aqui.
-static void update_hint(const GameActions *ga, const World *w, const Player *p) {
+static void update_hint(const GameActions *ga, const Terrain *t, const Player *p) {
+    const World *w = t->world;
     g_hint[0] = '\0';
     Market m;
-    int what = ga->dlg.open || ga->menu_open || ga->inv_open || loot_at_hand(ga, p) ? 0 : market_near(ga, w, p, &m);
-    if (what == 2) snprintf(g_hint, sizeof(g_hint), T("F: saquear el campamento de los %s"), w->tribes[m.idx].name);
+    int what = ga->dlg.open || ga->menu_open || ga->inv_open || loot_at_hand(ga, p) ? 0 : market_near(ga, t, p, &m);
+    if (what == 3) snprintf(g_hint, sizeof(g_hint), T("F: saquear los campos de %s"), w->settlements[m.idx].name);
+    else if (what == 2) snprintf(g_hint, sizeof(g_hint), T("F: saquear el campamento de los %s"), w->tribes[m.idx].name);
     else if (what == 1 && m.kind == MARKET_TRIBE) snprintf(g_hint, sizeof(g_hint), T("F: comerciar con los %s"), w->tribes[m.idx].name);
     else if (what == 1 && m.kind != MARKET_CARAVAN) snprintf(g_hint, sizeof(g_hint), T("F: comerciar en %s"), w->settlements[m.idx].name);
     else if (what == 1)
@@ -179,6 +189,29 @@ static void loot_camp(GameActions *ga, const Combat *cb, const World *w, int i, 
     if (!ig_drop_loot(ga, p->pos, items, (int)(sizeof(items) / sizeof(items[0])))) return;
     ga->tribe_looted |= 1u << i;
     snprintf(log, len, T("Saqueas a los %s: %d de plata y más, a tus pies (F)."), tc->name, silver);
+}
+
+// Los campos de una ciudad o una aldea (src/sim/city.h): se llevan el grano de las eras (a tus pies),
+// la cosecha queda arrasada y sale su guardia. Les queda rencor; si es del kanato, el kan se entera.
+static void raid_fields(GameActions *ga, Combat *cb, Troop *troop, const Terrain *t, int idx, const Player *p, int day, char *log, size_t len) {
+    const Settlement *s = &t->world->settlements[idx];
+    City *c = &ga->cities[idx];
+    int take = city_raid_fields(c, clock_season(day), day), field = 0;
+    if (take < 0) {
+        snprintf(log, len, T("Los campos de %s ya están arrasados: no queda nada que llevarse."), s->name);
+        return;
+    }
+    if (ct_field_at(ga, t, p->pos.x, p->pos.z, &field) == idx) c->raided_lot = field + 1; // desde este, quemados
+    int sacks = take / GRAIN_SACK_RATIONS;
+    if (sacks > 0) {
+        LootItem li = { GRAIN_SACK_ID, sacks, 1.0f };
+        ig_drop_loot(ga, p->pos, &li, 1);
+    }
+    Vector3 gate = ct_gate_toward(t, idx, p->pos.x, p->pos.z);
+    int guards = cb_spawn_city_guard(cb, t, idx, city_guard_party(c, s->kind == SETTLE_CAPITAL ? 6 : 3), gate, p->pos);
+    if (s->region == REGION_STEPPE && troop->overlord) troop->overlord->relation = fmaxf(-100.0f, troop->overlord->relation - RAID_RELATION);
+    if (guards > 0) snprintf(log, len, T("¡Campos de %s arrasados: %d sacos de grano (F)! Salen %d soldados."), s->name, sacks, guards);
+    else snprintf(log, len, T("¡Campos de %s arrasados: %d sacos de grano (F)! Nadie los defiende."), s->name, sacks);
 }
 
 static void start_raid(GameActions *ga, Combat *cb, Troop *troop, const Terrain *t, int i, char *log, size_t len) {
@@ -230,13 +263,37 @@ static void set_mode(GameActions *ga, int mode) {
     ga->dlg.cursor = 0;
 }
 
+// La ciudad o aldea con la que se comercia (src/sim/city.h), o NULL: su granero y su armeria mueven
+// los precios, y su tesoro paga lo que le vendes (y cobra lo que le compras).
+static City *market_city(GameActions *ga) {
+    bool town = ga->market_kind == MARKET_VILLAGE || ga->market_kind == MARKET_CAPITAL;
+    return town && ga->market_idx >= 0 && ga->market_idx < SETTLEMENTS_MAX ? &ga->cities[ga->market_idx] : NULL;
+}
+
+static int city_price(const GameActions *ga, const char *id, int base) {
+    const City *c = market_city((GameActions *)ga);
+    if (!c || base <= 0) return base;
+    int v = (int)lroundf((float)base * city_price_factor(c, id));
+    return v < 1 ? 1 : v;
+}
+
+static int sell_price(const GameActions *ga, const char *id) { return city_price(ga, id, trade_sell_price(id, (Region)ga->market_region)); }
+static int buy_price(const GameActions *ga, const char *id) { return city_price(ga, id, trade_buy_price(id, (Region)ga->market_region)); }
+
+// ¿Comercian contigo? Una ciudad con mucho rencor, no; el kanato, con la relacion por el suelo, tampoco.
+static bool market_trades(GameActions *ga, const Troop *troop) {
+    const City *c = market_city(ga);
+    float rel = troop && troop->overlord ? troop->overlord->relation : 0.0f;
+    return !c || city_trades(c, ga->market_region == REGION_STEPPE, rel);
+}
+
 // Lo que llevas y te compran aqui (sin la plata), lo mas caro primero.
-static int sell_list(GameActions *ga, const Props *props, const Player *p, Region r, Ware *out, int max) {
+static int sell_list(GameActions *ga, const Props *props, const Player *p, Ware *out, int max) {
     const char *ids[WARES_MAX];
     int counts[WARES_MAX];
     int n = ig_carried_list(ga, props, p, ids, counts, WARES_MAX), k = 0;
     for (int i = 0; i < n && k < max; i++) {
-        int price = strcmp(ids[i], SILVER_ID) ? trade_sell_price(ids[i], r) : 0;
+        int price = strcmp(ids[i], SILVER_ID) ? sell_price(ga, ids[i]) : 0;
         if (price <= 0) continue;
         snprintf(out[k].id, sizeof(out[k].id), "%s", ids[i]);
         out[k].count = counts[i], out[k].price = price;
@@ -255,7 +312,7 @@ static int buy_list(const GameActions *ga, const char **out, int max) {
     const char *all[32];
     int n = market_goods((MarketKind)ga->market_kind, (Region)ga->market_region, all, 32), k = 0;
     for (int i = 0; i < n && k < max; i++)
-        if (inventory_find(ga->inv, all[i]) && trade_buy_price(all[i], (Region)ga->market_region) > 0) out[k++] = all[i];
+        if (inventory_find(ga->inv, all[i]) && buy_price(ga, all[i]) > 0) out[k++] = all[i];
     return k;
 }
 
@@ -268,8 +325,9 @@ static void pay(GameActions *ga, const Props *props, const Player *p, const char
     }
 }
 
-static const char *price_note(const char *id, Region r) {
-    float f = price_factor(id, r);
+static const char *price_note(const GameActions *ga, const char *id) {
+    const City *c = market_city((GameActions *)ga);
+    float f = price_factor(id, (Region)ga->market_region) * (c ? city_price_factor(c, id) : 1.0f);
     return f < 0.99f ? T(" · aquí abunda") : f > 1.01f ? T(" · aquí escasea") : "";
 }
 
@@ -293,7 +351,11 @@ static void market_speaker(const GameActions *ga, const World *w, char *out, siz
     }
 }
 
-static void build_dialog(GameActions *ga, const Props *props, const Player *p, const World *w) {
+// ¿Es la capital del kanato de la estepa? Alli se paga el tributo.
+static bool overlord_capital(const GameActions *ga) { return ga->market_kind == MARKET_CAPITAL && ga->market_region == REGION_STEPPE; }
+
+static void build_dialog(GameActions *ga, const Props *props, const Player *p, const Terrain *t, const Troop *troop, int day) {
+    const World *w = t->world;
     Dialog *d = &ga->dlg;
     Region r = (Region)ga->market_region;
     char speaker[48];
@@ -301,7 +363,9 @@ static void build_dialog(GameActions *ga, const Props *props, const Player *p, c
     market_speaker(ga, w, speaker, sizeof(speaker), &icon);
     int silver = ig_carried_count(ga, props, p, SILVER_ID);
     Ware wares[WARES_MAX];
-    int nw = sell_list(ga, props, p, r, wares, WARES_MAX);
+    int nw = sell_list(ga, props, p, wares, WARES_MAX);
+    const City *city = market_city(ga);
+    bool trades = market_trades(ga, troop);
     switch (ga->talk_mode) {
     case TD_ROOT: {
         int worth = 0;
@@ -309,15 +373,36 @@ static void build_dialog(GameActions *ga, const Props *props, const Player *p, c
         const char *what = ga->market_kind == MARKET_CARAVAN && ga->market_idx < 100
                                ? T("Seda, especias y vino de tierras lejanas; la escolta no les quita el ojo a los camellos.")
                                : "";
+        if (city && !trades)
+            what = city->grudge >= CITY_GRUDGE_NO_TRADE ? T("No comercian con quien les arrasó los campos.")
+                                                        : T("No comercian con quien no paga el tributo al kan.");
+        else if (city)
+            what = TextFormat(T("Su tesoro tiene %d de plata para pagarte."), (int)city->silver);
         dlg_begin(d, speaker, icon,
                   TextFormat(T("Llevas %d de plata; lo que cargas vale %d aquí.\nEn las tierras del %s, lo que abunda vale menos y lo que escasea, más. %s"),
                              silver, worth, world_kingdom_name(r), what));
         dlg_option(d, ICON_MONEDAS, T("Vender"), T("Lo que llevas encima, en las alforjas, la carreta o las mochilas de la escolta: te pagan en plata."),
-                   nw > 0, 1);
-        dlg_option(d, ICON_ALFORJAS, T("Comprar"), T("Lo suyo, a pagar en plata."), true, 2);
+                   nw > 0 && trades, 1);
+        dlg_option(d, ICON_ALFORJAS, T("Comprar"), T("Lo suyo, a pagar en plata."), trades, 2);
         if (ga->market_kind == MARKET_CARAVAN && ga->market_idx < 100)
             dlg_option(d, ICON_SABLE, T("Asaltar la caravana"), T("Su escolta pelea; vencida, la carga es tuya. El reino se enterará."), true, 3);
+        if (city) dlg_option(d, ICON_ESTRUCTURA, T("La ciudad"), T("Su gente, el granero, el tesoro y la guarnición."), true, 4);
+        if (overlord_capital(ga) && troop && troop->overlord) {
+            int due = tribute_due(troop_count_with_status(troop, STATUS_ACTIVE));
+            bool paid = ga->tribute_season == season_index(day) + 1;
+            dlg_option(d, ICON_MONEDAS, TextFormat(T("Pagar el tributo (%d de plata)"), due),
+                       paid ? T("Ya pagaste el de esta estación.")
+                            : TextFormat(T("La relación con el kan sube (+%d). Si una estación pasa sin tributo, baja."), (int)TRIBUTE_RELATION),
+                       !paid && silver >= due, 5);
+        }
         dlg_option(d, ICON_TITULO, T("Adiós"), "", true, 0);
+        break;
+    }
+    case TD_CITY: {
+        char report[640];
+        ct_report(ga, t, troop, ga->market_idx, day, report, sizeof(report));
+        dlg_begin(d, speaker, icon, report);
+        dlg_option(d, ICON_TITULO, T("Volver"), "", true, 0);
         break;
     }
     case TD_SELL: {
@@ -326,7 +411,7 @@ static void build_dialog(GameActions *ga, const Props *props, const Player *p, c
         dlg_begin(d, speaker, icon, TextFormat(T("Llevas %d de plata. Enter o clic: vendes uno; con Mayús, todos."), silver));
         for (int i = ga->talk_a * SELL_PAGE; i < nw && i < (ga->talk_a + 1) * SELL_PAGE; i++) {
             DlgOption *o = dlg_option(d, icon_for_item(wares[i].id), item_name(ga, wares[i].id),
-                                      TextFormat(T("%d de plata cada uno · llevas %d%s"), wares[i].price, wares[i].count, price_note(wares[i].id, r)),
+                                      TextFormat(T("%d de plata cada uno · llevas %d%s"), wares[i].price, wares[i].count, price_note(ga, wares[i].id)),
                                       true, 100 + i);
             if (o && wares[i].count > 1) snprintf(o->badge, sizeof(o->badge), "%.7s", TextFormat("%d", wares[i].count));
         }
@@ -339,8 +424,8 @@ static void build_dialog(GameActions *ga, const Props *props, const Player *p, c
         int ng = buy_list(ga, goods, DLG_OPTIONS - 1);
         dlg_begin(d, speaker, icon, TextFormat(T("Llevas %d de plata. Enter o clic: compras uno; con Mayús, cinco."), silver));
         for (int i = 0; i < ng; i++) {
-            int price = trade_buy_price(goods[i], r);
-            DlgOption *o = dlg_option(d, icon_for_item(goods[i]), item_name(ga, goods[i]), TextFormat(T("%d de plata%s"), price, price_note(goods[i], r)),
+            int price = buy_price(ga, goods[i]);
+            DlgOption *o = dlg_option(d, icon_for_item(goods[i]), item_name(ga, goods[i]), TextFormat(T("%d de plata%s"), price, price_note(ga, goods[i])),
                                       silver >= price, 100 + i);
             if (o) snprintf(o->badge, sizeof(o->badge), "%.7s", TextFormat("%d", price)); // el precio, a la vista
         }
@@ -352,14 +437,25 @@ static void build_dialog(GameActions *ga, const Props *props, const Player *p, c
 }
 
 static void sell(GameActions *ga, const Props *props, const Player *p, const Ware *w, bool all, char *log, size_t len) {
-    int n = ig_take_carried(ga, props, p, w->id, all ? w->count : 1);
+    int want = all ? w->count : 1;
+    City *c = market_city(ga); // una ciudad paga con su tesoro: si no le alcanza, compra menos
+    if (c && (float)(want * w->price) > c->silver) want = (int)(c->silver / (float)w->price);
+    if (want <= 0) {
+        snprintf(log, len, "%s", T("El tesoro de la ciudad no tiene plata para pagarte."));
+        return;
+    }
+    int n = ig_take_carried(ga, props, p, w->id, want);
     if (n <= 0) return;
+    if (c) {
+        c->silver -= (float)(n * w->price);
+        if (!strcmp(w->id, GRAIN_SACK_ID)) c->grain += (float)(n * GRAIN_SACK_RATIONS); // el grano, a su granero
+    }
     pay(ga, props, p, SILVER_ID, n * w->price);
     snprintf(log, len, T("Vendes %d × %s por %d de plata."), n, item_name(ga, w->id), n * w->price);
 }
 
 static void buy(GameActions *ga, const Props *props, const Player *p, const char *id, bool five, char *log, size_t len) {
-    int price = trade_buy_price(id, (Region)ga->market_region), have = ig_carried_count(ga, props, p, SILVER_ID);
+    int price = buy_price(ga, id), have = ig_carried_count(ga, props, p, SILVER_ID);
     int n = five ? 5 : 1;
     if (price > 0 && n * price > have) n = have / price;
     if (n <= 0 || price <= 0) {
@@ -367,11 +463,29 @@ static void buy(GameActions *ga, const Props *props, const Player *p, const char
         return;
     }
     ig_take_carried(ga, props, p, SILVER_ID, n * price);
+    City *c = market_city(ga);
+    if (c) c->silver += (float)(n * price); // lo que pagas, a su tesoro
     pay(ga, props, p, id, n);
     snprintf(log, len, T("Compras %d × %s por %d de plata."), n, item_name(ga, id), n * price);
 }
 
-static void choose(GameActions *ga, Combat *cb, Troop *troop, const Props *props, const Terrain *t, const Player *p, int v, char *log,
+// El tributo de esta estacion: la plata, al tesoro del kan; la relacion sube.
+static void pay_tribute(GameActions *ga, const Props *props, const Player *p, Troop *troop, int day, char *log, size_t len) {
+    if (!troop->overlord || ga->tribute_season == season_index(day) + 1) return;
+    int due = tribute_due(troop_count_with_status(troop, STATUS_ACTIVE)), have = ig_carried_count(ga, props, p, SILVER_ID);
+    if (have < due) {
+        snprintf(log, len, T("No te alcanza: el tributo es de %d de plata y llevas %d."), due, have);
+        return;
+    }
+    ig_take_carried(ga, props, p, SILVER_ID, due);
+    City *c = market_city(ga);
+    if (c) c->silver += (float)due;
+    ga->tribute_season = season_index(day) + 1;
+    troop->overlord->relation = fminf(100.0f, troop->overlord->relation + TRIBUTE_RELATION);
+    snprintf(log, len, T("Pagas el tributo al %s: %d de plata. La relación sube (+%d)."), T(troop->overlord->name), due, (int)TRIBUTE_RELATION);
+}
+
+static void choose(GameActions *ga, Combat *cb, Troop *troop, const Props *props, const Terrain *t, const Player *p, int v, int day, char *log,
                    size_t len) {
     bool shift = (input_mods() & KM_SHIFT) != 0;
     switch (ga->talk_mode) {
@@ -380,7 +494,10 @@ static void choose(GameActions *ga, Combat *cb, Troop *troop, const Props *props
         else if (v == 1) set_mode(ga, TD_SELL);
         else if (v == 2) set_mode(ga, TD_BUY);
         else if (v == 3 && ga->market_kind == MARKET_CARAVAN && ga->market_idx < g_nroutes) start_raid(ga, cb, troop, t, ga->market_idx, log, len);
+        else if (v == 4) set_mode(ga, TD_CITY);
+        else if (v == 5) pay_tribute(ga, props, p, troop, day, log, len);
         break;
+    case TD_CITY: set_mode(ga, TD_ROOT); break;
     case TD_SELL: {
         if (v == 0) {
             set_mode(ga, TD_ROOT);
@@ -391,7 +508,7 @@ static void choose(GameActions *ga, Combat *cb, Troop *troop, const Props *props
             break;
         }
         Ware wares[WARES_MAX];
-        int nw = sell_list(ga, props, p, (Region)ga->market_region, wares, WARES_MAX);
+        int nw = sell_list(ga, props, p, wares, WARES_MAX);
         if (v >= 100 && v - 100 < nw) sell(ga, props, p, &wares[v - 100], shift, log, len);
         break;
     }
@@ -409,10 +526,11 @@ static void choose(GameActions *ga, Combat *cb, Troop *troop, const Props *props
     }
 }
 
-static void open_market(GameActions *ga, const Combat *cb, const World *w, const Player *p, char *log, size_t len) {
+static void open_market(GameActions *ga, Combat *cb, Troop *troop, const Terrain *t, const Player *p, int day, char *log, size_t len) {
     Market m;
-    int what = market_near(ga, w, p, &m);
-    if (what == 2) loot_camp(ga, cb, w, m.idx, p, log, len);
+    int what = market_near(ga, t, p, &m);
+    if (what == 2) loot_camp(ga, cb, t->world, m.idx, p, log, len);
+    if (what == 3) raid_fields(ga, cb, troop, t, m.idx, p, day, log, len);
     if (what != 1) return;
     ga->market_kind = m.kind;
     ga->market_idx = m.idx;
@@ -447,19 +565,19 @@ void td_update(GameActions *ga, Combat *cb, Troop *troop, const Props *props, co
             ga->tribe_looted &= ~(1u << i);
     if (g_talk_req) {
         g_talk_req = false;
-        if (!ga->dlg.open) open_market(ga, cb, w, p, log, len);
+        if (!ga->dlg.open) open_market(ga, cb, troop, t, p, clock_day(now), log, len);
     }
-    update_hint(ga, w, p);
+    update_hint(ga, t, p);
     if (!ga->dlg.open || ga->talk_mode < TD_ROOT || ga->talk_mode >= TD_ROOT + 100) return;
-    build_dialog(ga, props, p, w);
+    build_dialog(ga, props, p, t, troop, clock_day(now));
     int v = dlg_update(&ga->dlg);
     if (v == DLG_BACK) {
         if (ga->talk_mode == TD_ROOT) dlg_close(&ga->dlg);
         else set_mode(ga, TD_ROOT);
     } else if (v >= 0) {
-        choose(ga, cb, troop, props, t, p, v, log, len);
+        choose(ga, cb, troop, props, t, p, v, clock_day(now), log, len);
     }
-    if (ga->dlg.open) build_dialog(ga, props, p, w);
+    if (ga->dlg.open) build_dialog(ga, props, p, t, troop, clock_day(now));
 }
 
 // ------------------------------------------------------------------ dibujo
@@ -550,11 +668,23 @@ void td_draw_world(const GameActions *ga, Props *props, const Terrain *t, const 
 }
 
 // ------------------------------------------------------------------ pruebas
-void td_test(GameActions *ga, Combat *cb, Troop *troop, const Props *props, const Terrain *t, Player *p, const char *what, char *log,
+void td_test(GameActions *ga, Combat *cb, Troop *troop, const Props *props, const Terrain *t, Player *p, const char *what, int day, char *log,
              size_t len) {
     if (!t || !t->world) return;
     const World *w = t->world;
     ensure_routes(w);
+    if (!strcmp(what, "campos")) { // el primer campo de la ciudad mas cercana, y a saquearlo
+        int si = world_nearest_settlement(w, p->pos.x, p->pos.z, NULL), n = 0;
+        const CityLot *lots = si >= 0 ? ct_lots(ga, t, si, &n) : NULL;
+        for (int i = 0; lots && i < n; i++) {
+            if (lots[i].kind != LOT_FIELD) continue;
+            p->pos = (Vector3){ lots[i].x, terrain_height(t, lots[i].x, lots[i].z), lots[i].z };
+            p->yaw = atan2f(w->settlements[si].x - lots[i].x, w->settlements[si].z - lots[i].z);
+            raid_fields(ga, cb, troop, t, si, p, day, log, len);
+            break;
+        }
+        return;
+    }
     float bx = p->pos.x, bz = p->pos.z, bd = 1e18f, gap = 6.0f;
     bool caravan = !strcmp(what, "caravana") || !strcmp(what, "asaltar"), loot = !strcmp(what, "saquear");
     int ci = 0; // la de la ruta mas larga: va por campo abierto
@@ -582,7 +712,7 @@ void td_test(GameActions *ga, Combat *cb, Troop *troop, const Props *props, cons
     }
     for (int i = 0; !loot && i < w->settlement_count; i++) {
         float d = dist_xz(w->settlements[i].x, w->settlements[i].z, p->pos.x, p->pos.z);
-        if (d < bd) bd = d, bx = w->settlements[i].x, bz = w->settlements[i].z, gap = 9.0f;
+        if (d < bd) bd = d, bx = w->settlements[i].x, bz = w->settlements[i].z, gap = w->settlements[i].kind == SETTLE_CAPITAL ? 20.0f : 9.0f; // la capital: delante del palacio
     }
     for (int i = 0; !loot && i < w->site_count && i < 64; i++) {
         float d = dist_xz(w->sites[i].x, w->sites[i].z, p->pos.x, p->pos.z);
@@ -606,8 +736,8 @@ void td_test(GameActions *ga, Combat *cb, Troop *troop, const Props *props, cons
                   { "utileria.objeto.peine", 2 },    { "utileria.objeto.vela", 9 },     { SILVER_ID, 40 } };
     for (size_t i = 0; i < sizeof(GOODS) / sizeof(GOODS[0]); i++) ig_store(ga, props, p, GOODS[i].id, GOODS[i].n, 1.0f);
     Market m;
-    if (market_near(ga, w, p, &m) != 1) return;
+    if (market_near(ga, t, p, &m) != 1) return;
     ga->market_kind = m.kind, ga->market_idx = m.idx, ga->market_region = (int)m.region;
-    set_mode(ga, !strcmp(what, "vender") ? TD_SELL : !strcmp(what, "comprar") ? TD_BUY : TD_ROOT);
+    set_mode(ga, !strcmp(what, "vender") ? TD_SELL : !strcmp(what, "comprar") ? TD_BUY : !strcmp(what, "ciudad") ? TD_CITY : TD_ROOT);
     ga->dlg.open = true;
 }

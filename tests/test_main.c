@@ -37,6 +37,7 @@
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
 #include "../src/sim/forge.h"
+#include "../src/sim/city.h"
 #include "../src/sim/melee.h"
 #include "../src/sim/storage.h"
 #include "../src/sim/riding.h"
@@ -4324,6 +4325,136 @@ static void test_forge(void) {
     CHECK(!find_danger(FIND_IRON) && scout_pick(cand, 2, NULL, 0.0f, 0.0f, 1000.0f, 1, pick) == 1 && pick[0] == 0);
 }
 
+static int count_lots(const CityLot *l, int n, LotKind k) {
+    int c = 0;
+    for (int i = 0; i < n; i++) c += l[i].kind == k;
+    return c;
+}
+
+static void test_cities(void) {
+    // Arrancan segun su clase: la capital, mucha gente, tesoro y guarnicion; la aldea, poca. Siempre
+    // igual para la misma semilla.
+    City cap, vil, again;
+    city_start(&cap, SETTLE_CAPITAL, REGION_STEPPE, 7u);
+    city_start(&vil, SETTLE_VILLAGE, REGION_STEPPE, 7u);
+    city_start(&again, SETTLE_CAPITAL, REGION_STEPPE, 7u);
+    CHECK(!memcmp(&again, &cap, sizeof(City)));
+    CHECK(cap.people > 1000.0f && vil.people > 100.0f && vil.people < 400.0f && cap.silver > vil.silver * 10.0f);
+    CHECK(cap.soldiers > vil.soldiers && cap.grain >= cap.people * 50.0f && cap.fields == 1.0f && cap.grudge == 0.0f);
+    // Las estaciones: la cosecha, en otoño; en invierno, nada. El bosque rinde mas que el desierto, y
+    // la suerte es la misma toda la estacion.
+    CHECK(city_season_yield(SEASON_AUTUMN) > city_season_yield(SEASON_SUMMER) && city_season_yield(SEASON_WINTER) == 0.0f);
+    CHECK(city_fertility(REGION_FOREST) > city_fertility(REGION_DESERT) && city_land(SETTLE_CAPITAL) > city_land(SETTLE_VILLAGE));
+    CHECK(city_scribes(SETTLE_CAPITAL) > city_scribes(SETTLE_VILLAGE));
+    float l1 = city_season_luck(5u, 3, 1), l2 = city_season_luck(5u, 3, DAYS_PER_SEASON), l3 = city_season_luck(5u, 3, DAYS_PER_SEASON + 1);
+    CHECK(l1 == l2 && l1 >= 0.8f && l1 <= 1.2f && l3 >= 0.8f && l3 <= 1.2f);
+    CHECK(season_index(1) == 0 && season_index(DAYS_PER_SEASON) == 0 && season_index(DAYS_PER_SEASON + 1) == 1 && season_index(DAYS_PER_YEAR + 1) == 4);
+
+    // En paz, la ciudad crece; con un saqueo de sus campos cada estacion, cae: menos gente y tesoro,
+    // el granero vacio, los campos arrasados, descontento y rencor.
+    City peace = cap, raided = cap;
+    for (int day = 1; day <= 2 * DAYS_PER_YEAR; day++) {
+        Season s = clock_season(day);
+        float luck = city_season_luck(7u, 0, day);
+        if (day % DAYS_PER_SEASON == 3) CHECK(city_raid_fields(&raided, s, day) >= 0);
+        city_day(&peace, SETTLE_CAPITAL, REGION_STEPPE, s, luck);
+        city_day(&raided, SETTLE_CAPITAL, REGION_STEPPE, s, luck);
+    }
+    CHECK(peace.people > cap.people && peace.silver > cap.silver && peace.fields == 1.0f && peace.grudge == 0.0f && peace.unrest < 0.05f);
+    CHECK(raided.people < peace.people && raided.silver < peace.silver && raided.grain < peace.grain * 0.5f);
+    CHECK(raided.unrest > peace.unrest + 0.3f && raided.fields < 0.5f && raided.grudge > 50.0f && city_taxes(&raided, SETTLE_CAPITAL) < city_taxes(&peace, SETTLE_CAPITAL));
+    // Arrasados, no se saquean de nuevo hasta la otra estacion; se llevan mas en la cosecha.
+    City f = cap;
+    CHECK(city_raid_fields(&f, SEASON_AUTUMN, 10) == 120 && city_raid_fields(&f, SEASON_AUTUMN, 12) == -1);
+    CHECK(city_raid_fields(&f, SEASON_WINTER, 10 + CITY_RAID_DAYS) == 30);
+    CHECK(f.fields < cap.fields && f.grudge > 0.0f && f.unrest > cap.unrest && f.raided == 10 + CITY_RAID_DAYS);
+
+    // El tesoro limita el ejercito: la ciudad arruinada (en revuelta, sin plata) no puede pagar: los
+    // mercenarios se van y los soldados desertan hasta lo que alcanzan los impuestos. Con plata de
+    // sobra llegan mercenarios; cuando se acaba, no se les renueva el contrato.
+    City poor = raided, rich = peace;
+    poor.silver = 0.0f, poor.mercs = 30, poor.unrest = 1.0f;
+    int sold0 = poor.soldiers;
+    for (int d = 0; d < 10; d++) city_day(&poor, SETTLE_CAPITAL, REGION_STEPPE, SEASON_WINTER, 1.0f);
+    CHECK(sold0 > 0 && poor.mercs == 0 && poor.soldiers < sold0 && (float)poor.soldiers * CITY_SOLDIER_PAY > city_taxes(&poor, SETTLE_CAPITAL) * 0.5f);
+    for (int d = 0; d < 20; d++) {
+        rich.silver += 5000.0f;
+        city_day(&rich, SETTLE_CAPITAL, REGION_STEPPE, SEASON_SUMMER, 1.0f);
+    }
+    int hired = rich.mercs;
+    CHECK(hired > peace.mercs && rich.soldiers >= peace.soldiers);
+    rich.silver = city_reserve(&rich) * 0.5f; // se gasto la plata: bajo la reserva
+    for (int d = 0; d < 10; d++) city_day(&rich, SETTLE_CAPITAL, REGION_STEPPE, SEASON_SUMMER, 1.0f);
+    CHECK(rich.mercs < hired && rich.silver >= 0.0f);
+    City pay = peace;
+    pay.silver = 10.0f, pay.mercs = 50;
+    city_day(&pay, SETTLE_CAPITAL, REGION_STEPPE, SEASON_WINTER, 1.0f);
+    CHECK(pay.mercs < 50 && pay.silver >= 0.0f);
+    // Las aldeas no tienen con que pagar mercenarios.
+    City v = vil;
+    for (int day = 1; day <= DAYS_PER_YEAR; day++) city_day(&v, SETTLE_VILLAGE, REGION_STEPPE, clock_season(day), 1.0f);
+    CHECK(v.mercs == 0 && v.soldiers > 0 && v.people > vil.people);
+
+    // La guardia que sale a los campos: de la guarnicion, entre 2 y el maximo; sin soldados, nadie.
+    // Los muertos se descuentan (primero los de oficio) y dejan rencor.
+    City empty = cap, hurt = cap;
+    empty.soldiers = empty.mercs = 0;
+    CHECK(city_guard_party(&cap, 6) >= 2 && city_guard_party(&cap, 6) <= 6 && city_guard_party(&empty, 6) == 0);
+    city_lose_soldiers(&hurt, 3);
+    CHECK(hurt.soldiers == cap.soldiers - 3 && hurt.grudge > cap.grudge && hurt.people < cap.people);
+
+    // Los precios: con hambre, la comida mas cara; con el granero lleno, mas barata; la armeria llena
+    // abarata las armas; lo demas, igual.
+    City hungry = cap, full = cap, armed = cap;
+    hungry.grain = hungry.people * 5.0f, full.grain = full.people * 120.0f, armed.arms = (float)armed.soldiers * 3.0f;
+    CHECK(city_price_factor(&hungry, GRAIN_SACK_ID) > 1.4f && city_price_factor(&full, "utileria.consumible.pan") < 1.0f);
+    CHECK(city_price_factor(&cap, "utileria.material.cuero") == 1.0f && city_price_factor(&armed, "arma.corta.sable") < 1.0f);
+    CHECK(city_price_factor(NULL, "arma.corta.sable") == 1.0f);
+    // Con mucho rencor no comercian; el kanato, con la relacion por el suelo, tampoco.
+    City angry = cap;
+    angry.grudge = 80.0f;
+    CHECK(!city_trades(&angry, false, 50.0f) && city_trades(&cap, true, 0.0f) && !city_trades(&cap, true, -50.0f) && city_trades(&cap, false, -90.0f));
+    CHECK(tribute_due(7) > tribute_due(3) && tribute_due(0) > 0);
+
+    // El trazado: siempre el mismo y mas grande con mas gente (los campos nuevos se suman: los de antes
+    // no se mueven). El palacio en el centro de la capital; los barrios, solo en ella; los campos,
+    // afuera de la muralla y en seco.
+    const World *w = world_for_seed(20261011u);
+    int ci = -1, vi = -1;
+    for (int i = 0; i < w->settlement_count; i++) {
+        if (w->settlements[i].kind == SETTLE_CAPITAL && ci < 0) ci = i;
+        if (w->settlements[i].kind == SETTLE_VILLAGE && vi < 0) vi = i;
+    }
+    CHECK(ci >= 0 && vi >= 0);
+    if (ci < 0 || vi < 0) return;
+    static CityLot a[CITY_LOTS_MAX], b[CITY_LOTS_MAX], c2[CITY_LOTS_MAX];
+    City small = cap, big = cap;
+    small.people = 900.0f, big.people = 3200.0f, big.mercs = 40;
+    int na = city_layout(w, ci, &small, a, CITY_LOTS_MAX), nb = city_layout(w, ci, &big, b, CITY_LOTS_MAX);
+    CHECK(city_layout(w, ci, &small, c2, CITY_LOTS_MAX) == na && !memcmp(a, c2, sizeof(CityLot) * (size_t)na));
+    CHECK(count_lots(b, nb, LOT_HOUSE) > count_lots(a, na, LOT_HOUSE) && count_lots(b, nb, LOT_FIELD) > count_lots(a, na, LOT_FIELD));
+    CHECK(count_lots(a, na, LOT_PALACE) == 1 && count_lots(a, na, LOT_FORGE) == 1 && count_lots(a, na, LOT_BARRACKS) == 1);
+    CHECK(count_lots(a, na, LOT_CARPENTRY) == 1 && count_lots(a, na, LOT_MERC_TENT) == 0 && count_lots(b, nb, LOT_MERC_TENT) > 0);
+    const Settlement *cs = &w->settlements[ci];
+    CHECK(a[0].kind == LOT_PALACE && a[0].x == cs->x && a[0].z == cs->z);
+    for (int i = 0; i < nb; i++) {
+        if (b[i].kind != LOT_FIELD && b[i].kind != LOT_CORRAL) continue;
+        float d = sqrtf((b[i].x - cs->x) * (b[i].x - cs->x) + (b[i].z - cs->z) * (b[i].z - cs->z));
+        CHECK(d > CITY_WALL_R + 4.0f && d < CITY_FIELDS_R1 && world_water(w, b[i].x, b[i].z, 0.0f, NULL) < world_height(w, b[i].x, b[i].z));
+        CHECK(city_lot_at(b, nb, b[i].kind, b[i].x + 1.0f, b[i].z - 1.0f, 0.0f) == i);
+    }
+    for (int i = 0; i < na; i++) { // lo que ya habia, sigue en su lugar
+        if (a[i].kind != LOT_FIELD) continue;
+        bool kept = false;
+        for (int j = 0; j < nb && !kept; j++) kept = b[j].kind == LOT_FIELD && b[j].x == a[i].x && b[j].z == a[i].z;
+        CHECK(kept);
+    }
+    CHECK(city_lot_at(b, nb, LOT_FIELD, cs->x, cs->z, 0.0f) == -1);
+    int nv = city_layout(w, vi, &vil, a, CITY_LOTS_MAX);
+    CHECK(nv > 0 && count_lots(a, nv, LOT_PALACE) == 0 && count_lots(a, nv, LOT_FORGE) == 0 && count_lots(a, nv, LOT_HOUSE) >= 4);
+    CHECK(count_lots(a, nv, LOT_FIELD) >= 1 && city_layout(w, -1, &vil, a, CITY_LOTS_MAX) == 0 && city_layout(NULL, 0, &vil, a, CITY_LOTS_MAX) == 0);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -4446,6 +4577,7 @@ int main(void) {
     RUN(test_camp_migration_and_pastures);
     RUN(test_steppe_weapons);
     RUN(test_forge);
+    RUN(test_cities);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

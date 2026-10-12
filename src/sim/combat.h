@@ -46,6 +46,7 @@ typedef enum {
     ENEMY_ARCHER,
     ENEMY_RIDER,
     ENEMY_HORSE_ARCHER, // arquero a caballo: hostiga, rodea y se aleja tirando (src/sim/riding.h)
+    ENEMY_SOLDIER,      // soldado de un reino: la guardia que sale a defender los campos (src/sim/city.h)
     ENEMY_COUNT
 } EnemyKind;
 

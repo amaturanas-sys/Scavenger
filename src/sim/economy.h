@@ -46,6 +46,8 @@ void stock_seed_camp(Stockpile *s);
 #define FOOD_ID "utileria.consumible.carne_seca"
 #define FRESH_MEAT_ID "utileria.consumible.carne_fresca" // caza y sacrificio
 #define MILK_ID "utileria.consumible.leche"              // ordeño
+#define GRAIN_SACK_ID "utileria.objeto.saco_grano"        // de los campos saqueados o el mercado
+#define GRAIN_SACK_RATIONS 10                             // raciones que da un saco de grano
 #define HIDE_ID "utileria.material.pieles"
 
 typedef struct {

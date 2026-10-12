@@ -606,6 +606,42 @@ Cada arma tiene sus rasgos en `WeaponStats` (y los arcos, `RangedDef.saddle`):
 - **Comercio:** las caravanas venden acero wootz (40 de plata) y las capitales, hojas de sable de acero (30). La forja móvil vale 70, el mineral 0,5 y las puntas de hierro 1,5. El sable wootz templado vale 160; uno frágil, menos que uno sin templar.
 - **Lo que no entró:** el taller en una ciudad tomada (cuando haya ciudades que tomar, en la fase 8) y untar las armas con grasa (las armas todavía no se gastan con el uso).
 
+### Ciudades y reinos (v0.9.0 — `src/sim/city.*`, en juego `src/game/city_game.*` y `src/game/trade_game.*`)
+Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su economía, un día a la vez (`city_day`), en `GameActions.cities`.
+
+- **La gente y el granero:**
+  - Los labradores (el 55 % de la gente, hasta lo que da su tierra: 2400 almas en la capital, 340 en la aldea) cosechan según la estación (primavera 0,5; verano 0,9; otoño 2; invierno nada), la región (el bosque rinde más; el desierto, menos) y la suerte del año (0,8 a 1,2, la misma toda la estación).
+  - Cada alma come una ración por día, y el granero guarda hasta 150 días.
+  - Con un mes de reserva y poco descontento, la gente crece (más despacio pasada su tierra). Con hambre, se va un 1,5 % por día y sube el descontento.
+- **El tesoro:**
+  - Los escribas cobran 0,05 de plata por alma y día, por su eficiencia (la capital 0,8, la aldea 0,45); cobran menos con descontento o con la cosecha arrasada.
+  - Los talleres hacen armas y armaduras para la armería (2 de plata el juego) sin bajar de una parte de la reserva.
+  - El tesoro paga a los soldados (0,5 por día); se reclutan con armas de la armería si hay paga para veinte días. Si no alcanza, los mercenarios se van y los soldados desertan.
+  - Con plata de sobra, por encima de la reserva (1,5 por alma), llegan mercenarios (1,2 por día). Bajo la reserva, no se les renueva el contrato.
+- **La ciudad crece desde el centro** (`city_layout`, de la semilla y de su gente):
+  - en la capital, el palacio mirando a una de sus cuatro puertas y, alrededor, la fundición, el cuartel y la carpintería, al estilo de su región (`voxs_draw_city`); después, dos anillos de casas;
+  - afuera, entre las puertas, los campos y dos corrales, en huecos fijos que no se mueven cuando la ciudad crece, en seco y sin cuesta;
+  - las tiendas de los mercenarios, junto a la puerta principal;
+  - la aldea, un anillo de casas, sus campos y un corral.
+  - Se dibujan los campos según la estación (los arrasados, negros, desde el que se saqueó), los labradores de día, la guardia del palacio y de las puertas (más soldados, más guardias) y el estandarte del reino.
+- **El mercado** (`F` en la aldea o la capital):
+  - el granero mueve el precio de la comida (×1,6 con hambre, ×0,8 con el granero lleno) y la armería el de las armas;
+  - el tesoro paga lo que le vendes (y cobra lo que le compras), y el grano vendido va a su granero;
+  - «La ciudad» cuenta cómo está.
+- **El saqueo de los campos** (`F` en un campo, `city_raid_fields`):
+  - se lleva el grano de las eras: 120 raciones en otoño, 80 en verano, 50 en primavera y 30 en invierno, en sacos de 10;
+  - los campos pierden un 35 % (se resiembran en paz: rápido en primavera, nada en invierno), sube el descontento y el rencor (+30);
+  - no se puede saquear de nuevo hasta la otra estación;
+  - sale su guardia (`ENEMY_SOLDIER`: lanza, escudo de láminas, casco de bronce y escamas): de 2 a 6 (en la aldea, 3), según su guarnición. Los que caen se descuentan de ella (`Enemy.city`) y dejan más rencor;
+  - en el kanato, la relación con el kan baja 10.
+  - Con 60 de rencor, la ciudad no comercia contigo; se olvida a 0,6 por día.
+- **La tribu come grano:** en el acopio, después de la carne y la leche, cada saco da para diez.
+- **El tributo al Kanato de Hierro:**
+  - en su capital (la de la estepa), «Pagar el tributo» cuesta 4 de plata más 4 por integrante, una vez por estación; sube la relación (+10), y la plata va a su tesoro;
+  - al empezar una estación, si la anterior pasó sin pagarlo, la relación baja (−6) y lo cuenta el guardián del campamento inicial (la primera revisión solo se anota);
+  - con la relación en −30 o menos, el kanato no comercia contigo.
+- **Fase 8b (v0.9.1):** el ejército del reino en el mundo (infantería pesada con paveses en formación cerrada, arqueros y ballesteros, carros de guerra), las expediciones de castigo si la relación cae y el asedio de las ciudadelas. Tomar una ciudad da su taller permanente (fase 7b).
+
 ### Cría (implementado en v0.7.1 — `src/sim/animals.*`, en juego `src/game/fauna_game.c`)
 - **Quién se cría:** las monturas (caballo, burro, buey, camello) y el ganado (cabra, becerro). La mula y el elefante, no.
 - **Sexo y lo heredado:** cada animal nace con sexo y con dos rasgos: velocidad y aguante, que solo cuentan montado. Los salvajes, ±10 % (salen de dónde nacieron); los criados, el promedio de sus padres ±5 %, sin pasar de ±25 %.

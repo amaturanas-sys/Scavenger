@@ -26,10 +26,11 @@ void td_update(GameActions *ga, Combat *cb, Troop *troop, const Props *props, co
 void td_draw_hud(int w, int h);
 // Las caravanas. Dentro de BeginMode3D.
 void td_draw_world(const GameActions *ga, Props *props, const Terrain *t, const Player *p, float time);
-// Prueba (--comerciar): what = "raiz", "vender" o "comprar" (el mercado mas cercano, con algo que
+// Prueba (--comerciar): what = "raiz", "vender", "comprar" o "ciudad" (el mercado mas cercano, con algo que
 // vender en la mochila), "cerca" (a su lado, sin hablar), "caravana" (a su costado, mirandola pasar) o "asaltar" (la asalta), las dos
-// con la de la ruta mas larga, o "saquear" (un campamento rival cuyos guerreros ya salieron).
-void td_test(GameActions *ga, Combat *cb, Troop *troop, const Props *props, const Terrain *t, Player *p, const char *what, char *log,
+// con la de la ruta mas larga, "saquear" (un campamento rival cuyos guerreros ya salieron) o "campos" (saquea los campos de la
+// ciudad o aldea mas cercana; day: el dia de juego).
+void td_test(GameActions *ga, Combat *cb, Troop *troop, const Props *props, const Terrain *t, Player *p, const char *what, int day, char *log,
              size_t len);
 
 #endif

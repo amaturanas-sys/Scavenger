@@ -24,6 +24,7 @@
 #include "sim/memory_map.h"
 #include "game/dialog.h"
 #include "sim/camps.h"
+#include "sim/city.h"
 #include "sim/jewelry.h"
 #include "sim/loadout.h"
 #include "sim/talents.h"
@@ -194,6 +195,11 @@ typedef struct {
     // La migracion (src/game/camp_game.c): las yurtas del campamento inicial (src/world/camp.h), que
     // no son objetos del mundo; las cuenta main cada cuadro, para cargarlas al levantarlo.
     int start_yurts;
+    // Las ciudades y aldeas (src/game/city_game.c, src/sim/city.h): la economia de cada asentamiento
+    // del mundo, y el tributo al kanato de la estepa.
+    City cities[SETTLEMENTS_MAX];
+    int tribute_season;  // la estacion del ultimo tributo pagado (season_index + 1; 0: nunca)
+    int tribute_checked; // la ultima estacion revisada al empezar (+1): si la anterior paso sin tributo, la relacion baja
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);

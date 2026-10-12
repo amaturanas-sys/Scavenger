@@ -19,6 +19,11 @@ typedef enum {
     VB_TOWER_WOOD,
     VB_WALL_STONE,    // tramo de muralla de 8 m (a lo largo de x), con almenas
     VB_PALISADE,      // tramo de empalizada de troncos de 8 m
+    // La ciudad (fase 8a, src/sim/city.h): al estilo de su region, con voxs_draw_city.
+    VB_PALACE,        // el palacio del rey o gran jefe: terraza, sala con porche de columnas y techo en gradas
+    VB_FORGE,         // la fundicion: horno, chimenea alta, yunque y carbon
+    VB_BARRACKS,      // el cuartel: nave larga y un armero con lanzas
+    VB_CARPENTRY,     // la carpinteria: cobertizo con troncos apilados y un caballete
     VB_KINDS
 } VoxBuilding;
 
@@ -26,6 +31,10 @@ typedef enum {
 void voxs_draw_site(SiteKind kind, Region region, Vector3 at, float yaw, Color tint);
 // Dibuja una casa o torre; scale la agranda (la casa del jefe).
 void voxs_draw_building(VoxBuilding b, Vector3 at, float yaw, float scale, Color tint);
+// Los edificios de la ciudad (el palacio y los barrios), con los materiales y colores de su region:
+// fieltro y oro en la estepa, troncos en el bosque, piedra en el altiplano, madera y turba en la
+// costa, adobe y azul en el desierto.
+void voxs_draw_city(VoxBuilding b, Region region, Vector3 at, float yaw, float scale, Color tint);
 // La casa tipica de una region.
 VoxBuilding voxs_region_house(Region r);
 // Formaciones del paisaje (de las fotos de referencia de cada region), en 4 variantes:

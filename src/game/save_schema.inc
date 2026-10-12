@@ -444,6 +444,22 @@ static const SfField SF_F_CampNews[] = {
 };
 static const SfType SF_T_CampNews = SF_TYPE(CampNews, SF_F_CampNews);
 
+// City (src/sim/city.h)
+static const SfField SF_F_City[] = {
+    SF_ONE(City, people, "float", SF_FLOAT, NULL),
+    SF_ONE(City, grain, "float", SF_FLOAT, NULL),
+    SF_ONE(City, silver, "float", SF_FLOAT, NULL),
+    SF_ONE(City, arms, "float", SF_FLOAT, NULL),
+    SF_ONE(City, fields, "float", SF_FLOAT, NULL),
+    SF_ONE(City, unrest, "float", SF_FLOAT, NULL),
+    SF_ONE(City, soldiers, "int32_t", SF_INT, NULL),
+    SF_ONE(City, mercs, "int32_t", SF_INT, NULL),
+    SF_ONE(City, grudge, "float", SF_FLOAT, NULL),
+    SF_ONE(City, raided, "int32_t", SF_INT, NULL),
+    SF_ONE(City, raided_lot, "int32_t", SF_INT, NULL),
+};
+static const SfType SF_T_City = SF_TYPE(City, SF_F_City);
+
 // GameActions (src/game/actions_game.h)
 static const SfField SF_F_GameActions[] = {
     // inv: puntero, no se guarda
@@ -575,6 +591,9 @@ static const SfField SF_F_GameActions[] = {
     SF_ONE(GameActions, caravan_raid_at, "Vector3", SF_BYTES, NULL),
     SF_ONE(GameActions, tribe_looted, "unsigned", SF_UINT, NULL),
     SF_ONE(GameActions, start_yurts, "int", SF_INT, NULL),
+    SF_ARR(GameActions, cities, "City", SF_STRUCT, &SF_T_City),
+    SF_ONE(GameActions, tribute_season, "int", SF_INT, NULL),
+    SF_ONE(GameActions, tribute_checked, "int", SF_INT, NULL),
 };
 static const SfType SF_T_GameActions = SF_TYPE(GameActions, SF_F_GameActions);
 
@@ -616,6 +635,7 @@ static const SfField SF_F_Enemy[] = {
     SF_ONE(Enemy, ride_yaw, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, orbit_dir, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, retreating, "bool", SF_BOOL, NULL),
+    SF_ONE(Enemy, city, "int", SF_INT, NULL),
 };
 static const SfType SF_T_Enemy = SF_TYPE(Enemy, SF_F_Enemy);
 

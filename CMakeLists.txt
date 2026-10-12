@@ -64,7 +64,8 @@ add_library(estepa_sim STATIC
   src/sim/placement.c
   src/sim/trade.c
   src/sim/riding.c
-  src/sim/forge.c)
+  src/sim/forge.c
+  src/sim/city.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)
@@ -114,6 +115,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/travel_game.c
     src/game/trade_game.c
     src/game/forge_game.c
+    src/game/city_game.c
     src/game/apparel_game.c
     src/game/water_game.c
     src/game/death_game.c

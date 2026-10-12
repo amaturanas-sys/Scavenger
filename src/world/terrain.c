@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../sim/city.h"
 #include "../sim/hazards.h"
 #include "../sim/noise.h"
 #include "platform.h"
@@ -534,7 +535,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             if (sx * sx + sz * sz > 2.2f) continue;
             float dist;
             int si = world_nearest_settlement(t->world, x, z, &dist);
-            if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? 80.0f : 45.0f)) continue; // claros de los pueblos
+            if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 + 8.0f : VILLAGE_FIELDS_R1 + 6.0f)) continue; // claros de los pueblos (y sus campos)
             if (near_site(t->world, x, z)) continue;
             float height = 5.0f + 5.0f * r1 * (0.6f + 0.4f * k[REGION_FOREST]);
             push_tree(&b, (Vector3){ x, y, z }, height, 1.4f + 0.8f * r2, r2);
@@ -558,7 +559,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             if (world_river_bank(t->world, x, z, NULL) > 0.45f || (k[REGION_FJORD] > 0.5f && y < SEA_LEVEL + 4.0f)) continue; // ni en el lecho ni en la playa
             float dist;
             int si = world_nearest_settlement(t->world, x, z, &dist);
-            if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? 70.0f : 40.0f)) continue;
+            if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 + 4.0f : VILLAGE_FIELDS_R1 + 4.0f)) continue;
             if (near_site(t->world, x, z)) continue;
             float sx = terrain_height(t, x + 1.5f, z) - y, sz = terrain_height(t, x, z + 1.5f) - y;
             float slope = sqrtf(sx * sx + sz * sz) / 1.5f;

@@ -11,7 +11,6 @@
 #include "world/hearth.h"
 #include "world/voxstruct.h"
 
-#define SETTLE_DRAW 280.0f // m: se dibujan los asentamientos a esta distancia
 #define SETTLE_ARRIVE 90.0f
 #define DEN_DRAW 180.0f
 #define TRIBE_DRAW 260.0f
@@ -135,52 +134,6 @@ static Color folk_color(Region rg, int k) {
 
 static bool g_fires_out;
 
-static void draw_settlement(const Terrain *t, const Settlement *s, int idx, float time) {
-    float ground = terrain_height(t, s->x, s->z);
-    int n = s->kind == SETTLE_CAPITAL ? 9 : 5;
-    float ring = s->kind == SETTLE_CAPITAL ? 26.0f : 15.0f;
-    for (int i = 0; i < n; i++) { // casas en anillo, mirando al centro
-        float a = (float)i / n * 2.0f * PI + idx * 0.7f;
-        float x = s->x + cosf(a) * ring, z = s->z + sinf(a) * ring;
-        building(s->region, (Vector3){ x, terrain_height(t, x, z), z }, -a, s->kind == SETTLE_CAPITAL && i == 0 ? 1.6f : 1.0f);
-    }
-    if (s->kind == SETTLE_CAPITAL) { // muralla de torres y estandarte del reino
-        Color stone = s->region == REGION_STEPPE || s->region == REGION_FOREST ? (Color){ 120, 92, 60, 255 } : (Color){ 140, 134, 124, 255 };
-        for (int i = 0; i < 12; i++) {
-            float a = (float)i / 12.0f * 2.0f * PI, x = s->x + cosf(a) * 42.0f, z = s->z + sinf(a) * 42.0f;
-            float y = terrain_height(t, x, z);
-            voxs_draw_building(s->region == REGION_STEPPE || s->region == REGION_FOREST ? VB_TOWER_WOOD : VB_TOWER_STONE, (Vector3){ x, y, z }, a, 1.0f, WHITE);
-            float a2 = (float)(i + 1) / 12.0f * 2.0f * PI, x2 = s->x + cosf(a2) * 42.0f, z2 = s->z + sinf(a2) * 42.0f;
-            // Los tramos entre torres: muralla de piedra o empalizada, de voxeles (deja puertas).
-            if (i % 3) {
-                float len = dist_xz(x, z, x2, z2), ang = -atan2f(z2 - z, x2 - x);
-                bool wood = s->region == REGION_STEPPE || s->region == REGION_FOREST;
-                for (int k = 0; k * 8.0f < len; k++) {
-                    float f = (k * 8.0f + 4.0f) / len, px = x + (x2 - x) * f, pz = z + (z2 - z) * f;
-                    voxs_draw_building(wood ? VB_PALISADE : VB_WALL_STONE, (Vector3){ px, terrain_height(t, px, pz), pz }, ang, 1.0f, WHITE);
-                }
-            }
-            (void)stone;
-        }
-        Vector3 pole = { s->x, ground, s->z };
-        DrawCylinder(pole, 0.12f, 0.12f, 9.0f, 5, (Color){ 90, 70, 50, 255 });
-        float wave = sinf(time * 2.0f) * 0.3f;
-        DrawCube((Vector3){ pole.x + 1.0f, ground + 8.0f + wave * 0.2f, pole.z }, 2.0f, 1.2f, 0.08f, folk_color(s->region, idx + 1));
-    }
-    // Fogata y gente.
-    hearth_draw_base((Vector3){ s->x, ground, s->z }, s->kind == SETTLE_CAPITAL ? HEARTH_SCALE_BONFIRE : 1.3f, 100u + (uint32_t)idx, !g_fires_out);
-    for (int k = 0; k < 4; k++) {
-        float a = time * 0.05f + (float)k * 1.6f + idx, r = 5.0f + 1.5f * (float)(k % 2);
-        Vector3 pos = { s->x + cosf(a) * r, 0, s->z + sinf(a) * r };
-        pos.y = terrain_height(t, pos.x, pos.z);
-        BodyPose pose;
-        BodyPoseParams bp = { .walk_phase = time * 6.0f + k, .walk = 0.0f, .scale = 1.0f };
-        body_pose(&pose, &bp);
-        BodyColors bc = { { 200, 160, 120, 255 }, folk_color(s->region, k), { 84, 64, 46, 255 } };
-        body_draw(&pose, pos, a + PI, bc, NULL);
-    }
-}
-
 static void draw_den(const Terrain *t, const Den *d) {
     float y = terrain_height(t, d->x, d->z);
     Color rock = d->region == REGION_DESERT ? (Color){ 170, 120, 84, 255 } : (Color){ 112, 108, 100, 255 };
@@ -233,8 +186,6 @@ static void draw_site(const Terrain *t, const WorldSite *st, float time) {
 void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, float time) {
     g_fires_out = ga->fires_out; // la lluvia apaga tambien los fuegos de los demas
     const World *w = t->world;
-    for (int i = 0; i < w->settlement_count; i++)
-        if (dist_xz(w->settlements[i].x, w->settlements[i].z, p->pos.x, p->pos.z) < SETTLE_DRAW) draw_settlement(t, &w->settlements[i], i, time);
     for (int i = 0; i < w->den_count; i++)
         if (dist_xz(w->dens[i].x, w->dens[i].z, p->pos.x, p->pos.z) < DEN_DRAW) draw_den(t, &w->dens[i]);
     for (int i = 0; i < w->tribe_count; i++)

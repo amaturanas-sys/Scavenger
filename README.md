@@ -144,6 +144,23 @@ La forja (v0.8.1):
 
 Pruebas: `--ir veta|pantano`, `--ubicar taller` y `--forja`: la mochila grande con la forja móvil, hierro, carbón y un sable frágil empuñado. Pica la veta si estás junto a una (con `--ir veta`) y empieza las puntas de hierro; con `--enemigos`, el sable puede quebrarse.
 
+Ciudades y reinos (v0.9.0):
+- **Las ciudades crecen desde el centro:** en la capital, el palacio del rey o gran jefe (con su guardia y un escriba) y, alrededor, la fundición, el cuartel y la carpintería; después, los anillos de casas. Afuera, los campos con sus surcos y los corrales. El palacio y los barrios tienen el estilo de su región. Las aldeas tienen casas, campos y un corral. Con más gente aparecen más casas y más campos.
+- **Los campos siguen la estación:** brotes en primavera, verdes en verano, trigo dorado y después rastrojo con gavillas en otoño, tierra desnuda en invierno. De día, los labradores carpen entre los surcos. Los campos arrasados se ven negros hasta que los resiembran.
+- **Su economía, día a día:** cada asentamiento tiene gente, granero, tesoro, armería, soldados y mercenarios.
+  - Los campos dan según la estación (la cosecha, en otoño), la región y la suerte del año. Cada alma come una ración por día.
+  - Bien comidos y en paz, crecen; con hambre, la gente se va y crece el descontento.
+  - Los escribas cobran impuestos para el tesoro (la capital tiene más: cobra más). El tesoro paga los talleres de armas y a los soldados.
+  - Si sobra plata, contratan mercenarios, que acampan en tiendas junto a la puerta; si falta, se van.
+- **El mercado (`F`):** con el granero vacío, la comida vale más (hasta ×1,6); con la armería llena, las armas valen menos. Su tesoro paga lo que le vendes: una aldea pobre no te compra mucho. El grano que les vendes va a su granero. «La ciudad» muestra cómo está: gente, granero, cosecha, tesoro, escribas, armería y guarnición.
+- **Saquear sus campos (`F` en un campo):** te llevas el grano de las eras en sacos (12 en otoño; menos en las demás estaciones), y la tribu los come: un saco, diez raciones. La cosecha queda arrasada, sube su descontento y sale su guardia, de 2 a 6 soldados del reino con lanza, escudo de láminas y escamas. Los que caen se descuentan de su guarnición.
+  - Les queda rencor, que se olvida despacio. Con mucho rencor, no comercian contigo.
+  - Arrasados, sus campos no se pueden saquear de nuevo hasta la otra estación.
+  - Si la ciudad es del kanato, el kan se entera.
+- **El tributo:** la tribu rinde tributo al Kanato de Hierro. En su capital (la de la estepa), «Pagar el tributo» cuesta 4 de plata más 4 por cada integrante, una vez por estación, y sube la relación (+10). Si una estación pasa sin pagarlo, baja (−6), y lo cuenta el guardián del campamento inicial. Con la relación por el suelo, el kanato no comercia contigo.
+
+Pruebas: `--ir kanato|campos`, `--comerciar ciudad|campos` (con `--ir kanato`: la página de la ciudad o el saqueo de sus campos) y `--dron <m>`, la cámara lejos para ver una ciudad entera.
+
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.
@@ -194,7 +211,7 @@ Oficios, comercio y saqueo:
 - **Caravanas:** van y vuelven, al paso de los camellos, entre cada caravasar y la capital más cercana, con dos jinetes de escolta; se detienen a comerciar. **Asaltarla** baja 10 la relación con el reino: su escolta (dos jinetes, un bandido y un arquero) pelea y, vencida, la carga queda en el suelo (seda, especias, vino, plata, oro y una turquesa). La caravana vuelve a salir de su caravasar a los dos días.
 - **Saquear:** un campamento rival cuyos guerreros ya salieron al paso se saquea con `F` junto a su fuego si no queda nadie en pie a 40 m: cuero, fieltro, carne seca, pieles y plata. Se rearma al alejarte 600 m.
 
-Pruebas: `--comerciar raiz|vender|comprar|cerca` (el mercado más cercano: con `--ir aldea`, `--ir tribu`...), `--comerciar caravana|asaltar|saquear`.
+Pruebas: `--comerciar raiz|vender|comprar|ciudad|cerca` (el mercado más cercano: con `--ir aldea`, `--ir tribu`...), `--comerciar caravana|asaltar|saquear|campos`.
 
 Órdenes a la escolta (`Mayús+Y`):
 - **Despachar:** marcas quiénes salen y eliges el destino: un campamento o un sitio marcado en el mapa (`M`). Al menos uno tiene que conocerlo (haber estado allí). Cuantos más lo conozcan, menos riesgo; también influyen la distancia, el tamaño del grupo y la noche.
