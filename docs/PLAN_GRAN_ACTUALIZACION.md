@@ -381,7 +381,17 @@ La fase era grande y se partió en dos, como la 4 y la 6: las armas aquí (v0.8.
 
 **Costo:** medio-alto. Es sobre todo contenido y datos; los modelos 3D son trabajo aparte en Nomad o Kiln.
 
-## Fase 7b — La forja (v0.8.1)
+## Fase 7b — La forja (v0.8.1) — hecha
+
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **Las reglas, en `src/sim/forge.*`** (con tests): los sitios de hierro, las estaciones de la forja (`forge_station_ok`) y la probabilidad del temple (`temper_chance`). En juego, `src/game/forge_game.*`: dibujar las vetas, descubrirlas al pasar, picarlas, la estación (`forge_station`) y la tirada del temple.
+- **El hierro sale de la semilla** (`world_iron_sites`, con su propio generador): no cambia el mundo y no se guarda. Hasta 12 vetas a cielo abierto en el altiplano (a más de 700 m del centro y a 350 m una de otra) y un hierro de pantano por lago del bosque o de los fiordos. Al pasar a menos de 22 m, la veta queda marcada en el mapa; los exploradores la traen como hallazgo (`FIND_IRON`, que no es un peligro). `F` junto a ella pica (`ACTION_MINE`, 8 s): 2 de mineral, o 1 en el pantano. El herrero lo funde en el horno de acero (3 de mineral y 2 de carbón dan 1 hierro).
+- **La forja móvil es un objeto** (`utileria.herramienta.forja_movil`, del horno de acero): cuenta si está a mano, como los ingredientes (bolsillos, mochila, alforjas, carreta, o el acopio del campamento o de la columna). «Se carga en un caballo» quedó en eso: va en las alforjas, la carreta o el acopio que viaja con la columna. Hace a mano puntas de flecha de hierro, cuchillos y el sable de acero con una hoja comprada, y repara lo que pide un horno. Lo que se forja en un horno sigue pidiendo el horno.
+- **El taller** (`BUILD_WORKSHOP`) pide un campamento de 8 personas o más (`BuildDef.min_people`, nuevo; el menú lo muestra). Forja el sable wootz y la lanza de punta de acero, y templa. Lo de la «ciudad tomada» queda para cuando haya ciudades que tomar (fase 8).
+- **El temple es una receta** (`CraftDef.fails`): sale el arma `_templado`/`_templada` o, si sale mal, `_fragil`. Las variantes son ids del inventario (las manos guardan solo el id), así que no cambia ningún struct que se guarde. Templada pega ×1,15; frágil ×1,1, pero se quiebra en un golpe que entra (5 %, 12 % si se lo paran) y se pierde. La probabilidad es 0,5 + 0,15 por herrero (hasta 2) + 0,25 × la destreza del clan, entre 0,3 y 0,95. El wootz pega ×1,4. La empuñadura del sable nunca toma uno frágil.
+- **Comercio:** el wootz, en las caravanas; las hojas de sable, en las capitales. Lo templado vale más; lo frágil, menos que sin templar.
+- **Untar las armas con grasa** (pendiente desde la fase 5) no entró: las armas todavía no se gastan con el uso.
+- **Pruebas:** `--ir veta|pantano`, `--ubicar taller` y `--forja` (la forja móvil, hierro, carbón y un sable frágil; con `--ir veta`, pica). **Ayuda:** una página nueva, «La forja».
 
 **Lo que hay:** las armas de la fase 7; los hornos de bronce y de acero con herrero; reparar con el horno; el hierro, el cobre y el estaño como materiales del altiplano y del comercio; la exploración que marca sitios en el mapa (fase 4); la migración (fase 6b).
 

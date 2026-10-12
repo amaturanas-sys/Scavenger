@@ -759,6 +759,16 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
         snprintf(log, len, T("Tu %s se traba en el golpe: pierdes el ritmo (el sable corta limpio)."),
                  lower_name(it ? T(it->name) : T("Arma"), what, sizeof(what)));
     }
+    // Lo mal templado (src/sim/forge.h) a veces se quiebra en el golpe, y mas si se lo paran: se pierde.
+    if (strike && r.landed && rng_float(&cb->rng) < weapon_break_chance(weapon, r.blocked)) {
+        char id[INV_ID_LEN], what[48];
+        snprintf(id, sizeof(id), "%s", weapon); // weapon apunta a la mano: se copia antes de vaciarla
+        const InvItem *it = inventory_find(ga->inv, id);
+        if (ig_use(ga, props, p, id, 1) < 1 && bag_take(&ga->armory, id, 1, NULL) < 1) stock_take(ga_stock(ga), id, 1);
+        if (!strcmp(ga->hands.right.id, id)) hands_clear(&ga->hands, HAND_RIGHT);
+        else if (!strcmp(ga->hands.left.id, id)) hands_clear(&ga->hands, HAND_LEFT);
+        snprintf(log, len, T("¡Tu %s se quiebra en el golpe! El temple había salido mal."), lower_name(it ? T(it->name) : T("Arma"), what, sizeof(what)));
+    }
 }
 
 // Quien recibe el golpe de un enemigo: el jugador (target 0) o un integrante de la escolta.

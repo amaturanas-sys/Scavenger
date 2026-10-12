@@ -83,6 +83,9 @@ typedef struct {
 
 // La primera regla que encaja gana: lo concreto antes que lo general.
 static const IconRule RULES[] = {
+    // La forja (fase 7b): antes que las reglas generales (herramienta, estructura, sable).
+    { "mineral_hierro", ICON_MINERAL }, { "acero_wootz", ICON_LINGOTE }, { "hoja_acero", ICON_SABLE },
+    { "puntas_hierro", ICON_FLECHA },  { "forja_movil", ICON_FABRICAR }, { "taller_herrero", ICON_FABRICAR },
     { "amuleto", ICON_AMULETO },     { "tatuaje", ICON_TATUAJE },      { "mensaje", ICON_MENSAJE },
     { "anillo", ICON_ANILLO },       { "brazalete", ICON_BRAZALETE },  { "collar", ICON_COLLAR },
     { "aretes", ICON_ARETE },        { "hebilla", ICON_HEBILLA },      { "gema", ICON_GEMA },

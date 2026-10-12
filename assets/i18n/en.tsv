@@ -5,6 +5,7 @@
 Abedul	Birch
 Abeja (enjambre)	Bee (swarm)
 Acantilado modular	Modular cliff
+Acero wootz (torta)	Wootz steel (cake)
 Agua con vino	Watered wine
 Agua cruda	Raw water
 Agua hervida	Boiled water
@@ -121,6 +122,8 @@ Cuerpo base: gigante (gran guerrero)	Base body: giant (champion)
 Cuerpo base: niño	Base body: child
 Curandero	Healer
 Daga	Dagger
+Daga de anillo frágil (mal templada)	Brittle ring-pommel dagger (badly tempered)
+Daga de anillo templada	Tempered ring-pommel dagger
 Deel (caftán cruzado)	Deel (wrap caftan)
 Dromedario	Dromedary
 Duna	Dune
@@ -183,6 +186,7 @@ Herrero	Smith
 Hierba alta (escondite)	Tall grass (hiding)
 Hierbas curativas	Healing herbs
 Hoguera grande	Large bonfire
+Hoja de sable de acero	Steel sabre blade
 Hombreras (par) de escamas de hierro	Iron scale pauldrons (pair)
 Hombreras (par) de fieltro acolchado	Padded felt pauldrons (pair)
 Hombreras (par) de malla	Mail pauldrons (pair)
@@ -276,6 +280,7 @@ Poste tótem del clan	Clan totem pole
 Prisionero	Prisoner
 Protagonista ({NOMBRE})	Protagonist ({NOMBRE})
 Puerta de la ciudad	City gate
+Puntas de flecha de hierro	Iron arrowheads
 Puntas de hueso	Bone points
 Refugiado	Refugee
 Refugio de ramas y pieles	Branch and hide shelter
@@ -285,7 +290,11 @@ Roca mediana	Medium rock
 Roca pequeña	Small rock
 Rollo de cuerda	Coil of rope
 Sable de acero damasquinado	Damascus steel sabre
+Sable de acero frágil (mal templado)	Brittle steel sabre (badly tempered)
+Sable de acero templado	Tempered steel sabre
 Sable de la estepa	Steppe sabre
+Sable wootz frágil (mal templado)	Brittle wootz sabre (badly tempered)
+Sable wootz templado	Tempered wootz sabre
 Sacerdote del culto	Cult priest
 Saco de grano	Sack of grain
 Saxaúl (arbusto del desierto)	Saxaul (desert shrub)
@@ -354,6 +363,8 @@ Zorro	Fox
  · montado	 · mounted
 %d bebieron agua cruda y les cayeron los espíritus malditos (hace falta leña para hervirla).	%d drank raw water and the cursed spirits fell upon them (firewood is needed to boil it).
 %d pasaron sed: no hay agua cerca ni en el acopio.	%d went thirsty: no water nearby or in the stockpile.
+%d+ personas	%d+ people
+%s necesita un campamento grande: %d personas o más (aquí viven %d).	%s needs a large camp: %d people or more (%d live here).
 %s no se empuña.	%s can't be wielded.
 %s terminó: %s.	%s finished: %s.
 %s · Enter o clic otra vez: reparar	%s · Enter or click again: repair
@@ -364,6 +375,7 @@ Cambia la estación (%s): aquí el pasto no alcanza y el ganado pasará hambre. 
 Cambia la estación (%s): aquí hay buen pasto; los pastores juntan más forraje.	The season turns (%s): the grass is good here; the herders gather more fodder.
 Cambia la estación (%s): el pasto de aquí alcanza.	The season turns (%s): the grass here is enough.
 Campamento de las estelas	Camp of the Stelae
+Campamento grande: %d personas o más (aquí viven %d)	Large camp: %d people or more (%d live here)
 Cuadrilla de %d · se levanta 6 m delante de ti	Crew of %d · built 6 m ahead of you
 Demasiadas obras a la vez.	Too many works at once.
 Desenfundaste.	You draw your weapons.
@@ -373,6 +385,7 @@ Día %d: comieron %d%s, recolectaron %d. Ánimo del campamento %+.0f.	Day %d: %d
 El %s está demasiado entero: debilítalo peleando antes del lazo.	The %s is too strong: weaken it in a fight before the lasso.
 El %s se zafó del lazo.	The %s slipped the lasso.
 El horno: elige qué fabricar.	The oven: choose what to make.
+El temple salió mal: %s. Puede quebrarse en un golpe.	The temper went wrong: %s. It may shatter on a blow.
 Empuñadura: %s.	Grip: %s.
 Empuñas: %s.	You wield: %s.
 Empuñe: %s%s%s%s%s%s	Grip: %s%s%s%s%s%s
@@ -389,6 +402,7 @@ Falta: %s (%d de %d).	Missing: %s (%d of %d).
 Forjado	Forged
 Forjando: %s.	Forging: %s.
 Hace falta un %s en la tribu.	The tribe needs a %s.
+Hace falta una forja móvil a mano (o un horno, o el taller del herrero).	You need a mobile forge at hand (or a furnace, or the smith's workshop).
 Hace falta: %s.	Needs: %s.
 Haciendo: %s %d%%	Making: %s %d%%
 Hecho	Made
@@ -422,6 +436,7 @@ Obras	Works
 Para cribar hay que estar en la orilla, mirando al agua.	To pan you must stand on the shore, facing the water.
 Para hervir el agua hace falta un fuego encendido cerca.	Boiling water needs a lit fire nearby.
 Para llenar el odre hay que estar en la orilla, mirando al agua, o junto a un pozo.	To fill the waterskin you must stand on the shore, facing the water, or next to a well.
+Para picar hay que estar junto a una veta de hierro (los exploradores las marcan en el mapa).	To mine you must stand by an iron vein (scouts mark them on the map).
 Pasas el arma a la otra mano: %s.	You switch the weapon to the other hand: %s.
 Q / E cambia de pestaña	Q / E switches tab
 Recoges %d hierbas curativas.	You gather %d healing herbs.
@@ -429,6 +444,7 @@ Reparar	Repair
 Requiere: %s	Requires: %s
 Sacas agua del pozo: +%d agua limpia (no hace falta hervirla).	You draw water from the well: +%d clean water (no need to boil it).
 Te falta: %s.	You lack: %s.
+Templado: %s. Filo duro y lomo flexible: pega más.	Tempered: %s. Hard edge and flexible spine: it hits harder.
 Tomas %d cosas%s.	You take %d things%s.
 Tomaste: %s (T para lanzarlo).	You took: %s (T to throw it).
 Tomaste: %s.	You took: %s.
@@ -591,6 +607,7 @@ el guardián	the keeper
 en una obra	at a building site
 explorando	scouting
 hace la ronda	on patrol
+hierro de pantano	bog iron
 la ciudadela de %s	the citadel of %s
 malherido	badly hurt
 nada	nothing
@@ -604,6 +621,7 @@ te sigue · clic: que se quede	follows you · click: stay
 trabajando	working
 tu mapa ya no tiene lugar para más marcas.	your map has no room for more marks.
 un campamento rival (%s)	a rival camp (%s)
+una veta de hierro	an iron vein
 ¿A quién capacitamos? Mientras aprende no hace otra cosa.	Whom shall we train? While learning they do nothing else.
 ¿Disolvemos el campamento? No hay carreta cerca: solo se llevará lo que quepa en las alforjas y en nuestras mochilas. El resto arderá.	Dissolve the camp? There's no cart nearby: only what fits in the saddlebags and our backpacks goes. The rest will burn.
 ¿Disolvemos el campamento? Quemaremos las estructuras, cargaremos en la carreta y en nuestras mochilas lo que quepa y te seguiremos.	Dissolve the camp? We'll burn the structures, load what fits in the cart and our backpacks, and follow you.
@@ -781,6 +799,7 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡Lanza en ristre!	Lance couched!
 ¡Parry! El %s queda abierto.	Parry! The %s is wide open.
 ¡Te muerde un %s: veneno! Véndate con hierbas (B).	A %s bites you: poison! Bind it with herbs (B).
+¡Tu %s se quiebra en el golpe! El temple había salido mal.	Your %s shatters on the blow! The temper had gone wrong.
 ¡Un %s derriba a %s! Acércate y pulsa B.	A %s knocks down %s! Get close and press B.
 ¡Una %s te alcanza! %s.	A %s hits you! %s.
 # --- src/game/death_game.c
@@ -863,6 +882,13 @@ macho	male
 ¡Pescaste un pez! (+1 carne fresca)	You caught a fish! (+1 fresh meat)
 ¡Pescaste un pez! Pero no te cabe: lo sueltas.	You caught a fish! But no room: you let it go.
 ¡Tu montura cayó! Sigues a pie.	Your mount fell! You go on foot.
+# --- src/game/forge_game.c
+Encuentras hierro de pantano en la orilla: lo marcas en tu mapa (M). F para sacarlo.	You find bog iron on the shore: you mark it on your map (M). F to dig it out.
+Encuentras una veta de hierro a cielo abierto: la marcas en tu mapa (M). F para picarla.	You find an open-air iron vein: you mark it on your map (M). F to mine it.
+F: picar la veta de hierro	F: mine the iron vein
+F: sacar el hierro de pantano	F: dig out the bog iron
+Picas la veta: %d de mineral de hierro%s. Se funde en el horno de acero.	You mine the vein: %d iron ore%s. It is smelted in the steel furnace.
+Sacas hierro de pantano: %d de mineral%s. Se funde en el horno de acero.	You dig out bog iron: %d ore%s. It is smelted in the steel furnace.
 # --- src/game/gems_game.c
 %s: %d x %s.	%s: %d x %s.
 %s: %s, pero no te cabe.	%s: %s, but it doesn't fit.
@@ -998,7 +1024,7 @@ Cubre su zona	Covers its zone
 Dejas la mochila en el suelo: vas más ligero (Mayús+G para recogerla).	You drop the backpack: you move lighter (Shift+G to pick it up).
 Envenenado	Poisoned
 Flechas: elegir · Q/E: contenedor · Enter: pasar · U: cambiar de mochila · Mayús+G: dejarla o recogerla	Arrows: choose · Q/E: container · Enter: move · U: switch backpack · Shift+G: drop it or pick it up
-Hace falta: %s (cerca).	Needs: %s (nearby).
+Hace falta: %s (cerca) o una forja móvil a mano.	Needs: %s (nearby) or a mobile forge at hand.
 Herida	Wound
 Inventario	Inventory
 Joyas	Jewels
@@ -1224,6 +1250,7 @@ F despieza un cadáver, ordeña la cabra · Mayús+F sacrifica el ganado.	F butc
 F hablar/tomar/animales	F talk/take/animals
 F hace casi todo: hablar y comerciar, tomar y recoger botín, el pozo y el horno, rescatar y atender a los animales	F does almost everything: talk and trade, take and pick up loot, the well and the oven, rescue and tend the animals
 F junto a una tribu amiga o neutral, una aldea, una capital, un caravasar o una caravana: vende lo que llevas (encima, en las alforjas, en la carreta) y compra lo suyo. Lo que abunda en la región vale menos; lo que escasea, más.	F by a friendly or neutral tribe, a village, a capital, a caravanserai or a caravan: sell what you carry (on you, in the saddlebags, in the cart) and buy their goods. What abounds in the region is cheaper; what is scarce, dearer.
+F junto a una veta: picas el mineral (2 cada vez; en el pantano, 1). El herrero lo funde en el horno de acero, con carbón.	F by a vein: you mine ore (2 each time; 1 at a bog). The smith smelts it in the steel furnace, with charcoal.
 F junto al guardián, Pobladores: la gente del campamento con su oficio, salud, ánimo y lo que hace. Elige a uno o dos y «Dar una tarea».	F next to the keeper, Villagers: the camp's people with trade, health, morale and task. Pick one or two and «Give a task».
 F junto al guardián: obras, escolta, pobladores (sus tareas), capacitar en un oficio, estado, migrar y disolver el campamento.	F next to the keeper: builds, escort, villagers (their tasks), training a trade, status, migrating and dissolving the camp.
 F1/Ctrl+H cerrar esta ayuda	F1/Ctrl+H close this help
@@ -1232,6 +1259,7 @@ F5 o Ctrl+M: vista orbital del mundo entero (flechas para girar e inclinar). El 
 F5/Ctrl+M vista orbital	F5/Ctrl+M orbital view
 Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.	Craft by hand: arrows (wood, feathers, flint), rope (sinew), ointment (herbs and honey), cuirass and boots (hides). Forged goods need a smith and a furnace.
 Fauna y caza	Wildlife and hunting
+Forja móvil (se hace en el horno de acero): a mano en la mochila, las alforjas, la carreta o el acopio, también en la marcha. Repara el metal y hace puntas de flecha de hierro, cuchillos y sables con una hoja de acero.	Mobile forge (made at the steel furnace): at hand in the backpack, saddlebags, cart or store, also on the march. It repairs metal and makes iron arrowheads, knives and sabres from a steel blade.
 G agarrar · Mayús+G mochila	G grab · Shift+G backpack
 G lo agarra de rehén: te cubres con él, los suyos no se acercan ni disparan si los tapa (y si disparan, fallan más). Vas lento y con una sola mano. G lo suelta, K lo ejecuta, L lo empuja; un golpe fuerte te lo quita.	G takes them hostage: you shield yourself with them; their own won't come closer or shoot if covered (and if they shoot, they miss more). You move slowly, with one hand. G lets go, K executes, L shoves; a strong blow frees them.
 Golpea hacia el agua o tira una flecha para pescar.	Strike at the water or shoot an arrow to fish.
@@ -1244,6 +1272,7 @@ H o clic: golpe; tres seguidos: combo · mantener: golpe pesado (rompe guardias)
 H/clic golpe (mantén: pesado)	H/click strike (hold: heavy)
 Heridos, se retiran detrás de ti; abatidos, B los levanta. Los soldados pegan más fuerte.	Wounded, they fall back behind you; downed, B gets them up. Soldiers hit harder.
 Hervirla los echa (Tab, Hervir agua, junto a un fuego). El alcohol también: cerveza, vino, airag y agua con vino son seguros.	Boiling drives them out (Tab, Boil water, by a fire). So does alcohol: beer, wine, airag and watered wine are safe.
+Hierro: vetas a cielo abierto en el altiplano y hierro de pantano en las orillas de los lagos del bosque y de los fiordos. Al pasar cerca quedan en tu mapa (M); los exploradores también las marcan.	Iron: open-air veins in the highlands and bog iron on the shores of the forest and fjord lakes. Walk close and they go on your map (M); scouts mark them too.
 I inventario · P equipo	I inventory · P equipment
 Idioma	Language
 Instructivo	Guide
@@ -1259,6 +1288,7 @@ La armadura va por piezas (casco, gorjal, coraza, hombreras, brazales, guantes, 
 La escolta y la guardia	The escort and the guard
 La espalda, rehenes y abatidos	Backstabs, hostages and the downed
 La estepa	The steppe
+La forja	The forge
 La lluvia apaga todo fuego: antorchas, fogatas, hornos y flechas.	Rain puts out every fire: torches, campfires, furnaces and arrows.
 La moral y la lealtad deciden si la tribu se rebela.	Morale and loyalty decide whether the tribe rebels.
 La tribu bebe del acopio o del río cercano (hervida si hay leña). Los animales beben junto al agua; F con agua les da de beber.	The tribe drinks from the store or a nearby river (boiled if there is firewood). Animals drink by the water; F with water gives them a drink.
@@ -1268,6 +1298,7 @@ La tribu y el campamento	The tribe and the camp
 Lanza en ristre: con una lanza, L la baja. Al galope, el primero que tengas delante recibe todo el peso de la carrera y casi siempre cae.	Couched lance: with a lance, L lowers it. At a gallop, the first one ahead takes the full weight of the charge and almost always falls.
 Lanza ligera, a pie y a caballo. Lanza pesada: solo a caballo; en ristre (L) derriba y rompe la formación.	Light lance, on foot and on horseback. Heavy lance: on horseback only; couched (L) it knocks riders down and breaks the formation.
 Las armas de la estepa	Steppe weapons
+Las caravanas traen acero wootz; la capital vende hojas de sable de acero.	Caravans bring wootz steel; the capital sells steel sabre blades.
 Las caravanas van y vuelven entre cada caravasar y la capital más cercana. Si la asaltas, su escolta pelea; vencida, la carga queda en el suelo, y el reino se entera.	Caravans go back and forth between each caravanserai and the nearest capital. Raid one and its escort fights; once beaten, the cargo is left on the ground, and the kingdom hears of it.
 Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.	Structures wear out: the tribe repairs them with logs every day. Without upkeep, torrential rain brings them down.
 Las forja el herrero en los hornos de bronce y de acero; las tribus las venden.	The smith forges them in the bronze and steel furnaces; the tribes sell them.
@@ -1304,7 +1335,7 @@ Página siguiente	Next page
 R monta y desmonta; Mayús galopa. El caballo va hacia donde lo llevas, y tú puedes girarte en la montura.	R mounts and dismounts; Shift gallops. The horse goes where you steer it, and you can turn in the saddle.
 R montar · T lanzar · Y escolta	R mount · T throw · Y escort
 Reclutar, liberar o ejecutar prisioneros cambia la relación con el reino.	Recruiting, freeing or executing prisoners changes your standing with the kingdom.
-Reparar: el cuero y el fieltro con pieles (sin pieles, se untan con grasa); el bronce y el hierro, herrero, horno y metal.	Repair: leather and felt with hides (without hides, grease them); bronze and iron need a smith, a furnace and metal.
+Reparar: el cuero y el fieltro con pieles (sin pieles, se untan con grasa); el bronce y el hierro, herrero, horno (o la forja móvil) y metal.	Repair: leather and felt with hides (without hides, grease them); bronze and iron need a smith, a furnace (or the mobile forge) and metal.
 Ropa y calor	Clothing and heat
 Sable de la estepa: a caballo corta limpio y suma la carrera; el hacha, la espada y la maza se traban al galope. La akinakes, la espada corta de los escitas, es rápida.	Steppe sabre: on horseback it cuts clean and adds the charge; axes, swords and maces snag at the gallop. The akinakes, the Scythian short sword, is fast.
 Sagaris: el de pico perfora la armadura, el de martillo aturde; los dos enganchan el escudo. La maza abate más de lo que mata, y el casco la para la mitad.	Sagaris: the pick pierces armor, the hammer stuns; both hook the shield. The mace knocks out more than it kills, and a helmet stops only half of it.
@@ -1321,8 +1352,10 @@ Tab objetivo · Y+1-3 escolta	Tab target · Y+1-3 escort
 Tab, Llenar el odre en la orilla: agua cruda (3 tragos por odre). Fabricar: agua con vino, airag y cerveza de pan.	Tab, Fill the waterskin at the shore: raw water (3 sips per waterskin). Craft: watered wine, airag and bread beer.
 Tab, Obras (o el guardián, F) elige una obra: la cámara sube sobre el campamento.	Tab, Works (or the keeper, F) picks a building: the camera rises above the camp.
 Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario	Tab: actions, works, craft and repair (Q/E switches tab) · I: inventory
+Taller del herrero (Tab, Obras): solo en un campamento grande, de 8 personas o más, y con herrero. Forja el sable wootz y la lanza de punta de acero, y templa.	Smith's workshop (Tab, Works): only in a large camp, 8 people or more, and with a smith. It forges the wootz sabre and the steel-tipped lance, and tempers.
 Tatuajes (para siempre): habla (F) con el druida, elige motivo y zona. Lobo, ciervo, grifo, tamga y olas suben en tres grados; el tercero se bifurca y elegir una rama cierra la otra. La zona del cuerpo cambia a qué va el bonus.	Tattoos (forever): talk (F) to the druid, choose motif and zone. Wolf, deer, griffin, tamga and waves rise in three tiers; the third branches and choosing one closes the other. The body zone changes what the bonus goes to.
 Tatuajes y joyas	Tattoos and jewels
+Templar: filo duro y lomo flexible, el arma pega más. Si sale mal, queda frágil y se quiebra en un golpe (más si te lo paran). Sale mejor con más herreros (hasta dos) y la destreza del clan.	Tempering: hard edge and flexible spine, the weapon hits harder. If it goes wrong, it turns brittle and shatters on a blow (more so when parried). More smiths (up to two) and the clan's craft make it go better.
 Todo vale plata: el guardián (Estado) y el inventario dicen cuánto vale el acopio.	Everything is worth silver: the warden (Status) and the inventory tell what the store is worth.
 Un campamento rival cuyos guerreros ya salieron a tu encuentro se saquea con F, si no queda nadie en pie alrededor.	A rival camp whose warriors already rode out against you can be plundered with F, if no one is left standing around.
 Una gran tierra casi redonda con cinco regiones: la estepa en el centro, rodeada de ríos que serpentean; el bosque al noroeste, el desierto al noreste, el altiplano al sureste y los fiordos al suroeste.	A vast, nearly round land with five regions: the steppe at the center, ringed by winding rivers; the forest to the northwest, the desert to the northeast, the highland to the southeast and the fjords to the southwest.
@@ -1507,6 +1540,7 @@ Instalar fogata	Set campfire
 Instalar montura	Fit saddle
 Instalar tienda	Pitch tent
 Junto a un fuego encendido: el agua hervida es segura. Gasta una leña.	By a lit fire: boiled water is safe. Uses one firewood.
+Junto a una veta de hierro del altiplano o al hierro de pantano: mineral, que se funde en el horno de acero.	By a highland iron vein or bog iron: ore, which is smelted in the steel furnace.
 Lanzar	Throw
 Lanzar lazo	Throw lasso
 Lanzar trepa	Throw grapple
@@ -1514,8 +1548,10 @@ Llenar el odre	Fill the waterskin
 Luz en la noche; ahuyenta fieras.	Light at night; keeps beasts away.
 Muro de empalizada	Palisade wall
 Muro de piedra	Stone wall
+Picar la veta	Mine the vein
 Recoger un objeto del suelo. Hace falta una mano libre.	Pick an object up from the ground. Needs a free hand.
 Refugio	Shelter
+Taller del herrero	Smith's workshop
 Tienda ligera de viaje.	Light travel tent.
 Tomar	Take
 Torre de vigilancia	Watchtower
@@ -1536,6 +1572,7 @@ muro	wall
 objeto cercano	nearby object
 solo escudo	shield only
 una en cada mano	one in each hand
+veta de hierro	iron vein
 # --- src/sim/animals.c
 Antílope saiga	Saiga antelope
 Araña	Spider
@@ -1717,6 +1754,7 @@ Cerveza de pan (2)	Bread beer (2)
 Cola de hueso (2)	Bone glue (2)
 Coraza de escamas de acero	Steel scale cuirass
 Coraza laminar de cuero	Lamellar leather cuirass
+Cuchillo de hierro	Iron knife
 Cuerda de tendones	Sinew rope
 Cuero (curtir pieles)	Leather (tan hides)
 Daga de anillo	Ring-pommel dagger
@@ -1725,11 +1763,15 @@ Escudo de láminas de hierro	Iron-plated shield
 Fieltro	Felt
 Flechas (5)	Arrows (5)
 Flechas con punta de hueso (5)	Bone-tipped arrows (5)
+Flechas de punta de hierro (8)	Iron-tipped arrows (8)
+Forja móvil (fuelle y hogar)	Mobile forge (bellows and hearth)
 Gorro de cabeza de lobo	Wolf head hat
 Gorro de fieltro de punta	Pointed felt hat
 Gorro de piel	Fur hat
 Grebas laminares de cuero	Leather lamellar greaves
+Hierro (fundir el mineral)	Iron (smelt the ore)
 Ladrillos de adobe (2)	Adobe bricks (2)
+Lanza de punta de acero	Steel-tipped lance
 Lanza de punta de bronce	Bronze-tipped spear
 Lanza pesada	Heavy lance
 Lingote de bronce	Bronze ingot
@@ -1740,15 +1782,21 @@ Pañuelo del desierto	Desert scarf
 Peine de hueso	Bone comb
 Piedras de honda (8)	Sling stones (8)
 Piezas de arco (asta y tendón)	Bow parts (horn and sinew)
+Puntas de flecha de hierro (6)	Iron arrowheads (6)
 Puntas de hueso (4)	Bone points (4)
 Queso seco	Dried cheese
 Sable de acero	Steel sabre
+Sable de acero (con una hoja)	Steel sabre (from a blade)
+Sable de acero wootz	Wootz steel sabre
 Sable de bronce	Bronze sabre
 Sagaris de martillo	Hammer sagaris
 Sagaris de pico	Pick sagaris
 Sandalias de cuero	Leather sandals
 Silla de montar	Saddle
 Sombrero de ala ancha	Wide-brimmed hat
+Templar un sable de acero	Temper a steel sabre
+Templar un sable wootz	Temper a wootz sabre
+Templar una daga de anillo	Temper a ring-pommel dagger
 Túnica de lana	Wool tunic
 Túnica de seda blanca	White silk tunic
 Ungüento de hierbas y miel	Herb and honey ointment

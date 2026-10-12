@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/forge_game.h"
 #include "game/input.h"
 #include "game/place_game.h"
 #include "raymath.h"
@@ -449,8 +450,9 @@ const RepairDef *ig_repair_way(GameActions *ga, const Props *props, const Player
 bool ig_can_repair(GameActions *ga, const Props *props, const Player *p, const Troop *troop, const RepairItem *it, char *why,
                    size_t len) {
     const RepairDef *d = ig_repair_way(ga, props, p, it);
-    if (d->building && !building_near(props, d->building, p)) {
-        snprintf(why, len, T("Hace falta: %s (cerca)."), item_name(ga, d->building));
+    // El horno cerca, o la forja movil a mano (src/sim/forge.h): repara en cualquier sitio.
+    if (d->building && !building_near(props, d->building, p) && !forge_station(ga, props, p, d->building, true, true)) {
+        snprintf(why, len, T("Hace falta: %s (cerca) o una forja móvil a mano."), item_name(ga, d->building));
         return false;
     }
     if (d->role != ROLE_NONE && !has_role(troop, d->role)) {

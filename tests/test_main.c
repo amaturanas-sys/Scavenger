@@ -36,6 +36,7 @@
 #include "../src/sim/squad.h"
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
+#include "../src/sim/forge.h"
 #include "../src/sim/melee.h"
 #include "../src/sim/storage.h"
 #include "../src/sim/riding.h"
@@ -4214,6 +4215,115 @@ static void test_steppe_weapons(void) {
     for (size_t i = 0; i < sizeof(forged) / sizeof(forged[0]); i++) CHECK(!craft_by_hand(craft_def(forged[i])) && craft_def(forged[i])->building);
 }
 
+// Fase 7b: la forja (src/sim/forge.h y las recetas de src/sim/economy.h).
+static void test_forge(void) {
+    // Las vetas: siempre las mismas para una semilla, las de cielo abierto en el altiplano y las de
+    // pantano junto a los lagos del bosque y de los fiordos, en seco y separadas.
+    const World *w = world_for_seed(20261011u);
+    IronSite a[IRON_SITES_MAX], b[IRON_SITES_MAX];
+    int n = world_iron_sites(w, a, IRON_SITES_MAX), m = world_iron_sites(w, b, IRON_SITES_MAX);
+    CHECK(n > 0 && n == m && !memcmp(a, b, sizeof(IronSite) * (size_t)n));
+    int veins = 0, bogs = 0;
+    for (int i = 0; i < n; i++) {
+        Region rg = world_region(w, a[i].x, a[i].z);
+        if (a[i].kind == IRON_VEIN) {
+            veins++;
+            CHECK(rg == REGION_HIGHLAND);
+        } else {
+            bogs++;
+            CHECK(rg == REGION_FOREST || rg == REGION_FJORD);
+        }
+        CHECK(world_water(w, a[i].x, a[i].z, 0.0f, NULL) < world_height(w, a[i].x, a[i].z));
+        for (int j = 0; j < i; j++)
+            if (a[i].kind == IRON_VEIN && a[j].kind == IRON_VEIN)
+                CHECK((a[i].x - a[j].x) * (a[i].x - a[j].x) + (a[i].z - a[j].z) * (a[i].z - a[j].z) >= 350.0f * 350.0f);
+    }
+    CHECK(veins >= 4 && bogs >= 1);
+    CHECK(iron_site_near(a, n, a[0].x + 2.0f, a[0].z) == 0 && iron_site_near(a, n, a[0].x + IRON_NEAR + 1.0f, a[0].z + 50.0f) != 0);
+    CHECK(iron_ore_yield(IRON_VEIN) == 2 && iron_ore_yield(IRON_BOG) == 1);
+    CHECK(world_iron_sites(NULL, a, IRON_SITES_MAX) == 0 && world_iron_sites(w, a, 2) == 2); // respeta el maximo
+
+    // La forja movil: lo suyo en cualquier sitio, y reparar lo que pide un horno; no lo del taller.
+    CHECK(forge_station_ok(NULL, false, false, false, false, false));
+    CHECK(forge_station_ok(FORGE_MOBILE_ID, true, false, false, false, false) && !forge_station_ok(FORGE_MOBILE_ID, false, false, false, false, false));
+    CHECK(forge_station_ok(FORGE_MOBILE_ID, false, false, true, false, false) && forge_station_ok(FORGE_MOBILE_ID, false, false, false, true, false));
+    CHECK(!forge_station_ok("estructura.campamento.horno_acero", true, false, false, false, false)); // forjar acero: el horno
+    CHECK(forge_station_ok("estructura.campamento.horno_acero", true, false, false, false, true));   // reparar: la forja movil alcanza
+    CHECK(forge_station_ok("estructura.campamento.horno_bronce", false, true, false, false, false));
+    CHECK(!forge_station_ok(WORKSHOP_ID, true, true, true, false, false) && forge_station_ok(WORKSHOP_ID, false, false, false, true, false));
+
+    // El temple: mas herreros (hasta 2) y mejores manos, mas probable; siempre entre 0,3 y 0,95.
+    CHECK(temper_chance(1, 0.0f) > temper_chance(0, 0.0f) && temper_chance(2, 0.0f) > temper_chance(1, 0.0f));
+    CHECK(fabsf(temper_chance(5, 0.0f) - temper_chance(2, 0.0f)) < 1e-6f && temper_chance(1, 1.0f) > temper_chance(1, 0.0f));
+    CHECK(temper_chance(0, 0.0f) >= 0.3f && temper_chance(9, 9.0f) <= 0.95f && temper_chance(-3, -1.0f) >= 0.3f);
+
+    // Lo templado pega mas; lo fragil algo mas, pero se quiebra (mas si se lo paran); el wootz, el mejor.
+    WeaponStats steel = weapon_stats("arma.corta.sable_acero"), tempered = weapon_stats("arma.corta.sable_acero_templado");
+    WeaponStats brittle = weapon_stats("arma.corta.sable_acero_fragil"), wootz = weapon_stats("arma.corta.sable_wootz");
+    CHECK(tempered.damage > brittle.damage && brittle.damage > steel.damage && wootz.damage > steel.damage);
+    CHECK(weapon_stats("arma.corta.sable_wootz_templado").damage > wootz.damage && tempered.clean_cut && wootz.clean_cut);
+    CHECK(brittle.brittle && !tempered.brittle && !steel.brittle && weapon_stats("arma.corta.daga_anillo_fragil").ring);
+    CHECK(weapon_break_chance("arma.corta.sable_acero_fragil", true) > weapon_break_chance("arma.corta.sable_acero_fragil", false));
+    CHECK(weapon_break_chance("arma.corta.sable_acero_fragil", false) > 0.0f && weapon_break_chance("arma.corta.sable_acero_templado", true) == 0.0f);
+    CHECK(weapon_stats("arma.larga.lanza_acero").spear && weapon_stats("arma.larga.lanza_acero").damage > weapon_stats("arma.larga.lanza").damage);
+
+    // Las recetas: el temple, en el taller con herrero, sale templado o fragil; lo de la forja movil,
+    // con tus manos; el mineral se funde en el horno de acero.
+    CraftId temper[] = { CRAFT_TEMPER_SABLE, CRAFT_TEMPER_WOOTZ, CRAFT_TEMPER_DAGGER };
+    for (size_t i = 0; i < sizeof(temper) / sizeof(temper[0]); i++) {
+        const CraftDef *d = craft_def(temper[i]);
+        CHECK(d->fails && strcmp(d->fails, d->produces) && strstr(d->produces, "_templad") && weapon_stats(d->fails).brittle);
+        CHECK(d->building && !strcmp(d->building, WORKSHOP_ID) && d->role == ROLE_SMITH);
+    }
+    CraftId mobile[] = { CRAFT_IRON_POINTS, CRAFT_KNIFE, CRAFT_SABLE_FROM_BLADE };
+    for (size_t i = 0; i < sizeof(mobile) / sizeof(mobile[0]); i++)
+        CHECK(craft_def(mobile[i])->building && !strcmp(craft_def(mobile[i])->building, FORGE_MOBILE_ID) && craft_by_hand(craft_def(mobile[i])));
+    const CraftDef *smelt = craft_def(CRAFT_SMELT_IRON);
+    CHECK(!strcmp(smelt->produces, "utileria.material.hierro") && !strcmp(smelt->mats[0].id, IRON_ORE_ID) && smelt->role == ROLE_SMITH);
+    CHECK(!strcmp(craft_def(CRAFT_MOBILE_FORGE)->produces, FORGE_MOBILE_ID) && !craft_def(CRAFT_SMELT_IRON)->fails);
+    for (int c = 0; c < CRAFT_COUNT; c++) // solo el temple puede salir mal
+        CHECK(!craft_def((CraftId)c)->fails || strstr(craft_def((CraftId)c)->name, "Templar"));
+
+    // El taller: obra de campamento grande, con herrero.
+    const BuildDef *ws = build_def(BUILD_WORKSHOP);
+    CHECK(ws && !strcmp(ws->produces, WORKSHOP_ID) && ws->min_people == WORKSHOP_MIN_PEOPLE && ws->required_role == ROLE_SMITH);
+    for (int k = 0; k < BUILD_COUNT; k++)
+        if (k != BUILD_WORKSHOP) CHECK(build_def((BuildId)k)->min_people == 0);
+
+    // La forja movil se lleva: en la mochila mediana o en las alforjas de un caballo, no en los bolsillos.
+    char *ftext = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(ftext != NULL);
+    if (ftext) {
+        Inventory finv;
+        inventory_parse(&finv, ftext);
+        const InvItem *forge = inventory_find(&finv, FORGE_MOBILE_ID);
+        CHECK(forge && item_storable(forge) && item_kg(forge) <= 12.0f && item_kg(forge) > 2.0f);
+        Bag pack, horse, pockets;
+        bag_init_pack(&pack, PACK_MEDIUM);
+        bag_init(&horse, BAG_MOUNT, 50.0f);
+        bag_init(&pockets, BAG_POCKETS, 0.0f);
+        CHECK(bag_add(&pack, &finv, FORGE_MOBILE_ID, 1, 1.0f) == 1 && bag_add(&horse, &finv, FORGE_MOBILE_ID, 1, 1.0f) == 1);
+        CHECK(bag_add(&pockets, &finv, FORGE_MOBILE_ID, 1, 1.0f) == 0);
+        inventory_free(&finv);
+        free(ftext);
+    }
+    // La forja movil viaja con la caravana: en el acopio de un campamento que migra sigue ahi, y en
+    // la marcha (sin hornos ni taller) hace lo suyo y repara.
+    CampSite camps[CAMPS_MAX];
+    camps_init(camps, CAMPS_MAX);
+    int home = camp_found(camps, CAMPS_MAX, 0.0f, 0.0f, 1);
+    stock_add(&camps[home].stock, FORGE_MOBILE_ID, 1);
+    CHECK(camp_migrate(&camps[home]) && stock_count(&camps[home].stock, FORGE_MOBILE_ID) == 1);
+    bool on_road = stock_count(&camps[home].stock, FORGE_MOBILE_ID) > 0;
+    CHECK(forge_station_ok(FORGE_MOBILE_ID, on_road, false, false, false, false) && forge_station_ok("estructura.campamento.horno_bronce", on_road, false, false, false, true));
+    CHECK(camp_settle(camps, CAMPS_MAX, home, 900.0f, -600.0f) && stock_count(&camps[home].stock, FORGE_MOBILE_ID) == 1);
+
+    // Los exploradores tambien marcan el hierro (de interes, no de peligro).
+    ScoutCand cand[2] = { { 300.0f, 0.0f, FIND_IRON }, { 900.0f, 0.0f, FIND_WATER } };
+    int pick[2];
+    CHECK(!find_danger(FIND_IRON) && scout_pick(cand, 2, NULL, 0.0f, 0.0f, 1000.0f, 1, pick) == 1 && pick[0] == 0);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -4335,6 +4445,7 @@ int main(void) {
     RUN(test_breeding_and_foals);
     RUN(test_camp_migration_and_pastures);
     RUN(test_steppe_weapons);
+    RUN(test_forge);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

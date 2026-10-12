@@ -28,10 +28,14 @@ WeaponStats weapon_stats(const char *id) {
     else if (strstr(id, "lanza") || strstr(id, "pica") || strstr(id, "guja") || strstr(id, "alabarda"))
         w = stats(22.0f, 2.6f, 1.1f, WOUND_CUT), w.spear = true;
     else if (!strncmp(id, "arma.distancia.", 15)) return unarmed; // cuerpo a cuerpo, un arco no corta
-    // El metal mejor corta mas: bronce y acero; las armas especiales, mas aun.
+    // El metal mejor corta mas: bronce y acero (el wootz, mas); las armas especiales, mas aun.
     if (strstr(id, "bronce")) w.damage *= 1.1f;
-    if (strstr(id, "acero") || strstr(id, "damasquinado")) w.damage *= 1.3f;
+    if (strstr(id, "wootz")) w.damage *= 1.4f;
+    else if (strstr(id, "acero") || strstr(id, "damasquinado")) w.damage *= 1.3f;
     if (!strncmp(id, "arma.especial.", 14)) w.damage *= 1.2f;
+    // El temple (src/sim/forge.h): templada, filo duro y lomo flexible; fragil, pega algo mas y se quiebra.
+    if (strstr(id, "_templad")) w.damage *= 1.15f;
+    else if (strstr(id, "_fragil")) w.damage *= 1.1f, w.brittle = true;
     return w;
 }
 
@@ -65,6 +69,11 @@ float weapon_mounted_scale(const char *id, float speed) {
     if (w.clean_cut) return m * (1.0f + 0.1f * fminf(1.0f, fmaxf(speed, 0.0f) / 6.0f)); // al galope (6 m/s), un 10 % mas
     if (w.spear) return m;
     return 1.0f + (m - 1.0f) * 0.5f;
+}
+
+float weapon_break_chance(const char *id, bool blocked) {
+    if (!weapon_stats(id).brittle) return 0.0f;
+    return blocked ? 0.12f : 0.05f;
 }
 
 float weapon_snag_chance(const char *id, float speed) {

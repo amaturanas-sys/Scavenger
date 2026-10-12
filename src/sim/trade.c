@@ -65,6 +65,12 @@ static const PriceRule RULES[] = {
     { "utileria.material.arco_encolado", 30.0f, 0, 0 }, // el arco reflejo a medio hacer
     { "utileria.material.arco_oreado", 34.0f, 0, 0 },
     { "utileria.material.arco_seco", 40.0f, 0, 0 },
+    // La forja (fase 7b): el mineral, el wootz de las caravanas, las hojas de la capital.
+    { "utileria.material.mineral_hierro", 0.5f, HIGH | FOREST, STEPPE | DESERT },
+    { "utileria.material.acero_wootz", 40.0f, DESERT, STEPPE | FOREST | FJORD },
+    { "utileria.material.hoja_acero", 30.0f, 0, 0 },
+    { "utileria.material.puntas_hierro", 1.5f, 0, 0 },
+    { "utileria.herramienta.forja_movil", 70.0f, 0, 0 },
     { "utileria.material.cuerda", 3.0f, 0, 0 },
     // Metales: del altiplano.
     { "utileria.material.cobre", 4.0f, HIGH, STEPPE | DESERT },
@@ -96,6 +102,16 @@ static const PriceRule RULES[] = {
     { "armadura.grebas.laminar_cuero", 16.0f, STEPPE, 0 },
     { "armadura.torso.laminar_cuero", 28.0f, STEPPE, 0 },
     { "arma.especial.", 120.0f, 0, 0 },
+    // El temple (fase 7b): lo templado vale mas; lo fragil, menos. Antes que el arma sin templar.
+    { "arma.corta.sable_wootz_templado", 160.0f, 0, 0 },
+    { "arma.corta.sable_wootz_fragil", 60.0f, 0, 0 },
+    { "arma.corta.sable_wootz", 120.0f, 0, 0 },
+    { "arma.corta.sable_acero_templado", 75.0f, 0, 0 },
+    { "arma.corta.sable_acero_fragil", 30.0f, 0, 0 },
+    { "arma.corta.sable_acero", 55.0f, 0, 0 },
+    { "arma.corta.daga_anillo_templada", 36.0f, STEPPE, 0 },
+    { "arma.corta.daga_anillo_fragil", 14.0f, 0, 0 },
+    { "arma.larga.lanza_acero", 45.0f, 0, 0 },
     // Las armas de la estepa (fase 7): el arco reflejo vale el doble de lo que cuesta hacerlo.
     { "arma.distancia.arco_compuesto", 60.0f, STEPPE, FOREST | FJORD },
     { "arma.distancia.arco_simple", 15.0f, FOREST, 0 },
@@ -173,9 +189,9 @@ static const char *const KIND_GOODS[MARKET_KINDS][KIND_GOODS_MAX] = {
     [MARKET_VILLAGE] = { "utileria.consumible.pan", "utileria.consumible.cerveza", "utileria.material.cuerda", "utileria.material.carbon",
                          "utileria.objeto.vela", "utileria.objeto.antorcha", "proyectil.flecha.comun", "arma.distancia.arco_simple",
                          "arma.corta.maza", NULL },
-    [MARKET_CAPITAL] = { "arma.corta.sable_acero", "escudo.mano.lamina", "armadura.casco.bronce", "utileria.material.bronce",
+    [MARKET_CAPITAL] = { "arma.corta.sable_acero", "escudo.mano.lamina", "armadura.casco.bronce", "utileria.material.bronce", "utileria.material.hoja_acero",
                          "utileria.consumible.vino", "accesorio.anillo.plata", "accesorio.arreo.silla_montar", NULL },
-    [MARKET_CARAVAN] = { "utileria.material.seda", "utileria.consumible.vino", "utileria.consumible.especias", "utileria.gema.turquesa",
+    [MARKET_CARAVAN] = { "utileria.material.seda", "utileria.consumible.vino", "utileria.consumible.especias", "utileria.gema.turquesa", "utileria.material.acero_wootz",
                          "utileria.gema.lapislazuli", "utileria.material.oro", NULL },
 };
 

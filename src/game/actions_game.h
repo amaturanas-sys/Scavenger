@@ -245,6 +245,7 @@ void ga_quick_request_wield(const char *id); // un arma o un escudo, a su mano
 void ga_quick_request_action(ActionId a);
 void ga_quick_request_menu(void);
 void ga_quick_request_swap(void); // pasar el arma empuñada a la otra mano
+void ga_quick_request_craft(CraftId c); // empezar una receta (la prueba --forja)
 // La orden a la escolta (SquadOrder: Y+1..3 o las casillas del HUD), con su aviso.
 void ga_escort_order(GameActions *ga, int order, char *log, size_t len);
 void ga_request_escort_order(int order); // desde el HUD, atendida en el proximo ga_update

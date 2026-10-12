@@ -318,7 +318,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   | Acero | sable, coraza de escamas y escudo de láminas |
 
   - Hace falta el horno construido, un herrero y los materiales. Varios herreros forjan más rápido.
-  - Lo forjado va al acopio. El jugador empuña el mejor sable que haya (acero, luego bronce, luego común).
+  - Lo forjado va a lo que llevas (lo que no cabe, al acopio). El jugador empuña el mejor sable que haya: wootz templado, wootz, acero templado, acero, bronce y común (v0.8.1; nunca uno frágil).
 
 ### Inventario, equipo y amuletos (implementado — `src/sim/storage.*`, `src/sim/loadout.*`, `src/game/inventory_game.*`)
 - **Contenedores:** cada uno con peso máximo, huecos y talla máxima de objeto.
@@ -363,14 +363,14 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - hueso y asta: puntas de hueso (4), flechas con punta de hueso (5), peine y piezas de arco (hueso y tendón). Desde la v0.8.0 el arco compuesto reflejo se hace en tres etapas (abajo, «Las armas de la estepa»);
   - grasa y leche: velas de sebo (3), antorchas (leña y grasa) y queso seco (2 de leche);
   - para las obras: fieltro (2 pieles de cabra), madera labrada (2 troncos) y adobe (barro y forraje).
-- **Forjado:** las armas y armaduras de metal piden su horno y un herrero, y las hace la tribu.
+- **Forjado:** las armas y armaduras de metal piden su horno y un herrero, y las hace la tribu. Desde la v0.8.1, lo pequeño se hace a mano con la forja móvil, y el wootz y el temple, en el taller (abajo, «La forja»).
 - **Ingredientes recolectables:**
   - matas de hierbas y pedernal en el campo (F; Mayús+F recoge todo lo cercano);
   - plumas de las aves, hueso y tendones del resto de animales al despiezarlos (F);
   - miel de las colmenas.
 - **Reparar:** la pestaña lista las piezas gastadas que llevas puestas y las de tus contenedores cercanos, con su estado.
   - El fieltro y el cuero se remiendan con pieles (y cuerda), en cualquier sitio. Sin pieles, se untan con grasa (v0.7.0): devuelve el 30 %.
-  - El bronce, el hierro y el acero piden herrero, su horno en el campamento y metal con carbón.
+  - El bronce, el hierro y el acero piden herrero, su horno en el campamento (o la forja móvil a mano, v0.8.1) y metal con carbón.
   - Cada reparación devuelve parte del estado (60 % el cuero, 80 % el metal).
 
 ### Valor, comercio, caravanas y saqueo (implementado en v0.7.0 — `src/sim/trade.*`, en juego `src/game/trade_game.*`)
@@ -581,7 +581,30 @@ Cada arma tiene sus rasgos en `WeaponStats` (y los arcos, `RangedDef.saddle`):
   3. la cola de hueso y un tendón que lo terminan.
 - **Forjadas por el herrero:** akinakes, sagaris (de pico y de martillo), maza y lanza pesada en el horno de bronce; la daga de anillo, en el de acero.
 - **Dónde se consiguen:** las tribus venden el arco reflejo, el sagaris, la akinakes, la daga de anillo y la lanza pesada; las aldeas, el arco simple y la maza. Del botín: el arco simple de los arqueros y el arco reflejo y la daga de anillo de los arqueros a caballo.
-- **La forja** (forja móvil, taller, hierro de las minas y del pantano, wootz y temple) queda para la fase 7b (v0.8.1).
+- **La forja** (forja móvil, taller, hierro de las vetas y del pantano, wootz y temple): abajo, «La forja» (v0.8.1).
+
+### La forja (v0.8.1 — `src/sim/forge.*`, en juego `src/game/forge_game.*`)
+- **El hierro del mundo** (`world_iron_sites`: sale de la semilla y no se guarda):
+  - hasta 12 vetas a cielo abierto en el altiplano, a más de 700 m del centro y a 350 m una de otra;
+  - hierro de pantano: uno por lago del bosque o de los fiordos, en la orilla seca.
+  - Se ven de cerca (rocas herrumbradas o barro rojizo, hasta 160 m). Al pasar a menos de 22 m, la veta queda marcada en el mapa de memoria. Los exploradores también las traen como hallazgo (`FIND_IRON`, que no es un peligro).
+- **Picar** (`ACTION_MINE`, 8 s; `F` junto a la veta): 2 de mineral en la veta y 1 en el pantano. Va a lo que llevas; lo que no cabe, al acopio.
+- **Fundir** (horno de acero y herrero): 3 de mineral y 2 de carbón dan 1 hierro.
+- **La forja móvil** (`utileria.herramienta.forja_movil`): la hace el herrero en el horno de acero con 2 de cuero, 2 de hierro y 2 de piedra. Cuenta si está a mano: en los bolsillos, la mochila, las alforjas o la carreta cercanas, o en el acopio del campamento (o de la columna, en la migración). Con ella, a mano y en cualquier sitio:
+  - puntas de flecha de hierro (hierro y carbón: 6). Con leña y plumas, 2 puntas dan 8 flechas;
+  - cuchillo de hierro (hierro y hueso);
+  - sable de acero con una hoja comprada (hoja, cuero y madera labrada).
+  - Repara lo que pide el horno de bronce o el de acero (con herrero y metal, como siempre). Lo que se forja en un horno sigue pidiendo el horno.
+- **El taller del herrero** (`BUILD_WORKSHOP`): 8 troncos, 8 piedras, 2 de hierro y 2 de cuero; lo levantan de 3 a 6 obreros, con un herrero.
+  - Es una obra de campamento grande (`BuildDef.min_people`): pide 8 personas o más viviendo en él. El menú de Obras muestra «8+ personas» y cuántos viven allí.
+  - Hace todo lo de la forja móvil y además el sable de acero wootz (torta de wootz, 2 de carbón y cuero), la lanza de punta de acero (hierro, 2 de carbón y troncos) y el temple.
+- **El temple** (`CraftDef.fails`): del sable de acero, el sable wootz o la daga de anillo, con carbón, en el taller y con herrero. Sale templada (`_templado`/`_templada`) o frágil (`_fragil`):
+  - la probabilidad (`temper_chance`) es 0,5, más 0,15 por herrero (hasta 2), más 0,25 × la destreza del clan (`STAT_CRAFT`), entre 0,3 y 0,95;
+  - templada: ×1,15 de daño;
+  - frágil: ×1,1, pero se quiebra en un golpe que entra el 5 % de las veces (el 12 % si se lo paran) y se pierde (`weapon_break_chance`).
+- **El acero wootz** pega ×1,4 (el acero, ×1,3). La empuñadura del sable toma el mejor que tengas: wootz templado, wootz, acero templado, acero, bronce y el de la estepa. Nunca uno frágil: ese se empuña a mano.
+- **Comercio:** las caravanas venden acero wootz (40 de plata) y las capitales, hojas de sable de acero (30). La forja móvil vale 70, el mineral 0,5 y las puntas de hierro 1,5. El sable wootz templado vale 160; uno frágil, menos que uno sin templar.
+- **Lo que no entró:** el taller en una ciudad tomada (cuando haya ciudades que tomar, en la fase 8) y untar las armas con grasa (las armas todavía no se gastan con el uso).
 
 ### Cría (implementado en v0.7.1 — `src/sim/animals.*`, en juego `src/game/fauna_game.c`)
 - **Quién se cría:** las monturas (caballo, burro, buey, camello) y el ganado (cabra, becerro). La mula y el elefante, no.

@@ -21,13 +21,14 @@ src/
     climate.*    clima: temperatura, tiempo, nieve, lagos, glaciares
     hazards.*    frio, barro, hielo, socavones, desierto, minijuego (QTE)
     health.*     vida, sangre y heridas (jugador, tribu, enemigos)
-    combat.*     armas y sus rasgos (pico, maza, martillo, sable, lanza pesada, daga de anillo), enemigos (y jinetes), reglas de cada golpe y su paso por la armadura, botin, inercia montada y armas que se traban
+    combat.*     armas y sus rasgos (pico, maza, martillo, sable, lanza pesada, daga de anillo; templada o fragil), enemigos (y jinetes), reglas de cada golpe y su paso por la armadura, botin, inercia montada y armas que se traban
     body.*       cuerpo humano articulado por zonas (dibujo e impactos)
     armor.*      armadura por piezas: materiales, cobertura, durabilidad
     ballistics.* armas a distancia (y cuanto les pesa la montura) y trayectoria de proyectiles
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, produccion por oficio, efectos del campamento, forja, fabricar a mano (y el secado en el acopio), reparar (y untar con grasa)
+    forge.*      la forja: las vetas de hierro y el hierro de pantano de cada mundo (de la semilla), que estacion sirve para cada receta (forja movil, hornos, taller) y la probabilidad del temple
     trade.*      el valor de las cosas en plata, precios por region, lo que vende cada mercado y las rutas de las caravanas
     riding.*     la monta: el tiro a caballo segun el arco (y el disparo parto), la lanza en ristre (y la pesada), el cansancio de la montura y la maniobra de los arqueros a caballo
     animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado (y el rebaño que sigue a la caravana), anfibios, cria (sexo, herencia, preñez)
@@ -58,6 +59,7 @@ src/
     actions_game.*  menu de acciones, atajos, obras en curso
     camp_game.*     el guardian (F): obras, escolta, pobladores y sus tareas, capacitar, migrar (levantar, la columna, plantar) y disolver
     place_game.*    la vista aerea para ubicar una obra: la huella verde o roja, girar, rejilla, muros de dos puntos
+    forge_game.*    la forja en el juego: las vetas que se ven, se marcan al pasar y se pican (F), la estacion a mano (forja movil, hornos, taller) y la tirada del temple
     trade_game.*    comerciar (F en tribus, aldeas, capitales, caravasares y caravanas), las caravanas con su escolta, asaltarlas y saquear campamentos rivales
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates
     combat_game.*   combate (a pie y montado), enemigos, botin, vendajes, salud de la tribu y del jugador

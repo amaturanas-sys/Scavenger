@@ -80,6 +80,7 @@ typedef enum {
     ACTION_PAN,           // cribar en el agua: piedras rodadas y oro
     ACTION_FILL_WATER,    // llenar el odre en el rio o el lago (agua cruda)
     ACTION_BOIL,          // hervir agua junto a un fuego: echa a los espiritus malditos
+    ACTION_MINE,          // picar una veta de hierro (o el hierro de pantano): mineral (src/sim/forge.h)
     ACTION_COUNT
 } ActionId;
 
@@ -111,6 +112,7 @@ typedef enum {
     BUILD_ADOBE_HOUSE,    // casa de adobe: dura mucho (fase 5)
     BUILD_LOG_CABIN,      // cabaña de troncos labrados: dura
     BUILD_FELT_HUT,       // choza de fieltro
+    BUILD_WORKSHOP,       // taller del herrero: el temple, el wootz (fase 7b, src/sim/forge.h)
     BUILD_COUNT
 } BuildId;
 
@@ -123,6 +125,7 @@ typedef struct {
     Role required_role;    // sin alguien con esta funcion no se puede (ROLE_NONE: nadie en especial)
     Role skilled_role;     // quien tiene esta funcion trabaja el doble
     Ingredient mats[MAT_MAX]; // lo que consume del acopio al empezar
+    int min_people;        // gente que tiene que vivir en el campamento (0: cualquiera; el taller, uno grande)
 } BuildDef;
 
 const BuildDef *build_def(BuildId b);
