@@ -560,7 +560,7 @@ int main(int argc, char **argv) {
     const char *map_path = NULL;      // --mapa-mundo archivo.png: el mapa general del mundo, y sale
     const char *start_goto = NULL;    // --ir lugar: a un sitio del mundo (ver go_to)
     const char *start_trade = NULL;   // --comerciar: raiz, vender, comprar, caravana, asaltar o saquear (src/game/trade_game.h)
-    const char *start_ride = NULL;    // --montado: lanza, parto o agotado (src/game/combat_game.h); galopa solo hacia delante
+    const char *start_ride = NULL;    // --montado: lanza, pesada, parto o agotado (src/game/combat_game.h); galopa solo hacia delante
     bool start_breed = false;         // --cria: en el campamento inicial, una yegua por parir, un semental y un potro por crecer
     const char *start_migrate = NULL; // --migrar: marcha (levanta el campamento inicial y camina) o plantar (y lo planta a 170 m)
     bool start_diag = false;          // --diagnostico: el panel de Ctrl+D abierto

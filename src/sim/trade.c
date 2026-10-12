@@ -60,6 +60,11 @@ static const PriceRule RULES[] = {
     { "utileria.material.pedernal", 1.0f, 0, 0 },
     { "utileria.material.puntas_hueso", 0.5f, 0, 0 },
     { "utileria.material.piezas_arco", 6.0f, 0, 0 },
+    { "utileria.material.cola_hueso", 3.0f, 0, 0 },
+    { "utileria.material.alma_arco", 6.0f, FOREST, DESERT | STEPPE },
+    { "utileria.material.arco_encolado", 30.0f, 0, 0 }, // el arco reflejo a medio hacer
+    { "utileria.material.arco_oreado", 34.0f, 0, 0 },
+    { "utileria.material.arco_seco", 40.0f, 0, 0 },
     { "utileria.material.cuerda", 3.0f, 0, 0 },
     // Metales: del altiplano.
     { "utileria.material.cobre", 4.0f, HIGH, STEPPE | DESERT },
@@ -91,6 +96,13 @@ static const PriceRule RULES[] = {
     { "armadura.grebas.laminar_cuero", 16.0f, STEPPE, 0 },
     { "armadura.torso.laminar_cuero", 28.0f, STEPPE, 0 },
     { "arma.especial.", 120.0f, 0, 0 },
+    // Las armas de la estepa (fase 7): el arco reflejo vale el doble de lo que cuesta hacerlo.
+    { "arma.distancia.arco_compuesto", 60.0f, STEPPE, FOREST | FJORD },
+    { "arma.distancia.arco_simple", 15.0f, FOREST, 0 },
+    { "arma.larga.lanza_pesada", 40.0f, STEPPE, 0 },
+    { "arma.corta.daga_anillo", 24.0f, STEPPE, 0 },
+    { "arma.corta.akinakes", 30.0f, STEPPE, 0 },
+    { "arma.corta.sagaris", 32.0f, STEPPE, 0 }, // de pico y de martillo
     { "arma.distancia.", 35.0f, 0, 0 },
     { "arma.larga.", 30.0f, 0, 0 },
     { "arma.corta.", 25.0f, 0, 0 },
@@ -151,11 +163,16 @@ int trade_sell_price(const char *id, Region r) { return id && !strcmp(id, SILVER
 int trade_buy_price(const char *id, Region r) { return id && !strcmp(id, SILVER_ID) ? 1 : price(id, r, TRADE_BUY_MARKUP); }
 
 // ---------------------------------------------------------------- mercados
-static const char *const KIND_GOODS[MARKET_KINDS][8] = {
+#define KIND_GOODS_MAX 13
+static const char *const KIND_GOODS[MARKET_KINDS][KIND_GOODS_MAX] = {
+    // Las tribus venden tambien las armas de la estepa (fase 7): el arco reflejo, el sagaris, la
+    // akinakes, la daga de anillo y la lanza pesada.
     [MARKET_TRIBE] = { "utileria.consumible.carne_seca", "utileria.consumible.queso_seco", "utileria.consumible.airag", "utileria.material.cuero",
-                       "utileria.material.fieltro", "utileria.consumible.forraje", "utileria.material.pieles", NULL },
+                       "utileria.material.fieltro", "utileria.consumible.forraje", "utileria.material.pieles", "arma.distancia.arco_compuesto",
+                       "arma.corta.sagaris", "arma.corta.akinakes", "arma.corta.daga_anillo", "arma.larga.lanza_pesada", NULL },
     [MARKET_VILLAGE] = { "utileria.consumible.pan", "utileria.consumible.cerveza", "utileria.material.cuerda", "utileria.material.carbon",
-                         "utileria.objeto.vela", "utileria.objeto.antorcha", "proyectil.flecha.comun", NULL },
+                         "utileria.objeto.vela", "utileria.objeto.antorcha", "proyectil.flecha.comun", "arma.distancia.arco_simple",
+                         "arma.corta.maza", NULL },
     [MARKET_CAPITAL] = { "arma.corta.sable_acero", "escudo.mano.lamina", "armadura.casco.bronce", "utileria.material.bronce",
                          "utileria.consumible.vino", "accesorio.anillo.plata", "accesorio.arreo.silla_montar", NULL },
     [MARKET_CARAVAN] = { "utileria.material.seda", "utileria.consumible.vino", "utileria.consumible.especias", "utileria.gema.turquesa",
@@ -181,7 +198,7 @@ static int add_good(const char **out, int n, int max, const char *id) {
 int market_goods(MarketKind k, Region r, const char **out, int max) {
     int n = 0;
     if (k >= 0 && k < MARKET_KINDS)
-        for (int i = 0; i < 8 && KIND_GOODS[k][i]; i++) n = add_good(out, n, max, KIND_GOODS[k][i]);
+        for (int i = 0; i < KIND_GOODS_MAX && KIND_GOODS[k][i]; i++) n = add_good(out, n, max, KIND_GOODS[k][i]);
     if (r >= 0 && r < REGION_COUNT)
         for (int i = 0; i < 5 && REGION_GOODS[r][i]; i++) n = add_good(out, n, max, REGION_GOODS[r][i]);
     return n;

@@ -32,17 +32,18 @@
 // Lo forjado en los hornos se suma a traves del acopio.
 static const char *KIT[] = {
     "arma.corta.sable",          "arma.corta.daga",         "escudo.mano.mimbre",    "escudo.mano.cuero",
-    "arma.larga.guja",           "arma.larga.lanza",        "arma.distancia.arco_compuesto",
+    "arma.larga.guja",           "arma.larga.lanza",        "arma.distancia.arco_simple",
     "utileria.objeto.antorcha",  "arma.distancia.lazo",     "utileria.herramienta.gancho_trepa",
     "utileria.herramienta.pala", "accesorio.arreo.silla_montar", "arma.distancia.ballesta", "arma.distancia.honda",
 };
 // Empunaduras que recorre "cambiar empunadura" (X): derecha, izquierda. El sable
-// se sustituye por el mejor que haya en el acopio (acero > bronce > comun).
+// se sustituye por el mejor que haya en el acopio (acero > bronce > comun), y el arco simple por
+// el compuesto reflejo si lo tienes.
 static const char *PRESETS[][2] = {
     { "arma.corta.sable", "escudo.mano.mimbre" },        // arma y escudo
     { "arma.corta.sable", "arma.corta.daga" },           // una en cada mano
     { "arma.larga.guja", NULL },                         // a dos manos
-    { "arma.distancia.arco_compuesto", NULL },           // arco (dos manos)
+    { "arma.distancia.arco_simple", NULL },              // arco (dos manos)
     { "arma.distancia.ballesta", NULL },                 // ballesta
     { "arma.distancia.honda", NULL },                    // honda
     { "arma.larga.lanza", "escudo.mano.cuero" },         // lanza y escudo
@@ -78,12 +79,25 @@ static const char *best_sable(const GameActions *ga) {
     return "arma.corta.sable";
 }
 
+// El arco: el compuesto reflejo si lo tienes (en el acopio, la mochila o la armeria), si no el simple.
+static const char *best_bow(const GameActions *ga) {
+    const char *reflex = "arma.distancia.arco_compuesto";
+    if (stock_count(ga_stock_c(ga), reflex) > 0 || bag_count(&ga->backpack, reflex) > 0 || bag_count(&ga->armory, reflex) > 0) return reflex;
+    return "arma.distancia.arco_simple";
+}
+
+// Lo que la empuñadura pide de verdad: el mejor sable o el mejor arco que haya.
+static const char *preset_weapon(const GameActions *ga, const char *id) {
+    if (id && !strcmp(id, "arma.corta.sable")) return best_sable(ga);
+    if (id && !strcmp(id, "arma.distancia.arco_simple")) return best_bow(ga);
+    return id;
+}
+
 static void apply_preset(GameActions *ga) {
     hands_clear(&ga->hands, HAND_RIGHT);
     hands_clear(&ga->hands, HAND_LEFT);
     ga->torch_lit = false;
-    const char *r = PRESETS[ga->preset][0], *l = PRESETS[ga->preset][1];
-    if (r && !strcmp(r, "arma.corta.sable")) r = best_sable(ga);
+    const char *r = preset_weapon(ga, PRESETS[ga->preset][0]), *l = PRESETS[ga->preset][1];
     if (r) hands_equip(&ga->hands, inventory_find(ga->inv, r), HAND_RIGHT);
     if (l) hands_equip(&ga->hands, inventory_find(ga->inv, l), HAND_LEFT);
 }
@@ -110,8 +124,7 @@ int ga_grip_count(void) { return PRESET_COUNT; }
 GaGrip ga_grip(const GameActions *ga, int k) {
     GaGrip g = { 0 };
     if (k < 0 || k >= PRESET_COUNT) return g;
-    g.right = PRESETS[k][0], g.left = PRESETS[k][1];
-    if (g.right && !strcmp(g.right, "arma.corta.sable")) g.right = best_sable(ga);
+    g.right = preset_weapon(ga, PRESETS[k][0]), g.left = PRESETS[k][1];
     g.available = preset_available(ga, k);
     g.active = ga->preset == k && !ga->hands.sheathed && !ga->torch_lit;
     return g;
@@ -253,6 +266,13 @@ Stockpile *ga_stock_at(GameActions *ga, float x, float z) {
         return &none;
     }
     return &ga->camps[k].stock;
+}
+
+// El acopio de un campamento de verdad (donde estas, el que va en marcha o el mas cercano), o NULL.
+static Stockpile *camp_stock(GameActions *ga) {
+    int k = ga->here >= 0 && ga->here < CAMPS_MAX && ga->camps[ga->here].used ? ga->here : ga_marching(ga);
+    if (k < 0) k = camp_nearest(ga->camps, CAMPS_MAX, ga->player_pos.x, ga->player_pos.z, NULL);
+    return k >= 0 ? &ga->camps[k].stock : NULL;
 }
 
 Stockpile *ga_stock(GameActions *ga) {
@@ -1002,11 +1022,18 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
         if (ga->craft_timer >= ga->craft_total) {
             const CraftDef *c = craft_def((CraftId)ga->crafting);
             int n = c->amount > 0 ? c->amount : 1;
-            // A lo que llevas (o al acopio, si no cabe).
-            int kept = ig_store(ga, props, p, c->produces, n, 1.0f);
-            if (kept < n) stock_add(ga_stock(ga), c->produces, n - kept);
-            snprintf(log, log_len, "%s: %s%s.", craft_by_hand(c) ? T("Hecho") : T("Forjado"), T(c->name),
-                     kept < n ? T(" (lo que no cabe, al acopio)") : "");
+            Stockpile *rack = c->to_stock ? camp_stock(ga) : NULL; // el arco encolado se cuelga a secar
+            if (rack) {
+                stock_add(rack, c->produces, n);
+                snprintf(log, log_len, T("Hecho: %s. Queda colgado en el acopio del campamento: tarda %d días en secarse."), T(c->name),
+                         BOW_DRY_DAYS);
+            } else {
+                // A lo que llevas (o al acopio, si no cabe).
+                int kept = ig_store(ga, props, p, c->produces, n, 1.0f);
+                if (kept < n) stock_add(ga_stock(ga), c->produces, n - kept);
+                snprintf(log, log_len, "%s: %s%s.", craft_by_hand(c) ? T("Hecho") : T("Forjado"), T(c->name),
+                         kept < n ? T(" (lo que no cabe, al acopio)") : "");
+            }
             tg_xp(ga, XP_CRAFT, log, log_len);
             ga->crafting = -1;
         }
@@ -1124,6 +1151,15 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
                                                                   : T("Cambia la estación (%s): el pasto de aquí alcanza."),
                                           T(season_name(season))));
         }
+    }
+    // El secado: lo colgado en el acopio de cada campamento avanza un dia (el arco encolado).
+    for (int k = 0; k < CAMPS_MAX; k++) {
+        if (!ga->camps[k].used) continue;
+        Stockpile *st = &ga->camps[k].stock;
+        int before = stock_count(st, "utileria.material.arco_seco");
+        if (stock_dry_day(st) <= 0) continue;
+        int dry = stock_count(st, "utileria.material.arco_seco") - before;
+        if (dry > 0) cg_news(ga, k, TextFormat(T("Ya se secó el arco encolado (%d): termínalo con cola de hueso y tendón (Tab, Fabricar)."), dry));
     }
     // Efectos de lo construido en el campamento.
     const char *ids[PROPS_MAX + 8];
@@ -1484,7 +1520,9 @@ static void draw_menu(const GameActions *ga, const Props *props, const Troop *tr
         }
         draw_materials(ga, props, p, d->mats, true, desc_x, my, desc_w);
         const InvItem *out = inventory_find(ga->inv, d->produces);
-        ui_legend_default(T(d->name), TextFormat(T("da %d x %s · va a la mochila (o al acopio)"), d->amount > 0 ? d->amount : 1, out ? T(out->name) : d->produces));
+        ui_legend_default(T(d->name), TextFormat(d->to_stock ? T("da %d x %s · se seca en el acopio")
+                                                             : T("da %d x %s · va a la mochila (o al acopio)"),
+                                                 d->amount > 0 ? d->amount : 1, out ? T(out->name) : d->produces));
         break;
     }
     default: {

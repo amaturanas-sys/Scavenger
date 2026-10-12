@@ -33,6 +33,8 @@ typedef struct {
     float draw_time; // segundos para tensar del todo (0: ballesta y armas de fuego)
     float reload;    // segundos entre disparos
     float spread;    // desviacion (radianes) del disparo
+    float saddle;    // cuanto le pesa la montura (src/sim/riding.h): 0 el arco compuesto reflejo, corto
+                     // y hecho para la silla; 1 el arco simple; mas, el arco largo
 } RangedDef;
 
 const ProjectileDef *projectile_def(ProjectileKind k);

@@ -79,6 +79,7 @@ Reglas:
 - **`v0.7.0-caravana.sav`:** el asalto a una caravana, con su escolta peleando.
 - **`v0.7.1-caballos.sav`:** a caballo, con arqueros a caballo alrededor y la cría en el campamento.
 - **`v0.7.2-migracion.sav`:** el campamento inicial en marcha, con la tribu en columna.
+- **`v0.8.0-lanza.sav`:** una carga con la lanza pesada que rompió una fila de bandidos.
 
 | Partida | Qué tiene |
 |---|---|
@@ -93,6 +94,7 @@ Reglas:
 | `caravana` (v0.7.0) | El asalto a una caravana del desierto: la caravana detenida, su escolta (dos jinetes, un bandido y un arquero) peleando con el jugador y el mercado de la caravana como último con quien se habló. |
 | `caballos` (v0.7.1) | El jugador a caballo tras una carga con lanza (la espera de la próxima), arqueros a caballo alejándose al galope, una yegua preñada, un semental y una cría en el campamento. |
 | `migracion` (v0.7.2) | El campamento inicial levantado y en marcha: las cinco yurtas cargadas, la gente en columna detrás del jugador y el rebaño siguiéndolo. |
+| `lanza` (v0.8.0) | El jugador a caballo con la lanza pesada, justo después de una carga que alcanzó a dos bandidos de una fila de tres (el primero cayó muerto). |
 
 `estepa --probar-partidas tests/partidas` (CI, en el job de Linux) hace esto con cada una:
 - la carga;
@@ -138,6 +140,8 @@ La v0.7.1 agregó, al final de cada struct, sin migraciones:
 Además, `ENEMY_HORSE_ARCHER` va al final de `EnemyKind`. El resumen suma la línea de la cría de cada animal, la de la montura de cada enemigo, la lanza en ristre y los disparos partos, solo si no son cero.
 
 La v0.7.2 agregó, al final de `CampSite`, si el campamento está en marcha (`migrating`), lo que lleva cargado (`load`, cuántas viviendas de cada clase: yurta común, yurta del jefe, tienda ligera y choza de fieltro) y si dejó su primer sitio (`moved`: migró o, el inicial, se disolvió; así se sabe que las yurtas del campamento inicial ya no están allí). A `GameActions`, `start_yurts`, cuántas yurtas del campamento inicial quedan en pie (lo copia el juego en cada cuadro). Todo en cero en las partidas viejas: los campamentos están plantados donde siempre. El resumen suma, por campamento, la línea de la marcha solo si algo de eso no es cero.
+
+La v0.8.0 no cambió ningún struct que se guarda: los rasgos de las armas (`WeaponStats`, `RangedDef.saddle`) se calculan del id. Sí cambió lo que es un id: `arma.distancia.arco_compuesto` pasó a ser el arco compuesto reflejo (más fuerte, sin castigo a caballo), y el arco de antes es `arma.distancia.arco_simple`. Las partidas viejas cargan igual: el arco que ya tenían queda mejorado.
 
 ## El esquema congelado de las partidas planas
 

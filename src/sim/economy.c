@@ -306,9 +306,10 @@ static const CraftDef CRAFTS[CRAFT_COUNT] = {
     [CRAFT_COMB] = { N_("Peine de hueso"), "utileria.objeto.peine", NULL, ROLE_NONE, { { "utileria.material.hueso", 1 }, { NULL, 0 } }, 25.0f, 1 },
     [CRAFT_BOW_PARTS] = { N_("Piezas de arco (asta y tendón)"), "utileria.material.piezas_arco", NULL, ROLE_NONE,
                           { { "utileria.material.hueso", 2 }, { "utileria.material.tendones", 1 }, { NULL, 0 } }, 40.0f, 1 },
-    [CRAFT_COMPOSITE_BOW] = { N_("Arco compuesto"), "arma.distancia.arco_compuesto", NULL, ROLE_NONE,
-                              { { "utileria.material.madera_labrada", 1 }, { "utileria.material.piezas_arco", 2 }, { "utileria.material.tendones", 1 }, { NULL, 0 } },
-                              150.0f, 1 },
+    // La tercera etapa del arco reflejo: el arco ya seco, con la cola de hueso y la cuerda de tendon.
+    [CRAFT_COMPOSITE_BOW] = { N_("Arco compuesto reflejo (cola de hueso)"), "arma.distancia.arco_compuesto", NULL, ROLE_NONE,
+                              { { "utileria.material.arco_seco", 1 }, { "utileria.material.cola_hueso", 1 }, { "utileria.material.tendones", 1 }, { NULL, 0 } },
+                              60.0f, 1 },
     // Grasa: velas y antorchas.
     [CRAFT_CANDLES] = { N_("Velas de sebo (3)"), "utileria.objeto.vela", NULL, ROLE_NONE, { { "utileria.material.grasa", 1 }, { NULL, 0 } }, 20.0f, 3 },
     [CRAFT_TORCH] = { N_("Antorchas (2)"), "utileria.objeto.antorcha", NULL, ROLE_NONE,
@@ -319,9 +320,50 @@ static const CraftDef CRAFTS[CRAFT_COUNT] = {
     [CRAFT_WORKED_WOOD] = { N_("Madera labrada"), "utileria.material.madera_labrada", NULL, ROLE_NONE, { { "utileria.material.troncos", 2 }, { NULL, 0 } }, 30.0f, 1 },
     [CRAFT_ADOBE] = { N_("Ladrillos de adobe (2)"), "utileria.material.adobe", NULL, ROLE_NONE,
                       { { "utileria.material.barro", 2 }, { "utileria.consumible.forraje", 1 }, { NULL, 0 } }, 30.0f, 2 },
+    // Las armas de la estepa (fase 7).
+    [CRAFT_SIMPLE_BOW] = { N_("Arco simple"), "arma.distancia.arco_simple", NULL, ROLE_NONE,
+                           { { "utileria.material.madera_labrada", 1 }, { "utileria.material.tendones", 1 }, { NULL, 0 } }, 60.0f, 1 },
+    [CRAFT_BONE_GLUE] = { N_("Cola de hueso (2)"), "utileria.material.cola_hueso", NULL, ROLE_NONE,
+                          { { "utileria.material.hueso", 2 }, { "utileria.objeto.lena", 1 }, { NULL, 0 } }, 30.0f, 2 },
+    [CRAFT_BOW_CORE] = { N_("Alma de arco (madera)"), "utileria.material.alma_arco", NULL, ROLE_NONE,
+                         { { "utileria.material.madera_labrada", 1 }, { NULL, 0 } }, 50.0f, 1 },
+    [CRAFT_BOW_GLUED] = { N_("Arco encolado (asta y tendón)"), "utileria.material.arco_encolado", NULL, ROLE_NONE,
+                          { { "utileria.material.alma_arco", 1 }, { "utileria.material.piezas_arco", 2 }, { "utileria.material.tendones", 2 },
+                            { "utileria.material.cola_hueso", 1 } },
+                          90.0f, 1, true },
+    [CRAFT_AKINAKES] = { N_("Akinakes de bronce"), "arma.corta.akinakes", BRONZE, ROLE_SMITH,
+                         { { "utileria.material.cobre", 1 }, { "utileria.material.estano", 1 }, { "utileria.material.carbon", 1 }, { NULL, 0 } }, 90.0f },
+    [CRAFT_SAGARIS] = { N_("Sagaris de pico"), "arma.corta.sagaris", BRONZE, ROLE_SMITH,
+                        { { "utileria.material.cobre", 2 }, { "utileria.material.estano", 1 }, { "utileria.material.troncos", 1 }, { NULL, 0 } }, 100.0f },
+    [CRAFT_SAGARIS_HAMMER] = { N_("Sagaris de martillo"), "arma.corta.sagaris_martillo", BRONZE, ROLE_SMITH,
+                               { { "utileria.material.cobre", 2 }, { "utileria.material.estano", 1 }, { "utileria.material.troncos", 1 }, { NULL, 0 } },
+                               100.0f },
+    [CRAFT_MACE] = { N_("Maza de bronce"), "arma.corta.maza", BRONZE, ROLE_SMITH,
+                     { { "utileria.material.cobre", 2 }, { "utileria.material.estano", 1 }, { "utileria.material.troncos", 1 }, { NULL, 0 } }, 90.0f },
+    [CRAFT_RING_DAGGER] = { N_("Daga de anillo"), "arma.corta.daga_anillo", STEEL, ROLE_SMITH,
+                            { { "utileria.material.hierro", 1 }, { "utileria.material.carbon", 2 }, { NULL, 0 } }, 90.0f },
+    [CRAFT_HEAVY_LANCE] = { N_("Lanza pesada"), "arma.larga.lanza_pesada", BRONZE, ROLE_SMITH,
+                            { { "utileria.material.troncos", 2 }, { "utileria.material.cobre", 1 }, { "utileria.material.estano", 1 }, { NULL, 0 } },
+                            120.0f },
 };
 
 bool craft_by_hand(const CraftDef *c) { return c->role == ROLE_NONE; }
+
+int stock_dry_day(Stockpile *s) {
+    // De la ultima etapa a la primera: cada pieza avanza una sola por dia.
+    static const char *const STAGES[][2] = {
+        { "utileria.material.arco_oreado", "utileria.material.arco_seco" },
+        { "utileria.material.arco_encolado", "utileria.material.arco_oreado" },
+    };
+    int moved = 0;
+    for (size_t i = 0; i < sizeof(STAGES) / sizeof(STAGES[0]); i++) {
+        int n = stock_count(s, STAGES[i][0]);
+        if (n <= 0 || !stock_take(s, STAGES[i][0], n)) continue;
+        stock_add(s, STAGES[i][1], n);
+        moved += n;
+    }
+    return moved;
+}
 
 // Mismo orden que ArmorMaterial: fieltro, cuero, bronce, hierro, acero, oro.
 static const RepairDef REPAIRS[] = {

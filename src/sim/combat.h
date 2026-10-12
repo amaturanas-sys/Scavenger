@@ -15,10 +15,24 @@ typedef struct {
     float cooldown; // segundos entre golpes
     WoundKind wound;
     bool spear;     // arma de asta: estocada
+    // Las armas de la estepa (fase 7):
+    bool pierce;       // pico: contra la armadura entra como una punta (el sagaris)
+    bool crush;        // cabeza pesada: abate mas y el casco para la mitad (la maza)
+    bool stun;         // el golpe que entra aturde (el martillo del sagaris)
+    bool clean_cut;    // corte limpio a caballo: no se traba y suma inercia (el sable)
+    bool mounted_only; // solo sirve a caballo (la lanza pesada)
+    bool ring;         // daga de anillo: sin castigo en la mano torpe; mejor en llaves, rehenes y ejecuciones
 } WeaponStats;
 
 // Estadisticas del arma por id del inventario ("" o NULL: a puño limpio).
 WeaponStats weapon_stats(const char *inv_id);
+// A caballo, cuanto multiplica el golpe la inercia de la carrera (m/s): el sable (corte limpio)
+// la aprovecha entera y algo mas, las de asta entera, las demas la mitad.
+float weapon_mounted_scale(const char *inv_id, float speed);
+// Probabilidad de que un golpe al galope se trabe en el rival (se pierde el ritmo): las hachas,
+// las espadas, las dagas y las mazas; el sable y las de asta, nunca.
+float weapon_snag_chance(const char *inv_id, float speed);
+#define SNAG_SECONDS 0.9f // s de mas hasta el proximo golpe si se traba
 
 // Crecen al final (se guardan como numeros, docs/PARTIDAS.md).
 typedef enum {
@@ -72,5 +86,10 @@ float combat_damage(float base, float strength, float attack_scale, bool blocked
 // absorbed: daño que paro la armadura; broke: si una pieza se rompio.
 int combat_apply_hit(Health *h, Armor *a, Rng *rng, float damage, WoundKind kind, int part, bool projectile,
                      float *absorbed, bool *broke);
+// Un golpe cuerpo a cuerpo con los rasgos de su arma: con pierce (el pico) la armadura lo para como
+// a una punta (peor la malla); con crush (la maza), en la cabeza pasa la mitad de lo que pararia el
+// casco. Sin rasgos, es combat_apply_hit.
+int combat_apply_strike(Health *h, Armor *a, Rng *rng, float damage, WoundKind kind, int part, bool pierce, bool crush,
+                        float *absorbed, bool *broke);
 
 #endif

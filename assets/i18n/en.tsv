@@ -8,6 +8,7 @@ Acantilado modular	Modular cliff
 Agua con vino	Watered wine
 Agua cruda	Raw water
 Agua hervida	Boiled water
+Akinakes	Akinakes
 Alabarda	Halberd
 Alerce	Larch
 Altar del culto	Cult altar
@@ -24,7 +25,11 @@ Anillo de plata	Silver ring
 Antorcha	Torch
 Arbusto estepario	Steppe shrub
 Arco compuesto de cuerno	Horn composite bow
+Arco compuesto reflejo	Reflex composite bow
+Arco encolado (secando: falta 1 día)	Glued bow (drying: 1 day left)
+Arco encolado (secando: faltan 2 días)	Glued bow (drying: 2 days left)
 Arco largo	Longbow
+Arco seco (sin terminar)	Dried bow (unfinished)
 Aretes de bronce	Bronze earrings
 Aretes de oro	Gold earrings
 Aretes de plata	Silver earrings
@@ -92,6 +97,7 @@ Cerveza	Beer
 Chamán	Shaman
 Cinturón con placa de estilo animal	Animal-style plaque belt
 Cofre de botín	Loot chest
+Cola de hueso	Bone glue
 Collar de bronce	Bronze necklace
 Collar de oro	Gold necklace
 Collar de plata	Silver necklace
@@ -195,8 +201,8 @@ Kurgán (túmulo funerario)	Kurgan (burial mound)
 La madre	The mother
 Ladrillos de adobe	Adobe bricks
 Lana de cabra	Goat wool
-Lanza	Spear
 Lanza de caballería de doble punta	Double-tipped cavalry lance
+Lanza ligera	Light lance
 Lapislázuli	Lapis lazuli
 Lazo	Lasso
 Lazo con plomadas	Weighted lasso
@@ -278,8 +284,8 @@ Reno de tiro	Draft reindeer
 Roca mediana	Medium rock
 Roca pequeña	Small rock
 Rollo de cuerda	Coil of rope
-Sable curvo	Curved sabre
 Sable de acero damasquinado	Damascus steel sabre
+Sable de la estepa	Steppe sabre
 Sacerdote del culto	Cult priest
 Saco de grano	Sack of grain
 Saxaúl (arbusto del desierto)	Saxaul (desert shrub)
@@ -387,6 +393,7 @@ Hace falta: %s.	Needs: %s.
 Haciendo: %s %d%%	Making: %s %d%%
 Hecho	Made
 Hecho: %s.	Done: %s.
+Hecho: %s. Queda colgado en el acopio del campamento: tarda %d días en secarse.	Done: %s. It hangs in the camp store: it takes %d days to dry.
 Hierves el agua: +%d agua hervida, sin espíritus malditos.	You boil the water: +%d boiled water, free of cursed spirits.
 La trepa se engancha: ¡a escalar!	The grapple holds: climb!
 Lanzaste: %s.	You threw: %s.
@@ -432,7 +439,9 @@ Vacío	Empty
 Ya es de la tribu.	It already belongs to the tribe.
 Ya estás fabricando algo: %s.	You are already crafting: %s.
 Ya llevas algo: T para lanzarlo.	You already carry something: T to throw it.
+Ya se secó el arco encolado (%d): termínalo con cola de hueso y tendón (Tab, Fabricar).	The glued bow has dried (%d): finish it with bone glue and sinew (Tab, Craft).
 a mano	by hand
+da %d x %s · se seca en el acopio	makes %d x %s · dries in the camp store
 da %d x %s · va a la mochila (o al acopio)	makes %d x %s · goes to the pack (or the store)
 en el acopio	in the store
 falta	missing
@@ -691,6 +700,7 @@ L: lo empujas y cae de bruces.	L: you shove them and they fall flat.
 L: patada que empuja y desequilibra. Corriendo, patada a la carrera.	L: a kick that shoves and staggers. Running, a running kick.
 La flecha encendida se apagó.	The fire arrow went out.
 La flecha ya arde: ¡dispara!	The arrow is burning: shoot!
+La lanza pesada solo sirve a caballo: monta (R) y ponla en ristre (L).	The heavy lance only works on horseback: mount (R) and couch it (L).
 La lluvia apaga la flecha.	The rain puts out the arrow.
 La tribu no tiene sitio para más gente.	The tribe has no room for more people.
 Lanza en ristre	Couched lance
@@ -737,6 +747,7 @@ Te levantas.	You get up.
 Te untas el ungüento: cierra las heridas y corta el veneno.	You apply the salve: it closes wounds and stops poison.
 Te vendas %d herida%s con hierbas curativas.	You bind %d wound%s with healing herbs.
 Te zafas del agarre del %s.	You break the %s's hold.
+Tu %s se traba en el golpe: pierdes el ritmo (el sable corta limpio).	Your %s snags on the blow: you lose your rhythm (the sabre cuts clean).
 Tu arma no tiene gancho (hacha, guja o alabarda).	Your weapon has no hook (axe, glaive or halberd).
 Tu golpe pesado rompe la guardia del %s.	Your heavy strike breaks the %s's guard.
 Un %s mata a un %s.	A %s kills a %s.
@@ -766,6 +777,7 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡Golpeaste el nido! Ahí vienen...	You hit the nest! Here they come...
 ¡Jinetes bandidos al galope! Derríbalos del caballo.	Bandit riders galloping in! Knock them off their horses.
 ¡La escolta de la caravana desenvaina!	The caravan's escort draws steel!
+¡La lanza pesada rompe la formación! Alcanzas a %d de una sola carga.	The heavy lance breaks the formation! You strike %d in a single charge.
 ¡Lanza en ristre!	Lance couched!
 ¡Parry! El %s queda abierto.	Parry! The %s is wide open.
 ¡Te muerde un %s: veneno! Véndate con hierbas (B).	A %s bites you: poison! Bind it with herbs (B).
@@ -1153,6 +1165,7 @@ Acompañados corren menos riesgo y rinden más, y también el que sabe el oficio
 Al caer: pulsa la serie de teclas (J K L U I O) a tiempo.	When you fall: press the key sequence (J K L U I O) in time.
 Al volver cuentan qué pasó: en el registro y en la ventana (Informes).	On their return they report: in the log and in the window (Reports).
 Arco a caballo: la carrera abre el tiro, y más hacia atrás (el disparo parto, alejándote al galope). La monta lo corrige; con objetivo (Tab) apuntas solo.	Bow on horseback: speed spreads the shot, and more so backwards (the Parthian shot, galloping away). Riding skill corrects it; with a target (Tab) you aim on your own.
+Arco simple o arco compuesto reflejo: el reflejo tira más fuerte y, a caballo, como a pie (también el disparo parto).	Simple bow or reflex composite bow: the reflex bow shoots harder and, on horseback, as well as on foot (the Parthian shot too).
 Arco, ballesta u honda: mantén H (o el clic) para tensar y suelta para disparar. Con objetivo, la mira se calcula sola; sin él, la cámara alza la mira: la curva amarilla muestra dónde caerá. J baja el arma; L, patada.	Bow, crossbow or sling: hold H (or click) to draw and release to shoot. With a target, the aim is computed for you; without one, the camera raises the aim: the yellow curve shows where it will land. J lowers the weapon; L, kick.
 Arcos, flechas y armaduras	Bows, arrows and armour
 Armas, aguante y heridas	Weapons, stamina and wounds
@@ -1185,6 +1198,7 @@ Controles y reglas del juego	Controls and game rules
 Correr, saltar y golpear gastan aguante (la barra de abajo a la derecha): agotado, no corres hasta recobrar el aliento.	Running, jumping and striking spend stamina (the lowest bar on the right): exhausted, you can't run until you catch your breath.
 Cría: una hembra y un macho de la tribu, bien comidos, en el campamento. A los 3 días nace la cría, que hereda la velocidad y el aguante de sus padres; a los 4 es adulta. La mula no se cría.	Breeding: a well-fed female and male of the tribe in camp. In 3 days the young is born, inheriting its parents' speed and stamina; in 4 more it is grown. Mules don't breed.
 Cuatro botones (teclas o las casillas de abajo a la derecha): H ataque, J bloqueo, K parry, L carga o patada.	Four buttons (keys or the tiles at the bottom right): H attack, J block, K parry, L charge or kick.
+Daga de anillo: en la mano torpe pega como en la buena; llaves más firmes, el rehén no se te suelta con cualquier golpe y la ejecución apenas se oye.	Ring-pommel dagger: in the off hand it strikes like the good one; firmer holds, a hostage doesn't slip away at every blow, and executions are barely heard.
 Dejar la partida (lo no guardado se pierde)	Leave the game (unsaved progress is lost)
 Día %d · %s · tribu de %d	Day %d · %s · tribe of %d
 El agua	Water
@@ -1195,6 +1209,7 @@ El desierto quema de día y hiela de noche. Con calor te sofocas: busca sombra (
 El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Cold drains your warmth: seek fire and yurts; wet clothes chill you.
 El mundo	The world
 El pasto sigue a las estaciones: la estepa en primavera y otoño, las montañas en verano, el desierto en invierno. Sin pasto, el ganado pasa hambre.	Grass follows the seasons: steppe in spring and autumn, mountains in summer, desert in winter. Without it, the herd goes hungry.
+El reflejo se hace en tres etapas (Tab, Fabricar): el alma de madera; el asta y el tendón con cola de hueso, que secan dos días colgados en el acopio; y la cola que lo termina.	The reflex bow takes three stages (Tab, Craft): the wooden core; horn and sinew with bone glue, which dry for two days hanging in the store; and the glue that finishes it.
 En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
 En verano el pasto seco arde: los incendios corren con el viento.	In summer dry grass burns: wildfires run with the wind.
 Enter, un clic sobre la obra o la casilla de aceptar la coloca y paga el acopio; Esc cancela sin gastar nada.	Enter, a click on the building or the accept tile places it and pays from the stores; Esc cancels without spending anything.
@@ -1251,8 +1266,11 @@ La tribu come carne fresca y leche antes que la seca; con hambre baja la moral.	
 La tribu se cambia sola según el tiempo con la ropa de su mochila y del acopio; sin ropa adecuada pasa frío o calor y baja la moral.	The tribe changes clothes on its own with the weather, from their packs and the stockpile; without suitable clothing they suffer cold or heat and morale drops.
 La tribu y el campamento	The tribe and the camp
 Lanza en ristre: con una lanza, L la baja. Al galope, el primero que tengas delante recibe todo el peso de la carrera y casi siempre cae.	Couched lance: with a lance, L lowers it. At a gallop, the first one ahead takes the full weight of the charge and almost always falls.
+Lanza ligera, a pie y a caballo. Lanza pesada: solo a caballo; en ristre (L) derriba y rompe la formación.	Light lance, on foot and on horseback. Heavy lance: on horseback only; couched (L) it knocks riders down and breaks the formation.
+Las armas de la estepa	Steppe weapons
 Las caravanas van y vuelven entre cada caravasar y la capital más cercana. Si la asaltas, su escolta pelea; vencida, la carga queda en el suelo, y el reino se entera.	Caravans go back and forth between each caravanserai and the nearest capital. Raid one and its escort fights; once beaten, the cargo is left on the ground, and the kingdom hears of it.
 Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.	Structures wear out: the tribe repairs them with logs every day. Without upkeep, torrential rain brings them down.
+Las forja el herrero en los hornos de bronce y de acero; las tribus las venden.	The smith forges them in the bronze and steel furnaces; the tribes sell them.
 Las mazas, las patadas y los escudos tumban sin matar, y también una herida que no es mortal: el enemigo queda abatido en el suelo. A los 30-90 s despierta, herido, y huye a avisar a los suyos.	Maces, kicks and shields knock down without killing, and so does a wound that isn't mortal: the enemy lies downed. After 30-90 s they wake up, wounded, and run off to warn their own.
 Las obras	Building works
 Las partidas guardadas, con su foto y su fecha	Saved games, with their picture and date
@@ -1288,6 +1306,8 @@ R montar · T lanzar · Y escolta	R mount · T throw · Y escort
 Reclutar, liberar o ejecutar prisioneros cambia la relación con el reino.	Recruiting, freeing or executing prisoners changes your standing with the kingdom.
 Reparar: el cuero y el fieltro con pieles (sin pieles, se untan con grasa); el bronce y el hierro, herrero, horno y metal.	Repair: leather and felt with hides (without hides, grease them); bronze and iron need a smith, a furnace and metal.
 Ropa y calor	Clothing and heat
+Sable de la estepa: a caballo corta limpio y suma la carrera; el hacha, la espada y la maza se traban al galope. La akinakes, la espada corta de los escitas, es rápida.	Steppe sabre: on horseback it cuts clean and adds the charge; axes, swords and maces snag at the gallop. The akinakes, the Scythian short sword, is fast.
+Sagaris: el de pico perfora la armadura, el de martillo aturde; los dos enganchan el escudo. La maza abate más de lo que mata, y el casco la para la mitad.	Sagaris: the pick pierces armor, the hammer stuns; both hook the shield. The mace knocks out more than it kills, and a helmet stops only half of it.
 Salir	Quit
 Salir al título	Back to title
 Salir del juego	Quit game
@@ -1674,10 +1694,14 @@ Abrigo de piel de reno	Reindeer fur coat
 Abrigo de piel de tigre	Tiger fur coat
 Agua con vino (3)	Watered wine (3)
 Airag (leche de yegua fermentada)	Airag (fermented mare's milk)
+Akinakes de bronce	Bronze akinakes
 Alforjas	Saddlebags
 Aljaba de cuero	Leather quiver
+Alma de arco (madera)	Bow core (wood)
 Antorchas (2)	Torches (2)
-Arco compuesto	Composite bow
+Arco compuesto reflejo (cola de hueso)	Reflex composite bow (bone glue)
+Arco encolado (asta y tendón)	Glued bow (horn and sinew)
+Arco simple	Simple bow
 Botas de fieltro	Felt boots
 Botas de piel de reno	Reindeer fur boots
 Brazales laminares de cuero	Leather lamellar bracers
@@ -1690,10 +1714,12 @@ Capa de piel de puma	Puma fur cloak
 Casco de bronce	Bronze helmet
 Casco laminar de cuero	Leather lamellar helmet
 Cerveza de pan (2)	Bread beer (2)
+Cola de hueso (2)	Bone glue (2)
 Coraza de escamas de acero	Steel scale cuirass
 Coraza laminar de cuero	Lamellar leather cuirass
 Cuerda de tendones	Sinew rope
 Cuero (curtir pieles)	Leather (tan hides)
+Daga de anillo	Ring-pommel dagger
 Deel de invierno con piel	Fur winter deel
 Escudo de láminas de hierro	Iron-plated shield
 Fieltro	Felt
@@ -1705,9 +1731,11 @@ Gorro de piel	Fur hat
 Grebas laminares de cuero	Leather lamellar greaves
 Ladrillos de adobe (2)	Adobe bricks (2)
 Lanza de punta de bronce	Bronze-tipped spear
+Lanza pesada	Heavy lance
 Lingote de bronce	Bronze ingot
 Madera labrada	Dressed timber
 Manto blanco del desierto	White desert mantle
+Maza de bronce	Bronze mace
 Pañuelo del desierto	Desert scarf
 Peine de hueso	Bone comb
 Piedras de honda (8)	Sling stones (8)
@@ -1716,6 +1744,8 @@ Puntas de hueso (4)	Bone points (4)
 Queso seco	Dried cheese
 Sable de acero	Steel sabre
 Sable de bronce	Bronze sabre
+Sagaris de martillo	Hammer sagaris
+Sagaris de pico	Pick sagaris
 Sandalias de cuero	Leather sandals
 Silla de montar	Saddle
 Sombrero de ala ancha	Wide-brimmed hat

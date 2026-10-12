@@ -22,6 +22,8 @@
 #define DOWN_WAKE_MIN 30.0f          // s en el suelo antes de despertar
 #define DOWN_WAKE_MAX 90.0f
 #define HOSTAGE_SHIELD_RADIUS 0.5f   // m: cuanto tapa el rehen de la linea de tiro
+#define HOSTAGE_JOLT 12.0f           // daño de un golpe que suelta al rehen
+#define RING_ALERT_RANGE 3.0f        // m: con la daga de anillo, la ejecucion se oye aun menos
 
 // Coseno entre el frente de quien esta en (ex, ez) mirando a yaw (el frente es (sin yaw, cos yaw))
 // y la direccion hacia (px, pz): 1 de frente, -1 a la espalda.
@@ -35,6 +37,11 @@ bool stealth_backstab(float ex, float ez, float eyaw, float px, float pz, bool n
 float stealth_sight_scale(float facing, float noise);
 // Un testigo a esa distancia oye la ejecucion silenciosa.
 bool stealth_hears_kill(float dist);
+// Lo mismo, con la daga de anillo en la mano (ring): solo a menos de RING_ALERT_RANGE.
+bool stealth_hears_kill_with(float dist, bool ring);
+// Un golpe a quien sujeta un rehen: ¿lo suelta? Uno fuerte, o que lo tumba o lo desequilibra. Con
+// la daga de anillo al cuello (ring), solo uno que lo tumba o el doble de fuerte.
+bool hostage_jolted(float damage, bool knocked_down, bool staggered, bool ring);
 // El rehen (hx, hz) tapa el tiro de (sx, sz) a (tx, tz): esta en la linea, entre los dos.
 bool hostage_blocks_shot(float sx, float sz, float tx, float tz, float hx, float hz);
 // Abatidos: cuanto tarda en despertar, en [DOWN_WAKE_MIN, DOWN_WAKE_MAX].

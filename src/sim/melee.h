@@ -18,8 +18,10 @@
 //  - golpe de escudo: cubriendose con el escudo (J) y atacando (H): aturde;
 //  - agarre: del escudo (se lo arranca), del brazo armado (lo desarma) o de una
 //    extremidad, y lo tumba con una llave; si falla, el que agarra queda expuesto;
-//  - gancho: un arma con gancho (hacha, guja, alabarda) engancha el escudo enemigo
+//  - gancho: un arma con gancho (hacha, guja, alabarda, sagaris) engancha el escudo enemigo
 //    y se lo hace soltar.
+// Las armas de la estepa (fase 7, src/sim/combat.h): la maza abate mas (y el casco la para peor),
+// el martillo del sagaris aturde, el pico perfora, y la daga de anillo afirma las llaves.
 // Quien esta en el suelo no se cubre y recibe mas daño hasta que se levanta.
 #ifndef ESTEPA_MELEE_H
 #define ESTEPA_MELEE_H
@@ -67,7 +69,10 @@ typedef struct {
     float strength;  // fuerza (1 normal; grandes guerreros, mas)
     float weight;    // kg de armadura (pesa: cuesta mas tumbarlo)
     float health;    // [0, 1] vida restante (herido, se resiste peor)
+    bool ring;       // lleva una daga de anillo (en cualquier mano): sus llaves son mas firmes
 } Fighter;
+
+#define RING_GRAPPLE 1.35f // la daga de anillo: cuanto mas fuerte agarra
 
 typedef enum { GRAB_NONE, GRAB_SHIELD, GRAB_WEAPON_ARM, GRAB_LIMB } GrabTarget;
 
@@ -83,10 +88,11 @@ typedef struct {
     bool attacker_staggered; // fallo el agarre o choco con otro escudo
     GrabTarget grab;
     float guard_cost;    // aguante que gasta el que se cubrio (parar con el arma cansa)
+    bool pierce, crush;  // como lo para la armadura (combat_apply_strike): el pico, la maza
 } MeleeResult;
 
 const MoveDef *move_def(MeleeMove m);
-// ¿El arma puede enganchar un escudo? (hacha, guja, alabarda, gancho)
+// ¿El arma puede enganchar un escudo? (hacha, guja, alabarda, gancho, sagaris)
 bool weapon_can_hook(const char *inv_id);
 // Arma corta (combos rapidos) o larga (alcance, remate que tumba).
 bool weapon_is_short(const char *inv_id);
@@ -108,7 +114,7 @@ MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, c
 #define PARRY_EXPOSED 0.6f
 
 typedef enum {
-    PARRY_HOOK,    // hacha, guja, alabarda: engancha el escudo y se lo arranca
+    PARRY_HOOK,    // hacha, guja, alabarda, sagaris: engancha el escudo y se lo arranca
     PARRY_GRAPPLE, // manos o daga: le toma el brazo armado, lo desarma y lo tumba
     PARRY_DEFLECT, // las demas: desvia el golpe y el rival queda abierto
 } ParryKind;

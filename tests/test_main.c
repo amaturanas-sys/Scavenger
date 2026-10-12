@@ -763,13 +763,14 @@ static void test_armor_pieces_materials(void) {
 }
 
 static void test_ballistics_trajectories(void) {
-    const RangedDef *bow = ranged_def("arma.distancia.arco_compuesto");
+    const RangedDef *bow = ranged_def("arma.distancia.arco_simple");
     const RangedDef *xbow = ranged_def("arma.distancia.ballesta");
     const RangedDef *sling = ranged_def("arma.distancia.honda");
     CHECK(bow && xbow && sling && !ranged_def("arma.corta.sable") && !ranged_def(""));
     // v = sqrt(2E/m): mas potencia, mas rapido; mas masa, mas lento.
     float vb = ranged_muzzle_speed(bow, 1.0f), vx = ranged_muzzle_speed(xbow, 1.0f), vs = ranged_muzzle_speed(sling, 1.0f);
     CHECK(fabsf(vb - sqrtf(2.0f * 75.0f / 0.030f)) < 0.01f);
+    CHECK(ranged_muzzle_speed(ranged_def("arma.distancia.arco_compuesto"), 1.0f) > vb); // el reflejo: mas tension
     CHECK(vx < vb && vs < vx);                                   // el virote pesa el doble
     CHECK(ranged_muzzle_speed(bow, 0.3f) < vb * 0.6f);            // poco tenso, poca velocidad
     CHECK(ranged_muzzle_speed(xbow, 0.0f) == vx);                 // la ballesta no se tensa a mano
@@ -4065,6 +4066,154 @@ static void test_daily_work_by_trade(void) {
     CHECK(camp_effects(homes, 3).shelters == 8);
 }
 
+// Fase 7: las armas de la estepa (src/sim/combat.h, melee.h, riding.h, stealth.h, economy.h).
+static void test_steppe_weapons(void) {
+    // Los rasgos de cada arma.
+    WeaponStats sable = weapon_stats("arma.corta.sable"), steel = weapon_stats("arma.corta.sable_acero");
+    WeaponStats pick = weapon_stats("arma.corta.sagaris"), hammer = weapon_stats("arma.corta.sagaris_martillo");
+    WeaponStats mace = weapon_stats("arma.corta.maza"), ring = weapon_stats("arma.corta.daga_anillo");
+    WeaponStats light = weapon_stats("arma.larga.lanza"), heavy = weapon_stats("arma.larga.lanza_pesada");
+    WeaponStats aki = weapon_stats("arma.corta.akinakes"), axe = weapon_stats("arma.corta.hacha_mano");
+    CHECK(sable.clean_cut && steel.clean_cut && steel.damage > sable.damage && !axe.clean_cut);
+    CHECK(pick.pierce && !pick.stun && hammer.stun && !hammer.pierce && hammer.wound == WOUND_BRUISE);
+    CHECK(weapon_can_hook("arma.corta.sagaris") && weapon_can_hook("arma.corta.sagaris_martillo"));
+    CHECK(melee_parry_kind("arma.corta.sagaris") == PARRY_HOOK && melee_parry_kind("arma.corta.daga_anillo") == PARRY_GRAPPLE);
+    CHECK(mace.crush && weapon_stats("arma.especial.maza_tigre").crush && !sable.crush);
+    CHECK(ring.ring && !weapon_stats("arma.corta.daga").ring && weapon_is_short("arma.corta.daga_anillo"));
+    CHECK(heavy.spear && heavy.mounted_only && heavy.reach > light.reach + 0.8f && heavy.damage > light.damage && !light.mounted_only);
+    CHECK(weapon_is_short("arma.corta.akinakes") && aki.damage > weapon_stats("arma.corta.daga").damage && aki.damage < sable.damage);
+    CHECK(weapon_is_long("arma.larga.lanza_pesada"));
+
+    // A caballo: el sable aprovecha la carrera entera y no se traba; las demas, la mitad, y se traban.
+    CHECK(fabsf(weapon_mounted_scale("arma.corta.sable", 0.0f) - 1.0f) < 1e-5f);
+    CHECK(weapon_mounted_scale("arma.corta.sable", 8.0f) > mounted_momentum(8.0f));
+    CHECK(fabsf(weapon_mounted_scale("arma.larga.lanza", 8.0f) - mounted_momentum(8.0f)) < 1e-5f);
+    CHECK(weapon_mounted_scale("arma.corta.hacha_mano", 8.0f) < mounted_momentum(8.0f) && weapon_mounted_scale("arma.corta.hacha_mano", 8.0f) > 1.0f);
+    CHECK(weapon_snag_chance("arma.corta.sable", 9.0f) == 0.0f && weapon_snag_chance("arma.larga.lanza_pesada", 9.0f) == 0.0f);
+    CHECK(weapon_snag_chance("arma.corta.hacha_mano", 9.0f) > 0.2f && weapon_snag_chance("arma.corta.hacha_mano", 2.0f) == 0.0f);
+    CHECK(weapon_snag_chance("arma.corta.maza", 9.0f) > 0.0f && weapon_snag_chance("arma.corta.maza", 9.0f) < weapon_snag_chance("arma.corta.hacha_mano", 9.0f));
+    CHECK(weapon_snag_chance("", 9.0f) == 0.0f && weapon_snag_chance("arma.distancia.arco_simple", 9.0f) == 0.0f);
+
+    // El arco compuesto reflejo a caballo no tiene penalizacion; el simple, la de siempre; el largo, mas.
+    const RangedDef *simple = ranged_def("arma.distancia.arco_simple"), *reflex = ranged_def("arma.distancia.arco_compuesto");
+    const RangedDef *longbow = ranged_def("arma.distancia.arco_largo");
+    CHECK(simple && reflex && longbow && reflex->saddle == 0.0f && simple->saddle == 1.0f && longbow->saddle > 1.0f);
+    CHECK(reflex->power > simple->power && reflex->spread < simple->spread);
+    float afoot = mounted_bow_spread(0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+    CHECK(fabsf(mounted_bow_spread(9.0f, 0.0f, 0.0f, 0.0f, reflex->saddle) - afoot) < 1e-5f);
+    CHECK(fabsf(mounted_bow_spread(9.0f, 3.0f, 0.0f, 0.0f, reflex->saddle) - afoot) < 1e-5f); // el disparo parto, tambien
+    CHECK(fabsf(mounted_bow_spread(9.0f, 3.0f, 0.3f, 0.5f, 1.0f) - mounted_shot_spread(9.0f, 3.0f, 0.3f, 0.5f)) < 1e-5f);
+    CHECK(mounted_bow_spread(9.0f, 0.0f, 0.0f, 0.0f, longbow->saddle) > mounted_bow_spread(9.0f, 0.0f, 0.0f, 0.0f, simple->saddle));
+
+    // La lanza pesada derriba mas que la ligera, y el escudo la frena menos.
+    CHECK(heavy_lance_knock(4.0f, false) == 0.0f && heavy_lance_knock(7.0f, false) > lance_charge_knock(7.0f, false));
+    CHECK(heavy_lance_knock(7.0f, true) > lance_charge_knock(7.0f, true) && heavy_lance_knock(12.0f, false) <= 0.98f);
+    CHECK(HEAVY_LANCE_BREAK >= 1 && HEAVY_LANCE_DEPTH > 2.0f);
+
+    // Contra la armadura: el pico entra como una punta (la coraza de hierro para menos); la maza,
+    // en la cabeza, pasa la mitad de lo que pararia el casco.
+    Rng r1, r2;
+    rng_seed(&r1, 7), rng_seed(&r2, 7);
+    float cut_abs = 0.0f, pick_abs = 0.0f;
+    for (int i = 0; i < 200; i++) {
+        Armor a1, a2;
+        Health h1, h2;
+        memset(&a1, 0, sizeof(a1)), memset(&a2, 0, sizeof(a2));
+        armor_equip(&a1, "armadura.torso.escamas_hierro"), armor_equip(&a2, "armadura.torso.escamas_hierro");
+        health_init(&h1, 100.0f), health_init(&h2, 100.0f);
+        float ab1 = 0.0f, ab2 = 0.0f;
+        combat_apply_strike(&h1, &a1, &r1, 20.0f, WOUND_CUT, PART_THORAX, false, false, &ab1, NULL);
+        combat_apply_strike(&h2, &a2, &r2, 20.0f, WOUND_CUT, PART_THORAX, true, false, &ab2, NULL);
+        cut_abs += ab1, pick_abs += ab2;
+    }
+    CHECK(pick_abs > 0.0f && pick_abs < cut_abs * 0.85f);
+    rng_seed(&r1, 9), rng_seed(&r2, 9);
+    float plain_abs = 0.0f, crush_abs = 0.0f;
+    for (int i = 0; i < 200; i++) {
+        Armor a1, a2;
+        Health h1, h2;
+        memset(&a1, 0, sizeof(a1)), memset(&a2, 0, sizeof(a2));
+        armor_equip(&a1, "armadura.casco.bronce"), armor_equip(&a2, "armadura.casco.bronce");
+        health_init(&h1, 100.0f), health_init(&h2, 100.0f);
+        float ab1 = 0.0f, ab2 = 0.0f;
+        combat_apply_strike(&h1, &a1, &r1, 20.0f, WOUND_BRUISE, PART_HEAD, false, false, &ab1, NULL);
+        combat_apply_strike(&h2, &a2, &r2, 20.0f, WOUND_BRUISE, PART_HEAD, false, true, &ab2, NULL);
+        plain_abs += ab1, crush_abs += ab2;
+    }
+    CHECK(crush_abs > 0.0f && fabsf(crush_abs - plain_abs * 0.5f) < plain_abs * 0.01f);
+
+    // En el golpe: la maza tumba mas que el sable; el martillo, si entra, aturde.
+    Fighter att = { .armed = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f };
+    Fighter def = { .armed = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f };
+    Rng rm;
+    rng_seed(&rm, 11);
+    int knock_mace = 0, knock_sable = 0, dazed = 0;
+    for (int i = 0; i < 2000; i++) {
+        knock_mace += melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.maza", 1, &rm).knocked_down;
+        knock_sable += melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sable", 1, &rm).knocked_down;
+        MeleeResult r = melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sagaris_martillo", 1, &rm);
+        dazed += r.landed && !r.blocked && r.staggered;
+    }
+    CHECK(knock_mace > 150 && knock_sable == 0 && dazed == 2000);
+    MeleeResult rp = melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sagaris", 1, &rm);
+    CHECK(rp.pierce && !rp.crush && melee_resolve(MOVE_HEAVY, &att, &def, "arma.corta.maza", 1, &rm).crush);
+    MeleeResult hook = melee_resolve(MOVE_HOOK, &att, &(Fighter){ .shield = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f },
+                                     "arma.corta.sagaris", 1, &rm);
+    CHECK(hook.landed && hook.staggered);
+
+    // La daga de anillo: las llaves entran mas, la ejecucion se oye menos y el rehen se suelta menos.
+    Fighter ringed = att;
+    ringed.ring = true;
+    int grab_plain = 0, grab_ring = 0;
+    for (int i = 0; i < 2000; i++) {
+        grab_plain += melee_resolve(MOVE_GRAPPLE, &att, &def, "", 1, &rm).landed;
+        grab_ring += melee_resolve(MOVE_GRAPPLE, &ringed, &def, "", 1, &rm).landed;
+    }
+    CHECK(grab_ring > grab_plain + 150);
+    CHECK(stealth_hears_kill_with(4.0f, false) && !stealth_hears_kill_with(4.0f, true) && stealth_hears_kill_with(2.5f, true));
+    CHECK(stealth_hears_kill_with(SILENT_ALERT_RANGE, false) == stealth_hears_kill(SILENT_ALERT_RANGE));
+    CHECK(hostage_jolted(HOSTAGE_JOLT, false, false, false) && !hostage_jolted(HOSTAGE_JOLT, false, false, true));
+    CHECK(hostage_jolted(2.0f, false, true, false) && !hostage_jolted(2.0f, false, true, true));
+    CHECK(hostage_jolted(2.0f, true, false, true) && hostage_jolted(2.0f * HOSTAGE_JOLT, false, false, true));
+
+    // Los enemigos: el arquero a pie lleva el arco simple; el de a caballo, el reflejo y la daga de anillo.
+    CHECK(!strcmp(enemy_def(ENEMY_ARCHER)->ranged, "arma.distancia.arco_simple"));
+    CHECK(!strcmp(enemy_def(ENEMY_HORSE_ARCHER)->ranged, "arma.distancia.arco_compuesto"));
+    CHECK(!strcmp(enemy_def(ENEMY_HORSE_ARCHER)->weapon, "arma.corta.daga_anillo"));
+
+    // El arco reflejo, por etapas: el alma de madera, el asta y el tendon encolados (que secan en el
+    // acopio) y la cola de hueso que lo termina. Lo que sale de cada etapa entra en la siguiente.
+    const CraftDef *core = craft_def(CRAFT_BOW_CORE), *glued = craft_def(CRAFT_BOW_GLUED), *bow = craft_def(CRAFT_COMPOSITE_BOW);
+    const CraftDef *glue = craft_def(CRAFT_BONE_GLUE);
+    CHECK(core && glued && bow && glue && craft_by_hand(core) && craft_by_hand(glued) && craft_by_hand(bow));
+    bool core_in = false, glue_in = false, dry_in = false, glue_bow = false;
+    for (int i = 0; i < MAT_MAX && glued->mats[i].id; i++) {
+        core_in |= !strcmp(glued->mats[i].id, core->produces);
+        glue_in |= !strcmp(glued->mats[i].id, glue->produces);
+    }
+    for (int i = 0; i < MAT_MAX && bow->mats[i].id; i++) {
+        dry_in |= !strcmp(bow->mats[i].id, "utileria.material.arco_seco");
+        glue_bow |= !strcmp(bow->mats[i].id, glue->produces);
+    }
+    CHECK(core_in && glue_in && dry_in && glue_bow && glued->to_stock && !core->to_stock && !bow->to_stock);
+    CHECK(!strcmp(bow->produces, "arma.distancia.arco_compuesto") && !strcmp(craft_def(CRAFT_SIMPLE_BOW)->produces, "arma.distancia.arco_simple"));
+    Stockpile st;
+    stock_init(&st);
+    stock_add(&st, glued->produces, 2);
+    int days = 0;
+    while (stock_count(&st, "utileria.material.arco_seco") < 2 && days < 10) {
+        CHECK(stock_dry_day(&st) == 2);
+        days++;
+    }
+    CHECK(days == BOW_DRY_DAYS && stock_count(&st, glued->produces) == 0 && stock_count(&st, "utileria.material.arco_oreado") == 0);
+    CHECK(stock_dry_day(&st) == 0 && stock_count(&st, "utileria.material.arco_seco") == 2); // seco, se queda seco
+    stock_add(&st, glued->produces, 1);
+    CHECK(stock_dry_day(&st) == 1 && stock_count(&st, "utileria.material.arco_oreado") == 1 && stock_count(&st, "utileria.material.arco_seco") == 2);
+    // Las armas nuevas se forjan con herrero, en el horno.
+    CraftId forged[] = { CRAFT_AKINAKES, CRAFT_SAGARIS, CRAFT_SAGARIS_HAMMER, CRAFT_MACE, CRAFT_RING_DAGGER, CRAFT_HEAVY_LANCE };
+    for (size_t i = 0; i < sizeof(forged) / sizeof(forged[0]); i++) CHECK(!craft_by_hand(craft_def(forged[i])) && craft_def(forged[i])->building);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -4185,6 +4334,7 @@ int main(void) {
     RUN(test_horse_archer_harass);
     RUN(test_breeding_and_foals);
     RUN(test_camp_migration_and_pastures);
+    RUN(test_steppe_weapons);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }
