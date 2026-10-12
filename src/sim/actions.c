@@ -1,4 +1,5 @@
 #include "sim/actions.h"
+#include "sim/forge.h"
 #include "sim/lang.h"
 
 #include <stdio.h>
@@ -122,6 +123,8 @@ static const ActionDef ACTIONS[ACTION_COUNT] = {
                             ACTOR_PLAYER | ACTOR_NPC, 3.0f, "utileria.objeto.odre", NULL, N_("agua") },
     [ACTION_BOIL] = { N_("Hervir agua"), N_("Junto a un fuego encendido: el agua hervida es segura. Gasta una leña."), ACTOR_PLAYER | ACTOR_NPC, 10.0f,
                       NULL, NULL, N_("fuego"), { { "utileria.objeto.lena", 1 }, { NULL, 0 } } },
+    [ACTION_MINE] = { N_("Picar la veta"), N_("Junto a una veta de hierro del altiplano o al hierro de pantano: mineral, que se funde en el horno de acero."),
+                      ACTOR_PLAYER | ACTOR_NPC, 8.0f, NULL, NULL, N_("veta de hierro") },
 };
 
 const ActionDef *action_def(ActionId a) { return a >= 0 && a < ACTION_COUNT ? &ACTIONS[a] : NULL; }
@@ -152,6 +155,10 @@ static const BuildDef BUILDS[BUILD_COUNT] = {
         { { "utileria.material.madera_labrada", 8 }, { "utileria.material.troncos", 2 }, { NULL, 0 } } },
     [BUILD_FELT_HUT] = { N_("Choza de fieltro"), "estructura.vivienda.choza_fieltro", 700.0f, 2, 4, ROLE_NONE, ROLE_HERDER,
         { { "utileria.material.fieltro", 4 }, { "utileria.material.troncos", 2 }, { "utileria.material.cuerda", 1 }, { NULL, 0 } } },
+    // El taller del herrero (fase 7b): solo en un campamento grande.
+    [BUILD_WORKSHOP] = { N_("Taller del herrero"), WORKSHOP_ID, 2400.0f, 3, 6, ROLE_SMITH, ROLE_SMITH,
+        { { "utileria.material.troncos", 8 }, { "utileria.material.piedra", 8 }, { "utileria.material.hierro", 2 }, { "utileria.material.cuero", 2 } },
+        WORKSHOP_MIN_PEOPLE },
     [BUILD_CORRAL] = { N_("Corral"), "estructura.campamento.corral", 600.0f, 2, 4, ROLE_NONE, ROLE_HUNTER,
         { { "utileria.material.troncos", 6 }, { "utileria.material.cuerda", 3 }, { NULL, 0 } } },
 };

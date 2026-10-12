@@ -10,6 +10,7 @@
 #include "game/water_game.h"
 #include "game/talents_game.h"
 #include "game/trade_game.h"
+#include "game/forge_game.h"
 #include "sim/riding.h"
 
 #include <math.h>
@@ -73,17 +74,23 @@ static bool has_item(const GameActions *ga, const char *id) {
     return stock_count(ga_stock_c(ga), id) > 0;
 }
 
+// Lo tienes: en el acopio, la mochila o la armeria.
+static bool owned(const GameActions *ga, const char *id) {
+    return stock_count(ga_stock_c(ga), id) > 0 || bag_count(&ga->backpack, id) > 0 || bag_count(&ga->armory, id) > 0;
+}
+
 static const char *best_sable(const GameActions *ga) {
-    if (stock_count(ga_stock_c(ga), "arma.corta.sable_acero") > 0) return "arma.corta.sable_acero";
-    if (stock_count(ga_stock_c(ga), "arma.corta.sable_bronce") > 0) return "arma.corta.sable_bronce";
+    static const char *const BEST[] = { "arma.corta.sable_wootz_templado", "arma.corta.sable_wootz", "arma.corta.sable_acero_templado",
+                                        "arma.corta.sable_acero", "arma.corta.sable_bronce" }; // lo fragil no se elige solo
+    for (size_t i = 0; i < sizeof(BEST) / sizeof(BEST[0]); i++)
+        if (owned(ga, BEST[i])) return BEST[i];
     return "arma.corta.sable";
 }
 
-// El arco: el compuesto reflejo si lo tienes (en el acopio, la mochila o la armeria), si no el simple.
+// El arco: el compuesto reflejo si lo tienes, si no el simple.
 static const char *best_bow(const GameActions *ga) {
     const char *reflex = "arma.distancia.arco_compuesto";
-    if (stock_count(ga_stock_c(ga), reflex) > 0 || bag_count(&ga->backpack, reflex) > 0 || bag_count(&ga->armory, reflex) > 0) return reflex;
-    return "arma.distancia.arco_simple";
+    return owned(ga, reflex) ? reflex : "arma.distancia.arco_simple";
 }
 
 // Lo que la empuñadura pide de verdad: el mejor sable o el mejor arco que haya.
@@ -110,6 +117,7 @@ static char g_quick_wield[INV_ID_LEN]; // arma o escudo pedido por id
 static int g_quick_action = -1;        // accion pedida
 static bool g_quick_menu;              // abrir el menu de acciones
 static bool g_quick_swap;              // pasar el arma a la otra mano (Mayus + numero)
+static int g_quick_craft = -1;         // receta pedida (la prueba --forja)
 static int g_target_req;               // Tab en combate: 1 el enemigo siguiente, -1 el anterior
 static bool g_combat_near;             // hay enemigos a tiro de objetivo (lo pone src/game/combat_game.c)
 
@@ -137,6 +145,7 @@ void ga_quick_request_wield(const char *id) { snprintf(g_quick_wield, sizeof(g_q
 void ga_quick_request_action(ActionId a) { g_quick_action = (int)a; }
 void ga_quick_request_menu(void) { g_quick_menu = true; }
 void ga_quick_request_swap(void) { g_quick_swap = true; }
+void ga_quick_request_craft(CraftId c) { g_quick_craft = (int)c; }
 static int g_order_req = -1; // orden a la escolta pedida desde el HUD
 void ga_request_escort_order(int order) { g_order_req = order; }
 
@@ -341,6 +350,10 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
         if (ig_take_loot(ga, props, p, log, len)) return; // una bolsa de botin cerca: al momento
         if (gems_coral(ga, (Props *)props, p, log, len)) return; // un arrecife de coral: al momento
         if (props_nearest(props, p->pos, REACH, true) < 0 && fg_cut_grass(ga, (Props *)props, p, log, len)) return; // forraje
+        if (props_nearest(props, p->pos, REACH, true) < 0 && forge_site_near(ga->terrain, p->pos.x, p->pos.z)) { // una veta de hierro
+            start_action(ga, ACTION_MINE, props, p, log, len);
+            return;
+        }
         int near = props_nearest(props, p->pos, REACH, true);
         ga->take_all = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
         if (near >= 0 && goes_to_bags(props->items[near].item)) break; // a la mochila: no hace falta mano libre
@@ -399,6 +412,12 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
         }
         if (wg_water_room(ga, props, p) <= 0) {
             snprintf(log, len, "%s", T("Tus odres ya están llenos."));
+            return;
+        }
+        break;
+    case ACTION_MINE:
+        if (!forge_site_near(ga->terrain, p->pos.x, p->pos.z)) {
+            snprintf(log, len, "%s", T("Para picar hay que estar junto a una veta de hierro (los exploradores las marcan en el mapa)."));
             return;
         }
         break;
@@ -554,6 +573,7 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
             snprintf(log, len, "%s", T("Montura instalada: R para montar."));
         break;
     case ACTION_PAN: gems_pan(ga, props, p, log, len); break;
+    case ACTION_MINE: forge_mine(ga, props, p, log, len); break;
     case ACTION_FILL_WATER: {
         if (ga->terrain && wg_at_well(ga->terrain, p->pos.x, p->pos.z)) { // el pozo: agua limpia, como hervida
             int n = ig_store(ga, props, p, "utileria.consumible.agua_hervida", wg_water_room(ga, props, p), 1.0f);
@@ -584,6 +604,24 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
     }
 }
 
+// La gente que vive en el campamento k (activa).
+static int camp_people(const GameActions *ga, int k) {
+    int n = 0;
+    if (k < 0 || k >= CAMPS_MAX || !ga->camps[k].used) return 0;
+    for (int i = 0; ga->troop_ref && i < ga->troop_ref->count; i++)
+        n += ga->troop_ref->members[i].camp == k && ga->troop_ref->members[i].status == STATUS_ACTIVE;
+    return n;
+}
+
+// Una obra de campamento grande (el taller): false, con el aviso, si en k no vive bastante gente.
+static bool big_enough(const GameActions *ga, const BuildDef *d, int k, char *log, size_t len) {
+    if (d->min_people <= 0) return true;
+    int people = camp_people(ga, k);
+    if (people >= d->min_people) return true;
+    snprintf(log, len, T("%s necesita un campamento grande: %d personas o más (aquí viven %d)."), T(d->name), d->min_people, people);
+    return false;
+}
+
 // Tab -> Obras: si alcanza el acopio, la camara sube para ubicarla (src/game/place_game.c); se paga al colocarla.
 static void start_build(GameActions *ga, BuildId b, const Terrain *t, const Player *p, char *log, size_t len) {
     (void)t;
@@ -592,6 +630,7 @@ static void start_build(GameActions *ga, BuildId b, const Terrain *t, const Play
         snprintf(log, len, "%s", T("Demasiadas obras a la vez."));
         return;
     }
+    if (!big_enough(ga, d, ga->here, log, len)) return;
     const Ingredient *miss = stock_first_missing(ga_stock(ga), d->mats);
     if (miss) {
         snprintf(log, len, T("Falta en el acopio: %s (%d de %d)."), item_name(ga, miss->id),
@@ -609,6 +648,7 @@ bool ga_order_build(GameActions *ga, BuildId b, int camp, char *log, size_t len)
         snprintf(log, len, "%s", T("Demasiadas obras a la vez."));
         return false;
     }
+    if (!big_enough(ga, d, camp, log, len)) return false;
     Stockpile *st = &ga->camps[camp].stock;
     const Ingredient *miss = stock_first_missing(st, d->mats);
     if (miss) {
@@ -626,8 +666,9 @@ static void start_craft(GameActions *ga, CraftId c, const Props *props, const Pl
         snprintf(log, len, T("Ya estás fabricando algo: %s."), T(craft_def((CraftId)ga->crafting)->name));
         return;
     }
-    if (d->building && count_props(props, d->building) == 0) {
-        snprintf(log, len, T("Hace falta: %s."), item_name(ga, d->building));
+    if (d->building && !forge_station(ga, props, p, d->building, false, false)) {
+        if (!strcmp(d->building, FORGE_MOBILE_ID)) snprintf(log, len, "%s", T("Hace falta una forja móvil a mano (o un horno, o el taller del herrero)."));
+        else snprintf(log, len, T("Hace falta: %s."), item_name(ga, d->building));
         return;
     }
     float secs = craft_seconds(d, troop);
@@ -766,10 +807,10 @@ static const IconId TAB_ICONS[4] = { ICON_ACCIONES, ICON_OBRAS, ICON_FABRICAR, I
 static const IconId ACTION_ICONS[ACTION_COUNT] = { ICON_TOMAR,   ICON_LANZAR,   ICON_EMPUNAR, ICON_ENFUNDAR,
                                                    ICON_FOGATA,  ICON_TIENDA,   ICON_TRINCHERA, ICON_TREPA,
                                                    ICON_LAZO,    ICON_ANTORCHA, ICON_ENSILLAR, ICON_GEMA,
-                                                   ICON_AGUA,    ICON_HERVIR };
+                                                   ICON_AGUA,    ICON_HERVIR,   ICON_MINERAL };
 static const IconId BUILD_ICONS[BUILD_COUNT] = { ICON_REFUGIO, ICON_OBRAS, ICON_MURO_PIEDRA, ICON_HOGUERA, ICON_TOTEM,
                                                  ICON_HORNO,   ICON_FUNDICION, ICON_FUNDICION, ICON_TORRE, ICON_CORRAL,
-                                                 ICON_ESTRUCTURA, ICON_REFUGIO, ICON_TIENDA };
+                                                 ICON_ESTRUCTURA, ICON_REFUGIO, ICON_TIENDA, ICON_FABRICAR };
 
 static Rectangle tab_rect(int t) {
     return (Rectangle){ (float)(TAB_X + TAB_PAD + t * 32), (float)(TAB_Y + TAB_PAD), 28, 28 };
@@ -867,6 +908,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
                 snprintf(log, log_len, T("Empuñas: %s."), item_name(ga, g_quick_wield));
             }
         }
+        if (g_quick_craft >= 0 && g_quick_craft < CRAFT_COUNT) start_craft(ga, (CraftId)g_quick_craft, props, p, troop, log, log_len);
         if (g_quick_action >= 0) start_action(ga, (ActionId)g_quick_action, props, p, log, log_len);
         if (g_quick_swap) { // Mayus + numero: el arma empuñada, a la otra mano
             snprintf(log, log_len, hands_swap(&ga->hands) ? T("Pasas el arma a la otra mano: %s.")
@@ -875,7 +917,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             ga->swap_anim = 0.5f;
         }
     }
-    g_quick_grip = g_quick_action = -1;
+    g_quick_grip = g_quick_action = g_quick_craft = -1;
     g_quick_wield[0] = '\0';
     g_quick_swap = false;
     if (ga->menu_open) {
@@ -1028,11 +1070,19 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
                 snprintf(log, log_len, T("Hecho: %s. Queda colgado en el acopio del campamento: tarda %d días en secarse."), T(c->name),
                          BOW_DRY_DAYS);
             } else {
+                // El temple (src/sim/forge.h): sale templada o, si sale mal, fragil.
+                bool spoiled = c->fails && !forge_temper_roll(ga, troop);
+                const char *out = spoiled ? c->fails : c->produces;
                 // A lo que llevas (o al acopio, si no cabe).
-                int kept = ig_store(ga, props, p, c->produces, n, 1.0f);
-                if (kept < n) stock_add(ga_stock(ga), c->produces, n - kept);
-                snprintf(log, log_len, "%s: %s%s.", craft_by_hand(c) ? T("Hecho") : T("Forjado"), T(c->name),
-                         kept < n ? T(" (lo que no cabe, al acopio)") : "");
+                int kept = ig_store(ga, props, p, out, n, 1.0f);
+                if (kept < n) stock_add(ga_stock(ga), out, n - kept);
+                if (c->fails)
+                    snprintf(log, log_len, spoiled ? T("El temple salió mal: %s. Puede quebrarse en un golpe.")
+                                                   : T("Templado: %s. Filo duro y lomo flexible: pega más."),
+                             item_name(ga, out));
+                else
+                    snprintf(log, log_len, "%s: %s%s.", craft_by_hand(c) ? T("Hecho") : T("Forjado"), T(c->name),
+                             kept < n ? T(" (lo que no cabe, al acopio)") : "");
             }
             tg_xp(ga, XP_CRAFT, log, log_len);
             ga->crafting = -1;
@@ -1440,7 +1490,10 @@ static void draw_menu(const GameActions *ga, const Props *props, const Troop *tr
         IconId icon;
         bool enabled = true;
         if (ga->menu_tab == 0) icon = ACTION_ICONS[i];
-        else if (ga->menu_tab == 1) icon = BUILD_ICONS[i], enabled = build_plan(build_def((BuildId)i), troop, true).check == BUILD_READY;
+        else if (ga->menu_tab == 1) {
+            const BuildDef *d = build_def((BuildId)i);
+            icon = BUILD_ICONS[i], enabled = build_plan(d, troop, true).check == BUILD_READY && big_enough(ga, d, ga->here, NULL, 0);
+        }
         else if (ga->menu_tab == 2) {
             const CraftDef *d = craft_def((CraftId)i);
             icon = icon_for_item(d->produces);
@@ -1485,18 +1538,24 @@ static void draw_menu(const GameActions *ga, const Props *props, const Troop *tr
     case 1: {
         const BuildDef *d = build_def((BuildId)cur);
         CrewPlan plan = build_plan(d, troop, true);
-        bool ok = plan.check == BUILD_READY;
+        bool crowd = big_enough(ga, d, ga->here, NULL, 0), ok = plan.check == BUILD_READY && crowd;
         ui_tile(big, BUILD_ICONS[cur], true, ok);
         ui_text_wrapped(T(d->name), tx, dy, desc_w - 76, 10, UI_GOLD_LIGHT);
         chip(ICON_TRIBU, TextFormat("%d-%d", d->min_workers, d->max_workers), tx, dy + 26, UI_BONE_DIM);
         if (ok) chip(ICON_TIEMPO, TextFormat("%.0f s", d->work / plan.rate), tx, dy + 44, UI_TURQUOISE);
         int my = (int)(big.y + big.height) + 8;
-        if (d->required_role != ROLE_NONE) chip(ICON_PERSONA, T(role_name(d->required_role)), desc_x, my, ok ? UI_BONE : UI_CARNELIAN), my += 20;
+        if (d->required_role != ROLE_NONE || d->min_people > 0) { // el oficio y, en una obra grande, la gente del campamento
+            Color rc = plan.check == BUILD_READY ? UI_BONE : UI_CARNELIAN;
+            int cw = d->required_role != ROLE_NONE ? chip(ICON_PERSONA, T(role_name(d->required_role)), desc_x, my, rc) : 0;
+            if (d->min_people > 0) chip(ICON_TRIBU, TextFormat(T("%d+ personas"), d->min_people), desc_x + cw, my, crowd ? UI_BONE : UI_CARNELIAN);
+            my += 20;
+        }
         my += draw_materials(ga, props, p, d->mats, false, desc_x, my, desc_w);
         ui_icon(ok ? ICON_OK : ICON_FALTA, (float)desc_x, (float)my + 4, 16, ok ? UI_TURQUOISE : UI_CARNELIAN);
-        if (!ok) ui_text_wrapped(build_check_text(d, plan.check), desc_x + 20, my + 6, desc_w - 20, 10, UI_CARNELIAN);
-        ui_legend_default(T(d->name), ok ? TextFormat(T("Cuadrilla de %d · se levanta 6 m delante de ti"), plan.workers)
-                              : build_check_text(d, plan.check));
+        const char *why = plan.check != BUILD_READY ? build_check_text(d, plan.check)
+                          : TextFormat(T("Campamento grande: %d personas o más (aquí viven %d)"), d->min_people, camp_people(ga, ga->here));
+        if (!ok) ui_text_wrapped(why, desc_x + 20, my + 6, desc_w - 20, 10, UI_CARNELIAN);
+        ui_legend_default(T(d->name), ok ? TextFormat(T("Cuadrilla de %d · se levanta 6 m delante de ti"), plan.workers) : why);
         break;
     }
     case 2: {
@@ -1509,7 +1568,7 @@ static void draw_menu(const GameActions *ga, const Props *props, const Troop *tr
         if (secs >= 0.0f) chip(ICON_TIEMPO, TextFormat("%.0f s", secs), tx, dy + 26, UI_BONE_DIM);
         int my = (int)(big.y + big.height) + 8;
         if (d->building) { // horno y artesano
-            bool oven = count_props(props, d->building) > 0;
+            bool oven = forge_station(ga, props, p, d->building, false, false);
             int cw = chip(icon_for_item(d->building), oven ? "" : T("falta"), desc_x, my, oven ? UI_GOLD : UI_CARNELIAN);
             chip(ICON_PERSONA, T(role_name(d->role)), desc_x + cw, my, secs >= 0.0f ? UI_BONE : UI_CARNELIAN);
             if (ui_hover((Rectangle){ (float)desc_x, (float)my, (float)desc_w, 18 })) ui_legend(item_name(ga, d->building), TextFormat(T("y un %s en la tribu"), T(role_name(d->role))));
@@ -1571,10 +1630,13 @@ void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, 
             ui_text(TextFormat("%s %d%% · %s", T(d->name), (int)(bp->progress * 100.0f), crew), x + UI_PANEL_INSET, ty,
                     10, stalled ? UI_CARNELIAN : UI_BONE);
         }
-        if (ga->crafting >= 0)
-            ui_text(TextFormat(T("Haciendo: %s %d%%"), T(craft_def((CraftId)ga->crafting)->name),
-                               (int)(100.0f * ga->craft_timer / ga->craft_total)),
-                    x + UI_PANEL_INSET, ty, 10, UI_GOLD);
+        if (ga->crafting >= 0) {
+            const char *name = T(craft_def((CraftId)ga->crafting)->name);
+            int pct = (int)(100.0f * ga->craft_timer / ga->craft_total);
+            const char *line = TextFormat(T("Haciendo: %s %d%%"), name, pct);
+            if (MeasureText(line, 10) > w - 2 * UI_PANEL_INSET) line = TextFormat("%s %d%%", name, pct); // un nombre largo: sin el prefijo
+            ui_text(line, x + UI_PANEL_INSET, ty, 10, UI_GOLD);
+        }
     }
     if (ga->menu_open) draw_menu(ga, props, troop, p, width);
 }

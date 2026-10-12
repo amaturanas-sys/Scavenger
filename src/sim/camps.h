@@ -152,7 +152,7 @@ void task_fates(CampTaskKind kind, int skilled, int people, bool night, Rng *rng
 int recruit_found(int skilled, int people, Rng *rng);
 
 // Explorar recursos: lo que se marca en el mapa de memoria (src/sim/memory_map.h).
-typedef enum { FIND_WATER, FIND_PASTURE, FIND_RIVAL, FIND_CITADEL, FIND_KINDS } FindKind;
+typedef enum { FIND_WATER, FIND_PASTURE, FIND_RIVAL, FIND_CITADEL, FIND_IRON, FIND_KINDS } FindKind; // FIND_IRON: src/sim/forge.h
 typedef struct {
     float x, z;
     FindKind kind;
@@ -163,7 +163,7 @@ int scout_finds(int skilled, int people, Rng *rng);
 // Los hallazgos: de los candidatos dentro del radio que aun no estan marcados (known[i]), primero
 // el mas cercano de cada clase y despues los mas cercanos. Escribe los indices en out (hasta max).
 int scout_pick(const ScoutCand *c, int n, const bool *known, float cx, float cz, float radius, int max, int *out);
-// Campamentos rivales y ciudadelas: marca de peligro; agua y pastos: de interes.
+// Campamentos rivales y ciudadelas: marca de peligro; agua, pastos y hierro: de interes.
 bool find_danger(FindKind k);
 
 // Cazar: la presa y lo que traen.

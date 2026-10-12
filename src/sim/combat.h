@@ -22,6 +22,7 @@ typedef struct {
     bool clean_cut;    // corte limpio a caballo: no se traba y suma inercia (el sable)
     bool mounted_only; // solo sirve a caballo (la lanza pesada)
     bool ring;         // daga de anillo: sin castigo en la mano torpe; mejor en llaves, rehenes y ejecuciones
+    bool brittle;      // mal templada (fase 7b): pega un poco mas, pero puede quebrarse
 } WeaponStats;
 
 // Estadisticas del arma por id del inventario ("" o NULL: a puño limpio).
@@ -33,6 +34,9 @@ float weapon_mounted_scale(const char *inv_id, float speed);
 // las espadas, las dagas y las mazas; el sable y las de asta, nunca.
 float weapon_snag_chance(const char *inv_id, float speed);
 #define SNAG_SECONDS 0.9f // s de mas hasta el proximo golpe si se traba
+// Un arma fragil (mal templada, src/sim/forge.h) se quiebra a veces en un golpe que entra, y mas
+// si se lo paran. Las demas, nunca.
+float weapon_break_chance(const char *inv_id, bool blocked);
 
 // Crecen al final (se guardan como numeros, docs/PARTIDAS.md).
 typedef enum {

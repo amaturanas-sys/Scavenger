@@ -9,6 +9,7 @@
 #include "raylib.h"
 #include "sim/apparel.h"
 #include "sim/clock.h"
+#include "sim/forge.h"
 #include "sim/lang.h"
 #include "sim/world.h"
 #include "ui/icons.h"
@@ -71,7 +72,7 @@ static IconId role_icon(Role r) {
 static IconId build_icon(BuildId b) {
     static const IconId I[BUILD_COUNT] = { ICON_REFUGIO, ICON_OBRAS, ICON_MURO_PIEDRA, ICON_HOGUERA, ICON_TOTEM,
                                            ICON_HORNO,   ICON_FUNDICION, ICON_FUNDICION, ICON_TORRE, ICON_CORRAL,
-                                           ICON_ESTRUCTURA, ICON_REFUGIO, ICON_TIENDA };
+                                           ICON_ESTRUCTURA, ICON_REFUGIO, ICON_TIENDA, ICON_FABRICAR };
     return b >= 0 && b < BUILD_COUNT ? I[b] : ICON_OBRAS;
 }
 
@@ -898,7 +899,8 @@ static const char *lower_first(const char *s) {
 }
 
 // Explorar recursos: lo que hay en el mundo para descubrir. Los rivales y las ciudadelas primero
-// (son pocos); despues el agua (lagos y pozos) y los pastos de las orillas de los rios.
+// (son pocos); despues el hierro (las vetas, src/sim/forge.h), el agua (lagos y pozos) y los pastos
+// de las orillas de los rios.
 #define SCOUT_CANDS 256
 static int scout_cands(const World *w, const CampSite *c, ScoutCand *out, const char **names) {
     int n = 0;
@@ -907,6 +909,10 @@ static int scout_cands(const World *w, const CampSite *c, ScoutCand *out, const 
     for (int i = 0; i < w->settlement_count && n < SCOUT_CANDS; i++)
         if (w->settlements[i].kind == SETTLE_CAPITAL)
             names[n] = w->settlements[i].name, out[n++] = (ScoutCand){ w->settlements[i].x, w->settlements[i].z, FIND_CITADEL };
+    static IronSite iron[IRON_SITES_MAX];
+    int ni = world_iron_sites(w, iron, IRON_SITES_MAX);
+    for (int i = 0; i < ni && n < SCOUT_CANDS; i++) // el nombre dice cual: la veta o el pantano
+        names[n] = iron[i].kind == IRON_VEIN ? T("una veta de hierro") : T("hierro de pantano"), out[n++] = (ScoutCand){ iron[i].x, iron[i].z, FIND_IRON };
     for (int i = 0; i < w->lake_count && n < SCOUT_CANDS; i++) { // la orilla que da al campamento
         const Lake *lk = &w->lakes[i];
         float dx = c->x - lk->x, dz = c->z - lk->z, l = sqrtf(dx * dx + dz * dz);
@@ -963,6 +969,7 @@ static void scout_finish(GameActions *ga, Troop *troop, const Terrain *t, Memory
         }
         const char *what = f->kind == FIND_WATER     ? T("agua")
                            : f->kind == FIND_PASTURE ? T("pastos junto al río")
+                           : f->kind == FIND_IRON    ? (cname[pick[j]] ? cname[pick[j]] : T("una veta de hierro"))
                            : f->kind == FIND_RIVAL   ? TextFormat(T("un campamento rival (%s)"), cname[pick[j]] ? cname[pick[j]] : "?")
                                                      : TextFormat(T("la ciudadela de %s"), cname[pick[j]] ? cname[pick[j]] : "?");
         float dx = f->x - c->x, dz = f->z - c->z;

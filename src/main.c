@@ -31,6 +31,7 @@
 #include "game/talents_game.h"
 #include "game/travel_game.h"
 #include "game/trade_game.h"
+#include "game/forge_game.h"
 #include "game/apparel_game.h"
 #include "game/water_game.h"
 #include "game/world_game.h"
@@ -416,6 +417,16 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     if (!strcmp(what, "fogata")) x = 1.8f, z = 0.0f, lx = 1.8f, lz = 10.0f, ok = true; // la del campamento, de cerca
     if (!strcmp(what, "hoguera")) x = 6.5f, z = -2.0f, lx = 6.5f, lz = 10.0f, ok = true; // una hoguera junto a la fogata
     if (!strcmp(what, "hielo")) world_edge_point(w, REGION_HIGHLAND, 230.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    if (!strcmp(what, "veta") || !strcmp(what, "pantano")) { // el hierro (src/sim/forge.h): la mas cercana de esa clase, a dos pasos
+        int n;
+        const IronSite *s = forge_sites(t, &n);
+        float best = 1e30f;
+        for (int i = 0; i < n; i++) {
+            float d = s[i].x * s[i].x + s[i].z * s[i].z;
+            if ((s[i].kind == IRON_VEIN) == !strcmp(what, "veta") && d < best)
+                best = d, x = s[i].x - 4.0f, z = s[i].z - 2.0f, lx = s[i].x, lz = s[i].z, ok = true;
+        }
+    }
     static const struct { const char *name; SiteKind kind; } SITE_PLACES[] = {
         { "kurgan", SITE_KURGAN },       { "balbales", SITE_BALBALS },        { "piedra", SITE_DEER_STONE }, { "fortaleza", SITE_RUINED_FORT },
         { "ciudad", SITE_BURIED_CITY },  { "petroglifos", SITE_PETROGLYPHS }, { "caravasar", SITE_CARAVANSERAI },
@@ -562,6 +573,7 @@ int main(int argc, char **argv) {
     const char *start_trade = NULL;   // --comerciar: raiz, vender, comprar, caravana, asaltar o saquear (src/game/trade_game.h)
     const char *start_ride = NULL;    // --montado: lanza, pesada, parto o agotado (src/game/combat_game.h); galopa solo hacia delante
     bool start_breed = false;         // --cria: en el campamento inicial, una yegua por parir, un semental y un potro por crecer
+    bool start_forge = false;         // --forja: la forja movil, hierro, carbon y un sable fragil empuñado; pica la veta y hace puntas
     const char *start_migrate = NULL; // --migrar: marcha (levanta el campamento inicial y camina) o plantar (y lo planta a 170 m)
     bool start_diag = false;          // --diagnostico: el panel de Ctrl+D abierto
     int start_picker = -1;
@@ -630,6 +642,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--comerciar") && i + 1 < argc) start_trade = argv[++i];
         else if (!strcmp(argv[i], "--montado") && i + 1 < argc) start_ride = argv[++i];
         else if (!strcmp(argv[i], "--cria")) start_breed = true;
+        else if (!strcmp(argv[i], "--forja")) start_forge = true; // con --ir veta, la pica
         else if (!strcmp(argv[i], "--migrar") && i + 1 < argc) start_migrate = argv[++i];
         else if (!strcmp(argv[i], "--hablar") && i + 1 < argc) {
             i++;
@@ -914,7 +927,7 @@ int main(int argc, char **argv) {
         }
         if (start_place && frame == 6) { // prueba: la vista aerea, ubicando una obra en el campamento inicial
             static const char *NAMES[BUILD_COUNT] = { "refugio", "empalizada", "muro",   "hoguera", "totem", "horno", "bronce",
-                                                      "acero",   "torre",      "corral", "adobe",   "cabana", "choza" };
+                                                      "acero",   "torre",      "corral", "adobe",   "cabana", "choza", "taller" };
             for (int b = 0; b < BUILD_COUNT; b++)
                 if (!strcmp(start_place, NAMES[b])) pg_begin(&g_actions, (BuildId)b, 0, player.pos.x, player.pos.z);
             start_place = NULL;
@@ -948,6 +961,17 @@ int main(int argc, char **argv) {
         if (start_migrate && !strcmp(start_migrate, "plantar") && frame == 40) {
             cg_test_migrate(&g_actions, &troop, &g_props, &terrain, &player, 2, log, sizeof(log));
             rig.yaw = player.yaw = PI;
+        }
+        if (start_forge && frame == 8) { // prueba: la forja (src/game/forge_game.h); con --enemigos, el sable fragil se quiebra
+            bag_init_pack(&g_actions.backpack, PACK_LARGE), g_actions.pack_size = PACK_LARGE; // que entre todo
+            ig_store(&g_actions, &g_props, &player, FORGE_MOBILE_ID, 1, 1.0f);
+            ig_store(&g_actions, &g_props, &player, "utileria.material.hierro", 1, 1.0f);
+            ig_store(&g_actions, &g_props, &player, "utileria.material.carbon", 1, 1.0f);
+            ig_store(&g_actions, &g_props, &player, "arma.corta.sable_acero_fragil", 1, 1.0f);
+            ga_quick_request_wield("arma.corta.sable_acero_fragil");
+            ga_quick_request_craft(CRAFT_IRON_POINTS);
+            if (forge_site_near(&terrain, player.pos.x, player.pos.z)) ga_quick_request_action(ACTION_MINE);
+            start_forge = false;
         }
         if (start_breed && frame == 4) { // prueba: la cria (con --minuto 29.9, el dia cambia enseguida)
             static const float AT[3][2] = { { 14.0f, -16.0f }, { 17.0f, -14.0f }, { 12.0f, -12.0f } };
@@ -1114,6 +1138,7 @@ int main(int argc, char **argv) {
                            !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             if (!gallery_mode) td_update(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, world_time, dt, log, sizeof(log));
             if (!gallery_mode) ag_update(&g_actions, &troop, &g_climate, g_hazards.seed, world_time, dt, log, sizeof(log));
+            if (!gallery_mode) forge_update(&terrain, &player, &g_memory, world_time, log, sizeof(log)); // las vetas de hierro que pasas
             if (!gallery_mode) wd_update(&g_actions, &g_combat, &terrain, &player, &g_memory, log, sizeof(log));
             if (!gallery_mode)
                 wg_update(&g_actions, &troop, &player, &g_props, &g_hazards, &g_climate, tribe_fire, &terrain,
@@ -1242,6 +1267,7 @@ int main(int argc, char **argv) {
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
         if (gallery_mode) player_draw(&player);
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
+        if (!gallery_mode) forge_draw_world(&terrain, player.pos); // las vetas de hierro cercanas
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime(), clock_is_night(world_time));
         if (!gallery_mode) wd_draw_world(&g_actions, &terrain, &player, (float)GetTime());
         if (!gallery_mode) dg_draw_world(&terrain); // calaveras y huesos donde murio el jugador
@@ -1315,6 +1341,7 @@ int main(int argc, char **argv) {
             fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             cg_draw_hud(&g_actions, &troop, VIRTUAL_W); // la tribu en marcha
             td_draw_hud(VIRTUAL_W, VIRTUAL_H);
+            forge_draw_hud(&terrain, &player, VIRTUAL_W, VIRTUAL_H); // F junto a una veta
             ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions)) tg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             hud_draw_picker(&g_actions, &g_props, &player, VIRTUAL_W, VIRTUAL_H); // elegir que va en una casilla

@@ -31,6 +31,7 @@ float item_kg(const InvItem *it) {
         { "utileria.material.troncos", 15.0f }, { "utileria.material.piedra", 10.0f }, { "utileria.material.barro", 8.0f },
         { "utileria.material.pieles", 3.0f },   { "utileria.material.cuerda", 1.0f },  { "utileria.material.carbon", 5.0f },
         { "utileria.objeto.lena", 6.0f },
+        { "utileria.herramienta.forja_movil", 10.0f }, // el fuelle y las herramientas: el hogar se cava donde se arma
         // La plata y el oro van de a poco, como moneda (src/sim/trade.h).
         { "utileria.material.plata", 0.05f }, { "utileria.material.oro", 0.05f },
     };

@@ -1,5 +1,6 @@
 #include "sim/economy.h"
 #include "sim/armor.h"
+#include "sim/forge.h"
 #include "sim/lang.h"
 
 #include <stdio.h>
@@ -345,6 +346,41 @@ static const CraftDef CRAFTS[CRAFT_COUNT] = {
     [CRAFT_HEAVY_LANCE] = { N_("Lanza pesada"), "arma.larga.lanza_pesada", BRONZE, ROLE_SMITH,
                             { { "utileria.material.troncos", 2 }, { "utileria.material.cobre", 1 }, { "utileria.material.estano", 1 }, { NULL, 0 } },
                             120.0f },
+    // La forja (fase 7b). El mineral se funde en el horno de acero.
+    [CRAFT_SMELT_IRON] = { N_("Hierro (fundir el mineral)"), "utileria.material.hierro", STEEL, ROLE_SMITH,
+                           { { IRON_ORE_ID, 3 }, { "utileria.material.carbon", 2 }, { NULL, 0 } }, 120.0f },
+    [CRAFT_MOBILE_FORGE] = { N_("Forja móvil (fuelle y hogar)"), FORGE_MOBILE_ID, STEEL, ROLE_SMITH,
+                             { { "utileria.material.cuero", 2 }, { "utileria.material.hierro", 2 }, { "utileria.material.piedra", 2 }, { NULL, 0 } },
+                             150.0f },
+    // En la forja movil (o en un horno o el taller), con tus manos.
+    [CRAFT_IRON_POINTS] = { N_("Puntas de flecha de hierro (6)"), "utileria.material.puntas_hierro", FORGE_MOBILE_ID, ROLE_NONE,
+                            { { "utileria.material.hierro", 1 }, { "utileria.material.carbon", 1 }, { NULL, 0 } }, 40.0f, 6 },
+    [CRAFT_IRON_ARROWS] = { N_("Flechas de punta de hierro (8)"), "proyectil.flecha.comun", NULL, ROLE_NONE,
+                            { { "utileria.objeto.lena", 1 }, { "utileria.material.plumas", 1 }, { "utileria.material.puntas_hierro", 2 }, { NULL, 0 } },
+                            25.0f, 8 },
+    [CRAFT_KNIFE] = { N_("Cuchillo de hierro"), "arma.corta.cuchillo", FORGE_MOBILE_ID, ROLE_NONE,
+                      { { "utileria.material.hierro", 1 }, { "utileria.material.hueso", 1 }, { NULL, 0 } }, 45.0f, 1 },
+    [CRAFT_SABLE_FROM_BLADE] = { N_("Sable de acero (con una hoja)"), "arma.corta.sable_acero", FORGE_MOBILE_ID, ROLE_NONE,
+                                 { { "utileria.material.hoja_acero", 1 }, { "utileria.material.cuero", 1 }, { "utileria.material.madera_labrada", 1 },
+                                   { NULL, 0 } },
+                                 60.0f, 1 },
+    // En el taller del herrero, de un campamento grande.
+    [CRAFT_SABLE_WOOTZ] = { N_("Sable de acero wootz"), "arma.corta.sable_wootz", WORKSHOP_ID, ROLE_SMITH,
+                            { { "utileria.material.acero_wootz", 1 }, { "utileria.material.carbon", 2 }, { "utileria.material.cuero", 1 }, { NULL, 0 } },
+                            240.0f },
+    [CRAFT_SPEAR_STEEL] = { N_("Lanza de punta de acero"), "arma.larga.lanza_acero", WORKSHOP_ID, ROLE_SMITH,
+                            { { "utileria.material.hierro", 1 }, { "utileria.material.carbon", 2 }, { "utileria.material.troncos", 1 }, { NULL, 0 } },
+                            150.0f },
+    // El temple: sale templada o, si sale mal, fragil (fails).
+    [CRAFT_TEMPER_SABLE] = { N_("Templar un sable de acero"), "arma.corta.sable_acero_templado", WORKSHOP_ID, ROLE_SMITH,
+                             { { "arma.corta.sable_acero", 1 }, { "utileria.material.carbon", 1 }, { NULL, 0 } }, 120.0f, 1, false,
+                             "arma.corta.sable_acero_fragil" },
+    [CRAFT_TEMPER_WOOTZ] = { N_("Templar un sable wootz"), "arma.corta.sable_wootz_templado", WORKSHOP_ID, ROLE_SMITH,
+                             { { "arma.corta.sable_wootz", 1 }, { "utileria.material.carbon", 1 }, { NULL, 0 } }, 150.0f, 1, false,
+                             "arma.corta.sable_wootz_fragil" },
+    [CRAFT_TEMPER_DAGGER] = { N_("Templar una daga de anillo"), "arma.corta.daga_anillo_templada", WORKSHOP_ID, ROLE_SMITH,
+                              { { "arma.corta.daga_anillo", 1 }, { "utileria.material.carbon", 1 }, { NULL, 0 } }, 90.0f, 1, false,
+                              "arma.corta.daga_anillo_fragil" },
 };
 
 bool craft_by_hand(const CraftDef *c) { return c->role == ROLE_NONE; }

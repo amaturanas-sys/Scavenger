@@ -80,6 +80,7 @@ Reglas:
 - **`v0.7.1-caballos.sav`:** a caballo, con arqueros a caballo alrededor y la cría en el campamento.
 - **`v0.7.2-migracion.sav`:** el campamento inicial en marcha, con la tribu en columna.
 - **`v0.8.0-lanza.sav`:** una carga con la lanza pesada que rompió una fila de bandidos.
+- **`v0.8.1-forja.sav`:** junto a una veta de hierro, con la forja móvil, el mineral recién picado y una receta de la forja a medio hacer.
 
 | Partida | Qué tiene |
 |---|---|
@@ -95,6 +96,7 @@ Reglas:
 | `caballos` (v0.7.1) | El jugador a caballo tras una carga con lanza (la espera de la próxima), arqueros a caballo alejándose al galope, una yegua preñada, un semental y una cría en el campamento. |
 | `migracion` (v0.7.2) | El campamento inicial levantado y en marcha: las cinco yurtas cargadas, la gente en columna detrás del jugador y el rebaño siguiéndolo. |
 | `lanza` (v0.8.0) | El jugador a caballo con la lanza pesada, justo después de una carga que alcanzó a dos bandidos de una fila de tres (el primero cayó muerto). |
+| `forja` (v0.8.1) | El jugador junto a una veta del altiplano, ya marcada en el mapa, con el sable de acero frágil empuñado. En la mochila (la grande), la forja móvil y 2 de mineral recién picado, y las puntas de flecha de hierro a medio hacer (`CRAFT_IRON_POINTS`, una receta nueva). |
 
 `estepa --probar-partidas tests/partidas` (CI, en el job de Linux) hace esto con cada una:
 - la carga;
@@ -142,6 +144,8 @@ Además, `ENEMY_HORSE_ARCHER` va al final de `EnemyKind`. El resumen suma la lí
 La v0.7.2 agregó, al final de `CampSite`, si el campamento está en marcha (`migrating`), lo que lleva cargado (`load`, cuántas viviendas de cada clase: yurta común, yurta del jefe, tienda ligera y choza de fieltro) y si dejó su primer sitio (`moved`: migró o, el inicial, se disolvió; así se sabe que las yurtas del campamento inicial ya no están allí). A `GameActions`, `start_yurts`, cuántas yurtas del campamento inicial quedan en pie (lo copia el juego en cada cuadro). Todo en cero en las partidas viejas: los campamentos están plantados donde siempre. El resumen suma, por campamento, la línea de la marcha solo si algo de eso no es cero.
 
 La v0.8.0 no cambió ningún struct que se guarda: los rasgos de las armas (`WeaponStats`, `RangedDef.saddle`) se calculan del id. Sí cambió lo que es un id: `arma.distancia.arco_compuesto` pasó a ser el arco compuesto reflejo (más fuerte, sin castigo a caballo), y el arco de antes es `arma.distancia.arco_simple`. Las partidas viejas cargan igual: el arco que ya tenían queda mejorado.
+
+La v0.8.1 tampoco cambió ningún struct que se guarda. Lo nuevo va al final de sus enums: `ACTION_MINE`, `BUILD_WORKSHOP`, las recetas de la forja y del temple en `CraftId`, y `FIND_IRON` en `FindKind`. `BuildDef.min_people` y `CraftDef.fails` son datos de las recetas y no se guardan. El temple es un id del inventario (`_templado`, `_templada`, `_fragil`) y las vetas salen de la semilla del mundo, así que tampoco se guardan.
 
 ## El esquema congelado de las partidas planas
 

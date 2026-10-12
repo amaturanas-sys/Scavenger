@@ -165,6 +165,19 @@ typedef enum {
     CRAFT_MACE,
     CRAFT_RING_DAGGER,
     CRAFT_HEAVY_LANCE,
+    // La forja (fase 7b, src/sim/forge.h): fundir el mineral, la forja movil y lo que se hace en
+    // ella, y el taller (el wootz, las puntas de lanza de acero y el temple).
+    CRAFT_SMELT_IRON,
+    CRAFT_MOBILE_FORGE,
+    CRAFT_IRON_POINTS,
+    CRAFT_IRON_ARROWS,
+    CRAFT_KNIFE,
+    CRAFT_SABLE_FROM_BLADE,
+    CRAFT_SABLE_WOOTZ,
+    CRAFT_SPEAR_STEEL,
+    CRAFT_TEMPER_SABLE,
+    CRAFT_TEMPER_WOOTZ,
+    CRAFT_TEMPER_DAGGER,
     CRAFT_COUNT
 } CraftId;
 
@@ -177,6 +190,7 @@ typedef struct {
     float work;           // segundos de juego para un artesano
     int amount;           // cuantos salen (0 = 1)
     bool to_stock;        // lo hecho se cuelga en el acopio del campamento (a secar), no va a la mochila
+    const char *fails;    // el temple (src/sim/forge.h): lo que sale si sale mal (fragil), o NULL
 } CraftDef;
 
 const CraftDef *craft_def(CraftId c);

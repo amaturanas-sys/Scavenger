@@ -70,6 +70,7 @@ estructura.campamento.hoguera	Hoguera grande	faccion:nomada,uso:interactuable,us
 estructura.campamento.horno_cocina	Horno de cocina de barro	faccion:nomada,uso:interactuable,uso:construible,material:barro	1.5x1.4x1.5	150	pendiente	Construcción en grupo; el cocinero acelera la obra.
 estructura.campamento.horno_bronce	Horno de fundición de bronce	uso:interactuable,uso:construible,material:barro	2x2.5x2	300	pendiente	Armas y armaduras de bronce. Requiere un herrero.
 estructura.campamento.horno_acero	Horno de fundición de acero	uso:interactuable,uso:construible,material:piedra	2.5x3.5x2.5	400	pendiente	Armas y armaduras de acero. Requiere un herrero.
+estructura.campamento.taller_herrero	Taller del herrero	uso:interactuable,uso:construible,material:piedra	4x3x4	400	pendiente	Obra de campamento grande: el temple, el acero wootz y las puntas de lanza de acero. Requiere un herrero.
 estructura.defensa.trinchera	Trinchera	faccion:cualquiera,uso:cobertura	1.2x0.8x4	80	pendiente	Se cava con pala (acción individual).
 estructura.defensa.muro_piedra	Muro de piedra seca	faccion:nomada,uso:destructible,uso:construible,material:piedra	4x2x0.6	120	pendiente	Construcción en grupo.
 vehiculo.agua.bote_remos	Bote de remos	bioma:fiordo,uso:conducible,material:madera	1.5x0.8x4	250	pendiente	
@@ -165,6 +166,14 @@ arma.corta.sagaris	Sagaris de pico	uso:equipable,faccion:nomada,manos:una	0.2x0.
 arma.corta.sagaris_martillo	Sagaris de martillo	uso:equipable,faccion:nomada,manos:una	0.2x0.7x0.06	110	pendiente	Hacha de martillo: aturde y engancha escudos.
 arma.corta.daga_anillo	Daga de anillo	uso:equipable,faccion:nomada,manos:una,material:hierro	0.05x0.4x0.03	80	pendiente	La daga sármata: para la mano torpe, las llaves, el rehén y la ejecución.
 arma.larga.lanza_pesada	Lanza pesada	uso:equipable,faccion:nomada,manos:dos	0.1x4x0.1	90	pendiente	Cuatro metros de asta: solo a caballo. En ristre derriba y rompe la formación.
+arma.corta.sable_wootz	Sable de acero wootz	uso:equipable,manos:una,material:hierro	0.08x0.95x0.03	120	pendiente	El acero de crisol de las caravanas: el mejor filo. Se forja en el taller.
+arma.corta.sable_acero_templado	Sable de acero templado	uso:equipable,manos:una,material:hierro	0.08x0.95x0.03	120	pendiente	Filo duro y lomo flexible: pega más.
+arma.corta.sable_acero_fragil	Sable de acero frágil (mal templado)	uso:equipable,manos:una,material:hierro	0.08x0.95x0.03	120	pendiente	El temple salió mal: puede quebrarse.
+arma.corta.sable_wootz_templado	Sable wootz templado	uso:equipable,manos:una,material:hierro	0.08x0.95x0.03	120	pendiente	El mejor sable de la estepa.
+arma.corta.sable_wootz_fragil	Sable wootz frágil (mal templado)	uso:equipable,manos:una,material:hierro	0.08x0.95x0.03	120	pendiente	El temple salió mal: puede quebrarse.
+arma.corta.daga_anillo_templada	Daga de anillo templada	uso:equipable,faccion:nomada,manos:una,material:hierro	0.05x0.4x0.03	80	pendiente	Filo duro y lomo flexible: pega más.
+arma.corta.daga_anillo_fragil	Daga de anillo frágil (mal templada)	uso:equipable,faccion:nomada,manos:una,material:hierro	0.05x0.4x0.03	80	pendiente	El temple salió mal: puede quebrarse.
+arma.larga.lanza_acero	Lanza de punta de acero	uso:equipable,manos:una,material:hierro	0.1x2.4x0.1	80	pendiente	Se forja en el taller del herrero.
 proyectil.flecha.comun	Flecha	uso:municion	0.02x0.8x0.02	20	pendiente	
 proyectil.flecha.silbadora	Flecha silbadora (señales)	uso:municion,faccion:nomada	0.03x0.8x0.03	30	pendiente	
 proyectil.virote.comun	Virote de ballesta	uso:municion	0.02x0.4x0.02	20	pendiente	
@@ -298,6 +307,7 @@ utileria.consumible.unguento	Ungüento de hierbas y miel	uso:recolectable,uso:co
 utileria.consumible.especias	Especias	uso:recolectable,uso:consumible	0.15x0.1x0.15	20	pendiente	De las caravanas del desierto: valen su peso en plata.
 utileria.herramienta.pala	Pala	uso:equipable,manos:dos,material:hierro	0.25x1.2x0.05	60	pendiente	Para cavar trincheras.
 utileria.herramienta.gancho_trepa	Trepa (gancho con cuerda)	uso:equipable,manos:una,material:hierro	0.3x0.4x0.3	80	pendiente	Se lanza para escalar muros en los asedios.
+utileria.herramienta.forja_movil	Forja móvil (fuelle y hogar)	uso:herramienta,material:hierro	0.6x0.5x0.6	120	pendiente	Fuelle de cuero y hogar de carbón (10 kg): en la mochila, las alforjas, la carreta o el acopio, repara y hace puntas, cuchillos y sables en cualquier sitio.
 utileria.objeto.lena	Haz de leña	uso:recolectable,material:madera	0.5x0.3x0.8	40	pendiente	Material de fogatas, hogueras y hornos.
 utileria.material.troncos	Troncos	uso:recolectable,uso:material,material:madera	0.4x0.4x2	40	pendiente	Material del acopio de la tribu.
 utileria.material.piedra	Piedras	uso:recolectable,uso:material,material:piedra	0.5x0.4x0.5	30	pendiente	Material del acopio de la tribu.
@@ -323,6 +333,10 @@ utileria.material.cola_hueso	Cola de hueso	uso:material,material:hueso	0.1x0.1x0
 utileria.material.arco_encolado	Arco encolado (secando: faltan 2 días)	uso:material,material:madera	0.1x0.05x1.1	40	pendiente	Se seca en el acopio de un campamento.
 utileria.material.arco_oreado	Arco encolado (secando: falta 1 día)	uso:material,material:madera	0.1x0.05x1.1	40	pendiente	Se seca en el acopio de un campamento.
 utileria.material.arco_seco	Arco seco (sin terminar)	uso:material,material:madera	0.1x0.05x1.1	40	pendiente	Falta la cola de hueso que lo termina.
+utileria.material.mineral_hierro	Mineral de hierro	uso:recolectable,uso:material,material:hierro	0.3x0.2x0.3	30	pendiente	De las vetas del altiplano o del pantano: se funde en el horno de acero.
+utileria.material.acero_wootz	Acero wootz (torta)	uso:material,material:hierro	0.12x0.04x0.12	20	pendiente	El acero de crisol que traen las caravanas: el mejor sable.
+utileria.material.hoja_acero	Hoja de sable de acero	uso:material,material:hierro	0.05x0.8x0.02	40	pendiente	Hoja terminada de la capital: con la forja móvil se le pone empuñadura.
+utileria.material.puntas_hierro	Puntas de flecha de hierro	uso:material,material:hierro	0.03x0.06x0.02	10	pendiente	De la forja móvil: más flechas por tanda.
 utileria.material.pedernal	Pedernal	uso:recolectable,uso:material,material:piedra	0.15x0.1x0.15	30	pendiente	Se recoge en la estepa: puntas de flecha.
 personaje.base.cuerpo_nino	Cuerpo base: niño	rig:humanoide,talla:pequena	0.35x1.2x0.25	800	pendiente	Malla base modular: ropa y armadura encajan encima.
 personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.5x1.7x0.3	1200	pendiente	

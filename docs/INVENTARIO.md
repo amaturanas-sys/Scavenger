@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**421 objetos** · 1 con modelo · 420 pendientes.
+**435 objetos** · 1 con modelo · 434 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -12,10 +12,10 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
 | [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 30 | 0 | 0 | 0 |
-| [Estructuras](#estructura) | 42 | 41 | 1 | 0 | 0 |
+| [Estructuras](#estructura) | 43 | 42 | 1 | 0 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 46 | 46 | 0 | 0 | 0 |
-| [Armas](#arma) | 36 | 36 | 0 | 0 | 0 |
+| [Armas](#arma) | 44 | 44 | 0 | 0 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
 | [Escudos](#escudo) | 6 | 6 | 0 | 0 | 0 |
 | [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 80 | 80 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 85 | 85 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -129,6 +129,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.campamento.horno_cocina` | Horno de cocina de barro | 1.5x1.4x1.5 | 150 | pendiente | `faccion:nomada` `uso:interactuable` `uso:construible` `material:barro` | Construcción en grupo; el cocinero acelera la obra. |
 | `estructura.campamento.horno_bronce` | Horno de fundición de bronce | 2x2.5x2 | 300 | pendiente | `uso:interactuable` `uso:construible` `material:barro` | Armas y armaduras de bronce. Requiere un herrero. |
 | `estructura.campamento.horno_acero` | Horno de fundición de acero | 2.5x3.5x2.5 | 400 | pendiente | `uso:interactuable` `uso:construible` `material:piedra` | Armas y armaduras de acero. Requiere un herrero. |
+| `estructura.campamento.taller_herrero` | Taller del herrero | 4x3x4 | 400 | pendiente | `uso:interactuable` `uso:construible` `material:piedra` | Obra de campamento grande: el temple, el acero wootz y las puntas de lanza de acero. Requiere un herrero. |
 | `estructura.defensa.trinchera` | Trinchera | 1.2x0.8x4 | 80 | pendiente | `faccion:cualquiera` `uso:cobertura` | Se cava con pala (acción individual). |
 | `estructura.defensa.muro_piedra` | Muro de piedra seca | 4x2x0.6 | 120 | pendiente | `faccion:nomada` `uso:destructible` `uso:construible` `material:piedra` | Construcción en grupo. |
 
@@ -245,6 +246,14 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `arma.corta.sagaris_martillo` | Sagaris de martillo | 0.2x0.7x0.06 | 110 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` | Hacha de martillo: aturde y engancha escudos. |
 | `arma.corta.daga_anillo` | Daga de anillo | 0.05x0.4x0.03 | 80 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` `material:hierro` | La daga sármata: para la mano torpe, las llaves, el rehén y la ejecución. |
 | `arma.larga.lanza_pesada` | Lanza pesada | 0.1x4x0.1 | 90 | pendiente | `uso:equipable` `faccion:nomada` `manos:dos` | Cuatro metros de asta: solo a caballo. En ristre derriba y rompe la formación. |
+| `arma.corta.sable_wootz` | Sable de acero wootz | 0.08x0.95x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:hierro` | El acero de crisol de las caravanas: el mejor filo. Se forja en el taller. |
+| `arma.corta.sable_acero_templado` | Sable de acero templado | 0.08x0.95x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Filo duro y lomo flexible: pega más. |
+| `arma.corta.sable_acero_fragil` | Sable de acero frágil (mal templado) | 0.08x0.95x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:hierro` | El temple salió mal: puede quebrarse. |
+| `arma.corta.sable_wootz_templado` | Sable wootz templado | 0.08x0.95x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:hierro` | El mejor sable de la estepa. |
+| `arma.corta.sable_wootz_fragil` | Sable wootz frágil (mal templado) | 0.08x0.95x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:hierro` | El temple salió mal: puede quebrarse. |
+| `arma.corta.daga_anillo_templada` | Daga de anillo templada | 0.05x0.4x0.03 | 80 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` `material:hierro` | Filo duro y lomo flexible: pega más. |
+| `arma.corta.daga_anillo_fragil` | Daga de anillo frágil (mal templada) | 0.05x0.4x0.03 | 80 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` `material:hierro` | El temple salió mal: puede quebrarse. |
+| `arma.larga.lanza_acero` | Lanza de punta de acero | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se forja en el taller del herrero. |
 
 <a id="proyectil"></a>
 
@@ -464,6 +473,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.consumible.especias` | Especias | 0.15x0.1x0.15 | 20 | pendiente | `uso:recolectable` `uso:consumible` | De las caravanas del desierto: valen su peso en plata. |
 | `utileria.herramienta.pala` | Pala | 0.25x1.2x0.05 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Para cavar trincheras. |
 | `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
+| `utileria.herramienta.forja_movil` | Forja móvil (fuelle y hogar) | 0.6x0.5x0.6 | 120 | pendiente | `uso:herramienta` `material:hierro` | Fuelle de cuero y hogar de carbón (10 kg): en la mochila, las alforjas, la carreta o el acopio, repara y hace puntas, cuchillos y sables en cualquier sitio. |
 | `utileria.objeto.lena` | Haz de leña | 0.5x0.3x0.8 | 40 | pendiente | `uso:recolectable` `material:madera` | Material de fogatas, hogueras y hornos. |
 | `utileria.material.troncos` | Troncos | 0.4x0.4x2 | 40 | pendiente | `uso:recolectable` `uso:material` `material:madera` | Material del acopio de la tribu. |
 | `utileria.material.piedra` | Piedras | 0.5x0.4x0.5 | 30 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Material del acopio de la tribu. |
@@ -489,6 +499,10 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.material.arco_encolado` | Arco encolado (secando: faltan 2 días) | 0.1x0.05x1.1 | 40 | pendiente | `uso:material` `material:madera` | Se seca en el acopio de un campamento. |
 | `utileria.material.arco_oreado` | Arco encolado (secando: falta 1 día) | 0.1x0.05x1.1 | 40 | pendiente | `uso:material` `material:madera` | Se seca en el acopio de un campamento. |
 | `utileria.material.arco_seco` | Arco seco (sin terminar) | 0.1x0.05x1.1 | 40 | pendiente | `uso:material` `material:madera` | Falta la cola de hueso que lo termina. |
+| `utileria.material.mineral_hierro` | Mineral de hierro | 0.3x0.2x0.3 | 30 | pendiente | `uso:recolectable` `uso:material` `material:hierro` | De las vetas del altiplano o del pantano: se funde en el horno de acero. |
+| `utileria.material.acero_wootz` | Acero wootz (torta) | 0.12x0.04x0.12 | 20 | pendiente | `uso:material` `material:hierro` | El acero de crisol que traen las caravanas: el mejor sable. |
+| `utileria.material.hoja_acero` | Hoja de sable de acero | 0.05x0.8x0.02 | 40 | pendiente | `uso:material` `material:hierro` | Hoja terminada de la capital: con la forja móvil se le pone empuñadura. |
+| `utileria.material.puntas_hierro` | Puntas de flecha de hierro | 0.03x0.06x0.02 | 10 | pendiente | `uso:material` `material:hierro` | De la forja móvil: más flechas por tanda. |
 | `utileria.material.pedernal` | Pedernal | 0.15x0.1x0.15 | 30 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Se recoge en la estepa: puntas de flecha. |
 | `utileria.gema.turquesa` | Turquesa | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
 | `utileria.gema.cornalina` | Cornalina | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
