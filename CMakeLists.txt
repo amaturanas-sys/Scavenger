@@ -95,6 +95,11 @@ if(ESTEPA_BUILD_GAME)
     GIT_TAG 5.5
     GIT_SHALLOW TRUE)
   FetchContent_MakeAvailable(raylib)
+  FetchContent_Declare(cJSON
+    GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
+    GIT_TAG v1.7.15
+    GIT_SHALLOW TRUE)
+  FetchContent_MakeAvailable(cJSON)
 
   set(ESTEPA_GAME_SOURCES
     src/main.c
@@ -132,6 +137,7 @@ if(ESTEPA_BUILD_GAME)
     src/world/terrain.c
     src/world/worldview.c
     src/world/camp.c
+    src/world/anim_system.c
     src/world/hearth.c
     src/world/gallery.c
     src/world/sky.c
@@ -158,7 +164,7 @@ if(ESTEPA_BUILD_GAME)
       COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:estepa>/assets)
   endif()
-  target_link_libraries(estepa PRIVATE estepa_sim raylib)
+  target_link_libraries(estepa PRIVATE estepa_sim raylib cJSON)
   target_compile_options(estepa PRIVATE ${ESTEPA_WARNINGS})
   target_compile_definitions(estepa PRIVATE
     ESTEPA_VERSION="${ESTEPA_VERSION}" ESTEPA_BUILD_CODE=${ESTEPA_BUILD_CODE})
