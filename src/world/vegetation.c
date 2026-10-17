@@ -3,26 +3,15 @@
 
 #include "vegetation.h"
 
+#include "raylib.h"
+
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include "cJSON.h"
 #include "platform.h"
+#include "sim/clock.h"
 #include "raymath.h"
-
-// Malla de cross-quad (cuatro vértices formando una cruz)
-static const Vector3 CROSS_QUAD_VERTICES[VEGETATION_CROSS_QUAD_VERTICES] = {
-    {0.0f, 0.0f, 0.0f},   // Centro
-    {0.0f, 0.0f, 1.0f},   // Arriba (punta)
-    {0.0f, 0.0f, -1.0f},  // Abajo (raíz)
-    {1.0f, 0.0f, 0.0f},   // Derecha
-};
-
-// Índices de triángulos para el cross-quad
-static const unsigned int CROSS_QUAD_INDICES[6] = {
-    0, 1, 2,  // Triángulo superior
-    0, 2, 3   // Triángulo inferior
-};
 
 // Colores base por tipo de vegetación
 static const Color GRASS_COLORS[] = {
@@ -46,7 +35,7 @@ static const Color FOLIAGE_COLORS[] = {
 };
 
 // Colores estacionales
-static const Color SEASON_COLORS[SEASON_COUNT][VEGETATION_COUNT][3] = {
+static const Color SEASON_COLORS[SEASON_COUNT][VEGETATION_COUNT] = {
     // Primavera
     {
         {100, 180, 100, 255},  // Grass
@@ -74,7 +63,7 @@ static const Color SEASON_COLORS[SEASON_COUNT][VEGETATION_COUNT][3] = {
 };
 
 // Colores por bioma
-static const Color BIOME_COLORS[BIOME_COUNT][VEGETATION_COUNT][3] = {
+static const Color BIOME_COLORS[BIOME_COUNT][VEGETATION_COUNT] = {
     // Estepa
     {
         {101, 67, 33, 255},    // Grass (marrón seco)
@@ -103,12 +92,49 @@ void vegetation_init(VegetationSystem *vs, int seed) {
     vs->wind_speed = 0.5f;
     vs->enabled = true;
     
-    // Crear malla del cross-quad
-    vs->mesh = GenMeshFromVertices(CROSS_QUAD_VERTICES, VEGETATION_CROSS_QUAD_VERTICES,
-                                    CROSS_QUAD_INDICES, 6);
+    // Crear malla del cross-quad (simple quad)
+    float vertices[4 * 3] = {
+        0.0f, 0.0f, 0.0f,   // Centro
+        0.0f, 0.0f, 1.0f,   // Arriba (punta)
+        0.0f, 0.0f, -1.0f,  // Abajo (raíz)
+        1.0f, 0.0f, 0.0f    // Derecha
+    };
+    
+    unsigned int indices[6] = {
+        0, 1, 2,  // Triángulo superior
+        0, 2, 3   // Triángulo inferior
+    };
+    
+    // Create a simple quad mesh
+    Mesh quad = { 0 };
+    quad.vertexCount = 4;
+    quad.triangleCount = 2;
+    quad.vertices = MemAlloc(4 * 3 * sizeof(float));
+    quad.indices = MemAlloc(6 * sizeof(unsigned int));
+    quad.normals = MemAlloc(4 * 3 * sizeof(float));
+    quad.texcoords = MemAlloc(4 * 2 * sizeof(float));
+    quad.colors = MemAlloc(4 * 4 * sizeof(unsigned char));
+    
+    memcpy(quad.vertices, vertices, 4 * 3 * sizeof(float));
+    memcpy(quad.indices, indices, 6 * sizeof(unsigned int));
+    
+    for (int i = 0; i < 4; i++) {
+        quad.normals[i * 3 + 0] = 0.0f;
+        quad.normals[i * 3 + 1] = 1.0f;
+        quad.normals[i * 3 + 2] = 0.0f;
+        quad.texcoords[i * 2 + 0] = 0.0f;
+        quad.texcoords[i * 2 + 1] = 0.0f;
+        quad.colors[i * 4 + 0] = 255;
+        quad.colors[i * 4 + 1] = 255;
+        quad.colors[i * 4 + 2] = 255;
+        quad.colors[i * 4 + 3] = 255;
+    }
+    
+    UploadMesh(&quad, false);
+    vs->mesh = quad;
     
     // Crear shader de viento
-    vs->shader = LoadShaderFromMemory(
+    vs->shader.shader = LoadShaderFromMemory(
         NULL,
         "attribute vec3 position; attribute vec3 color; attribute float phase; "
         "uniform mat4 modelViewProjection; uniform float time; uniform float windSpeed; "
@@ -124,9 +150,9 @@ void vegetation_init(VegetationSystem *vs, int seed) {
         "}"
     );
     
-    vs->time_loc = GetShaderLocation(vs->shader, "time");
-    vs->color_loc = GetShaderLocation(vs->shader, "color");
-    vs->use_wind_loc = GetShaderLocation(vs->shader, "windSpeed");
+    vs->shader.uniforms.time = GetShaderLocation(vs->shader.shader, "time");
+    vs->shader.uniforms.color = GetShaderLocation(vs->shader.shader, "color");
+    vs->shader.uniforms.use_wind = GetShaderLocation(vs->shader.shader, "windSpeed");
     
     vs->initialized = true;
 }
@@ -134,7 +160,7 @@ void vegetation_init(VegetationSystem *vs, int seed) {
 void vegetation_unload(VegetationSystem *vs) {
     if (!vs || !vs->initialized) return;
     
-    if (vs->shader.id > 0) UnloadShader(vs->shader);
+    if (vs->shader.shader.id > 0) UnloadShader(vs->shader.shader);
     if (vs->mesh.vertexCount > 0) UnloadMesh(vs->mesh);
     
     memset(vs, 0, sizeof(*vs));
@@ -144,24 +170,14 @@ Color vegetation_get_season_color(Season season, VegetationType type) {
     if (season < 0 || season >= SEASON_COUNT || type < 0 || type >= VEGETATION_COUNT) {
         return WHITE;
     }
-    return (Color){
-        SEASON_COLORS[season][type][0],
-        SEASON_COLORS[season][type][1],
-        SEASON_COLORS[season][type][2],
-        255
-    };
+    return SEASON_COLORS[season][type];
 }
 
 Color vegetation_get_biome_color(Biome biome, VegetationType type) {
     if (biome < 0 || biome >= BIOME_COUNT || type < 0 || type >= VEGETATION_COUNT) {
         return WHITE;
     }
-    return (Color){
-        BIOME_COLORS[biome][type][0],
-        BIOME_COLORS[biome][type][1],
-        BIOME_COLORS[biome][type][2],
-        255
-    };
+    return BIOME_COLORS[biome][type];
 }
 
 void vegetation_set_wind_speed(VegetationSystem *vs, float speed) {
@@ -214,7 +230,6 @@ void vegetation_populate(VegetationSystem *vs, const Vector3 *center, float radi
     if (!vs || vs->instance_count >= VEGETATION_MAX_INSTANCES) return;
     
     int remaining = count;
-    int offset = vs->instance_count;
     
     for (int i = 0; i < remaining && vs->instance_count < VEGETATION_MAX_INSTANCES; i++) {
         float angle = pseudo_noise(i, 0, seed) * 2.0f * PI;
@@ -248,13 +263,12 @@ void vegetation_populate_area(VegetationSystem *vs, const BoundingBox *area,
     if (!vs || !area || vs->instance_count >= VEGETATION_MAX_INSTANCES) return;
     
     int remaining = count;
-    int offset = vs->instance_count;
     
     for (int i = 0; i < remaining && vs->instance_count < VEGETATION_MAX_INSTANCES; i++) {
         Vector3 pos = {
-            area->min.x + noise_2d(i, 0, seed) * (area->max.x - area->min.x),
-            area->min.y + noise_2d(i, 1, seed) * (area->max.y - area->min.y),
-            area->min.z + noise_2d(i, 2, seed) * (area->max.z - area->min.z)
+            area->min.x + noise_2d(i, 0, seed, 1.0f) * (area->max.x - area->min.x),
+            area->min.y + noise_2d(i, 1, seed, 1.0f) * (area->max.y - area->min.y),
+            area->min.z + noise_2d(i, 2, seed, 1.0f) * (area->max.z - area->min.z)
         };
         
         float height = 0.5f + noise_2d(pos.x, pos.z, seed + i, 0.1f) * 0.5f;
@@ -300,25 +314,37 @@ void vegetation_draw(VegetationSystem *vs, Camera camera, float time,
     
     if (visible_count == 0) return;
     
-    if (vs->shader.id > 0 && wind_intensity > 0.01f) {
-        BeginShaderMode(vs->shader);
-        SetShaderValue(vs->shader, vs->time_loc, &time, SHADER_UNIFORM_FLOAT);
-        SetShaderValue(vs->shader, vs->use_wind_loc, &wind_intensity, SHADER_UNIFORM_FLOAT);
+    if (vs->shader.shader.id > 0 && wind_intensity > 0.01f) {
+        BeginShaderMode(vs->shader.shader);
+        SetShaderValue(vs->shader.shader, vs->shader.uniforms.time, &time, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(vs->shader.shader, vs->shader.uniforms.use_wind, &wind_intensity, SHADER_UNIFORM_FLOAT);
+        
+        // Create material for instanced drawing
+        Material mat = { 0 };
+        mat.shader = vs->shader.shader;
         
         for (int i = 0; i < visible_count; i++) {
             Color col = vs->instances[i].color;
             if (tint_override.a > 0) {
                 col = vegetation_color_lerp(col, tint_override, 0.5f);
             }
-            SetShaderValue(vs->shader, vs->color_loc, &col, SHADER_UNIFORM_VEC3);
-            DrawMeshInstanced(vs->mesh, vs->shader, &transforms[i], 1);
+            SetShaderValue(vs->shader.shader, vs->shader.uniforms.color, &col, SHADER_UNIFORM_VEC3);
+            DrawMeshInstanced(vs->mesh, mat, &transforms[i], 1);
         }
         
         EndShaderMode();
     } else {
+        // Draw without shader using color material
+        Material mat = { 0 };
+        mat.shader = LoadShaderFromMemory(NULL, NULL); // Default shader
+        mat.maps[0].color = WHITE;
+        
         for (int i = 0; i < visible_count; i++) {
-            DrawMesh(vs->mesh, vs->instances[i].color, transforms[i]);
+            mat.maps[0].color = vs->instances[i].color;
+            DrawMesh(vs->mesh, mat, transforms[i]);
         }
+        
+        UnloadShader(mat.shader);
     }
 }
 
@@ -351,25 +377,37 @@ void vegetation_draw_all(VegetationSystem *vs, Camera camera, float time,
         
         if (visible_count == 0) continue;
         
-        if (vs->shader.id > 0 && wind_intensity > 0.01f) {
-            BeginShaderMode(vs->shader);
-            SetShaderValue(vs->shader, vs->time_loc, &time, SHADER_UNIFORM_FLOAT);
-            SetShaderValue(vs->shader, vs->use_wind_loc, &wind_intensity, SHADER_UNIFORM_FLOAT);
+        if (vs->shader.shader.id > 0 && wind_intensity > 0.01f) {
+            BeginShaderMode(vs->shader.shader);
+            SetShaderValue(vs->shader.shader, vs->shader.uniforms.time, &time, SHADER_UNIFORM_FLOAT);
+            SetShaderValue(vs->shader.shader, vs->shader.uniforms.use_wind, &wind_intensity, SHADER_UNIFORM_FLOAT);
+            
+            // Create material for instanced drawing
+            Material mat = { 0 };
+            mat.shader = vs->shader.shader;
             
             for (int i = 0; i < visible_count; i++) {
                 Color col = vs->instances[i].color;
                 if (tint_override.a > 0) {
                     col = vegetation_color_lerp(col, tint_override, 0.5f);
                 }
-                SetShaderValue(vs->shader, vs->color_loc, &col, SHADER_UNIFORM_VEC3);
-                DrawMeshInstanced(vs->mesh, vs->shader, &transforms[i], 1);
+                SetShaderValue(vs->shader.shader, vs->shader.uniforms.color, &col, SHADER_UNIFORM_VEC3);
+                DrawMeshInstanced(vs->mesh, mat, &transforms[i], 1);
             }
             
             EndShaderMode();
         } else {
+            // Draw without shader using color material
+            Material mat = { 0 };
+            mat.shader = LoadShaderFromMemory(NULL, NULL); // Default shader
+            mat.maps[0].color = WHITE;
+            
             for (int i = 0; i < visible_count; i++) {
-                DrawMesh(vs->mesh, vs->instances[i].color, transforms[i]);
+                mat.maps[0].color = vs->instances[i].color;
+                DrawMesh(vs->mesh, mat, transforms[i]);
             }
+            
+            UnloadShader(mat.shader);
         }
     }
 }

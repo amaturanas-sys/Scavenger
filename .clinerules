@@ -50,3 +50,10 @@ python tools/fetch_pipeline_asset.py \
 - All C code must compile with CMake (targeting Android/mobile)
 - Zero memory leaks in render loop
 - Static memory allocation preferred for embedded targets
+
+## GLOBAL AI BEHAVIOR RULE
+
+### write_to_file Tool Prohibition
+- The write_to_file tool is STRICTLY UNAVAILABLE and unsupported in this workspace.
+- To create, write, or modify ANY file, you MUST exclusively use the editor tool.
+- Never attempt to call write_to_file under any circumstances, as it will trigger an AI_NoSuchToolError and waste context tokens.

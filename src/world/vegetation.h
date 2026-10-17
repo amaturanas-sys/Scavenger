@@ -7,6 +7,14 @@
 #include <stdbool.h>
 #include "raylib.h"
 #include "raymath.h"
+#include "sim/clock.h"
+
+// Shader uniform locations for wind effect
+typedef struct {
+    int time;
+    int use_wind;
+    int color;
+} VegetationShaderUniforms;
 
 // Configuración del sistema de vegetación
 #define VEGETATION_MAX_INSTANCES 5000
@@ -22,6 +30,14 @@ typedef enum {
     VEGETATION_COUNT
 } VegetationType;
 
+// Tipos de biomas
+typedef enum {
+    BIOME_STEPPE,
+    BIOME_FOREST,
+    BIOME_PLATEAU,
+    BIOME_COUNT
+} Biome;
+
 // Datos de una instancia de vegetación
 typedef struct {
     Vector3 position;
@@ -36,9 +52,7 @@ typedef struct {
 // Datos del shader de viento
 typedef struct {
     Shader shader;
-    int time_loc;
-    int color_loc;
-    int use_wind_loc;
+    VegetationShaderUniforms uniforms;
 } VegetationShader;
 
 // Estado del sistema de vegetación
