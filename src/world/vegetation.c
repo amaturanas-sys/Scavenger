@@ -92,7 +92,18 @@ void vegetation_init(VegetationSystem *vs, int seed) {
     vs->wind_speed = 0.5f;
     vs->enabled = true;
     
-    // Crear malla del cross-quad (simple quad)
+    // Create a simple quad mesh
+    Mesh quad = { 0 };
+    quad.vertexCount = 4;
+    quad.triangleCount = 2;
+    
+    // Allocate and set up vertex data with attributes
+    quad.vertices = MemAlloc(4 * 3 * sizeof(float));
+    quad.indices = MemAlloc(6 * sizeof(unsigned int));
+    quad.normals = MemAlloc(4 * 3 * sizeof(float));
+    quad.texcoords = MemAlloc(4 * 2 * sizeof(float));
+    quad.colors = MemAlloc(4 * 4 * sizeof(unsigned char));
+    
     float vertices[4 * 3] = {
         0.0f, 0.0f, 0.0f,   // Centro
         0.0f, 0.0f, 1.0f,   // Arriba (punta)
@@ -104,16 +115,6 @@ void vegetation_init(VegetationSystem *vs, int seed) {
         0, 1, 2,  // Triángulo superior
         0, 2, 3   // Triángulo inferior
     };
-    
-    // Create a simple quad mesh
-    Mesh quad = { 0 };
-    quad.vertexCount = 4;
-    quad.triangleCount = 2;
-    quad.vertices = MemAlloc(4 * 3 * sizeof(float));
-    quad.indices = MemAlloc(6 * sizeof(unsigned int));
-    quad.normals = MemAlloc(4 * 3 * sizeof(float));
-    quad.texcoords = MemAlloc(4 * 2 * sizeof(float));
-    quad.colors = MemAlloc(4 * 4 * sizeof(unsigned char));
     
     memcpy(quad.vertices, vertices, 4 * 3 * sizeof(float));
     memcpy(quad.indices, indices, 6 * sizeof(unsigned int));
@@ -132,6 +133,18 @@ void vegetation_init(VegetationSystem *vs, int seed) {
     
     UploadMesh(&quad, false);
     vs->mesh = quad;
+    
+    // Store allocated pointers for cleanup
+    vs->mesh.vertices = MemAlloc(4 * 3 * sizeof(float));
+    vs->mesh.indices = MemAlloc(6 * sizeof(unsigned int));
+    vs->mesh.normals = MemAlloc(4 * 3 * sizeof(float));
+    vs->mesh.texcoords = MemAlloc(4 * 2 * sizeof(float));
+    vs->mesh.colors = MemAlloc(4 * 4 * sizeof(unsigned char));
+    memcpy(vs->mesh.vertices, quad.vertices, 4 * 3 * sizeof(float));
+    memcpy(vs->mesh.indices, quad.indices, 6 * sizeof(unsigned int));
+    memcpy(vs->mesh.normals, quad.normals, 4 * 3 * sizeof(float));
+    memcpy(vs->mesh.texcoords, quad.texcoords, 4 * 2 * sizeof(float));
+    memcpy(vs->mesh.colors, quad.colors, 4 * 4 * sizeof(unsigned char));
     
     // Crear shader de viento
     vs->shader.shader = LoadShaderFromMemory(
@@ -162,6 +175,13 @@ void vegetation_unload(VegetationSystem *vs) {
     
     if (vs->shader.shader.id > 0) UnloadShader(vs->shader.shader);
     if (vs->mesh.vertexCount > 0) UnloadMesh(vs->mesh);
+    
+    // Free the stored allocated memory
+    if (vs->mesh.vertices) MemFree(vs->mesh.vertices);
+    if (vs->mesh.indices) MemFree(vs->mesh.indices);
+    if (vs->mesh.normals) MemFree(vs->mesh.normals);
+    if (vs->mesh.texcoords) MemFree(vs->mesh.texcoords);
+    if (vs->mesh.colors) MemFree(vs->mesh.colors);
     
     memset(vs, 0, sizeof(*vs));
 }
