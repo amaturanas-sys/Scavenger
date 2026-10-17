@@ -123,7 +123,7 @@ static const IconRule RULES[] = {
     { "aljaba", ICON_FLECHA },       { "especias", ICON_HIERBAS },
     { "vino", ICON_VINO },
     { "cerveza", ICON_JARRA },       { "agua", ICON_AGUA },            { "odre", ICON_AGUA },
-    { "antorcha", ICON_ANTORCHA },   { "pala", ICON_TRINCHERA },       { "gancho_trepa", ICON_TREPA },
+    { "antorcha", ICON_ANTORCHA },   { "pala", ICON_TRINCHERA },       { "gancho_trepa", ICON_TREPA }, { "escala_asedio", ICON_TREPA },
     { "herramienta", ICON_HERRAMIENTA }, { "yunque", ICON_FABRICAR },  { "caldero", ICON_MIEL },
     { "saco", ICON_BOLSILLO },       { "cofre", ICON_GUARDAR },        { "fogata", ICON_FOGATA },
     { "hoguera", ICON_HOGUERA },     { "horno_bronce", ICON_FUNDICION }, { "horno_acero", ICON_FUNDICION },

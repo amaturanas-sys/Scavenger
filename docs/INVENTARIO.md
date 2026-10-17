@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**435 objetos** · 1 con modelo · 434 pendientes.
+**436 objetos** · 1 con modelo · 435 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 85 | 85 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 86 | 86 | 0 | 0 | 0 |
 | [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -473,6 +473,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.consumible.especias` | Especias | 0.15x0.1x0.15 | 20 | pendiente | `uso:recolectable` `uso:consumible` | De las caravanas del desierto: valen su peso en plata. |
 | `utileria.herramienta.pala` | Pala | 0.25x1.2x0.05 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Para cavar trincheras. |
 | `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
+| `utileria.herramienta.escala_asedio` | Escala de asedio | 0.5x2.9x0.15 | 120 | pendiente | `uso:herramienta` `material:madera` | En dos tramos que se atan al pie de la muralla (12 kg). F junto a la muralla de una ciudad en guerra: se apoya y se sube por ella, de ida y de vuelta. |
 | `utileria.herramienta.forja_movil` | Forja móvil (fuelle y hogar) | 0.6x0.5x0.6 | 120 | pendiente | `uso:herramienta` `material:hierro` | Fuelle de cuero y hogar de carbón (10 kg): en la mochila, las alforjas, la carreta o el acopio, repara y hace puntas, cuchillos y sables en cualquier sitio. |
 | `utileria.objeto.lena` | Haz de leña | 0.5x0.3x0.8 | 40 | pendiente | `uso:recolectable` `material:madera` | Material de fogatas, hogueras y hornos. |
 | `utileria.material.troncos` | Troncos | 0.4x0.4x2 | 40 | pendiente | `uso:recolectable` `uso:material` `material:madera` | Material del acopio de la tribu. |

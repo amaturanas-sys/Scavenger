@@ -71,6 +71,7 @@ static const PriceRule RULES[] = {
     { "utileria.material.hoja_acero", 30.0f, 0, 0 },
     { "utileria.material.puntas_hierro", 1.5f, 0, 0 },
     { "utileria.herramienta.forja_movil", 70.0f, 0, 0 },
+    { "utileria.herramienta.escala_asedio", 14.0f, 0, 0 },
     { "utileria.material.cuerda", 3.0f, 0, 0 },
     // Metales: del altiplano.
     { "utileria.material.cobre", 4.0f, HIGH, STEPPE | DESERT },

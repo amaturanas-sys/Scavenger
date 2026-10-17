@@ -307,6 +307,7 @@ utileria.consumible.unguento	Ungüento de hierbas y miel	uso:recolectable,uso:co
 utileria.consumible.especias	Especias	uso:recolectable,uso:consumible	0.15x0.1x0.15	20	pendiente	De las caravanas del desierto: valen su peso en plata.
 utileria.herramienta.pala	Pala	uso:equipable,manos:dos,material:hierro	0.25x1.2x0.05	60	pendiente	Para cavar trincheras.
 utileria.herramienta.gancho_trepa	Trepa (gancho con cuerda)	uso:equipable,manos:una,material:hierro	0.3x0.4x0.3	80	pendiente	Se lanza para escalar muros en los asedios.
+utileria.herramienta.escala_asedio	Escala de asedio	uso:herramienta,material:madera	0.5x2.9x0.15	120	pendiente	En dos tramos que se atan al pie de la muralla (12 kg). F junto a la muralla de una ciudad en guerra: se apoya y se sube por ella, de ida y de vuelta.
 utileria.herramienta.forja_movil	Forja móvil (fuelle y hogar)	uso:herramienta,material:hierro	0.6x0.5x0.6	120	pendiente	Fuelle de cuero y hogar de carbón (10 kg): en la mochila, las alforjas, la carreta o el acopio, repara y hace puntas, cuchillos y sables en cualquier sitio.
 utileria.objeto.lena	Haz de leña	uso:recolectable,material:madera	0.5x0.3x0.8	40	pendiente	Material de fogatas, hogueras y hornos.
 utileria.material.troncos	Troncos	uso:recolectable,uso:material,material:madera	0.4x0.4x2	40	pendiente	Material del acopio de la tribu.

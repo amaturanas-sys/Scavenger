@@ -19,6 +19,7 @@
 #include "sim/actions.h"
 #include "sim/animals.h"
 #include "sim/apparel.h"
+#include "sim/army.h"
 #include "sim/water.h"
 #include "sim/economy.h"
 #include "sim/memory_map.h"
@@ -200,6 +201,15 @@ typedef struct {
     City cities[SETTLEMENTS_MAX];
     int tribute_season;  // la estacion del ultimo tributo pagado (season_index + 1; 0: nunca)
     int tribute_checked; // la ultima estacion revisada al empezar (+1): si la anterior paso sin tributo, la relacion baja
+    // El ejercito y el asedio (fase 8b, src/game/city_game.c): la expedicion de castigo en marcha y el
+    // tributo de las ciudades tomadas.
+    int expedition_city;      // la ciudad que la manda + 1 (0: ninguna en marcha)
+    int expedition_camp;      // el campamento contra el que marcha + 1
+    ArmyComp expedition_army; // lo que salio
+    int expedition_lost;      // los suyos que cayeron o tomaste presos
+    bool expedition_out;      // ya salio al mundo (cerca del jugador); si no, todavia no llega
+    bool expedition_sacked;   // ya saqueo el campamento: se vuelve a su ciudad
+    int vassal_season;        // la ultima estacion en que cobraste el tributo de las ciudades tomadas (+1)
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);
@@ -210,6 +220,9 @@ const Stockpile *ga_stock_c(const GameActions *ga);
 Stockpile *ga_stock_at(GameActions *ga, float x, float z);
 // El guardian ordena una obra en su campamento (con su acopio), en un sitio libre.
 bool ga_order_build(GameActions *ga, BuildId b, int camp, char *log, size_t len);
+// Trepar por encima de algo (la muralla de una ciudad: src/game/city_game.c): sube hasta top, pasa a
+// over y baja en to.
+void ga_climb(GameActions *ga, const Player *p, Vector3 top, Vector3 over, Vector3 to);
 // El jugador no controla el movimiento (menu abierto o trepando).
 bool ga_blocks_input(const GameActions *ga);
 bool ga_menu_open(const GameActions *ga);

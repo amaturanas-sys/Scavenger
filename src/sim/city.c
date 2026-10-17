@@ -41,7 +41,7 @@ float city_taxes(const City *c, SettleKind k) {
     return c->people * CITY_TAX * city_scribes(k) * (1.0f - 0.6f * c->unrest) * (0.6f + 0.4f * c->fields);
 }
 
-int city_soldier_target(const City *c, SettleKind k) { return (int)(c->people / (k == SETTLE_CAPITAL ? 25.0f : 40.0f)); }
+int city_soldier_target(const City *c, SettleKind k) { return c->taken ? 0 : (int)(c->people / (k == SETTLE_CAPITAL ? 25.0f : 40.0f)); }
 float city_reserve(const City *c) { return c->people * 1.5f; }
 
 void city_start(City *c, SettleKind k, Region r, uint32_t seed) {
@@ -114,11 +114,11 @@ void city_day(City *c, SettleKind k, Region r, Season s, float luck) {
         c->soldiers = want; // menos gente: se licencia a los que sobran
     }
     float spare = c->silver - city_reserve(c);
-    if (spare > 0.0f) {
+    if (spare > 0.0f && !c->taken) { // tomada, no contrata: paga tributo a la tribu
         int target = (int)(spare / (CITY_MERC_PAY * 30.0f));
         if (target > c->mercs) c->mercs += clampi(target - c->mercs, 0, 4);
     } else if (c->mercs > 0) {
-        c->mercs -= c->mercs < 2 ? c->mercs : 2; // bajo la reserva: no se renueva el contrato
+        c->mercs -= c->mercs < 2 ? c->mercs : 2; // bajo la reserva (o tomada): no se renueva el contrato
     }
     // El rencor se olvida despacio; los campos se resiembran (en invierno, no).
     static const float SOW[SEASON_COUNT] = { 0.06f, 0.03f, 0.01f, 0.0f };
@@ -176,6 +176,7 @@ float city_price_factor(const City *c, const char *id) {
 }
 
 bool city_trades(const City *c, bool overlord, float relation) {
+    if (c && c->taken) return true; // tomada: es de la tribu
     if (c && c->grudge >= CITY_GRUDGE_NO_TRADE) return false;
     return !overlord || relation > OVERLORD_NO_TRADE;
 }

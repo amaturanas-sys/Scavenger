@@ -1,6 +1,6 @@
 # Plan: la gran actualización (v0.5 a v0.9)
 
-> **Estado:** fases 0 (v0.4.4), 1 (v0.5.0), 2 (v0.5.1), 3 (v0.6.0), 4 (v0.6.1) y 4b (v0.6.2) hechas; las demás, por hacer. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
+> **Estado:** hecho. Las fases 0 (v0.4.4), 1 (v0.5.0), 2 (v0.5.1), 3 (v0.6.0), 4 (v0.6.1), 4b (v0.6.2), 5 (v0.7.0), 6 (v0.7.1), 6b (v0.7.2), 7 (v0.8.0), 7b (v0.8.1), 8a (v0.9.0) y 8b (v0.9.1) salieron, cada una con su versión. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
 
 Pedido (5 y 6 de octubre de 2026):
 - combate más ágil, con selector de objetivo y cuatro botones (H J K L);
@@ -456,9 +456,23 @@ La fase era muy grande y se partió en dos, como la 4, la 6 y la 7: la ciudad y 
 
 **Costo:** muy alto. Se partió en 8a (ciudad y economía, arriba) y 8b (ejército y asedio).
 
-## Fase 8b — Ejército y asedio (v0.9.1)
+## Fase 8b — Ejército y asedio (v0.9.1) — hecha
 
-**Lo que hay:** las ciudades de la 8a con su economía, su tesoro y su guarnición (soldados y mercenarios, números); el soldado del reino (`ENEMY_SOLDIER`), que sale a defender los campos; la relación con el kanato (tributo y comercio) y el rencor de cada ciudad.
+**Cómo quedó** (lo que cambió respecto de lo planeado, o lo que el plan dejaba abierto):
+- **Las reglas, en `src/sim/army.*`** (con tests): lo que sale de la guarnición (`army_compose`, un tercio se queda y el tesoro paga la campaña), la formación (`formation_slot`), el carro (`chariot_speed`), las expediciones (`punitive_due`, `punitive_share`, `stock_plunder`), la muralla y sus puertas (`city_wall_blocks`), la guerra (`city_at_war`: es lo mismo que no comerciar), el cerco (`city_siege_day`), el fuego (`city_burn_grain`), la rendición (`city_surrenders`), la ciudad tomada (`city_take`, `city_vassal_tribute`) y el precio de la paz.
+- **Las tropas** son enemigos nuevos al final de `EnemyKind`: el infante pesado, el arquero del reino, el ballestero y el carro de guerra. El carro es una entidad con su propio movimiento (el rumbo de los caballos, el giro abierto, la velocidad del terreno) y su dibujo (dos caballos, la caja de mimbre, las ruedas, el conductor y el arquero), con primitivas: los modelos 3D siguen fuera de este plan. El soldado del reino de la 8a pasó al bando de los reinos (ya no es del de los bandidos).
+- **La formación** vive en `Combat.formations`. `CB_MAX_ENEMIES` pasó de 16 a 24 para que quepan una expedición y una salida a la vez.
+- **Las expediciones** van contra el campamento que el jugador tiene cerca y salen a la vista. Lejos de todo, el saqueo se resuelve sin verlo y lo cuenta el guardián, para que alejarse no las evite.
+- **El asedio:**
+  - la muralla pasó a cortar el paso siempre (antes se atravesaba), también en paz: se entra por las puertas, de 6 m;
+  - las escalas son un objeto nuevo (`utileria.herramienta.escala_asedio`, a mano con troncos y cuerda) que se apoya en un tramo de la muralla y se queda allí (`City.ladders`);
+  - el fuego quema las puertas (flechas encendidas o la antorcha) y, adentro, el granero;
+  - el hambre llega con el cerco: un campamento de la tribu cerca de la ciudad en guerra;
+  - la rendición se pide en el diálogo de la ciudad, también hablando con la guardia de una puerta cerrada. Se agregó «Pagar la paz», para salir de la guerra sin tomar la ciudad.
+- **La ciudad tomada** paga tributo cada estación y su fundición hace de taller (y de hornos) dentro de su muralla. Tomar la capital del kanato acaba con el tributo y con la relación.
+- **Pruebas:** `--asedio puerta|trepa|escala|fuego|quemada|salida|rendicion|tomada|expedicion|ejercito|carro|partida`. **Ayuda:** una página nueva, «Ejército y asedio».
+
+**Lo que había:** las ciudades de la 8a con su economía, su tesoro y su guarnición (soldados y mercenarios, números); el soldado del reino (`ENEMY_SOLDIER`), que sale a defender los campos; la relación con el kanato (tributo y comercio) y el rencor de cada ciudad.
 
 **Trabajo:** lo que quedó de la fase 8:
 - **El ejército en el mundo**, que sale de la guarnición y del tesoro:

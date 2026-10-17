@@ -42,6 +42,7 @@
 #include "game/actions_game.h"
 #include "game/player.h"
 #include "sim/armor.h"
+#include "sim/army.h"
 #include "sim/ballistics.h"
 #include "sim/combat.h"
 #include "sim/health.h"
@@ -50,7 +51,8 @@
 #include "world/props.h"
 #include "world/terrain.h"
 
-#define CB_MAX_ENEMIES 16
+#define CB_MAX_ENEMIES 24 // con el ejercito de los reinos (fase 8b) crecio de 16 a 24
+#define CB_FORMATIONS 4
 #define CB_MAX_SHOTS 48
 
 // Los estados crecen al final (se guardan como numeros, docs/PARTIDAS.md).
@@ -92,7 +94,26 @@ typedef struct {
     // Las ciudades (fase 8a, src/sim/city.h): de que asentamiento es + 1 (0: de ninguno). Si cae, ese
     // asentamiento pierde un soldado.
     int city;
+    // El ejercito (fase 8b, src/sim/army.h): su formacion + 1 (0: suelto) y su lugar en ella (-1: fuera
+    // de filas, como los carros, o despues de que la formacion se rompe); si es de la expedicion de
+    // castigo en marcha (src/game/city_game.c cuenta sus bajas).
+    int formation, slot;
+    bool punitive;
 } Enemy;
+
+// Una formacion del ejercito de un reino (fase 8b): filas que marchan juntas detras de un muro de
+// paveses (src/sim/army.h: formation_slot) hacia su meta, o hacia el enemigo que ven; con la mitad
+// de sus filas caidas, se rompe y cada uno pelea por su cuenta.
+typedef struct {
+    bool used;
+    Vector3 center, goal; // el centro del frente y adonde marcha
+    float yaw;            // hacia donde mira el frente
+    int cols, size;       // columnas y cuantos formaron en filas
+    int city;             // de que asentamiento + 1
+    bool broken;          // rota
+    bool foe_seen;        // alguno de sus hombres ve a un enemigo (foe: donde); lo ponen ellos cada cuadro
+    Vector3 foe;
+} Formation;
 
 typedef struct {
     Projectile p;
@@ -148,6 +169,8 @@ typedef struct {
     // La monta (fase 6, src/sim/riding.h): la lanza en ristre.
     float couch;       // s que le quedan a la lanza en ristre (L a caballo, con una lanza)
     float couch_cd;    // espera hasta la proxima carga
+    // El ejercito de los reinos (fase 8b).
+    Formation formations[CB_FORMATIONS];
 } Combat;
 
 void cb_init(Combat *cb, unsigned seed);
@@ -204,6 +227,18 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
 // La guardia de la ciudad idx (src/sim/city.h): n soldados que salen de from hacia to, sabiendo donde
 // esta el jugador. Si caen, la ciudad los pierde (src/game/city_game.c). Devuelve cuantos salieron.
 int cb_spawn_city_guard(Combat *cb, const Terrain *t, int city, int n, Vector3 from, Vector3 to);
+// El ejercito de la ciudad idx (src/sim/army.h): sale de from en formacion cerrada (los paveses
+// delante, los tiradores detras) hacia goal, y los carros por los flancos. punitive: es la expedicion
+// de castigo. Devuelve cuantas figuras salieron.
+int cb_spawn_army(Combat *cb, const Terrain *t, int city, const ArmyComp *a, Vector3 from, Vector3 goal, bool punitive);
+// Los de la expedicion de castigo que siguen en pie (o abatidos) en el mundo, y si alguno llego a
+// menos de r de at.
+int cb_punitive_alive(const Combat *cb);
+bool cb_punitive_near(const Combat *cb, Vector3 at, float r);
+// La expedicion se vuelve a su ciudad (to): su formacion marcha hacia alla.
+void cb_punitive_withdraw(Combat *cb, Vector3 to);
+// Los de la ciudad idx en pie (la guardia y el ejercito que salio).
+int cb_city_standing(const Combat *cb, int city);
 void cb_spawn_party_at(Combat *cb, const char *what, Vector3 at, const Terrain *t, char *log, size_t len);
 void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
                     size_t len);

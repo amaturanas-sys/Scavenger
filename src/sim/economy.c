@@ -389,6 +389,8 @@ static const CraftDef CRAFTS[CRAFT_COUNT] = {
     [CRAFT_TEMPER_DAGGER] = { N_("Templar una daga de anillo"), "arma.corta.daga_anillo_templada", WORKSHOP_ID, ROLE_SMITH,
                               { { "arma.corta.daga_anillo", 1 }, { "utileria.material.carbon", 1 }, { NULL, 0 } }, 90.0f, 1, false,
                               "arma.corta.daga_anillo_fragil" },
+    [CRAFT_SIEGE_LADDER] = { N_("Escala de asedio"), "utileria.herramienta.escala_asedio", NULL, ROLE_NONE,
+                             { { "utileria.material.troncos", 2 }, { "utileria.material.cuerda", 2 }, { NULL, 0 } }, 60.0f, 1 },
 };
 
 bool craft_by_hand(const CraftDef *c) { return c->role == ROLE_NONE; }

@@ -47,6 +47,11 @@ typedef enum {
     ENEMY_RIDER,
     ENEMY_HORSE_ARCHER, // arquero a caballo: hostiga, rodea y se aleja tirando (src/sim/riding.h)
     ENEMY_SOLDIER,      // soldado de un reino: la guardia que sale a defender los campos (src/sim/city.h)
+    // El ejercito de los reinos (fase 8b, src/sim/army.h):
+    ENEMY_HEAVY_INFANTRY, // infante pesado: pavés, lanza y escamas de hierro; en formacion cerrada
+    ENEMY_ROYAL_ARCHER,   // arquero del reino
+    ENEMY_CROSSBOWMAN,    // ballestero: tira lento y fuerte
+    ENEMY_CHARIOT,        // carro de guerra: dos caballos, conductor y arquero; rapido en el llano
     ENEMY_COUNT
 } EnemyKind;
 

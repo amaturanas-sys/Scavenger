@@ -1,0 +1,29 @@
+{
+  "camp": {
+    "name": "Default Camp Layout",
+    "type": "yurt",
+    "position": [0.0, 0.0, 0.0],
+    "rotation": 0.0,
+    "scale": 1.0,
+    "components": [
+      {
+        "type": "yurt",
+        "position": [5.0, 0.0, 0.0],
+        "rotation": 0.0,
+        "scale": 1.0
+      },
+      {
+        "type": "hearth",
+        "position": [5.5, 0.5, 0.0],
+        "rotation": 0.0,
+        "scale": 1.0
+      },
+      {
+        "type": "tree",
+        "position": [10.0, 0.0, 0.0],
+        "rotation": 0.0,
+        "scale": 1.0
+      }
+    ]
+  }
+}

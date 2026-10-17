@@ -409,6 +409,7 @@ Hecho	Made
 Hecho: %s.	Done: %s.
 Hecho: %s. Queda colgado en el acopio del campamento: tarda %d días en secarse.	Done: %s. It hangs in the camp store: it takes %d days to dry.
 Hierves el agua: +%d agua hervida, sin espíritus malditos.	You boil the water: +%d boiled water, free of cursed spirits.
+La trepa se engancha en las almenas: ¡a escalar la muralla!	The grappling hook catches on the battlements: climb the wall!
 La trepa se engancha: ¡a escalar!	The grapple holds: climb!
 Lanzaste: %s.	You threw: %s.
 Llenas el odre: +%d agua cruda. Hiérvela junto a un fuego antes de beberla (o bebe con riesgo).	You fill the waterskin: +%d raw water. Boil it by a fire before drinking (or drink at your own risk).
@@ -632,21 +633,51 @@ una veta de hierro	an iron vein
 ¿Qué levantamos? La cuadrilla sale de la gente sin tarea de este campamento.	What shall we raise? The crew comes from this camp's idle people.
 ¿Qué oficio aprende %s? Un maestro del oficio en el campamento lo acelera mucho.	Which trade does %s learn? A master of the trade in camp speeds it up a lot.
 # --- src/game/city_game.c
+ y cercada	 and under siege
+%s está cercada: no entra grano y la gente del campo se refugia adentro.	%s is besieged: no grain comes in and the country folk take refuge inside.
+%s no está en guerra contigo.	%s is not at war with you.
+%s no se rinde: le quedan %d soldados (se rinde con %d), grano para %d días y el descontento es del %d %%.	%s will not surrender: it has %d soldiers left (it gives up at %d), grain for %d days, and unrest at %d %%.
 %s: %d almas. El granero da para %d días. %s	%s: %d souls. The granary holds %d days of food. %s
-El %s no recibió tu tributo la estación pasada: la relación baja (−%d). Se paga en su capital.	The %s got no tribute from you last season: your standing drops (−%d). It is paid in its capital.
+Al pie de la muralla: la trepa (Tab) se engancha en las almenas.	At the foot of the wall: the grappling hook (Tab) catches on the battlements.
+Apoyas la escala en la muralla de %s: F para subir.	You set the ladder against the wall of %s: F to climb.
+Arde un techo en %s: se queman %d raciones de su granero.	A roof burns in %s: %d rations of its granary go up in flames.
+Desmonta antes de subir por la escala (R).	Dismount before climbing the ladder (R).
+El %s no recibió tu tributo la estación pasada: la relación baja (-%d). Se paga en su capital.	The %s got no tribute from you last season: your standing drops (-%d). It is paid in its capital.
 El tributo de esta estación, pagado.	This season's tribute: paid.
 El tributo de esta estación, sin pagar (en su capital).	This season's tribute: unpaid (pay it in its capital).
+En guerra con la tribu%s. Se rinde con %d soldados o menos, sin grano o en revuelta (descontento: %d %%).	At war with the tribe%s. It surrenders with %d soldiers or fewer, without grain, or in revolt (unrest: %d %%).
 En invierno los campos no dan.	In winter the fields yield nothing.
+Es de la tribu: te paga tributo cada estación y su fundición es tu taller.	It belongs to the tribe: it pays you tribute every season and its foundry is your workshop.
+Es de la tribu: te paga tributo cada estación.	It belongs to the tribe: it pays you tribute every season.
+F: apoyar la escala en la muralla	F: set the ladder against the wall
+F: prender la puerta con la antorcha	F: set the gate on fire with the torch
+F: subir por la escala	F: climb the ladder
 Guarnición: %d soldados y %d mercenarios.	Garrison: %d soldiers and %d mercenaries.
 Guarnición: %d soldados.	Garrison: %d soldiers.
 La cosecha de esta estación viene buena.	This season's harvest looks good.
 La cosecha de esta estación viene mala.	This season's harvest looks poor.
 La cosecha viene como siempre.	The harvest looks as usual.
+La expedición de castigo de %s saqueó %s: se llevó %d de comida, grano y plata del acopio.	The punitive expedition from %s sacked %s: it carried off %d of food, grain and silver from the stores.
+La lluvia apaga el fuego de la puerta de %s.	The rain puts out the fire at the gate of %s.
+La puerta de %s se consume: queda abierta.	The gate of %s burns down: it stands open.
+Las ciudades tomadas te pagan su tributo: %d de plata, al acopio de %s.	The conquered cities pay you their tribute: %d silver, to the stores of %s.
 Los campos están arrasados.	The fields lie ravaged.
 No comercian contigo: les saqueaste los campos.	They won't trade with you: you plundered their fields.
+Pasas la muralla de %s y bajas por la escala.	You cross the wall of %s and climb down the ladder.
+Prendes fuego a la puerta de %s con la antorcha: arde.	You set the gate of %s on fire with the torch: it burns.
 Relación con el %s: %d.	Standing with the %s: %d.
+Subes por la escala a la muralla de %s.	You climb the ladder onto the wall of %s.
 Te guardan rencor por los saqueos.	They bear you a grudge for the raids.
 Tesoro: %d de plata (los escribas cobran %d al día). Armería: %d juegos de armas.	Treasury: %d silver (the scribes collect %d a day). Armory: %d sets of arms.
+Un carro de guerra del reino.	A kingdom war chariot.
+Un ejército del reino en formación, con sus carros.	A kingdom army in formation, with its chariots.
+Una escala apoyada en la muralla: F para subir.	A ladder against the wall: F to climb.
+¡%s se rinde y abre sus puertas! Su fundición es tu taller y te pagará tributo cada estación.	%s surrenders and opens its gates! Its foundry is your workshop, and it will pay you tribute every season.
+¡%s se rinde! El kanato cae: ya no le debes tributo. Su fundición es tu taller y te pagará tributo cada estación.	%s surrenders! The khanate falls: you owe it no more tribute. Its foundry is your workshop, and it will pay you tribute every season.
+¡%s se rinde! Te pagará tributo cada estación.	%s surrenders! It will pay you tribute every season.
+¡Cae la expedición de castigo de %s! %d de los suyos quedaron en el campo.	The punitive expedition from %s falls! %d of its men were left on the field.
+¡Sale la guarnición de %s: %d hombres!	The garrison of %s sallies out: %d men!
+¡Una expedición de castigo de %s marcha sobre %s: %d infantes, %d tiradores y %d carros de guerra!	A punitive expedition from %s marches on %s: %d foot soldiers, %d shooters and %d war chariots!
 # --- src/game/combat_game.c
  (la armadura amortigua)	 (armor softens it)
  con el arma	 with the weapon
@@ -670,6 +701,7 @@ Tesoro: %d de plata (los escribas cobran %d al día). Armería: %d juegos de arm
 %s: ¡derribas al %s del caballo!	%s: you unhorse the %s!
 %s: ¡el %s cae al suelo!	%s: the %s hits the ground!
 %s: ¡le arrancas el escudo al %s!	%s: you rip the %s's shield away!
+%s: ¡vuelcas el carro de guerra!	%s: you overturn the war chariot!
 ; se rompe la pieza	; the piece breaks
 A caballo no hay parry.	No parry on horseback.
 A caballo: golpe (H) y golpe pesado (mantener H); con una lanza, L la pone en ristre.	On horseback: strike (H) and heavy strike (hold H); with a lance, L couches it.
@@ -704,6 +736,7 @@ El %s para tu %s%s.	The %s blocks your %s%s.
 El %s se espanta ante las pieles de fiera y retrocede.	The %s is frightened by the beast pelts and backs off.
 El %s se zafa del agarre: ¡quedas expuesto!	The %s breaks the hold: you're exposed!
 El golpe del %s alcanza a tu montura.	The %s's blow hits your mount.
+El virote se clava en el pavés del %s.	The bolt sticks in the %s's pavise.
 Empujar al rehén	Shove the hostage
 Empujas al %s: cae de bruces.	You shove the %s: they fall flat on their face.
 Escudo contra escudo: los dos os tambaleáis.	Shield against shield: you both stagger.
@@ -732,6 +765,7 @@ L: bajas la lanza. Al galope, el primero que tengas delante recibe todo el peso 
 L: carga con el escudo; empuja y tumba al primero que encuentra.	L: shield charge; shoves and knocks down the first one in the way.
 L: lo empujas y cae de bruces.	L: you shove them and they fall flat.
 L: patada que empuja y desequilibra. Corriendo, patada a la carrera.	L: a kick that shoves and staggers. Running, a running kick.
+La %s se clava en el pavés del %s.	The %s sticks in the %s's pavise.
 La flecha encendida se apagó.	The fire arrow went out.
 La flecha ya arde: ¡dispara!	The arrow is burning: shoot!
 La lanza pesada solo sirve a caballo: monta (R) y ponla en ristre (L).	The heavy lance only works on horseback: mount (R) and couch it (L).
@@ -786,6 +820,7 @@ Tu arma no tiene gancho (hacha, guja o alabarda).	Your weapon has no hook (axe, 
 Tu golpe pesado rompe la guardia del %s.	Your heavy strike breaks the %s's guard.
 Un %s mata a un %s.	A %s kills a %s.
 Un %s tumba a un %s.	A %s knocks down a %s.
+Un virote alcanza a %s en %s.	A bolt hits %s in the %s.
 Una %s alcanza a %s en %s.	A %s hits %s in %s.
 Vendas las heridas de %s.	You bind %s's wounds.
 golpe	strike
@@ -807,6 +842,8 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡Disparo parto! %s	Parthian shot! %s
 ¡El %s te arranca el escudo! (1 a 9 para volver a empuñar)	The %s tears your shield away! (1 to 9 to wield again)
 ¡El %s te desarma con una llave! (1 a 9 para volver a empuñar)	The %s disarms you with a lock! (1 to 9 to wield again)
+¡El carro de guerra arrolla a %s!	The war chariot runs %s down!
+¡El carro de guerra te arrolla!	The war chariot runs you down!
 ¡Fanáticos del culto! Buscan prisioneros para el sacrificio.	Cult fanatics! They seek prisoners for sacrifice.
 ¡Golpeaste el nido! Ahí vienen...	You hit the nest! Here they come...
 ¡Jinetes bandidos al galope! Derríbalos del caballo.	Bandit riders galloping in! Knock them off their horses.
@@ -817,6 +854,7 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡Te muerde un %s: veneno! Véndate con hierbas (B).	A %s bites you: poison! Bind it with herbs (B).
 ¡Tu %s se quiebra en el golpe! El temple había salido mal.	Your %s shatters on the blow! The temper had gone wrong.
 ¡Un %s derriba a %s! Acércate y pulsa B.	A %s knocks down %s! Get close and press B.
+¡Un virote te alcanza! %s.	A bolt hits you! %s.
 ¡Una %s te alcanza! %s.	A %s hits you! %s.
 # --- src/game/death_game.c
 el campamento	the camp
@@ -1234,6 +1272,7 @@ Ciudades y reinos	Cities and kingdoms
 Clima y peligros	Weather and hazards
 Combate cuerpo a cuerpo	Melee combat
 Con eso se fabrica (Tab, Fabricar): sillas, bridas, alforjas, aljabas, armadura laminar de cuero y el arco compuesto. Y se construye más duradero: casa de adobe, cabaña de troncos, choza de fieltro.	With that you craft (Tab, Craft): saddles, bridles, saddlebags, quivers, leather lamellar armor and the composite bow. And build to last: adobe house, log cabin, felt hut.
+Con la relación con el kanato en -40 (o mucho rencor en una ciudad) sale una expedición de castigo contra tu campamento, si su tesoro la paga.	With your relation to the khanate at -40 (or deep grudge in a city), a punitive expedition marches on your camp, if its treasury can pay for it.
 Construyen los del campamento que no tienen tarea; el que sabe el oficio trabaja el doble.	The camp's idle people do the building; whoever knows the trade works twice as fast.
 Continuar	Continue
 Contra el frío, pieles y abrigos: oso, reno, lobo, tigre, cabra. Contra el sol, sombrero, pañuelo del desierto, túnica de seda blanca y manto blanco.	Against the cold, furs and coats: bear, reindeer, wolf, tiger, goat. Against the sun, a hat, a desert scarf, a white silk tunic and a white mantle.
@@ -1245,6 +1284,7 @@ Cuatro botones (teclas o las casillas de abajo a la derecha): H ataque, J bloque
 Daga de anillo: en la mano torpe pega como en la buena; llaves más firmes, el rehén no se te suelta con cualquier golpe y la ejecución apenas se oye.	Ring-pommel dagger: in the off hand it strikes like the good one; firmer holds, a hostage doesn't slip away at every blow, and executions are barely heard.
 Dejar la partida (lo no guardado se pierde)	Leave the game (unsaved progress is lost)
 Día %d · %s · tribu de %d	Day %d · %s · tribe of %d
+Ejército y asedio	Army and siege
 El agua	Water
 El agua que corre por los suelos puede traer espíritus malditos: al rato, fiebre (más lento, más sed). Mayús+N: hierbas.	Water running on the ground may carry cursed spirits: after a while, fever (slower, thirstier). Shift+N: herbs.
 El borde: los fiordos dan al mar, el desierto termina en un cañón y un muro de estratos, el altiplano en un muro de hielo y el bosque en un canal sinuoso del que salen ríos.	The edge: the fjords open onto the sea, the desert ends in a canyon and a layered rock wall, the highland in a wall of ice, and the forest in a winding canal that feeds rivers.
@@ -1253,8 +1293,10 @@ El desierto quema de día y hiela de noche. Con calor te sofocas: busca sombra (
 El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Cold drains your warmth: seek fire and yurts; wet clothes chill you.
 El mundo	The world
 El pasto sigue a las estaciones: la estepa en primavera y otoño, las montañas en verano, el desierto en invierno. Sin pasto, el ganado pasa hambre.	Grass follows the seasons: steppe in spring and autumn, mountains in summer, desert in winter. Without it, the herd goes hungry.
+El pavés para casi todas las flechas de frente: flanquéalos. Con la mitad de sus filas caídas, la formación se rompe.	The pavise stops almost every arrow from the front: flank them. With half its ranks down, the formation breaks.
 El reflejo se hace en tres etapas (Tab, Fabricar): el alma de madera; el asta y el tendón con cola de hueso, que secan dos días colgados en el acopio; y la cola que lo termina.	The reflex bow takes three stages (Tab, Craft): the wooden core; horn and sinew with bone glue, which dry for two days hanging in the store; and the glue that finishes it.
 El tributo al Kanato de Hierro se paga en su capital, una vez por estación. Si una estación pasa sin pagarlo, la relación baja.	The tribute to the Iron Khanate is paid in its capital, once a season. If a season passes unpaid, your standing drops.
+En guerra, la ciudad cierra sus puertas y su guarnición sale a pelear. Se entra trepando (la trepa, Tab), por una escala (F la apoya) o quemando una puerta: flechas encendidas o la antorcha (F).	At war, the city shuts its gates and its garrison sallies out to fight. Get in by climbing (the grappling hook, Tab), by a ladder (F sets it) or by burning a gate: fire arrows or the torch (F).
 En la capital, el palacio y, alrededor, la fundición, el cuartel y la carpintería. Afuera, los campos y los corrales.	In the capital, the palace and, around it, the foundry, the barracks and the carpentry. Outside, the fields and the corrals.
 En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
 En verano el pasto seco arde: los incendios corren con el viento.	In summer dry grass burns: wildfires run with the wind.
@@ -1335,6 +1377,7 @@ Los lagos helados se cruzan, pero el hielo puede romperse.	Frozen lakes can be c
 Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.	Menus are icons: hover with the mouse (or pick with the arrows) and the name shows below; click or Enter to use them.
 Los pobladores y sus tareas	Villagers and their tasks
 Los rayos caen sobre lo alto durante las tormentas.	Lightning strikes high ground during storms.
+Los reinos tienen ejército: infantes pesados con pavés en formación cerrada, soldados, arqueros, ballesteros y carros de guerra, rápidos en el llano y lentos en la cuesta o en el agua.	The kingdoms have armies: heavy infantry with pavises in close formation, soldiers, archers, crossbowmen and war chariots, fast on flat ground and slow on slopes or in water.
 Los soldados que se quedan en el campamento hacen la guardia: rondan un anillo a 40-60 m, salen al encuentro de quien lo cruce y vuelven si alguien entra. De noche llevan antorcha. El guardián (F) capacita soldados.	Soldiers who stay at the camp keep watch: they patrol a ring 40-60 m out, go out to meet whoever crosses it and come back if someone gets in. At night they carry torches. The keeper (F) trains soldiers.
 M mapa · N beber · U ficha	M map · N drink · U card
 Mayús+G (o la columna) deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	Shift+G (or the column) drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
@@ -1366,6 +1409,7 @@ Salir al título	Back to title
 Salir del juego	Quit game
 Se fabrican a mano (Tab, Fabricar) con las pieles del despiece, la lana de las cabras (los pastores las esquilan) y la seda del botín.	Made by hand (Tab, Craft) from butchered pelts, goat wool (herders shear the goats) and looted silk.
 Serpientes, escorpiones, arañas y avispas envenenan: véndate (B).	Snakes, scorpions, spiders and wasps are venomous: bandage yourself (B).
+Sin soldados, sin grano o en revuelta, exígele la rendición (F en la puerta o en el palacio): te paga tributo y su fundición es tu taller.	Without soldiers, without grain or in revolt, demand its surrender (F at the gate or the palace): it pays you tribute and its foundry is your workshop.
 Socavones de nieve y arena movediza aparecen cada día en otro lugar.	Snow sinkholes and quicksand appear somewhere new every day.
 Su mercado (F): con el granero vacío, la comida vale más; con la armería llena, las armas, menos. Su tesoro paga lo que vendes. «La ciudad» dice cómo está.	Its market (F): with an empty granary, food costs more; with a full armory, weapons cost less. Its treasury pays for what you sell. 'The city' tells how it fares.
 Subes de nivel peleando, cazando, fabricando, construyendo y domando.	You level up by fighting, hunting, crafting, building and taming.
@@ -1380,6 +1424,7 @@ Tatuajes (para siempre): habla (F) con el druida, elige motivo y zona. Lobo, cie
 Tatuajes y joyas	Tattoos and jewels
 Templar: filo duro y lomo flexible, el arma pega más. Si sale mal, queda frágil y se quiebra en un golpe (más si te lo paran). Sale mejor con más herreros (hasta dos) y la destreza del clan.	Tempering: hard edge and flexible spine, the weapon hits harder. If it goes wrong, it turns brittle and shatters on a blow (more so when parried). More smiths (up to two) and the clan's craft make it go better.
 Todo vale plata: el guardián (Estado) y el inventario dicen cuánto vale el acopio.	Everything is worth silver: the warden (Status) and the inventory tell what the store is worth.
+Un campamento de la tribu cerca la deja sin grano; las flechas encendidas que caen adentro queman su granero.	A tribe camp nearby cuts off its grain; fire arrows that land inside burn its granary.
 Un campamento rival cuyos guerreros ya salieron a tu encuentro se saquea con F, si no queda nadie en pie alrededor.	A rival camp whose warriors already rode out against you can be plundered with F, if no one is left standing around.
 Una gran tierra casi redonda con cinco regiones: la estepa en el centro, rodeada de ríos que serpentean; el bosque al noroeste, el desierto al noreste, el altiplano al sureste y los fiordos al suroeste.	A vast, nearly round land with five regions: the steppe at the center, ringed by winding rivers; the forest to the northwest, the desert to the northeast, the highland to the southeast and the fjords to the southwest.
 Una tienda o un refugio lejos de los demás campamentos funda uno nuevo: nombra guardián a alguien de tu escolta.	A tent or shelter far from other camps founds a new one: name someone from your escort its keeper.
@@ -1403,12 +1448,16 @@ Aún quedan guerreros de los %s en pie: no puedes saquear.	Warriors of the %s ar
 Cae la escolta: la carga queda en el suelo (%d de plata y más). F: tomarla.	The escort falls: the cargo lies on the ground (%d silver and more). F: take it.
 Comprar	Buy
 Compras %d × %s por %d de plata.	You buy %d × %s for %d silver.
+Con pocos soldados, sin grano o en revuelta, se rinde: es de la tribu, te paga tributo y su fundición es tu taller.	With few soldiers, no grain or in revolt, it surrenders: it becomes the tribe's, pays you tribute, and its foundry is your workshop.
 El caravasar	The caravanserai
 El tesoro de la ciudad no tiene plata para pagarte.	The city's treasury has no silver to pay you.
+Es de la tribu: te recibe como a su señor.	It belongs to the tribe: it greets you as its lord.
+Exigir la rendición	Demand surrender
 F: comerciar con la caravana (o asaltarla)	F: trade with the caravan (or raid it)
 F: comerciar con los %s	F: trade with the %s
 F: comerciar en %s	F: trade in %s
 F: comerciar en el caravasar	F: trade at the caravanserai
+F: hablar con la guardia de %s	F: talk to the guards of %s
 F: saquear el campamento de los %s	F: plunder the camp of the %s
 F: saquear los campos de %s	F: plunder the fields of %s
 La ciudad	The city
@@ -1425,19 +1474,24 @@ No comercian con quien les arrasó los campos.	They don't trade with whoever rav
 No comercian con quien no paga el tributo al kan.	They don't trade with whoever withholds tribute from the khan.
 No te alcanza: cuesta %d de plata y llevas %d.	Not enough: it costs %d silver and you carry %d.
 No te alcanza: el tributo es de %d de plata y llevas %d.	Not enough: the tribute is %d silver and you carry %d.
+No te alcanza: la paz cuesta %d de plata y llevas %d.	Not enough: peace costs %d silver and you carry %d.
 Pagar el tributo (%d de plata)	Pay the tribute (%d silver)
+Pagar la paz (%d de plata)	Pay for peace (%d silver)
 Pagas el tributo al %s: %d de plata. La relación sube (+%d).	You pay the tribute to the %s: %d silver. Your standing rises (+%d).
+Pagas la paz: %d de plata. %s vuelve a abrir sus puertas.	You pay for peace: %d silver. %s opens its gates again.
 Saqueas a los %s: %d de plata y más, a tus pies (F).	You plunder the %s: %d silver and more, at your feet (F).
 Seda, especias y vino de tierras lejanas; la escolta no les quita el ojo a los camellos.	Silk, spices and wine from distant lands; the escort never takes its eyes off the camels.
 Su escolta pelea; vencida, la carga es tuya. El reino se enterará.	Its escort fights; once beaten, the cargo is yours. The kingdom will hear of it.
 Su gente, el granero, el tesoro y la guarnición.	Its people, granary, treasury and garrison.
 Su tesoro tiene %d de plata para pagarte.	Its treasury holds %d silver to pay you.
 Te alejas: la caravana sigue su camino.	You ride off: the caravan goes on its way.
+Te hablan desde lo alto de la puerta: están en guerra contigo.	They speak to you from atop the gate: they are at war with you.
+Te perdonan: vuelven a abrir sus puertas y a comerciar contigo.	They forgive you: they open their gates and trade with you again.
 Una caravana	A caravan
 Vender	Sell
 Vendes %d × %s por %d de plata.	You sell %d × %s for %d silver.
 Ya pagaste el de esta estación.	You already paid this season's.
-¡Asaltas la caravana! El %s se enterará (−%d).	You raid the caravan! The %s will hear of it (−%d).
+¡Asaltas la caravana! El %s se enterará (-%d).	You raid the caravan! The %s will hear of it (-%d).
 ¡Campos de %s arrasados: %d sacos de grano (F)! Nadie los defiende.	Fields of %s ravaged: %d sacks of grain (F)! No one defends them.
 ¡Campos de %s arrasados: %d sacos de grano (F)! Salen %d soldados.	Fields of %s ravaged: %d sacks of grain (F)! %d soldiers march out.
 # --- src/game/travel_game.c
@@ -1758,9 +1812,13 @@ verano	summer
 # --- src/sim/combat.c
 Arquero a caballo	Horse archer
 Arquero bandido	Bandit archer
+Arquero del reino	Kingdom archer
+Ballestero	Crossbowman
 Bandido	Bandit
 Captor del culto	Cult captor
+Carro de guerra	War chariot
 Fanático del culto	Cult fanatic
+Infante pesado	Heavy infantryman
 Jinete bandido	Bandit rider
 Soldado del reino	Kingdom soldier
 # --- src/sim/economy.c
@@ -1798,6 +1856,7 @@ Cuerda de tendones	Sinew rope
 Cuero (curtir pieles)	Leather (tan hides)
 Daga de anillo	Ring-pommel dagger
 Deel de invierno con piel	Fur winter deel
+Escala de asedio	Siege ladder
 Escudo de láminas de hierro	Iron-plated shield
 Fieltro	Felt
 Flechas (5)	Arrows (5)

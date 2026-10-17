@@ -1,0 +1,52 @@
+# PIPELINE WORKFLOW RULES: TRELLIS 2 + GRAIL + RIGNET
+#
+# When a user provides a URL to a 3D asset (.glb) from Hugging Face (TRELLIS 2, RigNet) or GRAIL:
+# 1. NEVER request the user to download or re-upload files through the tablet.
+# 2. Automatically execute python tools/fetch_pipeline_asset.py --url "<URL>" --name "<ASSET_NAME>" --category "<CATEGORY>" [--animated] in the Codespace terminal.
+# 3. Verify that assets/models/<ASSET_NAME>.glb exists and is logged in assets/data/models_manifest.json.
+# 4. If marked as --animated, update the C rendering module cache in src/world/ to register the Raylib ModelAnimation tracks.
+# 5. Provide a summary confirming download, manifest indexing, and engine readiness.
+
+## Workflow Enforcement
+
+### Rule 1: Automatic Asset Acquisition
+- All 3D assets must be acquired via `tools/fetch_pipeline_asset.py`
+- No manual downloads or uploads through the tablet interface
+- Supported sources: HuggingFace (TRELLIS 2, RigNet) and GRAIL
+- Required CLI flags: --url, --name, --category, [--animated]
+
+### Rule 2: Manifest Indexing
+- Every downloaded asset must be indexed in `assets/data/models_manifest.json`
+- Metadata required: file, category, has_rig (true if --animated), timestamp
+- Manifest must be valid JSON
+
+### Rule 3: Engine Integration Triggers
+- If --animated is specified, the C engine must register Raylib ModelAnimation tracks
+- Track registration happens automatically after successful manifest update
+- Non-animated assets use standard static model loading
+
+### Rule 4: Verification & Reporting
+- After each download, verify file existence and size
+- Confirm manifest entry was written correctly
+- Report success/failure summary to user
+
+## Implementation Notes
+
+### Tool Invocation Pattern
+```bash
+python tools/fetch_pipeline_asset.py \
+    --url "https://huggingface.co/dataset/trellis2/model/xxx.glb" \
+    --name "trellis_yurt" \
+    --category "yurt" \
+    --animated
+```
+
+### Expected File Structure
+- Assets stored in `assets/models/<name>.glb`
+- Manifests in `assets/data/models_manifest.json`
+- Engine modules in `src/world/`
+
+### Compilation Requirements
+- All C code must compile with CMake (targeting Android/mobile)
+- Zero memory leaks in render loop
+- Static memory allocation preferred for embedded targets
