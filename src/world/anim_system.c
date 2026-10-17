@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "raymath.h"
 
 void anim_system_init(AnimationSystem *sys) {
     memset(sys, 0, sizeof(*sys));
@@ -94,15 +95,7 @@ void anim_system_draw(const AnimationSystem *sys, int entity_index) {
     const AnimatedEntity *ent = &sys->entities[entity_index];
     if (!ent->loaded) return;
 
-    // Apply transform
-    Matrix trans = MatrixTranslate(ent->position.x, ent->position.y, ent->position.z);
-    Matrix rot = MatrixRotateXYZ(ent->rotation_axis);
-    Matrix scale_m = MatrixScale(ent->scale_factor, ent->scale_factor, ent->scale_factor);
-    Matrix transform = MatrixMultiply(MatrixMultiply(scale_m, rot), trans);
-
-    // Apply model transform
-    ent->model.transform = transform;
-
+    // Apply transform using model properties with DrawModelEx
     DrawModelEx(ent->model, ent->position, ent->rotation_axis, ent->rotation_angle,
                 ent->scale, WHITE);
 }

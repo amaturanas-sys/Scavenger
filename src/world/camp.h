@@ -11,6 +11,8 @@
 
 #define CAMP_MAX_INSTANCES 64
 #define CAMP_MAX_ANIMATED 8
+#define CAMP_MAX_YURTS 5
+#define CAMP_MAX_TREES 100
 
 typedef enum {
     CAMP_TYPE_YURT,
@@ -42,14 +44,27 @@ typedef struct {
     Model hearth_model;
     bool hearth_loaded;
     AnimationSystem anim_system;
+    // Camp site data (from camp_game.c)
+    Vector3 fire;
+    Vector3 yurts[CAMP_MAX_YURTS];
+    int yurt_count;
+    Vector3 trees[CAMP_MAX_TREES];
+    int tree_count;
+    float yurt_rot[CAMP_MAX_YURTS];
 } Camp;
 
 void camp_init(Camp *c, const Terrain *t, const char *yurt_path);
 // Carga un layout desde JSON (cJSON). Devuelve false si falla.
 bool LoadCampLayout(Camp *c, const char* filepath);
+// Load procedural camp layout from assets/camp_data.json
+bool LoadProceduralCamp(Camp *c, const char* filepath);
 void DrawCamp(const Camp *c, float time, float snow, bool fire_lit);
 void camp_unload(Camp *c);
 // Animation update
 void camp_update_animations(Camp *c, float dt);
+// Drawing function (lowercase for compatibility with main.c)
+static inline void camp_draw(const Camp *c, float time, float snow, bool fire_lit) {
+    DrawCamp(c, time, snow, fire_lit);
+}
 
 #endif

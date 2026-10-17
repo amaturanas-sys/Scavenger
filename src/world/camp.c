@@ -28,8 +28,8 @@ void camp_init(Camp *c, const Terrain *t, const char *yurt_path) {
     if (platform_asset_path("assets/models/estructura/forja/forja_comun.glb"))
         platform_note_asset(platform_asset_path("assets/models/estructura/forja/forja_comun.glb"), c->hearth_loaded);
 
-    // Initialize with default camp layout
-    LoadCampLayout(c, platform_asset_path("assets/data/camp_layout.json"));
+    // Load procedural camp layout from JSON
+    LoadProceduralCamp(c, platform_asset_path("assets/camp_data.json"));
 }
 
 bool LoadCampLayout(Camp *c, const char* filepath) {
@@ -104,6 +104,94 @@ bool LoadCampLayout(Camp *c, const char* filepath) {
     return true;
 }
 
+// Load procedural camp layout from assets/camp_data.json
+bool LoadProceduralCamp(Camp *c, const char* filepath) {
+    char *text = LoadFileText(filepath);
+    if (!text) {
+        // Fallback to default empty camp
+        memset(c, 0, sizeof(*c));
+        return false;
+    }
+
+    cJSON *root = cJSON_Parse(text);
+    UnloadFileText(text);
+    if (!root) {
+        // Fallback to default empty camp
+        memset(c, 0, sizeof(*c));
+        return false;
+    }
+
+    // Parse fire position
+    cJSON *fire_obj = cJSON_GetObjectItem(root, "fire");
+    if (fire_obj) {
+        cJSON *x = cJSON_GetObjectItem(fire_obj, "x");
+        cJSON *y = cJSON_GetObjectItem(fire_obj, "y");
+        cJSON *z = cJSON_GetObjectItem(fire_obj, "z");
+        if (x && y && z) {
+            c->fire = (Vector3){
+                (float)cJSON_GetNumberValue(x),
+                (float)cJSON_GetNumberValue(y),
+                (float)cJSON_GetNumberValue(z)
+            };
+        }
+    }
+
+    // Parse yurts
+    cJSON *yurts_arr = cJSON_GetObjectItem(root, "yurts");
+    if (yurts_arr && cJSON_IsArray(yurts_arr)) {
+        int yurt_count = cJSON_GetArraySize(yurts_arr);
+        if (yurt_count > CAMP_MAX_YURTS) yurt_count = CAMP_MAX_YURTS;
+        c->yurt_count = yurt_count;
+
+        for (int i = 0; i < yurt_count; i++) {
+            cJSON *yurt = cJSON_GetArrayItem(yurts_arr, i);
+            if (yurt) {
+                cJSON *x = cJSON_GetObjectItem(yurt, "x");
+                cJSON *y = cJSON_GetObjectItem(yurt, "y");
+                cJSON *z = cJSON_GetObjectItem(yurt, "z");
+                cJSON *rot = cJSON_GetObjectItem(yurt, "rotation");
+
+                if (x && y && z && rot) {
+                    c->yurts[i] = (Vector3){
+                        (float)cJSON_GetNumberValue(x),
+                        (float)cJSON_GetNumberValue(y),
+                        (float)cJSON_GetNumberValue(z)
+                    };
+                    c->yurt_rot[i] = (float)cJSON_GetNumberValue(rot);
+                }
+            }
+        }
+    }
+
+    // Parse trees
+    cJSON *trees_arr = cJSON_GetObjectItem(root, "trees");
+    if (trees_arr && cJSON_IsArray(trees_arr)) {
+        int tree_count = cJSON_GetArraySize(trees_arr);
+        if (tree_count > CAMP_MAX_TREES) tree_count = CAMP_MAX_TREES;
+        c->tree_count = tree_count;
+
+        for (int i = 0; i < tree_count; i++) {
+            cJSON *tree = cJSON_GetArrayItem(trees_arr, i);
+            if (tree) {
+                cJSON *x = cJSON_GetObjectItem(tree, "x");
+                cJSON *y = cJSON_GetObjectItem(tree, "y");
+                cJSON *z = cJSON_GetObjectItem(tree, "z");
+
+                if (x && y && z) {
+                    c->trees[i] = (Vector3){
+                        (float)cJSON_GetNumberValue(x),
+                        (float)cJSON_GetNumberValue(y),
+                        (float)cJSON_GetNumberValue(z)
+                    };
+                }
+            }
+        }
+    }
+
+    cJSON_Delete(root);
+    return true;
+}
+
 void DrawCamp(const Camp *c, float time, float snow, bool fire_lit) {
     (void)time;
 
@@ -160,7 +248,7 @@ void DrawCamp(const Camp *c, float time, float snow, bool fire_lit) {
                 break;
             case CAMP_TYPE_TRAINING:
                 // Draw a simple obstacle course marker
-                DrawSphere(inst->position, 0.5f * inst->scale, 8, 8, (Color){ 255, 165, 0, 200 });
+                DrawSphere(inst->position, 0.5f * inst->scale, (Color){ 255, 165, 0, 200 });
                 DrawLine3D((Vector3){ inst->position.x - 2.0f * inst->scale, inst->position.y, inst->position.z },
                     (Vector3){ inst->position.x + 2.0f * inst->scale, inst->position.y, inst->position.z },
                     (Color){ 255, 255, 255, 100 });

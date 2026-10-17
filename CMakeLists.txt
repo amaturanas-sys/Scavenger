@@ -141,6 +141,7 @@ if(ESTEPA_BUILD_GAME)
     src/world/voxstruct.c
     src/world/weather.c
     src/world/body_draw.c
+    src/world/vegetation.c
     src/vendor/cjson/cJSON.c)
 
   if(ANDROID)

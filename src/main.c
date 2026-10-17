@@ -64,6 +64,7 @@
 #include "rlgl.h"
 #include "world/weather.h"
 #include "world/terrain.h"
+#include "world/vegetation.h"
 #include "world/worldview.h"
 #include "sim/lang.h"
 
@@ -718,6 +719,16 @@ int main(int argc, char **argv) {
 
     Terrain terrain;
     terrain_init(&terrain, start_seed);
+    VegetationSystem vegetation;
+    vegetation_init(&vegetation, start_seed);
+    Vector3 center = {
+        (float)terrain.center_cx * CHUNK_SIZE,
+        0.0f,
+        (float)terrain.center_cz * CHUNK_SIZE
+    };
+    vegetation_populate(&vegetation, &center, 200.0f, 500, VEGETATION_GRASS, 0);
+    vegetation_populate(&vegetation, &center, 100.0f, 100, VEGETATION_WEED, 1);
+    vegetation_populate(&vegetation, &center, 80.0f, 50, VEGETATION_FOLIAGE, 2);
     if (map_path) { // el mapa general del mundo (con la nieve de verano) y nada mas
         bool ok = worldmap_export(terrain.world, map_path, map_size > 64 ? map_size : 1024, terrain.plain + 40.0f);
         printf("%s %s\n", ok ? "Mapa escrito:" : "No se pudo escribir", map_path);
@@ -1289,8 +1300,7 @@ int main(int argc, char **argv) {
         hearth_frame_begin();
         BeginMode3D(cam);
         terrain_draw(&terrain);
-        camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used && !g_actions.camps[0].moved,
-                  g_dz.tree_burn); // migrado, su fogata queda apagada
+        vegetation_draw(&vegetation, cam, world_time, 0.3f, CLITERAL(Color){255,255,255,0});
         if (gallery_mode) gallery_draw(&gallery);
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
         if (gallery_mode) player_draw(&player);
