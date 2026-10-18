@@ -679,7 +679,8 @@ Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su e
 - **La guerra** (`city_at_war`): con 60 de rencor o, en la estepa, con la relación en −30 o menos (mientras el kanato no caiga), la ciudad cierra el mercado y las puertas. En paz, rehace las puertas quemadas y quita las escalas.
 - **La muralla** (`city_wall_blocks`):
   - doce tramos rectos entre las torres; cada tercer tramo es una puerta: 6 m de paso entre dos lienzos de muro;
-  - corta el paso del jugador (que desliza a lo largo), de las flechas (se clavan) y de los enemigos, que entran y salen por las puertas (`ct_route`);
+  - **la puerta acodada** (v0.10.2): delante de cada puerta, un antemuro a 5,5 m, de 14 m de largo y cerrado de un costado. Se entra por su boca, a lo largo de la muralla, y se dobla hacia la puerta, bajo el adarve;
+  - la muralla y los antemuros cortan el paso del jugador (que desliza a lo largo), de las flechas (se clavan) y de los enemigos. Los enemigos y la guarnición entran y salen por las puertas, rodeando el antemuro, por el camino más corto (`city_route`);
   - en guerra, las puertas están cerradas.
 - **Cómo entrar:**
   - trepando: la trepa (`Tab`), a 3,5 m de la muralla y mirándola;

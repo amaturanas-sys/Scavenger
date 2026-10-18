@@ -10,7 +10,9 @@
 // --ver <id> muestra de cerca un objeto del inventario, en la galeria, con el jugador al lado (la
 // tuberia de modelos, tools/modelos: revisar uno recien importado).
 // --edificios tipo[:region] muestra las variantes del kit de edificios (src/sim/buildkit.h): casa,
-// palacio, fundicion, cuartel, carpinteria, granero, templo o carreta; de cada region o de una.
+// palacio, fundicion, cuartel, carpinteria, granero, templo, carreta, muralla, torre, puerta, las
+// ruinas (fortaleza, enterrada) o las obras de la tribu (refugio, empalizada, muro, horno,
+// horno_fundicion, atalaya, corral, taller, tienda, escombros, cenizas); de cada region o de una.
 // --dia y --minuto ponen el reloj (minutos desde el amanecer), p. ej. para ver la noche.
 // --pos lleva al jugador a otro lugar del mundo (p. ej. a la cordillera).
 // --trampa arranca en un peligro con su minijuego (prueba).
@@ -579,9 +581,16 @@ static void draw_diagnostics(bool has_keyboard) {
 }
 
 // La vista del kit de edificios (--edificios tipo[:region]).
-static const char *KIT_TYPES[BK_KINDS] = { "casa", "palacio", "fundicion", "cuartel", "carpinteria", "granero", "templo", "carreta" };
-static const char *KIT_NAMES[BK_KINDS] = { N_("las casas"),         N_("los palacios"), N_("las fundiciones"),       N_("los cuarteles"),
-                                           N_("las carpinterías"), N_("los graneros"), N_("los templos del fuego"), N_("las carretas-casa") };
+static const char *KIT_TYPES[BK_KINDS] = { "casa",       "palacio",    "fundicion", "cuartel", "carpinteria",     "granero", "templo",  "carreta",
+                                           "muralla",    "torre",      "puerta",    "fortaleza", "enterrada",      "refugio", "empalizada", "muro",
+                                           "horno",      "horno_fundicion", "atalaya", "corral", "taller",        "tienda",  "escombros", "cenizas" };
+static const char *KIT_NAMES[BK_KINDS] = { N_("las casas"),         N_("los palacios"),       N_("las fundiciones"),       N_("los cuarteles"),
+                                           N_("las carpinterías"), N_("los graneros"),       N_("los templos del fuego"), N_("las carretas-casa"),
+                                           N_("las murallas"),      N_("las torres"),         N_("las puertas acodadas"),  N_("las fortalezas derruidas"),
+                                           N_("las ciudades enterradas"), N_("los refugios"), N_("las empalizadas"),       N_("los muros de piedra seca"),
+                                           N_("los hornos de cocina"), N_("los hornos de fundición"), N_("las atalayas"),  N_("los corrales"),
+                                           N_("los talleres del herrero"), N_("las tiendas y las chozas de fieltro"), N_("los escombros y los muros en ruinas"),
+                                           N_("las cenizas y las yurtas quemadas") };
 static const char *KIT_REGIONS[REGION_COUNT] = { "estepa", "bosque", "altiplano", "fiordos", "desierto" };
 
 static void kit_parse(const char *arg, int *type, int *region) {
@@ -593,12 +602,27 @@ static void kit_parse(const char *arg, int *type, int *region) {
         if (!strcmp(buf, KIT_TYPES[i])) *type = i;
     for (int r = 0; colon && r < REGION_COUNT; r++)
         if (!strcmp(colon + 1, KIT_REGIONS[r])) *region = r;
-    if (*type < 0) printf("--edificios: casa, palacio, fundicion, cuartel, carpinteria, granero, templo o carreta (y :region)\n");
+    if (*type < 0) {
+        printf("--edificios:");
+        for (int i = 0; i < BK_KINDS; i++) printf(" %s%s", KIT_TYPES[i], i + 1 < BK_KINDS ? "," : " (y :region)\n");
+        return;
+    }
+    int only = -1, n = 0; // lo que hay en una sola region (la ciudad enterrada, las obras de la tribu): esa fila
+    for (int r = 0; r < REGION_COUNT; r++)
+        if (bk_available((BkType)*type, (Region)r)) only = r, n++;
+    if (*region < 0 && n == 1) *region = only;
 }
 
 // Donde va cada uno: las variantes a lo largo de x, las regiones (filas) a lo largo de z.
 static Vector3 kit_spot(const Terrain *t, int type, int row, int variant) {
-    float sp = type == BK_PALACE ? 22.0f : type == BK_BARRACKS ? 18.0f : 15.0f, x = 34.0f + (float)variant * sp, z = 30.0f + (float)row * sp;
+    float sp = type == BK_RUIN_FORT || type == BK_RUIN_CITY ? 34.0f
+             : type == BK_PALACE || type == BK_GATE         ? 24.0f
+             : type == BK_BARRACKS                          ? 18.0f
+             : type == BK_CORRAL                            ? 14.0f
+             : type == BK_WATCHTOWER || type == BK_SMITHY   ? 8.0f
+             : type >= BK_SHELTER                           ? 6.0f
+                                                            : 15.0f;
+    float x = 34.0f + (float)variant * sp, z = 30.0f + (float)row * sp;
     return (Vector3){ x, terrain_height(t, x, z), z };
 }
 
@@ -1319,7 +1343,7 @@ int main(int argc, char **argv) {
                 int rows = kit_region >= 0 ? 1 : REGION_COUNT;
                 Vector3 a = kit_spot(&terrain, kit_type, 0, 0), b = kit_spot(&terrain, kit_type, rows - 1, BK_VARIANTS - 1);
                 Vector3 c = { (a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f + 2.0f, (a.z + b.z) * 0.5f };
-                float span = fmaxf(b.x - a.x, b.z - a.z) + 12.0f;
+                float span = fmaxf(b.x - a.x, b.z - a.z) + fminf(12.0f, kit_spot(&terrain, kit_type, 0, 1).x - a.x); // las obras chicas, mas cerca
                 cam.target = c;
                 Vector3 dir = rows > 1 ? (Vector3){ 1.0f, 0.75f, 0.55f } : (Vector3){ 0.5f, 0.62f, 1.0f }; // una sola fila: de costado
                 cam.position = Vector3Add(c, Vector3Scale(Vector3Normalize(dir), span * (rows > 1 ? 0.95f : 0.8f)));
@@ -1427,9 +1451,10 @@ int main(int argc, char **argv) {
         rlSetClipPlanes(RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
         if (kit_type >= 0) { // el nombre de cada fila (region) y lo que se ve
             ui_strip((Rectangle){ 0, 0, (float)VIRTUAL_W, 30 }, UI_METAL_GOLD);
-            ui_text(TextFormat(T("Kit de edificios: %s · variantes 0 y 1, chicas (aldeas y tribus); 2 y 3, grandes (capitales)"),
-                               kit_region >= 0 ? T(bk_name((BkType)kit_type, (Region)kit_region)) : T(KIT_NAMES[kit_type])),
-                    6, 7, 10, UI_GOLD_LIGHT);
+            const char *what = kit_type >= BK_SHELTER ? T("Kit de edificios: %s · las obras de la tribu sin modelo: 0 y 1, las chicas; 2 y 3, las grandes")
+                             : kit_type == BK_RUIN_FORT || kit_type == BK_RUIN_CITY ? T("Kit de edificios: %s · cuatro ruinas, una por sitio")
+                                                                                     : T("Kit de edificios: %s · variantes 0 y 1, chicas (aldeas y tribus); 2 y 3, grandes (capitales)");
+            ui_text(TextFormat(what, kit_region >= 0 ? T(bk_name((BkType)kit_type, (Region)kit_region)) : T(KIT_NAMES[kit_type])), 6, 7, 10, UI_GOLD_LIGHT);
             for (int row = 0; row < (kit_region >= 0 ? 1 : REGION_COUNT); row++) {
                 Region rg = kit_region >= 0 ? (Region)kit_region : (Region)row;
                 Vector3 p = kit_spot(&terrain, kit_type, row, 0);

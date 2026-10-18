@@ -4666,15 +4666,67 @@ static void test_army(void) {
     CHECK(!city_gate_open(&foe, 0, true) && city_gate_open(&foe, 2, true) && city_gate_open(&foe, 0, false) && !city_gate_open(&foe, 7, false));
     // La muralla corta el paso: el muro siempre; por la puerta se pasa si esta abierta (en paz, o
     // quemada), pero no por sus lienzos de los costados.
-    float a105 = city_gate_angle(1), a195 = city_gate_angle(2), tx = -sinf(a105), tz = cosf(a105); // tx, tz: de costado
+    float a105 = city_gate_angle(1), tx = -sinf(a105), tz = cosf(a105); // tx, tz: de costado
     int gt = -1;
+    float p1[CITY_GATE_PATH][2], p2[CITY_GATE_PATH][2];
+    city_gate_path(1, p1), city_gate_path(2, p2);
+    enum { OUT_CLOSED, OUT_MOUTH, MOUTH, COURT, IN };
     CHECK(city_wall_blocks(&foe, false, cosf(a45) * 30.0f, sinf(a45) * 30.0f, cosf(a45) * 50.0f, sinf(a45) * 50.0f, &gt) && gt == -1);
-    CHECK(!city_wall_blocks(&foe, false, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &gt) && gt == 1);
-    CHECK(city_wall_blocks(&foe, true, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &gt) && gt == 1);
-    CHECK(!city_wall_blocks(&foe, true, cosf(a195) * 30.0f, sinf(a195) * 30.0f, cosf(a195) * 50.0f, sinf(a195) * 50.0f, &gt) && gt == 2);
+    CHECK(!city_wall_blocks(&foe, false, p1[IN][0], p1[IN][1], p1[COURT][0], p1[COURT][1], &gt) && gt == 1);   // en paz, abierta
+    CHECK(city_wall_blocks(&foe, true, p1[IN][0], p1[IN][1], p1[COURT][0], p1[COURT][1], &gt) && gt == 1);     // en guerra, cerrada
+    CHECK(!city_wall_blocks(&foe, true, p2[IN][0], p2[IN][1], p2[COURT][0], p2[COURT][1], &gt) && gt == 2);    // quemada, abierta
+    CHECK(!city_wall_blocks(NULL, true, p1[IN][0], p1[IN][1], p1[COURT][0], p1[COURT][1], &gt));               // sin ciudad: abiertas
     CHECK(city_wall_blocks(&foe, false, cosf(a105) * 30.0f + tx * 6.0f, sinf(a105) * 30.0f + tz * 6.0f, cosf(a105) * 50.0f + tx * 6.0f,
                            sinf(a105) * 50.0f + tz * 6.0f, &gt));
-    CHECK(!city_wall_blocks(NULL, true, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &gt));
+    // La puerta acodada: el antemuro de adelante corta el paso derecho; se entra por la boca, a lo
+    // largo de la muralla, y se rodea el antemuro por afuera. El costado cerrado tambien corta.
+    WallHit hit;
+    float d105 = city_wall_dist(a105);
+    CHECK(city_wall_hit(&foe, false, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &hit) && hit.gate == -1);
+    CHECK(fabsf(hit.t - (d105 + CITY_BARBICAN_OUT - 30.0f) / 20.0f) < 0.01f && fabsf(hit.tx * cosf(a105) + hit.tz * sinf(a105)) < 0.01f);
+    int open_path = 0;
+    for (int k = 0; k + 1 < CITY_GATE_PATH; k++) open_path += !city_wall_blocks(&foe, false, p1[k][0], p1[k][1], p1[k + 1][0], p1[k + 1][1], NULL);
+    CHECK(open_path == CITY_GATE_PATH - 1);                                                                   // el camino entero, abierto
+    CHECK(city_wall_blocks(&foe, false, p1[MOUTH][0], p1[MOUTH][1], p1[IN][0], p1[IN][1], NULL));             // de la boca, derecho adentro: el muro
+    CHECK(city_wall_blocks(&foe, false, cosf(a105) * 62.0f, sinf(a105) * 62.0f, p1[COURT][0], p1[COURT][1], NULL)); // de frente al patio: el antemuro
+    float sd = (float)city_gate_closed_side(1);
+    CHECK(sd == -(float)city_gate_closed_side(2) && city_wall_blocks(&foe, false, p1[COURT][0], p1[COURT][1], p1[COURT][0] + tx * sd * 12.0f,
+                                                                      p1[COURT][1] + tz * sd * 12.0f, NULL)); // el costado cerrado
+    CHECK(!city_wall_blocks(&foe, false, p1[COURT][0], p1[COURT][1], p1[COURT][0] - tx * sd * 12.0f, p1[COURT][1] - tz * sd * 12.0f, NULL));
+    // El rodeo: quien va de adentro hacia afuera (o al reves), de un lado al otro de la ciudad por
+    // afuera, o sale del patio de un antemuro, sigue los puntos de city_route a paso de medio metro y
+    // llega sin atravesar nunca la muralla ni un antemuro (por la boca de una puerta).
+    float walk[4][2]; // de, a
+    int stuck = 0, crossed = 0, walks = 0;
+    for (int k = 0; k < 24; k++) {
+        float ain = (float)k * 0.2618f + 0.1f, aout = (float)(k * 7) * 0.2618f + 0.3f, rin = 12.0f + (float)(k % 4) * 6.0f, rout = 58.0f + (float)(k % 3) * 9.0f;
+        float court[CITY_GATE_PATH][2];
+        city_gate_path(k % CITY_GATES, court);
+        walk[0][0] = cosf(ain) * rin, walk[0][1] = sinf(ain) * rin;          // adentro
+        walk[1][0] = cosf(aout) * rout, walk[1][1] = sinf(aout) * rout;      // afuera
+        walk[2][0] = -walk[1][0] * 0.9f, walk[2][1] = -walk[1][1] * 0.9f;    // afuera, del otro lado
+        walk[3][0] = court[COURT][0], walk[3][1] = court[COURT][1];          // en el patio del antemuro
+        static const int legs[5][2] = { { 0, 1 }, { 1, 0 }, { 1, 2 }, { 3, 2 }, { 3, 0 } };
+        for (int l = 0; l < 5; l++, walks++) {
+            float x = walk[legs[l][0]][0], z = walk[legs[l][0]][1], gx = walk[legs[l][1]][0], gz = walk[legs[l][1]][1];
+            int n = 0;
+            for (; n < 800 && (x - gx) * (x - gx) + (z - gz) * (z - gz) > 0.3f; n++) {
+                float wx = gx, wz = gz;
+                city_route(x, z, gx, gz, &wx, &wz);
+                float dx = wx - x, dz = wz - z, d = sqrtf(dx * dx + dz * dz), st = fminf(0.5f, d);
+                if (d < 1e-4f) break;
+                float nx = x + dx / d * st, nz = z + dz / d * st;
+                crossed += city_wall_blocks(NULL, false, x, z, nx, nz, NULL);
+                x = nx, z = nz;
+            }
+            stuck += n >= 800 || (x - gx) * (x - gx) + (z - gz) * (z - gz) > 0.3f;
+        }
+    }
+    CHECK(walks == 120 && stuck == 0 && crossed == 0);
+    // Adentro, o lejos, se va derecho; y el rodeo nunca cruza el muro al lado de la puerta.
+    float wx = 0.0f, wz = 0.0f;
+    CHECK(!city_route(-10.0f, 5.0f, 20.0f, -12.0f, &wx, &wz) && !city_route(80.0f, 70.0f, -90.0f, 75.0f, &wx, &wz));
+    CHECK(city_route(p1[IN][0], p1[IN][1], cosf(a105) * 62.0f, sinf(a105) * 62.0f, &wx, &wz) && !city_wall_blocks(NULL, false, p1[IN][0], p1[IN][1], wx, wz, NULL));
 
     // El cerco: sin cosecha y con la gente del campo adentro, el granero baja mas rapido y crece el
     // descontento; el fuego quema grano y asusta.
@@ -4771,10 +4823,12 @@ static void test_buildkit(void) {
                     bad_det++;
                 vox_free(&h);
                 uint32_t hash = test_bk_hash(&g);
-                if (v % 2 == 1 && hash == prev) same++;
+                bool wall = t == BK_WALL || t == BK_TOWER || t == BK_GATE, ruin = t == BK_RUIN_FORT || t == BK_RUIN_CITY; // la muralla; las ruinas
+                bool big = t == BK_PALACE || t == BK_BARRACKS || wall || ruin || t == BK_CORRAL; // sin chicas
+                if (v % 2 == 1 && hash == prev && t != BK_WALL && t != BK_TOWER) same++; // los tramos y las torres pueden repetirse
                 prev = hash;
-                // Las chicas caben en BK_SMALL x BK_SMALL (el palacio y el cuartel no tienen chicas).
-                if (small && t != BK_PALACE && t != BK_BARRACKS && (in.l > BK_SMALL || in.w > BK_SMALL)) too_big++;
+                // Las chicas caben en BK_SMALL x BK_SMALL (el palacio, el cuartel, la muralla, las ruinas y el corral no tienen chicas).
+                if (small && !big && (in.l > BK_SMALL || in.w > BK_SMALL)) too_big++;
                 if (in.l <= 0.0f || in.w <= 0.0f || in.h <= 0.0f || in.front <= 0.0f || in.found <= 0.0f) too_big++;
                 if (in.enclosed) {
                     enclosed++;
@@ -4808,15 +4862,94 @@ static void test_buildkit(void) {
                 } else if (t == BK_HOUSE || t == BK_PALACE || t == BK_BARRACKS || t == BK_TEMPLE) {
                     bad_door++; // las casas tienen muros y puerta
                 }
-                // Las caras, refinadas como se dibujan de cerca: las chicas, pocas.
-                if (vox_refine(&g) && vox_exposed_faces(&g) > (small && t != BK_PALACE && t != BK_BARRACKS ? 18000 : 28000)) over++;
+                // Las caras, refinadas como se dibujan de cerca: las chicas, pocas; las ruinas (una por sitio), mas.
+                if (vox_refine(&g) && vox_exposed_faces(&g) > (ruin ? 36000 : small && !big ? 18000 : 28000)) over++;
                 vox_free(&g);
             }
         }
-    CHECK(built == 4 * (BK_KINDS * REGION_COUNT - 3 - 4) && enclosed > 60); // sin 3 templos ni 4 carretas
+    // Sin 3 templos ni 4 carretas, ni 4 ciudades enterradas, ni las obras de la tribu fuera de la estepa.
+    int camp_kinds = BK_ASHES - BK_SHELTER + 1;
+    CHECK(camp_kinds == 11 && built == 4 * (BK_KINDS * REGION_COUNT - 3 - 4 - 4 - camp_kinds * (REGION_COUNT - 1)) && enclosed > 60);
+    for (int r = 0; r < REGION_COUNT; r++) {
+        CHECK(bk_available(BK_RUIN_FORT, (Region)r) && bk_available(BK_RUIN_CITY, (Region)r) == (r == REGION_DESERT));
+        for (int t = BK_SHELTER; t <= BK_ASHES; t++) CHECK(bk_available((BkType)t, (Region)r) == (r == REGION_STEPPE));
+    }
+    // La muralla que se ve es la que choca (src/sim/army.h): el adarve a la altura que se trepa; en la
+    // puerta, el hueco libre en la linea de la muralla; el antemuro adelante y el costado cerrado
+    // llenos; la boca y el patio, libres.
+    for (int r = 0; r < REGION_COUNT; r++)
+        for (int v = 0; v < 2; v++) {
+            CHECK(bk_build(BK_WALL, (Region)r, bk_variant_seed(BK_WALL, (Region)r, v), false, &g, &in));
+            CHECK(in.h >= CITY_WALL_HEIGHT - 0.5f && in.h <= CITY_WALL_HEIGHT + 1.6f && in.w >= 2.0f * CITY_WALL_R * sinf(PI_T / 12.0f) / 3.0f);
+            vox_free(&g);
+            CHECK(bk_build(BK_GATE, (Region)r, bk_variant_seed(BK_GATE, (Region)r, v), false, &g, &in));
+            float sd = (float)city_gate_closed_side(v), cs = g.size, hx = (float)g.nx * cs * 0.5f, hz = (float)g.nz * cs * 0.5f;
+#define AT(X, Y, Z) vox_get(&g, (int)floorf(((X) + hx) / cs), BK_FOUND + (int)floorf((Y) / cs), (int)floorf(((Z) + hz) / cs))
+            int bad = 0;
+            for (float y = 0.25f; y < 4.0f; y += 0.5f)
+                for (float z = -CITY_GATE_HALF + 0.25f; z < CITY_GATE_HALF; z += 0.5f) bad += AT(0.25f, y, z) != 0 || AT(-0.25f, y, z) != 0; // el hueco
+            for (float z = -CITY_BARBICAN_HALF + 0.75f; z < CITY_BARBICAN_HALF - 0.5f; z += 0.5f) bad += !AT(CITY_BARBICAN_OUT + 0.25f, 2.0f, z); // el antemuro
+            for (float x = 1.75f; x < CITY_BARBICAN_OUT - 0.5f; x += 0.5f) bad += !AT(x, 2.0f, sd * (CITY_BARBICAN_HALF + 0.25f)); // el costado cerrado
+            for (float x = 1.25f; x < CITY_BARBICAN_OUT - 1.0f; x += 0.5f) // la boca y el patio, entre la muralla y el antemuro
+                bad += AT(x, 1.25f, -sd * CITY_BARBICAN_HALF) != 0 || AT(x, 1.25f, 0.25f) != 0;
+#undef AT
+            CHECK(bad == 0 && in.l >= CITY_BARBICAN_OUT + 1.0f);
+            vox_free(&g);
+        }
     CHECK(bad_det == 0 && same == 0 && too_big == 0);
     CHECK(bad_door == 0 && leaks == 0 && short_vest == 0 && hollow == 0);
     CHECK(over == 0);
+    // Las ruinas: lo alto cayo (las torres, rotas), pero queda; la puerta de la fortaleza, libre; la
+    // ciudad enterrada, en la arena.
+    for (int r = 0; r < REGION_COUNT; r++) {
+        CHECK(bk_build(BK_RUIN_FORT, (Region)r, bk_variant_seed(BK_RUIN_FORT, (Region)r, 2), false, &g, &in));
+        float cs = g.size, hx = (float)g.nx * cs * 0.5f, hz = (float)g.nz * cs * 0.5f;
+        int gate = 0;
+        for (float x = in.front - 4.0f; x < in.front; x += cs)
+            for (float z = -1.5f; z < 1.5f; z += cs) gate += vox_get(&g, (int)floorf((x + hx) / cs), BK_FOUND + 1, (int)floorf((z + hz) / cs)) != 0;
+        CHECK(in.h > 1.5f && in.h < CITY_WALL_HEIGHT + 2.5f && in.l > 18.0f && gate == 0);
+        vox_free(&g);
+    }
+    CHECK(bk_build(BK_RUIN_CITY, REGION_DESERT, bk_variant_seed(BK_RUIN_CITY, REGION_DESERT, 0), false, &g, &in));
+    int sand = 0, ground = 0;
+    for (int z = 0; z < g.nz; z++)
+        for (int x = 0; x < g.nx; x++) ground++, sand += vox_get(&g, x, BK_FOUND, z) == M_SAND1 || vox_get(&g, x, BK_FOUND, z) == M_SAND2;
+    CHECK(sand * 2 > ground && in.h > 2.0f);
+    vox_free(&g);
+    // Las obras de la tribu sin modelo se dibujan con el kit, a la medida de su id del inventario (las
+    // casas, que el kit hace de muchas medidas, se escalan a su lugar).
+    Inventory inv;
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    inventory_parse(&inv, text);
+    static const char *const WORKS[] = { "estructura.campamento.refugio", "estructura.campamento.empalizada", "estructura.defensa.muro_piedra",
+                                         "estructura.campamento.horno_cocina", "estructura.campamento.horno_bronce", "estructura.campamento.horno_acero",
+                                         "estructura.campamento.atalaya", "estructura.campamento.corral", WORKSHOP_ID,
+                                         "estructura.vivienda.tienda_ligera", "estructura.vivienda.choza_fieltro", "estructura.vivienda.yurta_comun",
+                                         "estructura.vivienda.yurta_jefe", "estructura.vivienda.casa_adobe", "estructura.vivienda.cabana_troncos",
+                                         "estructura.ruina.escombros", "estructura.ruina.muro", "estructura.ruina.cenizas", "estructura.ruina.yurta_quemada" };
+    int mapped = 0, misfit = 0;
+    for (size_t i = 0; i < sizeof(WORKS) / sizeof(WORKS[0]); i++) {
+        BkType t = BK_KINDS;
+        Region r = REGION_COUNT;
+        int v = -1;
+        const InvItem *it = inventory_find(&inv, WORKS[i]);
+        if (!it || !bk_for_item(WORKS[i], &t, &r, &v) || !bk_available(t, r) || (v != 0 && v != 2)) continue;
+        mapped++;
+        for (int k = v; k <= v + 1; k++) {
+            if (!bk_build(t, r, bk_variant_seed(t, r, k), k < 2, &g, &in)) {
+                misfit++;
+                continue;
+            }
+            if (t != BK_HOUSE && (fabsf(in.l - it->l) > 1.5f || fabsf(in.w - it->w) > 1.5f || fabsf(in.h - it->h) > 0.75f)) misfit++;
+            vox_free(&g);
+        }
+    }
+    BkType t0;
+    CHECK(mapped == (int)(sizeof(WORKS) / sizeof(WORKS[0])) && misfit == 0);
+    CHECK(!bk_for_item("utileria.objeto.odre", &t0, NULL, NULL) && !bk_for_item(NULL, &t0, NULL, NULL));
+    free(text);
 }
 
 // ¿Hay agua sobre el suelo en algun punto del circulo (cada 5 m), en verano o con la crecida de la

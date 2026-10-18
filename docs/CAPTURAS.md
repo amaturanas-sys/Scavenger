@@ -80,6 +80,24 @@ Ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md). Con `--e
 | ![Graneros](capturas/kit_granero.png) | **Los graneros** (`--edificios granero`): sobre postes, o de adobe con silos. |
 | ![Templos](capturas/kit_templo.png) | **Los templos del fuego** (`--edificios templo`), del desierto y el altiplano. |
 | ![Carretas](capturas/kit_carreta.png) | **Las carretas-casa** de la estepa (`--edificios carreta`). |
+| ![Murallas](capturas/kit_muralla.png) | **Los tramos de la muralla** (`--edificios muralla`): el terraplén con la empalizada, el *murus gallicus*, la piedra con contrafuertes, la piedra seca y la turba, el adobe sobre zócalo. |
+| ![Torres](capturas/kit_torre.png) | **Las torres de la muralla** (`--edificios torre`). |
+| ![Puertas](capturas/kit_puerta.png) | **Las puertas acodadas** (`--edificios puerta`): el antemuro, cerrado de un costado. |
+| ![Asedio](capturas/asedio_puerta.png) | **La puerta acodada en el asedio** (`--asedio puerta`): desde el patio del antemuro, mirando la puerta. |
+| ![Salida](capturas/asedio_salida.png) | **La guarnición sale** por la puerta acodada (`--asedio salida`). |
+| ![Fortalezas](capturas/kit_fortaleza.png) | **Las fortalezas derruidas** (`--edificios fortaleza`): la muralla de cada región, comida desde arriba. |
+| ![Enterrada](capturas/kit_enterrada.png) | **La ciudad enterrada** del desierto (`--edificios enterrada`). |
+| ![Refugios](capturas/kit_refugio.png) | **El refugio de ramas y pieles** (`--edificios refugio`), una obra de la tribu. |
+| ![Empalizadas](capturas/kit_empalizada.png) | **La empalizada** (`--edificios empalizada`). |
+| ![Muros](capturas/kit_muro.png) | **El muro de piedra seca** (`--edificios muro`). |
+| ![Hornos](capturas/kit_horno.png) | **El horno de cocina** (`--edificios horno`). |
+| ![Fundición](capturas/kit_horno_fundicion.png) | **Los hornos de fundición** del bronce y del acero (`--edificios horno_fundicion`). |
+| ![Atalayas](capturas/kit_atalaya.png) | **La atalaya** (`--edificios atalaya`). |
+| ![Corrales](capturas/kit_corral.png) | **El corral** de cuerdas y estacas (`--edificios corral`). |
+| ![Talleres](capturas/kit_taller.png) | **El taller del herrero** (`--edificios taller`). |
+| ![Tiendas](capturas/kit_tienda.png) | **La tienda ligera y la choza de fieltro** (`--edificios tienda`). |
+| ![Escombros](capturas/kit_escombros.png) | **Los escombros y el muro en ruinas** (`--edificios escombros`). |
+| ![Cenizas](capturas/kit_cenizas.png) | **Las cenizas y la yurta quemada** (`--edificios cenizas`). |
 | ![Estepa](capturas/kit_plaza_estepa.png) | **La capital del kanato** (`--ir plaza-estepa`). |
 | ![Bosque](capturas/kit_plaza_bosque.png) | **La capital del bosque** (`--ir plaza-bosque`). |
 | ![Altiplano](capturas/kit_plaza_altiplano.png) | **La capital del altiplano** (`--ir plaza-altiplano`). |

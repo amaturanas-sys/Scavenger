@@ -7,6 +7,7 @@
 #include "platform.h"
 #include "raymath.h"
 #include "rlgl.h"
+#include "voxstruct.h"
 
 void props_init(Props *p, const Inventory *inv) {
     memset(p, 0, sizeof(*p));
@@ -139,6 +140,7 @@ void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, floa
         DrawModelEx(*m, pos, (Vector3){ 0, 1, 0 }, yaw * RAD2DEG, (Vector3){ 1, 1, 1 }, WHITE);
         return;
     }
+    if (!m && grow >= 1.0f && voxs_draw_item(item, pos, yaw)) return; // las obras de la tribu, con el kit
     // Marcador: caja con las medidas del inventario (largo en X local, ancho en Z), girada con yaw.
     float h = (item->texture || item->h <= 0.0f ? 0.03f : item->h) * fmaxf(grow, 0.05f);
     Color c = grow < 1.0f ? (Color){ 150, 120, 80, 255 } : category_color(item->category);
