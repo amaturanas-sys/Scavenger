@@ -1560,6 +1560,7 @@ neutral	neutral
 rival	rival
 ¡Los %s, tribu rival, te salen al paso!	The %s, a rival tribe, come out to block your way!
 # --- src/main.c
+%s: no tiene	%s: none
 Arma: %s	Weapon: %s
 Assets cargados: %d · fallidos: %d	Assets loaded: %d · failed: %d
 Capturaste a un gran guerrero: %s, %s.	You captured a great warrior: %s, %s.
@@ -1582,6 +1583,7 @@ Explorador enemigo	Enemy scout
 F1 o Ctrl+H: controles · Esc o Ctrl+P: menú	F1 or Ctrl+H: controls · Esc or Ctrl+P: menu
 Flechas: girar e inclinar · F5 o Esc: volver	Arrows: rotate and tilt · F5 or Esc: back
 Galeria: %d objetos (%d con modelo).	Gallery: %d objects (%d with model).
+Kit de edificios: %s · variantes 0 y 1, chicas (aldeas y tribus); 2 y 3, grandes (capitales)	Building kit: %s · variants 0 and 1, small (villages and tribes); 2 and 3, large (capitals)
 Liberaste a un prisionero.	You freed a prisoner.
 Marcaste este lugar en el mapa.	You marked this place on the map.
 Más allá solo hay mar abierto: la tropa no se aventura.	Beyond lies only open sea: the troop will not venture out.
@@ -1602,6 +1604,14 @@ Tropa %d	Band %d
 Tu tropa acampa en la estepa (mundo %u).	Your troop camps on the steppe (world %u).
 Un gran guerrero se une: %s, %s.	A great warrior joins: %s, %s.
 Vista orbital · mundo %u · estás en: %s	Orbital view · world %u · you are in: %s
+las carpinterías	the carpentry shops
+las carretas-casa	the house-wagons
+las casas	the houses
+las fundiciones	the smelters
+los cuarteles	the barracks
+los graneros	the granaries
+los palacios	the palaces
+los templos del fuego	the fire temples
 no	no
 sí	yes
 · %d cautivo%s	· %d captive%s
@@ -1728,6 +1738,22 @@ Bala	Ball
 Flecha	Arrow
 Piedra	Stone
 Virote	Bolt
+# --- src/sim/buildkit.c
+casa de adobe	mud-brick house
+casa de piedra y adobe	stone and mud-brick house
+casa de postes con techo de paja	post house with a thatched roof
+casa larga de turba	turf longhouse
+el cuartel	the barracks
+el granero de adobe y sus silos	the mud-brick granary and its silos
+el granero sobre postes	the granary on posts
+el templo del fuego	the fire temple
+la carpintería	the carpentry shop
+la carreta-casa	the house-wagon
+la fundición: el horno de cuba	the smelter: the shaft furnace
+la orda del kan	the khan's horde
+la sala de columnas	the columned hall
+la sala larga	the long hall
+yurta	yurt
 # --- src/sim/champion.c
 Acero Rizado	Rippled Steel
 Arco de Cuerno	Horn Bow

@@ -38,6 +38,14 @@ shot 16_galeria 40 --galeria
 for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida tribu rival kurgan caravasar ovoo ciudad; do
     shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.12
 done
+# El kit de edificios (docs/ARQUITECTURA_EDAD_DEL_HIERRO.md): las variantes de cada tipo en cada region
+# y las plazas de las cinco capitales, desde arriba.
+for k in casa palacio fundicion cuartel carpinteria granero templo carreta; do
+    shot "kit_$k" 60 --edificios "$k"
+done
+for r in estepa bosque altiplano fiordos desierto; do
+    shot "kit_plaza_$r" 90 --dia 11 --minuto 7 --ir "plaza-$r" --dron 40 --camara 0.85
+done
 # El cielo: el ocaso al oeste, la luna al este y las estrellas.
 shot cielo_ocaso 60 --dia 5 --minuto 15.5 --ir estepa --camara 0.06 --rumbo 270
 shot fogatas_dia 90 --dia 11 --minuto 7 --ir hoguera --camara 0.15

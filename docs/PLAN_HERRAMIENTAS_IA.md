@@ -4,7 +4,11 @@
 > - **Parte A, el plan grande:** hecho (fases 0 a 8b, de la v0.4.4 a la v0.9.1).
 > - **Paso 2, las tuberías (D.1 y C.2):** hecho en la **v0.9.3** (`tools/modelos`, las skills `modelos` y
 >   `animaciones`, `--ver <id>`), sobre lo que armó Cline (abajo).
-> - **Siguiente, aquí:** la parte B (investigación y kit de edificios), que no espera nada del usuario.
+> - **Parte B, los edificios:** la investigación ([ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md))
+>   y el kit (`src/sim/buildkit.c`), hechos en la **v0.10.0**: las ciudades, las aldeas y las tribus se
+>   arman con él; `--edificios` lo muestra.
+> - **Siguiente, aquí:** lo que falta de la B (las murallas con sus puertas acodadas, las ruinas y las
+>   obras del campamento con el kit), que no espera nada del usuario.
 > - **Del lado del usuario:** las imágenes de la D.2 (empezando por el estilo animal) y, con los cuerpos
 >   riggeados, los videos de la C.1.
 >
@@ -81,6 +85,12 @@ Un documento `docs/ARQUITECTURA_EDAD_DEL_HIERRO.md` con fuentes, medidas y mater
 Cada tipo lleva un dibujo esquemático (planta y alzado), sus medidas típicas, sus materiales y la paleta de colores. De ahí salen las piezas del kit.
 
 ### B.2 — El kit de piezas (en C, sin Three.js)
+
+> **Hecho en la v0.10.0** como `src/sim/buildkit.c` (en `src/sim/`, con tests, y no en `src/world/`):
+> ocho tipos por región y cuatro variantes de cada uno, vistos con `--edificios tipo[:region]` (en vez
+> de `--galeria-edificios`). Lo de adentro se rellena (la malla, con la mitad de caras) y, de lejos,
+> se dibuja sin refinar. Falta: las murallas con sus torres y puertas acodadas, las ruinas y las obras
+> del campamento con el kit. El detalle, en [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md).
 
 - **`src/world/buildkit.c`:** un **kit de piezas** de vóxeles o de malla low-poly. Cada pieza es una unidad de rejilla de 1 m:
   - muro de adobe, de piedra o de zarzo;
@@ -234,7 +244,8 @@ El usuario trabajó un tiempo con Cline en Codespaces (con los espacios de Huggi
 | 2 | Tuberías y skills de modelos y animaciones (D.1, C.2) | aquí | v0.9.3 | hecho; la prueba con un objeto real espera la primera imagen |
 | 3 | Fases 1 y 2 (combate) | aquí | v0.5.x | hecho |
 | 4 | Primeras animaciones de combate y personas (C) | GPU → aquí | — | espera los cuerpos riggeados (D.2) y los videos (C.1) |
-| 5 | Investigación y kit de edificios (B) | aquí | v0.10.0 | **siguiente** |
+| 5 | Investigación y kit de edificios (B) | aquí | v0.10.0 | hecho: viviendas, palacios, talleres, graneros, templos y carretas en las ciudades, las aldeas y las tribus |
+| 5b | Lo que falta de la B: murallas y puertas acodadas, ruinas y obras del campamento con el kit | aquí | v0.10.x | **siguiente** |
 | 6 | Fases 3, 4, 4b | aquí | v0.6.x | hecho |
 | 7 | Modelos por prioridad (D.2), en tandas | GPU → aquí | cada versión | espera las imágenes |
 | 8 | Fases 5 a 8 | aquí | v0.7–v0.9.1 | hecho |
