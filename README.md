@@ -188,6 +188,13 @@ La tubería de modelos (v0.9.3):
 - **`--ver <id>`** muestra un objeto del inventario de cerca, con el jugador al lado.
 - Guía: [assets/models/README.md](assets/models/README.md) y las skills `modelos` y `animaciones`; el plan: [docs/PLAN_HERRAMIENTAS_IA.md](docs/PLAN_HERRAMIENTAS_IA.md).
 
+Los edificios de la edad del hierro (v0.10.0):
+- **Cada región, su arquitectura**, de la investigación de [docs/ARQUITECTURA_EDAD_DEL_HIERRO.md](docs/ARQUITECTURA_EDAD_DEL_HIERRO.md): yurtas de fieltro y carretas-casa en la estepa (escitas y sakas); casas de postes con zarzo y paja en el bosque (Hallstatt y La Tène); piedra abajo y adobe arriba en el altiplano (Urartu); casas largas de turba en los fiordos; adobe con patio en el desierto (Bactria y Sogdiana).
+- **Las ciudades, las aldeas y las tribus** se arman con el kit: el palacio (la orda del kan sobre su tarima, la sala larga con escudos o la sala de columnas sobre su terraza), la fundición con su horno de cuba, el cuartel, la carpintería, las casas (las grandes en la capital), los graneros, el templo del fuego (desierto y altiplano) y las carretas. Cada tipo tiene cuatro variantes por región, y la guardia del palacio se para a los lados de su puerta.
+- **Más liviano:** lo de adentro, que no se ve, se rellena, y de lejos los edificios se dibujan con la mitad de detalle.
+
+Pruebas: `--edificios tipo[:region]` (casa, palacio, fundicion, cuartel, carpinteria, granero, templo o carreta: las cuatro variantes de cada región), `--ir plaza-<region>`, `--ir capital-<region>` y `--ir aldea-<region>` (con `--dron 40 --camara 0.85`, desde arriba).
+
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.

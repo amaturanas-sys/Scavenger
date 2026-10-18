@@ -64,3 +64,24 @@ Ver [MUNDO.md](MUNDO.md). Con `--ir lugar` y `--orbital`:
 | ![Capital](capturas/mundo_capital.png) | **Una capital** (`--ir capital`): la del Principado de los Pinos Negros. |
 | ![Aldea](capturas/mundo_aldea.png) | **Una aldea** del desierto (`--ir aldea`). |
 | ![Guarida](capturas/mundo_guarida.png) | **Una guarida** (`--ir guarida`). |
+
+## Los edificios de la edad del hierro
+
+Ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md). Con `--edificios tipo[:región]`
+(una fila por región, las cuatro variantes de cada una) y `--ir plaza-<región> --dron 40 --camara 0.85`:
+
+| | |
+|---|---|
+| ![Casas](capturas/kit_casa.png) | **Las casas** (`--edificios casa`): la yurta, la casa de postes y paja, la de piedra y adobe, la casa larga de turba y la de adobe con patio. |
+| ![Palacios](capturas/kit_palacio.png) | **Los palacios** (`--edificios palacio`): la orda del kan, las salas largas y las salas de columnas. |
+| ![Fundiciones](capturas/kit_fundicion.png) | **Las fundiciones** (`--edificios fundicion`): el horno de cuba bajo el cobertizo de cada región. |
+| ![Cuarteles](capturas/kit_cuartel.png) | **Los cuarteles** (`--edificios cuartel`), con su armero de lanzas. |
+| ![Carpinterías](capturas/kit_carpinteria.png) | **Las carpinterías** (`--edificios carpinteria`). |
+| ![Graneros](capturas/kit_granero.png) | **Los graneros** (`--edificios granero`): sobre postes, o de adobe con silos. |
+| ![Templos](capturas/kit_templo.png) | **Los templos del fuego** (`--edificios templo`), del desierto y el altiplano. |
+| ![Carretas](capturas/kit_carreta.png) | **Las carretas-casa** de la estepa (`--edificios carreta`). |
+| ![Estepa](capturas/kit_plaza_estepa.png) | **La capital del kanato** (`--ir plaza-estepa`). |
+| ![Bosque](capturas/kit_plaza_bosque.png) | **La capital del bosque** (`--ir plaza-bosque`). |
+| ![Altiplano](capturas/kit_plaza_altiplano.png) | **La capital del altiplano** (`--ir plaza-altiplano`). |
+| ![Fiordos](capturas/kit_plaza_fiordos.png) | **La capital de los fiordos** (`--ir plaza-fiordos`). |
+| ![Desierto](capturas/kit_plaza_desierto.png) | **La capital del desierto** (`--ir plaza-desierto`). |

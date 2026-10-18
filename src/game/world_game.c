@@ -117,9 +117,10 @@ int wd_den_near(const Terrain *t, float x, float z, float radius) {
 }
 
 // ------------------------------------------------------------------ dibujo
-// Las casas de cada region, de voxeles (src/world/voxstruct.c): la puerta mira al centro.
-static void building(Region rg, Vector3 at, float yaw, float scale) {
-    voxs_draw_building(voxs_region_house(rg), at, yaw + PI, scale, WHITE); // la puerta (+x del modelo) hacia el centro
+// Las casas de cada region, del kit de la edad del hierro (src/sim/buildkit.h): la puerta mira al
+// centro. variant: la 0 y la 1, chicas; la 2 y la 3, grandes.
+static void building(BkType bt, Region rg, int variant, Vector3 at, float yaw) {
+    voxs_draw_kit(bt, rg, variant, at, yaw + PI, 1.0f, WHITE); // la puerta (+x del modelo) hacia el centro
 }
 
 // Ropa de la gente de cada region.
@@ -147,14 +148,17 @@ static void draw_den(const Terrain *t, const Den *d) {
         DrawCube((Vector3){ d->x + 4.0f + (float)i * 0.5f, y + 0.05f, d->z - 1.0f + (float)i * 0.7f }, 0.6f, 0.08f, 0.12f, (Color){ 226, 220, 200, 255 });
 }
 
-// Un campamento de tribu: yurtas (o las casas de su region) en corro, el estandarte del color
-// de su actitud (rojo rival, crudo neutral, azul amiga), fogata, gente y caballos.
+// Un campamento de tribu: yurtas (o las casas de su region) en corro, la del jefe mas grande, el
+// estandarte del color de su actitud (rojo rival, crudo neutral, azul amiga), fogata, gente y
+// caballos. Los de la estepa (y los nomadas del desierto) tienen carretas; los demas, un granero.
 static void draw_tribe(const Terrain *t, const TribeCamp *tc, int idx, float time) {
     static const Color BANNER[TRIBE_ATTITUDES] = { { 168, 36, 32, 255 }, { 214, 206, 186, 255 }, { 52, 98, 176, 255 } };
     float ground = terrain_height(t, tc->x, tc->z);
+    Region rg = tc->region == REGION_DESERT ? REGION_STEPPE : tc->region;
     for (int i = 0; i < 5; i++) {
         float a = (float)i / 5.0f * 2.0f * PI + idx, x = tc->x + cosf(a) * 13.0f, z = tc->z + sinf(a) * 13.0f;
-        building(tc->region == REGION_DESERT ? REGION_STEPPE : tc->region, (Vector3){ x, terrain_height(t, x, z), z }, -a, 0.9f);
+        BkType bt = i == 4 ? (rg == REGION_STEPPE ? BK_WAGON : BK_GRANARY) : i == 2 && rg == REGION_STEPPE ? BK_WAGON : BK_HOUSE;
+        building(bt, rg, i == 0 ? 2 + (idx & 1) : (i + idx) & 1, (Vector3){ x, terrain_height(t, x, z), z }, -a);
     }
     Vector3 pole = { tc->x + 3.0f, ground, tc->z };
     DrawCylinder(pole, 0.1f, 0.1f, 6.5f, 5, (Color){ 90, 70, 50, 255 });
@@ -171,8 +175,8 @@ static void draw_tribe(const Terrain *t, const TribeCamp *tc, int idx, float tim
         BodyColors bc = { { 200, 160, 120, 255 }, k == 0 ? BANNER[tc->attitude] : folk_color(tc->region, k), { 84, 64, 46, 255 } };
         body_draw(&pose, pos, a + PI, bc, NULL);
     }
-    for (int k = 0; k < 2; k++) { // caballos atados
-        float x = tc->x - 8.0f + (float)k * 2.5f, z = tc->z + 9.0f;
+    for (int k = 0; k < 2; k++) { // caballos atados, adentro del corro
+        float x = tc->x - 4.0f + (float)k * 2.5f, z = tc->z + 6.5f;
         cb_draw_horse((Vector3){ x, terrain_height(t, x, z), z }, 0.3f * (float)k, 0.0f, time + k, false);
     }
 }

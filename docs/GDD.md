@@ -629,10 +629,10 @@ Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su e
   - El tesoro paga a los soldados (0,5 por día); se reclutan con armas de la armería si hay paga para veinte días. Si no alcanza, los mercenarios se van y los soldados desertan.
   - Con plata de sobra, por encima de la reserva (1,5 por alma), llegan mercenarios (1,2 por día). Bajo la reserva, no se les renueva el contrato.
 - **La ciudad crece desde el centro** (`city_layout`, de la semilla y de su gente):
-  - en la capital, el palacio mirando a una de sus cuatro puertas y, alrededor, la fundición, el cuartel y la carpintería, al estilo de su región (`voxs_draw_city`); después, dos anillos de casas;
+  - en la capital, el palacio mirando a una de sus cuatro puertas y, alrededor, la fundición, el cuartel y la carpintería, al estilo de su región; después, dos anillos de casas (las grandes adentro), con graneros, el templo del fuego (desierto y altiplano) y carretas-casa (estepa). Todo sale del kit de edificios de la edad del hierro (`src/sim/buildkit.c`, v0.10.0; ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md));
   - afuera, entre las puertas, los campos y dos corrales, en huecos fijos que no se mueven cuando la ciudad crece, en seco y sin cuesta;
   - las tiendas de los mercenarios, junto a la puerta principal;
-  - la aldea, un anillo de casas, sus campos y un corral.
+  - la aldea, un anillo de casas chicas (la del jefe, un poco más grande), sus campos y un corral.
   - Se dibujan los campos según la estación (los arrasados, negros, desde el que se saqueó), los labradores de día, la guardia del palacio y de las puertas (más soldados, más guardias) y el estandarte del reino.
 - **El mercado** (`F` en la aldea o la capital):
   - el granero mueve el precio de la comida (×1,6 con hambre, ×0,8 con el granero lleno) y la armería el de las armas;

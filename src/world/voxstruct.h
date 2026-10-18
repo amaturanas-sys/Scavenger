@@ -1,42 +1,37 @@
-// Estructuras de voxeles (src/sim/voxel.h): ruinas y construcciones en uso, casas de cada region
-// y yurtas. Cada modelo se arma una vez (con su paleta y su erosion, si es ruina) y se dibuja
-// girado donde haga falta. Las ruinas pierden lo alto primero (erosion por ruido).
+// Estructuras de voxeles (src/sim/voxel.h): ruinas y construcciones en uso, murallas y torres, y
+// los edificios del kit de la edad del hierro (src/sim/buildkit.h: casas, palacios, talleres,
+// graneros, templos y carretas). Cada modelo se arma una vez (con su paleta y su erosion, si es
+// ruina) y se dibuja girado donde haga falta. Las ruinas pierden lo alto primero (erosion por ruido).
 #ifndef ESTEPA_VOXSTRUCT_H
 #define ESTEPA_VOXSTRUCT_H
 
 #include <stdbool.h>
 
 #include "raylib.h"
+#include "sim/buildkit.h"
 #include "sim/world.h"
 
 typedef enum {
-    VB_YURT,          // yurta de fieltro (estepa; tribus)
-    VB_LOG_CABIN,     // cabaña de troncos (bosque)
-    VB_STONE_HOUSE,   // casa de piedra con techo de tablas (altiplano)
-    VB_LONGHOUSE,     // casa larga con techo de turba (costa)
-    VB_ADOBE,         // casa de adobe con cupula (desierto)
     VB_TOWER_STONE,   // torre de muralla (capitales)
     VB_TOWER_WOOD,
     VB_WALL_STONE,    // tramo de muralla de 8 m (a lo largo de x), con almenas
     VB_PALISADE,      // tramo de empalizada de troncos de 8 m
-    // La ciudad (fase 8a, src/sim/city.h): al estilo de su region, con voxs_draw_city.
-    VB_PALACE,        // el palacio del rey o gran jefe: terraza, sala con porche de columnas y techo en gradas
-    VB_FORGE,         // la fundicion: horno, chimenea alta, yunque y carbon
-    VB_BARRACKS,      // el cuartel: nave larga y un armero con lanzas
-    VB_CARPENTRY,     // la carpinteria: cobertizo con troncos apilados y un caballete
     VB_KINDS
 } VoxBuilding;
 
 // Dibuja una estructura del mundo (su clase y region) en (x, y, z) con giro yaw (radianes).
 void voxs_draw_site(SiteKind kind, Region region, Vector3 at, float yaw, Color tint);
-// Dibuja una casa o torre; scale la agranda (la casa del jefe).
+// Dibuja una torre o un tramo de muralla.
 void voxs_draw_building(VoxBuilding b, Vector3 at, float yaw, float scale, Color tint);
-// Los edificios de la ciudad (el palacio y los barrios), con los materiales y colores de su region:
-// fieltro y oro en la estepa, troncos en el bosque, piedra en el altiplano, madera y turba en la
-// costa, adobe y azul en el desierto.
-void voxs_draw_city(VoxBuilding b, Region region, Vector3 at, float yaw, float scale, Color tint);
-// La casa tipica de una region.
-VoxBuilding voxs_region_house(Region r);
+// Un edificio del kit de la edad del hierro (src/sim/buildkit.h): su tipo, su region y su variante
+// (0..BK_VARIANTS-1; la 0 y la 1, chicas). Cada uno se arma la primera vez que se dibuja: a menos
+// de VOXS_KIT_NEAR m del ojo (voxs_set_lod), refinado; mas lejos, con la mitad de detalle.
+void voxs_draw_kit(BkType t, Region region, int variant, Vector3 at, float yaw, float scale, Color tint);
+// Sus medidas y su puerta (m, desde el punto donde se dibuja; ver BkInfo); false si no existe.
+bool voxs_kit_info(BkType t, Region region, int variant, BkInfo *out);
+// El ojo de la camara de este cuadro y hasta donde los edificios del kit van refinados.
+#define VOXS_KIT_NEAR 32.0f
+void voxs_set_lod(Vector3 eye, float near_m);
 // Formaciones del paisaje (de las fotos de referencia de cada region), en 4 variantes:
 typedef enum {
     VF_BASALT,    // roquerio de columnas de basalto en la playa negra y las rompientes (fiordos)

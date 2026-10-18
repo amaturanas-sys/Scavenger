@@ -36,6 +36,8 @@ src/
     animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado (y el rebaño que sigue a la caravana), anfibios, cria (sexo, herencia, preñez)
     swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
     fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
+    buildkit.*   el kit de edificios de la edad del hierro: casas, palacios, talleres, graneros, templos del fuego y carretas de cada region, con piezas de 1 m y reglas con semilla (la puerta al frente, lo de adentro relleno, cuatro variantes), en voxeles
+    voxmat.h     los materiales de las estructuras de voxeles (src/world/voxstruct.c los pinta con la paleta de su region)
     flora.*      la vegetacion baja: donde crece cada mata (por celdas de 2 m, segun la region y el agua; ni en la roca, los rios, los pueblos o los campamentos), cuanto crece con la estacion y cuanto la mueven el viento y quien pasa
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano
     keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H J K L, F, X...)
@@ -51,6 +53,7 @@ src/
     save_format.* partida por bloques con esquema: escribir, leer y convertir campo por campo
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
+    voxstruct.*  estructuras de voxeles: ruinas y sitios, murallas y torres, y los edificios del kit (de cerca, refinados; de lejos, simples)
     vegetation.* el pasto, la stipa, las flores, los helechos y los juncos alrededor del jugador (una ventana de celdas que sigue al jugador; triangulos de color con rlgl)
     camp.*       campamento, props
     gallery.*    galeria del inventario (--galeria)
@@ -63,7 +66,7 @@ src/
     actions_game.*  menu de acciones, atajos, obras en curso
     camp_game.*     el guardian (F): obras, escolta, pobladores y sus tareas, capacitar, migrar (levantar, la columna, plantar) y disolver
     place_game.*    la vista aerea para ubicar una obra: la huella verde o roja, girar, rejilla, muros de dos puntos
-    city_game.*     las ciudades en el juego: la economia de cada dia, el tributo, las bajas de su guardia, su informe y el dibujo (palacio, barrios, casas, campos segun la estacion, corrales, labradores y guardias); y el asedio (la guerra, la muralla que corta el paso, las puertas que arden, las escalas, la guarnicion que sale, el cerco, la rendicion y la ciudad tomada) y las expediciones de castigo
+    city_game.*     las ciudades en el juego: la economia de cada dia, el tributo, las bajas de su guardia, su informe y el dibujo (los edificios del kit: palacio, talleres, casas, graneros, templo y carretas; campos segun la estacion, corrales, labradores y guardias); y el asedio (la guerra, la muralla que corta el paso, las puertas que arden, las escalas, la guarnicion que sale, el cerco, la rendicion y la ciudad tomada) y las expediciones de castigo
     forge_game.*    la forja en el juego: las vetas que se ven, se marcan al pasar y se pican (F), la estacion a mano (forja movil, hornos, taller) y la tirada del temple
     trade_game.*    comerciar (F en tribus, aldeas, capitales, caravasares y caravanas; con el tesoro y los precios de cada ciudad, y el tributo al kanato), las caravanas con su escolta, asaltarlas, saquear campamentos rivales y los campos de las ciudades
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates

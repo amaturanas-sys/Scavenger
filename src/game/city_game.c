@@ -838,6 +838,20 @@ static void draw_walls(const GameActions *ga, const Terrain *t, const Settlement
 
 static bool g_fires_out;
 
+// Que hay en el lote de la casa h (desde el centro) del asentamiento idx: casi siempre una casa del
+// kit de la edad del hierro (src/sim/buildkit.h), y entre ellas los graneros, el templo del fuego
+// (en el desierto y el altiplano) y las carretas-casa de la estepa. Las aldeas, las variantes chicas;
+// la capital, las grandes en el anillo de adentro y de todas en el de afuera.
+static BkType house_lot(Region rg, bool cap, int idx, int h, int *variant) {
+    uint32_t r = (uint32_t)(idx + 1) * 2654435761u ^ (uint32_t)(h + 1) * 0x9E3779B1u;
+    r ^= r >> 15;
+    *variant = cap && h < 10 ? 2 + (int)(r & 1u) : cap ? (int)(r & 3u) : (int)(r & 1u);
+    if (h == 2 && bk_available(BK_TEMPLE, rg)) return BK_TEMPLE;
+    if (h % 5 == 4) return BK_GRANARY;
+    if (h % 4 == 1 && bk_available(BK_WAGON, rg)) return BK_WAGON;
+    return BK_HOUSE;
+}
+
 static void draw_city(const GameActions *ga, const Terrain *t, int idx, Vector3 eye, float time, int day, bool night, bool war) {
     const World *w = t->world;
     const Settlement *s = &w->settlements[idx];
@@ -849,7 +863,7 @@ static void draw_city(const GameActions *ga, const Terrain *t, int idx, Vector3 
     for (int i = 0; i < n; i++) fields += lots[i].kind == LOT_FIELD;
     // Los arrasados: tantos como falta sembrar, desde el ultimo que se saqueo.
     int burnt = (int)((1.0f - c->fields) * (float)fields + 0.5f), first = c->raided_lot > 0 ? c->raided_lot - 1 : 0, nfield = 0;
-    bool first_house = true;
+    int house = 0;
     Vector3 plaza = { s->x, 0.0f, s->z };
     for (int i = 0; i < n; i++) {
         const CityLot *l = &lots[i];
@@ -857,28 +871,33 @@ static void draw_city(const GameActions *ga, const Terrain *t, int idx, Vector3 
         Vector3 at = { l->x, terrain_height(t, l->x, l->z), l->z };
         switch (l->kind) {
         case LOT_PALACE: {
-            voxs_draw_city(VB_PALACE, s->region, at, -l->yaw, 1.0f, WHITE);
-            plaza = lot_point(t, l, 12.0f, 0.0f); // la plaza, delante del palacio
-            if (d < FOLK_DRAW) { // la corte: la guardia del porche y un escriba que va y viene
+            int v = idx & (BK_VARIANTS - 1);
+            BkInfo pi;
+            voxs_draw_kit(BK_PALACE, s->region, v, at, -l->yaw, 1.0f, WHITE);
+            if (!voxs_kit_info(BK_PALACE, s->region, v, &pi)) pi = (BkInfo){ .front = 7.0f, .door_along = 5.0f, .door_up = 1.0f };
+            plaza = lot_point(t, l, pi.front + 7.0f, 0.0f); // la plaza, delante del palacio
+            if (d < FOLK_DRAW) { // la corte: la guardia a los lados de la puerta y un escriba que va y viene al pie
                 for (int k = -1; k <= 1; k += 2) {
-                    Vector3 g = lot_point(t, l, 5.6f, (float)k * 2.4f);
-                    g.y = at.y + 1.0f;
+                    Vector3 g = lot_point(t, l, pi.door_along + 1.25f, pi.door_across + (float)k * 1.1f);
+                    g.y = at.y + pi.door_up;
                     guard(g, -l->yaw + PI * 0.5f);
                 }
-                Vector3 sc = lot_point(t, l, 4.2f, sinf(time * 0.25f) * 4.0f);
-                sc.y = at.y + 1.0f;
+                Vector3 sc = lot_point(t, l, pi.front + 1.2f, sinf(time * 0.25f) * 4.0f);
                 person(sc, -l->yaw + (cosf(time * 0.25f) > 0.0f ? 0.0f : PI), (Color){ 70, 60, 110, 255 }, time * 4.0f, 0.5f, 0.0f);
             }
             break;
         }
-        case LOT_HOUSE:
-            voxs_draw_building(voxs_region_house(s->region), at, -l->yaw, !cap && first_house ? 1.25f : 1.0f, WHITE);
-            first_house = false;
+        case LOT_HOUSE: { // la del jefe de la aldea, la primera, un poco mas grande
+            int v;
+            BkType bt = house_lot(s->region, cap, idx, house, &v);
+            voxs_draw_kit(bt, s->region, v, at, -l->yaw, !cap && house == 0 ? 1.15f : 1.0f, WHITE);
+            house++;
             break;
-        case LOT_FORGE: voxs_draw_city(VB_FORGE, s->region, at, -l->yaw, 1.0f, WHITE); break;
-        case LOT_BARRACKS: voxs_draw_city(VB_BARRACKS, s->region, at, -l->yaw, 1.0f, WHITE); break;
-        case LOT_CARPENTRY: voxs_draw_city(VB_CARPENTRY, s->region, at, -l->yaw, 1.0f, WHITE); break;
-        case LOT_MERC_TENT: voxs_draw_building(VB_YURT, at, -l->yaw, 0.6f, (Color){ 150, 128, 104, 255 }); break;
+        }
+        case LOT_FORGE: voxs_draw_kit(BK_FORGE, s->region, idx & (BK_VARIANTS - 1), at, -l->yaw, 1.0f, WHITE); break;
+        case LOT_BARRACKS: voxs_draw_kit(BK_BARRACKS, s->region, idx & (BK_VARIANTS - 1), at, -l->yaw, 1.0f, WHITE); break;
+        case LOT_CARPENTRY: voxs_draw_kit(BK_CARPENTRY, s->region, idx & (BK_VARIANTS - 1), at, -l->yaw, 1.0f, WHITE); break;
+        case LOT_MERC_TENT: voxs_draw_kit(BK_HOUSE, REGION_STEPPE, 1, at, -l->yaw, 0.55f, (Color){ 150, 128, 104, 255 }); break;
         case LOT_FIELD: {
             bool scorched = fields > 0 && ((nfield++ - first) % fields + fields) % fields < burnt;
             if (d < FIELD_DRAW) draw_field(t, l, season, dos, scorched);

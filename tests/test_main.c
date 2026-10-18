@@ -8,6 +8,7 @@
 #include "../src/sim/anim_index.h"
 #include "../src/sim/animals.h"
 #include "../src/sim/voxel.h"
+#include "../src/sim/voxmat.h"
 #include "../src/sim/economy.h"
 #include "../src/sim/champion.h"
 #include "../src/sim/climate.h"
@@ -18,6 +19,7 @@
 #include "../src/sim/armor.h"
 #include "../src/sim/ballistics.h"
 #include "../src/sim/body.h"
+#include "../src/sim/buildkit.h"
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
 #include "../src/sim/loadout.h"
@@ -4704,6 +4706,119 @@ static void test_army(void) {
     CHECK(peace_price(5) > tribute_due(5));
 }
 
+// Las celdas vacias de la capa y que se alcanzan desde el borde de la rejilla (de a cuatro vecinas),
+// con la columna bx tapada de bz0 a bz1 (la puerta cerrada; bx = -1: abierta). Marca seen.
+static int test_bk_flood(const VoxGrid *g, int y, int bx, int bz0, int bz1, unsigned char *seen) {
+    int nx = g->nx, nz = g->nz, sp = 0, n = 0;
+    int *st = malloc(sizeof(int) * (size_t)nx * (size_t)nz);
+    memset(seen, 0, (size_t)nx * (size_t)nz);
+#define BK_OPEN(x, z) (!vox_get(g, x, y, z) && !((x) == bx && (z) >= bz0 && (z) <= bz1))
+    for (int z = 0; z < nz; z++)
+        for (int x = 0; x < nx; x++)
+            if ((x == 0 || z == 0 || x == nx - 1 || z == nz - 1) && BK_OPEN(x, z)) seen[x + nx * z] = 1, st[sp++] = x + nx * z;
+    while (sp > 0) {
+        int c = st[--sp], x = c % nx, z = c / nx;
+        static const int D[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+        n++;
+        for (int i = 0; i < 4; i++) {
+            int a = x + D[i][0], b = z + D[i][1];
+            if (a < 0 || b < 0 || a >= nx || b >= nz || seen[a + nx * b] || !BK_OPEN(a, b)) continue;
+            seen[a + nx * b] = 1, st[sp++] = a + nx * b;
+        }
+    }
+#undef BK_OPEN
+    free(st);
+    return n;
+}
+
+static uint32_t test_bk_hash(const VoxGrid *g) {
+    uint32_t h = 2166136261u ^ (uint32_t)(g->nx * 73856093 ^ g->ny * 19349663 ^ g->nz * 83492791);
+    for (int i = 0; i < g->nx * g->ny * g->nz; i++) h = (h ^ g->m[i]) * 16777619u;
+    return h;
+}
+
+// El kit de edificios (src/sim/buildkit.h): cada tipo de cada region arma siempre lo mismo con su
+// semilla y otra cosa con otra; las chicas caben en su huella; la puerta da al frente, a ras del
+// piso, y lleva a su vestibulo (cerrada, de afuera no se llega adentro); lo de adentro, que no se
+// ve, queda relleno (ningun hueco techado sin salida) y las caras, ya refinadas, no se pasan.
+static void test_buildkit(void) {
+    for (int r = 0; r < REGION_COUNT; r++) {
+        CHECK(bk_available(BK_HOUSE, (Region)r) && bk_available(BK_PALACE, (Region)r) && bk_available(BK_GRANARY, (Region)r));
+        CHECK(bk_available(BK_TEMPLE, (Region)r) == (r == REGION_DESERT || r == REGION_HIGHLAND)); // el templo del fuego
+        CHECK(bk_available(BK_WAGON, (Region)r) == (r == REGION_STEPPE));                          // la carreta-casa
+    }
+    VoxGrid g, h;
+    BkInfo in, in2;
+    CHECK(!bk_build(BK_TEMPLE, REGION_FJORD, 1u, false, &g, &in) && g.m == NULL && in.door_x == -1);
+    CHECK(!bk_available(BK_KINDS, REGION_STEPPE) && !bk_build(BK_KINDS, REGION_STEPPE, 1u, false, &g, NULL));
+    int built = 0, enclosed = 0, bad_det = 0, same = 0, too_big = 0, bad_door = 0, leaks = 0, short_vest = 0, hollow = 0, over = 0;
+    for (int t = 0; t < BK_KINDS; t++)
+        for (int r = 0; r < REGION_COUNT; r++) {
+            if (!bk_available((BkType)t, (Region)r)) continue;
+            CHECK(bk_name((BkType)t, (Region)r)[0] != '\0');
+            uint32_t prev = 0;
+            for (int v = 0; v < BK_VARIANTS; v++) {
+                bool small = v < 2;
+                uint32_t seed = bk_variant_seed((BkType)t, (Region)r, v);
+                if (!bk_build((BkType)t, (Region)r, seed, small, &g, &in)) {
+                    CHECK(false);
+                    continue;
+                }
+                built++;
+                // Siempre lo mismo con la misma semilla; la variante impar, distinta de la par.
+                if (!bk_build((BkType)t, (Region)r, seed, small, &h, &in2) || h.nx != g.nx || h.ny != g.ny || h.nz != g.nz ||
+                    memcmp(g.m, h.m, (size_t)g.nx * (size_t)g.ny * (size_t)g.nz) || in2.l != in.l || in2.door_x != in.door_x)
+                    bad_det++;
+                vox_free(&h);
+                uint32_t hash = test_bk_hash(&g);
+                if (v % 2 == 1 && hash == prev) same++;
+                prev = hash;
+                // Las chicas caben en BK_SMALL x BK_SMALL (el palacio y el cuartel no tienen chicas).
+                if (small && t != BK_PALACE && t != BK_BARRACKS && (in.l > BK_SMALL || in.w > BK_SMALL)) too_big++;
+                if (in.l <= 0.0f || in.w <= 0.0f || in.h <= 0.0f || in.front <= 0.0f || in.found <= 0.0f) too_big++;
+                if (in.enclosed) {
+                    enclosed++;
+                    int y = in.door_y + 1, nx = g.nx, zc = (in.door_z0 + in.door_z1) / 2;
+                    // La puerta: al frente, abierta, sobre el piso (a ras del suelo, o del metro de la terraza).
+                    if (in.door_x < nx / 2 || vox_get(&g, in.door_x, in.door_y, zc) || vox_get(&g, in.door_x, y, zc) ||
+                        vox_get(&g, in.door_x + 1, in.door_y, zc) || !vox_get(&g, in.door_x, in.door_y - 1, zc) || in.door_along <= 0.0f ||
+                        in.door_along > in.front + 1e-4f || in.door_up < 0.0f || in.door_up > 1.01f || in.door_z1 - in.door_z0 < 2)
+                        bad_door++;
+                    unsigned char *open = malloc((size_t)nx * (size_t)g.nz), *shut = malloc((size_t)nx * (size_t)g.nz);
+                    int n_open = test_bk_flood(&g, y, -1, 0, -1, open), n_shut = test_bk_flood(&g, y, in.door_x, in.door_z0, in.door_z1, shut);
+                    // Cerrada, nada de lo de atras de la puerta se alcanza; abierta, si: el vestibulo, de un metro al menos.
+                    for (int z = in.door_z0; z <= in.door_z1; z++)
+                        if (shut[in.door_x - 1 + nx * z] || !open[in.door_x - 1 + nx * z]) leaks++;
+                    float vest = (float)(n_open - n_shut) * g.size * g.size, door_w = (float)(in.door_z1 - in.door_z0 + 1) * g.size;
+                    if (vest < door_w * 1.0f) short_vest++;
+                    // Adentro, relleno: con la puerta abierta, no queda una celda vacia techada que no se alcance.
+                    int dark = 0;
+                    for (int i = 0; i < nx * g.ny * g.nz; i++) dark += g.m[i] == M_SHADOW;
+                    if (!dark) hollow++;
+                    for (int z = 0; z < g.nz; z++)
+                        for (int x = 0; x < nx; x++) {
+                            if (open[x + nx * z] || vox_get(&g, x, y, z)) continue;
+                            for (int yy = y + 1; yy < g.ny; yy++)
+                                if (vox_get(&g, x, yy, z)) {
+                                    hollow++;
+                                    break;
+                                }
+                        }
+                    free(open), free(shut);
+                } else if (t == BK_HOUSE || t == BK_PALACE || t == BK_BARRACKS || t == BK_TEMPLE) {
+                    bad_door++; // las casas tienen muros y puerta
+                }
+                // Las caras, refinadas como se dibujan de cerca: las chicas, pocas.
+                if (vox_refine(&g) && vox_exposed_faces(&g) > (small && t != BK_PALACE && t != BK_BARRACKS ? 18000 : 28000)) over++;
+                vox_free(&g);
+            }
+        }
+    CHECK(built == 4 * (BK_KINDS * REGION_COUNT - 3 - 4) && enclosed > 60); // sin 3 templos ni 4 carretas
+    CHECK(bad_det == 0 && same == 0 && too_big == 0);
+    CHECK(bad_door == 0 && leaks == 0 && short_vest == 0 && hollow == 0);
+    CHECK(over == 0);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -4829,6 +4944,7 @@ int main(void) {
     RUN(test_cities);
     RUN(test_army);
     RUN(test_flora);
+    RUN(test_buildkit);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }
