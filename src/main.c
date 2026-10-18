@@ -726,9 +726,9 @@ int main(int argc, char **argv) {
         0.0f,
         (float)terrain.center_cz * CHUNK_SIZE
     };
-    vegetation_populate(&vegetation, &center, 200.0f, 500, VEGETATION_GRASS, 0);
-    vegetation_populate(&vegetation, &center, 100.0f, 100, VEGETATION_WEED, 1);
-    vegetation_populate(&vegetation, &center, 80.0f, 50, VEGETATION_FOLIAGE, 2);
+    vegetation_populate(&vegetation, &center, 300.0f, 800, VEGETATION_GRASS, 0);
+    vegetation_populate(&vegetation, &center, 150.0f, 200, VEGETATION_WEED, 1);
+    vegetation_populate(&vegetation, &center, 120.0f, 100, VEGETATION_FOLIAGE, 2);
     if (map_path) { // el mapa general del mundo (con la nieve de verano) y nada mas
         bool ok = worldmap_export(terrain.world, map_path, map_size > 64 ? map_size : 1024, terrain.plain + 40.0f);
         printf("%s %s\n", ok ? "Mapa escrito:" : "No se pudo escribir", map_path);

@@ -20,7 +20,7 @@ MAX_YURTS = 50
 MAX_TREES = 100
 CAMP_RADIUS = 45.0  # meters
 YURT_SPACING = 3.5  # meters between yurts
-TREE_DENSITY = 0.3  # trees per square meter on outskirts
+TREE_DENSITY = 0.6  # trees per square meter on outskirts
 
 class CampGenerator:
     def __init__(self, seed=None):
