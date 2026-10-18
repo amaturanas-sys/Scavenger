@@ -64,6 +64,7 @@
 #include "rlgl.h"
 #include "world/weather.h"
 #include "world/terrain.h"
+#include "world/vegetation.h"
 #include "world/worldview.h"
 #include "sim/lang.h"
 
@@ -1260,6 +1261,7 @@ int main(int argc, char **argv) {
             camera_update(&rig, &cam, &player, &terrain, dt);
         }
         terrain_update(&terrain, player.pos);
+        if (!gallery_mode) vegetation_update(&terrain, player.pos); // las matas de las celdas nuevas
         // Clima: estacion, tiempo, nieve, lagos y glaciares (la galeria se ve siempre igual).
         Climate climate = climate_at(world_time, terrain.seed);
         if (gallery_mode) climate = (Climate){ .clouds = 0.1f, .temperature = 20.0f };
@@ -1291,6 +1293,14 @@ int main(int argc, char **argv) {
         terrain_draw(&terrain);
         camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used && !g_actions.camps[0].moved,
                   g_dz.tree_burn); // migrado, su fogata queda apagada
+        if (!gallery_mode) { // el pasto, la stipa, las flores, los helechos y los juncos cercanos
+            VegClearing clear[CAMPS_MAX];
+            int nclear = 0;
+            for (int i = 0; i < CAMPS_MAX; i++) // los campamentos de la tribu: el pasto pisoteado
+                if (g_actions.camps[i].used && !g_actions.camps[i].migrating)
+                    clear[nclear++] = (VegClearing){ g_actions.camps[i].x, g_actions.camps[i].z, 16.0f };
+            vegetation_draw(&terrain, cam, &climate, (float)GetTime(), &g_dz.fire, clear, nclear, &player.pos, 1);
+        }
         if (gallery_mode) gallery_draw(&gallery);
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
         if (gallery_mode) player_draw(&player);
@@ -1419,6 +1429,9 @@ int main(int argc, char **argv) {
             ImageFlipVertical(&img);
             ExportImage(img, shot_path);
             UnloadImage(img);
+            int planted, drawn;
+            vegetation_stats(&planted, &drawn);
+            printf("Vegetacion: %d matas sembradas, %d dibujadas (en %.0f, %.0f)\n", planted, drawn, player.pos.x, player.pos.z);
             break;
         }
     }

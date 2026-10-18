@@ -86,6 +86,15 @@ El norte es −Z y el este +X.
   - es una malla continua sobre la rejilla del suelo (2 m) con el nivel en cada vértice: los ríos bajan en pendiente como un torrente, sin escalones;
   - un vértice seco toma el nivel de sus vecinos con agua, así el borde se mete bajo la orilla y no quedan huecos;
   - lleva una textura de ondas (`assets/terrain/agua.png`) teñida con el color de cada agua.
+- **Vegetación** (`src/world/vegetation.c`, reglas en `src/sim/flora.c`; v0.9.2):
+  - pasto, stipa (con sus plumas plateadas en verano), flores de primavera, helechos y juncos alrededor del jugador, por celdas de 2 m como el suelo y sobre su facetado;
+  - del color del suelo de su región y su estación; crecen, se secan de pie, el invierno las aplasta y la nieve las tapa donde cubre el suelo (asoman la stipa y los juncos secos);
+  - el viento las mece en olas que cruzan el pasto; al pasar se apartan;
+  - una ventana de 60 m que sigue al jugador; se dibujan hasta 26 m (18 m en Android), con menos hojas a lo lejos.
+
+  ![Vegetación](mundo/vegetacion.png)
+
+  *Al galope por la estepa en verano · la estepa en otoño · el cañón de un río en verano · tallos secos en la nieve.*
 - **Estructuras de voxeles, resolución:** cada modelo se refina al doble (`vox_refine`: cada celda en 2×2×2, esquinas salientes gastadas y rincones rellenos) y lleva tono por celda, piedra a piedra y tabla a tabla. Las murallas de las capitales son tramos de voxeles: piedra con almenas o empalizada.
 - **Horizonte lejano:** una malla gruesa, de una celda por chunk, que llega a ~2,4 km bajo los chunks cargados. Deja un hueco donde están los chunks. Así se ven a lo lejos las montañas, los muros, el hielo y el mar. Lo lejano se pierde en una bruma del color del horizonte.
 - **Cielo** (`src/world/sky.c`):

@@ -98,6 +98,15 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 
 **Pendiente:** cosechas y ríos. El pasto para el ganado según la estación ya está (v0.7.2, en «Campamentos y guardián»).
 
+### La vegetación (v0.9.2 — `src/sim/flora.*`, en juego `src/world/vegetation.*`)
+Las matas que crecen alrededor del jugador, sobre el suelo de cada región, al ritmo del clima. Llegó con el PR #115 (de Cline), reescrita para que funcione en el juego y en Android.
+- **Qué crece y dónde:** pasto en todas partes (en el desierto, solo en los oasis); la stipa, el pasto pluma, en la estepa seca; flores en primavera (tulipanes y lirios en la estepa; azules, blancas y amarillas en el altiplano); helechos en el bosque y la costa; juncos en las orillas de lagos y ríos (también en el agua baja). Siempre las mismas para el mismo mundo: por celdas de 2 m, como el suelo, y sobre su facetado.
+- **Dónde no:** en el agua honda, en la tierra pelada y la roca de las cuestas, en el lecho de cantos de los ríos, en la playa negra, en el frente del glaciar, en los pueblos y sus campos, junto a las estructuras y a los campamentos de las tribus; en los campamentos de la tribu el pasto está pisoteado. En lo quemado por un incendio no hay nada, y vuelve a crecer cuando se borra la tierra calcinada.
+- **Con la estación:** el color es el del suelo de su región (verde, seco, ocre o dormido) y las puntas, más claras al sol. Crece en primavera, llega a lo más alto a comienzos del verano, se seca de pie en otoño y el invierno la aplasta. La stipa echa sus plumas plateadas de fines de la primavera a mediados del verano; los juncos llevan su espiga parda del verano al invierno y sus tallos secos quedan de pie. La nieve tapa las matas donde cubre el suelo; la stipa y los juncos asoman, escarchados.
+- **El viento:** las matas se inclinan a favor del viento (el de la lluvia y el humo) y se mecen en olas que cruzan el pasto; con ventisca, casi se acuestan. Al pasar, el jugador (y su caballo) las aparta.
+- **Rendimiento:** una ventana de 60 m que sigue al jugador; al moverse solo se siembran las celdas nuevas, las cercanas primero. Se dibujan hasta 26 m (18 m en Android), con menos hojas a lo lejos y creciendo de a poco en el borde; son triángulos de color sin texturas ni memoria por cuadro.
+- **Prueba:** `--ir estepa --dia 10` (verano: stipa con plumas y flores), `--dia 17` (otoño), `--dia 24` (invierno: tallos en la nieve), `--ir meandro`, `--ir canal` o `--ir bosque` (juncos y helechos); `--montado lanza` galopa por el pasto. Al terminar una captura (`--screenshot`) dice cuántas matas hay sembradas y cuántas se dibujaron.
+
 ### El mundo (implementado — `src/sim/world.*`, en juego `src/game/world_game.*` y `src/world/worldview.*`)
 Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
 - **Una gran tierra casi redonda** de 4,8 km de radio medio, de borde fractal (no una circunferencia neta), con **cinco regiones fijas**: la estepa en el centro, rodeada de ríos de meandros; el bosque de coníferas al noroeste; el desierto al noreste; el altiplano glaciar al sureste; la costa de fiordos al suroeste.

@@ -66,7 +66,8 @@ add_library(estepa_sim STATIC
   src/sim/riding.c
   src/sim/forge.c
   src/sim/city.c
-  src/sim/army.c)
+  src/sim/army.c
+  src/sim/flora.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)
@@ -138,7 +139,8 @@ if(ESTEPA_BUILD_GAME)
     src/world/clouds.c
     src/world/voxstruct.c
     src/world/weather.c
-    src/world/body_draw.c)
+    src/world/body_draw.c
+    src/world/vegetation.c)
 
   if(ANDROID)
     # Android: biblioteca compartida que carga NativeActivity (libestepa.so).
