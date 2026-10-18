@@ -11,6 +11,23 @@ Mientras el archivo no existe, el juego dibuja un **marcador**: una caja del col
 
 Lista completa y avance: [docs/INVENTARIO.md](../../docs/INVENTARIO.md).
 
+## Desde una imagen (TRELLIS.2) o un GLB cualquiera: la tubería
+
+`tools/modelos/modelos.py` hace todo lo de abajo de una vez (skill [`modelos`](../../.claude/skills/modelos/SKILL.md)):
+
+```bash
+python3 tools/modelos/modelos.py traer <id> --url <enlace del GLB> --fuente trellis2 --girar 90
+python3 tools/modelos/modelos.py traer <id> --archivo modelo.glb --girar 90
+./build/estepa --ver <id> --screenshot ver.png   # desde build/: el modelo de cerca, con el jugador al lado
+```
+
+Baja la fuente (queda en `arte/modelos/fuentes/`, fuera de git), la lleva al estilo del juego
+(`tris_max`, colores planos por cara desde la textura con una paleta corta, la luz del sol horneada,
+las medidas del inventario, frente +X, origen en el centro de la base), la deja en la ruta de su id
+como `importado` y anota de dónde salió en `arte/modelos/models_manifest.json`. Las personas, los
+animales y los mecanismos esperan en `arte/modelos/para_riggear/` hasta tener esqueleto y clips.
+`python3 tools/modelos/modelos.py check` (también en el CI) revisa triángulos, medidas, base y texturas.
+
 ## Cómo importar un modelo
 
 1. Exporta el modelo como **GLB** (glTF binario), con las texturas embebidas.

@@ -76,6 +76,7 @@ void gallery_draw(const Gallery *g) {
     for (int i = 0; i < g->count; i++) {
         const GalleryEntry *e = &g->entries[i];
         const InvItem *it = e->item;
+        if (g->solo && e != g->solo) continue;
         if (e->loaded) {
             DrawModel(e->model, e->pos, 1.0f, WHITE);
             continue;
@@ -93,11 +94,18 @@ void gallery_draw(const Gallery *g) {
     }
 }
 
+const GalleryEntry *gallery_find(const Gallery *g, const char *id) {
+    for (int i = 0; i < g->count; i++)
+        if (!strcmp(g->entries[i].item->id, id)) return &g->entries[i];
+    return NULL;
+}
+
 void gallery_draw_labels(const Gallery *g, Camera3D cam, Vector3 viewer, int width, int height) {
     const GalleryEntry *nearest = NULL;
     float best = 1e9f;
     for (int i = 0; i < g->count; i++) {
         const GalleryEntry *e = &g->entries[i];
+        if (g->solo && e != g->solo) continue;
         float d = Vector3Distance(viewer, e->pos);
         if (d < best) {
             best = d;

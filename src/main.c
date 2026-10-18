@@ -7,6 +7,8 @@
 // Uso de escritorio:  estepa [--screenshot salida.png] [--frames N] [--sin-teclado] [--galeria]
 //                     [--dia N] [--minuto M] [--pos X Z] [--trampa hielo|nieve|arena|rescate]
 // --galeria muestra todos los objetos del inventario de assets (modelos o marcadores).
+// --ver <id> muestra de cerca un objeto del inventario, en la galeria, con el jugador al lado (la
+// tuberia de modelos, tools/modelos: revisar uno recien importado).
 // --dia y --minuto ponen el reloj (minutos desde el amanecer), p. ej. para ver la noche.
 // --pos lleva al jugador a otro lugar del mundo (p. ej. a la cordillera).
 // --trampa arranca en un peligro con su minijuego (prueba).
@@ -574,6 +576,7 @@ int main(int argc, char **argv) {
     int shot_frames = 90;
     bool simulate_no_keyboard = false;
     bool gallery_mode = false;
+    const char *view_id = NULL; // --ver: el id a mirar de cerca
     int start_day = 1;
     float start_minute = 4.0f; // la partida empieza a media manana
     bool start_pos = false;
@@ -620,6 +623,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--frames") && i + 1 < argc) shot_frames = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--sin-teclado")) simulate_no_keyboard = true;
         else if (!strcmp(argv[i], "--galeria")) gallery_mode = true;
+        else if (!strcmp(argv[i], "--ver") && i + 1 < argc) gallery_mode = true, view_id = argv[++i];
         else if (!strcmp(argv[i], "--dia") && i + 1 < argc) start_day = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--minuto") && i + 1 < argc) start_minute = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--trampa") && i + 1 < argc) start_trap = argv[++i];
@@ -803,11 +807,22 @@ int main(int argc, char **argv) {
         props_add(&g_props, "estructura.campamento.hoguera", (Vector3){ 3.0f, terrain_height(&terrain, 3.0f, -2.0f), -2.0f }, 0.0f);
 
     Gallery gallery = { 0 };
+    const GalleryEntry *seen = NULL; // --ver
     if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
         player.pos = gallery.start;
         player.pos.y = terrain_height(&terrain, player.pos.x, player.pos.z);
         player.yaw = PI; // mirando a -Z, hacia las filas
         snprintf(log, sizeof(log), T("Galeria: %d objetos (%d con modelo)."), gallery.count, gallery.loaded);
+        seen = view_id ? gallery_find(&gallery, view_id) : NULL;
+        if (seen) { // solo ese, y el jugador al costado (-Z), para comparar el tamaño
+            const InvItem *it = seen->item;
+            gallery.solo = seen;
+            player.pos = (Vector3){ seen->pos.x, seen->pos.y, seen->pos.z - fmaxf(it->w, 0.4f) * 0.5f - 1.2f };
+            player.yaw = PI * 0.5f; // mirando a +X, como el modelo
+            printf("Ver: %s (%s)\n", it->id, seen->loaded ? "modelo" : "marcador: sin modelo");
+        } else if (view_id) {
+            printf("Ver: %s no esta en el inventario\n", view_id);
+        }
     } else {
         gallery_mode = false;
     }
@@ -1259,6 +1274,12 @@ int main(int argc, char **argv) {
             pg_camera(&cam);
         } else {
             camera_update(&rig, &cam, &player, &terrain, dt);
+            if (seen) { // --ver: la camara de tres cuartos, desde el frente (+X), arriba y a la derecha
+                const InvItem *it = seen->item;
+                float size = fmaxf(fmaxf(it->w, it->h), it->l), hgt = fmaxf(it->h, 0.05f);
+                cam.target = (Vector3){ seen->pos.x, seen->pos.y + hgt * 0.5f, seen->pos.z };
+                cam.position = Vector3Add(cam.target, Vector3Scale(Vector3Normalize((Vector3){ 1.0f, 0.55f, 0.75f }), fmaxf(0.45f, size * 2.2f)));
+            }
         }
         terrain_update(&terrain, player.pos);
         if (!gallery_mode) vegetation_update(&terrain, player.pos); // las matas de las celdas nuevas

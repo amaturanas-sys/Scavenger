@@ -1,55 +1,41 @@
-# PIPELINE WORKFLOW RULES: TRELLIS 2 + GRAIL + RIGNET
+# PIPELINE WORKFLOW RULES: TRELLIS 2 + RIGNET + GRAIL -> the game (tools/modelos)
 #
-# When a user provides a URL to a 3D asset (.glb) from Hugging Face (TRELLIS 2, RigNet) or GRAIL:
-# 1. NEVER request the user to download or re-upload files through the tablet.
-# 2. Automatically execute python tools/fetch_pipeline_asset.py --url "<URL>" --name "<ASSET_NAME>" --category "<CATEGORY>" [--animated] in the Codespace terminal.
-# 3. Verify that assets/models/<ASSET_NAME>.glb exists and is logged in assets/data/models_manifest.json.
-# 4. If marked as --animated, update the C rendering module cache in src/world/ to register the Raylib ModelAnimation tracks.
-# 5. Provide a summary confirming download, manifest indexing, and engine readiness.
+# When the user provides a URL to a 3D asset (.glb) from Hugging Face (TRELLIS 2, RigNet) or GRAIL:
+# 1. NEVER ask the user to download or re-upload files through the tablet.
+# 2. Find the inventory id of the object: python3 tools/modelos/modelos.py estado (pending models by priority),
+#    or python3 tools/assets/inventario.py faltan <category>.
+# 3. Run in the Codespace terminal (it can reach huggingface.co):
+#      python3 tools/modelos/modelos.py traer <ID> --url "<URL>" --fuente trellis2 --girar 90
+#    (the old command still works: python3 tools/fetch_pipeline_asset.py --url "<URL>" --name "<ID or NAME>" --category "<CATEGORY>" [--animated])
+# 4. Look at it in the game: cmake --build build && cmake -E copy_directory assets build/assets, then from build/:
+#      xvfb-run -a ./estepa --ver <ID> --frames 40 --screenshot ver.png
+#    If the front does not face the camera, run traer again with another --girar and --reemplazar.
+# 5. Commit the GLB, assets/inventario.tsv, docs/INVENTARIO.md and arte/modelos/models_manifest.json, and report.
 
 ## Workflow Enforcement
 
 ### Rule 1: Automatic Asset Acquisition
-- All 3D assets must be acquired via `tools/fetch_pipeline_asset.py`
-- No manual downloads or uploads through the tablet interface
-- Supported sources: HuggingFace (TRELLIS 2, RigNet) and GRAIL
-- Required CLI flags: --url, --name, --category, [--animated]
+- 3D assets come in through `tools/modelos/modelos.py traer` (or its wrapper `tools/fetch_pipeline_asset.py`).
+- No manual downloads or uploads through the tablet interface.
+- Sources: Hugging Face (TRELLIS 2, RigNet) and GRAIL; or a local GLB with `--archivo`.
 
-### Rule 2: Manifest Indexing
-- Every downloaded asset must be indexed in `assets/data/models_manifest.json`
-- Metadata required: file, category, has_rig (true if --animated), timestamp
-- Manifest must be valid JSON
+### Rule 2: The inventory is the manifest
+- Every model has a fixed path from its id in `assets/inventario.tsv`: `assets/models/<category>/<sub>/<name>.glb`.
+  A GLB anywhere else in `assets/models/` fails CI. Never write `assets/models/<name>.glb` by hand.
+- `traer` converts the high-res source to the game style (low-poly under `tris_max`, flat colors, the inventory
+  size, front +X, origin at the base), marks the id `importado` and records the provenance (url, sha256, options)
+  in `arte/modelos/models_manifest.json`. High-res sources stay in `arte/modelos/fuentes/` (not in git).
 
-### Rule 3: Engine Integration Triggers
-- If --animated is specified, the C engine must register Raylib ModelAnimation tracks
-- Track registration happens automatically after successful manifest update
-- Non-animated assets use standard static model loading
+### Rule 3: Rigged and animated models
+- People, animals and mechanisms need a skeleton and the mandatory clips of `docs/ANIMACIONES.md`; without them CI
+  fails. `traer` leaves their low-poly version in `arte/modelos/para_riggear/` for RigNet; the rigged GLB comes in
+  with `traer <ID> --archivo <file> --riggeado` (or `--animated` in the wrapper).
+- The engine already loads every model and its clips by name (`src/world/props.c`): do NOT change C code to
+  register a model or an animation.
 
 ### Rule 4: Verification & Reporting
-- After each download, verify file existence and size
-- Confirm manifest entry was written correctly
-- Report success/failure summary to user
-
-## Implementation Notes
-
-### Tool Invocation Pattern
-```bash
-python tools/fetch_pipeline_asset.py \
-    --url "https://huggingface.co/dataset/trellis2/model/xxx.glb" \
-    --name "trellis_yurt" \
-    --category "yurt" \
-    --animated
-```
-
-### Expected File Structure
-- Assets stored in `assets/models/<name>.glb`
-- Manifests in `assets/data/models_manifest.json`
-- Engine modules in `src/world/`
-
-### Compilation Requirements
-- All C code must compile with CMake (targeting Android/mobile)
-- Zero memory leaks in render loop
-- Static memory allocation preferred for embedded targets
+- `python3 tools/modelos/modelos.py check` (triangles, size, base, textures) must pass, plus the checks below.
+- Show the user the `--ver` screenshot and report what was imported.
 
 ## GLOBAL AI BEHAVIOR RULE
 - The write_to_file tool is STRICTLY UNAVAILABLE and unsupported in this workspace.
@@ -66,6 +52,7 @@ cmake --build build && ./build/sim_tests
 python3 tools/assets/i18n.py extraer && python3 tools/assets/i18n.py check
 python3 tools/assets/inventario.py check && python3 tools/assets/iconos.py check
 python3 tools/save/esquema.py check
+python3 tools/modelos/modelos.py check
 ```
 - Never push a commit that does not build: a red CI blocks every release.
 - A build that compiles can still crash: run the game before pushing (`cmake -E copy_directory assets build/assets`, then from `build/`: `xvfb-run -a ./estepa --frames 60 --screenshot shot.png` on Linux) and look at the screenshot.
