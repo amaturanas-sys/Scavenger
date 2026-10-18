@@ -4819,6 +4819,64 @@ static void test_buildkit(void) {
     CHECK(over == 0);
 }
 
+// ¿Hay agua sobre el suelo en algun punto del circulo (cada 5 m), en verano o con la crecida de la
+// primavera? sea_ok: el mar no cuenta (el embarcadero da al mar).
+static bool test_wet_circle(const World *w, float x, float z, float r, bool sea_ok) {
+    for (float dz = -r; dz <= r; dz += 5.0f)
+        for (float dx = -r; dx <= r; dx += 5.0f) {
+            if (dx * dx + dz * dz > r * r) continue;
+            float px = x + dx, pz = z + dz, h = world_height(w, px, pz);
+            for (int f = 0; f < 2; f++) {
+                WaterKind k;
+                if (world_water(w, px, pz, f ? 3.0f : 0.0f, &k) > h - 0.05f && !(sea_ok && k == WATER_SEA)) return true;
+            }
+        }
+    return false;
+}
+
+// El generador del mundo no pone nada sobre el agua ni dentro de ella: ni las capitales con su
+// muralla, ni las aldeas con sus casas, ni las tribus, las estructuras o las guaridas caen en un lago
+// (ni en un rio, el canal o el mar). Los pueblos y las tribus, ademas, quedan por debajo de la nieve
+// de todo el año (el glaciar).
+static void test_world_dry(void) {
+    // La linea de nieve del verano de world.h es la de src/sim/climate.c (la mas alta del año).
+    float top = -1e9f;
+    for (int d = 0; d < DAYS_PER_YEAR * 4; d++) top = fmaxf(top, climate_at(((float)d + 0.5f) * GAME_SECONDS_PER_DAY * 0.25f, 1u).snowline);
+    CHECK(top <= WORLD_SNOWLINE_MAX + 0.01f && top >= WORLD_SNOWLINE_MAX - 0.5f);
+    CHECK(WORLD_FOOT_CAPITAL >= CITY_WALL_R + 4.0f && WORLD_FOOT_VILLAGE >= 17.0f + 5.0f); // la muralla y sus torres; el anillo de casas
+    static const uint32_t SEEDS[] = { 1206u, 7u, 42u, 1984u, 2024u, 31337u };
+    int wet = 0, snowy = 0, lots_wet = 0, things = 0;
+    for (size_t i = 0; i < sizeof(SEEDS) / sizeof(SEEDS[0]); i++) {
+        const World *w = world_for_seed(SEEDS[i]);
+        float snow = w->camp_height + WORLD_SNOW_FREE;
+        CHECK(w->settlement_count == REGION_COUNT * 4 && w->tribe_count >= 15 && w->site_count >= 40); // no se pierde nada
+        for (int k = 0; k < w->settlement_count; k++) {
+            const Settlement *s = &w->settlements[k];
+            float r = s->kind == SETTLE_CAPITAL ? WORLD_FOOT_CAPITAL : WORLD_FOOT_VILLAGE;
+            wet += test_wet_circle(w, s->x, s->z, r, false);
+            snowy += world_height(w, s->x, s->z) > snow;
+            CityLot lots[CITY_LOTS_MAX];
+            int n = city_layout(w, k, NULL, lots, CITY_LOTS_MAX);
+            for (int l = 0; l < n; l++) // las casas, el palacio, los talleres, los campos y los corrales
+                lots_wet += world_water(w, lots[l].x, lots[l].z, 0.0f, NULL) > world_height(w, lots[l].x, lots[l].z) - 0.05f;
+            things++;
+        }
+        for (int k = 0; k < w->tribe_count; k++) {
+            wet += test_wet_circle(w, w->tribes[k].x, w->tribes[k].z, WORLD_FOOT_TRIBE, false);
+            snowy += world_height(w, w->tribes[k].x, w->tribes[k].z) > snow;
+            things++;
+        }
+        for (int k = 0; k < w->site_count; k++, things++)
+            wet += test_wet_circle(w, w->sites[k].x, w->sites[k].z, WORLD_FOOT_SITE, w->sites[k].kind == SITE_HARBOR);
+        for (int k = 0; k < w->den_count; k++, things++) wet += test_wet_circle(w, w->dens[k].x, w->dens[k].z, WORLD_FOOT_DEN, false);
+    }
+    CHECK(things > 700 && wet == 0 && snowy == 0 && lots_wet == 0);
+    // La huella en seco: un punto en medio de un lago no lo esta; uno lejos de toda el agua, si.
+    const World *w = world_for_seed(1206u);
+    CHECK(!world_footprint_dry(w, w->lakes[0].x, w->lakes[0].z, 1.0f, false));
+    CHECK(world_footprint_dry(w, w->settlements[0].x, w->settlements[0].z, WORLD_FOOT_CAPITAL, false));
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -4945,6 +5003,7 @@ int main(void) {
     RUN(test_army);
     RUN(test_flora);
     RUN(test_buildkit);
+    RUN(test_world_dry);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }
