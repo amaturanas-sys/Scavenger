@@ -46,6 +46,12 @@ typedef struct {
     float grudge;     // rencor contra la tribu [0, 100]: saqueos y muertos; se olvida despacio
     int32_t raided;   // el ultimo dia en que le saquearon los campos (0: nunca)
     int32_t raided_lot; // que campo arrasaron (su numero entre los campos del trazado + 1; 0: ninguno): desde ahi se ven quemados
+    // El ejercito y el asedio (fase 8b, src/sim/army.h):
+    int32_t taken;       // el dia en que la tribu la tomo (0: libre): sin ejercito, paga tributo y su fundicion es tu taller
+    int32_t gates_burnt; // las puertas quemadas (un bit por puerta): quedan abiertas
+    int32_t besieged;    // el ultimo dia que paso cercada (0: nunca)
+    int32_t ladders;     // las escalas apoyadas en la muralla (un bit por tramo)
+    int32_t expedition;  // el dia en que salio su ultima expedicion de castigo (0: nunca)
 } City;
 
 // La tierra de cultivo (en almas que puede alimentar con la cosecha entera) y los escribas
@@ -64,7 +70,8 @@ float city_season_luck(uint32_t seed, int idx, int day);
 void city_start(City *c, SettleKind k, Region r, uint32_t seed);
 // Lo que cobran sus escribas por dia (con descontento o la cosecha arrasada, menos).
 float city_taxes(const City *c, SettleKind k);
-// Los soldados que quiere tener (una parte de la gente) y el tesoro que guarda antes de gastar.
+// Los soldados que quiere tener (una parte de la gente; tomada, ninguno) y el tesoro que guarda
+// antes de gastar.
 int city_soldier_target(const City *c, SettleKind k);
 float city_reserve(const City *c);
 
@@ -85,7 +92,7 @@ int city_guard_party(const City *c, int max);
 // segun la armeria; con mucho descontento, todo un poco mas caro.
 float city_price_factor(const City *c, const char *id);
 // ¿Comercia con la tribu? No, con mucho rencor (o, en el reino al que se rinde tributo, con la
-// relacion por el suelo).
+// relacion por el suelo). Tomada por la tribu, si.
 bool city_trades(const City *c, bool overlord, float relation);
 #define CITY_GRUDGE_NO_TRADE 60.0f
 #define OVERLORD_NO_TRADE (-30.0f)

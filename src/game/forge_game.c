@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/city_game.h"
 #include "game/inventory_game.h"
 #include "game/talents_game.h"
 #include "sim/lang.h"
@@ -105,8 +106,10 @@ static bool has_building(const Props *props, const char *id, const Player *p, bo
 bool forge_station(const GameActions *ga, const Props *props, const Player *p, const char *building, bool repair, bool near) {
     if (!building || !building[0]) return true;
     bool mobile = ig_count(ga, props, p, FORGE_MOBILE_ID) > 0;
-    if (forge_station_ok(building, mobile, has_building(props, BRONZE_ID, p, near), has_building(props, STEEL_ID, p, near),
-                         has_building(props, WORKSHOP_ID, p, near), repair))
+    // Una ciudad tomada (fase 8b, src/game/city_game.c): su fundicion es tu taller, con sus hornos.
+    bool city = ga->terrain && ct_workshop_at(ga, ga->terrain, p->pos.x, p->pos.z);
+    if (forge_station_ok(building, mobile, city || has_building(props, BRONZE_ID, p, near), city || has_building(props, STEEL_ID, p, near),
+                         city || has_building(props, WORKSHOP_ID, p, near), repair))
         return true;
     return has_building(props, building, p, near); // otra obra (el horno de cocina...)
 }

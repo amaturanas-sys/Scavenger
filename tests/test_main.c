@@ -38,6 +38,7 @@
 #include "../src/sim/fire.h"
 #include "../src/sim/forge.h"
 #include "../src/sim/city.h"
+#include "../src/sim/army.h"
 #include "../src/sim/melee.h"
 #include "../src/sim/storage.h"
 #include "../src/sim/riding.h"
@@ -4455,6 +4456,135 @@ static void test_cities(void) {
     CHECK(count_lots(a, nv, LOT_FIELD) >= 1 && city_layout(w, -1, &vil, a, CITY_LOTS_MAX) == 0 && city_layout(NULL, 0, &vil, a, CITY_LOTS_MAX) == 0);
 }
 
+// El ejercito y el asedio (fase 8b, src/sim/army.h).
+#define PI_T 3.14159265f
+static void test_army(void) {
+    City cap;
+    city_start(&cap, SETTLE_CAPITAL, REGION_STEPPE, 7u);
+    // El tesoro limita el ejercito que sale: con la misma guarnicion, una ciudad pobre manda menos
+    // (y sin plata, nadie); lo que cuesta nunca pasa de lo que se gasta en una campaña. Siempre queda
+    // un tercio de la guarnicion en casa.
+    City rich = cap, poor = cap, broke = cap;
+    rich.soldiers = poor.soldiers = broke.soldiers = 60, rich.mercs = poor.mercs = broke.mercs = 0;
+    rich.silver = 5000.0f, poor.silver = 60.0f, broke.silver = 0.0f;
+    ArmyComp ar, ap, ab;
+    int nr = army_compose(&rich, SETTLE_CAPITAL, PUNITIVE_MAX_UNITS, true, &ar), np = army_compose(&poor, SETTLE_CAPITAL, PUNITIVE_MAX_UNITS, true, &ap);
+    CHECK(nr == PUNITIVE_MAX_UNITS && np > 0 && np < nr && army_compose(&broke, SETTLE_CAPITAL, PUNITIVE_MAX_UNITS, true, &ab) == 0);
+    CHECK(army_cost(&ap) <= poor.silver * ARMY_BUDGET && army_cost(&ar) <= rich.silver * ARMY_BUDGET && army_units(&ap) == np);
+    CHECK(ar.n[ARMY_HEAVY] > 0 && ar.n[ARMY_CROSSBOW] > 0 && ar.n[ARMY_ARCHER] > 0 && ar.n[ARMY_CHARIOT] > 0 && ar.n[ARMY_SOLDIER] > 0);
+    CHECK(army_men(&ar) == nr + ar.n[ARMY_CHARIOT] && army_men(&ar) <= 40);
+    City few = rich;
+    few.soldiers = 6; // 4 salen: dos tercios
+    ArmyComp af;
+    CHECK(army_compose(&few, SETTLE_CAPITAL, PUNITIVE_MAX_UNITS, true, &af) > 0 && army_men(&af) <= 4);
+    // Una salida en defensa no la paga el tesoro (pero no lleva carros); la aldea no tiene paveses ni
+    // carros; una ciudad tomada no tiene ejercito.
+    ArmyComp sally, va;
+    CHECK(army_compose(&broke, SETTLE_CAPITAL, 6, false, &sally) == 6 && sally.n[ARMY_CHARIOT] == 0);
+    City vil;
+    city_start(&vil, SETTLE_VILLAGE, REGION_STEPPE, 7u);
+    vil.silver = 5000.0f, vil.soldiers = 20;
+    CHECK(army_compose(&vil, SETTLE_VILLAGE, 8, true, &va) > 0 && va.n[ARMY_HEAVY] == 0 && va.n[ARMY_CHARIOT] == 0);
+    City owned = rich;
+    city_take(&owned, 30);
+    CHECK(army_compose(&owned, SETTLE_CAPITAL, 8, true, &va) == 0 && owned.soldiers == 0 && owned.taken == 30);
+
+    // La formacion cerrada: la primera fila delante (hacia donde mira), a la distancia justa, y la
+    // ultima fila, centrada.
+    float x0, z0, x1, z1, x5, z5;
+    formation_slot(0, 7, 3, 1.5f, 0.0f, 0.0f, 0.0f, &x0, &z0);
+    formation_slot(1, 7, 3, 1.5f, 0.0f, 0.0f, 0.0f, &x1, &z1);
+    formation_slot(6, 7, 3, 1.5f, 0.0f, 0.0f, 0.0f, &x5, &z5);
+    CHECK(fabsf(fabsf(x1 - x0) - 1.5f) < 1e-4f && fabsf(z1 - z0) < 1e-4f && fabsf(z0) < 1e-4f);
+    CHECK(fabsf(x5) < 1e-4f && fabsf(z5 + 3.0f) < 1e-4f); // la tercera fila, sola y al medio, 3 m detras
+    formation_slot(0, 4, 2, 2.0f, 10.0f, 10.0f, PI_T / 2.0f, &x0, &z0);
+    formation_slot(2, 4, 2, 2.0f, 10.0f, 10.0f, PI_T / 2.0f, &x1, &z1);
+    CHECK(x1 < x0 - 1.9f); // mirando a +x: la segunda fila, mas atras en x
+
+    // El carro pierde velocidad en terreno roto y vadeando; en el llano va mas rapido que un hombre
+    // a la carrera, y en lo roto, mas lento.
+    float flat = chariot_speed(CHARIOT_SPEED, 0.02f, 0.0f), rough = chariot_speed(CHARIOT_SPEED, 0.3f, 0.0f);
+    float wading = chariot_speed(CHARIOT_SPEED, 0.0f, 0.5f), steep = chariot_speed(CHARIOT_SPEED, -0.6f, 0.0f);
+    CHECK(flat == CHARIOT_SPEED && rough < flat * 0.5f && wading < flat * 0.4f && steep > 0.0f && steep <= rough);
+    CHECK(flat > enemy_def(ENEMY_SOLDIER)->speed * 2.0f && rough < enemy_def(ENEMY_SOLDIER)->speed);
+    CHECK(chariot_speed(CHARIOT_SPEED, 0.3f, 0.6f) < rough);
+
+    // La expedicion de castigo sale con la relacion baja (de la capital del kanato) o con mucho
+    // rencor (de cualquier ciudad), y no mas de una por estacion.
+    CHECK(punitive_due(true, -50.0f, 0.0f, 10, 0) && !punitive_due(true, -10.0f, 0.0f, 10, 0) && !punitive_due(false, -90.0f, 0.0f, 10, 0));
+    CHECK(punitive_due(false, 0.0f, 85.0f, 10, 0) && !punitive_due(true, -50.0f, 0.0f, 10, 8) && punitive_due(true, -50.0f, 0.0f, 8 + PUNITIVE_DAYS, 8));
+    ArmyComp exp;
+    CHECK(army_compose(&cap, SETTLE_CAPITAL, PUNITIVE_MAX_UNITS, true, &exp) > 0 && exp.n[ARMY_HEAVY] > 0 && exp.n[ARMY_CHARIOT] > 0);
+    // Lo que se llevan: mas con mas hombres, menos con defensores; solo la comida, el grano y la plata.
+    CHECK(punitive_share(20, 0) > punitive_share(20, 10) && punitive_share(0, 0) == 0.0f && punitive_share(200, 0) <= 0.6f);
+    CHECK(punitive_share(1, 50) >= 0.1f);
+    Stockpile st;
+    stock_init(&st);
+    stock_add(&st, "utileria.consumible.carne_seca", 20);
+    stock_add(&st, "utileria.material.plata", 50);
+    stock_add(&st, GRAIN_SACK_ID, 4);
+    stock_add(&st, "utileria.material.cuero", 10);
+    CHECK(stock_plunder(&st, 0.5f) == 10 + 25 + 2 && stock_count(&st, "utileria.consumible.carne_seca") == 10);
+    CHECK(stock_count(&st, "utileria.material.cuero") == 10 && stock_count(&st, "utileria.material.plata") == 25 && stock_plunder(&st, 0.0f) == 0);
+
+    // La muralla: doce tramos rectos entre las torres; las puertas, a 15, 105, 195 y 285 grados.
+    CHECK(city_segment_gate(city_wall_segment(city_gate_angle(0))) == 0 && city_segment_gate(city_wall_segment(city_gate_angle(3))) == 3);
+    CHECK(city_segment_gate(city_wall_segment(45.0f * PI_T / 180.0f)) == -1 && city_segment_gate(city_wall_segment(-80.0f * PI_T / 180.0f)) == 3);
+    CHECK(fabsf(city_wall_dist(city_gate_angle(1)) - CITY_WALL_R * cosf(PI_T / 12.0f)) < 0.01f && fabsf(city_wall_dist(0.001f) - CITY_WALL_R) < 0.1f);
+    float a45 = 45.0f * PI_T / 180.0f, a15 = city_gate_angle(0);
+    int seg = -1;
+    CHECK(city_wall_crossed(cosf(a45) * 30.0f, sinf(a45) * 30.0f, cosf(a45) * 50.0f, sinf(a45) * 50.0f, &seg) && seg == 1);
+    CHECK(city_wall_crossed(cosf(a15) * 50.0f, sinf(a15) * 50.0f, cosf(a15) * 39.0f, sinf(a15) * 39.0f, &seg) && seg == 0);
+    CHECK(!city_wall_crossed(10.0f, 0.0f, 30.0f, 5.0f, &seg) && !city_wall_crossed(60.0f, 0.0f, 0.0f, 70.0f, &seg));
+
+    // La guerra cierra las puertas (y una puerta quemada queda abierta); tomada, no hay guerra.
+    City foe = cap;
+    foe.grudge = 70.0f;
+    CHECK(city_at_war(&foe, false, 0.0f) && city_at_war(&cap, true, -35.0f) && !city_at_war(&cap, true, 0.0f) && !city_at_war(&owned, true, -90.0f));
+    foe.gates_burnt = 1 << 2;
+    CHECK(!city_gate_open(&foe, 0, true) && city_gate_open(&foe, 2, true) && city_gate_open(&foe, 0, false) && !city_gate_open(&foe, 7, false));
+    // La muralla corta el paso: el muro siempre; por la puerta se pasa si esta abierta (en paz, o
+    // quemada), pero no por sus lienzos de los costados.
+    float a105 = city_gate_angle(1), a195 = city_gate_angle(2), tx = -sinf(a105), tz = cosf(a105); // tx, tz: de costado
+    int gt = -1;
+    CHECK(city_wall_blocks(&foe, false, cosf(a45) * 30.0f, sinf(a45) * 30.0f, cosf(a45) * 50.0f, sinf(a45) * 50.0f, &gt) && gt == -1);
+    CHECK(!city_wall_blocks(&foe, false, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &gt) && gt == 1);
+    CHECK(city_wall_blocks(&foe, true, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &gt) && gt == 1);
+    CHECK(!city_wall_blocks(&foe, true, cosf(a195) * 30.0f, sinf(a195) * 30.0f, cosf(a195) * 50.0f, sinf(a195) * 50.0f, &gt) && gt == 2);
+    CHECK(city_wall_blocks(&foe, false, cosf(a105) * 30.0f + tx * 6.0f, sinf(a105) * 30.0f + tz * 6.0f, cosf(a105) * 50.0f + tx * 6.0f,
+                           sinf(a105) * 50.0f + tz * 6.0f, &gt));
+    CHECK(!city_wall_blocks(NULL, true, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &gt));
+
+    // El cerco: sin cosecha y con la gente del campo adentro, el granero baja mas rapido y crece el
+    // descontento; el fuego quema grano y asusta.
+    City free_c = cap, sieged = cap;
+    for (int day = 1; day <= DAYS_PER_SEASON; day++) {
+        city_day(&free_c, SETTLE_CAPITAL, REGION_STEPPE, SEASON_SUMMER, 1.0f);
+        city_day(&sieged, SETTLE_CAPITAL, REGION_STEPPE, SEASON_SUMMER, 0.0f);
+        city_siege_day(&sieged, SETTLE_CAPITAL);
+    }
+    CHECK(sieged.grain < free_c.grain - cap.people * 3.0f && sieged.unrest > free_c.unrest && sieged.silver < free_c.silver);
+    City burn = cap;
+    int burnt = city_burn_grain(&burn);
+    CHECK(burnt >= 40 && burn.grain < cap.grain && burn.unrest > cap.unrest);
+
+    // La rendicion: con la guarnicion entera y grano, no; sin guarnicion, con hambre o en revuelta, si.
+    CHECK(!city_surrenders(&cap, SETTLE_CAPITAL) && city_garrison_floor(&cap, SETTLE_CAPITAL) >= 2);
+    City beaten = cap, starving = cap, revolt = cap;
+    beaten.soldiers = city_garrison_floor(&cap, SETTLE_CAPITAL), beaten.mercs = 0;
+    starving.grain = starving.people * 2.0f, revolt.unrest = 0.95f;
+    CHECK(city_surrenders(&beaten, SETTLE_CAPITAL) && city_surrenders(&starving, SETTLE_CAPITAL) && city_surrenders(&revolt, SETTLE_CAPITAL));
+    // Tomada: sin ejercito aunque le sobre plata, comercia con la tribu y le paga tributo.
+    City vassal = rich;
+    city_take(&vassal, 12);
+    for (int day = 1; day <= DAYS_PER_SEASON; day++) city_day(&vassal, SETTLE_CAPITAL, REGION_STEPPE, SEASON_SUMMER, 1.0f);
+    float before = vassal.silver;
+    int paid = city_vassal_tribute(&vassal, SETTLE_CAPITAL);
+    CHECK(vassal.soldiers == 0 && vassal.mercs == 0 && city_trades(&vassal, true, -90.0f) && !city_surrenders(&vassal, SETTLE_CAPITAL));
+    CHECK(paid > 0 && fabsf(vassal.silver - (before - (float)paid)) < 0.01f && city_vassal_tribute(&cap, SETTLE_CAPITAL) == 0);
+    CHECK(peace_price(5) > tribute_due(5));
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -4578,6 +4708,7 @@ int main(void) {
     RUN(test_steppe_weapons);
     RUN(test_forge);
     RUN(test_cities);
+    RUN(test_army);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }
