@@ -175,6 +175,13 @@ Ejército y asedio (v0.9.1):
 
 Pruebas: `--asedio puerta|trepa|escala|fuego|quemada|salida|rendicion|tomada` (la capital del kanato en guerra), `--asedio expedicion` (la expedición de castigo contra el campamento), `--asedio ejercito|carro` (un ejército en formación, o un carro, delante) y `--asedio partida` (lo de la partida de referencia).
 
+La vegetación (v0.9.2):
+- **Pasto, stipa, flores, helechos y juncos** alrededor del jugador, del color del suelo de su región y su estación: verdes en primavera (con tulipanes y lirios en la estepa), la stipa con sus plumas plateadas en verano, secos y ocres en otoño, aplastados en invierno, con los tallos secos asomando en la nieve. Los juncos crecen en las orillas, con su espiga parda; los helechos, en el bosque.
+- **El viento** los inclina y los mece en olas que cruzan el pasto; al pasar, a pie o a caballo, se apartan. No crecen en el agua honda, la roca, el lecho de los ríos, los pueblos y sus campos ni en los campamentos (pisoteados), y lo quemado reverdece de a poco.
+- En Android se dibujan más cerca (18 m en vez de 26) para que no pese.
+
+Pruebas: `--ir estepa --dia 10` (verano), `--dia 17` (otoño), `--dia 24` (invierno), `--ir meandro` (juncos) y `--montado lanza` (al galope por el pasto).
+
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.

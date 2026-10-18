@@ -36,6 +36,7 @@
 #include "../src/sim/squad.h"
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
+#include "../src/sim/flora.h"
 #include "../src/sim/forge.h"
 #include "../src/sim/city.h"
 #include "../src/sim/army.h"
@@ -4458,6 +4459,124 @@ static void test_cities(void) {
 
 // El ejercito y el asedio (fase 8b, src/sim/army.h).
 #define PI_T 3.14159265f
+// Cuenta las matas de cada clase en un cuadrado de n x n celdas con centro en (x, z).
+static int flora_count(const World *w, float x, float z, int n, int count[FLORA_KINDS]) {
+    int total = 0, gx0 = (int)floorf(x / FLORA_CELL) - n / 2, gz0 = (int)floorf(z / FLORA_CELL) - n / 2;
+    for (int k = 0; k < FLORA_KINDS; k++) count[k] = 0;
+    for (int j = 0; j < n; j++)
+        for (int i = 0; i < n; i++) {
+            FloraTuft t[FLORA_PER_CELL];
+            int m = flora_cell(w, w->seed, gx0 + i, gz0 + j, t);
+            for (int q = 0; q < m; q++) count[t[q].kind]++;
+            total += m;
+        }
+    return total;
+}
+
+static void test_flora(void) {
+    // La densidad: mas pasto en la estepa que en el bosque; la stipa, en lo seco; el desierto, casi
+    // nada lejos del agua y algo en los oasis; los juncos, solo en la orilla; los helechos, en el bosque.
+    float steppe[REGION_COUNT] = { 0 }, forest[REGION_COUNT] = { 0 }, desert[REGION_COUNT] = { 0 };
+    steppe[REGION_STEPPE] = forest[REGION_FOREST] = desert[REGION_DESERT] = 1.0f;
+    CHECK(flora_density(FLORA_GRASS, steppe, 0.0f) > flora_density(FLORA_GRASS, forest, 0.0f));
+    CHECK(flora_density(FLORA_STIPA, steppe, 0.0f) > flora_density(FLORA_STIPA, steppe, 1.0f) && flora_density(FLORA_STIPA, forest, 0.0f) == 0.0f);
+    CHECK(flora_density(FLORA_GRASS, desert, 0.0f) < 0.05f && flora_density(FLORA_GRASS, desert, 1.0f) > 0.3f);
+    CHECK(flora_density(FLORA_REED, steppe, 0.0f) == 0.0f && flora_density(FLORA_REED, steppe, 1.0f) > 0.3f);
+    CHECK(flora_density(FLORA_FERN, forest, 0.0f) > 0.1f && flora_density(FLORA_FERN, steppe, 0.0f) == 0.0f);
+    // Cada candidato da una mata con la probabilidad de su densidad (y nunca mas de una).
+    int count[FLORA_KINDS] = { 0 }, none = 0;
+    for (int i = 0; i < 10000; i++) {
+        int k = flora_pick(steppe, 0.0f, ((float)i + 0.5f) / 10000.0f);
+        if (k < 0) none++;
+        else count[k]++;
+    }
+    CHECK(fabsf((float)count[FLORA_GRASS] / 10000.0f - flora_density(FLORA_GRASS, steppe, 0.0f)) < 0.01f);
+    CHECK(fabsf((float)count[FLORA_STIPA] / 10000.0f - flora_density(FLORA_STIPA, steppe, 0.0f)) < 0.01f);
+    float sum = 0.0f;
+    for (int k = 0; k < FLORA_KINDS; k++) sum += flora_density((FloraKind)k, steppe, 0.0f);
+    CHECK(count[FLORA_REED] == 0 && count[FLORA_FERN] == 0 && sum < 1.0f && fabsf((float)none / 10000.0f - (1.0f - sum)) < 0.01f);
+    int crowded = 0;
+    for (int i = 0; i < 1000; i++) crowded += flora_pick(steppe, 1.0f, ((float)i + 0.5f) / 1000.0f) >= 0;
+    CHECK(crowded == 1000); // en la orilla de la estepa no queda un m2 sin nada
+
+    // La siembra: siempre la misma; nada en el campamento; la base sobre el facetado del suelo, en su
+    // celda; en el agua, solo juncos y en el agua baja.
+    const World *w = world_for_seed(1206u);
+    FloraTuft a[FLORA_PER_CELL], b[FLORA_PER_CELL];
+    CHECK(flora_cell(w, w->seed, 0, 0, a) == 0 && flora_cell(w, w->seed, 5, -3, a) == 0 && flora_cell(w, w->seed, -8, 2, a) == 0);
+    int bad = 0, total = 0, wet = 0;
+    for (int gz = -160; gz < 160; gz += 7)
+        for (int gx = -160; gx < 160; gx += 7) {
+            int n = flora_cell(w, w->seed, gx, gz, a);
+            if (n != flora_cell(w, w->seed, gx, gz, b) || (n && memcmp(a, b, sizeof(FloraTuft) * (size_t)n))) bad++;
+            float x0 = (float)gx * FLORA_CELL, z0 = (float)gz * FLORA_CELL;
+            float h[4] = { world_height(w, x0, z0), world_height(w, x0 + FLORA_CELL, z0), world_height(w, x0, z0 + FLORA_CELL),
+                           world_height(w, x0 + FLORA_CELL, z0 + FLORA_CELL) };
+            float lo = fminf(fminf(h[0], h[1]), fminf(h[2], h[3])), hi = fmaxf(fmaxf(h[0], h[1]), fmaxf(h[2], h[3]));
+            for (int i = 0; i < n; i++) {
+                const FloraTuft *t = &a[i];
+                if (t->x < x0 || t->x > x0 + FLORA_CELL || t->z < z0 || t->z > z0 + FLORA_CELL) bad++;
+                if (t->y < lo - 0.01f || t->y > hi + 0.01f || t->kind >= FLORA_KINDS || t->size < 0.69f || t->size > 1.31f) bad++;
+                if (t->x * t->x + t->z * t->z < FLORA_CAMP_R * FLORA_CAMP_R) bad++;
+                float dist;
+                int si = world_nearest_settlement(w, t->x, t->z, &dist);
+                if (si >= 0 && dist < (w->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 : VILLAGE_FIELDS_R1)) bad++;
+                WaterKind wk;
+                float wl = world_water(w, t->x, t->z, 0.0f, &wk);
+                if (wl > t->y + 0.05f) {
+                    wet++;
+                    if (t->kind != FLORA_REED || wl > t->y + 0.6f || wk == WATER_SEA) bad++;
+                }
+            }
+            total += n;
+        }
+    CHECK(bad == 0 && total > 1000 && wet > 0); // y hay juncos en el agua baja
+    // Cada region con lo suyo: la estepa, pasto y stipa; el bosque, helechos; los lagos, juncos en la orilla.
+    float x, z;
+    world_region_point(w, REGION_STEPPE, 260.0f, &x, &z);
+    int st = flora_count(w, x, z, 24, count);
+    CHECK(st > 24 * 24 && count[FLORA_GRASS] > count[FLORA_STIPA] && count[FLORA_STIPA] > 0 && count[FLORA_FERN] == 0);
+    world_edge_point(w, REGION_FOREST, 420.0f, &x, &z);
+    flora_count(w, x, z, 24, count);
+    CHECK(count[FLORA_FERN] > 0 && count[FLORA_STIPA] == 0);
+    int reeds = 0;
+    for (int i = 0; i < w->lake_count && !reeds; i++) {
+        const Lake *l = &w->lakes[i];
+        for (int q = 0; q < 16; q++) { // alrededor de la orilla
+            float ang = (float)q * 0.3927f;
+            reeds += flora_count(w, l->x + cosf(ang) * l->r, l->z + sinf(ang) * l->r, 6, count) > 0 ? count[FLORA_REED] : 0;
+        }
+    }
+    CHECK(reeds > 0);
+
+    // La estacion: el pasto crece en primavera, se seca de pie y el invierno lo aplasta; las flores,
+    // solo en primavera; los juncos secos, de pie en invierno; las plumas de la stipa, en verano.
+    float spring = flora_height(FLORA_GRASS, 0.22f, 1.0f, 0.0f), early = flora_height(FLORA_GRASS, 0.03f, 0.3f, 0.0f);
+    float winter = flora_height(FLORA_GRASS, 0.85f, 0.0f, 0.1f), dry = flora_height(FLORA_GRASS, 0.47f, 0.5f, 0.0f);
+    CHECK(winter < early && early < spring && dry > winter && dry <= spring);
+    CHECK(flora_height(FLORA_FLOWER, 0.2f, 0.9f, 0.0f) > 0.2f && flora_height(FLORA_FLOWER, 0.5f, 0.5f, 0.0f) == 0.0f &&
+          flora_height(FLORA_FLOWER, 0.85f, 0.0f, 0.0f) == 0.0f && flora_height(FLORA_FLOWER, 0.2f, 0.0f, 0.0f) == 0.0f);
+    CHECK(flora_height(FLORA_REED, 0.85f, 0.0f, 0.0f) >= 0.7f * flora_height(FLORA_REED, 0.3f, 1.0f, 0.0f));
+    CHECK(flora_height(FLORA_FERN, 0.85f, 0.0f, 0.0f) < 0.3f * flora_height(FLORA_FERN, 0.3f, 1.0f, 0.0f));
+    CHECK(flora_plume(0.3f) > 0.99f && flora_plume(0.02f) == 0.0f && flora_plume(0.7f) == 0.0f && flora_plume(0.95f) == 0.0f);
+    // Con el clima del juego: el pasto de verano, mas alto que el del invierno.
+    Climate cs = climate_at((float)(DAYS_PER_SEASON + 3) * GAME_SECONDS_PER_DAY + 400.0f, 1206u);
+    Climate cw = climate_at((float)(3 * DAYS_PER_SEASON + 3) * GAME_SECONDS_PER_DAY + 400.0f, 1206u);
+    CHECK(flora_height(FLORA_GRASS, cs.year, cs.greenness, cs.autumn) > 1.5f * flora_height(FLORA_GRASS, cw.year, cw.greenness, cw.autumn));
+    CHECK(flora_height(FLORA_FLOWER, cw.year, cw.greenness, cw.autumn) == 0.0f);
+
+    // El viento: con mas viento se inclina y se mece mas; nunca pasa de su amplitud. Al pasar, se aparta.
+    CHECK(flora_lean(1.0f) > flora_lean(0.4f) && flora_lean(0.4f) > flora_lean(0.0f) && flora_lean(0.0f) > 0.0f);
+    float calm = 0.0f, storm = 0.0f;
+    for (int i = 0; i < 400; i++) {
+        float t = (float)i * 0.05f;
+        calm = fmaxf(calm, fabsf(flora_sway(t, 0.0f, 1.3f)));
+        storm = fmaxf(storm, fabsf(flora_sway(t, 1.0f, 1.3f)));
+    }
+    CHECK(calm > 0.0f && calm <= 0.05f + 1e-4f && storm > 2.0f * calm && storm <= 0.27f + 1e-4f);
+    CHECK(flora_trample(0.0f) == 1.0f && flora_trample(FLORA_TRAMPLE_R) == 0.0f && flora_trample(0.3f) > flora_trample(0.7f));
+}
+
 static void test_army(void) {
     City cap;
     city_start(&cap, SETTLE_CAPITAL, REGION_STEPPE, 7u);
@@ -4709,6 +4828,7 @@ int main(void) {
     RUN(test_forge);
     RUN(test_cities);
     RUN(test_army);
+    RUN(test_flora);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

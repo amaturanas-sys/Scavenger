@@ -36,6 +36,7 @@ src/
     animals.*    fauna: clases, relaciones (manada, acecho, rivalidad, huida), doma, montura, ganado (y el rebaño que sigue a la caravana), anfibios, cria (sexo, herencia, preñez)
     swarms.*     enjambres y bancos: peces, abejas, avispas, mosquitos, moscas
     fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
+    flora.*      la vegetacion baja: donde crece cada mata (por celdas de 2 m, segun la region y el agua; ni en la roca, los rios, los pueblos o los campamentos), cuanto crece con la estacion y cuanto la mueven el viento y quien pasa
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano
     keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H J K L, F, X...)
     targeting.*  el selector de objetivo: el siguiente alrededor del jugador, se pierde a 25 m
@@ -50,6 +51,7 @@ src/
     save_format.* partida por bloques con esquema: escribir, leer y convertir campo por campo
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
+    vegetation.* el pasto, la stipa, las flores, los helechos y los juncos alrededor del jugador (una ventana de celdas que sigue al jugador; triangulos de color con rlgl)
     camp.*       campamento, props
     gallery.*    galeria del inventario (--galeria)
     sky.*        cielo, tinte de noche, estrellas y brillo de los fuegos

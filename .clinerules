@@ -68,3 +68,5 @@ python3 tools/assets/inventario.py check && python3 tools/assets/iconos.py check
 python3 tools/save/esquema.py check
 ```
 - Never push a commit that does not build: a red CI blocks every release.
+- A build that compiles can still crash: run the game before pushing (`cmake -E copy_directory assets build/assets`, then from `build/`: `xvfb-run -a ./estepa --frames 60 --screenshot shot.png` on Linux) and look at the screenshot.
+- raylib: never pass a `Material` made with `{ 0 }` to `DrawMesh`/`DrawMeshInstanced` (its `maps` is NULL: the game crashes on the first frame; use `LoadMaterialDefault()` once); `LoadShaderFromMemory(vsCode, fsCode)` takes the vertex shader first; never load shaders, meshes or materials inside the frame loop. Vegetation lives in `src/sim/flora.*` (rules, tested) and `src/world/vegetation.*` (drawing with rlgl).
