@@ -25,3 +25,8 @@ build/cad/
 # Pruebas de partidas (quedan solo si fallan)
 tests/partidas/*.obtenido.txt
 tests/partidas/*.tmp
+
+# Tuberia de modelos: las fuentes de alta resolucion (TRELLIS.2, escaneos) no van a git; su
+# procedencia (url y sha256) queda en arte/modelos/models_manifest.json
+arte/modelos/fuentes/
+build/modelos/

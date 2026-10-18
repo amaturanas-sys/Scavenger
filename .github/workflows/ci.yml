@@ -24,6 +24,12 @@ jobs:
           python3 tools/assets/animaciones.py doc --verificar
           python3 tools/assets/iconos.py check
           python3 tools/assets/i18n.py check
+          python3 tools/modelos/modelos.py check
+      - name: Tuberia de modelos (pruebas, sin GPU ni red)
+        run: |
+          python3 -m venv /tmp/venv-modelos
+          /tmp/venv-modelos/bin/pip install --quiet -r tools/modelos/requirements.txt
+          /tmp/venv-modelos/bin/python tools/modelos/test_modelos.py
       - name: Esquema de la partida guardada al dia
         run: python3 tools/save/esquema.py check
       - name: Configurar

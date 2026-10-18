@@ -1,0 +1,7 @@
+# La conversion de modelos (tools/modelos/lowres.py y las pruebas). El juego y el chequeo del CI
+# (modelos.py check) no las necesitan.
+numpy>=1.26
+scipy>=1.11
+trimesh>=4.4
+fast-simplification>=0.1.7
+pillow>=10.0

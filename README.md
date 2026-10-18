@@ -182,6 +182,12 @@ La vegetación (v0.9.2):
 
 Pruebas: `--ir estepa --dia 10` (verano), `--dia 17` (otoño), `--dia 24` (invierno), `--ir meandro` (juncos) y `--montado lanza` (al galope por el pasto).
 
+La tubería de modelos (v0.9.3):
+- **De una imagen al juego:** la imagen va al espacio de TRELLIS.2 en Hugging Face (desde la tablet) y el GLB que sale entra con `python3 tools/modelos/modelos.py traer <id> --url <enlace> --girar 90`. Queda low-poly (bajo el `tris_max` del inventario), con colores planos y la luz del sol horneada, a escala y en la ruta de su id. Cline usa el mismo paso con `tools/fetch_pipeline_asset.py`.
+- **Personas y animales** esperan su esqueleto (RigNet) y sus clips en `arte/modelos/para_riggear/`.
+- **`--ver <id>`** muestra un objeto del inventario de cerca, con el jugador al lado.
+- Guía: [assets/models/README.md](assets/models/README.md) y las skills `modelos` y `animaciones`; el plan: [docs/PLAN_HERRAMIENTAS_IA.md](docs/PLAN_HERRAMIENTAS_IA.md).
+
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.

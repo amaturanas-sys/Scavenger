@@ -82,7 +82,7 @@ src/
   main.c    Bucle principal, render low-res, HUD
 tests/      Tests del nucleo (arnes propio, sin dependencias)
 assets/     Assets de runtime: inventario.tsv, animaciones.tsv, models/<categoria>/<sub>/<nombre>.glb, textures/
-tools/      Herramientas de produccion (programas Kiln, validadores, text-to-cad)
+tools/      Herramientas de produccion (programas Kiln, validadores, text-to-cad; modelos/: la tuberia de TRELLIS.2 y RigNet al juego)
 .claude/skills/cad/  Skill CAD de text-to-cad (MIT, earthtojake/text-to-cad)
 docs/       Diseño, roadmap, arquitectura
 ```
