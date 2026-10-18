@@ -8,6 +8,7 @@
 #include "raymath.h"
 #include "ui/theme.h"
 #include "sim/lang.h"
+#include "voxstruct.h"
 
 #define ROW_GAP 8.0f  // separacion entre filas (categorias)
 #define ITEM_GAP 2.0f // separacion entre objetos de una fila
@@ -81,12 +82,13 @@ void gallery_draw(const Gallery *g) {
             DrawModel(e->model, e->pos, 1.0f, WHITE);
             continue;
         }
-        // Marcador: caja con las medidas del inventario (largo en X, ancho en Z).
+        // Marcador: caja con las medidas del inventario (largo en X, ancho en Z). Las obras de la
+        // tribu, como en el juego: con el kit de edificios, dentro de la caja en alambre.
         Color c = category_color(it->category);
         float h = it->texture || it->h <= 0.0f ? 0.03f : it->h;
         Vector3 size = { fmaxf(it->l, 0.05f), h, fmaxf(it->w, 0.05f) };
         Vector3 center = { e->pos.x, e->pos.y + h * 0.5f, e->pos.z };
-        DrawCubeV(center, size, c);
+        if (!voxs_draw_item(it, e->pos, 0.0f)) DrawCubeV(center, size, c);
         DrawCubeWiresV(center, size, ColorBrightness(c, -0.45f));
         // Flecha de frente (+X): la direccion en la que debe mirar el modelo.
         Vector3 front = { e->pos.x + size.x * 0.5f, e->pos.y + h * 0.5f, e->pos.z };

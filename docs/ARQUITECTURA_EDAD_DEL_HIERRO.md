@@ -191,6 +191,77 @@ lo que importa es la silueta, los materiales y el color.
 | ![Desierto](capturas/kit_plaza_desierto.png) | ![Palacios](capturas/kit_palacio.png) |
 | **Desierto:** casas de adobe con patio y la sala de columnas con sus torres. | **Los palacios** de las cinco regiones (`--edificios palacio`). |
 
+## La muralla, las ruinas y las obras de la tribu (v0.10.2)
+
+![Las puertas acodadas de las cinco regiones](capturas/kit_puerta.png)
+
+**La muralla de las capitales** sale del kit, con el perfil de su región. Lo que se ve es lo que
+choca (`src/sim/army.h`): el adarve a la altura que se trepa, el hueco de la puerta y el antemuro.
+
+| Región | El muro | Las torres |
+|---|---|---|
+| Estepa | Un terraplén de tierra con la empalizada de troncos encima | De troncos: cuatro postes, la garita de tablas con saeteras y el techo de cuero en punta |
+| Bosque | El *murus gallicus*: la cara de piedra con las cabezas de las vigas, la tierra detrás y el parapeto de troncos | De troncos, con el techo de paja |
+| Altiplano | Piedra, con contrafuertes y almenas | De piedra, con almenas, la franja y las saeteras |
+| Fiordos | Piedra seca abajo, turba arriba con su pasto y un parapeto de tablas | De piedra oscura, con el techo de turba |
+| Desierto | Adobe sobre un zócalo de piedra, con almenas escalonadas | De adobe, con la franja azul |
+
+- **Las piezas:** la torre de cada esquina, tres tramos entre dos torres (cada uno a la altura de su
+  suelo, con una escalera de mano o una gárgola) y la puerta.
+- **La puerta acodada:** delante de cada puerta, un antemuro a 5,5 m de la muralla, de 14 m de largo,
+  cerrado de un costado y con una torre en cada punta. Se entra por la boca, a lo largo de la
+  muralla, y se dobla hacia la puerta: el que entra camina bajo el adarve y le da el flanco. Las
+  torres de la puerta van a los lados del paso, y el adarve cruza por encima en un puente. Las
+  puertas pares cierran el antemuro hacia un lado y las impares hacia el otro.
+- **Por dónde se camina:** la muralla y los antemuros cortan el paso del jugador (que se desliza a lo
+  largo), de las flechas y de los enemigos. Los enemigos y la guarnición buscan el camino más corto
+  (`city_route`) por un grafo chico: el camino de cada puerta (rodear el antemuro, la boca, el patio y
+  adentro), de puerta a puerta por adentro y, por afuera, de torre en torre. Cruzan la muralla solo
+  por el medio de una puerta y pasan lejos de las puntas de los antemuros.
+
+**Las ruinas** de los sitios del mundo se arman con las mismas piezas y después pasa el tiempo:
+- **Lo alto cae primero:** cada columna pierde lo de arriba hasta una altura que da el ruido, y nada
+  queda en el aire.
+- **Lo caído** se amontona al pie de los muros (de tierra, piedra o adobe, según la región).
+- **Encima** crece el pasto, el musgo o la arena.
+
+Hay dos ruinas, cada una con cuatro variantes:
+- **La fortaleza derruida:** un recinto cuadrado de 18 a 22 m con la muralla de su región, sus cuatro
+  torres rotas y la puerta al frente; adentro, los cimientos de la sala del fondo y el pozo.
+- **La ciudad enterrada** (del desierto): dos hileras de casas de adobe a los lados de la calle (unas
+  con su cúpula, otras con lo que queda del techo de caña) y dos columnas del templo. La arena las
+  tapa en dunas hasta la mitad.
+
+**Las obras de la tribu** (las de `Tab` → Obras y las viviendas del campamento) se dibujan con el kit
+mientras no tengan un modelo importado, a la medida de su objeto del inventario (`bk_for_item`).
+Van al estilo de la estepa, porque la tribu es nómada:
+- **Las obras:**
+  - el refugio de ramas y pieles;
+  - la empalizada y el muro de piedra seca;
+  - el horno de cocina y los hornos de fundición del bronce y del acero;
+  - la atalaya y el corral de cuerdas y estacas;
+  - el taller del herrero.
+- **Las viviendas:** la tienda ligera y la choza de fieltro. La casa de adobe (del desierto), la
+  cabaña de troncos (del bosque) y la yurta del jefe van a su tamaño.
+- **Lo que queda de ellas:** los escombros, el muro en ruinas, las cenizas y la yurta quemada.
+- En cuanto llega el modelo de una (la tubería de modelos, `tools/modelos`), se usa el modelo.
+
+| | |
+|---|---|
+| ![Fortalezas](capturas/kit_fortaleza.png) | ![Ciudad enterrada](capturas/kit_enterrada.png) |
+| **Las fortalezas derruidas** de las cinco regiones (`--edificios fortaleza`). | **La ciudad enterrada** (`--edificios enterrada`). |
+| ![Atalayas](capturas/kit_atalaya.png) | ![Talleres](capturas/kit_taller.png) |
+| **La atalaya** (`--edificios atalaya`). | **El taller del herrero** (`--edificios taller`). |
+| ![Corrales](capturas/kit_corral.png) | ![Asedio](capturas/asedio_puerta.png) |
+| **El corral** (`--edificios corral`). | **La puerta acodada** desde el patio del antemuro (`--asedio puerta`). |
+
+**Para mirarlo:**
+- `--edificios` con muralla, torre, puerta, fortaleza, enterrada, refugio, empalizada, muro, horno,
+  horno_fundicion, atalaya, corral, taller, tienda, escombros o cenizas. Lo que es de una sola región
+  (la ciudad enterrada y las obras de la tribu) se ve en una fila.
+- `--ver <id>` muestra una obra de cerca, como en el juego.
+- `--asedio puerta` y `--asedio salida` muestran la puerta acodada en el asedio.
+
 ## Fuentes
 
 - Yurta: [National Geographic, *yurt*](https://education.nationalgeographic.org/resource/yurt/);

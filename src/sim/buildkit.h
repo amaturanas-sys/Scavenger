@@ -31,6 +31,29 @@ typedef enum {
     BK_GRANARY,   // el granero sobre postes (en el desierto, de adobe con silos)
     BK_TEMPLE,    // el templo del fuego, de planta en cruz (solo en el desierto y el altiplano)
     BK_WAGON,     // la carreta-casa de la estepa: cuatro o seis ruedas y una casilla de fieltro
+    // La muralla de la capital (src/sim/army.h): adobe sobre zocalo, piedra, el murus gallicus del
+    // bosque, la empalizada sobre el terraplen de la estepa, piedra seca y turba en los fiordos.
+    BK_WALL,      // un tercio del tramo entre dos torres
+    BK_TOWER,     // la torre de cada esquina
+    BK_GATE,      // la puerta con su antemuro (la puerta acodada); la semilla par, cerrado hacia +Z
+    // Las ruinas de los sitios del mundo (src/world/voxstruct.c): las mismas piezas, comidas por el
+    // tiempo (lo alto cae primero) y tapadas de pasto, de musgo o de arena. Todas grandes.
+    BK_RUIN_FORT, // la fortaleza derruida: el recinto de muralla de la region, su puerta y sus torres rotas
+    BK_RUIN_CITY, // la ciudad enterrada: casas de adobe y cupulas asomando de la arena (solo en el desierto)
+    // Las obras de la tribu (src/sim/actions.h) y lo que queda de ellas, a la medida de su id del
+    // inventario (bk_for_item): src/world/props.c las dibuja con el kit mientras no haya un modelo
+    // importado. Al estilo de la estepa (la tribu es nomada); las chicas y las grandes son dos obras.
+    BK_SHELTER,    // el refugio de ramas y pieles
+    BK_PALISADE,   // un tramo de empalizada
+    BK_DRYSTONE,   // un tramo de muro de piedra seca
+    BK_OVEN,       // el horno de cocina de barro
+    BK_FURNACE,    // el horno de fundicion: las chicas, el del bronce; las grandes, el del acero
+    BK_WATCHTOWER, // la atalaya de madera
+    BK_CORRAL,     // el corral de cuerdas y estacas
+    BK_SMITHY,     // el taller del herrero
+    BK_TENT,       // las chicas, la tienda ligera de cuero; las grandes, la choza de fieltro
+    BK_RUBBLE,     // las chicas, los escombros; las grandes, un muro en ruinas
+    BK_ASHES,      // las chicas, las cenizas de una obra; las grandes, una yurta quemada
     BK_KINDS
 } BkType;
 
@@ -52,14 +75,21 @@ typedef struct {
     bool enclosed;           // muros cerrados (los cobertizos y las carretas, no); adentro, relleno de M_SHADOW
 } BkInfo;
 
-// ¿Tiene ese tipo en esa region? (el templo del fuego, solo en el desierto y el altiplano)
+// ¿Tiene ese tipo en esa region? (el templo del fuego, solo en el desierto y el altiplano; la ciudad
+// enterrada, solo en el desierto; las obras de la tribu, solo al estilo de la estepa)
 bool bk_available(BkType t, Region r);
-// La semilla de cada variante de un tipo y una region (siempre la misma).
+// La semilla de cada variante de un tipo y una region (siempre la misma). La de la puerta tiene la
+// paridad de la variante: la par cierra el antemuro hacia +Z, como la puerta par de la muralla.
 uint32_t bk_variant_seed(BkType t, Region r, int variant);
 // Arma el edificio en g (que reserva; vox_free al terminar). info (o NULL): sus medidas y su
 // puerta. small: que quepa en BK_SMALL x BK_SMALL. false si no lo tiene la region o no hay memoria.
 bool bk_build(BkType t, Region r, uint32_t seed, bool small, VoxGrid *g, BkInfo *info);
 // El nombre del tipo en esa region (UTF-8, para traducir con T()).
 const char *bk_name(BkType t, Region r);
+// Con que se dibuja un id del inventario de las obras y las viviendas de la tribu (y lo que queda de
+// ellas) mientras no tenga modelo: el tipo, la region y la primera de las dos variantes de su tamaño
+// (la otra, variant + 1). Las casas se escalan a su lugar; lo demas ya tiene sus medidas. false si no
+// es una de ellas.
+bool bk_for_item(const char *id, BkType *t, Region *r, int *variant);
 
 #endif

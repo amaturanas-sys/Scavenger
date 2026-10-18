@@ -87,29 +87,6 @@ static bool build_site(SiteKind k, VoxGrid *g, uint32_t seed) {
         for (int y = FOUND + 3; y < FOUND + 14; y += 4) vox_box(g, 1, y, 3, 4, y, 3, M_CARVE);
         vox_set(g, 2, FOUND + 9, 3, M_CARVE), vox_set(g, 3, FOUND + 10, 3, M_CARVE), vox_set(g, 2, FOUND + 5, 3, M_CARVE);
         return true;
-    case SITE_RUINED_FORT: // murallas derruidas y torre rota
-        if (!vox_init(g, 48, FOUND + 16, 48, 0.5f)) return false;
-        vox_box(g, 2, 0, 2, 45, FOUND + 10, 3, M_STONE);
-        vox_box(g, 2, 0, 44, 45, FOUND + 10, 45, M_STONE);
-        vox_box(g, 2, 0, 2, 3, FOUND + 10, 45, M_STONE);
-        vox_box(g, 44, 0, 2, 45, FOUND + 10, 45, M_STONE);
-        vox_cylinder(g, 42, 42, 0, FOUND + 15, 5, 4.5f, M_STONE);
-        vox_carve(g, 20, FOUND, 0, 27, FOUND + 6, 5); // la puerta
-        stones_mixed(g, seed);
-        vox_erode(g, seed, 0.85f);
-        vox_box(g, 2, 0, 2, 45, FOUND - 1, 3, M_STONE_DARK); // los cimientos quedan
-        return true;
-    case SITE_BURIED_CITY: // cupulas y muros asomando de la arena
-        if (!vox_init(g, 48, FOUND + 10, 40, 0.5f)) return false;
-        for (int i = 0; i < 5; i++) {
-            int x = 4 + (i % 3) * 15, z = 4 + (i / 3) * 18;
-            vox_box(g, x, 0, z, x + 10, FOUND + 3, z + 10, M_STONE);
-            if (i % 2 == 0) vox_ellipsoid(g, x + 5.5f, FOUND + 3, z + 5.5f, 5, 5, 5, M_ADOBE, true);
-            vox_carve(g, x + 4, FOUND, z, x + 6, FOUND + 2, z + 1);
-        }
-        vox_erode(g, seed, 0.55f);
-        vox_box(g, 0, 0, 0, 47, FOUND, 39, M_EARTH); // la arena las cubre
-        return true;
     case SITE_PETROGLYPHS: // peñas con grabados claros
         if (!vox_init(g, 40, FOUND + 12, 20, 0.25f)) return false;
         for (int i = 0; i < 3; i++) {
@@ -183,43 +160,6 @@ static bool build_site2(SiteKind k, Region r, VoxGrid *g, uint32_t seed) {
         vox_box(g, 19, FOUND + 1, 26, 19, FOUND + 3, 26, M_WOOD);
         return true;
     default: return build_site(k, g, seed);
-    }
-}
-
-static bool build_building(VoxBuilding b, VoxGrid *g) {
-    switch (b) {
-    case VB_TOWER_STONE:
-        if (!vox_init(g, 8, FOUND + 16, 8, 0.5f)) return false;
-        vox_cylinder(g, 4, 4, 0, FOUND + 13, 3.7f, 3.4f, M_STONE);
-        for (int i = 0; i < 6; i++) {
-            float a = (float)i / 6.0f * 2.0f * PI;
-            vox_set(g, 4 + (int)floorf(cosf(a) * 3.4f), FOUND + 14, 4 + (int)floorf(sinf(a) * 3.4f), M_STONE_DARK);
-        }
-        stones_mixed(g, 9u);
-        return true;
-    case VB_WALL_STONE: // 8 m de muro de piedra, con almenas y adarve
-        if (!vox_init(g, 32, FOUND + 20, 6, 0.25f)) return false;
-        vox_box(g, 0, 0, 1, 31, FOUND + 16, 4, M_STONE);
-        for (int x = 0; x < 32; x += 4) vox_box(g, x, FOUND + 17, 1, x + 1, FOUND + 19, 4, M_STONE);
-        for (int y = FOUND + 3; y < FOUND + 16; y += 4) vox_box(g, 0, y, 0, 31, y, 0, M_STONE_DARK); // hiladas
-        stones_mixed(g, 3u);
-        return true;
-    case VB_PALISADE: // troncos aguzados, de alturas un poco distintas, con un travesaño
-        if (!vox_init(g, 32, FOUND + 22, 4, 0.25f)) return false;
-        for (int x = 0; x < 32; x += 2) {
-            int h = FOUND + 16 + (x * 7) % 3;
-            vox_box(g, x, 0, 1, x + 1, h, 2, (x / 2) % 2 ? M_WOOD : M_WOOD_DARK);
-            vox_set(g, x, h + 1, 1, M_WOOD_DARK); // la punta
-        }
-        vox_box(g, 0, FOUND + 9, 0, 31, FOUND + 9, 0, M_WOOD_DARK);
-        return true;
-    case VB_TOWER_WOOD:
-        if (!vox_init(g, 8, FOUND + 16, 8, 0.5f)) return false;
-        vox_box(g, 1, 0, 1, 6, FOUND + 12, 6, M_WOOD_DARK);
-        vox_box(g, 0, FOUND + 13, 0, 7, FOUND + 13, 7, M_WOOD);
-        for (int s = 0; s < 3; s++) vox_box(g, s, FOUND + 14 + s, s, 7 - s, FOUND + 14 + s, 7 - s, M_WOOD_DARK);
-        return true;
-    default: return false;
     }
 }
 
@@ -352,7 +292,7 @@ static struct {
     bool tried, ok;
     Model model;
     float found_h; // m de cimiento (se dibuja hundido)
-} g_sites[SITE_SLOTS], g_builds[VB_KINDS], g_feats[VF_KINDS * VF_VARIANTS];
+} g_sites[SITE_SLOTS], g_feats[VF_KINDS * VF_VARIANTS];
 // El kit: de lejos, el modelo sin refinar; de cerca, el refinado (se arma la primera vez que hace falta).
 static struct {
     bool tried, ok, fine_tried, fine_ok;
@@ -395,6 +335,12 @@ static void draw_model(Model m, float found_h, Vector3 at, float yaw, float scal
 
 void voxs_draw_site(SiteKind kind, Region region, Vector3 at, float yaw, Color tint) {
     if ((unsigned)kind >= SITE_KINDS || (unsigned)region >= REGION_COUNT) return;
+    if (kind == SITE_RUINED_FORT || kind == SITE_BURIED_CITY) { // las ruinas, del kit: una de sus variantes, segun donde esten
+        BkType t = kind == SITE_RUINED_FORT ? BK_RUIN_FORT : BK_RUIN_CITY;
+        int v = (int)(fabsf(at.x) * 0.37f + fabsf(at.z) * 0.61f) % BK_VARIANTS;
+        voxs_draw_kit(t, bk_available(t, region) ? region : REGION_DESERT, v, at, yaw, 1.0f, tint);
+        return;
+    }
     int i = (int)kind * REGION_COUNT + (int)region;
     if (!g_sites[i].tried) {
         g_sites[i].tried = true;
@@ -406,20 +352,6 @@ void voxs_draw_site(SiteKind kind, Region region, Vector3 at, float yaw, Color t
         }
     }
     if (g_sites[i].ok) draw_model(g_sites[i].model, g_sites[i].found_h, at, yaw, 1.0f, tint);
-}
-
-void voxs_draw_building(VoxBuilding b, Vector3 at, float yaw, float scale, Color tint) {
-    if ((unsigned)b >= VB_KINDS) return;
-    if (!g_builds[b].tried) {
-        g_builds[b].tried = true;
-        VoxGrid g;
-        if (build_building(b, &g)) {
-            g_builds[b].found_h = FOUND * g.size;
-            g_builds[b].ok = to_model(&g, REGION_STEPPE, &g_builds[b].model, true);
-            vox_free(&g);
-        }
-    }
-    if (g_builds[b].ok) draw_model(g_builds[b].model, g_builds[b].found_h, at, yaw, scale, tint);
 }
 
 static int kit_slot(BkType t, Region region, int variant, bool fine) {
@@ -460,6 +392,19 @@ bool voxs_kit_info(BkType t, Region region, int variant, BkInfo *out) {
     return true;
 }
 
+bool voxs_draw_item(const InvItem *item, Vector3 at, float yaw) {
+    BkType t;
+    Region r;
+    int v;
+    if (!item || !bk_for_item(item->id, &t, &r, &v)) return false;
+    v += (int)(fabsf(at.x) * 0.7f + fabsf(at.z) * 1.3f) & 1; // de las dos de su tamaño, la que toca aca
+    float s = 1.0f;
+    BkInfo in;
+    if (t == BK_HOUSE && voxs_kit_info(t, r, v, &in) && in.l > 0.0f && in.w > 0.0f) s = fminf(item->l / in.l, item->w / in.w);
+    voxs_draw_kit(t, r, v, at, yaw, s, WHITE);
+    return true;
+}
+
 void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float scale, Color tint) {
     if ((unsigned)f >= VF_KINDS) return;
     int i = (int)f * VF_VARIANTS + (variant & (VF_VARIANTS - 1));
@@ -479,14 +424,11 @@ void voxs_forget_gpu(void) {
     memset(g_kit, 0, sizeof(g_kit));
     memset(g_feats, 0, sizeof(g_feats));
     memset(g_sites, 0, sizeof(g_sites));
-    memset(g_builds, 0, sizeof(g_builds));
 }
 
 void voxs_unload(void) {
     for (int i = 0; i < SITE_SLOTS; i++)
         if (g_sites[i].ok) UnloadModel(g_sites[i].model);
-    for (int i = 0; i < VB_KINDS; i++)
-        if (g_builds[i].ok) UnloadModel(g_builds[i].model);
     for (int i = 0; i < VF_KINDS * VF_VARIANTS; i++)
         if (g_feats[i].ok) UnloadModel(g_feats[i].model);
     for (int i = 0; i < BK_KINDS * REGION_COUNT * BK_VARIANTS; i++) {
@@ -496,5 +438,4 @@ void voxs_unload(void) {
     memset(g_kit, 0, sizeof(g_kit));
     memset(g_feats, 0, sizeof(g_feats));
     memset(g_sites, 0, sizeof(g_sites));
-    memset(g_builds, 0, sizeof(g_builds));
 }

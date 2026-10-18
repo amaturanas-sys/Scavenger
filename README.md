@@ -201,6 +201,14 @@ El mundo en seco (v0.10.1):
 - Lo que no cumplía se corre al lugar válido más cercano; el resto del mundo, sus nombres y las partidas guardadas quedan igual.
 - **Para Cline:** `.clinerules` explica cómo trabajar sin romper la compilación: ramas desde el `main` al día, traer `main` y compilar de cero antes de subir, C11 que compile en Linux, Windows y Android, los archivos nuevos en `CMakeLists.txt`, sin bibliotecas nuevas y con el CI en verde antes de fusionar.
 
+La muralla, las ruinas y las obras con el kit (v0.10.2):
+- **La muralla de las capitales**, al estilo de su región: el terraplén con la empalizada en la estepa, el *murus gallicus* en el bosque, piedra con contrafuertes en el altiplano, piedra seca y turba en los fiordos, adobe sobre zócalo en el desierto, con sus torres.
+- **La puerta acodada:** delante de cada puerta, un antemuro cerrado de un costado. Se entra por la boca, a lo largo de la muralla, y se dobla hacia la puerta, bajo el adarve. El antemuro también corta el paso y las flechas; los enemigos y la guarnición lo rodean por el camino más corto.
+- **Las ruinas:** la fortaleza derruida (con la muralla de su región) y la ciudad enterrada del desierto salen del kit: lo alto cae primero, lo caído se amontona al pie y las cubre el pasto, el musgo o la arena.
+- **Las obras de la tribu** sin modelo se ven como son, a su medida: el refugio, la empalizada, el muro de piedra seca, los hornos, la atalaya, el corral, el taller del herrero, la tienda y la choza de fieltro, las casas, y lo que queda de ellas (escombros, cenizas, la yurta quemada).
+
+Pruebas: `--edificios` con muralla, torre, puerta, fortaleza, enterrada, refugio, empalizada, muro, horno, horno_fundicion, atalaya, corral, taller, tienda, escombros o cenizas; `--ver <id>` (una obra de cerca); `--asedio puerta` y `--asedio salida`.
+
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.

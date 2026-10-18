@@ -231,12 +231,12 @@ int city_layout(const World *w, int idx, const City *c, CityLot *out, int max) {
             float a = gate + ((float)k + 0.5f) * 2.0f * PI_F / ring_n[ring] + (float)ring * 0.12f;
             add_lot(out, &n, max, s->x + cosf(a) * house_r[ring], s->z + sinf(a) * house_r[ring], a + PI_F, 0.0f, 0.0f, LOT_HOUSE);
         }
-    // Las tiendas de los mercenarios, junto a la puerta principal, afuera.
+    // Las tiendas de los mercenarios, junto a la puerta principal, afuera (mas alla del antemuro).
     if (cap && c) {
         static const float TENT[4] = { -0.09f, 0.09f, -0.2f, 0.2f };
         int tents = clampi((c->mercs + 11) / 12, 0, 4);
         for (int k = 0; k < tents; k++) {
-            float a = gate + TENT[k], x = s->x + cosf(a) * 47.0f, z = s->z + sinf(a) * 47.0f;
+            float a = gate + TENT[k], x = s->x + cosf(a) * 55.0f, z = s->z + sinf(a) * 55.0f;
             if (lot_ok(w, x, z, a, 3.0f, 3.0f)) add_lot(out, &n, max, x, z, a + PI_F, 3.0f, 3.0f, LOT_MERC_TENT);
         }
     }

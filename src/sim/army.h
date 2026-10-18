@@ -94,9 +94,39 @@ float city_gate_angle(int gate);
 bool city_wall_crossed(float x0, float z0, float x1, float z1, int *seg);
 // ¿La muralla corta ese paso? El muro siempre; en el tramo de una puerta, sus dos lienzos de muro
 // (mas alla de CITY_GATE_HALF del centro de la puerta) y la puerta misma si esta cerrada (war: la
-// ciudad esta en guerra; c NULL: abierta). gate: por que puerta pasa o choca (-1: muro).
+// ciudad esta en guerra; c NULL: abierta); y los antemuros de las puertas, siempre. gate: por que
+// puerta pasa o choca (-1: muro o antemuro).
 #define CITY_GATE_HALF 3.0f
 bool city_wall_blocks(const City *c, bool war, float x0, float z0, float x1, float z1, int *gate);
+// La puerta acodada: delante de cada puerta, un antemuro (el muro de adelante, a CITY_BARBICAN_OUT
+// de la muralla y de 2 * CITY_BARBICAN_HALF de largo, cerrado de un costado). Se entra por el
+// costado abierto, a lo largo de la muralla, y se dobla hacia la puerta: el que ataca le da el
+// flanco a la muralla. En las coordenadas de la puerta: X hacia afuera desde la muralla, Z de
+// costado, (-sin a, cos a) con a el angulo de la puerta.
+#define CITY_BARBICAN_OUT 5.5f
+#define CITY_BARBICAN_HALF 7.0f
+// De que costado (Z: +1 o -1) esta cerrado el antemuro de la puerta gate (del otro, la boca).
+int city_gate_closed_side(int gate);
+// El camino por la puerta gate de afuera hacia adentro (relativo al centro de la ciudad): rodear el
+// antemuro por afuera (la esquina cerrada y la de la boca), la boca, el patio delante de la puerta
+// y adentro.
+#define CITY_GATE_PATH 5
+void city_gate_path(int gate, float out[CITY_GATE_PATH][2]);
+// El rodeo por las puertas: si de (fx, fz) a (tx, tz) (relativos al centro) la muralla o un antemuro
+// cortan el paso (con las puertas abiertas), el punto al que ir antes en (wx, wz): el primero del
+// camino mas corto por un grafo chico (los caminos de las puertas, de puerta a puerta por adentro y
+// de torre en torre por afuera), que se vea derecho desde aca. Con holgura: la muralla se cruza solo
+// por el medio de una puerta, lejos de las puntas de los antemuros. Sin estado: llamado en cada
+// cuadro, el camino no cambia mientras se lo sigue. false si se va derecho.
+bool city_route(float fx, float fz, float tx, float tz, float *wx, float *wz);
+// Lo primero que corta el paso de (x0, z0) a (x1, z1) (relativos al centro): la muralla (con sus
+// puertas cerradas, como city_wall_blocks) o un antemuro (siempre). false si nada.
+typedef struct {
+    float t;      // donde choca, en [0, 1] del paso
+    float tx, tz; // a lo largo de lo que choca (para deslizarse)
+    int gate;     // la puerta de la muralla por la que pasa o en la que choca (-1: muro o antemuro)
+} WallHit;
+bool city_wall_hit(const City *c, bool war, float x0, float z0, float x1, float z1, WallHit *hit);
 
 // ¿Esta en guerra con la tribu? Con mucho rencor (o, el reino al que se rinde tributo, con la
 // relacion por el suelo): cierra el mercado y las puertas. Tomada, no.
