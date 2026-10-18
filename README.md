@@ -195,6 +195,12 @@ Los edificios de la edad del hierro (v0.10.0):
 
 Pruebas: `--edificios tipo[:region]` (casa, palacio, fundicion, cuartel, carpinteria, granero, templo o carreta: las cuatro variantes de cada región), `--ir plaza-<region>`, `--ir capital-<region>` y `--ir aldea-<region>` (con `--dron 40 --camara 0.85`, desde arriba).
 
+El mundo en seco (v0.10.1):
+- **Nada en el agua:** ningún pueblo, tribu, estructura o guarida queda sobre un lago o dentro de él (ni sobre un río, el canal o el mar), mirando toda su huella: la capital con su muralla, la aldea con sus casas, el corro de la tribu.
+- **Ni sobre el glaciar:** los pueblos y las tribus quedan por debajo de la nieve de todo el año. Tash-Dag, la capital del altiplano, ya no está sobre el hielo.
+- Lo que no cumplía se corre al lugar válido más cercano; el resto del mundo, sus nombres y las partidas guardadas quedan igual.
+- **Para Cline:** `.clinerules` explica cómo trabajar sin romper la compilación: ramas desde el `main` al día, traer `main` y compilar de cero antes de subir, C11 que compile en Linux, Windows y Android, los archivos nuevos en `CMakeLists.txt`, sin bibliotecas nuevas y con el CI en verde antes de fusionar.
+
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.

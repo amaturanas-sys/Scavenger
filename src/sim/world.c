@@ -412,6 +412,32 @@ static bool far_from_settlements(const World *w, float x, float z, float min) {
     return true;
 }
 
+// Hasta donde puede llegar el agua de un lago desde su centro: 1,3 radios (world_water) por la
+// orilla irregular (hasta 1,28).
+#define LAKE_REACH (1.3f * 1.28f)
+
+bool world_footprint_dry(const World *w, float x, float z, float r, bool sea_ok) {
+    for (int i = 0; i < w->lake_count; i++) { // los lagos, por su forma
+        const Lake *l = &w->lakes[i];
+        float reach = r + l->r * LAKE_REACH, dx = x - l->x, dz = z - l->z;
+        if (dx * dx + dz * dz < reach * reach) return false;
+    }
+    for (int i = 0; i < w->river_count; i++) { // los rios: su eje lejos de la huella
+        const River *rv = &w->rivers[i];
+        float lv;
+        if (river_box(rv, x, z, r + rv->width * 2.0f) && river_dist(rv, x, z, &lv, NULL, NULL) < r + rv->width * 1.5f) return false;
+    }
+    // El canal y el mar (grandes): el centro y dos anillos de 12 puntos.
+    for (int ring = 0; ring <= 2; ring++)
+        for (int k = 0; k < (ring ? 12 : 1); k++) {
+            float a = (float)k * (PI_F / 6.0f) + (float)ring * 0.26f, rr = r * 0.5f * (float)ring;
+            float px = x + cosf(a) * rr, pz = z + sinf(a) * rr;
+            WaterKind wk;
+            if (world_water(w, px, pz, 3.0f, &wk) > world_height(w, px, pz) - 0.5f && !(sea_ok && wk == WATER_SEA)) return false;
+        }
+    return true;
+}
+
 static bool dry_spot(const World *w, float x, float z) {
     float h = world_height(w, x, z);
     if (world_water(w, x, z, 3.0f, NULL) > h - 0.5f) return false;
@@ -628,6 +654,111 @@ static void make_creek(World *w, Rng *rng, int mains, float x, float z) {
     w->river_count++;
 }
 
+// ------------------------------------------------------------------ nada en el agua
+typedef enum { PLACE_SETTLEMENT, PLACE_TRIBE, PLACE_SITE, PLACE_DEN } PlaceKind;
+
+static bool near_any(float x, float z, float ox, float oz, float min) { return (x - ox) * (x - ox) + (z - oz) * (z - oz) < min * min; }
+
+// ¿Toda la huella queda por debajo de la nieve de todo el año? (los pueblos y las tribus)
+static bool snow_free(const World *w, float x, float z, float r) {
+    float top = w->camp_height + WORLD_SNOW_FREE;
+    if (world_height(w, x, z) > top) return false;
+    for (int k = 0; k < 8; k++) {
+        float a = (float)k * (PI_F / 4.0f);
+        if (world_height(w, x + cosf(a) * r, z + sinf(a) * r) > top) return false;
+    }
+    return true;
+}
+
+// ¿Sirve (x, z) para la cosa idx de esa clase? Las mismas reglas que al sembrarla (su region muy
+// adentro, lo seco y llano, las distancias a lo demas y al campamento) y, ademas, la huella en seco
+// y, los pueblos y las tribus, por debajo de la nieve de todo el año.
+static bool place_ok(const World *w, PlaceKind kind, int idx, float x, float z) {
+    Region rg;
+    float inset, foot, home, d2 = x * x + z * z;
+    bool sea_ok = false;
+    switch (kind) {
+    case PLACE_SETTLEMENT: {
+        const Settlement *s = &w->settlements[idx];
+        rg = s->region, inset = 500.0f, home = 450.0f, foot = s->kind == SETTLE_CAPITAL ? WORLD_FOOT_CAPITAL : WORLD_FOOT_VILLAGE;
+        for (int o = 0; o < w->settlement_count; o++)
+            if (o != idx && near_any(x, z, w->settlements[o].x, w->settlements[o].z, 600.0f)) return false;
+        for (int o = 0; o < w->tribe_count; o++)
+            if (near_any(x, z, w->tribes[o].x, w->tribes[o].z, 350.0f)) return false;
+        for (int o = 0; o < w->site_count; o++)
+            if (near_any(x, z, w->sites[o].x, w->sites[o].z, 140.0f)) return false;
+        for (int o = 0; o < w->den_count; o++)
+            if (near_any(x, z, w->dens[o].x, w->dens[o].z, 260.0f)) return false;
+        break;
+    }
+    case PLACE_TRIBE:
+        rg = w->tribes[idx].region, inset = 420.0f, home = 600.0f, foot = WORLD_FOOT_TRIBE;
+        for (int o = 0; o < w->settlement_count; o++)
+            if (near_any(x, z, w->settlements[o].x, w->settlements[o].z, 350.0f)) return false;
+        for (int o = 0; o < w->tribe_count; o++)
+            if (o != idx && near_any(x, z, w->tribes[o].x, w->tribes[o].z, 450.0f)) return false;
+        for (int o = 0; o < w->site_count; o++)
+            if (near_any(x, z, w->sites[o].x, w->sites[o].z, 120.0f)) return false;
+        break;
+    case PLACE_SITE: {
+        const WorldSite *st = &w->sites[idx];
+        rg = st->region, home = 250.0f, foot = WORLD_FOOT_SITE;
+        sea_ok = st->kind == SITE_HARBOR;
+        inset = sea_ok ? 0.0f : 300.0f;
+        if (sea_ok) { // el embarcadero, en la costa
+            float e = world_edge_distance(w, x, z);
+            if (e < SHORE_E - 30.0f || e > SHORE_E + 160.0f) return false;
+        }
+        for (int o = 0; o < w->settlement_count; o++)
+            if (near_any(x, z, w->settlements[o].x, w->settlements[o].z, 140.0f)) return false;
+        for (int o = 0; o < w->site_count; o++)
+            if (o != idx && near_any(x, z, w->sites[o].x, w->sites[o].z, 160.0f)) return false;
+        for (int o = 0; o < w->tribe_count; o++)
+            if (near_any(x, z, w->tribes[o].x, w->tribes[o].z, 120.0f)) return false;
+        break;
+    }
+    default:
+        rg = w->dens[idx].region, inset = 400.0f, home = 400.0f, foot = WORLD_FOOT_DEN;
+        for (int o = 0; o < w->settlement_count; o++)
+            if (near_any(x, z, w->settlements[o].x, w->settlements[o].z, 260.0f)) return false;
+        break;
+    }
+    if (d2 < home * home || world_region_weight(w, rg, x, z) < 0.85f) return false;
+    if (rg != REGION_STEPPE && world_edge_distance(w, x, z) < inset) return false;
+    if ((kind == PLACE_SETTLEMENT || kind == PLACE_TRIBE) && !snow_free(w, x, z, foot)) return false;
+    return dry_spot(w, x, z) && world_footprint_dry(w, x, z, foot, sea_ok);
+}
+
+// Si la cosa no sirve donde cayo, el lugar valido mas cercano (en anillos de 20 m, hasta 2 km).
+// false si no hay: queda donde estaba.
+static bool settle(const World *w, PlaceKind kind, int idx, float *x, float *z) {
+    if (place_ok(w, kind, idx, *x, *z)) return true;
+    for (float r = 20.0f; r <= 2000.0f; r += 20.0f) {
+        int n = 8 + (int)(r * 0.3f);
+        for (int k = 0; k < n; k++) {
+            float a = ((float)k + 0.5f) / (float)n * 2.0f * PI_F, px = *x + cosf(a) * r, pz = *z + sinf(a) * r;
+            if (place_ok(w, kind, idx, px, pz)) {
+                *x = px, *z = pz;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// Nada sobre el agua ni dentro de ella: lo que cayo sobre un lago (o un rio, el canal o el mar)
+// o, los pueblos y las tribus, sobre la nieve de todo el año, se corre al lugar valido mas cercano.
+// Va al final y sin tocar el azar: lo demas del mundo (sus nombres, lo que esta en seco) queda igual.
+static void settle_all(World *w) {
+    for (int i = 0; i < w->settlement_count; i++) settle(w, PLACE_SETTLEMENT, i, &w->settlements[i].x, &w->settlements[i].z);
+    for (int i = 0; i < w->tribe_count; i++) settle(w, PLACE_TRIBE, i, &w->tribes[i].x, &w->tribes[i].z);
+    for (int i = 0; i < w->site_count; i++) {
+        WorldSite *st = &w->sites[i];
+        if (settle(w, PLACE_SITE, i, &st->x, &st->z) && st->kind == SITE_HARBOR) st->yaw = atan2f(st->x, st->z); // mirando al mar
+    }
+    for (int i = 0; i < w->den_count; i++) settle(w, PLACE_DEN, i, &w->dens[i].x, &w->dens[i].z);
+}
+
 void world_generate(World *w, uint32_t seed) {
     memset(w, 0, sizeof(*w));
     w->seed = seed;
@@ -821,6 +952,7 @@ void world_generate(World *w, uint32_t seed) {
             n--;
         }
     }
+    settle_all(w);
 }
 
 const char *site_name(SiteKind k) {

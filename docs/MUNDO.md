@@ -46,6 +46,9 @@ El norte es −Z y el este +X.
   - Las guaridas quedan lejos de los pueblos.
 - **Nombres de los pueblos:** se arman con sílabas de cada región, sin repetirse.
 - **Tribus y estructuras:** dónde caen y qué actitud tiene cada tribu (siempre de las tres en cada región).
+- **Nada en el agua** (v0.10.1, `world_footprint_dry` y `settle_all` en `src/sim/world.c`): ningún pueblo, tribu, estructura o guarida queda sobre un lago o dentro de él, con su orilla; tampoco sobre un río, el canal o el mar (el embarcadero sí da al mar). Se mira toda su huella: la capital con su muralla (50 m de radio), la aldea con sus casas (24 m), el corro de la tribu (20 m), la estructura (18 m) y la guarida (8 m), también con la crecida de la primavera.
+  - Los pueblos y las tribus, además, quedan por debajo de la nieve de todo el año: la línea de nieve del verano, 40 m sobre el llano del campamento, menos 4 m (no más ciudades sobre el glaciar del altiplano).
+  - Lo que no cumple se corre al lugar válido más cercano (con las mismas reglas de su región y distancias), al final de la generación y sin tocar el azar: el resto del mundo y los nombres quedan iguales. En cada semilla se mueven unas 7 a 11 cosas de unas 127, de 20 a 340 m.
 
 ## El suelo, el horizonte y el cielo
 
