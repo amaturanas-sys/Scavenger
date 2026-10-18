@@ -50,3 +50,21 @@ python tools/fetch_pipeline_asset.py \
 - All C code must compile with CMake (targeting Android/mobile)
 - Zero memory leaks in render loop
 - Static memory allocation preferred for embedded targets
+
+## GLOBAL AI BEHAVIOR RULE
+- The write_to_file tool is STRICTLY UNAVAILABLE and unsupported in this workspace.
+- To create, write, or modify ANY file, you MUST exclusively use the editor tool.
+- Never attempt to call write_to_file under any circumstances: it triggers an AI_NoSuchToolError and wastes context tokens.
+
+## Project Conventions (read before changing C code)
+- The project conventions live in `.claude/skills/estepa/SKILL.md` and `docs/ARQUITECTURA.md`: pure C rules in `src/sim/` (tested in `tests/test_main.c`), raylib glue in `src/game/`, fixed arrays (no per-frame allocation), all UI text through `T()`/`N_()`.
+- Never remove or rename a field of a shared struct (for example `Camp` in `src/world/camp.h`, used by `main.c`, the fire, combat and migration code) without updating every use. Extend structs by adding fields at the end.
+- Saved structs: after changing one, run `python3 tools/save/esquema.py`; enums only grow at the end (`docs/PARTIDAS.md`).
+- Before every push, all of these must pass locally (CI runs the same on Linux, Windows and Android):
+```bash
+cmake --build build && ./build/sim_tests
+python3 tools/assets/i18n.py extraer && python3 tools/assets/i18n.py check
+python3 tools/assets/inventario.py check && python3 tools/assets/iconos.py check
+python3 tools/save/esquema.py check
+```
+- Never push a commit that does not build: a red CI blocks every release.
