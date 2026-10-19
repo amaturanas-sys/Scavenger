@@ -330,7 +330,7 @@ static float bush_density(const float *k, float near_water) {
 // Densidad de arboles: bosque cerrado; algunos en la costa y en las faldas del altiplano;
 // pocos en la estepa (mas junto al agua); ninguno en el desierto.
 static float tree_density(const float *k, float near_water) {
-    return k[REGION_FOREST] * 0.72f + k[REGION_FJORD] * 0.14f + k[REGION_HIGHLAND] * 0.06f + k[REGION_STEPPE] * (0.01f + 0.22f * near_water) +
+    return k[REGION_FOREST] * 0.85f + k[REGION_FJORD] * 0.20f + k[REGION_HIGHLAND] * 0.10f + k[REGION_STEPPE] * (0.01f + 0.35f * near_water) +
            k[REGION_DESERT] * 0.25f * near_water; // sotos junto a rios y oasis
 }
 

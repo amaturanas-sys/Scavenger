@@ -9,7 +9,7 @@
 #include "terrain.h"
 
 #define CAMP_MAX_YURTS 8
-#define WORLD_MAX_TREES 80
+#define WORLD_MAX_TREES 160
 
 typedef struct {
     Model yurt;

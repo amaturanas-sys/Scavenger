@@ -26,25 +26,25 @@ float flora_density(FloraKind kind, const float k[REGION_COUNT], float near_wate
     float nw = clamp01(near_water);
     switch (kind) {
     case FLORA_GRASS: // en el desierto, solo junto al agua (los oasis)
-        return k[REGION_STEPPE] * 0.55f + k[REGION_FOREST] * 0.22f + k[REGION_HIGHLAND] * 0.32f + k[REGION_FJORD] * 0.4f +
-               k[REGION_DESERT] * (0.015f + 0.35f * nw);
+        return k[REGION_STEPPE] * 0.88f + k[REGION_FOREST] * 0.35f + k[REGION_HIGHLAND] * 0.51f + k[REGION_FJORD] * 0.64f +
+               k[REGION_DESERT] * (0.024f + 0.56f * nw);
     case FLORA_STIPA: // la estepa seca: lejos del agua
-        return (k[REGION_STEPPE] * 0.24f + k[REGION_HIGHLAND] * 0.04f + k[REGION_DESERT] * 0.02f) * (1.0f - 0.7f * nw);
+        return (k[REGION_STEPPE] * 0.48f + k[REGION_HIGHLAND] * 0.08f + k[REGION_DESERT] * 0.04f) * (1.0f - 0.7f * nw);
     case FLORA_FLOWER:
-        return k[REGION_STEPPE] * 0.05f + k[REGION_HIGHLAND] * 0.04f + k[REGION_FOREST] * 0.015f + k[REGION_FJORD] * 0.02f;
+        return k[REGION_STEPPE] * 0.1f + k[REGION_HIGHLAND] * 0.08f + k[REGION_FOREST] * 0.03f + k[REGION_FJORD] * 0.04f;
     case FLORA_FERN:
-        return k[REGION_FOREST] * 0.22f + k[REGION_FJORD] * 0.07f;
+        return k[REGION_FOREST] * 0.44f + k[REGION_FJORD] * 0.14f;
     case FLORA_REED: // las orillas
         return nw * nw *
-               (k[REGION_STEPPE] * 0.5f + k[REGION_FOREST] * 0.35f + k[REGION_HIGHLAND] * 0.12f + k[REGION_FJORD] * 0.2f +
-                k[REGION_DESERT] * 0.45f);
+               (k[REGION_STEPPE] * 1.0f + k[REGION_FOREST] * 0.7f + k[REGION_HIGHLAND] * 0.24f + k[REGION_FJORD] * 0.4f +
+                k[REGION_DESERT] * 0.9f);
     default: return 0.0f;
     }
 }
 
 int flora_pick(const float k[REGION_COUNT], float near_water, float r) {
     float d[FLORA_KINDS], total = 0.0f;
-    for (int i = 0; i < FLORA_KINDS; i++) total += d[i] = flora_density((FloraKind)i, k, near_water);
+    for (int i = 0; i < FLORA_KINDS; i++) total += d[i] = flora_density((FloraKind)i, k, near_water) * FLORA_CANDIDATE_M2;
     float scale = total > 1.0f ? 1.0f / total : 1.0f; // como mucho una mata por candidato
     for (int i = 0; i < FLORA_KINDS; i++) {
         r -= d[i] * scale;
