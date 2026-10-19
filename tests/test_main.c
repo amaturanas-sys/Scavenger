@@ -4343,7 +4343,7 @@ static void test_cities(void) {
     city_start(&vil, SETTLE_VILLAGE, REGION_STEPPE, 7u);
     city_start(&again, SETTLE_CAPITAL, REGION_STEPPE, 7u);
     CHECK(!memcmp(&again, &cap, sizeof(City)));
-    CHECK(cap.people > 1000.0f && vil.people > 100.0f && vil.people < 400.0f && cap.silver > vil.silver * 10.0f);
+    CHECK(cap.people > 1800.0f && vil.people > 200.0f && vil.people < 600.0f && cap.silver > vil.silver * 10.0f);
     CHECK(cap.soldiers > vil.soldiers && cap.grain >= cap.people * 50.0f && cap.fields == 1.0f && cap.grudge == 0.0f);
     // Las estaciones: la cosecha, en otoño; en invierno, nada. El bosque rinde mas que el desierto, y
     // la suerte es la misma toda la estacion.
@@ -4485,17 +4485,17 @@ static void test_flora(void) {
     CHECK(flora_density(FLORA_GRASS, desert, 0.0f) < 0.05f && flora_density(FLORA_GRASS, desert, 1.0f) > 0.3f);
     CHECK(flora_density(FLORA_REED, steppe, 0.0f) == 0.0f && flora_density(FLORA_REED, steppe, 1.0f) > 0.3f);
     CHECK(flora_density(FLORA_FERN, forest, 0.0f) > 0.1f && flora_density(FLORA_FERN, steppe, 0.0f) == 0.0f);
-    // Cada candidato da una mata con la probabilidad de su densidad (y nunca mas de una).
+    // Cada candidato da una mata con la probabilidad de su densidad por lo que ocupa (y nunca mas de una).
     int count[FLORA_KINDS] = { 0 }, none = 0;
     for (int i = 0; i < 10000; i++) {
         int k = flora_pick(steppe, 0.0f, ((float)i + 0.5f) / 10000.0f);
         if (k < 0) none++;
         else count[k]++;
     }
-    CHECK(fabsf((float)count[FLORA_GRASS] / 10000.0f - flora_density(FLORA_GRASS, steppe, 0.0f)) < 0.01f);
-    CHECK(fabsf((float)count[FLORA_STIPA] / 10000.0f - flora_density(FLORA_STIPA, steppe, 0.0f)) < 0.01f);
+    CHECK(fabsf((float)count[FLORA_GRASS] / 10000.0f - flora_density(FLORA_GRASS, steppe, 0.0f) * FLORA_CANDIDATE_M2) < 0.01f);
+    CHECK(fabsf((float)count[FLORA_STIPA] / 10000.0f - flora_density(FLORA_STIPA, steppe, 0.0f) * FLORA_CANDIDATE_M2) < 0.01f);
     float sum = 0.0f;
-    for (int k = 0; k < FLORA_KINDS; k++) sum += flora_density((FloraKind)k, steppe, 0.0f);
+    for (int k = 0; k < FLORA_KINDS; k++) sum += flora_density((FloraKind)k, steppe, 0.0f) * FLORA_CANDIDATE_M2;
     CHECK(count[FLORA_REED] == 0 && count[FLORA_FERN] == 0 && sum < 1.0f && fabsf((float)none / 10000.0f - (1.0f - sum)) < 0.01f);
     int crowded = 0;
     for (int i = 0; i < 1000; i++) crowded += flora_pick(steppe, 1.0f, ((float)i + 0.5f) / 1000.0f) >= 0;

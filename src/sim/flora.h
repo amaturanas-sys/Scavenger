@@ -29,7 +29,8 @@ typedef enum {
 } FloraKind;
 
 #define FLORA_CELL 2.0f    // m: las celdas del suelo (src/world/terrain.h: CHUNK_SIZE / CHUNK_CELLS)
-#define FLORA_PER_CELL 4   // matas como mucho por celda (una por m2)
+#define FLORA_PER_CELL 8   // matas como mucho por celda (dos por m2)
+#define FLORA_CANDIDATE_M2 (FLORA_CELL * FLORA_CELL / (float)FLORA_PER_CELL) // lo que ocupa cada candidato: medio m2
 #define FLORA_CAMP_R 18.0f // el campamento inicial, en el origen: el pasto pisoteado
 #define FLORA_TRAMPLE_R 1.1f
 
@@ -37,7 +38,8 @@ typedef enum {
 // en la orilla de un lago o un rio, 0 a 2,5 m sobre el agua o lejos; el mar no cuenta).
 float flora_density(FloraKind kind, const float k[REGION_COUNT], float near_water);
 // La clase de una mata candidata con su azar r en [0, 1), o -1 si ahi no crece nada (cada
-// candidato ocupa un m2: la densidad es su probabilidad; todas juntas, como mucho 1).
+// candidato ocupa FLORA_CANDIDATE_M2: su probabilidad es la densidad por esa superficie; todas
+// juntas, como mucho 1).
 int flora_pick(const float k[REGION_COUNT], float near_water, float r);
 
 // Una mata sembrada.

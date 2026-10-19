@@ -9,9 +9,9 @@
 #include "rlgl.h"
 #include "sim/flora.h"
 
-#define VEG_GRID 30            // celdas por lado de la ventana (60 m)
+#define VEG_GRID 42            // celdas por lado de la ventana (84 m)
 #define VEG_SLOTS (VEG_GRID * VEG_GRID)
-#define VEG_RADIUS 26.0f       // hasta donde se dibuja
+#define VEG_RADIUS 39.0f       // hasta donde se dibuja
 #define VEG_RADIUS_TOUCH 18.0f // en Android
 #define VEG_FADE 5.0f          // los ultimos metros crecen de a poco: no aparecen de golpe
 #define VEG_BUDGET 48          // celdas que se siembran por cuadro (en Android, la mitad)

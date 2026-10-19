@@ -93,7 +93,9 @@ El norte es −Z y el este +X.
   - pasto, stipa (con sus plumas plateadas en verano), flores de primavera, helechos y juncos alrededor del jugador, por celdas de 2 m como el suelo y sobre su facetado;
   - del color del suelo de su región y su estación; crecen, se secan de pie, el invierno las aplasta y la nieve las tapa donde cubre el suelo (asoman la stipa y los juncos secos);
   - el viento las mece en olas que cruzan el pasto; al pasar se apartan;
-  - una ventana de 60 m que sigue al jugador; se dibujan hasta 26 m (18 m en Android), con menos hojas a lo lejos.
+  - una ventana de 84 m que sigue al jugador; se dibujan hasta 39 m (18 m en Android), con menos hojas a lo lejos;
+  - hasta dos matas por m² (v0.10.3: el pasto 1,6 veces más tupido; la stipa, las flores, los helechos y los juncos, el doble).
+- **Árboles** (v0.10.3, más que antes): densidad 0,85 en el bosque, 0,20 en los fiordos, 0,10 en las faldas del altiplano y hasta 0,36 junto al agua en la estepa; 160 alrededor del campamento inicial (fuera de sus 30 m).
 
   ![Vegetación](mundo/vegetacion.png)
 
