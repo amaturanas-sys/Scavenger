@@ -420,3 +420,14 @@ Esto refleja que antes había demasiada gente por cada estructura, haciendo las 
 
 - Cambios en `src/sim/city.c`: revertir densidades de casas y campos.
 - Documentación en `docs/GDD.md` y `docs/ROADMAP.md`.
+
+### 0.10.5 — Combate mejorado (v0.10.5)
+- **Controles de objetivo:** Tab para seleccionar, Ctrl+Q/E para cambiar entre enemigos.
+- **Cámara que sigue al objetivo:** la cámara se suaviza hacia el enemigo seleccionado, facilitando el movimiento.
+- **Animaciones mejoradas:** parry, deflect, shield bash y shield charge tienen clips específicos.
+- **Bloqueo mejorado:** escudo bloquea todo, arma solo golpeos directos.
+- **Escoltas mejoradas:** ahora responden mejor a órdenes.
+
+- Cambios en `src/sim/keymap.c`, `src/sim/keymap.h`, `src/sim/melee.h`, `src/sim/anim_index.c`, `src/game/combat_game.c`.
+- Documentación en `docs/GDD.md` y `docs/ROADMAP.md`.
+

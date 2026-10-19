@@ -33,6 +33,10 @@ typedef struct {
     int attacking;    // golpe en curso: 0 ninguno, 1..3 la serie de golpes
     bool spear;       // arma larga de asta (estocada)
     bool blocking;    // cubriendose con el escudo
+    bool parry;       // parry (MOVE_PARRY)
+    bool deflect;     // deflect (MOVE_DEFLECT)
+    bool shield_bash; // shield bash (MOVE_SHIELD_BASH)
+    bool shield_charge; // shield charge (MOVE_SHIELD_CHARGE)
     bool limping;     // herido en las piernas: cojea al caminar
     int ranged;       // apuntando: 0 no, 1 arco u honda, 2 ballesta, 3 mosquete
     int move;         // movimiento cuerpo a cuerpo en curso: 0 ninguno, MeleeMove + 1 (src/sim/melee.h)

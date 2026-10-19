@@ -152,6 +152,15 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 
 ## Versiones
 
+### 0.10.5 — Combate mejorado
+- [x] Añadir controles de objetivo (Tab, Ctrl+Q, Ctrl+E)
+- [x] Añadir cámara que sigue al objetivo
+- [x] Añadir animaciones específicas (parry, deflect, shield bash, shield charge)
+- [x] Mejorar integración de animaciones en pose_move
+- [x] Documentar en `docs/GDD.md`
+- [ ] PR y CI verde en Linux, Windows y Android
+- [ ] Release (ZIP y APK)
+
 ### 0.10.4 — Despoblación
 - [x] Revertir densidades de casas y campos en `src/sim/city.c`:
   - Capital: 110 almas/casa (antes 150), 180 almas/campo (antes 250)
