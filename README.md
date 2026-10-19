@@ -34,6 +34,10 @@ El repositorio trae su configuración (`.devcontainer/`): al crear el Codespace 
 CI (las cabeceras de X11/OpenGL, Xvfb, cmake, ninja y el Python de la tubería de modelos en `.venv`),
 compila de cero y corre las pruebas. Se vuelve a preparar con `bash .devcontainer/setup.sh`.
 
+Para trabajar con Cline (o cualquier IA) en el Codespace: las reglas están en `.clinerules` y el detalle,
+con el prompt para empezar cada sesión y la plantilla para pedir tareas, en
+[docs/GUIA_IA.md](docs/GUIA_IA.md).
+
 Si el Codespace se rompe (no compila, quedó en una rama vieja o con conflictos):
 - **Lo más simple:** borrarlo y crear uno nuevo desde `main` (Code → Codespaces → New codespace on main).
 - **Sin borrarlo:** `Ctrl+Shift+P` → *Codespaces: Rebuild Container*. Después, en la terminal, se

@@ -9,6 +9,8 @@
 >   con él; `--edificios` lo muestra. Lo que faltaba (el paso 5b), en la **v0.10.2**: las murallas con
 >   sus torres y sus puertas acodadas, las ruinas y las obras de la tribu.
 > - **Lo que sigue** espera al usuario (abajo): no queda nada del plan que se haga solo aquí.
+> - **Desde la v0.10.3**, el trabajo sigue con Cline en el Codespace de `main`: el flujo, las reglas y
+>   el prompt para empezar están en [GUIA_IA.md](GUIA_IA.md).
 > - **Del lado del usuario:** las imágenes de la D.2 (empezando por el estilo animal) y, con los cuerpos
 >   riggeados, los videos de la C.1.
 >
