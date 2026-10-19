@@ -57,8 +57,10 @@ first frame, models saved in the wrong path). To keep that from happening again:
    ```
    Then run every check listed in "Project Conventions" again, the reference saves
    (`cd build && xvfb-run -a ./estepa --probar-partidas ../tests/partidas`) and a screenshot. A stale `build/`
-   folder hides errors: CI always configures from zero. In Codespaces, install what CI installs first:
-   `sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libgl1-mesa-dri xvfb ninja-build`.
+   folder hides errors: CI always configures from zero. The Codespace installs what CI installs by itself
+   (`.devcontainer/setup.sh`, which also builds from zero and runs the tests); run it again with
+   `bash .devcontainer/setup.sh`. If the Codespace breaks, rebuild the container or create a new one from
+   `main` (README, "En un Codespace") instead of patching a stale checkout.
 3. **The code must build on the three platforms CI builds** (Linux with gcc, Windows with MSVC, Android with the
    NDK's clang):
    - plain C11: no variable-length arrays (MSVC rejects them), no GNU extensions (`typeof`, statement
@@ -79,6 +81,11 @@ first frame, models saved in the wrong path). To keep that from happening again:
 6. **Pull requests:** never push to `main` directly. Open a PR from your branch, wait until the CI is green on
    Linux, Windows and Android, and only then merge. If the CI turns red, fix it on that same branch before
    anything else, and never start a new branch on top of a red one.
+7. **Your branches only, and never `--force`:** work in a `cline/<task>` branch made from `origin/main`.
+   Never push to `main`, to `claude/*` branches (they belong to Claude Code) or to someone else's branch, and
+   never `git push --force`: in v0.10.3 a push from a stale Codespace replaced a `claude/*` branch with the old
+   v0.9.0 code (cJSON, `anim_system`) and the repository ended up split in three branches. If `git push` is
+   rejected, `git fetch` and merge `origin/main` into your branch; do not force it.
 
 ## GLOBAL AI BEHAVIOR RULE
 - The write_to_file tool is STRICTLY UNAVAILABLE and unsupported in this workspace.

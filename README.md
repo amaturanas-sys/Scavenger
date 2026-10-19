@@ -28,6 +28,24 @@ ctest --test-dir build      # tests del nucleo
 En Linux hacen falta las cabeceras de X11/OpenGL:
 `sudo apt install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev`
 
+### En un Codespace
+
+El repositorio trae su configuración (`.devcontainer/`): al crear el Codespace instala lo mismo que el
+CI (las cabeceras de X11/OpenGL, Xvfb, cmake, ninja y el Python de la tubería de modelos en `.venv`),
+compila de cero y corre las pruebas. Se vuelve a preparar con `bash .devcontainer/setup.sh`.
+
+Si el Codespace se rompe (no compila, quedó en una rama vieja o con conflictos):
+- **Lo más simple:** borrarlo y crear uno nuevo desde `main` (Code → Codespaces → New codespace on main).
+- **Sin borrarlo:** `Ctrl+Shift+P` → *Codespaces: Rebuild Container*. Después, en la terminal, se
+  guarda lo que no esté subido y se vuelve a `main`:
+  ```bash
+  git stash -u                  # guarda lo que no esté subido (git stash list para verlo)
+  git fetch origin
+  git switch main
+  git reset --hard origin/main  # la rama local, igual a la de GitHub
+  bash .devcontainer/setup.sh
+  ```
+
 ## Idioma / Language
 
 Toda la interfaz está en **español o inglés**. Se cambia con el botón del globo (Idioma / Language) en el menú de entrada o en la pausa, y se recuerda entre partidas (`saves/ajustes.txt`).
@@ -208,6 +226,13 @@ La muralla, las ruinas y las obras con el kit (v0.10.2):
 - **Las obras de la tribu** sin modelo se ven como son, a su medida: el refugio, la empalizada, el muro de piedra seca, los hornos, la atalaya, el corral, el taller del herrero, la tienda y la choza de fieltro, las casas, y lo que queda de ellas (escombros, cenizas, la yurta quemada).
 
 Pruebas: `--edificios` con muralla, torre, puerta, fortaleza, enterrada, refugio, empalizada, muro, horno, horno_fundicion, atalaya, corral, taller, tienda, escombros o cenizas; `--ver <id>` (una obra de cerca); `--asedio puerta` y `--asedio salida`.
+
+Una sola rama y más vida (v0.10.3):
+- **Las tres ramas, en una:** `main` tiene todo. La rama que el Codespace había subido sobre la base vieja de Cline se unió sin perder su historia, y su cambio se pasó al código actual.
+- **Más gente:** la capital arranca con 2500 a 3300 almas y la aldea con 300 a 450, con más tierra (4000 y 600); las casas y los campos crecen con ellas.
+- **Más árboles:** en el bosque, los fiordos, las faldas del altiplano y junto al agua de la estepa; y el doble alrededor del campamento.
+- **Más pasto:** el pasto, la stipa, las flores, los helechos y los juncos crecen más tupidos (hasta dos matas por m²), y en la PC se ven hasta 39 m (en Android, 18 m, para no perder cuadros).
+- **El Codespace** se prepara solo (`.devcontainer/`): ver «En un Codespace», arriba.
 
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 

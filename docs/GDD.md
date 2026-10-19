@@ -620,7 +620,7 @@ Cada arma tiene sus rasgos en `WeaponStats` (y los arcos, `RangedDef.saddle`):
 Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su economía, un día a la vez (`city_day`), en `GameActions.cities`.
 
 - **La gente y el granero:**
-  - Los labradores (el 55 % de la gente, hasta lo que da su tierra: 2400 almas en la capital, 340 en la aldea) cosechan según la estación (primavera 0,5; verano 0,9; otoño 2; invierno nada), la región (el bosque rinde más; el desierto, menos) y la suerte del año (0,8 a 1,2, la misma toda la estación).
+  - Los labradores (el 55 % de la gente, hasta lo que da su tierra: 4000 almas en la capital, 600 en la aldea) cosechan según la estación (primavera 0,5; verano 0,9; otoño 2; invierno nada), la región (el bosque rinde más; el desierto, menos) y la suerte del año (0,8 a 1,2, la misma toda la estación).
   - Cada alma come una ración por día, y el granero guarda hasta 150 días.
   - Con un mes de reserva y poco descontento, la gente crece (más despacio pasada su tierra). Con hambre, se va un 1,5 % por día y sube el descontento.
 - **El tesoro:**

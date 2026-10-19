@@ -165,6 +165,11 @@ La v0.9.1 agregó, también al final y sin migraciones:
 
 Además, `CB_MAX_ENEMIES` pasó de 16 a 24: el arreglo crece y las partidas viejas cargan con los huecos en cero. Los enemigos nuevos (`ENEMY_HEAVY_INFANTRY`, `ENEMY_ROYAL_ARCHER`, `ENEMY_CROSSBOWMAN` y `ENEMY_CHARIOT`) van al final de `EnemyKind`, y la receta de la escala (`CRAFT_SIEGE_LADDER`), al final de `CraftId`. El resumen suma, solo si no son cero, la línea del asedio de cada ciudad, la de la expedición, la del tributo de las tomadas, la de la formación de cada enemigo y la de cada formación.
 
+La v0.10.3 duplicó los árboles del campamento: `WORLD_MAX_TREES` pasó de 80 a 160, así que crece
+`Disasters.tree_burn` (lo quemado de cada árbol). Los primeros 80 árboles salen iguales de la
+semilla; en las partidas viejas, los nuevos cargan sanos (en cero). La gente con la que arranca cada
+ciudad cambió (`city_start`), pero eso solo cuenta en las partidas nuevas: las guardadas traen la suya.
+
 ## El esquema congelado de las partidas planas
 
 `src/game/save_v1.inc` describe con números fijos los structs de las partidas planas (formato 1, hasta la v0.4.3). Se volcó una sola vez, con `sf_dump_c`, desde el esquema de la v0.4.4, que era idéntico al de la v0.4.3, y **no se regenera**: describe archivos viejos, no los structs de hoy.

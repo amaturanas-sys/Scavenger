@@ -30,3 +30,6 @@ tests/partidas/*.tmp
 # procedencia (url y sha256) queda en arte/modelos/models_manifest.json
 arte/modelos/fuentes/
 build/modelos/
+
+# El entorno de Python del Codespace (.devcontainer/setup.sh)
+.venv/
