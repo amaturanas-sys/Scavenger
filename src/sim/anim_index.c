@@ -44,7 +44,16 @@ const char *anim_humanoid(const HumanoidState *s) {
     if (s->mounted) return s->mount_speed > 6.0f ? "jinete_galope" : s->mount_speed > 0.3f ? "jinete_paso" : "jinete_idle";
     if (!s->grounded) return "caer";
     if (s->doing >= 0) return anim_for_action((ActionId)s->doing);
-    if (s->move > 1 && s->move <= MOVE_COUNT) return move_def((MeleeMove)(s->move - 1))->clip; // patada, escudo, agarre...
+    if (s->move > 1 && s->move <= MOVE_COUNT) {
+        MeleeMove m = (MeleeMove)(s->move - 1);
+        const char *clip = move_def(m)->clip;
+        // Clips específicos para acciones especiales
+        if (m == MOVE_PARRY) return "parry";
+        if (m == MOVE_DEFLECT) return "desvio";
+        if (m == MOVE_SHIELD_BASH) return "golpe_escudo";
+        if (m == MOVE_SHIELD_CHARGE) return "carga_escudo";
+        return clip; // patada, agarre...
+    }
     if (s->attacking > 0) {
         static const char *one[] = { "ataque_una_1", "ataque_una_2", "ataque_una_3" };
         static const char *two[] = { "ataque_dos_1", "ataque_dos_2", "ataque_dos_3" };

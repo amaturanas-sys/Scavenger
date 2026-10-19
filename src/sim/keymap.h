@@ -39,6 +39,8 @@ typedef enum {
     KA_DRINK,       // N: beber (Mayus+N: con hierbas)
     KA_ESCORT,      // Y: escolta
     KA_DISPATCH,    // Mayus+Y: despachar a la tribu (viajes, mensajes)
+    KA_TARGET_LEFT, // Ctrl+Q: objetivo anterior
+    KA_TARGET_RIGHT, // Ctrl+E: objetivo siguiente
     KA_MARK,        // M: marcar el mapa (Mayus+M: peligro)
     KA_MENU,        // Tab fuera de combate: acciones, obras, fabricar, reparar
     KA_INVENTORY,   // I

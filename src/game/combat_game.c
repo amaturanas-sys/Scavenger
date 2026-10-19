@@ -593,6 +593,11 @@ static Fighter fighter_enemy(const Enemy *e, Vector3 from) {
     f.weight = armor_kg(&e->armor) + (e->mounted ? MOUNT_WEIGHT : 0.0f);
     f.health = fmaxf(0.0f, e->h.hp / e->h.hp_max);
     f.ring = e->armed && weapon_stats(def->weapon).ring;
+    // Estados de animación especial
+    f.parry = e->move == (MOVE_PARRY + 1);
+    f.deflect = e->move == (MOVE_DEFLECT + 1);
+    f.shield_bash = e->move == (MOVE_SHIELD_BASH + 1);
+    f.shield_charge = e->move == (MOVE_SHIELD_CHARGE + 1);
     return f;
 }
 
@@ -1159,6 +1164,11 @@ static void pose_player(BodyPose *b, const Combat *cb, const Player *p, float ti
                           .aiming = cb->aiming, .down = cb->player.down || cb->knock > 0.0f, .scale = 1.0f,
                           .crouch = p->crouching ? 1.0f : p->sneaking ? 0.3f : 0.0f, .hold = cb->hostage ? 1.0f : 0.0f };
     pose_move(&pp, cb->move, cb->move_anim, cb->blocking || cb->charge_timer > 0.0f);
+    // Estados de animación especial del jugador
+    pp.parry = cb->move == (MOVE_PARRY + 1);
+    pp.deflect = cb->move == (MOVE_DEFLECT + 1);
+    pp.shield_bash = cb->move == (MOVE_SHIELD_BASH + 1);
+    pp.shield_charge = cb->move == (MOVE_SHIELD_CHARGE + 1);
     body_pose(b, &pp);
 }
 
@@ -1170,6 +1180,11 @@ static void pose_enemy(BodyPose *b, const Enemy *e, float time, int i) {
                           .down = e->state == EN_DEAD || e->state == EN_DOWN || e->knock > 0.0f, .scale = 1.0f,
                           .held = e->state == EN_HOSTAGE ? 1.0f : 0.0f };
     pose_move(&pp, e->move, e->move_anim, e->blocking);
+    // Estados de animación especial
+    pp.parry = e->move == (MOVE_PARRY + 1);
+    pp.deflect = e->move == (MOVE_DEFLECT + 1);
+    pp.shield_bash = e->move == (MOVE_SHIELD_BASH + 1);
+    pp.shield_charge = e->move == (MOVE_SHIELD_CHARGE + 1);
     body_pose(b, &pp);
 }
 
@@ -1189,7 +1204,10 @@ static void draw_shield_on(const BodyPose *b, Vector3 pos, float yaw, Color c) {
 static void pose_member(BodyPose *b, const Npc *n, const Member *m, const Troop *troop, float time, int i) {
     const Champion *c = m->champion >= 0 ? &troop->champions[m->champion] : NULL;
     BodyPoseParams pp = { .walk_phase = time * 9.0f + (float)i, .walk = n->moving ? 1.0f : 0.0f,
-                          .attack = n->fight_anim / 0.4f, .down = m->health.down, .scale = c ? c->stats.size : 1.0f };
+                          .attack = n->fight_anim / 0.4f, .down = m->health.down, .scale = c ? c->stats.size : 1.0f,
+                          .deflect = 0.0f, .shield_bash = 0.0f, .shield_charge = 0.0f };
+    // Estados de animación especial
+    pp.parry = n->fight_anim > 0.3f && n->fight_anim < 0.8f;
     body_pose(b, &pp);
 }
 
@@ -2520,6 +2538,9 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     keep_target(cb, p);
     int req = ga_take_target_request();
     if (req && input_ok) cb_cycle_target(cb, p, req, log, log_len);
+    // Q/E: cambiar objetivo (izquierda/derecha)
+    if (input_action_pressed(KA_TARGET_LEFT) && input_ok) cb_cycle_target(cb, p, -1, log, log_len);
+    if (input_action_pressed(KA_TARGET_RIGHT) && input_ok) cb_cycle_target(cb, p, 1, log, log_len);
     // J (o el clic derecho sin arrastrar): cubrirse. Con escudo, de frente; sin escudo, con el arma
     // de mano, que cansa (agotado no se puede). A distancia, J baja el arma y solo cubre el escudo.
     bool shield = player_has_shield(ga);

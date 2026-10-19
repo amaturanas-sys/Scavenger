@@ -788,6 +788,22 @@ Historia principal con protagonista de **nombre elegido por el jugador**: hijo d
 
 ## Versiones
 
+### 0.10.5 — Combate mejorado
+- **Controles de objetivo:**
+  - Tab: selecciona el siguiente objetivo (flecha verde en el HUD)
+  - Ctrl+Q: objetivo anterior
+  - Ctrl+E: objetivo siguiente
+- **Cámara que sigue al objetivo:** cuando se selecciona un enemigo, la cámara se suaviza hacia él, facilitando el movimiento.
+- **Animaciones mejoradas:**
+  - Parry (K): animación específica para bloquear en la ventana justa
+  - Desvío (MOVE_DEFLECT): desvía golpes con el arma, deja al rival expuesto
+  - Golpe de escudo (MOVE_SHIELD_BASH): aturde con el escudo
+  - Carga con escudo (MOVE_SHIELD_CHARGE): empuja y puede tumbar
+- **Bloqueo mejorado:**
+  - Escudo: bloquea golpes y flechas
+  - Arma: solo bloquea golpes directos, no flechas (se cansa más)
+- **Escoltas (Y):** mejoradas, ahora pueden responder mejor a órdenes y mantener la formación.
+
 ### 0.10.4 — Despoblación
 - Las ciudades y aldeas ahora tienen **más casas y campos** para la misma población:
   - Capital: 110 almas/casa (antes 150), 180 almas/campo (antes 250)

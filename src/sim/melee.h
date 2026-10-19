@@ -70,6 +70,10 @@ typedef struct {
     float weight;    // kg de armadura (pesa: cuesta mas tumbarlo)
     float health;    // [0, 1] vida restante (herido, se resiste peor)
     bool ring;       // lleva una daga de anillo (en cualquier mano): sus llaves son mas firmes
+    bool parry;      // en un parry (MOVE_PARRY)
+    bool deflect;    // en un deflect (MOVE_DEFLECT)
+    bool shield_bash; // en un shield bash (MOVE_SHIELD_BASH)
+    bool shield_charge; // en un shield charge (MOVE_SHIELD_CHARGE)
 } Fighter;
 
 #define RING_GRAPPLE 1.35f // la daga de anillo: cuanto mas fuerte agarra

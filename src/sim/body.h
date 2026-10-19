@@ -37,6 +37,9 @@ typedef struct {
     float grab;       // [0, 1] agarre: los dos brazos al frente
     float guard;      // [0, 1] escudo en alto (cubrirse) o empujando (golpe de escudo)
     float parry;      // [0, 1] parry: el brazo del arma al frente y el antebrazo arriba
+    float deflect;    // [0, 1] deflect: desvía el golpe
+    float shield_bash; // [0, 1] shield bash: golpe con escudo
+    float shield_charge; // [0, 1] shield charge: carga con escudo
     float crouch;     // [0, 1] agachado: rodillas dobladas, mas bajo e inclinado
     float hold;       // [0, 1] sujeta a un rehen: el brazo izquierdo al frente, rodeando el cuello
     float held;       // [0, 1] es el rehen: las dos manos al brazo que le aprieta el cuello
