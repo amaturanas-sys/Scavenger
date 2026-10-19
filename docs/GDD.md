@@ -783,3 +783,14 @@ Historia principal con protagonista de **nombre elegido por el jugador**: hijo d
 - Preguntas de la narrativa: ver [NARRATIVA.md](NARRATIVA.md#preguntas-abiertas-para-el-autor).
 - ¿Muerte permanente del líder o escenarios de derrota a lo Outward?
 - Escala del mapa y número de reinos.
+
+---
+
+## Versiones
+
+### 0.10.4 — Despoblación
+- Las ciudades y aldeas ahora tienen **más casas y campos** para la misma población:
+  - Capital: 110 almas/casa (antes 150), 180 almas/campo (antes 250)
+  - Aldea: 45 almas/casa (antes 70), 40 almas/campo (antes 80)
+- Esto refleja que antes había demasiada gente por cada estructura, haciendo las ciudades parecer vacías.
+- Los asentamientos ahora muestran más vida, con más viviendas y tierras cultivables por cada alma.

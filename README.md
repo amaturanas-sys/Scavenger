@@ -406,3 +406,17 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --enemigos bandidos --espalda                       # a la espalda de un bandido (la daga)
 ./build/estepa --enemigos bandidos --rehen                         # con un bandido de rehén
 ```
+
+---
+
+## Versiones
+
+### 0.10.4 — Despoblación (v0.10.4)
+Las ciudades y aldeas ahora tienen **más casas y campos** para la misma población:
+- Capital: 110 almas/casa (antes 150), 180 almas/campo (antes 250)
+- Aldea: 45 almas/casa (antes 70), 40 almas/campo (antes 80)
+
+Esto refleja que antes había demasiada gente por cada estructura, haciendo las ciudades parecer vacías. Los asentamientos ahora muestran más vida, con más viviendas y tierras cultivables por cada alma.
+
+- Cambios en `src/sim/city.c`: revertir densidades de casas y campos.
+- Documentación en `docs/GDD.md` y `docs/ROADMAP.md`.
