@@ -8,6 +8,7 @@
 #include "raymath.h"
 #include "ui/theme.h"
 #include "sim/lang.h"
+#include "voxstruct.h"
 
 #define ROW_GAP 8.0f  // separacion entre filas (categorias)
 #define ITEM_GAP 2.0f // separacion entre objetos de una fila
@@ -76,16 +77,18 @@ void gallery_draw(const Gallery *g) {
     for (int i = 0; i < g->count; i++) {
         const GalleryEntry *e = &g->entries[i];
         const InvItem *it = e->item;
+        if (g->solo && e != g->solo) continue;
         if (e->loaded) {
             DrawModel(e->model, e->pos, 1.0f, WHITE);
             continue;
         }
-        // Marcador: caja con las medidas del inventario (largo en X, ancho en Z).
+        // Marcador: caja con las medidas del inventario (largo en X, ancho en Z). Las obras de la
+        // tribu, como en el juego: con el kit de edificios, dentro de la caja en alambre.
         Color c = category_color(it->category);
         float h = it->texture || it->h <= 0.0f ? 0.03f : it->h;
         Vector3 size = { fmaxf(it->l, 0.05f), h, fmaxf(it->w, 0.05f) };
         Vector3 center = { e->pos.x, e->pos.y + h * 0.5f, e->pos.z };
-        DrawCubeV(center, size, c);
+        if (!voxs_draw_item(it, e->pos, 0.0f)) DrawCubeV(center, size, c);
         DrawCubeWiresV(center, size, ColorBrightness(c, -0.45f));
         // Flecha de frente (+X): la direccion en la que debe mirar el modelo.
         Vector3 front = { e->pos.x + size.x * 0.5f, e->pos.y + h * 0.5f, e->pos.z };
@@ -93,11 +96,18 @@ void gallery_draw(const Gallery *g) {
     }
 }
 
+const GalleryEntry *gallery_find(const Gallery *g, const char *id) {
+    for (int i = 0; i < g->count; i++)
+        if (!strcmp(g->entries[i].item->id, id)) return &g->entries[i];
+    return NULL;
+}
+
 void gallery_draw_labels(const Gallery *g, Camera3D cam, Vector3 viewer, int width, int height) {
     const GalleryEntry *nearest = NULL;
     float best = 1e9f;
     for (int i = 0; i < g->count; i++) {
         const GalleryEntry *e = &g->entries[i];
+        if (g->solo && e != g->solo) continue;
         float d = Vector3Distance(viewer, e->pos);
         if (d < best) {
             best = d;

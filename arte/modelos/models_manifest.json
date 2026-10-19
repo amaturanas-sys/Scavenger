@@ -1,0 +1,17 @@
+{
+  "models": {
+    "estructura.vivienda.yurta_comun": {
+      "file": "assets/models/estructura/vivienda/yurta_comun.glb",
+      "category": "estructura",
+      "has_rig": false,
+      "source": {
+        "tool": "kiln",
+        "url": "",
+        "file": "tools/assets/yurta_comun.kiln.js",
+        "sha256": "440ee3bb5ae7fe5775ac7af9c7f3f9dbafae99fd476849ed7efb17787833ca8e"
+      },
+      "tris": 296,
+      "updated_at": "2026-10-18T00:00:00+00:00"
+    }
+  }
+}

@@ -66,7 +66,9 @@ add_library(estepa_sim STATIC
   src/sim/riding.c
   src/sim/forge.c
   src/sim/city.c
-  src/sim/army.c)
+  src/sim/army.c
+  src/sim/flora.c
+  src/sim/buildkit.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)
@@ -95,7 +97,6 @@ if(ESTEPA_BUILD_GAME)
     GIT_TAG 5.5
     GIT_SHALLOW TRUE)
   FetchContent_MakeAvailable(raylib)
-
 
   set(ESTEPA_GAME_SOURCES
     src/main.c
@@ -133,7 +134,6 @@ if(ESTEPA_BUILD_GAME)
     src/world/terrain.c
     src/world/worldview.c
     src/world/camp.c
-    src/world/anim_system.c
     src/world/hearth.c
     src/world/gallery.c
     src/world/sky.c
@@ -141,14 +141,13 @@ if(ESTEPA_BUILD_GAME)
     src/world/voxstruct.c
     src/world/weather.c
     src/world/body_draw.c
-    src/world/vegetation.c
-    src/vendor/cjson/cJSON.c)
+    src/world/vegetation.c)
 
   if(ANDROID)
     # Android: biblioteca compartida que carga NativeActivity (libestepa.so).
     # tools/android/build_apk.sh la empaqueta con los assets en el APK.
     add_library(estepa SHARED ${ESTEPA_GAME_SOURCES})
-    target_include_directories(estepa PRIVATE src/vendor/cjson ${ANDROID_NDK}/sources/android/native_app_glue)
+    target_include_directories(estepa PRIVATE ${ANDROID_NDK}/sources/android/native_app_glue)
     # Mantiene el punto de entrada que busca NativeActivity.
     target_link_options(estepa PRIVATE -u ANativeActivity_onCreate)
   else()
@@ -157,7 +156,6 @@ if(ESTEPA_BUILD_GAME)
       list(APPEND ESTEPA_GAME_SOURCES tools/windows/estepa.rc)
     endif()
     add_executable(estepa ${ESTEPA_GAME_SOURCES})
-    target_include_directories(estepa PRIVATE src/vendor/cjson)
     # Copia los assets junto al ejecutable.
     add_custom_command(TARGET estepa POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_directory

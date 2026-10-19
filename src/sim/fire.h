@@ -15,7 +15,6 @@
 
 #define FIRE_MAX 160
 #define SCORCH_MAX 400
-#define WORLD_MAX_TREES 100
 
 typedef enum { FUEL_NONE, FUEL_GRASS, FUEL_TREE, FUEL_STRUCTURE, FUEL_COUNT } FuelKind;
 

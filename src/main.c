@@ -7,6 +7,12 @@
 // Uso de escritorio:  estepa [--screenshot salida.png] [--frames N] [--sin-teclado] [--galeria]
 //                     [--dia N] [--minuto M] [--pos X Z] [--trampa hielo|nieve|arena|rescate]
 // --galeria muestra todos los objetos del inventario de assets (modelos o marcadores).
+// --ver <id> muestra de cerca un objeto del inventario, en la galeria, con el jugador al lado (la
+// tuberia de modelos, tools/modelos: revisar uno recien importado).
+// --edificios tipo[:region] muestra las variantes del kit de edificios (src/sim/buildkit.h): casa,
+// palacio, fundicion, cuartel, carpinteria, granero, templo, carreta, muralla, torre, puerta, las
+// ruinas (fortaleza, enterrada) o las obras de la tribu (refugio, empalizada, muro, horno,
+// horno_fundicion, atalaya, corral, taller, tienda, escombros, cenizas); de cada region o de una.
 // --dia y --minuto ponen el reloj (minutos desde el amanecer), p. ej. para ver la noche.
 // --pos lleva al jugador a otro lugar del mundo (p. ej. a la cordillera).
 // --trampa arranca en un peligro con su minijuego (prueba).
@@ -473,10 +479,11 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     }
     for (int i = 0; i < w->settlement_count && !ok; i++) { // el kanato (la capital de la estepa) y sus campos (src/sim/city.h)
         const Settlement *s = &w->settlements[i];
-        if (s->kind != SETTLE_CAPITAL || s->region != REGION_STEPPE) continue;
+        bool plaza = !strncmp(what, "plaza-", 6) && (unsigned)s->region < REGION_COUNT && !strcmp(what + 6, REG[s->region]); // plaza-region
+        if (s->kind != SETTLE_CAPITAL || (s->region != REGION_STEPPE && !plaza)) continue;
         CityLot lots[CITY_LOTS_MAX];
         int n = city_layout(w, i, NULL, lots, CITY_LOTS_MAX), f = 0;
-        if (!strcmp(what, "kanato") && n > 0) { // en la plaza, mirando al palacio (lots[0]: su puerta mira a la puerta principal)
+        if ((!strcmp(what, "kanato") || plaza) && n > 0) { // en la plaza, mirando al palacio (lots[0]: su puerta mira a la puerta principal)
             x = s->x + cosf(lots[0].yaw) * 24.0f, z = s->z + sinf(lots[0].yaw) * 24.0f, lx = s->x, lz = s->z, ok = true;
         }
         if (!strcmp(what, "campos")) { // en el primer campo, mirando a la ciudad
@@ -484,10 +491,14 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
             if (f < n) x = lots[f].x + cosf(lots[f].yaw) * 3.0f, z = lots[f].z + sinf(lots[f].yaw) * 3.0f, lx = s->x, lz = s->z, ok = true;
         }
     }
-    for (int i = 0; i < w->settlement_count && !ok; i++) {
+    for (int i = 0; i < w->settlement_count && !ok; i++) { // capital y aldea; capital-region y aldea-region (p. ej. aldea-fiordos)
         const Settlement *s = &w->settlements[i];
         bool want = (!strcmp(what, "capital") && s->kind == SETTLE_CAPITAL && s->region == REGION_FOREST) ||
                     (!strcmp(what, "aldea") && s->kind == SETTLE_VILLAGE && s->region == REGION_DESERT);
+        const char *dash = strchr(what, '-');
+        if (dash && !strncmp(what, s->kind == SETTLE_CAPITAL ? "capital" : "aldea", (size_t)(dash - what)) &&
+            strlen(s->kind == SETTLE_CAPITAL ? "capital" : "aldea") == (size_t)(dash - what) && (unsigned)s->region < REGION_COUNT)
+            want = !strcmp(dash + 1, REG[s->region]);
         if (want) x = s->x + 58.0f, z = s->z + 20.0f, lx = s->x, lz = s->z, ok = true;
     }
     for (int i = 0; i < w->den_count && !ok; i++)
@@ -569,11 +580,59 @@ static void draw_diagnostics(bool has_keyboard) {
     ui_text(T("Ctrl+D: cerrar"), 14, y + 2, 10, UI_BONE_DIM);
 }
 
+// La vista del kit de edificios (--edificios tipo[:region]).
+static const char *KIT_TYPES[BK_KINDS] = { "casa",       "palacio",    "fundicion", "cuartel", "carpinteria",     "granero", "templo",  "carreta",
+                                           "muralla",    "torre",      "puerta",    "fortaleza", "enterrada",      "refugio", "empalizada", "muro",
+                                           "horno",      "horno_fundicion", "atalaya", "corral", "taller",        "tienda",  "escombros", "cenizas" };
+static const char *KIT_NAMES[BK_KINDS] = { N_("las casas"),         N_("los palacios"),       N_("las fundiciones"),       N_("los cuarteles"),
+                                           N_("las carpinterías"), N_("los graneros"),       N_("los templos del fuego"), N_("las carretas-casa"),
+                                           N_("las murallas"),      N_("las torres"),         N_("las puertas acodadas"),  N_("las fortalezas derruidas"),
+                                           N_("las ciudades enterradas"), N_("los refugios"), N_("las empalizadas"),       N_("los muros de piedra seca"),
+                                           N_("los hornos de cocina"), N_("los hornos de fundición"), N_("las atalayas"),  N_("los corrales"),
+                                           N_("los talleres del herrero"), N_("las tiendas y las chozas de fieltro"), N_("los escombros y los muros en ruinas"),
+                                           N_("las cenizas y las yurtas quemadas") };
+static const char *KIT_REGIONS[REGION_COUNT] = { "estepa", "bosque", "altiplano", "fiordos", "desierto" };
+
+static void kit_parse(const char *arg, int *type, int *region) {
+    char buf[48];
+    snprintf(buf, sizeof(buf), "%s", arg);
+    char *colon = strchr(buf, ':');
+    if (colon) *colon = 0;
+    for (int i = 0; i < BK_KINDS; i++)
+        if (!strcmp(buf, KIT_TYPES[i])) *type = i;
+    for (int r = 0; colon && r < REGION_COUNT; r++)
+        if (!strcmp(colon + 1, KIT_REGIONS[r])) *region = r;
+    if (*type < 0) {
+        printf("--edificios:");
+        for (int i = 0; i < BK_KINDS; i++) printf(" %s%s", KIT_TYPES[i], i + 1 < BK_KINDS ? "," : " (y :region)\n");
+        return;
+    }
+    int only = -1, n = 0; // lo que hay en una sola region (la ciudad enterrada, las obras de la tribu): esa fila
+    for (int r = 0; r < REGION_COUNT; r++)
+        if (bk_available((BkType)*type, (Region)r)) only = r, n++;
+    if (*region < 0 && n == 1) *region = only;
+}
+
+// Donde va cada uno: las variantes a lo largo de x, las regiones (filas) a lo largo de z.
+static Vector3 kit_spot(const Terrain *t, int type, int row, int variant) {
+    float sp = type == BK_RUIN_FORT || type == BK_RUIN_CITY ? 34.0f
+             : type == BK_PALACE || type == BK_GATE         ? 24.0f
+             : type == BK_BARRACKS                          ? 18.0f
+             : type == BK_CORRAL                            ? 14.0f
+             : type == BK_WATCHTOWER || type == BK_SMITHY   ? 8.0f
+             : type >= BK_SHELTER                           ? 6.0f
+                                                            : 15.0f;
+    float x = 34.0f + (float)variant * sp, z = 30.0f + (float)row * sp;
+    return (Vector3){ x, terrain_height(t, x, z), z };
+}
+
 int main(int argc, char **argv) {
     const char *shot_path = NULL;
     int shot_frames = 90;
     bool simulate_no_keyboard = false;
     bool gallery_mode = false;
+    const char *view_id = NULL; // --ver: el id a mirar de cerca
+    int kit_type = -1, kit_region = -1; // --edificios: el tipo del kit y la region (-1: todas)
     int start_day = 1;
     float start_minute = 4.0f; // la partida empieza a media manana
     bool start_pos = false;
@@ -620,6 +679,11 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--frames") && i + 1 < argc) shot_frames = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--sin-teclado")) simulate_no_keyboard = true;
         else if (!strcmp(argv[i], "--galeria")) gallery_mode = true;
+        else if (!strcmp(argv[i], "--ver") && i + 1 < argc) gallery_mode = true, view_id = argv[++i];
+        else if (!strcmp(argv[i], "--edificios") && i + 1 < argc) {
+            gallery_mode = true;
+            kit_parse(argv[++i], &kit_type, &kit_region);
+        }
         else if (!strcmp(argv[i], "--dia") && i + 1 < argc) start_day = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--minuto") && i + 1 < argc) start_minute = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--trampa") && i + 1 < argc) start_trap = argv[++i];
@@ -719,16 +783,6 @@ int main(int argc, char **argv) {
 
     Terrain terrain;
     terrain_init(&terrain, start_seed);
-    VegetationSystem vegetation;
-    vegetation_init(&vegetation, start_seed);
-    Vector3 center = {
-        (float)terrain.center_cx * CHUNK_SIZE,
-        0.0f,
-        (float)terrain.center_cz * CHUNK_SIZE
-    };
-    vegetation_populate(&vegetation, &center, 300.0f, 800, VEGETATION_GRASS, 0);
-    vegetation_populate(&vegetation, &center, 150.0f, 200, VEGETATION_WEED, 1);
-    vegetation_populate(&vegetation, &center, 120.0f, 100, VEGETATION_FOLIAGE, 2);
     if (map_path) { // el mapa general del mundo (con la nieve de verano) y nada mas
         bool ok = worldmap_export(terrain.world, map_path, map_size > 64 ? map_size : 1024, terrain.plain + 40.0f);
         printf("%s %s\n", ok ? "Mapa escrito:" : "No se pudo escribir", map_path);
@@ -813,11 +867,27 @@ int main(int argc, char **argv) {
         props_add(&g_props, "estructura.campamento.hoguera", (Vector3){ 3.0f, terrain_height(&terrain, 3.0f, -2.0f), -2.0f }, 0.0f);
 
     Gallery gallery = { 0 };
+    const GalleryEntry *seen = NULL; // --ver
     if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
         player.pos = gallery.start;
         player.pos.y = terrain_height(&terrain, player.pos.x, player.pos.z);
         player.yaw = PI; // mirando a -Z, hacia las filas
         snprintf(log, sizeof(log), T("Galeria: %d objetos (%d con modelo)."), gallery.count, gallery.loaded);
+        seen = view_id ? gallery_find(&gallery, view_id) : NULL;
+        if (kit_type >= 0) { // fuera de cuadro, y el suelo de verano
+            player.pos = (Vector3){ 10.0f, terrain_height(&terrain, 10.0f, 12.0f), 12.0f };
+            Climate summer = climate_at(10.0f * GAME_SECONDS_PER_DAY + 400.0f, terrain.seed);
+            apply_climate_look(&terrain, &summer);
+        }
+        if (seen) { // solo ese, y el jugador al costado (-Z), para comparar el tamaño
+            const InvItem *it = seen->item;
+            gallery.solo = seen;
+            player.pos = (Vector3){ seen->pos.x, seen->pos.y, seen->pos.z - fmaxf(it->w, 0.4f) * 0.5f - 1.2f };
+            player.yaw = PI * 0.5f; // mirando a +X, como el modelo
+            printf("Ver: %s (%s)\n", it->id, seen->loaded ? "modelo" : "marcador: sin modelo");
+        } else if (view_id) {
+            printf("Ver: %s no esta en el inventario\n", view_id);
+        }
     } else {
         gallery_mode = false;
     }
@@ -1269,8 +1339,24 @@ int main(int argc, char **argv) {
             pg_camera(&cam);
         } else {
             camera_update(&rig, &cam, &player, &terrain, dt);
+            if (kit_type >= 0) { // --edificios: todas las variantes de un tipo, desde el frente y arriba
+                int rows = kit_region >= 0 ? 1 : REGION_COUNT;
+                Vector3 a = kit_spot(&terrain, kit_type, 0, 0), b = kit_spot(&terrain, kit_type, rows - 1, BK_VARIANTS - 1);
+                Vector3 c = { (a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f + 2.0f, (a.z + b.z) * 0.5f };
+                float span = fmaxf(b.x - a.x, b.z - a.z) + fminf(12.0f, kit_spot(&terrain, kit_type, 0, 1).x - a.x); // las obras chicas, mas cerca
+                cam.target = c;
+                Vector3 dir = rows > 1 ? (Vector3){ 1.0f, 0.75f, 0.55f } : (Vector3){ 0.5f, 0.62f, 1.0f }; // una sola fila: de costado
+                cam.position = Vector3Add(c, Vector3Scale(Vector3Normalize(dir), span * (rows > 1 ? 0.95f : 0.8f)));
+            }
+            if (seen) { // --ver: la camara de tres cuartos, desde el frente (+X), arriba y a la derecha
+                const InvItem *it = seen->item;
+                float size = fmaxf(fmaxf(it->w, it->h), it->l), hgt = fmaxf(it->h, 0.05f);
+                cam.target = (Vector3){ seen->pos.x, seen->pos.y + hgt * 0.5f, seen->pos.z };
+                cam.position = Vector3Add(cam.target, Vector3Scale(Vector3Normalize((Vector3){ 1.0f, 0.55f, 0.75f }), fmaxf(0.45f, size * 2.2f)));
+            }
         }
         terrain_update(&terrain, player.pos);
+        if (!gallery_mode) vegetation_update(&terrain, player.pos); // las matas de las celdas nuevas
         // Clima: estacion, tiempo, nieve, lagos y glaciares (la galeria se ve siempre igual).
         Climate climate = climate_at(world_time, terrain.seed);
         if (gallery_mode) climate = (Climate){ .clouds = 0.1f, .temperature = 20.0f };
@@ -1298,10 +1384,24 @@ int main(int argc, char **argv) {
         sky_draw_background(cam, sky_time, climate.clouds, VIRTUAL_W, VIRTUAL_H);
         rlSetClipPlanes(0.1, 3300.0); // el horizonte lejano y el cielo, a ~3 km
         hearth_frame_begin();
+        voxs_set_lod(cam.position, gallery_mode ? 1e9f : VOXS_KIT_NEAR); // la galeria y el kit, todo de cerca
         BeginMode3D(cam);
         terrain_draw(&terrain);
-        vegetation_draw(&vegetation, cam, world_time, 0.3f, CLITERAL(Color){255,255,255,0});
-        if (gallery_mode) gallery_draw(&gallery);
+        camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used && !g_actions.camps[0].moved,
+                  g_dz.tree_burn); // migrado, su fogata queda apagada
+        if (!gallery_mode) { // el pasto, la stipa, las flores, los helechos y los juncos cercanos
+            VegClearing clear[CAMPS_MAX];
+            int nclear = 0;
+            for (int i = 0; i < CAMPS_MAX; i++) // los campamentos de la tribu: el pasto pisoteado
+                if (g_actions.camps[i].used && !g_actions.camps[i].migrating)
+                    clear[nclear++] = (VegClearing){ g_actions.camps[i].x, g_actions.camps[i].z, 16.0f };
+            vegetation_draw(&terrain, cam, &climate, (float)GetTime(), &g_dz.fire, clear, nclear, &player.pos, 1);
+        }
+        if (gallery_mode && kit_type < 0) gallery_draw(&gallery);
+        if (kit_type >= 0)
+            for (int row = 0; row < (kit_region >= 0 ? 1 : REGION_COUNT); row++)
+                for (int v = 0; v < BK_VARIANTS; v++)
+                    voxs_draw_kit((BkType)kit_type, (Region)(kit_region >= 0 ? kit_region : row), v, kit_spot(&terrain, kit_type, row, v), 0.0f, 1.0f, WHITE);
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
         if (gallery_mode) player_draw(&player);
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
@@ -1349,7 +1449,22 @@ int main(int argc, char **argv) {
             ag_draw_overlay(&g_actions, &troop, cam, VIRTUAL_W, VIRTUAL_H);
         }
         rlSetClipPlanes(RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
-        if (gallery_mode) {
+        if (kit_type >= 0) { // el nombre de cada fila (region) y lo que se ve
+            ui_strip((Rectangle){ 0, 0, (float)VIRTUAL_W, 30 }, UI_METAL_GOLD);
+            const char *what = kit_type >= BK_SHELTER ? T("Kit de edificios: %s · las obras de la tribu sin modelo: 0 y 1, las chicas; 2 y 3, las grandes")
+                             : kit_type == BK_RUIN_FORT || kit_type == BK_RUIN_CITY ? T("Kit de edificios: %s · cuatro ruinas, una por sitio")
+                                                                                     : T("Kit de edificios: %s · variantes 0 y 1, chicas (aldeas y tribus); 2 y 3, grandes (capitales)");
+            ui_text(TextFormat(what, kit_region >= 0 ? T(bk_name((BkType)kit_type, (Region)kit_region)) : T(KIT_NAMES[kit_type])), 6, 7, 10, UI_GOLD_LIGHT);
+            for (int row = 0; row < (kit_region >= 0 ? 1 : REGION_COUNT); row++) {
+                Region rg = kit_region >= 0 ? (Region)kit_region : (Region)row;
+                Vector3 p = kit_spot(&terrain, kit_type, row, 0);
+                p.x -= 9.0f, p.y += 1.0f;
+                Vector2 sc = GetWorldToScreenEx(p, cam, VIRTUAL_W, VIRTUAL_H);
+                const char *name = bk_available((BkType)kit_type, rg) ? TextFormat("%s: %s", T(region_name(rg)), T(bk_name((BkType)kit_type, rg)))
+                                                                    : TextFormat(T("%s: no tiene"), T(region_name(rg)));
+                ui_text(name, (int)sc.x, (int)sc.y, 10, UI_BONE);
+            }
+        } else if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);
         } else if (!menu_visible(&menu) && pg_active()) {
             pg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H); // la vista aerea: solo lo de la obra
@@ -1429,6 +1544,9 @@ int main(int argc, char **argv) {
             ImageFlipVertical(&img);
             ExportImage(img, shot_path);
             UnloadImage(img);
+            int planted, drawn;
+            vegetation_stats(&planted, &drawn);
+            printf("Vegetacion: %d matas sembradas, %d dibujadas (en %.0f, %.0f)\n", planted, drawn, player.pos.x, player.pos.z);
             break;
         }
     }

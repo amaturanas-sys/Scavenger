@@ -136,22 +136,12 @@ static char g_hint[96];
 
 Vector3 ct_route(const GameActions *ga, const Terrain *t, Vector3 from, Vector3 to) {
     const World *w = t ? t->world : NULL;
+    (void)ga;
     for (int i = 0; w && i < w->settlement_count && i < SETTLEMENTS_MAX; i++) {
         const Settlement *s = &w->settlements[i];
         if (s->kind != SETTLE_CAPITAL || dist_xz(from.x, from.z, s->x, s->z) > CITY_WALL_R + 40.0f) continue;
-        float fx = from.x - s->x, fz = from.z - s->z;
-        if (!city_wall_blocks(NULL, false, fx, fz, to.x - s->x, to.z - s->z, NULL)) continue; // las suyas, abiertas
-        bool inside = sqrtf(fx * fx + fz * fz) < city_wall_dist(atan2f(fz, fx));
-        float best = 1e30f;
-        Vector3 out = to;
-        for (int g = 0; g < CITY_GATES; g++) {
-            float a = city_gate_angle(g);
-            Vector3 o = wall_point(t, s, a, 4.0f), n = wall_point(t, s, a, -4.0f), nearp = inside ? n : o, farp = inside ? o : n;
-            float cost = dist_xz(from.x, from.z, nearp.x, nearp.z) + dist_xz(farp.x, farp.z, to.x, to.z);
-            if (cost < best) best = cost, out = dist_xz(from.x, from.z, nearp.x, nearp.z) < 2.5f ? farp : nearp;
-        }
-        (void)ga;
-        return out;
+        float wx, wz;
+        if (city_route(from.x - s->x, from.z - s->z, to.x - s->x, to.z - s->z, &wx, &wz)) return (Vector3){ s->x + wx, to.y, s->z + wz };
     }
     return to;
 }
@@ -163,12 +153,11 @@ bool ct_shot_wall(const GameActions *ga, const Terrain *t, Vector3 from, Vector3
         const Settlement *s = &w->settlements[i];
         if (s->kind != SETTLE_CAPITAL || dist_xz(to.x, to.z, s->x, s->z) > CITY_WALL_R + 20.0f) continue;
         float x0 = from.x - s->x, z0 = from.z - s->z, x1 = to.x - s->x, z1 = to.z - s->z;
-        int gate = -1;
+        WallHit wh;
         bool war = at_war(ga, w, troop, i);
-        if (!city_wall_blocks(&ga->cities[i], war, x0, z0, x1, z1, &gate)) continue;
-        float s0 = sqrtf(x0 * x0 + z0 * z0) - city_wall_dist(atan2f(z0, x0)), s1 = sqrtf(x1 * x1 + z1 * z1) - city_wall_dist(atan2f(z1, x1));
-        float f = s0 / (s0 - s1);
-        Vector3 hit = Vector3Lerp(from, to, f);
+        if (!city_wall_hit(&ga->cities[i], war, x0, z0, x1, z1, &wh)) continue; // la muralla o un antemuro
+        int gate = wh.gate;
+        Vector3 hit = Vector3Lerp(from, to, wh.t);
         if (hit.y > terrain_height(t, hit.x, hit.z) + CITY_WALL_HEIGHT) continue; // por encima de la muralla
         *at = hit;
         // Encendida en una puerta cerrada: la puerta arde.
@@ -520,12 +509,13 @@ static void wall_blocks_player(const GameActions *ga, const World *w, const Troo
     if (step < 1e-4f || step > 3.0f) return;
     for (int i = 0; i < w->settlement_count && i < SETTLEMENTS_MAX; i++) {
         const Settlement *s = &w->settlements[i];
-        if (s->kind != SETTLE_CAPITAL || dist_xz(p->pos.x, p->pos.z, s->x, s->z) > CITY_WALL_R + 8.0f) continue;
+        if (s->kind != SETTLE_CAPITAL || dist_xz(p->pos.x, p->pos.z, s->x, s->z) > CITY_WALL_R + CITY_BARBICAN_OUT + 8.0f) continue;
         bool war = at_war(ga, w, troop, i);
         float x0 = g_last.x - s->x, z0 = g_last.z - s->z, x1 = p->pos.x - s->x, z1 = p->pos.z - s->z;
-        if (!city_wall_blocks(&ga->cities[i], war, x0, z0, x1, z1, NULL)) continue;
-        float r0 = sqrtf(x0 * x0 + z0 * z0) + 1e-4f, ux = x0 / r0, uz = z0 / r0, dx = x1 - x0, dz = z1 - z0, along = dx * ux + dz * uz;
-        float sx = x0 + dx - ux * along, sz = z0 + dz - uz * along; // solo de costado, a lo largo de la muralla
+        WallHit wh;
+        if (!city_wall_hit(&ga->cities[i], war, x0, z0, x1, z1, &wh)) continue;
+        float along = (x1 - x0) * wh.tx + (z1 - z0) * wh.tz;
+        float sx = x0 + wh.tx * along, sz = z0 + wh.tz * along; // solo a lo largo de lo que choca (la muralla o el antemuro)
         if (!city_wall_blocks(&ga->cities[i], war, x0, z0, sx, sz, NULL)) p->pos.x = s->x + sx, p->pos.z = s->z + sz;
         else p->pos.x = g_last.x, p->pos.z = g_last.z;
         return;
@@ -767,17 +757,13 @@ static void flames(Vector3 at, float h, float r, float time, int seed) {
                (Color){ 70, 66, 62, (unsigned char)(150.0f * (1.0f - sm)) });
 }
 
-// Una puerta de la muralla, entre las torres (x, z) y (x2, z2): dos lienzos de muro a los lados y en
-// medio las dos hojas: abiertas hacia adentro en paz; cerradas en guerra; ardiendo; o quemadas (los
-// tocones negros).
-static void draw_gate(const Terrain *t, float x, float z, float x2, float z2, VoxBuilding piece, int state, float time, int seed) {
-    float len = dist_xz(x, z, x2, z2), ang = -atan2f(z2 - z, x2 - x), dx = (x2 - x) / len, dz = (z2 - z) / len;
-    float mx = (x + x2) * 0.5f, mz = (z + z2) * 0.5f, side = CITY_GATE_HALF + 4.0f;
-    for (int k = -1; k <= 1; k += 2) {
-        float px = mx + dx * side * (float)k, pz = mz + dz * side * (float)k;
-        voxs_draw_building(piece, (Vector3){ px, terrain_height(t, px, pz), pz }, ang, 1.0f, WHITE);
-    }
-    float y = terrain_height(t, mx, mz);
+// Una puerta de la muralla: la pieza del kit (los lienzos, las torres de la puerta, el puente del
+// adarve y el antemuro de la puerta acodada, src/sim/army.h) y en medio las dos hojas: abiertas hacia
+// adentro en paz; cerradas en guerra; ardiendo; o quemadas (los tocones negros).
+static void draw_gate(const Terrain *t, const Settlement *s, int g, int state, float time, int seed) {
+    float a = city_gate_angle(g), d = city_wall_dist(a), mx = s->x + cosf(a) * d, mz = s->z + sinf(a) * d, y = terrain_height(t, mx, mz);
+    float dx = -sinf(a), dz = cosf(a), ang = -atan2f(dz, dx); // dx, dz: a lo largo de la muralla
+    voxs_draw_kit(BK_GATE, s->region, g, (Vector3){ mx, y, mz }, -a, 1.0f, WHITE); // la variante par cierra el antemuro hacia +Z, como la puerta par
     static const Color DOOR = { 96, 64, 40, 255 }, IRON = { 52, 48, 46, 255 }, CHAR = { 34, 30, 28, 255 };
     rlPushMatrix();
     rlTranslatef(mx, y, mz);
@@ -799,24 +785,26 @@ static void draw_gate(const Terrain *t, float x, float z, float x2, float z2, Vo
         for (int k = -1; k <= 1; k++) flames((Vector3){ mx + dx * 1.6f * (float)k, y + 0.2f, mz + dz * 1.6f * (float)k }, 3.6f, 1.2f, time, seed + k);
 }
 
-// La muralla de la capital: doce torres y entre ellas muro de piedra o empalizada; cada tercer tramo
-// es una puerta (15, 105, 195 y 285 grados: ver draw_gate). Y las escalas que la tribu le apoyo.
+// La muralla de la capital, del kit de la edad del hierro (src/sim/buildkit.h), al estilo de su
+// region: doce torres y entre ellas los tramos (tres piezas cada uno, cada una a la altura de su
+// suelo); cada tercer tramo es una puerta con su antemuro (15, 105, 195 y 285 grados: ver
+// draw_gate). Y las escalas que la tribu le apoyo.
 static void draw_walls(const GameActions *ga, const Terrain *t, const Settlement *s, int idx, bool war, float time) {
-    bool wood = s->region == REGION_STEPPE || s->region == REGION_FOREST;
     const City *c = &ga->cities[idx];
-    for (int i = 0; i < 12; i++) {
-        float a = (float)i / 12.0f * 2.0f * PI, x = s->x + cosf(a) * CITY_WALL_R, z = s->z + sinf(a) * CITY_WALL_R;
-        voxs_draw_building(wood ? VB_TOWER_WOOD : VB_TOWER_STONE, (Vector3){ x, terrain_height(t, x, z), z }, a, 1.0f, WHITE);
-        float a2 = (float)(i + 1) / 12.0f * 2.0f * PI, x2 = s->x + cosf(a2) * CITY_WALL_R, z2 = s->z + sinf(a2) * CITY_WALL_R;
-        if (i % 3 == 0) {
-            int g = i / 3, state = !war ? 0 : (c->gates_burnt >> g) & 1 ? 3 : g_gate_fire[idx][g] > 0.0f ? 2 : 1;
-            draw_gate(t, x, z, x2, z2, wood ? VB_PALISADE : VB_WALL_STONE, state, time, idx * 4 + g);
+    float step = 2.0f * PI / (float)CITY_WALL_SEGMENTS;
+    for (int i = 0; i < CITY_WALL_SEGMENTS; i++) {
+        float a = (float)i * step, x = s->x + cosf(a) * CITY_WALL_R, z = s->z + sinf(a) * CITY_WALL_R;
+        voxs_draw_kit(BK_TOWER, s->region, i % 2, (Vector3){ x, terrain_height(t, x, z), z }, -a, 1.0f, WHITE);
+        int g = city_segment_gate(i);
+        if (g >= 0) {
+            int state = !war ? 0 : (c->gates_burnt >> g) & 1 ? 3 : g_gate_fire[idx][g] > 0.0f ? 2 : 1;
+            draw_gate(t, s, g, state, time, idx * 4 + g);
             continue;
         }
-        float len = dist_xz(x, z, x2, z2), ang = -atan2f(z2 - z, x2 - x);
-        for (int k = 0; (float)k * 8.0f < len; k++) {
-            float f = ((float)k * 8.0f + 4.0f) / len, px = x + (x2 - x) * f, pz = z + (z2 - z) * f;
-            voxs_draw_building(wood ? VB_PALISADE : VB_WALL_STONE, (Vector3){ px, terrain_height(t, px, pz), pz }, ang, 1.0f, WHITE);
+        float x2 = s->x + cosf(a + step) * CITY_WALL_R, z2 = s->z + sinf(a + step) * CITY_WALL_R;
+        for (int k = 0; k < 3; k++) { // tres piezas por tramo
+            float f = ((float)k + 0.5f) / 3.0f, px = x + (x2 - x) * f, pz = z + (z2 - z) * f;
+            voxs_draw_kit(BK_WALL, s->region, (i + k) % 2, (Vector3){ px, terrain_height(t, px, pz), pz }, -(a + step * 0.5f), 1.0f, WHITE);
         }
     }
     static const Color RAIL = { 120, 90, 58, 255 };
@@ -838,6 +826,20 @@ static void draw_walls(const GameActions *ga, const Terrain *t, const Settlement
 
 static bool g_fires_out;
 
+// Que hay en el lote de la casa h (desde el centro) del asentamiento idx: casi siempre una casa del
+// kit de la edad del hierro (src/sim/buildkit.h), y entre ellas los graneros, el templo del fuego
+// (en el desierto y el altiplano) y las carretas-casa de la estepa. Las aldeas, las variantes chicas;
+// la capital, las grandes en el anillo de adentro y de todas en el de afuera.
+static BkType house_lot(Region rg, bool cap, int idx, int h, int *variant) {
+    uint32_t r = (uint32_t)(idx + 1) * 2654435761u ^ (uint32_t)(h + 1) * 0x9E3779B1u;
+    r ^= r >> 15;
+    *variant = cap && h < 10 ? 2 + (int)(r & 1u) : cap ? (int)(r & 3u) : (int)(r & 1u);
+    if (h == 2 && bk_available(BK_TEMPLE, rg)) return BK_TEMPLE;
+    if (h % 5 == 4) return BK_GRANARY;
+    if (h % 4 == 1 && bk_available(BK_WAGON, rg)) return BK_WAGON;
+    return BK_HOUSE;
+}
+
 static void draw_city(const GameActions *ga, const Terrain *t, int idx, Vector3 eye, float time, int day, bool night, bool war) {
     const World *w = t->world;
     const Settlement *s = &w->settlements[idx];
@@ -849,7 +851,7 @@ static void draw_city(const GameActions *ga, const Terrain *t, int idx, Vector3 
     for (int i = 0; i < n; i++) fields += lots[i].kind == LOT_FIELD;
     // Los arrasados: tantos como falta sembrar, desde el ultimo que se saqueo.
     int burnt = (int)((1.0f - c->fields) * (float)fields + 0.5f), first = c->raided_lot > 0 ? c->raided_lot - 1 : 0, nfield = 0;
-    bool first_house = true;
+    int house = 0;
     Vector3 plaza = { s->x, 0.0f, s->z };
     for (int i = 0; i < n; i++) {
         const CityLot *l = &lots[i];
@@ -857,28 +859,33 @@ static void draw_city(const GameActions *ga, const Terrain *t, int idx, Vector3 
         Vector3 at = { l->x, terrain_height(t, l->x, l->z), l->z };
         switch (l->kind) {
         case LOT_PALACE: {
-            voxs_draw_city(VB_PALACE, s->region, at, -l->yaw, 1.0f, WHITE);
-            plaza = lot_point(t, l, 12.0f, 0.0f); // la plaza, delante del palacio
-            if (d < FOLK_DRAW) { // la corte: la guardia del porche y un escriba que va y viene
+            int v = idx & (BK_VARIANTS - 1);
+            BkInfo pi;
+            voxs_draw_kit(BK_PALACE, s->region, v, at, -l->yaw, 1.0f, WHITE);
+            if (!voxs_kit_info(BK_PALACE, s->region, v, &pi)) pi = (BkInfo){ .front = 7.0f, .door_along = 5.0f, .door_up = 1.0f };
+            plaza = lot_point(t, l, pi.front + 7.0f, 0.0f); // la plaza, delante del palacio
+            if (d < FOLK_DRAW) { // la corte: la guardia a los lados de la puerta y un escriba que va y viene al pie
                 for (int k = -1; k <= 1; k += 2) {
-                    Vector3 g = lot_point(t, l, 5.6f, (float)k * 2.4f);
-                    g.y = at.y + 1.0f;
+                    Vector3 g = lot_point(t, l, pi.door_along + 1.25f, pi.door_across + (float)k * 1.1f);
+                    g.y = at.y + pi.door_up;
                     guard(g, -l->yaw + PI * 0.5f);
                 }
-                Vector3 sc = lot_point(t, l, 4.2f, sinf(time * 0.25f) * 4.0f);
-                sc.y = at.y + 1.0f;
+                Vector3 sc = lot_point(t, l, pi.front + 1.2f, sinf(time * 0.25f) * 4.0f);
                 person(sc, -l->yaw + (cosf(time * 0.25f) > 0.0f ? 0.0f : PI), (Color){ 70, 60, 110, 255 }, time * 4.0f, 0.5f, 0.0f);
             }
             break;
         }
-        case LOT_HOUSE:
-            voxs_draw_building(voxs_region_house(s->region), at, -l->yaw, !cap && first_house ? 1.25f : 1.0f, WHITE);
-            first_house = false;
+        case LOT_HOUSE: { // la del jefe de la aldea, la primera, un poco mas grande
+            int v;
+            BkType bt = house_lot(s->region, cap, idx, house, &v);
+            voxs_draw_kit(bt, s->region, v, at, -l->yaw, !cap && house == 0 ? 1.15f : 1.0f, WHITE);
+            house++;
             break;
-        case LOT_FORGE: voxs_draw_city(VB_FORGE, s->region, at, -l->yaw, 1.0f, WHITE); break;
-        case LOT_BARRACKS: voxs_draw_city(VB_BARRACKS, s->region, at, -l->yaw, 1.0f, WHITE); break;
-        case LOT_CARPENTRY: voxs_draw_city(VB_CARPENTRY, s->region, at, -l->yaw, 1.0f, WHITE); break;
-        case LOT_MERC_TENT: voxs_draw_building(VB_YURT, at, -l->yaw, 0.6f, (Color){ 150, 128, 104, 255 }); break;
+        }
+        case LOT_FORGE: voxs_draw_kit(BK_FORGE, s->region, idx & (BK_VARIANTS - 1), at, -l->yaw, 1.0f, WHITE); break;
+        case LOT_BARRACKS: voxs_draw_kit(BK_BARRACKS, s->region, idx & (BK_VARIANTS - 1), at, -l->yaw, 1.0f, WHITE); break;
+        case LOT_CARPENTRY: voxs_draw_kit(BK_CARPENTRY, s->region, idx & (BK_VARIANTS - 1), at, -l->yaw, 1.0f, WHITE); break;
+        case LOT_MERC_TENT: voxs_draw_kit(BK_HOUSE, REGION_STEPPE, 1, at, -l->yaw, 0.55f, (Color){ 150, 128, 104, 255 }); break;
         case LOT_FIELD: {
             bool scorched = fields > 0 && ((nfield++ - first) % fields + fields) % fields < burnt;
             if (d < FIELD_DRAW) draw_field(t, l, season, dos, scorched);
@@ -1018,8 +1025,16 @@ void ct_test(GameActions *ga, Combat *cb, Troop *troop, const Props *props, cons
     if (!strcmp(what, "fuego")) g_gate_fire[ki][g] = GATE_BURN_SECONDS * 6.0f; // que siga ardiendo para la foto
     if (!strcmp(what, "quemada")) c->gates_burnt |= 1 << g;
     bool sally = !strcmp(what, "salida");
-    p->pos = wall_point(t, s, city_gate_angle(g), sally ? 30.0f : 12.0f);
-    p->yaw = atan2f(s->x - p->pos.x, s->z - p->pos.z);
+    if (sally) { // lejos, de frente: la guarnicion sale por la puerta acodada
+        p->pos = wall_point(t, s, city_gate_angle(g), 30.0f);
+        p->yaw = atan2f(s->x - p->pos.x, s->z - p->pos.z);
+    } else { // en el pasillo de la puerta acodada, pasando la boca del antemuro, mirando la puerta
+        float path[CITY_GATE_PATH][2], a = city_gate_angle(g), door = city_wall_dist(a);
+        city_gate_path(g, path);
+        float bx = path[2][0] - path[3][0], bz = path[2][1] - path[3][1], x = s->x + path[3][0] + bx * 0.9f, z = s->z + path[3][1] + bz * 0.9f;
+        p->pos = (Vector3){ x, terrain_height(t, x, z), z };
+        p->yaw = atan2f(s->x + cosf(a) * door - x, s->z + sinf(a) * door - z);
+    }
     g_last_ok = false; // un salto: no es un paso
     if (!sally) g_sally_cd[ki] = 120.0f; // que no salga nadie a tapar la puerta
     (void)props;

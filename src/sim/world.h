@@ -133,6 +133,18 @@ typedef struct {
     float camp_height;                // altura del llano del campamento (origen)
 } World;
 
+// Lo que ocupa cada cosa del mundo (m de radio alrededor de su centro): nada de eso cae en el agua.
+#define WORLD_FOOT_CAPITAL 50.0f // la muralla de la capital (CITY_WALL_R, src/sim/city.h) y sus torres
+#define WORLD_FOOT_VILLAGE 24.0f // el anillo de casas de la aldea
+#define WORLD_FOOT_TRIBE 20.0f   // el corro de casas o yurtas de una tribu
+#define WORLD_FOOT_SITE 18.0f    // una estructura (la fortaleza en ruinas y la ciudad enterrada, las mas grandes)
+#define WORLD_FOOT_DEN 8.0f      // una guarida
+// La linea de nieve del verano, en m sobre el llano del campamento (src/sim/climate.c: la mas alta
+// del año): mas arriba hay nieve todo el año y glaciar. Los pueblos y las tribus, siempre por debajo
+// de WORLD_SNOW_FREE.
+#define WORLD_SNOWLINE_MAX 40.0f
+#define WORLD_SNOW_FREE (WORLD_SNOWLINE_MAX - 4.0f)
+
 void world_generate(World *w, uint32_t seed);
 // El mundo de una semilla (generado una vez y guardado).
 const World *world_for_seed(uint32_t seed);
@@ -176,6 +188,9 @@ const char *world_kingdom_name(Region r); // UTF-8
 // Nombre de la clase de estructura (UTF-8, para el texto) y si es una ruina.
 const char *site_name(SiteKind k);
 bool site_is_ruin(SiteKind k);
+// ¿La huella de radio r alrededor de (x, z) esta en seco? Ni un lago (con su orilla), ni un rio,
+// ni el canal, ni el mar (sea_ok: el embarcadero, que da al mar), con la crecida de la primavera.
+bool world_footprint_dry(const World *w, float x, float z, float r, bool sea_ok);
 // Asentamiento mas cercano (indice) o -1; dist (si no es NULL) en m.
 int world_nearest_settlement(const World *w, float x, float z, float *dist);
 int world_nearest_den(const World *w, float x, float z, float *dist);

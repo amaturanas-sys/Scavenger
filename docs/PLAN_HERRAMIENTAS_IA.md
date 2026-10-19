@@ -1,11 +1,22 @@
 # Plan: herramientas de generación (edificios, animaciones y modelos) y ejecución del plan grande
 
-> **Estado:** plan, sin empezar (6 de octubre de 2026).
+> **Estado (18 de octubre de 2026):** en marcha.
+> - **Parte A, el plan grande:** hecho (fases 0 a 8b, de la v0.4.4 a la v0.9.1).
+> - **Paso 2, las tuberías (D.1 y C.2):** hecho en la **v0.9.3** (`tools/modelos`, las skills `modelos` y
+>   `animaciones`, `--ver <id>`), sobre lo que armó Cline (abajo).
+> - **Parte B, los edificios:** hecha. La investigación ([ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md))
+>   y el kit (`src/sim/buildkit.c`), en la **v0.10.0**: las ciudades, las aldeas y las tribus se arman
+>   con él; `--edificios` lo muestra. Lo que faltaba (el paso 5b), en la **v0.10.2**: las murallas con
+>   sus torres y sus puertas acodadas, las ruinas y las obras de la tribu.
+> - **Lo que sigue** espera al usuario (abajo): no queda nada del plan que se haga solo aquí.
+> - **Del lado del usuario:** las imágenes de la D.2 (empezando por el estilo animal) y, con los cuerpos
+>   riggeados, los videos de la C.1.
 >
-> Las tres herramientas necesitan una **GPU NVIDIA** que esta instancia de Claude Code no tiene (contenedor en la nube, sin `nvidia-smi`). El plan las integra así:
-> - **scripts y skills en el repo**, para que cualquier sesión de Claude Code sepa usarlas;
-> - **la generación pesada** en una máquina con GPU: la del usuario, una nube de GPU o la demo de Hugging Face;
-> - **la conversión a low-res y la integración al juego**, aquí, con CI.
+> Las tres herramientas necesitan una **GPU NVIDIA** que esta instancia de Claude Code no tiene (y su
+> red no llega a huggingface.co). Por eso:
+> - **la generación pesada** corre del lado del usuario: los espacios de Hugging Face desde la tablet
+>   (TRELLIS.2, RigNet), o Codespaces con Cline, que sí llega a Hugging Face;
+> - **la conversión a low-res, la integración y la revisión**, con los scripts del repo y el CI.
 
 Pedido:
 1. Ejecutar el plan de mejoras.
@@ -74,6 +85,13 @@ Un documento `docs/ARQUITECTURA_EDAD_DEL_HIERRO.md` con fuentes, medidas y mater
 Cada tipo lleva un dibujo esquemático (planta y alzado), sus medidas típicas, sus materiales y la paleta de colores. De ahí salen las piezas del kit.
 
 ### B.2 — El kit de piezas (en C, sin Three.js)
+
+> **Hecho en la v0.10.0** como `src/sim/buildkit.c` (en `src/sim/`, con tests, y no en `src/world/`):
+> ocho tipos por región y cuatro variantes de cada uno, vistos con `--edificios tipo[:region]` (en vez
+> de `--galeria-edificios`). Lo de adentro se rellena (la malla, con la mitad de caras) y, de lejos,
+> se dibuja sin refinar. Lo que faltaba, en la **v0.10.2**: las murallas con sus torres y sus puertas
+> acodadas, las ruinas (la fortaleza derruida y la ciudad enterrada) y las obras del campamento con el
+> kit. El detalle, en [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md).
 
 - **`src/world/buildkit.c`:** un **kit de piezas** de vóxeles o de malla low-poly. Cada pieza es una unidad de rejilla de 1 m:
   - muro de adobe, de piedra o de zarzo;
@@ -156,20 +174,32 @@ Cada clip de `docs/ANIMACIONES.md` (los cuerpos humanoides usan 62 clips) necesi
 
 ## Parte D — Modelos desde imágenes con TRELLIS.2, en low-res
 
-### D.1 — La tubería
+### D.1 — La tubería (hecha en la v0.9.3: `tools/modelos`)
 
-1. **Imágenes:** el usuario sube 1 a 4 imágenes por objeto a `arte/referencias/<id>/`. Pautas:
+1. **Imágenes:** el usuario hace 1 a 4 imágenes por objeto. Pautas:
    - el objeto entero, aislado, sobre fondo liso, en tres cuartos, de 1024 px o más;
    - mejor fotos de museo (Ermitage, Pazyryk, Museo Británico) o dibujos de concepto.
-2. **Generación**, en una GPU de 24 GB o en la demo de Hugging Face para pocos objetos: `tools/modelos/trellis_generar.py <id>`. Produce un GLB de alta resolución en `arte/trellis/<id>.glb`, que no va al juego.
-3. **A low-res:** `tools/modelos/lowres.py` (Blender sin ventana) hace lo siguiente:
-   - **Reducción:** diezma hasta el presupuesto de triángulos de `assets/inventario.tsv` (columna `tris_max`).
-   - **Medidas:** escala a las medidas del inventario y orienta el frente a +X, como los modelos de Kiln.
-   - **Textura:** hornea a 64×64 o 128×128 px con paleta reducida y filtro *nearest*, el estilo pixelado del juego.
-   - **Animales y personas:** les pone un esqueleto (el humanoide o el cuadrúpedo del juego) para las animaciones de la parte C.
-   - **Salida:** exporta a `assets/models/<categoría>/<id>.glb`.
-4. **Inventario:** el estado del objeto pasa de `pendiente` a `importado` en `assets/inventario.tsv` y en `docs/INVENTARIO.md`.
-5. **CI:** `tools/modelos/check.py` revisa los triángulos bajo el presupuesto, el tamaño de la textura, la orientación y que el APK siga dentro de su tamaño máximo.
+2. **Generación**, en el espacio de TRELLIS.2 en Hugging Face (desde la tablet) o en una GPU de 24 GB:
+   un GLB de alta resolución con textura.
+3. **Traer y bajar a low-res:** `python3 tools/modelos/modelos.py traer <id> --url <GLB> --girar 90`
+   (o `--archivo`; Cline lo llama con `tools/fetch_pipeline_asset.py`). Sin Blender (`lowres.py`, con
+   numpy, trimesh y fast-simplification):
+   - **Reducción:** diezma hasta `tris_max` del inventario, sin respetar las costuras de la textura.
+   - **Medidas:** escala por la medida más larga del inventario, gira el frente a +X (`--girar`,
+     `--rotar`) y deja el origen en el centro de la base (o en el agarre, `--origen`).
+   - **Color:** cada cara toma el color que más cubre de la textura debajo, de una paleta corta
+     (24), con la luz del sol del terreno horneada: un facetado sin texturas, que raylib dibuja de
+     una vez.
+   - **La fuente** queda en `arte/modelos/fuentes/` (fuera de git) y su procedencia (url, sha256,
+     opciones) en `arte/modelos/models_manifest.json`.
+   - **Personas, animales y mecanismos:** su versión low-poly espera en `arte/modelos/para_riggear/`;
+     el esqueleto lo pone **RigNet** (Hugging Face) y los clips la parte C; el GLB riggeado entra con
+     `--riggeado`.
+4. **Inventario:** el estado pasa de `pendiente` a `importado` en `assets/inventario.tsv` y en
+   `docs/INVENTARIO.md`.
+5. **Revisión y CI:** `./estepa --ver <id>` lo muestra de cerca con el jugador al lado;
+   `tools/modelos/modelos.py check` revisa triángulos, medidas, base y texturas, y
+   `tools/modelos/test_modelos.py` prueba la tubería con una fuente sintética (sin GPU ni red).
 
 ### D.2 — Qué imágenes pedir, por prioridad
 
@@ -196,15 +226,36 @@ La skill `.claude/skills/modelos/SKILL.md` documenta cómo pedir las imágenes, 
 3. **Los videos de la parte C.1**, empezando por el combate (fases 1 y 2).
 4. **Las imágenes de la parte D.2**, empezando por personas, caballo y armas.
 
+## Lo que armó Cline y cómo quedó
+
+El usuario trabajó un tiempo con Cline en Codespaces (con los espacios de Hugging Face desde la tablet):
+
+| De Cline | Cómo quedó |
+|---|---|
+| `tools/fetch_pipeline_asset.py` y las reglas de `.clinerules` (TRELLIS 2 + GRAIL + RigNet): bajar el GLB de un enlace y anotarlo en un manifiesto | **Integrado (v0.9.3).** El mismo comando pasa por `tools/modelos/modelos.py traer`: el modelo va a la ruta de su id (en `assets/models/<nombre>.glb` el CI fallaba), se baja a low-res, el inventario queda al día y el manifiesto (`arte/modelos/models_manifest.json`) guarda la procedencia. |
+| **RigNet** para el esqueleto | **Adoptado:** reemplaza al esqueleto que la parte D ponía a mano en Blender. Las personas y los animales esperan en `arte/modelos/para_riggear/`. |
+| La vegetación (PR #115) | **Reescrita (v0.9.2):** se caía en el primer cuadro; ahora con reglas puras y tests. |
+| El campamento desde JSON (cJSON) y `anim_system` | **No se adoptó:** rompía la compilación y el dibujo del campamento. El campamento sale de la semilla del mundo, y el motor ya carga los clips de cada GLB por nombre (`src/world/props.c`). |
+
 ## Orden de trabajo y versiones
 
-| Paso | Qué | Dónde | Versión |
-|---|---|---|---|
-| 1 | Fase 0 del plan grande | aquí | v0.4.4 |
-| 2 | Tuberías y skills de modelos y animaciones (D.1, C.2), con un objeto y un clip de prueba | aquí + GPU | v0.4.5 |
-| 3 | Fases 1 y 2 (combate) | aquí | v0.5.x |
-| 4 | Primeras animaciones de combate y personas (C) | GPU → aquí | v0.5.x |
-| 5 | Investigación y kit de edificios (B) | aquí | v0.6.x |
-| 6 | Fases 3, 4, 4b | aquí | v0.6.x |
-| 7 | Modelos por prioridad (D.2), en tandas | GPU → aquí | cada versión |
-| 8 | Fases 5 a 8 | aquí | v0.7–v0.9 |
+| Paso | Qué | Dónde | Versión | Estado |
+|---|---|---|---|---|
+| 1 | Fase 0 del plan grande | aquí | v0.4.4 | hecho |
+| 2 | Tuberías y skills de modelos y animaciones (D.1, C.2) | aquí | v0.9.3 | hecho; la prueba con un objeto real espera la primera imagen |
+| 3 | Fases 1 y 2 (combate) | aquí | v0.5.x | hecho |
+| 4 | Primeras animaciones de combate y personas (C) | GPU → aquí | — | espera los cuerpos riggeados (D.2) y los videos (C.1) |
+| 5 | Investigación y kit de edificios (B) | aquí | v0.10.0 | hecho: viviendas, palacios, talleres, graneros, templos y carretas en las ciudades, las aldeas y las tribus |
+| 5b | Lo que falta de la B: murallas y puertas acodadas, ruinas y obras del campamento con el kit | aquí | v0.10.2 | hecho |
+| 6 | Fases 3, 4, 4b | aquí | v0.6.x | hecho |
+| 7 | Modelos por prioridad (D.2), en tandas | GPU → aquí | cada versión | espera las imágenes |
+| 8 | Fases 5 a 8 | aquí | v0.7–v0.9.1 | hecho |
+
+**La primera tanda de modelos (D.2)**, la que pidió la narrativa: las piezas de estilo animal, que
+además no llevan esqueleto y entran directo al juego:
+- `accesorio.arreo.placa_arreo_padre` (la placa de arreo del padre, de estilo animal);
+- los amuletos de oro `accesorio.amuleto.*` (lobo, ciervo, águila e íbice, tigre y dragón, oso, caballo:
+  el combate animal);
+- `arma.corta.akinakes` (la espada corta).
+
+Después, los cuerpos base (`personaje.base.*`) y el caballo, que abren la parte C.

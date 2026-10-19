@@ -8,6 +8,7 @@
 #include "../src/sim/anim_index.h"
 #include "../src/sim/animals.h"
 #include "../src/sim/voxel.h"
+#include "../src/sim/voxmat.h"
 #include "../src/sim/economy.h"
 #include "../src/sim/champion.h"
 #include "../src/sim/climate.h"
@@ -18,6 +19,7 @@
 #include "../src/sim/armor.h"
 #include "../src/sim/ballistics.h"
 #include "../src/sim/body.h"
+#include "../src/sim/buildkit.h"
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
 #include "../src/sim/loadout.h"
@@ -36,6 +38,7 @@
 #include "../src/sim/squad.h"
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
+#include "../src/sim/flora.h"
 #include "../src/sim/forge.h"
 #include "../src/sim/city.h"
 #include "../src/sim/army.h"
@@ -4458,6 +4461,124 @@ static void test_cities(void) {
 
 // El ejercito y el asedio (fase 8b, src/sim/army.h).
 #define PI_T 3.14159265f
+// Cuenta las matas de cada clase en un cuadrado de n x n celdas con centro en (x, z).
+static int flora_count(const World *w, float x, float z, int n, int count[FLORA_KINDS]) {
+    int total = 0, gx0 = (int)floorf(x / FLORA_CELL) - n / 2, gz0 = (int)floorf(z / FLORA_CELL) - n / 2;
+    for (int k = 0; k < FLORA_KINDS; k++) count[k] = 0;
+    for (int j = 0; j < n; j++)
+        for (int i = 0; i < n; i++) {
+            FloraTuft t[FLORA_PER_CELL];
+            int m = flora_cell(w, w->seed, gx0 + i, gz0 + j, t);
+            for (int q = 0; q < m; q++) count[t[q].kind]++;
+            total += m;
+        }
+    return total;
+}
+
+static void test_flora(void) {
+    // La densidad: mas pasto en la estepa que en el bosque; la stipa, en lo seco; el desierto, casi
+    // nada lejos del agua y algo en los oasis; los juncos, solo en la orilla; los helechos, en el bosque.
+    float steppe[REGION_COUNT] = { 0 }, forest[REGION_COUNT] = { 0 }, desert[REGION_COUNT] = { 0 };
+    steppe[REGION_STEPPE] = forest[REGION_FOREST] = desert[REGION_DESERT] = 1.0f;
+    CHECK(flora_density(FLORA_GRASS, steppe, 0.0f) > flora_density(FLORA_GRASS, forest, 0.0f));
+    CHECK(flora_density(FLORA_STIPA, steppe, 0.0f) > flora_density(FLORA_STIPA, steppe, 1.0f) && flora_density(FLORA_STIPA, forest, 0.0f) == 0.0f);
+    CHECK(flora_density(FLORA_GRASS, desert, 0.0f) < 0.05f && flora_density(FLORA_GRASS, desert, 1.0f) > 0.3f);
+    CHECK(flora_density(FLORA_REED, steppe, 0.0f) == 0.0f && flora_density(FLORA_REED, steppe, 1.0f) > 0.3f);
+    CHECK(flora_density(FLORA_FERN, forest, 0.0f) > 0.1f && flora_density(FLORA_FERN, steppe, 0.0f) == 0.0f);
+    // Cada candidato da una mata con la probabilidad de su densidad (y nunca mas de una).
+    int count[FLORA_KINDS] = { 0 }, none = 0;
+    for (int i = 0; i < 10000; i++) {
+        int k = flora_pick(steppe, 0.0f, ((float)i + 0.5f) / 10000.0f);
+        if (k < 0) none++;
+        else count[k]++;
+    }
+    CHECK(fabsf((float)count[FLORA_GRASS] / 10000.0f - flora_density(FLORA_GRASS, steppe, 0.0f)) < 0.01f);
+    CHECK(fabsf((float)count[FLORA_STIPA] / 10000.0f - flora_density(FLORA_STIPA, steppe, 0.0f)) < 0.01f);
+    float sum = 0.0f;
+    for (int k = 0; k < FLORA_KINDS; k++) sum += flora_density((FloraKind)k, steppe, 0.0f);
+    CHECK(count[FLORA_REED] == 0 && count[FLORA_FERN] == 0 && sum < 1.0f && fabsf((float)none / 10000.0f - (1.0f - sum)) < 0.01f);
+    int crowded = 0;
+    for (int i = 0; i < 1000; i++) crowded += flora_pick(steppe, 1.0f, ((float)i + 0.5f) / 1000.0f) >= 0;
+    CHECK(crowded == 1000); // en la orilla de la estepa no queda un m2 sin nada
+
+    // La siembra: siempre la misma; nada en el campamento; la base sobre el facetado del suelo, en su
+    // celda; en el agua, solo juncos y en el agua baja.
+    const World *w = world_for_seed(1206u);
+    FloraTuft a[FLORA_PER_CELL], b[FLORA_PER_CELL];
+    CHECK(flora_cell(w, w->seed, 0, 0, a) == 0 && flora_cell(w, w->seed, 5, -3, a) == 0 && flora_cell(w, w->seed, -8, 2, a) == 0);
+    int bad = 0, total = 0, wet = 0;
+    for (int gz = -160; gz < 160; gz += 7)
+        for (int gx = -160; gx < 160; gx += 7) {
+            int n = flora_cell(w, w->seed, gx, gz, a);
+            if (n != flora_cell(w, w->seed, gx, gz, b) || (n && memcmp(a, b, sizeof(FloraTuft) * (size_t)n))) bad++;
+            float x0 = (float)gx * FLORA_CELL, z0 = (float)gz * FLORA_CELL;
+            float h[4] = { world_height(w, x0, z0), world_height(w, x0 + FLORA_CELL, z0), world_height(w, x0, z0 + FLORA_CELL),
+                           world_height(w, x0 + FLORA_CELL, z0 + FLORA_CELL) };
+            float lo = fminf(fminf(h[0], h[1]), fminf(h[2], h[3])), hi = fmaxf(fmaxf(h[0], h[1]), fmaxf(h[2], h[3]));
+            for (int i = 0; i < n; i++) {
+                const FloraTuft *t = &a[i];
+                if (t->x < x0 || t->x > x0 + FLORA_CELL || t->z < z0 || t->z > z0 + FLORA_CELL) bad++;
+                if (t->y < lo - 0.01f || t->y > hi + 0.01f || t->kind >= FLORA_KINDS || t->size < 0.69f || t->size > 1.31f) bad++;
+                if (t->x * t->x + t->z * t->z < FLORA_CAMP_R * FLORA_CAMP_R) bad++;
+                float dist;
+                int si = world_nearest_settlement(w, t->x, t->z, &dist);
+                if (si >= 0 && dist < (w->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 : VILLAGE_FIELDS_R1)) bad++;
+                WaterKind wk;
+                float wl = world_water(w, t->x, t->z, 0.0f, &wk);
+                if (wl > t->y + 0.05f) {
+                    wet++;
+                    if (t->kind != FLORA_REED || wl > t->y + 0.6f || wk == WATER_SEA) bad++;
+                }
+            }
+            total += n;
+        }
+    CHECK(bad == 0 && total > 1000 && wet > 0); // y hay juncos en el agua baja
+    // Cada region con lo suyo: la estepa, pasto y stipa; el bosque, helechos; los lagos, juncos en la orilla.
+    float x, z;
+    world_region_point(w, REGION_STEPPE, 260.0f, &x, &z);
+    int st = flora_count(w, x, z, 24, count);
+    CHECK(st > 24 * 24 && count[FLORA_GRASS] > count[FLORA_STIPA] && count[FLORA_STIPA] > 0 && count[FLORA_FERN] == 0);
+    world_edge_point(w, REGION_FOREST, 420.0f, &x, &z);
+    flora_count(w, x, z, 24, count);
+    CHECK(count[FLORA_FERN] > 0 && count[FLORA_STIPA] == 0);
+    int reeds = 0;
+    for (int i = 0; i < w->lake_count && !reeds; i++) {
+        const Lake *l = &w->lakes[i];
+        for (int q = 0; q < 16; q++) { // alrededor de la orilla
+            float ang = (float)q * 0.3927f;
+            reeds += flora_count(w, l->x + cosf(ang) * l->r, l->z + sinf(ang) * l->r, 6, count) > 0 ? count[FLORA_REED] : 0;
+        }
+    }
+    CHECK(reeds > 0);
+
+    // La estacion: el pasto crece en primavera, se seca de pie y el invierno lo aplasta; las flores,
+    // solo en primavera; los juncos secos, de pie en invierno; las plumas de la stipa, en verano.
+    float spring = flora_height(FLORA_GRASS, 0.22f, 1.0f, 0.0f), early = flora_height(FLORA_GRASS, 0.03f, 0.3f, 0.0f);
+    float winter = flora_height(FLORA_GRASS, 0.85f, 0.0f, 0.1f), dry = flora_height(FLORA_GRASS, 0.47f, 0.5f, 0.0f);
+    CHECK(winter < early && early < spring && dry > winter && dry <= spring);
+    CHECK(flora_height(FLORA_FLOWER, 0.2f, 0.9f, 0.0f) > 0.2f && flora_height(FLORA_FLOWER, 0.5f, 0.5f, 0.0f) == 0.0f &&
+          flora_height(FLORA_FLOWER, 0.85f, 0.0f, 0.0f) == 0.0f && flora_height(FLORA_FLOWER, 0.2f, 0.0f, 0.0f) == 0.0f);
+    CHECK(flora_height(FLORA_REED, 0.85f, 0.0f, 0.0f) >= 0.7f * flora_height(FLORA_REED, 0.3f, 1.0f, 0.0f));
+    CHECK(flora_height(FLORA_FERN, 0.85f, 0.0f, 0.0f) < 0.3f * flora_height(FLORA_FERN, 0.3f, 1.0f, 0.0f));
+    CHECK(flora_plume(0.3f) > 0.99f && flora_plume(0.02f) == 0.0f && flora_plume(0.7f) == 0.0f && flora_plume(0.95f) == 0.0f);
+    // Con el clima del juego: el pasto de verano, mas alto que el del invierno.
+    Climate cs = climate_at((float)(DAYS_PER_SEASON + 3) * GAME_SECONDS_PER_DAY + 400.0f, 1206u);
+    Climate cw = climate_at((float)(3 * DAYS_PER_SEASON + 3) * GAME_SECONDS_PER_DAY + 400.0f, 1206u);
+    CHECK(flora_height(FLORA_GRASS, cs.year, cs.greenness, cs.autumn) > 1.5f * flora_height(FLORA_GRASS, cw.year, cw.greenness, cw.autumn));
+    CHECK(flora_height(FLORA_FLOWER, cw.year, cw.greenness, cw.autumn) == 0.0f);
+
+    // El viento: con mas viento se inclina y se mece mas; nunca pasa de su amplitud. Al pasar, se aparta.
+    CHECK(flora_lean(1.0f) > flora_lean(0.4f) && flora_lean(0.4f) > flora_lean(0.0f) && flora_lean(0.0f) > 0.0f);
+    float calm = 0.0f, storm = 0.0f;
+    for (int i = 0; i < 400; i++) {
+        float t = (float)i * 0.05f;
+        calm = fmaxf(calm, fabsf(flora_sway(t, 0.0f, 1.3f)));
+        storm = fmaxf(storm, fabsf(flora_sway(t, 1.0f, 1.3f)));
+    }
+    CHECK(calm > 0.0f && calm <= 0.05f + 1e-4f && storm > 2.0f * calm && storm <= 0.27f + 1e-4f);
+    CHECK(flora_trample(0.0f) == 1.0f && flora_trample(FLORA_TRAMPLE_R) == 0.0f && flora_trample(0.3f) > flora_trample(0.7f));
+}
+
 static void test_army(void) {
     City cap;
     city_start(&cap, SETTLE_CAPITAL, REGION_STEPPE, 7u);
@@ -4545,15 +4666,67 @@ static void test_army(void) {
     CHECK(!city_gate_open(&foe, 0, true) && city_gate_open(&foe, 2, true) && city_gate_open(&foe, 0, false) && !city_gate_open(&foe, 7, false));
     // La muralla corta el paso: el muro siempre; por la puerta se pasa si esta abierta (en paz, o
     // quemada), pero no por sus lienzos de los costados.
-    float a105 = city_gate_angle(1), a195 = city_gate_angle(2), tx = -sinf(a105), tz = cosf(a105); // tx, tz: de costado
+    float a105 = city_gate_angle(1), tx = -sinf(a105), tz = cosf(a105); // tx, tz: de costado
     int gt = -1;
+    float p1[CITY_GATE_PATH][2], p2[CITY_GATE_PATH][2];
+    city_gate_path(1, p1), city_gate_path(2, p2);
+    enum { OUT_CLOSED, OUT_MOUTH, MOUTH, COURT, IN };
     CHECK(city_wall_blocks(&foe, false, cosf(a45) * 30.0f, sinf(a45) * 30.0f, cosf(a45) * 50.0f, sinf(a45) * 50.0f, &gt) && gt == -1);
-    CHECK(!city_wall_blocks(&foe, false, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &gt) && gt == 1);
-    CHECK(city_wall_blocks(&foe, true, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &gt) && gt == 1);
-    CHECK(!city_wall_blocks(&foe, true, cosf(a195) * 30.0f, sinf(a195) * 30.0f, cosf(a195) * 50.0f, sinf(a195) * 50.0f, &gt) && gt == 2);
+    CHECK(!city_wall_blocks(&foe, false, p1[IN][0], p1[IN][1], p1[COURT][0], p1[COURT][1], &gt) && gt == 1);   // en paz, abierta
+    CHECK(city_wall_blocks(&foe, true, p1[IN][0], p1[IN][1], p1[COURT][0], p1[COURT][1], &gt) && gt == 1);     // en guerra, cerrada
+    CHECK(!city_wall_blocks(&foe, true, p2[IN][0], p2[IN][1], p2[COURT][0], p2[COURT][1], &gt) && gt == 2);    // quemada, abierta
+    CHECK(!city_wall_blocks(NULL, true, p1[IN][0], p1[IN][1], p1[COURT][0], p1[COURT][1], &gt));               // sin ciudad: abiertas
     CHECK(city_wall_blocks(&foe, false, cosf(a105) * 30.0f + tx * 6.0f, sinf(a105) * 30.0f + tz * 6.0f, cosf(a105) * 50.0f + tx * 6.0f,
                            sinf(a105) * 50.0f + tz * 6.0f, &gt));
-    CHECK(!city_wall_blocks(NULL, true, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &gt));
+    // La puerta acodada: el antemuro de adelante corta el paso derecho; se entra por la boca, a lo
+    // largo de la muralla, y se rodea el antemuro por afuera. El costado cerrado tambien corta.
+    WallHit hit;
+    float d105 = city_wall_dist(a105);
+    CHECK(city_wall_hit(&foe, false, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &hit) && hit.gate == -1);
+    CHECK(fabsf(hit.t - (d105 + CITY_BARBICAN_OUT - 30.0f) / 20.0f) < 0.01f && fabsf(hit.tx * cosf(a105) + hit.tz * sinf(a105)) < 0.01f);
+    int open_path = 0;
+    for (int k = 0; k + 1 < CITY_GATE_PATH; k++) open_path += !city_wall_blocks(&foe, false, p1[k][0], p1[k][1], p1[k + 1][0], p1[k + 1][1], NULL);
+    CHECK(open_path == CITY_GATE_PATH - 1);                                                                   // el camino entero, abierto
+    CHECK(city_wall_blocks(&foe, false, p1[MOUTH][0], p1[MOUTH][1], p1[IN][0], p1[IN][1], NULL));             // de la boca, derecho adentro: el muro
+    CHECK(city_wall_blocks(&foe, false, cosf(a105) * 62.0f, sinf(a105) * 62.0f, p1[COURT][0], p1[COURT][1], NULL)); // de frente al patio: el antemuro
+    float sd = (float)city_gate_closed_side(1);
+    CHECK(sd == -(float)city_gate_closed_side(2) && city_wall_blocks(&foe, false, p1[COURT][0], p1[COURT][1], p1[COURT][0] + tx * sd * 12.0f,
+                                                                      p1[COURT][1] + tz * sd * 12.0f, NULL)); // el costado cerrado
+    CHECK(!city_wall_blocks(&foe, false, p1[COURT][0], p1[COURT][1], p1[COURT][0] - tx * sd * 12.0f, p1[COURT][1] - tz * sd * 12.0f, NULL));
+    // El rodeo: quien va de adentro hacia afuera (o al reves), de un lado al otro de la ciudad por
+    // afuera, o sale del patio de un antemuro, sigue los puntos de city_route a paso de medio metro y
+    // llega sin atravesar nunca la muralla ni un antemuro (por la boca de una puerta).
+    float walk[4][2]; // de, a
+    int stuck = 0, crossed = 0, walks = 0;
+    for (int k = 0; k < 24; k++) {
+        float ain = (float)k * 0.2618f + 0.1f, aout = (float)(k * 7) * 0.2618f + 0.3f, rin = 12.0f + (float)(k % 4) * 6.0f, rout = 58.0f + (float)(k % 3) * 9.0f;
+        float court[CITY_GATE_PATH][2];
+        city_gate_path(k % CITY_GATES, court);
+        walk[0][0] = cosf(ain) * rin, walk[0][1] = sinf(ain) * rin;          // adentro
+        walk[1][0] = cosf(aout) * rout, walk[1][1] = sinf(aout) * rout;      // afuera
+        walk[2][0] = -walk[1][0] * 0.9f, walk[2][1] = -walk[1][1] * 0.9f;    // afuera, del otro lado
+        walk[3][0] = court[COURT][0], walk[3][1] = court[COURT][1];          // en el patio del antemuro
+        static const int legs[5][2] = { { 0, 1 }, { 1, 0 }, { 1, 2 }, { 3, 2 }, { 3, 0 } };
+        for (int l = 0; l < 5; l++, walks++) {
+            float x = walk[legs[l][0]][0], z = walk[legs[l][0]][1], gx = walk[legs[l][1]][0], gz = walk[legs[l][1]][1];
+            int n = 0;
+            for (; n < 800 && (x - gx) * (x - gx) + (z - gz) * (z - gz) > 0.3f; n++) {
+                float wx = gx, wz = gz;
+                city_route(x, z, gx, gz, &wx, &wz);
+                float dx = wx - x, dz = wz - z, d = sqrtf(dx * dx + dz * dz), st = fminf(0.5f, d);
+                if (d < 1e-4f) break;
+                float nx = x + dx / d * st, nz = z + dz / d * st;
+                crossed += city_wall_blocks(NULL, false, x, z, nx, nz, NULL);
+                x = nx, z = nz;
+            }
+            stuck += n >= 800 || (x - gx) * (x - gx) + (z - gz) * (z - gz) > 0.3f;
+        }
+    }
+    CHECK(walks == 120 && stuck == 0 && crossed == 0);
+    // Adentro, o lejos, se va derecho; y el rodeo nunca cruza el muro al lado de la puerta.
+    float wx = 0.0f, wz = 0.0f;
+    CHECK(!city_route(-10.0f, 5.0f, 20.0f, -12.0f, &wx, &wz) && !city_route(80.0f, 70.0f, -90.0f, 75.0f, &wx, &wz));
+    CHECK(city_route(p1[IN][0], p1[IN][1], cosf(a105) * 62.0f, sinf(a105) * 62.0f, &wx, &wz) && !city_wall_blocks(NULL, false, p1[IN][0], p1[IN][1], wx, wz, NULL));
 
     // El cerco: sin cosecha y con la gente del campo adentro, el granero baja mas rapido y crece el
     // descontento; el fuego quema grano y asusta.
@@ -4583,6 +4756,258 @@ static void test_army(void) {
     CHECK(vassal.soldiers == 0 && vassal.mercs == 0 && city_trades(&vassal, true, -90.0f) && !city_surrenders(&vassal, SETTLE_CAPITAL));
     CHECK(paid > 0 && fabsf(vassal.silver - (before - (float)paid)) < 0.01f && city_vassal_tribute(&cap, SETTLE_CAPITAL) == 0);
     CHECK(peace_price(5) > tribute_due(5));
+}
+
+// Las celdas vacias de la capa y que se alcanzan desde el borde de la rejilla (de a cuatro vecinas),
+// con la columna bx tapada de bz0 a bz1 (la puerta cerrada; bx = -1: abierta). Marca seen.
+static int test_bk_flood(const VoxGrid *g, int y, int bx, int bz0, int bz1, unsigned char *seen) {
+    int nx = g->nx, nz = g->nz, sp = 0, n = 0;
+    int *st = malloc(sizeof(int) * (size_t)nx * (size_t)nz);
+    memset(seen, 0, (size_t)nx * (size_t)nz);
+#define BK_OPEN(x, z) (!vox_get(g, x, y, z) && !((x) == bx && (z) >= bz0 && (z) <= bz1))
+    for (int z = 0; z < nz; z++)
+        for (int x = 0; x < nx; x++)
+            if ((x == 0 || z == 0 || x == nx - 1 || z == nz - 1) && BK_OPEN(x, z)) seen[x + nx * z] = 1, st[sp++] = x + nx * z;
+    while (sp > 0) {
+        int c = st[--sp], x = c % nx, z = c / nx;
+        static const int D[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+        n++;
+        for (int i = 0; i < 4; i++) {
+            int a = x + D[i][0], b = z + D[i][1];
+            if (a < 0 || b < 0 || a >= nx || b >= nz || seen[a + nx * b] || !BK_OPEN(a, b)) continue;
+            seen[a + nx * b] = 1, st[sp++] = a + nx * b;
+        }
+    }
+#undef BK_OPEN
+    free(st);
+    return n;
+}
+
+static uint32_t test_bk_hash(const VoxGrid *g) {
+    uint32_t h = 2166136261u ^ (uint32_t)(g->nx * 73856093 ^ g->ny * 19349663 ^ g->nz * 83492791);
+    for (int i = 0; i < g->nx * g->ny * g->nz; i++) h = (h ^ g->m[i]) * 16777619u;
+    return h;
+}
+
+// El kit de edificios (src/sim/buildkit.h): cada tipo de cada region arma siempre lo mismo con su
+// semilla y otra cosa con otra; las chicas caben en su huella; la puerta da al frente, a ras del
+// piso, y lleva a su vestibulo (cerrada, de afuera no se llega adentro); lo de adentro, que no se
+// ve, queda relleno (ningun hueco techado sin salida) y las caras, ya refinadas, no se pasan.
+static void test_buildkit(void) {
+    for (int r = 0; r < REGION_COUNT; r++) {
+        CHECK(bk_available(BK_HOUSE, (Region)r) && bk_available(BK_PALACE, (Region)r) && bk_available(BK_GRANARY, (Region)r));
+        CHECK(bk_available(BK_TEMPLE, (Region)r) == (r == REGION_DESERT || r == REGION_HIGHLAND)); // el templo del fuego
+        CHECK(bk_available(BK_WAGON, (Region)r) == (r == REGION_STEPPE));                          // la carreta-casa
+    }
+    VoxGrid g, h;
+    BkInfo in, in2;
+    CHECK(!bk_build(BK_TEMPLE, REGION_FJORD, 1u, false, &g, &in) && g.m == NULL && in.door_x == -1);
+    CHECK(!bk_available(BK_KINDS, REGION_STEPPE) && !bk_build(BK_KINDS, REGION_STEPPE, 1u, false, &g, NULL));
+    int built = 0, enclosed = 0, bad_det = 0, same = 0, too_big = 0, bad_door = 0, leaks = 0, short_vest = 0, hollow = 0, over = 0;
+    for (int t = 0; t < BK_KINDS; t++)
+        for (int r = 0; r < REGION_COUNT; r++) {
+            if (!bk_available((BkType)t, (Region)r)) continue;
+            CHECK(bk_name((BkType)t, (Region)r)[0] != '\0');
+            uint32_t prev = 0;
+            for (int v = 0; v < BK_VARIANTS; v++) {
+                bool small = v < 2;
+                uint32_t seed = bk_variant_seed((BkType)t, (Region)r, v);
+                if (!bk_build((BkType)t, (Region)r, seed, small, &g, &in)) {
+                    CHECK(false);
+                    continue;
+                }
+                built++;
+                // Siempre lo mismo con la misma semilla; la variante impar, distinta de la par.
+                if (!bk_build((BkType)t, (Region)r, seed, small, &h, &in2) || h.nx != g.nx || h.ny != g.ny || h.nz != g.nz ||
+                    memcmp(g.m, h.m, (size_t)g.nx * (size_t)g.ny * (size_t)g.nz) || in2.l != in.l || in2.door_x != in.door_x)
+                    bad_det++;
+                vox_free(&h);
+                uint32_t hash = test_bk_hash(&g);
+                bool wall = t == BK_WALL || t == BK_TOWER || t == BK_GATE, ruin = t == BK_RUIN_FORT || t == BK_RUIN_CITY; // la muralla; las ruinas
+                bool big = t == BK_PALACE || t == BK_BARRACKS || wall || ruin || t == BK_CORRAL; // sin chicas
+                if (v % 2 == 1 && hash == prev && t != BK_WALL && t != BK_TOWER) same++; // los tramos y las torres pueden repetirse
+                prev = hash;
+                // Las chicas caben en BK_SMALL x BK_SMALL (el palacio, el cuartel, la muralla, las ruinas y el corral no tienen chicas).
+                if (small && !big && (in.l > BK_SMALL || in.w > BK_SMALL)) too_big++;
+                if (in.l <= 0.0f || in.w <= 0.0f || in.h <= 0.0f || in.front <= 0.0f || in.found <= 0.0f) too_big++;
+                if (in.enclosed) {
+                    enclosed++;
+                    int y = in.door_y + 1, nx = g.nx, zc = (in.door_z0 + in.door_z1) / 2;
+                    // La puerta: al frente, abierta, sobre el piso (a ras del suelo, o del metro de la terraza).
+                    if (in.door_x < nx / 2 || vox_get(&g, in.door_x, in.door_y, zc) || vox_get(&g, in.door_x, y, zc) ||
+                        vox_get(&g, in.door_x + 1, in.door_y, zc) || !vox_get(&g, in.door_x, in.door_y - 1, zc) || in.door_along <= 0.0f ||
+                        in.door_along > in.front + 1e-4f || in.door_up < 0.0f || in.door_up > 1.01f || in.door_z1 - in.door_z0 < 2)
+                        bad_door++;
+                    unsigned char *open = malloc((size_t)nx * (size_t)g.nz), *shut = malloc((size_t)nx * (size_t)g.nz);
+                    int n_open = test_bk_flood(&g, y, -1, 0, -1, open), n_shut = test_bk_flood(&g, y, in.door_x, in.door_z0, in.door_z1, shut);
+                    // Cerrada, nada de lo de atras de la puerta se alcanza; abierta, si: el vestibulo, de un metro al menos.
+                    for (int z = in.door_z0; z <= in.door_z1; z++)
+                        if (shut[in.door_x - 1 + nx * z] || !open[in.door_x - 1 + nx * z]) leaks++;
+                    float vest = (float)(n_open - n_shut) * g.size * g.size, door_w = (float)(in.door_z1 - in.door_z0 + 1) * g.size;
+                    if (vest < door_w * 1.0f) short_vest++;
+                    // Adentro, relleno: con la puerta abierta, no queda una celda vacia techada que no se alcance.
+                    int dark = 0;
+                    for (int i = 0; i < nx * g.ny * g.nz; i++) dark += g.m[i] == M_SHADOW;
+                    if (!dark) hollow++;
+                    for (int z = 0; z < g.nz; z++)
+                        for (int x = 0; x < nx; x++) {
+                            if (open[x + nx * z] || vox_get(&g, x, y, z)) continue;
+                            for (int yy = y + 1; yy < g.ny; yy++)
+                                if (vox_get(&g, x, yy, z)) {
+                                    hollow++;
+                                    break;
+                                }
+                        }
+                    free(open), free(shut);
+                } else if (t == BK_HOUSE || t == BK_PALACE || t == BK_BARRACKS || t == BK_TEMPLE) {
+                    bad_door++; // las casas tienen muros y puerta
+                }
+                // Las caras, refinadas como se dibujan de cerca: las chicas, pocas; las ruinas (una por sitio), mas.
+                if (vox_refine(&g) && vox_exposed_faces(&g) > (ruin ? 36000 : small && !big ? 18000 : 28000)) over++;
+                vox_free(&g);
+            }
+        }
+    // Sin 3 templos ni 4 carretas, ni 4 ciudades enterradas, ni las obras de la tribu fuera de la estepa.
+    int camp_kinds = BK_ASHES - BK_SHELTER + 1;
+    CHECK(camp_kinds == 11 && built == 4 * (BK_KINDS * REGION_COUNT - 3 - 4 - 4 - camp_kinds * (REGION_COUNT - 1)) && enclosed > 60);
+    for (int r = 0; r < REGION_COUNT; r++) {
+        CHECK(bk_available(BK_RUIN_FORT, (Region)r) && bk_available(BK_RUIN_CITY, (Region)r) == (r == REGION_DESERT));
+        for (int t = BK_SHELTER; t <= BK_ASHES; t++) CHECK(bk_available((BkType)t, (Region)r) == (r == REGION_STEPPE));
+    }
+    // La muralla que se ve es la que choca (src/sim/army.h): el adarve a la altura que se trepa; en la
+    // puerta, el hueco libre en la linea de la muralla; el antemuro adelante y el costado cerrado
+    // llenos; la boca y el patio, libres.
+    for (int r = 0; r < REGION_COUNT; r++)
+        for (int v = 0; v < 2; v++) {
+            CHECK(bk_build(BK_WALL, (Region)r, bk_variant_seed(BK_WALL, (Region)r, v), false, &g, &in));
+            CHECK(in.h >= CITY_WALL_HEIGHT - 0.5f && in.h <= CITY_WALL_HEIGHT + 1.6f && in.w >= 2.0f * CITY_WALL_R * sinf(PI_T / 12.0f) / 3.0f);
+            vox_free(&g);
+            CHECK(bk_build(BK_GATE, (Region)r, bk_variant_seed(BK_GATE, (Region)r, v), false, &g, &in));
+            float sd = (float)city_gate_closed_side(v), cs = g.size, hx = (float)g.nx * cs * 0.5f, hz = (float)g.nz * cs * 0.5f;
+#define AT(X, Y, Z) vox_get(&g, (int)floorf(((X) + hx) / cs), BK_FOUND + (int)floorf((Y) / cs), (int)floorf(((Z) + hz) / cs))
+            int bad = 0;
+            for (float y = 0.25f; y < 4.0f; y += 0.5f)
+                for (float z = -CITY_GATE_HALF + 0.25f; z < CITY_GATE_HALF; z += 0.5f) bad += AT(0.25f, y, z) != 0 || AT(-0.25f, y, z) != 0; // el hueco
+            for (float z = -CITY_BARBICAN_HALF + 0.75f; z < CITY_BARBICAN_HALF - 0.5f; z += 0.5f) bad += !AT(CITY_BARBICAN_OUT + 0.25f, 2.0f, z); // el antemuro
+            for (float x = 1.75f; x < CITY_BARBICAN_OUT - 0.5f; x += 0.5f) bad += !AT(x, 2.0f, sd * (CITY_BARBICAN_HALF + 0.25f)); // el costado cerrado
+            for (float x = 1.25f; x < CITY_BARBICAN_OUT - 1.0f; x += 0.5f) // la boca y el patio, entre la muralla y el antemuro
+                bad += AT(x, 1.25f, -sd * CITY_BARBICAN_HALF) != 0 || AT(x, 1.25f, 0.25f) != 0;
+#undef AT
+            CHECK(bad == 0 && in.l >= CITY_BARBICAN_OUT + 1.0f);
+            vox_free(&g);
+        }
+    CHECK(bad_det == 0 && same == 0 && too_big == 0);
+    CHECK(bad_door == 0 && leaks == 0 && short_vest == 0 && hollow == 0);
+    CHECK(over == 0);
+    // Las ruinas: lo alto cayo (las torres, rotas), pero queda; la puerta de la fortaleza, libre; la
+    // ciudad enterrada, en la arena.
+    for (int r = 0; r < REGION_COUNT; r++) {
+        CHECK(bk_build(BK_RUIN_FORT, (Region)r, bk_variant_seed(BK_RUIN_FORT, (Region)r, 2), false, &g, &in));
+        float cs = g.size, hx = (float)g.nx * cs * 0.5f, hz = (float)g.nz * cs * 0.5f;
+        int gate = 0;
+        for (float x = in.front - 4.0f; x < in.front; x += cs)
+            for (float z = -1.5f; z < 1.5f; z += cs) gate += vox_get(&g, (int)floorf((x + hx) / cs), BK_FOUND + 1, (int)floorf((z + hz) / cs)) != 0;
+        CHECK(in.h > 1.5f && in.h < CITY_WALL_HEIGHT + 2.5f && in.l > 18.0f && gate == 0);
+        vox_free(&g);
+    }
+    CHECK(bk_build(BK_RUIN_CITY, REGION_DESERT, bk_variant_seed(BK_RUIN_CITY, REGION_DESERT, 0), false, &g, &in));
+    int sand = 0, ground = 0;
+    for (int z = 0; z < g.nz; z++)
+        for (int x = 0; x < g.nx; x++) ground++, sand += vox_get(&g, x, BK_FOUND, z) == M_SAND1 || vox_get(&g, x, BK_FOUND, z) == M_SAND2;
+    CHECK(sand * 2 > ground && in.h > 2.0f);
+    vox_free(&g);
+    // Las obras de la tribu sin modelo se dibujan con el kit, a la medida de su id del inventario (las
+    // casas, que el kit hace de muchas medidas, se escalan a su lugar).
+    Inventory inv;
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    inventory_parse(&inv, text);
+    static const char *const WORKS[] = { "estructura.campamento.refugio", "estructura.campamento.empalizada", "estructura.defensa.muro_piedra",
+                                         "estructura.campamento.horno_cocina", "estructura.campamento.horno_bronce", "estructura.campamento.horno_acero",
+                                         "estructura.campamento.atalaya", "estructura.campamento.corral", WORKSHOP_ID,
+                                         "estructura.vivienda.tienda_ligera", "estructura.vivienda.choza_fieltro", "estructura.vivienda.yurta_comun",
+                                         "estructura.vivienda.yurta_jefe", "estructura.vivienda.casa_adobe", "estructura.vivienda.cabana_troncos",
+                                         "estructura.ruina.escombros", "estructura.ruina.muro", "estructura.ruina.cenizas", "estructura.ruina.yurta_quemada" };
+    int mapped = 0, misfit = 0;
+    for (size_t i = 0; i < sizeof(WORKS) / sizeof(WORKS[0]); i++) {
+        BkType t = BK_KINDS;
+        Region r = REGION_COUNT;
+        int v = -1;
+        const InvItem *it = inventory_find(&inv, WORKS[i]);
+        if (!it || !bk_for_item(WORKS[i], &t, &r, &v) || !bk_available(t, r) || (v != 0 && v != 2)) continue;
+        mapped++;
+        for (int k = v; k <= v + 1; k++) {
+            if (!bk_build(t, r, bk_variant_seed(t, r, k), k < 2, &g, &in)) {
+                misfit++;
+                continue;
+            }
+            if (t != BK_HOUSE && (fabsf(in.l - it->l) > 1.5f || fabsf(in.w - it->w) > 1.5f || fabsf(in.h - it->h) > 0.75f)) misfit++;
+            vox_free(&g);
+        }
+    }
+    BkType t0;
+    CHECK(mapped == (int)(sizeof(WORKS) / sizeof(WORKS[0])) && misfit == 0);
+    CHECK(!bk_for_item("utileria.objeto.odre", &t0, NULL, NULL) && !bk_for_item(NULL, &t0, NULL, NULL));
+    free(text);
+}
+
+// ¿Hay agua sobre el suelo en algun punto del circulo (cada 5 m), en verano o con la crecida de la
+// primavera? sea_ok: el mar no cuenta (el embarcadero da al mar).
+static bool test_wet_circle(const World *w, float x, float z, float r, bool sea_ok) {
+    for (float dz = -r; dz <= r; dz += 5.0f)
+        for (float dx = -r; dx <= r; dx += 5.0f) {
+            if (dx * dx + dz * dz > r * r) continue;
+            float px = x + dx, pz = z + dz, h = world_height(w, px, pz);
+            for (int f = 0; f < 2; f++) {
+                WaterKind k;
+                if (world_water(w, px, pz, f ? 3.0f : 0.0f, &k) > h - 0.05f && !(sea_ok && k == WATER_SEA)) return true;
+            }
+        }
+    return false;
+}
+
+// El generador del mundo no pone nada sobre el agua ni dentro de ella: ni las capitales con su
+// muralla, ni las aldeas con sus casas, ni las tribus, las estructuras o las guaridas caen en un lago
+// (ni en un rio, el canal o el mar). Los pueblos y las tribus, ademas, quedan por debajo de la nieve
+// de todo el año (el glaciar).
+static void test_world_dry(void) {
+    // La linea de nieve del verano de world.h es la de src/sim/climate.c (la mas alta del año).
+    float top = -1e9f;
+    for (int d = 0; d < DAYS_PER_YEAR * 4; d++) top = fmaxf(top, climate_at(((float)d + 0.5f) * GAME_SECONDS_PER_DAY * 0.25f, 1u).snowline);
+    CHECK(top <= WORLD_SNOWLINE_MAX + 0.01f && top >= WORLD_SNOWLINE_MAX - 0.5f);
+    CHECK(WORLD_FOOT_CAPITAL >= CITY_WALL_R + 4.0f && WORLD_FOOT_VILLAGE >= 17.0f + 5.0f); // la muralla y sus torres; el anillo de casas
+    static const uint32_t SEEDS[] = { 1206u, 7u, 42u, 1984u, 2024u, 31337u };
+    int wet = 0, snowy = 0, lots_wet = 0, things = 0;
+    for (size_t i = 0; i < sizeof(SEEDS) / sizeof(SEEDS[0]); i++) {
+        const World *w = world_for_seed(SEEDS[i]);
+        float snow = w->camp_height + WORLD_SNOW_FREE;
+        CHECK(w->settlement_count == REGION_COUNT * 4 && w->tribe_count >= 15 && w->site_count >= 40); // no se pierde nada
+        for (int k = 0; k < w->settlement_count; k++) {
+            const Settlement *s = &w->settlements[k];
+            float r = s->kind == SETTLE_CAPITAL ? WORLD_FOOT_CAPITAL : WORLD_FOOT_VILLAGE;
+            wet += test_wet_circle(w, s->x, s->z, r, false);
+            snowy += world_height(w, s->x, s->z) > snow;
+            CityLot lots[CITY_LOTS_MAX];
+            int n = city_layout(w, k, NULL, lots, CITY_LOTS_MAX);
+            for (int l = 0; l < n; l++) // las casas, el palacio, los talleres, los campos y los corrales
+                lots_wet += world_water(w, lots[l].x, lots[l].z, 0.0f, NULL) > world_height(w, lots[l].x, lots[l].z) - 0.05f;
+            things++;
+        }
+        for (int k = 0; k < w->tribe_count; k++) {
+            wet += test_wet_circle(w, w->tribes[k].x, w->tribes[k].z, WORLD_FOOT_TRIBE, false);
+            snowy += world_height(w, w->tribes[k].x, w->tribes[k].z) > snow;
+            things++;
+        }
+        for (int k = 0; k < w->site_count; k++, things++)
+            wet += test_wet_circle(w, w->sites[k].x, w->sites[k].z, WORLD_FOOT_SITE, w->sites[k].kind == SITE_HARBOR);
+        for (int k = 0; k < w->den_count; k++, things++) wet += test_wet_circle(w, w->dens[k].x, w->dens[k].z, WORLD_FOOT_DEN, false);
+    }
+    CHECK(things > 700 && wet == 0 && snowy == 0 && lots_wet == 0);
+    // La huella en seco: un punto en medio de un lago no lo esta; uno lejos de toda el agua, si.
+    const World *w = world_for_seed(1206u);
+    CHECK(!world_footprint_dry(w, w->lakes[0].x, w->lakes[0].z, 1.0f, false));
+    CHECK(world_footprint_dry(w, w->settlements[0].x, w->settlements[0].z, WORLD_FOOT_CAPITAL, false));
 }
 
 int main(void) {
@@ -4709,6 +5134,9 @@ int main(void) {
     RUN(test_forge);
     RUN(test_cities);
     RUN(test_army);
+    RUN(test_flora);
+    RUN(test_buildkit);
+    RUN(test_world_dry);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

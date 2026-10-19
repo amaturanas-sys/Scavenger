@@ -46,6 +46,9 @@ El norte es −Z y el este +X.
   - Las guaridas quedan lejos de los pueblos.
 - **Nombres de los pueblos:** se arman con sílabas de cada región, sin repetirse.
 - **Tribus y estructuras:** dónde caen y qué actitud tiene cada tribu (siempre de las tres en cada región).
+- **Nada en el agua** (v0.10.1, `world_footprint_dry` y `settle_all` en `src/sim/world.c`): ningún pueblo, tribu, estructura o guarida queda sobre un lago o dentro de él, con su orilla; tampoco sobre un río, el canal o el mar (el embarcadero sí da al mar). Se mira toda su huella: la capital con su muralla (50 m de radio), la aldea con sus casas (24 m), el corro de la tribu (20 m), la estructura (18 m) y la guarida (8 m), también con la crecida de la primavera.
+  - Los pueblos y las tribus, además, quedan por debajo de la nieve de todo el año: la línea de nieve del verano, 40 m sobre el llano del campamento, menos 4 m (no más ciudades sobre el glaciar del altiplano).
+  - Lo que no cumple se corre al lugar válido más cercano (con las mismas reglas de su región y distancias), al final de la generación y sin tocar el azar: el resto del mundo y los nombres quedan iguales. En cada semilla se mueven unas 7 a 11 cosas de unas 127, de 20 a 340 m.
 
 ## El suelo, el horizonte y el cielo
 
@@ -86,6 +89,15 @@ El norte es −Z y el este +X.
   - es una malla continua sobre la rejilla del suelo (2 m) con el nivel en cada vértice: los ríos bajan en pendiente como un torrente, sin escalones;
   - un vértice seco toma el nivel de sus vecinos con agua, así el borde se mete bajo la orilla y no quedan huecos;
   - lleva una textura de ondas (`assets/terrain/agua.png`) teñida con el color de cada agua.
+- **Vegetación** (`src/world/vegetation.c`, reglas en `src/sim/flora.c`; v0.9.2):
+  - pasto, stipa (con sus plumas plateadas en verano), flores de primavera, helechos y juncos alrededor del jugador, por celdas de 2 m como el suelo y sobre su facetado;
+  - del color del suelo de su región y su estación; crecen, se secan de pie, el invierno las aplasta y la nieve las tapa donde cubre el suelo (asoman la stipa y los juncos secos);
+  - el viento las mece en olas que cruzan el pasto; al pasar se apartan;
+  - una ventana de 60 m que sigue al jugador; se dibujan hasta 26 m (18 m en Android), con menos hojas a lo lejos.
+
+  ![Vegetación](mundo/vegetacion.png)
+
+  *Al galope por la estepa en verano · la estepa en otoño · el cañón de un río en verano · tallos secos en la nieve.*
 - **Estructuras de voxeles, resolución:** cada modelo se refina al doble (`vox_refine`: cada celda en 2×2×2, esquinas salientes gastadas y rincones rellenos) y lleva tono por celda, piedra a piedra y tabla a tabla. Las murallas de las capitales son tramos de voxeles: piedra con almenas o empalizada.
 - **Horizonte lejano:** una malla gruesa, de una celda por chunk, que llega a ~2,4 km bajo los chunks cargados. Deja un hueco donde están los chunks. Así se ven a lo lejos las montañas, los muros, el hielo y el mar. Lo lejano se pierde en una bruma del color del horizonte.
 - **Cielo** (`src/world/sky.c`):
@@ -105,9 +117,9 @@ El norte es −Z y el este +X.
   - con la cámara dentro de una nube (según la densidad de sus voxeles), la vista se cubre de niebla.
 - **Estructuras de voxeles** (`src/world/voxstruct.c`): cada estructura del mundo y cada casa son un modelo de voxeles de 0,25 a 0,5 m.
   - **Malla:** solo las caras expuestas, como en la representación por voxeles de nubes de puntos, con oclusión ambiental por vértice y sombreado por cara.
-  - **Ruinas:** la fortaleza y la ciudad enterrada se erosionan con ruido, y lo alto cae primero.
+  - **Ruinas** (v0.10.2): la fortaleza derruida y la ciudad enterrada salen del kit de edificios, con la muralla de su región o las casas de adobe del desierto. Después pasa el tiempo: cada columna pierde lo de arriba hasta una altura que da el ruido (lo alto cae primero y nada queda en el aire), lo caído se amontona al pie y crece el pasto, el musgo o la arena. Cada ruina es una de cuatro variantes, según donde esté.
   - **Color por región:** arenisca en el desierto, liquen en el bosque y la costa.
-  - **Casas por región:** yurta de fieltro, cabaña de troncos, casa de piedra, casa larga con techo de turba y adobe con cúpula. Las capitales llevan torres de piedra o de madera.
+  - **Los edificios de las ciudades, las aldeas y las tribus** salen del kit de la edad del hierro (`src/sim/buildkit.c`, v0.10.0): la yurta y la carreta-casa en la estepa, la casa de postes y paja en el bosque, la de piedra y adobe en el altiplano, la casa larga de turba en los fiordos y la de adobe con patio en el desierto; cada tipo y región con cuatro variantes (dos chicas, dos grandes), el palacio, los talleres, los graneros y el templo del fuego. De cerca (menos de 32 m), refinados; de lejos, simples. Ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md). La muralla de las capitales (v0.10.2), también del kit: el muro y las torres de su región, y la puerta acodada con su antemuro.
   - **Claro:** alrededor de las estructuras y los campamentos no crecen árboles ni rocas.
 - **Barrancos del altiplano:** son permafrost; sus paredes son hielo (seracs) todo el año. Un lago o un río no flota sobre un cañón: donde el suelo cae muy por debajo de su nivel, manda el agua de abajo.
 - **Fogatas y hogueras** (`src/world/hearth.c`), a partir de fotos de fogatas reales:
@@ -156,7 +168,9 @@ Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
 | `SKY_LUNAR_DAYS`, `arc_dir()` | `src/world/sky.*` | Fases de la luna y arco del sol. |
 | `CLOUD_ABOVE_PLAIN`, `CLOUD_VIEW`, `CELL`, `VT_DIM`, `VOX_NEAR` | `src/world/clouds.*` | Altura de las nubes, alcance, celda de cada nube, tamaño de las rejillas y distancia de los voxeles. |
 | `vox_cloud_shape()`, `vox_cloud_light()` | `src/sim/voxel.c` | Perfil y erosión de las nubes; extinción y ambiente de la luz. |
-| `build_site()`, `build_building()` | `src/world/voxstruct.c` | Las estructuras y casas de voxeles. |
+| `build_site()`, `build_building()` | `src/world/voxstruct.c` | Las estructuras, las torres y las murallas de voxeles. |
+| `bk_build()`, `house()`, `palace()`, `seal()` | `src/sim/buildkit.c` | El kit de edificios: plantas, medidas, materiales y detalles de cada región; el relleno de lo de adentro. |
+| `house_lot()`, `VOXS_KIT_NEAR` | `src/game/city_game.c`, `src/world/voxstruct.h` | Qué edificio y qué variante va en cada lote de casa; hasta dónde van refinados. |
 
 ## Cómo verlo
 
@@ -169,12 +183,12 @@ Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
 
 Sitios de `--ir`:
 - **Regiones y paisaje:** estepa, meandro, arroyo, bosque, canal, altiplano, trenzado, hielo, cumbre, fiordos, mar, desierto y muro.
-- **Pueblos y fieras:** capital, aldea y guarida.
+- **Pueblos y fieras:** capital, aldea y guarida; `capital-<región>`, `aldea-<región>` y `plaza-<región>` (en la plaza, frente al palacio) para las de cada región (estepa, bosque, altiplano, fiordos o desierto); kanato (la plaza de la capital de la estepa) y campos.
 - **Tribus:** tribu (amiga), rival y neutral.
 - **Estructuras:** kurgan, balbales, piedra, fortaleza, ciudad, petroglifos, caravasar, torre, ovoo, pozo y embarcadero.
 - **Fuegos:** fogata (la del campamento, de cerca) y hoguera (pone una junto a ella).
 
-`--camara` fija la inclinación: 0,05 es casi de canto, con el cielo a la vista; 1,25 es desde arriba. `--rumbo` fija los grados: 0 sur, 90 este, 180 norte, 270 oeste.
+`--camara` fija la inclinación: 0,05 es casi de canto, con el cielo a la vista; 1,25 es desde arriba. `--rumbo` fija los grados: 0 sur, 90 este, 180 norte, 270 oeste. `--dron <m>` aleja la cámara (para ver una ciudad entera) y `--edificios tipo[:región]` muestra las variantes del kit de edificios.
 
 En el juego, **F5** abre la vista orbital (flechas: girar e inclinar).
 

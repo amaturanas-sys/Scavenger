@@ -1,433 +1,337 @@
-// Sistema de vegetación procedimental para SCAVENGERS THRIVE
-// Maneja pasto, maleza y follaje con instanced rendering, LOD y shaders de viento.
+#include "world/vegetation.h"
 
-#include "vegetation.h"
-
-#include "raylib.h"
-
+#include <limits.h>
 #include <math.h>
-#include <string.h>
 #include <stdlib.h>
-#include "cJSON.h"
+
 #include "platform.h"
-#include "sim/clock.h"
 #include "raymath.h"
+#include "rlgl.h"
+#include "sim/flora.h"
 
-// Colores base por tipo de vegetación
-static const Color GRASS_COLORS[] = {
-    {76, 175, 80, 255},  // Verde fresco
-    {102, 187, 106, 255},
-    {129, 199, 132, 255},
-    {139, 195, 74, 255}
-};
+#define VEG_GRID 30            // celdas por lado de la ventana (60 m)
+#define VEG_SLOTS (VEG_GRID * VEG_GRID)
+#define VEG_RADIUS 26.0f       // hasta donde se dibuja
+#define VEG_RADIUS_TOUCH 18.0f // en Android
+#define VEG_FADE 5.0f          // los ultimos metros crecen de a poco: no aparecen de golpe
+#define VEG_BUDGET 48          // celdas que se siembran por cuadro (en Android, la mitad)
+#define VEG_BURNT 48           // focos y tierra calcinada cerca que se miran por cuadro
 
-static const Color WEED_COLORS[] = {
-    {120, 144, 156, 255},  // Gris verdoso
-    {144, 164, 174, 255},
-    {158, 158, 158, 255}
-};
+static const Vector2 WIND_DIR = { 0.86f, 0.5f }; // el mismo viento que la lluvia (weather.c)
 
-static const Color FOLIAGE_COLORS[] = {
-    {34, 139, 34, 255},   // Verde bosque
-    {50, 205, 50, 255},
-    {60, 179, 113, 255},
-    {46, 125, 50, 255}
-};
+typedef struct {
+    int gx, gz; // la celda que tiene (INT_MIN: ninguna)
+    int n;
+    FloraTuft tuft[FLORA_PER_CELL];
+} VegSlot;
 
-// Colores estacionales
-static const Color SEASON_COLORS[SEASON_COUNT][VEGETATION_COUNT] = {
-    // Primavera
-    {
-        {100, 180, 100, 255},  // Grass
-        {140, 150, 160, 255},  // Weed
-        {60, 160, 60, 255},    // Foliage
-    },
-    // Verano
-    {
-        {76, 175, 80, 255},    // Grass
-        {120, 144, 156, 255},  // Weed
-        {34, 139, 34, 255},    // Foliage
-    },
-    // Otoño
-    {
-        {210, 180, 140, 255},  // Grass (dorado)
-        {180, 160, 130, 255},  // Weed
-        {160, 100, 50, 255},   // Foliage (naranja)
-    },
-    // Invierno
-    {
-        {245, 245, 255, 255},  // Grass (blanco)
-        {220, 220, 230, 255},  // Weed
-        {200, 200, 220, 255},  // Foliage (azulado)
-    }
-};
+static VegSlot g_slots[VEG_SLOTS];
+static signed char g_order[VEG_SLOTS][2]; // las celdas de la ventana, de la mas cercana a la mas lejana
+static const World *g_world;
+static uint32_t g_seed;
+static int g_cx, g_cz; // la celda del centro
+static int g_drawn;
 
-// Colores por bioma
-static const Color BIOME_COLORS[BIOME_COUNT][VEGETATION_COUNT] = {
-    // Estepa
-    {
-        {101, 67, 33, 255},    // Grass (marrón seco)
-        {90, 70, 60, 255},     // Weed
-        {34, 139, 34, 255},    // Foliage (limitado)
-    },
-    // Bosque
-    {
-        {76, 175, 80, 255},    // Grass
-        {120, 144, 156, 255},  // Weed
-        {34, 139, 34, 255},    // Foliage
-    },
-    // Altiplano
-    {
-        {139, 119, 101, 255},  // Grass (arena)
-        {160, 140, 120, 255},  // Weed
-        {80, 120, 80, 255},    // Foliage
-    }
-};
+static float clamp01(float v) { return v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v; }
 
-void vegetation_init(VegetationSystem *vs, int seed) {
-    if (!vs) return;
-    
-    memset(vs, 0, sizeof(*vs));
-    vs->seed = seed;
-    vs->wind_speed = 0.5f;
-    vs->enabled = true;
-    
-    // Create a simple quad mesh
-    Mesh quad = { 0 };
-    quad.vertexCount = 4;
-    quad.triangleCount = 2;
-    
-    // Allocate and set up vertex data with attributes
-    quad.vertices = MemAlloc(4 * 3 * sizeof(float));
-    quad.indices = MemAlloc(6 * sizeof(unsigned int));
-    quad.normals = MemAlloc(4 * 3 * sizeof(float));
-    quad.texcoords = MemAlloc(4 * 2 * sizeof(float));
-    quad.colors = MemAlloc(4 * 4 * sizeof(unsigned char));
-    
-    float vertices[4 * 3] = {
-        0.0f, 0.0f, 0.0f,   // Centro
-        0.0f, 0.0f, 1.0f,   // Arriba (punta)
-        0.0f, 0.0f, -1.0f,  // Abajo (raíz)
-        1.0f, 0.0f, 0.0f    // Derecha
-    };
-    
-    unsigned int indices[6] = {
-        0, 1, 2,  // Triángulo superior
-        0, 2, 3   // Triángulo inferior
-    };
-    
-    memcpy(quad.vertices, vertices, 4 * 3 * sizeof(float));
-    memcpy(quad.indices, indices, 6 * sizeof(unsigned int));
-    
-    for (int i = 0; i < 4; i++) {
-        quad.normals[i * 3 + 0] = 0.0f;
-        quad.normals[i * 3 + 1] = 1.0f;
-        quad.normals[i * 3 + 2] = 0.0f;
-        quad.texcoords[i * 2 + 0] = 0.0f;
-        quad.texcoords[i * 2 + 1] = 0.0f;
-        quad.colors[i * 4 + 0] = 255;
-        quad.colors[i * 4 + 1] = 255;
-        quad.colors[i * 4 + 2] = 255;
-        quad.colors[i * 4 + 3] = 255;
-    }
-    
-    UploadMesh(&quad, false);
-    vs->mesh = quad;
-    
-    // Store allocated pointers for cleanup
-    vs->mesh.vertices = MemAlloc(4 * 3 * sizeof(float));
-    vs->mesh.indices = MemAlloc(6 * sizeof(unsigned int));
-    vs->mesh.normals = MemAlloc(4 * 3 * sizeof(float));
-    vs->mesh.texcoords = MemAlloc(4 * 2 * sizeof(float));
-    vs->mesh.colors = MemAlloc(4 * 4 * sizeof(unsigned char));
-    memcpy(vs->mesh.vertices, quad.vertices, 4 * 3 * sizeof(float));
-    memcpy(vs->mesh.indices, quad.indices, 6 * sizeof(unsigned int));
-    memcpy(vs->mesh.normals, quad.normals, 4 * 3 * sizeof(float));
-    memcpy(vs->mesh.texcoords, quad.texcoords, 4 * 2 * sizeof(float));
-    memcpy(vs->mesh.colors, quad.colors, 4 * 4 * sizeof(unsigned char));
-    
-    // Crear shader de viento
-    vs->shader.shader = LoadShaderFromMemory(
-        NULL,
-        "attribute vec3 position; attribute vec3 color; attribute float phase; "
-        "uniform mat4 modelViewProjection; uniform float time; uniform float windSpeed; "
-        "uniform vec3 color; varying vec3 vColor; varying float vPhase; "
-        "void main() { "
-        "    vec3 pos = position; "
-        "    float tipY = pos.y; "
-        "    float windOffset = sin(time * windSpeed + phase) * 0.1 * tipY; "
-        "    pos.x += windOffset; "
-        "    gl_Position = modelViewProjection * vec4(pos, 1.0); "
-        "    vColor = color; "
-        "    vPhase = phase; "
-        "}"
-    );
-    
-    vs->shader.uniforms.time = GetShaderLocation(vs->shader.shader, "time");
-    vs->shader.uniforms.color = GetShaderLocation(vs->shader.shader, "color");
-    vs->shader.uniforms.use_wind = GetShaderLocation(vs->shader.shader, "windSpeed");
-    
-    vs->initialized = true;
+static float smooth(float a, float b, float x) {
+    float t = clamp01((x - a) / (b - a));
+    return t * t * (3.0f - 2.0f * t);
 }
 
-void vegetation_unload(VegetationSystem *vs) {
-    if (!vs || !vs->initialized) return;
-    
-    if (vs->shader.shader.id > 0) UnloadShader(vs->shader.shader);
-    if (vs->mesh.vertexCount > 0) UnloadMesh(vs->mesh);
-    
-    // Free the stored allocated memory
-    if (vs->mesh.vertices) MemFree(vs->mesh.vertices);
-    if (vs->mesh.indices) MemFree(vs->mesh.indices);
-    if (vs->mesh.normals) MemFree(vs->mesh.normals);
-    if (vs->mesh.texcoords) MemFree(vs->mesh.texcoords);
-    if (vs->mesh.colors) MemFree(vs->mesh.colors);
-    
-    memset(vs, 0, sizeof(*vs));
+static Color mixc(Color a, Color b, float k) {
+    k = clamp01(k);
+    return (Color){ (unsigned char)Lerp(a.r, b.r, k), (unsigned char)Lerp(a.g, b.g, k), (unsigned char)Lerp(a.b, b.b, k), 255 };
 }
 
-Color vegetation_get_season_color(Season season, VegetationType type) {
-    if (season < 0 || season >= SEASON_COUNT || type < 0 || type >= VEGETATION_COUNT) {
-        return WHITE;
-    }
-    return SEASON_COLORS[season][type];
+static Color shade(Color c, float k) {
+    return (Color){ (unsigned char)fminf(255.0f, c.r * k), (unsigned char)fminf(255.0f, c.g * k), (unsigned char)fminf(255.0f, c.b * k), 255 };
 }
 
-Color vegetation_get_biome_color(Biome biome, VegetationType type) {
-    if (biome < 0 || biome >= BIOME_COUNT || type < 0 || type >= VEGETATION_COUNT) {
-        return WHITE;
-    }
-    return BIOME_COLORS[biome][type];
+static int by_dist(const void *a, const void *b) {
+    const signed char *p = a, *q = b;
+    return (p[0] * p[0] + p[1] * p[1]) - (q[0] * q[0] + q[1] * q[1]);
 }
 
-void vegetation_set_wind_speed(VegetationSystem *vs, float speed) {
-    if (!vs) return;
-    vs->wind_speed = fminf(fmaxf(speed, 0.0f), 1.0f);
-}
+static int slot_of(int gx, int gz) { return ((gx % VEG_GRID + VEG_GRID) % VEG_GRID) + VEG_GRID * ((gz % VEG_GRID + VEG_GRID) % VEG_GRID); }
 
-void vegetation_set_season_tint(VegetationSystem *vs, Season season) {
-    if (!vs) return;
-    for (int i = 0; i < vs->instance_count && i < VEGETATION_MAX_INSTANCES; i++) {
-        VegetationType type = vs->instances[i].type;
-        vs->instances[i].color = vegetation_get_season_color(season, type);
-    }
-}
-
-void vegetation_set_biome(VegetationSystem *vs, Biome biome) {
-    if (!vs) return;
-    for (int i = 0; i < vs->instance_count && i < VEGETATION_MAX_INSTANCES; i++) {
-        VegetationType type = vs->instances[i].type;
-        vs->instances[i].color = vegetation_get_biome_color(biome, type);
-    }
-}
-
-// Generación procedimental simple usando ruido pseudo-aleatorio
-static float pseudo_noise(float x, float z, int seed) {
-    int n = (int)(x * 3711.0f + z * 6243.0f + (float)seed);
-    n = (n << 13) ^ n;
-    return ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / (float)0x7fffffff;
-}
-
-static float noise_2d(float x, float z, int seed, float scale) {
-    float ix = floorf(x * scale);
-    float iz = floorf(z * scale);
-    float fx = x * scale - ix;
-    float fz = z * scale - iz;
-    
-    float a = pseudo_noise(ix, iz, seed);
-    float b = pseudo_noise(ix + 1, iz, seed);
-    float c = pseudo_noise(ix, iz + 1, seed);
-    float d = pseudo_noise(ix + 1, iz + 1, seed);
-    
-    float u = fx * fx * (3.0f - 2.0f * fx);
-    float v = fz * fz * (3.0f - 2.0f * fz);
-    
-    return vegetation_lerp(vegetation_lerp(a, b, u), vegetation_lerp(c, d, u), v);
-}
-
-void vegetation_populate(VegetationSystem *vs, const Vector3 *center, float radius,
-                          int count, VegetationType type, int seed) {
-    if (!vs || vs->instance_count >= VEGETATION_MAX_INSTANCES) return;
-    
-    int remaining = count;
-    
-    for (int i = 0; i < remaining && vs->instance_count < VEGETATION_MAX_INSTANCES; i++) {
-        float angle = pseudo_noise(i, 0, seed) * 2.0f * PI;
-        float r = sqrtf(pseudo_noise(i, 1, seed)) * radius;
-        
-        Vector3 pos = {
-            center->x + cosf(angle) * r,
-            center->y,
-            center->z + sinf(angle) * r
-        };
-        
-        float height = 0.5f + noise_2d(pos.x, pos.z, seed + i, 0.1f) * 0.5f;
-        
-        vs->instances[vs->instance_count] = (VegetationInstance){
-            .position = pos,
-            .scale = 0.5f + noise_2d(pos.x, pos.z, seed + i + 1000, 0.5f) * 0.5f,
-            .rotation_y = pseudo_noise(i, 2, seed) * 360.0f,
-            .wind_phase = pseudo_noise(i, 3, seed) * 2.0f * PI,
-            .color = (type == VEGETATION_GRASS) ? GRASS_COLORS[0] :
-                     (type == VEGETATION_WEED) ? WEED_COLORS[0] : FOLIAGE_COLORS[0],
-            .type = type,
-            .height = height
-        };
-        
-        vs->instance_count++;
-    }
-}
-
-void vegetation_populate_area(VegetationSystem *vs, const BoundingBox *area,
-                               int count, VegetationType type, int seed) {
-    if (!vs || !area || vs->instance_count >= VEGETATION_MAX_INSTANCES) return;
-    
-    int remaining = count;
-    
-    for (int i = 0; i < remaining && vs->instance_count < VEGETATION_MAX_INSTANCES; i++) {
-        Vector3 pos = {
-            area->min.x + noise_2d(i, 0, seed, 1.0f) * (area->max.x - area->min.x),
-            area->min.y + noise_2d(i, 1, seed, 1.0f) * (area->max.y - area->min.y),
-            area->min.z + noise_2d(i, 2, seed, 1.0f) * (area->max.z - area->min.z)
-        };
-        
-        float height = 0.5f + noise_2d(pos.x, pos.z, seed + i, 0.1f) * 0.5f;
-        
-        vs->instances[vs->instance_count] = (VegetationInstance){
-            .position = pos,
-            .scale = 0.5f + noise_2d(pos.x, pos.z, seed + i + 1000, 0.5f) * 0.5f,
-            .rotation_y = noise_2d(pos.x, pos.z, seed + i + 2000, 1.0f) * 360.0f,
-            .wind_phase = noise_2d(pos.x, pos.z, seed + i + 3000, 1.0f) * 2.0f * PI,
-            .color = (type == VEGETATION_GRASS) ? GRASS_COLORS[0] :
-                     (type == VEGETATION_WEED) ? WEED_COLORS[0] : FOLIAGE_COLORS[0],
-            .type = type,
-            .height = height
-        };
-        
-        vs->instance_count++;
-    }
-}
-void vegetation_draw(VegetationSystem *vs, Camera camera, float time,
-                     float wind_intensity, Color tint_override) {
-    if (!vs || !vs->initialized || !vs->enabled || vs->instance_count == 0) return;
-    
-    Vector3 cam_pos = camera.position;
-    int visible_count = 0;
-    Matrix transforms[VEGETATION_MAX_INSTANCES];
-    
-    for (int i = 0; i < vs->instance_count; i++) {
-        const VegetationInstance *inst = &vs->instances[i];
-        
-        float dist = Vector3Distance(cam_pos, inst->position);
-        
-        if (dist < VEGETATION_LOD_FAR) {
-            Matrix scale_m = MatrixScale(inst->scale, inst->height, inst->scale);
-            Matrix rot_m = MatrixRotateY(inst->rotation_y * DEG2RAD);
-            Matrix trans_m = MatrixTranslate(inst->position.x, inst->position.y, inst->position.z);
-            
-            transforms[visible_count] = MatrixMultiply(scale_m, trans_m);
-            transforms[visible_count] = MatrixMultiply(transforms[visible_count], rot_m);
-            
-            visible_count++;
+void vegetation_update(const Terrain *t, Vector3 pos) {
+    if (g_world != t->world || g_seed != t->seed) { // otro mundo (otra partida): de cero
+        if (!g_world) {
+            for (int j = 0, i = 0; j < VEG_GRID; j++)
+                for (int k = 0; k < VEG_GRID; k++, i++) g_order[i][0] = (signed char)(k - VEG_GRID / 2), g_order[i][1] = (signed char)(j - VEG_GRID / 2);
+            qsort(g_order, VEG_SLOTS, sizeof(g_order[0]), by_dist);
         }
+        for (int i = 0; i < VEG_SLOTS; i++) g_slots[i].gx = g_slots[i].gz = INT_MIN, g_slots[i].n = 0;
+        g_world = t->world, g_seed = t->seed;
     }
-    
-    if (visible_count == 0) return;
-    
-    if (vs->shader.shader.id > 0 && wind_intensity > 0.01f) {
-        BeginShaderMode(vs->shader.shader);
-        SetShaderValue(vs->shader.shader, vs->shader.uniforms.time, &time, SHADER_UNIFORM_FLOAT);
-        SetShaderValue(vs->shader.shader, vs->shader.uniforms.use_wind, &wind_intensity, SHADER_UNIFORM_FLOAT);
-        
-        // Create material for instanced drawing
-        Material mat = { 0 };
-        mat.shader = vs->shader.shader;
-        
-        for (int i = 0; i < visible_count; i++) {
-            Color col = vs->instances[i].color;
-            if (tint_override.a > 0) {
-                col = vegetation_color_lerp(col, tint_override, 0.5f);
-            }
-            SetShaderValue(vs->shader.shader, vs->shader.uniforms.color, &col, SHADER_UNIFORM_VEC3);
-            DrawMeshInstanced(vs->mesh, mat, &transforms[i], 1);
-        }
-        
-        EndShaderMode();
-    } else {
-        // Draw without shader using color material
-        Material mat = { 0 };
-        mat.shader = LoadShaderFromMemory(NULL, NULL); // Default shader
-        mat.maps[0].color = WHITE;
-        
-        for (int i = 0; i < visible_count; i++) {
-            mat.maps[0].color = vs->instances[i].color;
-            DrawMesh(vs->mesh, mat, transforms[i]);
-        }
-        
-        UnloadShader(mat.shader);
+    g_cx = (int)floorf(pos.x / FLORA_CELL), g_cz = (int)floorf(pos.z / FLORA_CELL);
+    int budget = platform_touch_ui() ? VEG_BUDGET / 2 : VEG_BUDGET;
+    for (int i = 0; i < VEG_SLOTS && budget > 0; i++) {
+        int gx = g_cx + g_order[i][0], gz = g_cz + g_order[i][1];
+        VegSlot *s = &g_slots[slot_of(gx, gz)];
+        if (s->gx == gx && s->gz == gz) continue;
+        s->gx = gx, s->gz = gz;
+        s->n = flora_cell(t->world, t->seed, gx, gz, s->tuft);
+        budget--;
     }
 }
 
-void vegetation_draw_all(VegetationSystem *vs, Camera camera, float time,
-                          float wind_intensity, Color tint_override) {
-    if (!vs || !vs->initialized || !vs->enabled || vs->instance_count == 0) return;
-    
-    Vector3 cam_pos = camera.position;
-    
-    for (int type = 0; type < VEGETATION_COUNT; type++) {
-        int visible_count = 0;
-        Matrix transforms[VEGETATION_MAX_INSTANCES];
-        
-        for (int i = 0; i < vs->instance_count; i++) {
-            if (vs->instances[i].type != type) continue;
-            
-            float dist = Vector3Distance(cam_pos, vs->instances[i].position);
-            
-            if (dist < VEGETATION_LOD_FAR) {
-                Matrix scale_m = MatrixScale(vs->instances[i].scale, vs->instances[i].height, vs->instances[i].scale);
-                Matrix rot_m = MatrixRotateY(vs->instances[i].rotation_y * DEG2RAD);
-                Matrix trans_m = MatrixTranslate(vs->instances[i].position.x, vs->instances[i].position.y, vs->instances[i].position.z);
-                
-                transforms[visible_count] = MatrixMultiply(scale_m, trans_m);
-                transforms[visible_count] = MatrixMultiply(transforms[visible_count], rot_m);
-                
-                visible_count++;
+void vegetation_stats(int *planted, int *drawn) {
+    int n = 0;
+    for (int i = 0; i < VEG_SLOTS; i++)
+        if (g_slots[i].gx != INT_MIN) n += g_slots[i].n;
+    if (planted) *planted = g_world ? n : 0;
+    if (drawn) *drawn = g_drawn;
+}
+
+// ---------------------------------------------------------------- el dibujo
+// Los colores de la estacion (los de cada mata salen de aca, con su region y su azar).
+typedef struct {
+    float year, plume, snow;
+    bool cattail; // los juncos con su espiga parda: del verano al invierno
+    Color stipa_tip, fern, reed;
+} VegLook;
+
+// El pasto: el color del suelo de su region y su estacion (src/world/terrain.c: ground_color).
+static Color grass_color(const Climate *c, const FloraTuft *t) {
+    const Color green = { 112, 150, 70, 255 }, dry = { 188, 168, 106, 255 }, ochre = { 172, 124, 68, 255 };
+    const Color dormant = { 140, 128, 98, 255 }, needles = { 72, 96, 54, 255 }, tundra = { 132, 136, 104, 255 };
+    const Color moss = { 96, 124, 92, 255 }, desert = { 170, 150, 100, 255 };
+    Color g = mixc(dry, green, c->greenness);
+    g = mixc(g, ochre, c->autumn * 0.85f);
+    g = mixc(dormant, g, 0.35f + 0.65f * clamp01(c->greenness + c->autumn));
+    g = mixc(g, mixc(needles, ochre, c->autumn * 0.3f), t->forest / 255.0f);
+    g = mixc(g, tundra, t->high / 255.0f);
+    g = mixc(g, moss, t->fjord / 255.0f);
+    return mixc(g, desert, t->desert / 255.0f * 0.6f);
+}
+
+static void tri(Vector3 a, Color ca, Vector3 b, Color cb, Vector3 c, Color cc) {
+    rlColor4ub(ca.r, ca.g, ca.b, 255);
+    rlVertex3f(a.x, a.y, a.z);
+    rlColor4ub(cb.r, cb.g, cb.b, 255);
+    rlVertex3f(b.x, b.y, b.z);
+    rlColor4ub(cc.r, cc.g, cc.b, 255);
+    rlVertex3f(c.x, c.y, c.z);
+}
+
+// Una hoja de alto h desde b: se abre hacia (ox, oz) (open: m por m de alto) y la dobla (bx, bz) (el
+// viento y quien pasa); el largo se conserva: doblada, baja. w: medio ancho de la base, de costado a
+// (sx, sz). mid: un quiebre a esa altura (0: una sola pieza), que se dobla menos; wmid: el ancho ahi
+// (por el de la base: la pluma de la stipa es mas ancha que su tallo).
+static void blade(Vector3 b, float h, float ox, float oz, float open, float bx, float bz, float w, float sx, float sz, Color cb,
+                  Color ct, float mid, float wmid, Color cm) {
+    float dx = ox * open + bx, dz = oz * open + bz, f2 = dx * dx + dz * dz;
+    if (f2 > 0.8f) {
+        float k = sqrtf(0.8f / f2);
+        dx *= k, dz *= k, f2 = 0.8f;
+    }
+    Vector3 tip = { b.x + dx * h, b.y + h * sqrtf(1.0f - f2), b.z + dz * h };
+    Vector3 l = { b.x - sx * w, b.y, b.z - sz * w }, r = { b.x + sx * w, b.y, b.z + sz * w };
+    if (mid <= 0.0f) {
+        tri(l, cb, r, cb, tip, ct);
+        return;
+    }
+    // El quiebre: la mitad de abajo casi derecha, la de arriba se dobla.
+    float k = mid * mid, wm = w * wmid;
+    Vector3 m = { b.x + dx * h * k, b.y + h * mid * sqrtf(1.0f - f2 * k), b.z + dz * h * k };
+    Vector3 ml = { m.x - sx * wm, m.y, m.z - sz * wm }, mr = { m.x + sx * wm, m.y, m.z + sz * wm };
+    tri(l, cb, r, cb, mr, cm);
+    tri(l, cb, mr, cm, ml, cm);
+    tri(ml, cm, mr, cm, tip, ct);
+}
+
+// Una flor: un rombo doble (de dos lados que se cruzan) en (c), de radio r.
+static void blossom(Vector3 c, float r, Color col) {
+    Color dark = shade(col, 0.7f);
+    Vector3 top = { c.x, c.y + 1.5f * r, c.z }, bot = { c.x, c.y - 0.7f * r, c.z };
+    tri((Vector3){ c.x - r, c.y, c.z }, col, (Vector3){ c.x + r, c.y, c.z }, col, top, col);
+    tri((Vector3){ c.x - r, c.y, c.z }, dark, bot, dark, (Vector3){ c.x + r, c.y, c.z }, dark);
+    tri((Vector3){ c.x, c.y, c.z - r }, col, (Vector3){ c.x, c.y, c.z + r }, col, top, col);
+    tri((Vector3){ c.x, c.y, c.z - r }, dark, bot, dark, (Vector3){ c.x, c.y, c.z + r }, dark);
+}
+
+// Una mata. h: su alto; lod: 3 de cerca, 2 a media distancia, 1 lejos; (bx, bz): cuanto la doblan
+// el viento y quien pasa (m por m de alto); (fx, fz): de costado a la camara (las de una sola hoja
+// la miran de frente).
+static void draw_tuft(const FloraTuft *t, const Climate *c, const VegLook *L, float h, int lod, float bx, float bz, float fx, float fz) {
+    Vector3 b = { t->x, t->y - 0.03f, t->z };
+    float a0 = t->rnd * 6.2832f, v = 0.88f + 0.24f * t->rnd, s = t->size;
+    Color snow = { 232, 236, 242, 255 };
+    switch ((FloraKind)t->kind) {
+    case FLORA_GRASS: {
+        // La base, a la sombra; las puntas, al sol (en primavera y verano, de un verde mas claro).
+        Color g = grass_color(c, t), cb = shade(g, 0.7f * v);
+        Color ct = mixc(mixc(shade(g, 1.18f * v), (Color){ 200, 208, 120, 255 }, 0.22f * c->greenness), snow, L->snow * 0.5f);
+        int n = lod == 3 ? 4 : lod;
+        for (int j = 0; j < n; j++) {
+            float a = a0 + (float)j * 6.2832f / (float)n, ox = cosf(a), oz = sinf(a);
+            float hj = h * (0.72f + 0.28f * fmodf(t->rnd * 7.3f + (float)j * 0.37f, 1.0f));
+            Vector3 bj = { b.x + ox * 0.05f, b.y, b.z + oz * 0.05f };
+            if (n == 1) blade(bj, hj, ox, oz, 0.22f, bx, bz, 0.1f * s, fx, fz, cb, ct, 0.0f, 1.0f, cb);
+            else blade(bj, hj, ox, oz, 0.3f, bx, bz, 0.065f * s, -oz, ox, cb, ct, 0.0f, 1.0f, cb);
+        }
+        break;
+    }
+    case FLORA_STIPA: { // tallos finos que el viento dobla mas; arriba, la pluma
+        Color g = mixc(grass_color(c, t), (Color){ 196, 184, 140, 255 }, 0.35f);
+        Color cb = shade(g, 0.6f * v), cm = shade(g, 0.95f * v), ct = mixc(mixc(cm, L->stipa_tip, L->plume), snow, L->snow * 0.6f);
+        int n = lod == 3 ? 3 : lod;
+        for (int j = 0; j < n; j++) {
+            float a = a0 + (float)j * 2.094f + 0.4f, ox = cosf(a), oz = sinf(a);
+            float hj = h * (0.8f + 0.2f * fmodf(t->rnd * 5.1f + (float)j * 0.61f, 1.0f));
+            if (n == 1) blade(b, hj, ox, oz, 0.18f, bx * 1.3f, bz * 1.3f, 0.06f * s, fx, fz, cb, ct, 0.0f, 1.0f, cm);
+            else blade(b, hj, ox, oz, 0.2f, bx * 1.3f, bz * 1.3f, 0.03f * s, -oz, ox, cb, ct, lod == 3 ? 0.6f : 0.0f, 1.8f, cm);
+        }
+        break;
+    }
+    case FLORA_FLOWER: { // un tallo, dos hojas y la flor (tulipanes y lirios; en el altiplano, azules y blancas)
+        static const Color STEPPE[4] = { { 204, 58, 52, 255 }, { 232, 196, 64, 255 }, { 136, 96, 190, 255 }, { 214, 86, 120, 255 } };
+        static const Color HIGH[4] = { { 70, 110, 200, 255 }, { 236, 232, 222, 255 }, { 232, 196, 64, 255 }, { 120, 100, 200, 255 } };
+        int pick = (int)(t->rnd * 997.0f) % 4;
+        Color petal = t->high > 128 || t->fjord > 128 ? HIGH[pick] : t->forest > 128 ? HIGH[(pick + 1) % 4] : STEPPE[pick];
+        Color g = shade(grass_color(c, t), 0.9f), cb = shade(g, 0.6f);
+        float f2 = bx * bx + bz * bz, k = f2 > 0.8f ? sqrtf(0.8f / f2) : 1.0f; // la flor, en la punta del tallo (como blade)
+        Vector3 head = { b.x + bx * k * h, b.y + h * sqrtf(1.0f - fminf(f2, 0.8f)), b.z + bz * k * h };
+        if (lod > 1) {
+            blade(b, h, 0.0f, 0.0f, 0.0f, bx, bz, 0.025f * s, fx, fz, cb, g, 0.0f, 1.0f, g);
+            blade(b, h * 0.45f, cosf(a0), sinf(a0), 0.5f, bx, bz, 0.04f * s, -sinf(a0), cosf(a0), cb, g, 0.0f, 1.0f, g);
+            if (lod == 3) blade(b, h * 0.4f, -cosf(a0), -sinf(a0), 0.5f, bx, bz, 0.04f * s, sinf(a0), -cosf(a0), cb, g, 0.0f, 1.0f, g);
+        }
+        blossom(head, (0.055f + 0.02f * t->rnd) * s * (lod == 1 ? 1.3f : 1.0f), shade(petal, v));
+        break;
+    }
+    case FLORA_FERN: { // frondas anchas que se abren hacia afuera
+        Color cb = shade(L->fern, 0.55f * v), ct = mixc(shade(L->fern, 1.05f * v), snow, L->snow * 0.5f);
+        int n = lod == 3 ? 5 : lod == 2 ? 3 : 2;
+        for (int j = 0; j < n; j++) {
+            float a = a0 + (float)j * 6.2832f / (float)n, ox = cosf(a), oz = sinf(a);
+            blade(b, h, ox, oz, 0.7f, bx * 0.6f, bz * 0.6f, 0.09f * s, -oz, ox, cb, ct, 0.0f, 1.0f, cb);
+        }
+        break;
+    }
+    case FLORA_REED: { // tallos altos casi derechos; del verano al invierno, la espiga parda
+        Color cb = shade(L->reed, 0.6f * v), cm = shade(L->reed, 0.9f * v), ct = mixc(shade(L->reed, 1.05f * v), snow, L->snow * 0.6f);
+        int n = lod == 3 ? 4 : lod == 2 ? 3 : 1;
+        for (int j = 0; j < n; j++) {
+            float a = a0 + (float)j * 1.5708f, ox = cosf(a), oz = sinf(a);
+            float hj = h * (0.75f + 0.25f * fmodf(t->rnd * 3.7f + (float)j * 0.29f, 1.0f));
+            Vector3 bj = { b.x + ox * 0.12f, b.y, b.z + oz * 0.12f };
+            float w = (n == 1 ? 0.05f : 0.03f) * s, sx = n == 1 ? fx : -oz, sz = n == 1 ? fz : ox;
+            blade(bj, hj, ox, oz, 0.07f, bx * 0.7f, bz * 0.7f, w, sx, sz, cb, ct, lod == 3 ? 0.55f : 0.0f, 0.8f, cm);
+            if (L->cattail && (j & 1) == 0) { // la espiga, cerca de la punta
+                float f = 0.8f, dx = (ox * 0.07f + bx * 0.7f) * hj * f * f, dz = (oz * 0.07f + bz * 0.7f) * hj * f * f;
+                Vector3 e = { bj.x + dx, bj.y + hj * f, bj.z + dz };
+                Color brown = { 92, 60, 36, 255 };
+                float r = 0.045f * s, len = 0.14f * hj;
+                tri((Vector3){ e.x - sx * r, e.y, e.z - sz * r }, brown, (Vector3){ e.x + sx * r, e.y, e.z + sz * r }, brown,
+                    (Vector3){ e.x, e.y + len * 0.5f, e.z }, brown);
+                tri((Vector3){ e.x - sx * r, e.y, e.z - sz * r }, brown, (Vector3){ e.x, e.y - len * 0.5f, e.z }, brown,
+                    (Vector3){ e.x + sx * r, e.y, e.z + sz * r }, brown);
             }
         }
-        
-        if (visible_count == 0) continue;
-        
-        if (vs->shader.shader.id > 0 && wind_intensity > 0.01f) {
-            BeginShaderMode(vs->shader.shader);
-            SetShaderValue(vs->shader.shader, vs->shader.uniforms.time, &time, SHADER_UNIFORM_FLOAT);
-            SetShaderValue(vs->shader.shader, vs->shader.uniforms.use_wind, &wind_intensity, SHADER_UNIFORM_FLOAT);
-            
-            // Create material for instanced drawing
-            Material mat = { 0 };
-            mat.shader = vs->shader.shader;
-            
-            for (int i = 0; i < visible_count; i++) {
-                Color col = vs->instances[i].color;
-                if (tint_override.a > 0) {
-                    col = vegetation_color_lerp(col, tint_override, 0.5f);
+        break;
+    }
+    default: break;
+    }
+}
+
+typedef struct {
+    float x, z, r2, grow; // grow: cuanto volvio a crecer (lo calcinado reverdece al desvanecerse)
+} Burnt;
+
+void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float time, const FireField *fire, const VegClearing *clear,
+                     int nclear, const Vector3 *walkers, int nwalkers) {
+    g_drawn = 0;
+    if (!g_world || g_world != t->world) return;
+    float radius = platform_touch_ui() ? VEG_RADIUS_TOUCH : VEG_RADIUS;
+    float ccx = ((float)g_cx + 0.5f) * FLORA_CELL, ccz = ((float)g_cz + 0.5f) * FLORA_CELL;
+    // La estacion.
+    float hk[FLORA_KINDS];
+    for (int k = 0; k < FLORA_KINDS; k++) hk[k] = flora_height((FloraKind)k, c->year, c->greenness, c->autumn);
+    VegLook L = { .year = c->year, .plume = flora_plume(c->year), .snow = clamp01(c->snow_cover), .stipa_tip = { 214, 210, 188, 255 } };
+    L.cattail = c->year > 0.3f && c->year < 0.95f;
+    float dormant = 1.0f - clamp01(c->greenness + c->autumn);
+    L.fern = mixc(mixc((Color){ 156, 92, 44, 255 }, (Color){ 70, 116, 56, 255 }, c->greenness * 1.4f), (Color){ 112, 88, 64, 255 }, dormant);
+    L.reed = mixc((Color){ 184, 162, 108, 255 }, (Color){ 88, 124, 62, 255 }, c->greenness * (1.0f - c->autumn));
+    float lean = flora_lean(c->wind);
+    // Los focos y la tierra calcinada cerca.
+    Burnt burnt[VEG_BURNT];
+    int nb = 0;
+    if (fire) {
+        float reach = (radius + 12.0f) * (radius + 12.0f);
+        for (int i = 0; i < FIRE_MAX && nb < VEG_BURNT; i++) {
+            const FireCell *f = &fire->cells[i];
+            float dx = f->x - ccx, dz = f->z - ccz;
+            if (f->used && dx * dx + dz * dz < reach) burnt[nb++] = (Burnt){ f->x, f->z, 2.2f * 2.2f, 0.0f };
+        }
+        for (int i = 0; i < SCORCH_MAX && nb < VEG_BURNT; i++) {
+            const Scorch *s = &fire->scorch[i];
+            float dx = s->x - ccx, dz = s->z - ccz;
+            if (s->r > 0.0f && s->age < SCORCH_DAYS_SECONDS && dx * dx + dz * dz < reach)
+                burnt[nb++] = (Burnt){ s->x, s->z, s->r * s->r, smooth(0.6f, 1.0f, s->age / SCORCH_DAYS_SECONDS) };
+        }
+    }
+    // Lo que ve la camara: un cono algo mas ancho que la diagonal de la pantalla.
+    Vector3 fwd = Vector3Normalize(Vector3Subtract(cam.target, cam.position));
+    float hy = tanf(cam.fovy * 0.5f * DEG2RAD), hx = hy * 16.0f / 9.0f;
+    float cone = cosf(fminf(atanf(sqrtf(hx * hx + hy * hy)) + 0.2f, 1.5f));
+    rlDrawRenderBatchActive();
+    rlDisableBackfaceCulling(); // hojas de una sola cara: se ven de los dos lados
+    rlBegin(RL_TRIANGLES);
+    for (int i = 0; i < VEG_SLOTS; i++) {
+        const VegSlot *sl = &g_slots[i];
+        if (!sl->n || sl->gx == INT_MIN || abs(sl->gx - g_cx) > VEG_GRID / 2 || abs(sl->gz - g_cz) > VEG_GRID / 2) continue;
+        for (int q = 0; q < sl->n; q++) {
+            const FloraTuft *tf = &sl->tuft[q];
+            float dx = tf->x - ccx, dz = tf->z - ccz, d = sqrtf(dx * dx + dz * dz);
+            if (d > radius) continue;
+            float h = hk[tf->kind] * tf->size * smooth(radius, radius - VEG_FADE, d);
+            if (h < 0.04f) continue;
+            Vector3 to = { tf->x - cam.position.x, tf->y + h * 0.5f - cam.position.y, tf->z - cam.position.z };
+            float cd = Vector3Length(to);
+            if (cd > 2.5f && Vector3DotProduct(to, fwd) < cone * cd) continue;
+            // La nieve: la del suelo de su celda (src/world/terrain.c); la stipa y los juncos secos asoman.
+            float cover = L.snow * (1.0f - 0.6f * tf->desert / 255.0f), above = tf->y - t->look.snowline;
+            if (above > 0.0f) continue; // el glaciar
+            bool snowy = tf->patch < cover * 1.15f - 0.05f || (above > -6.0f && tf->patch < (above + 6.0f) / 6.0f);
+            if (snowy) {
+                if (tf->kind != FLORA_STIPA && tf->kind != FLORA_REED) continue;
+                h -= 0.25f;
+                if (h < 0.1f) continue;
+            }
+            bool gone = false;
+            for (int k = 0; k < nclear && !gone; k++) {
+                float ex = tf->x - clear[k].x, ez = tf->z - clear[k].z;
+                gone = ex * ex + ez * ez < clear[k].r * clear[k].r;
+            }
+            for (int k = 0; k < nb && !gone; k++) {
+                float ex = tf->x - burnt[k].x, ez = tf->z - burnt[k].z;
+                if (ex * ex + ez * ez < burnt[k].r2) {
+                    h *= burnt[k].grow;
+                    gone = h < 0.04f;
                 }
-                SetShaderValue(vs->shader.shader, vs->shader.uniforms.color, &col, SHADER_UNIFORM_VEC3);
-                DrawMeshInstanced(vs->mesh, mat, &transforms[i], 1);
             }
-            
-            EndShaderMode();
-        } else {
-            // Draw without shader using color material
-            Material mat = { 0 };
-            mat.shader = LoadShaderFromMemory(NULL, NULL); // Default shader
-            mat.maps[0].color = WHITE;
-            
-            for (int i = 0; i < visible_count; i++) {
-                mat.maps[0].color = vs->instances[i].color;
-                DrawMesh(vs->mesh, mat, transforms[i]);
+            if (gone) continue;
+            // El viento: olas que cruzan el pasto a favor; un poco de costado; y quien pasa la aparta.
+            float phase = -(tf->x * WIND_DIR.x + tf->z * WIND_DIR.y) * 0.45f + tf->rnd * 1.5f;
+            float s = lean + flora_sway(time, c->wind, phase), side = 0.35f * flora_sway(time * 1.3f, c->wind, phase + 1.7f);
+            float bx = WIND_DIR.x * s - WIND_DIR.y * side, bz = WIND_DIR.y * s + WIND_DIR.x * side;
+            for (int k = 0; k < nwalkers; k++) {
+                float ex = tf->x - walkers[k].x, ez = tf->z - walkers[k].z, e = sqrtf(ex * ex + ez * ez);
+                float push = flora_trample(e);
+                if (push <= 0.0f) continue;
+                bx += ex / fmaxf(e, 0.05f) * push * 0.9f, bz += ez / fmaxf(e, 0.05f) * push * 0.9f;
+                h *= 1.0f - 0.35f * push;
             }
-            
-            UnloadShader(mat.shader);
+            float hd = sqrtf(to.x * to.x + to.z * to.z), fx = hd > 0.01f ? -to.z / hd : 1.0f, fz = hd > 0.01f ? to.x / hd : 0.0f;
+            int lod = cd < 10.0f ? 3 : cd < 18.0f ? 2 : 1;
+            draw_tuft(tf, c, &L, h, lod, bx, bz, fx, fz);
+            g_drawn++;
         }
     }
+    rlEnd();
+    rlDrawRenderBatchActive();
+    rlEnableBackfaceCulling();
 }

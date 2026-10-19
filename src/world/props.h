@@ -1,6 +1,8 @@
 // Objetos sueltos en el mundo (fogatas, tiendas, lena, obras terminadas...).
 // Cada uno es un id del inventario de assets: se dibuja con su modelo si ya
-// fue importado, o con un marcador de sus medidas si no.
+// fue importado; si no, las obras y las viviendas de la tribu con el kit de
+// edificios (bk_for_item, src/sim/buildkit.h) y lo demas con un marcador de
+// sus medidas.
 #ifndef ESTEPA_PROPS_H
 #define ESTEPA_PROPS_H
 
@@ -50,8 +52,9 @@ int props_nearest(const Props *p, Vector3 from, float radius, bool takeable_only
 // Un objeto se puede tomar con la mano si es pequeno.
 bool props_takeable(const InvItem *item);
 
-// Dibuja un id del inventario: modelo si existe, si no un marcador.
-// grow en [0, 1] escala la altura (obras a medio construir).
+// Dibuja un id del inventario: modelo si existe, si no el kit o un marcador.
+// grow en [0, 1] escala la altura (obras a medio construir: el marcador con su
+// andamio, hasta que se terminan).
 void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, float grow);
 // El fantasma de una obra por ubicar (src/game/place_game.c): el modelo (o la caja de sus
 // medidas) tenido con tint, translucido.

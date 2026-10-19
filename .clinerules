@@ -1,59 +1,104 @@
-# PIPELINE WORKFLOW RULES: TRELLIS 2 + GRAIL + RIGNET
+# PIPELINE WORKFLOW RULES: TRELLIS 2 + RIGNET + GRAIL -> the game (tools/modelos)
 #
-# When a user provides a URL to a 3D asset (.glb) from Hugging Face (TRELLIS 2, RigNet) or GRAIL:
-# 1. NEVER request the user to download or re-upload files through the tablet.
-# 2. Automatically execute python tools/fetch_pipeline_asset.py --url "<URL>" --name "<ASSET_NAME>" --category "<CATEGORY>" [--animated] in the Codespace terminal.
-# 3. Verify that assets/models/<ASSET_NAME>.glb exists and is logged in assets/data/models_manifest.json.
-# 4. If marked as --animated, update the C rendering module cache in src/world/ to register the Raylib ModelAnimation tracks.
-# 5. Provide a summary confirming download, manifest indexing, and engine readiness.
+# When the user provides a URL to a 3D asset (.glb) from Hugging Face (TRELLIS 2, RigNet) or GRAIL:
+# 1. NEVER ask the user to download or re-upload files through the tablet.
+# 2. Find the inventory id of the object: python3 tools/modelos/modelos.py estado (pending models by priority),
+#    or python3 tools/assets/inventario.py faltan <category>.
+# 3. Run in the Codespace terminal (it can reach huggingface.co):
+#      python3 tools/modelos/modelos.py traer <ID> --url "<URL>" --fuente trellis2 --girar 90
+#    (the old command still works: python3 tools/fetch_pipeline_asset.py --url "<URL>" --name "<ID or NAME>" --category "<CATEGORY>" [--animated])
+# 4. Look at it in the game: cmake --build build && cmake -E copy_directory assets build/assets, then from build/:
+#      xvfb-run -a ./estepa --ver <ID> --frames 40 --screenshot ver.png
+#    If the front does not face the camera, run traer again with another --girar and --reemplazar.
+# 5. Commit the GLB, assets/inventario.tsv, docs/INVENTARIO.md and arte/modelos/models_manifest.json, and report.
 
 ## Workflow Enforcement
 
 ### Rule 1: Automatic Asset Acquisition
-- All 3D assets must be acquired via `tools/fetch_pipeline_asset.py`
-- No manual downloads or uploads through the tablet interface
-- Supported sources: HuggingFace (TRELLIS 2, RigNet) and GRAIL
-- Required CLI flags: --url, --name, --category, [--animated]
+- 3D assets come in through `tools/modelos/modelos.py traer` (or its wrapper `tools/fetch_pipeline_asset.py`).
+- No manual downloads or uploads through the tablet interface.
+- Sources: Hugging Face (TRELLIS 2, RigNet) and GRAIL; or a local GLB with `--archivo`.
 
-### Rule 2: Manifest Indexing
-- Every downloaded asset must be indexed in `assets/data/models_manifest.json`
-- Metadata required: file, category, has_rig (true if --animated), timestamp
-- Manifest must be valid JSON
+### Rule 2: The inventory is the manifest
+- Every model has a fixed path from its id in `assets/inventario.tsv`: `assets/models/<category>/<sub>/<name>.glb`.
+  A GLB anywhere else in `assets/models/` fails CI. Never write `assets/models/<name>.glb` by hand.
+- `traer` converts the high-res source to the game style (low-poly under `tris_max`, flat colors, the inventory
+  size, front +X, origin at the base), marks the id `importado` and records the provenance (url, sha256, options)
+  in `arte/modelos/models_manifest.json`. High-res sources stay in `arte/modelos/fuentes/` (not in git).
 
-### Rule 3: Engine Integration Triggers
-- If --animated is specified, the C engine must register Raylib ModelAnimation tracks
-- Track registration happens automatically after successful manifest update
-- Non-animated assets use standard static model loading
+### Rule 3: Rigged and animated models
+- People, animals and mechanisms need a skeleton and the mandatory clips of `docs/ANIMACIONES.md`; without them CI
+  fails. `traer` leaves their low-poly version in `arte/modelos/para_riggear/` for RigNet; the rigged GLB comes in
+  with `traer <ID> --archivo <file> --riggeado` (or `--animated` in the wrapper).
+- The engine already loads every model and its clips by name (`src/world/props.c`): do NOT change C code to
+  register a model or an animation.
 
 ### Rule 4: Verification & Reporting
-- After each download, verify file existence and size
-- Confirm manifest entry was written correctly
-- Report success/failure summary to user
+- `python3 tools/modelos/modelos.py check` (triangles, size, base, textures) must pass, plus the checks below.
+- Show the user the `--ver` screenshot and report what was imported.
 
-## Implementation Notes
+## Branches: always from the latest main (no more build breaks from stale branches)
+The red CI runs and crashes of PRs #114 and #115 came from branches that were behind `main` or were pushed
+without the full checks (the camp read from JSON with cJSON and `anim_system`, the vegetation that crashed on the
+first frame, models saved in the wrong path). To keep that from happening again:
 
-### Tool Invocation Pattern
-```bash
-python tools/fetch_pipeline_asset.py \
-    --url "https://huggingface.co/dataset/trellis2/model/xxx.glb" \
-    --name "trellis_yurt" \
-    --category "yurt" \
-    --animated
-```
-
-### Expected File Structure
-- Assets stored in `assets/models/<name>.glb`
-- Manifests in `assets/data/models_manifest.json`
-- Engine modules in `src/world/`
-
-### Compilation Requirements
-- All C code must compile with CMake (targeting Android/mobile)
-- Zero memory leaks in render loop
-- Static memory allocation preferred for embedded targets
+1. **Start every task from the latest `main`**, never from another feature branch or an old local copy:
+   ```bash
+   git fetch origin
+   git switch -c <task-branch> origin/main
+   ```
+   One task per branch. Keep it short-lived (merged within a day or two) and never build a branch on top of
+   another branch that is not merged yet: if you need something that only exists in another branch, wait until
+   it is in `main`.
+2. **Before every push, bring `main` in and rebuild from scratch:**
+   ```bash
+   git fetch origin && git merge origin/main   # on conflicts, what is already in main wins: re-apply your change on top
+   rm -rf build && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build
+   ```
+   Then run every check listed in "Project Conventions" again, the reference saves
+   (`cd build && xvfb-run -a ./estepa --probar-partidas ../tests/partidas`) and a screenshot. A stale `build/`
+   folder hides errors: CI always configures from zero. In Codespaces, install what CI installs first:
+   `sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libgl1-mesa-dri xvfb ninja-build`.
+3. **The code must build on the three platforms CI builds** (Linux with gcc, Windows with MSVC, Android with the
+   NDK's clang):
+   - plain C11: no variable-length arrays (MSVC rejects them), no GNU extensions (`typeof`, statement
+     expressions, `__attribute__`), no POSIX-only headers (`unistd.h`, `dirent.h`) in `src/`, no `M_PI`
+     (use the `PI` constants already in the code);
+   - zero new warnings (`-Wall -Wextra -Wpedantic` on gcc, `/W4` on MSVC): what is a warning on one compiler is
+     often an error on another;
+   - shaders must also run on Android (GLSL ES 100, OpenGL ES 2).
+4. **New files and dependencies:**
+   - every new `.c` file goes into `CMakeLists.txt` (`src/sim/` in `estepa_sim`; `src/game/`, `src/world/` and
+     `src/ui/` in the game sources). The Android APK builds from the same file (`tools/android/build_apk.sh`);
+   - no new external libraries (cJSON or any other): the build only fetches raylib. If one is really needed,
+     ask the user first.
+5. **Never break what is already in `main`:** before renaming or removing a function, a struct field or a file,
+   `git grep` every use and fix them all in the same commit (`src/main.c`, `src/game/`, `tests/`). When merging
+   `main`, do not undo its recent changes: `git diff origin/main...HEAD --stat` must list only the files of
+   your task.
+6. **Pull requests:** never push to `main` directly. Open a PR from your branch, wait until the CI is green on
+   Linux, Windows and Android, and only then merge. If the CI turns red, fix it on that same branch before
+   anything else, and never start a new branch on top of a red one.
 
 ## GLOBAL AI BEHAVIOR RULE
-
-### write_to_file Tool Prohibition
 - The write_to_file tool is STRICTLY UNAVAILABLE and unsupported in this workspace.
 - To create, write, or modify ANY file, you MUST exclusively use the editor tool.
-- Never attempt to call write_to_file under any circumstances, as it will trigger an AI_NoSuchToolError and waste context tokens.
+- Never attempt to call write_to_file under any circumstances: it triggers an AI_NoSuchToolError and wastes context tokens.
+
+## Project Conventions (read before changing C code)
+- The project conventions live in `.claude/skills/estepa/SKILL.md` and `docs/ARQUITECTURA.md`: pure C rules in `src/sim/` (tested in `tests/test_main.c`), raylib glue in `src/game/`, fixed arrays (no per-frame allocation), all UI text through `T()`/`N_()`.
+- Never remove or rename a field of a shared struct (for example `Camp` in `src/world/camp.h`, used by `main.c`, the fire, combat and migration code) without updating every use. Extend structs by adding fields at the end.
+- Saved structs: after changing one, run `python3 tools/save/esquema.py`; enums only grow at the end (`docs/PARTIDAS.md`).
+- Before every push, all of these must pass locally (CI runs the same on Linux, Windows and Android):
+```bash
+cmake --build build && ./build/sim_tests
+python3 tools/assets/i18n.py extraer && python3 tools/assets/i18n.py check
+python3 tools/assets/inventario.py check && python3 tools/assets/inventario.py doc --verificar
+python3 tools/assets/animaciones.py check && python3 tools/assets/animaciones.py doc --verificar
+python3 tools/assets/iconos.py check
+python3 tools/save/esquema.py check
+python3 tools/modelos/modelos.py check && python3 tools/modelos/test_modelos.py
+```
+- Never push a commit that does not build: a red CI blocks every release.
+- A build that compiles can still crash: run the game before pushing (`cmake -E copy_directory assets build/assets`, then from `build/`: `xvfb-run -a ./estepa --frames 60 --screenshot shot.png` on Linux) and look at the screenshot.
+- raylib: never pass a `Material` made with `{ 0 }` to `DrawMesh`/`DrawMeshInstanced` (its `maps` is NULL: the game crashes on the first frame; use `LoadMaterialDefault()` once); `LoadShaderFromMemory(vsCode, fsCode)` takes the vertex shader first; never load shaders, meshes or materials inside the frame loop. Vegetation lives in `src/sim/flora.*` (rules, tested) and `src/world/vegetation.*` (drawing with rlgl).

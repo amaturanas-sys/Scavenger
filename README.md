@@ -175,6 +175,40 @@ Ejército y asedio (v0.9.1):
 
 Pruebas: `--asedio puerta|trepa|escala|fuego|quemada|salida|rendicion|tomada` (la capital del kanato en guerra), `--asedio expedicion` (la expedición de castigo contra el campamento), `--asedio ejercito|carro` (un ejército en formación, o un carro, delante) y `--asedio partida` (lo de la partida de referencia).
 
+La vegetación (v0.9.2):
+- **Pasto, stipa, flores, helechos y juncos** alrededor del jugador, del color del suelo de su región y su estación: verdes en primavera (con tulipanes y lirios en la estepa), la stipa con sus plumas plateadas en verano, secos y ocres en otoño, aplastados en invierno, con los tallos secos asomando en la nieve. Los juncos crecen en las orillas, con su espiga parda; los helechos, en el bosque.
+- **El viento** los inclina y los mece en olas que cruzan el pasto; al pasar, a pie o a caballo, se apartan. No crecen en el agua honda, la roca, el lecho de los ríos, los pueblos y sus campos ni en los campamentos (pisoteados), y lo quemado reverdece de a poco.
+- En Android se dibujan más cerca (18 m en vez de 26) para que no pese.
+
+Pruebas: `--ir estepa --dia 10` (verano), `--dia 17` (otoño), `--dia 24` (invierno), `--ir meandro` (juncos) y `--montado lanza` (al galope por el pasto).
+
+La tubería de modelos (v0.9.3):
+- **De una imagen al juego:** la imagen va al espacio de TRELLIS.2 en Hugging Face (desde la tablet) y el GLB que sale entra con `python3 tools/modelos/modelos.py traer <id> --url <enlace> --girar 90`. Queda low-poly (bajo el `tris_max` del inventario), con colores planos y la luz del sol horneada, a escala y en la ruta de su id. Cline usa el mismo paso con `tools/fetch_pipeline_asset.py`.
+- **Personas y animales** esperan su esqueleto (RigNet) y sus clips en `arte/modelos/para_riggear/`.
+- **`--ver <id>`** muestra un objeto del inventario de cerca, con el jugador al lado.
+- Guía: [assets/models/README.md](assets/models/README.md) y las skills `modelos` y `animaciones`; el plan: [docs/PLAN_HERRAMIENTAS_IA.md](docs/PLAN_HERRAMIENTAS_IA.md).
+
+Los edificios de la edad del hierro (v0.10.0):
+- **Cada región, su arquitectura**, de la investigación de [docs/ARQUITECTURA_EDAD_DEL_HIERRO.md](docs/ARQUITECTURA_EDAD_DEL_HIERRO.md): yurtas de fieltro y carretas-casa en la estepa (escitas y sakas); casas de postes con zarzo y paja en el bosque (Hallstatt y La Tène); piedra abajo y adobe arriba en el altiplano (Urartu); casas largas de turba en los fiordos; adobe con patio en el desierto (Bactria y Sogdiana).
+- **Las ciudades, las aldeas y las tribus** se arman con el kit: el palacio (la orda del kan sobre su tarima, la sala larga con escudos o la sala de columnas sobre su terraza), la fundición con su horno de cuba, el cuartel, la carpintería, las casas (las grandes en la capital), los graneros, el templo del fuego (desierto y altiplano) y las carretas. Cada tipo tiene cuatro variantes por región, y la guardia del palacio se para a los lados de su puerta.
+- **Más liviano:** lo de adentro, que no se ve, se rellena, y de lejos los edificios se dibujan con la mitad de detalle.
+
+Pruebas: `--edificios tipo[:region]` (casa, palacio, fundicion, cuartel, carpinteria, granero, templo o carreta: las cuatro variantes de cada región), `--ir plaza-<region>`, `--ir capital-<region>` y `--ir aldea-<region>` (con `--dron 40 --camara 0.85`, desde arriba).
+
+El mundo en seco (v0.10.1):
+- **Nada en el agua:** ningún pueblo, tribu, estructura o guarida queda sobre un lago o dentro de él (ni sobre un río, el canal o el mar), mirando toda su huella: la capital con su muralla, la aldea con sus casas, el corro de la tribu.
+- **Ni sobre el glaciar:** los pueblos y las tribus quedan por debajo de la nieve de todo el año. Tash-Dag, la capital del altiplano, ya no está sobre el hielo.
+- Lo que no cumplía se corre al lugar válido más cercano; el resto del mundo, sus nombres y las partidas guardadas quedan igual.
+- **Para Cline:** `.clinerules` explica cómo trabajar sin romper la compilación: ramas desde el `main` al día, traer `main` y compilar de cero antes de subir, C11 que compile en Linux, Windows y Android, los archivos nuevos en `CMakeLists.txt`, sin bibliotecas nuevas y con el CI en verde antes de fusionar.
+
+La muralla, las ruinas y las obras con el kit (v0.10.2):
+- **La muralla de las capitales**, al estilo de su región: el terraplén con la empalizada en la estepa, el *murus gallicus* en el bosque, piedra con contrafuertes en el altiplano, piedra seca y turba en los fiordos, adobe sobre zócalo en el desierto, con sus torres.
+- **La puerta acodada:** delante de cada puerta, un antemuro cerrado de un costado. Se entra por la boca, a lo largo de la muralla, y se dobla hacia la puerta, bajo el adarve. El antemuro también corta el paso y las flechas; los enemigos y la guarnición lo rodean por el camino más corto.
+- **Las ruinas:** la fortaleza derruida (con la muralla de su región) y la ciudad enterrada del desierto salen del kit: lo alto cae primero, lo caído se amontona al pie y las cubre el pasto, el musgo o la arena.
+- **Las obras de la tribu** sin modelo se ven como son, a su medida: el refugio, la empalizada, el muro de piedra seca, los hornos, la atalaya, el corral, el taller del herrero, la tienda y la choza de fieltro, las casas, y lo que queda de ellas (escombros, cenizas, la yurta quemada).
+
+Pruebas: `--edificios` con muralla, torre, puerta, fortaleza, enterrada, refugio, empalizada, muro, horno, horno_fundicion, atalaya, corral, taller, tienda, escombros o cenizas; `--ver <id>` (una obra de cerca); `--asedio puerta` y `--asedio salida`.
+
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.

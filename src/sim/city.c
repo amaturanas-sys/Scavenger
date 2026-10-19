@@ -10,7 +10,7 @@
 static float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
 static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
 
-int city_land(SettleKind k) { return k == SETTLE_CAPITAL ? 4000 : 600; }
+int city_land(SettleKind k) { return k == SETTLE_CAPITAL ? 2400 : 340; }
 float city_scribes(SettleKind k) { return k == SETTLE_CAPITAL ? 0.8f : 0.45f; }
 
 float city_fertility(Region r) {
@@ -50,7 +50,7 @@ void city_start(City *c, SettleKind k, Region r, uint32_t seed) {
     rng_next(&rng);
     memset(c, 0, sizeof(*c));
     bool cap = k == SETTLE_CAPITAL;
-    float base = cap ? 2500.0f + (float)rng_range(&rng, 800) : 300.0f + (float)rng_range(&rng, 150);
+    float base = cap ? 1700.0f + (float)rng_range(&rng, 600) : 180.0f + (float)rng_range(&rng, 120);
     c->people = floorf(base * (0.75f + 0.3f * city_fertility(r))); // las tierras buenas, mas pobladas
     c->grain = c->people * 60.0f;
     c->silver = c->people * (cap ? 1.2f : 0.3f);
@@ -225,18 +225,18 @@ int city_layout(const World *w, int idx, const City *c, CityLot *out, int max) {
         house_r[0] = 14.0f, house_r[1] = 17.0f, ring_n[0] = 9.0f, ring_n[1] = 0.0f;
     }
     // Las casas: crece desde el centro (el anillo de adentro primero) con la gente.
-    int houses = clampi(people / (cap ? 150 : 70), cap ? 6 : 4, cap ? 24 : 9);
+    int houses = clampi(people / (cap ? 110 : 45), cap ? 6 : 4, cap ? 24 : 9);
     for (int ring = 0, made = 0; ring < 2; ring++)
         for (int k = 0; k < (int)ring_n[ring] && made < houses; k++, made++) {
             float a = gate + ((float)k + 0.5f) * 2.0f * PI_F / ring_n[ring] + (float)ring * 0.12f;
             add_lot(out, &n, max, s->x + cosf(a) * house_r[ring], s->z + sinf(a) * house_r[ring], a + PI_F, 0.0f, 0.0f, LOT_HOUSE);
         }
-    // Las tiendas de los mercenarios, junto a la puerta principal, afuera.
+    // Las tiendas de los mercenarios, junto a la puerta principal, afuera (mas alla del antemuro).
     if (cap && c) {
         static const float TENT[4] = { -0.09f, 0.09f, -0.2f, 0.2f };
         int tents = clampi((c->mercs + 11) / 12, 0, 4);
         for (int k = 0; k < tents; k++) {
-            float a = gate + TENT[k], x = s->x + cosf(a) * 47.0f, z = s->z + sinf(a) * 47.0f;
+            float a = gate + TENT[k], x = s->x + cosf(a) * 55.0f, z = s->z + sinf(a) * 55.0f;
             if (lot_ok(w, x, z, a, 3.0f, 3.0f)) add_lot(out, &n, max, x, z, a + PI_F, 3.0f, 3.0f, LOT_MERC_TENT);
         }
     }
@@ -244,7 +244,7 @@ int city_layout(const World *w, int idx, const City *c, CityLot *out, int max) {
     // que los primeros queden repartidos. La capital, entre sus cuatro puertas; la aldea, alrededor.
     float r0 = cap ? CITY_FIELDS_R0 : VILLAGE_FIELDS_R0, r1 = cap ? CITY_FIELDS_R1 : VILLAGE_FIELDS_R1;
     float fw = cap ? 11.0f : 9.0f, fl = cap ? 16.0f : 13.0f;
-    int slots = cap ? 18 : 10, fields = clampi(people / (cap ? 250 : 80), cap ? 4 : 3, cap ? 16 : 9);
+    int slots = cap ? 18 : 10, fields = clampi(people / (cap ? 180 : 40), cap ? 4 : 3, cap ? 16 : 9);
     static const int ORDER_CAP[18] = { 0, 8, 4, 12, 16, 2, 10, 6, 14, 17, 1, 9, 5, 13, 3, 11, 7, 15 };
     static const int ORDER_VIL[10] = { 0, 5, 2, 7, 4, 9, 1, 6, 3, 8 };
     float jit[18];

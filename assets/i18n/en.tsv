@@ -1560,6 +1560,7 @@ neutral	neutral
 rival	rival
 ¡Los %s, tribu rival, te salen al paso!	The %s, a rival tribe, come out to block your way!
 # --- src/main.c
+%s: no tiene	%s: none
 Arma: %s	Weapon: %s
 Assets cargados: %d · fallidos: %d	Assets loaded: %d · failed: %d
 Capturaste a un gran guerrero: %s, %s.	You captured a great warrior: %s, %s.
@@ -1582,6 +1583,9 @@ Explorador enemigo	Enemy scout
 F1 o Ctrl+H: controles · Esc o Ctrl+P: menú	F1 or Ctrl+H: controls · Esc or Ctrl+P: menu
 Flechas: girar e inclinar · F5 o Esc: volver	Arrows: rotate and tilt · F5 or Esc: back
 Galeria: %d objetos (%d con modelo).	Gallery: %d objects (%d with model).
+Kit de edificios: %s · cuatro ruinas, una por sitio	Building kit: %s · four ruins, one per site
+Kit de edificios: %s · las obras de la tribu sin modelo: 0 y 1, las chicas; 2 y 3, las grandes	Building kit: %s · the tribe's works without a model: 0 and 1, the small ones; 2 and 3, the big ones
+Kit de edificios: %s · variantes 0 y 1, chicas (aldeas y tribus); 2 y 3, grandes (capitales)	Building kit: %s · variants 0 and 1, small (villages and tribes); 2 and 3, large (capitals)
 Liberaste a un prisionero.	You freed a prisoner.
 Marcaste este lugar en el mapa.	You marked this place on the map.
 Más allá solo hay mar abierto: la tropa no se aventura.	Beyond lies only open sea: the troop will not venture out.
@@ -1602,6 +1606,30 @@ Tropa %d	Band %d
 Tu tropa acampa en la estepa (mundo %u).	Your troop camps on the steppe (world %u).
 Un gran guerrero se une: %s, %s.	A great warrior joins: %s, %s.
 Vista orbital · mundo %u · estás en: %s	Orbital view · world %u · you are in: %s
+las atalayas	the watchtowers
+las carpinterías	the carpentry shops
+las carretas-casa	the house-wagons
+las casas	the houses
+las cenizas y las yurtas quemadas	the ashes and the burnt yurts
+las ciudades enterradas	the buried cities
+las empalizadas	the palisades
+las fortalezas derruidas	the ruined fortresses
+las fundiciones	the smelters
+las murallas	the city walls
+las puertas acodadas	the bent gates
+las tiendas y las chozas de fieltro	the tents and the felt huts
+las torres	the towers
+los corrales	the corrals
+los cuarteles	the barracks
+los escombros y los muros en ruinas	the rubble and the ruined walls
+los graneros	the granaries
+los hornos de cocina	the cooking ovens
+los hornos de fundición	the smelting furnaces
+los muros de piedra seca	the dry-stone walls
+los palacios	the palaces
+los refugios	the shelters
+los talleres del herrero	the smithies
+los templos del fuego	the fire temples
 no	no
 sí	yes
 · %d cautivo%s	· %d captive%s
@@ -1728,6 +1756,38 @@ Bala	Ball
 Flecha	Arrow
 Piedra	Stone
 Virote	Bolt
+# --- src/sim/buildkit.c
+casa de adobe	mud-brick house
+casa de piedra y adobe	stone and mud-brick house
+casa de postes con techo de paja	post house with a thatched roof
+casa larga de turba	turf longhouse
+el corral	the corral
+el cuartel	the barracks
+el granero de adobe y sus silos	the mud-brick granary and its silos
+el granero sobre postes	the granary on posts
+el horno de cocina	the cooking oven
+el horno de fundición: el del bronce y el del acero	the smelting furnace: for bronze and for steel
+el muro de piedra seca	the dry-stone wall
+el refugio de ramas y pieles	the shelter of branches and hides
+el taller del herrero	the smithy
+el templo del fuego	the fire temple
+la atalaya	the watchtower
+la carpintería	the carpentry shop
+la carreta-casa	the house-wagon
+la ciudad enterrada	the buried city
+la empalizada	the palisade
+la fortaleza derruida	the ruined fortress
+la fundición: el horno de cuba	the smelter: the shaft furnace
+la muralla	the city wall
+la orda del kan	the khan's horde
+la puerta acodada	the bent gate
+la sala de columnas	the columned hall
+la sala larga	the long hall
+la tienda ligera y la choza de fieltro	the light tent and the felt hut
+la torre de la muralla	the wall tower
+las cenizas y la yurta quemada	the ashes and the burnt yurt
+los escombros y el muro en ruinas	the rubble and the ruined wall
+yurta	yurt
 # --- src/sim/champion.c
 Acero Rizado	Rippled Steel
 Arco de Cuerno	Horn Bow

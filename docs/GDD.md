@@ -98,6 +98,15 @@ Todo sale de una función pura del instante y la semilla (`climate_at`): igual e
 
 **Pendiente:** cosechas y ríos. El pasto para el ganado según la estación ya está (v0.7.2, en «Campamentos y guardián»).
 
+### La vegetación (v0.9.2 — `src/sim/flora.*`, en juego `src/world/vegetation.*`)
+Las matas que crecen alrededor del jugador, sobre el suelo de cada región, al ritmo del clima. Llegó con el PR #115 (de Cline), reescrita para que funcione en el juego y en Android.
+- **Qué crece y dónde:** pasto en todas partes (en el desierto, solo en los oasis); la stipa, el pasto pluma, en la estepa seca; flores en primavera (tulipanes y lirios en la estepa; azules, blancas y amarillas en el altiplano); helechos en el bosque y la costa; juncos en las orillas de lagos y ríos (también en el agua baja). Siempre las mismas para el mismo mundo: por celdas de 2 m, como el suelo, y sobre su facetado.
+- **Dónde no:** en el agua honda, en la tierra pelada y la roca de las cuestas, en el lecho de cantos de los ríos, en la playa negra, en el frente del glaciar, en los pueblos y sus campos, junto a las estructuras y a los campamentos de las tribus; en los campamentos de la tribu el pasto está pisoteado. En lo quemado por un incendio no hay nada, y vuelve a crecer cuando se borra la tierra calcinada.
+- **Con la estación:** el color es el del suelo de su región (verde, seco, ocre o dormido) y las puntas, más claras al sol. Crece en primavera, llega a lo más alto a comienzos del verano, se seca de pie en otoño y el invierno la aplasta. La stipa echa sus plumas plateadas de fines de la primavera a mediados del verano; los juncos llevan su espiga parda del verano al invierno y sus tallos secos quedan de pie. La nieve tapa las matas donde cubre el suelo; la stipa y los juncos asoman, escarchados.
+- **El viento:** las matas se inclinan a favor del viento (el de la lluvia y el humo) y se mecen en olas que cruzan el pasto; con ventisca, casi se acuestan. Al pasar, el jugador (y su caballo) las aparta.
+- **Rendimiento:** una ventana de 60 m que sigue al jugador; al moverse solo se siembran las celdas nuevas, las cercanas primero. Se dibujan hasta 26 m (18 m en Android), con menos hojas a lo lejos y creciendo de a poco en el borde; son triángulos de color sin texturas ni memoria por cuadro.
+- **Prueba:** `--ir estepa --dia 10` (verano: stipa con plumas y flores), `--dia 17` (otoño), `--dia 24` (invierno: tallos en la nieve), `--ir meandro`, `--ir canal` o `--ir bosque` (juncos y helechos); `--montado lanza` galopa por el pasto. Al terminar una captura (`--screenshot`) dice cuántas matas hay sembradas y cuántas se dibujaron.
+
 ### El mundo (implementado — `src/sim/world.*`, en juego `src/game/world_game.*` y `src/world/worldview.*`)
 Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
 - **Una gran tierra casi redonda** de 4,8 km de radio medio, de borde fractal (no una circunferencia neta), con **cinco regiones fijas**: la estepa en el centro, rodeada de ríos de meandros; el bosque de coníferas al noroeste; el desierto al noreste; el altiplano glaciar al sureste; la costa de fiordos al suroeste.
@@ -620,10 +629,10 @@ Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su e
   - El tesoro paga a los soldados (0,5 por día); se reclutan con armas de la armería si hay paga para veinte días. Si no alcanza, los mercenarios se van y los soldados desertan.
   - Con plata de sobra, por encima de la reserva (1,5 por alma), llegan mercenarios (1,2 por día). Bajo la reserva, no se les renueva el contrato.
 - **La ciudad crece desde el centro** (`city_layout`, de la semilla y de su gente):
-  - en la capital, el palacio mirando a una de sus cuatro puertas y, alrededor, la fundición, el cuartel y la carpintería, al estilo de su región (`voxs_draw_city`); después, dos anillos de casas;
+  - en la capital, el palacio mirando a una de sus cuatro puertas y, alrededor, la fundición, el cuartel y la carpintería, al estilo de su región; después, dos anillos de casas (las grandes adentro), con graneros, el templo del fuego (desierto y altiplano) y carretas-casa (estepa). Todo sale del kit de edificios de la edad del hierro (`src/sim/buildkit.c`, v0.10.0; ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md));
   - afuera, entre las puertas, los campos y dos corrales, en huecos fijos que no se mueven cuando la ciudad crece, en seco y sin cuesta;
   - las tiendas de los mercenarios, junto a la puerta principal;
-  - la aldea, un anillo de casas, sus campos y un corral.
+  - la aldea, un anillo de casas chicas (la del jefe, un poco más grande), sus campos y un corral.
   - Se dibujan los campos según la estación (los arrasados, negros, desde el que se saqueó), los labradores de día, la guardia del palacio y de las puertas (más soldados, más guardias) y el estandarte del reino.
 - **El mercado** (`F` en la aldea o la capital):
   - el granero mueve el precio de la comida (×1,6 con hambre, ×0,8 con el granero lleno) y la armería el de las armas;
@@ -670,7 +679,8 @@ Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su e
 - **La guerra** (`city_at_war`): con 60 de rencor o, en la estepa, con la relación en −30 o menos (mientras el kanato no caiga), la ciudad cierra el mercado y las puertas. En paz, rehace las puertas quemadas y quita las escalas.
 - **La muralla** (`city_wall_blocks`):
   - doce tramos rectos entre las torres; cada tercer tramo es una puerta: 6 m de paso entre dos lienzos de muro;
-  - corta el paso del jugador (que desliza a lo largo), de las flechas (se clavan) y de los enemigos, que entran y salen por las puertas (`ct_route`);
+  - **la puerta acodada** (v0.10.2): delante de cada puerta, un antemuro a 5,5 m, de 14 m de largo y cerrado de un costado. Se entra por su boca, a lo largo de la muralla, y se dobla hacia la puerta, bajo el adarve;
+  - la muralla y los antemuros cortan el paso del jugador (que desliza a lo largo), de las flechas (se clavan) y de los enemigos. Los enemigos y la guarnición entran y salen por las puertas, rodeando el antemuro, por el camino más corto (`city_route`);
   - en guerra, las puertas están cerradas.
 - **Cómo entrar:**
   - trepando: la trepa (`Tab`), a 3,5 m de la muralla y mirándola;
