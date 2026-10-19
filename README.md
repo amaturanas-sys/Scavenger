@@ -36,7 +36,9 @@ compila de cero y corre las pruebas. Se vuelve a preparar con `bash .devcontaine
 
 Para trabajar con Cline (o cualquier IA) en el Codespace: las reglas están en `.clinerules` y el detalle,
 con el prompt para empezar cada sesión y la plantilla para pedir tareas, en
-[docs/GUIA_IA.md](docs/GUIA_IA.md).
+[docs/GUIA_IA.md](docs/GUIA_IA.md). Si Cline no puede correr comandos («Command execution aborted»): en
+Cline, Settings → Terminal Settings → *Terminal Execution Mode* en **Background Exec** (más en la guía,
+sección 4).
 
 Si el Codespace se rompe (no compila, quedó en una rama vieja o con conflictos):
 - **Lo más simple:** borrarlo y crear uno nuevo desde `main` (Code → Codespaces → New codespace on main).

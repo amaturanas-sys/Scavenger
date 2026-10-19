@@ -11,6 +11,13 @@ o si una tarea choca con estas reglas, pregunta al usuario antes de seguir.
 - **Tareas grandes o ambiguas:** primero un plan corto (archivos, pruebas, documentos, versión) y esperar el OK
   del usuario.
 - **Lo que no se deshace** (borrar ramas o archivos del usuario, reescribir historia, publicar a mano): pregunta.
+- **Si un comando no corre** («Command execution aborted», sin salida, «Shell Integration Unavailable»), el
+  problema es la terminal, no el proyecto.
+  - No lo repitas igual: como mucho una vez más, partido en comandos simples, uno por llamada.
+  - Si vuelve a fallar, detente y muéstrale al usuario el error exacto.
+  - La solución está en `docs/GUIA_IA.md`, sección 4: en Cline, Terminal Execution Mode en Background Exec.
+  - Para leer un archivo (`VERSION`) o ver si existe (`build/estepa`), usa tus herramientas de leer y listar
+    archivos, no la terminal.
 - **El estado:** al terminar cada tarea, actualiza la sección 6 de `docs/GUIA_IA.md` (versión, lo último, lo que
   sigue) e informa según su sección 7: qué cambió, cómo se probó (con números), los enlaces del PR y de la
   release, y lo pendiente.

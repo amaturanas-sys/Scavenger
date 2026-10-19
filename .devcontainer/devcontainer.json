@@ -10,6 +10,7 @@
         "saoudrizwan.claude-dev"
       ],
       "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
         "cmake.generator": "Ninja",
         "cmake.buildDirectory": "${workspaceFolder}/build",
         "cmake.configureOnOpen": false,

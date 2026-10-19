@@ -185,6 +185,27 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 - **Las capturas de la documentación:** `bash tools/capturas.sh build` las rehace todas (unos 4
   minutos); se suben las que cambiaron.
 
+### Si Cline no puede correr comandos
+
+Si los comandos fallan con «Command execution aborted», no muestran salida o aparece «Shell Integration
+Unavailable», la falla está en cómo Cline usa la terminal de VS Code, no en el proyecto. Repetir el
+comando no sirve: Cline corta la tarea a las 6 llamadas iguales. Se arregla así, en este orden:
+1. **En Cline:** el engranaje (Settings) → *Terminal Settings* → *Terminal Execution Mode* en
+   **Background Exec**. Los comandos corren en un proceso aparte, sin la integración de la terminal. Es el
+   arreglo que la documentación de Cline propone primero.
+2. **Si sigue,** en las mismas opciones:
+   - *Default Terminal Profile* en **bash** (el Codespace ya la trae por defecto desde
+     `.devcontainer/devcontainer.json`);
+   - *Shell integration timeout* en **10** segundos;
+   - *Enable aggressive terminal reuse* apagado.
+3. **Recargar la ventana:** `Ctrl+Shift+P` → *Developer: Reload Window*.
+4. **Si tampoco anda a mano en una terminal nueva** (`` Ctrl+` ``): el Codespace está mal. Primero
+   *Codespaces: Rebuild Container*; si no alcanza, crear uno nuevo desde `main`.
+
+Mientras tanto, Cline puede leer archivos y ver si existen con sus herramientas de leer y listar
+archivos, sin la terminal. Los comandos, de a uno: cadenas largas con `&&` son lo primero que se
+traba.
+
 ## 5. Lo que ya salió mal (y no tiene que repetirse)
 
 - **PR #114 y #115: el CI quedó rojo y el juego se caía.**
@@ -247,7 +268,9 @@ Antes de tocar nada:
    cada versión), docs/ROADMAP.md y docs/PLAN_HERRAMIENTAS_IA.md. Para cada tarea, lee además el
    documento de su sistema (docs/GDD.md, docs/ARQUITECTURA.md, docs/MUNDO.md, docs/PARTIDAS.md...)
    y .claude/skills/estepa/SKILL.md.
-2. Revisa el entorno y dime qué encontraste:
+2. Revisa el entorno y dime qué encontraste (los comandos de a uno, sin encadenarlos con &&; si uno
+   se aborta o no muestra salida, no lo repitas: lee la sección 4 de docs/GUIA_IA.md, «Si Cline no
+   puede correr comandos», y avísame):
    - git status: en main, limpio; git fetch origin y que main esté igual a origin/main;
    - que gh esté instalado y autenticado (gh auth status); si no, corre bash .devcontainer/setup.sh;
    - cmake --build build && ./build/sim_tests (si no hay build/, el setup lo arma);
