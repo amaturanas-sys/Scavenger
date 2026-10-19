@@ -22,12 +22,17 @@ Las skills genéricas de juego (Unity/Unreal, ECS, multijugador) se aplican con 
 - Ghidra solo sobre nuestros propios builds.
 
 ## Antes de subir
+El flujo completo de cada cambio (rama desde `main`, pruebas, captura, docs, PR, CI, merge y release)
+está en `docs/GUIA_IA.md`; las reglas en corto, en `.clinerules` (las mismas para Cline y para Claude).
 ```sh
 cmake --build build && ./build/sim_tests
 python3 tools/assets/i18n.py extraer && python3 tools/assets/i18n.py check
-python3 tools/assets/inventario.py check && python3 tools/assets/iconos.py check
+python3 tools/assets/inventario.py check && python3 tools/assets/inventario.py doc --verificar
+python3 tools/assets/animaciones.py check && python3 tools/assets/animaciones.py doc --verificar
+python3 tools/assets/iconos.py check
 python3 tools/save/esquema.py check
-python3 tools/modelos/modelos.py check
+python3 tools/modelos/modelos.py check && python3 tools/modelos/test_modelos.py
+cmake -E copy_directory assets build/assets && (cd build && xvfb-run -a ./estepa --probar-partidas ../tests/partidas)
 ```
 
 ## Qué skill usar
