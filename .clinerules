@@ -53,6 +53,47 @@ o si una tarea choca con estas reglas, pregunta al usuario antes de seguir.
      workflow. Hay que comprobar que tenga el zip de Windows y el APK.
    - Lo que solo toca documentos o configuración no sube la versión.
 
+## Precauciones contra bucles y errores de Git
+Al trabajar con PRs y ramas, seguir estas 4 medidas para evitar bucles infinitos y errores similares:
+
+1. **Verificar antes de crear PR**
+```bash
+# Verificar que el branch no tiene commits duplicados
+git fetch origin
+git log origin/main..HEAD --oneline
+# Si hay salida, no crear el PR
+```
+
+2. **Evitar múltiples llamadas a `gh pr view` en bucle**
+```bash
+# En lugar de:
+while true; do gh pr view $PR_ID; sleep 10; done
+
+# Usar:
+gh pr view $PR_ID --json state
+# Y verificar una sola vez o con un timeout
+```
+
+3. **Usar `--auto` o `--admin` para merge**
+```bash
+# En lugar de intentar merge manualmente:
+gh pr merge --squash --delete-branch $PR_ID
+
+# Usar:
+gh pr merge --auto --delete-branch $PR_ID
+# o con privilegios:
+gh pr merge --admin --delete-branch $PR_ID
+```
+
+4. **Limpiar ramas locales después de merge**
+```bash
+# Después de mergear un PR, la rama se elimina automáticamente:
+gh pr merge --auto --delete-branch $PR_ID
+# Si se usa merge manual, ejecutar:
+gh pr merge --squash --delete-branch $PR_ID
+# Esto elimina la rama automáticamente
+```
+
 ## Pruebas antes de subir (lo mismo que corre el CI)
 ```bash
 cmake --build build && ./build/sim_tests
