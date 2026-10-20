@@ -436,3 +436,11 @@ Esto refleja que antes había demasiada gente por cada estructura, haciendo las 
 - Cambios en `src/sim/keymap.c`, `src/sim/keymap.h`, `src/sim/melee.h`, `src/sim/anim_index.c`, `src/game/combat_game.c`.
 - Documentación en `docs/GDD.md` y `docs/ROADMAP.md`.
 
+### 0.10.6 — Tubería 3D completa (v0.10.6)
+- **Modelos desde imágenes:** `tools/modelos/modelos.py traer <id> --url "<URL>" --fuente trellis2` (o `rignet`, `grail`, `kiln`). El modelo baja a low-poly, entra en la ruta de su id, y el manifiesto (`arte/modelos/models_manifest.json`) guarda la procedencia.
+- **Riggeado:** personas y animales se riggean con RigNet (`--riggeado`). La versión low-poly queda en `arte/modelos/para_riggear/` y el estado en el inventario es «pendiente».
+- **Clips obligatorios:** cada modelo con esqueleto necesita clips (andar, correr, agacharse, etc.). La prueba `test_modelos.py` valida que lo deje pendiente.
+
+- Cambios en `tools/modelos/modelos.py`, `tools/modelos/glb.py`, `tools/modelos/lowres.py`, `tools/modelos/test_modelos.py`, `arte/modelos/models_manifest.json`.
+- Documentación en `docs/GDD.md`, `docs/ROADMAP.md`, `docs/PLAN_HERRAMIENTAS_IA.md`.
+

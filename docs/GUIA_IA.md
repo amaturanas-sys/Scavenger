@@ -257,6 +257,27 @@ traba.
 - **Antes de algo que no se deshace** (borrar ramas o archivos del usuario, reescribir historia,
   publicar), preguntar.
 
+### Resumen de la versión 0.10.6
+
+**Qué cambió:**
+- Se completó la tubería 3D para importar modelos desde imágenes (TRELLIS.2, RigNet, GRAIL, Kiln) y convertirlos
+  a low-poly, riggearlos y generar los clips obligatorios.
+- Nuevo comando: `tools/modelos/modelos.py traer <id> --url "<URL>" --fuente trellis2` (u otra fuente).
+- El manifiesto `arte/modelos/models_manifest.json` registra cada modelo importado (procedencia, opciones, SHA256).
+- Personas y animales se riggean con RigNet (`--riggeado`); la versión low-poly queda en `arte/modelos/para_riggear/`
+  con estado «pendiente» en el inventario.
+
+**Cómo se probó:**
+- CI verde en Linux: `151339` comprobaciones en `sim_tests`, `5/5` pruebas de `test_modelos.py`.
+- PR #126 fusionado con squash merge, borrando la rama.
+
+**Enlace del PR:** https://github.com/amaturanas-sys/Scavenger/pull/126
+
+**Lo pendiente:**
+- Las imágenes de la D.2 (personas, animales, armas, estructuras, objetos) para seguir llenando el manifiesto.
+- Los videos de la C.1 (animaciones de combate, personas) para generar clips con GRAIL o alternativas.
+- Las casas y los campos por persona (sección 5): hoy cada casa aloja 150 almas en la capital y 70 en la aldea.
+
 ## 8. El prompt maestro
 
 Para la primera sesión de Cline en un Codespace nuevo (o cuando haya que retomar todo). Se copia
