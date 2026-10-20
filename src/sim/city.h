@@ -58,6 +58,19 @@ typedef struct {
 // (la parte del impuesto que cobran) de una capital o una aldea.
 int city_land(SettleKind k);
 float city_scribes(SettleKind k);
+
+// Cuanto rinde la region (el bosque, mas; el desierto, menos) y la estacion (otoño, la cosecha;
+// invierno, nada).
+float city_fertility(Region r);
+float city_season_yield(Season s);
+// La suerte de la cosecha de una estacion (0,8 .. 1,2): siempre la misma para esa ciudad y ese año.
+float city_season_luck(uint32_t seed, int idx, int day);
+
+// Valores por persona: casas y campos que caben en una estructura.
+#define CITY_MAX_ALMAS_HOGAR_CAPITAL 110   // capital: 110 almas por casa
+#define CITY_MAX_ALMAS_HOGAR_ALDEA 45      // aldea: 45 almas por casa
+#define CITY_MAX_ALMAS_CAMPO_CAPITAL 180   // capital: 180 almas por campo
+#define CITY_MAX_ALMAS_CAMPO_ALDEA 40      // aldea: 40 almas por campo
 // Cuanto rinde la region (el bosque, mas; el desierto, menos) y la estacion (otoño, la cosecha;
 // invierno, nada).
 float city_fertility(Region r);
