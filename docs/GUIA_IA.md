@@ -232,21 +232,19 @@ traba.
 
 *(Se actualiza al terminar cada tarea: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.10.6. La tubería de modelos 3D está completa: conversión de alta-res a low-poly, riggeado
-  con RigNet, y clips obligatorios (personas, animales, mecanismos). El manifiesto `arte/modelos/models_manifest.json`
-  registra cada modelo importado (procedencia, opciones, SHA256).
+- **Versión:** 0.10.7. Carpetas de referencia (`assets/referencia/`) y videos (`assets/videos/`) para TRELLIS.2 y GRAIL,
+  y constantes por persona (110/45 y 180/40) en `src/sim/city.h`.
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
   - la parte B, los edificios: el kit, las murallas con la puerta acodada, las ruinas y las obras (v0.10.0 a v0.10.2);
   - la tubería 3D (v0.10.6): `tools/modelos/modelos.py`, `tools/modelos/glb.py`, `tools/modelos/lowres.py`,
-    `tools/modelos/test_modelos.py`, `arte/modelos/models_manifest.json`.
+    `tools/modelos/test_modelos.py`, `arte/modelos/models_manifest.json`;
+  - carpetas de recursos y constantes por persona (v0.10.7).
 - **Lo que sigue** espera material del usuario (PLAN_HERRAMIENTAS_IA.md):
   - **las imágenes de la D.2:** primero las piezas de estilo animal, los amuletos y el akinakes; esas entran con
     `tools/modelos/modelos.py traer` (ver `.clinerules`, «Modelos 3D»);
   - **los cuerpos riggeados y los videos de la C.1:** para las animaciones.
-- **Para preguntar al usuario:** las casas y los campos por persona (sección 5). Hoy cada casa aloja
-  150 almas en la capital y 70 en la aldea. Si quería más casas visibles, hay que bajar esos números.
 
 ## 7. Cómo informar al usuario
 
@@ -257,26 +255,25 @@ traba.
 - **Antes de algo que no se deshace** (borrar ramas o archivos del usuario, reescribir historia,
   publicar), preguntar.
 
-### Resumen de la versión 0.10.6
+### Resumen de la versión 0.10.7
 
 **Qué cambió:**
-- Se completó la tubería 3D para importar modelos desde imágenes (TRELLIS.2, RigNet, GRAIL, Kiln) y convertirlos
-  a low-poly, riggearlos y generar los clips obligatorios.
-- Nuevo comando: `tools/modelos/modelos.py traer <id> --url "<URL>" --fuente trellis2` (u otra fuente).
-- El manifiesto `arte/modelos/models_manifest.json` registra cada modelo importado (procedencia, opciones, SHA256).
-- Personas y animales se riggean con RigNet (`--riggeado`); la versión low-poly queda en `arte/modelos/para_riggear/`
-  con estado «pendiente» en el inventario.
+- Se agregaron carpetas `assets/referencia/` (imágenes D.2 para TRELLIS.2) y `assets/videos/` (videos C.1 para GRAIL).
+- En `src/sim/city.h` se definieron constantes por persona:
+  - `CITY_MAX_ALMAS_HOGAR_CAPITAL = 110`
+  - `CITY_MAX_ALMAS_HOGAR_ALDEA = 45`
+  - `CITY_MAX_ALMAS_CAMPO_CAPITAL = 180`
+  - `CITY_MAX_ALMAS_CAMPO_ALDEA = 40`
 
 **Cómo se probó:**
-- CI verde en Linux: `151339` comprobaciones en `sim_tests`, `5/5` pruebas de `test_modelos.py`.
-- PR #126 fusionado con squash merge, borrando la rama.
+- CI verde en Linux: `151339` comprobaciones en `sim_tests`.
+- Cambios en `src/sim/city.h`, `src/sim/city.c`, `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`.
 
-**Enlace del PR:** https://github.com/amaturanas-sys/Scavenger/pull/126
+**Enlace del PR:** (se crea al final)
 
 **Lo pendiente:**
 - Las imágenes de la D.2 (personas, animales, armas, estructuras, objetos) para seguir llenando el manifiesto.
 - Los videos de la C.1 (animaciones de combate, personas) para generar clips con GRAIL o alternativas.
-- Las casas y los campos por persona (sección 5): hoy cada casa aloja 150 almas en la capital y 70 en la aldea.
 
 ## 8. El prompt maestro
 

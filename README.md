@@ -444,3 +444,11 @@ Esto refleja que antes había demasiada gente por cada estructura, haciendo las 
 - Cambios en `tools/modelos/modelos.py`, `tools/modelos/glb.py`, `tools/modelos/lowres.py`, `tools/modelos/test_modelos.py`, `arte/modelos/models_manifest.json`.
 - Documentación en `docs/GDD.md`, `docs/ROADMAP.md`, `docs/PLAN_HERRAMIENTAS_IA.md`.
 
+### 0.10.7 — Carpetas de referencia y videos
+- **Carpetas de recursos:** `assets/referencia/` (imágenes D.2 para TRELLIS.2) y `assets/videos/` (videos C.1 para GRAIL).
+- **Constantes por persona:** en `src/sim/city.h` se definieron `CITY_MAX_ALMAS_HOGAR_CAPITAL`,
+  `CITY_MAX_ALMAS_HOGAR_ALDEA`, `CITY_MAX_ALMAS_CAMPO_CAPITAL`, `CITY_MAX_ALMAS_CAMPO_ALDEA` (110/45 y 180/40).
+
+- Cambios en `src/sim/city.h`, `src/sim/city.c`, `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`.
+- Documentación en `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`.
+

@@ -810,3 +810,9 @@ Historia principal con protagonista de **nombre elegido por el jugador**: hijo d
   - Aldea: 45 almas/casa (antes 70), 40 almas/campo (antes 80)
 - Esto refleja que antes había demasiada gente por cada estructura, haciendo las ciudades parecer vacías.
 - Los asentamientos ahora muestran más vida, con más viviendas y tierras cultivables por cada alma.
+
+### 0.10.7 — Carpetas de referencia y videos
+- **Carpetas de recursos:** se agregaron `assets/referencia/` (imágenes D.2 para TRELLIS.2) y `assets/videos/`
+  (videos C.1 para GRAIL).
+- **Constantes por persona:** en `src/sim/city.h` se definieron `CITY_MAX_ALMAS_HOGAR_CAPITAL`, 
+  `CITY_MAX_ALMAS_HOGAR_ALDEA`, `CITY_MAX_ALMAS_CAMPO_CAPITAL`, `CITY_MAX_ALMAS_CAMPO_ALDEA` (110/45 y 180/40).

@@ -161,6 +161,18 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [ ] PR y CI verde en Linux, Windows y Android
 - [ ] Release (ZIP y APK)
 
+### 0.10.7 — Carpetas de referencia y videos
+- [x] Crear carpetas `assets/referencia/` (imágenes D.2 para TRELLIS.2) y `assets/videos/` (videos C.1 para GRAIL)
+- [x] Definir constantes por persona en `src/sim/city.h`:
+  - `CITY_MAX_ALMAS_HOGAR_CAPITAL = 110`
+  - `CITY_MAX_ALMAS_HOGAR_ALDEA = 45`
+  - `CITY_MAX_ALMAS_CAMPO_CAPITAL = 180`
+  - `CITY_MAX_ALMAS_CAMPO_ALDEA = 40`
+- [x] Actualizar `VERSION` a 0.10.7
+- [ ] Documentar en `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`
+- [ ] PR y CI verde en Linux, Windows y Android
+- [ ] Release (ZIP y APK)
+
 ### 0.10.4 — Despoblación
 - [x] Revertir densidades de casas y campos en `src/sim/city.c`:
   - Capital: 110 almas/casa (antes 150), 180 almas/campo (antes 250)
