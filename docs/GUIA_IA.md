@@ -232,12 +232,15 @@ traba.
 
 *(Se actualiza al terminar cada tarea: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.10.3. Las tres ramas quedaron unidas en `main`, ahora la única. Las ciudades, los
-  árboles y la vegetación son más densos, y el Codespace se prepara solo (`.devcontainer/`).
+- **Versión:** 0.10.6. La tubería de modelos 3D está completa: conversión de alta-res a low-poly, riggeado
+  con RigNet, y clips obligatorios (personas, animales, mecanismos). El manifiesto `arte/modelos/models_manifest.json`
+  registra cada modelo importado (procedencia, opciones, SHA256).
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
-  - la parte B, los edificios: el kit, las murallas con la puerta acodada, las ruinas y las obras (v0.10.0 a v0.10.2).
+  - la parte B, los edificios: el kit, las murallas con la puerta acodada, las ruinas y las obras (v0.10.0 a v0.10.2);
+  - la tubería 3D (v0.10.6): `tools/modelos/modelos.py`, `tools/modelos/glb.py`, `tools/modelos/lowres.py`,
+    `tools/modelos/test_modelos.py`, `arte/modelos/models_manifest.json`.
 - **Lo que sigue** espera material del usuario (PLAN_HERRAMIENTAS_IA.md):
   - **las imágenes de la D.2:** primero las piezas de estilo animal, los amuletos y el akinakes; esas entran con
     `tools/modelos/modelos.py traer` (ver `.clinerules`, «Modelos 3D»);

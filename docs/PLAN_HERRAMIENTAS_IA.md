@@ -1,6 +1,6 @@
 # Plan: herramientas de generación (edificios, animaciones y modelos) y ejecución del plan grande
 
-> **Estado (18 de octubre de 2026):** en marcha.
+> **Estado (20 de octubre de 2026):** en marcha.
 > - **Parte A, el plan grande:** hecho (fases 0 a 8b, de la v0.4.4 a la v0.9.1).
 > - **Paso 2, las tuberías (D.1 y C.2):** hecho en la **v0.9.3** (`tools/modelos`, las skills `modelos` y
 >   `animaciones`, `--ver <id>`), sobre lo que armó Cline (abajo).
@@ -8,6 +8,9 @@
 >   y el kit (`src/sim/buildkit.c`), en la **v0.10.0**: las ciudades, las aldeas y las tribus se arman
 >   con él; `--edificios` lo muestra. Lo que faltaba (el paso 5b), en la **v0.10.2**: las murallas con
 >   sus torres y sus puertas acodadas, las ruinas y las obras de la tribu.
+> - **Tubería 3D completa:** conversión de alta-res a low-poly, riggeado con RigNet, y clips obligatorios
+>   (personas, animales, mecanismos). El manifiesto `arte/modelos/models_manifest.json` registra cada
+>   modelo importado (procedencia, opciones, SHA256). En la **v0.10.6**.
 > - **Lo que sigue** espera al usuario (abajo): no queda nada del plan que se haga solo aquí.
 > - **Desde la v0.10.3**, el trabajo sigue con Cline en el Codespace de `main`: el flujo, las reglas y
 >   el prompt para empezar están en [GUIA_IA.md](GUIA_IA.md).
@@ -249,9 +252,10 @@ El usuario trabajó un tiempo con Cline en Codespaces (con los espacios de Huggi
 | 4 | Primeras animaciones de combate y personas (C) | GPU → aquí | — | espera los cuerpos riggeados (D.2) y los videos (C.1) |
 | 5 | Investigación y kit de edificios (B) | aquí | v0.10.0 | hecho: viviendas, palacios, talleres, graneros, templos y carretas en las ciudades, las aldeas y las tribus |
 | 5b | Lo que falta de la B: murallas y puertas acodadas, ruinas y obras del campamento con el kit | aquí | v0.10.2 | hecho |
-| 6 | Fases 3, 4, 4b | aquí | v0.6.x | hecho |
-| 7 | Modelos por prioridad (D.2), en tandas | GPU → aquí | cada versión | espera las imágenes |
-| 8 | Fases 5 a 8 | aquí | v0.7–v0.9.1 | hecho |
+| 6 | Tubería 3D (conversión, riggeado, clips) | aquí | v0.10.6 | hecho |
+| 7 | Fases 3, 4, 4b | aquí | v0.6.x | hecho |
+| 8 | Modelos por prioridad (D.2), en tandas | GPU → aquí | cada versión | espera las imágenes |
+| 9 | Fases 5 a 8 | aquí | v0.7–v0.9.1 | hecho |
 
 **La primera tanda de modelos (D.2)**, la que pidió la narrativa: las piezas de estilo animal, que
 además no llevan esqueleto y entran directo al juego:
