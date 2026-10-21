@@ -141,7 +141,9 @@ if(ESTEPA_BUILD_GAME)
     src/world/voxstruct.c
     src/world/weather.c
     src/world/body_draw.c
-    src/world/vegetation.c)
+    src/world/vegetation.c
+    src/entities/character.c
+    src/entities/equipment.c)
 
   if(ANDROID)
     # Android: biblioteca compartida que carga NativeActivity (libestepa.so).
