@@ -143,7 +143,7 @@ void character_equip_swap_texture(int equip_idx, TextureMaterial tex) {
     if (equip_idx < 0 || equip_idx >= g_equipment_count) return;
     CharacterEquipment *eq = &g_equipment[equip_idx];
 
-    if (tex >= TEX_COUNT || tex == eq->tex) return;
+    if (tex >= 6 || tex == eq->tex) return;
 
     eq->tex = tex;
 
