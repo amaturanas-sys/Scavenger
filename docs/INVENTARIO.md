@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**436 objetos** · 1 con modelo · 435 pendientes.
+**437 objetos** · 1 con modelo y rig · 435 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -24,7 +24,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
 | [Utilería y consumibles](#utileria) | 86 | 86 | 0 | 0 | 0 |
-| [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
+| [Personajes y NPCs](#personaje) | 40 | 39 | 0 | 0 | 0 |
 
 ## Etiquetas
 
@@ -540,12 +540,12 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
-| `personaje.base.cuerpo_nino` | Cuerpo base: niño | 0.35x1.2x0.25 | 800 | pendiente | `rig:humanoide` `talla:pequena` | Malla base modular: ropa y armadura encajan encima. |
-| `personaje.base.cuerpo_comun` | Cuerpo base: adulto común | 0.5x1.7x0.3 | 1200 | pendiente | `rig:humanoide` `talla:comun` |  |
-| `personaje.base.cuerpo_robusto` | Cuerpo base: adulto robusto | 0.6x1.85x0.35 | 1300 | pendiente | `rig:humanoide` `talla:grande` |  |
-| `personaje.base.cuerpo_gigante` | Cuerpo base: gigante (gran guerrero) | 0.75x2.3x0.45 | 1500 | pendiente | `rig:humanoide` `talla:gigante` `especial:gran_guerrero` | Talla x1.2–1.45 del común. |
-| `personaje.base.cuerpo_anciano` | Cuerpo base: anciano | 0.5x1.6x0.3 | 1200 | pendiente | `rig:humanoide` `talla:comun` |  |
-| `personaje.narrativo.protagonista` | Protagonista ({NOMBRE}) | 0.5x1.75x0.3 | 2000 | pendiente | `rig:humanoide` `acto:2` `especial:narrativo` `uso:personalizable` | Personalizable: nombre, aspecto, ropa. |
+| `personaje.base.cuerpo_nino` | Cuerpo base: niño | 0.35x1.2x0.25 | 800 | importado | `rig:humanoide` `talla:pequena` | Malla base modular: ropa y armadura encajan encima. |
+| `personaje.base.cuerpo_comun` | Cuerpo base: adulto común | 0.5x1.7x0.3 | 1200 | importado | `rig:humanoide` `talla:comun` |  |
+| `personaje.base.cuerpo_robusto` | Cuerpo base: adulto robusto | 0.6x1.85x0.35 | 1300 | importado | `rig:humanoide` `talla:grande` |  |
+| `personaje.base.cuerpo_gigante` | Cuerpo base: gigante (gran guerrero) | 0.75x2.3x0.45 | 1500 | importado | `rig:humanoide` `talla:gigante` `especial:gran_guerrero` | Talla x1.2–1.45 del común. |
+| `personaje.base.cuerpo_anciano` | Cuerpo base: anciano | 0.5x1.6x0.3 | 1200 | importado | `rig:humanoide` `talla:comun` |  |
+| `personaje.narrativo.protagonista` | Protagonista ({NOMBRE}) | 0.5x1.75x0.3 | 2000 | importado | `rig:humanoide` `acto:2` `especial:narrativo` `uso:personalizable` | Personalizable: nombre, aspecto, ropa. |
 | `personaje.narrativo.padre` | El padre (jefe de la confederación) | 0.5x1.75x0.3 | 2000 | pendiente | `rig:humanoide` `acto:1` `especial:narrativo` `faccion:nomada` | Jugable en el prólogo, a caballo. |
 | `personaje.narrativo.madre` | La madre | 0.5x1.75x0.3 | 2000 | pendiente | `rig:humanoide` `acto:1` `especial:narrativo` |  |
 | `personaje.narrativo.medio_hermano` | El medio-hermano | 0.5x1.75x0.3 | 2000 | pendiente | `rig:humanoide` `acto:2` `especial:narrativo` `faccion:culto` | Antagonista. |

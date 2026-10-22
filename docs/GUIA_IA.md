@@ -261,20 +261,22 @@ traba.
 - Se agregaron carpetas `assets/referencia/` (imágenes D.2 para TRELLIS.2) y `assets/videos/` (videos C.1 para GRAIL).
 - En `src/sim/city.h` se definieron constantes por persona:
   - `CITY_MAX_ALMAS_HOGAR_CAPITAL = 110`
-  - `CITY_MAX_ALMAS_HOGAR_ALDEA = 45`
-  - `CITY_MAX_ALMAS_CAMPO_CAPITAL = 180`
-  - `CITY_MAX_ALMAS_CAMPO_ALDEA = 40`
+### Resumen de la versión 0.10.8
 
-**Cómo se probó:**
-- CI verde en Linux: `151339` comprobaciones en `sim_tests`.
-- Cambios en `src/sim/city.h`, `src/sim/city.c`, `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`.
-
-**Enlace del PR:** (se crea al final)
+**Qué cambió:**
+- Sistema de personajes 3D con equipamiento modular (bone attachments y texture swapping).
+- 9 slots de equipamiento: casco, gorjal, torso, hombreras, brazales, manos, faldar, grebas, botas.
+- 6 materiales: fieltro, cuero, bronce, hierro, acero, oro.
+- Caché de equipamiento: 54 combinaciones posibles gestionadas eficientemente.
 
 **Lo pendiente:**
 - Las imágenes de la D.2 (personas, animales, armas, estructuras, objetos) para seguir llenando el manifiesto.
 - Los videos de la C.1 (animaciones de combate, personas) para generar clips con GRAIL o alternativas.
 
+**Cómo se probó:**
+- CI verde en Linux, Windows y Android.
+- PR #130: https://github.com/amaturanas-sys/Scavenger/pull/130
+- Cambios en `src/entities/character.c`, `src/entities/equipment.c`, `src/sim/armor.h`, `docs/INVENTARIO.md`.
 ## 8. El prompt maestro
 
 Para la primera sesión de Cline en un Codespace nuevo (o cuando haya que retomar todo). Se copia

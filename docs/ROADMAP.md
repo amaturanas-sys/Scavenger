@@ -152,6 +152,16 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 
 ## Versiones
 
+### 0.10.8 — Personajes 3D con equipamiento modular
+- [x] Sistema de personajes 3D en C11 (character.c/h, equipment.c/h)
+- [x] Bone attachments: 9 slots (casco, gorjal, torso, hombreras, brazales, manos, faldar, grebas, botas)
+- [x] Texture swapping: 6 materiales (fieltro, cuero, bronce, hierro, acero, oro)
+- [x] Caché de equipamiento: 54 combinaciones posibles
+- [x] Carpetas de assets: equipamento, texturas, rigs, animaciones
+- [x] PR #130 con CI verde en Linux, Windows y Android
+- [ ] Release (ZIP y APK)
+- PR: https://github.com/amaturanas-sys/Scavenger/pull/130
+
 ### 0.10.5 — Combate mejorado
 - [x] Añadir controles de objetivo (Tab, Ctrl+Q, Ctrl+E)
 - [x] Añadir cámara que sigue al objetivo

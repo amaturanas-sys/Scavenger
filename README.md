@@ -452,3 +452,15 @@ Esto refleja que antes había demasiada gente por cada estructura, haciendo las 
 - Cambios en `src/sim/city.h`, `src/sim/city.c`, `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`.
 - Documentación en `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`.
 
+### 0.10.8 — Personajes 3D con equipamiento modular
+- **Bone attachments:** sistema para equipar cascos, gorjales, torso, hombreras, brazales, manos, faldar, grebas y botas.
+- **Texture swapping:** 6 materiales (fieltro, cuero, bronce, hierro, acero, oro) intercambiables sin recargar geometría.
+- **Caché de equipamiento:** gestión eficiente de 54 combinaciones posibles (9 slots xc2x97 6 materiales).
+- **Carpetas de assets:** `assets/models/personajes/equipamento/`, `assets/models/personajes/texturas/`,
+  `assets/models/personajes/rigs/`, `assets/models/personajes/animaciones/`.
+
+- Cambios en `src/entities/character.c`, `src/entities/character.h`, `src/entities/equipment.c`,
+  `src/entities/equipment.h`, `src/sim/armor.h`, `docs/INVENTARIO.md`.
+- Documentación en `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`.
+
+---
