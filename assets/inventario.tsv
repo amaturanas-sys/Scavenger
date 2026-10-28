@@ -437,3 +437,67 @@ utileria.consumible.agua_hervida	Agua hervida	uso:recolectable,uso:consumible	0.
 utileria.consumible.agua_vino	Agua con vino	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	El vino purifica el agua: segura y apenas achispa.
 utileria.consumible.cerveza	Cerveza	uso:recolectable,uso:consumible	0.2x0.25x0.2	40	pendiente	Segura de beber; en exceso, torpe y fatigado.
 utileria.consumible.vino	Vino	uso:recolectable,uso:consumible	0.12x0.3x0.12	40	pendiente	De las caravanas del imperio. Seguro; emborracha pronto.
+personajes.animaciones.combat	Animación: Combat	rig:humanoide	1x1x1	0	pendiente	
+personajes.animaciones.walk	Animación: Walk	rig:humanoide	1x1x1	0	pendiente	
+personajes.animaciones.idle	Animación: Idle	rig:humanoide	1x1x1	0	pendiente	
+personajes.animaciones.attack	Animación: Attack	rig:humanoide	1x1x1	0	pendiente	
+personajes.rigs.base_personaje	Rig base: Personaje	rig:humanoide	1x1x1	0	pendiente	
+personajes.rigs.base_personaje_idle	Rig base: Personaje (idle)	rig:humanoide	1x1x1	0	pendiente	
+personajes.equipamento.armadura_chaleco_acero	Chaleco de acero	material:acero	0.5x0.3x0.4	500	pendiente	
+personajes.equipamento.armadura_chaleco_bronze	Chaleco of bronce	material:bronze	0.5x0.3x0.4	500	pendiente	
+personajes.equipamento.armadura_chaleco_cuero	Chaleco of cuero	material:cuero	0.5x0.3x0.4	500	pendiente	
+personajes.equipamento.armadura_chaleco_fielto	Chaleco of fieltro	material:fieltro	0.5x0.3x0.4	500	pendiente	
+personajes.equipamento.armadura_chaleco_hierro	Chaleco of hierro	material:hierro	0.5x0.3x0.4	500	pendiente	
+personajes.equipamento.armadura_chaleco_oro	Chaleco of oro	material:oro	0.5x0.3x0.4	500	pendiente	
+personajes.equipamento.armadura_cinturon_acero	Cinturon of acero	material:acero	0.5x0.1x0.4	500	pendiente	
+personajes.equipamento.armadura_cinturon_bronze	Cinturon of bronce	material:bronze	0.5x0.1x0.4	500	pendiente	
+personajes.equipamento.armadura_cinturon_cuero	Cinturon of cuero	material:cuero	0.5x0.1x0.4	500	pendiente	
+personajes.equipamento.armadura_cinturon_hierro	Cinturon of hierro	material:hierro	0.5x0.1x0.4	500	pendiente	
+personajes.equipamento.armadura_cinturon_oro	Cinturon of oro	material:oro	0.5x0.1x0.4	500	pendiente	
+personajes.equipamento.armadura_gorjal_acero	Gorjal of acero	material:acero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.armadura_gorjal_bronze	Gorjal of bronce	material:bronze	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.armadura_gorjal_cuero	Gorjal of cuero	material:cuero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.armadura_gorjal_hierro	Gorjal of hierro	material:hierro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.armadura_gorjal_oro	Gorjal of oro	material:oro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.brazales_armadura_brazales_acero	Brazales of acero	material:acero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.brazales_armadura_brazales_bronze	Brazales of bronce	material:bronze	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.brazales_armadura_brazales_cuero	Brazales of cuero	material:cuero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.brazales_armadura_brazales_fielto	Brazales of fieltro	material:fieltro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.brazales_armadura_brazales_hierro	Brazales of hierro	material:hierro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.brazales_armadura_brazales_oro	Brazales of oro	material:oro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.cascos_armadura_casco_acero	Casco of acero	material:acero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.cascos_armadura_casco_bronze	Casco of bronce	material:bronze	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.cascos_armadura_casco_cuero	Casco of cuero	material:cuero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.cascos_armadura_casco_fielto	Casco of fieltro	material:fieltro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.cascos_armadura_casco_hierro	Casco of hierro	material:hierro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.cascos_armadura_casco_oro	Casco of oro	material:oro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.gorjales_armadura_gorjales_acero	Gorjales of acero	material:acero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.gorjales_armadura_gorjales_bronze	Gorjales of bronce	material:bronze	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.gorjales_armadura_gorjales_cuero	Gorjales of cuero	material:cuero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.gorjales_armadura_gorjales_fielto	Gorjales of fieltro	material:fieltro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.gorjales_armadura_gorjales_hierro	Gorjales of hierro	material:hierro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.gorjales_armadura_gorjales_oro	Gorjales of oro	material:oro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.faldas_armadura_faldas_acero	Faldas of acero	material:acero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.faldas_armadura_faldas_bronze	Faldas of bronce	material:bronze	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.faldas_armadura_faldas_cuero	Faldas of cuero	material:cuero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.faldas_armadura_faldas_fielto	Faldas of fieltro	material:fieltro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.faldas_armadura_faldas_hierro	Faldas of hierro	material:hierro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.faldas_armadura_faldas_oro	Faldas of oro	material:oro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.grebas_armadura_grebas_acero	Grebas of acero	material:acero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.grebas_armadura_grebas_bronze	Grebas of bronce	material:bronze	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.grebas_armadura_grebas_cuero	Grebas of cuero	material:cuero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.grebas_armadura_grebas_fielto	Grebas of fieltro	material:fieltro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.grebas_armadura_grebas_hierro	Grebas of hierro	material:hierro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.grebas_armadura_grebas_oro	Grebas of oro	material:oro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.hombreras_armadura_hombreras_acero	Hombreras of acero	material:acero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.hombreras_armadura_hombreras_bronze	Hombreras of bronce	material:bronze	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.hombreras_armadura_hombreras_cuero	Hombreras of cuero	material:cuero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.hombreras_armadura_hombreras_fielto	Hombreras of fieltro	material:fieltro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.hombreras_armadura_hombreras_hierro	Hombreras of hierro	material:hierro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.hombreras_armadura_hombreras_oro	Hombreras of oro	material:oro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.piernas_armadura_piernas_acero	Piernas of acero	material:acero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.piernas_armadura_piernas_bronze	Piernas of bronce	material:bronze	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.piernas_armadura_piernas_cuero	Piernas of cuero	material:cuero	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.piernas_armadura_piernas_fielto	Piernas of fieltro	material:fieltro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.piernas_armadura_piernas_hierro	Piernas of hierro	material:hierro	0.5x0.2x0.4	500	pendiente	
+personajes.equipamento.piernas_armadura_piernas_oro	Piernas of oro	material:oro	0.5x0.2x0.4	500	pendiente	
