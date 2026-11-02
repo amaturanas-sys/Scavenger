@@ -124,8 +124,8 @@ esté seco (`terrain_water_full`).
 3. **El hielo** de cada agua (`world_lake_ice`, `world_river_ice`; aguanta desde 0,5, `ICE_WALKABLE`):
    - **la altura:** 0,08 grados menos por metro sobre el campamento (más que en la realidad, para que se note);
    - **el tamaño:** un lago chico sigue el aire de hoy; uno grande, el de dos días antes. Los chicos (el del
-     campamento, los oasis) se hielan un día o dos antes que los grandes, y los del altiplano antes que los de
-     la costa;
+     campamento, los oasis) se hielan de uno a tres días antes que los grandes, y los del altiplano antes que
+     los de la costa;
    - **los ríos:** los arroyos y los charcos se hielan primero; los ríos grandes y el canal, al final.
 4. **El mar** se hiela desde la orilla, donde es bajo (`world_sea_ice`): con más frío, más lejos (hasta 17 m
    de hondo), con el borde irregular. Mar adentro sigue abierto, y los témpanos flotan a la deriva. El hielo de
