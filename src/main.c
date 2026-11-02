@@ -5,7 +5,7 @@
 // optimizacion de rendimiento en moviles (9 veces menos pixeles que 1080p).
 //
 // Uso de escritorio:  estepa [--screenshot salida.png] [--frames N] [--sin-teclado] [--galeria]
-//                     [--dia N] [--minuto M] [--pos X Z] [--trampa hielo|nieve|arena|rescate|hundido|nado|agujero]
+//                     [--dia N] [--minuto M] [--pos X Z] [--trampa hielo|nieve|arena|rescate|hundido|nado|agujero|tiburon|mordida]
 // --galeria muestra todos los objetos del inventario de assets (modelos o marcadores).
 // --ver <id> muestra de cerca un objeto del inventario, en la galeria, con el jugador al lado (la
 // tuberia de modelos, tools/modelos: revisar uno recien importado).
@@ -419,7 +419,7 @@ static void game_new(GameState *g, Terrain *terrain, Camp *camp, unsigned seed, 
 
 // Prueba: lleva al jugador a un sitio del mundo, mirando hacia lo que interesa. Lugares:
 // estepa, bosque, altiplano, fiordos, desierto (en su region); canal, muro, mar, hielo (el
-// borde); lengua (el pie del glaciar, donde avanza y retrocede); meandro, trenzado, arroyo, rapidos (los rios);
+// borde); muro-canal (en la orilla del canal, mirando el muro de roca de enfrente); lengua (el pie del glaciar, donde avanza y retrocede); meandro, trenzado, arroyo, rapidos (los rios);
 // cascada (la mas alta), cascada-helada (la de un rio que en invierno se hiela), cascada-pie (la mas alta, de
 // cerca: la cortina, la espuma y la bruma); lago, desborde (el lago mas
 // grande y su punto de desborde); capital, aldea, guarida.
@@ -431,10 +431,10 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     for (int r = 1; r < REGION_COUNT; r++)
         if (!strcmp(what, REG[r])) world_region_point(w, (Region)r, 0.62f * WORLD_RADIUS, &x, &z), lx = x * 1.1f, lz = z * 1.1f, ok = true;
     if (!strcmp(what, "estepa")) x = 260.0f, z = -180.0f, lx = 600.0f, lz = -400.0f, ok = true;
-    if (!strcmp(what, "canal")) {
+    if (!strcmp(what, "canal") || !strcmp(what, "muro-canal")) { // muro-canal: en la orilla, mirando el muro de enfrente
         float x0, z0;
         world_edge_point(w, REGION_FOREST, 0.0f, &x0, &z0);
-        float a = atan2f(z0, x0), r = world_edge_radius(w, a) - world_canal_offset(w, a) - 62.0f;
+        float a = atan2f(z0, x0), r = world_edge_radius(w, a) - world_canal_offset(w, a) - (!strcmp(what, "canal") ? 62.0f : 40.0f);
         x = cosf(a) * r, z = sinf(a) * r, lx = x * 1.2f, lz = z * 1.2f, ok = true;
     }
     if (!strcmp(what, "muro")) world_edge_point(w, REGION_DESERT, 210.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
@@ -1247,6 +1247,7 @@ int main(int argc, char **argv) {
             if (start_migrate && !strcmp(start_migrate, "marcha") && frame > 8) in.move_z = 1.0f; // prueba: en marcha, al paso
             if (g_actions.mounted >= 0 && fg_mount_winded()) in.run = false; // la montura agotada no galopa
             player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards) * cb_speed_scale(&g_combat);
+            player_set_endurance(health_endurance_scale(&g_combat.player)); // las secuelas (el tiburon) cansan mas
             player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
             if (!g_actions.climbing) player_update(&player, &terrain, in, rig.yaw, dt);
             if (world_clamp(terrain.world, &player.pos.x, &player.pos.z)) { // la frontera invisible del gran circulo
@@ -1258,13 +1259,14 @@ int main(int argc, char **argv) {
                              rg == REGION_FJORD    ? T("Más allá solo hay mar abierto: la tropa no se aventura.")
                              : rg == REGION_DESERT ? T("El gran muro del cañón cierra el desierto: no hay paso.")
                              : rg == REGION_HIGHLAND ? T("El muro de hielo del glaciar cierra el altiplano: no hay paso.")
-                                                   : T("El gran canal marca el fin de estas tierras: no hay vado."));
+                                                   : T("Del otro lado del gran canal se alza un muro de roca: no hay vado."));
                 }
             }
             world_time += dt;
             int prev_champion = last_champion;
             if (!menu && show_diag) debug_camp_actions(&troop, &rng, &world_time, &last_champion, log, sizeof(log)); // teclas de prueba: con Ctrl+D
             g_actions.player_armor = &g_combat.armor; // para reparar lo que llevas puesto
+            g_actions.player_health = &g_combat.player; // el druida cura sus secuelas
             if (!gallery_mode) // la barra rapida (1..9) y su selector, antes que las acciones
                 hud_update(&g_actions, &g_props, &player, !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), log, sizeof(log));
             if (!gallery_mode) ga_update(&g_actions, &g_props, &terrain, &player, &troop, dt, log, sizeof(log));
@@ -1576,6 +1578,7 @@ int main(int argc, char **argv) {
             tg_draw(&g_actions, VIRTUAL_W, VIRTUAL_H);
             if (show_card) draw_champion_card(&troop, last_champion);
             if (show_controls) menu_draw_controls(VIRTUAL_W / 2 - 200, 90, 400, 140);
+            hz_draw_fade(&g_hazards, VIRTUAL_W, VIRTUAL_H); // al despertar en la playa (el tiburon), sobre todo
         }
         }
         menu_draw(&menu, in_game,

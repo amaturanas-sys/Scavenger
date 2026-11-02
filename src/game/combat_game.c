@@ -2195,6 +2195,17 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
         cb->healer_timer = 8.0f;
         snprintf(log, len, T("%s te venda las heridas."), hm->name);
     }
+    // Las secuelas (la mordida del tiburon, docs/AGUA.md fase 5): no se curan solas; el curandero las trata de a
+    // poco mientras estas en el campamento (el druida, de una vez: src/game/talents_game.c).
+    static bool tending;
+    if (at_camp && hm && cb->player.sequela > 0.0f) {
+        if (!tending && !log[0]) snprintf(log, len, T("%s trata tus secuelas: quédate en el campamento hasta que ceda."), hm->name);
+        tending = true;
+        health_sequela_tend(&cb->player, dt);
+        if (cb->player.sequela <= 0.0f) snprintf(log, len, T("%s terminó de tratar tus secuelas: vuelves a tener todo tu aguante."), hm->name);
+    } else {
+        tending = false;
+    }
     if (!cb->player.down) {
         cb->down_timer = 0.0f;
         return;
@@ -2911,8 +2922,9 @@ void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h) {
     (void)troop;
     const Health *ph = &cb->player;
-    const char *txt = TextFormat("%s%s", health_state_name(ph), health_bleeding(ph) ? T(" · sangra") : "");
-    Color col = health_bleeding(ph) || ph->down ? UI_CARNELIAN : ph->wound_count ? UI_GOLD : UI_BONE;
+    const char *txt = TextFormat("%s%s%s", health_state_name(ph), health_bleeding(ph) ? T(" · sangra") : "",
+                                 ph->sequela > 0.0f ? T(" · secuelas") : ""); // la mordida del tiburon: no se curan solas
+    Color col = health_bleeding(ph) || ph->down ? UI_CARNELIAN : ph->wound_count || ph->sequela > 0.0f ? UI_GOLD : UI_BONE;
     hud_vital(health_bleeding(ph) ? ICON_SANGRE : ICON_VIDA, txt, col, fmaxf(0.0f, ph->hp) / ph->hp_max, UI_CARNELIAN, right_x, y);
     DrawRectangle(right_x - 80, y + 18, (int)(80 * ph->blood), 2, UI_LAPIS); // sangre
 

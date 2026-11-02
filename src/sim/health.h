@@ -59,6 +59,8 @@ typedef struct {
     bool dead;
     bool beast; // fiera: nombres de zonas de animal
     float venom; // veneno en el cuerpo: la vida que todavia va a quitar
+    float sequela; // secuelas [0, 1] (la mordida del tiburon, docs/AGUA.md fase 5): menos aguante y velocidad; no
+                   // se curan solas, solo con un curandero o un druida del campamento
 } Health;
 
 void health_init(Health *h, float hp_max);
@@ -89,6 +91,17 @@ bool health_poisoned(const Health *h);
 void health_daily(Health *h, float healer);
 // Revive a alguien abatido (no muerto): queda con poca vida y sangre.
 void health_revive(Health *h);
+
+// Las secuelas: lo que deja una herida terrible y no se va con el descanso (docs/AGUA.md, fase 5). Cada
+// mordida del tiburon suma SEQUELA_BITE (hasta 1). Con todas: un cuarto menos de velocidad y el aguante rinde
+// algo mas de la mitad. Solo las curan el curandero del campamento (de a poco, health_sequela_tend) o el
+// druida (de una vez, health_sequela_cure).
+#define SEQUELA_BITE 0.5f
+#define SEQUELA_TEND_SECONDS 90.0f // lo que tarda el curandero en curar unas secuelas completas
+void health_add_sequela(Health *h, float amount);
+float health_endurance_scale(const Health *h); // cuanto rinde el aguante: 1 sin secuelas, 0,55 con todas
+void health_sequela_tend(Health *h, float dt);  // el curandero: las va curando (dt en s)
+void health_sequela_cure(Health *h);            // el druida: de una vez
 
 bool health_bleeding(const Health *h);
 int health_untreated(const Health *h); // heridas sin tratar que lo necesitan

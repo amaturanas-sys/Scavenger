@@ -30,6 +30,8 @@ typedef enum {
 } TalkMode;
 
 static const Ingredient ENCHANT_COST[] = { { "utileria.consumible.hierbas", 1 }, { "utileria.consumible.miel", 1 }, { NULL, 0 } };
+// Lo que pide el druida por curar las secuelas de una vez (docs/AGUA.md, fase 5).
+static const Ingredient SEQUELA_COST[] = { { "utileria.consumible.hierbas", 2 }, { "utileria.consumible.miel", 1 }, { NULL, 0 } };
 
 void tg_init(GameActions *ga) {
     progress_init(&ga->prog);
@@ -217,6 +219,11 @@ static void build(GameActions *ga, const Troop *troop, const Props *props, const
         dlg_begin(d, TextFormat(T("%s, druida"), who), ICON_DRUIDA, T("Los espíritus de la estepa escuchan. ¿Quieres llevar un motivo en la piel, o que despierte una joya?"));
         dlg_option(d, ICON_TATUAJE, T("Tatuarme"), T("Para siempre: elige motivo y zona del cuerpo"), true, 1);
         dlg_option(d, ICON_GEMA, T("Encantar una joya"), T("Pasivo o activo, según su piedra (hierbas y miel)"), true, 2);
+        if (ga->player_health && ga->player_health->sequela > 0.0f) { // la mordida del tiburon
+            bool ok = have_all(ga, props, p, SEQUELA_COST);
+            dlg_option(d, ICON_UNGUENTO, T("Curar mis secuelas"),
+                       ok ? T("De una vez: vuelve todo el aguante (dos hierbas y una miel)") : T("Faltan dos hierbas y una miel"), ok, 3);
+        }
         dlg_option(d, ICON_SALIR, T("Adiós"), "", true, 0);
         break;
     case TK_TAT_NODE: {
@@ -369,7 +376,13 @@ static void choose(GameActions *ga, Troop *troop, Props *props, const Player *p,
     case TK_DRUID:
     case TK_SMITH:
         if (v == 0) dlg_close(&ga->dlg);
-        else if (ga->talk_mode == TK_DRUID) set_mode(ga, v == 1 ? TK_TAT_NODE : TK_ENCH_PICK);
+        else if (ga->talk_mode == TK_DRUID && v == 3) { // las secuelas, de una vez
+            if (!ga->player_health || !have_all(ga, props, p, SEQUELA_COST)) break;
+            ig_use_all(ga, props, p, SEQUELA_COST);
+            health_sequela_cure(ga->player_health);
+            snprintf(log, len, T("%s cura tus secuelas con hierbas y miel: vuelve todo tu aguante."), m ? m->name : "");
+            dlg_close(&ga->dlg);
+        } else if (ga->talk_mode == TK_DRUID) set_mode(ga, v == 1 ? TK_TAT_NODE : TK_ENCH_PICK);
         else set_mode(ga, TK_J_TYPE);
         break;
     case TK_TAT_NODE:

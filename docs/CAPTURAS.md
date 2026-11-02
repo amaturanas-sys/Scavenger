@@ -109,6 +109,17 @@ El shader del agua ([AGUA.md](AGUA.md), fase 4), en verano (`--dia 11`):
 | ![Cascada](capturas/agua_cascada.png) | **Una cascada de cerca** (`--ir cascada-pie`): la cortina que baja, la espuma y la bruma al pie. |
 | ![Respaldo](capturas/agua_respaldo.png) | **El agua sin su shader** (`--sin-shader`): lo que queda si el teléfono no lo compila (las ondas y la malla de espuma de antes). |
 
+### Los bordes
+
+El muro tras el canal del bosque y el mar abierto ([AGUA.md](AGUA.md), fase 5):
+
+| | |
+|---|---|
+| ![Muro desde la orilla](capturas/borde_muro_canal.png) | **El muro de roca del otro lado del canal** (`--ir muro-canal`): estratos levantados, desde la orilla despejada. |
+| ![Muro desde arriba](capturas/borde_muro_lejos.png) | **El mismo, desde arriba del bosque** (`--ir canal --dron 45`). |
+| ![Tiburón](capturas/borde_tiburon.png) | **La aleta del tiburón** (`--ir mar --trampa tiburon`): da vueltas alrededor de quien nada mar adentro de su línea. |
+| ![Playa](capturas/borde_playa.png) | **Despertar en la playa** (`--ir mar --trampa mordida`): herido y con secuelas («herido · secuelas»). |
+
 ## Los edificios de la edad del hierro
 
 Ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md). Con `--edificios tipo[:región]`

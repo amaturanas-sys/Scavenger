@@ -75,6 +75,14 @@ shot agua_cascada 60 --dia 11 --minuto 7 --ir cascada-pie --camara 0.12
 shot agua_respaldo 60 --dia 11 --minuto 7 --ir mar --dron 6 --camara 0.45 --sin-shader
 montage "$OUT"/agua_{corriente,olas,lago,rapidos,cascada,respaldo}.png -tile 2x3 -geometry +0+0 -depth 8 "$ROOT/docs/mundo/como_se_ve_el_agua.png" \
     2>/dev/null && echo "  docs/mundo/como_se_ve_el_agua.png"
+# Los bordes (docs/AGUA.md, fase 5): el muro de roca del otro lado del canal del bosque, la aleta del tiburon
+# alrededor de quien nada mar adentro y el despertar en la playa, herido y con secuelas.
+shot borde_muro_canal 90 --dia 11 --minuto 7 --ir muro-canal --camara 0.06
+shot borde_muro_lejos 90 --dia 11 --minuto 7 --ir canal --dron 45 --camara 0.2
+shot borde_tiburon 60 --dia 11 --minuto 7 --ir mar --trampa tiburon --camara 0.3
+shot borde_playa 60 --dia 11 --minuto 7 --ir mar --trampa mordida --camara 0.2
+montage "$OUT"/borde_{muro_canal,muro_lejos,tiburon,playa}.png -tile 2x2 -geometry +0+0 -depth 8 "$ROOT/docs/mundo/los_bordes.png" 2>/dev/null &&
+    echo "  docs/mundo/los_bordes.png"
 # El kit de edificios (docs/ARQUITECTURA_EDAD_DEL_HIERRO.md): las variantes de cada tipo en cada region
 # (la muralla, las ruinas y las obras de la tribu tambien) y las plazas de las cinco capitales, desde arriba.
 for k in casa palacio fundicion cuartel carpinteria granero templo carreta muralla torre puerta fortaleza enterrada \
@@ -97,8 +105,13 @@ shot orbital_1206_150 40 --dia 11 --minuto 7 --orbital 150 0.3
 shot orbital_1206_250 40 --dia 11 --minuto 7 --orbital 250 0.9
 shot orbital_2024_300 40 --semilla 2024 --dia 11 --minuto 7 --orbital 300 0.5
 shot orbital_42_90 40 --semilla 42 --dia 11 --minuto 7 --orbital 90 0.65
+mkdir -p "$ROOT/docs/mundo"
+montage "$OUT"/{orbital_1206_30,orbital_1206_150,orbital_1206_250,orbital_2024_300,orbital_42_90,mundo_cumbre}.png -tile 2x3 \
+    -geometry +0+0 -depth 8 "$ROOT/docs/mundo/orbitales.png" 2>/dev/null && echo "  docs/mundo/orbitales.png"
 # Mapas generales de varias semillas.
 mkdir -p "$ROOT/docs/mundo"
 for s in 1206 7 42 1984 2024 31337; do
     xvfb-run -a -s "-screen 0 1280x720x24" ./estepa --semilla "$s" --mapa-mundo "$ROOT/docs/mundo/mapa_$s.png" >/dev/null 2>&1 || true
 done
+montage "$ROOT"/docs/mundo/mapa_{1206,7,42,1984,2024,31337}.png -resize 600x600 -tile 3x2 -geometry +0+0 -depth 8 \
+    "$ROOT/docs/mundo/semillas.png" 2>/dev/null && echo "  docs/mundo/semillas.png"

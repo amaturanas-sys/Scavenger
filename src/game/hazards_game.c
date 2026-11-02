@@ -9,11 +9,15 @@
 #include "game/hud_game.h"
 #include "game/input.h"
 #include "raymath.h"
+#include "rlgl.h"
 #include "sim/clock.h"
 #include "ui/theme.h"
 #include "sim/lang.h"
 
 #define FAINT_SECONDS 25.0f  // en hipotermia, hasta desmayarse
+#define SHARK_WARN 2.5f      // s nadando mar adentro de la linea del tiburon hasta que se ve su aleta
+#define SHARK_BITE 11.0f     // ... y hasta que muerde
+#define WAKE_FADE 3.5f       // s del fundido al despertar en la playa
 #define HOLE_RADIUS 1.4f
 #define RESCUE_RANGE 3.0f
 #define ESCORT_SPEED 5.5f
@@ -144,6 +148,62 @@ static void climb_out(Hazards *hz, Player *p, const Terrain *t, float away) {
 
 static void hurt(Hazards *hz, float dmg, WoundKind kind, int part) {
     if (hz->body) health_hit(hz->body, &hz->rng, dmg, kind, part);
+}
+
+// ------------------------------------------------------------------ el tiburon
+// La playa mas cercana tierra adentro (hacia el centro del mundo): el primer suelo seco, unos pasos mas alla.
+static Vector3 beach_point(const Terrain *t, Vector3 from) {
+    float d = sqrtf(from.x * from.x + from.z * from.z) + 1e-3f, dx = -from.x / d, dz = -from.z / d;
+    for (float r = 0.0f; r < 900.0f; r += 2.0f) {
+        float x = from.x + dx * r, z = from.z + dz * r;
+        if (terrain_water_step(t, x, z) != WSTEP_DRY) continue;
+        x += dx * 3.0f, z += dz * 3.0f;
+        if (terrain_water_step(t, x, z) != WSTEP_DRY || terrain_near_feature(t, x, z, 1.5f)) continue; // no adentro de una roca
+        return (Vector3){ x, terrain_body_y(t, x, z), z };
+    }
+    return (Vector3){ 0.0f, terrain_height(t, 0.0f, 22.0f), 22.0f }; // no deberia pasar: el campamento
+}
+
+// La mordida (docs/AGUA.md, fase 5): el jugador nunca muere. Lo deja herido en una pierna, con secuelas, y
+// despierta en la playa (la herida, cerrada por la sal: no sangra).
+static void shark_bite(Hazards *hz, Player *p, GameActions *ga, const Terrain *t, char *log, size_t len) {
+    dismount(ga);
+    Health *h = hz->body;
+    if (h) {
+        health_hit(h, &hz->rng, 30.0f, WOUND_BITE, rng_float(&hz->rng) < 0.5f ? PART_THIGH_L : PART_THIGH_R);
+        health_treat(h);
+        for (int i = 0; i < h->wound_count; i++) h->wounds[i].bleeding = false;
+        h->hp = fmaxf(h->hp, 0.3f * h->hp_max), h->blood = fmaxf(h->blood, 0.55f), h->down = false, h->dead = false; // nunca muere
+        health_add_sequela(h, SEQUELA_BITE);
+    }
+    p->pos = beach_point(t, p->pos);
+    p->vy = 0.0f;
+    hz->shark = 0.0f, hz->wake_fade = WAKE_FADE;
+    hz->warmth.wet = 1.0f;
+    snprintf(log, len, "%s", T("¡El tiburón te muerde! Despiertas en la playa, herido y con secuelas."));
+}
+
+// Mar adentro de su linea, la aleta aparece, da vueltas cada vez mas cerca y, si sigues ahi, muerde. Al volver
+// hacia la costa, se aleja.
+static void update_shark(Hazards *hz, const Terrain *t, Player *p, GameActions *ga, float dt, char *log, size_t len) {
+    if (hz->wake_fade > 0.0f) {
+        float was = hz->wake_fade;
+        hz->wake_fade = fmaxf(0.0f, hz->wake_fade - dt);
+        if (was > 0.6f && hz->wake_fade <= 0.6f) // ya despierto: lo que dejo la mordida
+            snprintf(log, len, "%s", T("Las secuelas no se curan solas: un curandero o un druida del campamento."));
+    }
+    float open = hz->swimming && hz->trap == TRAP_NONE ? world_open_sea(t->world, p->pos.x, p->pos.z) : -1.0f;
+    float before = hz->shark;
+    if (open > 0.0f) hz->shark += dt;
+    else hz->shark = fmaxf(0.0f, hz->shark - 2.0f * dt);
+    if (before < SHARK_WARN && hz->shark >= SHARK_WARN)
+        snprintf(log, len, "%s", T("Una aleta gris corta el agua a tu alrededor. ¡Vuelve hacia la orilla!"));
+    float close = Clamp((hz->shark - SHARK_WARN) / (SHARK_BITE - SHARK_WARN), 0.0f, 1.0f);
+    hz->shark_ang += dt * (0.55f + 0.9f * close); // da vueltas, cada vez mas rapido
+    float r = 16.0f - 13.0f * close;
+    float x = p->pos.x + cosf(hz->shark_ang) * r, z = p->pos.z + sinf(hz->shark_ang) * r;
+    hz->shark_pos = (Vector3){ x, terrain_water(t, x, z), z };
+    if (hz->shark >= SHARK_BITE) shark_bite(hz, p, ga, t, log, len);
 }
 
 static void resolve_self(Hazards *hz, bool won, Player *p, GameActions *ga, const Terrain *t, int day, char *log,
@@ -462,6 +522,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
             }
         }
     }
+    update_shark(hz, t, p, ga, dt, log, log_len); // el mar abierto (docs/AGUA.md, fase 5)
     float desert = biome_desert(hz->seed, p->pos.x, p->pos.z);
     hz->mud = desert > 0.5f || over_water ? 1.0f : hazard_mud_scale(c->wetness, c->snow_cover);
 
@@ -570,7 +631,40 @@ void hz_new_day(Hazards *hz, const Climate *c, GameActions *ga, const Props *pro
 }
 
 // ------------------------------------------------------------------ dibujo
+// La aleta del tiburon: un triangulo gris oscuro que corta el agua, con su estela blanca, en la direccion en que da
+// vueltas. Aparece de a poco.
+static void draw_shark_fin(const Hazards *hz, float time) {
+    float show = Clamp((hz->shark - SHARK_WARN + 0.6f) / 0.6f, 0.0f, 1.0f);
+    if (show <= 0.0f) return;
+    Vector3 c = hz->shark_pos;
+    float a = hz->shark_ang + PI / 2.0f; // hacia donde avanza (tangente a su vuelta)
+    float fx = cosf(a), fz = sinf(a), bob = 0.04f * sinf(time * 3.0f);
+    Vector3 nose = { c.x + fx * 0.55f, c.y + bob, c.z + fz * 0.55f }, tail = { c.x - fx * 0.45f, c.y + bob, c.z - fz * 0.45f };
+    Vector3 tip = { c.x - fx * 0.35f, c.y + 0.75f * show + bob, c.z - fz * 0.35f };
+    rlDrawRenderBatchActive();
+    rlDisableBackfaceCulling();
+    rlBegin(RL_TRIANGLES);
+    rlColor4ub(58, 64, 72, 255);
+    rlVertex3f(nose.x, nose.y, nose.z), rlVertex3f(tail.x, tail.y, tail.z), rlVertex3f(tip.x, tip.y, tip.z);
+    // La estela: una cuña de espuma que se abre detras.
+    float side_x = -fz, side_z = fx;
+    Vector3 w0 = { tail.x, c.y + 0.03f, tail.z }, w1 = { tail.x - fx * 2.2f + side_x * 0.7f, c.y + 0.03f, tail.z - fz * 2.2f + side_z * 0.7f };
+    Vector3 w2 = { tail.x - fx * 2.2f - side_x * 0.7f, c.y + 0.03f, tail.z - fz * 2.2f - side_z * 0.7f };
+    rlColor4ub(240, 246, 250, (unsigned char)(150.0f * show));
+    rlVertex3f(w0.x, w0.y, w0.z), rlVertex3f(w1.x, w1.y, w1.z), rlVertex3f(w2.x, w2.y, w2.z);
+    rlEnd();
+    rlDrawRenderBatchActive();
+    rlEnableBackfaceCulling();
+}
+
+void hz_draw_fade(const Hazards *hz, int width, int height) {
+    if (hz->wake_fade <= 0.0f) return;
+    float k = Clamp(hz->wake_fade / WAKE_FADE * 1.4f, 0.0f, 1.0f);
+    DrawRectangle(0, 0, width, height, (Color){ 0, 0, 0, (unsigned char)(255.0f * k) });
+}
+
 void hz_draw_world(const Hazards *hz, const Terrain *t, const GameActions *ga, const Troop *troop, float time) {
+    draw_shark_fin(hz, time); // el mar abierto (docs/AGUA.md, fase 5)
     // Agujeros en el hielo: agua negra con esquirlas alrededor (los que se rompieron y los de pescar).
     for (int i = 0; i < hz->hole_count + ga->ice_hole_count; i++) {
         bool fishing = i >= hz->hole_count;
@@ -734,6 +828,17 @@ void hz_force(Hazards *hz, const char *what, Player *p, GameActions *ga, Troop *
         Vector3 at;
         if (fg_ice_hole_spot(ga, t, p, &at)) fg_ice_hole_open(ga, at);
         force_escort(hz, p, ga, troop, t, false);
+    } else if (!strcmp(what, "tiburon") || !strcmp(what, "mordida")) { // con --ir mar: mar adentro de la linea del tiburon
+        float d = sqrtf(p->pos.x * p->pos.x + p->pos.z * p->pos.z) + 1e-3f, dx = p->pos.x / d, dz = p->pos.z / d;
+        for (float r = 0.0f; r < 600.0f; r += 2.0f) { // hacia afuera, hasta 25 m mas alla de la linea
+            float x = p->pos.x + dx * r, z = p->pos.z + dz * r;
+            if (world_open_sea(t->world, x, z) < 25.0f) continue;
+            p->pos = (Vector3){ x, terrain_body_y(t, x, z), z };
+            p->yaw = atan2f(-dx, -dz); // mirando a la costa
+            break;
+        }
+        hz->shark = SHARK_WARN + 2.5f; // la aleta ya da vueltas
+        if (!strcmp(what, "mordida")) shark_bite(hz, p, ga, t, log, sizeof(log)), hz->wake_fade = 0.0f;
     } else if (!strcmp(what, "rescate") || !strcmp(what, "hundido")) { // con --ir lago en invierno, sobre el hielo; hundido: sin
         onto_ice(p, t);                                                 // empezar el minijuego (espera a que lo saquen)
         toggle_escort(hz, ga, troop, p, 1e9f, log, sizeof(log));

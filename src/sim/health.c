@@ -211,8 +211,14 @@ float health_speed_scale(const Health *h) {
     if (h->down || h->dead) return 0.0f;
     float p = limb_penalty(h, PART_THIGH_L, PART_THIGH_R, 0.7f, 0.35f) + limb_penalty(h, PART_SHIN_L, PART_SHIN_R, 0.6f, 0.3f);
     if (h->blood < 0.7f) p += 0.7f - h->blood;
+    p += 0.25f * clampf(h->sequela, 0.0f, 1.0f); // las secuelas: un cuarto menos con todas
     return clampf(1.0f - p, 0.25f, 1.0f);
 }
+
+void health_add_sequela(Health *h, float amount) { h->sequela = clampf(h->sequela + amount, 0.0f, 1.0f); }
+float health_endurance_scale(const Health *h) { return 1.0f - 0.45f * clampf(h->sequela, 0.0f, 1.0f); }
+void health_sequela_tend(Health *h, float dt) { h->sequela = fmaxf(0.0f, h->sequela - dt / SEQUELA_TEND_SECONDS); }
+void health_sequela_cure(Health *h) { h->sequela = 0.0f; }
 
 float health_attack_scale(const Health *h) {
     if (h->down || h->dead) return 0.0f;

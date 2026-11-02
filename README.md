@@ -247,6 +247,14 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Los bordes (v0.11.4), la fase 5 y última del diseño del agua ([docs/AGUA.md](docs/AGUA.md)):
+- **Un muro de roca tras el canal del bosque:** del otro lado del canal se alza un muro de estratos levantados, de unos 120 m, en grises y ocres. Se ve desde la orilla, que quedó despejada, y desde lejos; no se alcanza.
+- **El mar abierto:** en la costa se nada hasta una línea mar adentro. Más allá aparece una aleta que da vueltas cada vez más cerca: si no vuelves hacia la orilla, el tiburón muerde.
+- **El jugador nunca muere:** tras la mordida, la pantalla se funde a negro y despiertas en la playa, herido en un muslo y con **secuelas**.
+- **Las secuelas:** menos velocidad, y el aguante rinde menos (correr cansa más y se recupera más despacio). No se curan solas: el **curandero** las trata de a poco mientras estás en el campamento, y el **druida** las cura de una vez («Curar mis secuelas», por dos hierbas y una miel).
+
+Pruebas: `--ir muro-canal` (el muro desde la orilla), `--ir mar --trampa tiburon` (la aleta) y `--ir mar --trampa mordida` (despertar en la playa con secuelas).
+
 Cómo se ve el agua (v0.11.3), la fase 4 del diseño del agua ([docs/AGUA.md](docs/AGUA.md)):
 - **El agua tiene su shader**, en la PC y en Android (GLSL 330 y GLSL ES 100, del mismo código). Si un teléfono no lo compila, el agua se ve como antes.
 - **Los lagos se mecen:** el agua sube y baja unos centímetros, dos ondas se cruzan a la deriva y brillan donde coinciden.

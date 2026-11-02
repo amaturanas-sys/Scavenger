@@ -169,6 +169,7 @@ typedef struct {
     Vector3 loot_pos[GA_LOOT];
     float loot_age[GA_LOOT]; // s en el suelo; < 0: hueco libre
     Armor *player_armor; // la armadura que lleva el jugador (la pone main cada cuadro; no se guarda)
+    Health *player_health; // la salud del jugador (la pone main cada cuadro; no se guarda): el druida cura las secuelas
     const Terrain *terrain; // el terreno (lo pone ga_update cada cuadro; no se guarda)
     Troop *troop_ref;       // la tribu (lo pone ga_update cada cuadro; no se guarda)
     // La mochila del jugador: su tamaño y donde esta (puesta, en el suelo, en la carreta o en un animal).
