@@ -18,7 +18,7 @@ src/
     memory_map.* mapa de memoria: exploracion, olvido, marcas
     champion.*   grandes guerreros: azar, historia, dones
     clock.*      reloj de juego: dias de 30 min, estaciones, luz y noche
-    climate.*    clima: temperatura, tiempo, nieve, lagos, glaciares
+    climate.*    clima: temperatura, tiempo, nieve, lagos, glaciares, el deshielo y el hielo del mar
     hazards.*    frio, barro, hielo, socavones, desierto, minijuego (QTE)
     health.*     vida, sangre y heridas (jugador, tribu, enemigos)
     combat.*     armas y sus rasgos (pico, maza, martillo, sable, lanza pesada, daga de anillo; templada o fragil), enemigos (y jinetes, el soldado del reino y su ejercito: infante pesado, arquero, ballestero y carro de guerra), reglas de cada golpe y su paso por la armadura, botin, inercia montada y armas que se traban
@@ -28,7 +28,7 @@ src/
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, produccion por oficio, efectos del campamento, forja, fabricar a mano (y el secado en el acopio), reparar (y untar con grasa)
-    world.*      el mundo de cada semilla: regiones, relieve, bordes, agua, pueblos, tribus y estructuras (docs/MUNDO.md)
+    world.*      el mundo de cada semilla: regiones, relieve, bordes, agua (y como esta en cada estacion: seca, helada), pueblos, tribus y estructuras (docs/MUNDO.md, docs/AGUA.md)
     hydro.*      la hidrologia: Priority-Flood, la suma del agua, los lagos por su desborde y los rios (docs/AGUA.md)
     city.*       las ciudades y aldeas: su economia por dia (gente, cosechas, granero, impuestos, talleres, tesoro, soldados y mercenarios), el saqueo de sus campos, sus precios, el tributo al kanato y el trazado que crece desde el centro
     army.*       el ejercito de los reinos y el asedio: lo que sale de la guarnicion segun el tesoro, la formacion cerrada, la velocidad del carro de guerra, las expediciones de castigo y su saqueo, la muralla y sus puertas (con el antemuro de la puerta acodada y el rodeo de los que entran y salen), la guerra, el cerco, el fuego, la rendicion y la ciudad tomada

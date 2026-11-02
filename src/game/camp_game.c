@@ -543,7 +543,7 @@ bool cg_marching(const GameActions *ga, const Member *m) {
 static bool site_ok(const Terrain *t, float x, float z) {
     if (!t) return true;
     float h = terrain_height(t, x, z);
-    if (terrain_water(t, x, z) > h - 0.1f) return false;
+    if (terrain_water_full(t, x, z) > h - 0.1f) return false; // ni en un cauce seco o helado: el agua vuelve
     float dx = terrain_height(t, x + 2.0f, z) - terrain_height(t, x - 2.0f, z), dz = terrain_height(t, x, z + 2.0f) - terrain_height(t, x, z - 2.0f);
     return fabsf(dx) < 1.4f && fabsf(dz) < 1.4f;
 }

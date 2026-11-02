@@ -209,8 +209,78 @@ float world_land(const World *w, float x, float z);
 // agua sale solo por su rio de desborde (docs/AGUA.md, pagina 9).
 float world_lake_shore(const World *w, int i);
 // Superficie del agua en (x, z), o -1e9 si no hay. flood: crecida estacional de lagos y
-// rios (el mar no crece). kind (si no es NULL): que agua es.
+// rios (el mar no crece). kind (si no es NULL): que agua es. Es el agua completa, la de los cauces llenos:
+// sirve para no construir en un cauce. La de cada estacion (seca o helada) es world_water_now.
 float world_water(const World *w, float x, float z, float flood, WaterKind *kind);
+
+// ------------------------------------------------------------------ las estaciones del agua
+// docs/AGUA.md, fase 2. Lo que hace falta del clima (src/sim/climate.h) para saber como esta cada agua:
+//  - los rios llevan la lluvia de su cuenca y el deshielo del glaciar (River.melt). Con helada el glaciar no
+//    suelta agua, y los que dependen de el se secan: queda el cauce de grava, con unos charcos;
+//  - con frio el agua se hiela, primero la de lo alto y la chica (charcos, arroyos, lagos chicos); al final,
+//    los rios grandes y el canal. El mar se hiela desde la costa, donde es bajo;
+//  - el frente del glaciar avanza en invierno y retrocede en verano.
+typedef struct {
+    float flood;     // crecida de los lagos sobre su nivel base (m); los rios y el canal, la mitad; el mar no crece
+    float temp;      // temperatura media del dia en el llano del campamento (grados; Climate.temp_mean)
+    float temp_late; // la de dos dias antes (Climate.temp_late): la que sienten los lagos grandes y el canal
+    float melt;      // el deshielo del glaciar que corre ahora [0, 1] (Climate.melt)
+    float sea_ice;   // el hielo del mar en la costa [0, 1] (Climate.sea_ice)
+} WaterSeason;
+// La estacion del agua completa (la de world_water): todo el deshielo y nada de hielo.
+WaterSeason world_full_season(float flood);
+
+// Como esta un cauce (crece al final).
+typedef enum {
+    CHANNEL_WET,    // con agua
+    CHANNEL_DRY,    // seco: el cauce de grava, con unos charcos
+    CHANNEL_FROZEN, // helado: el hielo aguanta (ICE_WALKABLE, src/sim/hazards.h)
+    CHANNEL_STATES
+} ChannelState;
+#define WORLD_DRY_SHARE 0.2f  // un rio se seca si corre menos de esta parte de su agua...
+#define WORLD_FULL_SHARE 0.6f // ... y desde esta parte, su cauce va lleno
+// La parte del agua de un tramo que corre ahora [0, 1]: la de la lluvia y los lagos siempre, la del deshielo
+// segun la estacion.
+float world_river_share(const World *w, int river, const WaterSeason *s);
+ChannelState world_channel_state(const World *w, int river, const WaterSeason *s);
+// Cuanto sube (o baja) el nivel de un tramo sobre su nivel base (River.level), en m: la mitad de la crecida,
+// menos lo que baja con menos agua. El que sale de un lago nunca queda mas alto que el lago.
+float world_river_offset(const World *w, int river, const WaterSeason *s);
+// El nivel del agua en el punto k de un tramo en esa estacion (cerca de su boca baja con el agua que lo recibe:
+// sin escalones en la junta), o -1e9 si esta seco y ahi no queda un charco; ice (si no es NULL): su hielo.
+float world_river_level(const World *w, int river, int k, const WaterSeason *s, float *ice);
+// El hielo [0, 1] de un lago y de un tramo (con ICE_WALKABLE, aguanta). Pesa la temperatura de su altura
+// (mas fria arriba) y, en los lagos, su tamaño: los chicos siguen el aire de hoy y los grandes, el de dos dias
+// antes (se hielan despues y se deshielan despues).
+float world_lake_ice(const World *w, int lake, const WaterSeason *s);
+float world_river_ice(const World *w, int river, const WaterSeason *s);
+// El hielo del mar en (x, z), con el fondo del mar ahi (sea_floor, el relieve bajo el agua).
+float world_sea_ice(const World *w, float x, float z, float sea_floor, const WaterSeason *s);
+// Cuanto tiene que avanzar el glaciar (Climate.glacier) para cubrir (x, z): 0 o menos junto al muro de hielo
+// (siempre), 1 en lo mas lejos que llega su lengua; mas de 1, nunca (fuera del altiplano, 2).
+float world_glacier_reach(const World *w, float x, float z);
+
+// El agua de un punto en una estacion.
+typedef struct {
+    float level;     // la superficie del agua o del hielo, o -1e9 si no hay (un cauce seco, sin charco)
+    WaterKind kind;  // WATER_NONE si no hay
+    float ice;       // [0, 1]
+    int lake, river; // el lago o el tramo de rio de esa agua, o -1
+} WaterNow;
+float world_water_now(const World *w, float x, float z, const WaterSeason *s, WaterNow *out);
+// Lo mismo en dos pasos, para quien lo pide muchas veces en el mismo lugar (las mallas del agua): las aguas
+// que llegan a (x, z), que no cambian con la estacion, y como estan en una estacion.
+#define WATER_RIVERS_HERE 2
+typedef struct {
+    float ground;    // world_height (si hay un lago o un rio cerca; si no, -1e9)
+    float sea_floor; // el relieve bajo el mar, o -1e9 si no hay mar
+    float canal;     // el nivel base del canal, o -1e9
+    int lake;        // el lago que llega (el mas alto), o -1
+    int river[WATER_RIVERS_HERE];  // los tramos que llegan (los mas altos primero), o -1
+    float river_level[WATER_RIVERS_HERE], river_along[WATER_RIVERS_HERE];
+} WaterBodies;
+void world_water_bodies(const World *w, float x, float z, WaterBodies *b);
+float world_water_resolve(const World *w, const WaterBodies *b, float x, float z, const WaterSeason *s, WaterNow *out);
 // Orilla de rio: cuanto es (x, z) lecho de cantos rodados que el agua lava (1 en el cauce y la
 // orilla baja, 0 lejos), para rios de meandro, tributarios y arroyos; width (si no es NULL): el
 // ancho de ese rio. Los trenzados ya son de grava.

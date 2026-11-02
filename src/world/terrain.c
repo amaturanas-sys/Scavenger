@@ -13,10 +13,15 @@
 #include "rlgl.h"
 
 // Por triangulo: altura, pendiente, luz, mancha, y pesos de desierto, bosque, altiplano y
-// costa, distancia sobre el agua (para la orilla) y que es (suelo, copa o tronco).
-enum { A_H, A_SLOPE, A_LIGHT, A_PATCH, A_DESERT, A_FOREST, A_HIGH, A_FJORD, A_SHORE, A_EDGE, A_BANK, A_KIND, TRI_ATTRS };
+// costa, distancia sobre el agua (para la orilla), que es (suelo, copa o tronco) y cuanto tiene que
+// avanzar el glaciar para cubrirlo (world_glacier_reach).
+enum { A_H, A_SLOPE, A_LIGHT, A_PATCH, A_DESERT, A_FOREST, A_HIGH, A_FJORD, A_SHORE, A_EDGE, A_BANK, A_KIND, A_GLACIER, TRI_ATTRS };
 enum { KIND_GROUND, KIND_CANOPY, KIND_TRUNK, KIND_ROCK, KIND_BUSH };
-enum { W_LAKE, W_RIVER, W_SEA, W_GLACIAL, W_FOAM, W_MESHES }; // las mallas de agua de cada chunk (la espuma: rompientes y rapidos)
+// Las mallas de agua de cada chunk: el agua (cada vertice con el color de su agua y su hielo), el hielo que
+// aguanta (sin el brillo de las ondas) y la espuma (rompientes y rapidos).
+enum { W_WATER, W_ICE, W_FOAM };
+#define W_MESHES TERRAIN_WATER_MESHES
+enum { WC_GLACIAL = 1, WC_RAPIDS = 2 }; // lo de cada celda con agua
 
 // Texturas del suelo (assets/terrain/texturas.png, tools/assets/texturas_terreno.py): un atlas
 // low-res de 4x4 celdas; cada celda cubre 8 m. El orden es fijo.
@@ -53,18 +58,28 @@ void terrain_dry_step(const Terrain *t, float x0, float z0, float *x, float *z) 
     *x = x0, *z = z0;
 }
 
-float terrain_water(const Terrain *t, float x, float z) { return world_water(t->world, x, z, t->look.flood, NULL); }
+static WaterSeason look_season(const TerrainLook *L) { return (WaterSeason){ L->flood, L->temp, L->temp_late, L->melt, L->sea_ice }; }
+WaterSeason terrain_season(const Terrain *t) { return look_season(&t->look); }
+
+float terrain_water(const Terrain *t, float x, float z) {
+    WaterSeason s = look_season(&t->look);
+    return world_water_now(t->world, x, z, &s, NULL);
+}
+
+float terrain_water_full(const Terrain *t, float x, float z) { return world_water(t->world, x, z, t->look.flood, NULL); }
 
 float terrain_ice(const Terrain *t, float x, float z) {
-    WaterKind k;
-    world_water(t->world, x, z, t->look.flood, &k);
-    return k == WATER_SEA ? 0.0f : t->look.ice;
+    WaterSeason s = look_season(&t->look);
+    WaterNow n;
+    world_water_now(t->world, x, z, &s, &n);
+    return n.ice;
 }
 
 bool terrain_deep_water(const Terrain *t, float x, float z, float depth) {
-    WaterKind k;
-    float w = world_water(t->world, x, z, t->look.flood, &k);
-    return w > terrain_height(t, x, z) + depth && (k == WATER_SEA || !hazard_ice_walkable(t->look.ice));
+    WaterSeason s = look_season(&t->look);
+    WaterNow n;
+    float w = world_water_now(t->world, x, z, &s, &n);
+    return w > terrain_height(t, x, z) + depth && !hazard_ice_walkable(n.ice);
 }
 
 static Color mixc(Color a, Color b, float k) {
@@ -83,7 +98,7 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
     const Color dormant = { 140, 128, 98, 255 }, dirt = { 140, 110, 76, 255 }, rock = { 120, 116, 108, 255 };
     const Color snow = { 226, 232, 240, 255 }, glacier = { 196, 218, 236, 255 }, mud = { 112, 96, 72, 255 };
     const Color lakebed = { 158, 140, 108, 255 }, needles = { 72, 96, 54, 255 }, tundra = { 132, 136, 104, 255 };
-    const Color moss = { 96, 124, 92, 255 }, shingle = { 128, 128, 124, 255 };
+    const Color moss = { 96, 124, 92, 255 }, shingle = { 128, 128, 124, 255 }, moraine = { 146, 138, 124, 255 };
     Color grass = mixc(dry, green, L->greenness);
     grass = mixc(grass, ochre, L->autumn * 0.85f);
     grass = mixc(dormant, grass, 0.35f + 0.65f * Clamp(L->greenness + L->autumn, 0.0f, 1.0f));
@@ -100,6 +115,9 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
     float above_water = a[A_SHORE];
     if (above_water > 0.0f && above_water < TERRAIN_LAKE_FLOOD)
         c = above_water < 0.4f ? (a[A_FJORD] > 0.5f ? shingle : mud) : mixc(c, lakebed, 0.7f);
+    // Lo que el agua deja ver al bajar o al secarse (docs/AGUA.md, fase 2): la grava de los cauces del
+    // altiplano y la costa, y el limo de los lechos.
+    else if (above_water <= 0.0f && above_water > -2.5f) c = a[A_HIGH] + a[A_FJORD] > 0.5f ? shingle : mixc(lakebed, mud, 0.5f);
     if (!bare) c = mixc(c, mud, L->wetness * 0.35f * (1.0f - desert)); // suelo mojado (la arena no se embarra)
     // La playa de los fiordos: arena volcanica negra; en los rios, cantos rodados claros sin pasto.
     if (a[A_FJORD] > 0.5f && h_abs < SEA_LEVEL + 4.0f && slope < 0.6f) c = mixc(c, (Color){ 62, 60, 62, 255 }, Clamp((SEA_LEVEL + 4.0f - h_abs) * 0.6f, 0.0f, 1.0f));
@@ -114,6 +132,12 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
     if (a[A_HIGH] > 0.5f && a[A_EDGE] < 150.0f) c = mixc(c, (Color){ 176, 206, 232, 255 }, 0.5f + 0.5f * Clamp(slope * 2.0f, 0.0f, 1.0f));
     // Los barrancos del altiplano son permafrost: paredes de hielo todo el año, tambien en verano.
     else if (a[A_HIGH] > 0.5f && slope > 0.6f) c = mixc(c, (Color){ 184, 210, 230, 255 }, 0.75f);
+    // La lengua del glaciar: avanza en invierno sobre la morrena (el limo y la grava) que deja al retroceder en
+    // verano.
+    if (a[A_GLACIER] <= 1.0f) {
+        if (!bare) c = mixc(c, moraine, 0.85f);
+        c = mixc(c, (Color){ 214, 230, 246, 255 }, (L->glacier - a[A_GLACIER]) / 0.06f + 0.5f);
+    }
     // Nieve: cubre el llano segun la estacion (en manchas a medio cubrir); menos en lo empinado y en la arena.
     float cover = L->snow_cover * (slope > 0.75f ? 0.55f : 1.0f) * (1.0f - 0.6f * desert);
     if (patch < cover * 1.15f - 0.05f) c = snow;
@@ -170,6 +194,7 @@ static TerrainTex ground_tex(const float *a, float slope) {
     float hi = a[A_HIGH], fo = a[A_FOREST], fj = a[A_FJORD], de = a[A_DESERT];
     if (hi > 0.5f && a[A_EDGE] < 150.0f) return slope > 0.45f ? TT_SERAC : TT_ICE; // el frente del glaciar: seracs
     if (hi > 0.5f && slope > 0.6f) return TT_SERAC;                                // barrancos de permafrost
+    if (a[A_GLACIER] <= 1.0f && slope < 0.45f) return TT_SNOW;                     // la lengua del glaciar, o el limo que deja al retroceder
     if (fj > 0.5f && a[A_H] < SEA_LEVEL + 4.0f && slope < 0.6f) return TT_BLACKSAND; // la playa de arena volcanica
     if (a[A_BANK] > 0.45f && de < 0.5f && slope < 0.6f) return TT_COBBLES;       // el lecho de cantos que el rio lava
     if (a[A_H] > g_perma_snow && slope < 0.7f) return TT_SNOW;
@@ -364,39 +389,87 @@ static Model make_model(TriBuf *b) {
     return m;
 }
 
-// Agua de un chunk: una malla continua sobre la rejilla del suelo (2 m), con el nivel del agua
-// en cada vertice. Los rios bajan en pendiente (sin escalones) y la orilla queda bajo el
-// suelo (sin huecos): un vertice seco toma el nivel de sus vecinos con agua, asi el borde del
-// agua se mete bajo la orilla. Mallas: lagos, rios y canal, mar, deshielo turquesa y espuma; al
-// dibujarlas, los lagos suben con la crecida, los rios con la mitad, el mar nada.
-static Texture2D g_water_tex;
+// Agua de un chunk: una malla continua sobre la rejilla del suelo (2 m), con el nivel del agua de la estacion
+// en cada vertice. Los rios bajan en pendiente (sin escalones) y la orilla queda bajo el suelo (sin huecos): un
+// vertice seco toma el nivel de sus vecinos con agua, asi el borde del agua se mete bajo la orilla. Cada
+// vertice lleva el color de su agua (lago, rio, mar o deshielo turquesa) mezclado con el de su hielo; el
+// hielo que aguanta va en su propia malla (sin el brillo de las ondas), y la espuma en otra.
+static Texture2D g_water_tex, g_ice_tex;
 static bool g_water_tex_tried;
 
-static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
-    enum { N = CHUNK_CELLS, V = CHUNK_CELLS + 1, MAXT = N * N * 2 };
+// Las aguas de cada vertice (src/sim/world.h, WaterBodies) y lo de cada celda: se piden una vez por chunk.
+// gh: el suelo de los vertices (el de la malla del chunk).
+static void sample_water(const Terrain *t, Chunk *ch, int cx, int cz, const float (*gh)[CHUNK_CELLS + 1]) {
+    enum { N = CHUNK_CELLS, V = CHUNK_CELLS + 1 };
     const float cell = CHUNK_SIZE / N, ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
-    static float lv[V][V], gh[V][V];
-    static unsigned char wk[V][V];
-    static float verts[W_MESHES][MAXT * 9];
-    static unsigned char foam_alpha[MAXT * 3];
-    int count[W_MESHES] = { 0 };
+    static WaterBodies wb[V * V];
+    bool any = false;
     for (int j = 0; j < V; j++)
         for (int i = 0; i < V; i++) {
-            float x = ox + i * cell, z = oz + j * cell;
-            WaterKind k;
-            lv[j][i] = world_water(t->world, x, z, 0.0f, &k);
-            wk[j][i] = (unsigned char)k;
-            gh[j][i] = terrain_height(t, x, z);
+            WaterBodies *b = &wb[j * V + i];
+            world_water_bodies(t->world, ox + i * cell, oz + j * cell, b);
+            any = any || b->sea_floor > -1e8f || b->canal > -1e8f || b->lake >= 0 || b->river[0] >= 0;
         }
+    if (!any) return; // tierra adentro: sin agua (la mayoria de los chunks)
+    ch->wbody = MemAlloc(V * V * sizeof(WaterBodies));
+    ch->wground = MemAlloc(V * V * sizeof(float));
+    ch->wcell = MemAlloc(N * N);
+    memcpy(ch->wbody, wb, sizeof(wb));
+    for (int j = 0; j < V; j++)
+        for (int i = 0; i < V; i++) ch->wground[j * V + i] = gh[j][i];
+    for (int j = 0; j < N; j++)
+        for (int i = 0; i < N; i++) {
+            bool wet = false;
+            for (int c = 0; c < 4; c++) {
+                const WaterBodies *b = &wb[(j + (c >> 1)) * V + i + (c & 1)];
+                wet = wet || b->sea_floor > -1e8f || b->canal > -1e8f || b->lake >= 0 || b->river[0] >= 0;
+            }
+            unsigned char f = 0;
+            float mx = ox + (i + 0.5f) * cell, mz = oz + (j + 0.5f) * cell;
+            if (wet && world_region_weight(t->world, REGION_HIGHLAND, mx, mz) > 0.5f) f |= WC_GLACIAL; // deshielo turquesa
+            if (wet && world_river_bank(t->world, mx, mz, NULL) > 0.85f) f |= WC_RAPIDS;
+            ch->wcell[j * N + i] = f;
+        }
+}
+
+static void free_water(Chunk *ch) {
+    for (int m = 0; m < W_MESHES; m++)
+        if (ch->has_water[m]) UnloadModel(ch->water[m]);
+    memset(ch->has_water, 0, sizeof(ch->has_water));
+}
+
+// Las mallas del agua del chunk en la estacion de las mallas (t->meshed).
+static void mesh_water(const Terrain *t, Chunk *ch) {
+    enum { N = CHUNK_CELLS, V = CHUNK_CELLS + 1, MAXT = N * N * 2 };
+    free_water(ch);
+    ch->water_dirty = false;
+    if (!ch->wbody) return;
+    const float cell = CHUNK_SIZE / N, ox = ch->cx * CHUNK_SIZE, oz = ch->cz * CHUNK_SIZE;
+    static float lv[V][V], ice[V][V];
+    static unsigned char wk[V][V], dry[V][V];
+    static float verts[W_MESHES][MAXT * 9];
+    static unsigned char cols[W_MESHES][MAXT * 12];
+    int count[W_MESHES] = { 0 };
+    const WaterSeason *s = &t->meshed;
+    for (int j = 0; j < V; j++)
+        for (int i = 0; i < V; i++) {
+            WaterNow n;
+            lv[j][i] = world_water_resolve(t->world, &ch->wbody[j * V + i], ox + i * cell, oz + j * cell, s, &n);
+            wk[j][i] = (unsigned char)n.kind, ice[j][i] = n.ice;
+            dry[j][i] = n.kind == WATER_RIVER && world_river_share(t->world, n.river, s) < WORLD_DRY_SHARE; // un charco
+        }
+    // Los colores del agua (con el brillo de las ondas a la mitad: ver terrain_draw_water) y del hielo.
+    const Color lake = { 52, 96, 128, 200 }, river = { 62, 112, 140, 200 }, sea = { 36, 72, 104, 220 }, glacial = { 84, 168, 178, 210 };
+    const Color icec = { 184, 210, 232, 240 };
     for (int j = 0; j < N; j++)
         for (int i = 0; i < N; i++) {
             const int ci[4][2] = { { i, j }, { i, j + 1 }, { i + 1, j }, { i + 1, j + 1 } };
-            float sum = 0.0f, lowest = 1e9f, low_lv = 1e9f;
+            float sum = 0.0f, ice_sum = 0.0f, lowest = 1e9f, low_lv = 1e9f;
             int wet = 0, kind = WATER_NONE;
-            bool use[4] = { false, false, false, false };
+            bool use[4] = { false, false, false, false }, puddle = false;
             for (int c = 0; c < 4; c++) {
                 int x = ci[c][0], z = ci[c][1];
-                lowest = fminf(lowest, gh[z][x]);
+                lowest = fminf(lowest, ch->wground[z * V + x]);
                 if (wk[z][x] != WATER_NONE) low_lv = fminf(low_lv, lv[z][x]);
             }
             // Dos aguas a niveles muy distintos en una celda (un lago al borde de un cañon con su
@@ -405,47 +478,61 @@ static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
                 int x = ci[c][0], z = ci[c][1];
                 if (wk[z][x] == WATER_NONE || lv[z][x] > low_lv + 3.0f) continue;
                 use[c] = true;
-                sum += lv[z][x], wet++;
+                sum += lv[z][x], ice_sum += ice[z][x], wet++;
+                puddle = puddle || dry[z][x];
                 if (kind == WATER_NONE || wk[z][x] == WATER_SEA) kind = wk[z][x];
             }
             if (!wet) continue;
-            float avg = sum / (float)wet;
-            if (avg + (kind == WATER_SEA ? 0.0f : TERRAIN_LAKE_FLOOD) < lowest) continue; // el agua no llega a esta celda
-            int m = kind == WATER_SEA ? W_SEA : kind == WATER_LAKE ? W_LAKE : W_RIVER;
-            float mx = ox + (i + 0.5f) * cell, mz = oz + (j + 0.5f) * cell;
-            if (m != W_SEA && world_region_weight(t->world, REGION_HIGHLAND, mx, mz) > 0.5f) m = W_GLACIAL; // deshielo turquesa
-            float q[4][3];
+            float avg = sum / (float)wet, avg_ice = ice_sum / (float)wet;
+            if (avg <= lowest) continue; // el agua no llega a esta celda
+            Color base = kind == WATER_SEA ? sea : kind == WATER_LAKE ? lake : river;
+            if (kind != WATER_SEA && (ch->wcell[j * N + i] & WC_GLACIAL)) base = glacial;
+            int m = hazard_ice_walkable(avg_ice) ? W_ICE : W_WATER;
+            float q[4][3], qi[4];
             for (int c = 0; c < 4; c++) {
                 int x = ci[c][0], z = ci[c][1];
-                float y = use[c] ? lv[z][x] : avg; // seco: el nivel de los vecinos, bajo la orilla
-                q[c][0] = ox + x * cell, q[c][1] = y, q[c][2] = oz + z * cell;
+                q[c][0] = ox + x * cell, q[c][1] = use[c] ? lv[z][x] : avg, q[c][2] = oz + z * cell; // seco: bajo la orilla
+                qi[c] = use[c] ? ice[z][x] : avg_ice;
             }
             const int tri[6] = { 0, 1, 2, 2, 1, 3 };
-            for (int v = 0; v < 6; v++) memcpy(&verts[m][(count[m] * 3 + v) * 3], q[tri[v]], sizeof(q[0]));
+            for (int v = 0; v < 6; v++) {
+                int o = count[m] * 3 + v, c = tri[v];
+                memcpy(&verts[m][o * 3], q[c], sizeof(q[0]));
+                Color k = mixc(base, icec, qi[c]);
+                float boost = m == W_WATER ? 1.0f / 0.94f : 1.0f;
+                cols[m][o * 4 + 0] = (unsigned char)fminf(255.0f, k.r * boost), cols[m][o * 4 + 1] = (unsigned char)fminf(255.0f, k.g * boost);
+                cols[m][o * 4 + 2] = (unsigned char)fminf(255.0f, k.b * boost), cols[m][o * 4 + 3] = (unsigned char)Lerp(base.a, icec.a, Clamp(qi[c], 0.0f, 1.0f));
+            }
             count[m] += 2;
-            // Espuma: la rompiente del mar y los rapidos de los rios con cantos (no los trenzados);
-            // la opacidad sale de la profundidad en cada esquina: la franja sigue la orilla.
-            bool surf = kind == WATER_SEA ? lowest > avg - 2.0f
-                                          : kind == WATER_RIVER && lowest > avg - 0.8f && world_river_bank(t->world, mx, mz, NULL) > 0.85f;
+            // Espuma: la rompiente del mar y los rapidos de los rios con cantos (no los trenzados ni los
+            // charcos); la opacidad sale de la profundidad en cada esquina (la franja sigue la orilla). Con
+            // hielo, menos; helada, ninguna.
+            bool surf = m == W_WATER && !puddle &&
+                        (kind == WATER_SEA ? lowest > avg - 2.0f : kind == WATER_RIVER && lowest > avg - 0.8f && (ch->wcell[j * N + i] & WC_RAPIDS));
             if (surf) {
                 for (int v = 0; v < 6; v++) {
                     const float *p = q[tri[v]];
-                    int o = (count[W_FOAM] * 3 + v) * 3;
-                    verts[W_FOAM][o + 0] = p[0], verts[W_FOAM][o + 1] = p[1] + 0.06f, verts[W_FOAM][o + 2] = p[2];
+                    int o = count[W_FOAM] * 3 + v;
+                    verts[W_FOAM][o * 3 + 0] = p[0], verts[W_FOAM][o * 3 + 1] = p[1] + 0.06f, verts[W_FOAM][o * 3 + 2] = p[2];
                     int gx = (int)roundf((p[0] - ox) / cell), gz = (int)roundf((p[2] - oz) / cell);
-                    float depth = p[1] - gh[gz][gx], reach = kind == WATER_SEA ? 2.0f : 0.8f;
+                    float depth = p[1] - ch->wground[gz * V + gx], reach = kind == WATER_SEA ? 2.0f : 0.8f;
                     float wob = 0.6f + 0.4f * noise2d(p[0] * 0.15f, p[2] * 0.15f, 777u); // jirones
-                    foam_alpha[count[W_FOAM] * 3 + v] = (unsigned char)(230.0f * Clamp(1.0f - depth / reach, 0.0f, 1.0f) * wob);
+                    cols[W_FOAM][o * 4 + 0] = cols[W_FOAM][o * 4 + 1] = cols[W_FOAM][o * 4 + 2] = 255;
+                    cols[W_FOAM][o * 4 + 3] = (unsigned char)(230.0f * Clamp(1.0f - depth / reach, 0.0f, 1.0f) * wob * (1.0f - 2.0f * Clamp(qi[tri[v]], 0.0f, 0.5f)));
                 }
                 count[W_FOAM] += 2;
             }
         }
-    if (!g_water_tex_tried) { // la textura del agua (ondas), una vez
+    if (!g_water_tex_tried) { // las texturas del agua (ondas) y del hielo (grietas), una vez
         g_water_tex_tried = true;
-        const char *path = platform_asset_path("assets/terrain/agua.png");
-        if (platform_asset_exists(path)) g_water_tex = LoadTexture(path);
-        if (g_water_tex.id) SetTextureFilter(g_water_tex, TEXTURE_FILTER_POINT), SetTextureWrap(g_water_tex, TEXTURE_WRAP_REPEAT);
-        platform_note_asset("assets/terrain/agua.png", g_water_tex.id != 0);
+        static const char *FILES[2] = { "assets/terrain/agua.png", "assets/terrain/hielo.png" };
+        Texture2D *tex[2] = { &g_water_tex, &g_ice_tex };
+        for (int k = 0; k < 2; k++) {
+            const char *path = platform_asset_path(FILES[k]);
+            if (platform_asset_exists(path)) *tex[k] = LoadTexture(path);
+            if (tex[k]->id) SetTextureFilter(*tex[k], TEXTURE_FILTER_POINT), SetTextureWrap(*tex[k], TEXTURE_WRAP_REPEAT);
+            platform_note_asset(FILES[k], tex[k]->id != 0);
+        }
     }
     for (int m = 0; m < W_MESHES; m++) {
         ch->has_water[m] = count[m] > 0;
@@ -456,21 +543,19 @@ static void build_water(const Terrain *t, Chunk *ch, int cx, int cz) {
         mesh.vertices = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
         mesh.normals = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
         mesh.texcoords = MemAlloc(mesh.vertexCount * 2 * sizeof(float));
+        mesh.colors = MemAlloc(mesh.vertexCount * 4);
         memcpy(mesh.vertices, verts[m], mesh.vertexCount * 3 * sizeof(float));
+        memcpy(mesh.colors, cols[m], mesh.vertexCount * 4);
+        float span = m == W_ICE ? 10.0f : 6.0f; // ondas cada 6 m; las placas del hielo, de 10 m (las texturas se repiten)
         for (int i = 0; i < mesh.vertexCount; i++) {
             mesh.normals[i * 3 + 1] = 1.0f;
-            // Ondas cada 6 m (la textura se repite; en los rios, estirada a lo largo del agua).
-            mesh.texcoords[i * 2 + 0] = mesh.vertices[i * 3 + 0] / 6.0f;
-            mesh.texcoords[i * 2 + 1] = mesh.vertices[i * 3 + 2] / 6.0f;
-        }
-        if (m == W_FOAM) { // espuma: blanca, con transparencia por vertice
-            mesh.colors = MemAlloc(mesh.vertexCount * 4);
-            for (int i = 0; i < mesh.vertexCount; i++)
-                mesh.colors[i * 4 + 0] = mesh.colors[i * 4 + 1] = mesh.colors[i * 4 + 2] = 255, mesh.colors[i * 4 + 3] = foam_alpha[i];
+            mesh.texcoords[i * 2 + 0] = mesh.vertices[i * 3 + 0] / span;
+            mesh.texcoords[i * 2 + 1] = mesh.vertices[i * 3 + 2] / span;
         }
         UploadMesh(&mesh, false);
         ch->water[m] = LoadModelFromMesh(mesh);
-        if (m != W_FOAM && g_water_tex.id) ch->water[m].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = g_water_tex;
+        Texture2D tex = m == W_ICE && g_ice_tex.id ? g_ice_tex : g_water_tex;
+        if (m != W_FOAM && tex.id) ch->water[m].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = tex;
     }
 }
 
@@ -502,6 +587,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             at[A_EDGE] = world_edge_distance(t->world, mx, mz);
             at[A_BANK] = world_river_bank(t->world, mx, mz, NULL);
             at[A_KIND] = KIND_GROUND;
+            at[A_GLACIER] = world_glacier_reach(t->world, mx, mz);
             // La celda del atlas se repite cada TEX_SPAN m: cuatro celdas del suelo por textura.
             const int per = (int)(TEX_SPAN / cell);
             float u0 = (float)(((cx * CHUNK_CELLS + ix) % per + per) % per) / per, v0 = (float)(((cz * CHUNK_CELLS + iz) % per + per) % per) / per;
@@ -532,6 +618,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             if (r0 > tree_density(k, near_water)) continue;
             if (wl > y - 0.8f || y > t->look.snowline + 8.0f) continue; // en el agua o en el glaciar, no
             if (world_river_bank(t->world, x, z, NULL) > 0.45f) continue; // el lecho que el rio lava
+            if (world_glacier_reach(t->world, x, z) <= 1.0f) continue;    // ni en la morrena (el glaciar avanza en invierno)
             float sx = terrain_height(t, x + 2.0f, z) - y, sz = terrain_height(t, x, z + 2.0f) - y;
             if (sx * sx + sz * sz > 2.2f) continue;
             float dist;
@@ -570,7 +657,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             if (r0 < rd) {
                 float size = 0.4f + 1.4f * r1 * r1 + (k[REGION_HIGHLAND] + k[REGION_FJORD]) * 0.8f * r2;
                 push_rock(&b, (Vector3){ x, y, z }, size, h, at);
-            } else if (slope < 0.9f && y < t->look.snowline - 6.0f) { // ni en el glaciar
+            } else if (slope < 0.9f && y < t->look.snowline - 6.0f && world_glacier_reach(t->world, x, z) > 1.0f) { // ni en el glaciar ni en su morrena
                 push_bush(&b, (Vector3){ x, y, z }, 0.5f + 0.7f * r1, 0.4f + 0.8f * r2 * (0.5f + k[REGION_FOREST]), r2, at);
             }
         }
@@ -579,7 +666,8 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
     //  - fiordos: roquerios de basalto en la playa negra y las rompientes, farallones en el mar;
     //  - rios: cantos rodados claros en el cauce y la orilla;
     //  - desierto: farallones en estratos junto al cañon, torres de arenisca y creta blanca;
-    //  - altiplano: seracs en el frente del glaciar y tempanos en los lagos de deshielo.
+    //  - altiplano: seracs en el frente del glaciar y tempanos en los lagos de deshielo;
+    //  - el mar: tempanos que flotan en invierno (draw_features los muestra segun la estacion).
     const int FS = 8;
     const float fslot = CHUNK_SIZE / FS;
     for (int iz = 0; iz < FS && ch.feat_count < CHUNK_FEATS; iz++)
@@ -598,6 +686,8 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             if (k[REGION_FJORD] > 0.5f && y > SEA_LEVEL - 4.0f && y < SEA_LEVEL + 3.0f) { // la orilla del mar
                 if (y < SEA_LEVEL - 1.5f && r0 < 0.06f) kind = VF_SEA_STACK;
                 else if (r0 < 0.22f) kind = VF_BASALT;
+            } else if (wk == WATER_SEA && y < SEA_LEVEL - 4.0f) { // mar adentro
+                if (r0 < 0.09f) kind = VF_FLOE, y = SEA_LEVEL, scale = 0.7f + 0.8f * r1;
             } else if (k[REGION_DESERT] < 0.5f && wk == WATER_RIVER && r0 < 0.3f && world_river_bank(t->world, x, z, NULL) > 0.5f) {
                 kind = VF_BOULDER; // en el cauce
             } else if (k[REGION_DESERT] < 0.5f && wl < -1e8f && r0 < 0.22f && world_river_bank(t->world, x, z, NULL) > 0.6f) {
@@ -621,18 +711,19 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
     paint_chunk(t, &ch, false);
     // Los colores cambian con las estaciones: buffer dinamico.
     UploadMesh(&ch.model.meshes[0], true);
-    build_water(t, &ch, cx, cz);
+    sample_water(t, &ch, cx, cz, (const float (*)[CHUNK_CELLS + 1])hgrid);
+    mesh_water(t, &ch);
     return ch;
 }
 
 static void free_chunk(Chunk *c) {
     UnloadModel(c->model);
-    for (int m = 0; m < W_MESHES; m++)
-        if (c->has_water[m]) UnloadModel(c->water[m]);
+    free_water(c);
     MemFree(c->tri);
     c->tri = NULL;
+    if (c->wbody) MemFree(c->wbody), MemFree(c->wground), MemFree(c->wcell);
+    c->wbody = NULL, c->wground = NULL, c->wcell = NULL;
     c->loaded = false;
-    memset(c->has_water, 0, sizeof(c->has_water));
 }
 
 // ------------------------------------------------------------------ el horizonte lejano
@@ -645,8 +736,8 @@ static void free_chunk(Chunk *c) {
 #define FAR_VERTS (FAR_CELLS + 1)
 #define FAR_HAZE_NEAR 350.0f
 typedef struct {
-    float h, water, k[REGION_COUNT], edge;
-    unsigned char wkind;
+    float h, k[REGION_COUNT], edge, glacier;
+    WaterBodies wb; // sus aguas: far_fill las resuelve en la estacion de las mallas
 } FarVert;
 static struct {
     bool ready, valid;
@@ -659,12 +750,11 @@ static struct {
 
 static void far_sample(const Terrain *t, FarVert *f, int gx, int gz) {
     float x = gx * CHUNK_SIZE, z = gz * CHUNK_SIZE;
-    WaterKind wk;
-    f->h = world_height(t->world, x, z);
-    f->water = world_water(t->world, x, z, 0.0f, &wk);
-    f->wkind = (unsigned char)wk;
+    world_water_bodies(t->world, x, z, &f->wb);
+    f->h = f->wb.ground > -1e8f ? f->wb.ground : world_height(t->world, x, z);
     world_region_weights(t->world, x, z, f->k);
     f->edge = world_edge_distance(t->world, x, z);
+    f->glacier = world_glacier_reach(t->world, x, z);
 }
 
 // Mueve la ventana de datos a la nueva esquina: copia lo que ya estaba y pide lo nuevo.
@@ -687,16 +777,26 @@ static void far_fill(const Terrain *t) {
     const Color ice = { 198, 220, 236, 255 };
     float ccx = (t->center_cx + 0.5f) * CHUNK_SIZE, ccz = (t->center_cz + 0.5f) * CHUNK_SIZE;
     g_perma_snow = t->plain + 40.0f;
+    // El agua de cada vertice en la estacion de las mallas: su nivel (un cauce seco, ninguno) y su hielo.
+    static float wlv[FAR_VERTS * FAR_VERTS], wice[FAR_VERTS * FAR_VERTS];
+    static unsigned char wkind[FAR_VERTS * FAR_VERTS];
+    for (int j = 0; j < FAR_VERTS; j++)
+        for (int i = 0; i < FAR_VERTS; i++) {
+            int v = j * FAR_VERTS + i;
+            WaterNow n;
+            wlv[v] = world_water_resolve(t->world, &g_far.v[v].wb, (g_far.gx0 + i) * CHUNK_SIZE, (g_far.gz0 + j) * CHUNK_SIZE, &t->meshed, &n);
+            wice[v] = n.ice, wkind[v] = (unsigned char)n.kind;
+        }
     int tri = 0;
     for (int j = 0; j < FAR_CELLS; j++)
         for (int i = 0; i < FAR_CELLS; i++) {
             int gx = g_far.gx0 + i, gz = g_far.gz0 + j;
             bool hole = abs(gx - t->center_cx) <= CHUNK_RADIUS && abs(gz - t->center_cz) <= CHUNK_RADIUS;
-            const FarVert *q[4] = { &g_far.v[j * FAR_VERTS + i], &g_far.v[j * FAR_VERTS + i + 1], &g_far.v[(j + 1) * FAR_VERTS + i],
-                                    &g_far.v[(j + 1) * FAR_VERTS + i + 1] };
+            const int vi[4] = { j * FAR_VERTS + i, j * FAR_VERTS + i + 1, (j + 1) * FAR_VERTS + i, (j + 1) * FAR_VERTS + i + 1 };
+            const FarVert *q[4] = { &g_far.v[vi[0]], &g_far.v[vi[1]], &g_far.v[vi[2]], &g_far.v[vi[3]] };
             Vector3 p[4];
             for (int c = 0; c < 4; c++)
-                p[c] = (Vector3){ (gx + (c & 1)) * CHUNK_SIZE, fmaxf(q[c]->h, q[c]->water), (gz + (c >> 1)) * CHUNK_SIZE };
+                p[c] = (Vector3){ (gx + (c & 1)) * CHUNK_SIZE, fmaxf(q[c]->h, wlv[vi[c]]), (gz + (c >> 1)) * CHUNK_SIZE };
             const int idx[2][3] = { { 0, 2, 1 }, { 1, 2, 3 } };
             for (int s = 0; s < 2; s++, tri++) {
                 float *v = &m->vertices[tri * 9];
@@ -706,6 +806,7 @@ static void far_fill(const Terrain *t) {
                     continue;
                 }
                 const FarVert *a = q[idx[s][0]], *b = q[idx[s][1]], *c = q[idx[s][2]];
+                const int va = vi[idx[s][0]], vb = vi[idx[s][1]], vc = vi[idx[s][2]];
                 Vector3 p0 = p[idx[s][0]], p1 = p[idx[s][1]], p2 = p[idx[s][2]];
                 Vector3 n = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(p1, p0), Vector3Subtract(p2, p0)));
                 float at[TRI_ATTRS] = { 0 };
@@ -718,12 +819,13 @@ static void far_fill(const Terrain *t) {
                 at[A_FJORD] = (a->k[REGION_FJORD] + b->k[REGION_FJORD] + c->k[REGION_FJORD]) / 3.0f;
                 at[A_SHORE] = 99.0f;
                 at[A_EDGE] = (a->edge + b->edge + c->edge) / 3.0f;
-                float water = (a->water + b->water + c->water) / 3.0f;
+                at[A_GLACIER] = (a->glacier + b->glacier + c->glacier) / 3.0f;
+                float water = (wlv[va] + wlv[vb] + wlv[vc]) / 3.0f;
                 Color base;
-                if (water > at[A_H]) { // agua: el mar, los lagos y, en el altiplano, el deshielo turquesa
-                    const FarVert *w = a->water > -1e8f ? a : b->water > -1e8f ? b : c;
-                    base = w->wkind == WATER_SEA ? sea : at[A_HIGH] > 0.5f ? glacial : lake;
-                    if (w->wkind != WATER_SEA) base = mixc(base, ice, Clamp(t->look.ice, 0.0f, 1.0f));
+                if (water > at[A_H]) { // agua: el mar, los lagos y, en el altiplano, el deshielo turquesa; con su hielo
+                    int w = wlv[va] > -1e8f ? va : wlv[vb] > -1e8f ? vb : vc;
+                    base = wkind[w] == WATER_SEA ? sea : at[A_HIGH] > 0.5f ? glacial : lake;
+                    base = mixc(base, ice, wice[w]);
                 } else {
                     base = ground_color(&t->look, at, at[A_H] - t->plain);
                     float trees = Clamp(tree_density(a->k, 0.0f) / 0.62f, 0.0f, 1.0f) * (at[A_H] < t->look.snowline ? 0.85f : 0.0f);
@@ -798,55 +900,57 @@ void terrain_init(Terrain *t, unsigned seed) {
     t->seed = seed;
     t->world = world_for_seed(seed);
     t->plain = terrain_plain_height(t);
-    // Aspecto inicial: verano seco, sin nieve.
-    t->look = (TerrainLook){ .greenness = 0.4f, .snowline = t->plain + 40.0f };
+    // Aspecto inicial: verano seco, sin nieve, el glaciar atras y los cauces llenos.
+    t->look = (TerrainLook){ .greenness = 0.4f, .snowline = t->plain + 40.0f, .temp = 20.0f, .temp_late = 20.0f, .melt = 1.0f };
+    t->meshed = look_season(&t->look);
 }
 
 static bool look_changed(const TerrainLook *a, const TerrainLook *b) {
     return fabsf(a->greenness - b->greenness) > 0.02f || fabsf(a->autumn - b->autumn) > 0.02f ||
            fabsf(a->snow_cover - b->snow_cover) > 0.02f || fabsf(a->wetness - b->wetness) > 0.03f ||
-           fabsf(a->snowline - b->snowline) > 0.25f;
+           fabsf(a->snowline - b->snowline) > 0.25f || fabsf(a->glacier - b->glacier) > 0.01f;
+}
+
+// ¿Cambio el agua lo bastante para rehacer sus mallas? (la crecida, unos cm; el hielo, un cuarto de grado)
+static bool season_changed(const WaterSeason *a, const WaterSeason *b) {
+    return fabsf(a->flood - b->flood) > 0.03f || fabsf(a->temp - b->temp) > 0.25f || fabsf(a->temp_late - b->temp_late) > 0.25f ||
+           fabsf(a->melt - b->melt) > 0.02f || fabsf(a->sea_ice - b->sea_ice) > 0.02f;
 }
 
 void terrain_set_look(Terrain *t, const TerrainLook *look) {
     bool repaint = look_changed(&t->look, look);
-    if (!repaint) { // la crecida y el hielo solo cambian el agua, no el suelo
-        t->look.ice = look->ice;
-        t->look.flood = look->flood;
-        return;
+    // El agua que se consulta (terrain_water, terrain_ice) sigue al clima en cada cuadro; sus mallas, de a saltos.
+    t->look.flood = look->flood, t->look.temp = look->temp, t->look.temp_late = look->temp_late;
+    t->look.melt = look->melt, t->look.sea_ice = look->sea_ice, t->look.floes = look->floes;
+    WaterSeason now = look_season(&t->look);
+    bool water = season_changed(&t->meshed, &now);
+    if (water) {
+        t->meshed = now;
+        for (int i = 0; i < CHUNK_SLOTS; i++) t->slots[i].water_dirty = t->slots[i].loaded;
     }
-    t->look = *look;
-    for (int i = 0; i < CHUNK_SLOTS; i++)
-        if (t->slots[i].loaded) paint_chunk(t, &t->slots[i], true);
-    if (g_far.ready && t->has_center) far_fill(t);
+    if (repaint) {
+        t->look = *look;
+        for (int i = 0; i < CHUNK_SLOTS; i++)
+            if (t->slots[i].loaded) paint_chunk(t, &t->slots[i], true);
+    }
+    if ((repaint || water) && g_far.ready && t->has_center) far_fill(t);
+    // Las mallas del agua, de a unos chunks por cuadro: la estacion cambia despacio.
+    for (int i = 0, budget = 8; i < CHUNK_SLOTS && budget > 0; i++)
+        if (t->slots[i].loaded && t->slots[i].water_dirty) mesh_water(t, &t->slots[i]), budget--;
 }
 
 void terrain_draw_water(const Terrain *t, float time) {
     if (!t->has_center) return;
-    const Color water = { 52, 96, 128, 200 }, river = { 62, 112, 140, 200 }, sea = { 36, 72, 104, 220 }, ice = { 198, 220, 236, 240 };
-    float ripple = 0.06f * sinf(time * 1.3f); // oleaje leve: el brillo del agua respira (el hielo no)
-    const Color glacial = { 84, 168, 178, 210 };
-    for (int m = 0; m < W_MESHES; m++) {
-        if (m == W_FOAM) { // la espuma late con las olas; con hielo, no hay
-            float frozen = Clamp(t->look.ice, 0.0f, 1.0f);
-            unsigned char a = (unsigned char)(255.0f * (0.45f + 0.25f * sinf(time * 1.7f)) * (1.0f - 0.8f * frozen));
-            for (int i = 0; i < CHUNK_SLOTS; i++) {
-                const Chunk *ch = &t->slots[i];
-                if (ch->loaded && ch->has_water[m]) DrawModel(ch->water[m], (Vector3){ 0, 0.5f * t->look.flood, 0 }, 1.0f, (Color){ 255, 255, 255, a });
-            }
-            continue;
-        }
-        Color col = m == W_SEA ? sea : m == W_RIVER ? river : m == W_GLACIAL ? glacial : water;
-        float frozen = m == W_SEA ? 0.0f : Clamp(t->look.ice, 0.0f, 1.0f);
-        Color c = mixc(col, ice, frozen);
-        c.a = (unsigned char)Lerp(col.a, ice.a, frozen);
-        c = ColorBrightness(c, ripple * (1.0f - frozen));
-        float lift = m == W_SEA ? 0.0f : m == W_LAKE ? t->look.flood : 0.5f * t->look.flood;
+    // Oleaje leve: el brillo del agua respira (los colores de sus vertices van con 1/0,94: mesh_water); el
+    // hielo no. La espuma late con las olas.
+    unsigned char glow = (unsigned char)(255.0f * (0.94f + 0.06f * sinf(time * 1.3f)));
+    unsigned char foam = (unsigned char)(255.0f * (0.45f + 0.25f * sinf(time * 1.7f)));
+    const Color tint[W_MESHES] = { { glow, glow, glow, 255 }, WHITE, { 255, 255, 255, foam } };
+    for (int m = 0; m < W_MESHES; m++)
         for (int i = 0; i < CHUNK_SLOTS; i++) {
             const Chunk *ch = &t->slots[i];
-            if (ch->loaded && ch->has_water[m]) DrawModel(ch->water[m], (Vector3){ 0, lift, 0 }, 1.0f, c);
+            if (ch->loaded && ch->has_water[m]) DrawModel(ch->water[m], (Vector3){ 0 }, 1.0f, tint[m]);
         }
-    }
 }
 
 void terrain_draw_falls(const Terrain *t, float time) {
@@ -854,14 +958,20 @@ void terrain_draw_falls(const Terrain *t, float time) {
     const World *w = t->world;
     const Color sheet = { 150, 196, 220, 200 }, shine = { 236, 246, 252, 230 }, ice = { 198, 220, 236, 240 };
     float cx = ((float)t->center_cx + 0.5f) * CHUNK_SIZE, cz = ((float)t->center_cz + 0.5f) * CHUNK_SIZE;
-    float reach = ((float)CHUNK_RADIUS + 0.5f) * CHUNK_SIZE, frozen = Clamp(t->look.ice, 0.0f, 1.0f), lift = 0.5f * t->look.flood;
+    float reach = ((float)CHUNK_RADIUS + 0.5f) * CHUNK_SIZE;
+    const WaterSeason *season = &t->meshed; // como el agua de las mallas
     rlDrawRenderBatchActive();
     rlDisableBackfaceCulling(); // la cortina se ve de los dos lados
     rlBegin(RL_TRIANGLES);
     for (int i = 0; i < w->fall_count; i++) {
         const Waterfall *f = &w->falls[i];
         if (fabsf(f->x - cx) > reach || fabsf(f->z - cz) > reach) continue;
-        float ax = cosf(f->yaw), az = -sinf(f->yaw), hw = f->width * 0.5f + 0.5f; // a lo ancho de la caida
+        // Su rio: seco, no cae nada; con poca agua, una cortina angosta; helado, de hielo y sin espuma.
+        if (f->river >= 0 && world_channel_state(w, f->river, season) == CHANNEL_DRY) continue;
+        float full = f->river >= 0 ? Clamp(world_river_share(w, f->river, season) / WORLD_FULL_SHARE, 0.0f, 1.0f) : 1.0f;
+        float frozen = f->river >= 0 ? world_river_ice(w, f->river, season) : 0.0f;
+        float lift = f->river >= 0 ? world_river_offset(w, f->river, season) : 0.5f * season->flood;
+        float ax = cosf(f->yaw), az = -sinf(f->yaw), hw = (f->width * 0.5f + 0.5f) * (0.35f + 0.65f * full); // a lo ancho de la caida
         float top = f->top + lift + 0.05f, bot = f->bottom + lift + 0.05f;
         for (int s = 0; s < 4; s++) { // cuatro tiras, cada una con su brillo que baja
             float u0 = -1.0f + 0.5f * (float)s, u1 = u0 + 0.5f;
@@ -925,15 +1035,26 @@ void terrain_update(Terrain *t, Vector3 pos) {
     far_update(t);
 }
 
-// Las formaciones de voxeles de los chunks cargados (los tempanos suben con la crecida).
+// Las formaciones de voxeles de los chunks cargados (los tempanos de los lagos suben con la crecida). Los del
+// mar salen con el frio (TerrainLook.floes: cada uno desde su umbral) y van a la deriva, meciendose.
 static void draw_features(const Terrain *t) {
+    float time = (float)GetTime();
     for (int i = 0; i < CHUNK_SLOTS; i++) {
         const Chunk *ch = &t->slots[i];
         if (!ch->loaded) continue;
         for (int k = 0; k < ch->feat_count; k++) {
             const ChunkFeature *f = &ch->feat[k];
             Vector3 at = { f->x, f->y + (f->kind == VF_ICEBERG ? t->look.flood : 0.0f), f->z };
-            voxs_draw_feature((VoxFeature)f->kind, f->variant, at, f->yaw, f->scale, WHITE);
+            float yaw = f->yaw;
+            if (f->kind == VF_FLOE) {
+                float ph = (float)(hash2((int)f->x, (int)f->z, 0xF10Eu) & 1023u) / 1023.0f;
+                if (ph >= t->look.floes * 0.8f) continue;
+                ph *= 2.0f * PI;
+                at.x += 7.0f * sinf(time * 0.021f + ph), at.z += 5.0f * cosf(time * 0.017f + ph * 1.3f);
+                at.y += 0.06f * sinf(time * 0.9f + ph);
+                yaw += 0.2f * sinf(time * 0.013f + ph);
+            }
+            voxs_draw_feature((VoxFeature)f->kind, f->variant, at, yaw, f->scale, WHITE);
         }
     }
 }
@@ -957,11 +1078,12 @@ void terrain_unload(Terrain *t) {
 void terrain_unload_gpu(void) {
     if (g_atlas.id) UnloadTexture(g_atlas);
     if (g_water_tex.id) UnloadTexture(g_water_tex);
+    if (g_ice_tex.id) UnloadTexture(g_ice_tex);
     terrain_forget_gpu();
 }
 
 void terrain_forget_gpu(void) {
-    g_atlas = (Texture2D){ 0 }, g_water_tex = (Texture2D){ 0 };
+    g_atlas = (Texture2D){ 0 }, g_water_tex = (Texture2D){ 0 }, g_ice_tex = (Texture2D){ 0 };
     g_atlas_tried = g_water_tex_tried = false;
     g_far.ready = g_far.valid = false;
 }

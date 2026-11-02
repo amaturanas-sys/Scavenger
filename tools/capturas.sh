@@ -36,9 +36,23 @@ shot 15_botin 30 --botin
 shot 16_galeria 40 --galeria
 # El mundo (docs/MUNDO.md): a pie en cada sitio (verano, mediodia) y la vista orbital.
 for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida tribu rival kurgan caravasar ovoo ciudad \
-         lago desborde cascada; do
+         lago desborde cascada lengua; do
     shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.12
 done
+# Las estaciones del agua (docs/AGUA.md, fase 2): el mismo lugar en dos momentos del año. El rio del glaciar
+# antes y despues de secarse; el lago antes y despues de helarse; el mar al romperse su hielo y helado; la lengua
+# del glaciar en la primavera y retirada en el verano.
+shot estacion_meandro_otono 90 --dia 17 --minuto 7 --ir meandro --camara 0.3
+shot estacion_meandro_invierno 90 --dia 20 --minuto 7 --ir meandro --camara 0.3
+shot estacion_lago_otono 90 --dia 21 --minuto 7 --ir lago --dron 30 --camara 0.45
+shot estacion_lago_invierno 90 --dia 25 --minuto 7 --ir lago --dron 30 --camara 0.45
+shot estacion_mar_deshielo 90 --dia 5 --minuto 7 --ir mar --camara 0.2
+shot estacion_mar_invierno 90 --dia 26 --minuto 7 --ir mar --camara 0.2
+shot estacion_lengua_primavera 90 --dia 6 --minuto 7 --ir lengua --camara 0.25
+shot estacion_lengua_verano 90 --dia 9 --minuto 7 --ir lengua --camara 0.25
+mkdir -p "$ROOT/docs/mundo"
+montage "$OUT"/estacion_{meandro_otono,meandro_invierno,lago_otono,lago_invierno,mar_deshielo,mar_invierno,lengua_primavera,lengua_verano}.png \
+    -tile 2x4 -geometry +0+0 -depth 8 "$ROOT/docs/mundo/estaciones.png" 2>/dev/null && echo "  docs/mundo/estaciones.png"
 # El kit de edificios (docs/ARQUITECTURA_EDAD_DEL_HIERRO.md): las variantes de cada tipo en cada region
 # (la muralla, las ruinas y las obras de la tribu tambien) y las plazas de las cinco capitales, desde arriba.
 for k in casa palacio fundicion cuartel carpinteria granero templo carreta muralla torre puerta fortaleza enterrada \

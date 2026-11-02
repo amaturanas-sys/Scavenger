@@ -1,8 +1,9 @@
 # El agua: ríos, lagos, hielo y mar
 
 El diseño del usuario (seis páginas a mano, noviembre de 2026), pasado a reglas del juego y repartido en cinco
-fases. La **fase 1 (v0.11.0)** ya está: el agua baja por donde debe y los lagos llenan sus depresiones. Las
-demás, abajo, con lo que hace falta para cada una.
+fases. Ya están la **fase 1 (v0.11.0)**: el agua baja por donde debe y los lagos llenan sus depresiones; y la
+**fase 2 (v0.11.1)**: cada agua cambia con las estaciones (se seca, se hiela, el mar se congela en la costa y el
+glaciar avanza y retrocede). Las demás, abajo, con lo que hace falta para cada una.
 
 ![El agua](mundo/agua.png)
 
@@ -16,12 +17,12 @@ río de meandros en la estepa · un río trenzado del deshielo · un arroyo junt
 |---|---|---|
 | **1. El nivel del mar es la base** | Las alturas medias bajan del altiplano al desierto, la estepa, el bosque y la costa, hasta el mar. | **Hecho (v0.11.0).** Altiplano ~82 m, desierto ~61, estepa ~40, bosque ~33 y costa ~26 (las medias medidas, con su relieve; `ALTITUDE[]` en `src/sim/world.c`). |
 | **2. Agua sobre el nivel del mar** | Los lagos están en las depresiones del altiplano, la estepa y el bosque. | **Hecho.** Cada depresión del relieve es un lago (también en la costa). El desierto solo tiene oasis. |
-| **3. Aguas abajo y estaciones** | En verano el glaciar retrocede y los cauces se llenan, y los ríos alimentan los lagos. En invierno los cauces quedan secos (la «huella») y los lagos se hielan. | **Fase 2.** Hoy el deshielo es la fuente de los ríos grandes, y cada río guarda cuánto de su agua es deshielo (`River.melt`): en invierno se secarán los que dependen del glaciar. |
+| **3. Aguas abajo y estaciones** | En verano el glaciar retrocede y los cauces se llenan, y los ríos alimentan los lagos. En invierno los cauces quedan secos (la «huella») y los lagos se hielan. | **Hecho (v0.11.1).** Los ríos del glaciar corren de mediados de la primavera a mediados del otoño; con helada se secan y queda su cauce de grava con unos charcos helados. La lengua del glaciar retrocede en verano. |
 | **4. Cambios de altura** | El agua siempre necesita una superficie por donde deslizarse y siempre cae. Sin superficie, es una cascada. | **Hecho.** El nivel de un río nunca sube. Donde cae 3 m o más con una pendiente de más del 25 %, hay una cascada: una cortina de agua con espuma al pie. Su aspecto fino es de la fase 4. |
 | **El mundo: un disco de cinco biomas** | Cada bioma tiene su borde y, entre biomas, transiciones con cordilleras y ríos. A tiene muros de hielo. B tiene un gran canal con acantilados y ríos sinuosos, y del otro lado, paredes de roca. D tiene un cañón con un muro de estratos. F tiene la costa con fiordos y un mar accesible hasta un límite. | **En parte.** Los bordes de A, B, D y F ya existían. Las **cordilleras** entre el altiplano y el desierto, y entre el altiplano y la costa, están hechas. El muro de roca tras el canal y el mar con su límite son de la fase 5. Tu croquis tiene la misma vecindad que el juego (A frente a B, D frente a F): no se movieron regiones. |
-| **5. El invierno** | a) Los lagos se cubren de hielo, que se rompe (peligro) o se perfora para pescar. b) Unos ríos se hielan y otros se secan. c) Hay hielo en la costa y témpanos en el mar. d) Los glaciares retroceden en verano. | **Fases 2 y 3.** Hoy el hielo es el mismo para todos los lagos y ríos (`climate.ice`), se cruza y se rompe bajo el jugador (`src/sim/hazards.h`, con rescate). |
+| **5. El invierno** | a) Los lagos se cubren de hielo, que se rompe (peligro) o se perfora para pescar. b) Unos ríos se hielan y otros se secan. c) Hay hielo en la costa y témpanos en el mar. d) Los glaciares retroceden en verano. | **b, c y d: hecho (v0.11.1).** a) Cada lago y cada río tiene su hielo, que se cruza y se rompe bajo el jugador (`src/sim/hazards.h`, con rescate); el agujero para pescar es de la fase 3. |
 | **6. Las texturas** | a) Vaivén en lagos y lagunas. b) Torrente en ríos y cascadas. c) Espuma en las orillas y donde el terreno o alguien toca el agua. d) Olas que entran y se retiran. | **Fase 4.** Hoy hay una textura de ondas que «respira» y espuma en orillas y rápidos. |
-| **7. La hondura** | En lo bajo se camina por el fondo, en lo hondo se nada, en invierno se camina sobre el hielo y el hielo se rompe. | **El jugador, ya** (vadea hasta 1,2 m, nada más hondo). **Fase 3:** los NPC y los animales, que hoy rodean el agua. |
+| **7. La hondura** | En lo bajo se camina por el fondo, en lo hondo se nada, en invierno se camina sobre el hielo y el hielo se rompe. | **El jugador, ya** (vadea hasta 1,2 m, nada más hondo; cruza el hielo que aguanta y los cauces secos). **Fase 3:** los NPC y los animales, que hoy rodean el agua honda (el hielo que aguanta y los cauces secos ya los cruzan). |
 | **8. El trazado de los ríos** | Desde donde nace, el río baja por la cota más baja; los ríos se ramifican como raíces. | **Hecho.** Priority-Flood más la suma del agua (abajo). |
 | **9. El agua necesita un contenedor** | El nivel de un lago es la altura de su punto de salida más bajo (el desborde), y de ahí sale su río. | **Hecho.** |
 
@@ -95,17 +96,79 @@ grande nace del glaciar y llega al mar o al canal. Con esta grilla, `world_heigh
 **Las partidas guardadas.** La semilla es la misma, pero el agua cambió de lugar. Si al cargar el jugador
 queda en agua honda, aparece en la orilla más cercana.
 
+## La fase 2 (v0.11.1): las estaciones del agua
+
+Todo es una función pura del clima de ese día (`src/sim/climate.h`) y del mundo: `world_water_now` en
+`src/sim/world.c` dice el agua de un punto en una estación (`WaterSeason`), con su hielo, y el juego la consulta
+en cada cuadro (`terrain_water`, `terrain_ice`). El agua «completa», la de los cauces llenos, sigue siendo
+`world_water`: con ella se generan el mundo, los pueblos y la flora, y no se construye en un cauce aunque hoy
+esté seco (`terrain_water_full`).
+
+1. **El clima del agua** (`Climate`):
+   - `melt`, el deshielo del glaciar que corre ahora: nada con helada, todo con calor;
+   - `temp_late`, la temperatura de dos días antes: la que sienten los lagos grandes y los ríos grandes, que
+     se enfrían y se entibian despacio;
+   - `sea_ice` y `floes`, el hielo de la costa y los témpanos: siguen la temperatura de tres días antes (el mar
+     es lo más lento). Los témpanos llegan antes que el hielo y se van después;
+   - `glacier`, cuánto avanzó el frente del glaciar: lo más al empezar la primavera, lo menos al empezar el
+     otoño (va detrás del frío).
+2. **Los cauces** (`ChannelState`: con agua, seco o helado). Cada tramo corre la parte de su agua que no es
+   deshielo, más el deshielo de ahora (`world_river_share`).
+   - Con menos del 20 %, el cauce se seca: queda la grava (o los cantos rodados) con unos charcos en lo hondo,
+     que se hielan antes que el río.
+   - Con menos del 60 %, el nivel baja hacia lo hondo del cauce (en el trenzado, hasta sus canales). Cerca de su
+     boca, un tramo baja con el agua que lo recibe, así no queda colgado sobre ella. El río que sale de un lago
+     nunca queda más alto que el lago.
+   - En el invierno se secan los ríos del glaciar (de 70 a 110 de los 130 a 160 tramos de cada semilla); los
+     de la lluvia y los lagos se hielan. Los del glaciar corren de nuevo desde mediados de la primavera.
+3. **El hielo** de cada agua (`world_lake_ice`, `world_river_ice`; aguanta desde 0,5, `ICE_WALKABLE`):
+   - **la altura:** 0,08 grados menos por metro sobre el campamento (más que en la realidad, para que se note);
+   - **el tamaño:** un lago chico sigue el aire de hoy; uno grande, el de dos días antes. Los chicos (el del
+     campamento, los oasis) se hielan de uno a tres días antes que los grandes, y los del altiplano antes que
+     los de la costa;
+   - **los ríos:** los arroyos y los charcos se hielan primero; los ríos grandes y el canal, al final.
+4. **El mar** se hiela desde la orilla, donde es bajo (`world_sea_ice`): con más frío, más lejos (hasta 17 m
+   de hondo), con el borde irregular. Mar adentro sigue abierto, y los témpanos flotan a la deriva. El hielo de
+   la costa se camina y se rompe como el de un lago.
+5. **El glaciar** (`world_glacier_reach`): su lengua avanza desde el pie del muro de hielo, en lóbulos, hasta
+   unos 400 m al final del invierno, y retrocede en el verano. Deja una morrena de limo y grava, sin pasto ni
+   árboles. Arriba, la nieve de todo el año sube y baja como antes (`Climate.snowline`).
+6. **Cómo se ve:**
+   - las mallas del agua de cada chunk se rehacen cuando la estación cambia lo suficiente (unos centímetros de
+     crecida o un cuarto de grado). Lo que no cambia con la estación (qué agua llega a cada vértice,
+     `WaterBodies`) se guarda al crear el chunk, así que rehacerlas cuesta menos de 0,1 ms por chunk;
+   - cada vértice lleva el color de su agua mezclado con el de su hielo. El hielo que aguanta va en su propia
+     malla, con la textura `assets/terrain/hielo.png` (placas con grietas, de `tools/assets/texturas_terreno.py`)
+     y sin el brillo de las ondas;
+   - las cascadas de un río seco desaparecen; las de uno helado son de hielo, sin espuma;
+   - los témpanos del mar son placas de vóxeles (`VF_FLOE`) que salen con el frío y se mecen a la deriva;
+   - el horizonte lejano usa la misma agua.
+7. **En el juego:** el jugador, la tribu, los enemigos y los animales cruzan los cauces secos y el hielo que
+   aguanta (y lo rompen como antes). Los peces no se ven ni se pescan donde el agua se fue. Las construcciones,
+   los árboles del campamento y el pasto que puede quemarse miran el agua completa.
+
+![Las estaciones del agua](mundo/estaciones.png)
+
+*El mismo lugar en dos momentos del año: un río de meandros del glaciar en otoño y ya seco · un lago glaciar
+antes y después de helarse · el mar al romperse su hielo en la primavera y helado en invierno · la lengua del
+glaciar en la primavera y retirada en el verano (`--ir meandro`, `lago`, `mar`, `lengua`, con `--dia`).*
+
+**Las pruebas** (`tests/test_main.c`, `test_water_seasons`):
+- el clima del agua: el deshielo, el hielo del mar (después de los témpanos) y el glaciar, sin saltos;
+- la estación llena es el agua de siempre (`world_water`), en todo el mundo;
+- en verano todos los cauces llevan agua; en invierno los del glaciar se secan (sin agua o con charcos helados)
+  y los de la lluvia y los lagos se hielan;
+- en cada estación, ningún tramo sube ni queda más colgado sobre el agua que lo recibe que con los cauces llenos,
+  y el río de un lago no queda más alto que el lago;
+- los lagos: ninguno helado en verano, todos en el invierno; los altos se hielan antes que los bajos, y los chicos
+  antes que los grandes;
+- el mar se hiela junto a la costa y no mar adentro;
+- el glaciar cubre siempre el pie del muro, más lejos solo en invierno, y nunca fuera del altiplano.
+
 ## Las fases que siguen
 
 Cada una va con su PR, el CI verde, su release, sus capturas y sus pruebas.
 
-- **Fase 2, v0.11.1, «Las estaciones del agua».**
-  - Cada cauce está con agua, seco o helado (`ChannelState`, en un solo header), según la estación y su
-    deshielo (`River.melt`). Los ríos del glaciar se secan en invierno y queda su huella (la grava, unos
-    charcos); los que salen de lagos o de la lluvia se hielan.
-  - El frente del glaciar retrocede en verano y avanza en invierno, y su deshielo llena los cauces.
-  - Los lagos se hielan según su tamaño y su altura: los chicos y los altos primero.
-  - Hay hielo en la costa y témpanos que flotan en el mar.
 - **Fase 3, v0.11.2, «Hielo, nado y pesca».**
   - Los NPC y los animales vadean, nadan, cruzan el hielo y caen al romperse (hoy rodean el agua honda).
   - Se puede hacer un agujero en el hielo para pescar, con una herramienta nueva del inventario.

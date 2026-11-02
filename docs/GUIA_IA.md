@@ -330,9 +330,9 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.11.0. La fase 1 del agua: las alturas del diseño del usuario, la hidrología (`src/sim/hydro.c`),
-  los ríos por donde baja el agua, los lagos por su desborde, las cascadas y dos cordilleras de frontera
-  ([AGUA.md](AGUA.md)).
+- **Versión:** 0.11.1. La fase 2 del agua: los cauces secos o helados según el deshielo y el clima
+  (`ChannelState`, `world_water_now`), el hielo de cada lago y cada río, el mar helado en la costa con sus
+  témpanos y la lengua del glaciar ([AGUA.md](AGUA.md)).
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
@@ -340,18 +340,16 @@ traba.
     v0.10.2);
   - las casas y los campos por persona (v0.10.4 y v0.10.7: 110 y 45 almas por casa, 180 y 40 por campo);
   - la verificación de la v0.10.9: el reparto Codespace → Claude, las reglas comunes y las guardas;
-  - el agua, fase 1 (v0.11.0).
+  - el agua, fases 1 y 2 (v0.11.0 y v0.11.1).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
   - el campamento nodal: descartado por el usuario (duplicaba el campamento);
-  - los cauces por estación: los rehace la fase 2 del agua.
+  - los cauces por estación: los rehizo la fase 2 del agua (v0.11.1).
 - **Lo que sigue:**
-  - **El agua, fases 2 a 5** ([AGUA.md](AGUA.md)): las estaciones del agua (cauces secos o helados según el
-    deshielo, `River.melt`; el glaciar que retrocede; el hielo en la costa); hielo, nado y pesca (los NPC y
-    los animales en el agua; el agujero para pescar); el shader del agua; los bordes (el muro tras el canal
-    y el tiburón: muerde, el jugador despierta herido en la playa, con secuelas que solo cura un curandero
-    o un druida).
+  - **El agua, fases 3 a 5** ([AGUA.md](AGUA.md)): hielo, nado y pesca (los NPC y los animales en el agua;
+    el agujero para pescar); el shader del agua; los bordes (el muro tras el canal y el tiburón: muerde, el
+    jugador despierta herido en la playa, con secuelas que solo cura un curandero o un druida).
   - **Lo que espera material del usuario** (PLAN_HERRAMIENTAS_IA.md): las imágenes de la D.2 y los
     cuerpos riggeados y los videos de la C.1.
 

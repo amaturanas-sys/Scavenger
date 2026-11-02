@@ -282,6 +282,20 @@ static bool build_feature(VoxFeature f, int v, VoxGrid *g) {
         erode_skin(g, seed, 0.5f, 0.2f);
         return true;
     }
+    case VF_FLOE: { // tempano del mar: una placa chata de hielo, de borde quebrado, que asoma un palmo
+        if (!vox_init(g, 18, 4, 14, 0.5f)) return false;
+        float rx = 6.0f + hrand(&rs) * 2.5f, rz = 4.5f + hrand(&rs) * 2.0f;
+        for (int z = 0; z < g->nz; z++)
+            for (int x = 0; x < g->nx; x++) {
+                float dx = ((float)x - 8.5f) / rx, dz = ((float)z - 6.5f) / rz, a = atan2f(dz, dx);
+                float edge = 1.0f + 0.44f * (vox_noise3(cosf(a) * 2.0f + 2.0f, sinf(a) * 2.0f + 2.0f, 0.5f, seed) - 0.5f); // borde quebrado
+                if (dx * dx + dz * dz > edge * edge) continue;
+                int top = 1 + (vox_noise3((float)x * 0.4f, 0.5f, (float)z * 0.4f, seed + 1u) > 0.62f); // unos bloques encima
+                for (int y = 0; y <= top; y++) vox_set(g, x, y, z, y == 0 ? M_ICE_B : M_ICE); // abajo, el azul del agua
+            }
+        erode_skin(g, seed, 0.3f, 0.15f);
+        return true;
+    }
     default: return false;
     }
 }
@@ -413,7 +427,7 @@ void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float s
         VoxGrid g;
         if (build_feature(f, variant & (VF_VARIANTS - 1), &g)) {
             g_feats[i].ok = to_model(&g, REGION_STEPPE, &g_feats[i].model, false);
-            g_feats[i].found_h = (f == VF_ICEBERG ? 3 : FOUND) * g.size;
+            g_feats[i].found_h = (f == VF_ICEBERG ? 3 : f == VF_FLOE ? 1 : FOUND) * g.size;
             vox_free(&g);
         }
     }

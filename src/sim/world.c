@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "animals.h"
+#include "hazards.h"
 #include "hydro.h"
 #include "lang.h"
 #include "noise.h"
@@ -370,46 +371,203 @@ float world_height(const World *w, float x, float z) {
     return h;
 }
 
-float world_water(const World *w, float x, float z, float flood, WaterKind *kind) {
-    float best = -1e9f;
-    WaterKind k = WATER_NONE;
+void world_water_bodies(const World *w, float x, float z, WaterBodies *b) {
+    b->ground = b->sea_floor = b->canal = -1e9f;
+    b->lake = -1;
+    for (int k = 0; k < WATER_RIVERS_HERE; k++) b->river[k] = -1, b->river_level[k] = -1e9f, b->river_along[k] = 0.0f;
     float th = atan2f(z, x), e = world_edge_distance(w, x, z);
     if (e < SHORE_E + 1100.0f) {
         float q[REGION_COUNT];
         quadrant_weights(warped_angle(w, x, z), q);
-        if (q[REGION_FJORD] > 0.05f && land(w, x, z) < SEA_LEVEL + 1.0f) best = SEA_LEVEL, k = WATER_SEA;
-        float ce = world_canal_offset(w, th);
-        if (q[REGION_FOREST] > 0.5f && fabsf(e - ce) < CANAL_HALF + 4.0f) {
-            float lv = canal_level(w, th) + 0.5f * flood;
-            if (lv > best) best = lv, k = WATER_CANAL;
+        if (q[REGION_FJORD] > 0.05f) {
+            float h = land(w, x, z);
+            if (h < SEA_LEVEL + 1.0f) b->sea_floor = h;
         }
+        float ce = world_canal_offset(w, th);
+        if (q[REGION_FOREST] > 0.5f && fabsf(e - ce) < CANAL_HALF + 4.0f) b->canal = canal_level(w, th);
     }
     // Un lago o un rio no flota: donde el suelo cae muy por debajo de su nivel (un cañon que
     // pasa junto a la cuenca) no hay agua suya, y manda la de abajo. Sin esto, el agua quedaba
     // en el aire con paredes hasta el fondo (blancas de hielo en invierno, turquesa en verano).
-    float ground = 0.0f;
-    bool have_ground = false;
+    float lake_lv = -1e9f;
     for (int i = 0; i < w->lake_count; i++) {
         const Lake *l = &w->lakes[i];
         float dx = x - l->x, dz = z - l->z;
-        if (dx * dx + dz * dz > l->r * l->r * 3.2f) continue;
-        if (lake_dist(w, l, x, z) < 1.3f && l->level + flood > best) {
-            if (!have_ground) ground = world_height(w, x, z), have_ground = true;
-            if (l->level - ground < WATER_MAX_DEPTH_LAKE) best = l->level + flood, k = WATER_LAKE;
-        }
+        if (dx * dx + dz * dz > l->r * l->r * 3.2f || l->level <= lake_lv || lake_dist(w, l, x, z) >= 1.3f) continue;
+        if (b->ground < -1e8f) b->ground = world_height(w, x, z);
+        if (l->level - b->ground < WATER_MAX_DEPTH_LAKE) b->lake = i, lake_lv = l->level;
     }
     for (int i = 0; i < w->river_count; i++) {
         const River *r = &w->rivers[i];
         if (!river_box(r, x, z, r->width * 1.5f)) continue;
-        float lv = 0.0f, d = river_dist(r, x, z, &lv, NULL, NULL);
+        float lv = 0.0f, along = 0.0f, d = river_dist(r, x, z, &lv, &along, NULL);
         float reach = r->kind == RIVER_BRAIDED ? r->width : r->width * 1.25f;
-        if (d < reach && lv + 0.5f * flood > best) {
-            if (!have_ground) ground = world_height(w, x, z), have_ground = true;
-            if (lv - ground < WATER_MAX_DEPTH_RIVER) best = lv + 0.5f * flood, k = WATER_RIVER;
-        }
+        if (d >= reach || lv <= b->river_level[WATER_RIVERS_HERE - 1]) continue;
+        if (b->ground < -1e8f) b->ground = world_height(w, x, z);
+        if (lv - b->ground >= WATER_MAX_DEPTH_RIVER) continue;
+        int k = WATER_RIVERS_HERE - 1; // los mas altos primero
+        for (; k > 0 && lv > b->river_level[k - 1]; k--)
+            b->river[k] = b->river[k - 1], b->river_level[k] = b->river_level[k - 1], b->river_along[k] = b->river_along[k - 1];
+        b->river[k] = i, b->river_level[k] = lv, b->river_along[k] = along;
     }
+}
+
+float world_water(const World *w, float x, float z, float flood, WaterKind *kind) {
+    WaterBodies b;
+    world_water_bodies(w, x, z, &b);
+    float best = -1e9f;
+    WaterKind k = WATER_NONE;
+    if (b.sea_floor > -1e8f) best = SEA_LEVEL, k = WATER_SEA;
+    if (b.canal > -1e8f && b.canal + 0.5f * flood > best) best = b.canal + 0.5f * flood, k = WATER_CANAL;
+    if (b.lake >= 0 && w->lakes[b.lake].level + flood > best) best = w->lakes[b.lake].level + flood, k = WATER_LAKE;
+    if (b.river[0] >= 0 && b.river_level[0] + 0.5f * flood > best) best = b.river_level[0] + 0.5f * flood, k = WATER_RIVER;
     if (kind) *kind = k;
     return best;
+}
+
+// ------------------------------------------------------------------ las estaciones del agua (docs/AGUA.md, fase 2)
+#define ICE_LAPSE 0.08f    // grados menos por metro sobre el llano del campamento (en el juego, la altura enfria mas)
+#define ICE_CANAL 1.5f     // el canal, ancho y hondo, guarda el calor: se hiela al final
+#define ICE_PUDDLE -1.5f   // un charco se hiela antes que su rio
+#define DRY_PUDDLES 0.3f   // en un cauce seco hay charco donde el ruido pasa de esto
+#define MOUTH_BLEND 80.0f  // m antes de la boca en que un rio baja hasta el agua que lo recibe
+#define GLACIER_ADVANCE 260.0f // m que avanza la lengua del glaciar sobre su pie (por el medio de sus lobulos)
+
+WaterSeason world_full_season(float flood) { return (WaterSeason){ flood, 30.0f, 30.0f, 1.0f, 0.0f }; }
+
+static float ice_of(float temp) { return clamp01((-temp - 1.0f) / 5.0f); } // como Climate.ice
+
+float world_river_share(const World *w, int i, const WaterSeason *s) {
+    if (i < 0 || i >= w->river_count) return 0.0f;
+    const River *r = &w->rivers[i];
+    return clamp01(1.0f - r->melt + r->melt * clamp01(s->melt));
+}
+
+ChannelState world_channel_state(const World *w, int i, const WaterSeason *s) {
+    if (world_river_share(w, i, s) < WORLD_DRY_SHARE) return CHANNEL_DRY;
+    return hazard_ice_walkable(world_river_ice(w, i, s)) ? CHANNEL_FROZEN : CHANNEL_WET;
+}
+
+static float river_deep(const River *r) { return 2.2f * fminf(1.0f, r->width / 5.0f); } // como world_height
+
+float world_river_offset(const World *w, int i, const WaterSeason *s) {
+    if (i < 0 || i >= w->river_count) return 0.0f;
+    const River *r = &w->rivers[i];
+    float full = clamp01(world_river_share(w, i, s) / WORLD_FULL_SHARE);
+    // Con menos agua, el nivel baja hacia lo hondo del cauce (en el trenzado, hasta sus canales).
+    float low = r->kind == RIVER_BRAIDED ? 0.55f : 0.4f + 0.85f * river_deep(r);
+    float off = 0.5f * s->flood - (1.0f - full) * low;
+    return r->source == RIVER_FROM_LAKE ? fminf(off, s->flood) : off;
+}
+
+// La temperatura de un tramo: la de su altura, mas lo que guarda segun su clase (los rios grandes van un poco
+// detras del aire; los arroyos, no) y menos si lleva poca agua.
+static float river_temp(const World *w, int i, const WaterSeason *s) {
+    static const float KIND[RIVER_KINDS] = { 1.5f, 1.5f, 0.5f, -0.5f }; // meandro, tributario, trenzado, arroyo
+    const River *r = &w->rivers[i];
+    float full = clamp01(world_river_share(w, i, s) / WORLD_FULL_SHARE), slow = r->kind == RIVER_CREEK ? 0.0f : 0.5f;
+    return lerpf(s->temp, s->temp_late, slow) - ICE_LAPSE * (r->level[r->n / 2] - w->camp_height) + KIND[r->kind] - 1.5f * (1.0f - full);
+}
+
+float world_river_ice(const World *w, int i, const WaterSeason *s) {
+    return i < 0 || i >= w->river_count ? 0.0f : ice_of(river_temp(w, i, s));
+}
+
+float world_lake_ice(const World *w, int i, const WaterSeason *s) {
+    if (i < 0 || i >= w->lake_count) return 0.0f;
+    const Lake *l = &w->lakes[i];
+    float big = smooth(20.0f, 150.0f, l->r); // los chicos (y los oasis) siguen el aire de hoy
+    return ice_of(lerpf(s->temp, s->temp_late, big) - ICE_LAPSE * (l->level - w->camp_height));
+}
+
+float world_sea_ice(const World *w, float x, float z, float sea_floor, const WaterSeason *s) {
+    if (s->sea_ice <= 0.0f || sea_floor < -1e8f) return 0.0f;
+    // Crece desde la orilla, donde es bajo, y con mas frio llega a lo mas hondo; el borde, irregular.
+    float n = 0.5f + 0.5f * noise2d(x * 0.012f, z * 0.012f, w->seed + 741u);
+    float reach = (1.0f + 11.0f * s->sea_ice) * (0.6f + 0.8f * n); // hasta 17 m de hondo: mar adentro sigue abierto
+    return clamp01((reach - (SEA_LEVEL - sea_floor)) / 3.0f) * smooth(0.0f, 0.4f, s->sea_ice);
+}
+
+float world_glacier_reach(const World *w, float x, float z) {
+    float e = world_edge_distance(w, x, z);
+    if (e > ICE_E + 30.0f + 1.5f * GLACIER_ADVANCE) return 2.0f;
+    float q[REGION_COUNT];
+    quadrant_weights(warped_angle(w, x, z), q);
+    if (q[REGION_HIGHLAND] < 0.5f) return 2.0f;
+    // Lenguas: el frente avanza mas por unos lados que por otros, y menos hacia las cordilleras de los costados.
+    float th = atan2f(z, x);
+    float lobe = 0.55f + 0.9f * (0.5f + 0.5f * noise2d(cosf(th) * 9.0f, sinf(th) * 9.0f, w->seed + 743u));
+    lobe *= fmaxf(0.05f, smooth(0.5f, 0.9f, q[REGION_HIGHLAND]));
+    return (e - ICE_E - 30.0f) / (GLACIER_ADVANCE * lobe);
+}
+
+// Cuanto cambia el nivel de un tramo en (along): lo suyo, y cerca de la boca baja con el agua que lo recibe si
+// esa baja mas (sin un escalon en la junta; esa agua, a su vez, puede bajar con la que la recibe a ella).
+static float river_offset_at(const World *w, int i, float along, const WaterSeason *s, int depth) {
+    const River *r = &w->rivers[i];
+    float off = world_river_offset(w, i, s), end = r->along[r->n - 1], k = smooth(end - MOUTH_BLEND, end, along);
+    if (k <= 0.0f) return off;
+    float to = off;
+    if (r->end == RIVER_TO_LAKE) to = s->flood;
+    else if (r->end == RIVER_TO_CANAL) to = 0.5f * s->flood;
+    else if (r->end == RIVER_TO_SEA) to = 0.0f;
+    else if ((r->end == RIVER_TO_NEXT || r->end == RIVER_TO_RIVER) && r->into >= 0 && r->into < w->river_count && depth < 16) {
+        const River *t = &w->rivers[r->into];
+        int j = 0; // la junta: el primer punto del tramo siguiente, o el punto del rio donde llega
+        for (int q = 0; r->end == RIVER_TO_RIVER && q < t->n; q++)
+            if (t->x[q] == r->x[r->n - 1] && t->z[q] == r->z[r->n - 1]) {
+                j = q;
+                break;
+            }
+        to = river_offset_at(w, r->into, t->along[j], s, depth + 1);
+    }
+    return to < off ? lerpf(off, to, k) : off;
+}
+
+// El nivel de un tramo en (along), con su hielo. Seco: solo unos charcos en lo hondo del cauce.
+static float river_now(const World *w, int i, float lv, float along, const WaterSeason *s, float *ice) {
+    const River *r = &w->rivers[i];
+    float t = river_temp(w, i, s);
+    *ice = ice_of(t);
+    if (world_river_share(w, i, s) < WORLD_DRY_SHARE) {
+        if (noise2d(along * 0.035f, (float)i * 3.7f, w->seed + 733u) < DRY_PUDDLES) return -1e9f;
+        *ice = ice_of(t + ICE_PUDDLE);
+        return lv - (r->kind == RIVER_BRAIDED ? 0.5f : 0.4f + 0.8f * river_deep(r));
+    }
+    return lv + river_offset_at(w, i, along, s, 0);
+}
+
+float world_river_level(const World *w, int i, int k, const WaterSeason *s, float *ice) {
+    float dummy;
+    if (!ice) ice = &dummy;
+    *ice = 0.0f;
+    if (i < 0 || i >= w->river_count || k < 0 || k >= w->rivers[i].n) return -1e9f;
+    return river_now(w, i, w->rivers[i].level[k], w->rivers[i].along[k], s, ice);
+}
+
+float world_water_resolve(const World *w, const WaterBodies *b, float x, float z, const WaterSeason *s, WaterNow *out) {
+    WaterNow n = { -1e9f, WATER_NONE, 0.0f, -1, -1 };
+    if (b->sea_floor > -1e8f) n.level = SEA_LEVEL, n.kind = WATER_SEA, n.ice = world_sea_ice(w, x, z, b->sea_floor, s);
+    if (b->canal > -1e8f && b->canal + 0.5f * s->flood > n.level) {
+        n.level = b->canal + 0.5f * s->flood, n.kind = WATER_CANAL;
+        n.ice = ice_of(s->temp_late - ICE_LAPSE * (b->canal - w->camp_height) + ICE_CANAL);
+    }
+    if (b->lake >= 0 && w->lakes[b->lake].level + s->flood > n.level) {
+        n.level = w->lakes[b->lake].level + s->flood, n.kind = WATER_LAKE;
+        n.ice = world_lake_ice(w, b->lake, s), n.lake = b->lake;
+    }
+    for (int k = 0; k < WATER_RIVERS_HERE && b->river[k] >= 0; k++) {
+        float ice, lv = river_now(w, b->river[k], b->river_level[k], b->river_along[k], s, &ice);
+        if (lv > n.level) n.level = lv, n.kind = WATER_RIVER, n.ice = ice, n.lake = -1, n.river = b->river[k];
+    }
+    if (out) *out = n;
+    return n.level;
+}
+
+float world_water_now(const World *w, float x, float z, const WaterSeason *s, WaterNow *out) {
+    WaterBodies b;
+    world_water_bodies(w, x, z, &b);
+    return world_water_resolve(w, &b, x, z, s, out);
 }
 
 float world_river_bank(const World *w, float x, float z, float *width) {
