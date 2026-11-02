@@ -366,6 +366,20 @@ static void world_reset(Terrain *terrain, Camp *camp, unsigned seed) {
     camp_init(camp, terrain, platform_asset_path("assets/models/estructura/vivienda/yurta_comun.glb"));
 }
 
+// Una partida de antes de la v0.11.0 (el agua cambio de lugar: docs/AGUA.md) puede dejar al jugador adentro de
+// un lago o de un rio hondo: aparece en la orilla mas cercana. true si lo movio.
+static bool ashore(const Terrain *t, Player *p) {
+    if (!terrain_deep_water(t, p->pos.x, p->pos.z, 1.0f)) return false;
+    for (float r = 4.0f; r <= 300.0f; r += 4.0f)
+        for (int k = 0; k < 24; k++) {
+            float a = (float)k / 24.0f * 2.0f * PI, x = p->pos.x + cosf(a) * r, z = p->pos.z + sinf(a) * r;
+            if (terrain_deep_water(t, x, z, 0.2f)) continue;
+            p->pos.x = x, p->pos.z = z, p->pos.y = terrain_height(t, x, z);
+            return true;
+        }
+    return false;
+}
+
 // Una semilla nueva para cada partida: el mismo mapa de regiones, otros rios, lagos y montañas.
 static unsigned fresh_seed(void) {
     unsigned s = (unsigned)time(NULL) * 2654435761u ^ (unsigned)(GetTime() * 1000003.0);
@@ -403,7 +417,8 @@ static void game_new(GameState *g, Terrain *terrain, Camp *camp, unsigned seed, 
 
 // Prueba: lleva al jugador a un sitio del mundo, mirando hacia lo que interesa. Lugares:
 // estepa, bosque, altiplano, fiordos, desierto (en su region); canal, muro, mar, hielo (el
-// borde); meandro, trenzado (los rios); capital, aldea, guarida.
+// borde); meandro, trenzado, arroyo, rapidos (los rios); cascada (la mas alta); lago, desborde (el lago mas
+// grande y su punto de desborde); capital, aldea, guarida.
 static void go_to(const Terrain *t, Player *p, const char *what) {
     const World *w = t->world;
     static const char *REG[REGION_COUNT] = { "estepa", "bosque", "altiplano", "fiordos", "desierto" };
@@ -460,6 +475,33 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
             if (h > best) best = h, x = w->peaks[i].x + 6.0f, z = w->peaks[i].z, lx = 0.0f, lz = 0.0f, ok = true;
         }
     }
+    if (!strcmp(what, "cascada")) { // la cascada mas grande tierra adentro (de alto por ancho): abajo, mirandola caer
+        int best = -1;
+        for (int i = 0; i < w->fall_count; i++) {
+            const Waterfall *a = &w->falls[i], *b = best >= 0 ? &w->falls[best] : NULL;
+            if (a->bottom < SEA_LEVEL + 1.0f || world_region(w, a->bx, a->bz) == REGION_DESERT) continue; // ni al mar ni al cañon
+            if (!b || (a->top - a->bottom) * fminf(a->width, 12.0f) > (b->top - b->bottom) * fminf(b->width, 12.0f)) best = i;
+        }
+        if (best >= 0) {
+            const Waterfall *f = &w->falls[best];
+            float dx = sinf(f->yaw), dz = cosf(f->yaw), side = 0.5f * f->width + 12.0f;
+            x = f->bx + dx * 35.0f - dz * side, z = f->bz + dz * 35.0f + dx * side;
+            lx = 0.5f * (f->x + f->bx), lz = 0.5f * (f->z + f->bz), ok = true;
+        }
+    }
+    if (!strcmp(what, "lago") || !strcmp(what, "desborde")) { // el lago mas grande (no el del campamento): en su orilla o en su desborde
+        int best = -1;
+        for (int i = 1; i < w->lake_count; i++) // sin el bosque delante
+            if (!w->lakes[i].oasis && world_region(w, w->lakes[i].x, w->lakes[i].z) != REGION_FOREST && (best < 0 || w->lakes[i].r > w->lakes[best].r))
+                best = i;
+        if (best >= 0) {
+            const Lake *l = &w->lakes[best];
+            float dx = l->spill_x - l->x, dz = l->spill_z - l->z, d = sqrtf(dx * dx + dz * dz) + 1e-3f;
+            if (!strcmp(what, "lago")) x = l->x - dx / d * l->r * 1.3f, z = l->z - dz / d * l->r * 1.3f; // del otro lado del desborde
+            else x = l->spill_x + dx / d * 25.0f, z = l->spill_z + dz / d * 25.0f;                    // pasando el desborde, mirando el lago
+            lx = l->x, lz = l->z, ok = true;
+        }
+    }
     for (int i = 0; i < w->river_count && !ok; i++) { // rapidos: en la orilla de un arroyo, mirando aguas abajo
         const River *rv = &w->rivers[i];
         if (strcmp(what, "rapidos") || rv->kind != RIVER_CREEK || rv->n < 12) continue;
@@ -472,7 +514,8 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
         const River *rv = &w->rivers[i];
         bool want = (!strcmp(what, "meandro") && rv->kind == RIVER_MEANDER) || (!strcmp(what, "trenzado") && rv->kind == RIVER_BRAIDED) ||
                     (!strcmp(what, "arroyo") && rv->kind == RIVER_CREEK);
-        if (!want) continue;
+        if (!want || rv->n < 8) continue; // un tramo largo
+        if (rv->kind == RIVER_MEANDER && world_region(w, rv->x[rv->n / 2], rv->z[rv->n / 2]) != REGION_STEPPE) continue; // el de la estepa
         int k = rv->n / 2;
         float dx = rv->x[k + 1] - rv->x[k], dz = rv->z[k + 1] - rv->z[k], l = sqrtf(dx * dx + dz * dz) + 1e-3f;
         float off = rv->width + 25.0f;
@@ -978,6 +1021,8 @@ int main(int argc, char **argv) {
                     in_game = true;
                     menu.screen = MENU_HIDDEN;
                     snprintf(log, sizeof(log), T("Partida cargada (hueco %d)."), menu.slot + 1);
+                    if (ashore(&terrain, &player))
+                        snprintf(log, sizeof(log), T("Partida cargada (hueco %d): donde estabas ahora hay agua y apareces en la orilla."), menu.slot + 1);
                 } else {
                     menu_message(&menu, err);
                 }
@@ -1156,6 +1201,8 @@ int main(int argc, char **argv) {
             if (save_read(start_load, &gs, err, sizeof(err))) {
                 world_reset(&terrain, &camp, g_hazards.seed);
                 snprintf(log, sizeof(log), T("Partida cargada (hueco %d)."), start_load + 1);
+                if (ashore(&terrain, &player))
+                    snprintf(log, sizeof(log), T("Partida cargada (hueco %d): donde estabas ahora hay agua y apareces en la orilla."), start_load + 1);
             }
             else snprintf(log, sizeof(log), "%s", err);
             start_load = -1;
@@ -1417,6 +1464,7 @@ int main(int argc, char **argv) {
         if (!gallery_mode) td_draw_world(&g_actions, &g_props, &terrain, &player, (float)GetTime()); // las caravanas
         if (!gallery_mode) dz_draw_world(&g_dz, &terrain, (float)GetTime());
         if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
+        if (!gallery_mode) terrain_draw_falls(&terrain, (float)GetTime());
         if (!gallery_mode) pg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime()); // la obra por ubicar, translucida
         hearth_draw_smoke(cam, (float)GetTime(), climate.wind, gallery_mode ? 1.0f : clock_light(world_time)); // el humo, oscurecido de noche como todo
         if (gallery_mode) hearth_draw_flames((float)GetTime(), climate.wind);

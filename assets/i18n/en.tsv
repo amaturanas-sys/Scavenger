@@ -1590,6 +1590,7 @@ Liberaste a un prisionero.	You freed a prisoner.
 Marcaste este lugar en el mapa.	You marked this place on the map.
 Más allá solo hay mar abierto: la tropa no se aventura.	Beyond lies only open sea: the troop will not venture out.
 Partida cargada (hueco %d).	Game loaded (slot %d).
+Partida cargada (hueco %d): donde estabas ahora hay agua y apareces en la orilla.	Game loaded (slot %d): there is water where you stood now, so you appear on the shore.
 Partida guardada en el hueco %d.	Game saved in slot %d.
 Puntería x%.2f  Monta x%.2f	Aim x%.2f  Riding x%.2f
 Puntería x%.2f  Monta x%.2f  Sanación %.0f%%	Aim x%.2f  Riding x%.2f  Healing %.0f%%

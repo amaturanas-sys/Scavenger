@@ -28,6 +28,8 @@ src/
     inventory.*  inventario de assets (lee assets/inventario.tsv)
     actions.*    manos y empunadura, acciones individuales, construcciones en grupo
     economy.*    acopio, comida y recoleccion diaria, produccion por oficio, efectos del campamento, forja, fabricar a mano (y el secado en el acopio), reparar (y untar con grasa)
+    world.*      el mundo de cada semilla: regiones, relieve, bordes, agua, pueblos, tribus y estructuras (docs/MUNDO.md)
+    hydro.*      la hidrologia: Priority-Flood, la suma del agua, los lagos por su desborde y los rios (docs/AGUA.md)
     city.*       las ciudades y aldeas: su economia por dia (gente, cosechas, granero, impuestos, talleres, tesoro, soldados y mercenarios), el saqueo de sus campos, sus precios, el tributo al kanato y el trazado que crece desde el centro
     army.*       el ejercito de los reinos y el asedio: lo que sale de la guarnicion segun el tesoro, la formacion cerrada, la velocidad del carro de guerra, las expediciones de castigo y su saqueo, la muralla y sus puertas (con el antemuro de la puerta acodada y el rodeo de los que entran y salen), la guerra, el cerco, el fuego, la rendicion y la ciudad tomada
     forge.*      la forja: las vetas de hierro y el hierro de pantano de cada mundo (de la semilla), que estacion sirve para cada receta (forja movil, hornos, taller) y la probabilidad del temple

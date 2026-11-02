@@ -3,20 +3,22 @@
 // partida (la semilla).
 //
 // Reglas fijas (iguales en todas las partidas); el norte es -Z y el este +X:
-//  - la estepa ocupa el centro (alli acampa la tribu), rodeada de rios de trayecto
-//    tortuoso (meandros) que la separan de las demas regiones;
+//  - la estepa ocupa el centro (alli acampa la tribu, en una loma suave);
 //  - al suroeste, la costa de fiordos, que termina en el mar;
-//  - al noroeste, un bosque de coniferas muy tupido, que termina en un canal sigmoideo del
-//    que salen rios tributarios;
+//  - al noroeste, un bosque de coniferas muy tupido, que termina en un canal sigmoideo;
 //  - al noreste, el desierto, que termina en un gran cañon y un muro de estratos;
-//  - al sureste, el altiplano glaciar, que termina en un muro de hielo; sus rios bajan
-//    trenzados por lechos de grava;
-//  - cada region tiene su altitud media (de la costa, la mas baja, al altiplano, la mas alta);
+//  - al sureste, el altiplano glaciar, que termina en un muro de hielo, entre dos cordilleras (hacia el
+//    desierto y hacia los fiordos);
+//  - las altitudes medias, de mayor a menor: altiplano, desierto, estepa, bosque y fiordos (el mar);
+//  - el agua baja (docs/AGUA.md, src/sim/hydro.h): los rios nacen en el deshielo del glaciar y en las
+//    lluvias, se juntan como raices y terminan en el canal del bosque, en el mar o en el cañon; trenzados
+//    en el altiplano, de meandros en la estepa, tributarios en el bosque. Cada lago llena una depresion
+//    hasta su punto de desborde, y de ahi sale su rio;
 //  - los asentamientos, las guaridas y los reinos vecinos son de su region.
 //
-// Lo que cambia con la semilla: el contorno fractal del borde, el trazado de los rios y sus
-// meandros, la forma y el sitio de los lagos y las montañas, las fronteras entre regiones
-// (dentro de su cuadrante) y donde caen los asentamientos, las guaridas y las capitales.
+// Lo que cambia con la semilla: el contorno fractal del borde, el relieve (y con el, por donde bajan los
+// rios y donde quedan los lagos), las montañas, las fronteras entre regiones (dentro de su cuadrante) y
+// donde caen los asentamientos, las guaridas y las capitales.
 //
 // Todo es una funcion pura del mundo y de (x, z): el render, la fisica y la IA consultan
 // la altura y el agua sin estado propio. world_for_seed() guarda el mundo generado.
@@ -34,31 +36,68 @@ typedef enum { REGION_STEPPE, REGION_FOREST, REGION_HIGHLAND, REGION_FJORD, REGI
 typedef enum { WATER_NONE, WATER_LAKE, WATER_RIVER, WATER_CANAL, WATER_SEA } WaterKind;
 
 #define LAKES_MAX 32
-#define RIVERS_MAX 48
-#define RIVER_PTS 160
-#define PEAKS_MAX 48
+#define RIVERS_MAX 192 // tramos: un rio largo se parte en varios (de hasta RIVER_PTS puntos, cada 20 m)
+#define RIVER_PTS 96
+#define PEAKS_MAX 64
+#define FALLS_MAX 48
 #define SETTLEMENTS_MAX 24
 #define DENS_MAX 56
 #define CANAL_SAMPLES 360
 
 typedef struct {
     float x, z, r;  // centro y radio (la orilla se deforma con ruido)
-    float level;    // nivel base del agua (absoluto)
+    float level;    // nivel base del agua (absoluto): el de su punto de desborde
     bool oasis;     // en el desierto
     bool glacial;   // del altiplano: agua turquesa de deshielo
+    float spill_x, spill_z; // el punto de desborde: por ahi sale su rio
+    int outflow;    // el tramo de rio que sale por el desborde (indice en rivers), o -1 (los oasis)
 } Lake;
 
 // Arroyo: un cauce chico (2 a 3,5 m) que baja de lomas, cumbres y bosques hasta un rio.
 typedef enum { RIVER_MEANDER, RIVER_TRIBUTARY, RIVER_BRAIDED, RIVER_CREEK, RIVER_KINDS } RiverKind;
+// De donde viene el agua de un rio (crece al final).
+typedef enum {
+    RIVER_FROM_RAIN,    // las lluvias de su cuenca
+    RIVER_FROM_GLACIER, // el deshielo del glaciar del altiplano (en invierno, menos: docs/AGUA.md)
+    RIVER_FROM_LAKE,    // el desborde de un lago
+    RIVER_SOURCES
+} RiverSource;
+// Donde termina un tramo (crece al final).
+typedef enum {
+    RIVER_TO_SEA,   // el mar de los fiordos
+    RIVER_TO_CANAL, // el canal del bosque
+    RIVER_TO_SINK,  // el cañon del desierto, que se la traga
+    RIVER_TO_LAKE,  // un lago (into: su indice)
+    RIVER_TO_RIVER, // otro rio, donde se junta (into: el tramo)
+    RIVER_TO_NEXT,  // sigue en el tramo siguiente del mismo rio (into)
+    RIVER_TO_EDGE,  // el borde del mundo
+    RIVER_ENDS
+} RiverEnd;
 
+// Un tramo de rio, de la cabecera (punto 0) a la boca: el nivel del agua nunca sube.
 typedef struct {
     float x[RIVER_PTS], z[RIVER_PTS], level[RIVER_PTS];
-    float along[RIVER_PTS]; // metros recorridos hasta cada punto (para los canales trenzados)
+    float along[RIVER_PTS]; // metros recorridos hasta cada punto, desde la cabecera del rio
     int n;
     float width;            // trenzado: el ancho del lecho de grava
     RiverKind kind;
     float minx, minz, maxx, maxz; // caja (para descartar rapido)
+    RiverSource source;
+    RiverEnd end;
+    int into;               // el lago o el tramo donde termina (-1 si no)
+    float flow;             // el agua en la boca (celdas de lluvia de su cuenca; el deshielo cuenta mas)
+    float melt;             // la parte de ese agua que es deshielo [0, 1]
 } River;
+
+// Una cascada: donde el rio cae sin pendiente que lo sostenga (docs/AGUA.md, pagina 4).
+typedef struct {
+    float x, z;        // el borde de arriba
+    float top, bottom; // el nivel del agua arriba y abajo
+    float yaw;         // hacia donde cae (como el jugador: 0 es +z)
+    float width;
+    int river;         // el tramo
+    float bx, bz;      // el pie
+} Waterfall;
 
 typedef struct {
     float x, z, r, h; // macizo: centro, radio y altura sobre el terreno
@@ -131,6 +170,8 @@ typedef struct {
     int site_count;
     float canal_level[CANAL_SAMPLES]; // nivel del agua del canal del bosque por grado
     float camp_height;                // altura del llano del campamento (origen)
+    Waterfall falls[FALLS_MAX];
+    int fall_count;
 } World;
 
 // Lo que ocupa cada cosa del mundo (m de radio alrededor de su centro): nada de eso cae en el agua.
@@ -162,6 +203,11 @@ int region_habitat(Region r);
 
 // Altura del suelo (con lagos, rios, canal, mar y muros ya excavados).
 float world_height(const World *w, float x, float z);
+// El relieve sin el agua (sin lagos, rios ni canal excavados): por donde bajaria el agua.
+float world_land(const World *w, float x, float z);
+// Lo mas bajo de la orilla del lago i (el relieve donde termina su agua): su nivel queda por debajo, asi el
+// agua sale solo por su rio de desborde (docs/AGUA.md, pagina 9).
+float world_lake_shore(const World *w, int i);
 // Superficie del agua en (x, z), o -1e9 si no hay. flood: crecida estacional de lagos y
 // rios (el mar no crece). kind (si no es NULL): que agua es.
 float world_water(const World *w, float x, float z, float flood, WaterKind *kind);

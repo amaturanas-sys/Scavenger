@@ -64,6 +64,9 @@ Ver [MUNDO.md](MUNDO.md). Con `--ir lugar` y `--orbital`:
 | ![Capital](capturas/mundo_capital.png) | **Una capital** (`--ir capital`): la del Principado de los Pinos Negros. |
 | ![Aldea](capturas/mundo_aldea.png) | **Una aldea** del desierto (`--ir aldea`). |
 | ![Guarida](capturas/mundo_guarida.png) | **Una guarida** (`--ir guarida`). |
+| ![Lago](capturas/mundo_lago.png) | **Un lago** (`--ir lago`): el más grande fuera del bosque, del otro lado de su desborde ([AGUA.md](AGUA.md)). |
+| ![Desborde](capturas/mundo_desborde.png) | **El desborde de un lago** (`--ir desborde`): por ahí sale su río. |
+| ![Cascada](capturas/mundo_cascada.png) | **Una cascada** (`--ir cascada`): la más grande tierra adentro, desde abajo. |
 
 ## Los edificios de la edad del hierro
 
