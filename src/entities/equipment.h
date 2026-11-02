@@ -1,6 +1,7 @@
 // Sistema de Equipamiento 3D para Bone Attachments
 // Carga y gestiona modelos de equipamiento que se adjuntan a huesos
 // del skeleton principal para rendering eficiente.
+// ANDAMIAJE SIN CONECTAR (v0.10.8): ver src/entities/character.h y docs/ARQUITECTURA.md.
 #ifndef ESTEPA_EQUIPMENT_H
 #define ESTEPA_EQUIPMENT_H
 

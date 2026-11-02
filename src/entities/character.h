@@ -1,6 +1,8 @@
 // Sistema de Personajes 3D con Equipamiento Modular
 // Soporta skinned meshes con bone attachments y texture swapping para Android.
-// TODO: Migrar de body_draw a este sistema para personajes con modelos 3D.
+// ANDAMIAJE SIN CONECTAR (v0.10.8): nada del juego lo llama todavia. Los personajes se dibujan con
+// src/world/body_draw.c y los modelos con src/world/props.c; esto no los reemplaza. Antes de
+// conectarlo o de crecerlo, ver docs/ARQUITECTURA.md («src/entities»).
 #ifndef ESTEPA_CHARACTER_H
 #define ESTEPA_CHARACTER_H
 
@@ -12,34 +14,9 @@
 #include "sim/armor.h"
 #include "sim/apparel.h"
 #include "sim/champion.h"
+#include "equipment.h"
 
-// Mapeo de huesos del modelo base a slots de armadura
-// Los índices son los nombres de los huesos en el GLB base_personaje.glb
-typedef enum {
-    BONE_HEAD = 0,
-    BONE_NECK,
-    BONE_THORAX,
-    BONE_ABDOMEN,
-    BONE_PELVIS,
-    BONE_UPPER_ARM_L,
-    BONE_FOREARM_L,
-    BONE_UPPER_ARM_R,
-    BONE_FOREARM_R,
-    BONE_THIGH_L,
-    BONE_SHIN_L,
-    BONE_THIGH_R,
-    BONE_SHIN_R
-} BoneIndex;
-
-// Material de equipamiento para texture swapping
-typedef enum {
-    TEX_FELT = 0,
-    TEX_LEATHER,
-    TEX_BRONZE,
-    TEX_IRON,
-    TEX_STEEL,
-    TEX_GOLD
-} TextureMaterial;
+// BoneIndex y TextureMaterial: en equipment.h (un tipo vive en un solo header).
 
 // Equipamiento de un personaje (modelo 3D + texturas)
 typedef struct {

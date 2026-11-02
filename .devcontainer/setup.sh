@@ -6,6 +6,8 @@
 # del nucleo. Se puede volver a correr: bash .devcontainer/setup.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# El pre-push del repo: nada a main ni a claude/*, y las guardas a la vista (docs/GUIA_IA.md).
+git config core.hooksPath .githooks
 SUDO=""
 if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; fi
 $SUDO apt-get update
@@ -21,4 +23,5 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 cmake -E copy_directory assets build/assets
 ./build/sim_tests | tail -1
+python3 tools/ci/guardas.py --base HEAD || true
 echo "Listo. El juego sin pantalla: cd build && xvfb-run -a ./estepa --frames 60 --screenshot shot.png"

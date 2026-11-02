@@ -89,6 +89,9 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Inventario por contenedores (bolsillos, mochila, alforjas, carreta, acopio y armería) con peso y estado; menú de equipo con armadura por piezas y amuletos.
 - [x] Menú de entrada (nueva partida, cargar con minifoto y fecha, instructivo), pausa con guardar y cargar, HUD limpio (F1 controles).
 - [x] Partidas por bloques con el esquema de sus campos (v0.4.4): las versiones nuevas cargan las partidas de las anteriores aunque cambien los structs; partidas de referencia en CI ([PARTIDAS.md](PARTIDAS.md)).
+- [x] La verificación (v0.10.9): la revisión de lo que el Codespace fusionó de la v0.10.4 a la v0.10.8. El cambio de objetivo pasa a `Ctrl+Q` y `Ctrl+E` (con Q/E solas también giraba la cámara), con su prueba; el parry, el desvío y el gancho recuperan su pose y la tribu ya no hace un parry en medio del golpe; fuera los campos que nadie leía y las declaraciones repetidas; `src/entities/` sin tipos repetidos ni advertencias, marcado como andamiaje. El reparto nuevo (el Codespace implementa, Claude Code verifica y publica), las mismas reglas para Cline y Copilot, y las guardas del CI (`tools/ci/guardas.py`) con el pre-push del Codespace. Lo que el Codespace tenía sin subir, en la rama de archivo `cline/rescate-codespace`.
+- [x] Personajes con equipamiento, sin conectar (v0.10.8): la base de `src/entities/` (piezas de armadura en los huesos, texturas por material); nada del juego la usa todavía.
+- [x] Las casas y los campos por persona (v0.10.4 y v0.10.7) y el objetivo con Ctrl+Q y Ctrl+E (v0.10.5). La v0.10.6 solo tocó documentos.
 - [x] Una sola rama y más vida (v0.10.3): las tres ramas (main, la de Claude que el Codespace había reemplazado con la base vieja de Cline, y cline-vegetacion) en main, sin perder historia; el cambio de densidad del Codespace pasado al código actual (más gente y tierra en las ciudades, más árboles, el pasto más tupido y visible más lejos en la PC, el doble de árboles alrededor del campamento); el Codespace se prepara solo con `.devcontainer/`.
 - [x] La muralla, las ruinas y las obras con el kit (v0.10.2, el paso 5b del plan de herramientas): la muralla de las capitales al estilo de cada región, con sus torres y la puerta acodada (un antemuro que obliga a entrar de costado, bajo el adarve, y que también corta el paso y las flechas); los enemigos rodean el antemuro por el camino más corto; la fortaleza derruida y la ciudad enterrada salen del kit y el tiempo las come desde arriba; las obras y las viviendas de la tribu sin modelo se dibujan con el kit, a su medida.
 - [x] El mundo en seco (v0.10.1): ningún pueblo, tribu, estructura o guarida sobre un lago (ni un río, el canal o el mar), mirando toda su huella, y los pueblos y las tribus por debajo de la nieve de todo el año; lo que no cumplía se corre al lugar válido más cercano sin cambiar el resto del mundo. Reglas de ramas para Cline en `.clinerules`.
@@ -147,37 +150,3 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - **Assets 3D:** inventario en `assets/inventario.tsv`; importación en [assets/models/README.md](../assets/models/README.md); Kiln (`tools/assets/*.kiln.js`) y text-to-cad para crear y refinar.
 - **Optimización:** Ghidra sobre nuestros propios builds. Ver [GHIDRA.md](GHIDRA.md).
 - **Skills y agentes de Claude Code:** `.claude/skills/` (programación de juegos, C/C++, pruebas, depuración, revisión, diseño de juego) y el equipo `gamedev-*` en `.claude/agents/` con `/gamedev <tarea>`. Origen y licencias en [.claude/skills/THIRD_PARTY.md](../.claude/skills/THIRD_PARTY.md); convenciones del proyecto en `.claude/skills/estepa/`.
-
----
-
-## Versiones
-
-### 0.10.5 — Combate mejorado
-- [x] Añadir controles de objetivo (Tab, Ctrl+Q, Ctrl+E)
-- [x] Añadir cámara que sigue al objetivo
-- [x] Añadir animaciones específicas (parry, deflect, shield bash, shield charge)
-- [x] Mejorar integración de animaciones en pose_move
-- [x] Documentar en `docs/GDD.md`
-- [ ] PR y CI verde en Linux, Windows y Android
-- [ ] Release (ZIP y APK)
-
-### 0.10.7 — Carpetas de referencia y videos
-- [x] Crear carpetas `assets/referencia/` (imágenes D.2 para TRELLIS.2) y `assets/videos/` (videos C.1 para GRAIL)
-- [x] Definir constantes por persona en `src/sim/city.h`:
-  - `CITY_MAX_ALMAS_HOGAR_CAPITAL = 110`
-  - `CITY_MAX_ALMAS_HOGAR_ALDEA = 45`
-  - `CITY_MAX_ALMAS_CAMPO_CAPITAL = 180`
-  - `CITY_MAX_ALMAS_CAMPO_ALDEA = 40`
-- [x] Actualizar `VERSION` a 0.10.7
-- [ ] Documentar en `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`
-- [ ] PR y CI verde en Linux, Windows y Android
-- [ ] Release (ZIP y APK)
-
-### 0.10.4 — Despoblación
-- [x] Revertir densidades de casas y campos en `src/sim/city.c`:
-  - Capital: 110 almas/casa (antes 150), 180 almas/campo (antes 250)
-  - Aldea: 45 almas/casa (antes 70), 40 almas/campo (antes 80)
-- [x] Actualizar `VERSION` a 0.10.4
-- [x] Documentar en `docs/GDD.md` y `docs/ROADMAP.md`
-- [ ] PR y CI verde en Linux, Windows y Android
-- [ ] Release (ZIP y APK)

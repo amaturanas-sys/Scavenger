@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # las guardas comparan con el commit de antes (en un PR, el main al que entra)
+      - name: Guardas del proyecto (lo que ya salio mal no vuelve a entrar; docs/GUIA_IA.md)
+        run: python3 tools/ci/guardas.py --base HEAD^1
       - name: Dependencias
         run: |
           sudo apt-get update

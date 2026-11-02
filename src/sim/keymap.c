@@ -23,8 +23,8 @@ static const KeyBind BINDS[KA_COUNT] = {
     [KA_DRINK] = { 'N', 0, KM_CTRL },
     [KA_ESCORT] = { 'Y', 0, KM_SHIFT | KM_CTRL },
     [KA_DISPATCH] = { 'Y', KM_SHIFT, KM_CTRL },
-    [KA_TARGET_LEFT] = { 'Q', 0, KM_CTRL },
-    [KA_TARGET_RIGHT] = { 'E', 0, KM_CTRL },
+    [KA_TARGET_LEFT] = { 'Q', KM_CTRL, 0 }, // Ctrl+Q / Ctrl+E: Q y E solas giran la camara
+    [KA_TARGET_RIGHT] = { 'E', KM_CTRL, 0 },
     [KA_MARK] = { 'M', 0, KM_CTRL }, // Ctrl+M: la vista orbital
     [KA_MENU] = { KM_KEY_TAB, 0, KM_CTRL },
     [KA_INVENTORY] = { 'I', 0, KM_CTRL },
@@ -49,6 +49,6 @@ const char *keymap_text(KeyAction a) {
     else if (b->key == KM_KEY_SPACE) snprintf(key, sizeof(key), "%s", T("Espacio"));
     else snprintf(key, sizeof(key), "%c", (char)b->key);
     char *out = buf[next++ % 4];
-    snprintf(out, sizeof(buf[0]), "%s%s", b->need & KM_SHIFT ? T("Mayús+") : "", key);
+    snprintf(out, sizeof(buf[0]), "%s%s%s", b->need & KM_CTRL ? "Ctrl+" : "", b->need & KM_SHIFT ? T("Mayús+") : "", key);
     return out;
 }
