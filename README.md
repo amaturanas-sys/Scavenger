@@ -127,7 +127,7 @@ Combate de cuatro botones (las teclas o las cuatro casillas de abajo a la derech
 - **`J` o clic derecho sin arrastrar, bloqueo (mantener):** con escudo cubre el frente (`J`+`H`: golpe de escudo); sin escudo paras con el arma, que aguanta la mitad del golpe y cansa. Con arma a distancia, `J` la baja.
 - **`K`, parry:** justo antes del golpe enemigo (el rival anuncia el golpe; en la ventana justa destella un rombo dorado sobre él y la casilla). Con hacha o guja le arrancas el escudo; sin armas o con daga, llave y derribo (lo desarmas); con las demás, desvías y queda abierto. A destiempo quedas expuesto un momento.
 - **`L`, carga o patada:** con escudo, carga que empuja y tumba al primero que encuentra; sin escudo, patada (corriendo, con inercia).
-- **Objetivo:** `Tab` en combate pasa al enemigo siguiente (`Mayús+Tab`, al anterior); también se elige con un clic o un toque. Un anillo dorado lo marca y su barra se resalta; los golpes van a él y las flechas lo buscan. Se pierde a 25 m o si muere. Fuera de combate, `Tab` abre el menú.
+- **Objetivo:** `Tab` en combate pasa al enemigo siguiente (`Mayús+Tab`, al anterior; también `Ctrl+E` y `Ctrl+Q`); también se elige con un clic o un toque. Un anillo dorado lo marca y su barra se resalta; los golpes van a él y las flechas lo buscan. Se pierde a 25 m o si muere. Fuera de combate, `Tab` abre el menú.
 - **La espalda:** por detrás los enemigos solo te oyen (en sigilo o agachado casi nada). A menos de 2 m de la espalda de uno que no te vio (o aturdido) aparece una daga sobre él: `K` lo mata en silencio (solo lo oyen los que están a menos de 6 m) y `G` lo toma de rehén.
 - **Rehén:** te cubres con él; los suyos no se acercan y no disparan si los tapa (si disparan, fallan más). Vas lento y con una sola mano. `G` lo suelta, `K` lo ejecuta y `L` lo empuja; un golpe fuerte te lo quita.
 - **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar. El abatido despierta a los 30-90 s, herido, y huye a avisar a los suyos. Junto a él, `F` lo toma prisionero y `H` o `K` lo rematan (a la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran).
@@ -240,10 +240,18 @@ Una sola rama y más vida (v0.10.3):
 - **Más pasto:** el pasto, la stipa, las flores, los helechos y los juncos crecen más tupidos (hasta dos matas por m²), y en la PC se ven hasta 39 m (en Android, 18 m, para no perder cuadros).
 - **El Codespace** se prepara solo (`.devcontainer/`): ver «En un Codespace», arriba.
 
-Tubería 3D completa (v0.10.6):
-- **Modelos desde imágenes:** `tools/modelos/modelos.py traer <id> --url "<URL>" --fuente trellis2` (o `rignet`, `grail`, `kiln`). El modelo baja a low-poly, entra en la ruta de su id, y el manifiesto (`arte/modelos/models_manifest.json`) guarda la procedencia.
-- **Riggeado:** personas y animales se riggean con RigNet (`--riggeado`). La versión low-poly queda en `arte/modelos/para_riggear/` y el estado en el inventario es «pendiente».
-- **Clips obligatorios:** cada modelo con esqueleto necesita clips (andar, correr, agacharse, etc.). La prueba `test_modelos.py` valida que lo deje pendiente.
+Las casas y los campos por persona (v0.10.4 y v0.10.7):
+- **Más casas y campos a la vista** con la misma gente: cada casa aloja 110 almas en la capital y 45 en la aldea (antes 150 y 70), y cada campo alimenta a 180 y 40 (antes 250 y 80). Los números están en `src/sim/city.h` (`CITY_MAX_ALMAS_*`).
+
+El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo anterior y `Ctrl+E` al siguiente, además de `Tab` y `Mayús+Tab`. La v0.10.6 no cambió el juego (solo la documentación de la tubería de modelos de la v0.9.3).
+
+Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
+
+La verificación (v0.10.9):
+- **El combate, arreglado:** `Ctrl+Q` y `Ctrl+E` cambian de objetivo y `Q`/`E` solas vuelven a ser solo de la cámara (en la v0.10.5 hacían las dos cosas a la vez). El parry vuelve a subir suave, el desvío y el gancho al escudo recuperan su pose, y los guerreros de la tribu ya no levantan un parry en medio de su golpe.
+- **Cline, Copilot y Claude Code:** el Codespace hace la primera versión de cada tarea, en su rama y con su PR; Claude Code la verifica, la corrige, la fusiona y publica la release. Las dos IA del Codespace tienen las mismas reglas (`.clinerules` y `.github/copilot-instructions.md`), y el PR trae la sección «Para Claude». Todo en `docs/GUIA_IA.md`.
+- **Las guardas del CI** (`tools/ci/guardas.py`): frenan pruebas borradas o recortadas, archivos vacíos o falsos en `assets/`, texto roto, tipos repetidos, enums que crecen por el medio, archivos sueltos y versiones sin novedades. En el Codespace, el pre-push (`.githooks/`) además impide subir a `main` o a `claude/*`.
+- **El Codespace roto, a salvo:** lo que tenía sin subir (el VAT de Copilot, el campamento nodal y el comienzo del agua) quedó en la rama `cline/rescate-codespace`, de archivo; `main` no se tocó.
 
 Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 
@@ -411,44 +419,3 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --enemigos bandidos --espalda                       # a la espalda de un bandido (la daga)
 ./build/estepa --enemigos bandidos --rehen                         # con un bandido de rehén
 ```
-
----
-
-## Versiones
-
-### 0.10.4 — Despoblación (v0.10.4)
-Las ciudades y aldeas ahora tienen **más casas y campos** para la misma población:
-- Capital: 110 almas/casa (antes 150), 180 almas/campo (antes 250)
-- Aldea: 45 almas/casa (antes 70), 40 almas/campo (antes 80)
-
-Esto refleja que antes había demasiada gente por cada estructura, haciendo las ciudades parecer vacías. Los asentamientos ahora muestran más vida, con más viviendas y tierras cultivables por cada alma.
-
-- Cambios en `src/sim/city.c`: revertir densidades de casas y campos.
-- Documentación en `docs/GDD.md` y `docs/ROADMAP.md`.
-
-### 0.10.5 — Combate mejorado (v0.10.5)
-- **Controles de objetivo:** Tab para seleccionar, Ctrl+Q/E para cambiar entre enemigos.
-- **Cámara que sigue al objetivo:** la cámara se suaviza hacia el enemigo seleccionado, facilitando el movimiento.
-- **Animaciones mejoradas:** parry, deflect, shield bash y shield charge tienen clips específicos.
-- **Bloqueo mejorado:** escudo bloquea todo, arma solo golpeos directos.
-- **Escoltas mejoradas:** ahora responden mejor a órdenes.
-
-- Cambios en `src/sim/keymap.c`, `src/sim/keymap.h`, `src/sim/melee.h`, `src/sim/anim_index.c`, `src/game/combat_game.c`.
-- Documentación en `docs/GDD.md` y `docs/ROADMAP.md`.
-
-### 0.10.6 — Tubería 3D completa (v0.10.6)
-- **Modelos desde imágenes:** `tools/modelos/modelos.py traer <id> --url "<URL>" --fuente trellis2` (o `rignet`, `grail`, `kiln`). El modelo baja a low-poly, entra en la ruta de su id, y el manifiesto (`arte/modelos/models_manifest.json`) guarda la procedencia.
-- **Riggeado:** personas y animales se riggean con RigNet (`--riggeado`). La versión low-poly queda en `arte/modelos/para_riggear/` y el estado en el inventario es «pendiente».
-- **Clips obligatorios:** cada modelo con esqueleto necesita clips (andar, correr, agacharse, etc.). La prueba `test_modelos.py` valida que lo deje pendiente.
-
-- Cambios en `tools/modelos/modelos.py`, `tools/modelos/glb.py`, `tools/modelos/lowres.py`, `tools/modelos/test_modelos.py`, `arte/modelos/models_manifest.json`.
-- Documentación en `docs/GDD.md`, `docs/ROADMAP.md`, `docs/PLAN_HERRAMIENTAS_IA.md`.
-
-### 0.10.7 — Carpetas de referencia y videos
-- **Carpetas de recursos:** `assets/referencia/` (imágenes D.2 para TRELLIS.2) y `assets/videos/` (videos C.1 para GRAIL).
-- **Constantes por persona:** en `src/sim/city.h` se definieron `CITY_MAX_ALMAS_HOGAR_CAPITAL`,
-  `CITY_MAX_ALMAS_HOGAR_ALDEA`, `CITY_MAX_ALMAS_CAMPO_CAPITAL`, `CITY_MAX_ALMAS_CAMPO_ALDEA` (110/45 y 180/40).
-
-- Cambios en `src/sim/city.h`, `src/sim/city.c`, `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`.
-- Documentación en `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`.
-

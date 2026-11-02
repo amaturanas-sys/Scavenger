@@ -178,7 +178,7 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
     - las demás: **desvío**, que lo deja abierto un segundo.
     A destiempo (o sin golpe que parar) el jugador queda **expuesto** 0,6 s: ni se cubre ni ataca.
   - **Carga o patada:** `L`. Con escudo, **carga** que empuja y arrolla al primero que encuentra. Sin escudo, **patada**: aparta y desequilibra; contra un escudo en guardia solo le quita la guardia. **A la carrera, con inercia**, tumba incluso al que se cubre con escudo.
-  - **Objetivo:** `Tab` en combate pasa al enemigo siguiente, en orden alrededor del jugador desde el que tiene delante (`Mayús+Tab`, al anterior); un clic o un toque sobre un enemigo lo elige. Un anillo dorado lo marca y su barra de vida se resalta. Los golpes van a él (el jugador se vuelve hacia él) y las armas a distancia le apuntan solas, con la caída calculada. Se pierde a 25 m o si muere; sin objetivo, se golpea al más cercano delante. Fuera de combate, `Tab` abre el menú de acciones.
+  - **Objetivo:** `Tab` en combate pasa al enemigo siguiente, en orden alrededor del jugador desde el que tiene delante (`Mayús+Tab`, al anterior; también `Ctrl+E` y `Ctrl+Q`, v0.10.5: `Q` y `E` solas giran la cámara); un clic o un toque sobre un enemigo lo elige. Un anillo dorado lo marca y su barra de vida se resalta. Los golpes van a él (el jugador se vuelve hacia él) y las armas a distancia le apuntan solas, con la caída calculada. Se pierde a 25 m o si muere; sin objetivo, se golpea al más cercano delante. Fuera de combate, `Tab` abre el menú de acciones.
   - **La espalda** (v0.5.1, `src/sim/stealth.*`): de frente te ven; de lado, menos; por detrás solo te oyen (el ruido: correr se oye, el sigilo casi nada). A menos de 2 m, en el cono trasero de 70° de uno que no te notó (o aturdido), aparece una daga sobre él:
     - `K`: **ejecución silenciosa**, muerte en el acto; solo la oyen los que están a menos de 6 m.
     - `G`: **rehén**. Va delante del jugador, sujeto por el cuello. Los de su bando (bandidos o culto) no se acercan a menos de 4,5 m ni atacan; el arquero no tira si el rehén le tapa el blanco, y si tira, falla más. El jugador va lento y con una sola mano (sin escudo ni armas a dos manos). `G` lo suelta, `K` lo ejecuta delante de los suyos y `L` lo empuja al suelo; un golpe fuerte (o caer, o montar) lo suelta.
@@ -633,6 +633,7 @@ Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su e
   - afuera, entre las puertas, los campos y dos corrales, en huecos fijos que no se mueven cuando la ciudad crece, en seco y sin cuesta;
   - las tiendas de los mercenarios, junto a la puerta principal;
   - la aldea, un anillo de casas chicas (la del jefe, un poco más grande), sus campos y un corral.
+  - las casas y los campos siguen a su gente: una casa cada 110 almas en la capital y cada 45 en la aldea, y un campo cada 180 y cada 40 (`CITY_MAX_ALMAS_*` en `src/sim/city.h`, v0.10.4), entre su mínimo y su máximo.
   - Se dibujan los campos según la estación (los arrasados, negros, desde el que se saqueó), los labradores de día, la guardia del palacio y de las puertas (más soldados, más guardias) y el estandarte del reino.
 - **El mercado** (`F` en la aldea o la capital):
   - el granero mueve el precio de la comida (×1,6 con hambre, ×0,8 con el granero lleno) y la armería el de las armas;
@@ -783,36 +784,3 @@ Historia principal con protagonista de **nombre elegido por el jugador**: hijo d
 - Preguntas de la narrativa: ver [NARRATIVA.md](NARRATIVA.md#preguntas-abiertas-para-el-autor).
 - ¿Muerte permanente del líder o escenarios de derrota a lo Outward?
 - Escala del mapa y número de reinos.
-
----
-
-## Versiones
-
-### 0.10.5 — Combate mejorado
-- **Controles de objetivo:**
-  - Tab: selecciona el siguiente objetivo (flecha verde en el HUD)
-  - Ctrl+Q: objetivo anterior
-  - Ctrl+E: objetivo siguiente
-- **Cámara que sigue al objetivo:** cuando se selecciona un enemigo, la cámara se suaviza hacia él, facilitando el movimiento.
-- **Animaciones mejoradas:**
-  - Parry (K): animación específica para bloquear en la ventana justa
-  - Desvío (MOVE_DEFLECT): desvía golpes con el arma, deja al rival expuesto
-  - Golpe de escudo (MOVE_SHIELD_BASH): aturde con el escudo
-  - Carga con escudo (MOVE_SHIELD_CHARGE): empuja y puede tumbar
-- **Bloqueo mejorado:**
-  - Escudo: bloquea golpes y flechas
-  - Arma: solo bloquea golpes directos, no flechas (se cansa más)
-- **Escoltas (Y):** mejoradas, ahora pueden responder mejor a órdenes y mantener la formación.
-
-### 0.10.4 — Despoblación
-- Las ciudades y aldeas ahora tienen **más casas y campos** para la misma población:
-  - Capital: 110 almas/casa (antes 150), 180 almas/campo (antes 250)
-  - Aldea: 45 almas/casa (antes 70), 40 almas/campo (antes 80)
-- Esto refleja que antes había demasiada gente por cada estructura, haciendo las ciudades parecer vacías.
-- Los asentamientos ahora muestran más vida, con más viviendas y tierras cultivables por cada alma.
-
-### 0.10.7 — Carpetas de referencia y videos
-- **Carpetas de recursos:** se agregaron `assets/referencia/` (imágenes D.2 para TRELLIS.2) y `assets/videos/`
-  (videos C.1 para GRAIL).
-- **Constantes por persona:** en `src/sim/city.h` se definieron `CITY_MAX_ALMAS_HOGAR_CAPITAL`, 
-  `CITY_MAX_ALMAS_HOGAR_ALDEA`, `CITY_MAX_ALMAS_CAMPO_CAPITAL`, `CITY_MAX_ALMAS_CAMPO_ALDEA` (110/45 y 180/40).

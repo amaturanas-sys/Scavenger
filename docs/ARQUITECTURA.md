@@ -82,10 +82,12 @@ src/
   ui/       Interfaz (raylib)
     theme.*      tema de orfebreria: paneles, barras, texto
     minimap.*    minimapa circular tipo brujula
+  entities/ Andamiaje sin conectar (v0.10.8): personajes 3D con piezas de armadura en los huesos (ver abajo)
   main.c    Bucle principal, render low-res, HUD
 tests/      Tests del nucleo (arnes propio, sin dependencias)
 assets/     Assets de runtime: inventario.tsv, animaciones.tsv, models/<categoria>/<sub>/<nombre>.glb, textures/
-tools/      Herramientas de produccion (programas Kiln, validadores, text-to-cad; modelos/: la tuberia de TRELLIS.2 y RigNet al juego)
+tools/      Herramientas de produccion (programas Kiln, validadores, text-to-cad; modelos/: la tuberia de TRELLIS.2 y RigNet al juego; ci/guardas.py: las guardas del CI)
+.githooks/  El pre-push del Codespace: nada a main ni a claude/*, y las guardas a la vista
 .claude/skills/cad/  Skill CAD de text-to-cad (MIT, earthtojake/text-to-cad)
 docs/       Diseño, roadmap, arquitectura
 ```
@@ -105,6 +107,15 @@ docs/       Diseño, roadmap, arquitectura
 - **Android:** mismo código; con la toolchain del NDK el juego se compila como `libestepa.so` (raylib en modo Android, OpenGL ES 2) y `tools/android/build_apk.sh` lo empaqueta con `aapt2`, `zipalign` y `apksigner`, sin Gradle. Los assets van dentro del APK.
 - `src/platform.*` concentra las diferencias: rutas de assets y detección de teclado físico (`AConfiguration_getKeyboard`). El port se juega con teclado; sin teclado, el juego se pausa con un aviso.
 
+## Andamiajes sin conectar: `src/entities/`
+- **Qué es:** la base de un sistema de personajes 3D (v0.10.8, del Codespace): un modelo con esqueleto, piezas de armadura colgadas de sus huesos (`equipment.*`) y texturas por material (fieltro, cuero, bronce, hierro, acero, oro). Compila, pero **nada del juego lo llama**.
+- **Lo que dibuja hoy a las personas:** `src/world/body_draw.c` (el cuerpo por zonas de `src/sim/body.*`) y, cuando hay un modelo, `src/world/props.c`, que carga cada GLB y sus clips por el id del inventario. Esos dos siguen siendo el camino.
+- **Antes de conectarlo o de crecerlo** (el VAT de Copilot, por ejemplo, que quedó en la rama de archivo `cline/rescate-codespace`), un plan aprobado por el usuario que diga:
+  - cómo se suma a `props.c` y a `body_draw.c`, en vez de reemplazarlos;
+  - de dónde salen los cuerpos riggeados y las piezas (`tools/modelos`, con sus ids del inventario; nada de archivos vacíos);
+  - y cómo se prueba.
+
 ## Testing
-- `ctest` corre `sim_tests` (13 tests, ~1000 comprobaciones).
-- CI compila el juego, corre los tests y genera una captura del render bajo Xvfb como artefacto.
+- `ctest` corre `sim_tests`: unas 130 pruebas y más de 150 000 comprobaciones (cada versión las dice en su PR).
+- **Las guardas** (`tools/ci/guardas.py`, en el CI de cada PR y en el pre-push del Codespace): pruebas que no se borran ni se recortan, enums que crecen al final, un tipo en un solo header, nada vacío ni suelto, versiones con sus novedades (ver [GUIA_IA.md](GUIA_IA.md), sección 6).
+- CI compila el juego, corre los tests, las partidas de referencia y genera una captura del render bajo Xvfb como artefacto.

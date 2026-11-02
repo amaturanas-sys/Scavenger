@@ -68,6 +68,7 @@ void character_system_unload(void) {
 }
 
 int character_equip_load(const char *model_path, const char *tex_path, const char **anim_names) {
+    (void)tex_path; // la textura se cambia despues, con character_equip_swap_texture
     if (g_equipment_count >= g_config.max_characters) return -1;
     if (!model_path) return -1;
 
@@ -158,8 +159,6 @@ void character_equip_swap_texture(int equip_idx, TextureMaterial tex) {
 
 void character_equip_clear(int equip_idx) {
     if (equip_idx < 0 || equip_idx >= g_equipment_count) return;
-    CharacterEquipment *eq = &g_equipment[equip_idx];
-
     character_equip_unload(equip_idx);
     g_equipment_count--;
     if (equip_idx < g_equipment_count) {

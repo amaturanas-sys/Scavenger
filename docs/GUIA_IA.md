@@ -1,27 +1,33 @@
 # Guía para trabajar con IA en SCAVENGERS THRIVE
 
-Para Cline en el Codespace y para cualquier otra IA que continúe el proyecto. Recoge cómo se trabajó
-con Claude Code hasta la v0.10.3: el flujo de cada cambio con sus comandos, las reglas que no se
-rompen, lo que ya salió mal y el estado del proyecto.
+Para Cline y Copilot en el Codespace, y para Claude Code. Dice cómo se reparte el trabajo entre ellos, el
+flujo de cada cambio con sus comandos, las reglas que no se rompen, las guardas que las hacen cumplir, lo
+que ya salió mal y el estado del proyecto.
 
-- **`.clinerules`** tiene las reglas en corto (Cline las carga en cada mensaje).
+- **`.clinerules`** (Cline) y **`.github/copilot-instructions.md`** (Copilot) tienen las reglas en corto.
+  Cada herramienta carga las suyas en cada mensaje, y las dos comparten un bloque idéntico.
 - **Acá está el detalle.**
-- **Al final**, el prompt maestro para empezar una sesión y la plantilla para pedir cada tarea.
+- **Al final**, el prompt maestro para empezar una sesión y las plantillas para pedir cada tarea y su
+  verificación.
 
 ## 1. El proyecto en un minuto
 
 - **El juego:** *SCAVENGERS THRIVE — THEY COME FROM THE STEPPES* (nombre interno `estepa`), en C11 con
   raylib 5.5, a 640 × 360. Corre en Windows y en Android (APK); se desarrolla en Linux.
-- **Dónde va:** la versión está en `VERSION`. Lo hecho y lo pendiente, en [ROADMAP.md](ROADMAP.md); el
-  plan vigente, en [PLAN_HERRAMIENTAS_IA.md](PLAN_HERRAMIENTAS_IA.md). Las novedades de cada versión,
-  en el `README.md`.
+- **Dónde va:**
+  - la versión está en `VERSION`;
+  - lo hecho y lo pendiente, en [ROADMAP.md](ROADMAP.md);
+  - el plan vigente, en [PLAN_HERRAMIENTAS_IA.md](PLAN_HERRAMIENTAS_IA.md);
+  - las novedades de cada versión, en el `README.md`.
 - **Las carpetas:**
   - `src/sim/`: C puro, sin raylib. Todo lo que tiene reglas va acá y se prueba en `tests/test_main.c`.
   - `src/game/`: el juego (une la simulación con raylib: entrada, dibujo, diálogos).
-  - `src/world/`: el dibujo del mundo (terreno, voxeles, vegetación, objetos sueltos).
+  - `src/world/`: el dibujo del mundo (terreno, voxeles, vegetación, cuerpos, objetos sueltos).
   - `src/ui/`: la interfaz.
+  - `src/entities/`: un andamiaje sin conectar (ver [ARQUITECTURA.md](ARQUITECTURA.md)).
   - `assets/`: el inventario (`inventario.tsv`), las traducciones (`i18n/en.tsv`), los modelos, los íconos.
-  - `tools/`: los scripts de assets, partidas, modelos, Android, Windows y capturas.
+  - `tools/`: los scripts de assets, partidas, modelos, Android, Windows, capturas y las guardas del CI
+    (`tools/ci/guardas.py`).
   - `tests/`: las pruebas del núcleo y las partidas de referencia (`tests/partidas/`).
   - `docs/`: la documentación, siempre en español.
 - **Los documentos:**
@@ -38,30 +44,54 @@ rompen, lo que ya salió mal y el estado del proyecto.
 | [PLAN_HERRAMIENTAS_IA.md](PLAN_HERRAMIENTAS_IA.md), [ROADMAP.md](ROADMAP.md) | El plan, su estado y lo que falta. |
 | [CAPTURAS.md](CAPTURAS.md) | Las capturas de cada pantalla y cómo se sacan. |
 | [NARRATIVA.md](NARRATIVA.md), [ESTILO_VISUAL.md](ESTILO_VISUAL.md) | La historia y el estilo. |
-| `.claude/skills/estepa`, `modelos`, `animaciones` | Las convenciones y las tuberías de modelos y animaciones (sirven de guía también para Cline). |
+| `.claude/skills/estepa`, `modelos`, `animaciones` | Las convenciones y las tuberías de modelos y animaciones (sirven de guía para todas las IA). |
 
-## 2. El flujo de cada cambio
+## 2. Cómo se reparte el trabajo
 
-Así se hizo cada versión. Cada paso evita un error que ya pasó (ver la sección 5).
+El Codespace hace la primera versión de cada cosa; Claude Code la verifica, la corrige y la publica. Así
+cada release sale revisada por quien conoce todo el proyecto, y nada se fusiona sin esa revisión.
+
+| Paso | Quién | Qué hace |
+|---|---|---|
+| 1. Pedir | El usuario | Le pasa la tarea a Cline o a Copilot con la plantilla de la sección 12. |
+| 2. Implementar | Cline o Copilot, en el Codespace | Rama `cline/<tarea>` o `copilot/<tarea>`: el código, sus pruebas nuevas y el documento del sistema. Abre el PR con la sección «Para Claude» llena. No toca `VERSION`, ni las novedades del `README.md`, ni el `ROADMAP`. No fusiona. |
+| 3. Verificar | Claude Code | Lee el diff entero, corre todo, mira capturas, corrige lo que esté mal y completa pruebas y documentos (sección 4). |
+| 4. Publicar | Claude Code | Sube la versión, abre su PR con todo, lo fusiona con el CI verde, cierra el PR original y publica la release con el ZIP y el APK. |
+| 5. Informar | Claude Code | Le cuenta al usuario qué encontró, qué corrigió y los enlaces. |
+
+- **Por qué Claude abre su propio PR:** solo puede subir a su rama (`claude/…`). Toma la rama del
+  Codespace tal cual (con su historia y los `Co-authored-by`), le suma sus correcciones y abre el PR
+  desde ahí. El PR original se cierra con el enlace al nuevo.
+- **Cada error nuevo que encuentre la verificación** se vuelve una regla (en el bloque común) o una
+  guarda (en `tools/ci/guardas.py`), para que no se repita.
+- **Lo que Claude haga solo** (una fase grande, un arreglo) sigue el mismo flujo, con su PR.
+
+## 3. El flujo en el Codespace
+
+Cada paso evita un error que ya pasó (ver la sección 8).
 
 1. **Entender antes de tocar:**
-   - Leer el documento del sistema y su código. Buscar con `git grep` si ya existe algo que lo haga:
-     se extiende lo que hay; no se arma un sistema paralelo.
-   - Si la tarea es grande o ambigua, proponer al usuario un plan corto y esperar su OK: qué archivos,
-     qué pruebas, qué documentos, qué versión.
-2. **Rama nueva desde el `main` al día:**
+   - Leer el documento del sistema y su código. Buscar con `git grep` si ya existe algo que lo haga: se
+     extiende lo que hay; no se arma un sistema paralelo.
+   - Si la tarea es grande o ambigua, proponer al usuario un plan corto (archivos, pruebas, documentos) y
+     esperar su OK.
+2. **Rama nueva desde el `main` al día** (nunca en `main`, tampoco en la copia local):
    ```bash
    git fetch origin
-   git switch -c cline/<tarea> origin/main
+   git switch -c cline/<tarea> origin/main    # Copilot: copilot/<tarea>
    ```
 3. **Implementar:**
-   - Las reglas, en `src/sim/` con sus pruebas en `tests/test_main.c`.
+   - Las reglas, en `src/sim/`, con sus pruebas nuevas al final de `tests/test_main.c` (una función
+     `test_…` y su `RUN`).
    - El dibujo y la entrada, en `src/game/` o `src/world/`.
    - Los textos visibles, con `T()` o `N_()`.
    - Un `.c` nuevo, en `CMakeLists.txt`.
+   - Solo lo que la tarea pide: el diff muestra tus líneas, no archivos rehechos.
 4. **Probar todo** (lo mismo que corre el CI):
    ```bash
-   cmake --build build && ./build/sim_tests
+   rm -rf build && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build
+   ./build/sim_tests
+   python3 tools/ci/guardas.py
    python3 tools/assets/i18n.py extraer && python3 tools/assets/i18n.py check
    python3 tools/assets/inventario.py check && python3 tools/assets/inventario.py doc --verificar
    python3 tools/assets/animaciones.py check && python3 tools/assets/animaciones.py doc --verificar
@@ -74,51 +104,63 @@ Así se hizo cada versión. Cada paso evita un error que ya pasó (ver la secci�
    - Si `i18n.py check` falla, falta traducir: `python3 tools/assets/i18n.py faltan` los lista y se
      traducen en `assets/i18n/en.tsv`.
    - Si cambió un struct que se guarda: `python3 tools/save/esquema.py` (ver PARTIDAS.md).
-5. **Mirar el juego** (sección 4): una captura del lugar que cambió, y abrir la imagen. Que compile no
-   alcanza: un juego que compila igual puede caerse en el primer cuadro.
-6. **Documentar:**
-   - El documento del sistema (GDD, MUNDO, ARQUITECTURA...).
-   - Si cambia el juego: el `README.md` (una sección «… (vX.Y.Z)» con las novedades), el
-     `docs/ROADMAP.md` (una línea arriba de la anterior) y `VERSION`.
-   - Si cambia lo que se ve: las capturas (`bash tools/capturas.sh build`) y `docs/CAPTURAS.md`.
-   - La sección 6 de esta guía (el estado actual).
-7. **Antes de subir, traer `main` y compilar de cero** (una carpeta `build/` vieja esconde errores):
+   - Cada salida se lee entera, sin `| head` ni `| tail`.
+5. **Mirar el juego** (sección 7): una captura del lugar que cambió, y abrir la imagen. Un juego que
+   compila igual puede caerse en el primer cuadro.
+6. **Documentar** el sistema que cambió (GDD, MUNDO, ARQUITECTURA…) y, si cambia lo que se ve, las
+   capturas (`bash tools/capturas.sh build`). La versión y las novedades las escribe Claude.
+7. **Antes de subir, traer `main` y repetir el paso 4:**
    ```bash
-   git fetch origin && git merge origin/main
-   rm -rf build && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build
+   git fetch origin && git merge origin/main   # con conflictos, lo de main manda
    ```
-   Después, otra vez el paso 4. Revisar `git diff origin/main...HEAD --stat`: tiene que listar solo los
-   archivos de la tarea.
-8. **Commit y PR:**
+   `git diff origin/main...HEAD --stat` tiene que listar solo los archivos de la tarea.
+8. **Commit, push y PR:**
    ```bash
-   git add -A && git commit -m "Lo que cambia (vX.Y.Z): en una línea, en español"
+   git add <los archivos de la tarea> && git commit -m "Lo que cambia: en una línea, en español"
    git push -u origin cline/<tarea>
-   gh pr create --base main --title "..." --body "..."   # o desde GitHub
-   gh pr checks --watch                                   # Linux, Windows y Android
+   gh pr create --base main --title "..." --body-file <el cuerpo con la plantilla>   # --draft si falta algo
    ```
    - El mensaje y el PR dicen lo que hace el diff de verdad, con los números.
-   - El PR sigue la plantilla (`.github/pull_request_template.md`).
-9. **Merge con el CI verde** en Linux, Windows y Android:
-   ```bash
-   gh pr merge --squash --delete-branch
-   git switch main && git pull
-   ```
-   Si el CI queda rojo, se arregla en la misma rama; nunca se fusiona en rojo.
-10. **Publicar**, solo si cambió `VERSION`:
-    ```bash
-    gh workflow run release.yml --ref main
-    ```
-    - También se puede desde GitHub: Actions → Release → Run workflow.
-    - Si el token no alcanza, se sube la etiqueta: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-    - Hay que comprobar que la release vX.Y.Z tenga el zip de Windows y el APK.
-11. **Informar al usuario** (sección 7).
+   - La sección «Para Claude» de la plantilla, llena: qué está hecho, qué falta, dónde mirar.
+   - Al terminar la sesión, la rama siempre subida, aunque falte (como borrador).
+9. **El CI:** se mira una vez con `gh pr checks <número>`; si queda rojo, se arregla en la misma rama.
+   Nunca `gh pr merge`: fusiona Claude.
+10. **Informar al usuario** (sección 10), con el enlace del PR.
 
-**Las versiones:** `X.Y.Z`.
-- Sube la Z: cada PR que cambia el juego (código, assets, reglas).
-- Sube la Y: una fase o un sistema grande.
-- Lo que solo toca documentos o configuración no sube la versión ni publica.
+## 4. La verificación de Claude Code
 
-## 3. Reglas que no se rompen
+Lo que hace Claude con cada PR del Codespace, antes de publicar:
+
+1. **Traer la rama** y crear la suya encima: `git fetch origin <rama>` y
+   `git switch -c claude/<…> FETCH_HEAD`.
+2. **Leer el diff entero** contra `main`, no solo el resumen del PR. Mirar sobre todo:
+   - que haga lo que el PR dice, y nada que no diga (archivos rehechos, código ajeno borrado);
+   - que no arme un sistema paralelo, ni deje andamiajes sin conectar ni marcadores;
+   - las reglas de la sección 5: la arquitectura, los enums, las partidas, `T()`, la memoria por cuadro;
+   - que cada regla nueva tenga su prueba y que ninguna prueba se haya aflojado;
+   - que los documentos digan la verdad (teclas, carpetas, números).
+3. **Correr todo de cero** (sección 3, paso 4), las guardas y las partidas de referencia, y **mirar** las
+   capturas del lugar que cambió (también de noche, en invierno o donde la regla lo pida).
+4. **Corregir** en su rama lo que esté mal y completar lo que falte: pruebas, documentos, traducciones.
+5. **Versión y novedades:** `VERSION`, la sección «… (vX.Y.Z)» del `README.md`, la línea del
+   `docs/ROADMAP.md` y la sección 9 de esta guía.
+6. **PR propio, CI verde, squash merge** y cerrar el PR original con el enlace al nuevo.
+7. **La release:** `gh workflow run release.yml --ref main` (o Actions → Release → Run workflow), y
+   comprobar que tenga el ZIP de Windows y el APK.
+8. **Informar** al usuario: qué encontró, qué corrigió, los enlaces y lo pendiente.
+
+## 5. Reglas que no se rompen
+
+**Respetar lo que ya existe:**
+- Antes de escribir un sistema se busca con `git grep` y se extiende. Nunca uno paralelo ni uno que
+  «reemplace más adelante» al que hay.
+- Se cambia solo lo que la tarea pide; no se reescriben archivos ni funciones que andan.
+- Las pruebas solo crecen: se agregan, nunca se borran, recortan, mueven ni comentan. Si un sistema entero
+  se quita, sus pruebas van a `tests/retiradas.txt` con el motivo, y lo aprueba Claude.
+- Las herramientas compartidas (`tools/assets/`, `tools/save/`, `tools/modelos/`, `tools/ci/`, el CI,
+  `.devcontainer/`, `CMakeLists.txt` salvo para agregar un `.c`) no se cambian para que algo pase.
+- Nada de marcadores: ni archivos vacíos, ni modelos de mentira, ni carpetas nuevas sin acordarlas.
+- Los documentos, el PR y los commits dicen solo lo que el diff hace y está probado.
 
 **El código** (CI compila con gcc en Linux, MSVC en Windows y el NDK en Android):
 - **C11 llano:**
@@ -128,44 +170,69 @@ Así se hizo cada versión. Cada paso evita un error que ya pasó (ver la secci�
   - sin `M_PI` (usar las constantes `PI` del código).
 - **Cero advertencias nuevas** (`-Wall -Wextra -Wpedantic`, `/W4`).
 - **Los shaders** también en GLSL ES 100.
-- **La memoria:** arreglos fijos (`*_MAX`) y estructuras planas; nada se reserva por cuadro y no hay ECS genérico.
+- **La memoria:** arreglos fijos (`*_MAX`) y estructuras planas; nada se reserva por cuadro y no hay ECS
+  genérico.
 - **Sin bibliotecas externas nuevas** (cJSON ni ninguna): la compilación solo baja raylib. Si hace falta
   una, se pregunta.
 - **raylib:**
   - nunca un `Material` hecho con `{ 0 }` en `DrawMesh` (se cae en el primer cuadro);
   - `LoadShaderFromMemory(vs, fs)` lleva el de vértices primero;
   - nada se carga dentro del bucle de cuadros.
-- **Antes de renombrar o quitar algo** (una función, un campo, un archivo): `git grep` todos sus usos
-  y arreglarlos en el mismo commit.
+- **Un tipo vive en un solo header.** Antes de renombrar o quitar algo (una función, un campo, un
+  archivo): `git grep` todos sus usos y arreglarlos en el mismo commit.
 
 **Los datos:**
 - **Los textos:** todo lo visible pasa por `T("...")` o `N_("...")`, y se traduce en `assets/i18n/en.tsv`.
-- **Los enums crecen al final:** se guardan como números.
+  Todo lo escrito, en español y en UTF-8.
+- **Los enums crecen al final** (justo antes de su `_COUNT`): se guardan como números.
 - **Las partidas:**
-  - Al cambiar un struct que se guarda: `python3 tools/save/esquema.py`.
-  - Un campo nuevo empieza en cero en las partidas viejas. Si no puede, se sube la versión del bloque y
-    se migra en `migrate()`.
-  - Un arreglo puede crecer; para achicarlo hace falta migrar. Ver PARTIDAS.md.
-- **El inventario:**
-  - Los objetos nuevos van en `assets/inventario.tsv` (después, `inventario.py doc`).
-  - Los íconos se generan con `iconos.py generar`.
+  - al cambiar un struct que se guarda: `python3 tools/save/esquema.py`;
+  - un campo nuevo empieza en cero en las partidas viejas; si no puede, se sube la versión del bloque y
+    se migra en `migrate()`;
+  - un arreglo puede crecer; para achicarlo hace falta migrar. Ver PARTIDAS.md.
+- **El inventario:** los objetos nuevos van en `assets/inventario.tsv` (después, `inventario.py doc`); los
+  íconos se generan con `iconos.py generar`. Las categorías son las que ya existen.
 - **Los modelos 3D** entran solo con `tools/modelos/modelos.py traer`, nunca a mano: cada id tiene una
   ruta fija.
 - **Los generados no se editan a mano:** `src/game/save_schema.inc`, `docs/INVENTARIO.md`,
   `docs/ANIMACIONES.md`, el atlas de íconos.
 
 **Git:**
-- Solo ramas `cline/<tarea>` desde `origin/main`, una tarea por rama.
-- Nunca se sube a `main`, a `claude/*` ni a la rama de otro.
-- Nunca `git push --force`, ni `rebase` de algo ya subido.
-- Si el push es rechazado: `git fetch` y `git merge origin/main`.
-- Con la rama fusionada, se borra (`--delete-branch`).
+- Ramas `cline/<tarea>` o `copilot/<tarea>` desde `origin/main`, una tarea por rama, nunca en `main`.
+- Nunca se sube a `main`, a `claude/*` ni a la rama de otro. Nunca `--force`, ni `rebase` de algo ya
+  subido. Si el push es rechazado: `git fetch` y `git merge origin/main`.
+- Al terminar la sesión, la rama se sube aunque falte algo.
+- Solo Claude fusiona (squash, borrando la rama) y publica. Nunca `--admin` ni `--auto`.
 
-**Las pruebas:**
-- Nunca se apaga, se salta ni se afloja una prueba para tener verde.
-- Si una regla cambia a propósito, la prueba se actualiza con los valores nuevos y el PR lo dice.
+**Las versiones** (las sube Claude al verificar): `X.Y.Z`.
+- Sube la Z en cada PR que cambia el juego (código, assets, reglas); la Y, en una fase o un sistema grande.
+- Lo que solo toca documentos o configuración no sube la versión ni publica.
 
-## 4. Cómo mirar el juego sin pantalla
+## 6. Las guardas automáticas
+
+`tools/ci/guardas.py` corre en el CI de cada PR (en el paso de Linux, que es obligatorio para fusionar) y
+antes de cada push en el Codespace (`.githooks/pre-push`). Cada guarda nació de un error de la sección 8:
+
+| Guarda | Frena | El error que la originó |
+|---|---|---|
+| `lugar`, `basura` | Archivos sueltos en la raíz, carpetas nuevas en la raíz o en `src/`, registros, caches de Python. | `ASSETS_MANIFEST.md`, `build_log.txt`, `campamento.json`. |
+| `vacio`, `formato` | Archivos vacíos en `assets/`, `arte/` o `android/`; un `.glb` o `.png` que no lo es. | 82 GLB y PNG de 0 bytes presentados como modelos. |
+| `texto` | Texto roto por la codificación. | El «×» de «9 slots × 6» escrito como los bytes `\xc2\x97`. |
+| `cmake` | Un `.c` de `src/` que no se compila. | `vat_example.c`. |
+| `tipos` | El mismo tipo o enumerador en dos headers. | `ChannelState`; `BoneIndex` en `src/entities/`. |
+| `reglas` | Que el bloque común de Cline y de Copilot no sea idéntico. | — |
+| `pruebas` | Pruebas borradas o recortadas, un `RUN` repetido, quitado o sin su función. | Mil líneas menos en `tests/test_main.c`. |
+| `enums` | Un enum que crece por el medio o pierde valores. | `KA_TARGET_LEFT` antes de `KA_MARK`. |
+| `version` | `VERSION` sin su sección en el `README.md` o el `ROADMAP`, o sin cambios del juego. | La v0.10.6, solo de documentos; la v0.10.8, sin novedades. |
+
+- **A mano:** `python3 tools/ci/guardas.py` compara con el punto donde la rama salió de `origin/main` y mira
+  también lo que aún no se commiteó.
+- **Los errores** se arreglan; nunca se esquiva una guarda. Los avisos (herramientas tocadas, reglas sin
+  prueba, una prueba sin `RUN`) no frenan, pero Claude los revisa.
+- **El pre-push** también impide subir a `main` o a `claude/*`. En el Codespace lo activa
+  `.devcontainer/setup.sh`; en uno anterior, una vez: `git config core.hooksPath .githooks`.
+
+## 7. Cómo mirar el juego sin pantalla
 
 Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-run -a` delante:
 
@@ -206,7 +273,7 @@ Mientras tanto, Cline puede leer archivos y ver si existen con sus herramientas 
 archivos, sin la terminal. Los comandos, de a uno: cadenas largas con `&&` son lo primero que se
 traba.
 
-## 5. Lo que ya salió mal (y no tiene que repetirse)
+## 8. Lo que ya salió mal (y no tiene que repetirse)
 
 - **PR #114 y #115: el CI quedó rojo y el juego se caía.**
   - Qué pasó:
@@ -220,117 +287,157 @@ traba.
 - **v0.10.3: el repositorio quedó dividido en tres ramas.**
   - Un push desde un Codespace viejo reemplazó la rama de Claude con el código de la v0.9.0.
   - Se unió sin perder historia.
-  - Reglas que salieron de ahí: nunca `--force`, nunca a ramas ajenas, y el Codespace se rehace
-    desde `main` en vez de remendarlo.
+  - Reglas que salieron de ahí: nunca `--force`, nunca a ramas ajenas, el Codespace se rehace desde
+    `main` en vez de remendarlo, y el pre-push que impide subir a `main` o a `claude/*`.
 - **Un commit que decía otra cosa que su diff.** «Increase population and vegetation density»
-  anunciaba «más casas y campos por persona», pero sus números hacían lo contrario: cada casa
-  alojaba más gente. Antes de escribir el mensaje se verifican los números.
+  anunciaba «más casas y campos por persona», pero sus números hacían lo contrario. Antes de escribir el
+  mensaje se verifican los números.
 - **Números cambiados sin sus pruebas ni sus documentos.** Cambiar una regla obliga a actualizar su
   prueba y el GDD en el mismo PR.
+- **v0.10.5 a v0.10.8: cinco versiones sin verificar** (lo encontró la revisión de la v0.10.9):
+  - el cambio de objetivo quedó en Q/E solas, que también giran la cámara: en combate, cada Q o E hacía
+    las dos cosas (el README decía Ctrl+Q y Ctrl+E);
+  - unas líneas pisaban la pose suave del parry, rompían las del desvío y el gancho, y hacían que los
+    guerreros de la tribu levantaran un parry en medio de su golpe;
+  - campos que nadie leía, `KA_TARGET_*` metidos en medio de su enum y declaraciones repetidas en
+    `city.h`;
+  - la v0.10.6 subió la versión solo con documentos, y la v0.10.7 anunció carpetas
+    (`assets/referencia/`, `assets/videos/`) que no existían;
+  - `src/entities/` (v0.10.8) quedó sin conectar, con dos advertencias y sus tipos repetidos en dos
+    headers, y sus novedades llegaron en otro PR que editó a mano `docs/INVENTARIO.md` (CI rojo);
+  - ninguna de esas versiones tuvo pruebas nuevas ni release.
+- **v0.10.9: el Codespace se rompió con tres tareas mezcladas en `main`.**
+  - Qué pasó:
+    - el VAT (de Copilot), un campamento nodal y el comienzo del agua quedaron en el `main` local, sin
+      rama y sin subir;
+    - `tests/test_main.c` perdió unas mil líneas (siete pruebas borradas, otra recortada, `RUN`
+      repetidos) y no enlazaba;
+    - `ChannelState` estaba en dos headers;
+    - 82 GLB y PNG vacíos en `assets/models/personajes/` (una categoría inventada, en plural);
+    - `inventario.py` cambiado para aceptar esas rutas (rompía la de cada objeto con `_` en el nombre);
+    - un `.vscode/settings.json` cortado a la mitad, `build/` y `build-vscode/` mezclados, y salidas de la
+      compilación pasadas por `head`;
+    - un reporte que llamó «punto estable» a un commit que nunca se había subido ni pasado el CI.
+  - Se rescató todo en la rama `cline/rescate-codespace` (queda de archivo, sin fusionar) y `main` no se
+    tocó.
+  - Lo que salió de ahí: el reparto de la sección 2 (el Codespace implementa y Claude verifica), las
+    guardas de la sección 6, subir la rama al terminar cada sesión, las pruebas que solo crecen y las
+    herramientas compartidas que no se cambian para que algo pase.
 
-## 6. Estado actual y qué sigue
+## 9. Estado actual y qué sigue
 
-*(Se actualiza al terminar cada tarea: la versión, lo último y lo que sigue.)*
+*(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.10.7. Carpetas de referencia (`assets/referencia/`) y videos (`assets/videos/`) para TRELLIS.2 y GRAIL,
-  y constantes por persona (110/45 y 180/40) en `src/sim/city.h`.
+- **Versión:** 0.10.9. La verificación de la 0.10.4 a la 0.10.8: el combate y la tecla de objetivo
+  arreglados, `src/entities/` marcado como andamiaje, las reglas de Cline y Copilot con el reparto nuevo y
+  las guardas en el CI.
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
-  - la parte B, los edificios: el kit, las murallas con la puerta acodada, las ruinas y las obras (v0.10.0 a v0.10.2);
-  - la tubería 3D (v0.10.6): `tools/modelos/modelos.py`, `tools/modelos/glb.py`, `tools/modelos/lowres.py`,
-    `tools/modelos/test_modelos.py`, `arte/modelos/models_manifest.json`;
-  - carpetas de recursos y constantes por persona (v0.10.7).
-- **Lo que sigue** espera material del usuario (PLAN_HERRAMIENTAS_IA.md):
-  - **las imágenes de la D.2:** primero las piezas de estilo animal, los amuletos y el akinakes; esas entran con
-    `tools/modelos/modelos.py traer` (ver `.clinerules`, «Modelos 3D»);
-  - **los cuerpos riggeados y los videos de la C.1:** para las animaciones.
+  - la parte B, los edificios: el kit, las murallas con la puerta acodada, las ruinas y las obras (v0.10.0 a
+    v0.10.2);
+  - las casas y los campos por persona (v0.10.4 y v0.10.7: 110 y 45 almas por casa, 180 y 40 por campo).
+- **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
+  - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
+    con modelos vacíos;
+  - el campamento nodal: descartado por el usuario (duplicaba el campamento);
+  - los cauces por estación: los rehace la fase 2 del agua.
+- **Lo que sigue:**
+  - **El agua** (los dibujos del usuario; el plan entero va en `docs/AGUA.md` con la fase 1):
+    - fase 1, v0.11.0, «El agua baja»: las alturas altiplano > desierto > estepa > bosque > fiordos;
+      ríos trazados por cuenca desde el glaciar hasta el canal y el mar; lagos con el nivel de su punto
+      de desborde y su río de salida; cascadas;
+    - fase 2, las estaciones del agua; fase 3, hielo, nado y pesca; fase 4, cómo se ve el agua; fase 5,
+      los bordes (el muro tras el canal y el tiburón: muerde, el jugador despierta herido en la playa, con
+      secuelas que solo cura un sanador o un druida).
+  - **Lo que espera material del usuario** (PLAN_HERRAMIENTAS_IA.md): las imágenes de la D.2 y los
+    cuerpos riggeados y los videos de la C.1.
 
-## 7. Cómo informar al usuario
+## 10. Cómo informar al usuario
 
 - Siempre en español y en pocas líneas.
-- Qué cambió, cómo se probó (con números: comprobaciones, caminatas, capturas), el enlace del PR y el de
-  la release, y lo pendiente o lo que hay que decidir.
+- Qué cambió, cómo se probó (con números: comprobaciones, caminatas, capturas), el enlace del PR y, si hubo
+  versión, el de la release. Lo pendiente o lo que hay que decidir.
 - Si algo no se pudo hacer, decirlo claro, con el error y lo que hace falta.
 - **Antes de algo que no se deshace** (borrar ramas o archivos del usuario, reescribir historia,
   publicar), preguntar.
+- **Los resúmenes de cada versión** van en el `README.md` y en el `ROADMAP`, no en esta guía.
 
-### Resumen de la versión 0.10.7
+## 11. El prompt maestro
 
-**Qué cambió:**
-- Se agregaron carpetas `assets/referencia/` (imágenes D.2 para TRELLIS.2) y `assets/videos/` (videos C.1 para GRAIL).
-- En `src/sim/city.h` se definieron constantes por persona:
-  - `CITY_MAX_ALMAS_HOGAR_CAPITAL = 110`
-  - `CITY_MAX_ALMAS_HOGAR_ALDEA = 45`
-  - `CITY_MAX_ALMAS_CAMPO_CAPITAL = 180`
-  - `CITY_MAX_ALMAS_CAMPO_ALDEA = 40`
-
-**Cómo se probó:**
-- CI verde en Linux: `151339` comprobaciones en `sim_tests`.
-- Cambios en `src/sim/city.h`, `src/sim/city.c`, `docs/GDD.md`, `docs/ROADMAP.md`, `docs/GUIA_IA.md`.
-
-**Enlace del PR:** (se crea al final)
-
-**Lo pendiente:**
-- Las imágenes de la D.2 (personas, animales, armas, estructuras, objetos) para seguir llenando el manifiesto.
-- Los videos de la C.1 (animaciones de combate, personas) para generar clips con GRAIL o alternativas.
-
-## 8. El prompt maestro
-
-Para la primera sesión de Cline en un Codespace nuevo (o cuando haya que retomar todo). Se copia
-entero:
+Para la primera sesión de Cline o de Copilot en un Codespace nuevo (o cuando haya que retomar todo). Se
+copia entero:
 
 ```text
 Vas a continuar el desarrollo de SCAVENGERS THRIVE (C11 + raylib, Windows y Android) en este
-Codespace, donde lo dejó Claude Code en la v0.10.3. Trabajamos en español.
+Codespace. Trabajamos en español. Tú haces la primera versión de cada tarea, en tu rama y con su PR;
+Claude Code la verifica, la corrige, la fusiona y publica la release (docs/GUIA_IA.md, sección 2).
 
 Antes de tocar nada:
-1. Lee completos, en este orden: .clinerules, docs/GUIA_IA.md, README.md (sobre todo las novedades de
-   cada versión), docs/ROADMAP.md y docs/PLAN_HERRAMIENTAS_IA.md. Para cada tarea, lee además el
-   documento de su sistema (docs/GDD.md, docs/ARQUITECTURA.md, docs/MUNDO.md, docs/PARTIDAS.md...)
-   y .claude/skills/estepa/SKILL.md.
+1. Lee completos, en este orden: tus reglas (.clinerules o .github/copilot-instructions.md),
+   docs/GUIA_IA.md, README.md (sobre todo las novedades de cada versión), docs/ROADMAP.md y
+   docs/PLAN_HERRAMIENTAS_IA.md. Para cada tarea, lee además el documento de su sistema
+   (docs/GDD.md, docs/ARQUITECTURA.md, docs/MUNDO.md, docs/PARTIDAS.md...) y
+   .claude/skills/estepa/SKILL.md.
 2. Revisa el entorno y dime qué encontraste (los comandos de a uno, sin encadenarlos con &&; si uno
-   se aborta o no muestra salida, no lo repitas: lee la sección 4 de docs/GUIA_IA.md, «Si Cline no
-   puede correr comandos», y avísame):
-   - git status: en main, limpio; git fetch origin y que main esté igual a origin/main;
+   se aborta o no muestra salida, no lo repitas: lee la sección 7 de docs/GUIA_IA.md y avísame):
+   - git status: limpio; git fetch origin; en main y al día con origin/main (sin commits propios);
+   - git config core.hooksPath (tiene que decir .githooks; si no, córrelo: git config core.hooksPath .githooks);
    - que gh esté instalado y autenticado (gh auth status); si no, corre bash .devcontainer/setup.sh;
-   - cmake --build build && ./build/sim_tests (si no hay build/, el setup lo arma);
+   - rm -rf build, cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release, cmake --build build y
+     ./build/sim_tests (lee la salida entera);
+   - python3 tools/ci/guardas.py (0 errores);
    - una captura: cmake -E copy_directory assets build/assets y, desde build/,
-     xvfb-run -a ./estepa --frames 60 --screenshot shot.png; mírala.
-3. Resúmeme en pocas líneas la versión, el estado del plan y lo que propones hacer después. No cambies
-   nada hasta que te diga qué tarea hacer.
+     xvfb-run -a ./estepa --frames 60 --screenshot shot.png; mírala y dime qué se ve.
+3. Resúmeme en pocas líneas la versión y lo que propones hacer después. No cambies nada hasta que te
+   diga qué tarea hacer.
 
 En cada tarea, sin excepciones:
-- Sigue el flujo de la sección 2 de docs/GUIA_IA.md: rama cline/<tarea> desde origin/main; las
-  reglas de la sección 3; todas las pruebas y una captura que mires; los documentos; PR; CI verde en
-  Linux, Windows y Android; squash merge borrando la rama; la release si subió VERSION.
-- Nunca subas a main ni uses --force. Nunca apagues ni aflojes una prueba para tener verde. Nunca
-  agregues bibliotecas externas ni armes un sistema paralelo a uno que ya existe (búscalo con git grep).
-- Si la tarea es grande o ambigua, primero proponme un plan corto (archivos, pruebas, documentos,
-  versión) y espera mi OK. Si algo falla y no ves la causa, para y pregúntame.
-- Al terminar, actualiza la sección 6 de docs/GUIA_IA.md e infórmame según la sección 7: qué
-  cambió, cómo lo probaste (con números), el enlace del PR y de la release, y lo pendiente.
+- Sigue la sección 3 de docs/GUIA_IA.md: rama cline/<tarea> (o copilot/<tarea>) desde origin/main;
+  solo lo que la tarea pide; pruebas nuevas al final de tests/test_main.c; todas las pruebas, las
+  guardas y una captura que mires; el documento del sistema; PR con la sección «Para Claude» llena.
+- No toques VERSION, ni las novedades del README, ni el ROADMAP. No fusiones ni publiques: eso lo hace
+  Claude al verificar.
+- Nunca trabajes en main. Nunca --force, --admin ni --auto. Nunca borres, recortes ni aflojes una
+  prueba. Nunca cambies una herramienta compartida para que algo pase. Nunca armes un sistema paralelo
+  a uno que ya existe (búscalo con git grep). Nunca subas archivos vacíos ni marcadores.
+- Si la tarea es grande o ambigua, primero proponme un plan corto (archivos, pruebas, documentos) y
+  espera mi OK. Si algo falla y no ves la causa, para y pregúntame.
+- Al terminar la sesión, tu rama siempre subida (aunque falte: el PR como borrador). Infórmame en
+  pocas líneas: qué cambió, cómo lo probaste (con números), el enlace del PR y lo pendiente.
 ```
 
-## 9. Plantilla para pedir cada tarea
+## 12. Plantillas
+
+**Para pedir una tarea al Codespace** (Cline o Copilot):
 
 ```text
 Tarea: <lo que quieres, con el detalle que tengas: qué, dónde y por qué>.
 
-Sigue .clinerules y docs/GUIA_IA.md. Antes de escribir código, dime en pocas líneas qué vas a
-cambiar (archivos, pruebas, documentos y versión) y espera mi OK.
+Sigue tus reglas y docs/GUIA_IA.md. Antes de escribir código, dime en pocas líneas qué vas a
+cambiar (archivos, pruebas y documentos) y espera mi OK. Al final, la rama subida y el PR con la
+sección «Para Claude» llena.
 ```
 
-Para los modelos 3D alcanza con pasar la URL del `.glb` (de TRELLIS.2 o RigNet en Hugging Face):
-`.clinerules` dice qué hacer con ella.
+Para los modelos 3D alcanza con pasar la URL del `.glb` (de TRELLIS.2 o RigNet en Hugging Face): las
+reglas dicen qué hacer con ella.
 
-## 10. Para el dueño del repositorio
+**Para pedir la verificación a Claude Code:**
 
-Dos ajustes de GitHub que hacen que ni una IA ni un descuido puedan romper `main`:
-- **Settings → Branches → Add branch protection rule** (o *Rules → Rulesets*) para `main`:
+```text
+Verifica el PR #<número> (<lo que debía hacer, en una línea>). Si está bien o lo corriges, publícalo
+con su versión y su release.
+```
+
+## 13. Para el dueño del repositorio
+
+Los ajustes de GitHub que hacen que ni una IA ni un descuido puedan romper `main`:
+- **Settings → Rules → Rulesets** (o *Branches → Add branch protection rule*) para `main`:
   - *Require a pull request before merging*, sin pedir aprobaciones: hay un solo dueño.
   - *Require status checks to pass*, con «Linux (tests + build + captura)», «Windows (tests + build)»
-    y «Android (APK arm64)».
+    y «Android (APK arm64)». Las guardas corren dentro del de Linux.
   - *Block force pushes*.
-- **Settings → General → Pull Requests → Automatically delete head branches:** cada rama se borra
-  sola al fusionar su PR, y queda solo `main`.
+  - *Bypass list* vacía: así nadie, ni con permisos de administrador (`gh pr merge --admin`), fusiona con
+    el CI en rojo.
+- **Settings → General → Pull Requests → Automatically delete head branches:** cada rama se borra sola al
+  fusionar su PR, y queda solo `main` (más la de archivo, `cline/rescate-codespace`).

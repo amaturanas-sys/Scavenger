@@ -1,0 +1,5 @@
+# Las pruebas que se retiraron a proposito (tools/ci/guardas.py las deja pasar).
+# Las pruebas no se borran ni se recortan: si una regla cambia, la prueba se actualiza con los
+# valores nuevos. Solo cuando un sistema entero se quita, sus pruebas vienen aca, con el motivo y el
+# PR, y lo aprueba Claude Code al verificar. Una por linea:
+#   test_nombre: el motivo (PR #N)

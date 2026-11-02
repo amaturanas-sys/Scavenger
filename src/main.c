@@ -103,8 +103,9 @@ static float g_drone; // --dron: la camara a tantos metros (pruebas y capturas d
 
 static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const Terrain *t, float dt) {
     // Orbita: Q/E o arrastre con boton derecho (sin arrastrar, el derecho cubre); rueda para el zoom.
-    if (IsKeyDown(KEY_Q)) rig->yaw += 1.8f * dt;
-    if (IsKeyDown(KEY_E)) rig->yaw -= 1.8f * dt;
+    // Con Ctrl, Q/E cambian de objetivo en combate (KA_TARGET_LEFT/RIGHT): la camara no gira.
+    if (IsKeyDown(KEY_Q) && !input_ctrl()) rig->yaw += 1.8f * dt;
+    if (IsKeyDown(KEY_E) && !input_ctrl()) rig->yaw -= 1.8f * dt;
     float dx, dy;
     if (input_right_drag(&dx, &dy)) {
         rig->yaw -= dx * 0.006f;

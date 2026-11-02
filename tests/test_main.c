@@ -3171,6 +3171,17 @@ static void test_save_blocks_numbers_change_type(void) {
     CHECK(sf_same(&T_TNum1, &T_TNum1) && !sf_same(&T_TNum1, &T_TNum2) && !sf_same(&T_TRootV1, &T_TRootV2));
 }
 
+// Ctrl+Q / Ctrl+E cambian de objetivo en combate (v0.10.5). Q y E solas giran la camara (src/main.c): ninguna
+// accion las usa sin Ctrl (en la v0.10.5 cambiaban de objetivo y giraban la camara a la vez).
+static void test_keymap_target_keys(void) {
+    CHECK(keymap_matches(KA_TARGET_LEFT, 'Q', KM_CTRL) && keymap_matches(KA_TARGET_RIGHT, 'E', KM_CTRL));
+    CHECK(!keymap_matches(KA_TARGET_LEFT, 'Q', 0) && !keymap_matches(KA_TARGET_RIGHT, 'E', 0));
+    for (int a = 0; a < KA_COUNT; a++)
+        CHECK(!keymap_matches((KeyAction)a, 'Q', 0) && !keymap_matches((KeyAction)a, 'E', 0) &&
+              !keymap_matches((KeyAction)a, 'Q', KM_SHIFT) && !keymap_matches((KeyAction)a, 'E', KM_SHIFT));
+    CHECK(strcmp(keymap_text(KA_TARGET_LEFT), "Ctrl+Q") == 0 && strcmp(keymap_text(KA_TARGET_RIGHT), "Ctrl+E") == 0);
+}
+
 // ---------------------------------------------------------------- fase 1: teclas, parry, bloqueo, objetivo
 static void test_keymap_four_buttons(void) {
     // Los cuatro botones de combate: H J K L (con Mayus, corriendo, tambien), no las teclas viejas.
@@ -5102,6 +5113,7 @@ int main(void) {
     RUN(test_save_blocks_reject_damage);
     RUN(test_save_blocks_numbers_change_type);
     RUN(test_keymap_four_buttons);
+    RUN(test_keymap_target_keys);
     RUN(test_melee_parry_window);
     RUN(test_melee_weapon_block_costs_stamina);
     RUN(test_target_cycle);
