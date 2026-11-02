@@ -61,6 +61,44 @@ void terrain_dry_step(const Terrain *t, float x0, float z0, float *x, float *z) 
 static WaterSeason look_season(const TerrainLook *L) { return (WaterSeason){ L->flood, L->temp, L->temp_late, L->melt, L->sea_ice }; }
 WaterSeason terrain_season(const Terrain *t) { return look_season(&t->look); }
 
+WaterStep terrain_water_step(const Terrain *t, float x, float z) {
+    WaterSeason s = look_season(&t->look);
+    WaterNow n;
+    float w = world_water_now(t->world, x, z, &s, &n);
+    return hazard_water_step(w - terrain_height(t, x, z), n.ice, WADE_PERSON);
+}
+
+float terrain_body_y(const Terrain *t, float x, float z) {
+    WaterSeason s = look_season(&t->look);
+    WaterNow n;
+    float ground = terrain_height(t, x, z), water = world_water_now(t->world, x, z, &s, &n);
+    if (water <= ground + WADE_ANKLE) return ground;
+    return hazard_ice_walkable(n.ice) ? water : fmaxf(ground, water - 1.25f);
+}
+
+void terrain_wade_step(const Terrain *t, float x0, float z0, float *x, float *z) {
+    // El agua donde esta frena el paso.
+    float k = hazard_water_speed(terrain_water_step(t, x0, z0));
+    float dx = (*x - x0) * k, dz = (*z - z0) * k;
+    *x = x0 + dx, *z = z0 + dz;
+    if (!terrain_deep_water(t, *x, *z, WADE_PERSON) || terrain_deep_water(t, x0, z0, WADE_PERSON)) return; // vadea, o ya nada
+    // A lo hondo: un rio se cruza nadando (hay donde hacer pie mas adelante); un lago o el mar, se rodea.
+    float l = sqrtf(dx * dx + dz * dz);
+    if (l < 1e-4f) return;
+    for (float r = 4.0f; r <= TERRAIN_NARROW_WATER; r += 4.0f)
+        if (!terrain_deep_water(t, *x + dx / l * r, *z + dz / l * r, WADE_PERSON)) return;
+    static const float TURN[8] = { 0.5f, -0.5f, 1.0f, -1.0f, 1.5f, -1.5f, 2.0f, -2.0f };
+    for (int i = 0; i < 8; i++) {
+        float cs = cosf(TURN[i]), sn = sinf(TURN[i]);
+        float nx = x0 + dx * cs - dz * sn, nz = z0 + dx * sn + dz * cs;
+        if (!terrain_deep_water(t, nx, nz, WADE_PERSON)) {
+            *x = nx, *z = nz;
+            return;
+        }
+    }
+    *x = x0, *z = z0;
+}
+
 float terrain_water(const Terrain *t, float x, float z) {
     WaterSeason s = look_season(&t->look);
     return world_water_now(t->world, x, z, &s, NULL);

@@ -60,6 +60,24 @@ float hazard_ice_break_chance(float ice, float speed, float load) {
     return fminf(1.0f, base * motion * load);
 }
 
+float hazard_ice_load(float kg) { return kg <= 0.0f ? 0.0f : powf(kg / 75.0f, 0.55f); }
+
+// ---------------------------------------------------------------------- agua
+WaterStep hazard_water_step(float depth, float ice, float wade) {
+    if (depth < WADE_ANKLE) return WSTEP_DRY;
+    if (hazard_ice_walkable(ice)) return WSTEP_ICE;
+    return depth < wade ? WSTEP_WADE : WSTEP_SWIM;
+}
+
+float hazard_water_speed(WaterStep s) { return s == WSTEP_SWIM ? 0.4f : s == WSTEP_WADE ? 0.55f : 1.0f; }
+
+float hazard_ice_fish_chance(int fish, float dist, bool spear) {
+    if (fish <= 0 || dist > ICE_FISH_REACH) return 0.0f;
+    float near = 1.0f - 0.6f * clamp01(dist / ICE_FISH_REACH); // los de lejos tardan en acudir
+    float many = clamp01((float)fish / 8.0f);                 // un banco flaco pica menos
+    return (spear ? 0.55f : 0.4f) * near * (0.4f + 0.6f * many);
+}
+
 // --------------------------------------------------------------- socavones
 bool hazard_sinkhole_cell(uint32_t seed, int day, int cx, int cz, Sinkhole *out) {
     Rng r;

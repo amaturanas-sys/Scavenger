@@ -8,6 +8,7 @@
 #include <stdbool.h>
 
 #include "raylib.h"
+#include "sim/hazards.h"
 #include "sim/world.h"
 
 #define CHUNK_SIZE 48.0f   // metros por lado
@@ -86,8 +87,19 @@ bool terrain_deep_water(const Terrain *t, float x, float z, float depth);
 Region terrain_region(const Terrain *t, float x, float z);
 // Un paso de (x0, z0) a (*x, *z) que no entre en agua honda (mas de 0,6 m, o hielo que no
 // aguanta): si entra, prueba a rodearla girando a uno y otro lado; si no puede, se queda.
-// Quien ya esta en el agua puede salir. Para la gente (la tribu, los enemigos) y sus monturas.
+// Quien ya esta en el agua puede salir. Para lo que no nada: los carros de guerra.
 void terrain_dry_step(const Terrain *t, float x0, float z0, float *x, float *z);
+// El paso de la gente (la tribu, los enemigos) y sus monturas (docs/AGUA.md, fase 3): vadea hasta WADE_PERSON
+// (src/sim/hazards.h); mas hondo, cruza nadando un agua angosta (un rio: hay donde hacer pie a menos de
+// TERRAIN_NARROW_WATER m en esa direccion) y rodea una ancha (un lago, el mar) como terrain_dry_step. El agua frena
+// el paso: vadeando y nadando avanza menos. El hielo que aguanta se camina.
+#define TERRAIN_NARROW_WATER 40.0f
+void terrain_wade_step(const Terrain *t, float x0, float z0, float *x, float *z);
+// Donde van los pies de alguien en (x, z): el suelo; sobre el hielo que aguanta, encima; nadando, con la cabeza
+// afuera (1,25 m bajo la superficie).
+float terrain_body_y(const Terrain *t, float x, float z);
+// Como esta alguien en (x, z): en seco, vadeando, nadando o sobre el hielo (src/sim/hazards.h).
+WaterStep terrain_water_step(const Terrain *t, float x, float z);
 // Agua (o hielo) en el area cargada. Despues de lo opaco.
 void terrain_draw_water(const Terrain *t, float time);
 // Las cascadas del area cargada (docs/AGUA.md, pagina 4): la cortina de agua y la espuma al pie (helada si su

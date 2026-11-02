@@ -46,8 +46,31 @@ float hazard_mud_scale(float wetness, float snow_cover);
 #define ICE_WALKABLE 0.5f
 bool hazard_ice_walkable(float ice);
 // Probabilidad por segundo de que la capa se rompa bajo alguien.
-// speed: m/s; load: 1 a pie, ~2.5 a caballo.
+// speed: m/s; load: 1 a pie, ~2.5 a caballo (hazard_ice_load).
 float hazard_ice_break_chance(float ice, float speed, float load);
+// La carga sobre el hielo de algo de este peso (kg): 1 para una persona de 75 kg; un caballo, 2,5.
+float hazard_ice_load(float kg);
+
+// --------------------------------------------------------------------- agua (docs/AGUA.md, fase 3)
+// Como se mueve alguien segun el agua donde pisa: depth, lo que el agua sube sobre el suelo (<= 0 en seco);
+// ice, su hielo; wade, hasta donde vadea (una persona, WADE_PERSON; un animal, segun su talla). Crece al final.
+typedef enum {
+    WSTEP_DRY,  // en seco (o en agua que no llega a los tobillos)
+    WSTEP_WADE, // vadeando: el agua frena
+    WSTEP_SWIM, // nadando: mas lento todavia, y sin pelear
+    WSTEP_ICE,  // sobre el hielo que aguanta (que puede romperse)
+    WSTEP_KINDS
+} WaterStep;
+#define WADE_PERSON 1.2f   // m: una persona vadea hasta aca; mas hondo, nada
+#define WADE_ANKLE 0.25f   // m: menos que esto no cuenta
+WaterStep hazard_water_step(float depth, float ice, float wade);
+float hazard_water_speed(WaterStep s); // cuanto de su velocidad: 1 en seco y en el hielo
+
+// La pesca en el hielo: un agujero hecho con el picahielo, y peces que acuden a el.
+#define ICE_FISH_REACH 30.0f // m: los peces de un banco a esta distancia del agujero acuden
+// La probabilidad de sacar un pez en un intento: fish, cuantos peces tiene el banco mas cercano (0: ninguno a
+// ICE_FISH_REACH); dist, a cuantos m esta; spear, con una lanza en la mano (si no, con la mano y un sedal).
+float hazard_ice_fish_chance(int fish, float dist, bool spear);
 
 // --------------------------------------------------------------- socavones
 typedef enum { SINK_NONE, SINK_SNOW, SINK_QUICKSAND } SinkKind;

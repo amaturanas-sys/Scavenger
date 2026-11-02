@@ -258,6 +258,7 @@ Pescador de los fiordos	Fjord fisher
 Pez (banco)	Fish (shoal)
 Peñasco (escalable)	Crag (climbable)
 Pica imperial	Imperial pike
+Picahielo	Ice pick
 Piedra con mensaje cifrado	Stone with coded message
 Piedra de honda	Sling stone
 Piedra-ciervo	Deer stone
@@ -370,6 +371,7 @@ Zorro	Fox
 %s · Enter o clic otra vez: reparar	%s · Enter or click again: repair
 , antorcha	, torch
 , lleva algo	, carrying
+Abriste un agujero en el hielo. Pesca en él (Tab → Acciones), y no lo pises.	You cut a hole in the ice. Fish in it (Tab → Actions), and don't step in it.
 Acciones	Actions
 Cambia la estación (%s): aquí el pasto no alcanza y el ganado pasará hambre. Conviene migrar.	The season turns (%s): the grass here is not enough and the herd will go hungry. Better to migrate.
 Cambia la estación (%s): aquí hay buen pasto; los pastores juntan más forraje.	The season turns (%s): the grass is good here; the herders gather more fodder.
@@ -434,9 +436,11 @@ No tienes agua cruda que hervir (llena el odre en la orilla).	You have no raw wa
 No tienes armas que enfundar.	You have no weapons to sheathe.
 Obra terminada: %s.	Work finished: %s.
 Obras	Works
+Para abrir un agujero hay que estar sobre el hielo de un lago o un río hondo, mirando adonde lo quieres.	To cut a hole you must stand on the ice of a deep lake or river, facing where you want it.
 Para cribar hay que estar en la orilla, mirando al agua.	To pan you must stand on the shore, facing the water.
 Para hervir el agua hace falta un fuego encendido cerca.	Boiling water needs a lit fire nearby.
 Para llenar el odre hay que estar en la orilla, mirando al agua, o junto a un pozo.	To fill the waterskin you must stand on the shore, facing the water, or next to a well.
+Para pescar en el hielo hay que estar junto a un agujero (ábrelo con el picahielo).	To fish through the ice you must stand next to a hole (cut it with the ice pick).
 Para picar hay que estar junto a una veta de hierro (los exploradores las marcan en el mapa).	To mine you must stand by an iron vein (scouts mark them on the map).
 Pasas el arma a la otra mano: %s.	You switch the weapon to the other hand: %s.
 Q / E cambia de pestaña	Q / E switches tab
@@ -733,6 +737,7 @@ El %s despierta y huye a avisar a los suyos.	The %s wakes up and runs off to war
 El %s esquiva la lanza.	The %s dodges the lance.
 El %s para la lanza con el escudo.	The %s stops the lance with his shield.
 El %s para tu %s%s.	The %s blocks your %s%s.
+El %s se ahoga bajo el hielo.	The %s drowns under the ice.
 El %s se espanta ante las pieles de fiera y retrocede.	The %s is frightened by the beast pelts and backs off.
 El %s se zafa del agarre: ¡quedas expuesto!	The %s breaks the hold: you're exposed!
 El golpe del %s alcanza a tu montura.	The %s's blow hits your mount.
@@ -844,6 +849,7 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡El %s te desarma con una llave! (1 a 9 para volver a empuñar)	The %s disarms you with a lock! (1 to 9 to wield again)
 ¡El carro de guerra arrolla a %s!	The war chariot runs %s down!
 ¡El carro de guerra te arrolla!	The war chariot runs you down!
+¡El hielo se rompe bajo un %s! Forcejea en el agua helada.	The ice breaks under a %s! It struggles in the freezing water.
 ¡Fanáticos del culto! Buscan prisioneros para el sacrificio.	Cult fanatics! They seek prisoners for sacrifice.
 ¡Golpeaste el nido! Ahí vienen...	You hit the nest! Here they come...
 ¡Jinetes bandidos al galope! Derríbalos del caballo.	Bandit riders galloping in! Knock them off their horses.
@@ -894,10 +900,12 @@ El %s de la tribu tiene hambre: dale carne (F) o déjalo cazar.	The tribe's %s i
 El %s de la tribu tiene hambre: llévalo a pastar o dale forraje (F).	The tribe's %s is hungry: take it to graze or give it fodder (F).
 El %s de la tribu tiene sed: llévalo al agua o dale de beber (F, con agua).	The tribe's %s is thirsty: take it to water or give it a drink (F, with water).
 El %s está débil: ¡lánzale el lazo (menú) y dale carne!	The %s is weak: lasso it (menu) and feed it meat!
+El %s se ahogó bajo el hielo.	The %s drowned under the ice.
 El %s se fue: pasó demasiada hambre y vuelve a ser salvaje.	The %s left: it went hungry too long and turned wild again.
 El %s se fue: pasó demasiada sed y vuelve a ser salvaje.	The %s left: it was too thirsty and goes wild again.
 El %s tiene hambre: necesitas carne, o déjalo cazar.	The %s is hungry: you need meat, or let it hunt.
 El %s tiene hambre: necesitas forraje (corta hierba alta con F), o llévalo a pastar.	The %s is hungry: you need fodder (cut tall grass with F), or take it to graze.
+El hielo se rompe bajo un %s: forcejea en el agua.	The ice breaks under a %s: it struggles in the water.
 El humo calma a las abejas: tomas miel (+2).	Smoke calms the bees: you take honey (+2).
 Esta colmena ya no tiene miel hoy.	This hive has no more honey today.
 Este animal no da leche (Mayús+F: sacrificar).	This animal gives no milk (Shift+F: slaughter).
@@ -915,8 +923,11 @@ Le das carne al %s: ¡ahora es de la tribu y te defenderá!	You feed the %s: now
 Los peces se escapan entre tus piernas.	The fish slip between your legs.
 Mayús+F: sacrificar (%s)	Shift+F: slaughter (%s)
 Nació una cría de %s (%s).	A young %s was born (%s).
+Nada picó esta vez: espera otro poco (con una lanza en la mano, pican más).	Nothing bit this time: wait a little longer (with a spear in hand, they bite more).
+Nada picó esta vez: espera otro poco.	Nothing bit this time: wait a little longer.
 Necesitas llevar carne para darle de comer al %s.	You need meat to feed the %s.
 No hay ningún animal con el que hacer algo aquí.	No animal to deal with here.
+No pica nada: aquí no hay peces. Prueba en otro lugar del lago, sobre lo más hondo.	Nothing bites: there are no fish here. Try another spot on the lake, over the deepest water.
 No te cabe más forraje.	No room for more fodder.
 Ordeñas la %s: +%d leche.	You milk the %s: +%d milk.
 Quedó preñada una hembra de %s: pare en %.0f días.	A %s female is with young: due in %.0f days.
@@ -931,10 +942,13 @@ Una es %s.	One is a %s.
 Ya ordeñaste hoy a este animal.	You already milked this animal today.
 hembra	female
 macho	male
+¡El %s de la tribu rompió el hielo y cayó al agua helada!	The tribe's %s broke through the ice and fell into the freezing water!
 ¡La flecha atraviesa un pez! (+1 carne fresca)	Your arrow spears a fish! (+1 fresh meat)
 ¡Las abejas defienden la colmena! Hace falta humo (antorcha encendida).	The bees defend the hive! You need smoke (lit torch).
 ¡Pescaste un pez! (+1 carne fresca)	You caught a fish! (+1 fresh meat)
 ¡Pescaste un pez! Pero no te cabe: lo sueltas.	You caught a fish! But no room: you let it go.
+¡Sacaste un pez por el agujero! (+1 carne fresca)	You pulled a fish through the hole! (+1 fresh meat)
+¡Sacaste un pez por el agujero! Pero no te cabe: lo sueltas.	You pulled a fish through the hole! But you have no room: you let it go.
 ¡Tu montura cayó! Sigues a pie.	Your mount fell! You go on foot.
 # --- src/game/forge_game.c
 Encuentras hierro de pantano en la orilla: lo marcas en tu mapa (M). F para sacarlo.	You find bog iron on the shore: you mark it on your map (M). F to dig it out.
@@ -1635,6 +1649,7 @@ no	no
 sí	yes
 · %d cautivo%s	· %d captive%s
 # --- src/sim/actions.c
+Abrir un agujero en el hielo	Cut a hole in the ice
 Arrojar el objeto que se lleva en la mano.	Throw the object in your hand.
 Atrapar un animal salvaje: una montura queda domada; un depredador debilitado queda atado hasta que le des carne (F).	Catch a wild animal: a mount is tamed; a weakened predator stays tied until you give it meat (F).
 Cabaña de troncos	Log cabin
@@ -1660,6 +1675,7 @@ Horno de fundición (bronce)	Smelting furnace (bronze)
 Instalar fogata	Set campfire
 Instalar montura	Fit saddle
 Instalar tienda	Pitch tent
+Junto a un agujero en el hielo: los peces de cerca acuden. Con una lanza en la mano, pican más.	Next to a hole in the ice: nearby fish come to it. With a spear in hand, they bite more.
 Junto a un fuego encendido: el agua hervida es segura. Gasta una leña.	By a lit fire: boiled water is safe. Uses one firewood.
 Junto a una veta de hierro del altiplano o al hierro de pantano: mineral, que se funde en el horno de acero.	By a highland iron vein or bog iron: ore, which is smelted in the steel furnace.
 Lanzar	Throw
@@ -1669,9 +1685,11 @@ Llenar el odre	Fill the waterskin
 Luz en la noche; ahuyenta fieras.	Light at night; keeps beasts away.
 Muro de empalizada	Palisade wall
 Muro de piedra	Stone wall
+Pescar en el agujero	Fish through the hole
 Picar la veta	Mine the vein
 Recoger un objeto del suelo. Hace falta una mano libre.	Pick an object up from the ground. Needs a free hand.
 Refugio	Shelter
+Sobre el hielo de un lago o un río hondo, con el picahielo: un agujero para pescar. Se hiela de nuevo durante la noche, y quien lo pisa cae al agua.	On the ice of a deep lake or river, with the ice pick: a hole to fish through. It freezes over again during the night, and whoever steps in it falls into the water.
 Taller del herrero	Smith's workshop
 Tienda ligera de viaje.	Light travel tent.
 Tomar	Take
@@ -1681,12 +1699,14 @@ Una en cada mano, a dos manos, arma y escudo...	One in each hand, two-handed, we
 Una fogata pequeña para una persona o dos.	A small campfire for one or two people.
 a dos manos	two-handed
 a una mano	one-handed
+agujero en el hielo	hole in the ice
 animal salvaje	wild animal
 arma y escudo	weapon and shield
 desarmado	unarmed
 falta un %s en la tribu	the tribe lacks a %s
 faltan manos (mínimo %d)	not enough hands (at least %d)
 fuego	fire
+hielo	ice
 lista	ready
 montura	mount
 muro	wall

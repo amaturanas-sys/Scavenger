@@ -269,6 +269,7 @@ static const SfField SF_F_Npc[] = {
     SF_ONE(Npc, alarm, "float", SF_FLOAT, NULL),
     SF_ONE(Npc, sheltered, "bool", SF_BOOL, NULL),
     SF_ONE(Npc, hide_at, "Vector3", SF_BYTES, NULL),
+    SF_ONE(Npc, sunk, "float", SF_FLOAT, NULL),
 };
 static const SfType SF_T_Npc = SF_TYPE(Npc, SF_F_Npc);
 
@@ -318,6 +319,7 @@ static const SfField SF_F_Animal[] = {
     SF_ONE(Animal, grit, "float", SF_FLOAT, NULL),
     SF_ONE(Animal, foal, "float", SF_FLOAT, NULL),
     SF_ONE(Animal, pregnant, "float", SF_FLOAT, NULL),
+    SF_ONE(Animal, sunk, "float", SF_FLOAT, NULL),
 };
 static const SfType SF_T_Animal = SF_TYPE(Animal, SF_F_Animal);
 
@@ -612,6 +614,9 @@ static const SfField SF_F_GameActions[] = {
     SF_ONE(GameActions, expedition_out, "bool", SF_BOOL, NULL),
     SF_ONE(GameActions, expedition_sacked, "bool", SF_BOOL, NULL),
     SF_ONE(GameActions, vassal_season, "int", SF_INT, NULL),
+    SF_ARR(GameActions, ice_holes, "Vector3", SF_BYTES, NULL),
+    SF_ONE(GameActions, ice_hole_count, "int", SF_INT, NULL),
+    SF_ONE(GameActions, ice_hole_day, "int", SF_INT, NULL),
 };
 static const SfType SF_T_GameActions = SF_TYPE(GameActions, SF_F_GameActions);
 

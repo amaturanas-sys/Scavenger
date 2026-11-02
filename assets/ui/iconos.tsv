@@ -154,3 +154,5 @@ indice	nombre	columna	fila	descripcion
 150	monedas	6	9	Monedas: plata para comerciar
 151	balanza	7	9	Comercio: balanza de dos platillos
 152	camello	8	9	Caravana: camello cargado
+153	picahielo	9	9	Picahielo: asta con punta de cincel sobre el hielo agrietado
+154	pescar	10	9	Pescar en el hielo: un pez que sale por el agujero

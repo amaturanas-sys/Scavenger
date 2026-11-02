@@ -91,12 +91,6 @@ float cb_speed_scale(const Combat *cb) {
     return cb->player.down ? 1.0f : s;
 }
 
-static float surface_y(const Terrain *t, float x, float z) {
-    float ground = terrain_height(t, x, z), water = terrain_water(t, x, z);
-    if (water > ground + 0.25f) return hazard_ice_walkable(terrain_ice(t, x, z)) ? water : fmaxf(ground, water - 1.25f);
-    return ground;
-}
-
 static void lower_first(char *s) {
     if (s[0] >= 'A' && s[0] <= 'Z') s[0] = (char)(s[0] - 'A' + 'a');
 }
@@ -116,7 +110,7 @@ static Enemy *spawn_enemy(Combat *cb, EnemyKind kind, Vector3 pos, const Terrain
         const EnemyDef *def = enemy_def(kind);
         e->used = true;
         e->kind = kind;
-        e->pos = (Vector3){ pos.x, surface_y(t, pos.x, pos.z), pos.z };
+        e->pos = (Vector3){ pos.x, terrain_body_y(t, pos.x, pos.z), pos.z };
         e->home = e->wander_to = e->pos;
         e->target = -1;
         if (def->beast) health_init_beast(&e->h, def->hp);
@@ -363,13 +357,34 @@ static void enemy_down_check(Combat *cb, Enemy *e) {
     e->blocking = false;
     if (cb->hostage == (int)(e - cb->enemies) + 1) cb->hostage = 0; // el rehen cae: se suelta
     if (e->mounted) unhorse(cb, e);
-    if (e->h.dead || down_is_lethal(&e->h)) {
+    if (e->h.dead || down_is_lethal(&e->h) || e->state == EN_ICE) { // abatido en el agua helada, se ahoga
         e->state = EN_DEAD;
         e->corpse = CORPSE_SECONDS;
     } else if (e->state != EN_DOWN) {
         e->state = EN_DOWN;
         e->timer = down_wake_seconds(&cb->rng);
     }
+}
+
+// El hielo (docs/AGUA.md, fase 3): sobre el que aguanta, la capa puede romperse bajo un enemigo que anda (mas a
+// caballo o en carro, y corriendo). Cae al agua helada y forcejea sin pelear (EN_ICE).
+#define ENEMY_ICE_SECONDS 12.0f // lo que tarda en salir, mas o menos
+#define ENEMY_ICE_COLD 2.0f     // vida por segundo que le quita el agua helada
+static void enemy_ice_roll(Combat *cb, Enemy *e, const Terrain *t, const Player *p, float dt, char *log, size_t len) {
+    if (e->state == EN_ICE || e->speed <= 0.0f || !standing(e)) return;
+    if (terrain_water_step(t, e->pos.x, e->pos.z) != WSTEP_ICE) return; // sobre el hielo que aguanta
+    float ice = terrain_ice(t, e->pos.x, e->pos.z);
+    float load = e->kind == ENEMY_CHARIOT ? 4.0f : e->mounted ? 2.5f : 1.0f;
+    if (rng_float(&cb->rng) >= hazard_ice_break_chance(ice, e->speed, load) * dt) return;
+    if (e->mounted) unhorse(cb, e); // el caballo sale nadando por su cuenta
+    if (cb->hostage == (int)(e - cb->enemies) + 1) cb->hostage = 0;
+    e->state = EN_ICE;
+    e->timer = ENEMY_ICE_SECONDS * (0.7f + 0.6f * rng_float(&cb->rng));
+    e->blocking = false, e->windup = 0.0f, e->windup_move = 0, e->speed = 0.0f;
+    health_hit(&e->h, &cb->rng, 8.0f, WOUND_FROSTBITE, PART_RANDOM);
+    char who[48];
+    if (dist2(e->pos, p->pos) < 45.0f && !log[0])
+        snprintf(log, len, T("¡El hielo se rompe bajo un %s! Forcejea en el agua helada."), lower_name(T(enemy_def(e->kind)->name), who, sizeof(who)));
 }
 
 // Los de cerca se enteran: van a por el jugador un rato aunque no lo vean.
@@ -1169,6 +1184,7 @@ static void pose_enemy(BodyPose *b, const Enemy *e, float time, int i) {
                           .attack = attack, .aiming = enemy_def(e->kind)->ranged && e->target >= 0 && e->speed < 0.2f,
                           .down = e->state == EN_DEAD || e->state == EN_DOWN || e->knock > 0.0f, .scale = 1.0f,
                           .held = e->state == EN_HOSTAGE ? 1.0f : 0.0f };
+    if (e->state == EN_ICE) pp.attack = 0.5f + 0.5f * sinf(time * 6.0f + (float)i); // en el agua helada: manotea
     pose_move(&pp, e->move, e->move_anim, e->blocking);
     body_pose(b, &pp);
 }
@@ -1340,7 +1356,7 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             continue;
         }
         // Suelo: se clava (o se hunde en el agua).
-        float ground = surface_y(t, s->p.pos.x, s->p.pos.z);
+        float ground = terrain_body_y(t, s->p.pos.x, s->p.pos.z);
         if (s->p.pos.y <= ground) {
             float l = sqrtf(d.x * d.x + d.y * d.y + d.z * d.z);
             s->dir = l > 1e-4f ? (V3){ d.x / l, d.y / l, d.z / l } : (V3){ 0, -1, 0 };
@@ -1535,8 +1551,9 @@ static void chariot_step(Combat *cb, Enemy *e, int i, const EnemyDef *def, Playe
     float x0 = e->pos.x, z0 = e->pos.z;
     e->pos.x += fx * e->speed * dt, e->pos.z += fz * e->speed * dt;
     terrain_dry_step(t, x0, z0, &e->pos.x, &e->pos.z);
-    e->pos.y = surface_y(t, e->pos.x, e->pos.z);
+    e->pos.y = terrain_body_y(t, e->pos.x, e->pos.z);
     if (e->speed > 4.0f && e->cooldown <= 0.0f && e->state != EN_FLEE) chariot_trample(cb, e, p, ga, troop, log, len);
+    enemy_ice_roll(cb, e, t, p, dt, log, len); // el carro pesa: sobre el hielo, se hunde facil
 }
 
 // Las formaciones: marchan hacia su meta (o hacia el enemigo que ven sus hombres) al paso del mas
@@ -1578,7 +1595,7 @@ static void update_formations(Combat *cb, const Terrain *t, float dt) {
             float step = fminf(pace * 0.8f * dt, d - stop);
             f->center.x += dx / d * step, f->center.z += dz / d * step;
         }
-        f->center.y = surface_y(t, f->center.x, f->center.z);
+        f->center.y = terrain_body_y(t, f->center.x, f->center.z);
     }
 }
 
@@ -1624,11 +1641,28 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             }
             continue;
         }
+        if (e->state == EN_ICE) { // en el agua helada: forcejea en el agujero; sale con frio, o se ahoga
+            e->speed = 0.0f, e->blocking = false, e->windup = 0.0f, e->windup_move = 0;
+            e->pos.y = fmaxf(terrain_height(t, e->pos.x, e->pos.z), terrain_water(t, e->pos.x, e->pos.z) - 1.0f);
+            e->h.hp -= dt * ENEMY_ICE_COLD;
+            char who[48];
+            if (e->h.hp <= 0.0f) {
+                e->h.hp = 0.0f, e->h.dead = true;
+                e->state = EN_DEAD, e->corpse = CORPSE_SECONDS;
+                if (dist2(e->pos, p->pos) < 45.0f && !log[0])
+                    snprintf(log, len, T("El %s se ahoga bajo el hielo."), lower_name(T(def->name), who, sizeof(who)));
+            } else if ((e->timer -= dt) <= 0.0f) { // trepa al hielo por donde vino, helado, y se aleja
+                e->pos.x -= sinf(e->yaw) * 2.6f, e->pos.z -= cosf(e->yaw) * 2.6f;
+                e->pos.y = terrain_body_y(t, e->pos.x, e->pos.z);
+                e->state = EN_FLEE, e->timer = 6.0f;
+            }
+            continue;
+        }
         if (e->state == EN_HOSTAGE && cb->hostage != i + 1) e->state = EN_CHASE; // nadie lo sujeta: vuelve a pelear
         if (e->state == EN_HOSTAGE) { // rehen: delante del jugador, sujeto por el cuello
             e->pos.x = p->pos.x + sinf(p->yaw) * HOSTAGE_AHEAD;
             e->pos.z = p->pos.z + cosf(p->yaw) * HOSTAGE_AHEAD;
-            e->pos.y = surface_y(t, e->pos.x, e->pos.z);
+            e->pos.y = terrain_body_y(t, e->pos.x, e->pos.z);
             e->yaw = p->yaw;
             e->speed = p->moving ? 1.0f : 0.0f;
             continue;
@@ -1669,6 +1703,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         float speed = 0.0f;
         Vector3 goal = e->pos;
         const RangedDef *rd = ranged_def(def->ranged);
+        bool swim = terrain_water_step(t, e->pos.x, e->pos.z) == WSTEP_SWIM; // nadando no tira (el cuerpo a cuerpo, si)
         // Escarmiento: las pieles de depredador espantan. Al ver de cerca a quien las lleva puede
         // echarse atras un rato, y herido huye antes (los fanaticos del culto casi no se inmutan).
         float dread = target >= 0 ? ag_dread(ga, troop, target) * (e->kind == ENEMY_FANATIC ? 0.3f : 1.0f) : 0.0f;
@@ -1708,7 +1743,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
                 horse_archer_goal(e->pos.x, e->pos.z, tpos.x, tpos.z, e->orbit_dir, &e->retreating, &goal.x, &goal.z);
                 speed = def->speed * (e->retreating ? 1.0f : 0.8f);
                 bool covered = hold_back && hostage_blocks_shot(e->pos.x, e->pos.z, p->pos.x, p->pos.z, hostage->pos.x, hostage->pos.z);
-                if (e->reload <= 0.0f && best < 40.0f && !covered) {
+                if (e->reload <= 0.0f && best < 40.0f && !covered && !swim) {
                     Vector3 from = aim_origin(e->pos, e->yaw);
                     from.y += RIDER_LIFT;
                     Vector3 aim = { tpos.x, tpos.y + 1.2f, tpos.z };
@@ -1730,7 +1765,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
                 if (best > 28.0f) goal = tpos, speed = def->speed;
                 else if (best < 10.0f) goal = (Vector3){ e->pos.x - dir.x * 4.0f, 0, e->pos.z - dir.z * 4.0f }, speed = def->speed;
                 bool covered = hold_back && hostage_blocks_shot(e->pos.x, e->pos.z, p->pos.x, p->pos.z, hostage->pos.x, hostage->pos.z);
-                if (e->reload <= 0.0f && best < 45.0f && !covered) {
+                if (e->reload <= 0.0f && best < 45.0f && !covered && !swim) {
                     Vector3 from = aim_origin(e->pos, e->yaw);
                     Vector3 aim = { tpos.x, tpos.y + 1.2f, tpos.z };
                     float pitch;
@@ -1799,7 +1834,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             float step = fminf(speed * dt, d), x0 = e->pos.x, z0 = e->pos.z;
             e->pos.x += (goal.x - e->pos.x) / d * step;
             e->pos.z += (goal.z - e->pos.z) / d * step;
-            terrain_dry_step(t, x0, z0, &e->pos.x, &e->pos.z);
+            terrain_wade_step(t, x0, z0, &e->pos.x, &e->pos.z); // vadea y cruza un rio a nado; rodea los lagos
             if (e->state != EN_CHASE) e->yaw = atan2f(goal.x - e->pos.x, goal.z - e->pos.z);
             e->speed = speed;
             if (e->mounted) { // el caballo mira hacia donde va; el jinete, a su blanco
@@ -1811,7 +1846,8 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         }
         if (e->mounted) e->ride_yaw = atan2f(sinf(e->ride_yaw), cosf(e->ride_yaw)); // en [-pi, pi]
         if (face_front && d < 1.0f) e->yaw = fm->yaw;
-        e->pos.y = surface_y(t, e->pos.x, e->pos.z);
+        e->pos.y = terrain_body_y(t, e->pos.x, e->pos.z);
+        enemy_ice_roll(cb, e, t, p, dt, log, len);
     }
 }
 
@@ -1843,14 +1879,14 @@ static void member_fight(Combat *cb, GameActions *ga, Troop *troop, Props *props
         float d = dist2(n->pos, apos);
         n->fighting = true;
         n->yaw = atan2f(apos.x - n->pos.x, apos.z - n->pos.z);
-        n->moving = d > 1.6f;
+        n->moving = d > 1.6f && n->sunk <= 0.0f;
         if (n->moving) {
             float speed = 5.0f * health_speed_scale(&m->health) * armor_speed_scale(&m->armor);
             float step = fminf(speed * dt, d - 1.5f), x0 = n->pos.x, z0 = n->pos.z;
             n->pos.x += (apos.x - n->pos.x) / d * step;
             n->pos.z += (apos.z - n->pos.z) / d * step;
-            terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z);
-            n->pos.y = surface_y(t, n->pos.x, n->pos.z);
+            terrain_wade_step(t, x0, z0, &n->pos.x, &n->pos.z);
+            n->pos.y = terrain_body_y(t, n->pos.x, n->pos.z);
         } else if (cb->comp_cd[k] <= 0.0f) {
             const Champion *c = troop_champion(troop, m->id);
             float dmg = combat_damage(COMPANION_DAMAGE, c ? c->stats.strength : 1.0f, health_attack_scale(&m->health),
@@ -1866,14 +1902,14 @@ static void member_fight(Combat *cb, GameActions *ga, Troop *troop, Props *props
     float d = dist2(n->pos, best->pos);
     n->yaw = atan2f(best->pos.x - n->pos.x, best->pos.z - n->pos.z);
     float speed = 5.0f * health_speed_scale(&m->health) * armor_speed_scale(&m->armor);
-    n->moving = d > 1.5f;
+    n->moving = d > 1.5f && n->sunk <= 0.0f;
     if (n->moving) {
         float step = fminf(speed * dt, d - 1.4f), x0 = n->pos.x, z0 = n->pos.z;
         n->pos.x += (best->pos.x - n->pos.x) / d * step;
         n->pos.z += (best->pos.z - n->pos.z) / d * step;
-        terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z);
-        n->pos.y = surface_y(t, n->pos.x, n->pos.z);
-    } else if (cb->comp_cd[k] <= 0.0f && n->stagger <= 0.0f) {
+        terrain_wade_step(t, x0, z0, &n->pos.x, &n->pos.z);
+        n->pos.y = terrain_body_y(t, n->pos.x, n->pos.z);
+    } else if (cb->comp_cd[k] <= 0.0f && n->stagger <= 0.0f && n->sunk <= 0.0f) {
         // Las mismas reglas que el jugador: combos, patadas, agarres y ganchos segun lo que haga el rival.
         const char *weapon = member_weapon(m);
         Fighter me = fighter_member(n, m, troop, best->pos), foe = fighter_enemy(best, n->pos);
@@ -1925,13 +1961,13 @@ static Vector3 shelter_near(const Props *props, Vector3 from, float cx, float cz
 
 static void npc_step(Npc *n, const Terrain *t, Vector3 to, float speed, float dt) {
     float d = dist2(n->pos, to);
-    n->moving = d > 0.4f;
+    n->moving = d > 0.4f && n->sunk <= 0.0f; // en el agua helada no se mueve (src/game/hazards_game.c)
     if (!n->moving) return;
     float step = fminf(speed * dt, d), x0 = n->pos.x, z0 = n->pos.z;
     n->pos.x += (to.x - n->pos.x) / d * step;
     n->pos.z += (to.z - n->pos.z) / d * step;
-    terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z);
-    n->pos.y = surface_y(t, n->pos.x, n->pos.z);
+    terrain_wade_step(t, x0, z0, &n->pos.x, &n->pos.z);
+    n->pos.y = terrain_body_y(t, n->pos.x, n->pos.z);
     n->yaw = atan2f(to.x - n->pos.x, to.z - n->pos.z);
 }
 
@@ -2745,6 +2781,8 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
             continue;
         }
         Vector3 at = e->pos;
+        bool struggling = e->state == EN_ICE; // en el agua helada: se agita
+        if (struggling) at.y += 0.07f * sinf(time * 5.0f + (float)i);
         if (e->mounted && !dead) { // a caballo: el jinete va encima
             cb_draw_horse(e->pos, e->ride_yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
             at.y += RIDER_LIFT;
@@ -2752,7 +2790,7 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         if (props_has_model(props, it)) {
             HumanoidState hs = { .moving = e->speed > 0.2f, .running = e->speed > 3.5f, .grounded = true, .doing = -1,
                                  .mounted = e->mounted && !dead,
-                                 .building = -1, .dead = dead, .down = downed, .hit = e->hit_anim > 0.0f,
+                                 .building = -1, .dead = dead, .down = downed, .hit = e->hit_anim > 0.0f || struggling,
                                  .attacking = (e->attack_anim > 0.0f || e->windup > 0.0f) && !def->ranged ? 1 + i % 3 : 0,
                                  .ranged = def->ranged && e->target >= 0 && e->speed < 0.2f ? 1 : 0,
                                  .limping = health_speed_scale(&e->h) < 0.85f,

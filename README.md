@@ -247,6 +247,14 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Hielo, nado y pesca (v0.11.2), la fase 3 del diseño del agua ([docs/AGUA.md](docs/AGUA.md)):
+- **La tribu y los enemigos nadan:** vadean hasta el pecho y, más hondo, cruzan un río a nado (un lago o el mar los rodean, como antes). Nadando van más lento, con la cabeza afuera, y nadie dispara (cuerpo a cuerpo, sí). Los carros de guerra no entran al agua honda.
+- **Los animales también:** cada uno vadea según su tamaño y nada más hondo. Un río lo cruzan a nado si huyen, cazan o siguen a la manada; pastando, lo rodean.
+- **El hielo se rompe bajo todos:** un caballo rompe el hielo delgado más del doble de veces que una cabra. El animal que cae forcejea y sale asustado, o se ahoga. El enemigo que cae pierde el caballo, forcejea sin pelear, helándose, y sale huyendo (si lo abaten en el agua, se ahoga). El de la tribu que cae cerca de ti espera con la cabeza afuera a que lo saques (`F`, con el minijuego).
+- **La pesca en el hielo:** con el **picahielo**, un objeto nuevo que va siempre en el equipo (también en las partidas guardadas), se abre un agujero delante (`Tab` → Acciones), sobre el hielo de un lago o un río hondo. Junto al agujero se pesca: acuden los peces de cerca, y con una lanza en la mano pican más. Los agujeros se hielan de nuevo durante la noche, y quien pisa uno cae al agua.
+
+Pruebas: `--ir meandro --trampa nado` (la escolta cruza el río a nado hacia ti); `--dia 25 --ir lago` con `--trampa agujero` (sobre el hielo, junto a un agujero para pescar) o `--trampa hundido` (un compañero que rompió el hielo espera a que lo saques).
+
 Las estaciones del agua (v0.11.1), la fase 2 del diseño del agua ([docs/AGUA.md](docs/AGUA.md)):
 - **Los ríos del glaciar se secan con la helada:** corren de mediados de la primavera a mediados del otoño. En invierno queda su cauce de grava o de cantos, con unos charcos helados, y se cruza a pie. Los de la lluvia y los que salen de un lago no se secan: se hielan. Con poca agua, el nivel baja hacia lo hondo del cauce, y las cascadas de un río seco desaparecen.
 - **Cada lago y cada río tiene su hielo:** los chicos (el lago del campamento, los oasis, los arroyos, los charcos) y los altos se hielan primero; los lagos grandes, los ríos grandes y el canal, de uno a tres días después, y se deshielan también después. El hielo que aguanta se ve blanco y con grietas, y se rompe bajo el jugador como antes.

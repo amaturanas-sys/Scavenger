@@ -5,7 +5,7 @@
 // optimizacion de rendimiento en moviles (9 veces menos pixeles que 1080p).
 //
 // Uso de escritorio:  estepa [--screenshot salida.png] [--frames N] [--sin-teclado] [--galeria]
-//                     [--dia N] [--minuto M] [--pos X Z] [--trampa hielo|nieve|arena|rescate]
+//                     [--dia N] [--minuto M] [--pos X Z] [--trampa hielo|nieve|arena|rescate|hundido|nado|agujero]
 // --galeria muestra todos los objetos del inventario de assets (modelos o marcadores).
 // --ver <id> muestra de cerca un objeto del inventario, en la galeria, con el jugador al lado (la
 // tuberia de modelos, tools/modelos: revisar uno recien importado).

@@ -91,7 +91,8 @@ void hz_draw_world(const Hazards *hz, const Terrain *t, const GameActions *ga, c
 // Calor corporal (bajo el minimapa, en right_x/y), minijuego y avisos.
 void hz_draw_hud(const Hazards *hz, const Troop *troop, int right_x, int y, int width, int height);
 // Prueba: arranca en una trampa ("hielo", "nieve", "arena"), con un companero en el hielo
-// ("rescate") o con la escolta fuera ("escolta").
+// ("rescate", con el minijuego; "hundido", esperando a que lo saquen), con la escolta fuera ("escolta"), con la
+// escolta nadando en el rio de delante ("nado") o sobre el hielo del lago junto a un agujero para pescar ("agujero").
 void hz_force(Hazards *hz, const char *what, Player *p, GameActions *ga, Troop *troop, const Terrain *t);
 
 #endif

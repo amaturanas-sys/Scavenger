@@ -43,6 +43,9 @@
 #define GA_PACKS 4 // monturas con alforjas
 #define GA_LOOT 8  // bolsas de botin en el suelo
 #define GA_NEWS 4  // informes que recuerda cada campamento
+#define GA_ICE_HOLES 6 // agujeros para pescar en el hielo
+#define ICE_PICK_ID "utileria.herramienta.picahielo"
+#define ICE_HOLE_RADIUS 0.9f // m: el agujero para pescar (quien lo pisa cae al agua)
 
 // Los informes de los que vuelven a un campamento (src/game/camp_game.c), el mas nuevo primero.
 typedef struct {
@@ -78,6 +81,7 @@ typedef struct {
     float alarm;       // s de alarma: corre a esconderse
     bool sheltered;    // escondido en una yurta o tienda (no se ve ni se le ataca)
     Vector3 hide_at;   // donde se esconde
+    float sunk;        // s que le quedan en el agua helada (rompio el hielo: no se mueve hasta que lo saquen, v0.11.2)
 } Npc;
 
 typedef struct {
@@ -210,6 +214,10 @@ typedef struct {
     bool expedition_out;      // ya salio al mundo (cerca del jugador); si no, todavia no llega
     bool expedition_sacked;   // ya saqueo el campamento: se vuelve a su ciudad
     int vassal_season;        // la ultima estacion en que cobraste el tributo de las ciudades tomadas (+1)
+    // La pesca en el hielo (docs/AGUA.md, fase 3): los agujeros abiertos con el picahielo. Se hielan de nuevo
+    // durante la noche; quien pisa uno cae al agua (src/game/hazards_game.c).
+    Vector3 ice_holes[GA_ICE_HOLES];
+    int ice_hole_count, ice_hole_day; // el dia en que se abrieron + 1 (0: ninguno)
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);

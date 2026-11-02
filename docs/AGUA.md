@@ -1,9 +1,11 @@
 # El agua: ríos, lagos, hielo y mar
 
 El diseño del usuario (seis páginas a mano, noviembre de 2026), pasado a reglas del juego y repartido en cinco
-fases. Ya están la **fase 1 (v0.11.0)**: el agua baja por donde debe y los lagos llenan sus depresiones; y la
+fases. Ya están la **fase 1 (v0.11.0)**: el agua baja por donde debe y los lagos llenan sus depresiones; la
 **fase 2 (v0.11.1)**: cada agua cambia con las estaciones (se seca, se hiela, el mar se congela en la costa y el
-glaciar avanza y retrocede). Las demás, abajo, con lo que hace falta para cada una.
+glaciar avanza y retrocede); y la **fase 3 (v0.11.2)**: la tribu, los enemigos y los animales vadean, nadan y caen
+al romperse el hielo, y con el picahielo se abre un agujero para pescar. Las demás, abajo, con lo que hace falta
+para cada una.
 
 ![El agua](mundo/agua.png)
 
@@ -20,9 +22,9 @@ río de meandros en la estepa · un río trenzado del deshielo · un arroyo junt
 | **3. Aguas abajo y estaciones** | En verano el glaciar retrocede y los cauces se llenan, y los ríos alimentan los lagos. En invierno los cauces quedan secos (la «huella») y los lagos se hielan. | **Hecho (v0.11.1).** Los ríos del glaciar corren de mediados de la primavera a mediados del otoño; con helada se secan y queda su cauce de grava con unos charcos helados. La lengua del glaciar retrocede en verano. |
 | **4. Cambios de altura** | El agua siempre necesita una superficie por donde deslizarse y siempre cae. Sin superficie, es una cascada. | **Hecho.** El nivel de un río nunca sube. Donde cae 3 m o más con una pendiente de más del 25 %, hay una cascada: una cortina de agua con espuma al pie. Su aspecto fino es de la fase 4. |
 | **El mundo: un disco de cinco biomas** | Cada bioma tiene su borde y, entre biomas, transiciones con cordilleras y ríos. A tiene muros de hielo. B tiene un gran canal con acantilados y ríos sinuosos, y del otro lado, paredes de roca. D tiene un cañón con un muro de estratos. F tiene la costa con fiordos y un mar accesible hasta un límite. | **En parte.** Los bordes de A, B, D y F ya existían. Las **cordilleras** entre el altiplano y el desierto, y entre el altiplano y la costa, están hechas. El muro de roca tras el canal y el mar con su límite son de la fase 5. Tu croquis tiene la misma vecindad que el juego (A frente a B, D frente a F): no se movieron regiones. |
-| **5. El invierno** | a) Los lagos se cubren de hielo, que se rompe (peligro) o se perfora para pescar. b) Unos ríos se hielan y otros se secan. c) Hay hielo en la costa y témpanos en el mar. d) Los glaciares retroceden en verano. | **b, c y d: hecho (v0.11.1).** a) Cada lago y cada río tiene su hielo, que se cruza y se rompe bajo el jugador (`src/sim/hazards.h`, con rescate); el agujero para pescar es de la fase 3. |
+| **5. El invierno** | a) Los lagos se cubren de hielo, que se rompe (peligro) o se perfora para pescar. b) Unos ríos se hielan y otros se secan. c) Hay hielo en la costa y témpanos en el mar. d) Los glaciares retroceden en verano. | **Hecho.** a) Cada lago y cada río tiene su hielo, que se cruza y se rompe bajo el jugador, la tribu, los enemigos y los animales (`src/sim/hazards.h`, con rescate); con el picahielo se abre un agujero para pescar (v0.11.2). b, c y d: v0.11.1. |
 | **6. Las texturas** | a) Vaivén en lagos y lagunas. b) Torrente en ríos y cascadas. c) Espuma en las orillas y donde el terreno o alguien toca el agua. d) Olas que entran y se retiran. | **Fase 4.** Hoy hay una textura de ondas que «respira» y espuma en orillas y rápidos. |
-| **7. La hondura** | En lo bajo se camina por el fondo, en lo hondo se nada, en invierno se camina sobre el hielo y el hielo se rompe. | **El jugador, ya** (vadea hasta 1,2 m, nada más hondo; cruza el hielo que aguanta y los cauces secos). **Fase 3:** los NPC y los animales, que hoy rodean el agua honda (el hielo que aguanta y los cauces secos ya los cruzan). |
+| **7. La hondura** | En lo bajo se camina por el fondo, en lo hondo se nada, en invierno se camina sobre el hielo y el hielo se rompe. | **Hecho (v0.11.2).** El jugador, la tribu y los enemigos vadean hasta 1,2 m y nadan más hondo; cruzan un río a nado y rodean un lago. Los animales vadean según su tamaño y cruzan un río a nado si tienen prisa. Todos cruzan el hielo que aguanta y los cauces secos, y el hielo se rompe bajo todos. |
 | **8. El trazado de los ríos** | Desde donde nace, el río baja por la cota más baja; los ríos se ramifican como raíces. | **Hecho.** Priority-Flood más la suma del agua (abajo). |
 | **9. El agua necesita un contenedor** | El nivel de un lago es la altura de su punto de salida más bajo (el desborde), y de ahí sale su río. | **Hecho.** |
 
@@ -165,13 +167,54 @@ glaciar en la primavera y retirada en el verano (`--ir meandro`, `lago`, `mar`, 
 - el mar se hiela junto a la costa y no mar adentro;
 - el glaciar cubre siempre el pie del muro, más lejos solo en invierno, y nunca fuera del altiplano.
 
+## La fase 3 (v0.11.2): hielo, nado y pesca
+
+1. **Cómo está cada uno en el agua** (`hazard_water_step` en `src/sim/hazards.h`): hasta el tobillo (0,25 m) es
+   suelo seco; hasta el pecho (`WADE_PERSON`, 1,2 m en la gente) se vadea al 55 % del paso; más hondo se nada al
+   40 %; sobre el hielo que aguanta se camina.
+2. **La tribu y los enemigos** (`terrain_wade_step` en `src/world/terrain.h`) vadean, y un agua honda pero
+   angosta la cruzan a nado: un río, donde hay dónde hacer pie a menos de 40 m en esa dirección. Un lago o el mar
+   los rodean, como antes. Nadando, la cabeza queda afuera (`terrain_body_y`) y nadie dispara (se pelea cuerpo a
+   cuerpo). Los carros de guerra siguen sin entrar al agua honda.
+3. **Los animales** (`src/sim/animals.c`) vadean según su tamaño (`species_wade`: de 0,3 a 1,2 m) y nadan más
+   hondo, más lento. Un río lo cruzan a nado solo si tienen prisa: huyendo, cazando o siguiendo a la manada (los
+   de tamaño mediano para arriba); pastando, lo rodean. Un lago o el mar los rodean siempre.
+4. **El hielo se rompe bajo todos** (`hazard_ice_break_chance`, con su peso: `hazard_ice_load`):
+   - **un animal** pesa según su tamaño: un caballo rompe el hielo delgado más del doble de veces que una cabra.
+     El que cae forcejea de 8 a 14 s, perdiendo vida con el frío, y sale asustado por donde vino, o se ahoga;
+   - **un enemigo** pesa más a caballo (el caballo sale nadando por su cuenta) y más en carro. Forcejea sin pelear
+     (`EN_ICE`), helándose, unos 12 s, y sale y huye. Si lo abaten en el agua, se ahoga;
+   - **de la tribu**, el que anda cerca del jugador: queda atrapado como la escolta, sin moverse y con la cabeza
+     afuera (`Npc.sunk`), hasta que lo sacas (F junto a él, con el minijuego) o se ahoga.
+5. **La pesca en el hielo** (`src/game/fauna_game.c`):
+   - el **picahielo** (`utileria.herramienta.picahielo`, un objeto nuevo que va siempre en el equipo, como la
+     pala) abre un agujero 1,6 m delante, sobre el hielo que aguanta de un agua de más de 1 m (Tab → Acciones,
+     8 s). Hay hasta seis; se hielan de nuevo durante la noche, y quien pisa uno cae al agua;
+   - junto a un agujero se pesca (10 s): acude el banco de peces más cercano bajo el hielo, hasta 30 m. Pica más
+     cerca, con un banco grande y con una lanza en la mano (`hazard_ice_fish_chance`), y da una carne fresca;
+   - los peces ahora viven también bajo el hielo.
+6. **Las partidas** guardan quién está hundido (`Npc.sunk`, `Animal.sunk`) y los agujeros para pescar; las
+   anteriores cargan sin ninguno.
+
+![Hielo, nado y pesca](mundo/hielo_nado_pesca.png)
+
+*La escolta cruza un río a nado y sale a la orilla · un compañero que rompió el hielo espera a que lo saquen ·
+el agujero para pescar en el lago helado (`--ir meandro --trampa nado`; `--dia 25 --ir lago`, con
+`--trampa hundido` y `--trampa agujero`).*
+
+**Las pruebas** (`tests/test_main.c`):
+- `test_animals_swim_and_ice`: un ciervo que pasta no cruza el río; el que huye lo cruza a nado, más lento; un
+  lago grande no se cruza; un caballo rompe el hielo delgado más del doble de veces que una cabra; el que cayó no
+  se mueve; el débil se ahoga y el fuerte sale;
+- `test_animals_keep_out_of_lakes`: sin prisa, ningún animal entra más hondo de lo que vadea;
+- `test_hazards_cold_mud_ice`: cómo se está en el agua (en seco, vadeando, nadando o sobre el hielo) y su paso; la
+  pesca: sin peces o muy lejos no pica, la lanza y un banco grande ayudan, y nunca es segura;
+- `test_action_catalog`: el agujero pide el picahielo.
+
 ## Las fases que siguen
 
 Cada una va con su PR, el CI verde, su release, sus capturas y sus pruebas.
 
-- **Fase 3, v0.11.2, «Hielo, nado y pesca».**
-  - Los NPC y los animales vadean, nadan, cruzan el hielo y caen al romperse (hoy rodean el agua honda).
-  - Se puede hacer un agujero en el hielo para pescar, con una herramienta nueva del inventario.
 - **Fase 4, v0.11.3, «Cómo se ve el agua».** Un shader, también en GLSL ES 100 para Android, con:
   - el vaivén de los lagos;
   - la corriente de los ríos, que sigue su cauce;

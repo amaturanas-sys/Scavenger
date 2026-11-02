@@ -123,8 +123,11 @@ typedef enum {
     MODE_DRINK,  // con sed: va a la orilla (tx, tz) y bebe desde tierra
 } AnimalMode;
 
-// Los de tierra no pasan de esta profundidad (m): rodean lagos y rios hondos.
+// Lo menos que vadea un animal de tierra (m); los grandes, mas (species_wade). Mas hondo nadan: al huir, al
+// perseguir o siguiendo a la tribu cruzan un agua angosta (un rio); pastando, la rodean (docs/AGUA.md, fase 3).
 #define ANIMAL_WADE_MAX 0.3f
+#define ANIMAL_NARROW_WATER 40.0f // m: un agua con tierra a menos de esto (en la direccion del paso) se cruza
+#define ANIMAL_SUNK_COLD 2.5f     // vida por segundo que quita el agua helada a quien cayo por el hielo
 
 // Objetivo: un animal (indice) o una persona (indice en FaunaCtx.humans).
 typedef enum { TGT_NONE, TGT_ANIMAL, TGT_HUMAN } TargetKind;
@@ -168,6 +171,7 @@ typedef struct {
     float grit;           // aguante heredado: +-TRAIT_MAX (montado, se cansa menos)
     float foal;           // dias que le faltan para ser adulto (0: adulto); el potro no se monta
     float pregnant;       // dias que le faltan para parir (0: no esta preñada)
+    float sunk;           // s que le quedan forcejeando en el agua helada (cayo por el hielo, v0.11.2); 0: no
 } Animal;
 
 // Personas cerca de la fauna (jugador, tribu, enemigos). El indice 0 suele ser el jugador.
@@ -191,6 +195,9 @@ typedef struct {
     void *water_ud;
     bool grass;         // hay pasto (sin nieve): los herbivoros domados pastan solos
     bool caravan;       // la tribu va en marcha (migra): el ganado y las monturas de la tribu la siguen
+    // El hielo en (x, z) [0, 1] (con ICE_WALKABLE se camina, y puede romperse); NULL: no hay hielo. Con el mismo
+    // water_ud. water_depth da 0 sobre el hielo que aguanta.
+    float (*ice)(void *ud, float x, float z);
 } FaunaCtx;
 
 typedef enum {
@@ -203,6 +210,8 @@ typedef enum {
     FEV_STARVED,     // un animal de la tribu se fue por hambre (vuelve a ser salvaje)
     FEV_THIRSTY,     // un animal de la tribu tiene sed (llevalo al agua o dale de beber)
     FEV_PARCHED,     // un animal de la tribu se fue por sed
+    FEV_ICE,         // rompio el hielo y cayo al agua helada (forcejea: sunk)
+    FEV_DROWNED,     // se ahogo bajo el hielo
 } FaunaEventKind;
 
 typedef struct {
@@ -222,6 +231,9 @@ typedef struct {
 
 const SpeciesDef *species_def(Species s);
 bool species_is_prey(Species s); // presa de los cazadores (monturas, presas y ganado)
+// Hasta donde vadea (m, de ANIMAL_WADE_MAX a 1,2) y cuanto pesa (kg) un animal de esa talla.
+float species_wade(const SpeciesDef *d);
+float species_mass(const SpeciesDef *d);
 // Busca una especie por el final de su id ("lobo", "caballo_estepario"); -1 si no.
 int species_find(const char *name);
 

@@ -125,6 +125,10 @@ static const ActionDef ACTIONS[ACTION_COUNT] = {
                       NULL, NULL, N_("fuego"), { { "utileria.objeto.lena", 1 }, { NULL, 0 } } },
     [ACTION_MINE] = { N_("Picar la veta"), N_("Junto a una veta de hierro del altiplano o al hierro de pantano: mineral, que se funde en el horno de acero."),
                       ACTOR_PLAYER | ACTOR_NPC, 8.0f, NULL, NULL, N_("veta de hierro") },
+    [ACTION_ICE_HOLE] = { N_("Abrir un agujero en el hielo"), N_("Sobre el hielo de un lago o un río hondo, con el picahielo: un agujero para pescar. Se hiela de nuevo durante la noche, y quien lo pisa cae al agua."),
+                          ACTOR_PLAYER | ACTOR_NPC, 8.0f, "utileria.herramienta.picahielo", NULL, N_("hielo") },
+    [ACTION_ICE_FISH] = { N_("Pescar en el agujero"), N_("Junto a un agujero en el hielo: los peces de cerca acuden. Con una lanza en la mano, pican más."),
+                          ACTOR_PLAYER | ACTOR_NPC, 10.0f, NULL, NULL, N_("agujero en el hielo") },
 };
 
 const ActionDef *action_def(ActionId a) { return a >= 0 && a < ACTION_COUNT ? &ACTIONS[a] : NULL; }
