@@ -126,5 +126,14 @@ Climate climate_at(float t, uint32_t seed) {
     c.ice = clamp01((-c.temp_mean - 1.0f) / 5.0f);
     // Glaciares: la nieve permanente baja en invierno y sube en verano.
     c.snowline = 22.0f + 0.75f * c.temp_mean;
+    // El glaciar suelta agua desde que deja de helar, y del todo con calor. El mar va unos dias detras de los
+    // lagos grandes: se hiela en la costa al final del invierno y se rompe en tempanos en la primavera. El
+    // frente del glaciar avanza todo el invierno y retrocede todo el verano (va detras del frio).
+    c.temp_late = climate_temp_mean(c.year - 2.0f / (float)DAYS_PER_YEAR);
+    c.melt = smooth01((c.temp_mean + 1.0f) / 12.0f);
+    float sea_temp = climate_temp_mean(c.year - 3.0f / (float)DAYS_PER_YEAR);
+    c.sea_ice = clamp01((-sea_temp - 6.0f) / 6.0f);
+    c.floes = clamp01((-sea_temp - 1.0f) / 6.0f);
+    c.glacier = 0.5f + 0.5f * cosf(2.0f * PI_F * (c.year - 0.02f));
     return c;
 }

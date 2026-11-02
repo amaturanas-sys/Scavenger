@@ -243,7 +243,8 @@ static void advance_days(Troop *t, Rng *rng, int *day, float world_time, const T
 static void apply_climate_look(Terrain *terrain, const Climate *c) {
     TerrainLook look = {
         .greenness = c->greenness, .autumn = c->autumn, .snow_cover = c->snow_cover, .wetness = c->wetness,
-        .snowline = terrain->plain + c->snowline, .flood = c->water_level, .ice = c->ice,
+        .snowline = terrain->plain + c->snowline, .glacier = c->glacier, .flood = c->water_level, .temp = c->temp_mean,
+        .temp_late = c->temp_late, .melt = c->melt, .sea_ice = c->sea_ice, .floes = c->floes,
     };
     terrain_set_look(terrain, &look);
 }
@@ -417,7 +418,8 @@ static void game_new(GameState *g, Terrain *terrain, Camp *camp, unsigned seed, 
 
 // Prueba: lleva al jugador a un sitio del mundo, mirando hacia lo que interesa. Lugares:
 // estepa, bosque, altiplano, fiordos, desierto (en su region); canal, muro, mar, hielo (el
-// borde); meandro, trenzado, arroyo, rapidos (los rios); cascada (la mas alta); lago, desborde (el lago mas
+// borde); lengua (el pie del glaciar, donde avanza y retrocede); meandro, trenzado, arroyo, rapidos (los rios);
+// cascada (la mas alta), cascada-helada (la de un rio que en invierno se hiela); lago, desborde (el lago mas
 // grande y su punto de desborde); capital, aldea, guarida.
 static void go_to(const Terrain *t, Player *p, const char *what) {
     const World *w = t->world;
@@ -444,6 +446,16 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     if (!strcmp(what, "fogata")) x = 1.8f, z = 0.0f, lx = 1.8f, lz = 10.0f, ok = true; // la del campamento, de cerca
     if (!strcmp(what, "hoguera")) x = 6.5f, z = -2.0f, lx = 6.5f, lz = 10.0f, ok = true; // una hoguera junto a la fogata
     if (!strcmp(what, "hielo")) world_edge_point(w, REGION_HIGHLAND, 230.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    if (!strcmp(what, "lengua")) { // lo mas bajo junto al muro de hielo, mirandolo: ahi se ve avanzar y retroceder el glaciar
+        float best = 1e9f, x0, z0;
+        world_edge_point(w, REGION_HIGHLAND, 0.0f, &x0, &z0);
+        for (float da = -0.5f; da <= 0.5f; da += 0.01f) {
+            float a = atan2f(z0, x0) + da, r = world_edge_radius(w, a) - 330.0f, px = cosf(a) * r, pz = sinf(a) * r;
+            float h = world_height(w, px, pz);
+            if (world_region(w, px, pz) == REGION_HIGHLAND && world_glacier_reach(w, px, pz) < 0.8f && h < best)
+                best = h, x = px, z = pz, lx = px * 1.2f, lz = pz * 1.2f, ok = true;
+        }
+    }
     if (!strcmp(what, "veta") || !strcmp(what, "pantano")) { // el hierro (src/sim/forge.h): la mas cercana de esa clase, a dos pasos
         int n;
         const IronSite *s = forge_sites(t, &n);
@@ -475,11 +487,14 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
             if (h > best) best = h, x = w->peaks[i].x + 6.0f, z = w->peaks[i].z, lx = 0.0f, lz = 0.0f, ok = true;
         }
     }
-    if (!strcmp(what, "cascada")) { // la cascada mas grande tierra adentro (de alto por ancho): abajo, mirandola caer
+    if (!strcmp(what, "cascada") || !strcmp(what, "cascada-helada")) { // la cascada mas grande tierra adentro (de alto por ancho):
+        // abajo, mirandola caer; cascada-helada: la mas grande de un rio que en invierno no se seca (se hiela)
         int best = -1;
+        bool frozen = !strcmp(what, "cascada-helada");
         for (int i = 0; i < w->fall_count; i++) {
             const Waterfall *a = &w->falls[i], *b = best >= 0 ? &w->falls[best] : NULL;
             if (a->bottom < SEA_LEVEL + 1.0f || world_region(w, a->bx, a->bz) == REGION_DESERT) continue; // ni al mar ni al cañon
+            if (frozen && (a->river < 0 || w->rivers[a->river].melt > 1.0f - WORLD_DRY_SHARE - 0.02f)) continue;
             if (!b || (a->top - a->bottom) * fminf(a->width, 12.0f) > (b->top - b->bottom) * fminf(b->width, 12.0f)) best = i;
         }
         if (best >= 0) {

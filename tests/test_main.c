@@ -5133,6 +5133,183 @@ static void test_water_flows_down(void) {
     }
 }
 
+// Las estaciones del agua (docs/AGUA.md, fase 2): el agua de un dia del año (con su hora, 5 min).
+static WaterSeason test_season(float day, uint32_t seed) {
+    Climate c = climate_at(day_time((int)day, 5.0f) + (day - floorf(day)) * GAME_SECONDS_PER_DAY, seed);
+    return (WaterSeason){ c.water_level, c.temp_mean, c.temp_late, c.melt, c.sea_ice };
+}
+
+// El dia del otoño en que el hielo de un lago empieza a aguantar.
+static float test_lake_freeze_day(const World *w, int lake, uint32_t seed) {
+    for (float d = 15.0f; d < 29.0f; d += 0.05f) {
+        WaterSeason s = test_season(d, seed);
+        if (hazard_ice_walkable(world_lake_ice(w, lake, &s))) return d;
+    }
+    return 99.0f;
+}
+
+static void test_water_seasons(void) {
+    // El clima del agua: el glaciar suelta agua en verano y nada con helada; el mar se hiela al final del
+    // invierno y sigue helado al empezar la primavera; los tempanos llegan antes y se van despues; el frente
+    // del glaciar avanza en invierno y retrocede en verano. Todo sin saltos.
+    const uint32_t seed = 1206u;
+    Climate su = climate_at(day_time(11, 5), seed), au = climate_at(day_time(16, 5), seed), wi = climate_at(day_time(26, 5), seed);
+    Climate sp = climate_at(day_time(2, 5), seed), late_sp = climate_at(day_time(8, 5), seed);
+    CHECK(su.melt > 0.99f && au.melt > 0.9f && wi.melt == 0.0f && sp.melt == 0.0f);
+    CHECK(su.sea_ice == 0.0f && au.sea_ice == 0.0f && late_sp.sea_ice == 0.0f && wi.sea_ice > 0.9f && sp.sea_ice > 0.9f);
+    CHECK(su.floes == 0.0f && wi.floes == 1.0f && wi.temp_late > wi.temp_mean - 3.0f && su.temp_late < su.temp_mean + 3.0f);
+    CHECK(sp.glacier > 0.95f && au.glacier < 0.05f && wi.glacier > su.glacier);
+    float first_floes = -1.0f, first_sea_ice = -1.0f, prev_g = climate_at(14.0f * GAME_SECONDS_PER_DAY, seed).glacier;
+    for (float t = 14.0f * GAME_SECONDS_PER_DAY; t < 28.0f * GAME_SECONDS_PER_DAY; t += 60.0f) {
+        Climate c = climate_at(t, seed);
+        if (c.floes > 0.0f && first_floes < 0.0f) first_floes = t;
+        if (c.sea_ice > 0.0f && first_sea_ice < 0.0f) first_sea_ice = t;
+        CHECK(fabsf(c.glacier - prev_g) < 0.01f && fabsf(c.temp_late - climate_at(t - 60.0f, seed).temp_late) < 0.2f);
+        prev_g = c.glacier;
+    }
+    CHECK(first_floes > 0.0f && first_sea_ice > first_floes);
+
+    static const uint32_t SEEDS[] = { 42u, 1206u, 7u };
+    for (int si = 0; si < 3; si++) {
+        const World *w = world_for_seed(SEEDS[si]);
+        WaterSeason summer = test_season(11.2f, SEEDS[si]), winter = test_season(26.2f, SEEDS[si]), full = world_full_season(0.0f);
+        // La estacion llena es el agua de siempre (world_water: la de los cauces, para construir).
+        int same = 0, cells = 0;
+        for (float x = -4600.0f; x <= 4600.0f; x += 97.0f)
+            for (float z = -4600.0f; z <= 4600.0f; z += 89.0f) {
+                WaterKind k;
+                WaterNow n;
+                float a = world_water(w, x, z, 0.0f, &k), b = world_water_now(w, x, z, &full, &n);
+                same += a == b && k == n.kind && n.ice == 0.0f;
+                cells++;
+            }
+        CHECK(same == cells);
+        // Los cauces: en verano todos llevan agua. En invierno, los del glaciar se secan y los de la lluvia y
+        // los lagos se hielan; seco, un rio deja su cauce sin agua o con unos charcos helados.
+        int dry = 0, frozen = 0, gone = 0, puddles = 0;
+        for (int i = 0; i < w->river_count; i++) {
+            const River *rv = &w->rivers[i];
+            CHECK(world_channel_state(w, i, &summer) == CHANNEL_WET);
+            ChannelState st = world_channel_state(w, i, &winter);
+            if (rv->melt > 1.0f - WORLD_DRY_SHARE + 0.02f) {
+                CHECK(st == CHANNEL_DRY);
+                dry++;
+            } else if (rv->melt < 0.5f) {
+                CHECK(st == CHANNEL_FROZEN);
+                frozen++;
+            }
+            for (int k = 0; k < rv->n; k++) {
+                float ice, lv = world_river_level(w, i, k, &winter, &ice), lsu = world_river_level(w, i, k, &summer, NULL);
+                CHECK(lsu > rv->level[k] - 0.01f - 0.5f * fabsf(summer.flood) && lsu <= rv->level[k] + 0.5f * fabsf(summer.flood) + 0.01f);
+                if (st != CHANNEL_DRY) continue;
+                if (lv < -1e8f) {
+                    gone++;
+                } else {
+                    puddles++;
+                    CHECK(lv < rv->level[k] - 0.3f && hazard_ice_walkable(ice));
+                }
+            }
+        }
+        CHECK(dry > 10 && frozen > 3 && gone > 0 && puddles > 0);
+        // El agua baja tambien en cada estacion: un tramo no sube y no queda mas colgado sobre el agua que lo recibe
+        // que con los cauces llenos.
+        int steps = 0;
+        for (float d = 1.0f; d < 29.0f; d += 0.5f) {
+            WaterSeason s = test_season(d, SEEDS[si]);
+            for (int i = 0; i < w->river_count; i++) {
+                const River *rv = &w->rivers[i];
+                if (world_channel_state(w, i, &s) == CHANNEL_DRY) continue;
+                for (int k = 0; k + 1 < rv->n; k++) CHECK(world_river_level(w, i, k + 1, &s, NULL) <= world_river_level(w, i, k, &s, NULL) + 0.01f);
+                if ((rv->end != RIVER_TO_NEXT && rv->end != RIVER_TO_RIVER) || rv->into < 0 || world_channel_state(w, rv->into, &s) == CHANNEL_DRY) continue;
+                const River *t = &w->rivers[rv->into];
+                for (int j = 0; j < t->n; j++)
+                    if (t->x[j] == rv->x[rv->n - 1] && t->z[j] == rv->z[rv->n - 1]) {
+                        float up = world_river_level(w, i, rv->n - 1, &s, NULL) - rv->level[rv->n - 1];
+                        CHECK(up <= world_river_level(w, rv->into, j, &s, NULL) - t->level[j] + 0.05f);
+                        steps++;
+                        break;
+                    }
+            }
+            for (int l = 0; l < w->lake_count; l++) { // el rio de un lago nunca queda mas alto que el lago
+                int o = w->lakes[l].outflow;
+                if (o >= 0 && world_channel_state(w, o, &s) != CHANNEL_DRY) CHECK(world_river_level(w, o, 0, &s, NULL) <= w->lakes[l].level + s.flood + 0.01f);
+            }
+        }
+        CHECK(steps > 50);
+        // Los lagos: ninguno helado en verano, todos en lo hondo del invierno. Se hielan antes los chicos (el del
+        // campamento, los oasis) que los grandes, y los altos que los bajos.
+        float freeze[LAKES_MAX];
+        for (int l = 0; l < w->lake_count; l++) {
+            CHECK(world_lake_ice(w, l, &summer) == 0.0f && hazard_ice_walkable(world_lake_ice(w, l, &winter)));
+            freeze[l] = test_lake_freeze_day(w, l, SEEDS[si]);
+            CHECK(freeze[l] > 18.0f && freeze[l] < 25.0f);
+        }
+        int pairs = 0;
+        for (int a = 0; a < w->lake_count; a++)
+            for (int b = 0; b < w->lake_count; b++) {
+                const Lake *la = &w->lakes[a], *lb = &w->lakes[b];
+                if (la->r <= lb->r + 0.01f && la->level >= lb->level + 3.0f) {
+                    CHECK(freeze[a] <= freeze[b]);
+                    pairs++;
+                }
+                if (la->r < 60.0f && lb->r > 100.0f && la->level >= lb->level - 15.0f) {
+                    CHECK(freeze[a] < freeze[b] - 0.5f);
+                    pairs++;
+                }
+            }
+        CHECK(pairs > 100);
+        // Un lago helado aguanta: world_water_now dice su hielo (y en verano, agua para nadar).
+        const Lake *big = &w->lakes[1];
+        WaterNow n;
+        world_water_now(w, big->x, big->z, &winter, &n);
+        CHECK(n.kind == WATER_LAKE && n.lake == 1 && hazard_ice_walkable(n.ice));
+        world_water_now(w, big->x, big->z, &summer, &n);
+        CHECK(n.kind == WATER_LAKE && n.ice == 0.0f && n.level == big->level + summer.flood);
+        // El mar: en invierno se hiela donde es bajo, junto a la costa; mar adentro, no. En verano, nada.
+        int shallow = 0, deep = 0;
+        for (float in = -900.0f; in < 400.0f; in += 7.0f)
+            for (float a = -0.6f; a <= 0.6f; a += 0.05f) {
+                float x0, z0;
+                world_edge_point(w, REGION_FJORD, 0.0f, &x0, &z0);
+                float th = atan2f(z0, x0) + a, r = world_edge_radius(w, th) - in, x = cosf(th) * r, z = sinf(th) * r;
+                WaterBodies b;
+                world_water_bodies(w, x, z, &b);
+                if (b.sea_floor < -1e8f) continue;
+                world_water_resolve(w, &b, x, z, &summer, &n);
+                CHECK(n.ice == 0.0f);
+                world_water_resolve(w, &b, x, z, &winter, &n);
+                if (n.kind != WATER_SEA) continue;
+                if (SEA_LEVEL - b.sea_floor < 3.0f) {
+                    CHECK(hazard_ice_walkable(n.ice));
+                    shallow++;
+                }
+                if (SEA_LEVEL - b.sea_floor > 18.0f) {
+                    CHECK(n.ice == 0.0f);
+                    deep++;
+                }
+            }
+        CHECK(shallow > 10 && deep > 10);
+        // El glaciar: al pie del muro de hielo, siempre; mas lejos, solo en invierno; fuera del altiplano, nunca.
+        float x, z;
+        world_edge_point(w, REGION_HIGHLAND, 140.0f, &x, &z);
+        CHECK(world_glacier_reach(w, x, z) <= 0.0f);
+        world_edge_point(w, REGION_HIGHLAND, 700.0f, &x, &z);
+        CHECK(world_glacier_reach(w, x, z) > 1.0f);
+        int winter_only = 0;
+        for (float in = 160.0f; in < 560.0f; in += 20.0f) {
+            world_edge_point(w, REGION_HIGHLAND, in, &x, &z);
+            float g = world_glacier_reach(w, x, z);
+            winter_only += g > au.glacier && g <= wi.glacier;
+        }
+        CHECK(winter_only > 3);
+        for (int r = REGION_FOREST; r < REGION_COUNT; r++) { // (la estepa no tiene borde)
+            if (r == REGION_HIGHLAND) continue;
+            world_edge_point(w, (Region)r, 200.0f, &x, &z);
+            CHECK(world_glacier_reach(w, x, z) > 1.0f);
+        }
+    }
+}
+
 static void test_world_dry(void) {
     // La linea de nieve del verano de world.h es la de src/sim/climate.c (la mas alta del año).
     float top = -1e9f;
@@ -5302,6 +5479,7 @@ int main(void) {
     RUN(test_world_dry);
     RUN(test_hydro_basics);
     RUN(test_water_flows_down);
+    RUN(test_water_seasons);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

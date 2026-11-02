@@ -19,12 +19,17 @@
 #define TERRAIN_LAKE_FLOOD 3.0f
 #define TERRAIN_NO_WATER (-1e9f)
 
-// Aspecto estacional del suelo (sale de Climate; alturas absolutas).
+// Aspecto estacional del suelo y del agua (sale de Climate; alturas absolutas).
 typedef struct {
     float greenness, autumn, snow_cover, wetness;
     float snowline;    // altura absoluta de la nieve permanente (glaciares)
+    float glacier;     // cuanto avanzo el frente del glaciar [0, 1] (Climate.glacier)
+    // El agua (docs/AGUA.md, fase 2: src/sim/world.h, WaterSeason): cada lago y cada rio, con su hielo.
     float flood;       // crecida de lagos y rios sobre su nivel base (m; el mar no crece)
-    float ice;         // lagos y rios congelados (el mar no se hiela)
+    float temp, temp_late; // temperatura media de hoy y de dos dias antes (Climate.temp_mean, temp_late)
+    float melt;        // el deshielo del glaciar que corre ahora [0, 1]
+    float sea_ice;     // el hielo del mar en la costa [0, 1]
+    float floes;       // los tempanos en el mar [0, 1]
 } TerrainLook;
 
 // Formaciones de cada region, de voxeles (src/world/voxstruct.h), sembradas por chunk.
@@ -34,6 +39,7 @@ typedef struct {
     unsigned char kind, variant;
 } ChunkFeature;
 
+#define TERRAIN_WATER_MESHES 3 // el agua, el hielo y la espuma de cada chunk
 typedef struct {
     bool loaded;
     int cx, cz;
@@ -41,8 +47,14 @@ typedef struct {
     int feat_count;
     Model model;
     float *tri;             // por triangulo: lo que hace falta para recolorear con la estacion
-    Model water[5];         // lagos, rios y canal, mar, agua glaciar, espuma (cada una sube distinto con la crecida)
-    bool has_water[5];
+    Model water[TERRAIN_WATER_MESHES];
+    bool has_water[TERRAIN_WATER_MESHES];
+    // Las aguas que llegan a cada vertice (no cambian con la estacion; NULL si el chunk no tiene agua) y el
+    // suelo: con eso, las mallas del agua se rehacen al cambiar la estacion sin volver a preguntarle al mundo.
+    WaterBodies *wbody;
+    float *wground;
+    unsigned char *wcell; // por celda: deshielo turquesa del altiplano, rapidos con espuma
+    bool water_dirty;     // la estacion cambio: rehacer sus mallas del agua
 } Chunk;
 
 typedef struct {
@@ -51,6 +63,7 @@ typedef struct {
     int center_cx, center_cz;
     bool has_center;
     TerrainLook look;
+    WaterSeason meshed; // la estacion de las mallas del agua (cambia de a saltos: la consulta, en cada cuadro)
     float plain;        // altura del llano del campamento
     const World *world; // la forma del mundo (de la semilla)
 } Terrain;
@@ -60,9 +73,13 @@ float terrain_height(const Terrain *t, float x, float z);
 float terrain_plain_height(const Terrain *t);
 // Cambia el aspecto estacional; recolorea los chunks si cambio lo suficiente.
 void terrain_set_look(Terrain *t, const TerrainLook *look);
-// Superficie del agua en (x, z) (lagos y rios con la crecida, canal, mar), o TERRAIN_NO_WATER.
+// El agua de la estacion (src/sim/world.h): la de los lagos, los rios, el canal y el mar, segun el aspecto.
+WaterSeason terrain_season(const Terrain *t);
+// Superficie del agua (o del hielo) en (x, z) en esta estacion (un cauce seco no tiene), o TERRAIN_NO_WATER.
 float terrain_water(const Terrain *t, float x, float z);
-// Hielo del agua en (x, z) [0, 1]: lagos, rios y canal se hielan; el mar no.
+// El agua con los cauces llenos (aunque hoy esten secos o helados): para no construir ni sembrar en un cauce.
+float terrain_water_full(const Terrain *t, float x, float z);
+// Hielo del agua en (x, z) [0, 1]: el de su lago, su rio, el canal o el mar (en la costa).
 float terrain_ice(const Terrain *t, float x, float z);
 // ¿Agua (sin hielo que aguante) a mas de depth de profundidad en (x, z)?
 bool terrain_deep_water(const Terrain *t, float x, float z, float depth);
@@ -73,8 +90,8 @@ Region terrain_region(const Terrain *t, float x, float z);
 void terrain_dry_step(const Terrain *t, float x0, float z0, float *x, float *z);
 // Agua (o hielo) en el area cargada. Despues de lo opaco.
 void terrain_draw_water(const Terrain *t, float time);
-// Las cascadas del area cargada (docs/AGUA.md, pagina 4): la cortina de agua y la espuma al pie (en
-// invierno, helada). Despues del agua.
+// Las cascadas del area cargada (docs/AGUA.md, pagina 4): la cortina de agua y la espuma al pie (helada si su
+// rio esta helado; ninguna si esta seco). Despues del agua.
 void terrain_draw_falls(const Terrain *t, float time);
 
 void terrain_init(Terrain *t, unsigned seed);

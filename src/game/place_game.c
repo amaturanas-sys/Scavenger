@@ -153,7 +153,7 @@ static void gather(const GameActions *ga, const Props *props) {
 static float ground_h(void *ud, float x, float z) { return terrain_height((const Terrain *)ud, x, z); }
 static float ground_water(void *ud, float x, float z) {
     const Terrain *t = ud;
-    return terrain_water(t, x, z) - terrain_height(t, x, z); // el hielo tampoco: es agua
+    return terrain_water_full(t, x, z) - terrain_height(t, x, z); // el hielo y los cauces secos tampoco: es agua
 }
 
 static Stockpile *stock_for(GameActions *ga) { return P.camp >= 0 ? &ga->camps[P.camp].stock : ga_stock(ga); }

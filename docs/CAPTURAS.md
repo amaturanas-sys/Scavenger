@@ -67,6 +67,23 @@ Ver [MUNDO.md](MUNDO.md). Con `--ir lugar` y `--orbital`:
 | ![Lago](capturas/mundo_lago.png) | **Un lago** (`--ir lago`): el más grande fuera del bosque, del otro lado de su desborde ([AGUA.md](AGUA.md)). |
 | ![Desborde](capturas/mundo_desborde.png) | **El desborde de un lago** (`--ir desborde`): por ahí sale su río. |
 | ![Cascada](capturas/mundo_cascada.png) | **Una cascada** (`--ir cascada`): la más grande tierra adentro, desde abajo. |
+| ![Lengua](capturas/mundo_lengua.png) | **El pie del glaciar** (`--ir lengua`): la morrena, lo más bajo junto al muro de hielo. |
+
+### Las estaciones del agua
+
+El mismo lugar en dos momentos del año ([AGUA.md](AGUA.md), fase 2), con `--dia` (la primavera empieza el día 1;
+el verano, el 8; el otoño, el 15; el invierno, el 22):
+
+| | |
+|---|---|
+| ![Meandro en otoño](capturas/estacion_meandro_otono.png) | **Un río del glaciar** (`--dia 17 --ir meandro`): todavía con agua. |
+| ![Meandro seco](capturas/estacion_meandro_invierno.png) | **El mismo, seco** (`--dia 20`): con la helada, el glaciar no suelta agua y queda el cauce de cantos. |
+| ![Lago en otoño](capturas/estacion_lago_otono.png) | **Un lago glaciar** (`--dia 21 --ir lago --dron 30`): los grandes se hielan después que los chicos. |
+| ![Lago helado](capturas/estacion_lago_invierno.png) | **El mismo, helado** (`--dia 25`). |
+| ![Mar en deshielo](capturas/estacion_mar_deshielo.png) | **El mar al romperse su hielo** (`--dia 5 --ir mar`): el hielo de la costa y los témpanos a la deriva. |
+| ![Mar helado](capturas/estacion_mar_invierno.png) | **El mar helado en la costa** (`--dia 26`). |
+| ![Lengua en primavera](capturas/estacion_lengua_primavera.png) | **La lengua del glaciar** (`--dia 6 --ir lengua`): cubre la morrena. |
+| ![Lengua en verano](capturas/estacion_lengua_verano.png) | **La morrena en el verano** (`--dia 9`): el glaciar se retiró. |
 
 ## Los edificios de la edad del hierro
 

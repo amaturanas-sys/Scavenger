@@ -78,6 +78,7 @@ int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out) {
     float k[REGION_COUNT];
     world_region_weights(w, mx, mz, k);
     if (k[REGION_HIGHLAND] > 0.5f && edge < 150.0f) return 0;     // el muro de hielo del altiplano
+    if (world_glacier_reach(w, mx, mz) <= 1.0f) return 0;         // la morrena: el glaciar la cubre en invierno
     if (world_river_bank(w, mx, mz, NULL) > 0.45f) return 0;      // el lecho de cantos que el rio lava
     // El suelo es un facetado de dos triangulos por celda (src/world/terrain.c: de (x1, z0) a
     // (x0, z1)): la base de cada mata, sobre el triangulo que la tiene.

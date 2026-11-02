@@ -38,6 +38,7 @@ typedef enum {
     VF_CHALK,     // formacion de creta blanca erosionada por el viento (desierto)
     VF_SERAC,     // bloques de hielo del frente del glaciar, con grietas azules
     VF_ICEBERG,   // tempano en los lagos de deshielo
+    VF_FLOE,      // tempano chato del mar en invierno: una placa de hielo de borde quebrado
     VF_KINDS
 } VoxFeature;
 #define VF_VARIANTS 4

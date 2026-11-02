@@ -57,6 +57,11 @@ static bool deep_water(const Terrain *t, float x, float z) {
     return terrain_deep_water(t, x, z, 0.6f);
 }
 
+// Los peces no se ven bajo el hielo ni donde el agua se fue (un cauce seco en invierno: docs/AGUA.md).
+static bool fish_hidden(const Terrain *t, float x, float z) {
+    return hazard_ice_walkable(terrain_ice(t, x, z)) || terrain_water(t, x, z) < terrain_height(t, x, z) + 0.3f;
+}
+
 // Profundidad del agua (para la fauna y los peces); helado, se camina por encima.
 static const char *water_at_hand(const GameActions *ga, const Player *p);
 
@@ -381,8 +386,8 @@ static void update_swarms(GameActions *ga, Combat *cb, const Player *p, const Te
     for (int i = 0; i < GA_MAX_SWARMS; i++) {
         Swarm *s = &ga->swarms[i];
         if (!s->used) continue;
-        if (s->kind == SWARM_FISH && hazard_ice_walkable(terrain_ice(t, s->cx, s->cz))) continue; // bajo el hielo
-        if (s->kind == SWARM_FISH) s->hy = terrain_water(t, s->cx, s->cz);                         // el nivel cambia con la estacion
+        if (s->kind == SWARM_FISH && fish_hidden(t, s->cx, s->cz)) continue; // bajo el hielo o sin agua
+        if (s->kind == SWARM_FISH) s->hy = terrain_water(t, s->cx, s->cz);    // el nivel cambia con la estacion
         SwarmHit hit = swarm_update(s, &c, &ga->rng, dt);
         if (!hit.stings) continue;
         cb->player.hp -= hit.damage;
@@ -399,7 +404,7 @@ static void update_swarms(GameActions *ga, Combat *cb, const Player *p, const Te
 
 bool fg_fish(GameActions *ga, const Terrain *t, Vector3 pos, float yaw, float reach, bool spear, char *log, size_t len) {
     float ax = pos.x + sinf(yaw) * reach * 0.8f, az = pos.z + cosf(yaw) * reach * 0.8f;
-    if (hazard_ice_walkable(terrain_ice(t, ax, az))) return false;
+    if (fish_hidden(t, ax, az)) return false;
     Vector3 at = { ax, terrain_water(t, ax, az) - 0.3f, az };
     for (int i = 0; i < GA_MAX_SWARMS; i++) {
         Swarm *s = &ga->swarms[i];
@@ -921,7 +926,7 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
 }
 
 static void draw_swarm(const Swarm *s, Props *props, const InvItem *nest, const Terrain *t, float time) {
-    if (s->kind == SWARM_FISH && hazard_ice_walkable(t->look.ice)) return;
+    if (s->kind == SWARM_FISH && fish_hidden(t, s->cx, s->cz)) return; // bajo el hielo o sin agua
     if (nest) { // colmena o avispero, colgando de un poste
         Vector3 at = { s->hx, s->hy, s->hz };
         if (props_has_model(props, nest)) {

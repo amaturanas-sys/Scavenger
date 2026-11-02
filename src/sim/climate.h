@@ -37,9 +37,9 @@ typedef struct {
     float autumn;      // tonos ocres del otono
     float snow_cover;  // nieve en el llano
     float wetness;     // suelo mojado o embarrado
-    // Agua.
+    // Agua (docs/AGUA.md). Cada lago y cada rio tiene su propio hielo (src/sim/world.h, WaterSeason).
     float water_level; // nivel de los lagos respecto de su nivel base (m): crecida de deshielo
-    float ice;         // lagos congelados (1 = se puede cruzar)
+    float ice;         // un lago a la altura del campamento congelado (1 = se puede cruzar)
     // Montanas: por encima de esta altura hay nieve permanente y glaciar.
     float snowline;
     // Tiempo atmosferico ahora.
@@ -49,6 +49,13 @@ typedef struct {
     float snow;   // intensidad de nevada
     float wind;   // fuerza del viento
     float storm;  // probabilidad de relampagos
+    // Las estaciones del agua (docs/AGUA.md, fase 2). El agua grande va detras del aire: se enfria y se
+    // entibia despacio, asi que los lagos grandes y el mar siguen la temperatura de unos dias antes.
+    float temp_late; // la temperatura media de dos dias antes (la de los lagos grandes)
+    float melt;      // el deshielo del glaciar que corre ahora [0, 1]: lleno en verano, nada con helada
+    float sea_ice;   // el hielo del mar en la costa [0, 1]: del final del invierno al principio de la primavera
+    float floes;     // los tempanos en el mar [0, 1]: aparecen antes que el hielo de la costa y quedan despues
+    float glacier;   // cuanto avanzo el frente del glaciar [0, 1]: lo mas al empezar la primavera, lo menos al empezar el otoño
 } Climate;
 
 Climate climate_at(float t, uint32_t seed);

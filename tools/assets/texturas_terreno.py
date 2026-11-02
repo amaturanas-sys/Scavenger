@@ -2,7 +2,8 @@
 """Texturas del terreno de ESTEPA: un atlas pequeño (low-res, pixeles nitidos) editable.
 
 Uso:
-  python3 tools/assets/texturas_terreno.py generar [--forzar]   escribe assets/terrain/texturas.png (no pisa tus cambios sin --forzar)
+  python3 tools/assets/texturas_terreno.py generar [--forzar]   escribe assets/terrain/texturas.png, agua.png y hielo.png
+                                                               (los que faltan: no pisa tus cambios sin --forzar)
   python3 tools/assets/texturas_terreno.py guia                 assets/terrain/texturas_guia.png (x4, con nombres)
 
 El atlas tiene celdas de 32x32 en 4 columnas (128x128). Cada celda es un detalle en tonos casi
@@ -27,6 +28,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "assets", "terrain", "texturas.png")
 GUIDE = os.path.join(ROOT, "assets", "terrain", "texturas_guia.png")
 WATER = os.path.join(ROOT, "assets", "terrain", "agua.png")
+ICE = os.path.join(ROOT, "assets", "terrain", "hielo.png")
 CELL = 32
 COLS = 4
 
@@ -301,14 +303,36 @@ def water_tile():
     return tile(f, 300)
 
 
+def ice_tile():
+    """El hielo de lagos, rios y mar (docs/AGUA.md, fase 2): casi blanco, con nubes de burbujas y escarcha y
+    grietas finas (el juego lo tiñe con el color de cada agua helada). 32x32: se repite sin costuras."""
+    n = wrap_noise(23, 4)
+    n2 = wrap_noise(24, 8)
+    rnd = random.Random(25)
+    pts = [(rnd.uniform(0, CELL), rnd.uniform(0, CELL)) for _ in range(6)]
+
+    def f(x, y, r):
+        v = 226 + 16 * (n(x, y) - 0.5) + 10 * (n2(x, y) - 0.5) + r.uniform(-4, 4)
+        ds = sorted(min(math.hypot(x - px - ox, y - py - oy) for ox in (-CELL, 0, CELL) for oy in (-CELL, 0, CELL)) for px, py in pts)
+        if ds[1] - ds[0] < 0.7:
+            v = 196  # grieta
+        elif ds[1] - ds[0] < 1.6:
+            v += 12  # el borde claro de la grieta
+        if r.random() < 0.012:
+            v = 255  # escarcha que brilla
+        return gray(v, (0.98, 1.0, 1.03))
+
+    return tile(f, 301)
+
+
 def generar(force):
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    if os.path.exists(OUT) and not force:
-        print(f"{OUT} ya existe (puede tener tus cambios): usa --forzar para rehacerlo.")
-        return
-    build().save(OUT)
-    water_tile().save(WATER)
-    print(f"Escrito {OUT} y {WATER}")
+    for path, make in ((OUT, build), (WATER, water_tile), (ICE, ice_tile)):
+        if os.path.exists(path) and not force:
+            print(f"{path} ya existe (puede tener tus cambios): usa --forzar para rehacerlo.")
+            continue
+        make().save(path)
+        print(f"Escrito {path}")
 
 
 def guia():

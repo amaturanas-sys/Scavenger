@@ -247,6 +247,15 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las estaciones del agua (v0.11.1), la fase 2 del diseño del agua ([docs/AGUA.md](docs/AGUA.md)):
+- **Los ríos del glaciar se secan con la helada:** corren de mediados de la primavera a mediados del otoño. En invierno queda su cauce de grava o de cantos, con unos charcos helados, y se cruza a pie. Los de la lluvia y los que salen de un lago no se secan: se hielan. Con poca agua, el nivel baja hacia lo hondo del cauce, y las cascadas de un río seco desaparecen.
+- **Cada lago y cada río tiene su hielo:** los chicos (el lago del campamento, los oasis, los arroyos, los charcos) y los altos se hielan primero; los lagos grandes, los ríos grandes y el canal, uno o dos días después, y se deshielan también después. El hielo que aguanta se ve blanco y con grietas, y se rompe bajo el jugador como antes.
+- **El mar se hiela en la costa** al final del invierno, desde donde es bajo, y en la primavera se rompe en témpanos que flotan a la deriva. Mar adentro sigue abierto.
+- **El glaciar avanza y retrocede:** su lengua cubre la morrena al pie del muro de hielo al final del invierno y se retira en el verano. La morrena no tiene pasto ni árboles.
+- **Para construir** cuenta el agua de los cauces llenos: no se levanta nada en un cauce seco ni sobre el hielo.
+
+Pruebas: `--ir lengua` (el pie del glaciar) y `--ir cascada-helada` (la cascada de un río que no se seca), con `--dia` para la estación (de 1 a 28: la primavera empieza el día 1, el invierno el 22).
+
 El agua baja (v0.11.0), la fase 1 del diseño del agua ([docs/AGUA.md](docs/AGUA.md)):
 - **Las alturas del diseño:** de mayor a menor, el altiplano, el desierto, la estepa, el bosque y la costa. Entre el altiplano y el desierto, y entre el altiplano y la costa, dos cordilleras.
 - **Los ríos bajan por donde baja el agua:** nacen del deshielo del glaciar y de las lluvias, siguen la cota más baja y se juntan como raíces hasta el canal del bosque, el mar de los fiordos o el cañón del desierto. Trenzados en el altiplano y la costa, de meandros en la estepa, tributarios en el bosque, arroyos en todas partes. En el desierto no nace ninguno.
