@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 
+#include "channel.h"
+
 // El tiempo cambia en bloques de 7.5 minutos (4 por dia), con transicion suave.
 #define WEATHER_BLOCK_SECONDS 450.0f
 #define WEATHER_BLEND_SECONDS 60.0f
@@ -58,5 +60,6 @@ const char *weather_name(WeatherKind w); // UTF-8, en minuscula
 float climate_year(float t);
 float climate_temp_mean(float year);
 WeatherKind climate_block_weather(int block, uint32_t seed);
+ChannelState channel_state_for_season(float year); // retorna el estado del cauce según la estación
 
 #endif

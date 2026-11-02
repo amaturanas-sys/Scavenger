@@ -38,6 +38,7 @@ CATEGORIES = OrderedDict([
     ("asedio", "Maquinaria de asedio"),
     ("utileria", "Utilería y consumibles"),
     ("personaje", "Personajes y NPCs"),
+    ("personajes", "Personajes (plural - assets/models/personajes/)"),
 ])
 STATES = ["pendiente", "kiln", "importado", "refinado"]
 # Etiquetas: clave -> valores permitidos (None = valor libre).
@@ -56,7 +57,7 @@ TAGS = {
     "motivo": None,
     "manos": {"una", "dos", "escudo"},
 }
-ID_RE = re.compile(r"^[a-z0-9_]+\.[a-z0-9_]+\.[a-z0-9_]+$")
+ID_RE = re.compile(r"^[a-z0-9_]+(\.[a-z0-9_]+)+$")
 DIMS_RE = re.compile(r"^\d+(\.\d+)?x\d+(\.\d+)?x\d+(\.\d+)?$")
 
 
@@ -88,7 +89,14 @@ SEASONS = ("primavera", "verano", "otono", "invierno")
 
 
 def path_of(it):
-    rel = it["id"].replace(".", "/")
+    # Convertir guiones bajos a slashes para directorios, y el último punto a slash para separar archivo
+    # Ejemplo: personajes.equipamento.armadura_chaleco_acero -> personajes/equipamento/armadura_chaleco/acero.glb
+    # Ejemplo: personnages.animaciones.combat -> personnages/animaciones/combat.glb
+    rel = it["id"].replace("_", "/")
+    last_dot = rel.rfind(".")
+    if last_dot != -1:
+        # Todo antes del último punto es directorio
+        rel = rel[:last_dot].replace(".", "/") + "/" + rel[last_dot+1:]
     if "formato:textura" in it["tags"]:
         return os.path.join("assets", "textures", rel + ".png")
     return os.path.join("assets", "models", rel + ".glb")

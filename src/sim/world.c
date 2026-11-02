@@ -29,12 +29,25 @@
 #define WATER_MAX_DEPTH_RIVER 6.0f // los cauces, ~2,6 m
 #define ICE_E 120.0f      // pie del muro de hielo del altiplano
 
+// Erosión geométrica del cauce del río
+#define CHANNEL_MIN_DEPTH 1.0f   // profundidad mínima del cauce (m)
+#define CHANNEL_MAX_DEPTH 2.5f   // profundidad máxima del cauce (m)
+#define CHANNEL_WIDTH_FACTOR 0.8f // factor para calcular ancho a partir de profundidad
+#define CASCADE_DROP_THRESHOLD 3.0f // desnivel mínimo para considerar cascada
+#define CASCADE_MIN_RIVER_PTS 12   // mínimo de puntos para detectar cascadas
+
 static float clamp01(float v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); }
 static float smooth(float a, float b, float v) {
     float t = clamp01((v - a) / (b - a));
     return t * t * (3.0f - 2.0f * t);
 }
 static float lerpf(float a, float b, float t) { return a + (b - a) * t; }
+
+// Función gaussiana para el pincel de erosión (perfil de trinchera)
+static float gaussian_pencil(float x, float sigma) {
+    float x2 = x * x;
+    return expf(-x2 / (2.0f * sigma * sigma));
+}
 
 // ------------------------------------------------------------------ regiones
 // Cuadrantes fijos (angulo de atan2(z, x); +Z es el sur): la estepa al centro; el altiplano
@@ -330,12 +343,30 @@ float world_height(const World *w, float x, float z) {
         const River *r = &w->rivers[i];
         if (!river_box(r, x, z, r->width * 2.5f)) continue;
         float lv = 0.0f, along = 0.0f, side = 0.0f, d = river_dist(r, x, z, &lv, &along, &side);
+        
+        // Geometría del cauce seco (invierno)
+        float channel_depth = 0.0f;
+        if (r->n > 0) {
+            float best_dist = 1e9f, best_k = -1;
+            for (int k = 0; k < r->n; k++) {
+                float dx = r->x[k] - x, dz = r->z[k] - z;
+                float dist = sqrtf(dx * dx + dz * dz);
+                if (dist < best_dist) {
+                    best_dist = dist;
+                    best_k = k;
+                }
+            }
+            if (best_k >= 0 && best_dist < r->width * r->width) {
+                channel_depth = CHANNEL_MIN_DEPTH + (1.0f - (float)best_k / r->n) * (CHANNEL_MAX_DEPTH - CHANNEL_MIN_DEPTH);
+            }
+        }
+        
         if (r->kind == RIVER_BRAIDED) {
-            if (d < r->width) h = fminf(h, braid_channel(w, r, along, side) ? lv - 0.6f : lv + 0.12f); // grava y canales
+            if (d < r->width) h = fminf(h, braid_channel(w, r, along, side) ? lv - 0.6f - channel_depth : lv + 0.12f); // grava y canales
             else if (d < r->width * 1.6f) h = fminf(h, lerpf(lv + 0.12f, fmaxf(h, lv + 0.12f), smooth(r->width, r->width * 1.6f, d)));
         } else {
             float deep = 2.2f * fminf(1.0f, r->width / 5.0f); // los arroyos, menos hondos
-            if (d < r->width) h = fminf(h, lv - 0.4f - deep * (1.0f - (d / r->width) * (d / r->width)));
+            if (d < r->width) h = fminf(h, lv - 0.4f - fmaxf(deep, channel_depth) * (1.0f - (d / r->width) * (d / r->width)));
             else if (d < r->width * 2.4f) h = fminf(h, lerpf(lv + 0.2f, fmaxf(h, lv + 0.2f), smooth(r->width, r->width * 2.4f, d)));
         }
     }
@@ -376,6 +407,10 @@ float world_water(const World *w, float x, float z, float flood, WaterKind *kind
     for (int i = 0; i < w->river_count; i++) {
         const River *r = &w->rivers[i];
         if (!river_box(r, x, z, r->width * 1.5f)) continue;
+        
+        // Si el cauce está seco (invierno), no hay agua
+        if (r->state == CHANNEL_DRY) continue;
+        
         float lv = 0.0f, d = river_dist(r, x, z, &lv, NULL, NULL);
         float reach = r->kind == RIVER_BRAIDED ? r->width : r->width * 1.25f;
         if (d < reach && lv + 0.5f * flood > best) {
@@ -392,6 +427,16 @@ float world_river_bank(const World *w, float x, float z, float *width) {
     for (int i = 0; i < w->river_count; i++) {
         const River *r = &w->rivers[i];
         if (r->kind == RIVER_BRAIDED || !river_box(r, x, z, r->width * 3.0f)) continue;
+        
+        // Si el cauce está seco (invierno), el lecho de cantos es completamente visible
+        if (r->state == CHANNEL_DRY) {
+            if (best < 1.0f) {
+                best = 1.0f;
+                if (width) *width = r->width;
+            }
+            continue;
+        }
+        
         float lv = 0.0f, d = river_dist(r, x, z, &lv, NULL, NULL);
         // Barras de cantos: el cauce y una orilla de hasta 2,6 anchos, mas ancha en los rios grandes.
         float b = 1.0f - smooth(r->width * 1.3f, r->width * 2.6f + 3.0f, d);
@@ -537,6 +582,159 @@ static void river_levels(const World *w, River *rv, float below, bool from_end) 
         for (int k = rv->n - 1; k >= 0; k--) m = fminf(m, rv->level[k]), rv->level[k] = m;
     else
         for (int k = 0; k < rv->n; k++) m = fminf(m, rv->level[k]), rv->level[k] = m;
+}
+
+// ------------------------------------------------------------------ erosión geométrica del cauce del río
+static void erosion_pencil(World *w, River *rv, float depth) {
+    if (rv->n < 4) return;
+    float width = depth * CHANNEL_WIDTH_FACTOR;
+    for (int k = 0; k < rv->n; k++) {
+        float cx = rv->x[k], cz = rv->z[k];
+        float base_h = land(w, cx, cz);
+        float total_suction = 0.0f;
+        for (int j = 0; j < rv->n; j++) {
+            float dx = rv->x[j] - cx;
+            float dz = rv->z[j] - cz;
+            float dist = sqrtf(dx * dx + dz * dz);
+            if (dist > width) continue;
+            float profile = gaussian_pencil(dist, width * 0.5f);
+            total_suction += profile;
+        }
+        float suction = total_suction * depth * 0.1f;
+        rv->level[k] = base_h - suction;
+    }
+}
+
+static void detect_waterfalls(World *w, int river_idx) {
+    River *rv = &w->rivers[river_idx];
+    if (rv->n < CASCADE_MIN_RIVER_PTS) return;
+    for (int k = 0; k < rv->n - 1; k++) {
+        float h0 = land(w, rv->x[k], rv->z[k]);
+        float h1 = land(w, rv->x[k + 1], rv->z[k + 1]);
+        float drop = h0 - h1;
+        if (drop > CASCADE_DROP_THRESHOLD) {
+            bool has_surface = false;
+            for (int j = k + 1; j < rv->n && j < k + 8; j++) {
+                float h = land(w, rv->x[j], rv->z[j]);
+                if (h < h1 + 0.5f) {
+                    has_surface = true;
+                    break;
+                }
+            }
+            if (!has_surface && w->cascade_count < CASCades_MAX) {
+                Cascade *c = &w->cascades[w->cascade_count];
+                c->river_idx = river_idx;
+                c->point_idx = k;
+                c->kind = drop > 6.0f ? CASCADE_PLUNGE : (drop > 4.0f ? CASCADE_RAPIDS : CASCADE_WATERFALL);
+                c->drop_height = drop;
+                c->base_x = rv->x[k];
+                c->base_z = rv->z[k];
+                w->cascade_count++;
+            }
+        }
+    }
+}
+
+// ------------------------------------------------------------------ arroyos secos
+static void generate_creeks(World *w, Rng *rng) {
+    for (int i = 0; i < w->river_count && w->creek_count < CREEKS_MAX - 2; i++) {
+        River *dest = &w->rivers[i];
+        if (dest->kind != RIVER_MEANDER && dest->kind != RIVER_TRIBUTARY) continue;
+        for (int j = 0; j < 5 && w->creek_count < CREEKS_MAX; j++) {
+            float a = rng_float(rng) * 2.0f * PI_F;
+            float r = 200.0f + rng_float(rng) * 150.0f;
+            float x, z;
+            polar(r, a, &x, &z);
+            if (world_region(w, x, z) != REGION_STEPPE) continue;
+            float h = land(w, x, z);
+            if (world_water(w, x, z, 0.0f, NULL) > h - 0.5f) continue;
+            bool overlaps = false;
+            for (int k = 0; k < w->creek_count; k++) {
+                Creek *ck = &w->creeks[k];
+                float dx = x - ck->x[0], dz = z - ck->x[0];
+                if (dx * dx + dz * dz < 100.0f * 100.0f) {
+                    overlaps = true;
+                    break;
+                }
+            }
+            if (overlaps) continue;
+            Creek *ck = &w->creeks[w->creek_count];
+            memset(ck, 0, sizeof(*ck));
+            ck->kind = CREEK_SEASONAL;
+            ck->destination_river_idx = i;
+            ck->n = 0;
+            float px = x, pz = z, step = 20.0f;
+            for (int k = 0; k < CREEK_PTS && ck->n < CREEK_PTS; k++) {
+                float dx = dest->x[0] - px, dz = dest->z[0] - pz, d = sqrtf(dx * dx + dz * dz);
+                ck->x[ck->n] = px;
+                ck->z[ck->n] = pz;
+                ck->depth[ck->n] = CHANNEL_MIN_DEPTH + (1.0f - (float)k / CREEK_PTS) * (CHANNEL_MAX_DEPTH - CHANNEL_MIN_DEPTH) * 0.5f;
+                ck->n++;
+                if (d < step) {
+                    ck->x[ck->n] = dest->x[0];
+                    ck->z[ck->n] = dest->z[0];
+                    ck->depth[ck->n] = 0.0f;
+                    ck->n++;
+                    break;
+                }
+                float a = atan2f(dz, dx) + 0.5f * noise2d(k * 0.15f, (float)w->creek_count, w->seed + 95u);
+                px += cosf(a) * step;
+                pz += sinf(a) * step;
+            }
+            for (int k = 0; k < ck->n; k++) {
+                ck->minx = fminf(ck->minx, ck->x[k]);
+                ck->maxx = fmaxf(ck->maxx, ck->x[k]);
+                ck->minz = fminf(ck->minz, ck->z[k]);
+                ck->maxz = fmaxf(ck->maxz, ck->z[k]);
+            }
+            w->creek_count++;
+        }
+    }
+}
+
+// ------------------------------------------------------------------ funciones públicas de geometría del cauce
+
+float world_channel_depth(const World *w, float x, float z) {
+    for (int i = 0; i < w->river_count; i++) {
+        River *rv = &w->rivers[i];
+        if (!river_box(rv, x, z, rv->width * 2.5f)) continue;
+        float best_dist = 1e9f, best_k = -1;
+        for (int k = 0; k < rv->n; k++) {
+            float dx = rv->x[k] - x, dz = rv->z[k] - z;
+            float d = dx * dx + dz * dz;
+            if (d < best_dist) {
+                best_dist = d;
+                best_k = k;
+            }
+        }
+        if (best_k >= 0 && best_dist < rv->width * rv->width) {
+            return CHANNEL_MIN_DEPTH + (1.0f - (float)best_k / rv->n) * (CHANNEL_MAX_DEPTH - CHANNEL_MIN_DEPTH);
+        }
+    }
+    return 0.0f;
+}
+
+bool world_channel_is_dry(const World *w, int river_idx) {
+    if (river_idx < 0 || river_idx >= w->river_count) return false;
+    River *rv = &w->rivers[river_idx];
+    // El estado del cauce depende de la estación (clima)
+    // Si el cauce está congelado, también se considera "seco" para la física
+    return rv->state == CHANNEL_DRY || rv->state == CHANNEL_FROZEN;
+}
+
+bool world_cascade_at(const World *w, float x, float z) {
+    for (int i = 0; i < w->cascade_count; i++) {
+        Cascade *c = &w->cascades[i];
+        River *rv = &w->rivers[c->river_idx];
+        if (rv->n <= c->point_idx) continue;
+        float dx = rv->x[c->point_idx] - x;
+        float dz = rv->z[c->point_idx] - z;
+        float d = dx * dx + dz * dz;
+        if (d < 4.0f * 4.0f) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Los meandros de la estepa: arcos que siguen su contorno dando vueltas cerradas. El rumbo
@@ -803,6 +1001,11 @@ void world_generate(World *w, uint32_t seed) {
     // Rios: los meandros que rodean la estepa; los tributarios del canal, por el bosque; los
     // trenzados del altiplano (del hielo hacia la estepa) y de la costa (de la estepa al mar).
     make_meanders(w, &rng);
+    for (int i = 0; i < w->river_count; i++) {
+        River *rv = &w->rivers[i];
+        rv->state = CHANNEL_WET;
+        erosion_pencil(w, rv, WATER_MAX_DEPTH_RIVER);
+    }
     int tribs = 4 + rng_range(&rng, 3);
     for (int i = 0; i < tribs * 4 && tribs > 0; i++) {
         float a = SECTOR_ANGLE[REGION_FOREST] - w->warp_phase + (rng_float(&rng) - 0.5f) * 1.6f * SECTOR_HALF;
@@ -814,16 +1017,37 @@ void world_generate(World *w, uint32_t seed) {
         make_radial(w, &rng, RIVER_TRIBUTARY, REGION_FOREST, a, r0, steppe_radius(w, a) + 40.0f, true, 5.0f + rng_float(&rng) * 4.0f);
         tribs--;
     }
+    for (int i = 0; i < w->river_count; i++) {
+        River *rv = &w->rivers[i];
+        if (rv->state != CHANNEL_WET) continue;
+        erosion_pencil(w, rv, WATER_MAX_DEPTH_RIVER);
+    }
     int braids = 3 + rng_range(&rng, 2);
     for (int i = 0; i < braids; i++) {
         float a = SECTOR_ANGLE[REGION_HIGHLAND] - w->warp_phase + ((float)i + 0.5f - braids * 0.5f) / braids * 1.5f * SECTOR_HALF;
         make_radial(w, &rng, RIVER_BRAIDED, REGION_HIGHLAND, a, world_edge_radius(w, a) - ICE_E - 60.0f, steppe_radius(w, a) + 30.0f, true,
                     40.0f + rng_float(&rng) * 40.0f);
     }
+    for (int i = 0; i < w->river_count; i++) {
+        River *rv = &w->rivers[i];
+        if (rv->state != CHANNEL_WET) continue;
+        erosion_pencil(w, rv, WATER_MAX_DEPTH_RIVER);
+    }
     for (int i = 0, n = 1 + rng_range(&rng, 2); i < n; i++) {
         float a = SECTOR_ANGLE[REGION_FJORD] - w->warp_phase + (rng_float(&rng) - 0.5f) * 1.2f * SECTOR_HALF;
         make_radial(w, &rng, RIVER_BRAIDED, REGION_FJORD, a, steppe_radius(w, a) + 60.0f, world_edge_radius(w, a) - 80.0f, false,
                     35.0f + rng_float(&rng) * 30.0f);
+    }
+    for (int i = 0; i < w->river_count; i++) {
+        River *rv = &w->rivers[i];
+        if (rv->state != CHANNEL_WET) continue;
+        erosion_pencil(w, rv, WATER_MAX_DEPTH_RIVER);
+    }
+    // Detectar cascadas en todos los ríos
+    for (int i = 0; i < w->river_count; i++) {
+        if (w->rivers[i].state == CHANNEL_WET) {
+            detect_waterfalls(w, i);
+        }
     }
     // Arroyos: bajan de las lomas de la estepa, del bosque, del altiplano y de la costa hasta un rio.
     {
@@ -952,6 +1176,7 @@ void world_generate(World *w, uint32_t seed) {
             n--;
         }
     }
+    generate_creeks(w, &rng);
     settle_all(w);
 }
 

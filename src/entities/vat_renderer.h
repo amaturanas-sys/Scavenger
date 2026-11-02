@@ -32,79 +32,79 @@ typedef struct {
     bool dead;                    // Dead pose variant
 } VatInstance;
 
+// Renderer state flags
+typedef enum {
+    VAT_RENDERER_STATE_UNINITIALIZED = 0,
+    VAT_RENDERER_STATE_DESKTOP_ONLY,      // GLSL 330 available, GLSL ES 100 not used
+    VAT_RENDERER_STATE_ANDROID_ONLY,      // GLSL ES 100 available, GLSL 330 not used
+    VAT_RENDERER_STATE_BOTH_SHADERS,      // Both shaders loaded
+    VAT_RENDERER_STATE_ERROR               // Initialization failed
+} VatRendererState;
+
 // VAT Renderer State
 typedef struct {
-    int max_instances;            // Maximum number of concurrent VAT instances
-    int instance_count;           // Current number of active instances
-    
-    // Shader handles
-    Shader gl330_shader;          // GLSL 330 shader for desktop
-    Shader gl100_shader;          // GLSL ES 100 shader for Android
-    
-    // Shader uniform locations
-    int loc_matModel;             // matModel uniform
-    int loc_matView;              // matView uniform
-    int loc_matProjection;        // matProjection uniform
-    int loc_vatPositionMin;       // vatPositionMin uniform
-    int loc_vatPositionExtent;    // vatPositionExtent uniform
-    int loc_vatFrame;             // vatFrame uniform
-    int loc_vatFrameCount;        // vatFrameCount uniform
-    int loc_vatVertexCount;       // vatVertexCount uniform
-    int loc_matDiffuseColor;      // matDiffuseColor uniform
-    int loc_lightDir;             // lightDir uniform
-    int loc_lightColor;           // lightColor uniform
-    int loc_ambientColor;         // ambientColor uniform
-    int loc_ambientIntensity;     // ambientIntensity uniform
-    int loc_texture0;             // texture0 sampler uniform
-    
-    // Texture IDs
-    Texture2D *textures;          // Array of VAT texture handles
-    int max_textures;             // Maximum number of textures
-    
-    // Mesh handles
-    Model *meshes;                // Array of static mesh handles
-    int max_meshes;               // Maximum number of meshes
-    
-    // Material handles (one per mesh)
-    Material *materials;          // Array of material handles
-    int max_materials;            // Maximum number of materials
-    
-    // Instance transforms (application-owned array for instancing)
-    Matrix *instanceTransforms;   // Pre-allocated instance transforms
-    int max_instance_transforms;  // Maximum number of instance transforms
-    
-    // Android-specific
-    bool android_instancing_supported;  // Whether Android backend supports instancing
-    bool android_shader_loaded;          // Whether GLSL ES 100 shader loaded successfully
+    int max_instances;
+    int instance_count;
+    VatRendererState state;
+    bool is_android;
+    Shader active_shader;
+    Shader gl330_shader;
+    Shader gl100_shader;
+    int gl330_loc_matModel;
+    int gl330_loc_matView;
+    int gl330_loc_matProjection;
+    int gl330_loc_vatPositionMin;
+    int gl330_loc_vatPositionExtent;
+    int gl330_loc_vatFrame;
+    int gl330_loc_vatFrameCount;
+    int gl330_loc_vatVertexCount;
+    int gl330_loc_matDiffuseColor;
+    int gl330_loc_lightDir;
+    int gl330_loc_lightColor;
+    int gl330_loc_ambientColor;
+    int gl330_loc_ambientIntensity;
+    int gl330_loc_texture0;
+    int gl100_loc_matModel;
+    int gl100_loc_matView;
+    int gl100_loc_matProjection;
+    int gl100_loc_vatPositionMin;
+    int gl100_loc_vatPositionExtent;
+    int gl100_loc_vatFrame;
+    int gl100_loc_vatFrameCount;
+    int gl100_loc_vatVertexCount;
+    int gl100_loc_matDiffuseColor;
+    int gl100_loc_lightDir;
+    int gl100_loc_lightColor;
+    int gl100_loc_ambientColor;
+    int gl100_loc_ambientIntensity;
+    int gl100_loc_texture0;
+    Texture2D *textures;
+    int max_textures;
+    Model *meshes;
+    int max_meshes;
+    Material *materials;
+    int max_materials;
+    VatInstance *instances;
+    Matrix *instanceTransforms;
+    int max_instance_transforms;
+    bool android_instancing_supported;
+    bool android_shader_loaded;
 } VatRenderer;
 
-// Initialization and shutdown
 void vat_renderer_init(VatRenderer *vr, int max_instances);
 void vat_renderer_shutdown(VatRenderer *vr);
-
-// Asset loading (must be called during initialization, not in frame loop)
-// Returns 0 on success, -1 on failure
 int vat_renderer_load_shader_gl330(VatRenderer *vr, const char *vs_path, const char *fs_path);
 int vat_renderer_load_shader_gl100(VatRenderer *vr, const char *vs_path, const char *fs_path);
 int vat_renderer_load_mesh(VatRenderer *vr, const char *path);
 int vat_renderer_load_vat_texture(VatRenderer *vr, const char *path, int frame_count);
-
-// Instance management
-// Returns instance index, or -1 if no available slot
 int vat_renderer_add_instance(VatRenderer *vr, int archetype_id);
 void vat_renderer_remove_instance(VatRenderer *vr, int instance_idx);
 void vat_renderer_clear_instances(VatRenderer *vr);
-
-// Update (must be called each frame)
 void vat_renderer_update_instance(VatRenderer *vr, int instance_idx, float dt);
 void vat_renderer_set_instance_frame(VatRenderer *vr, int instance_idx, int frame);
 void vat_renderer_set_instance_animation(VatRenderer *vr, int instance_idx, float anim_speed);
-
-// Render
 void vat_renderer_draw(VatRenderer *vr);
 void vat_renderer_draw_instance(VatRenderer *vr, int instance_idx);
-
-// Utility functions
 const char *vat_renderer_get_shader_error(VatRenderer *vr);
 bool vat_renderer_shader_loaded(VatRenderer *vr);
 bool vat_renderer_android_instancing_supported(VatRenderer *vr);

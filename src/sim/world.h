@@ -26,6 +26,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "channel.h"
+
 #define WORLD_RADIUS 4800.0f // m: radio medio de la tierra (el borde varia, fractal)
 #define SEA_LEVEL 0.0f
 
@@ -41,6 +43,14 @@ typedef enum { WATER_NONE, WATER_LAKE, WATER_RIVER, WATER_CANAL, WATER_SEA } Wat
 #define DENS_MAX 56
 #define CANAL_SAMPLES 360
 
+// Arroyos secos: cauces que se secan en invierno
+typedef enum { CREEK_SEASONAL, CREEK_PERENNIAL, CREEK_KINDS } CreekKind;
+
+#define CREEKS_MAX 64
+#define CREEK_PTS 64
+#define CREEK_MAX_DEPTH 1.5f   // profundidad máxima de un arroyo seco
+#define CREEK_MIN_WIDTH 2.0f   // ancho mínimo de un arroyo seco
+
 typedef struct {
     float x, z, r;  // centro y radio (la orilla se deforma con ruido)
     float level;    // nivel base del agua (absoluto)
@@ -51,6 +61,9 @@ typedef struct {
 // Arroyo: un cauce chico (2 a 3,5 m) que baja de lomas, cumbres y bosques hasta un rio.
 typedef enum { RIVER_MEANDER, RIVER_TRIBUTARY, RIVER_BRAIDED, RIVER_CREEK, RIVER_KINDS } RiverKind;
 
+// Cascadas: puntos donde el cauce cae sin superficie (desnivel > 3.0m)
+typedef enum { CASCADE_WATERFALL, CASCADE_RAPIDS, CASCADE_PLUNGE } CascadeKind;
+
 typedef struct {
     float x[RIVER_PTS], z[RIVER_PTS], level[RIVER_PTS];
     float along[RIVER_PTS]; // metros recorridos hasta cada punto (para los canales trenzados)
@@ -58,11 +71,30 @@ typedef struct {
     float width;            // trenzado: el ancho del lecho de grava
     RiverKind kind;
     float minx, minz, maxx, maxz; // caja (para descartar rapido)
+    ChannelState state;     // geometría del cauce
 } River;
 
 typedef struct {
     float x, z, r, h; // macizo: centro, radio y altura sobre el terreno
 } Peak;
+
+// Cascada: punto de caída en el cauce del río
+typedef struct {
+    int river_idx;      // índice del río al que pertenece
+    int point_idx;      // índice del punto en el cauce donde ocurre
+    CascadeKind kind;   // tipo de cascada
+    float drop_height;  // altura de la caída
+    float base_x, base_z; // posición base del cauce
+} Cascade;
+
+// Arroyo seco: cauce que existe todo el año pero se seca en invierno
+typedef struct {
+    float x[RIVER_PTS], z[RIVER_PTS], depth[RIVER_PTS]; // profundidad del cauce en cada punto
+    int n;
+    CreekKind kind;     // estacional vs perenne
+    float minx, minz, maxx, maxz; // caja
+    int destination_river_idx; // a qué río grande termina (si es estacional)
+} Creek;
 
 typedef enum { SETTLE_VILLAGE, SETTLE_CAPITAL } SettleKind;
 
@@ -106,6 +138,10 @@ typedef enum {
     SITE_KINDS
 } SiteKind;
 #define SITES_MAX 64
+
+// Cascadas: puntos donde el cauce cae sin superficie
+#define CASCades_MAX 32          // máximo de cascadas
+
 typedef struct {
     float x, z, yaw;
     Region region;
@@ -119,6 +155,10 @@ typedef struct {
     int lake_count;
     River rivers[RIVERS_MAX];
     int river_count;
+    Cascade cascades[CASCades_MAX];
+    int cascade_count;
+    Creek creeks[CREEKS_MAX];
+    int creek_count;
     Peak peaks[PEAKS_MAX];
     int peak_count;
     Settlement settlements[SETTLEMENTS_MAX];
@@ -139,6 +179,7 @@ typedef struct {
 #define WORLD_FOOT_TRIBE 20.0f   // el corro de casas o yurtas de una tribu
 #define WORLD_FOOT_SITE 18.0f    // una estructura (la fortaleza en ruinas y la ciudad enterrada, las mas grandes)
 #define WORLD_FOOT_DEN 8.0f      // una guarida
+#define CASCades_MAX 32          // máximo de cascadas
 // La linea de nieve del verano, en m sobre el llano del campamento (src/sim/climate.c: la mas alta
 // del año): mas arriba hay nieve todo el año y glaciar. Los pueblos y las tribus, siempre por debajo
 // de WORLD_SNOW_FREE.
@@ -194,5 +235,13 @@ bool world_footprint_dry(const World *w, float x, float z, float r, bool sea_ok)
 // Asentamiento mas cercano (indice) o -1; dist (si no es NULL) en m.
 int world_nearest_settlement(const World *w, float x, float z, float *dist);
 int world_nearest_den(const World *w, float x, float z, float *dist);
+
+// Geometría del cauce del río (erosión geométrica aplicada en world_generate)
+// Retorna profundidad del cauce en (x, z) si está sobre un río, o 0 si no.
+float world_channel_depth(const World *w, float x, float z);
+// Retorna si el cauce está seco (invierno) o lleno (verano).
+bool world_channel_is_dry(const World *w, int river_idx);
+// Retorna si el cauce tiene cascada en el punto (x, z).
+bool world_cascade_at(const World *w, float x, float z);
 
 #endif

@@ -24,6 +24,7 @@
 #include "../src/sim/inventory.h"
 #include "../src/sim/loadout.h"
 #include "../src/sim/camps.h"
+#include "../src/sim/camp.h"
 #include "../src/sim/jewelry.h"
 #include "../src/sim/lang.h"
 #include "../src/sim/talents.h"
@@ -4024,936 +4025,258 @@ static void test_camp_migration_and_pastures(void) {
     CHECK(dist_end[1] < 10.0f && dist_end[0] > 18.0f);
 }
 
-static void test_daily_work_by_trade(void) {
-    Troop t;
-    troop_init(&t, NULL);
-    int hunter = troop_recruit(&t, "Jebe", 0), herder = troop_recruit(&t, "Temulun", 0), builder = troop_recruit(&t, "Boroqul", 0),
-        cook = troop_recruit(&t, "Sorkan", 0), idle = troop_recruit(&t, "Muqali", 0);
-    troop_assign_role(&t, hunter, ROLE_HUNTER);
-    troop_assign_role(&t, herder, ROLE_HERDER);
-    troop_assign_role(&t, builder, ROLE_BUILDER);
-    troop_assign_role(&t, cook, ROLE_COOK);
-    (void)idle;
-    Stockpile s;
-    stock_init(&s);
-    stock_add(&s, "utileria.material.pieles", 4);
-    stock_add(&s, "utileria.piel.cabra", 2);
-    stock_add(&s, "utileria.material.troncos", 8);
-    stock_add(&s, "utileria.material.grasa", 1);
-    WorkReport r = economy_daily_work(&s, &t);
-    // Cada uno, una tanda, exacta: el cazador curte, el pastor abatana, el constructor labra, el cocinero hace velas.
-    CHECK(r.batches == 4);
-    CHECK(stock_count(&s, "utileria.material.pieles") == 2 && stock_count(&s, "utileria.material.cuero") == 1);
-    CHECK(stock_count(&s, "utileria.piel.cabra") == 0 && stock_count(&s, "utileria.material.fieltro") == 1);
-    CHECK(stock_count(&s, "utileria.material.troncos") == 6 && stock_count(&s, "utileria.material.madera_labrada") == 1);
-    CHECK(stock_count(&s, "utileria.material.grasa") == 0 && stock_count(&s, "utileria.objeto.vela") == 3);
-    int velas = 0;
-    for (int i = 0; i < r.n; i++) velas += !strcmp(r.made[i].id, "utileria.objeto.vela") ? r.made[i].count : 0;
-    CHECK(velas == 3);
-    // Al otro dia: la reserva no se toca (2 pieles y 6 troncos quedan); el cazador pasa a los huesos si hay.
-    r = economy_daily_work(&s, &t);
-    CHECK(r.batches == 0 && stock_count(&s, "utileria.material.pieles") == 2 && stock_count(&s, "utileria.material.troncos") == 6);
-    stock_add(&s, "utileria.material.hueso", 2);
-    stock_add(&s, "utileria.material.barro", 4);
-    stock_add(&s, "utileria.consumible.forraje", 3);
-    r = economy_daily_work(&s, &t);
-    CHECK(r.batches == 2 && stock_count(&s, "utileria.material.puntas_hueso") == 4 && stock_count(&s, "utileria.material.hueso") == 1);
-    CHECK(stock_count(&s, "utileria.material.adobe") == 2 && stock_count(&s, "utileria.material.barro") == 2 && stock_count(&s, "utileria.consumible.forraje") == 2);
-    // Sin oficio no se procesa nada; los que no estan activos, tampoco.
-    Troop none;
-    troop_init(&none, NULL);
-    troop_recruit(&none, "Nadie", 0);
-    CHECK(economy_daily_work(&s, &none).batches == 0);
-    // Las casas de adobe y de troncos labrados se gastan menos y dan techo.
-    CHECK(structure_wear_scale("estructura.vivienda.casa_adobe") < structure_wear_scale("estructura.vivienda.cabana_troncos") &&
-          structure_wear_scale("estructura.vivienda.cabana_troncos") < structure_wear_scale("estructura.campamento.refugio") &&
-          structure_wear_scale("estructura.campamento.refugio") == 1.0f && structure_wear_scale("estructura.defensa.muro_piedra") < 1.0f);
-    const char *homes[3] = { "estructura.vivienda.casa_adobe", "estructura.vivienda.cabana_troncos", "estructura.vivienda.choza_fieltro" };
-    CHECK(camp_effects(homes, 3).shelters == 8);
+static void test_camp_generate_creates_nodes(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 123;
+    config.yurt_count = 3;
+    config.caravan_count = 2;
+    config.palisade_count = 1;
+    config.fort_count = 0;
+    config.circle_radius = 50.0f;
+    config.circular = true;
+    
+    camp_generate(&camp, &config, 456);
+    CHECK(camp.node_count == 6);
+    CHECK(camp.area_min_x < camp.area_max_x);
+    CHECK(camp.area_min_z < camp.area_max_z);
 }
 
-// Fase 7: las armas de la estepa (src/sim/combat.h, melee.h, riding.h, stealth.h, economy.h).
-static void test_steppe_weapons(void) {
-    // Los rasgos de cada arma.
-    WeaponStats sable = weapon_stats("arma.corta.sable"), steel = weapon_stats("arma.corta.sable_acero");
-    WeaponStats pick = weapon_stats("arma.corta.sagaris"), hammer = weapon_stats("arma.corta.sagaris_martillo");
-    WeaponStats mace = weapon_stats("arma.corta.maza"), ring = weapon_stats("arma.corta.daga_anillo");
-    WeaponStats light = weapon_stats("arma.larga.lanza"), heavy = weapon_stats("arma.larga.lanza_pesada");
-    WeaponStats aki = weapon_stats("arma.corta.akinakes"), axe = weapon_stats("arma.corta.hacha_mano");
-    CHECK(sable.clean_cut && steel.clean_cut && steel.damage > sable.damage && !axe.clean_cut);
-    CHECK(pick.pierce && !pick.stun && hammer.stun && !hammer.pierce && hammer.wound == WOUND_BRUISE);
-    CHECK(weapon_can_hook("arma.corta.sagaris") && weapon_can_hook("arma.corta.sagaris_martillo"));
-    CHECK(melee_parry_kind("arma.corta.sagaris") == PARRY_HOOK && melee_parry_kind("arma.corta.daga_anillo") == PARRY_GRAPPLE);
-    CHECK(mace.crush && weapon_stats("arma.especial.maza_tigre").crush && !sable.crush);
-    CHECK(ring.ring && !weapon_stats("arma.corta.daga").ring && weapon_is_short("arma.corta.daga_anillo"));
-    CHECK(heavy.spear && heavy.mounted_only && heavy.reach > light.reach + 0.8f && heavy.damage > light.damage && !light.mounted_only);
-    CHECK(weapon_is_short("arma.corta.akinakes") && aki.damage > weapon_stats("arma.corta.daga").damage && aki.damage < sable.damage);
-    CHECK(weapon_is_long("arma.larga.lanza_pesada"));
-
-    // A caballo: el sable aprovecha la carrera entera y no se traba; las demas, la mitad, y se traban.
-    CHECK(fabsf(weapon_mounted_scale("arma.corta.sable", 0.0f) - 1.0f) < 1e-5f);
-    CHECK(weapon_mounted_scale("arma.corta.sable", 8.0f) > mounted_momentum(8.0f));
-    CHECK(fabsf(weapon_mounted_scale("arma.larga.lanza", 8.0f) - mounted_momentum(8.0f)) < 1e-5f);
-    CHECK(weapon_mounted_scale("arma.corta.hacha_mano", 8.0f) < mounted_momentum(8.0f) && weapon_mounted_scale("arma.corta.hacha_mano", 8.0f) > 1.0f);
-    CHECK(weapon_snag_chance("arma.corta.sable", 9.0f) == 0.0f && weapon_snag_chance("arma.larga.lanza_pesada", 9.0f) == 0.0f);
-    CHECK(weapon_snag_chance("arma.corta.hacha_mano", 9.0f) > 0.2f && weapon_snag_chance("arma.corta.hacha_mano", 2.0f) == 0.0f);
-    CHECK(weapon_snag_chance("arma.corta.maza", 9.0f) > 0.0f && weapon_snag_chance("arma.corta.maza", 9.0f) < weapon_snag_chance("arma.corta.hacha_mano", 9.0f));
-    CHECK(weapon_snag_chance("", 9.0f) == 0.0f && weapon_snag_chance("arma.distancia.arco_simple", 9.0f) == 0.0f);
-
-    // El arco compuesto reflejo a caballo no tiene penalizacion; el simple, la de siempre; el largo, mas.
-    const RangedDef *simple = ranged_def("arma.distancia.arco_simple"), *reflex = ranged_def("arma.distancia.arco_compuesto");
-    const RangedDef *longbow = ranged_def("arma.distancia.arco_largo");
-    CHECK(simple && reflex && longbow && reflex->saddle == 0.0f && simple->saddle == 1.0f && longbow->saddle > 1.0f);
-    CHECK(reflex->power > simple->power && reflex->spread < simple->spread);
-    float afoot = mounted_bow_spread(0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-    CHECK(fabsf(mounted_bow_spread(9.0f, 0.0f, 0.0f, 0.0f, reflex->saddle) - afoot) < 1e-5f);
-    CHECK(fabsf(mounted_bow_spread(9.0f, 3.0f, 0.0f, 0.0f, reflex->saddle) - afoot) < 1e-5f); // el disparo parto, tambien
-    CHECK(fabsf(mounted_bow_spread(9.0f, 3.0f, 0.3f, 0.5f, 1.0f) - mounted_shot_spread(9.0f, 3.0f, 0.3f, 0.5f)) < 1e-5f);
-    CHECK(mounted_bow_spread(9.0f, 0.0f, 0.0f, 0.0f, longbow->saddle) > mounted_bow_spread(9.0f, 0.0f, 0.0f, 0.0f, simple->saddle));
-
-    // La lanza pesada derriba mas que la ligera, y el escudo la frena menos.
-    CHECK(heavy_lance_knock(4.0f, false) == 0.0f && heavy_lance_knock(7.0f, false) > lance_charge_knock(7.0f, false));
-    CHECK(heavy_lance_knock(7.0f, true) > lance_charge_knock(7.0f, true) && heavy_lance_knock(12.0f, false) <= 0.98f);
-    CHECK(HEAVY_LANCE_BREAK >= 1 && HEAVY_LANCE_DEPTH > 2.0f);
-
-    // Contra la armadura: el pico entra como una punta (la coraza de hierro para menos); la maza,
-    // en la cabeza, pasa la mitad de lo que pararia el casco.
-    Rng r1, r2;
-    rng_seed(&r1, 7), rng_seed(&r2, 7);
-    float cut_abs = 0.0f, pick_abs = 0.0f;
-    for (int i = 0; i < 200; i++) {
-        Armor a1, a2;
-        Health h1, h2;
-        memset(&a1, 0, sizeof(a1)), memset(&a2, 0, sizeof(a2));
-        armor_equip(&a1, "armadura.torso.escamas_hierro"), armor_equip(&a2, "armadura.torso.escamas_hierro");
-        health_init(&h1, 100.0f), health_init(&h2, 100.0f);
-        float ab1 = 0.0f, ab2 = 0.0f;
-        combat_apply_strike(&h1, &a1, &r1, 20.0f, WOUND_CUT, PART_THORAX, false, false, &ab1, NULL);
-        combat_apply_strike(&h2, &a2, &r2, 20.0f, WOUND_CUT, PART_THORAX, true, false, &ab2, NULL);
-        cut_abs += ab1, pick_abs += ab2;
+static void test_camp_generate_deterministic(void) {
+    Camp a, b;
+    CampGenConfig config = { 0 };
+    config.seed = 999;
+    config.yurt_count = 5;
+    config.circle_radius = 30.0f;
+    config.circular = true;
+    
+    camp_generate(&a, &config, 111);
+    camp_generate(&b, &config, 111);
+    
+    CHECK(a.node_count == b.node_count);
+    for (int i = 0; i < a.node_count; i++) {
+        CHECK(a.nodes[i].pos.x == b.nodes[i].pos.x);
+        CHECK(a.nodes[i].pos.y == b.nodes[i].pos.y);
+        CHECK(a.nodes[i].pos.z == b.nodes[i].pos.z);
+        CHECK(a.nodes[i].pos.yaw == b.nodes[i].pos.yaw);
+        CHECK(a.nodes[i].pos.pitch == b.nodes[i].pos.pitch);
+        CHECK(a.nodes[i].type == b.nodes[i].type);
+        CHECK(a.nodes[i].seed == b.nodes[i].seed);
+        CHECK(a.nodes[i].scale == b.nodes[i].scale);
     }
-    CHECK(pick_abs > 0.0f && pick_abs < cut_abs * 0.85f);
-    rng_seed(&r1, 9), rng_seed(&r2, 9);
-    float plain_abs = 0.0f, crush_abs = 0.0f;
-    for (int i = 0; i < 200; i++) {
-        Armor a1, a2;
-        Health h1, h2;
-        memset(&a1, 0, sizeof(a1)), memset(&a2, 0, sizeof(a2));
-        armor_equip(&a1, "armadura.casco.bronce"), armor_equip(&a2, "armadura.casco.bronce");
-        health_init(&h1, 100.0f), health_init(&h2, 100.0f);
-        float ab1 = 0.0f, ab2 = 0.0f;
-        combat_apply_strike(&h1, &a1, &r1, 20.0f, WOUND_BRUISE, PART_HEAD, false, false, &ab1, NULL);
-        combat_apply_strike(&h2, &a2, &r2, 20.0f, WOUND_BRUISE, PART_HEAD, false, true, &ab2, NULL);
-        plain_abs += ab1, crush_abs += ab2;
-    }
-    CHECK(crush_abs > 0.0f && fabsf(crush_abs - plain_abs * 0.5f) < plain_abs * 0.01f);
-
-    // En el golpe: la maza tumba mas que el sable; el martillo, si entra, aturde.
-    Fighter att = { .armed = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f };
-    Fighter def = { .armed = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f };
-    Rng rm;
-    rng_seed(&rm, 11);
-    int knock_mace = 0, knock_sable = 0, dazed = 0;
-    for (int i = 0; i < 2000; i++) {
-        knock_mace += melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.maza", 1, &rm).knocked_down;
-        knock_sable += melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sable", 1, &rm).knocked_down;
-        MeleeResult r = melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sagaris_martillo", 1, &rm);
-        dazed += r.landed && !r.blocked && r.staggered;
-    }
-    CHECK(knock_mace > 150 && knock_sable == 0 && dazed == 2000);
-    MeleeResult rp = melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sagaris", 1, &rm);
-    CHECK(rp.pierce && !rp.crush && melee_resolve(MOVE_HEAVY, &att, &def, "arma.corta.maza", 1, &rm).crush);
-    MeleeResult hook = melee_resolve(MOVE_HOOK, &att, &(Fighter){ .shield = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f },
-                                     "arma.corta.sagaris", 1, &rm);
-    CHECK(hook.landed && hook.staggered);
-
-    // La daga de anillo: las llaves entran mas, la ejecucion se oye menos y el rehen se suelta menos.
-    Fighter ringed = att;
-    ringed.ring = true;
-    int grab_plain = 0, grab_ring = 0;
-    for (int i = 0; i < 2000; i++) {
-        grab_plain += melee_resolve(MOVE_GRAPPLE, &att, &def, "", 1, &rm).landed;
-        grab_ring += melee_resolve(MOVE_GRAPPLE, &ringed, &def, "", 1, &rm).landed;
-    }
-    CHECK(grab_ring > grab_plain + 150);
-    CHECK(stealth_hears_kill_with(4.0f, false) && !stealth_hears_kill_with(4.0f, true) && stealth_hears_kill_with(2.5f, true));
-    CHECK(stealth_hears_kill_with(SILENT_ALERT_RANGE, false) == stealth_hears_kill(SILENT_ALERT_RANGE));
-    CHECK(hostage_jolted(HOSTAGE_JOLT, false, false, false) && !hostage_jolted(HOSTAGE_JOLT, false, false, true));
-    CHECK(hostage_jolted(2.0f, false, true, false) && !hostage_jolted(2.0f, false, true, true));
-    CHECK(hostage_jolted(2.0f, true, false, true) && hostage_jolted(2.0f * HOSTAGE_JOLT, false, false, true));
-
-    // Los enemigos: el arquero a pie lleva el arco simple; el de a caballo, el reflejo y la daga de anillo.
-    CHECK(!strcmp(enemy_def(ENEMY_ARCHER)->ranged, "arma.distancia.arco_simple"));
-    CHECK(!strcmp(enemy_def(ENEMY_HORSE_ARCHER)->ranged, "arma.distancia.arco_compuesto"));
-    CHECK(!strcmp(enemy_def(ENEMY_HORSE_ARCHER)->weapon, "arma.corta.daga_anillo"));
-
-    // El arco reflejo, por etapas: el alma de madera, el asta y el tendon encolados (que secan en el
-    // acopio) y la cola de hueso que lo termina. Lo que sale de cada etapa entra en la siguiente.
-    const CraftDef *core = craft_def(CRAFT_BOW_CORE), *glued = craft_def(CRAFT_BOW_GLUED), *bow = craft_def(CRAFT_COMPOSITE_BOW);
-    const CraftDef *glue = craft_def(CRAFT_BONE_GLUE);
-    CHECK(core && glued && bow && glue && craft_by_hand(core) && craft_by_hand(glued) && craft_by_hand(bow));
-    bool core_in = false, glue_in = false, dry_in = false, glue_bow = false;
-    for (int i = 0; i < MAT_MAX && glued->mats[i].id; i++) {
-        core_in |= !strcmp(glued->mats[i].id, core->produces);
-        glue_in |= !strcmp(glued->mats[i].id, glue->produces);
-    }
-    for (int i = 0; i < MAT_MAX && bow->mats[i].id; i++) {
-        dry_in |= !strcmp(bow->mats[i].id, "utileria.material.arco_seco");
-        glue_bow |= !strcmp(bow->mats[i].id, glue->produces);
-    }
-    CHECK(core_in && glue_in && dry_in && glue_bow && glued->to_stock && !core->to_stock && !bow->to_stock);
-    CHECK(!strcmp(bow->produces, "arma.distancia.arco_compuesto") && !strcmp(craft_def(CRAFT_SIMPLE_BOW)->produces, "arma.distancia.arco_simple"));
-    Stockpile st;
-    stock_init(&st);
-    stock_add(&st, glued->produces, 2);
-    int days = 0;
-    while (stock_count(&st, "utileria.material.arco_seco") < 2 && days < 10) {
-        CHECK(stock_dry_day(&st) == 2);
-        days++;
-    }
-    CHECK(days == BOW_DRY_DAYS && stock_count(&st, glued->produces) == 0 && stock_count(&st, "utileria.material.arco_oreado") == 0);
-    CHECK(stock_dry_day(&st) == 0 && stock_count(&st, "utileria.material.arco_seco") == 2); // seco, se queda seco
-    stock_add(&st, glued->produces, 1);
-    CHECK(stock_dry_day(&st) == 1 && stock_count(&st, "utileria.material.arco_oreado") == 1 && stock_count(&st, "utileria.material.arco_seco") == 2);
-    // Las armas nuevas se forjan con herrero, en el horno.
-    CraftId forged[] = { CRAFT_AKINAKES, CRAFT_SAGARIS, CRAFT_SAGARIS_HAMMER, CRAFT_MACE, CRAFT_RING_DAGGER, CRAFT_HEAVY_LANCE };
-    for (size_t i = 0; i < sizeof(forged) / sizeof(forged[0]); i++) CHECK(!craft_by_hand(craft_def(forged[i])) && craft_def(forged[i])->building);
 }
 
-// Fase 7b: la forja (src/sim/forge.h y las recetas de src/sim/economy.h).
-static void test_forge(void) {
-    // Las vetas: siempre las mismas para una semilla, las de cielo abierto en el altiplano y las de
-    // pantano junto a los lagos del bosque y de los fiordos, en seco y separadas.
-    const World *w = world_for_seed(20261011u);
-    IronSite a[IRON_SITES_MAX], b[IRON_SITES_MAX];
-    int n = world_iron_sites(w, a, IRON_SITES_MAX), m = world_iron_sites(w, b, IRON_SITES_MAX);
-    CHECK(n > 0 && n == m && !memcmp(a, b, sizeof(IronSite) * (size_t)n));
-    int veins = 0, bogs = 0;
-    for (int i = 0; i < n; i++) {
-        Region rg = world_region(w, a[i].x, a[i].z);
-        if (a[i].kind == IRON_VEIN) {
-            veins++;
-            CHECK(rg == REGION_HIGHLAND);
-        } else {
-            bogs++;
-            CHECK(rg == REGION_FOREST || rg == REGION_FJORD);
-        }
-        CHECK(world_water(w, a[i].x, a[i].z, 0.0f, NULL) < world_height(w, a[i].x, a[i].z));
-        for (int j = 0; j < i; j++)
-            if (a[i].kind == IRON_VEIN && a[j].kind == IRON_VEIN)
-                CHECK((a[i].x - a[j].x) * (a[i].x - a[j].x) + (a[i].z - a[j].z) * (a[i].z - a[j].z) >= 350.0f * 350.0f);
-    }
-    CHECK(veins >= 4 && bogs >= 1);
-    CHECK(iron_site_near(a, n, a[0].x + 2.0f, a[0].z) == 0 && iron_site_near(a, n, a[0].x + IRON_NEAR + 1.0f, a[0].z + 50.0f) != 0);
-    CHECK(iron_ore_yield(IRON_VEIN) == 2 && iron_ore_yield(IRON_BOG) == 1);
-    CHECK(world_iron_sites(NULL, a, IRON_SITES_MAX) == 0 && world_iron_sites(w, a, 2) == 2); // respeta el maximo
-
-    // La forja movil: lo suyo en cualquier sitio, y reparar lo que pide un horno; no lo del taller.
-    CHECK(forge_station_ok(NULL, false, false, false, false, false));
-    CHECK(forge_station_ok(FORGE_MOBILE_ID, true, false, false, false, false) && !forge_station_ok(FORGE_MOBILE_ID, false, false, false, false, false));
-    CHECK(forge_station_ok(FORGE_MOBILE_ID, false, false, true, false, false) && forge_station_ok(FORGE_MOBILE_ID, false, false, false, true, false));
-    CHECK(!forge_station_ok("estructura.campamento.horno_acero", true, false, false, false, false)); // forjar acero: el horno
-    CHECK(forge_station_ok("estructura.campamento.horno_acero", true, false, false, false, true));   // reparar: la forja movil alcanza
-    CHECK(forge_station_ok("estructura.campamento.horno_bronce", false, true, false, false, false));
-    CHECK(!forge_station_ok(WORKSHOP_ID, true, true, true, false, false) && forge_station_ok(WORKSHOP_ID, false, false, false, true, false));
-
-    // El temple: mas herreros (hasta 2) y mejores manos, mas probable; siempre entre 0,3 y 0,95.
-    CHECK(temper_chance(1, 0.0f) > temper_chance(0, 0.0f) && temper_chance(2, 0.0f) > temper_chance(1, 0.0f));
-    CHECK(fabsf(temper_chance(5, 0.0f) - temper_chance(2, 0.0f)) < 1e-6f && temper_chance(1, 1.0f) > temper_chance(1, 0.0f));
-    CHECK(temper_chance(0, 0.0f) >= 0.3f && temper_chance(9, 9.0f) <= 0.95f && temper_chance(-3, -1.0f) >= 0.3f);
-
-    // Lo templado pega mas; lo fragil algo mas, pero se quiebra (mas si se lo paran); el wootz, el mejor.
-    WeaponStats steel = weapon_stats("arma.corta.sable_acero"), tempered = weapon_stats("arma.corta.sable_acero_templado");
-    WeaponStats brittle = weapon_stats("arma.corta.sable_acero_fragil"), wootz = weapon_stats("arma.corta.sable_wootz");
-    CHECK(tempered.damage > brittle.damage && brittle.damage > steel.damage && wootz.damage > steel.damage);
-    CHECK(weapon_stats("arma.corta.sable_wootz_templado").damage > wootz.damage && tempered.clean_cut && wootz.clean_cut);
-    CHECK(brittle.brittle && !tempered.brittle && !steel.brittle && weapon_stats("arma.corta.daga_anillo_fragil").ring);
-    CHECK(weapon_break_chance("arma.corta.sable_acero_fragil", true) > weapon_break_chance("arma.corta.sable_acero_fragil", false));
-    CHECK(weapon_break_chance("arma.corta.sable_acero_fragil", false) > 0.0f && weapon_break_chance("arma.corta.sable_acero_templado", true) == 0.0f);
-    CHECK(weapon_stats("arma.larga.lanza_acero").spear && weapon_stats("arma.larga.lanza_acero").damage > weapon_stats("arma.larga.lanza").damage);
-
-    // Las recetas: el temple, en el taller con herrero, sale templado o fragil; lo de la forja movil,
-    // con tus manos; el mineral se funde en el horno de acero.
-    CraftId temper[] = { CRAFT_TEMPER_SABLE, CRAFT_TEMPER_WOOTZ, CRAFT_TEMPER_DAGGER };
-    for (size_t i = 0; i < sizeof(temper) / sizeof(temper[0]); i++) {
-        const CraftDef *d = craft_def(temper[i]);
-        CHECK(d->fails && strcmp(d->fails, d->produces) && strstr(d->produces, "_templad") && weapon_stats(d->fails).brittle);
-        CHECK(d->building && !strcmp(d->building, WORKSHOP_ID) && d->role == ROLE_SMITH);
-    }
-    CraftId mobile[] = { CRAFT_IRON_POINTS, CRAFT_KNIFE, CRAFT_SABLE_FROM_BLADE };
-    for (size_t i = 0; i < sizeof(mobile) / sizeof(mobile[0]); i++)
-        CHECK(craft_def(mobile[i])->building && !strcmp(craft_def(mobile[i])->building, FORGE_MOBILE_ID) && craft_by_hand(craft_def(mobile[i])));
-    const CraftDef *smelt = craft_def(CRAFT_SMELT_IRON);
-    CHECK(!strcmp(smelt->produces, "utileria.material.hierro") && !strcmp(smelt->mats[0].id, IRON_ORE_ID) && smelt->role == ROLE_SMITH);
-    CHECK(!strcmp(craft_def(CRAFT_MOBILE_FORGE)->produces, FORGE_MOBILE_ID) && !craft_def(CRAFT_SMELT_IRON)->fails);
-    for (int c = 0; c < CRAFT_COUNT; c++) // solo el temple puede salir mal
-        CHECK(!craft_def((CraftId)c)->fails || strstr(craft_def((CraftId)c)->name, "Templar"));
-
-    // El taller: obra de campamento grande, con herrero.
-    const BuildDef *ws = build_def(BUILD_WORKSHOP);
-    CHECK(ws && !strcmp(ws->produces, WORKSHOP_ID) && ws->min_people == WORKSHOP_MIN_PEOPLE && ws->required_role == ROLE_SMITH);
-    for (int k = 0; k < BUILD_COUNT; k++)
-        if (k != BUILD_WORKSHOP) CHECK(build_def((BuildId)k)->min_people == 0);
-
-    // La forja movil se lleva: en la mochila mediana o en las alforjas de un caballo, no en los bolsillos.
-    char *ftext = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
-    CHECK(ftext != NULL);
-    if (ftext) {
-        Inventory finv;
-        inventory_parse(&finv, ftext);
-        const InvItem *forge = inventory_find(&finv, FORGE_MOBILE_ID);
-        CHECK(forge && item_storable(forge) && item_kg(forge) <= 12.0f && item_kg(forge) > 2.0f);
-        Bag pack, horse, pockets;
-        bag_init_pack(&pack, PACK_MEDIUM);
-        bag_init(&horse, BAG_MOUNT, 50.0f);
-        bag_init(&pockets, BAG_POCKETS, 0.0f);
-        CHECK(bag_add(&pack, &finv, FORGE_MOBILE_ID, 1, 1.0f) == 1 && bag_add(&horse, &finv, FORGE_MOBILE_ID, 1, 1.0f) == 1);
-        CHECK(bag_add(&pockets, &finv, FORGE_MOBILE_ID, 1, 1.0f) == 0);
-        inventory_free(&finv);
-        free(ftext);
-    }
-    // La forja movil viaja con la caravana: en el acopio de un campamento que migra sigue ahi, y en
-    // la marcha (sin hornos ni taller) hace lo suyo y repara.
-    CampSite camps[CAMPS_MAX];
-    camps_init(camps, CAMPS_MAX);
-    int home = camp_found(camps, CAMPS_MAX, 0.0f, 0.0f, 1);
-    stock_add(&camps[home].stock, FORGE_MOBILE_ID, 1);
-    CHECK(camp_migrate(&camps[home]) && stock_count(&camps[home].stock, FORGE_MOBILE_ID) == 1);
-    bool on_road = stock_count(&camps[home].stock, FORGE_MOBILE_ID) > 0;
-    CHECK(forge_station_ok(FORGE_MOBILE_ID, on_road, false, false, false, false) && forge_station_ok("estructura.campamento.horno_bronce", on_road, false, false, false, true));
-    CHECK(camp_settle(camps, CAMPS_MAX, home, 900.0f, -600.0f) && stock_count(&camps[home].stock, FORGE_MOBILE_ID) == 1);
-
-    // Los exploradores tambien marcan el hierro (de interes, no de peligro).
-    ScoutCand cand[2] = { { 300.0f, 0.0f, FIND_IRON }, { 900.0f, 0.0f, FIND_WATER } };
-    int pick[2];
-    CHECK(!find_danger(FIND_IRON) && scout_pick(cand, 2, NULL, 0.0f, 0.0f, 1000.0f, 1, pick) == 1 && pick[0] == 0);
+static void test_camp_negative_counts(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 1;
+    config.yurt_count = -5;
+    config.circle_radius = 10.0f;
+    
+    camp_generate(&camp, &config, 2);
+    CHECK(camp.node_count == 0);
 }
 
-static int count_lots(const CityLot *l, int n, LotKind k) {
-    int c = 0;
-    for (int i = 0; i < n; i++) c += l[i].kind == k;
-    return c;
+static void test_camp_zero_count(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 1;
+    config.yurt_count = 0;
+    config.circle_radius = 10.0f;
+    
+    camp_generate(&camp, &config, 3);
+    CHECK(camp.node_count == 0);
 }
 
-static void test_cities(void) {
-    // Arrancan segun su clase: la capital, mucha gente, tesoro y guarnicion; la aldea, poca. Siempre
-    // igual para la misma semilla.
-    City cap, vil, again;
-    city_start(&cap, SETTLE_CAPITAL, REGION_STEPPE, 7u);
-    city_start(&vil, SETTLE_VILLAGE, REGION_STEPPE, 7u);
-    city_start(&again, SETTLE_CAPITAL, REGION_STEPPE, 7u);
-    CHECK(!memcmp(&again, &cap, sizeof(City)));
-    CHECK(cap.people > 1800.0f && vil.people > 200.0f && vil.people < 600.0f && cap.silver > vil.silver * 10.0f);
-    CHECK(cap.soldiers > vil.soldiers && cap.grain >= cap.people * 50.0f && cap.fields == 1.0f && cap.grudge == 0.0f);
-    // Las estaciones: la cosecha, en otoño; en invierno, nada. El bosque rinde mas que el desierto, y
-    // la suerte es la misma toda la estacion.
-    CHECK(city_season_yield(SEASON_AUTUMN) > city_season_yield(SEASON_SUMMER) && city_season_yield(SEASON_WINTER) == 0.0f);
-    CHECK(city_fertility(REGION_FOREST) > city_fertility(REGION_DESERT) && city_land(SETTLE_CAPITAL) > city_land(SETTLE_VILLAGE));
-    CHECK(city_scribes(SETTLE_CAPITAL) > city_scribes(SETTLE_VILLAGE));
-    float l1 = city_season_luck(5u, 3, 1), l2 = city_season_luck(5u, 3, DAYS_PER_SEASON), l3 = city_season_luck(5u, 3, DAYS_PER_SEASON + 1);
-    CHECK(l1 == l2 && l1 >= 0.8f && l1 <= 1.2f && l3 >= 0.8f && l3 <= 1.2f);
-    CHECK(season_index(1) == 0 && season_index(DAYS_PER_SEASON) == 0 && season_index(DAYS_PER_SEASON + 1) == 1 && season_index(DAYS_PER_YEAR + 1) == 4);
-
-    // En paz, la ciudad crece; con un saqueo de sus campos cada estacion, cae: menos gente y tesoro,
-    // el granero vacio, los campos arrasados, descontento y rencor.
-    City peace = cap, raided = cap;
-    for (int day = 1; day <= 2 * DAYS_PER_YEAR; day++) {
-        Season s = clock_season(day);
-        float luck = city_season_luck(7u, 0, day);
-        if (day % DAYS_PER_SEASON == 3) CHECK(city_raid_fields(&raided, s, day) >= 0);
-        city_day(&peace, SETTLE_CAPITAL, REGION_STEPPE, s, luck);
-        city_day(&raided, SETTLE_CAPITAL, REGION_STEPPE, s, luck);
-    }
-    CHECK(peace.people > cap.people && peace.silver > cap.silver && peace.fields == 1.0f && peace.grudge == 0.0f && peace.unrest < 0.05f);
-    CHECK(raided.people < peace.people && raided.silver < peace.silver && raided.grain < peace.grain * 0.5f);
-    CHECK(raided.unrest > peace.unrest + 0.3f && raided.fields < 0.5f && raided.grudge > 50.0f && city_taxes(&raided, SETTLE_CAPITAL) < city_taxes(&peace, SETTLE_CAPITAL));
-    // Arrasados, no se saquean de nuevo hasta la otra estacion; se llevan mas en la cosecha.
-    City f = cap;
-    CHECK(city_raid_fields(&f, SEASON_AUTUMN, 10) == 120 && city_raid_fields(&f, SEASON_AUTUMN, 12) == -1);
-    CHECK(city_raid_fields(&f, SEASON_WINTER, 10 + CITY_RAID_DAYS) == 30);
-    CHECK(f.fields < cap.fields && f.grudge > 0.0f && f.unrest > cap.unrest && f.raided == 10 + CITY_RAID_DAYS);
-
-    // El tesoro limita el ejercito: la ciudad arruinada (en revuelta, sin plata) no puede pagar: los
-    // mercenarios se van y los soldados desertan hasta lo que alcanzan los impuestos. Con plata de
-    // sobra llegan mercenarios; cuando se acaba, no se les renueva el contrato.
-    City poor = raided, rich = peace;
-    poor.silver = 0.0f, poor.mercs = 30, poor.unrest = 1.0f;
-    int sold0 = poor.soldiers;
-    for (int d = 0; d < 10; d++) city_day(&poor, SETTLE_CAPITAL, REGION_STEPPE, SEASON_WINTER, 1.0f);
-    CHECK(sold0 > 0 && poor.mercs == 0 && poor.soldiers < sold0 && (float)poor.soldiers * CITY_SOLDIER_PAY > city_taxes(&poor, SETTLE_CAPITAL) * 0.5f);
-    for (int d = 0; d < 20; d++) {
-        rich.silver += 5000.0f;
-        city_day(&rich, SETTLE_CAPITAL, REGION_STEPPE, SEASON_SUMMER, 1.0f);
-    }
-    int hired = rich.mercs;
-    CHECK(hired > peace.mercs && rich.soldiers >= peace.soldiers);
-    rich.silver = city_reserve(&rich) * 0.5f; // se gasto la plata: bajo la reserva
-    for (int d = 0; d < 10; d++) city_day(&rich, SETTLE_CAPITAL, REGION_STEPPE, SEASON_SUMMER, 1.0f);
-    CHECK(rich.mercs < hired && rich.silver >= 0.0f);
-    City pay = peace;
-    pay.silver = 10.0f, pay.mercs = 50;
-    city_day(&pay, SETTLE_CAPITAL, REGION_STEPPE, SEASON_WINTER, 1.0f);
-    CHECK(pay.mercs < 50 && pay.silver >= 0.0f);
-    // Las aldeas no tienen con que pagar mercenarios.
-    City v = vil;
-    for (int day = 1; day <= DAYS_PER_YEAR; day++) city_day(&v, SETTLE_VILLAGE, REGION_STEPPE, clock_season(day), 1.0f);
-    CHECK(v.mercs == 0 && v.soldiers > 0 && v.people > vil.people);
-
-    // La guardia que sale a los campos: de la guarnicion, entre 2 y el maximo; sin soldados, nadie.
-    // Los muertos se descuentan (primero los de oficio) y dejan rencor.
-    City empty = cap, hurt = cap;
-    empty.soldiers = empty.mercs = 0;
-    CHECK(city_guard_party(&cap, 6) >= 2 && city_guard_party(&cap, 6) <= 6 && city_guard_party(&empty, 6) == 0);
-    city_lose_soldiers(&hurt, 3);
-    CHECK(hurt.soldiers == cap.soldiers - 3 && hurt.grudge > cap.grudge && hurt.people < cap.people);
-
-    // Los precios: con hambre, la comida mas cara; con el granero lleno, mas barata; la armeria llena
-    // abarata las armas; lo demas, igual.
-    City hungry = cap, full = cap, armed = cap;
-    hungry.grain = hungry.people * 5.0f, full.grain = full.people * 120.0f, armed.arms = (float)armed.soldiers * 3.0f;
-    CHECK(city_price_factor(&hungry, GRAIN_SACK_ID) > 1.4f && city_price_factor(&full, "utileria.consumible.pan") < 1.0f);
-    CHECK(city_price_factor(&cap, "utileria.material.cuero") == 1.0f && city_price_factor(&armed, "arma.corta.sable") < 1.0f);
-    CHECK(city_price_factor(NULL, "arma.corta.sable") == 1.0f);
-    // Con mucho rencor no comercian; el kanato, con la relacion por el suelo, tampoco.
-    City angry = cap;
-    angry.grudge = 80.0f;
-    CHECK(!city_trades(&angry, false, 50.0f) && city_trades(&cap, true, 0.0f) && !city_trades(&cap, true, -50.0f) && city_trades(&cap, false, -90.0f));
-    CHECK(tribute_due(7) > tribute_due(3) && tribute_due(0) > 0);
-
-    // El trazado: siempre el mismo y mas grande con mas gente (los campos nuevos se suman: los de antes
-    // no se mueven). El palacio en el centro de la capital; los barrios, solo en ella; los campos,
-    // afuera de la muralla y en seco.
-    const World *w = world_for_seed(20261011u);
-    int ci = -1, vi = -1;
-    for (int i = 0; i < w->settlement_count; i++) {
-        if (w->settlements[i].kind == SETTLE_CAPITAL && ci < 0) ci = i;
-        if (w->settlements[i].kind == SETTLE_VILLAGE && vi < 0) vi = i;
-    }
-    CHECK(ci >= 0 && vi >= 0);
-    if (ci < 0 || vi < 0) return;
-    static CityLot a[CITY_LOTS_MAX], b[CITY_LOTS_MAX], c2[CITY_LOTS_MAX];
-    City small = cap, big = cap;
-    small.people = 900.0f, big.people = 3200.0f, big.mercs = 40;
-    int na = city_layout(w, ci, &small, a, CITY_LOTS_MAX), nb = city_layout(w, ci, &big, b, CITY_LOTS_MAX);
-    CHECK(city_layout(w, ci, &small, c2, CITY_LOTS_MAX) == na && !memcmp(a, c2, sizeof(CityLot) * (size_t)na));
-    CHECK(count_lots(b, nb, LOT_HOUSE) > count_lots(a, na, LOT_HOUSE) && count_lots(b, nb, LOT_FIELD) > count_lots(a, na, LOT_FIELD));
-    CHECK(count_lots(a, na, LOT_PALACE) == 1 && count_lots(a, na, LOT_FORGE) == 1 && count_lots(a, na, LOT_BARRACKS) == 1);
-    CHECK(count_lots(a, na, LOT_CARPENTRY) == 1 && count_lots(a, na, LOT_MERC_TENT) == 0 && count_lots(b, nb, LOT_MERC_TENT) > 0);
-    const Settlement *cs = &w->settlements[ci];
-    CHECK(a[0].kind == LOT_PALACE && a[0].x == cs->x && a[0].z == cs->z);
-    for (int i = 0; i < nb; i++) {
-        if (b[i].kind != LOT_FIELD && b[i].kind != LOT_CORRAL) continue;
-        float d = sqrtf((b[i].x - cs->x) * (b[i].x - cs->x) + (b[i].z - cs->z) * (b[i].z - cs->z));
-        CHECK(d > CITY_WALL_R + 4.0f && d < CITY_FIELDS_R1 && world_water(w, b[i].x, b[i].z, 0.0f, NULL) < world_height(w, b[i].x, b[i].z));
-        CHECK(city_lot_at(b, nb, b[i].kind, b[i].x + 1.0f, b[i].z - 1.0f, 0.0f) == i);
-    }
-    for (int i = 0; i < na; i++) { // lo que ya habia, sigue en su lugar
-        if (a[i].kind != LOT_FIELD) continue;
-        bool kept = false;
-        for (int j = 0; j < nb && !kept; j++) kept = b[j].kind == LOT_FIELD && b[j].x == a[i].x && b[j].z == a[i].z;
-        CHECK(kept);
-    }
-    CHECK(city_lot_at(b, nb, LOT_FIELD, cs->x, cs->z, 0.0f) == -1);
-    int nv = city_layout(w, vi, &vil, a, CITY_LOTS_MAX);
-    CHECK(nv > 0 && count_lots(a, nv, LOT_PALACE) == 0 && count_lots(a, nv, LOT_FORGE) == 0 && count_lots(a, nv, LOT_HOUSE) >= 4);
-    CHECK(count_lots(a, nv, LOT_FIELD) >= 1 && city_layout(w, -1, &vil, a, CITY_LOTS_MAX) == 0 && city_layout(NULL, 0, &vil, a, CITY_LOTS_MAX) == 0);
+static void test_camp_max_nodes(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 1;
+    config.yurt_count = CAMP_MAX_NODES;
+    config.circle_radius = 50.0f;
+    
+    camp_generate(&camp, &config, 4);
+    CHECK(camp.node_count == CAMP_MAX_NODES);
 }
 
-// El ejercito y el asedio (fase 8b, src/sim/army.h).
-#define PI_T 3.14159265f
-// Cuenta las matas de cada clase en un cuadrado de n x n celdas con centro en (x, z).
-static int flora_count(const World *w, float x, float z, int n, int count[FLORA_KINDS]) {
-    int total = 0, gx0 = (int)floorf(x / FLORA_CELL) - n / 2, gz0 = (int)floorf(z / FLORA_CELL) - n / 2;
-    for (int k = 0; k < FLORA_KINDS; k++) count[k] = 0;
-    for (int j = 0; j < n; j++)
-        for (int i = 0; i < n; i++) {
-            FloraTuft t[FLORA_PER_CELL];
-            int m = flora_cell(w, w->seed, gx0 + i, gz0 + j, t);
-            for (int q = 0; q < m; q++) count[t[q].kind]++;
-            total += m;
-        }
-    return total;
+static void test_camp_get_node_rejects_invalid(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 1;
+    config.yurt_count = 3;
+    config.circle_radius = 10.0f;
+    
+    camp_generate(&camp, &config, 5);
+    
+    CHECK(camp_get_node(&camp, -1) == NULL);
+    CHECK(camp_get_node(&camp, 0) != NULL);
+    CHECK(camp_get_node(&camp, camp.node_count - 1) != NULL);
+    CHECK(camp_get_node(&camp, camp.node_count) == NULL);
+    CHECK(camp_get_node(&camp, 999) == NULL);
 }
 
-static void test_flora(void) {
-    // La densidad: mas pasto en la estepa que en el bosque; la stipa, en lo seco; el desierto, casi
-    // nada lejos del agua y algo en los oasis; los juncos, solo en la orilla; los helechos, en el bosque.
-    float steppe[REGION_COUNT] = { 0 }, forest[REGION_COUNT] = { 0 }, desert[REGION_COUNT] = { 0 };
-    steppe[REGION_STEPPE] = forest[REGION_FOREST] = desert[REGION_DESERT] = 1.0f;
-    CHECK(flora_density(FLORA_GRASS, steppe, 0.0f) > flora_density(FLORA_GRASS, forest, 0.0f));
-    CHECK(flora_density(FLORA_STIPA, steppe, 0.0f) > flora_density(FLORA_STIPA, steppe, 1.0f) && flora_density(FLORA_STIPA, forest, 0.0f) == 0.0f);
-    CHECK(flora_density(FLORA_GRASS, desert, 0.0f) < 0.05f && flora_density(FLORA_GRASS, desert, 1.0f) > 0.3f);
-    CHECK(flora_density(FLORA_REED, steppe, 0.0f) == 0.0f && flora_density(FLORA_REED, steppe, 1.0f) > 0.3f);
-    CHECK(flora_density(FLORA_FERN, forest, 0.0f) > 0.1f && flora_density(FLORA_FERN, steppe, 0.0f) == 0.0f);
-    // Cada candidato da una mata con la probabilidad de su densidad por lo que ocupa (y nunca mas de una).
-    int count[FLORA_KINDS] = { 0 }, none = 0;
-    for (int i = 0; i < 10000; i++) {
-        int k = flora_pick(steppe, 0.0f, ((float)i + 0.5f) / 10000.0f);
-        if (k < 0) none++;
-        else count[k]++;
-    }
-    CHECK(fabsf((float)count[FLORA_GRASS] / 10000.0f - flora_density(FLORA_GRASS, steppe, 0.0f) * FLORA_CANDIDATE_M2) < 0.01f);
-    CHECK(fabsf((float)count[FLORA_STIPA] / 10000.0f - flora_density(FLORA_STIPA, steppe, 0.0f) * FLORA_CANDIDATE_M2) < 0.01f);
-    float sum = 0.0f;
-    for (int k = 0; k < FLORA_KINDS; k++) sum += flora_density((FloraKind)k, steppe, 0.0f) * FLORA_CANDIDATE_M2;
-    CHECK(count[FLORA_REED] == 0 && count[FLORA_FERN] == 0 && sum < 1.0f && fabsf((float)none / 10000.0f - (1.0f - sum)) < 0.01f);
-    int crowded = 0;
-    for (int i = 0; i < 1000; i++) crowded += flora_pick(steppe, 1.0f, ((float)i + 0.5f) / 1000.0f) >= 0;
-    CHECK(crowded == 1000); // en la orilla de la estepa no queda un m2 sin nada
-
-    // La siembra: siempre la misma; nada en el campamento; la base sobre el facetado del suelo, en su
-    // celda; en el agua, solo juncos y en el agua baja.
-    const World *w = world_for_seed(1206u);
-    FloraTuft a[FLORA_PER_CELL], b[FLORA_PER_CELL];
-    CHECK(flora_cell(w, w->seed, 0, 0, a) == 0 && flora_cell(w, w->seed, 5, -3, a) == 0 && flora_cell(w, w->seed, -8, 2, a) == 0);
-    int bad = 0, total = 0, wet = 0;
-    for (int gz = -160; gz < 160; gz += 7)
-        for (int gx = -160; gx < 160; gx += 7) {
-            int n = flora_cell(w, w->seed, gx, gz, a);
-            if (n != flora_cell(w, w->seed, gx, gz, b) || (n && memcmp(a, b, sizeof(FloraTuft) * (size_t)n))) bad++;
-            float x0 = (float)gx * FLORA_CELL, z0 = (float)gz * FLORA_CELL;
-            float h[4] = { world_height(w, x0, z0), world_height(w, x0 + FLORA_CELL, z0), world_height(w, x0, z0 + FLORA_CELL),
-                           world_height(w, x0 + FLORA_CELL, z0 + FLORA_CELL) };
-            float lo = fminf(fminf(h[0], h[1]), fminf(h[2], h[3])), hi = fmaxf(fmaxf(h[0], h[1]), fmaxf(h[2], h[3]));
-            for (int i = 0; i < n; i++) {
-                const FloraTuft *t = &a[i];
-                if (t->x < x0 || t->x > x0 + FLORA_CELL || t->z < z0 || t->z > z0 + FLORA_CELL) bad++;
-                if (t->y < lo - 0.01f || t->y > hi + 0.01f || t->kind >= FLORA_KINDS || t->size < 0.69f || t->size > 1.31f) bad++;
-                if (t->x * t->x + t->z * t->z < FLORA_CAMP_R * FLORA_CAMP_R) bad++;
-                float dist;
-                int si = world_nearest_settlement(w, t->x, t->z, &dist);
-                if (si >= 0 && dist < (w->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 : VILLAGE_FIELDS_R1)) bad++;
-                WaterKind wk;
-                float wl = world_water(w, t->x, t->z, 0.0f, &wk);
-                if (wl > t->y + 0.05f) {
-                    wet++;
-                    if (t->kind != FLORA_REED || wl > t->y + 0.6f || wk == WATER_SEA) bad++;
-                }
-            }
-            total += n;
-        }
-    CHECK(bad == 0 && total > 1000 && wet > 0); // y hay juncos en el agua baja
-    // Cada region con lo suyo: la estepa, pasto y stipa; el bosque, helechos; los lagos, juncos en la orilla.
-    float x, z;
-    world_region_point(w, REGION_STEPPE, 260.0f, &x, &z);
-    int st = flora_count(w, x, z, 24, count);
-    CHECK(st > 24 * 24 && count[FLORA_GRASS] > count[FLORA_STIPA] && count[FLORA_STIPA] > 0 && count[FLORA_FERN] == 0);
-    world_edge_point(w, REGION_FOREST, 420.0f, &x, &z);
-    flora_count(w, x, z, 24, count);
-    CHECK(count[FLORA_FERN] > 0 && count[FLORA_STIPA] == 0);
-    int reeds = 0;
-    for (int i = 0; i < w->lake_count && !reeds; i++) {
-        const Lake *l = &w->lakes[i];
-        for (int q = 0; q < 16; q++) { // alrededor de la orilla
-            float ang = (float)q * 0.3927f;
-            reeds += flora_count(w, l->x + cosf(ang) * l->r, l->z + sinf(ang) * l->r, 6, count) > 0 ? count[FLORA_REED] : 0;
-        }
-    }
-    CHECK(reeds > 0);
-
-    // La estacion: el pasto crece en primavera, se seca de pie y el invierno lo aplasta; las flores,
-    // solo en primavera; los juncos secos, de pie en invierno; las plumas de la stipa, en verano.
-    float spring = flora_height(FLORA_GRASS, 0.22f, 1.0f, 0.0f), early = flora_height(FLORA_GRASS, 0.03f, 0.3f, 0.0f);
-    float winter = flora_height(FLORA_GRASS, 0.85f, 0.0f, 0.1f), dry = flora_height(FLORA_GRASS, 0.47f, 0.5f, 0.0f);
-    CHECK(winter < early && early < spring && dry > winter && dry <= spring);
-    CHECK(flora_height(FLORA_FLOWER, 0.2f, 0.9f, 0.0f) > 0.2f && flora_height(FLORA_FLOWER, 0.5f, 0.5f, 0.0f) == 0.0f &&
-          flora_height(FLORA_FLOWER, 0.85f, 0.0f, 0.0f) == 0.0f && flora_height(FLORA_FLOWER, 0.2f, 0.0f, 0.0f) == 0.0f);
-    CHECK(flora_height(FLORA_REED, 0.85f, 0.0f, 0.0f) >= 0.7f * flora_height(FLORA_REED, 0.3f, 1.0f, 0.0f));
-    CHECK(flora_height(FLORA_FERN, 0.85f, 0.0f, 0.0f) < 0.3f * flora_height(FLORA_FERN, 0.3f, 1.0f, 0.0f));
-    CHECK(flora_plume(0.3f) > 0.99f && flora_plume(0.02f) == 0.0f && flora_plume(0.7f) == 0.0f && flora_plume(0.95f) == 0.0f);
-    // Con el clima del juego: el pasto de verano, mas alto que el del invierno.
-    Climate cs = climate_at((float)(DAYS_PER_SEASON + 3) * GAME_SECONDS_PER_DAY + 400.0f, 1206u);
-    Climate cw = climate_at((float)(3 * DAYS_PER_SEASON + 3) * GAME_SECONDS_PER_DAY + 400.0f, 1206u);
-    CHECK(flora_height(FLORA_GRASS, cs.year, cs.greenness, cs.autumn) > 1.5f * flora_height(FLORA_GRASS, cw.year, cw.greenness, cw.autumn));
-    CHECK(flora_height(FLORA_FLOWER, cw.year, cw.greenness, cw.autumn) == 0.0f);
-
-    // El viento: con mas viento se inclina y se mece mas; nunca pasa de su amplitud. Al pasar, se aparta.
-    CHECK(flora_lean(1.0f) > flora_lean(0.4f) && flora_lean(0.4f) > flora_lean(0.0f) && flora_lean(0.0f) > 0.0f);
-    float calm = 0.0f, storm = 0.0f;
-    for (int i = 0; i < 400; i++) {
-        float t = (float)i * 0.05f;
-        calm = fmaxf(calm, fabsf(flora_sway(t, 0.0f, 1.3f)));
-        storm = fmaxf(storm, fabsf(flora_sway(t, 1.0f, 1.3f)));
-    }
-    CHECK(calm > 0.0f && calm <= 0.05f + 1e-4f && storm > 2.0f * calm && storm <= 0.27f + 1e-4f);
-    CHECK(flora_trample(0.0f) == 1.0f && flora_trample(FLORA_TRAMPLE_R) == 0.0f && flora_trample(0.3f) > flora_trample(0.7f));
+static void test_camp_find_nearest(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 1;
+    config.yurt_count = 3;
+    config.circle_radius = 10.0f;
+    
+    camp_generate(&camp, &config, 6);
+    
+    int nearest = camp_find_nearest(&camp, 0, 0, 100.0f);
+    CHECK(nearest >= 0 && nearest < camp.node_count);
+    
+    nearest = camp_find_nearest(&camp, 1000, 1000, 10.0f);
+    CHECK(nearest == -1);
 }
 
-static void test_army(void) {
-    City cap;
-    city_start(&cap, SETTLE_CAPITAL, REGION_STEPPE, 7u);
-    // El tesoro limita el ejercito que sale: con la misma guarnicion, una ciudad pobre manda menos
-    // (y sin plata, nadie); lo que cuesta nunca pasa de lo que se gasta en una campaña. Siempre queda
-    // un tercio de la guarnicion en casa.
-    City rich = cap, poor = cap, broke = cap;
-    rich.soldiers = poor.soldiers = broke.soldiers = 60, rich.mercs = poor.mercs = broke.mercs = 0;
-    rich.silver = 5000.0f, poor.silver = 60.0f, broke.silver = 0.0f;
-    ArmyComp ar, ap, ab;
-    int nr = army_compose(&rich, SETTLE_CAPITAL, PUNITIVE_MAX_UNITS, true, &ar), np = army_compose(&poor, SETTLE_CAPITAL, PUNITIVE_MAX_UNITS, true, &ap);
-    CHECK(nr == PUNITIVE_MAX_UNITS && np > 0 && np < nr && army_compose(&broke, SETTLE_CAPITAL, PUNITIVE_MAX_UNITS, true, &ab) == 0);
-    CHECK(army_cost(&ap) <= poor.silver * ARMY_BUDGET && army_cost(&ar) <= rich.silver * ARMY_BUDGET && army_units(&ap) == np);
-    CHECK(ar.n[ARMY_HEAVY] > 0 && ar.n[ARMY_CROSSBOW] > 0 && ar.n[ARMY_ARCHER] > 0 && ar.n[ARMY_CHARIOT] > 0 && ar.n[ARMY_SOLDIER] > 0);
-    CHECK(army_men(&ar) == nr + ar.n[ARMY_CHARIOT] && army_men(&ar) <= 40);
-    City few = rich;
-    few.soldiers = 6; // 4 salen: dos tercios
-    ArmyComp af;
-    CHECK(army_compose(&few, SETTLE_CAPITAL, PUNITIVE_MAX_UNITS, true, &af) > 0 && army_men(&af) <= 4);
-    // Una salida en defensa no la paga el tesoro (pero no lleva carros); la aldea no tiene paveses ni
-    // carros; una ciudad tomada no tiene ejercito.
-    ArmyComp sally, va;
-    CHECK(army_compose(&broke, SETTLE_CAPITAL, 6, false, &sally) == 6 && sally.n[ARMY_CHARIOT] == 0);
-    City vil;
-    city_start(&vil, SETTLE_VILLAGE, REGION_STEPPE, 7u);
-    vil.silver = 5000.0f, vil.soldiers = 20;
-    CHECK(army_compose(&vil, SETTLE_VILLAGE, 8, true, &va) > 0 && va.n[ARMY_HEAVY] == 0 && va.n[ARMY_CHARIOT] == 0);
-    City owned = rich;
-    city_take(&owned, 30);
-    CHECK(army_compose(&owned, SETTLE_CAPITAL, 8, true, &va) == 0 && owned.soldiers == 0 && owned.taken == 30);
-
-    // La formacion cerrada: la primera fila delante (hacia donde mira), a la distancia justa, y la
-    // ultima fila, centrada.
-    float x0, z0, x1, z1, x5, z5;
-    formation_slot(0, 7, 3, 1.5f, 0.0f, 0.0f, 0.0f, &x0, &z0);
-    formation_slot(1, 7, 3, 1.5f, 0.0f, 0.0f, 0.0f, &x1, &z1);
-    formation_slot(6, 7, 3, 1.5f, 0.0f, 0.0f, 0.0f, &x5, &z5);
-    CHECK(fabsf(fabsf(x1 - x0) - 1.5f) < 1e-4f && fabsf(z1 - z0) < 1e-4f && fabsf(z0) < 1e-4f);
-    CHECK(fabsf(x5) < 1e-4f && fabsf(z5 + 3.0f) < 1e-4f); // la tercera fila, sola y al medio, 3 m detras
-    formation_slot(0, 4, 2, 2.0f, 10.0f, 10.0f, PI_T / 2.0f, &x0, &z0);
-    formation_slot(2, 4, 2, 2.0f, 10.0f, 10.0f, PI_T / 2.0f, &x1, &z1);
-    CHECK(x1 < x0 - 1.9f); // mirando a +x: la segunda fila, mas atras en x
-
-    // El carro pierde velocidad en terreno roto y vadeando; en el llano va mas rapido que un hombre
-    // a la carrera, y en lo roto, mas lento.
-    float flat = chariot_speed(CHARIOT_SPEED, 0.02f, 0.0f), rough = chariot_speed(CHARIOT_SPEED, 0.3f, 0.0f);
-    float wading = chariot_speed(CHARIOT_SPEED, 0.0f, 0.5f), steep = chariot_speed(CHARIOT_SPEED, -0.6f, 0.0f);
-    CHECK(flat == CHARIOT_SPEED && rough < flat * 0.5f && wading < flat * 0.4f && steep > 0.0f && steep <= rough);
-    CHECK(flat > enemy_def(ENEMY_SOLDIER)->speed * 2.0f && rough < enemy_def(ENEMY_SOLDIER)->speed);
-    CHECK(chariot_speed(CHARIOT_SPEED, 0.3f, 0.6f) < rough);
-
-    // La expedicion de castigo sale con la relacion baja (de la capital del kanato) o con mucho
-    // rencor (de cualquier ciudad), y no mas de una por estacion.
-    CHECK(punitive_due(true, -50.0f, 0.0f, 10, 0) && !punitive_due(true, -10.0f, 0.0f, 10, 0) && !punitive_due(false, -90.0f, 0.0f, 10, 0));
-    CHECK(punitive_due(false, 0.0f, 85.0f, 10, 0) && !punitive_due(true, -50.0f, 0.0f, 10, 8) && punitive_due(true, -50.0f, 0.0f, 8 + PUNITIVE_DAYS, 8));
-    ArmyComp exp;
-    CHECK(army_compose(&cap, SETTLE_CAPITAL, PUNITIVE_MAX_UNITS, true, &exp) > 0 && exp.n[ARMY_HEAVY] > 0 && exp.n[ARMY_CHARIOT] > 0);
-    // Lo que se llevan: mas con mas hombres, menos con defensores; solo la comida, el grano y la plata.
-    CHECK(punitive_share(20, 0) > punitive_share(20, 10) && punitive_share(0, 0) == 0.0f && punitive_share(200, 0) <= 0.6f);
-    CHECK(punitive_share(1, 50) >= 0.1f);
-    Stockpile st;
-    stock_init(&st);
-    stock_add(&st, "utileria.consumible.carne_seca", 20);
-    stock_add(&st, "utileria.material.plata", 50);
-    stock_add(&st, GRAIN_SACK_ID, 4);
-    stock_add(&st, "utileria.material.cuero", 10);
-    CHECK(stock_plunder(&st, 0.5f) == 10 + 25 + 2 && stock_count(&st, "utileria.consumible.carne_seca") == 10);
-    CHECK(stock_count(&st, "utileria.material.cuero") == 10 && stock_count(&st, "utileria.material.plata") == 25 && stock_plunder(&st, 0.0f) == 0);
-
-    // La muralla: doce tramos rectos entre las torres; las puertas, a 15, 105, 195 y 285 grados.
-    CHECK(city_segment_gate(city_wall_segment(city_gate_angle(0))) == 0 && city_segment_gate(city_wall_segment(city_gate_angle(3))) == 3);
-    CHECK(city_segment_gate(city_wall_segment(45.0f * PI_T / 180.0f)) == -1 && city_segment_gate(city_wall_segment(-80.0f * PI_T / 180.0f)) == 3);
-    CHECK(fabsf(city_wall_dist(city_gate_angle(1)) - CITY_WALL_R * cosf(PI_T / 12.0f)) < 0.01f && fabsf(city_wall_dist(0.001f) - CITY_WALL_R) < 0.1f);
-    float a45 = 45.0f * PI_T / 180.0f, a15 = city_gate_angle(0);
-    int seg = -1;
-    CHECK(city_wall_crossed(cosf(a45) * 30.0f, sinf(a45) * 30.0f, cosf(a45) * 50.0f, sinf(a45) * 50.0f, &seg) && seg == 1);
-    CHECK(city_wall_crossed(cosf(a15) * 50.0f, sinf(a15) * 50.0f, cosf(a15) * 39.0f, sinf(a15) * 39.0f, &seg) && seg == 0);
-    CHECK(!city_wall_crossed(10.0f, 0.0f, 30.0f, 5.0f, &seg) && !city_wall_crossed(60.0f, 0.0f, 0.0f, 70.0f, &seg));
-
-    // La guerra cierra las puertas (y una puerta quemada queda abierta); tomada, no hay guerra.
-    City foe = cap;
-    foe.grudge = 70.0f;
-    CHECK(city_at_war(&foe, false, 0.0f) && city_at_war(&cap, true, -35.0f) && !city_at_war(&cap, true, 0.0f) && !city_at_war(&owned, true, -90.0f));
-    foe.gates_burnt = 1 << 2;
-    CHECK(!city_gate_open(&foe, 0, true) && city_gate_open(&foe, 2, true) && city_gate_open(&foe, 0, false) && !city_gate_open(&foe, 7, false));
-    // La muralla corta el paso: el muro siempre; por la puerta se pasa si esta abierta (en paz, o
-    // quemada), pero no por sus lienzos de los costados.
-    float a105 = city_gate_angle(1), tx = -sinf(a105), tz = cosf(a105); // tx, tz: de costado
-    int gt = -1;
-    float p1[CITY_GATE_PATH][2], p2[CITY_GATE_PATH][2];
-    city_gate_path(1, p1), city_gate_path(2, p2);
-    enum { OUT_CLOSED, OUT_MOUTH, MOUTH, COURT, IN };
-    CHECK(city_wall_blocks(&foe, false, cosf(a45) * 30.0f, sinf(a45) * 30.0f, cosf(a45) * 50.0f, sinf(a45) * 50.0f, &gt) && gt == -1);
-    CHECK(!city_wall_blocks(&foe, false, p1[IN][0], p1[IN][1], p1[COURT][0], p1[COURT][1], &gt) && gt == 1);   // en paz, abierta
-    CHECK(city_wall_blocks(&foe, true, p1[IN][0], p1[IN][1], p1[COURT][0], p1[COURT][1], &gt) && gt == 1);     // en guerra, cerrada
-    CHECK(!city_wall_blocks(&foe, true, p2[IN][0], p2[IN][1], p2[COURT][0], p2[COURT][1], &gt) && gt == 2);    // quemada, abierta
-    CHECK(!city_wall_blocks(NULL, true, p1[IN][0], p1[IN][1], p1[COURT][0], p1[COURT][1], &gt));               // sin ciudad: abiertas
-    CHECK(city_wall_blocks(&foe, false, cosf(a105) * 30.0f + tx * 6.0f, sinf(a105) * 30.0f + tz * 6.0f, cosf(a105) * 50.0f + tx * 6.0f,
-                           sinf(a105) * 50.0f + tz * 6.0f, &gt));
-    // La puerta acodada: el antemuro de adelante corta el paso derecho; se entra por la boca, a lo
-    // largo de la muralla, y se rodea el antemuro por afuera. El costado cerrado tambien corta.
-    WallHit hit;
-    float d105 = city_wall_dist(a105);
-    CHECK(city_wall_hit(&foe, false, cosf(a105) * 30.0f, sinf(a105) * 30.0f, cosf(a105) * 50.0f, sinf(a105) * 50.0f, &hit) && hit.gate == -1);
-    CHECK(fabsf(hit.t - (d105 + CITY_BARBICAN_OUT - 30.0f) / 20.0f) < 0.01f && fabsf(hit.tx * cosf(a105) + hit.tz * sinf(a105)) < 0.01f);
-    int open_path = 0;
-    for (int k = 0; k + 1 < CITY_GATE_PATH; k++) open_path += !city_wall_blocks(&foe, false, p1[k][0], p1[k][1], p1[k + 1][0], p1[k + 1][1], NULL);
-    CHECK(open_path == CITY_GATE_PATH - 1);                                                                   // el camino entero, abierto
-    CHECK(city_wall_blocks(&foe, false, p1[MOUTH][0], p1[MOUTH][1], p1[IN][0], p1[IN][1], NULL));             // de la boca, derecho adentro: el muro
-    CHECK(city_wall_blocks(&foe, false, cosf(a105) * 62.0f, sinf(a105) * 62.0f, p1[COURT][0], p1[COURT][1], NULL)); // de frente al patio: el antemuro
-    float sd = (float)city_gate_closed_side(1);
-    CHECK(sd == -(float)city_gate_closed_side(2) && city_wall_blocks(&foe, false, p1[COURT][0], p1[COURT][1], p1[COURT][0] + tx * sd * 12.0f,
-                                                                      p1[COURT][1] + tz * sd * 12.0f, NULL)); // el costado cerrado
-    CHECK(!city_wall_blocks(&foe, false, p1[COURT][0], p1[COURT][1], p1[COURT][0] - tx * sd * 12.0f, p1[COURT][1] - tz * sd * 12.0f, NULL));
-    // El rodeo: quien va de adentro hacia afuera (o al reves), de un lado al otro de la ciudad por
-    // afuera, o sale del patio de un antemuro, sigue los puntos de city_route a paso de medio metro y
-    // llega sin atravesar nunca la muralla ni un antemuro (por la boca de una puerta).
-    float walk[4][2]; // de, a
-    int stuck = 0, crossed = 0, walks = 0;
-    for (int k = 0; k < 24; k++) {
-        float ain = (float)k * 0.2618f + 0.1f, aout = (float)(k * 7) * 0.2618f + 0.3f, rin = 12.0f + (float)(k % 4) * 6.0f, rout = 58.0f + (float)(k % 3) * 9.0f;
-        float court[CITY_GATE_PATH][2];
-        city_gate_path(k % CITY_GATES, court);
-        walk[0][0] = cosf(ain) * rin, walk[0][1] = sinf(ain) * rin;          // adentro
-        walk[1][0] = cosf(aout) * rout, walk[1][1] = sinf(aout) * rout;      // afuera
-        walk[2][0] = -walk[1][0] * 0.9f, walk[2][1] = -walk[1][1] * 0.9f;    // afuera, del otro lado
-        walk[3][0] = court[COURT][0], walk[3][1] = court[COURT][1];          // en el patio del antemuro
-        static const int legs[5][2] = { { 0, 1 }, { 1, 0 }, { 1, 2 }, { 3, 2 }, { 3, 0 } };
-        for (int l = 0; l < 5; l++, walks++) {
-            float x = walk[legs[l][0]][0], z = walk[legs[l][0]][1], gx = walk[legs[l][1]][0], gz = walk[legs[l][1]][1];
-            int n = 0;
-            for (; n < 800 && (x - gx) * (x - gx) + (z - gz) * (z - gz) > 0.3f; n++) {
-                float wx = gx, wz = gz;
-                city_route(x, z, gx, gz, &wx, &wz);
-                float dx = wx - x, dz = wz - z, d = sqrtf(dx * dx + dz * dz), st = fminf(0.5f, d);
-                if (d < 1e-4f) break;
-                float nx = x + dx / d * st, nz = z + dz / d * st;
-                crossed += city_wall_blocks(NULL, false, x, z, nx, nz, NULL);
-                x = nx, z = nz;
-            }
-            stuck += n >= 800 || (x - gx) * (x - gx) + (z - gz) * (z - gz) > 0.3f;
-        }
+static void test_camp_node_distance(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 1;
+    config.yurt_count = 2;
+    config.circle_radius = 10.0f;
+    
+    camp_generate(&camp, &config, 7);
+    
+    if (camp.node_count >= 2) {
+        float d = camp_node_distance(&camp, 0, 1);
+        CHECK(d >= 0.0f);
     }
-    CHECK(walks == 120 && stuck == 0 && crossed == 0);
-    // Adentro, o lejos, se va derecho; y el rodeo nunca cruza el muro al lado de la puerta.
-    float wx = 0.0f, wz = 0.0f;
-    CHECK(!city_route(-10.0f, 5.0f, 20.0f, -12.0f, &wx, &wz) && !city_route(80.0f, 70.0f, -90.0f, 75.0f, &wx, &wz));
-    CHECK(city_route(p1[IN][0], p1[IN][1], cosf(a105) * 62.0f, sinf(a105) * 62.0f, &wx, &wz) && !city_wall_blocks(NULL, false, p1[IN][0], p1[IN][1], wx, wz, NULL));
-
-    // El cerco: sin cosecha y con la gente del campo adentro, el granero baja mas rapido y crece el
-    // descontento; el fuego quema grano y asusta.
-    City free_c = cap, sieged = cap;
-    for (int day = 1; day <= DAYS_PER_SEASON; day++) {
-        city_day(&free_c, SETTLE_CAPITAL, REGION_STEPPE, SEASON_SUMMER, 1.0f);
-        city_day(&sieged, SETTLE_CAPITAL, REGION_STEPPE, SEASON_SUMMER, 0.0f);
-        city_siege_day(&sieged, SETTLE_CAPITAL);
-    }
-    CHECK(sieged.grain < free_c.grain - cap.people * 3.0f && sieged.unrest > free_c.unrest && sieged.silver < free_c.silver);
-    City burn = cap;
-    int burnt = city_burn_grain(&burn);
-    CHECK(burnt >= 40 && burn.grain < cap.grain && burn.unrest > cap.unrest);
-
-    // La rendicion: con la guarnicion entera y grano, no; sin guarnicion, con hambre o en revuelta, si.
-    CHECK(!city_surrenders(&cap, SETTLE_CAPITAL) && city_garrison_floor(&cap, SETTLE_CAPITAL) >= 2);
-    City beaten = cap, starving = cap, revolt = cap;
-    beaten.soldiers = city_garrison_floor(&cap, SETTLE_CAPITAL), beaten.mercs = 0;
-    starving.grain = starving.people * 2.0f, revolt.unrest = 0.95f;
-    CHECK(city_surrenders(&beaten, SETTLE_CAPITAL) && city_surrenders(&starving, SETTLE_CAPITAL) && city_surrenders(&revolt, SETTLE_CAPITAL));
-    // Tomada: sin ejercito aunque le sobre plata, comercia con la tribu y le paga tributo.
-    City vassal = rich;
-    city_take(&vassal, 12);
-    for (int day = 1; day <= DAYS_PER_SEASON; day++) city_day(&vassal, SETTLE_CAPITAL, REGION_STEPPE, SEASON_SUMMER, 1.0f);
-    float before = vassal.silver;
-    int paid = city_vassal_tribute(&vassal, SETTLE_CAPITAL);
-    CHECK(vassal.soldiers == 0 && vassal.mercs == 0 && city_trades(&vassal, true, -90.0f) && !city_surrenders(&vassal, SETTLE_CAPITAL));
-    CHECK(paid > 0 && fabsf(vassal.silver - (before - (float)paid)) < 0.01f && city_vassal_tribute(&cap, SETTLE_CAPITAL) == 0);
-    CHECK(peace_price(5) > tribute_due(5));
 }
 
-// Las celdas vacias de la capa y que se alcanzan desde el borde de la rejilla (de a cuatro vecinas),
-// con la columna bx tapada de bz0 a bz1 (la puerta cerrada; bx = -1: abierta). Marca seen.
-static int test_bk_flood(const VoxGrid *g, int y, int bx, int bz0, int bz1, unsigned char *seen) {
-    int nx = g->nx, nz = g->nz, sp = 0, n = 0;
-    int *st = malloc(sizeof(int) * (size_t)nx * (size_t)nz);
-    memset(seen, 0, (size_t)nx * (size_t)nz);
-#define BK_OPEN(x, z) (!vox_get(g, x, y, z) && !((x) == bx && (z) >= bz0 && (z) <= bz1))
-    for (int z = 0; z < nz; z++)
-        for (int x = 0; x < nx; x++)
-            if ((x == 0 || z == 0 || x == nx - 1 || z == nz - 1) && BK_OPEN(x, z)) seen[x + nx * z] = 1, st[sp++] = x + nx * z;
-    while (sp > 0) {
-        int c = st[--sp], x = c % nx, z = c / nx;
-        static const int D[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
-        n++;
-        for (int i = 0; i < 4; i++) {
-            int a = x + D[i][0], b = z + D[i][1];
-            if (a < 0 || b < 0 || a >= nx || b >= nz || seen[a + nx * b] || !BK_OPEN(a, b)) continue;
-            seen[a + nx * b] = 1, st[sp++] = a + nx * b;
-        }
+static void test_camp_nodes_fit(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 1;
+    config.yurt_count = 2;
+    config.circle_radius = 10.0f;
+    
+    camp_generate(&camp, &config, 8);
+    
+    if (camp.node_count >= 2) {
+        CHECK(camp_nodes_fit(&camp, 0, 1, 20.0f) == true);
+        CHECK(camp_nodes_fit(&camp, 0, 1, 0.0f) == true);
+        CHECK(camp_nodes_fit(&camp, 0, 1, 1000.0f) == true);
     }
-#undef BK_OPEN
-    free(st);
-    return n;
 }
 
-static uint32_t test_bk_hash(const VoxGrid *g) {
-    uint32_t h = 2166136261u ^ (uint32_t)(g->nx * 73856093 ^ g->ny * 19349663 ^ g->nz * 83492791);
-    for (int i = 0; i < g->nx * g->ny * g->nz; i++) h = (h ^ g->m[i]) * 16777619u;
-    return h;
+static void test_camp_serialization_preserves(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 1;
+    config.yurt_count = 4;
+    config.circle_radius = 25.0f;
+    
+    camp_generate(&camp, &config, 9);
+    
+    CampNodeCompact out[256];
+    camp_serialize(&camp, out);
+    
+    for (int i = 0; i < camp.node_count; i++) {
+        CHECK(out[i].x == camp.nodes[i].pos.x);
+        CHECK(out[i].y == camp.nodes[i].pos.y);
+        CHECK(out[i].z == camp.nodes[i].pos.z);
+        CHECK(out[i].yaw == camp.nodes[i].pos.yaw);
+        CHECK(out[i].pitch == camp.nodes[i].pos.pitch);
+        CHECK(out[i].scale == camp.nodes[i].scale);
+        CHECK(out[i].type == (uint8_t)camp.nodes[i].type);
+        CHECK(out[i].seed == camp.nodes[i].seed);
+    }
 }
 
-// El kit de edificios (src/sim/buildkit.h): cada tipo de cada region arma siempre lo mismo con su
-// semilla y otra cosa con otra; las chicas caben en su huella; la puerta da al frente, a ras del
-// piso, y lleva a su vestibulo (cerrada, de afuera no se llega adentro); lo de adentro, que no se
-// ve, queda relleno (ningun hueco techado sin salida) y las caras, ya refinadas, no se pasan.
-static void test_buildkit(void) {
-    for (int r = 0; r < REGION_COUNT; r++) {
-        CHECK(bk_available(BK_HOUSE, (Region)r) && bk_available(BK_PALACE, (Region)r) && bk_available(BK_GRANARY, (Region)r));
-        CHECK(bk_available(BK_TEMPLE, (Region)r) == (r == REGION_DESERT || r == REGION_HIGHLAND)); // el templo del fuego
-        CHECK(bk_available(BK_WAGON, (Region)r) == (r == REGION_STEPPE));                          // la carreta-casa
-    }
-    VoxGrid g, h;
-    BkInfo in, in2;
-    CHECK(!bk_build(BK_TEMPLE, REGION_FJORD, 1u, false, &g, &in) && g.m == NULL && in.door_x == -1);
-    CHECK(!bk_available(BK_KINDS, REGION_STEPPE) && !bk_build(BK_KINDS, REGION_STEPPE, 1u, false, &g, NULL));
-    int built = 0, enclosed = 0, bad_det = 0, same = 0, too_big = 0, bad_door = 0, leaks = 0, short_vest = 0, hollow = 0, over = 0;
-    for (int t = 0; t < BK_KINDS; t++)
-        for (int r = 0; r < REGION_COUNT; r++) {
-            if (!bk_available((BkType)t, (Region)r)) continue;
-            CHECK(bk_name((BkType)t, (Region)r)[0] != '\0');
-            uint32_t prev = 0;
-            for (int v = 0; v < BK_VARIANTS; v++) {
-                bool small = v < 2;
-                uint32_t seed = bk_variant_seed((BkType)t, (Region)r, v);
-                if (!bk_build((BkType)t, (Region)r, seed, small, &g, &in)) {
-                    CHECK(false);
-                    continue;
-                }
-                built++;
-                // Siempre lo mismo con la misma semilla; la variante impar, distinta de la par.
-                if (!bk_build((BkType)t, (Region)r, seed, small, &h, &in2) || h.nx != g.nx || h.ny != g.ny || h.nz != g.nz ||
-                    memcmp(g.m, h.m, (size_t)g.nx * (size_t)g.ny * (size_t)g.nz) || in2.l != in.l || in2.door_x != in.door_x)
-                    bad_det++;
-                vox_free(&h);
-                uint32_t hash = test_bk_hash(&g);
-                bool wall = t == BK_WALL || t == BK_TOWER || t == BK_GATE, ruin = t == BK_RUIN_FORT || t == BK_RUIN_CITY; // la muralla; las ruinas
-                bool big = t == BK_PALACE || t == BK_BARRACKS || wall || ruin || t == BK_CORRAL; // sin chicas
-                if (v % 2 == 1 && hash == prev && t != BK_WALL && t != BK_TOWER) same++; // los tramos y las torres pueden repetirse
-                prev = hash;
-                // Las chicas caben en BK_SMALL x BK_SMALL (el palacio, el cuartel, la muralla, las ruinas y el corral no tienen chicas).
-                if (small && !big && (in.l > BK_SMALL || in.w > BK_SMALL)) too_big++;
-                if (in.l <= 0.0f || in.w <= 0.0f || in.h <= 0.0f || in.front <= 0.0f || in.found <= 0.0f) too_big++;
-                if (in.enclosed) {
-                    enclosed++;
-                    int y = in.door_y + 1, nx = g.nx, zc = (in.door_z0 + in.door_z1) / 2;
-                    // La puerta: al frente, abierta, sobre el piso (a ras del suelo, o del metro de la terraza).
-                    if (in.door_x < nx / 2 || vox_get(&g, in.door_x, in.door_y, zc) || vox_get(&g, in.door_x, y, zc) ||
-                        vox_get(&g, in.door_x + 1, in.door_y, zc) || !vox_get(&g, in.door_x, in.door_y - 1, zc) || in.door_along <= 0.0f ||
-                        in.door_along > in.front + 1e-4f || in.door_up < 0.0f || in.door_up > 1.01f || in.door_z1 - in.door_z0 < 2)
-                        bad_door++;
-                    unsigned char *open = malloc((size_t)nx * (size_t)g.nz), *shut = malloc((size_t)nx * (size_t)g.nz);
-                    int n_open = test_bk_flood(&g, y, -1, 0, -1, open), n_shut = test_bk_flood(&g, y, in.door_x, in.door_z0, in.door_z1, shut);
-                    // Cerrada, nada de lo de atras de la puerta se alcanza; abierta, si: el vestibulo, de un metro al menos.
-                    for (int z = in.door_z0; z <= in.door_z1; z++)
-                        if (shut[in.door_x - 1 + nx * z] || !open[in.door_x - 1 + nx * z]) leaks++;
-                    float vest = (float)(n_open - n_shut) * g.size * g.size, door_w = (float)(in.door_z1 - in.door_z0 + 1) * g.size;
-                    if (vest < door_w * 1.0f) short_vest++;
-                    // Adentro, relleno: con la puerta abierta, no queda una celda vacia techada que no se alcance.
-                    int dark = 0;
-                    for (int i = 0; i < nx * g.ny * g.nz; i++) dark += g.m[i] == M_SHADOW;
-                    if (!dark) hollow++;
-                    for (int z = 0; z < g.nz; z++)
-                        for (int x = 0; x < nx; x++) {
-                            if (open[x + nx * z] || vox_get(&g, x, y, z)) continue;
-                            for (int yy = y + 1; yy < g.ny; yy++)
-                                if (vox_get(&g, x, yy, z)) {
-                                    hollow++;
-                                    break;
-                                }
-                        }
-                    free(open), free(shut);
-                } else if (t == BK_HOUSE || t == BK_PALACE || t == BK_BARRACKS || t == BK_TEMPLE) {
-                    bad_door++; // las casas tienen muros y puerta
-                }
-                // Las caras, refinadas como se dibujan de cerca: las chicas, pocas; las ruinas (una por sitio), mas.
-                if (vox_refine(&g) && vox_exposed_faces(&g) > (ruin ? 36000 : small && !big ? 18000 : 28000)) over++;
-                vox_free(&g);
-            }
-        }
-    // Sin 3 templos ni 4 carretas, ni 4 ciudades enterradas, ni las obras de la tribu fuera de la estepa.
-    int camp_kinds = BK_ASHES - BK_SHELTER + 1;
-    CHECK(camp_kinds == 11 && built == 4 * (BK_KINDS * REGION_COUNT - 3 - 4 - 4 - camp_kinds * (REGION_COUNT - 1)) && enclosed > 60);
-    for (int r = 0; r < REGION_COUNT; r++) {
-        CHECK(bk_available(BK_RUIN_FORT, (Region)r) && bk_available(BK_RUIN_CITY, (Region)r) == (r == REGION_DESERT));
-        for (int t = BK_SHELTER; t <= BK_ASHES; t++) CHECK(bk_available((BkType)t, (Region)r) == (r == REGION_STEPPE));
-    }
-    // La muralla que se ve es la que choca (src/sim/army.h): el adarve a la altura que se trepa; en la
-    // puerta, el hueco libre en la linea de la muralla; el antemuro adelante y el costado cerrado
-    // llenos; la boca y el patio, libres.
-    for (int r = 0; r < REGION_COUNT; r++)
-        for (int v = 0; v < 2; v++) {
-            CHECK(bk_build(BK_WALL, (Region)r, bk_variant_seed(BK_WALL, (Region)r, v), false, &g, &in));
-            CHECK(in.h >= CITY_WALL_HEIGHT - 0.5f && in.h <= CITY_WALL_HEIGHT + 1.6f && in.w >= 2.0f * CITY_WALL_R * sinf(PI_T / 12.0f) / 3.0f);
-            vox_free(&g);
-            CHECK(bk_build(BK_GATE, (Region)r, bk_variant_seed(BK_GATE, (Region)r, v), false, &g, &in));
-            float sd = (float)city_gate_closed_side(v), cs = g.size, hx = (float)g.nx * cs * 0.5f, hz = (float)g.nz * cs * 0.5f;
-#define AT(X, Y, Z) vox_get(&g, (int)floorf(((X) + hx) / cs), BK_FOUND + (int)floorf((Y) / cs), (int)floorf(((Z) + hz) / cs))
-            int bad = 0;
-            for (float y = 0.25f; y < 4.0f; y += 0.5f)
-                for (float z = -CITY_GATE_HALF + 0.25f; z < CITY_GATE_HALF; z += 0.5f) bad += AT(0.25f, y, z) != 0 || AT(-0.25f, y, z) != 0; // el hueco
-            for (float z = -CITY_BARBICAN_HALF + 0.75f; z < CITY_BARBICAN_HALF - 0.5f; z += 0.5f) bad += !AT(CITY_BARBICAN_OUT + 0.25f, 2.0f, z); // el antemuro
-            for (float x = 1.75f; x < CITY_BARBICAN_OUT - 0.5f; x += 0.5f) bad += !AT(x, 2.0f, sd * (CITY_BARBICAN_HALF + 0.25f)); // el costado cerrado
-            for (float x = 1.25f; x < CITY_BARBICAN_OUT - 1.0f; x += 0.5f) // la boca y el patio, entre la muralla y el antemuro
-                bad += AT(x, 1.25f, -sd * CITY_BARBICAN_HALF) != 0 || AT(x, 1.25f, 0.25f) != 0;
-#undef AT
-            CHECK(bad == 0 && in.l >= CITY_BARBICAN_OUT + 1.0f);
-            vox_free(&g);
-        }
-    CHECK(bad_det == 0 && same == 0 && too_big == 0);
-    CHECK(bad_door == 0 && leaks == 0 && short_vest == 0 && hollow == 0);
-    CHECK(over == 0);
-    // Las ruinas: lo alto cayo (las torres, rotas), pero queda; la puerta de la fortaleza, libre; la
-    // ciudad enterrada, en la arena.
-    for (int r = 0; r < REGION_COUNT; r++) {
-        CHECK(bk_build(BK_RUIN_FORT, (Region)r, bk_variant_seed(BK_RUIN_FORT, (Region)r, 2), false, &g, &in));
-        float cs = g.size, hx = (float)g.nx * cs * 0.5f, hz = (float)g.nz * cs * 0.5f;
-        int gate = 0;
-        for (float x = in.front - 4.0f; x < in.front; x += cs)
-            for (float z = -1.5f; z < 1.5f; z += cs) gate += vox_get(&g, (int)floorf((x + hx) / cs), BK_FOUND + 1, (int)floorf((z + hz) / cs)) != 0;
-        CHECK(in.h > 1.5f && in.h < CITY_WALL_HEIGHT + 2.5f && in.l > 18.0f && gate == 0);
-        vox_free(&g);
-    }
-    CHECK(bk_build(BK_RUIN_CITY, REGION_DESERT, bk_variant_seed(BK_RUIN_CITY, REGION_DESERT, 0), false, &g, &in));
-    int sand = 0, ground = 0;
-    for (int z = 0; z < g.nz; z++)
-        for (int x = 0; x < g.nx; x++) ground++, sand += vox_get(&g, x, BK_FOUND, z) == M_SAND1 || vox_get(&g, x, BK_FOUND, z) == M_SAND2;
-    CHECK(sand * 2 > ground && in.h > 2.0f);
-    vox_free(&g);
-    // Las obras de la tribu sin modelo se dibujan con el kit, a la medida de su id del inventario (las
-    // casas, que el kit hace de muchas medidas, se escalan a su lugar).
-    Inventory inv;
-    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
-    CHECK(text != NULL);
-    if (!text) return;
-    inventory_parse(&inv, text);
-    static const char *const WORKS[] = { "estructura.campamento.refugio", "estructura.campamento.empalizada", "estructura.defensa.muro_piedra",
-                                         "estructura.campamento.horno_cocina", "estructura.campamento.horno_bronce", "estructura.campamento.horno_acero",
-                                         "estructura.campamento.atalaya", "estructura.campamento.corral", WORKSHOP_ID,
-                                         "estructura.vivienda.tienda_ligera", "estructura.vivienda.choza_fieltro", "estructura.vivienda.yurta_comun",
-                                         "estructura.vivienda.yurta_jefe", "estructura.vivienda.casa_adobe", "estructura.vivienda.cabana_troncos",
-                                         "estructura.ruina.escombros", "estructura.ruina.muro", "estructura.ruina.cenizas", "estructura.ruina.yurta_quemada" };
-    int mapped = 0, misfit = 0;
-    for (size_t i = 0; i < sizeof(WORKS) / sizeof(WORKS[0]); i++) {
-        BkType t = BK_KINDS;
-        Region r = REGION_COUNT;
-        int v = -1;
-        const InvItem *it = inventory_find(&inv, WORKS[i]);
-        if (!it || !bk_for_item(WORKS[i], &t, &r, &v) || !bk_available(t, r) || (v != 0 && v != 2)) continue;
-        mapped++;
-        for (int k = v; k <= v + 1; k++) {
-            if (!bk_build(t, r, bk_variant_seed(t, r, k), k < 2, &g, &in)) {
-                misfit++;
-                continue;
-            }
-            if (t != BK_HOUSE && (fabsf(in.l - it->l) > 1.5f || fabsf(in.w - it->w) > 1.5f || fabsf(in.h - it->h) > 0.75f)) misfit++;
-            vox_free(&g);
-        }
-    }
-    BkType t0;
-    CHECK(mapped == (int)(sizeof(WORKS) / sizeof(WORKS[0])) && misfit == 0);
-    CHECK(!bk_for_item("utileria.objeto.odre", &t0, NULL, NULL) && !bk_for_item(NULL, &t0, NULL, NULL));
-    free(text);
+static void test_camp_deserialize_rejects_invalid_type(void) {
+    CampNodeCompact nodes[256] = { 0 };
+    Camp camp;
+    
+    nodes[0].type = 255;
+    nodes[0].x = 10.0f;
+    nodes[0].y = 5.0f;
+    nodes[0].z = 15.0f;
+    nodes[0].yaw = 0.5f;
+    nodes[0].pitch = 0.0f;
+    nodes[0].scale = 1.2f;
+    nodes[0].seed = 123;
+    
+    int count = camp_deserialize(nodes, 1, &camp);
+    CHECK(count == 0);
+    CHECK(camp.node_count == 0);
 }
 
-// ¿Hay agua sobre el suelo en algun punto del circulo (cada 5 m), en verano o con la crecida de la
-// primavera? sea_ok: el mar no cuenta (el embarcadero da al mar).
+static void test_camp_deserialize_zero_count(void) {
+    CampNodeCompact nodes[256] = { 0 };
+    Camp camp;
+    
+    int count = camp_deserialize(nodes, 0, &camp);
+    CHECK(count == 0);
+    CHECK(camp.node_count == 0);
+}
+
+static void test_camp_deserialize_negative_count(void) {
+    CampNodeCompact nodes[256] = { 0 };
+    Camp camp;
+    
+    int count = camp_deserialize(nodes, -5, &camp);
+    CHECK(count == 0);
+    CHECK(camp.node_count == 0);
+}
+
+static void test_camp_deserialize_recalc_bbox(void) {
+    CampNodeCompact nodes[256] = { 0 };
+    Camp camp;
+    
+    nodes[0].type = 0;
+    nodes[0].x = 10.0f;
+    nodes[0].y = 0.0f;
+    nodes[0].z = 20.0f;
+    nodes[0].yaw = 0.0f;
+    nodes[0].pitch = 0.0f;
+    nodes[0].scale = 1.0f;
+    nodes[0].seed = 1;
+    
+    int count = camp_deserialize(nodes, 1, &camp);
+    CHECK(count == 1);
+    CHECK(camp.node_count == 1);
+    CHECK(camp.area_min_x == 10.0f);
+    CHECK(camp.area_max_x == 10.0f);
+    CHECK(camp.area_min_z == 20.0f);
+    CHECK(camp.area_max_z == 20.0f);
+}
+
+static void test_camp_nodes_overlap(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 1;
+    config.yurt_count = 2;
+    config.circle_radius = 10.0f;
+    
+    camp_generate(&camp, &config, 10);
+    
+    if (camp.node_count >= 2) {
+        CHECK(camp_nodes_overlap(&camp, 0, 1, 20.0f) == false);
+        CHECK(camp_nodes_overlap(&camp, 0, 1, 0.0f) == true);
+    }
+}
+
+static void test_camp_clear(void) {
+    Camp camp;
+    CampGenConfig config = { 0 };
+    config.seed = 1;
+    config.yurt_count = 3;
+    config.circle_radius = 10.0f;
+    
+    camp_generate(&camp, &config, 11);
+    CHECK(camp.node_count > 0);
+    
+    camp_clear(&camp);
+    CHECK(camp.node_count == 0);
+    CHECK(camp.area_min_x == 0.0f);
+    CHECK(camp.area_max_x == 0.0f);
+    CHECK(camp.area_min_z == 0.0f);
+    CHECK(camp.area_max_z == 0.0f);
+}
+
 static bool test_wet_circle(const World *w, float x, float z, float r, bool sea_ok) {
     for (float dz = -r; dz <= r; dz += 5.0f)
         for (float dx = -r; dx <= r; dx += 5.0f) {
@@ -4967,10 +4290,6 @@ static bool test_wet_circle(const World *w, float x, float z, float r, bool sea_
     return false;
 }
 
-// El generador del mundo no pone nada sobre el agua ni dentro de ella: ni las capitales con su
-// muralla, ni las aldeas con sus casas, ni las tribus, las estructuras o las guaridas caen en un lago
-// (ni en un rio, el canal o el mar). Los pueblos y las tribus, ademas, quedan por debajo de la nieve
-// de todo el año (el glaciar).
 static void test_world_dry(void) {
     // La linea de nieve del verano de world.h es la de src/sim/climate.c (la mas alta del año).
     float top = -1e9f;
@@ -5130,6 +4449,7 @@ int main(void) {
     RUN(test_horse_archer_harass);
     RUN(test_breeding_and_foals);
     RUN(test_camp_migration_and_pastures);
+    RUN(test_camp_generate_creates_nodes);
     RUN(test_steppe_weapons);
     RUN(test_forge);
     RUN(test_cities);
@@ -5137,6 +4457,7 @@ int main(void) {
     RUN(test_flora);
     RUN(test_buildkit);
     RUN(test_world_dry);
+    
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

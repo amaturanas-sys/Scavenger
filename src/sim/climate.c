@@ -128,3 +128,16 @@ Climate climate_at(float t, uint32_t seed) {
     c.snowline = 22.0f + 0.75f * c.temp_mean;
     return c;
 }
+
+// Retorna el estado del cauce del río según la estación:
+// - Verano (year < 0.25f): CHANNEL_WET (cauce lleno)
+// - Otoño/Invierno (year >= 0.25f): CHANNEL_DRY (cauce seco)
+// - Primavera (year >= 0.75f): CHANNEL_WET (deshielo)
+ChannelState channel_state_for_season(float year) {
+    // Verano: deshielo, cauce lleno
+    if (year < 0.25f) return CHANNEL_WET;
+    // Otoño/Invierno: cauce seco
+    if (year < 0.75f) return CHANNEL_DRY;
+    // Primavera: deshielo, cauce lleno
+    return CHANNEL_WET;
+}
