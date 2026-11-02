@@ -297,6 +297,16 @@ float world_canal_offset(const World *w, float angle);
 // Lleva (x, z) dentro de la frontera invisible (antes del mar abierto, del muro, del canal
 // o del hielo). Devuelve true si lo movio.
 bool world_clamp(const World *w, float *x, float *z);
+// Los bordes (docs/AGUA.md, fase 5). El mar abierto: en la costa de los fiordos, cuantos metros mas alla de la
+// linea del tiburon (WORLD_SHARK_E m del borde) esta (x, z), sobre el mar; 0 o menos, todavia no (o no es el
+// mar). Hasta ahi se nada; mas alla, el tiburon.
+#define WORLD_SHARK_E 140.0f
+float world_open_sea(const World *w, float x, float z);
+// El muro de roca del otro lado del canal del bosque, de estratos levantados: cuanto es (x, z) muro [0, 1] (0 de
+// la orilla de afuera del canal hacia adentro). Se ve y no se alcanza.
+float world_forest_wall(const World *w, float x, float z);
+// ¿Esta (x, z) a menos de margin m del agua del canal del bosque? (su orilla queda despejada: se ve el muro)
+bool world_canal_near(const World *w, float x, float z, float margin);
 
 // Un punto del eje del cuadrante de una region (la estepa: el centro), a distancia r del
 // centro; world_edge_point: a inset metros del borde, en el centro del cuadrante.

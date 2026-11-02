@@ -73,6 +73,10 @@ typedef struct {
     float ice_roll; // acumulador para las tiradas de rotura
     Health *body;    // salud del jugador (src/game/combat_game.c): caidas y congelacion hieren
     float frost_timer;
+    // El tiburon (docs/AGUA.md, fase 5): los segundos nadando mar adentro de su linea (world_open_sea), su vuelta
+    // alrededor del jugador, donde va su aleta y el fundido al despertar en la playa.
+    float shark, shark_ang, wake_fade;
+    Vector3 shark_pos;
 } Hazards;
 
 void hz_init(Hazards *hz, unsigned seed);
@@ -90,9 +94,13 @@ void hz_new_day(Hazards *hz, const Climate *c, GameActions *ga, const Props *pro
 void hz_draw_world(const Hazards *hz, const Terrain *t, const GameActions *ga, const Troop *troop, float time);
 // Calor corporal (bajo el minimapa, en right_x/y), minijuego y avisos.
 void hz_draw_hud(const Hazards *hz, const Troop *troop, int right_x, int y, int width, int height);
+// El fundido a negro al despertar en la playa tras la mordida del tiburon (sobre todo lo demas).
+void hz_draw_fade(const Hazards *hz, int width, int height);
 // Prueba: arranca en una trampa ("hielo", "nieve", "arena"), con un companero en el hielo
 // ("rescate", con el minijuego; "hundido", esperando a que lo saquen), con la escolta fuera ("escolta"), con la
-// escolta nadando en el rio de delante ("nado") o sobre el hielo del lago junto a un agujero para pescar ("agujero").
+// escolta nadando en el rio de delante ("nado"), sobre el hielo del lago junto a un agujero para pescar ("agujero"),
+// nadando mar adentro con la aleta del tiburon cerca ("tiburon", con --ir mar) o despertando en la playa tras la
+// mordida ("mordida").
 void hz_force(Hazards *hz, const char *what, Player *p, GameActions *ga, Troop *troop, const Terrain *t);
 
 #endif

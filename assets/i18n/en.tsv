@@ -690,6 +690,7 @@ Una escala apoyada en la muralla: F para subir.	A ladder against the wall: F to 
  · Mayús+L: encender	 · Shift+L: light
  · recargando	 · reloading
  · sangra	 · bleeding
+ · secuelas	 · lasting injury
 %s Mueres. Vuelves en %s; tus huesos quedan donde caíste (moral -8).	%s You die. You return at %s; your bones stay where you fell (morale -8).
 %s del %s contra tu guardia: la pierdes.	%s from the %s against your guard: you lose it.
 %s del %s: ¡te derriba!	%s by the %s: you go down!
@@ -699,6 +700,8 @@ Una escala apoyada en la muralla: F para subir.	A ladder against the wall: F to 
 %s murió de sus heridas. La tribu está de luto (moral -6).	%s died of their wounds. The tribe mourns (morale -6).
 %s te levanta y te venda. ¡Sigue en pie!	%s lifts you up and binds you. Keep going!
 %s te venda las heridas.	%s binds your wounds.
+%s terminó de tratar tus secuelas: vuelves a tener todo tu aguante.	%s finished treating your lasting injury: your full stamina is back.
+%s trata tus secuelas: quédate en el campamento hasta que ceda.	%s is treating your lasting injury: stay in camp until it eases.
 %s tumbó a un %s: queda abatido.	%s knocked down a %s: it lies downed.
 %s: %s derriba al %s.	%s: %s knocks down the %s.
 %s: el %s se tambalea.	%s: the %s staggers.
@@ -981,6 +984,7 @@ Solo coral quebradizo, sin valor	Only brittle, worthless coral
 ; se hundió 	; sunk: 
 Escapaste de la arena%s%s.	You escaped the sand%s%s.
 La escolta vuelve al campamento.	The escort returns to camp.
+Las secuelas no se curan solas: un curandero o un druida del campamento.	A lasting injury won't heal by itself: see the camp's healer or druid.
 No hay nadie libre cerca para acompañarte.	Nobody free nearby to go with you.
 Noche helada: faltó leña (%d de %d). La tribu pasó frío (moral -4).	Freezing night: short of firewood (%d of %d). The tribe was cold (morale -4).
 Pulsa las teclas en orden  ·  errores %d/%d	Press the keys in order  ·  mistakes %d/%d
@@ -997,6 +1001,7 @@ Te desmayaste por el calor; la tribu te llevó a la sombra (moral -3). Cúbrete 
 Tiras de %s: ¡no lo sueltes!	You pull %s: don't let go!
 Trepaste fuera del socavón.	You climbed out of the sinkhole.
 Un compañero	A companion
+Una aleta gris corta el agua a tu alrededor. ¡Vuelve hacia la orilla!	A grey fin cuts the water around you. Head back to shore!
 cayó al agua helada	fell into icy water
 cayó en un socavón	fell into a sinkhole
 desapareció en la arena	vanished in the sand
@@ -1014,6 +1019,7 @@ tu compañero	your companion
 ¡Caíste en un socavón de nieve!	You fell into a snow sinkhole!
 ¡El hielo se rompió bajo tus pies!	The ice broke under your feet!
 ¡El hielo se rompió!	The ice broke!
+¡El tiburón te muerde! Despiertas en la playa, herido y con secuelas.	The shark bites you! You wake up on the beach, wounded and with a lasting injury.
 ¡Saca a %s!	Pull %s out!
 ¡Salvaste a %s! La tribu lo celebra (moral +3).	You saved %s! The tribe cheers (morale +3).
 ¡Socavón de nieve!	Snow sinkhole!
@@ -1207,6 +1213,7 @@ sep	Sep
 %s (x%.2f): %s	%s (x%.2f): %s
 %s con %s. Pondré %d de metal y %d piedra(s).	%s with %s. I'll use %d metal and %d gem(s).
 %s con %s. ¿Qué despierto en ella? Cuesta: %s.	%s with %s. What shall I awaken in it? Cost: %s.
+%s cura tus secuelas con hierbas y miel: vuelve todo tu aguante.	%s heals your lasting injury with herbs and honey: your full stamina is back.
 %s despierta la joya: %s.	%s awakens the jewel: %s.
 %s en %s: %s. No se podrá quitar nunca. Tinta: %s.	%s on %s: %s. It can never be removed. Ink: %s.
 %s te entrega un %s con %s. Llévaselo a un druida para que despierte.	%s hands you a %s with %s. Take it to a druid to awaken it.
@@ -1219,10 +1226,13 @@ sep	Sep
 %s: ¿dónde? La zona cambia a qué va el bonus y cuánto pesa.	%s: where? The zone changes what the bonus goes to and how much it weighs.
 Anillo, brazalete, collar, aretes o hebilla	Ring, bracelet, necklace, earrings or buckle
 Con metal y una piedra te hago una joya. Sin encantar no hace nada: eso es cosa del druida.	With metal and a gem I'll make you a jewel. Unenchanted it does nothing: that's the druid's craft.
+Curar mis secuelas	Heal my lasting injury
+De una vez: vuelve todo el aguante (dos hierbas y una miel)	All at once: your full stamina returns (two herbs and one honey)
 Efecto pasivo	Passive effect
 Encantar una joya	Enchant a jewel
 Falta metal o piedra.	Missing metal or gem.
 Falta tinta: carbón, hierbas (y miel en el tercer grado)	Missing ink: charcoal, herbs (and honey for the third tier)
+Faltan dos hierbas y una miel	You need two herbs and one honey
 Habilidad activa	Active ability
 Hacer una joya	Make a jewel
 Hazla	Make it
@@ -1581,6 +1591,7 @@ Capturaste a un gran guerrero: %s, %s.	You captured a great warrior: %s, %s.
 Cautivo	Captive
 Conecta un teclado para jugar	Connect a keyboard to play
 Ctrl+D: cerrar	Ctrl+D: close
+Del otro lado del gran canal se alza un muro de roca: no hay vado.	Beyond the great canal rises a wall of rock: there is no ford.
 Desterraste a un integrante.	You banished a member.
 Dia %d: %d desertores, %d grandes guerreros.	Day %d: %d deserters, %d great warriors.
 Dia %d: %d desertores.	Day %d: %d deserters.
@@ -1590,7 +1601,6 @@ Dones: 	Gifts:
 Día %d · %s · %s (%d min)	Day %d · %s · %s (%d min)
 Ejecutaste a un prisionero.	You executed a prisoner.
 Ejecutaste a uno de los tuyos.	You executed one of your own.
-El gran canal marca el fin de estas tierras: no hay vado.	The great canal marks the end of these lands: there is no ford.
 El gran muro del cañón cierra el desierto: no hay paso.	The great canyon wall closes the desert: there is no way through.
 El muro de hielo del glaciar cierra el altiplano: no hay paso.	The glacier's ice wall closes off the highland: there is no way through.
 Explorador enemigo	Enemy scout

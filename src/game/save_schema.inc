@@ -62,6 +62,7 @@ static const SfField SF_F_Health[] = {
     SF_ONE(Health, dead, "bool", SF_BOOL, NULL),
     SF_ONE(Health, beast, "bool", SF_BOOL, NULL),
     SF_ONE(Health, venom, "float", SF_FLOAT, NULL),
+    SF_ONE(Health, sequela, "float", SF_FLOAT, NULL),
 };
 static const SfType SF_T_Health = SF_TYPE(Health, SF_F_Health);
 
@@ -566,6 +567,7 @@ static const SfField SF_F_GameActions[] = {
     SF_ARR(GameActions, loot_pos, "Vector3", SF_BYTES, NULL),
     SF_ARR(GameActions, loot_age, "float", SF_FLOAT, NULL),
     // player_armor: puntero, no se guarda
+    // player_health: puntero, no se guarda
     // terrain: puntero, no se guarda
     // troop_ref: puntero, no se guarda
     SF_ONE(GameActions, pack_size, "int", SF_INT, NULL),
@@ -825,6 +827,10 @@ static const SfField SF_F_Hazards[] = {
     SF_ONE(Hazards, ice_roll, "float", SF_FLOAT, NULL),
     // body: puntero, no se guarda
     SF_ONE(Hazards, frost_timer, "float", SF_FLOAT, NULL),
+    SF_ONE(Hazards, shark, "float", SF_FLOAT, NULL),
+    SF_ONE(Hazards, shark_ang, "float", SF_FLOAT, NULL),
+    SF_ONE(Hazards, wake_fade, "float", SF_FLOAT, NULL),
+    SF_ONE(Hazards, shark_pos, "Vector3", SF_BYTES, NULL),
 };
 static const SfType SF_T_Hazards = SF_TYPE(Hazards, SF_F_Hazards);
 

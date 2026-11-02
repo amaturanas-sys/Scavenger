@@ -5276,6 +5276,77 @@ static float test_lake_freeze_day(const World *w, int lake, uint32_t seed) {
     return 99.0f;
 }
 
+// Los bordes (docs/AGUA.md, fase 5): el mar abierto mas alla de la linea del tiburon, el muro de roca del otro
+// lado del canal del bosque, y las secuelas de la mordida (no se curan solas).
+static void test_borders_and_sequelae(void) {
+    static const uint32_t SEEDS[] = { 1206u, 42u, 7u };
+    for (int si = 0; si < 3; si++) {
+        const World *w = world_for_seed(SEEDS[si]);
+        float x, z;
+        // El mar: mar adentro de la linea, si; cerca de la costa, no; fuera de la costa, nunca.
+        world_edge_point(w, REGION_FJORD, 60.0f, &x, &z);
+        CHECK(world_open_sea(w, x, z) > 50.0f);
+        world_edge_point(w, REGION_FJORD, WORLD_SHARK_E + 40.0f, &x, &z);
+        CHECK(world_open_sea(w, x, z) <= 0.0f);
+        for (int r = 0; r < REGION_COUNT; r++) {
+            if (r == REGION_FJORD) continue;
+            world_edge_point(w, (Region)r, 60.0f, &x, &z);
+            CHECK(world_open_sea(w, x, z) <= 0.0f);
+        }
+        // Se llega nadando hasta la linea (la frontera invisible queda mas alla).
+        world_edge_point(w, REGION_FJORD, WORLD_SHARK_E - 10.0f, &x, &z);
+        CHECK(!world_clamp(w, &x, &z));
+        // El muro: del otro lado del canal sube mas de 70 m sobre el agua del canal, en escalones (estratos), y a lo
+        // largo sube y baja (levantados). Del lado de adentro no hay muro, y la frontera deja al jugador ahi.
+        float fa = 225.0f * 0.0174533f - w->warp_phase;
+        float ce = world_canal_offset(w, fa), er = world_edge_radius(w, fa);
+        WaterKind wk;
+        float canal = world_water(w, cosf(fa) * (er - ce), sinf(fa) * (er - ce), 0.0f, &wk);
+        CHECK(wk == WATER_CANAL);
+        float top_r = er - (ce - 30.0f - 20.0f - 90.0f), tx = cosf(fa) * top_r, tz = sinf(fa) * top_r;
+        CHECK(world_height(w, tx, tz) > canal + 70.0f && world_forest_wall(w, tx, tz) > 0.9f);
+        float in_r = er - (ce + 45.0f);
+        CHECK(world_forest_wall(w, cosf(fa) * in_r, sinf(fa) * in_r) == 0.0f);
+        int cliffs = 0;
+        float prev = world_height(w, cosf(fa) * (er - ce + 50.0f), sinf(fa) * (er - ce + 50.0f));
+        for (float e = ce - 50.0f; e > ce - 130.0f; e -= 2.0f) {
+            float h = world_height(w, cosf(fa) * (er - e), sinf(fa) * (er - e));
+            cliffs += h - prev > 3.0f; // un escalon del muro: mas de 3 m en 2 m
+            prev = h;
+        }
+        CHECK(cliffs >= 4);
+        float lo = 1e9f, hi = -1e9f;
+        for (float da = -0.2f; da <= 0.2f; da += 0.01f) {
+            float a = fa + da, r = world_edge_radius(w, a) - (world_canal_offset(w, a) - 140.0f);
+            float h = world_height(w, cosf(a) * r, sinf(a) * r);
+            lo = fminf(lo, h), hi = fmaxf(hi, h);
+        }
+        CHECK(hi - lo > 25.0f);
+        float cx = tx, cz = tz;
+        CHECK(world_clamp(w, &cx, &cz) && world_forest_wall(w, cx, cz) == 0.0f);
+    }
+    // Las secuelas: suman hasta 1, frenan y cansan, no se van con el descanso; el curandero las cura de a poco y
+    // el druida de una vez.
+    Health h;
+    health_init(&h, 100.0f);
+    CHECK(h.sequela == 0.0f && health_speed_scale(&h) == 1.0f && health_endurance_scale(&h) == 1.0f);
+    health_add_sequela(&h, SEQUELA_BITE);
+    float half = health_speed_scale(&h);
+    health_add_sequela(&h, SEQUELA_BITE);
+    health_add_sequela(&h, SEQUELA_BITE);
+    CHECK(h.sequela == 1.0f && half < 1.0f && fabsf(health_speed_scale(&h) - 0.75f) < 1e-4f && health_speed_scale(&h) < half);
+    CHECK(fabsf(health_endurance_scale(&h) - 0.55f) < 1e-4f);
+    for (int d = 0; d < 10; d++) health_daily(&h, 1.0f);
+    CHECK(h.sequela == 1.0f); // ni con descanso ni con curandero en el dia: no se curan solas
+    health_sequela_tend(&h, SEQUELA_TEND_SECONDS * 0.5f);
+    CHECK(fabsf(h.sequela - 0.5f) < 1e-4f);
+    health_sequela_tend(&h, SEQUELA_TEND_SECONDS);
+    CHECK(h.sequela == 0.0f && health_speed_scale(&h) == 1.0f);
+    health_add_sequela(&h, SEQUELA_BITE);
+    health_sequela_cure(&h);
+    CHECK(h.sequela == 0.0f);
+}
+
 // La corriente que se ve (docs/AGUA.md, fase 4): en cada trecho de cada tramo, aguas abajo y a lo largo del
 // trecho; el agua nunca sube.
 static void test_river_flow(void) {
@@ -5631,6 +5702,7 @@ int main(void) {
     RUN(test_water_flows_down);
     RUN(test_water_seasons);
     RUN(test_river_flow);
+    RUN(test_borders_and_sequelae);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

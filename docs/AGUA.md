@@ -4,9 +4,10 @@ El diseño del usuario (seis páginas a mano, noviembre de 2026), pasado a regla
 fases. Ya están la **fase 1 (v0.11.0)**: el agua baja por donde debe y los lagos llenan sus depresiones; la
 **fase 2 (v0.11.1)**: cada agua cambia con las estaciones (se seca, se hiela, el mar se congela en la costa y el
 glaciar avanza y retrocede); la **fase 3 (v0.11.2)**: la tribu, los enemigos y los animales vadean, nadan y caen
-al romperse el hielo, y con el picahielo se abre un agujero para pescar; y la **fase 4 (v0.11.3)**: el agua tiene
-su shader, con el vaivén de los lagos, la corriente de los ríos, las olas en la costa, la espuma y la bruma de las
-cascadas. La que falta, abajo.
+al romperse el hielo, y con el picahielo se abre un agujero para pescar; la **fase 4 (v0.11.3)**: el agua tiene su
+shader, con el vaivén de los lagos, la corriente de los ríos, las olas en la costa, la espuma y la bruma de las
+cascadas; y la **fase 5 (v0.11.4)**: los bordes, con el muro de roca tras el canal del bosque y el mar abierto, donde
+espera el tiburón. Están todas.
 
 ![El agua](mundo/agua.png)
 
@@ -22,7 +23,7 @@ río de meandros en la estepa · un río trenzado del deshielo · un arroyo junt
 | **2. Agua sobre el nivel del mar** | Los lagos están en las depresiones del altiplano, la estepa y el bosque. | **Hecho.** Cada depresión del relieve es un lago (también en la costa). El desierto solo tiene oasis. |
 | **3. Aguas abajo y estaciones** | En verano el glaciar retrocede y los cauces se llenan, y los ríos alimentan los lagos. En invierno los cauces quedan secos (la «huella») y los lagos se hielan. | **Hecho (v0.11.1).** Los ríos del glaciar corren de mediados de la primavera a mediados del otoño; con helada se secan y queda su cauce de grava con unos charcos helados. La lengua del glaciar retrocede en verano. |
 | **4. Cambios de altura** | El agua siempre necesita una superficie por donde deslizarse y siempre cae. Sin superficie, es una cascada. | **Hecho.** El nivel de un río nunca sube. Donde cae 3 m o más con una pendiente de más del 25 %, hay una cascada: una cortina de agua con espuma al pie. Desde la v0.11.3 la cortina baja y al pie hay bruma. |
-| **El mundo: un disco de cinco biomas** | Cada bioma tiene su borde y, entre biomas, transiciones con cordilleras y ríos. A tiene muros de hielo. B tiene un gran canal con acantilados y ríos sinuosos, y del otro lado, paredes de roca. D tiene un cañón con un muro de estratos. F tiene la costa con fiordos y un mar accesible hasta un límite. | **En parte.** Los bordes de A, B, D y F ya existían. Las **cordilleras** entre el altiplano y el desierto, y entre el altiplano y la costa, están hechas. El muro de roca tras el canal y el mar con su límite son de la fase 5. Tu croquis tiene la misma vecindad que el juego (A frente a B, D frente a F): no se movieron regiones. |
+| **El mundo: un disco de cinco biomas** | Cada bioma tiene su borde y, entre biomas, transiciones con cordilleras y ríos. A tiene muros de hielo. B tiene un gran canal con acantilados y ríos sinuosos, y del otro lado, paredes de roca. D tiene un cañón con un muro de estratos. F tiene la costa con fiordos y un mar accesible hasta un límite. | **Hecho.** Los bordes de A, B, D y F ya existían. Las **cordilleras** entre el altiplano y el desierto, y entre el altiplano y la costa, están hechas. Desde la v0.11.4, del otro lado del canal se alza un muro de roca de estratos levantados, y el mar se nada hasta la línea del tiburón. Tu croquis tiene la misma vecindad que el juego (A frente a B, D frente a F): no se movieron regiones. |
 | **5. El invierno** | a) Los lagos se cubren de hielo, que se rompe (peligro) o se perfora para pescar. b) Unos ríos se hielan y otros se secan. c) Hay hielo en la costa y témpanos en el mar. d) Los glaciares retroceden en verano. | **Hecho.** a) Cada lago y cada río tiene su hielo, que se cruza y se rompe bajo el jugador, la tribu, los enemigos y los animales (`src/sim/hazards.h`, con rescate); con el picahielo se abre un agujero para pescar (v0.11.2). b, c y d: v0.11.1. |
 | **6. Las texturas** | a) Vaivén en lagos y lagunas. b) Torrente en ríos y cascadas. c) Espuma en las orillas y donde el terreno o alguien toca el agua. d) Olas que entran y se retiran. | **Hecho (v0.11.3).** El shader del agua: el vaivén de los lagos, la corriente de los ríos por su cauce, el oleaje del mar con las olas que entran y se retiran, y la espuma de las orillas, las rocas, los rápidos y de quien está en el agua. |
 | **7. La hondura** | En lo bajo se camina por el fondo, en lo hondo se nada, en invierno se camina sobre el hielo y el hielo se rompe. | **Hecho (v0.11.2).** El jugador, la tribu y los enemigos vadean hasta 1,2 m y nadan más hondo; cruzan un río a nado y rodean un lago. Los animales vadean según su tamaño y cruzan un río a nado si tienen prisa. Todos cruzan el hielo que aguanta y los cauces secos, y el hielo se rompe bajo todos. |
@@ -259,12 +260,41 @@ desborde · los rápidos de un arroyo · la cascada de cerca, con su bruma · el
   trecho, y el agua nunca sube;
 - el CI: el shader carga en GLSL 330 y en GLSL ES 100 (el log dice «el agua con su shader»).
 
-## La fase que sigue
+## La fase 5 (v0.11.4): los bordes
 
-Con su PR, el CI verde, su release, sus capturas y sus pruebas.
+1. **El muro tras el canal del bosque** (`land` y `world_forest_wall` en `src/sim/world.c`): unos 20 m más allá de
+   la orilla de afuera del canal, la roca sube en ocho estratos hasta unos 120 m. Las capas suben y bajan a lo
+   largo del muro (estratos levantados), en grises y ocres, sin árboles; se ve también desde lejos. No se
+   alcanza: la frontera invisible sigue en la orilla de adentro, y esa orilla quedó despejada (sin árboles a
+   14 m del agua, `world_canal_near`) para que se vea. Los ríos, los lagos y las cascadas no cambiaron.
+2. **El mar abierto** (`world_open_sea`): en la costa de los fiordos se nada hasta la **línea del tiburón**, a
+   140 m del borde del mundo (`WORLD_SHARK_E`, unos 60 a 160 m mar adentro de la costa). Los fiordos que entran
+   tierra adentro quedan lejos de ella.
+3. **El tiburón** (`src/game/hazards_game.c`):
+   - nadando mar adentro de la línea, a los 2,5 s aparece una aleta gris, con su estela, que da vueltas
+     alrededor, cada vez más cerca y más rápido (y un aviso: vuelve hacia la orilla);
+   - si vuelves hacia la costa, se aleja;
+   - si sigues ahí, a los 11 s muerde. El jugador nunca muere: la pantalla se funde a negro y despierta en la
+     playa más cercana hacia tierra adentro (nunca dentro de una roca), con una mordida en el muslo cerrada por
+     la sal (no sangra), al menos un tercio de vida y **secuelas**.
+4. **Las secuelas** (`Health.sequela`, `src/sim/health.h`): cada mordida suma la mitad (hasta todas). Con todas,
+   un cuarto menos de velocidad y el aguante rinde poco más de la mitad: correr y saltar cansan más y se
+   recupera más despacio. La vida del jugador lo dice: «herido · secuelas». **No se curan solas**: ni el descanso
+   ni los días las bajan. Las curan:
+   - **el curandero** del campamento, de a poco, mientras estás en el campamento (unas secuelas completas, en
+     90 s);
+   - **el druida**, de una vez: «Curar mis secuelas» en su diálogo (F junto a él), por dos hierbas y una miel.
+5. **Las partidas** guardan las secuelas de cada uno (las anteriores cargan sin ninguna).
 
-- **Fase 5, v0.11.4, «Los bordes».**
-  - Del otro lado del canal del bosque, un muro de roca y estratos levantados: una vista que no se alcanza.
-  - El mar abierto se puede nadar hasta un límite. Más allá, el tiburón. El jugador nunca muere: lo muerde,
-    lo deja herido y despierta en la playa, con **secuelas** que no se curan solas (menos aguante y
-    velocidad). Solo las cura un **curandero** o un **druida** del campamento.
+![Los bordes](mundo/los_bordes.png)
+
+*El muro de roca del otro lado del canal, desde la orilla y desde arriba · la aleta del tiburón alrededor de quien
+nada mar adentro · despierta en la playa, herido y con secuelas (`--ir muro-canal`; `--ir canal --dron 45`;
+`--ir mar --trampa tiburon`; `--ir mar --trampa mordida`).*
+
+**Las pruebas** (`tests/test_main.c`, `test_borders_and_sequelae`, en tres semillas):
+- el mar abierto está mar adentro de la línea y solo en la costa; hasta la línea se llega nadando;
+- el muro sube más de 70 m sobre el agua del canal, en escalones, y a lo largo sube y baja; del lado de adentro no
+  hay muro, y la frontera deja al jugador ahí;
+- las secuelas suman hasta todas, frenan y cansan, no se van con los días (ni con curandero), el curandero las cura
+  de a poco y el druida de una vez.

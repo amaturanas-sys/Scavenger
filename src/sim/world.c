@@ -150,6 +150,9 @@ float world_region_weight(const World *w, Region r, float x, float z) {
 
 float world_canal_offset(const World *w, float th) { return CANAL_E + CANAL_SWING * sinf(th * 7.0f + w->warp_phase * 9.0f); }
 
+// Donde empieza el muro del otro lado del canal del bosque: unos 20 m mas alla de su orilla de afuera.
+#define WALL_OUTER(w, th) (world_canal_offset((w), (th)) - CANAL_HALF - 20.0f)
+
 bool world_clamp(const World *w, float *x, float *z) {
     float th = atan2f(*z, *x), r = sqrtf(*x * *x + *z * *z);
     float q[REGION_COUNT];
@@ -162,6 +165,32 @@ bool world_clamp(const World *w, float *x, float *z) {
     *x *= limit / r;
     *z *= limit / r;
     return true;
+}
+
+static float land(const World *w, float x, float z);
+
+float world_open_sea(const World *w, float x, float z) {
+    float q[REGION_COUNT];
+    quadrant_weights(warped_angle(w, x, z), q);
+    if (q[REGION_FJORD] < 0.5f) return -1e9f;
+    float beyond = WORLD_SHARK_E - world_edge_distance(w, x, z);
+    if (beyond <= 0.0f || land(w, x, z) > SEA_LEVEL - 2.0f) return fminf(beyond, 0.0f); // aca no, o sobre una roca
+    return beyond;
+}
+
+float world_forest_wall(const World *w, float x, float z) {
+    float q[REGION_COUNT];
+    quadrant_weights(warped_angle(w, x, z), q);
+    if (q[REGION_FOREST] <= 0.0f) return 0.0f;
+    float th = atan2f(z, x);
+    return q[REGION_FOREST] * smooth(WALL_OUTER(w, th) + 4.0f, WALL_OUTER(w, th) - 12.0f, world_edge_distance(w, x, z));
+}
+
+bool world_canal_near(const World *w, float x, float z, float margin) {
+    float q[REGION_COUNT];
+    quadrant_weights(warped_angle(w, x, z), q);
+    if (q[REGION_FOREST] < 0.5f) return false;
+    return fabsf(world_edge_distance(w, x, z) - world_canal_offset(w, atan2f(z, x))) < CANAL_HALF + margin;
 }
 
 void world_region_point(const World *w, Region rg, float r, float *x, float *z) {
@@ -257,6 +286,16 @@ static float land(const World *w, float x, float z) {
             float t = smooth(ICE_E + 10.0f, ICE_E - 70.0f, e);
             float cracks = (1.0f - fabsf(noise2d(x * 0.05f, z * 0.05f, w->seed + 91u))) * 5.0f;
             h = lerpf(h, h + t * (135.0f + cracks), q[REGION_HIGHLAND]);
+        }
+        if (q[REGION_FOREST] > 0.0f) { // del otro lado del canal, un muro de roca de estratos levantados (fase 5)
+            float t = smooth(WALL_OUTER(w, th), WALL_OUTER(w, th) - 75.0f, e);
+            if (t > 0.0f) {
+                // Ocho estratos, cada uno con su escalon; las capas suben y bajan a lo largo del muro (levantadas).
+                float layers = t * 8.0f, step = floorf(layers), frac = layers - step;
+                float tilt = 38.0f * sinf(th * 40.0f + w->warp_phase * 7.0f);
+                float wall = (step + smooth(0.6f, 1.0f, frac)) / 8.0f * 120.0f + tilt * t;
+                h = lerpf(h, h + fmaxf(0.0f, wall), q[REGION_FOREST]);
+            }
         }
     }
     float d = sqrtf(x * x + z * z);

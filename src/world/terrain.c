@@ -15,7 +15,8 @@
 // Por triangulo: altura, pendiente, luz, mancha, y pesos de desierto, bosque, altiplano y
 // costa, distancia sobre el agua (para la orilla), que es (suelo, copa o tronco) y cuanto tiene que
 // avanzar el glaciar para cubrirlo (world_glacier_reach).
-enum { A_H, A_SLOPE, A_LIGHT, A_PATCH, A_DESERT, A_FOREST, A_HIGH, A_FJORD, A_SHORE, A_EDGE, A_BANK, A_KIND, A_GLACIER, TRI_ATTRS };
+// A_WALL: cuanto es el muro de roca del otro lado del canal del bosque (world_forest_wall, docs/AGUA.md fase 5).
+enum { A_H, A_SLOPE, A_LIGHT, A_PATCH, A_DESERT, A_FOREST, A_HIGH, A_FJORD, A_SHORE, A_EDGE, A_BANK, A_KIND, A_GLACIER, A_WALL, TRI_ATTRS };
 enum { KIND_GROUND, KIND_CANOPY, KIND_TRUNK, KIND_ROCK, KIND_BUSH };
 // Las mallas de agua de cada chunk: el agua (cada vertice con el color de su agua y su hielo), el hielo que
 // aguanta (sin el brillo de las ondas) y la espuma (rompientes y rapidos).
@@ -166,6 +167,14 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
         Color dc = slope > 0.5f ? mixc(redrock, sand_dark, 0.5f + 0.5f * sinf(h_abs * 0.6f)) : mixc(sand, sand_dark, patch * 0.8f);
         c = mixc(c, dc, Clamp(desert * 1.4f, 0.0f, 1.0f));
     }
+    // El muro del otro lado del canal del bosque (docs/AGUA.md, fase 5): roca en estratos, grises y ocres que se
+    // alternan con la altura; los rellanos, de liquen.
+    if (a[A_WALL] > 0.0f) {
+        const Color grey = { 120, 116, 110, 255 }, ochre = { 150, 128, 98, 255 }, dark = { 88, 84, 80, 255 }, lichen = { 104, 112, 86, 255 };
+        float band = sinf(h_abs * 0.42f);
+        Color sc = slope > 0.4f ? mixc(mixc(grey, ochre, 0.5f + 0.5f * band), dark, Clamp(-band * 1.5f - 0.6f, 0.0f, 1.0f)) : mixc(grey, lichen, 0.6f);
+        c = mixc(c, sc, Clamp(a[A_WALL], 0.0f, 1.0f));
+    }
     // El muro de hielo del altiplano: hielo azulado, mas en lo empinado.
     if (a[A_HIGH] > 0.5f && a[A_EDGE] < 150.0f) c = mixc(c, (Color){ 176, 206, 232, 255 }, 0.5f + 0.5f * Clamp(slope * 2.0f, 0.0f, 1.0f));
     // Los barrancos del altiplano son permafrost: paredes de hielo todo el año, tambien en verano.
@@ -233,6 +242,7 @@ static TerrainTex ground_tex(const float *a, float slope) {
     if (hi > 0.5f && a[A_EDGE] < 150.0f) return slope > 0.45f ? TT_SERAC : TT_ICE; // el frente del glaciar: seracs
     if (hi > 0.5f && slope > 0.6f) return TT_SERAC;                                // barrancos de permafrost
     if (a[A_GLACIER] <= 1.0f && slope < 0.45f) return TT_SNOW;                     // la lengua del glaciar, o el limo que deja al retroceder
+    if (a[A_WALL] > 0.5f) return slope > 0.4f ? TT_STRATA : TT_ROCK;             // el muro tras el canal del bosque
     if (fj > 0.5f && a[A_H] < SEA_LEVEL + 4.0f && slope < 0.6f) return TT_BLACKSAND; // la playa de arena volcanica
     if (a[A_BANK] > 0.45f && de < 0.5f && slope < 0.6f) return TT_COBBLES;       // el lecho de cantos que el rio lava
     if (a[A_H] > g_perma_snow && slope < 0.7f) return TT_SNOW;
@@ -561,6 +571,24 @@ static void load_water_shader(void) {
 }
 
 bool terrain_water_shader(void) { return g_water_shader_ok; }
+
+// El radio aproximado de cada formacion, en m (antes de su escala).
+static float feature_radius(int kind) {
+    return kind == VF_BOULDER ? 1.1f : kind == VF_BASALT ? 3.2f : kind == VF_SEA_STACK ? 4.4f : kind == VF_ICEBERG ? 4.0f : kind == VF_FLOE ? 3.0f : 3.5f;
+}
+
+bool terrain_near_feature(const Terrain *t, float x, float z, float margin) {
+    for (int i = 0; i < CHUNK_SLOTS; i++) {
+        const Chunk *ch = &t->slots[i];
+        if (!ch->loaded) continue;
+        for (int k = 0; k < ch->feat_count; k++) {
+            const ChunkFeature *f = &ch->feat[k];
+            float r = feature_radius(f->kind) * f->scale + margin;
+            if ((x - f->x) * (x - f->x) + (z - f->z) * (z - f->z) < r * r) return true;
+        }
+    }
+    return false;
+}
 void terrain_water_shader_off(void) { g_water_shader_off = true; }
 
 void terrain_set_ripples(const Vector4 *bodies, int count) {
@@ -822,6 +850,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             at[A_BANK] = world_river_bank(t->world, mx, mz, NULL);
             at[A_KIND] = KIND_GROUND;
             at[A_GLACIER] = world_glacier_reach(t->world, mx, mz);
+            at[A_WALL] = world_forest_wall(t->world, mx, mz);
             // La celda del atlas se repite cada TEX_SPAN m: cuatro celdas del suelo por textura.
             const int per = (int)(TEX_SPAN / cell);
             float u0 = (float)(((cx * CHUNK_CELLS + ix) % per + per) % per) / per, v0 = (float)(((cz * CHUNK_CELLS + iz) % per + per) % per) / per;
@@ -845,6 +874,8 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             float r0 = (float)(h & 0xFFFF) / 65535.0f, r1 = (float)((h >> 16) & 0xFF) / 255.0f, r2 = (float)(h >> 24) / 255.0f;
             float x = ox + (ix + 0.15f + 0.7f * r1) * slot, z = oz + (iz + 0.15f + 0.7f * r2) * slot;
             if (x * x + z * z < 120.0f * 120.0f || world_edge_distance(t->world, x, z) < 110.0f) continue;
+            if (world_forest_wall(t->world, x, z) > 0.2f) continue; // el muro tras el canal: roca desnuda
+            if (world_canal_near(t->world, x, z, 14.0f)) continue;   // la orilla del canal, despejada: se ve el muro
             float k[REGION_COUNT];
             world_region_weights(t->world, x, z, k);
             float y = terrain_height(t, x, z), wl = world_water(t->world, x, z, 0.0f, NULL);
@@ -970,7 +1001,7 @@ static void free_chunk(Chunk *c) {
 #define FAR_VERTS (FAR_CELLS + 1)
 #define FAR_HAZE_NEAR 350.0f
 typedef struct {
-    float h, k[REGION_COUNT], edge, glacier;
+    float h, k[REGION_COUNT], edge, glacier, wall;
     WaterBodies wb; // sus aguas: far_fill las resuelve en la estacion de las mallas
 } FarVert;
 static struct {
@@ -989,6 +1020,7 @@ static void far_sample(const Terrain *t, FarVert *f, int gx, int gz) {
     world_region_weights(t->world, x, z, f->k);
     f->edge = world_edge_distance(t->world, x, z);
     f->glacier = world_glacier_reach(t->world, x, z);
+    f->wall = world_forest_wall(t->world, x, z);
 }
 
 // Mueve la ventana de datos a la nueva esquina: copia lo que ya estaba y pide lo nuevo.
@@ -1054,6 +1086,7 @@ static void far_fill(const Terrain *t) {
                 at[A_SHORE] = 99.0f;
                 at[A_EDGE] = (a->edge + b->edge + c->edge) / 3.0f;
                 at[A_GLACIER] = (a->glacier + b->glacier + c->glacier) / 3.0f;
+                at[A_WALL] = (a->wall + b->wall + c->wall) / 3.0f;
                 float water = (wlv[va] + wlv[vb] + wlv[vc]) / 3.0f;
                 Color base;
                 if (water > at[A_H]) { // agua: el mar, los lagos y, en el altiplano, el deshielo turquesa; con su hielo
@@ -1062,7 +1095,8 @@ static void far_fill(const Terrain *t) {
                     base = mixc(base, ice, wice[w]);
                 } else {
                     base = ground_color(&t->look, at, at[A_H] - t->plain);
-                    float trees = Clamp(tree_density(a->k, 0.0f) / 0.62f, 0.0f, 1.0f) * (at[A_H] < t->look.snowline ? 0.85f : 0.0f);
+                    float trees = Clamp(tree_density(a->k, 0.0f) / 0.62f, 0.0f, 1.0f) * (at[A_H] < t->look.snowline ? 0.85f : 0.0f) *
+                                  (1.0f - Clamp(at[A_WALL] * 2.0f, 0.0f, 1.0f)); // el muro tras el canal: roca, sin bosque
                     base = mixc(base, tree_color(&t->look, (float[TRI_ATTRS]){ [A_PATCH] = 0.6f, [A_KIND] = KIND_CANOPY, [A_H] = at[A_H] }), trees);
                     base = shade(base, 0.55f + 0.45f * fmaxf(0.0f, Vector3DotProduct(n, sun)));
                 }

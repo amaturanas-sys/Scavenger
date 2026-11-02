@@ -110,6 +110,9 @@ void terrain_draw_water(const Terrain *t, float time);
 // TERRAIN_RIPPLES, los mas cercanos primero (src/game/water_game.c).
 #define TERRAIN_RIPPLES 8
 void terrain_set_ripples(const Vector4 *bodies, int count);
+// ¿Hay una formacion de roca o hielo (cantos, basalto, farallones, tempanos, mesas...) a menos de margin m de (x, z)?
+// Solo en los chunks cargados (no tienen colision: para no dejar a nadie adentro de una).
+bool terrain_near_feature(const Terrain *t, float x, float z, float margin);
 // ¿Se dibuja el agua con su shader? (falso antes del primer chunk con agua, o si no compilo)
 bool terrain_water_shader(void);
 // Sin el shader del agua (--sin-shader: prueba del respaldo). Antes del primer chunk.

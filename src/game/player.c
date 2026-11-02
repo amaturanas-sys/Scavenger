@@ -47,11 +47,14 @@ PlayerInput player_read_input(void) {
 #define STAMINA_RECOVER 0.3f
 static float g_stamina = 1.0f;
 static bool g_winded;
+static float g_endurance = 1.0f; // cuanto rinde el aguante (las secuelas lo bajan: player_set_endurance)
+
+void player_set_endurance(float k) { g_endurance = k < 0.3f ? 0.3f : k > 1.0f ? 1.0f : k; }
 
 float player_stamina(void) { return g_stamina; }
 bool player_winded(void) { return g_winded; }
 void player_stamina_spend(float amount) {
-    g_stamina = fmaxf(0.0f, g_stamina - amount);
+    g_stamina = fmaxf(0.0f, g_stamina - amount / g_endurance); // con secuelas, cansa mas
     if (g_stamina <= 0.0f) g_winded = true;
 }
 
@@ -99,7 +102,7 @@ void player_update(Player *p, const Terrain *t, PlayerInput in, float cam_yaw, f
     }
 
     if (!mounted && p->stance == STANCE_RUN) player_stamina_spend(STAMINA_RUN_COST * dt);
-    else g_stamina = fminf(1.0f, g_stamina + (p->moving ? STAMINA_REGEN_WALK : STAMINA_REGEN_REST) * dt);
+    else g_stamina = fminf(1.0f, g_stamina + (p->moving ? STAMINA_REGEN_WALK : STAMINA_REGEN_REST) * g_endurance * dt);
 
     float ground = terrain_height(t, p->pos.x, p->pos.z);
     if (p->grounded && in.jump && p->crouching) { // agachado, Espacio lo levanta

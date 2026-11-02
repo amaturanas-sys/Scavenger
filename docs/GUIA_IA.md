@@ -332,9 +332,9 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.11.3. La fase 4 del agua: el shader del agua, en GLSL 330 y GLSL ES 100, con su respaldo
-  (el vaivén, la corriente por el cauce, las olas en la costa, la espuma y la bruma de las cascadas); el CI
-  compila y dibuja la variante OpenGL ES 2.0 ([AGUA.md](AGUA.md)).
+- **Versión:** 0.11.4. La fase 5 y última del agua: los bordes. El muro de roca tras el canal del bosque, el mar
+  abierto con el tiburón, y las secuelas de la mordida, que solo curan el curandero o el druida
+  ([AGUA.md](AGUA.md)).
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
@@ -342,15 +342,13 @@ traba.
     v0.10.2);
   - las casas y los campos por persona (v0.10.4 y v0.10.7: 110 y 45 almas por casa, 180 y 40 por campo);
   - la verificación de la v0.10.9: el reparto Codespace → Claude, las reglas comunes y las guardas;
-  - el agua, fases 1 a 4 (v0.11.0 a v0.11.3).
+  - el agua, las cinco fases (v0.11.0 a v0.11.4).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
   - el campamento nodal: descartado por el usuario (duplicaba el campamento);
   - los cauces por estación: los rehizo la fase 2 del agua (v0.11.1).
 - **Lo que sigue:**
-  - **El agua, fase 5** ([AGUA.md](AGUA.md)): los bordes (el muro tras el canal y el tiburón: muerde, el
-    jugador despierta herido en la playa, con secuelas que solo cura un curandero o un druida).
   - **Lo que espera material del usuario** (PLAN_HERRAMIENTAS_IA.md): las imágenes de la D.2 y los
     cuerpos riggeados y los videos de la C.1.
 
