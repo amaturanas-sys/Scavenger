@@ -5276,6 +5276,27 @@ static float test_lake_freeze_day(const World *w, int lake, uint32_t seed) {
     return 99.0f;
 }
 
+// La corriente que se ve (docs/AGUA.md, fase 4): en cada trecho de cada tramo, aguas abajo y a lo largo del
+// trecho; el agua nunca sube.
+static void test_river_flow(void) {
+    const World *w = world_for_seed(1206u);
+    int checked = 0;
+    for (int i = 0; i < w->river_count; i++) {
+        const River *rv = &w->rivers[i];
+        for (int k = 0; k + 1 < rv->n; k++) {
+            float vx = rv->x[k + 1] - rv->x[k], vz = rv->z[k + 1] - rv->z[k], l = sqrtf(vx * vx + vz * vz);
+            if (l < 0.5f || rv->along[k + 1] - rv->along[k] < 0.5f) continue;
+            float dx = 0.0f, dz = 0.0f, slope = -1.0f, mid = 0.5f * (rv->along[k] + rv->along[k + 1]);
+            CHECK(world_river_flow(w, i, mid, &dx, &dz, &slope));
+            CHECK(fabsf(dx * dx + dz * dz - 1.0f) < 1e-3f && (dx * vx + dz * vz) / l > 0.999f && slope >= 0.0f);
+            checked++;
+        }
+    }
+    CHECK(checked > 500);
+    float dx, dz;
+    CHECK(!world_river_flow(w, -1, 0.0f, &dx, &dz, NULL) && !world_river_flow(w, w->river_count, 0.0f, &dx, &dz, NULL));
+}
+
 static void test_water_seasons(void) {
     // El clima del agua: el glaciar suelta agua en verano y nada con helada; el mar se hiela al final del
     // invierno y sigue helado al empezar la primavera; los tempanos llegan antes y se van despues; el frente
@@ -5609,6 +5630,7 @@ int main(void) {
     RUN(test_hydro_basics);
     RUN(test_water_flows_down);
     RUN(test_water_seasons);
+    RUN(test_river_flow);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

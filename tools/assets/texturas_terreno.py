@@ -2,7 +2,8 @@
 """Texturas del terreno de ESTEPA: un atlas pequeño (low-res, pixeles nitidos) editable.
 
 Uso:
-  python3 tools/assets/texturas_terreno.py generar [--forzar]   escribe assets/terrain/texturas.png, agua.png y hielo.png
+  python3 tools/assets/texturas_terreno.py generar [--forzar]   escribe assets/terrain/texturas.png, agua.png, hielo.png
+                                                               y espuma.png
                                                                (los que faltan: no pisa tus cambios sin --forzar)
   python3 tools/assets/texturas_terreno.py guia                 assets/terrain/texturas_guia.png (x4, con nombres)
 
@@ -29,6 +30,7 @@ OUT = os.path.join(ROOT, "assets", "terrain", "texturas.png")
 GUIDE = os.path.join(ROOT, "assets", "terrain", "texturas_guia.png")
 WATER = os.path.join(ROOT, "assets", "terrain", "agua.png")
 ICE = os.path.join(ROOT, "assets", "terrain", "hielo.png")
+FOAM = os.path.join(ROOT, "assets", "terrain", "espuma.png")
 CELL = 32
 COLS = 4
 
@@ -325,9 +327,26 @@ def ice_tile():
     return tile(f, 301)
 
 
+def foam_tile():
+    """La espuma del agua (docs/AGUA.md, fase 4): una red de burbujas, clara en los bordes de las celdas y
+    con manchas, en grises de todo el rango (el shader del agua la corta con umbrales para hacer jirones).
+    32x32: se repite sin costuras."""
+    n = wrap_noise(26, 4)
+    rnd = random.Random(27)
+    pts = [(rnd.uniform(0, CELL), rnd.uniform(0, CELL)) for _ in range(14)]
+
+    def f(x, y, r):
+        ds = sorted(min(math.hypot(x - px - ox, y - py - oy) for ox in (-CELL, 0, CELL) for oy in (-CELL, 0, CELL)) for px, py in pts)
+        edge = max(0.0, 1.0 - (ds[1] - ds[0]) / 4.0)  # los bordes de las burbujas
+        v = 255 * (0.55 * edge + 0.45 * n(x, y)) + r.uniform(-10, 10)
+        return gray(v)
+
+    return tile(f, 302)
+
+
 def generar(force):
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    for path, make in ((OUT, build), (WATER, water_tile), (ICE, ice_tile)):
+    for path, make in ((OUT, build), (WATER, water_tile), (ICE, ice_tile), (FOAM, foam_tile)):
         if os.path.exists(path) and not force:
             print(f"{path} ya existe (puede tener tus cambios): usa --forzar para rehacerlo.")
             continue

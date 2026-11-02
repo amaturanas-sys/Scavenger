@@ -247,6 +247,17 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Cómo se ve el agua (v0.11.3), la fase 4 del diseño del agua ([docs/AGUA.md](docs/AGUA.md)):
+- **El agua tiene su shader**, en la PC y en Android (GLSL 330 y GLSL ES 100, del mismo código). Si un teléfono no lo compila, el agua se ve como antes.
+- **Los lagos se mecen:** el agua sube y baja unos centímetros, dos ondas se cruzan a la deriva y brillan donde coinciden.
+- **Los ríos corren por su cauce:** la superficie avanza aguas abajo, más rápido en lo empinado y en los arroyos, y más lento con poca agua.
+- **El mar trae olas:** el oleaje de alta mar y, en la costa, las olas que suben y se retiran con su línea de espuma.
+- **La espuma:** en las orillas, en las rocas del agua (los cantos de los ríos, el basalto y los farallones del mar, los témpanos) y en los rápidos; y alrededor de quien vadea o nada: tú, la tribu, los enemigos y los animales.
+- **Las cascadas:** la cortina baja, y al pie se levanta una bruma que se desvanece.
+- **El CI prueba el shader de Android:** compila el juego para OpenGL ES 2.0 y lo dibuja con Mesa en cada PR.
+
+Pruebas: `--ir cascada-pie` (la cascada de cerca), `--ir rapidos`, `--ir mar --dron 6`, `--ir meandro --trampa nado` (la espuma de quien nada) y `--sin-shader` (el agua de antes, como si el shader no compilara).
+
 Hielo, nado y pesca (v0.11.2), la fase 3 del diseño del agua ([docs/AGUA.md](docs/AGUA.md)):
 - **La tribu y los enemigos nadan:** vadean hasta el pecho y, más hondo, cruzan un río a nado (un lago o el mar los rodean, como antes). Nadando van más lento, con la cabeza afuera, y nadie dispara (cuerpo a cuerpo, sí). Los carros de guerra no entran al agua honda.
 - **Los animales también:** cada uno vadea según su tamaño y nada más hondo. Un río lo cruzan a nado si huyen, cazan o siguen a la manada; pastando, lo rodean.

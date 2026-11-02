@@ -97,6 +97,7 @@ docs/       Diseño, roadmap, arquitectura
 ## Render
 - Todo el mundo y el HUD se dibujan en un `RenderTexture` de **640×360** con filtro *point*, y se escala a la ventana conservando la proporción.
 - Iluminación **horneada** en los colores de vértice del terreno (ambiente + difusa del sol): sin shaders de luz, costo cero en GPU.
+- **Un solo shader propio, el del agua** (`src/world/terrain.c`, [AGUA.md](AGUA.md) fase 4): GLSL 330 en la PC y GLSL ES 100 en Android, del mismo código; lo demás usa el de raylib. Si no compila, el agua se dibuja como antes. El CI compila también la variante OpenGL ES 2.0 y la dibuja con Mesa.
 - Objetivo de rendimiento: 60 fps en Android de gama baja. Referencia actual: 60 fps con render **por software** (Mesa llvmpipe) en CI.
 
 ## Mundo

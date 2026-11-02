@@ -89,7 +89,8 @@ El norte es −Z y el este +X.
   - es una malla continua sobre la rejilla del suelo (2 m) con el nivel en cada vértice: los ríos bajan en pendiente como un torrente, sin escalones;
   - un vértice seco toma el nivel de sus vecinos con agua, así el borde se mete bajo la orilla y no quedan huecos;
   - lleva una textura de ondas (`assets/terrain/agua.png`) teñida con el color de cada agua;
-  - cambia con la estación (v0.11.1, [AGUA.md](AGUA.md)): los cauces secos no tienen agua, y el hielo que aguanta va en su propia malla, con la textura de placas y grietas (`assets/terrain/hielo.png`). Las mallas se rehacen cuando la estación cambia lo suficiente.
+  - cambia con la estación (v0.11.1, [AGUA.md](AGUA.md)): los cauces secos no tienen agua, y el hielo que aguanta va en su propia malla, con la textura de placas y grietas (`assets/terrain/hielo.png`). Las mallas se rehacen cuando la estación cambia lo suficiente;
+  - se mueve con su shader (v0.11.3, [AGUA.md](AGUA.md) fase 4): el vaivén de los lagos, la corriente de los ríos por su cauce, las olas del mar que suben y se retiran en la costa, la espuma de las orillas, las rocas, los rápidos y de quien está en el agua (`assets/terrain/espuma.png`), y la cortina de las cascadas que baja, con su bruma.
 - **Vegetación** (`src/world/vegetation.c`, reglas en `src/sim/flora.c`; v0.9.2):
   - pasto, stipa (con sus plumas plateadas en verano), flores de primavera, helechos y juncos alrededor del jugador, por celdas de 2 m como el suelo y sobre su facetado;
   - del color del suelo de su región y su estación; crecen, se secan de pie, el invierno las aplasta y la nieve las tapa donde cubre el suelo (asoman la stipa y los juncos secos);

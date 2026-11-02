@@ -55,6 +55,7 @@ typedef struct {
     WaterBodies *wbody;
     float *wground;
     unsigned char *wcell; // por celda: deshielo turquesa del altiplano, rapidos con espuma
+    unsigned char *wfoam; // por vertice: la espuma de las rocas y los rapidos [0, 255] (el shader del agua)
     bool water_dirty;     // la estacion cambio: rehacer sus mallas del agua
 } Chunk;
 
@@ -100,10 +101,21 @@ void terrain_wade_step(const Terrain *t, float x0, float z0, float *x, float *z)
 float terrain_body_y(const Terrain *t, float x, float z);
 // Como esta alguien en (x, z): en seco, vadeando, nadando o sobre el hielo (src/sim/hazards.h).
 WaterStep terrain_water_step(const Terrain *t, float x, float z);
-// Agua (o hielo) en el area cargada. Despues de lo opaco.
+// Agua (o hielo) en el area cargada. Despues de lo opaco. Con el shader del agua (docs/AGUA.md, fase 4; GLSL 330,
+// o ES 100 en Android): el vaiven de los lagos, la corriente de los rios por su cauce, el oleaje del mar con las
+// olas que entran y se retiran en la playa, y la espuma de las orillas, las rocas, los rapidos y de quien esta en
+// el agua. Si el shader no compila, el agua de antes (las ondas que respiran y la malla de espuma).
 void terrain_draw_water(const Terrain *t, float time);
-// Las cascadas del area cargada (docs/AGUA.md, pagina 4): la cortina de agua y la espuma al pie (helada si su
-// rio esta helado; ninguna si esta seco). Despues del agua.
+// Quien esta en el agua este cuadro (x, z del mundo; z: radio de su espuma en m; w: cuanta [0, 1]): hasta
+// TERRAIN_RIPPLES, los mas cercanos primero (src/game/water_game.c).
+#define TERRAIN_RIPPLES 8
+void terrain_set_ripples(const Vector4 *bodies, int count);
+// ¿Se dibuja el agua con su shader? (falso antes del primer chunk con agua, o si no compilo)
+bool terrain_water_shader(void);
+// Sin el shader del agua (--sin-shader: prueba del respaldo). Antes del primer chunk.
+void terrain_water_shader_off(void);
+// Las cascadas del area cargada (docs/AGUA.md, pagina 4 y fase 4): la cortina de agua, que baja, y la espuma y
+// la bruma al pie (helada si su rio esta helado: sin espuma ni bruma; ninguna si esta seco). Despues del agua.
 void terrain_draw_falls(const Terrain *t, float time);
 
 void terrain_init(Terrain *t, unsigned seed);
