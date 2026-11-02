@@ -73,6 +73,9 @@ Region terrain_region(const Terrain *t, float x, float z);
 void terrain_dry_step(const Terrain *t, float x0, float z0, float *x, float *z);
 // Agua (o hielo) en el area cargada. Despues de lo opaco.
 void terrain_draw_water(const Terrain *t, float time);
+// Las cascadas del area cargada (docs/AGUA.md, pagina 4): la cortina de agua y la espuma al pie (en
+// invierno, helada). Despues del agua.
+void terrain_draw_falls(const Terrain *t, float time);
 
 void terrain_init(Terrain *t, unsigned seed);
 // Carga los chunks cercanos a `pos` y descarga los que quedaron lejos.

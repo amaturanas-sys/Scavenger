@@ -55,6 +55,7 @@ add_library(estepa_sim STATIC
   src/sim/apparel.c
   src/sim/water.c
   src/sim/world.c
+  src/sim/hydro.c
   src/sim/anim_index.c
   src/sim/save_format.c
   src/sim/keymap.c

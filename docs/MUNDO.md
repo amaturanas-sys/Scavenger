@@ -12,15 +12,15 @@ El norte es −Z y el este +X.
 
 | Regla | Qué hace |
 |---|---|
-| **La estepa en el centro** | Allí acampa la tribu. La rodean **ríos de meandros** (trayecto tortuoso) que la separan de las demás regiones. |
+| **La estepa en el centro** | Allí acampa la tribu, en una loma suave (el agua baja alrededor, nunca por el campamento). La cruzan los ríos que bajan del altiplano hacia el bosque y la costa. |
 | **Cuatro regiones alrededor** | **Noroeste:** bosque de coníferas muy tupido, con alerces que se doran en otoño. **Noreste:** desierto. **Sureste:** altiplano glaciar. **Suroeste:** costa de fiordos. |
-| **Altitud media por región** | Costa ~12 m · desierto ~28 m · estepa ~40 m · bosque ~55 m · altiplano ~70 m. Encima va el relieve propio de cada una: matas y colinas suaves en la estepa, lomas en el bosque, crestas afiladas y cumbres nevadas en el altiplano, costa abrupta en los fiordos, dunas y mesetas en el desierto. |
+| **Altitud media por región** | De mayor a menor (v0.11.0, [AGUA.md](AGUA.md)): altiplano 70 m · desierto 55 m · estepa 40 m · bosque 33 m · costa 12 m (con su relieve, las medias son ~82, 61, 40, 33 y 26 m). Encima va el relieve propio de cada una: matas y colinas suaves en la estepa, lomas en el bosque, crestas afiladas y cumbres nevadas en el altiplano, costa abrupta en los fiordos, dunas y mesetas en el desierto. |
 | **El borde de los fiordos** | La tierra baja al **mar** (nivel 0). Los fiordos entran tierra adentro. |
 | **El borde del desierto** | Un **gran cañón** y, detrás, un **muro de siete estratos** de 160 m. |
-| **El borde del altiplano** | Un **muro de hielo glaciar** de 135 m, con grietas. Del altiplano bajan **ríos trenzados** por anchos lechos de grava; sus lagos son turquesa, de deshielo. |
-| **El borde del bosque** | Un **canal sigmoideo** (serpentea) de 60 m de ancho, del que salen **ríos tributarios** hacia adentro. |
+| **El borde del altiplano** | Un **muro de hielo glaciar** de 135 m, con grietas. Su deshielo da los ríos más grandes, que bajan **trenzados** por anchos lechos de grava; sus lagos son turquesa. Lo flanquean dos **cordilleras**: hacia el desierto (al este) y hacia la costa (al sur). |
+| **El borde del bosque** | Un **canal sigmoideo** (serpentea) de 60 m de ancho, donde desembocan los **ríos tributarios** del bosque. |
 | **La frontera invisible** | Sigue el borde fractal, antes del mar abierto, del muro, del hielo o del canal. Un aviso explica por qué no se pasa. |
-| **El agua corre hacia abajo** | El nivel de cada río baja siempre y su agua nunca queda sobre la orilla. Hay un lago siempre cerca del campamento. El desierto solo tiene oasis. |
+| **El agua baja** | Ver [AGUA.md](AGUA.md). Los ríos nacen donde se junta el agua (el deshielo del glaciar y las lluvias), bajan por la cota más baja, se ramifican como raíces y terminan en el canal del bosque, en el mar o en el cañón del desierto. Cada lago llena una depresión hasta su punto de desborde, y de ahí sale su río. Donde el agua cae sin pendiente, una cascada. Hay un lago siempre cerca del campamento; en el desierto no nace ningún río y solo tiene oasis. |
 | **Cada región, su gente y sus fieras** | **Gente:** un reino vecino por región, con su capital amurallada y tres aldeas al estilo de la región. **Fieras:** guaridas de las especies de la región. La fauna que aparece es la del hábitat de la región. |
 | **Tribus nómadas** | Tres o cuatro por región (16 por mundo), con las tres actitudes en cada una: **rivales**, que salen al paso con jinetes o bandidos (de nuevo si te alejas 600 m y vuelves); **neutrales**, que observan; y **amigables**, que marcan en el mapa una estructura cercana que no viste. Sus campamentos de yurtas llevan un estandarte del color de su actitud: rojo, crudo o azul. |
 | **Estructuras** | Unas 45 por mundo, según la región. Al verlas quedan en el mapa. Las ruinas son kurganes, balbales, piedras de ciervos, fortalezas derruidas, ciudades enterradas y petroglifos. En uso están los caravasares, torres de vigía, ovoos, pozos y embarcaderos. Reparto por región: estepa (kurganes, balbales, piedras de ciervos, ovoos, pozos, caravasar); bosque (fortalezas, torres, petroglifos); altiplano (ovoos, piedras de ciervos, petroglifos); costa (embarcaderos, túmulos); desierto (ciudades enterradas, caravasares, pozos). |
@@ -30,12 +30,12 @@ El norte es −Z y el este +X.
 
 - **El borde:** el contorno fractal de la tierra.
 - **Fronteras entre regiones:** el radio de la estepa varía con ruido y las fronteras entre cuadrantes se tuercen. Ninguna región sale de su cuadrante.
-- **Ríos:**
-  - los meandros de la estepa: cuánto serpentean y su largo de onda;
-  - cuántos tributarios salen del canal (4 a 6) y dónde;
-  - los ríos trenzados del altiplano (3 a 4) y de los fiordos (1 a 2): su trazado y sus canales;
-  - 14 a 20 **arroyos** de 2 a 3,5 m que bajan de lomas, bosques, cumbres y costa hasta el río más cercano.
-- **Lagos:** 14 a 19, más 3 a 4 oasis; dónde están, su tamaño y la forma de su orilla.
+- **Ríos y lagos** (v0.11.0): salen del relieve de cada semilla (la hidrología, [AGUA.md](AGUA.md)).
+  - Unos 130 a 180 tramos: trenzados del deshielo en el altiplano y la costa, de meandros en la estepa,
+    tributarios en el bosque y arroyos de 2 a 3,5 m en todas partes.
+  - 13 a 22 cascadas.
+  - 25 a 30 lagos en las depresiones (con su río de salida), más 3 a 4 oasis en el desierto. Su forma, el
+    largo de onda de los meandros y por dónde baja cada río cambian con la semilla.
 - **Montañas:** dónde se levantan los macizos y cuánto miden.
   - En el altiplano, 8 a 12, con cumbres que llegan a las nubes.
   - En la costa, 5 a 8.
@@ -162,8 +162,13 @@ Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
 | `SHORE_E`, `fjord_inlet()` | arriba | La costa y lo que entran los fiordos. |
 | `WALL_E`, `GORGE_E` | arriba | El cañón y el muro de estratos del desierto. |
 | `ICE_E` | arriba | El muro de hielo del altiplano. |
-| `make_meanders()`, `make_radial()` | `world_generate` | Meandros, tributarios y ríos trenzados. |
-| Lagos 14–19, oasis 3–4 | `world_generate` | Lagos y oasis. |
+| Las cordilleras de frontera | `world_generate` | Los cerros entre el altiplano y el desierto, y entre el altiplano y la costa. |
+| `REGION_RAIN[]`, `GLACIER_MELT` | `make_water()` | Cuánto llueve en cada región y cuánto da el deshielo. |
+| `FLOW_CREEK`, `FLOW_RIVER`, `FLOW_BRAID` | `make_water()` | Desde cuánta agua nace un arroyo, un río y un río trenzado. |
+| `LAKE_MIN_DEPTH`, `LAKE_MIN_CELLS` | `make_water()` | Qué depresión es un lago. |
+| `stream_meanders()`, `FALL_DROP`, `FALL_SLOPE` | `make_water()` | Los meandros y las cascadas. |
+| `HYDRO_EPS`, `HYDRO_SIDE` | `src/sim/hydro.h` | La hidrología: cuánto sube el agua en lo llano y el tamaño de la grilla. |
+| Oasis 3–4 | `world_generate` | Los oasis del desierto. |
 | `tree_density()` | `src/world/terrain.c` | Árboles por región (bosque tupido: 0,62). |
 | `ground_color()`, `ground_tex()` | `src/world/terrain.c` | Color y textura del suelo. |
 | `FAR_CELLS`, `FAR_HAZE_NEAR` | `src/world/terrain.c` | Alcance del horizonte lejano y su bruma. |
@@ -184,7 +189,8 @@ Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
 ```
 
 Sitios de `--ir`:
-- **Regiones y paisaje:** estepa, meandro, arroyo, bosque, canal, altiplano, trenzado, hielo, cumbre, fiordos, mar, desierto y muro.
+- **Regiones y paisaje:** estepa, meandro, arroyo, rapidos, bosque, canal, altiplano, trenzado, hielo, cumbre, fiordos, mar, desierto y muro.
+- **El agua:** lago (el más grande fuera del bosque), desborde (por donde sale su río) y cascada (la más grande tierra adentro).
 - **Pueblos y fieras:** capital, aldea y guarida; `capital-<región>`, `aldea-<región>` y `plaza-<región>` (en la plaza, frente al palacio) para las de cada región (estepa, bosque, altiplano, fiordos o desierto); kanato (la plaza de la capital de la estepa) y campos.
 - **Tribus:** tribu (amiga), rival y neutral.
 - **Estructuras:** kurgan, balbales, piedra, fortaleza, ciudad, petroglifos, caravasar, torre, ovoo, pozo y embarcadero.

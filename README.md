@@ -247,6 +247,16 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+El agua baja (v0.11.0), la fase 1 del diseño del agua ([docs/AGUA.md](docs/AGUA.md)):
+- **Las alturas del diseño:** de mayor a menor, el altiplano, el desierto, la estepa, el bosque y la costa. Entre el altiplano y el desierto, y entre el altiplano y la costa, dos cordilleras.
+- **Los ríos bajan por donde baja el agua:** nacen del deshielo del glaciar y de las lluvias, siguen la cota más baja y se juntan como raíces hasta el canal del bosque, el mar de los fiordos o el cañón del desierto. Trenzados en el altiplano y la costa, de meandros en la estepa, tributarios en el bosque, arroyos en todas partes. En el desierto no nace ninguno.
+- **Cada lago llena una depresión** hasta su punto de desborde, y de ahí sale su río (en la estepa, el bosque, el altiplano y la costa; el desierto solo tiene oasis). Hay siempre uno cerca del campamento, que queda en una loma: el agua lo rodea.
+- **Cascadas** donde el agua cae sin pendiente: una cortina de agua con espuma al pie (en invierno, helada).
+- **Cómo se hace:** Priority-Flood (Barnes, 2014) y la suma del agua sobre una grilla de 40 m, en `src/sim/hydro.c`, con sus pruebas. Cada río sabe de dónde viene (la lluvia, el glaciar o un lago) y cuánto de su agua es deshielo: en la fase 2, los del glaciar se secarán en invierno.
+- **Las partidas guardadas** cargan con el agua nueva; si el jugador quedó en agua honda, aparece en la orilla.
+
+Pruebas: `--ir lago`, `--ir desborde`, `--ir cascada`, `--ir meandro`, `--ir trenzado`, `--ir arroyo` y `--semilla N --mapa-mundo mapa.png`.
+
 La verificación (v0.10.9):
 - **El combate, arreglado:** `Ctrl+Q` y `Ctrl+E` cambian de objetivo y `Q`/`E` solas vuelven a ser solo de la cámara (en la v0.10.5 hacían las dos cosas a la vez). El parry vuelve a subir suave, el desvío y el gancho al escudo recuperan su pose, y los guerreros de la tribu ya no levantan un parry en medio de su golpe.
 - **Cline, Copilot y Claude Code:** el Codespace hace la primera versión de cada tarea, en su rama y con su PR; Claude Code la verifica, la corrige, la fusiona y publica la release. Las dos IA del Codespace tienen las mismas reglas (`.clinerules` y `.github/copilot-instructions.md`), y el PR trae la sección «Para Claude». Todo en `docs/GUIA_IA.md`.

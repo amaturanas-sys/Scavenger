@@ -10,6 +10,7 @@
 #include "platform.h"
 #include "world/voxstruct.h"
 #include "raymath.h"
+#include "rlgl.h"
 
 // Por triangulo: altura, pendiente, luz, mancha, y pesos de desierto, bosque, altiplano y
 // costa, distancia sobre el agua (para la orilla) y que es (suelo, copa o tronco).
@@ -846,6 +847,46 @@ void terrain_draw_water(const Terrain *t, float time) {
             if (ch->loaded && ch->has_water[m]) DrawModel(ch->water[m], (Vector3){ 0, lift, 0 }, 1.0f, c);
         }
     }
+}
+
+void terrain_draw_falls(const Terrain *t, float time) {
+    if (!t->has_center || !t->world || t->world->fall_count == 0) return;
+    const World *w = t->world;
+    const Color sheet = { 150, 196, 220, 200 }, shine = { 236, 246, 252, 230 }, ice = { 198, 220, 236, 240 };
+    float cx = ((float)t->center_cx + 0.5f) * CHUNK_SIZE, cz = ((float)t->center_cz + 0.5f) * CHUNK_SIZE;
+    float reach = ((float)CHUNK_RADIUS + 0.5f) * CHUNK_SIZE, frozen = Clamp(t->look.ice, 0.0f, 1.0f), lift = 0.5f * t->look.flood;
+    rlDrawRenderBatchActive();
+    rlDisableBackfaceCulling(); // la cortina se ve de los dos lados
+    rlBegin(RL_TRIANGLES);
+    for (int i = 0; i < w->fall_count; i++) {
+        const Waterfall *f = &w->falls[i];
+        if (fabsf(f->x - cx) > reach || fabsf(f->z - cz) > reach) continue;
+        float ax = cosf(f->yaw), az = -sinf(f->yaw), hw = f->width * 0.5f + 0.5f; // a lo ancho de la caida
+        float top = f->top + lift + 0.05f, bot = f->bottom + lift + 0.05f;
+        for (int s = 0; s < 4; s++) { // cuatro tiras, cada una con su brillo que baja
+            float u0 = -1.0f + 0.5f * (float)s, u1 = u0 + 0.5f;
+            Color c = mixc(sheet, shine, 0.35f * (0.5f + 0.5f * sinf(time * 6.0f + (float)s * 1.7f + (float)i)));
+            c = mixc(c, ice, frozen);
+            Vector3 a = { f->x + ax * u0 * hw, top, f->z + az * u0 * hw }, b = { f->x + ax * u1 * hw, top, f->z + az * u1 * hw };
+            Vector3 d = { f->bx + ax * u0 * hw, bot, f->bz + az * u0 * hw }, e = { f->bx + ax * u1 * hw, bot, f->bz + az * u1 * hw };
+            rlColor4ub(c.r, c.g, c.b, c.a);
+            rlVertex3f(a.x, a.y, a.z), rlVertex3f(d.x, d.y, d.z), rlVertex3f(b.x, b.y, b.z);
+            rlVertex3f(b.x, b.y, b.z), rlVertex3f(d.x, d.y, d.z), rlVertex3f(e.x, e.y, e.z);
+        }
+        if (frozen > 0.5f) continue;
+        // La espuma al pie: un abanico blanco que late.
+        unsigned char alpha = (unsigned char)(200.0f * (0.6f + 0.4f * sinf(time * 3.0f + (float)i)) * (1.0f - frozen));
+        float r = hw * 1.6f;
+        for (int k = 0; k < 10; k++) {
+            float a0 = (float)k / 10.0f * 2.0f * PI, a1 = (float)(k + 1) / 10.0f * 2.0f * PI;
+            rlColor4ub(250, 252, 255, alpha);
+            rlVertex3f(f->bx, bot + 0.08f, f->bz);
+            rlVertex3f(f->bx + cosf(a0) * r, bot + 0.06f, f->bz + sinf(a0) * r);
+            rlVertex3f(f->bx + cosf(a1) * r, bot + 0.06f, f->bz + sinf(a1) * r);
+        }
+    }
+    rlEnd();
+    rlEnableBackfaceCulling();
 }
 
 static bool in_range(int cx, int cz, int ccx, int ccz) {

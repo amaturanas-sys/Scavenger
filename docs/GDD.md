@@ -109,13 +109,14 @@ Las matas que crecen alrededor del jugador, sobre el suelo de cada región, al r
 
 ### El mundo (implementado — `src/sim/world.*`, en juego `src/game/world_game.*` y `src/world/worldview.*`)
 Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
-- **Una gran tierra casi redonda** de 4,8 km de radio medio, de borde fractal (no una circunferencia neta), con **cinco regiones fijas**: la estepa en el centro, rodeada de ríos de meandros; el bosque de coníferas al noroeste; el desierto al noreste; el altiplano glaciar al sureste; la costa de fiordos al suroeste.
-- **Altitud media estandarizada:** costa ~12 m, desierto ~28 m, estepa ~40 m, bosque ~55 m, altiplano ~70 m (con cumbres que guardan el glaciar).
+- **Una gran tierra casi redonda** de 4,8 km de radio medio, de borde fractal (no una circunferencia neta), con **cinco regiones fijas**: la estepa en el centro, cruzada por los ríos que bajan del altiplano; el bosque de coníferas al noroeste; el desierto al noreste; el altiplano glaciar al sureste; la costa de fiordos al suroeste.
+- **Altitud media estandarizada** (v0.11.0), de mayor a menor: altiplano ~70 m (con cumbres que guardan el glaciar), desierto ~55 m, estepa ~40 m, bosque ~33 m y costa ~12 m.
+- **El agua baja** (v0.11.0, [AGUA.md](AGUA.md)): los ríos nacen del deshielo y las lluvias, bajan por la cota más baja ramificándose como raíces y terminan en el canal, el mar o el cañón; cada lago llena una depresión hasta su punto de desborde y de ahí sale su río; donde el agua cae sin pendiente, una cascada.
 - **La frontera:**
   - la costa termina en el mar, con fiordos estrechos que entran tierra adentro;
   - el desierto termina en un gran cañón y, detrás, un muro de siete estratos;
-  - el altiplano termina en un muro de hielo glaciar, agrietado; sus ríos bajan trenzados por lechos de grava, con lagos turquesa de deshielo;
-  - el bosque termina en un canal sigmoideo, del que salen ríos tributarios hacia adentro;
+  - el altiplano termina en un muro de hielo glaciar, agrietado, entre dos cordilleras; su deshielo baja en ríos trenzados por lechos de grava, con lagos turquesa;
+  - el bosque termina en un canal sigmoideo, donde desembocan sus ríos tributarios;
   - Nadie pasa: la frontera invisible sigue el borde fractal (un aviso dice por qué).
 - **Cada partida, otro mundo** (la semilla): cambian el trazado de los ríos, la forma y el sitio de los lagos y las montañas, las fronteras entre regiones (dentro de su sector) y dónde caen los pueblos y las guaridas. Las reglas no cambian. La semilla viaja en la partida guardada; `--semilla N` la fija.
 - **Pueblos y reinos:** cada región tiene su reino vecino (la estepa, el Kanato de Hierro al que la tribu rinde tributo; Principado de los Pinos Negros; Señorío del Glaciar; Jarlazgo de la Costa Helada; Reino de los Oasis), una capital amurallada y dos aldeas, al estilo de su región. Al llegar, quedan en el mapa.

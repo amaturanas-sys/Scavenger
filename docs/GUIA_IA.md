@@ -38,6 +38,7 @@ que ya salió mal y el estado del proyecto.
 | [GDD.md](GDD.md) | El diseño y las reglas de cada sistema, con los nombres de sus funciones. |
 | [ARQUITECTURA.md](ARQUITECTURA.md) | Los módulos de cada carpeta y qué hace cada uno. |
 | [MUNDO.md](MUNDO.md) | La generación del mundo, el terreno, la vegetación, el cielo. |
+| [AGUA.md](AGUA.md) | El diseño del agua del usuario, página por página, y sus cinco fases: lo hecho y lo que sigue. |
 | [PARTIDAS.md](PARTIDAS.md) | El formato de las partidas y cómo cambiar un struct que se guarda. |
 | [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md) | El kit de edificios: casas, palacios, murallas, ruinas, obras. |
 | [INVENTARIO.md](INVENTARIO.md), [ANIMACIONES.md](ANIMACIONES.md) | Generados por sus scripts: no se editan a mano. |
@@ -240,6 +241,7 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 |---|---|
 | El arranque | `./estepa --frames 60 --screenshot shot.png` |
 | Un lugar del mundo | `--ir estepa`, `bosque`, `altiplano`, `desierto`, `mar`, `capital`, `aldea`, `fortaleza`, `ciudad`, `plaza-<región>`… (con `--dia 11 --minuto 7` es verano al mediodía; `--camara`, `--dron 40` desde arriba) |
+| El agua | `--ir lago`, `desborde`, `cascada`, `meandro`, `trenzado`, `arroyo`, `rapidos` |
 | El kit de edificios | `--edificios casa` (o `palacio`, `muralla`, `puerta`, `fortaleza`, `refugio`… ; `:región` para una sola fila) |
 | Un objeto de cerca | `--ver <id del inventario>` |
 | El asedio | `--asedio puerta`, `fuego`, `salida`, `quemada`, `tomada`… |
@@ -328,28 +330,28 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.10.9. La verificación de la 0.10.4 a la 0.10.8: el combate y la tecla de objetivo
-  arreglados, `src/entities/` marcado como andamiaje, las reglas de Cline y Copilot con el reparto nuevo y
-  las guardas en el CI.
+- **Versión:** 0.11.0. La fase 1 del agua: las alturas del diseño del usuario, la hidrología (`src/sim/hydro.c`),
+  los ríos por donde baja el agua, los lagos por su desborde, las cascadas y dos cordilleras de frontera
+  ([AGUA.md](AGUA.md)).
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
   - la parte B, los edificios: el kit, las murallas con la puerta acodada, las ruinas y las obras (v0.10.0 a
     v0.10.2);
-  - las casas y los campos por persona (v0.10.4 y v0.10.7: 110 y 45 almas por casa, 180 y 40 por campo).
+  - las casas y los campos por persona (v0.10.4 y v0.10.7: 110 y 45 almas por casa, 180 y 40 por campo);
+  - la verificación de la v0.10.9: el reparto Codespace → Claude, las reglas comunes y las guardas;
+  - el agua, fase 1 (v0.11.0).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
   - el campamento nodal: descartado por el usuario (duplicaba el campamento);
   - los cauces por estación: los rehace la fase 2 del agua.
 - **Lo que sigue:**
-  - **El agua** (los dibujos del usuario; el plan entero va en `docs/AGUA.md` con la fase 1):
-    - fase 1, v0.11.0, «El agua baja»: las alturas altiplano > desierto > estepa > bosque > fiordos;
-      ríos trazados por cuenca desde el glaciar hasta el canal y el mar; lagos con el nivel de su punto
-      de desborde y su río de salida; cascadas;
-    - fase 2, las estaciones del agua; fase 3, hielo, nado y pesca; fase 4, cómo se ve el agua; fase 5,
-      los bordes (el muro tras el canal y el tiburón: muerde, el jugador despierta herido en la playa, con
-      secuelas que solo cura un sanador o un druida).
+  - **El agua, fases 2 a 5** ([AGUA.md](AGUA.md)): las estaciones del agua (cauces secos o helados según el
+    deshielo, `River.melt`; el glaciar que retrocede; el hielo en la costa); hielo, nado y pesca (los NPC y
+    los animales en el agua; el agujero para pescar); el shader del agua; los bordes (el muro tras el canal
+    y el tiburón: muerde, el jugador despierta herido en la playa, con secuelas que solo cura un curandero
+    o un druida).
   - **Lo que espera material del usuario** (PLAN_HERRAMIENTAS_IA.md): las imágenes de la D.2 y los
     cuerpos riggeados y los videos de la C.1.
 

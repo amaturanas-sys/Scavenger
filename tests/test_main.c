@@ -50,6 +50,7 @@
 #include "../src/sim/troop.h"
 #include "../src/sim/water.h"
 #include "../src/sim/world.h"
+#include "../src/sim/hydro.h"
 
 static int g_failed = 0, g_checks = 0;
 
@@ -2739,8 +2740,9 @@ static void test_world_regions_borders_and_sites(void) {
             CHECK(n[r] > 20);
             mean[r] = n[r] ? (float)(sum[r] / n[r]) : 0.0f;
         }
-        CHECK(mean[REGION_FJORD] < mean[REGION_DESERT] && mean[REGION_DESERT] < mean[REGION_STEPPE]);
-        CHECK(mean[REGION_STEPPE] < mean[REGION_FOREST] && mean[REGION_FOREST] < mean[REGION_HIGHLAND]);
+        // De mayor a menor (docs/AGUA.md, v0.11.0): el altiplano, el desierto, la estepa, el bosque y la costa.
+        CHECK(mean[REGION_FJORD] < mean[REGION_FOREST] && mean[REGION_FOREST] < mean[REGION_STEPPE]);
+        CHECK(mean[REGION_STEPPE] < mean[REGION_DESERT] && mean[REGION_DESERT] < mean[REGION_HIGHLAND]);
         // Los bordes: el mar en la costa, el cañon y el muro de estratos en el desierto, el muro
         // de hielo en el altiplano y el canal en el bosque.
         float x, z;
@@ -2758,26 +2760,33 @@ static void test_world_regions_borders_and_sites(void) {
         float cr = world_edge_radius(w, fa) - world_canal_offset(w, fa);
         float lv = world_water(w, cosf(fa) * cr, sinf(fa) * cr, 0.0f, &wk);
         CHECK(wk == WATER_CANAL && lv > world_height(w, cosf(fa) * cr, sinf(fa) * cr) + 1.0f);
-        // Los rios: meandros alrededor de la estepa; tributarios que nacen en el canal; trenzados
-        // en el altiplano; el agua siempre baja.
-        int kinds[RIVER_KINDS] = { 0 };
+        // Los rios (v0.11.0, docs/AGUA.md): el agua siempre baja, de la cabecera (el punto 0) a la boca;
+        // tributarios en el bosque, que terminan en el canal; trenzados en el altiplano y la costa; de
+        // meandros fuera del bosque; un tramo sigue en el proximo sin saltos.
+        int kinds[RIVER_KINDS] = { 0 }, canal = 0;
         for (int i = 0; i < w->river_count; i++) {
             const River *rv = &w->rivers[i];
             kinds[rv->kind]++;
-            CHECK(rv->n >= 8);
-            if (rv->kind == RIVER_TRIBUTARY) {
-                float th = atan2f(rv->z[0], rv->x[0]);
-                CHECK(fabsf(world_edge_distance(w, rv->x[0], rv->z[0]) - world_canal_offset(w, th)) < 3.0f);
-                for (int j = 1; j < rv->n; j++) CHECK(rv->level[j] >= rv->level[j - 1]);
+            CHECK(rv->n >= 2);
+            if (rv->end == RIVER_TO_CANAL) { // la boca, en el canal del bosque
+                float th = atan2f(rv->z[rv->n - 1], rv->x[rv->n - 1]);
+                CHECK(fabsf(world_edge_distance(w, rv->x[rv->n - 1], rv->z[rv->n - 1]) - world_canal_offset(w, th)) < 31.0f);
+                canal++;
             }
-            if (rv->kind == RIVER_BRAIDED || rv->kind == RIVER_CREEK)
-                for (int j = 1; j < rv->n; j++) CHECK(rv->level[j] <= rv->level[j - 1]);
-            if (rv->kind == RIVER_MEANDER) { // cerca del contorno de la estepa
-                float r0 = sqrtf(rv->x[rv->n / 2] * rv->x[rv->n / 2] + rv->z[rv->n / 2] * rv->z[rv->n / 2]);
-                CHECK(r0 > 0.2f * WORLD_RADIUS && r0 < 0.55f * WORLD_RADIUS);
+            for (int j = 1; j < rv->n; j++) CHECK(rv->level[j] <= rv->level[j - 1]);
+            if (rv->end == RIVER_TO_NEXT) { // el tramo siguiente empieza donde termina este, sin subir
+                const River *nx = &w->rivers[rv->into];
+                CHECK(nx->x[0] == rv->x[rv->n - 1] && nx->z[0] == rv->z[rv->n - 1] && nx->level[0] <= rv->level[rv->n - 1]);
             }
+            int forest = 0, cold = 0;
+            for (int j = 0; j < rv->n; j++) {
+                Region rg = world_region(w, rv->x[j], rv->z[j]);
+                forest += rg == REGION_FOREST, cold += rg == REGION_HIGHLAND || rg == REGION_FJORD;
+            }
+            if (rv->kind == RIVER_MEANDER) CHECK(forest * 2 <= rv->n);  // casi todo fuera del bosque
+            if (rv->kind == RIVER_BRAIDED) CHECK(cold * 2 >= rv->n);    // casi todo en el altiplano o la costa
         }
-        CHECK(kinds[RIVER_MEANDER] >= 4 && kinds[RIVER_TRIBUTARY] >= 3 && kinds[RIVER_BRAIDED] >= 3 && kinds[RIVER_CREEK] >= 8);
+        CHECK(kinds[RIVER_MEANDER] >= 4 && kinds[RIVER_TRIBUTARY] >= 2 && kinds[RIVER_BRAIDED] >= 3 && kinds[RIVER_CREEK] >= 8 && canal >= 2);
         // Agua cerca del campamento; el campamento, en seco.
         CHECK(sqrtf(w->lakes[0].x * w->lakes[0].x + w->lakes[0].z * w->lakes[0].z) < 260.0f);
         CHECK(world_water(w, 0.0f, 0.0f, 3.0f, NULL) < world_height(w, 0.0f, 0.0f));
@@ -4982,6 +4991,148 @@ static bool test_wet_circle(const World *w, float x, float z, float r, bool sea_
 // muralla, ni las aldeas con sus casas, ni las tribus, las estructuras o las guaridas caen en un lago
 // (ni en un rio, el canal o el mar). Los pueblos y las tribus, ademas, quedan por debajo de la nieve
 // de todo el año (el glaciar).
+// ---------------------------------------------------------------- el agua baja (v0.11.0, docs/AGUA.md)
+// La hidrologia (src/sim/hydro.h) sobre un terreno de prueba de 48 x 48 celdas de 10 m: una ladera que baja
+// al mar (al oeste, x < 10), dos valles que se juntan en uno (de z = +-80 a z = 0) y, en la loma entre ellos,
+// un pozo de 8 m (centro (300, 0), radio 60), un poco mas bajo hacia el sur. Le llueve igual a todo; al este
+// de x = 420, ademas, el deshielo.
+static float hydro_test_ground(float x, float z) {
+    float c = 80.0f * fminf(1.0f, fmaxf(0.0f, (x - 100.0f) / 100.0f)); // los dos valles se abren despues de x = 100
+    float g = 0.04f * x + 0.02f * fminf(fabsf(z - c), fabsf(z + c)) + 0.003f * z;
+    float d = sqrtf((x - 300.0f) * (x - 300.0f) + z * z);
+    if (d < 60.0f) g -= 8.0f * (1.0f - (d / 60.0f) * (d / 60.0f));
+    return g;
+}
+
+static HydroCell hydro_test_cell(const void *ud, float x, float z, float *h, float *rain, float *melt) {
+    (void)ud;
+    *h = hydro_test_ground(x, z), *rain = 1.0f, *melt = x > 420.0f ? 3.0f : 0.0f;
+    return x < 10.0f ? HCELL_SEA : HCELL_LAND;
+}
+
+static void test_hydro_basics(void) {
+    HydroGrid g = { 48, 10.0f, 0.0f, -240.0f };
+    CHECK(hydro_run(&g, hydro_test_cell, NULL) && hydro_cells() == 48 * 48);
+    HydroGrid big = { HYDRO_SIDE + 1, 10.0f, 0.0f, 0.0f };
+    CHECK(!hydro_run(&big, hydro_test_cell, NULL) && hydro_run(&g, hydro_test_cell, NULL)); // no cabe; la buena otra vez
+    // El agua siempre baja (o corre por lo lleno, que nunca sube) y llega a una salida; nada se pierde.
+    double rain = 0.0, melt = 0.0, out = 0.0, out_melt = 0.0;
+    int lost = 0, uphill = 0;
+    for (int c = 0; c < hydro_cells(); c++) {
+        if (hydro_kind(c) != HCELL_LAND) continue;
+        float x, z;
+        hydro_center(c, &x, &z);
+        rain += 1.0, melt += x > 420.0f ? 3.0 : 0.0;
+        int d = hydro_down(c), steps = 0;
+        if (d >= 0 && hydro_surface(d) > hydro_surface(c)) uphill++;
+        if (d >= 0 && hydro_kind(d) != HCELL_LAND) out += hydro_flow(c), out_melt += hydro_melt(c);
+        for (int k = c; k >= 0 && hydro_kind(k) == HCELL_LAND && steps <= hydro_cells(); k = hydro_down(k)) steps++;
+        lost += steps > hydro_cells();
+    }
+    CHECK(lost == 0 && uphill == 0);
+    CHECK(fabs(out - (rain + melt)) < 0.01 * rain && fabs(out_melt - melt) < 0.01 * (melt + 1.0));
+    // El pozo es un lago: su nivel es el de su desborde, lo mas bajo de su borde; de ahi sale el agua.
+    HydroBasin b[8];
+    int nb = hydro_basins(1.5f, 2, b, 8);
+    CHECK(nb == 1);
+    if (nb >= 1) {
+        float sx, sz, rim = 1e9f;
+        hydro_center(b[0].spill, &sx, &sz);
+        for (int c = 0; c < hydro_cells(); c++) { // lo mas bajo de la primera corona de celdas fuera del lago
+            float x, z;
+            hydro_center(c, &x, &z);
+            bool ring = hydro_basin_of(c) < 0 && sqrtf((x - b[0].x) * (x - b[0].x) + (z - b[0].z) * (z - b[0].z)) < 85.0f;
+            for (int k = 0; k < 8 && ring; k++) {
+                int nb2 = hydro_cell_at(x + (float)((k % 3) - 1) * 10.0f, z + (float)((k / 3) - 1) * 10.0f);
+                if (nb2 >= 0 && hydro_basin_of(nb2) == b[0].id) rim = fminf(rim, hydro_ground(c)), ring = false;
+            }
+        }
+        CHECK(fabsf(b[0].x - 300.0f) < 25.0f && fabsf(b[0].z) < 25.0f && b[0].depth > 3.0f && b[0].cells > 20);
+        CHECK(sqrtf((sx - 300.0f) * (sx - 300.0f) + sz * sz) > 40.0f && sz < 0.0f); // en el borde, del lado mas bajo (el sur)
+        CHECK(fabsf(b[0].level - hydro_test_ground(sx, sz)) < 0.01f && fabsf(b[0].level - rim) < 0.01f); // el nivel: el desborde, lo mas bajo del borde
+        CHECK(hydro_basin_of(hydro_cell_at(300.0f, 0.0f)) == b[0].id && hydro_basin_of(hydro_cell_at(100.0f, 0.0f)) < 0);
+        // Los rios: el mayor llega al mar; los valles se juntan (un afluente termina en otro rio); el lago
+        // desborda en un rio que nace en su desborde.
+        static HydroPath p[16];
+        int np = hydro_paths(60.0f, b, 1, p, 16), merged = 0, from_lake = 0, chained = 0;
+        CHECK(np >= 2 && p[0].end == HEND_OUTLET && hydro_kind(p[0].cells[p[0].n - 1]) == HCELL_SEA);
+        for (int i = 0; i < np; i++) {
+            merged += p[i].end == HEND_RIVER && p[i].into >= 0 && p[i].into < i;
+            if (p[i].from_lake == 0) {
+                from_lake++;
+                CHECK(p[i].cells[0] == b[0].spill);
+            }
+            for (int k = 0; k + 2 < p[i].n; k++) chained += hydro_down(p[i].cells[k]) != p[i].cells[k + 1];
+            if (i > 0) CHECK(p[i].flow <= p[0].flow);
+        }
+        CHECK(merged >= 1 && from_lake == 1 && chained == 0);
+    }
+}
+
+// El agua del mundo (docs/AGUA.md): cada lago tiene su nivel bajo su orilla y desborda por un rio que pasa
+// por su desborde; cada rio, siguiendo sus tramos, llega al mar, al canal o al cañon; el mas grande lleva el
+// deshielo del glaciar; las cascadas caen de verdad; hay lagos en la estepa, el bosque y el altiplano.
+static void test_water_flows_down(void) {
+    static const uint32_t SEEDS[] = { 42u, 1206u, 7u };
+    for (int s = 0; s < 3; s++) {
+        const World *w = world_for_seed(SEEDS[s]);
+        int lakes_in[REGION_COUNT] = { 0 };
+        for (int i = 0; i < w->lake_count; i++) {
+            const Lake *l = &w->lakes[i];
+            if (l->oasis) continue; // los oasis son manantiales: no desbordan
+            lakes_in[world_region(w, l->x, l->z)]++;
+            CHECK(l->level <= world_lake_shore(w, i) - 0.39f);
+            CHECK(l->outflow >= 0 && l->outflow < w->river_count);
+            if (l->outflow < 0 || l->outflow >= w->river_count) continue;
+            const River *o = &w->rivers[l->outflow];
+            float dx = o->x[0] - l->x, dz = o->z[0] - l->z, best = 1e18f;
+            CHECK(o->source == RIVER_FROM_LAKE && o->level[0] <= l->level + 0.01f && dx * dx + dz * dz < l->r * l->r);
+            for (int r = l->outflow, k = 0; r >= 0 && k < 3; k++, r = w->rivers[r].end == RIVER_TO_NEXT ? w->rivers[r].into : -1)
+                for (int j = 0; j < w->rivers[r].n; j++) {
+                    float ex = w->rivers[r].x[j] - l->spill_x, ez = w->rivers[r].z[j] - l->spill_z;
+                    best = fminf(best, ex * ex + ez * ez);
+                }
+            CHECK(best < 45.0f * 45.0f); // su rio pasa por el desborde
+        }
+        CHECK(lakes_in[REGION_STEPPE] > 0 && lakes_in[REGION_FOREST] > 0 && lakes_in[REGION_HIGHLAND] > 0 && lakes_in[REGION_DESERT] == 0);
+        // Cada tramo, siguiendo por donde termina, llega a una salida; las juntas, sin saltos.
+        int biggest = 0;
+        for (int i = 0; i < w->river_count; i++) {
+            const River *rv = &w->rivers[i];
+            if (rv->flow > w->rivers[biggest].flow) biggest = i;
+            if (rv->end == RIVER_TO_RIVER && rv->into >= 0) { // termina en un punto de su rio
+                const River *t = &w->rivers[rv->into];
+                bool on = false;
+                for (int j = 0; j < t->n; j++) on |= t->x[j] == rv->x[rv->n - 1] && t->z[j] == rv->z[rv->n - 1];
+                CHECK(on);
+            }
+            if (rv->end == RIVER_TO_LAKE) {
+                const Lake *l = &w->lakes[rv->into];
+                float dx = rv->x[rv->n - 1] - l->x, dz = rv->z[rv->n - 1] - l->z;
+                CHECK(dx * dx + dz * dz < l->r * l->r); // termina adentro del lago
+            }
+            int r = i, steps = 0;
+            while (r >= 0 && steps++ < 4 * RIVERS_MAX) {
+                RiverEnd e = w->rivers[r].end;
+                if (e == RIVER_TO_SEA || e == RIVER_TO_CANAL || e == RIVER_TO_SINK || e == RIVER_TO_EDGE) break;
+                r = e == RIVER_TO_LAKE ? w->lakes[w->rivers[r].into].outflow : w->rivers[r].into;
+            }
+            CHECK(r >= 0 && steps < 4 * RIVERS_MAX);
+        }
+        // El rio mas grande: mucho deshielo del glaciar, y llega al mar o al canal.
+        const River *big = &w->rivers[biggest];
+        int r = biggest;
+        while (w->rivers[r].end == RIVER_TO_NEXT || w->rivers[r].end == RIVER_TO_RIVER) r = w->rivers[r].into;
+        CHECK(big->melt > 0.3f && (w->rivers[r].end == RIVER_TO_SEA || w->rivers[r].end == RIVER_TO_CANAL));
+        // Las cascadas: el agua cae de verdad, en su rio.
+        CHECK(w->fall_count > 0);
+        for (int f = 0; f < w->fall_count; f++) {
+            const Waterfall *fa = &w->falls[f];
+            CHECK(fa->top - fa->bottom >= 3.0f && fa->river >= 0 && fa->width > 0.0f);
+        }
+    }
+}
+
 static void test_world_dry(void) {
     // La linea de nieve del verano de world.h es la de src/sim/climate.c (la mas alta del año).
     float top = -1e9f;
@@ -5149,6 +5300,8 @@ int main(void) {
     RUN(test_flora);
     RUN(test_buildkit);
     RUN(test_world_dry);
+    RUN(test_hydro_basics);
+    RUN(test_water_flows_down);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

@@ -35,7 +35,8 @@ shot 14_jinetes 40 --enemigos jinetes
 shot 15_botin 30 --botin
 shot 16_galeria 40 --galeria
 # El mundo (docs/MUNDO.md): a pie en cada sitio (verano, mediodia) y la vista orbital.
-for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida tribu rival kurgan caravasar ovoo ciudad; do
+for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida tribu rival kurgan caravasar ovoo ciudad \
+         lago desborde cascada; do
     shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.12
 done
 # El kit de edificios (docs/ARQUITECTURA_EDAD_DEL_HIERRO.md): las variantes de cada tipo en cada region
