@@ -103,7 +103,7 @@ void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, M
         ga->seen_sites |= 1ull << i;
         memmap_toggle_marker(mem, st->x, st->z, MARKER_INTEREST, 4.0f);
         if (st->kind == SITE_WELL || st->kind == SITE_CARAVANSERAI)
-            snprintf(log, len, T("Encuentras %s: agua limpia (Tab: llenar el odre · N: beber). Queda en el mapa."), T(site_name(st->kind)));
+            snprintf(log, len, T("Encuentras %s: agua limpia (L: llenar el odre · N: beber). Queda en el mapa."), T(site_name(st->kind)));
         else
             snprintf(log, len, site_is_ruin(st->kind) ? T("Encuentras %s, de otros tiempos: queda en el mapa.") : T("Encuentras %s: queda en el mapa."),
                      T(site_name(st->kind)));

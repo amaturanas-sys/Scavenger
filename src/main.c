@@ -18,6 +18,8 @@
 // --trampa arranca en un peligro con su minijuego (prueba).
 // --enemigos bandidos|culto|lobos|arqueros los pone delante; --heridas hiere al jugador y a la tribu;
 // --apuntar empuña el arco tenso (pruebas).
+// --manos escudo|espada|nada: la espada enfundada con el escudo en el brazo, el escudo a la espalda
+// con la espada en la mano, o todo guardado (como pulsar 1, 2 o enfundar todo; prueba de los botones).
 // --sin-teclado simula un dispositivo Android sin teclado (prueba del aviso).
 // --sin-shader dibuja el agua sin su shader, como si no compilara (prueba del respaldo).
 #include <math.h>
@@ -703,6 +705,7 @@ int main(int argc, char **argv) {
     bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
     bool start_crouch = false, start_target = false;
     int start_back = 0; // prueba: 1 a la espalda del primer enemigo, 2 ademas con el de rehen
+    const char *start_hands = NULL; // prueba: "escudo" (la espada enfundada), "espada" (el escudo a la espalda) o "nada"
     int start_escort = -1; // prueba: con la escolta fuera y esa orden (SquadOrder)
     bool start_raid = false, start_guards = false; // prueba: un asalto al campamento; dos soldados de guardia
     MenuScreen start_menu_screen = MENU_TITLE;
@@ -733,7 +736,7 @@ int main(int argc, char **argv) {
     bool start_tasks = false; // prueba: la tribu sale a cazar, explorar, pastorear y hacer guardia
     const char *start_place = NULL; // prueba: ubicar una obra en el campamento inicial (la vista aerea)
     int start_talk = 0;      // prueba: 1 hablar con el druida, 2 con el orfebre
-    int start_equip_tab = -1; // prueba: pestaña del equipo (1 ropa, 2 joyas, 3 tatuajes)   // prueba: menu Tab abierto en esa pestaña
+    int start_equip_tab = -1; // prueba: pestaña del equipo (1 ropa, 2 joyas, 3 tatuajes)   // prueba: menu de acciones (L) abierto en esa pestaña
     bool start_loot = false; // prueba: bolsas de botin delante
     bool start_inv = false, start_equip = false; // pruebas: guardar al final en ese hueco / cargar al empezar
     float start_x = 0.0f, start_z = 0.0f;
@@ -757,6 +760,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--objetivo")) start_target = true;
         else if (!strcmp(argv[i], "--espalda")) start_back = 1;
         else if (!strcmp(argv[i], "--rehen")) start_back = 2;
+        else if (!strcmp(argv[i], "--manos") && i + 1 < argc) start_hands = argv[++i];
         else if (!strcmp(argv[i], "--asalto")) start_raid = true;
         else if (!strcmp(argv[i], "--guardias")) start_guards = true;
         else if (!strcmp(argv[i], "--escolta")) { // [atacar|defender|seguir]
@@ -1204,7 +1208,7 @@ int main(int argc, char **argv) {
             tg_try_talk(&g_actions, &troop, &player, log, sizeof(log));
             start_talk = 0;
         }
-        if (start_tab >= 0 && frame == 3) { // prueba: menu Tab (0 acciones, 1 obras, 2 fabricar, 3 reparar)
+        if (start_tab >= 0 && frame == 3) { // prueba: menu de acciones, L (0 acciones, 1 obras, 2 fabricar, 3 reparar)
             g_actions.menu_open = true;
             g_actions.menu_tab = start_tab;
             start_tab = -1;
@@ -1359,13 +1363,13 @@ int main(int argc, char **argv) {
                 snprintf(g_actions.hands.right.id, sizeof(g_actions.hands.right.id), "arma.distancia.arco_compuesto");
                 g_actions.hands.right.kind = INV_HANDS_TWO;
                 g_actions.hands.left.id[0] = '\0';
-                g_actions.hands.sheathed = false;
+                g_actions.hands.sheathed = g_actions.hands.right_away = g_actions.hands.left_away = false;
                 g_combat.aiming = true;
                 g_combat.draw = 0.8f;
                 g_combat.aim_pitch = 0.12f;
                 player.yaw = rig.yaw;
             }
-            if (start_target && frame == 30 && !gallery_mode) // prueba: como pulsar Tab con enemigos cerca
+            if (start_target && frame == 30 && !gallery_mode) // prueba: como pulsar O con enemigos cerca
                 cb_cycle_target(&g_combat, &player, 1, log, sizeof(log));
             if (start_guards && frame == 3 && !gallery_mode) // prueba: dos integrantes sin oficio clave pasan a soldados
                 for (int i = 0, k = 0; i < troop.count && k < 2; i++)
@@ -1378,6 +1382,11 @@ int main(int argc, char **argv) {
             }
             if (start_back && frame == 30 && !gallery_mode) // prueba: la espalda ganada (y el rehen)
                 cb_test_back(&g_combat, &player, start_back == 2, log, sizeof(log));
+            if (start_hands && frame == 30 && !gallery_mode) { // prueba: como pulsar 1 (la espada) o 2 (el escudo)
+                if (!strcmp(start_hands, "escudo")) hands_toggle_hand(&g_actions.hands, HAND_RIGHT);
+                else if (!strcmp(start_hands, "espada")) hands_toggle_hand(&g_actions.hands, HAND_LEFT);
+                else if (!strcmp(start_hands, "nada")) hands_toggle_sheathe(&g_actions.hands);
+            }
             if (start_crouch && !gallery_mode) { // prueba: agachado (X), de perfil para ver la postura
                 player.crouching = true;
                 if (frame == 3) player.yaw = rig.yaw + PI / 2;

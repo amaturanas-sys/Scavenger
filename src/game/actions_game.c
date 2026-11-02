@@ -102,6 +102,13 @@ static const char *preset_weapon(const GameActions *ga, const char *id) {
     return id;
 }
 
+const char *ga_best_weapon(const GameActions *ga, const char *id) { return preset_weapon(ga, id); }
+
+// La antorcha solo arde en la mano: guardada (o fuera de la mano), se apaga.
+static void torch_check(GameActions *ga) {
+    if (ga->torch_lit && !(hands_out(&ga->hands, HAND_LEFT) && strstr(ga->hands.left.id, "antorcha"))) ga->torch_lit = false;
+}
+
 static void apply_preset(GameActions *ga) {
     hands_clear(&ga->hands, HAND_RIGHT);
     hands_clear(&ga->hands, HAND_LEFT);
@@ -120,7 +127,7 @@ static int g_quick_action = -1;        // accion pedida
 static bool g_quick_menu;              // abrir el menu de acciones
 static bool g_quick_swap;              // pasar el arma a la otra mano (Mayus + numero)
 static int g_quick_craft = -1;         // receta pedida (la prueba --forja)
-static int g_target_req;               // Tab en combate: 1 el enemigo siguiente, -1 el anterior
+static int g_target_req;               // O: 1 el enemigo siguiente, -1 el anterior (Mayus+O)
 static bool g_combat_near;             // hay enemigos a tiro de objetivo (lo pone src/game/combat_game.c)
 
 static bool preset_available(const GameActions *ga, int k) {
@@ -136,7 +143,10 @@ GaGrip ga_grip(const GameActions *ga, int k) {
     if (k < 0 || k >= PRESET_COUNT) return g;
     g.right = preset_weapon(ga, PRESETS[k][0]), g.left = PRESETS[k][1];
     g.available = preset_available(ga, k);
-    g.active = ga->preset == k && !ga->hands.sheathed && !ga->torch_lit;
+    // Activa: las manos tienen de verdad sus armas (empuñar otra cosa desde la barra, la espada sola de la
+    // casilla 1, no la deja activa) y algo de ella esta fuera.
+    bool same = !strcmp(ga->hands.right.id, g.right ? g.right : "") && !strcmp(ga->hands.left.id, g.left ? g.left : "");
+    g.active = ga->preset == k && same && (hands_out(&ga->hands, HAND_RIGHT) || hands_out(&ga->hands, HAND_LEFT)) && !ga->torch_lit;
     return g;
 }
 
@@ -563,7 +573,7 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         break;
     case ACTION_SHEATHE:
         hands_toggle_sheathe(&ga->hands);
-        if (ga->hands.sheathed) ga->torch_lit = false;
+        torch_check(ga);
         snprintf(log, len, "%s", ga->hands.sheathed ? T("Enfundaste las armas: manos libres.") : T("Desenfundaste."));
         break;
     case ACTION_LIGHT_TORCH:
@@ -616,7 +626,7 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         Vector3 at;
         if (t && fg_ice_hole_spot(ga, t, p, &at)) {
             fg_ice_hole_open(ga, at);
-            snprintf(log, len, "%s", T("Abriste un agujero en el hielo. Pesca en él (Tab → Acciones), y no lo pises."));
+            snprintf(log, len, "%s", T("Abriste un agujero en el hielo. Pesca en él (L → Acciones), y no lo pises."));
         }
         break;
     }
@@ -669,7 +679,7 @@ static bool big_enough(const GameActions *ga, const BuildDef *d, int k, char *lo
     return false;
 }
 
-// Tab -> Obras: si alcanza el acopio, la camara sube para ubicarla (src/game/place_game.c); se paga al colocarla.
+// L -> Obras: si alcanza el acopio, la camara sube para ubicarla (src/game/place_game.c); se paga al colocarla.
 static void start_build(GameActions *ga, BuildId b, const Terrain *t, const Player *p, char *log, size_t len) {
     (void)t;
     const BuildDef *d = build_def(b);
@@ -839,7 +849,7 @@ static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const T
     }
 }
 
-// ---------------------------------------------------------------- menu Tab: disposicion
+// ---------------------------------------------------------------- menu de acciones (L): disposicion
 // Lo comparten el dibujo y el raton. Pantalla virtual de 640x360.
 #define TAB_W 520
 #define TAB_H 312
@@ -929,10 +939,10 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     ga->swap_anim = fmaxf(0.0f, ga->swap_anim - dt);
     bool other_menu = ga->inv_open || ga->equip_open || ga->dlg.open; // inventario, equipo o un dialogo
     if (g_order_req >= 0) ga_escort_order(ga, g_order_req, log, log_len), g_order_req = -1;
-    // Tab: en combate elige el objetivo (con Mayus, el anterior); si no, el menu de acciones.
-    bool tab = input_action_pressed(KA_MENU);
-    if (tab && g_combat_near && !ga->menu_open && !other_menu) g_target_req = input_mods() & KM_SHIFT ? -1 : 1;
-    else if ((tab || g_quick_menu) && !other_menu) ga->menu_open = !ga->menu_open;
+    // O: el objetivo siguiente (con Mayus, el anterior); L: el menu de acciones (v0.12.0: Tab es el
+    // inventario, docs/PLAN_TACTICO_Y_CUEVAS.md).
+    if (input_action_pressed(KA_TARGET) && g_combat_near && !ga->menu_open && !other_menu) g_target_req = input_mods() & KM_SHIFT ? -1 : 1;
+    if ((input_action_pressed(KA_MENU) || g_quick_menu) && !other_menu) ga->menu_open = !ga->menu_open;
     g_quick_menu = false;
     // Lo que pide la barra rapida del HUD (teclas 1..9 o toques).
     if (ga->doing < 0 && !ga->climbing && !other_menu && !ga->menu_open) {
@@ -948,15 +958,24 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             }
         }
         if (g_quick_wield[0]) { // un arma o un escudo suelto: a su mano
-            const InvItem *it = inventory_find(ga->inv, g_quick_wield);
-            if (!it || it->hands == INV_HANDS_NONE) snprintf(log, log_len, T("%s no se empuña."), item_name(ga, g_quick_wield));
-            else {
-                if (ga->hands.sheathed) hands_toggle_sheathe(&ga->hands);
-                if (it->hands != INV_HANDS_SHIELD) ga->torch_lit = false;
+            const char *id = preset_weapon(ga, g_quick_wield); // el mejor sable o el mejor arco que tengas
+            const InvItem *it = inventory_find(ga->inv, id);
+            int slot = hands_slot_of(&ga->hands, id);
+            if (!it || it->hands == INV_HANDS_NONE) snprintf(log, log_len, T("%s no se empuña."), item_name(ga, id));
+            else if (slot >= 0) { // ya esta en su mano: lo guarda o lo saca, y lo de la otra mano sigue igual
+                hands_toggle_hand(&ga->hands, (HandSlot)slot);
+                bool out = hands_out(&ga->hands, (HandSlot)slot), shield = it->hands == INV_HANDS_SHIELD;
+                snprintf(log, log_len,
+                         shield ? (out ? T("Te pones %s en el brazo.") : T("Te cuelgas %s a la espalda."))
+                                : (out ? T("Desenfundas: %s.") : T("Enfundas: %s.")),
+                         item_name(ga, id));
+                ga->swap_anim = 0.5f;
+            } else {
                 hands_equip(&ga->hands, it, it->hands == INV_HANDS_SHIELD ? HAND_LEFT : HAND_RIGHT);
                 ga->swap_anim = 0.5f;
-                snprintf(log, log_len, T("Empuñas: %s."), item_name(ga, g_quick_wield));
+                snprintf(log, log_len, T("Empuñas: %s."), item_name(ga, id));
             }
+            torch_check(ga);
         }
         if (g_quick_craft >= 0 && g_quick_craft < CRAFT_COUNT) start_craft(ga, (CraftId)g_quick_craft, props, p, troop, log, log_len);
         if (g_quick_action >= 0) start_action(ga, (ActionId)g_quick_action, props, p, log, log_len);
@@ -1259,7 +1278,7 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
         int before = stock_count(st, "utileria.material.arco_seco");
         if (stock_dry_day(st) <= 0) continue;
         int dry = stock_count(st, "utileria.material.arco_seco") - before;
-        if (dry > 0) cg_news(ga, k, TextFormat(T("Ya se secó el arco encolado (%d): termínalo con cola de hueso y tendón (Tab, Fabricar)."), dry));
+        if (dry > 0) cg_news(ga, k, TextFormat(T("Ya se secó el arco encolado (%d): termínalo con cola de hueso y tendón (L, Fabricar)."), dry));
     }
     // Efectos de lo construido en el campamento.
     const char *ids[PROPS_MAX + 8];
@@ -1394,13 +1413,14 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
     const Hands *h = &ga->hands;
     const InvItem *r = h->right.id[0] ? inventory_find(ga->inv, h->right.id) : NULL;
     const InvItem *l = h->left.id[0] ? inventory_find(ga->inv, h->left.id) : NULL;
-    if (h->sheathed) {
-        draw_held(r, (Vector3){ -0.32f, 0.35f, -0.1f }, false);
-        draw_held(l, (Vector3){ 0.0f, 0.6f, -0.3f }, l && l->hands == INV_HANDS_SHIELD);
-    } else if (h->right.kind == INV_HANDS_TWO) {
-        draw_held(r, (Vector3){ 0.0f, 0.5f, 0.45f }, false);
-    } else {
-        draw_held(r, (Vector3){ -0.45f, 0.75f, 0.2f }, false);
+    // Cada mano por separado: lo de fuera, en la mano; lo guardado, al cinto (el arma) o a la
+    // espalda (el escudo).
+    bool r_out = hands_out(h, HAND_RIGHT), l_out = hands_out(h, HAND_LEFT);
+    if (!r_out) draw_held(r, (Vector3){ -0.32f, 0.35f, -0.1f }, false);
+    else if (h->right.kind == INV_HANDS_TWO) draw_held(r, (Vector3){ 0.0f, 0.5f, 0.45f }, false);
+    else draw_held(r, (Vector3){ -0.45f, 0.75f, 0.2f }, false);
+    if (!l_out) draw_held(l, (Vector3){ 0.0f, 0.6f, -0.3f }, l && l->hands == INV_HANDS_SHIELD);
+    else {
         draw_held(l, (Vector3){ 0.5f, 0.7f, 0.3f }, l && l->hands == INV_HANDS_SHIELD);
         if (ga->torch_lit && l) {
             float flick = 0.8f + 0.2f * sinf(time * 17.0f);
@@ -1437,7 +1457,7 @@ int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, con
             break;
         }
     }
-    if (ga->torch_lit && !ga->hands.sheathed && n < max) {
+    if (ga->torch_lit && hands_out(&ga->hands, HAND_LEFT) && n < max) {
         pos[n] = (Vector3){ p->pos.x, p->pos.y + p->draw_lift + 1.6f, p->pos.z };
         radius[n++] = 6.0f;
     }
@@ -1454,11 +1474,12 @@ int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, con
 bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) {
     const InvItem *body = inventory_find(ga->inv, "personaje.narrativo.protagonista");
     if (!body || !props_has_model(props, body)) return false;
+    Hands drawn = hands_drawn(&ga->hands); // la animacion, segun lo que esta fuera (el escudo solo, la espada sola)
     HumanoidState hs = {
         .moving = p->moving, .running = p->stance == STANCE_RUN, .sneaking = p->sneaking, .crouching = p->crouching, .grounded = p->grounded,
         .hidden = ga->hidden, .climbing = ga->climbing, .climb_top = ga->climbing && ga->climb_t > 1.6f,
-        .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = ga->hands.sheathed,
-        .grip = hands_grip(&ga->hands), .doing = ga->doing, .building = -1,
+        .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = drawn.sheathed,
+        .grip = hands_grip(&drawn), .doing = ga->doing, .building = -1,
         .down = ga->pl_down, .hit = ga->pl_hit, .attacking = ga->pl_attacking, .spear = ga->pl_spear,
         .blocking = ga->pl_blocking, .limping = ga->pl_limping, .ranged = ga->pl_ranged, .move = ga->pl_move, .holding = ga->pl_holding,
         .knocked = ga->pl_knocked, .swapping = ga->swap_anim > 0.0f,
@@ -1472,7 +1493,11 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) 
 const char *ga_hands_text(const GameActions *ga) {
     static char buf[128];
     const Hands *h = &ga->hands;
-    snprintf(buf, sizeof(buf), T("Empuñe: %s%s%s%s%s%s"), grip_name(hands_grip(h)), h->sheathed ? T(" (enfundado)") : "",
+    Hands d = hands_drawn(h);
+    const char *away = h->sheathed ? T(" (enfundado)") : h->right_away && h->right.id[0] ? T(" (arma enfundada)")
+                       : h->left_away && h->left.id[0] ? (h->left.kind == INV_HANDS_SHIELD ? T(" (escudo a la espalda)") : T(" (izquierda guardada)"))
+                                                       : "";
+    snprintf(buf, sizeof(buf), T("Empuñe: %s%s%s%s%s%s"), grip_name(hands_grip(h->sheathed ? h : &d)), away,
              ga->torch_lit ? T(", antorcha") : "", h->carried[0] ? T(", lleva algo") : "",
              ga->mounted >= 0 ? T(" · montado") : "", ga->hidden ? T(" · OCULTO") : "");
     return buf;

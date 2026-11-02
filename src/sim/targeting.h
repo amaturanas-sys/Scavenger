@@ -1,4 +1,4 @@
-// El selector de objetivo (C puro): con que enemigo pelea el jugador. Tab pasa al siguiente,
+// El selector de objetivo (C puro): con que enemigo pelea el jugador. O pasa al siguiente,
 // en orden alrededor del jugador empezando por el que tiene delante; se pierde a TARGET_RANGE
 // metros o si muere. Sin objetivo, los golpes van al mas cercano delante (como siempre).
 #ifndef ESTEPA_TARGETING_H

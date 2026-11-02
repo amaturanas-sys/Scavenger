@@ -88,7 +88,7 @@ static void drink(GameActions *ga, const Props *props, Player *p, const Hazards 
         snprintf(log, len, "%s", T("Bebes del agua que corre por el suelo. Puede traer espíritus malditos..."));
         return;
     }
-    snprintf(log, len, "%s", T("No tienes nada que beber: llena el odre en la orilla (Tab) o bebe del río (N, mirando al agua)."));
+    snprintf(log, len, "%s", T("No tienes nada que beber: llena el odre en la orilla (L) o bebe del río (N, mirando al agua)."));
 }
 
 static void herbs(GameActions *ga, const Props *props, const Player *p, char *log, size_t len) {

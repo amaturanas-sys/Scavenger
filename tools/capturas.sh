@@ -34,6 +34,14 @@ shot 13_equipo 30 --equipo --heridas
 shot 14_jinetes 40 --enemigos jinetes
 shot 15_botin 30 --botin
 shot 16_galeria 40 --galeria
+# Las manos (docs/PLAN_TACTICO_Y_CUEVAS.md, A1): los cuatro botones con el escudo solo (la espada al cinto),
+# la espada sola (el escudo a la espalda), todo guardado y con un rehen.
+shot manos_escudo 40 --enemigos bandidos --manos escudo
+shot manos_espada 40 --enemigos bandidos --manos espada
+shot manos_nada 40 --enemigos bandidos --manos nada
+shot manos_rehen 60 --enemigos bandidos --rehen
+montage "$OUT"/manos_{escudo,espada,nada,rehen}.png -tile 2x2 -geometry +0+0 -depth 8 "$OUT/las_manos.png" 2>/dev/null &&
+    echo "  las_manos.png"
 # El mundo (docs/MUNDO.md): a pie en cada sitio (verano, mediodia) y la vista orbital.
 for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida tribu rival kurgan caravasar ovoo ciudad \
          lago desborde cascada lengua; do

@@ -1,5 +1,6 @@
 // Mapa de teclas del juego (C puro): cada accion con su tecla y sus modificadores, en un solo
-// lugar (el mapa de la fase 1 del plan grande, docs/PLAN_GRAN_ACTUALIZACION.md). El juego
+// lugar (el mapa de la fase 1 del plan grande, docs/PLAN_GRAN_ACTUALIZACION.md, rehecho con las
+// hojas del sistema tactico en la v0.12.0, docs/PLAN_TACTICO_Y_CUEVAS.md). El juego
 // pregunta por acciones (input_action_pressed en src/game/input.c), no por teclas, y los tests
 // comprueban que cada accion responde a su tecla y no a la vieja.
 //
@@ -18,12 +19,13 @@
 enum { KM_SHIFT = 1, KM_CTRL = 2, KM_ALT = 4 };
 
 typedef enum {
-    // Los cuatro botones de combate.
-    KA_ATTACK, // H (y clic izquierdo): golpe, combo, mantener: pesado; a distancia, tensar y disparar
+    // Los cuatro botones de combate (lo que hacen cambia con lo que se tiene fuera: arma, escudo).
+    KA_ATTACK, // H (y clic izquierdo): golpe, combo, mantener: pesado; a distancia, tensar y disparar;
+               // con la espalda ganada, por la espalda; con un rehen, ejecutarlo; junto a un abatido, rematar
     KA_BLOCK,  // J (y clic derecho sin arrastrar), mantener: cubrirse con el escudo o el arma
-    KA_PARRY,  // K: parry o contra en la ventana justa
-    KA_CHARGE, // L: carga con escudo, o patada
-    KA_TARGET, // Tab en combate: el enemigo siguiente (Mayus+Tab: el anterior)
+    KA_PARRY,  // I: parry o contra en la ventana justa; con un rehen, empujarlo
+    KA_CHARGE, // K: carga con escudo, o patada
+    KA_TARGET, // O: el enemigo siguiente (Mayus+O: el anterior)
     // Moverse.
     KA_SNEAK,  // C: sigilo
     KA_CROUCH, // X: agacharse
@@ -42,8 +44,8 @@ typedef enum {
     KA_TARGET_LEFT, // Ctrl+Q: objetivo anterior
     KA_TARGET_RIGHT, // Ctrl+E: objetivo siguiente
     KA_MARK,        // M: marcar el mapa (Mayus+M: peligro)
-    KA_MENU,        // Tab fuera de combate: acciones, obras, fabricar, reparar
-    KA_INVENTORY,   // I
+    KA_MENU,        // L: acciones, obras, fabricar, reparar
+    KA_INVENTORY,   // Tab: el inventario (y, con el cursor y un numero, la barra rapida)
     KA_EQUIPMENT,   // P
     KA_CARD,        // U: la ficha del gran guerrero
     KA_COUNT

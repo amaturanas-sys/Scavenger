@@ -472,7 +472,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.consumible.unguento` | Ungüento de hierbas y miel | 0.1x0.1x0.1 | 30 | pendiente | `uso:recolectable` `uso:consumible` | Cura más que las hierbas: corta el veneno y cierra las heridas. |
 | `utileria.consumible.especias` | Especias | 0.15x0.1x0.15 | 20 | pendiente | `uso:recolectable` `uso:consumible` | De las caravanas del desierto: valen su peso en plata. |
 | `utileria.herramienta.pala` | Pala | 0.25x1.2x0.05 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Para cavar trincheras. |
-| `utileria.herramienta.picahielo` | Picahielo | 0.12x1.5x0.06 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Un asta con una punta de hierro en cincel: abre un agujero en el hielo para pescar (Tab → Acciones). |
+| `utileria.herramienta.picahielo` | Picahielo | 0.12x1.5x0.06 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Un asta con una punta de hierro en cincel: abre un agujero en el hielo para pescar (L → Acciones). |
 | `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
 | `utileria.herramienta.escala_asedio` | Escala de asedio | 0.5x2.9x0.15 | 120 | pendiente | `uso:herramienta` `material:madera` | En dos tramos que se atan al pie de la muralla (12 kg). F junto a la muralla de una ciudad en guerra: se apoya y se sube por ella, de ida y de vuelta. |
 | `utileria.herramienta.forja_movil` | Forja móvil (fuelle y hogar) | 0.6x0.5x0.6 | 120 | pendiente | `uso:herramienta` `material:hierro` | Fuelle de cuero y hogar de carbón (10 kg): en la mochila, las alforjas, la carreta o el acopio, repara y hace puntas, cuchillos y sables en cualquier sitio. |
@@ -530,7 +530,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.piel.reno` | Piel de reno | 0.8x0.15x1.2 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Del despiece: abrigos y botas. |
 | `utileria.piel.cabra` | Lana de cabra | 0.5x0.2x0.5 | 40 | pendiente | `uso:recolectable` `uso:material` `material:lana` | De las cabras (despiece y esquila de los pastores): fieltro, lana. |
 | `utileria.material.seda` | Seda | 0.4x0.1x0.3 | 30 | pendiente | `uso:recolectable` `uso:material` `material:seda` | De las caravanas del imperio (botín). |
-| `utileria.consumible.agua_hervida` | Agua hervida | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | Hervir el agua (Tab, junto a un fuego) echa a los espíritus malditos. |
+| `utileria.consumible.agua_hervida` | Agua hervida | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | Hervir el agua (L, junto a un fuego) echa a los espíritus malditos. |
 | `utileria.consumible.agua_vino` | Agua con vino | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | El vino purifica el agua: segura y apenas achispa. |
 | `utileria.consumible.cerveza` | Cerveza | 0.2x0.25x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | Segura de beber; en exceso, torpe y fatigado. |
 | `utileria.consumible.vino` | Vino | 0.12x0.3x0.12 | 40 | pendiente | `uso:recolectable` `uso:consumible` | De las caravanas del imperio. Seguro; emborracha pronto. |

@@ -332,9 +332,10 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.11.4. La fase 5 y última del agua: los bordes. El muro de roca tras el canal del bosque, el mar
-  abierto con el tiburón, y las secuelas de la mordida, que solo curan el curandero o el druida
-  ([AGUA.md](AGUA.md)).
+- **Versión:** 0.12.0. La primera fase del sistema táctico de las hojas del usuario: las manos. Las teclas
+  `H I J K` (ataque, parry, bloqueo, carga o patada), `Tab` inventario, `L` menú y `O` objetivo; la espada y
+  el escudo se guardan por separado (de serie, `1` y `2`), y los cuatro botones cambian con lo que está fuera
+  ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)).
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
@@ -342,13 +343,18 @@ traba.
     v0.10.2);
   - las casas y los campos por persona (v0.10.4 y v0.10.7: 110 y 45 almas por casa, 180 y 40 por campo);
   - la verificación de la v0.10.9: el reparto Codespace → Claude, las reglas comunes y las guardas;
-  - el agua, las cinco fases (v0.11.0 a v0.11.4).
+  - el agua, las cinco fases (v0.11.0 a v0.11.4);
+  - el sistema táctico: A1, las manos (v0.12.0).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
   - el campamento nodal: descartado por el usuario (duplicaba el campamento);
   - los cauces por estación: los rehizo la fase 2 del agua (v0.11.1).
 - **Lo que sigue:**
+  - **El sistema táctico y las cuevas** ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)): A2 la barra
+    rápida (10 casillas, `Tab` y un número, el odre, el lazo, el gancho y la montura desde la barra), A3 el
+    objetivo (los clics con arma a distancia, mirar al objetivo, la línea de visión y los 5 / 7 / 3 s), A4 a
+    cubierto (`C`), y las cuevas B1 a B3.
   - **Lo que espera material del usuario** (PLAN_HERRAMIENTAS_IA.md): las imágenes de la D.2 y los
     cuerpos riggeados y los videos de la C.1.
 

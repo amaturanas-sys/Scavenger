@@ -108,10 +108,14 @@ typedef struct {
 
 static void default_slots(void) {
     memset(g_slots, 0, sizeof(g_slots));
-    g_slots[0] = (QbSlot){ QB_GRIP, 0, "" }; // sable y escudo
-    g_slots[1] = (QbSlot){ QB_GRIP, 3, "" }; // arco
-    g_slots[2] = (QbSlot){ QB_GRIP, 6, "" }; // lanza y escudo
-    g_slots[3] = (QbSlot){ QB_ITEM, 0, "utileria.objeto.antorcha" };
+    // Como en las hojas (docs/PLAN_TACTICO_Y_CUEVAS.md): 1 la espada (enfundar y desenfundar), 2 el
+    // escudo (al brazo o a la espalda), 3 el odre (beber).
+    g_slots[0] = (QbSlot){ QB_ITEM, 0, "arma.corta.sable" }; // el mejor sable que tengas
+    g_slots[1] = (QbSlot){ QB_ITEM, 0, "escudo.mano.mimbre" };
+    g_slots[2] = (QbSlot){ QB_ITEM, 0, "utileria.objeto.odre" };
+    g_slots[3] = (QbSlot){ QB_GRIP, 3, "" }; // arco
+    g_slots[4] = (QbSlot){ QB_GRIP, 6, "" }; // lanza y escudo
+    g_slots[5] = (QbSlot){ QB_ITEM, 0, "utileria.objeto.antorcha" };
     g_slots_set = true;
 }
 
@@ -166,11 +170,13 @@ static QbOption describe(const GameActions *ga, const Props *props, const Player
         o.ok = g.available;
         break;
     }
-    case QB_ITEM:
-        o.icon = icon_for_item(s->id);
-        o.title = item_label(ga, s->id);
+    case QB_ITEM: {
+        const char *id = ga_best_weapon(ga, s->id); // la espada de la casilla 1: la mejor que tengas
+        o.icon = icon_for_item(id);
+        o.title = item_label(ga, id);
         o.ok = has_carried(ga, props, p, s->id);
         break;
+    }
     case QB_SKILL:
         o.icon = ICON_NIVEL;
         o.title = T(ability_def((AbilityId)s->grip)->name);
@@ -190,7 +196,7 @@ static bool slot_active(const GameActions *ga, const QbSlot *s) {
     if (s->kind == QB_GRIP) return ga_grip(ga, s->grip).active;
     if (s->kind == QB_ITEM) {
         if (item_use(ga, s->id) == USE_TORCH) return ga->torch_lit;
-        return !ga->hands.sheathed && (!strcmp(ga->hands.right.id, s->id) || !strcmp(ga->hands.left.id, s->id));
+        return hands_holding(&ga->hands, ga_best_weapon(ga, s->id)); // fuera, en su mano
     }
     if (s->kind == QB_SKILL) return ga->ab_timer[s->grip] > 0.0f;
     return false;
@@ -267,10 +273,7 @@ static void use_slot(GameActions *ga, const Props *props, const Player *p, int k
         case USE_TORCH: ga_quick_request_action(ACTION_LIGHT_TORCH); break;
         case USE_DRINK: wg_request_drink(); break;
         case USE_BANDAGE: cb_request_bandage(); break;
-        case USE_WIELD:
-            if (slot_active(ga, s)) ga_quick_request_action(ACTION_SHEATHE); // otra vez: enfunda
-            else ga_quick_request_wield(s->id);
-            break;
+        case USE_WIELD: ga_quick_request_wield(s->id); break; // en su mano: la guarda o la saca (solo esa mano)
         default: break;
         }
         break;
@@ -412,7 +415,7 @@ typedef struct {
 } ColumnEntry;
 
 static const ColumnEntry COLUMN[] = {
-    { ICON_ACCIONES, COL_MENU, 0, "Tab" },
+    { ICON_ACCIONES, COL_MENU, 0, "L" },
     { ICON_BEBER, COL_DRINK, 0, "N" },
     { ICON_UNGUENTO, COL_BANDAGE, 0, "B" },
     { ICON_FOGATA, COL_ACTION, ACTION_PLACE_FIRE, "" },
@@ -427,7 +430,7 @@ static const ColumnEntry COLUMN[] = {
 
 // Con un arma que dispara flechas o virotes en la mano (se pueden encender).
 static bool arrows_in_hand(const GameActions *ga) {
-    const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);
+    const RangedDef *rd = hands_out(&ga->hands, HAND_RIGHT) ? ranged_def(ga->hands.right.id) : NULL;
     return rd && (rd->projectile == PROJ_ARROW || rd->projectile == PROJ_BOLT);
 }
 
@@ -473,7 +476,7 @@ void hud_action_column(const GameActions *ga, int x, int y) {
                                 : e->kind == COL_PACK    ? T("Mochila")
                                 : e->kind == COL_ARROW   ? T("Encender la flecha")
                                                          : T(action_def(e->action)->name);
-            const char *detail = e->kind == COL_MENU      ? T("Tab: el menú de acciones, obras, fabricar y reparar.")
+            const char *detail = e->kind == COL_MENU      ? T("L: el menú de acciones, obras, fabricar y reparar.")
                                  : e->kind == COL_DRINK   ? T("N: bebe lo más seguro que tengas, o del río en la orilla.")
                                  : e->kind == COL_BANDAGE ? T("B: venda tus heridas (o levanta a un compañero abatido).")
                                  : e->kind == COL_PACK    ? T("Mayús+G: deja la mochila en el suelo para moverte ligero, o recógela.")

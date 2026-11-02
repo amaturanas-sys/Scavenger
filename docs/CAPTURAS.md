@@ -25,7 +25,7 @@ Los menús usan **iconos** (siluetas del atlas [`assets/ui/iconos.png`](../asset
 | ![Pausa](capturas/06_pausa.png) | **Pausa** (Esc, `--pausa`): continuar, guardar, cargar, instructivo, al título, salir. |
 | ![Guardar](capturas/07_guardar.png) | **Guardar** (`--guardar`): la minifoto es la partida al pausar. |
 
-## Menú Tab: acciones, obras, fabricar, reparar
+## Menú de acciones (L): acciones, obras, fabricar, reparar
 
 | | |
 |---|---|
@@ -38,7 +38,7 @@ Los menús usan **iconos** (siluetas del atlas [`assets/ui/iconos.png`](../asset
 
 | | |
 |---|---|
-| ![Inventario](capturas/12_inventario.png) | **Inventario** (I, `--inventario`): dos columnas; arriba, los contenedores a mano (bolsillos, mochila, alforjas, carreta, campamento). |
+| ![Inventario](capturas/12_inventario.png) | **Inventario** (Tab, `--inventario`): dos columnas; arriba, los contenedores a mano (bolsillos, mochila, alforjas, carreta, campamento). |
 | ![Equipo](capturas/13_equipo.png) | **Equipo** (P, `--equipo`): los nueve huecos de armadura alrededor de la figura y los tres amuletos; a la derecha, sus cifras y la salud. |
 
 ## Combate y mundo
@@ -48,6 +48,17 @@ Los menús usan **iconos** (siluetas del atlas [`assets/ui/iconos.png`](../asset
 | ![Jinetes](capturas/14_jinetes.png) | **Jinetes bandidos** (`--enemigos jinetes`). |
 | ![Botín](capturas/15_botin.png) | **Bolsas de botín** (`--botin`). |
 | ![Galería](capturas/16_galeria.png) | **Galería de modelos** (`--galeria`): todos los objetos del inventario a escala. |
+
+### Las manos
+
+Los cuatro botones (`H I J K`, abajo a la derecha) según lo que está fuera; la espada y el escudo se guardan por separado (`1` y `2`, [PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), A1). El montaje: [`capturas/las_manos.png`](capturas/las_manos.png).
+
+| | |
+|---|---|
+| ![Escudo solo](capturas/manos_escudo.png) | **El escudo solo** (`--enemigos bandidos --manos escudo`): la espada al cinto; puñetazo, parry con el escudo, cubrirse y carga. |
+| ![Espada sola](capturas/manos_espada.png) | **La espada sola** (`--manos espada`): el escudo a la espalda; golpe, parry, parar con el arma y patada. |
+| ![Nada](capturas/manos_nada.png) | **Todo guardado** (`--manos nada`): puñetazo, la llave y patada; sin bloqueo. |
+| ![Rehén](capturas/manos_rehen.png) | **Con un rehén** (`--enemigos bandidos --rehen`): `H` lo ejecuta, `I` lo empuja, `G` lo suelta. |
 
 ## El mundo
 

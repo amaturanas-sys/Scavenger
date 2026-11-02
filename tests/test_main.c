@@ -1012,6 +1012,70 @@ static void test_hands_sheathe_take_throw(void) {
     CHECK(hands_can_take(&h)); // la izquierda quedo libre
 }
 
+// A1 (v0.12.0, docs/PLAN_TACTICO_Y_CUEVAS.md): el arma y el escudo se guardan por separado, como en las
+// hojas (1 enfunda la espada, 2 guarda el escudo), y el parry depende de lo que queda fuera.
+static void test_hands_each_hand(void) {
+    InvItem sable = make_item("arma.corta.sable", INV_HANDS_ONE), escudo = make_item("escudo.mano.mimbre", INV_HANDS_SHIELD);
+    InvItem arco = make_item("arma.distancia.arco_simple", INV_HANDS_TWO), antorcha = make_item("utileria.objeto.antorcha", INV_HANDS_ONE);
+    InvItem daga = make_item("arma.corta.daga", INV_HANDS_ONE);
+    Hands h;
+    hands_init(&h);
+    CHECK(!hands_toggle_hand(&h, HAND_RIGHT) && !hands_toggle_hand(&h, HAND_LEFT)); // nada que guardar
+    hands_equip(&h, &sable, HAND_RIGHT);
+    hands_equip(&h, &escudo, HAND_LEFT);
+    CHECK(hands_out(&h, HAND_RIGHT) && hands_out(&h, HAND_LEFT));
+    // 1: enfunda la espada; el escudo sigue en el brazo y el parry es con el escudo.
+    CHECK(hands_toggle_hand(&h, HAND_RIGHT) && !hands_out(&h, HAND_RIGHT) && hands_out(&h, HAND_LEFT) && !h.sheathed);
+    CHECK(!strcmp(hands_attack_weapon(&h, 1, NULL), "") && hands_parry_kind(&h) == PARRY_SHIELD);
+    Hands d = hands_drawn(&h);
+    CHECK(!d.right.id[0] && !strcmp(d.left.id, "escudo.mano.mimbre") && hands_grip(&d) == GRIP_SHIELD && !d.sheathed);
+    CHECK(!hands_holding(&h, "arma.corta.sable") && hands_holding(&h, "escudo.mano.mimbre"));
+    CHECK(hands_can_take(&h)); // la mano del arma, libre
+    // 2: guarda tambien el escudo: todo adentro, como enfundar todo; las manos, la llave.
+    CHECK(hands_toggle_hand(&h, HAND_LEFT) && h.sheathed && !hands_out(&h, HAND_LEFT));
+    CHECK(hands_parry_kind(&h) == PARRY_GRAPPLE && hands_drawn(&h).sheathed);
+    // 1 otra vez: la espada fuera, el escudo sigue a la espalda.
+    CHECK(hands_toggle_hand(&h, HAND_RIGHT) && hands_out(&h, HAND_RIGHT) && !hands_out(&h, HAND_LEFT) && !h.sheathed);
+    CHECK(!strcmp(hands_attack_weapon(&h, 1, NULL), "arma.corta.sable") && hands_parry_kind(&h) == PARRY_DEFLECT);
+    d = hands_drawn(&h);
+    CHECK(hands_grip(&d) == GRIP_ONE_HANDED && !d.left.id[0]);
+    // 2: el escudo al brazo; con los dos fuera, el parry es el del arma.
+    CHECK(hands_toggle_hand(&h, HAND_LEFT) && hands_out(&h, HAND_LEFT) && hands_parry_kind(&h) == PARRY_DEFLECT);
+    // Enfundar todo guarda los dos; otra vez, los saca; con uno guardado, guarda el que quedaba.
+    CHECK(hands_toggle_sheathe(&h) && h.sheathed && !hands_out(&h, HAND_RIGHT) && !hands_out(&h, HAND_LEFT));
+    CHECK(hands_toggle_sheathe(&h) && hands_out(&h, HAND_RIGHT) && hands_out(&h, HAND_LEFT));
+    hands_toggle_hand(&h, HAND_LEFT);
+    CHECK(hands_toggle_sheathe(&h) && h.sheathed);
+    // Empuñar algo saca solo eso: la antorcha en la izquierda no desenfunda la espada.
+    CHECK(hands_equip(&h, &antorcha, HAND_LEFT) && hands_out(&h, HAND_LEFT) && !hands_out(&h, HAND_RIGHT));
+    // Las partidas de antes (sin right_away ni left_away): las dos manos siguen a sheathed.
+    Hands old;
+    hands_init(&old);
+    hands_equip(&old, &sable, HAND_RIGHT);
+    hands_equip(&old, &escudo, HAND_LEFT);
+    old.right_away = old.left_away = false, old.sheathed = true;
+    CHECK(!hands_out(&old, HAND_RIGHT) && !hands_out(&old, HAND_LEFT));
+    old.sheathed = false;
+    CHECK(hands_out(&old, HAND_RIGHT) && hands_out(&old, HAND_LEFT));
+    // El arco (a dos manos) deja libres las dos manos; el escudo despues lo aparta.
+    CHECK(hands_equip(&old, &arco, HAND_RIGHT) && hands_out(&old, HAND_RIGHT) && !old.left.id[0]);
+    CHECK(hands_equip(&old, &escudo, HAND_LEFT) && !old.right.id[0] && hands_out(&old, HAND_LEFT));
+    // Pasar el arma a la otra mano lleva consigo lo guardado.
+    Hands sw;
+    hands_init(&sw);
+    hands_equip(&sw, &sable, HAND_RIGHT);
+    hands_equip(&sw, &daga, HAND_LEFT);
+    hands_toggle_hand(&sw, HAND_LEFT); // la daga, guardada
+    CHECK(hands_swap(&sw) && !strcmp(sw.left.id, "arma.corta.sable") && hands_out(&sw, HAND_LEFT) && !hands_out(&sw, HAND_RIGHT));
+    CHECK(hands_slot_of(&sw, "arma.corta.daga") == HAND_RIGHT && hands_slot_of(&sw, "escudo.mano.mimbre") == -1);
+    // El parry con el escudo: lo desvia y lo aturde con el canto (un poco de daño, sin tumbarlo).
+    Rng rng;
+    rng_seed(&rng, 3);
+    Fighter me = { .shield = true, .strength = 1.0f, .health = 1.0f }, foe = { .armed = true, .strength = 1.0f, .health = 1.0f };
+    MeleeResult r = melee_parry(PARRY_SHIELD, &me, &foe, &rng);
+    CHECK(r.landed && r.staggered && r.damage > 0.0f && !r.knocked_down && !r.disarmed && !r.shield_dropped);
+}
+
 static void test_action_catalog(void) {
     for (int a = 0; a < ACTION_COUNT; a++) {
         const ActionDef *d = action_def((ActionId)a);
@@ -3321,39 +3385,42 @@ static void test_keymap_target_keys(void) {
 
 // ---------------------------------------------------------------- fase 1: teclas, parry, bloqueo, objetivo
 static void test_keymap_four_buttons(void) {
-    // Los cuatro botones de combate: H J K L (con Mayus, corriendo, tambien), no las teclas viejas.
+    // Los cuatro botones de combate, como en las hojas (v0.12.0): H golpe, I parry, J bloqueo, K carga
+    // o patada (con Mayus, corriendo, tambien), no las teclas viejas.
     CHECK(keymap_matches(KA_ATTACK, 'H', 0) && keymap_matches(KA_ATTACK, 'H', KM_SHIFT));
     CHECK(!keymap_matches(KA_ATTACK, 'V', 0) && !keymap_matches(KA_ATTACK, 'H', KM_CTRL)); // Ctrl+H: los controles
     CHECK(keymap_matches(KA_BLOCK, 'J', 0) && !keymap_matches(KA_BLOCK, 'Z', 0));
-    CHECK(keymap_matches(KA_PARRY, 'K', 0) && !keymap_matches(KA_PARRY, 'U', 0) && !keymap_matches(KA_PARRY, 'O', 0));
-    CHECK(keymap_matches(KA_CHARGE, 'L', 0) && keymap_matches(KA_CHARGE, 'L', KM_SHIFT) && !keymap_matches(KA_CHARGE, 'J', 0));
-    // El mapa nuevo: X agacharse, C sigilo, F todo, Mayus+G mochila, Mayus+L flecha, U ficha.
+    CHECK(keymap_matches(KA_PARRY, 'I', 0) && !keymap_matches(KA_PARRY, 'K', 0) && !keymap_matches(KA_PARRY, 'U', 0));
+    CHECK(keymap_matches(KA_CHARGE, 'K', 0) && keymap_matches(KA_CHARGE, 'K', KM_SHIFT) && !keymap_matches(KA_CHARGE, 'L', 0));
+    // Tab abre el inventario (la I es el parry); L, el menu de acciones; O elige el objetivo.
+    CHECK(keymap_matches(KA_INVENTORY, KM_KEY_TAB, 0) && !keymap_matches(KA_INVENTORY, 'I', 0));
+    CHECK(keymap_matches(KA_MENU, 'L', 0) && !keymap_matches(KA_MENU, 'L', KM_SHIFT) && !keymap_matches(KA_MENU, KM_KEY_TAB, 0));
+    CHECK(keymap_matches(KA_TARGET, 'O', 0) && keymap_matches(KA_TARGET, 'O', KM_SHIFT) && !keymap_matches(KA_TARGET, KM_KEY_TAB, 0));
+    // El resto del mapa: X agacharse, C sigilo, F todo, Mayus+G mochila, Mayus+L flecha, U ficha.
     CHECK(keymap_matches(KA_CROUCH, 'X', 0) && keymap_matches(KA_SNEAK, 'C', 0));
     CHECK(keymap_matches(KA_INTERACT, 'F', 0) && keymap_matches(KA_INTERACT, 'F', KM_SHIFT) && !keymap_matches(KA_INTERACT, 'K', 0));
     CHECK(keymap_matches(KA_BACKPACK, 'G', KM_SHIFT) && !keymap_matches(KA_BACKPACK, 'G', 0));
     CHECK(keymap_matches(KA_GRAB, 'G', 0) && !keymap_matches(KA_GRAB, 'G', KM_SHIFT));
     CHECK(keymap_matches(KA_LIGHT_ARROW, 'L', KM_SHIFT) && !keymap_matches(KA_LIGHT_ARROW, 'L', 0));
-    CHECK(keymap_matches(KA_CARD, 'U', 0) && keymap_matches(KA_TARGET, KM_KEY_TAB, KM_SHIFT));
+    CHECK(keymap_matches(KA_CARD, 'U', 0));
     CHECK(!keymap_matches(KA_EQUIPMENT, 'P', KM_CTRL) && !keymap_matches(KA_MARK, 'M', KM_CTRL)); // Ctrl+P pausa, Ctrl+M orbital
     CHECK(keymap_matches(KA_ESCORT, 'Y', 0) && !keymap_matches(KA_ESCORT, 'Y', KM_SHIFT) && keymap_matches(KA_DISPATCH, 'Y', KM_SHIFT));
-    // Las teclas viejas quedan libres: V, Z y O no hacen nada.
-    for (int a = 0; a < KA_COUNT; a++)
-        CHECK(!keymap_matches((KeyAction)a, 'V', 0) && !keymap_matches((KeyAction)a, 'Z', 0) && !keymap_matches((KeyAction)a, 'O', 0));
-    // Ninguna tecla hace dos cosas, salvo los pares que decide el contexto: Tab (objetivo en
-    // combate, menu fuera) y Mayus+L (con arco enciende la flecha; con arma de mano, carga).
+    // Las teclas viejas quedan libres: V y Z no hacen nada.
+    for (int a = 0; a < KA_COUNT; a++) CHECK(!keymap_matches((KeyAction)a, 'V', 0) && !keymap_matches((KeyAction)a, 'Z', 0));
+    // Ninguna tecla hace dos cosas (ya no hace falta que el contexto decida: Tab no es objetivo y
+    // menu a la vez, ni Mayus+L carga y flecha).
     const int keys[] = { 'A', 'B', 'C', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z', KM_KEY_TAB, KM_KEY_SPACE };
     const unsigned mods[] = { 0, KM_SHIFT, KM_CTRL, KM_ALT, KM_SHIFT | KM_ALT };
     int clashes = 0;
     for (size_t k = 0; k < sizeof(keys) / sizeof(keys[0]); k++)
         for (size_t m = 0; m < sizeof(mods) / sizeof(mods[0]); m++)
             for (int a = 0; a < KA_COUNT; a++)
-                for (int b = a + 1; b < KA_COUNT; b++) {
-                    if (!keymap_matches((KeyAction)a, keys[k], mods[m]) || !keymap_matches((KeyAction)b, keys[k], mods[m])) continue;
-                    bool ok = (a == KA_TARGET && b == KA_MENU) || (a == KA_CHARGE && b == KA_LIGHT_ARROW);
-                    if (!ok) clashes++;
-                }
+                for (int b = a + 1; b < KA_COUNT; b++)
+                    clashes += keymap_matches((KeyAction)a, keys[k], mods[m]) && keymap_matches((KeyAction)b, keys[k], mods[m]);
     CHECK(clashes == 0);
-    CHECK(!strcmp(keymap_text(KA_ATTACK), "H") && !strcmp(keymap_text(KA_BACKPACK), "Mayús+G") && !strcmp(keymap_text(KA_TARGET), "Tab"));
+    CHECK(!strcmp(keymap_text(KA_ATTACK), "H") && !strcmp(keymap_text(KA_PARRY), "I") && !strcmp(keymap_text(KA_CHARGE), "K"));
+    CHECK(!strcmp(keymap_text(KA_BACKPACK), "Mayús+G") && !strcmp(keymap_text(KA_INVENTORY), "Tab") && !strcmp(keymap_text(KA_MENU), "L") &&
+          !strcmp(keymap_text(KA_TARGET), "O"));
 }
 
 static void test_melee_parry_window(void) {
@@ -5607,6 +5674,7 @@ int main(void) {
     RUN(test_champion_desertion_weighs_on_troop);
     RUN(test_hands_grips);
     RUN(test_hands_sheathe_take_throw);
+    RUN(test_hands_each_hand);
     RUN(test_action_catalog);
     RUN(test_build_needs_crew_and_skills);
     RUN(test_build_skill_morale_and_champions);

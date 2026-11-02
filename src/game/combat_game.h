@@ -2,12 +2,14 @@
 // src/sim/combat.h con el jugador, la tribu, los enemigos y la interfaz:
 //  - salud del jugador: vida, sangre y heridas; abatido, lo levanta la escolta
 //    o despierta en el campamento;
-//  - cuerpo a cuerpo (src/sim/melee.h) con cuatro botones: H ataque (combo;
-//    mantener: pesado), J bloqueo (escudo, o el arma, que cansa), K parry en la
-//    ventana justa del golpe que anuncia el rival (engancha, hace la llave o
-//    desvia, segun el arma), L carga con escudo o patada; J + H golpe de escudo;
-//    los enemigos y la escolta usan las mismas reglas;
-//  - objetivo: Tab (en combate) pasa al enemigo siguiente, un toque o un clic lo
+//  - cuerpo a cuerpo (src/sim/melee.h) con cuatro botones, como en las hojas
+//    (docs/PLAN_TACTICO_Y_CUEVAS.md): H ataque (combo; mantener: pesado), I parry en
+//    la ventana justa del golpe que anuncia el rival (engancha, hace la llave o
+//    desvia, segun el arma; solo con el escudo, lo desvia y lo aturde), J bloqueo
+//    (escudo, o el arma, que cansa), K carga con escudo o patada; J + H golpe de
+//    escudo; lo que hacen depende de lo que esta fuera (la espada, el escudo o los
+//    dos); los enemigos y la escolta usan las mismas reglas;
+//  - objetivo: O pasa al enemigo siguiente (Mayus+O, al anterior), un toque o un clic lo
 //    elige; anillo bajo los pies y su barra de vida resaltada; se pierde a 25 m;
 //  - armas a distancia: mantener H (o clic) para tensar y soltar para disparar;
 //    con objetivo, la mira calcula la caida sola; sin el, la camara alza o baja
@@ -191,7 +193,7 @@ void cb_test_raid(Combat *cb, const GameActions *ga, const Player *p, const Terr
 // Prueba (--espalda, --rehen): el jugador, en sigilo, a la espalda del primer enemigo, que no lo
 // vio; con hostage, ademas lo toma de rehen.
 void cb_test_back(Combat *cb, Player *p, bool hostage, char *log, size_t len);
-// Tab: el objetivo siguiente (dir 1) o el anterior (-1), en orden alrededor del jugador.
+// O: el objetivo siguiente (dir 1) o el anterior (-1, Mayus+O), en orden alrededor del jugador.
 void cb_cycle_target(Combat *cb, const Player *p, int dir, char *log, size_t len);
 // El enemigo elegido (o NULL).
 const Enemy *cb_target(const Combat *cb);

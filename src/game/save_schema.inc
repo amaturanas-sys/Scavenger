@@ -184,6 +184,8 @@ static const SfField SF_F_Hands[] = {
     SF_ONE(Hands, left, "Held", SF_STRUCT, &SF_T_Held),
     SF_ONE(Hands, sheathed, "bool", SF_BOOL, NULL),
     SF_ARR(Hands, carried, "char", SF_TEXT, NULL),
+    SF_ONE(Hands, right_away, "bool", SF_BOOL, NULL),
+    SF_ONE(Hands, left_away, "bool", SF_BOOL, NULL),
 };
 static const SfType SF_T_Hands = SF_TYPE(Hands, SF_F_Hands);
 

@@ -1,5 +1,7 @@
 # Plan: la gran actualización (v0.5 a v0.9)
 
+> **Las teclas cambiaron en la v0.12.0** (las hojas del sistema táctico, [PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)): `H` ataque, `I` parry, `J` bloqueo, `K` carga o patada; `Tab` inventario, `L` menú de acciones, `O` objetivo. Por la espalda y con un rehén, `H` ejecuta e `I` empuja. Lo de abajo cuenta las teclas de entonces.
+
 > **Estado:** hecho. Las fases 0 (v0.4.4), 1 (v0.5.0), 2 (v0.5.1), 3 (v0.6.0), 4 (v0.6.1), 4b (v0.6.2), 5 (v0.7.0), 6 (v0.7.1), 6b (v0.7.2), 7 (v0.8.0), 7b (v0.8.1), 8a (v0.9.0) y 8b (v0.9.1) salieron, cada una con su versión. Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet. Las fases están ordenadas por dependencia: el combate primero, porque la tribu, la economía y los asentamientos lo usan.
 
 Pedido (5 y 6 de octubre de 2026):

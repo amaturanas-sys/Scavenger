@@ -570,7 +570,7 @@ bool ig_take_loot(GameActions *ga, const Props *props, const Player *p, char *lo
     if (!b->n) ga->loot_age[k] = -1.0f;
     if (taken) snprintf(log, len, T("Recoges el botín: %s%s%s"), first, taken > 1 ? TextFormat(T(" y %d más"), taken - 1) : "",
                         b->n ? T(" (lo demás no te cabe).") : ".");
-    else snprintf(log, len, "%s", T("No te cabe nada del botín (I: inventario)."));
+    else snprintf(log, len, "%s", T("No te cabe nada del botín (Tab: inventario)."));
     return true;
 }
 

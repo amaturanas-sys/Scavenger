@@ -1,7 +1,7 @@
 // Acciones y vida del campamento en el juego. Conecta el nucleo (sim/actions,
 // sim/economy, sim/animals) con el jugador, el mundo y la interfaz:
-//  - menu de acciones (Tab), atajos (X empunadura, H enfundar, F tomar,
-//    T lanzar, R montar, I acopio) y acciones con duracion;
+//  - menu de acciones (L), atajos (1..9 la barra rapida: cada arma y el escudo se guardan por
+//    separado; F tomar, T lanzar, R montar, Tab inventario) y acciones con duracion;
 //  - acopio de la tribu: materiales, comida, recoleccion diaria;
 //  - obras en grupo: los NPCs elegidos caminan a la obra y trabajan alli;
 //  - NPCs que hacen acciones individuales (instalar una fogata o una tienda);
@@ -161,7 +161,7 @@ typedef struct {
     // Menus de inventario y de equipo.
     bool inv_open, equip_open;
     int inv_pane, inv_cont[2], inv_cursor[2], equip_cursor;
-    // Menu de acciones (Tab) por pestañas: acciones, obras, fabricar, reparar.
+    // Menu de acciones (L) por pestañas: acciones, obras, fabricar, reparar.
     int menu_tab, tab_cursor[4];
     bool take_all; // F con Mayus: tomar todo lo de alrededor
     // Botin que dejan los enemigos al caer (F para recogerlo).
@@ -267,9 +267,11 @@ typedef struct {
 int ga_grip_count(void);
 GaGrip ga_grip(const GameActions *ga, int k);
 bool ga_has_item(const GameActions *ga, const char *id); // en el equipo o en el acopio
+// El arma que de verdad se empuña por ese id: el mejor sable o el mejor arco que tengas.
+const char *ga_best_weapon(const GameActions *ga, const char *id);
 // Pedidos del HUD (teclas 1..9, toques o clics), atendidos en el proximo ga_update.
 void ga_quick_request_grip(int k);
-void ga_quick_request_wield(const char *id); // un arma o un escudo, a su mano
+void ga_quick_request_wield(const char *id); // un arma o un escudo, a su mano (si ya esta en ella, lo guarda o lo saca)
 void ga_quick_request_action(ActionId a);
 void ga_quick_request_menu(void);
 void ga_quick_request_swap(void); // pasar el arma empuñada a la otra mano
@@ -277,8 +279,8 @@ void ga_quick_request_craft(CraftId c); // empezar una receta (la prueba --forja
 // La orden a la escolta (SquadOrder: Y+1..3 o las casillas del HUD), con su aviso.
 void ga_escort_order(GameActions *ga, int order, char *log, size_t len);
 void ga_request_escort_order(int order); // desde el HUD, atendida en el proximo ga_update
-// Tab en combate (src/game/combat_game.c): hay enemigos a tiro de objetivo (Tab elige objetivo en
-// vez de abrir el menu); el pedido de Tab (1 el siguiente, -1 el anterior, 0 nada).
+// El objetivo (src/game/combat_game.c): hay enemigos a tiro de objetivo; el pedido de O (1 el
+// siguiente, -1 el anterior con Mayus+O, 0 nada).
 void ga_set_combat_near(bool near);
 int ga_take_target_request(void);
 

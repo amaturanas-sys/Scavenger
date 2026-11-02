@@ -42,7 +42,7 @@ src/
     voxmat.h     los materiales de las estructuras de voxeles (src/world/voxstruct.c los pinta con la paleta de su region)
     flora.*      la vegetacion baja: donde crece cada mata (por celdas de 2 m, segun la region y el agua; ni en la roca, los rios, los pueblos o los campamentos), cuanto crece con la estacion y cuanto la mueven el viento y quien pasa
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano
-    keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H J K L, F, X...)
+    keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H I J K, Tab, L, O, F, X...)
     targeting.*  el selector de objetivo: el siguiente alrededor del jugador, se pierde a 25 m
     stealth.*    la espalda (cono trasero, lo que ve un enemigo segun de donde vienes), el rehen que tapa el tiro (y cuando se suelta) y los abatidos
     squad.*      la escolta con ordenes, la ronda de los guardias y la alarma de los pobladores

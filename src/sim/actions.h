@@ -32,8 +32,13 @@ typedef struct {
 
 typedef struct {
     Held right, left;
-    bool sheathed;              // armas enfundadas: las manos quedan libres
+    bool sheathed;              // todo enfundado: las manos quedan libres
     char carried[INV_ID_LEN];   // objeto tomado del suelo ("" = nada)
+    // Cada mano por separado (docs/PLAN_TACTICO_Y_CUEVAS.md, A1): lo de esa mano esta guardado
+    // mientras lo de la otra sigue fuera (la espada enfundada con el escudo en el brazo, o el
+    // escudo a la espalda con la espada en la mano). Con sheathed no cuentan; en cero (las
+    // partidas de antes), las dos manos siguen a sheathed, como siempre.
+    bool right_away, left_away;
 } Hands;
 
 typedef enum {
@@ -52,8 +57,18 @@ bool hands_equip(Hands *h, const InvItem *item, HandSlot slot);
 void hands_clear(Hands *h, HandSlot slot);
 Grip hands_grip(const Hands *h);
 const char *grip_name(Grip g);
-// Enfundar/desenfundar. Devuelve false si no hay nada que enfundar.
+// Enfundar/desenfundar todo: si algo esta fuera, lo guarda todo; si no, lo saca todo. Devuelve
+// false si no hay nada que enfundar.
 bool hands_toggle_sheathe(Hands *h);
+// Lo de esa mano esta fuera: empuñado y no guardado (una mano vacia no esta fuera).
+bool hands_out(const Hands *h, HandSlot slot);
+// Lo que se tiene en las manos de verdad: una copia sin lo guardado (sin nada fuera, sheathed).
+Hands hands_drawn(const Hands *h);
+// Guarda o saca solo lo de una mano (la espada con su numero, el escudo con el suyo); lo de la
+// otra mano queda como estaba. false si esa mano esta vacia.
+bool hands_toggle_hand(Hands *h, HandSlot slot);
+// La mano que tiene ese objeto (empuñado, fuera o guardado), o -1.
+int hands_slot_of(const Hands *h, const char *id);
 // Para tomar un objeto hace falta una mano libre (o las armas enfundadas).
 bool hands_can_take(const Hands *h);
 bool hands_take(Hands *h, const char *id);
