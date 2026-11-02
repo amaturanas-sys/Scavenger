@@ -281,6 +281,10 @@ typedef struct {
 } WaterBodies;
 void world_water_bodies(const World *w, float x, float z, WaterBodies *b);
 float world_water_resolve(const World *w, const WaterBodies *b, float x, float z, const WaterSeason *s, WaterNow *out);
+// Hacia donde corre un tramo en un punto de su recorrido (along: los metros desde la cabecera, como
+// WaterBodies.river_along): la direccion aguas abajo (dx, dz, unitaria) y lo que baja el agua por metro (slope,
+// si no es NULL). false si el tramo no existe (docs/AGUA.md, fase 4: la corriente que se ve).
+bool world_river_flow(const World *w, int river, float along, float *dx, float *dz, float *slope);
 // Orilla de rio: cuanto es (x, z) lecho de cantos rodados que el agua lava (1 en el cauce y la
 // orilla baja, 0 lejos), para rios de meandro, tributarios y arroyos; width (si no es NULL): el
 // ancho de ese rio. Los trenzados ya son de grava.

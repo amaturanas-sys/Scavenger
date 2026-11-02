@@ -570,6 +570,23 @@ float world_water_now(const World *w, float x, float z, const WaterSeason *s, Wa
     return world_water_resolve(w, &b, x, z, s, out);
 }
 
+bool world_river_flow(const World *w, int river, float along, float *dx, float *dz, float *slope) {
+    if (river < 0 || river >= w->river_count) return false;
+    const River *r = &w->rivers[river];
+    if (r->n < 2) return false;
+    int lo = 0, hi = r->n - 2; // el trecho [lo, lo + 1] donde cae along
+    while (lo < hi) {
+        int mid = (lo + hi + 1) / 2;
+        if (r->along[mid] <= along) lo = mid;
+        else hi = mid - 1;
+    }
+    float vx = r->x[lo + 1] - r->x[lo], vz = r->z[lo + 1] - r->z[lo], l = sqrtf(vx * vx + vz * vz);
+    if (l < 1e-4f) return false;
+    *dx = vx / l, *dz = vz / l;
+    if (slope) *slope = fmaxf(0.0f, (r->level[lo] - r->level[lo + 1]) / l);
+    return true;
+}
+
 float world_river_bank(const World *w, float x, float z, float *width) {
     float best = 0.0f;
     for (int i = 0; i < w->river_count; i++) {

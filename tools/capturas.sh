@@ -39,6 +39,9 @@ for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desier
          lago desborde cascada lengua; do
     shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.12
 done
+mkdir -p "$ROOT/docs/mundo"
+montage "$OUT"/mundo_{lago,desborde,cascada,meandro,trenzado,arroyo}.png -tile 3x2 -geometry +0+0 -depth 8 "$ROOT/docs/mundo/agua.png" 2>/dev/null &&
+    echo "  docs/mundo/agua.png"
 # Las estaciones del agua (docs/AGUA.md, fase 2): el mismo lugar en dos momentos del año. El rio del glaciar
 # antes y despues de secarse; el lago antes y despues de helarse; el mar al romperse su hielo y helado; la lengua
 # del glaciar en la primavera y retirada en el verano.
@@ -61,6 +64,17 @@ shot agua_hundido 40 --dia 25 --minuto 7 --ir lago --trampa hundido --camara 0.3
 shot agua_pesca 60 --dia 25 --minuto 7 --ir lago --trampa agujero --camara 0.4
 montage "$OUT"/agua_{nado,orilla,hundido,pesca}.png -tile 2x2 -geometry +0+0 -depth 8 "$ROOT/docs/mundo/hielo_nado_pesca.png" 2>/dev/null &&
     echo "  docs/mundo/hielo_nado_pesca.png"
+# Como se ve el agua (docs/AGUA.md, fase 4): la corriente del rio con la espuma de quien nada, las olas del mar en
+# las rocas, un lago glaciar por su desborde, los rapidos de un arroyo, la cascada de cerca (la cortina y la bruma)
+# y el agua sin su shader (--sin-shader: lo que queda si no compila).
+shot agua_corriente 60 --dia 11 --minuto 7 --ir meandro --trampa nado --camara 0.35
+shot agua_olas 60 --dia 11 --minuto 7 --ir mar --dron 6 --camara 0.45
+shot agua_lago 60 --dia 11 --minuto 7 --ir desborde --camara 0.3
+shot agua_rapidos 60 --dia 11 --minuto 7 --ir rapidos --camara 0.3
+shot agua_cascada 60 --dia 11 --minuto 7 --ir cascada-pie --camara 0.12
+shot agua_respaldo 60 --dia 11 --minuto 7 --ir mar --dron 6 --camara 0.45 --sin-shader
+montage "$OUT"/agua_{corriente,olas,lago,rapidos,cascada,respaldo}.png -tile 2x3 -geometry +0+0 -depth 8 "$ROOT/docs/mundo/como_se_ve_el_agua.png" \
+    2>/dev/null && echo "  docs/mundo/como_se_ve_el_agua.png"
 # El kit de edificios (docs/ARQUITECTURA_EDAD_DEL_HIERRO.md): las variantes de cada tipo en cada region
 # (la muralla, las ruinas y las obras de la tribu tambien) y las plazas de las cinco capitales, desde arriba.
 for k in casa palacio fundicion cuartel carpinteria granero templo carreta muralla torre puerta fortaleza enterrada \

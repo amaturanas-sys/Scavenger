@@ -3,9 +3,10 @@
 El diseño del usuario (seis páginas a mano, noviembre de 2026), pasado a reglas del juego y repartido en cinco
 fases. Ya están la **fase 1 (v0.11.0)**: el agua baja por donde debe y los lagos llenan sus depresiones; la
 **fase 2 (v0.11.1)**: cada agua cambia con las estaciones (se seca, se hiela, el mar se congela en la costa y el
-glaciar avanza y retrocede); y la **fase 3 (v0.11.2)**: la tribu, los enemigos y los animales vadean, nadan y caen
-al romperse el hielo, y con el picahielo se abre un agujero para pescar. Las demás, abajo, con lo que hace falta
-para cada una.
+glaciar avanza y retrocede); la **fase 3 (v0.11.2)**: la tribu, los enemigos y los animales vadean, nadan y caen
+al romperse el hielo, y con el picahielo se abre un agujero para pescar; y la **fase 4 (v0.11.3)**: el agua tiene
+su shader, con el vaivén de los lagos, la corriente de los ríos, las olas en la costa, la espuma y la bruma de las
+cascadas. La que falta, abajo.
 
 ![El agua](mundo/agua.png)
 
@@ -20,10 +21,10 @@ río de meandros en la estepa · un río trenzado del deshielo · un arroyo junt
 | **1. El nivel del mar es la base** | Las alturas medias bajan del altiplano al desierto, la estepa, el bosque y la costa, hasta el mar. | **Hecho (v0.11.0).** Altiplano ~82 m, desierto ~61, estepa ~40, bosque ~33 y costa ~26 (las medias medidas, con su relieve; `ALTITUDE[]` en `src/sim/world.c`). |
 | **2. Agua sobre el nivel del mar** | Los lagos están en las depresiones del altiplano, la estepa y el bosque. | **Hecho.** Cada depresión del relieve es un lago (también en la costa). El desierto solo tiene oasis. |
 | **3. Aguas abajo y estaciones** | En verano el glaciar retrocede y los cauces se llenan, y los ríos alimentan los lagos. En invierno los cauces quedan secos (la «huella») y los lagos se hielan. | **Hecho (v0.11.1).** Los ríos del glaciar corren de mediados de la primavera a mediados del otoño; con helada se secan y queda su cauce de grava con unos charcos helados. La lengua del glaciar retrocede en verano. |
-| **4. Cambios de altura** | El agua siempre necesita una superficie por donde deslizarse y siempre cae. Sin superficie, es una cascada. | **Hecho.** El nivel de un río nunca sube. Donde cae 3 m o más con una pendiente de más del 25 %, hay una cascada: una cortina de agua con espuma al pie. Su aspecto fino es de la fase 4. |
+| **4. Cambios de altura** | El agua siempre necesita una superficie por donde deslizarse y siempre cae. Sin superficie, es una cascada. | **Hecho.** El nivel de un río nunca sube. Donde cae 3 m o más con una pendiente de más del 25 %, hay una cascada: una cortina de agua con espuma al pie. Desde la v0.11.3 la cortina baja y al pie hay bruma. |
 | **El mundo: un disco de cinco biomas** | Cada bioma tiene su borde y, entre biomas, transiciones con cordilleras y ríos. A tiene muros de hielo. B tiene un gran canal con acantilados y ríos sinuosos, y del otro lado, paredes de roca. D tiene un cañón con un muro de estratos. F tiene la costa con fiordos y un mar accesible hasta un límite. | **En parte.** Los bordes de A, B, D y F ya existían. Las **cordilleras** entre el altiplano y el desierto, y entre el altiplano y la costa, están hechas. El muro de roca tras el canal y el mar con su límite son de la fase 5. Tu croquis tiene la misma vecindad que el juego (A frente a B, D frente a F): no se movieron regiones. |
 | **5. El invierno** | a) Los lagos se cubren de hielo, que se rompe (peligro) o se perfora para pescar. b) Unos ríos se hielan y otros se secan. c) Hay hielo en la costa y témpanos en el mar. d) Los glaciares retroceden en verano. | **Hecho.** a) Cada lago y cada río tiene su hielo, que se cruza y se rompe bajo el jugador, la tribu, los enemigos y los animales (`src/sim/hazards.h`, con rescate); con el picahielo se abre un agujero para pescar (v0.11.2). b, c y d: v0.11.1. |
-| **6. Las texturas** | a) Vaivén en lagos y lagunas. b) Torrente en ríos y cascadas. c) Espuma en las orillas y donde el terreno o alguien toca el agua. d) Olas que entran y se retiran. | **Fase 4.** Hoy hay una textura de ondas que «respira» y espuma en orillas y rápidos. |
+| **6. Las texturas** | a) Vaivén en lagos y lagunas. b) Torrente en ríos y cascadas. c) Espuma en las orillas y donde el terreno o alguien toca el agua. d) Olas que entran y se retiran. | **Hecho (v0.11.3).** El shader del agua: el vaivén de los lagos, la corriente de los ríos por su cauce, el oleaje del mar con las olas que entran y se retiran, y la espuma de las orillas, las rocas, los rápidos y de quien está en el agua. |
 | **7. La hondura** | En lo bajo se camina por el fondo, en lo hondo se nada, en invierno se camina sobre el hielo y el hielo se rompe. | **Hecho (v0.11.2).** El jugador, la tribu y los enemigos vadean hasta 1,2 m y nadan más hondo; cruzan un río a nado y rodean un lago. Los animales vadean según su tamaño y cruzan un río a nado si tienen prisa. Todos cruzan el hielo que aguanta y los cauces secos, y el hielo se rompe bajo todos. |
 | **8. El trazado de los ríos** | Desde donde nace, el río baja por la cota más baja; los ríos se ramifican como raíces. | **Hecho.** Priority-Flood más la suma del agua (abajo). |
 | **9. El agua necesita un contenedor** | El nivel de un lago es la altura de su punto de salida más bajo (el desborde), y de ahí sale su río. | **Hecho.** |
@@ -211,16 +212,57 @@ el agujero para pescar en el lago helado (`--ir meandro --trampa nado`; `--dia 2
   pesca: sin peces o muy lejos no pica, la lanza y un banco grande ayudan, y nunca es segura;
 - `test_action_catalog`: el agujero pide el picahielo.
 
-## Las fases que siguen
+## La fase 4 (v0.11.3): cómo se ve el agua
 
-Cada una va con su PR, el CI verde, su release, sus capturas y sus pruebas.
+El agua tiene su shader (`src/world/terrain.c`): GLSL 330 en la PC y GLSL ES 100 en Android, del mismo código
+(solo cambian las palabras de cada versión). Si no compila, el agua se dibuja como antes (las ondas que
+respiran y la malla de espuma); `--sin-shader` lo muestra.
 
-- **Fase 4, v0.11.3, «Cómo se ve el agua».** Un shader, también en GLSL ES 100 para Android, con:
-  - el vaivén de los lagos;
-  - la corriente de los ríos, que sigue su cauce;
-  - la cortina y la bruma de las cascadas;
-  - la espuma en las orillas, las rocas y alrededor de quien está en el agua;
-  - las olas que entran y se retiran en las playas.
+1. **Lo que sabe cada vértice del agua** (se arma con la malla de cada chunk: no cuesta nada por cuadro):
+   - la hondura: el agua sobre el suelo (bajo la orilla, negativa);
+   - la corriente: en los ríos, aguas abajo por su cauce (`world_river_flow`), más rápida en lo empinado y en los
+     arroyos, y más lenta con poca agua; en los lagos y el mar, una deriva leve;
+   - qué agua es (lago, río o mar) y su hielo, que calma las olas y la espuma;
+   - la espuma de las rocas (los cantos del cauce, el basalto y los farallones del mar, los témpanos de los
+     lagos) y la de los rápidos, en lo bajo de los ríos con cantos.
+2. **El vaivén de los lagos:** el agua sube y baja unos centímetros y dos ondas se cruzan a la deriva, con
+   rachas que la aclaran y brillos donde coinciden las crestas.
+3. **La corriente de los ríos:** la textura avanza con el agua siguiendo el cauce, sin estirarse (dos fases que
+   se turnan: un *flow map*).
+4. **El mar:** el oleaje de alta mar y, en la orilla, las olas que entran y se retiran: el agua sube por la costa
+   y baja, con una línea de espuma que va y viene. No llegan a toda la costa a la vez.
+5. **La espuma:**
+   - en las orillas: fina en los lagos y los ríos, la rompiente en el mar;
+   - en las rocas y en los rápidos;
+   - alrededor de quien está en el agua: el jugador, la tribu, los enemigos y los animales que vadean o nadan
+     (hasta ocho, los más cercanos, `wg_ripples`), un anillo que se abre y se cierra, más fuerte si se mueven;
+   - hecha de jirones de burbujas (`assets/terrain/espuma.png`, de `tools/assets/texturas_terreno.py`).
+6. **Las cascadas:** la cortina tiene la textura de las ondas y baja (unos 5 m/s). Al pie, además de la espuma,
+   una bruma de motas blandas que suben, se abren y se desvanecen, más en las caídas altas y anchas. Helada, la
+   cortina queda quieta, sin espuma ni bruma.
+7. **Para Android:**
+   - las cuentas van respecto de un origen cerca del jugador (el chunk donde está), así los números entran en
+     `mediump`. Las ondas caben justas en 48 m y el tiempo de los vértices vuelve a empezar cada 120 s: al
+     cambiar de chunk o de vuelta, nada salta;
+   - el de vértices va en `mediump`, como el shader por defecto de raylib (con `highp`, llvmpipe de Mesa no
+     dibuja nada en OpenGL ES);
+   - el CI compila el juego para OpenGL ES 2.0 y lo dibuja con Mesa: el shader de Android se prueba en cada PR.
+
+![Cómo se ve el agua](mundo/como_se_ve_el_agua.png)
+
+*La corriente del río, con la espuma de quien nada · las olas del mar en las rocas · un lago glaciar por su
+desborde · los rápidos de un arroyo · la cascada de cerca, con su bruma · el agua sin su shader (`--ir meandro
+--trampa nado`; `--ir mar --dron 6`; `--ir desborde`; `--ir rapidos`; `--ir cascada-pie`; `--sin-shader`).*
+
+**Las pruebas:**
+- `test_river_flow` (`tests/test_main.c`): en cada trecho de cada río la corriente va aguas abajo, a lo largo del
+  trecho, y el agua nunca sube;
+- el CI: el shader carga en GLSL 330 y en GLSL ES 100 (el log dice «el agua con su shader»).
+
+## La fase que sigue
+
+Con su PR, el CI verde, su release, sus capturas y sus pruebas.
+
 - **Fase 5, v0.11.4, «Los bordes».**
   - Del otro lado del canal del bosque, un muro de roca y estratos levantados: una vista que no se alcanza.
   - El mar abierto se puede nadar hasta un límite. Más allá, el tiburón. El jugador nunca muere: lo muerde,

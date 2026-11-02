@@ -164,3 +164,56 @@ void wg_draw_hud(const GameActions *ga, int right_x, int y) {
     IconId icon = hydration_sick(h) ? ICON_ESPIRITUS : dl >= DRUNK_DRUNK ? ICON_JARRA : ICON_BEBER;
     hud_vital(icon, txt, col, h->water / THIRST_MAX, UI_TURQUOISE, right_x, y);
 }
+
+// ------------------------------------------------------------------ la espuma de quien esta en el agua
+typedef struct {
+    float x, z, r, w, d;
+} Ripple;
+
+static void ripple_add(Ripple *list, int *n, int cap, const Terrain *t, Vector3 from, float x, float z, float size, bool moving) {
+    float d = sqrtf((x - from.x) * (x - from.x) + (z - from.z) * (z - from.z));
+    if (d > 70.0f) return;
+    WaterStep ws = terrain_water_step(t, x, z);
+    if (ws != WSTEP_WADE && ws != WSTEP_SWIM) return;
+    Ripple r = { x, z, 0.45f + 0.35f * size, (ws == WSTEP_SWIM ? 0.8f : 0.55f) + (moving ? 0.2f : 0.0f), d };
+    if (*n < cap) {
+        list[(*n)++] = r;
+        return;
+    }
+    int far = 0; // lleno: reemplaza al mas lejano, si este esta mas cerca
+    for (int i = 1; i < cap; i++)
+        if (list[i].d > list[far].d) far = i;
+    if (r.d < list[far].d) list[far] = r;
+}
+
+int wg_ripples(const GameActions *ga, const Troop *troop, const Combat *cb, const Player *p, const Terrain *t, Vector4 *out, int max) {
+    enum { CAP = 16 };
+    Ripple list[CAP];
+    int n = 0;
+    ripple_add(list, &n, CAP, t, p->pos, p->pos.x, p->pos.z, 1.0f, p->moving);
+    for (int i = 0; troop && i < troop->count && i < TROOP_MAX; i++) {
+        const Npc *np = &ga->npcs[i];
+        const Member *m = &troop->members[i];
+        if (m->status != STATUS_ACTIVE || np->member_id != m->id || ga_away(ga, m)) continue;
+        ripple_add(list, &n, CAP, t, p->pos, np->pos.x, np->pos.z, 1.0f, np->moving);
+    }
+    for (int i = 0; cb && i < CB_MAX_ENEMIES; i++) {
+        const Enemy *e = &cb->enemies[i];
+        if (!e->used || e->state == EN_DEAD) continue;
+        ripple_add(list, &n, CAP, t, p->pos, e->pos.x, e->pos.z, e->mounted || e->kind == ENEMY_CHARIOT ? 2.0f : 1.0f, e->speed > 0.2f);
+    }
+    for (int i = 0; i < ga->animal_count; i++) {
+        const Animal *a = &ga->animals[i];
+        const SpeciesDef *d = species_def(a->species);
+        if (!a->used || a->state == ANIMAL_DEAD || d->flier) continue;
+        ripple_add(list, &n, CAP, t, p->pos, a->x, a->z, fminf(2.5f, d->size), a->speed > 0.2f);
+    }
+    for (int i = 1; i < n; i++) // los mas cercanos primero
+        for (int k = i; k > 0 && list[k].d < list[k - 1].d; k--) {
+            Ripple tmp = list[k];
+            list[k] = list[k - 1], list[k - 1] = tmp;
+        }
+    int count = n < max ? n : max;
+    for (int i = 0; i < count; i++) out[i] = (Vector4){ list[i].x, list[i].z, list[i].r, list[i].w };
+    return count;
+}

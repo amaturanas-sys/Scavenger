@@ -19,6 +19,7 @@
 // --enemigos bandidos|culto|lobos|arqueros los pone delante; --heridas hiere al jugador y a la tribu;
 // --apuntar empuña el arco tenso (pruebas).
 // --sin-teclado simula un dispositivo Android sin teclado (prueba del aviso).
+// --sin-shader dibuja el agua sin su shader, como si no compilara (prueba del respaldo).
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
@@ -419,7 +420,8 @@ static void game_new(GameState *g, Terrain *terrain, Camp *camp, unsigned seed, 
 // Prueba: lleva al jugador a un sitio del mundo, mirando hacia lo que interesa. Lugares:
 // estepa, bosque, altiplano, fiordos, desierto (en su region); canal, muro, mar, hielo (el
 // borde); lengua (el pie del glaciar, donde avanza y retrocede); meandro, trenzado, arroyo, rapidos (los rios);
-// cascada (la mas alta), cascada-helada (la de un rio que en invierno se hiela); lago, desborde (el lago mas
+// cascada (la mas alta), cascada-helada (la de un rio que en invierno se hiela), cascada-pie (la mas alta, de
+// cerca: la cortina, la espuma y la bruma); lago, desborde (el lago mas
 // grande y su punto de desborde); capital, aldea, guarida.
 static void go_to(const Terrain *t, Player *p, const char *what) {
     const World *w = t->world;
@@ -487,8 +489,9 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
             if (h > best) best = h, x = w->peaks[i].x + 6.0f, z = w->peaks[i].z, lx = 0.0f, lz = 0.0f, ok = true;
         }
     }
-    if (!strcmp(what, "cascada") || !strcmp(what, "cascada-helada")) { // la cascada mas grande tierra adentro (de alto por ancho):
-        // abajo, mirandola caer; cascada-helada: la mas grande de un rio que en invierno no se seca (se hiela)
+    if (!strcmp(what, "cascada") || !strcmp(what, "cascada-helada") || !strcmp(what, "cascada-pie")) { // la cascada mas grande tierra
+        // adentro (de alto por ancho): abajo, mirandola caer; cascada-helada: la mas grande de un rio que en invierno no se
+        // seca (se hiela); cascada-pie: la misma que cascada, de cerca (la cortina, la espuma y la bruma)
         int best = -1;
         bool frozen = !strcmp(what, "cascada-helada");
         for (int i = 0; i < w->fall_count; i++) {
@@ -499,8 +502,9 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
         }
         if (best >= 0) {
             const Waterfall *f = &w->falls[best];
-            float dx = sinf(f->yaw), dz = cosf(f->yaw), side = 0.5f * f->width + 12.0f;
-            x = f->bx + dx * 35.0f - dz * side, z = f->bz + dz * 35.0f + dx * side;
+            bool close = !strcmp(what, "cascada-pie");
+            float dx = sinf(f->yaw), dz = cosf(f->yaw), side = 0.5f * f->width + (close ? 6.0f : 12.0f), back = close ? 15.0f : 35.0f;
+            x = f->bx + dx * back - dz * side, z = f->bz + dz * back + dx * side;
             lx = 0.5f * (f->x + f->bx), lz = 0.5f * (f->z + f->bz), ok = true;
         }
     }
@@ -767,6 +771,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--ir") && i + 1 < argc) start_goto = argv[++i];
         else if (!strcmp(argv[i], "--diagnostico")) start_diag = true;
         else if (!strcmp(argv[i], "--tactil")) g_force_touch = true;
+        else if (!strcmp(argv[i], "--sin-shader")) terrain_water_shader_off(); // el agua de antes (prueba del respaldo)
         else if (!strcmp(argv[i], "--selector") && i + 1 < argc) start_picker = atoi(argv[++i]) - 1; // prueba: el selector de una casilla
         else if (!strcmp(argv[i], "--rumbo") && i + 1 < argc) start_heading = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--camara") && i + 1 < argc) start_pitch = (float)atof(argv[++i]);
@@ -1478,7 +1483,11 @@ int main(int argc, char **argv) {
         if (!gallery_mode) trv_draw_world(&g_actions, &troop, (float)GetTime());
         if (!gallery_mode) td_draw_world(&g_actions, &g_props, &terrain, &player, (float)GetTime()); // las caravanas
         if (!gallery_mode) dz_draw_world(&g_dz, &terrain, (float)GetTime());
-        if (!gallery_mode) terrain_draw_water(&terrain, (float)GetTime()); // translucida: despues de lo opaco
+        if (!gallery_mode) { // translucida: despues de lo opaco; con la espuma de quien esta en el agua
+            Vector4 ripples[TERRAIN_RIPPLES];
+            terrain_set_ripples(ripples, wg_ripples(&g_actions, &troop, &g_combat, &player, &terrain, ripples, TERRAIN_RIPPLES));
+            terrain_draw_water(&terrain, (float)GetTime());
+        }
         if (!gallery_mode) terrain_draw_falls(&terrain, (float)GetTime());
         if (!gallery_mode) pg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime()); // la obra por ubicar, translucida
         hearth_draw_smoke(cam, (float)GetTime(), climate.wind, gallery_mode ? 1.0f : clock_light(world_time)); // el humo, oscurecido de noche como todo

@@ -170,7 +170,9 @@ Lo que hace Claude con cada PR del Codespace, antes de publicar:
   - sin `unistd.h` ni `dirent.h` en `src/`;
   - sin `M_PI` (usar las constantes `PI` del código).
 - **Cero advertencias nuevas** (`-Wall -Wextra -Wpedantic`, `/W4`).
-- **Los shaders** también en GLSL ES 100.
+- **Los shaders** también en GLSL ES 100, con `precision mediump float;` en el de vértices (como el de raylib:
+  con `highp`, llvmpipe de Mesa no dibuja nada en OpenGL ES) y un respaldo si no compila. El CI los compila y
+  dibuja también con OpenGL ES 2.0 (`-DOPENGL_VERSION="ES 2.0"`; ver el del agua, `src/world/terrain.c`).
 - **La memoria:** arreglos fijos (`*_MAX`) y estructuras planas; nada se reserva por cuadro y no hay ECS
   genérico.
 - **Sin bibliotecas externas nuevas** (cJSON ni ninguna): la compilación solo baja raylib. Si hace falta
@@ -330,9 +332,9 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.11.2. La fase 3 del agua: la tribu, los enemigos y los animales vadean y cruzan un río a nado
-  (`terrain_wade_step`, `hazard_water_step`), el hielo se rompe bajo todos según su peso, y el picahielo abre un
-  agujero para pescar ([AGUA.md](AGUA.md)).
+- **Versión:** 0.11.3. La fase 4 del agua: el shader del agua, en GLSL 330 y GLSL ES 100, con su respaldo
+  (el vaivén, la corriente por el cauce, las olas en la costa, la espuma y la bruma de las cascadas); el CI
+  compila y dibuja la variante OpenGL ES 2.0 ([AGUA.md](AGUA.md)).
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
@@ -340,16 +342,15 @@ traba.
     v0.10.2);
   - las casas y los campos por persona (v0.10.4 y v0.10.7: 110 y 45 almas por casa, 180 y 40 por campo);
   - la verificación de la v0.10.9: el reparto Codespace → Claude, las reglas comunes y las guardas;
-  - el agua, fases 1 a 3 (v0.11.0 a v0.11.2).
+  - el agua, fases 1 a 4 (v0.11.0 a v0.11.3).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
   - el campamento nodal: descartado por el usuario (duplicaba el campamento);
   - los cauces por estación: los rehizo la fase 2 del agua (v0.11.1).
 - **Lo que sigue:**
-  - **El agua, fases 4 y 5** ([AGUA.md](AGUA.md)): el shader del agua (también en GLSL ES 100 para Android);
-    los bordes (el muro tras el canal y el tiburón: muerde, el jugador despierta herido en la playa, con
-    secuelas que solo cura un curandero o un druida).
+  - **El agua, fase 5** ([AGUA.md](AGUA.md)): los bordes (el muro tras el canal y el tiburón: muerde, el
+    jugador despierta herido en la playa, con secuelas que solo cura un curandero o un druida).
   - **Lo que espera material del usuario** (PLAN_HERRAMIENTAS_IA.md): las imágenes de la D.2 y los
     cuerpos riggeados y los videos de la C.1.
 

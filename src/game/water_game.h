@@ -10,6 +10,7 @@
 
 #include <stddef.h>
 
+#include "game/combat_game.h"
 #include "game/hazards_game.h"
 #include "sim/water.h"
 
@@ -26,6 +27,9 @@ bool wg_water_near(const Terrain *t, float x, float z);
 // ¿Junto a un pozo (o la fuente de un caravasar)? Su agua viene de hondo y es limpia: se bebe
 // y se lleva sin hervir.
 bool wg_at_well(const Terrain *t, float x, float z);
+// La espuma de quien esta en el agua (docs/AGUA.md, fase 4): el jugador, la tribu, los enemigos y los animales
+// que vadean o nadan a menos de 70 m, los mas cercanos primero, para terrain_set_ripples (x, z, radio, cuanta).
+int wg_ripples(const GameActions *ga, const Troop *troop, const Combat *cb, const Player *p, const Terrain *t, Vector4 *out, int max);
 // Sed, borrachera y enfermedad bajo la salud (alineado a la derecha).
 void wg_request_drink(void); // como pulsar N (desde el HUD)
 void wg_draw_hud(const GameActions *ga, int right_x, int y);

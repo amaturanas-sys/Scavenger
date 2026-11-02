@@ -19,7 +19,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
-            libxi-dev libgl1-mesa-dev libgl1-mesa-dri xvfb ninja-build
+            libxi-dev libgl1-mesa-dev libgl1-mesa-dri libegl1 libgles2 xvfb ninja-build
       - name: Inventario de assets
         run: |
           python3 tools/assets/inventario.py check
@@ -57,6 +57,24 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" \
             ./estepa --galeria --screenshot galeria.png --frames 40
           test -s galeria.png
+      - name: El shader del agua (GLSL 330, y GLSL ES 100 como en Android)
+        run: |
+          # El de escritorio, junto a un rio; y el juego compilado para OpenGL ES 2.0, con Mesa (el CI de Android
+          # solo arma el APK: aqui se compila y se dibuja el shader de Android). Si no compila, el agua de antes:
+          # el log no dice "el agua con su shader" y el paso falla (docs/AGUA.md, fase 4).
+          cd build
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" \
+            ./estepa --screenshot agua.png --frames 40 --ir meandro > agua.log 2>&1
+          grep "ESTEPA: el agua con su shader (GLSL 330)" agua.log
+          cd ..
+          cmake -S . -B build-es2 -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENGL_VERSION="ES 2.0" -DESTEPA_BUILD_TESTS=OFF \
+            -DFETCHCONTENT_SOURCE_DIR_RAYLIB="$PWD/build/_deps/raylib-src"
+          cmake --build build-es2 --target estepa
+          cd build-es2
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" \
+            ./estepa --screenshot agua_es2.png --frames 40 --ir meandro > agua_es2.log 2>&1
+          grep "OpenGL ES" agua_es2.log
+          grep "ESTEPA: el agua con su shader (GLSL ES 100)" agua_es2.log
       - uses: actions/upload-artifact@v4
         with:
           name: estepa-linux
@@ -65,6 +83,8 @@ jobs:
             build/assets
             build/captura.png
             build/galeria.png
+            build/agua.png
+            build-es2/agua_es2.png
 
   windows:
     name: Windows (tests + build)

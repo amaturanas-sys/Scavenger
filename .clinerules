@@ -82,7 +82,8 @@ cmake -E copy_directory assets build/assets
   `src/world/` y `src/ui/` usan raylib. Ver `docs/ARQUITECTURA.md`.
 - **C11 llano:** sin arreglos de largo variable, sin extensiones de GNU, sin `unistd.h` ni `dirent.h` en
   `src/` y sin `M_PI`.
-- **Cero advertencias nuevas.** Los shaders, también en GLSL ES 100.
+- **Cero advertencias nuevas.** Los shaders, también en GLSL ES 100, con `precision mediump float;` en el de
+  vértices (con `highp`, Mesa no dibuja nada en OpenGL ES) y un respaldo si no compila (ver `src/world/terrain.c`).
 - **La memoria:** arreglos fijos (`*_MAX`) y estructuras planas. Nada se reserva ni se carga dentro del
   bucle de cuadros. Sin bibliotecas nuevas.
 - **Un `.c` nuevo** va en `CMakeLists.txt`. Un tipo vive en un solo header.

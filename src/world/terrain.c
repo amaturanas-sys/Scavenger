@@ -432,8 +432,141 @@ static Model make_model(TriBuf *b) {
 // vertice seco toma el nivel de sus vecinos con agua, asi el borde del agua se mete bajo la orilla. Cada
 // vertice lleva el color de su agua (lago, rio, mar o deshielo turquesa) mezclado con el de su hielo; el
 // hielo que aguanta va en su propia malla (sin el brillo de las ondas), y la espuma en otra.
-static Texture2D g_water_tex, g_ice_tex;
+static Texture2D g_water_tex, g_ice_tex, g_foam_tex;
 static bool g_water_tex_tried;
+
+// ---------------------------------------------------------------- el shader del agua (docs/AGUA.md, fase 4)
+// Cada vertice de la malla del agua lleva (con el shader):
+//  - texcoord: x la hondura (el agua sobre el suelo, m; negativa bajo la orilla), y la espuma de las rocas y los
+//    rapidos [0, 1] (-1: un charco, sin espuma);
+//  - texcoord2: la corriente (m/s; en los lagos y el mar, una deriva leve);
+//  - normal: x el agua (0 lago o canal, 1 rio, 2 mar), y su hielo [0, 1] (calma las olas y la espuma).
+// Las ondas y la espuma se piden respecto de un origen cerca del jugador (el chunk donde esta: salta de a 48 m),
+// asi los numeros quedan chicos (mediump en Android). Por eso las ondas caben justas en 48 m (K1) y el tiempo
+// del vertice vuelve a empezar cada 120 s (W1): al saltar, nada se mueve.
+#define WATER_GLSL_VS \
+    "ATTR vec3 vertexPosition;\n" \
+    "ATTR vec2 vertexTexCoord;\n" \
+    "ATTR vec2 vertexTexCoord2;\n" \
+    "ATTR vec3 vertexNormal;\n" \
+    "ATTR vec4 vertexColor;\n" \
+    "uniform mat4 mvp;\n" \
+    "uniform vec4 uOrigin;\n" /* xz: el origen; w: el tiempo (s, de 0 a 120) */ \
+    "VARY vec2 vRel;\n" \
+    "VARY vec2 vFlow;\n" \
+    "VARY vec4 vColor;\n" \
+    "VARY vec4 vInfo;\n" \
+    "VARY float vGust;\n" \
+    "const float K1 = 0.1308997;\n" \
+    "const float W1 = 0.0523599;\n" \
+    "void main() {\n" \
+    "    vec3 p = vertexPosition;\n" \
+    "    vec2 rel = p.xz - uOrigin.xz;\n" \
+    "    float t = uOrigin.w;\n" \
+    "    float sea = step(1.5, vertexNormal.x);\n" \
+    "    float river = step(0.5, vertexNormal.x) - sea;\n" \
+    "    float calm = 1.0 - clamp(vertexNormal.y * 2.0, 0.0, 1.0);\n" \
+    "    float depth = vertexTexCoord.x;\n" \
+    "    float bob = 0.035 * sin(t * W1 * 22.0 + rel.x * K1 * 2.0 + rel.y * K1) * (1.0 - river);\n" \
+    "    float swell = 0.12 * sin(t * W1 * 12.0 + rel.x * K1 - rel.y * K1) * smoothstep(1.0, 6.0, depth);\n" \
+    "    float surge = 0.28 * sin(t * W1 * 16.0 + depth * 1.4 + 0.6 * sin(rel.x * K1 + rel.y * K1 * 2.0))\n" \
+    "                * (1.0 - smoothstep(0.5, 3.5, depth));\n" \
+    "    float lift = (bob + sea * (swell + surge)) * calm;\n" \
+    "    p.y += lift;\n" \
+    "    vRel = rel;\n" \
+    "    vFlow = vertexTexCoord2;\n" \
+    "    vColor = vertexColor;\n" \
+    "    vInfo = vec4(depth + lift, vertexTexCoord.y, sea, vertexNormal.y);\n" \
+    "    vGust = 0.07 * sin(rel.x * K1 * 2.0 + rel.y * K1 - t * W1 * 8.0) * (1.0 - river) * calm;\n" \
+    "    gl_Position = mvp * vec4(p, 1.0);\n" \
+    "}\n"
+#define WATER_GLSL_FS \
+    "uniform sampler2D texture0;\n" /* las ondas (assets/terrain/agua.png) */ \
+    "uniform sampler2D texture1;\n" /* la espuma (assets/terrain/espuma.png) */ \
+    "uniform vec4 colDiffuse;\n" \
+    "uniform vec4 uPhase;\n" /* xy: las dos fases de la corriente [0, 1); zw: la deriva de la segunda onda */ \
+    "uniform vec4 uPulse;\n" /* x: el latido de la espuma [-1, 1] */ \
+    "uniform vec4 uBodies[8];\n" /* quien esta en el agua: xy donde, z el radio, w cuanta espuma */ \
+    "VARY vec2 vRel;\n" \
+    "VARY vec2 vFlow;\n" \
+    "VARY vec4 vColor;\n" \
+    "VARY vec4 vInfo;\n" \
+    "VARY float vGust;\n" \
+    "void main() {\n" \
+    "    vec2 uv = vRel / 6.0;\n" \
+    "    vec2 fuv = vRel / 12.0;\n" \
+    "    vec2 f = vFlow * (1.6 / 6.0);\n" /* lo que avanza la corriente en un ciclo de 1,6 s */ \
+    "    float blend = abs(1.0 - 2.0 * uPhase.x);\n" \
+    "    float ra = TEX(texture0, uv - f * uPhase.x).r;\n" \
+    "    float rb = TEX(texture0, uv - f * uPhase.y + vec2(0.37, 0.61)).r;\n" \
+    "    float ripple = mix(ra, rb, blend);\n" \
+    "    float r2 = TEX(texture0, uv * 0.75 + uPhase.zw).r;\n" \
+    "    float shade = 0.5 * (ripple + r2) + vGust;\n" /* como antes: la textura (0,84 de promedio) por el color */ \
+    "    float glint = smoothstep(0.9, 0.98, min(ripple, r2 + 0.03));\n" \
+    "    float na = TEX(texture1, fuv - f * 0.5 * uPhase.x).r;\n" \
+    "    float nb = TEX(texture1, fuv - f * 0.5 * uPhase.y + vec2(0.5, 0.5)).r;\n" \
+    "    float noise = mix(na, nb, blend);\n" \
+    "    float sea = vInfo.z;\n" \
+    "    float ice = vInfo.w;\n" \
+    "    float shore = vInfo.y < 0.0 ? 0.0 : 1.0 - smoothstep(0.0, mix(0.3, 1.1, sea), vInfo.x);\n" \
+    "    float foam = shore * smoothstep(0.62 - 0.32 * shore, 0.8, noise + 0.12 * uPulse.x * (0.4 + sea));\n" \
+    "    foam = max(foam, max(vInfo.y, 0.0) * smoothstep(0.42, 0.72, noise));\n" \
+    "    for (int i = 0; i < 8; i++) {\n" \
+    "        vec4 b = uBodies[i];\n" \
+    "        float d = length(vRel - b.xy);\n" \
+    "        float ring = 1.0 - smoothstep(0.0, 0.2, abs(d - b.z));\n" \
+    "        float inner = 1.0 - smoothstep(0.0, b.z, d);\n" \
+    "        foam = max(foam, b.w * max(ring, 0.6 * inner) * smoothstep(0.25, 0.55, noise + 0.2));\n" \
+    "    }\n" \
+    "    foam *= 1.0 - clamp(ice * 2.0, 0.0, 1.0);\n" \
+    "    vec3 col = vColor.rgb * shade + glint * 0.16 * (1.0 - ice);\n" \
+    "    col = mix(col, vec3(0.96, 0.98, 1.0), foam * 0.92);\n" \
+    "    FRAG = vec4(col, mix(vColor.a, 0.96, foam)) * colDiffuse;\n" \
+    "}\n"
+static const char WATER_VS_330[] = "#version 330\n#define ATTR in\n#define VARY out\n" WATER_GLSL_VS;
+static const char WATER_FS_330[] = "#version 330\n#define VARY in\n#define TEX texture\n#define FRAG finalColor\nout vec4 finalColor;\n" WATER_GLSL_FS;
+// En GLSL ES el vertice va en mediump, como el shader por defecto de raylib con el que se dibuja todo lo demas en
+// Android (en los moviles es de 32 bits; y con highp, llvmpipe de Mesa no dibuja nada en OpenGL ES).
+static const char WATER_VS_100[] = "#version 100\nprecision mediump float;\n#define ATTR attribute\n#define VARY varying\n" WATER_GLSL_VS;
+static const char WATER_FS_100[] = "#version 100\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n"
+                                   "#define VARY varying\n#define TEX texture2D\n#define FRAG gl_FragColor\n" WATER_GLSL_FS;
+
+static Shader g_water_shader;
+static bool g_water_shader_ok, g_water_shader_off;
+static int g_wloc_origin, g_wloc_phase, g_wloc_pulse, g_wloc_bodies;
+static Vector4 g_ripples[TERRAIN_RIPPLES]; // x, z del mundo, radio y cuanta espuma
+static int g_ripple_count;
+
+// El shader del agua: GLSL ES 100 con OpenGL ES (Android), GLSL 330 con OpenGL 3.3. Sin el (no compila, o
+// falta la textura de la espuma), el agua de antes.
+static void load_water_shader(void) {
+    if (g_water_shader_off) return;
+    int v = rlGetVersion();
+    bool es = v == RL_OPENGL_ES_20 || v == RL_OPENGL_ES_30;
+    if (!es && v != RL_OPENGL_33 && v != RL_OPENGL_43) return; // OpenGL 1.1 o 2.1: sin shader
+    Shader sh = LoadShaderFromMemory(es ? WATER_VS_100 : WATER_VS_330, es ? WATER_FS_100 : WATER_FS_330);
+    if (!IsShaderValid(sh) || sh.id == rlGetShaderIdDefault()) {
+        TraceLog(LOG_WARNING, "ESTEPA: el shader del agua no compilo: el agua de antes");
+        return;
+    }
+    g_water_shader = sh;
+    g_wloc_origin = GetShaderLocation(sh, "uOrigin");
+    g_wloc_phase = GetShaderLocation(sh, "uPhase");
+    g_wloc_pulse = GetShaderLocation(sh, "uPulse");
+    g_wloc_bodies = GetShaderLocation(sh, "uBodies[0]");
+    if (g_wloc_bodies < 0) g_wloc_bodies = GetShaderLocation(sh, "uBodies");
+    g_water_shader_ok = g_water_tex.id && g_foam_tex.id;
+    if (!g_water_shader_ok) UnloadShader(sh), g_water_shader = (Shader){ 0 };
+    else TraceLog(LOG_INFO, "ESTEPA: el agua con su shader (GLSL %s)", es ? "ES 100" : "330"); // el CI lo busca
+}
+
+bool terrain_water_shader(void) { return g_water_shader_ok; }
+void terrain_water_shader_off(void) { g_water_shader_off = true; }
+
+void terrain_set_ripples(const Vector4 *bodies, int count) {
+    g_ripple_count = count < 0 ? 0 : count > TERRAIN_RIPPLES ? TERRAIN_RIPPLES : count;
+    for (int i = 0; i < g_ripple_count; i++) g_ripples[i] = bodies[i];
+}
 
 // Las aguas de cada vertice (src/sim/world.h, WaterBodies) y lo de cada celda: se piden una vez por chunk.
 // gh: el suelo de los vertices (el de la malla del chunk).
@@ -468,6 +601,23 @@ static void sample_water(const Terrain *t, Chunk *ch, int cx, int cz, const floa
             if (wet && world_river_bank(t->world, mx, mz, NULL) > 0.85f) f |= WC_RAPIDS;
             ch->wcell[j * N + i] = f;
         }
+    // La espuma de cada vertice (el shader del agua) que rodea las rocas del agua: los cantos del cauce, los
+    // farallones y el basalto del mar, los tempanos de los lagos. La de los rapidos depende de la hondura (y la
+    // hondura, de la estacion): mesh_water.
+    ch->wfoam = MemAlloc(V * V);
+    for (int j = 0; j < V; j++)
+        for (int i = 0; i < V; i++) {
+            float f = 0.0f, x = ox + i * cell, z = oz + j * cell;
+            for (int k = 0; k < ch->feat_count; k++) {
+                const ChunkFeature *ft = &ch->feat[k];
+                float r = ft->kind == VF_BOULDER ? 1.1f : ft->kind == VF_BASALT ? 3.2f : ft->kind == VF_SEA_STACK ? 4.4f : ft->kind == VF_ICEBERG ? 4.0f : 0.0f;
+                if (r <= 0.0f) continue;
+                r *= ft->scale;
+                float d = sqrtf((x - ft->x) * (x - ft->x) + (z - ft->z) * (z - ft->z));
+                f = fmaxf(f, 1.0f - Clamp((d - r) / 1.8f, 0.0f, 1.0f));
+            }
+            ch->wfoam[j * V + i] = (unsigned char)(255.0f * Clamp(f, 0.0f, 1.0f));
+        }
 }
 
 static void free_water(Chunk *ch) {
@@ -482,19 +632,53 @@ static void mesh_water(const Terrain *t, Chunk *ch) {
     free_water(ch);
     ch->water_dirty = false;
     if (!ch->wbody) return;
+    if (!g_water_tex_tried) { // las texturas del agua (ondas), del hielo (grietas) y de la espuma, y el shader, una vez
+        g_water_tex_tried = true;
+        static const char *FILES[3] = { "assets/terrain/agua.png", "assets/terrain/hielo.png", "assets/terrain/espuma.png" };
+        Texture2D *tex[3] = { &g_water_tex, &g_ice_tex, &g_foam_tex };
+        for (int k = 0; k < 3; k++) {
+            const char *path = platform_asset_path(FILES[k]);
+            if (platform_asset_exists(path)) *tex[k] = LoadTexture(path);
+            if (tex[k]->id) SetTextureFilter(*tex[k], TEXTURE_FILTER_POINT), SetTextureWrap(*tex[k], TEXTURE_WRAP_REPEAT);
+            platform_note_asset(FILES[k], tex[k]->id != 0);
+        }
+        load_water_shader();
+    }
+    const bool shaded = g_water_shader_ok;
     const float cell = CHUNK_SIZE / N, ox = ch->cx * CHUNK_SIZE, oz = ch->cz * CHUNK_SIZE;
-    static float lv[V][V], ice[V][V];
+    static float lv[V][V], ice[V][V], flow[V][V][2];
     static unsigned char wk[V][V], dry[V][V];
     static float verts[W_MESHES][MAXT * 9];
     static unsigned char cols[W_MESHES][MAXT * 12];
+    static float wuv[MAXT * 6], wuv2[MAXT * 6], wnorm[MAXT * 9]; // la malla del agua, con el shader
     int count[W_MESHES] = { 0 };
     const WaterSeason *s = &t->meshed;
+    const World *w = t->world;
     for (int j = 0; j < V; j++)
         for (int i = 0; i < V; i++) {
             WaterNow n;
-            lv[j][i] = world_water_resolve(t->world, &ch->wbody[j * V + i], ox + i * cell, oz + j * cell, s, &n);
+            const WaterBodies *wb = &ch->wbody[j * V + i];
+            lv[j][i] = world_water_resolve(w, wb, ox + i * cell, oz + j * cell, s, &n);
             wk[j][i] = (unsigned char)n.kind, ice[j][i] = n.ice;
-            dry[j][i] = n.kind == WATER_RIVER && world_river_share(t->world, n.river, s) < WORLD_DRY_SHARE; // un charco
+            dry[j][i] = n.kind == WATER_RIVER && world_river_share(w, n.river, s) < WORLD_DRY_SHARE; // un charco
+            // La corriente que se ve: aguas abajo, mas rapida en lo empinado y en los arroyos, y mas lenta con
+            // poca agua. Los lagos, el canal y el mar, una deriva leve (con el viento del oeste).
+            flow[j][i][0] = flow[j][i][1] = 0.0f;
+            if (!shaded || n.kind == WATER_NONE || dry[j][i]) continue;
+            if (n.kind != WATER_RIVER || n.river < 0) {
+                float drift = n.kind == WATER_SEA ? 0.2f : 0.11f;
+                flow[j][i][0] = drift * 0.86f, flow[j][i][1] = drift * 0.5f;
+                continue;
+            }
+            float along = 0.0f, dx, dz, slope;
+            for (int k = 0; k < WATER_RIVERS_HERE; k++)
+                if (wb->river[k] == n.river) along = wb->river_along[k];
+            if (!world_river_flow(w, n.river, along, &dx, &dz, &slope)) continue;
+            const River *rv = &w->rivers[n.river];
+            float base = rv->kind == RIVER_CREEK ? 0.9f : rv->kind == RIVER_BRAIDED ? 0.75f : rv->kind == RIVER_TRIBUTARY ? 0.6f : 0.45f;
+            float full = Clamp(world_river_share(w, n.river, s) / WORLD_FULL_SHARE, 0.0f, 1.0f);
+            float v = Clamp(base + 30.0f * slope, 0.3f, 2.2f) * (0.45f + 0.55f * full);
+            flow[j][i][0] = dx * v, flow[j][i][1] = dz * v;
         }
     // Los colores del agua (con el brillo de las ondas a la mitad: ver terrain_draw_water) y del hielo.
     const Color lake = { 52, 96, 128, 200 }, river = { 62, 112, 140, 200 }, sea = { 36, 72, 104, 220 }, glacial = { 84, 168, 178, 210 };
@@ -533,6 +717,7 @@ static void mesh_water(const Terrain *t, Chunk *ch) {
                 qi[c] = use[c] ? ice[z][x] : avg_ice;
             }
             const int tri[6] = { 0, 1, 2, 2, 1, 3 };
+            float code = kind == WATER_SEA ? 2.0f : kind == WATER_RIVER && !puddle ? 1.0f : 0.0f;
             for (int v = 0; v < 6; v++) {
                 int o = count[m] * 3 + v, c = tri[v];
                 memcpy(&verts[m][o * 3], q[c], sizeof(q[0]));
@@ -540,12 +725,22 @@ static void mesh_water(const Terrain *t, Chunk *ch) {
                 float boost = m == W_WATER ? 1.0f / 0.94f : 1.0f;
                 cols[m][o * 4 + 0] = (unsigned char)fminf(255.0f, k.r * boost), cols[m][o * 4 + 1] = (unsigned char)fminf(255.0f, k.g * boost);
                 cols[m][o * 4 + 2] = (unsigned char)fminf(255.0f, k.b * boost), cols[m][o * 4 + 3] = (unsigned char)Lerp(base.a, icec.a, Clamp(qi[c], 0.0f, 1.0f));
+                if (shaded && m == W_WATER) { // hondura, espuma, corriente, que agua y su hielo (ver el shader)
+                    int x = ci[c][0], z = ci[c][1];
+                    float depth = q[c][1] - ch->wground[z * V + x], rocks = (float)ch->wfoam[z * V + x] / 255.0f;
+                    // Los rapidos: en lo bajo de los rios con cantos (como la malla de espuma de antes).
+                    float rapids = (ch->wcell[j * N + i] & WC_RAPIDS) && kind == WATER_RIVER ? 0.6f * (1.0f - Clamp((depth - 0.25f) / 0.6f, 0.0f, 1.0f)) : 0.0f;
+                    wuv[o * 2 + 0] = depth;
+                    wuv[o * 2 + 1] = puddle ? -1.0f : fmaxf(rocks, rapids);
+                    wuv2[o * 2 + 0] = flow[z][x][0], wuv2[o * 2 + 1] = flow[z][x][1];
+                    wnorm[o * 3 + 0] = code, wnorm[o * 3 + 1] = Clamp(qi[c], 0.0f, 1.0f), wnorm[o * 3 + 2] = 0.0f;
+                }
             }
             count[m] += 2;
             // Espuma: la rompiente del mar y los rapidos de los rios con cantos (no los trenzados ni los
             // charcos); la opacidad sale de la profundidad en cada esquina (la franja sigue la orilla). Con
-            // hielo, menos; helada, ninguna.
-            bool surf = m == W_WATER && !puddle &&
+            // hielo, menos; helada, ninguna. Con el shader del agua, la espuma la hace el (esta malla no va).
+            bool surf = !shaded && m == W_WATER && !puddle &&
                         (kind == WATER_SEA ? lowest > avg - 2.0f : kind == WATER_RIVER && lowest > avg - 0.8f && (ch->wcell[j * N + i] & WC_RAPIDS));
             if (surf) {
                 for (int v = 0; v < 6; v++) {
@@ -561,17 +756,6 @@ static void mesh_water(const Terrain *t, Chunk *ch) {
                 count[W_FOAM] += 2;
             }
         }
-    if (!g_water_tex_tried) { // las texturas del agua (ondas) y del hielo (grietas), una vez
-        g_water_tex_tried = true;
-        static const char *FILES[2] = { "assets/terrain/agua.png", "assets/terrain/hielo.png" };
-        Texture2D *tex[2] = { &g_water_tex, &g_ice_tex };
-        for (int k = 0; k < 2; k++) {
-            const char *path = platform_asset_path(FILES[k]);
-            if (platform_asset_exists(path)) *tex[k] = LoadTexture(path);
-            if (tex[k]->id) SetTextureFilter(*tex[k], TEXTURE_FILTER_POINT), SetTextureWrap(*tex[k], TEXTURE_WRAP_REPEAT);
-            platform_note_asset(FILES[k], tex[k]->id != 0);
-        }
-    }
     for (int m = 0; m < W_MESHES; m++) {
         ch->has_water[m] = count[m] > 0;
         if (!count[m]) continue;
@@ -584,16 +768,28 @@ static void mesh_water(const Terrain *t, Chunk *ch) {
         mesh.colors = MemAlloc(mesh.vertexCount * 4);
         memcpy(mesh.vertices, verts[m], mesh.vertexCount * 3 * sizeof(float));
         memcpy(mesh.colors, cols[m], mesh.vertexCount * 4);
-        float span = m == W_ICE ? 10.0f : 6.0f; // ondas cada 6 m; las placas del hielo, de 10 m (las texturas se repiten)
-        for (int i = 0; i < mesh.vertexCount; i++) {
-            mesh.normals[i * 3 + 1] = 1.0f;
-            mesh.texcoords[i * 2 + 0] = mesh.vertices[i * 3 + 0] / span;
-            mesh.texcoords[i * 2 + 1] = mesh.vertices[i * 3 + 2] / span;
+        bool own = shaded && m == W_WATER; // con el shader: sus datos (las ondas las calcula el)
+        if (own) {
+            mesh.texcoords2 = MemAlloc(mesh.vertexCount * 2 * sizeof(float));
+            memcpy(mesh.texcoords, wuv, mesh.vertexCount * 2 * sizeof(float));
+            memcpy(mesh.texcoords2, wuv2, mesh.vertexCount * 2 * sizeof(float));
+            memcpy(mesh.normals, wnorm, mesh.vertexCount * 3 * sizeof(float));
+        } else {
+            float span = m == W_ICE ? 10.0f : 6.0f; // ondas cada 6 m; las placas del hielo, de 10 m (las texturas se repiten)
+            for (int i = 0; i < mesh.vertexCount; i++) {
+                mesh.normals[i * 3 + 1] = 1.0f;
+                mesh.texcoords[i * 2 + 0] = mesh.vertices[i * 3 + 0] / span;
+                mesh.texcoords[i * 2 + 1] = mesh.vertices[i * 3 + 2] / span;
+            }
         }
         UploadMesh(&mesh, false);
         ch->water[m] = LoadModelFromMesh(mesh);
         Texture2D tex = m == W_ICE && g_ice_tex.id ? g_ice_tex : g_water_tex;
         if (m != W_FOAM && tex.id) ch->water[m].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = tex;
+        if (own) {
+            ch->water[m].materials[0].shader = g_water_shader;
+            ch->water[m].materials[0].maps[MATERIAL_MAP_SPECULAR].texture = g_foam_tex;
+        }
     }
 }
 
@@ -759,8 +955,8 @@ static void free_chunk(Chunk *c) {
     free_water(c);
     MemFree(c->tri);
     c->tri = NULL;
-    if (c->wbody) MemFree(c->wbody), MemFree(c->wground), MemFree(c->wcell);
-    c->wbody = NULL, c->wground = NULL, c->wcell = NULL;
+    if (c->wbody) MemFree(c->wbody), MemFree(c->wground), MemFree(c->wcell), MemFree(c->wfoam);
+    c->wbody = NULL, c->wground = NULL, c->wcell = NULL, c->wfoam = NULL;
     c->loaded = false;
 }
 
@@ -977,12 +1173,34 @@ void terrain_set_look(Terrain *t, const TerrainLook *look) {
         if (t->slots[i].loaded && t->slots[i].water_dirty) mesh_water(t, &t->slots[i]), budget--;
 }
 
+static float fract1(float x) { return x - floorf(x); }
+
 void terrain_draw_water(const Terrain *t, float time) {
     if (!t->has_center) return;
     // Oleaje leve: el brillo del agua respira (los colores de sus vertices van con 1/0,94: mesh_water); el
-    // hielo no. La espuma late con las olas.
+    // hielo no. La espuma late con las olas. Con el shader, todo eso lo hace el (los uniformes de este cuadro).
     unsigned char glow = (unsigned char)(255.0f * (0.94f + 0.06f * sinf(time * 1.3f)));
     unsigned char foam = (unsigned char)(255.0f * (0.45f + 0.25f * sinf(time * 1.7f)));
+    if (g_water_shader_ok) {
+        float ox = (float)t->center_cx * CHUNK_SIZE, oz = (float)t->center_cz * CHUNK_SIZE;
+        Vector4 origin = { ox, 0.0f, oz, fmodf(time, 120.0f) };
+        float a = fract1(time / 1.6f);
+        Vector4 phase = { a, fract1(a + 0.5f), fract1(time * 0.021f), fract1(time * 0.013f) };
+        Vector4 pulse = { sinf(time * 1.7f), cosf(time * 1.7f), 0.0f, 0.0f };
+        Vector4 bodies[TERRAIN_RIPPLES];
+        for (int i = 0; i < TERRAIN_RIPPLES; i++) { // sin nadie: lejos, sin espuma (y radio 1: el shader divide)
+            bodies[i] = (Vector4){ 500.0f, 500.0f, 1.0f, 0.0f };
+            if (i >= g_ripple_count) continue;
+            const Vector4 *r = &g_ripples[i];
+            float pulse_r = 1.0f + 0.12f * sinf(time * 3.1f + (float)i * 1.7f); // la onda que va y viene
+            bodies[i] = (Vector4){ r->x - ox, r->y - oz, fmaxf(0.3f, r->z * pulse_r), Clamp(r->w, 0.0f, 1.0f) };
+        }
+        SetShaderValue(g_water_shader, g_wloc_origin, &origin, SHADER_UNIFORM_VEC4);
+        SetShaderValue(g_water_shader, g_wloc_phase, &phase, SHADER_UNIFORM_VEC4);
+        SetShaderValue(g_water_shader, g_wloc_pulse, &pulse, SHADER_UNIFORM_VEC4);
+        if (g_wloc_bodies >= 0) SetShaderValueV(g_water_shader, g_wloc_bodies, bodies, SHADER_UNIFORM_VEC4, TERRAIN_RIPPLES);
+        glow = 255;
+    }
     const Color tint[W_MESHES] = { { glow, glow, glow, 255 }, WHITE, { 255, 255, 255, foam } };
     for (int m = 0; m < W_MESHES; m++)
         for (int i = 0; i < CHUNK_SLOTS; i++) {
@@ -991,6 +1209,10 @@ void terrain_draw_water(const Terrain *t, float time) {
         }
 }
 
+// La bruma de las cascadas: una mota blanda (un degradado redondo de 16x16), una vez.
+static Texture2D g_mist_tex;
+static bool g_mist_tried;
+
 void terrain_draw_falls(const Terrain *t, float time) {
     if (!t->has_center || !t->world || t->world->fall_count == 0) return;
     const World *w = t->world;
@@ -998,30 +1220,61 @@ void terrain_draw_falls(const Terrain *t, float time) {
     float cx = ((float)t->center_cx + 0.5f) * CHUNK_SIZE, cz = ((float)t->center_cz + 0.5f) * CHUNK_SIZE;
     float reach = ((float)CHUNK_RADIUS + 0.5f) * CHUNK_SIZE;
     const WaterSeason *season = &t->meshed; // como el agua de las mallas
-    rlDrawRenderBatchActive();
-    rlDisableBackfaceCulling(); // la cortina se ve de los dos lados
-    rlBegin(RL_TRIANGLES);
-    for (int i = 0; i < w->fall_count; i++) {
+    if (!g_mist_tried) {
+        g_mist_tried = true;
+        Image img = GenImageGradientRadial(16, 16, 0.0f, WHITE, (Color){ 255, 255, 255, 0 }); // blanca hasta el borde transparente
+        g_mist_tex = LoadTextureFromImage(img);
+        UnloadImage(img);
+    }
+    // Lo que se ve de cada cascada cercana: la cortina baja por la textura de las ondas (ahora, aguas abajo).
+    int near[64], nn = 0;
+    for (int i = 0; i < w->fall_count && nn < 64; i++) {
         const Waterfall *f = &w->falls[i];
         if (fabsf(f->x - cx) > reach || fabsf(f->z - cz) > reach) continue;
-        // Su rio: seco, no cae nada; con poca agua, una cortina angosta; helado, de hielo y sin espuma.
-        if (f->river >= 0 && world_channel_state(w, f->river, season) == CHANNEL_DRY) continue;
+        if (f->river >= 0 && world_channel_state(w, f->river, season) == CHANNEL_DRY) continue; // seco: no cae nada
+        near[nn++] = i;
+    }
+    if (!nn) return;
+    rlDrawRenderBatchActive();
+    rlDisableBackfaceCulling(); // la cortina se ve de los dos lados
+    if (g_water_tex.id) rlSetTexture(g_water_tex.id);
+    rlBegin(RL_QUADS);
+    float slide = fract1(time * 0.9f); // la textura baja 0,9 vueltas por segundo (5 m/s): se repite sin saltos
+    for (int n = 0; n < nn; n++) {
+        int i = near[n];
+        const Waterfall *f = &w->falls[i];
+        // Su rio: con poca agua, una cortina angosta; helado, de hielo y quieto, sin espuma ni bruma.
         float full = f->river >= 0 ? Clamp(world_river_share(w, f->river, season) / WORLD_FULL_SHARE, 0.0f, 1.0f) : 1.0f;
         float frozen = f->river >= 0 ? world_river_ice(w, f->river, season) : 0.0f;
         float lift = f->river >= 0 ? world_river_offset(w, f->river, season) : 0.5f * season->flood;
         float ax = cosf(f->yaw), az = -sinf(f->yaw), hw = (f->width * 0.5f + 0.5f) * (0.35f + 0.65f * full); // a lo ancho de la caida
         float top = f->top + lift + 0.05f, bot = f->bottom + lift + 0.05f;
+        float v0 = frozen > 0.5f ? 0.0f : -slide, v1 = v0 + (top - bot) / 6.0f;
         for (int s = 0; s < 4; s++) { // cuatro tiras, cada una con su brillo que baja
             float u0 = -1.0f + 0.5f * (float)s, u1 = u0 + 0.5f;
             Color c = mixc(sheet, shine, 0.35f * (0.5f + 0.5f * sinf(time * 6.0f + (float)s * 1.7f + (float)i)));
             c = mixc(c, ice, frozen);
+            float tu0 = u0 * hw / 3.0f, tu1 = u1 * hw / 3.0f;
             Vector3 a = { f->x + ax * u0 * hw, top, f->z + az * u0 * hw }, b = { f->x + ax * u1 * hw, top, f->z + az * u1 * hw };
             Vector3 d = { f->bx + ax * u0 * hw, bot, f->bz + az * u0 * hw }, e = { f->bx + ax * u1 * hw, bot, f->bz + az * u1 * hw };
             rlColor4ub(c.r, c.g, c.b, c.a);
-            rlVertex3f(a.x, a.y, a.z), rlVertex3f(d.x, d.y, d.z), rlVertex3f(b.x, b.y, b.z);
-            rlVertex3f(b.x, b.y, b.z), rlVertex3f(d.x, d.y, d.z), rlVertex3f(e.x, e.y, e.z);
+            rlTexCoord2f(tu0, v0), rlVertex3f(a.x, a.y, a.z);
+            rlTexCoord2f(tu0, v1), rlVertex3f(d.x, d.y, d.z);
+            rlTexCoord2f(tu1, v1), rlVertex3f(e.x, e.y, e.z);
+            rlTexCoord2f(tu1, v0), rlVertex3f(b.x, b.y, b.z);
         }
+    }
+    rlEnd();
+    rlSetTexture(0);
+    rlBegin(RL_TRIANGLES);
+    for (int n = 0; n < nn; n++) {
+        int i = near[n];
+        const Waterfall *f = &w->falls[i];
+        float full = f->river >= 0 ? Clamp(world_river_share(w, f->river, season) / WORLD_FULL_SHARE, 0.0f, 1.0f) : 1.0f;
+        float frozen = f->river >= 0 ? world_river_ice(w, f->river, season) : 0.0f;
         if (frozen > 0.5f) continue;
+        float lift = f->river >= 0 ? world_river_offset(w, f->river, season) : 0.5f * season->flood;
+        float hw = (f->width * 0.5f + 0.5f) * (0.35f + 0.65f * full), bot = f->bottom + lift + 0.05f;
         // La espuma al pie: un abanico blanco que late.
         unsigned char alpha = (unsigned char)(200.0f * (0.6f + 0.4f * sinf(time * 3.0f + (float)i)) * (1.0f - frozen));
         float r = hw * 1.6f;
@@ -1034,6 +1287,45 @@ void terrain_draw_falls(const Terrain *t, float time) {
         }
     }
     rlEnd();
+    // La bruma al pie: motas blandas que suben, se abren y se desvanecen (de cara a la camara, sin tapar lo de
+    // atras: no escriben la profundidad). Mas en las caidas altas y anchas.
+    if (g_mist_tex.id) {
+        Matrix view = rlGetMatrixModelview();
+        Vector3 right = { view.m0, view.m4, view.m8 }, up = { view.m1, view.m5, view.m9 };
+        rlDrawRenderBatchActive();
+        rlDisableDepthMask();
+        rlSetTexture(g_mist_tex.id);
+        rlBegin(RL_QUADS);
+        for (int n = 0; n < nn; n++) {
+            int i = near[n];
+            const Waterfall *f = &w->falls[i];
+            float full = f->river >= 0 ? Clamp(world_river_share(w, f->river, season) / WORLD_FULL_SHARE, 0.0f, 1.0f) : 1.0f;
+            float frozen = f->river >= 0 ? world_river_ice(w, f->river, season) : 0.0f;
+            if (frozen > 0.5f) continue;
+            float lift = f->river >= 0 ? world_river_offset(w, f->river, season) : 0.5f * season->flood;
+            float hw = (f->width * 0.5f + 0.5f) * (0.35f + 0.65f * full), bot = f->bottom + lift;
+            float drop = f->top - f->bottom, power = Clamp(drop / 8.0f, 0.3f, 1.0f) * (0.4f + 0.6f * full);
+            int puffs = 4 + (int)(8.0f * power);
+            for (int k = 0; k < puffs; k++) {
+                float seed = (float)(hash2(i, k, 0xB2u) & 1023u) / 1023.0f;
+                float age = fract1(time * 0.22f + seed); // cada mota vive unos 4,5 s
+                float ang = seed * 2.0f * PI + (float)k * 2.4f, spread = hw * (0.5f + 1.3f * age);
+                Vector3 at = { f->bx + cosf(ang) * spread, bot + 0.4f + (1.0f + 0.4f * drop) * power * age, f->bz + sinf(ang) * spread };
+                float size = (1.2f + 2.4f * age) * (0.6f + 0.4f * power) * (0.6f + 0.25f * hw);
+                unsigned char alpha = (unsigned char)(150.0f * power * (1.0f - age) * fminf(1.0f, age * 5.0f) * (1.0f - frozen));
+                Vector3 rx = Vector3Scale(right, size), uy = Vector3Scale(up, size);
+                rlColor4ub(240, 246, 250, alpha);
+                rlTexCoord2f(0.0f, 0.0f), rlVertex3f(at.x - rx.x + uy.x, at.y - rx.y + uy.y, at.z - rx.z + uy.z);
+                rlTexCoord2f(0.0f, 1.0f), rlVertex3f(at.x - rx.x - uy.x, at.y - rx.y - uy.y, at.z - rx.z - uy.z);
+                rlTexCoord2f(1.0f, 1.0f), rlVertex3f(at.x + rx.x - uy.x, at.y + rx.y - uy.y, at.z + rx.z - uy.z);
+                rlTexCoord2f(1.0f, 0.0f), rlVertex3f(at.x + rx.x + uy.x, at.y + rx.y + uy.y, at.z + rx.z + uy.z);
+            }
+        }
+        rlEnd();
+        rlSetTexture(0);
+        rlDrawRenderBatchActive();
+        rlEnableDepthMask();
+    }
     rlEnableBackfaceCulling();
 }
 
@@ -1117,11 +1409,16 @@ void terrain_unload_gpu(void) {
     if (g_atlas.id) UnloadTexture(g_atlas);
     if (g_water_tex.id) UnloadTexture(g_water_tex);
     if (g_ice_tex.id) UnloadTexture(g_ice_tex);
+    if (g_foam_tex.id) UnloadTexture(g_foam_tex);
+    if (g_water_shader_ok) UnloadShader(g_water_shader);
+    if (g_mist_tex.id) UnloadTexture(g_mist_tex);
     terrain_forget_gpu();
 }
 
 void terrain_forget_gpu(void) {
-    g_atlas = (Texture2D){ 0 }, g_water_tex = (Texture2D){ 0 }, g_ice_tex = (Texture2D){ 0 };
+    g_atlas = (Texture2D){ 0 }, g_water_tex = (Texture2D){ 0 }, g_ice_tex = (Texture2D){ 0 }, g_foam_tex = (Texture2D){ 0 };
+    g_water_shader = (Shader){ 0 }, g_water_shader_ok = false;
+    g_mist_tex = (Texture2D){ 0 }, g_mist_tried = false;
     g_atlas_tried = g_water_tex_tried = false;
     g_far.ready = g_far.valid = false;
 }

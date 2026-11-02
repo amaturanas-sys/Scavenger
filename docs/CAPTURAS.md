@@ -96,6 +96,19 @@ La tribu en el agua y la pesca en el hielo ([AGUA.md](AGUA.md), fase 3), con `--
 | ![Hundido](capturas/agua_hundido.png) | **Un compañero rompió el hielo** (`--dia 25 --ir lago --trampa hundido`): espera, con la cabeza afuera, a que lo saquen (F). |
 | ![Pesca](capturas/agua_pesca.png) | **El agujero para pescar** (`--dia 25 --ir lago --trampa agujero`): abierto con el picahielo sobre el lago helado. |
 
+### Cómo se ve el agua
+
+El shader del agua ([AGUA.md](AGUA.md), fase 4), en verano (`--dia 11`):
+
+| | |
+|---|---|
+| ![Corriente](capturas/agua_corriente.png) | **La corriente de un río** (`--ir meandro --trampa nado`): la superficie avanza aguas abajo, y quien nada lleva su anillo de espuma. |
+| ![Olas](capturas/agua_olas.png) | **Las olas del mar en las rocas** (`--ir mar --dron 6 --camara 0.45`): el oleaje, y la espuma que va y viene en la costa y el basalto. |
+| ![Lago](capturas/agua_lago.png) | **Un lago glaciar** (`--ir desborde`): el vaivén, las ondas que se cruzan y la espuma fina de la orilla. |
+| ![Rápidos](capturas/agua_rapidos.png) | **Los rápidos de un arroyo** (`--ir rapidos`): la corriente y la espuma en lo bajo, entre los cantos. |
+| ![Cascada](capturas/agua_cascada.png) | **Una cascada de cerca** (`--ir cascada-pie`): la cortina que baja, la espuma y la bruma al pie. |
+| ![Respaldo](capturas/agua_respaldo.png) | **El agua sin su shader** (`--sin-shader`): lo que queda si el teléfono no lo compila (las ondas y la malla de espuma de antes). |
+
 ## Los edificios de la edad del hierro
 
 Ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md). Con `--edificios tipo[:región]`
