@@ -170,9 +170,9 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
     // El muro del otro lado del canal del bosque (docs/AGUA.md, fase 5): roca en estratos, grises y ocres que se
     // alternan con la altura; los rellanos, de liquen.
     if (a[A_WALL] > 0.0f) {
-        const Color grey = { 120, 116, 110, 255 }, ochre = { 150, 128, 98, 255 }, dark = { 88, 84, 80, 255 }, lichen = { 104, 112, 86, 255 };
+        const Color grey = { 120, 116, 110, 255 }, buff = { 150, 128, 98, 255 }, dark = { 88, 84, 80, 255 }, lichen = { 104, 112, 86, 255 };
         float band = sinf(h_abs * 0.42f);
-        Color sc = slope > 0.4f ? mixc(mixc(grey, ochre, 0.5f + 0.5f * band), dark, Clamp(-band * 1.5f - 0.6f, 0.0f, 1.0f)) : mixc(grey, lichen, 0.6f);
+        Color sc = slope > 0.4f ? mixc(mixc(grey, buff, 0.5f + 0.5f * band), dark, Clamp(-band * 1.5f - 0.6f, 0.0f, 1.0f)) : mixc(grey, lichen, 0.6f);
         c = mixc(c, sc, Clamp(a[A_WALL], 0.0f, 1.0f));
     }
     // El muro de hielo del altiplano: hielo azulado, mas en lo empinado.
