@@ -85,6 +85,17 @@ el verano, el 8; el otoño, el 15; el invierno, el 22):
 | ![Lengua en primavera](capturas/estacion_lengua_primavera.png) | **La lengua del glaciar** (`--dia 6 --ir lengua`): cubre la morrena. |
 | ![Lengua en verano](capturas/estacion_lengua_verano.png) | **La morrena en el verano** (`--dia 9`): el glaciar se retiró. |
 
+### Hielo, nado y pesca
+
+La tribu en el agua y la pesca en el hielo ([AGUA.md](AGUA.md), fase 3), con `--trampa`:
+
+| | |
+|---|---|
+| ![Nado](capturas/agua_nado.png) | **La escolta cruza un río a nado** (`--dia 11 --ir meandro --trampa nado`): con la cabeza afuera, hacia el jugador en la orilla. |
+| ![Orilla](capturas/agua_orilla.png) | **Y sale a la orilla** (el mismo, unos segundos después). |
+| ![Hundido](capturas/agua_hundido.png) | **Un compañero rompió el hielo** (`--dia 25 --ir lago --trampa hundido`): espera, con la cabeza afuera, a que lo saquen (F). |
+| ![Pesca](capturas/agua_pesca.png) | **El agujero para pescar** (`--dia 25 --ir lago --trampa agujero`): abierto con el picahielo sobre el lago helado. |
+
 ## Los edificios de la edad del hierro
 
 Ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md). Con `--edificios tipo[:región]`

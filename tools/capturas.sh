@@ -53,6 +53,14 @@ shot estacion_lengua_verano 90 --dia 9 --minuto 7 --ir lengua --camara 0.25
 mkdir -p "$ROOT/docs/mundo"
 montage "$OUT"/estacion_{meandro_otono,meandro_invierno,lago_otono,lago_invierno,mar_deshielo,mar_invierno,lengua_primavera,lengua_verano}.png \
     -tile 2x4 -geometry +0+0 -depth 8 "$ROOT/docs/mundo/estaciones.png" 2>/dev/null && echo "  docs/mundo/estaciones.png"
+# Hielo, nado y pesca (docs/AGUA.md, fase 3): la escolta cruza un rio a nado y sale a la orilla; un companero que
+# rompio el hielo espera a que lo saquen; el agujero para pescar en el lago helado.
+shot agua_nado 50 --dia 11 --minuto 7 --ir meandro --trampa nado --camara 0.2
+shot agua_orilla 160 --dia 11 --minuto 7 --ir meandro --trampa nado --camara 0.2
+shot agua_hundido 40 --dia 25 --minuto 7 --ir lago --trampa hundido --camara 0.3
+shot agua_pesca 60 --dia 25 --minuto 7 --ir lago --trampa agujero --camara 0.4
+montage "$OUT"/agua_{nado,orilla,hundido,pesca}.png -tile 2x2 -geometry +0+0 -depth 8 "$ROOT/docs/mundo/hielo_nado_pesca.png" 2>/dev/null &&
+    echo "  docs/mundo/hielo_nado_pesca.png"
 # El kit de edificios (docs/ARQUITECTURA_EDAD_DEL_HIERRO.md): las variantes de cada tipo en cada region
 # (la muralla, las ruinas y las obras de la tribu tambien) y las plazas de las cinco capitales, desde arriba.
 for k in casa palacio fundicion cuartel carpinteria granero templo carreta muralla torre puerta fortaleza enterrada \

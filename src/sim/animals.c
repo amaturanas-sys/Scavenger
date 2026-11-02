@@ -1,4 +1,5 @@
 #include "sim/animals.h"
+#include "sim/hazards.h"
 #include "sim/lang.h"
 #include "sim/water.h"
 
@@ -63,6 +64,9 @@ static const SpeciesDef SPECIES[SPECIES_COUNT] = {
 #define HUNGER_RATE (1.0f / 420.0f)
 
 const SpeciesDef *species_def(Species s) { return s >= 0 && s < SPECIES_COUNT ? &SPECIES[s] : NULL; }
+
+float species_wade(const SpeciesDef *d) { return fminf(1.2f, fmaxf(ANIMAL_WADE_MAX, 0.4f * d->size)); }
+float species_mass(const SpeciesDef *d) { return 30.0f * d->size * d->size * d->size; }
 
 bool species_is_prey(Species s) {
     AnimalClass c = SPECIES[s].cls;
@@ -167,27 +171,82 @@ static float tire_rate(const SpeciesDef *d) {
 // Los de tierra (ni aves ni nadadores) no entran en agua honda.
 static bool walks_on_land(const SpeciesDef *d) { return !d->aquatic && !d->flier; }
 
-// Tras moverse: si el paso lo mete en agua honda (y no venia de ella), prueba a rodearla
-// girando a uno y otro lado; si no puede, se queda en la orilla y elige otro destino.
-static void keep_dry(Animal *a, const FaunaCtx *c, float x0, float z0) {
-    if (!c || !c->water_depth || !walks_on_land(&SPECIES[a->species])) return;
-    float depth = water_at(c, a->x, a->z);
-    if (depth <= ANIMAL_WADE_MAX) return;
-    if (depth <= water_at(c, x0, z0)) return; // ya estaba en el agua: que salga
-    float dx = a->x - x0, dz = a->z - z0;
-    static const float TURN[8] = { 0.5f, -0.5f, 1.0f, -1.0f, 1.5f, -1.5f, 2.0f, -2.0f };
-    for (int k = 0; k < 8; k++) {
-        float cs = cosf(TURN[k]), sn = sinf(TURN[k]);
-        float nx = x0 + dx * cs - dz * sn, nz = z0 + dx * sn + dz * cs;
-        if (water_at(c, nx, nz) <= ANIMAL_WADE_MAX) {
-            a->x = nx, a->z = nz;
-            a->yaw = atan2f(nx - x0, nz - z0);
+// ¿Hay donde hacer pie (agua que vadea) a menos de ANIMAL_NARROW_WATER m, siguiendo el paso de (x0, z0) a
+// (x1, z1)? Un rio se cruza; un lago, se rodea.
+static bool narrow_water(const FaunaCtx *c, float x0, float z0, float x1, float z1, float wade) {
+    float dx = x1 - x0, dz = z1 - z0, l = sqrtf(dx * dx + dz * dz);
+    if (l < 1e-4f) return false;
+    for (float r = 3.0f; r <= ANIMAL_NARROW_WATER; r += 3.0f)
+        if (water_at(c, x1 + dx / l * r, z1 + dz / l * r) <= wade) return true;
+    return false;
+}
+
+// Tras moverse, el agua (docs/AGUA.md, fase 3): vadea hasta su talla y mas hondo nada. Al huir, al perseguir o
+// siguiendo a la tribu cruza nadando un agua angosta (un rio); si no, rodea el agua honda girando a uno y otro
+// lado, y si no puede, se queda en la orilla y elige otro destino. El agua frena: vadeando y nadando avanza menos.
+static void water_step(Animal *a, const FaunaCtx *c, float x0, float z0) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    if (!c || !c->water_depth || !walks_on_land(d)) return;
+    float wade = species_wade(d), depth = water_at(c, a->x, a->z), from = water_at(c, x0, z0);
+    if (depth > wade && depth > from) { // se mete en lo hondo (y no venia de ahi: el que esta en el agua, que salga)
+        bool hurry = a->mode == MODE_FLEE || a->mode == MODE_CHASE || a->mode == MODE_FOLLOW;
+        if (!hurry || d->size < 0.4f || !narrow_water(c, x0, z0, a->x, a->z, wade)) {
+            float dx = a->x - x0, dz = a->z - z0;
+            static const float TURN[8] = { 0.5f, -0.5f, 1.0f, -1.0f, 1.5f, -1.5f, 2.0f, -2.0f };
+            for (int k = 0; k < 8; k++) {
+                float cs = cosf(TURN[k]), sn = sinf(TURN[k]);
+                float nx = x0 + dx * cs - dz * sn, nz = z0 + dx * sn + dz * cs;
+                if (water_at(c, nx, nz) <= wade) {
+                    a->x = nx, a->z = nz;
+                    a->yaw = atan2f(nx - x0, nz - z0);
+                    return;
+                }
+            }
+            a->x = x0, a->z = z0;
+            if (a->mode == MODE_GRAZE) a->timer = 0.0f; // otro destino
+            if (water_at(c, a->tx, a->tz) > wade) a->tx = x0, a->tz = z0;
             return;
         }
     }
-    a->x = x0, a->z = z0;
-    if (a->mode == MODE_GRAZE) a->timer = 0.0f; // otro destino
-    if (water_at(c, a->tx, a->tz) > ANIMAL_WADE_MAX) a->tx = x0, a->tz = z0;
+    float k = hazard_water_speed(hazard_water_step(from, 0.0f, wade)); // lo frena el agua donde estaba
+    if (k < 1.0f) a->x = x0 + (a->x - x0) * k, a->z = z0 + (a->z - z0) * k;
+}
+
+// Sobre el hielo que aguanta, la capa puede romperse bajo un animal de tierra (mas cuanto pesa y cuanto corre):
+// cae al agua helada y forcejea hasta salir (sunk).
+static void ice_roll(Animal *a, int i, const FaunaCtx *c, Rng *rng, float dt, FaunaEvents *ev) {
+    const SpeciesDef *d = &SPECIES[a->species];
+    if (!c || !c->ice || !walks_on_land(d) || a->sunk > 0.0f || a->speed <= 0.0f) return;
+    float ice = c->ice(c->water_ud, a->x, a->z);
+    if (!hazard_ice_walkable(ice)) return;
+    if (rng_float(rng) >= hazard_ice_break_chance(ice, a->speed, hazard_ice_load(species_mass(d))) * dt) return;
+    a->sunk = 8.0f + 6.0f * rng_float(rng);
+    a->speed = 0.0f;
+    a->fleeing = false;
+    push(ev, FEV_ICE, i, -1, 0.0f, WOUND_FROSTBITE);
+}
+
+// En el agua helada: forcejea en el agujero sin moverse; el frio lo debilita y, si no le queda vida, se ahoga.
+// Al terminar, trepa al hielo por donde vino. true mientras sigue en el agua.
+static bool sunk_step(Animal *a, int i, float dt, FaunaEvents *ev) {
+    if (a->sunk <= 0.0f) return false;
+    a->sunk -= dt;
+    a->speed = 0.0f;
+    a->h.hp -= dt * ANIMAL_SUNK_COLD;
+    if (a->h.hp <= 0.0f) {
+        a->sunk = 0.0f;
+        die(a, false);
+        push(ev, FEV_DROWNED, i, -1, 0.0f, WOUND_FROSTBITE);
+        return true;
+    }
+    if (a->sunk <= 0.0f) { // sale: hacia atras, por el hielo por donde vino
+        a->sunk = 0.0f;
+        a->x -= sinf(a->yaw) * 2.5f, a->z -= cosf(a->yaw) * 2.5f;
+        a->yaw += 3.14159265f;
+        a->alert = fmaxf(a->alert, 6.0f);
+        return false;
+    }
+    return true;
 }
 
 // Con sed, los de tierra buscan la orilla mas cercana, van hasta ella y beben desde
@@ -909,6 +968,7 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
             if (a->mode != MODE_DRINK && water_near(c, a->x, a->z)) a->thirst = fmaxf(0.0f, a->thirst - dt * THIRST_ANIMAL_RATE * 30.0f);
         }
         if (a->ridden) continue; // lo mueve el jinete (y fija su velocidad)
+        if (sunk_step(a, i, dt, ev)) continue; // en el agua helada
         float x0 = a->x, z0 = a->z;
         switch (a->state) {
         case ANIMAL_BOUND:
@@ -924,8 +984,9 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
         case ANIMAL_SADDLED: update_tamed(a, i, all, n, c, rng, dt, ev); break;
         default: update_wild(a, i, all, n, c, rng, dt, ev); break;
         }
-        if (a->state != ANIMAL_BOUND) keep_dry(a, c, x0, z0);
+        if (a->state != ANIMAL_BOUND) water_step(a, c, x0, z0);
         a->speed = dt > 0.0f ? dist_xz(a->x, a->z, x0, z0) / dt : 0.0f;
+        ice_roll(a, i, c, rng, dt, ev);
         if (a->speed > d->walk * 2.5f) a->stamina = fmaxf(0.0f, a->stamina - tire_rate(d) * dt);
         else a->stamina = fminf(1.0f, a->stamina + dt / 20.0f);
         update_bird_alt(a, dt);
@@ -934,7 +995,7 @@ void fauna_update(Animal *all, int n, const FaunaCtx *c, Rng *rng, float dt, Fau
 
 void animal_update(Animal *a, float dt, float px, float pz, Rng *rng) {
     FaunaHuman h = { px, pz, false, false, false, false };
-    FaunaCtx c = { &h, 1, px, pz, false, 0.0f, 0.0f, false, NULL, NULL, false, false };
+    FaunaCtx c = { &h, 1, px, pz, false, 0.0f, 0.0f, false, NULL, NULL, false, false, NULL };
     fauna_update(a, 1, &c, rng, dt, NULL);
 }
 

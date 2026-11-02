@@ -165,6 +165,8 @@ typedef enum {
     ICON_MONEDAS,          // la plata: con ella se comercia
     ICON_BALANZA,          // comerciar (src/game/trade_game.c)
     ICON_CAMELLO,          // una caravana
+    ICON_PICAHIELO,        // abrir un agujero en el hielo
+    ICON_PESCAR,           // pescar en el hielo
     ICON_COUNT
 } IconId;
 

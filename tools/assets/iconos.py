@@ -1340,6 +1340,27 @@ def _(p):
     p.line([(26, 62), (16, 84)], 5)  # la cola
 
 
+@icon("picahielo", "Picahielo: asta con punta de cincel sobre el hielo agrietado")
+def _(p):
+    p.thick(36, 14, 70, 92, 9)  # el asta
+    p.poly(rot([(62, 88), (80, 88), (76, 112), (66, 112)], 71, 100, -24))  # la punta en cincel
+    p.ell(64, 116, 44, 9)  # el hielo
+    p.ell(64, 116, 22, 5, c=K)  # el agujero
+    p.line([(18, 110), (30, 104)], 4, c=K)  # grietas
+    p.line([(98, 104), (112, 112)], 4, c=K)
+
+
+@icon("pescar", "Pescar en el hielo: un pez que sale por el agujero")
+def _(p):
+    p.ell(64, 112, 54, 13)  # el hielo
+    p.ell(64, 112, 28, 7, c=K)  # el agujero
+    cuerpo = [(64 + 34 * math.cos(a / 12 * math.pi), 56 + 15 * math.sin(a / 12 * math.pi)) for a in range(24)]
+    p.poly(rot(cuerpo, 64, 56, -32))
+    p.poly(rot([(18, 40), (34, 56), (18, 72)], 64, 56, -32))  # la cola
+    p.ell(86, 36, 4, c=K)  # el ojo
+    p.line([(104, 8), (98, 30)], 4)  # el sedal
+
+
 # ------------------------------------------------------------------ atlas
 def render(fn):
     pen = Pen()

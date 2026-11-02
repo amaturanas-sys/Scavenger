@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "game/camp_game.h"
+#include "game/fauna_game.h"
 #include "game/hud_game.h"
 #include "game/input.h"
 #include "raymath.h"
@@ -36,9 +37,7 @@ bool hz_blocks_input(const Hazards *hz) { return hz->trap != TRAP_NONE || hz->qt
 
 float hz_speed_scale(const Hazards *hz) {
     float s = hz->mud * warmth_speed_scale(&hz->warmth) * heat_speed_scale(&hz->heat) * (hz->outfit_speed > 0.0f ? hz->outfit_speed : 1.0f);
-    if (hz->swimming) s *= 0.4f;
-    else if (hz->wading) s *= 0.55f;
-    return s;
+    return s * hazard_water_speed(hz->swimming ? WSTEP_SWIM : hz->wading ? WSTEP_WADE : WSTEP_DRY);
 }
 
 static float dist2(Vector3 a, Vector3 b) { return Vector2Distance((Vector2){ a.x, a.z }, (Vector2){ b.x, b.z }); }
@@ -63,9 +62,12 @@ static SinkKind sinkhole_at(const Hazards *hz, const Terrain *t, int day, float 
     return SINK_NONE;
 }
 
-static bool in_hole(const Hazards *hz, Vector3 p) {
+// En un agujero del hielo: uno que se rompio, o uno abierto para pescar (src/game/fauna_game.c).
+static bool in_hole(const Hazards *hz, const GameActions *ga, Vector3 p) {
     for (int i = 0; i < hz->hole_count; i++)
         if (dist2(hz->holes[i], p) < HOLE_RADIUS) return true;
+    for (int i = 0; i < ga->ice_hole_count; i++)
+        if (dist2(ga->ice_holes[i], p) < ICE_HOLE_RADIUS) return true;
     return false;
 }
 
@@ -207,6 +209,7 @@ static void resolve_rescue(Hazards *hz, bool won, GameActions *ga, Troop *troop,
     }
     Npc *n = npc_for(ga, troop, hz->victim);
     if (n) { // lo deja junto al jugador, en suelo firme
+        n->sunk = 0.0f;
         n->pos = (Vector3){ p->pos.x + 1.2f, 0.0f, p->pos.z };
         n->pos.y = fmaxf(terrain_height(t, n->pos.x, n->pos.z), terrain_water(t, n->pos.x, n->pos.z));
     }
@@ -257,12 +260,6 @@ static void toggle_escort(Hazards *hz, GameActions *ga, const Troop *troop, cons
     else snprintf(log, len, "%s", T("No hay nadie libre cerca para acompañarte."));
 }
 
-static float surface_y(const Terrain *t, float x, float z) {
-    float ground = terrain_height(t, x, z), water = terrain_water(t, x, z);
-    if (water > ground + 0.25f) return hazard_ice_walkable(terrain_ice(t, x, z)) ? water : fmaxf(ground, water - 1.25f);
-    return ground;
-}
-
 static void update_escort(Hazards *hz, GameActions *ga, Troop *troop, const Terrain *t, const Player *p, int day,
                           float dt, bool roll, char *log, size_t len) {
     int k = 0;
@@ -290,18 +287,19 @@ static void update_escort(Hazards *hz, GameActions *ga, Troop *troop, const Terr
         float speed = 0.0f;
         if (n->moving) {
             speed = fminf(ESCORT_SPEED * pack_speed((PackSize)troop->members[i].pack), d * 2.0f); // la mochila grande frena
+            speed *= hazard_water_speed(terrain_water_step(t, n->pos.x, n->pos.z));              // y el agua
             float step = fminf(speed * dt, d);
             n->pos.x += (to.x - n->pos.x) / d * step;
             n->pos.z += (to.z - n->pos.z) / d * step;
             n->yaw = atan2f(to.x - n->pos.x, to.z - n->pos.z);
         }
-        n->pos.y = surface_y(t, n->pos.x, n->pos.z);
+        n->pos.y = terrain_body_y(t, n->pos.x, n->pos.z);
         if (!roll || hz->victim) continue;
         // La escolta tambien puede romper el hielo o pisar un socavon.
         bool over_water = terrain_water(t, n->pos.x, n->pos.z) > terrain_height(t, n->pos.x, n->pos.z) + 0.25f;
         float nice = terrain_ice(t, n->pos.x, n->pos.z);
         if (over_water && hazard_ice_walkable(nice)) {
-            if (in_hole(hz, n->pos) || rng_float(&hz->rng) < hazard_ice_break_chance(nice, speed, 1.0f) * 0.5f) {
+            if (in_hole(hz, ga, n->pos) || rng_float(&hz->rng) < hazard_ice_break_chance(nice, speed, 1.0f) * 0.5f) {
                 add_hole(hz, n->pos);
                 victim_trapped(hz, troop, n->member_id, TRAP_ICE, log, len);
             }
@@ -314,6 +312,30 @@ static void update_escort(Hazards *hz, GameActions *ga, Troop *troop, const Terr
             victim_trapped(hz, troop, n->member_id, kind == SINK_SNOW ? TRAP_SNOW : TRAP_QUICKSAND, log, len);
     }
     if (k == 0) hz->escort_on = false;
+}
+
+// La tribu que anda cerca del jugador (la escolta va aparte: update_escort) tambien puede romper el hielo; el que
+// cae espera a que lo saquen (F junto a el), y mientras tanto no se mueve (Npc.sunk).
+static void update_tribe_ice(Hazards *hz, GameActions *ga, Troop *troop, const Terrain *t, const Player *p, bool roll, char *log,
+                             size_t len) {
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++) { // el atrapado no se mueve; los demas, si
+        Npc *n = &ga->npcs[i];
+        if (n->member_id != hz->victim) n->sunk = 0.0f;
+    }
+    if (!roll || hz->victim) return;
+    for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
+        Npc *n = &ga->npcs[i];
+        const Member *m = &troop->members[i];
+        if (n->escort || !n->moving || m->status != STATUS_ACTIVE || n->member_id != m->id || ga_away(ga, m) || dist2(n->pos, p->pos) > 80.0f)
+            continue;
+        float ice = terrain_ice(t, n->pos.x, n->pos.z);
+        if (terrain_water(t, n->pos.x, n->pos.z) < terrain_height(t, n->pos.x, n->pos.z) + WADE_ANKLE || !hazard_ice_walkable(ice)) continue;
+        if (in_hole(hz, ga, n->pos) || rng_float(&hz->rng) < hazard_ice_break_chance(ice, 2.6f, 1.0f) * 0.5f) {
+            add_hole(hz, n->pos);
+            victim_trapped(hz, troop, n->member_id, TRAP_ICE, log, len);
+            return;
+        }
+    }
 }
 
 // ----------------------------------------------------------------------- frio
@@ -343,6 +365,8 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
         hz->hole_count = 0;
         hz->hole_day = day;
     }
+    if (ga->ice_hole_day != day + 1 || (unsigned)ga->ice_hole_count > GA_ICE_HOLES) // tambien los de pescar
+        ga->ice_hole_count = 0, ga->ice_hole_day = day + 1;
     hz->ice_roll += dt;
     bool roll = hz->ice_roll >= 0.5f; // tiradas de riesgo dos veces por segundo
     if (roll) hz->ice_roll = 0.0f;
@@ -355,6 +379,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
             if (IsKeyPressed(KEY_ONE + k)) ga_escort_order(ga, k, log, log_len), chord = true;
     if (input_action_released(KA_ESCORT) && !chord && hz->trap == TRAP_NONE) toggle_escort(hz, ga, troop, p, 60.0f, log, log_len);
     update_escort(hz, ga, troop, t, p, day, dt, roll, log, log_len);
+    update_tribe_ice(hz, ga, troop, t, p, roll, log, log_len);
 
     // Minijuego en curso.
     if (hz->qte.state == QTE_RUNNING) {
@@ -368,10 +393,16 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
         }
     }
 
-    // Companero atrapado: el tiempo corre.
+    // Companero atrapado: el tiempo corre. No se mueve de donde cayo (hundido: en el agua, con la cabeza afuera).
     if (hz->victim) {
         Npc *vn = npc_for(ga, troop, hz->victim);
         if (!hz->qte_rescue || hz->qte.state != QTE_RUNNING) hz->victim_timer -= dt;
+        if (vn) {
+            vn->sunk = fmaxf(hz->victim_timer, 0.1f);
+            vn->moving = false;
+            if (hz->victim_trap == TRAP_ICE) // con la cabeza afuera
+                vn->pos.y = fmaxf(terrain_height(t, vn->pos.x, vn->pos.z), terrain_water(t, vn->pos.x, vn->pos.z) - 1.0f);
+        }
         if (hz->victim_timer <= 0.0f || !vn) {
             Member *m = troop_find(troop, hz->victim);
             const char *how = hz->victim_trap == TRAP_ICE ? T("se ahogó bajo el hielo")
@@ -379,7 +410,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
                                                              : T("desapareció en la arena");
             if (m) snprintf(log, log_len, T("%s %s. La tribu está de luto (moral -6)."), m->name, how);
             troop_mourn(troop, hz->victim, 6.0f);
-            if (vn) vn->escort = false;
+            if (vn) vn->escort = false, vn->sunk = 0.0f;
             hz->victim = 0;
             if (hz->qte_rescue) hz->qte.state = QTE_IDLE, hz->qte_rescue = false;
         } else if (hz->trap == TRAP_NONE && hz->qte.state != QTE_RUNNING && dist2(vn->pos, p->pos) < RESCUE_RANGE &&
@@ -413,7 +444,7 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
             float speed = p->moving ? (p->stance == STANCE_RUN ? 7.5f : 4.0f) * p->speed_scale : 0.0f;
             float load = ga->mounted >= 0 ? 2.5f : 1.0f;
             if (p->grounded &&
-                (in_hole(hz, p->pos) || (roll && rng_float(&hz->rng) < hazard_ice_break_chance(ice, speed, load) * 0.5f))) {
+                (in_hole(hz, ga, p->pos) || (roll && rng_float(&hz->rng) < hazard_ice_break_chance(ice, speed, load) * 0.5f))) {
                 add_hole(hz, p->pos);
                 start_self_trap(hz, TRAP_ICE, p, ga, troop, log, log_len);
             }
@@ -540,14 +571,17 @@ void hz_new_day(Hazards *hz, const Climate *c, GameActions *ga, const Props *pro
 
 // ------------------------------------------------------------------ dibujo
 void hz_draw_world(const Hazards *hz, const Terrain *t, const GameActions *ga, const Troop *troop, float time) {
-    // Agujeros en el hielo: agua negra con esquirlas alrededor.
-    for (int i = 0; i < hz->hole_count; i++) {
-        Vector3 h = { hz->holes[i].x, terrain_water(t, hz->holes[i].x, hz->holes[i].z) + 0.02f, hz->holes[i].z };
-        DrawCylinder(h, HOLE_RADIUS, HOLE_RADIUS, 0.03f, 12, (Color){ 18, 34, 48, 255 });
+    // Agujeros en el hielo: agua negra con esquirlas alrededor (los que se rompieron y los de pescar).
+    for (int i = 0; i < hz->hole_count + ga->ice_hole_count; i++) {
+        bool fishing = i >= hz->hole_count;
+        Vector3 at = fishing ? ga->ice_holes[i - hz->hole_count] : hz->holes[i];
+        float r = fishing ? ICE_HOLE_RADIUS : HOLE_RADIUS;
+        Vector3 h = { at.x, terrain_water(t, at.x, at.z) + 0.02f, at.z };
+        DrawCylinder(h, r, r, 0.03f, 12, (Color){ 18, 34, 48, 255 });
         for (int k = 0; k < 8; k++) {
             float a = k * PI / 4.0f + i;
-            DrawCube((Vector3){ h.x + cosf(a) * (HOLE_RADIUS + 0.2f), h.y + 0.04f, h.z + sinf(a) * (HOLE_RADIUS + 0.2f) },
-                     0.35f, 0.08f, 0.2f, (Color){ 214, 232, 244, 255 });
+            DrawCube((Vector3){ h.x + cosf(a) * (r + 0.2f), h.y + 0.04f, h.z + sinf(a) * (r + 0.2f) }, 0.35f, 0.08f, 0.2f,
+                     (Color){ 214, 232, 244, 255 });
         }
     }
     // Pista de un socavon oculto: apenas un cerco de grietas (nieve) o de arena humeda.
@@ -647,9 +681,45 @@ void hz_draw_hud(const Hazards *hz, const Troop *troop, int right_x, int y, int 
 }
 
 // ------------------------------------------------------------------- prueba
+// La escolta, a su lado o en el agua (nado: el jugador en la orilla y ellos delante, donde ya se nada; vuelven
+// hacia el jugador cruzando el rio).
+static void force_escort(Hazards *hz, Player *p, GameActions *ga, Troop *troop, const Terrain *t, bool swim) {
+    char log[128];
+    toggle_escort(hz, ga, troop, p, 1e9f, log, sizeof(log));
+    float fx = sinf(p->yaw), fz = cosf(p->yaw), shore = -1.0f, ahead = 0.0f;
+    for (float r = 0.0f; swim && r < 120.0f && ahead <= 0.0f; r += 0.5f) {
+        WaterStep ws = terrain_water_step(t, p->pos.x + fx * r, p->pos.z + fz * r);
+        if (ws != WSTEP_DRY && shore < 0.0f) shore = r;
+        if (ws == WSTEP_SWIM) ahead = r + 4.0f;
+    }
+    if (ahead > 0.0f && shore > 3.0f) { // a la orilla
+        p->pos.x += fx * (shore - 3.0f), p->pos.z += fz * (shore - 3.0f), ahead -= shore - 3.0f;
+        p->pos.y = terrain_body_y(t, p->pos.x, p->pos.z);
+    }
+    for (int i = 0, k = 0; i < troop->count && i < TROOP_MAX; i++) {
+        Npc *n = &ga->npcs[i];
+        if (!n->escort) continue;
+        float side = k ? -1.3f : 1.3f, back = ahead > 0.0f ? ahead + 2.0f * (float)k : -2.2f;
+        n->pos.x = p->pos.x + fx * back + fz * side, n->pos.z = p->pos.z + fz * back - fx * side;
+        n->pos.y = terrain_body_y(t, n->pos.x, n->pos.z);
+        k++;
+    }
+}
+
+// Delante, sobre el hielo del lago: donde ya es hondo, pero no tanto como donde flotan los tempanos.
+static void onto_ice(Player *p, const Terrain *t) {
+    float fx = sinf(p->yaw), fz = cosf(p->yaw);
+    for (float r = 0.0f; r < 160.0f; r += 1.0f) {
+        float x = p->pos.x + fx * r, z = p->pos.z + fz * r, depth = terrain_water(t, x, z) - terrain_height(t, x, z);
+        float x2 = x + fx * 1.6f, z2 = z + fz * 1.6f, depth2 = terrain_water(t, x2, z2) - terrain_height(t, x2, z2);
+        if (terrain_water_step(t, x, z) != WSTEP_ICE || depth < 1.2f || depth2 < 1.2f || depth2 > 2.0f) continue;
+        p->pos = (Vector3){ x, terrain_body_y(t, x, z), z };
+        return;
+    }
+}
+
 void hz_force(Hazards *hz, const char *what, Player *p, GameActions *ga, Troop *troop, const Terrain *t) {
     char log[128];
-    (void)t;
     if (!strcmp(what, "hielo")) start_self_trap(hz, TRAP_ICE, p, ga, troop, log, sizeof(log));
     else if (!strcmp(what, "nieve")) start_self_trap(hz, TRAP_SNOW, p, ga, troop, log, sizeof(log));
     else if (!strcmp(what, "arena")) start_self_trap(hz, TRAP_QUICKSAND, p, ga, troop, log, sizeof(log));
@@ -657,14 +727,24 @@ void hz_force(Hazards *hz, const char *what, Player *p, GameActions *ga, Troop *
         toggle_escort(hz, ga, troop, p, 1e9f, log, sizeof(log));
         for (int i = 0, k = 0; i < troop->count && i < TROOP_MAX; i++) // ya a su lado
             if (ga->npcs[i].escort) ga->npcs[i].pos = (Vector3){ p->pos.x + (k++ ? -1.3f : 1.3f), p->pos.y, p->pos.z - 2.2f };
-    } else if (!strcmp(what, "rescate")) {
+    } else if (!strcmp(what, "nado")) { // la escolta, en el rio de delante: vuelve nadando (con --ir meandro)
+        force_escort(hz, p, ga, troop, t, true);
+    } else if (!strcmp(what, "agujero")) { // sobre el hielo del lago (con --ir lago en invierno), junto a un agujero para pescar
+        onto_ice(p, t);
+        Vector3 at;
+        if (fg_ice_hole_spot(ga, t, p, &at)) fg_ice_hole_open(ga, at);
+        force_escort(hz, p, ga, troop, t, false);
+    } else if (!strcmp(what, "rescate") || !strcmp(what, "hundido")) { // con --ir lago en invierno, sobre el hielo; hundido: sin
+        onto_ice(p, t);                                                 // empezar el minijuego (espera a que lo saquen)
         toggle_escort(hz, ga, troop, p, 1e9f, log, sizeof(log));
         for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
             Npc *n = &ga->npcs[i];
             if (!n->escort) continue;
-            n->pos = (Vector3){ p->pos.x + 1.5f, p->pos.y, p->pos.z - 1.0f };
+            float sx = cosf(p->yaw), sz = -sinf(p->yaw); // a un lado, un paso adelante
+            n->pos = (Vector3){ p->pos.x + sx * 1.5f + sinf(p->yaw) * 1.5f, p->pos.y, p->pos.z + sz * 1.5f + cosf(p->yaw) * 1.5f };
+            if (terrain_water_step(t, n->pos.x, n->pos.z) == WSTEP_ICE) add_hole(hz, n->pos);
             victim_trapped(hz, troop, n->member_id, TRAP_ICE, log, sizeof(log));
-            start_rescue(hz, troop, log, sizeof(log));
+            if (!strcmp(what, "rescate")) start_rescue(hz, troop, log, sizeof(log));
             break;
         }
     }

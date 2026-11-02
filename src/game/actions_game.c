@@ -37,6 +37,7 @@ static const char *KIT[] = {
     "arma.larga.guja",           "arma.larga.lanza",        "arma.distancia.arco_simple",
     "utileria.objeto.antorcha",  "arma.distancia.lazo",     "utileria.herramienta.gancho_trepa",
     "utileria.herramienta.pala", "accesorio.arreo.silla_montar", "arma.distancia.ballesta", "arma.distancia.honda",
+    "utileria.herramienta.picahielo",
 };
 // Empunaduras que recorre "cambiar empunadura" (X): derecha, izquierda. El sable
 // se sustituye por el mejor que haya en el acopio (acero > bronce > comun), y el arco simple por
@@ -423,6 +424,20 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
             return;
         }
         break;
+    case ACTION_ICE_HOLE: {
+        Vector3 at;
+        if (!ga->terrain || !fg_ice_hole_spot(ga, ga->terrain, p, &at)) {
+            snprintf(log, len, "%s", T("Para abrir un agujero hay que estar sobre el hielo de un lago o un río hondo, mirando adonde lo quieres."));
+            return;
+        }
+        break;
+    }
+    case ACTION_ICE_FISH:
+        if (fg_ice_hole_near(ga, p) < 0) {
+            snprintf(log, len, "%s", T("Para pescar en el hielo hay que estar junto a un agujero (ábrelo con el picahielo)."));
+            return;
+        }
+        break;
     case ACTION_MINE:
         if (!forge_site_near(ga->terrain, p->pos.x, p->pos.z)) {
             snprintf(log, len, "%s", T("Para picar hay que estar junto a una veta de hierro (los exploradores las marcan en el mapa)."));
@@ -597,6 +612,15 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         break;
     case ACTION_PAN: gems_pan(ga, props, p, log, len); break;
     case ACTION_MINE: forge_mine(ga, props, p, log, len); break;
+    case ACTION_ICE_HOLE: {
+        Vector3 at;
+        if (t && fg_ice_hole_spot(ga, t, p, &at)) {
+            fg_ice_hole_open(ga, at);
+            snprintf(log, len, "%s", T("Abriste un agujero en el hielo. Pesca en él (Tab → Acciones), y no lo pises."));
+        }
+        break;
+    }
+    case ACTION_ICE_FISH: fg_ice_fish(ga, p, fg_ice_hole_near(ga, p), log, len); break;
     case ACTION_FILL_WATER: {
         if (ga->terrain && wg_at_well(ga->terrain, p->pos.x, p->pos.z)) { // el pozo: agua limpia, como hervida
             int n = ig_store(ga, props, p, "utileria.consumible.agua_hervida", wg_water_room(ga, props, p), 1.0f);
@@ -752,15 +776,16 @@ static void sync_npcs(GameActions *ga, const Troop *troop, const Terrain *t) {
 
 static bool npc_walk(Npc *n, const Terrain *t, Vector3 to, float dt) {
     float d = dist2d(n->pos, to);
-    n->moving = d >= 0.3f;
+    n->moving = d >= 0.3f && n->sunk <= 0.0f; // en el agua helada no se mueve (src/game/hazards_game.c)
     if (d < 0.3f) return true;
+    if (n->sunk > 0.0f) return false;
     float step = fminf(NPC_SPEED * dt, d);
     float dx = (to.x - n->pos.x) / d, dz = (to.z - n->pos.z) / d;
     float x0 = n->pos.x, z0 = n->pos.z;
     n->pos.x += dx * step;
     n->pos.z += dz * step;
-    terrain_dry_step(t, x0, z0, &n->pos.x, &n->pos.z); // rodea lagos y rios hondos
-    n->pos.y = terrain_height(t, n->pos.x, n->pos.z);
+    terrain_wade_step(t, x0, z0, &n->pos.x, &n->pos.z); // vadea y cruza un rio a nado; rodea los lagos
+    n->pos.y = terrain_body_y(t, n->pos.x, n->pos.z);
     n->yaw = atan2f(dx, dz);
     return false;
 }
@@ -830,7 +855,8 @@ static const IconId TAB_ICONS[4] = { ICON_ACCIONES, ICON_OBRAS, ICON_FABRICAR, I
 static const IconId ACTION_ICONS[ACTION_COUNT] = { ICON_TOMAR,   ICON_LANZAR,   ICON_EMPUNAR, ICON_ENFUNDAR,
                                                    ICON_FOGATA,  ICON_TIENDA,   ICON_TRINCHERA, ICON_TREPA,
                                                    ICON_LAZO,    ICON_ANTORCHA, ICON_ENSILLAR, ICON_GEMA,
-                                                   ICON_AGUA,    ICON_HERVIR,   ICON_MINERAL };
+                                                   ICON_AGUA,    ICON_HERVIR,   ICON_MINERAL, ICON_PICAHIELO,
+                                                   ICON_PESCAR };
 static const IconId BUILD_ICONS[BUILD_COUNT] = { ICON_REFUGIO, ICON_OBRAS, ICON_MURO_PIEDRA, ICON_HOGUERA, ICON_TOTEM,
                                                  ICON_HORNO,   ICON_FUNDICION, ICON_FUNDICION, ICON_TORRE, ICON_CORRAL,
                                                  ICON_ESTRUCTURA, ICON_REFUGIO, ICON_TIENDA, ICON_FABRICAR };

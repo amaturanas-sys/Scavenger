@@ -81,6 +81,8 @@ typedef enum {
     ACTION_FILL_WATER,    // llenar el odre en el rio o el lago (agua cruda)
     ACTION_BOIL,          // hervir agua junto a un fuego: echa a los espiritus malditos
     ACTION_MINE,          // picar una veta de hierro (o el hierro de pantano): mineral (src/sim/forge.h)
+    ACTION_ICE_HOLE,      // abrir un agujero en el hielo con el picahielo (docs/AGUA.md, fase 3)
+    ACTION_ICE_FISH,      // pescar en un agujero del hielo
     ACTION_COUNT
 } ActionId;
 

@@ -63,6 +63,7 @@ typedef enum {
     EN_DEAD,
     EN_DOWN,    // abatido: en el suelo, vivo; despierta a los 30-90 s y huye (src/sim/stealth.h)
     EN_HOSTAGE, // rehen del jugador: sujeto por el cuello, delante de el
+    EN_ICE,     // rompio el hielo (v0.11.2): forcejea en el agua helada sin pelear; sale con frio, o se ahoga
 } EnemyState;
 
 typedef struct {

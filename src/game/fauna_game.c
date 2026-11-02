@@ -71,6 +71,12 @@ static float water_depth_cb(void *ud, float x, float z) {
     return terrain_water(t, x, z) - terrain_height(t, x, z);
 }
 
+// El hielo donde pisa un animal (src/sim/animals.h: puede romperse bajo el), solo sobre el agua.
+static float ice_cb(void *ud, float x, float z) {
+    const Terrain *t = ud;
+    return terrain_water(t, x, z) > terrain_height(t, x, z) + WADE_ANKLE ? terrain_ice(t, x, z) : 0.0f;
+}
+
 static int free_slot(GameActions *ga) {
     for (int i = 0; i < GA_MAX_ANIMALS; i++) {
         if (ga->animals[i].used) continue;
@@ -323,15 +329,15 @@ static void seed_cell(GameActions *ga, const Terrain *t, int cx, int cz) {
     float z = ((float)cz + 0.2f + 0.6f * (float)((h >> 24) & 0xFF) / 255.0f) * SWARM_CELL;
     if (sqrtf(x * x + z * z) < 30.0f) return; // no en el campamento
     SwarmKind k;
-    float y;
-    if (deep_water(t, x, z) && water_depth_cb((void *)t, x, z) > 1.0f) {
+    float y, depth = terrain_water(t, x, z) - terrain_height(t, x, z); // tambien bajo el hielo: ahi se pesca por un agujero
+    if (depth > 1.0f) {
         if (r < 0.55f) k = SWARM_FISH;
-        else if (r < 0.8f) k = SWARM_MOSQUITOES;
+        else if (r < 0.8f && !hazard_ice_walkable(terrain_ice(t, x, z))) k = SWARM_MOSQUITOES;
         else return;
         y = terrain_water(t, x, z);
         if (k == SWARM_MOSQUITOES) y += 0.2f;
     } else {
-        if (deep_water(t, x, z) || terrain_region(t, x, z) == REGION_DESERT || terrain_height(t, x, z) > t->look.snowline - 30.0f) return;
+        if (depth > 0.6f || terrain_region(t, x, z) == REGION_DESERT || terrain_height(t, x, z) > t->look.snowline - 30.0f) return;
         if (r < 0.12f) k = SWARM_BEES;
         else if (r < 0.2f) k = SWARM_WASPS;
         else return;
@@ -420,6 +426,65 @@ bool fg_fish(GameActions *ga, const Terrain *t, Vector3 pos, float yaw, float re
         }
     }
     return false;
+}
+
+// ------------------------------------------------------------------ la pesca en el hielo
+#define ICE_HOLE_AHEAD 1.6f // m delante del jugador
+#define ICE_FISH_REACH_P 2.6f // m: el agujero donde se pesca, junto al jugador
+
+bool fg_ice_hole_spot(const GameActions *ga, const Terrain *t, const Player *p, Vector3 *at) {
+    float x = p->pos.x + sinf(p->yaw) * ICE_HOLE_AHEAD, z = p->pos.z + cosf(p->yaw) * ICE_HOLE_AHEAD;
+    float water = terrain_water(t, x, z);
+    if (!hazard_ice_walkable(terrain_ice(t, x, z)) || water - terrain_height(t, x, z) < 1.0f) return false; // hielo sobre agua honda
+    for (int i = 0; i < ga->ice_hole_count; i++)
+        if (dist_xz(ga->ice_holes[i].x, ga->ice_holes[i].z, x, z) < 2.0f * ICE_HOLE_RADIUS + 0.5f) return false;
+    *at = (Vector3){ x, water, z };
+    return true;
+}
+
+int fg_ice_hole_near(const GameActions *ga, const Player *p) {
+    int best = -1;
+    float bd = ICE_FISH_REACH_P;
+    for (int i = 0; i < ga->ice_hole_count; i++) {
+        float d = dist_xz(ga->ice_holes[i].x, ga->ice_holes[i].z, p->pos.x, p->pos.z);
+        if (d < bd) bd = d, best = i;
+    }
+    return best;
+}
+
+void fg_ice_hole_open(GameActions *ga, Vector3 at) {
+    if (ga->ice_hole_count >= GA_ICE_HOLES) { // el mas viejo se hiela
+        memmove(ga->ice_holes, ga->ice_holes + 1, sizeof(ga->ice_holes[0]) * (GA_ICE_HOLES - 1));
+        ga->ice_hole_count--;
+    }
+    ga->ice_holes[ga->ice_hole_count++] = at;
+}
+
+bool fg_ice_fish(GameActions *ga, const Player *p, int hole, char *log, size_t len) {
+    if (hole < 0 || hole >= ga->ice_hole_count) return false;
+    Vector3 h = ga->ice_holes[hole];
+    // El banco mas cercano bajo el hielo acude al agujero.
+    Swarm *best = NULL;
+    float bd = ICE_FISH_REACH;
+    for (int i = 0; i < GA_MAX_SWARMS; i++) {
+        Swarm *s = &ga->swarms[i];
+        if (!s->used || s->kind != SWARM_FISH || swarm_alive(s) <= 0) continue;
+        float d = dist_xz(s->cx, s->cz, h.x, h.z);
+        if (d < bd) bd = d, best = s;
+    }
+    if (!best) {
+        snprintf(log, len, "%s", T("No pica nada: aquí no hay peces. Prueba en otro lugar del lago, sobre lo más hondo."));
+        return false;
+    }
+    bool spear = !ga->hands.sheathed && strstr(ga->hands.right.id, "lanza") != NULL;
+    if (rng_float(&ga->rng) >= hazard_ice_fish_chance(swarm_alive(best), bd, spear)) {
+        snprintf(log, len, "%s", spear ? T("Nada picó esta vez: espera otro poco.") : T("Nada picó esta vez: espera otro poco (con una lanza en la mano, pican más)."));
+        return false;
+    }
+    swarm_catch(best, best->cx, best->cy, best->cz, 50.0f, 1);
+    bool kept = ig_store(ga, NULL, &(Player){ .pos = p->pos }, FRESH_MEAT_ID, 1, 1.0f) == 1;
+    snprintf(log, len, "%s", kept ? T("¡Sacaste un pez por el agujero! (+1 carne fresca)") : T("¡Sacaste un pez por el agujero! Pero no te cabe: lo sueltas."));
+    return true;
 }
 
 bool fg_shot_water(GameActions *ga, const Terrain *t, Vector3 at, char *log, size_t len) {
@@ -657,21 +722,11 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
     }
     g_ref_count = n;
     bool caravan = ga_marching(ga) >= 0; // la tribu migra: el rebaño va con ella (src/sim/camps.h)
-    FaunaCtx ctx = { hu, n, p->pos.x, p->pos.z, p->moving && ga->mounted < 0, 0.0f, 0.0f, night, water_depth_cb, (void *)t, ga->grass, caravan };
-
-    float ox[GA_MAX_ANIMALS], oz[GA_MAX_ANIMALS];
-    for (int i = 0; i < ga->animal_count; i++) ox[i] = ga->animals[i].x, oz[i] = ga->animals[i].z;
+    FaunaCtx ctx = { hu, n, p->pos.x, p->pos.z, p->moving && ga->mounted < 0, 0.0f, 0.0f, night, water_depth_cb, (void *)t, ga->grass, caravan, ice_cb };
+    // El agua la decide la fauna (src/sim/animals.c): vadean hasta su talla, cruzan nadando un rio al huir, al
+    // perseguir o siguiendo a la tribu, rodean los lagos y pueden romper el hielo.
     FaunaEvents ev = { .n = 0 };
     fauna_update(ga->animals, ga->animal_count, &ctx, &ga->rng, dt, &ev);
-    // Al agua no entran (salvo las aves): se quedan en la orilla.
-    for (int i = 0; i < ga->animal_count; i++) {
-        Animal *a = &ga->animals[i];
-        const SpeciesDef *sd = species_def(a->species);
-        if (!a->used || a->ridden || sd->flier || sd->aquatic || !deep_water(t, a->x, a->z)) continue;
-        a->x = ox[i], a->z = oz[i];
-        a->tx = a->home_x, a->tz = a->home_z;
-        a->timer = 0.0f;
-    }
 
     for (int e = 0; e < ev.n; e++) {
         const FaunaEvent *f = &ev.ev[e];
@@ -713,6 +768,13 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
         case FEV_STARVED: snprintf(log, len, T("El %s se fue: pasó demasiada hambre y vuelve a ser salvaje."), who); break;
         case FEV_THIRSTY: snprintf(log, len, T("El %s de la tribu tiene sed: llévalo al agua o dale de beber (F, con agua)."), who); break;
         case FEV_PARCHED: snprintf(log, len, T("El %s se fue: pasó demasiada sed y vuelve a ser salvaje."), who); break;
+        case FEV_ICE:
+            if (animal_domestic(a)) snprintf(log, len, T("¡El %s de la tribu rompió el hielo y cayó al agua helada!"), who);
+            else if (adist(a, p->pos) < 45.0f) snprintf(log, len, T("El hielo se rompe bajo un %s: forcejea en el agua."), who);
+            break;
+        case FEV_DROWNED:
+            if (animal_domestic(a) || adist(a, p->pos) < 45.0f) snprintf(log, len, T("El %s se ahogó bajo el hielo."), who);
+            break;
         default: break;
         }
     }
@@ -879,11 +941,16 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
         const SpeciesDef *d = species_def(a->species);
         const InvItem *it = inventory_find(ga->inv, d->model);
         Vector3 pos = { a->x, terrain_height(t, a->x, a->z), a->z };
-        // En el agua, los anfibios flotan: solo asoma el lomo (el cocodrilo, los ojos).
+        float top = it ? it->h : d->size * 0.6f;
+        // En el agua, los anfibios flotan: solo asoma el lomo (el cocodrilo, los ojos). Los de tierra que nadan, el
+        // lomo y la cabeza; el que cayo por el hielo, la cabeza, forcejeando.
         float depth = water_depth_cb((void *)t, a->x, a->z);
         if (d->aquatic && depth > 0.3f && a->state != ANIMAL_DEAD)
             pos.y = terrain_water(t, a->x, a->z) - (a->species == SPECIES_CROCODILE && a->mode != MODE_CHASE ? 0.42f : 0.25f);
-        float top = it ? it->h : d->size * 0.6f;
+        else if (a->sunk > 0.0f && a->state != ANIMAL_DEAD)
+            pos.y = fmaxf(pos.y, terrain_water(t, a->x, a->z) - top * (0.7f + 0.08f * sinf(time * 6.0f + (float)i)));
+        else if (!d->aquatic && !d->flier && depth > species_wade(d) && a->state != ANIMAL_DEAD)
+            pos.y = terrain_water(t, a->x, a->z) - top * 0.62f;
         if (it && props_has_model(props, it)) {
             // El modelo mira a +X (Kiln); el animal avanza segun yaw (0 = +Z).
             float tt = a->state == ANIMAL_DEAD ? fminf(a->corpse, 1.2f) : time + (float)i * 0.37f;

@@ -454,6 +454,21 @@ static void test_hazards_cold_mud_ice(void) {
     float ride = hazard_ice_break_chance(1.0f, 4.0f, 2.5f), thin = hazard_ice_break_chance(0.55f, 4.0f, 1.0f);
     CHECK(walk > 0.0f && walk < 0.01f && run > walk * 2.0f && ride > walk * 2.0f && thin > walk * 3.0f);
     CHECK(hazard_ice_break_chance(1.0f, 0.0f, 1.0f) < walk); // quieto, menos riesgo
+
+    // Agua: hasta el tobillo es suelo seco; hasta el pecho se vadea; mas hondo se nada; el hielo firme se camina.
+    CHECK(hazard_water_step(0.1f, 0.0f, WADE_PERSON) == WSTEP_DRY && hazard_water_step(0.8f, 0.0f, WADE_PERSON) == WSTEP_WADE);
+    CHECK(hazard_water_step(2.0f, 0.0f, WADE_PERSON) == WSTEP_SWIM && hazard_water_step(2.0f, 1.0f, WADE_PERSON) == WSTEP_ICE);
+    CHECK(hazard_water_step(2.0f, 0.3f, WADE_PERSON) == WSTEP_SWIM); // hielo delgado: no aguanta, se nada
+    CHECK(hazard_water_step(0.8f, 0.0f, 0.5f) == WSTEP_SWIM);        // un animal chico nada donde una persona vadea
+    CHECK(hazard_water_speed(WSTEP_DRY) == 1.0f && hazard_water_speed(WSTEP_ICE) == 1.0f);
+    CHECK(hazard_water_speed(WSTEP_SWIM) < hazard_water_speed(WSTEP_WADE) && hazard_water_speed(WSTEP_WADE) < 1.0f);
+
+    // Pesca en el hielo: sin peces o muy lejos no pica; cerca, un banco grande y la lanza ayudan.
+    CHECK(hazard_ice_fish_chance(0, 1.0f, true) == 0.0f && hazard_ice_fish_chance(8, ICE_FISH_REACH + 1.0f, true) == 0.0f);
+    float near = hazard_ice_fish_chance(8, 2.0f, false), far = hazard_ice_fish_chance(8, ICE_FISH_REACH - 1.0f, false);
+    CHECK(near > far && far > 0.0f && near <= 0.4f);
+    CHECK(hazard_ice_fish_chance(8, 2.0f, true) > near && hazard_ice_fish_chance(2, 2.0f, false) < near);
+    CHECK(hazard_ice_fish_chance(30, 0.0f, true) <= 0.55f); // nunca seguro
 }
 
 static void test_hazards_sinkholes_and_desert(void) {
@@ -1006,6 +1021,8 @@ static void test_action_catalog(void) {
     }
     CHECK(action_def(ACTION_COUNT) == NULL);
     CHECK(!strcmp(action_def(ACTION_THROW_LASSO)->requires, "arma.distancia.lazo"));
+    CHECK(!strcmp(action_def(ACTION_ICE_HOLE)->requires, "utileria.herramienta.picahielo")); // el agujero, con picahielo
+    CHECK(action_def(ACTION_ICE_FISH)->requires == NULL && action_def(ACTION_ICE_FISH)->seconds > action_def(ACTION_ICE_HOLE)->seconds);
     for (int b = 0; b < BUILD_COUNT; b++) {
         const BuildDef *d = build_def((BuildId)b);
         CHECK(d && d->work > 0.0f && d->min_workers >= 2 && d->max_workers >= d->min_workers); // siempre en grupo
@@ -1219,7 +1236,7 @@ static void test_animals_flee_and_wander(void) {
     Animal herd[3];
     for (int i = 0; i < 3; i++) animal_init(&herd[i], SPECIES_DEER, (float)i * 2.0f, 0), herd[i].group = 7;
     FaunaHuman hu = { 5.0f, 0.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 5.0f, 0.0f, false, 100.0f, 100.0f, false, NULL, NULL, false, false };
+    FaunaCtx c = { &hu, 1, 5.0f, 0.0f, false, 100.0f, 100.0f, false, NULL, NULL, false, false, NULL };
     animal_hurt(herd, 3, 2, &r, 10.0f, WOUND_CUT, PART_THORAX, true, 0);
     CHECK(herd[2].fear_humans > 0.0f && herd[0].fear_humans > 0.0f && herd[1].fear_humans > 0.0f);
     float before = an_dist(&herd[0], 5.0f, 0.0f);
@@ -1239,7 +1256,7 @@ static void test_animals_birds(void) {
         animal_init(&b, sp, 0, 0);
         b.hunger = 1.0f;
         FaunaHuman hu = { 1.0f, 0.0f, false, false, false, true };
-        FaunaCtx c = { &hu, 1, 1.0f, 0.0f, false, 0, 0, false, NULL, NULL, false, false };
+        FaunaCtx c = { &hu, 1, 1.0f, 0.0f, false, 0, 0, false, NULL, NULL, false, false, NULL };
         FaunaEvents ev = { .n = 0 };
         int bites = 0;
         for (int i = 0; i < 600; i++) {
@@ -1256,7 +1273,7 @@ static void test_animals_birds(void) {
     animal_init(&z[1], SPECIES_HARE, 25.0f, 0);
     z[0].hunger = 1.0f;
     FaunaHuman far = { 500.0f, 500.0f, false, false, false, false };
-    FaunaCtx c = { &far, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false, false };
+    FaunaCtx c = { &far, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false, false, NULL };
     bool dived = false, killed = false, carried = false;
     for (int i = 0; i < 900 && z[1].used; i++) {
         fauna_update(z, 2, &c, &r, 0.05f, NULL);
@@ -1276,7 +1293,7 @@ static void test_animals_birds(void) {
     Animal rv;
     animal_init(&rv, SPECIES_RAVEN, 0, 0);
     FaunaHuman hurt = { 20.0f, 0.0f, false, false, false, true };
-    FaunaCtx ch = { &hurt, 1, 20.0f, 0.0f, false, 0, 0, false, NULL, NULL, false, false };
+    FaunaCtx ch = { &hurt, 1, 20.0f, 0.0f, false, 0, 0, false, NULL, NULL, false, false, NULL };
     for (int i = 0; i < 400; i++) fauna_update(&rv, 1, &ch, &r, 0.05f, NULL);
     CHECK(rv.mode == MODE_STALK && an_dist(&rv, 20.0f, 0.0f) < 13.0f && rv.alt > 3.0f);
 }
@@ -1324,7 +1341,7 @@ static void test_animals_tame_predator(void) {
     Animal w2 = w;
     FaunaEvents ev = { .n = 0 };
     FaunaHuman hu = { 50.0f, 50.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 50.0f, 50.0f, false, 0, 0, false, NULL, NULL, false, false };
+    FaunaCtx c = { &hu, 1, 50.0f, 50.0f, false, 0, 0, false, NULL, NULL, false, false, NULL };
     for (int i = 0; i < 650 && w2.state == ANIMAL_BOUND; i++) fauna_update(&w2, 1, &c, &r, 0.1f, &ev);
     CHECK(w2.state == ANIMAL_WILD && ev.n > 0 && ev.ev[ev.n - 1].kind == FEV_BREAK_FREE);
     // Con carne: de la tribu.
@@ -1333,7 +1350,7 @@ static void test_animals_tame_predator(void) {
     Animal pack[1] = { w };
     pack[0].x = 0, pack[0].z = 0;
     FaunaHuman people[2] = { { 0.0f, 0.0f, false, false, false, false }, { 6.0f, 0.0f, false, false, true, false } };
-    FaunaCtx c2 = { people, 2, 0.0f, 0.0f, false, 0, 0, false, NULL, NULL, false, false };
+    FaunaCtx c2 = { people, 2, 0.0f, 0.0f, false, 0, 0, false, NULL, NULL, false, false, NULL };
     ev.n = 0;
     bool bit_enemy = false;
     for (int i = 0; i < 60; i++) {
@@ -1355,7 +1372,7 @@ static void test_animals_pack_hunt(void) {
     }
     for (int i = 3; i < 7; i++) animal_init(&a[i], SPECIES_DEER, (float)(i - 3) * 2.0f, 3.0f), a[i].group = 2;
     FaunaHuman hu = { 500.0f, 500.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false, false, NULL };
     bool shared = false, alarmed = false, killed = false, ate = false;
     for (int step = 0; step < 1800 && !(killed && ate); step++) {
         FaunaEvents ev = { .n = 0 };
@@ -1381,7 +1398,7 @@ static void test_animals_stalk_and_rivals(void) {
     Rng r;
     rng_seed(&r, 13);
     FaunaHuman hu = { 500.0f, 500.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 0, 0, false, NULL, NULL, false, false, NULL };
     Animal a[2];
     animal_init(&a[0], SPECIES_TIGER, 0, 0);
     animal_init(&a[1], SPECIES_DEER, 25.0f, 0);
@@ -1417,7 +1434,7 @@ static void test_animals_flee_only_critical(void) {
     Rng r;
     rng_seed(&r, 17);
     FaunaHuman hu = { 3.0f, 0.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 3.0f, 0.0f, false, 50, 50, false, NULL, NULL, false, false };
+    FaunaCtx c = { &hu, 1, 3.0f, 0.0f, false, 50, 50, false, NULL, NULL, false, false, NULL };
     Animal w;
     animal_init(&w, SPECIES_BEAR, 0, 0);
     animal_hurt(&w, 1, 0, &r, 60.0f, WOUND_CUT, PART_THORAX, true, 0);
@@ -1455,7 +1472,7 @@ static void test_animals_livestock(void) {
     CHECK(g[0].state == ANIMAL_TAMED && g[1].state == ANIMAL_TAMED); // de la tribu desde el principio
     // El pastor camina cerca: lo siguen; se para: se quedan donde estan.
     FaunaHuman hu = { 4.0f, 0.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 4.0f, 0.0f, true, 0, 0, false, NULL, NULL, false, false };
+    FaunaCtx c = { &hu, 1, 4.0f, 0.0f, true, 0, 0, false, NULL, NULL, false, false, NULL };
     for (int i = 0; i < 300; i++) {
         hu.x = c.px = 4.0f + (float)i * 0.1f; // 1 m/s
         fauna_update(g, 2, &c, &r, 0.1f, NULL);
@@ -1642,24 +1659,27 @@ static float test_round_lake(void *ud, float x, float z) {
     return d < 20.0f ? fminf(2.0f, (20.0f - d) * 0.5f) : -1.0f;
 }
 
-// Los de tierra rodean el agua honda y, con sed, beben desde la orilla sin entrar.
+// Los de tierra, pastando, rodean el agua honda (vadean hasta su talla) y, con sed, beben desde la orilla sin entrar.
 static void test_animals_keep_out_of_lakes(void) {
     Rng r;
     rng_seed(&r, 77);
     FaunaHuman hu = { 500.0f, 500.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 100, 100, false, test_round_lake, NULL, false, false };
+    FaunaCtx c = { &hu, 1, 500.0f, 500.0f, false, 100, 100, false, test_round_lake, NULL, false, false, NULL };
     Animal herd[4];
     for (int i = 0; i < 4; i++) {
-        animal_init(&herd[i], i < 2 ? SPECIES_DEER : SPECIES_WOLF, 24.0f + i, 0.0f);
+        animal_init(&herd[i], i < 2 ? SPECIES_DEER : SPECIES_GOAT, 24.0f + i, 0.0f);
         herd[i].home_x = herd[i].home_z = 0.0f; // su territorio esta centrado en el lago
     }
-    float worst = 0.0f;
+    float worst = -1.0f;
     for (int t = 0; t < 6000; t++) { // 10 minutos
         fauna_update(herd, 4, &c, &r, 0.1f, NULL);
-        for (int i = 0; i < 4; i++) worst = fmaxf(worst, test_round_lake(NULL, herd[i].x, herd[i].z));
+        for (int i = 0; i < 4; i++)
+            worst = fmaxf(worst, test_round_lake(NULL, herd[i].x, herd[i].z) - species_wade(species_def(herd[i].species)));
     }
-    CHECK(worst <= ANIMAL_WADE_MAX + 1e-3f);
-    // Con sed: va a la orilla, bebe y no entra.
+    CHECK(worst <= 1e-3f);
+    CHECK(species_wade(species_def(SPECIES_HARE)) == ANIMAL_WADE_MAX && species_wade(species_def(SPECIES_CAMEL)) > 1.0f);
+    // Con sed: va a la orilla, bebe y no entra (con su propio azar: la primera parte cambia segun quien pasta).
+    rng_seed(&r, 77);
     Animal deer;
     animal_init(&deer, SPECIES_DEER, 60.0f, 10.0f);
     deer.thirst = 1.0f;
@@ -1674,11 +1694,119 @@ static void test_animals_keep_out_of_lakes(void) {
     CHECK(sqrtf(deer.x * deer.x + deer.z * deer.z) < 26.0f); // en la orilla
 }
 
+// Un rio de 12 m (de x = 10 a x = 22, 2 m de hondo) y un lago grande (mas alla de x = 200).
+static float test_river(void *ud, float x, float z) {
+    (void)ud, (void)z;
+    if (x > 200.0f) return 3.0f;
+    return x > 10.0f && x < 22.0f ? 2.0f : -1.0f;
+}
+
+// Un estanque helado (x < 0): el hielo de ud (un float), sobre 3 m de agua.
+static float test_frozen_depth(void *ud, float x, float z) {
+    (void)z;
+    return x < 0.0f && !hazard_ice_walkable(*(const float *)ud) ? 3.0f : -1.0f;
+}
+static float test_frozen_ice(void *ud, float x, float z) {
+    (void)z;
+    return x < 0.0f ? *(const float *)ud : 0.0f;
+}
+
+// El agua de los animales (docs/AGUA.md, fase 3): huyendo cruzan un rio a nado (mas lento que en tierra); pastando
+// no; un lago grande no lo cruzan. En el hielo que aguanta caminan, y puede romperse: mas bajo los pesados; el
+// que cae forcejea sin moverse, sale por donde vino o, si le falta vida, se ahoga.
+static void test_animals_swim_and_ice(void) {
+    Rng r;
+    rng_seed(&r, 5);
+    FaunaHuman hu = { -500.0f, 500.0f, false, false, false, false };
+    FaunaCtx c = { &hu, 1, -500.0f, 500.0f, false, 0, 0, false, test_river, NULL, false, false, NULL };
+    // Pastando, con su territorio del otro lado del rio: no lo cruza.
+    Animal deer;
+    animal_init(&deer, SPECIES_DEER, 5.0f, 0.0f);
+    deer.home_x = 40.0f, deer.home_z = 0.0f;
+    float deepest = -1.0f;
+    for (int t = 0; t < 3000; t++) {
+        fauna_update(&deer, 1, &c, &r, 0.1f, NULL);
+        deepest = fmaxf(deepest, test_river(NULL, deer.x, deer.z) - species_wade(species_def(SPECIES_DEER)));
+    }
+    CHECK(deepest <= 1e-3f && deer.x < 10.0f);
+    // Huyendo de alguien que viene detras (del oeste), lo cruza nadando; en el agua avanza menos.
+    animal_init(&deer, SPECIES_DEER, 5.0f, 0.0f);
+    deer.home_x = 5.0f, deer.home_z = 0.0f;
+    deer.fear_humans = 1000.0f; // le teme a la gente
+    hu.x = c.px = -6.0f, hu.z = c.pz = 0.0f;
+    float swim_x = 0.0f, land_x = 0.0f;
+    int swim_n = 0, land_n = 0;
+    for (int t = 0; t < 400 && deer.x < 30.0f; t++) {
+        hu.x = c.px = deer.x - 6.0f; // lo siguen de cerca
+        float x0 = deer.x;
+        bool wet = test_river(NULL, x0, deer.z) > 0.0f;
+        fauna_update(&deer, 1, &c, &r, 0.1f, NULL);
+        if (wet) swim_x += deer.x - x0, swim_n++;
+        else land_x += deer.x - x0, land_n++;
+    }
+    CHECK(deer.x > 22.0f && swim_n > 0 && land_n > 0 && swim_x / (float)swim_n < 0.6f * land_x / (float)land_n);
+    // Un lago grande no se cruza: se queda en la orilla.
+    animal_init(&deer, SPECIES_DEER, 190.0f, 0.0f);
+    deer.home_x = 190.0f, deer.home_z = 0.0f;
+    deer.fear_humans = 1000.0f;
+    for (int t = 0; t < 300; t++) {
+        hu.x = c.px = deer.x - 6.0f, hu.z = c.pz = deer.z;
+        fauna_update(&deer, 1, &c, &r, 0.1f, NULL);
+    }
+    CHECK(deer.x <= 200.0f + 1e-3f);
+
+    // El hielo: delgado (0,55), lo cruzan una y otra vez un caballo (pesado) y una cabra (liviana).
+    float ice = 0.55f;
+    FaunaHuman nobody = { 500.0f, 500.0f, false, false, false, false };
+    FaunaCtx ci = { &nobody, 1, 500.0f, 500.0f, false, 0, 0, false, test_frozen_depth, &ice, false, false, test_frozen_ice };
+    int falls[2] = { 0, 0 };
+    for (int k = 0; k < 2; k++) {
+        Rng rr;
+        rng_seed(&rr, 9u);
+        Animal a;
+        animal_init(&a, k == 0 ? SPECIES_HORSE : SPECIES_GOAT, -30.0f, 0.0f);
+        a.home_x = -30.0f, a.home_z = 0.0f;
+        FaunaEvents ev = { .n = 0 };
+        for (int t = 0; t < 20000; t++) {
+            if (a.sunk <= 0.0f && (a.tx > -2.0f || a.timer <= 0.0f)) a.tx = -60.0f + 50.0f * rng_float(&rr), a.tz = 0.0f, a.timer = 30.0f;
+            a.mode = MODE_GRAZE;
+            float sx = a.x, sz = a.z, before = a.sunk;
+            fauna_update(&a, 1, &ci, &rr, 0.1f, &ev);
+            if (before > 0.0f && a.sunk > 0.0f) CHECK(a.x == sx && a.z == sz); // forcejea sin moverse
+            for (int e = 0; e < ev.n; e++) falls[k] += ev.ev[e].kind == FEV_ICE;
+            ev.n = 0;
+            a.h.hp = a.h.hp_max; // que no se ahogue en esta prueba
+        }
+    }
+    CHECK(falls[0] > 2 * falls[1] && falls[0] > 0);
+    // Debil, se ahoga; con vida, sale del agua por donde vino.
+    Animal weak, strong;
+    animal_init(&weak, SPECIES_DEER, -10.0f, 0.0f);
+    animal_init(&strong, SPECIES_DEER, -10.0f, 0.0f);
+    weak.sunk = strong.sunk = 6.0f;
+    weak.h.hp = 5.0f;
+    strong.yaw = 0.0f;
+    FaunaEvents ev = { .n = 0 };
+    bool drowned = false;
+    for (int t = 0; t < 80; t++) {
+        fauna_update(&weak, 1, &ci, &r, 0.1f, &ev);
+        for (int e = 0; e < ev.n; e++) drowned |= ev.ev[e].kind == FEV_DROWNED;
+        ev.n = 0;
+    }
+    CHECK(drowned && weak.state == ANIMAL_DEAD);
+    float sz0 = strong.z;
+    for (int t = 0; t < 61; t++) fauna_update(&strong, 1, &ci, &r, 0.1f, NULL);
+    CHECK(strong.sunk == 0.0f && strong.state != ANIMAL_DEAD && strong.z < sz0 - 2.0f);
+    // La carga sobre el hielo crece con el peso: una persona, 1.
+    CHECK(fabsf(hazard_ice_load(75.0f) - 1.0f) < 1e-4f && hazard_ice_load(species_mass(species_def(SPECIES_HORSE))) > 1.5f &&
+          hazard_ice_load(species_mass(species_def(SPECIES_GOAT))) < 1.0f);
+}
+
 static void test_animals_water_and_venom(void) {
     Rng r;
     rng_seed(&r, 31);
     FaunaHuman hu = { 6.0f, 0.0f, false, false, false, false };
-    FaunaCtx c = { &hu, 1, 6.0f, 0.0f, false, 100, 100, false, test_lake, NULL, false, false };
+    FaunaCtx c = { &hu, 1, 6.0f, 0.0f, false, 100, 100, false, test_lake, NULL, false, false, NULL };
     Animal croc;
     animal_init(&croc, SPECIES_CROCODILE, -2.0f, 0.0f); // en el agua, junto a la orilla
     FaunaEvents ev = { .n = 0 };
@@ -2492,7 +2620,7 @@ static void test_backpacks_and_feeding(void) {
     animal_init(&herd[1], SPECIES_DOG, 3.0f, 0.0f);
     herd[1].state = ANIMAL_TAMED;
     FaunaHuman hu = { 200.0f, 200.0f, false, false, false, false };
-    FaunaCtx bare = { &hu, 1, 200.0f, 200.0f, false, 0.0f, 0.0f, false, NULL, NULL, false, false };
+    FaunaCtx bare = { &hu, 1, 200.0f, 200.0f, false, 0.0f, 0.0f, false, NULL, NULL, false, false, NULL };
     herd[0].hunger = herd[1].hunger = 0.5f;
     for (int i = 0; i < 600; i++) fauna_update(herd, 2, &bare, &rng, 0.5f, NULL); // 5 minutos sin pasto
     CHECK(herd[0].hunger > 0.6f);
@@ -4037,7 +4165,7 @@ static void test_camp_migration_and_pastures(void) {
         goat.hunger = goat.thirst = 0.0f;
         Rng r;
         rng_seed(&r, 11u);
-        FaunaCtx fc = { &hu, 1, 0.0f, 0.0f, false, 0.0f, 0.0f, false, NULL, NULL, true, caravan == 1 };
+        FaunaCtx fc = { &hu, 1, 0.0f, 0.0f, false, 0.0f, 0.0f, false, NULL, NULL, true, caravan == 1, NULL };
         for (int i = 0; i < 200; i++) fauna_update(&goat, 1, &fc, &r, 0.1f, NULL);
         dist_end[caravan] = sqrtf(goat.x * goat.x + goat.z * goat.z);
     }
@@ -5409,6 +5537,7 @@ int main(void) {
     RUN(test_health_venom);
     RUN(test_animals_water_and_venom);
     RUN(test_animals_keep_out_of_lakes);
+    RUN(test_animals_swim_and_ice);
     RUN(test_world_tribes_and_sites);
     RUN(test_voxels);
     RUN(test_world_river_banks);
