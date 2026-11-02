@@ -494,9 +494,10 @@ float world_glacier_reach(const World *w, float x, float z) {
     float q[REGION_COUNT];
     quadrant_weights(warped_angle(w, x, z), q);
     if (q[REGION_HIGHLAND] < 0.5f) return 2.0f;
-    // Lenguas: el frente avanza mas por unos lados que por otros.
+    // Lenguas: el frente avanza mas por unos lados que por otros, y menos hacia las cordilleras de los costados.
     float th = atan2f(z, x);
     float lobe = 0.55f + 0.9f * (0.5f + 0.5f * noise2d(cosf(th) * 9.0f, sinf(th) * 9.0f, w->seed + 743u));
+    lobe *= fmaxf(0.05f, smooth(0.5f, 0.9f, q[REGION_HIGHLAND]));
     return (e - ICE_E - 30.0f) / (GLACIER_ADVANCE * lobe);
 }
 
