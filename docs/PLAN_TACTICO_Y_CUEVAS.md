@@ -126,14 +126,28 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 Cada guarida del mundo tiene su cueva (`src/sim/caves.c`, desde la semilla y su índice: sin archivos ni bibliotecas).
 En las coordenadas de la cueva, la boca está en (0, 0) y +z va hacia adentro.
 
-- **Afuera,** la boca es un peñasco natural de silueta irregular, con un umbral estrecho, roca facetada y un túnel que
-  se oscurece hacia el fondo (`src/game/world_game.c`). Cerca de la boca no crecen árboles (12 m) y la cámara no se
-  mete en la roca. **Al caminar hacia adentro por la boca, se entra.**
-- Las cuevas no animales pueden mostrar señales de ocupación humana: una escalera de madera y una plataforma; las
-  tribales añaden postes, las de forajidos una estacada improvisada, las imperiales una plataforma más cuidada y las
-  abandonadas una escalera rota. Son elementos visuales y no cambian todavía las reglas de entrada.
-- Algunas cuevas abandonadas conservan una fachada antigua excavada: mampostería, dintel, nichos, hornacina y una reja
-  oxidada. Es una arquitectura de una civilización desaparecida, también puramente visual por ahora.
+- **Afuera** (v0.13.1), la boca es un risco de voxeles de la piedra de su región (`voxs_draw_cave_mouth`, en
+  `src/world/voxstruct.c`):
+  - arenisca en estratos en el desierto, granito en el altiplano y, en el resto, piedra con liquen y pasto en lo alto;
+  - un arco natural de 3,2 m de ancho abajo y 3,2 m de alto (más derecho en las abandonadas) y el túnel hueco detrás,
+    que se oscurece hacia el fondo;
+  - dos rocas bajas en el umbral, que quien camina rodea;
+  - un cimiento de 2,8 m, para que en una ladera nada quede en el aire;
+  - cuatro variantes por región, refinadas de cerca.
+
+  Cerca de la boca no crecen árboles (12 m) y la cámara no se mete en la roca. **Al caminar hacia adentro por la boca,
+  se entra.**
+- **Lo de cada tipo** va delante de la roca, sobre el suelo de la boca y fuera del paso (`src/game/world_game.c`). Se ve
+  pero no tiene colisión, y no cambia las reglas de entrada:
+  - **las habitadas:** antorchas a los lados, y una escalera de madera que sube a un saliente a 2 m (el del imperio, de
+    piedra, con pilares y baranda);
+  - **la tribu:** el bastidor con un cuero, la cortina corrida y el sol pintado;
+  - **los forajidos:** una estacada a los dos lados;
+  - **el imperio:** sus estandartes;
+  - **las fieras:** huesos y un cráneo;
+  - **las abandonadas:** una escalera rota apoyada en la roca, piedras caídas y la fachada de una civilización
+    desaparecida. La fachada tiene jambas y dintel de sillares, hiladas encima, dos nichos ciegos, una hornacina y la
+    reja oxidada, caída en el suelo a un costado.
 - **El vestíbulo:** tras la boca, una cámara chica y llana (3 m de radio). De su borde salen, cada uno por su lado, los
   tres pasillos de la boca: las dos salidas (a las recámaras `a` e `i`, los extremos del anillo) y la bajada.
 - **La Cisterna Magna:** la sala más honda (7 a 9 m de radio, el doble de alto). **La bajada** llega a ella desde el
@@ -202,7 +216,8 @@ Lo tomado, encendido o rescatado queda en `GameActions.cave_done` (un bit por ob
 `--cueva tipo[:lugar]` (tipo: `animal`, `abandonada`, `forajidos`, `tribu`, `imperio`; lugar: una sala o `boca`, `celda`,
 `dialogo`, `nido`, `huevos`, `presa`, `botin`, `arma`, `cofre`, `anfora`, `deposito`, `pintura`, `fogata`, `antorcha`,
 `veta`, `columna`), `--cueva-f` (F en el cuadro 20; con el diálogo abierto, romper las cadenas), `--antorcha` (encendida
-en la mano), `--caminar adelante|atras` e `--ir boca-<tipo>`. Las capturas: [CAPTURAS.md](CAPTURAS.md#las-cuevas).
+en la mano), `--caminar adelante|atras` e `--ir boca-<tipo>` (la más cercana; `boca-<tipo>-ladera`, la de ese tipo con
+más desnivel en la boca; con `-lado` al final, desde un costado). Las capturas: [CAPTURAS.md](CAPTURAS.md#las-cuevas).
 
 ---
 

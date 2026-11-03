@@ -285,7 +285,7 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | El asedio | `--asedio puerta`, `fuego`, `salida`, `quemada`, `tomada`… |
 | Combate | `--enemigos bandidos`, `culto`, `lobos`, `arqueros` |
 | El sistema táctico | `--manos escudo` (`espada`, `nada`), `--rehen`, `--objetivo`, `--cubierto`, `--inventario` (la fila de la barra) |
-| Las cuevas | `--ir boca-forajidos` (`animal`, `abandonada`, `tribu`, `imperio`): la boca, afuera; `--cueva forajidos:0 --antorcha`: adentro (lugar: una sala o `boca`, `celda`, `dialogo`, `nido`, `cofre`, `fogata`…); `--cueva-f` pulsa F; `--caminar adelante` (o `atras`) |
+| Las cuevas | `--ir boca-forajidos` (`animal`, `abandonada`, `tribu`, `imperio`): la boca, afuera (`boca-<tipo>-ladera`: la de ese tipo con más desnivel; con `-lado` al final, desde un costado); `--cueva forajidos:0 --antorcha`: adentro (lugar: una sala o `boca`, `celda`, `dialogo`, `nido`, `cofre`, `fogata`…); `--cueva-f` pulsa F; `--caminar adelante` (o `atras`) |
 | La galería de assets | `--galeria` |
 | El mapa del mundo | `--semilla 42 --mapa-mundo mapa.png` |
 | Las partidas de referencia | `--probar-partidas ../tests/partidas` |

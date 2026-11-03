@@ -262,6 +262,24 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las bocas de las cuevas (v0.13.1), la fase B1 pulida ([docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)):
+- **La roca, de voxeles:** cada boca es un risco de la piedra de su región, con su arco natural, el túnel hueco detrás y
+  dos rocas bajas en el umbral, que se rodean. En el desierto es arenisca en estratos; en el altiplano, granito; en el
+  resto, piedra con liquen y pasto en lo alto. En una ladera, su cimiento no deja nada en el aire.
+- **De afuera se ve de quién es:**
+  - las habitadas tienen una escalera que sube a un saliente (el del imperio, de piedra y con baranda);
+  - la tribu, un bastidor con un cuero;
+  - los forajidos, una estacada a los dos lados;
+  - las abandonadas, una escalera rota y la fachada de una civilización desaparecida: jambas y dintel de sillares,
+    nichos, una hornacina y la reja oxidada, caída a un costado.
+
+  Todo está fuera del paso: se sigue entrando caminando por la boca.
+- **Las partidas de antes** cargan igual: no cambia nada de lo que se guarda.
+- **Copilot en el Codespace:** el agente `pulir` (en el selector de agentes) y las instrucciones de lo que se ve
+  (`.github/instructions/arte.instructions.md`) lo llevan a las skills de `.claude/skills/`.
+
+Pruebas: `--ir boca-<tipo>-ladera` (la boca de ese tipo con más desnivel) y `--ir boca-<tipo>-lado` (de costado).
+
 El sistema táctico y las cuevas (v0.13.0), el resto de las hojas ([docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)):
 - **La barra rápida, de 10 casillas** (`1` a `9` y `0`): con el inventario abierto (`Tab`), un número (o un toque en la fila
   de abajo) pone lo elegido en esa casilla. El odre bebe o, junto al agua o a un pozo, se llena; el lazo va al animal
@@ -509,5 +527,6 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --enemigos bandidos --rehen                         # con un bandido de rehén
 ./build/estepa --cubierto --enemigos bandidos                      # a cubierto junto a una roca (C)
 ./build/estepa --ir boca-forajidos                                 # la boca de un refugio de forajidos (y sus guardias)
+./build/estepa --ir boca-abandonada-ladera --dron 7                # la abandonada con más desnivel, desde arriba (con -lado al final, de costado)
 ./build/estepa --cueva forajidos:dialogo --antorcha                # adentro, ante un prisionero (--cueva-f: romper las cadenas)
 ```
