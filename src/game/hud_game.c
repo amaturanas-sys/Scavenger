@@ -99,6 +99,10 @@ static bool g_slots_set;      // si no, las de serie
 static int g_picking = -1;    // casilla que se esta eligiendo (-1: selector cerrado)
 static int g_pick_cursor;
 
+static int quickbar_key(int slot) {
+    return slot == HUD_QUICK_SLOTS - 1 ? KEY_ZERO : KEY_ONE + slot;
+}
+
 typedef struct {
     QbSlot s;
     IconId icon;
@@ -129,13 +133,23 @@ const QbSlot *hud_slots(void) {
     return g_slots;
 }
 
+bool hud_assign_item(int slot, const char *id) {
+    if (slot < 0 || slot >= HUD_QUICK_SLOTS || !id || !id[0]) return false;
+    QbSlot s = { QB_ITEM, 0, "" };
+    snprintf(s.id, sizeof(s.id), "%s", id);
+    g_slots[slot] = s;
+    g_slots_set = true;
+    return true;
+}
+
 // Para que sirve un objeto en la barra: beber, vendar, la antorcha o empuñarlo.
-typedef enum { USE_NONE, USE_DRINK, USE_BANDAGE, USE_TORCH, USE_WIELD } ItemUse;
+typedef enum { USE_NONE, USE_DRINK, USE_BANDAGE, USE_TORCH, USE_WIELD, USE_ACTION } ItemUse;
 static ItemUse item_use(const GameActions *ga, const char *id) {
     if (!id || !id[0]) return USE_NONE;
     if (strstr(id, "antorcha")) return USE_TORCH;
     if (strstr(id, "agua") || strstr(id, "odre") || strstr(id, "vino") || strstr(id, "airag") || strstr(id, "cerveza")) return USE_DRINK;
     if (strstr(id, "unguento") || strstr(id, "hierbas")) return USE_BANDAGE;
+    if (strstr(id, "lazo") || strstr(id, "gancho_trepa") || strstr(id, "silla_montar")) return USE_ACTION;
     const InvItem *it = inventory_find(ga->inv, id);
     return it && it->hands != INV_HANDS_NONE ? USE_WIELD : USE_NONE;
 }
@@ -274,6 +288,11 @@ static void use_slot(GameActions *ga, const Props *props, const Player *p, int k
         case USE_DRINK: wg_request_drink(); break;
         case USE_BANDAGE: cb_request_bandage(); break;
         case USE_WIELD: ga_quick_request_wield(s->id); break; // en su mano: la guarda o la saca (solo esa mano)
+        case USE_ACTION:
+            if (strstr(s->id, "lazo")) ga_quick_request_action(ACTION_THROW_LASSO);
+            else if (strstr(s->id, "gancho_trepa")) ga_quick_request_action(ACTION_THROW_GRAPPLE);
+            else if (strstr(s->id, "silla_montar")) ga_quick_request_action(ACTION_SADDLE);
+            break;
         default: break;
         }
         break;
@@ -294,7 +313,7 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
         if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) g_pick_cursor = (g_pick_cursor + 8) % n;
         if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) g_pick_cursor = (g_pick_cursor + n - 8 % n) % n;
         if (g_pick_cursor >= n) g_pick_cursor = n - 1;
-        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ONE + g_picking)) {
+        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) || IsKeyPressed(quickbar_key(g_picking))) {
             g_slots[g_picking] = opt[g_pick_cursor].s;
             snprintf(log, len, T("Casilla %d: %s."), g_picking + 1, opt[g_pick_cursor].title);
             g_picking = -1;
@@ -305,7 +324,7 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
     if (input_action_down(KA_ESCORT)) return; // Y+1..3: ordenes a la escolta (src/game/hazards_game.c)
     unsigned mods = input_mods();
     for (int k = 0; k < HUD_QUICK_SLOTS; k++) {
-        if (!IsKeyPressed(KEY_ONE + k)) continue;
+        if (!IsKeyPressed(quickbar_key(k))) continue;
         const QbSlot *s = &g_slots[k];
         if ((mods & KM_ALT) || s->kind == QB_EMPTY) g_picking = k, g_pick_cursor = 0; // vacia (o Alt): elegir
         else if ((mods & KM_SHIFT) && wields(ga, s)) { // Mayús: el arma empuñada, a la otra mano
@@ -342,7 +361,8 @@ void hud_quickbar(GameActions *ga, const Props *props, const Player *p, int x, i
             if (s->kind == QB_SKILL) ui_tile_bar(r, 1.0f - ga->ab_cd[s->grip] / fmaxf(1.0f, ability_def((AbilityId)s->grip)->cooldown), UI_TURQUOISE);
         }
         DrawRectangle((int)r.x + 1, (int)r.y + 1, 7, 9, (Color){ 16, 12, 9, 200 });
-        DrawText(TextFormat("%d", k + 1), (int)r.x + 2, (int)r.y + 1, 10, active ? UI_TURQ_LIGHT : UI_GOLD_LIGHT);
+        DrawText(TextFormat("%d", k == HUD_QUICK_SLOTS - 1 ? 0 : k + 1), (int)r.x + 2, (int)r.y + 1, 10,
+                 active ? UI_TURQ_LIGHT : UI_GOLD_LIGHT);
         if (g_picking == k) DrawRectangleLines((int)r.x - 1, (int)r.y - 1, (int)r.width + 2, (int)r.height + 2, UI_TURQUOISE);
         if (h) {
             const char *how = empty          ? TextFormat(T("Tecla %d: elegir un arma, un objeto o una habilidad."), k + 1)

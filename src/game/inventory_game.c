@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "game/forge_game.h"
+#include "game/hud_game.h"
 #include "game/input.h"
 #include "game/place_game.h"
 #include "raymath.h"
@@ -808,6 +809,16 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
         int nr = rows_of(ga, &conts[*cont], rows, 64);
         int *cur = &ga->inv_cursor[*pane];
         if (*cur >= nr) *cur = nr ? nr - 1 : 0;
+        if (*cur < nr) {
+            for (int slot = 0; slot < HUD_QUICK_SLOTS; slot++) {
+                int key = slot == HUD_QUICK_SLOTS - 1 ? KEY_ZERO : KEY_ONE + slot;
+                if (IsKeyPressed(key)) {
+                    if (hud_assign_item(slot, rows[*cur].id))
+                        snprintf(log, len, T("Casilla %d: %s."), slot == HUD_QUICK_SLOTS - 1 ? 0 : slot + 1,
+                                 item_name(ga, rows[*cur].id));
+                }
+            }
+        }
         // Flechas (o WASD) por la cuadricula; por el borde se pasa a la otra columna.
         bool right = IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D), left = IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A);
         if (right && (nr == 0 || *cur % INV_COLS == INV_COLS - 1 || *cur == nr - 1) && *pane == 0) *pane = 1;
