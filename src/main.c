@@ -575,14 +575,19 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     }
     if (!strncmp(what, "boca-", 5)) { // la boca de la cueva de ese tipo mas cercana al campamento, de frente, a 6 m
         static const char *KINDS[CAVE_KINDS] = { "animal", "abandonada", "forajidos", "tribu", "imperio" };
+        char kind[24];
+        snprintf(kind, sizeof(kind), "%s", what + 5);
+        char *side = strstr(kind, "-lado"); // boca-<tipo>-lado: a un costado del peñasco, mirandolo
+        if (side) *side = '\0';
         float best = 1e30f;
         for (int i = 0; i < w->cave_count; i++) {
             const Cave *c = &w->caves[i];
             float d = c->x * c->x + c->z * c->z;
-            if (strcmp(what + 5, KINDS[c->kind]) != 0 || d > best) continue;
+            if (strcmp(kind, KINDS[c->kind]) != 0 || d > best) continue;
             best = d, ok = true;
-            cave_to_world(c, 0.0f, -6.0f, &x, &z);
-            lx = c->x, lz = c->z;
+            cave_to_world(c, side ? 8.0f : 0.0f, side ? 3.0f : -6.0f, &x, &z);
+            if (side) cave_to_world(c, 0.0f, 3.0f, &lx, &lz);
+            else lx = c->x, lz = c->z;
         }
     }
     for (int i = 0; i < w->den_count && !ok; i++)
@@ -1290,6 +1295,7 @@ int main(int argc, char **argv) {
             // fauna, los peligros y los desastres; el reloj, la sed, el inventario, la barra rapida y la antorcha siguen.
             bool cave = cv_inside();
             if (!g_actions.climbing && !cave) player_update(&player, &terrain, in, rig.yaw, dt);
+            if (!cave) wd_keep_out_of_rock(&terrain, &player.pos); // el peñasco de la boca de una cueva no se atraviesa
             if (in.toggle_sneak && !cave) ga_toggle_cover(&g_actions, &g_props, &terrain, &player); // C: junto a un obstaculo, cobertura
             cv_update(&g_actions, &g_combat, &troop, &g_props, &player, &terrain, in, &rig.yaw, world_time,
                       !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log)); // la boca: entrar y salir

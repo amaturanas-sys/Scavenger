@@ -126,7 +126,7 @@ void wg_update(GameActions *ga, Troop *troop, Player *p, const Props *props, con
     // La casilla del odre (las hojas: «3 para beber; 3 junto a un punto de agua, llenar»): en la orilla
     // mirando al agua o junto a un pozo, la accion de llenarlo (con su tiempo); si no, beber.
     if (input_ok && g_odre_req) {
-        if (ga->terrain && (wg_at_well(ga->terrain, p->pos.x, p->pos.z) || gems_water_ahead(ga->terrain, p)))
+        if (!ga_in_cave() && ga->terrain && (wg_at_well(ga->terrain, p->pos.x, p->pos.z) || gems_water_ahead(ga->terrain, p))) // en una cueva, bebe
             ga_quick_request_action(ACTION_FILL_WATER);
         else drink(ga, props, p, hz, c, log, len);
     }

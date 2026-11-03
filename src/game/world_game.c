@@ -184,8 +184,8 @@ static void draw_cave(const Terrain *t, const Cave *c, float time) {
     DrawCube((Vector3){ 0.0f, top + 0.7f, 2.6f }, 8.0f, 1.4f, 4.6f, empire ? dressed : rock);
     DrawSphereEx((Vector3){ -1.4f, top + 1.2f, 3.6f }, 2.6f, 6, 8, dark);
     DrawSphereEx((Vector3){ 1.8f, top + 1.0f, 4.0f }, 2.9f, 6, 8, rock);
-    DrawSphereEx((Vector3){ -3.6f, top * 0.6f, 4.2f }, 2.2f, 6, 8, dark);
-    DrawSphereEx((Vector3){ 3.8f, top * 0.55f, 4.4f }, 2.3f, 6, 8, rock);
+    DrawSphereEx((Vector3){ -3.1f, top * 0.6f, 4.4f }, 1.6f, 6, 8, dark); // a los costados, dentro de la huella (wd_keep_out_of_rock)
+    DrawSphereEx((Vector3){ 3.1f, top * 0.55f, 4.6f }, 1.6f, 6, 8, rock);
     DrawCube((Vector3){ 0.0f, top * 0.5f + 0.2f, 5.6f }, 9.0f, top + 1.8f, 2.4f, dark); // el fondo del peñasco
     // El tunel: se oscurece hacia adentro (a los 4 m ya no se ve nada). Sin descartar caras (vaciando el lote antes
     // y despues: raylib dibuja al final).
@@ -243,6 +243,28 @@ static bool in_outcrop(const Cave *c, float ground, Vector3 q) {
     cave_from_world(c, q.x, q.z, &lx, &lz);
     if (fabsf(lx) > 5.0f || lz < 0.2f || lz > 7.0f || q.y > ground + 6.5f) return false;
     return !(fabsf(lx) < 1.3f && lz < 4.2f && q.y < ground + 2.8f);
+}
+
+void wd_keep_out_of_rock(const Terrain *t, Vector3 *pos) {
+    const World *w = t->world;
+    for (int i = 0; i < w->cave_count; i++) {
+        const Cave *c = &w->caves[i];
+        if (dist_xz(c->x, c->z, pos->x, pos->z) > 12.0f) continue;
+        float lx, lz;
+        cave_from_world(c, pos->x, pos->z, &lx, &lz);
+        float ax = fabsf(lx);
+        if (ax >= 4.7f || lz <= 0.3f || lz >= 6.8f) continue; // fuera de la huella del peñasco (draw_cave)
+        if (ax < 1.3f && lz < 4.2f) continue;                  // en el tunel
+        // Al borde libre mas cercano: el frente, un costado, el fondo o (junto al tunel) su pared.
+        float dfront = lz - 0.3f, dside = 4.7f - ax, dback = 6.8f - lz, dtunnel = lz < 4.2f ? ax - 1.3f : 1e9f;
+        float sx = lx < 0.0f ? -1.0f : 1.0f;
+        if (dfront <= dside && dfront <= dback && dfront <= dtunnel) lz = 0.3f;
+        else if (dtunnel <= dside && dtunnel <= dback) lx = sx * 1.3f;
+        else if (dside <= dback) lx = sx * 4.7f;
+        else lz = 6.8f;
+        cave_to_world(c, lx, lz, &pos->x, &pos->z);
+        pos->y = terrain_height(t, pos->x, pos->z);
+    }
 }
 
 void wd_camera_clear(const Terrain *t, Vector3 target, Vector3 *cam) {

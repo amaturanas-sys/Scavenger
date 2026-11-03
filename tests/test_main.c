@@ -5796,11 +5796,11 @@ static void test_caves(void) {
                 bool on_wall = ob->kind == COBJ_TORCH || ob->kind == COBJ_VEIN || ob->kind == COBJ_WEB || ob->kind == COBJ_PAINTING ||
                                ob->kind == COBJ_ARMS || ob->kind == COBJ_CELL;
                 const CaveRoom *rm = &c->rooms[ob->room];
-                float a = atan2f(ob->x - rm->x, ob->z - rm->z);
+                float wall_ang = atan2f(ob->x - rm->x, ob->z - rm->z);
                 for (int k = -1; k <= 1 && on_wall; k++) {
-                    float b = a + (float)k / rm->radius;
+                    float side_ang = wall_ang + (float)k / rm->radius;
                     int where = 0;
-                    bool in = cave_floor(c, rm->x + sinf(b) * (rm->radius + 0.6f), rm->z + cosf(b) * (rm->radius + 0.6f), NULL, &where);
+                    bool in = cave_floor(c, rm->x + sinf(side_ang) * (rm->radius + 0.6f), rm->z + cosf(side_ang) * (rm->radius + 0.6f), NULL, &where);
                     CHECK(!in || where < CAVE_IN_CORRIDOR);
                 }
             }
