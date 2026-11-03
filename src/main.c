@@ -331,7 +331,7 @@ static void draw_weather_text(int right, int y, const Climate *c, Region rg) {
 
 // HUD limpio: arriba a la izquierda, lo esencial (hora, tribu, animo, manos); el registro
 // abajo, solo mientras es reciente; los controles, con F1.
-static void draw_hud(const Troop *t, float world_time, const char *hands, const char *log, float log_age, bool menu) {
+static void draw_hud(const Troop *t, float world_time, const char *hands, const char *log, float log_age, bool menu, Rectangle dialog) {
     const int x = 4 + 8, w = 236;
     DrawRectangle(4, 4, w, 46, (Color){ 20, 14, 10, 170 });
     DrawRectangleLines(4, 4, w, 46, Fade(UI_GOLD_DARK, 0.9f));
@@ -353,8 +353,12 @@ static void draw_hud(const Troop *t, float world_time, const char *hands, const 
         float a = log_age < 6.0f ? 1.0f : (8.0f - log_age) / 2.0f;
         int lw = MeasureText(log, 10);
         if (lw > VIRTUAL_W - 180) lw = VIRTUAL_W - 180;
-        // Con un menu abierto, la leyenda ocupa la base: el registro sube encima de ella.
+        // Con un menu abierto, la leyenda ocupa la base: el registro sube encima de ella. Con un dialogo,
+        // encima de su panel (lo que se compra o se vende se sigue leyendo), desde su borde y sin llegar
+        // a la placa de las constantes, que empieza 126 px antes del borde derecho.
+        if (dialog.height > 0 && lw > VIRTUAL_W - 136 - (int)dialog.x - 14) lw = VIRTUAL_W - 136 - (int)dialog.x - 14;
         int ly = menu ? VIRTUAL_H - 40 : VIRTUAL_H - 22, lx = menu ? (VIRTUAL_W - lw - 14) / 2 : 4;
+        if (dialog.height > 0) ly = (int)dialog.y - 20, lx = (int)dialog.x;
         DrawRectangle(lx, ly, lw + 14, 18, Fade((Color){ 20, 14, 10, 255 }, 0.7f * a));
         DrawRectangle(lx, ly, 2, 18, Fade(UI_GOLD, a));
         BeginScissorMode(lx, ly, lw + 14, 18);
@@ -362,7 +366,7 @@ static void draw_hud(const Troop *t, float world_time, const char *hands, const 
         EndScissorMode();
         hint_free = lx + lw + 14 + 6 <= hx; // un registro largo tapa la leyenda mientras dura
     }
-    if (menu || !hint_free) return;
+    if (menu || dialog.height > 0 || !hint_free) return;
     ui_text(hint, hx, VIRTUAL_H - 16, 10, Fade(UI_BONE_DIM, 0.8f));
 }
 
@@ -1634,7 +1638,7 @@ int main(int argc, char **argv) {
             pg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H); // la vista aerea: solo lo de la obra
         } else if (!menu_visible(&menu)) {
             draw_hud(&troop, world_time, ga_hands_text(&g_actions), log, log_age,
-                     g_actions.menu_open || g_actions.inv_open || g_actions.equip_open);
+                     g_actions.menu_open || g_actions.inv_open || g_actions.equip_open, dlg_panel(&g_actions.dlg, VIRTUAL_H));
             if (cv_inside()) cv_draw_plan(&terrain, VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13, MINIMAP_RADIUS); // el plano de la cueva
             else {
                 minimap_set_world(&minimap, terrain.world, terrain.plain);
