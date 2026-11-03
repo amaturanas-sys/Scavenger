@@ -208,6 +208,54 @@ static void draw_natural_mouth(Color rock, float top) {
     DrawSphereEx((Vector3){ 1.95f, top * 1.05f, 1.35f }, 1.55f, 6, 5, ColorBrightness(rock, -0.08f));
 }
 
+static Vector3 ladder_point(Vector3 low, Vector3 high, float t, float side) {
+    Vector3 p = Vector3Lerp(low, high, t);
+    Vector3 across = Vector3Normalize((Vector3){ high.z - low.z, 0.0f, low.x - high.x });
+    return Vector3Add(p, Vector3Scale(across, side));
+}
+
+static void draw_human_entrance(CaveKind kind, float top) {
+    Color wood = kind == CAVE_EMPIRE ? (Color){ 112, 78, 42, 255 } : (Color){ 105, 72, 40, 255 };
+    Color wood_light = kind == CAVE_TRIBE ? (Color){ 156, 108, 56, 255 } : ColorBrightness(wood, 0.18f);
+    Color stone = kind == CAVE_EMPIRE ? (Color){ 142, 128, 104, 255 } : (Color){ 116, 100, 78, 255 };
+    Vector3 low = { 2.55f, 0.05f, -2.8f }, high = { 1.72f, fminf(top - 0.35f, 2.35f), 0.20f };
+    int rungs = kind == CAVE_ABANDONED ? 4 : kind == CAVE_EMPIRE ? 8 : 6;
+    for (int side = -1; side <= 1; side += 2) {
+        Vector3 a = ladder_point(low, high, 0.0f, (float)side * 0.52f);
+        Vector3 b = ladder_point(low, high, 1.0f, (float)side * 0.52f);
+        DrawCylinderEx(a, b, 0.075f, 0.065f, 5, wood);
+    }
+    for (int i = 0; i < rungs; i++) {
+        float t = (float)(i + 1) / (float)(rungs + 1);
+        Vector3 a = ladder_point(low, high, t, -0.52f), b = ladder_point(low, high, t, 0.52f);
+        DrawCylinderEx(a, b, 0.06f, 0.05f, 5, wood_light);
+    }
+    if (kind != CAVE_ABANDONED) {
+        Vector3 p = { high.x, high.y - 0.08f, high.z + 0.38f };
+        DrawCube(p, 2.2f, 0.18f, 1.05f, stone);
+        DrawCubeWires(p, 2.2f, 0.18f, 1.05f, ColorBrightness(stone, -0.3f));
+        if (kind == CAVE_EMPIRE) {
+            DrawCylinderEx((Vector3){ p.x - 0.82f, p.y + 0.10f, p.z - 0.35f },
+                           (Vector3){ p.x - 0.82f, p.y + 0.10f, p.z + 0.35f }, 0.08f, 0.08f, 5, wood);
+            DrawCylinderEx((Vector3){ p.x + 0.82f, p.y + 0.10f, p.z - 0.35f },
+                           (Vector3){ p.x + 0.82f, p.y + 0.10f, p.z + 0.35f }, 0.08f, 0.08f, 5, wood);
+        }
+    } else {
+        Vector3 fallen = ladder_point(low, high, 0.58f, 0.0f);
+        DrawCylinderEx(fallen, Vector3Add(fallen, (Vector3){ 0.75f, -0.16f, 0.35f }), 0.06f, 0.035f, 5, wood);
+    }
+    if (kind == CAVE_TRIBE) {
+        DrawCylinderEx((Vector3){ 0.78f, 0.0f, -0.35f }, (Vector3){ 0.78f, 1.35f, -0.35f }, 0.07f, 0.04f, 5, wood);
+        DrawCylinderEx((Vector3){ 1.42f, 0.0f, -0.35f }, (Vector3){ 1.42f, 1.35f, -0.35f }, 0.07f, 0.04f, 5, wood);
+        DrawCube((Vector3){ 1.10f, 1.05f, -0.35f }, 0.95f, 0.06f, 0.05f, (Color){ 132, 82, 42, 255 });
+    } else if (kind == CAVE_BANDITS) {
+        for (int i = 0; i < 3; i++) {
+            float x = -3.2f + (float)i * 0.55f;
+            DrawCylinderEx((Vector3){ x, 0.0f, -1.05f }, (Vector3){ x + 0.12f, 0.85f, -1.0f }, 0.07f, 0.035f, 4, wood);
+        }
+    }
+}
+
 static void draw_cave(const Terrain *t, const Cave *c, float time) {
     // El pie del peñasco: lo mas bajo del terreno alrededor (en una ladera no queda en el aire).
     float ground = terrain_height(t, c->x, c->z), base = ground;
@@ -226,6 +274,7 @@ static void draw_cave(const Terrain *t, const Cave *c, float time) {
     rlRotatef(c->yaw * RAD2DEG, 0, 1, 0); // +z del dibujo: hacia adentro (cave_to_world)
     // La boca es natural en todos los biomas; el tipo de cueva se lee después por sus adornos.
     draw_natural_mouth(rock, top);
+    if (c->kind != CAVE_ANIMAL) draw_human_entrance(c->kind, top);
     DrawSphereEx((Vector3){ -1.7f, top * 1.25f, 4.4f }, 2.5f, 6, 5, dark);
     DrawSphereEx((Vector3){ 1.8f, top * 1.20f, 4.7f }, 2.8f, 6, 5, ColorBrightness(dark, 0.08f));
     DrawSphereEx((Vector3){ 0.0f, top * 0.52f, 5.1f }, 2.2f, 6, 5, ColorBrightness(dark, -0.10f));
