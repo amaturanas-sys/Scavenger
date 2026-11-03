@@ -26,6 +26,8 @@ void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, flo
 int wd_cave_lights(const Terrain *t, const Player *p, Vector3 *pos, float *radius, int max);
 // El peñasco de la boca de una cueva es roca: quien camina afuera no lo atraviesa (por el tunel, si).
 void wd_keep_out_of_rock(const Terrain *t, Vector3 *pos);
+// Cuanto baja el terreno alrededor de la boca de una cueva (m; las pruebas buscan la mas empinada).
+float wd_cave_drop(const Terrain *t, const Cave *c);
 // La camara de afuera no se mete en el peñasco de una boca (por el tunel, si): la acerca a target.
 void wd_camera_clear(const Terrain *t, Vector3 target, Vector3 *cam);
 // La guarida cercana a (x, z) (a menos de radius), o -1: su especie aparece alli.

@@ -583,10 +583,12 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
         snprintf(kind, sizeof(kind), "%s", what + 5);
         char *side = strstr(kind, "-lado"); // boca-<tipo>-lado: a un costado del peñasco, mirandolo
         if (side) *side = '\0';
+        char *slope = strstr(kind, "-ladera"); // boca-<tipo>-ladera: la de ese tipo con mas desnivel en la boca
+        if (slope) *slope = '\0';
         float best = 1e30f;
         for (int i = 0; i < w->cave_count; i++) {
             const Cave *c = &w->caves[i];
-            float d = c->x * c->x + c->z * c->z;
+            float d = slope ? -wd_cave_drop(t, c) : c->x * c->x + c->z * c->z;
             if (strcmp(kind, KINDS[c->kind]) != 0 || d > best) continue;
             best = d, ok = true;
             cave_to_world(c, side ? 8.0f : 0.0f, side ? 3.0f : -6.0f, &x, &z);
