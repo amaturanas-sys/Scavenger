@@ -137,7 +137,7 @@ gastar a Claude, y el flujo de arriba no cambia: rama, PR, y Claude verifica y f
 
 | Quién | Cómo las usa |
 |---|---|
-| Copilot (modo agente de VS Code) | Las carga por su cuenta desde `.claude/skills/` (también lee `.github/skills/` y `.agents/skills/`). Entra la que corresponde por su descripción, o la que se nombra en el pedido. |
+| Copilot (modo agente de VS Code, con el harness Local o el de Copilot, y el agente que abre PRs) | Las carga por su cuenta desde `.claude/skills/` (también lee `.github/skills/` y `.agents/skills/`). Entra la que corresponde por su descripción, la que se pide con `/` (`/estetica`) o la que se nombra en el pedido. |
 | Claude Code | Las carga por su cuenta. |
 | Cline | Se le pide que lea el `SKILL.md` de la que haga falta. |
 
@@ -154,11 +154,15 @@ gastar a Claude, y el flujo de arriba no cambia: rama, PR, y Claude verifica y f
   falta en las versiones de VS Code donde las skills todavía son experimentales. Un Codespace creado antes de
   este cambio lo toma con *Codespaces: Rebuild Container*. Si solo falta text-to-CAD, alcanza con
   `python3 tools/assets/cad.py instalar`.
+- **El agente `pulir`** (`.github/agents/pulir.agent.md`): se elige en el selector de agentes del chat de
+  Copilot. Trae cargadas `estepa` y `estetica` y sigue el ciclo hasta el PR, sin tocar `VERSION` ni fusionar.
+  Cuando Copilot toca modelos, texturas, íconos o cómo se dibuja el mundo, entra solo
+  `.github/instructions/arte.instructions.md`, con las medidas y lo que no se hace.
 - **Un pedido de ejemplo:** «Usa la skill estetica: saca fotos de `estructura.vivienda.yurta_comun` con
   `cad.py foto` y en el juego con `--ver`, compárala con su medida del inventario y con el estilo de
   `assets/models/README.md`, y propón qué pulir antes de tocar nada».
 - **Lo que solo existe en Claude Code** (los agentes `gamedev-*`, `/gamedev`) no está para Copilot ni para
-  Cline.
+  Cline. VS Code puede mostrar esos agentes en su selector, porque lee `.claude/agents/`: no se usan.
 
 ## 4. La verificación de Claude Code
 
@@ -281,7 +285,7 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | El asedio | `--asedio puerta`, `fuego`, `salida`, `quemada`, `tomada`… |
 | Combate | `--enemigos bandidos`, `culto`, `lobos`, `arqueros` |
 | El sistema táctico | `--manos escudo` (`espada`, `nada`), `--rehen`, `--objetivo`, `--cubierto`, `--inventario` (la fila de la barra) |
-| Las cuevas | `--ir boca-forajidos` (`animal`, `abandonada`, `tribu`, `imperio`): la boca, afuera; `--cueva forajidos:0 --antorcha`: adentro (lugar: una sala o `boca`, `celda`, `dialogo`, `nido`, `cofre`, `fogata`…); `--cueva-f` pulsa F; `--caminar adelante` (o `atras`) |
+| Las cuevas | `--ir boca-forajidos` (`animal`, `abandonada`, `tribu`, `imperio`): la boca, afuera (`boca-<tipo>-ladera`: la de ese tipo con más desnivel; con `-lado` al final, desde un costado); `--cueva forajidos:0 --antorcha`: adentro (lugar: una sala o `boca`, `celda`, `dialogo`, `nido`, `cofre`, `fogata`…); `--cueva-f` pulsa F; `--caminar adelante` (o `atras`) |
 | La galería de assets | `--galeria` |
 | El mapa del mundo | `--semilla 42 --mapa-mundo mapa.png` |
 | Las partidas de referencia | `--probar-partidas ../tests/partidas` |
@@ -381,10 +385,10 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.13.0. El sistema táctico y las cuevas de las hojas del usuario, entero
-  ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)): las manos (A1, la v0.12.0, que no se publicó sola),
-  la barra rápida de 10 casillas, el objetivo, la cobertura y las cuevas que se recorren por dentro, con sus
-  prisioneros y sus guardias.
+- **Versión:** 0.13.1. Las bocas de las cuevas, del Codespace verificado (los PR #148 y #149 de Copilot): la
+  roca, de voxeles de la piedra de cada región, y lo de cada tipo delante, fuera del paso. Para Copilot, el
+  agente `pulir` y las instrucciones de lo que se ve, que llevan a las skills de `.claude/skills/` (lo útil de
+  #147, sin sus copias).
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
@@ -394,6 +398,7 @@ traba.
   - la verificación de la v0.10.9: el reparto Codespace → Claude, las reglas comunes y las guardas;
   - el agua, las cinco fases (v0.11.0 a v0.11.4);
   - el sistema táctico y las cuevas: de A1 a B3 (v0.13.0).
+  - las bocas de las cuevas, de voxeles, con lo de cada tipo (v0.13.1).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

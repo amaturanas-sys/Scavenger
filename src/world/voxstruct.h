@@ -43,6 +43,15 @@ typedef enum {
 } VoxFeature;
 #define VF_VARIANTS 4
 void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float scale, Color tint);
+// La roca de la boca de una cueva (lo de cada tipo lo pone src/game/world_game.c delante): un risco de la piedra de su
+// region con un arco natural al frente y el tunel hueco detras. En el plano de la cueva (x de costado, z hacia adentro,
+// y desde el suelo de la boca): la cara en z = VOXS_MOUTH_FACE; el arco, de 3,2 m de ancho abajo y 3,2 de alto en el
+// medio; la roca dentro de |x| < 4,7 y 0,4 < z < 6,8, menos dos rocas bajas que asoman delante (VOXS_MOUTH_BOULDERS:
+// x, z y radio); 2,8 m de cimiento bajo el suelo, para las laderas. facade: la cara lisa alrededor del arco (la fachada
+// de las abandonadas). at: el suelo en la boca; yaw: el de la cueva. 4 variantes; de cerca (voxs_set_lod), refinada.
+#define VOXS_MOUTH_FACE 0.4f
+extern const float VOXS_MOUTH_BOULDERS[2][3];
+void voxs_draw_cave_mouth(Region region, int variant, bool facade, Vector3 at, float yaw);
 void voxs_unload(void);
 void voxs_forget_gpu(void); // ver terrain_forget_gpu
 

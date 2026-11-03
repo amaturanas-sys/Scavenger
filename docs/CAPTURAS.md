@@ -78,9 +78,11 @@ Una por guarida ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1 a B3).
 
 | | |
 |---|---|
-| ![Boca de forajidos](capturas/cueva_boca_forajidos.png) | **La boca de un refugio de forajidos** (`--ir boca-forajidos`): el peñasco, el túnel, las antorchas y la estacada; sus guardias salen a pelear. |
-| ![Boca de fieras](capturas/cueva_boca_fieras.png) | **La boca de una guarida de fieras** (`--ir boca-animal`). |
-| ![Boca del imperio](capturas/cueva_boca_imperio.png) | **La boca de un almacén del imperio** (`--ir boca-imperio`): piedra labrada, estandartes y la guardia imperial. |
+| ![Boca de forajidos](capturas/cueva_boca_forajidos.png) | **La boca de un refugio de forajidos** (`--ir boca-forajidos`): la roca de voxeles con su arco y su túnel, las antorchas, la escalera al saliente y la estacada; sus guardias salen a pelear. |
+| ![Boca de fieras](capturas/cueva_boca_fieras.png) | **La boca de una guarida de fieras** (`--ir boca-animal`): la roca sola, con su arco natural, el liquen y el pasto en lo alto, y las dos rocas bajas del umbral. |
+| ![Boca del imperio](capturas/cueva_boca_imperio.png) | **La boca de un almacén del imperio** (`--ir boca-imperio`): el saliente de piedra con su baranda, los estandartes y la guardia imperial. |
+| ![Boca de una tribu](capturas/cueva_boca_tribu.png) | **La boca de un refugio de una tribu** (`--ir boca-tribu`): la cortina de cuero corrida, el sol pintado sobre el arco y el bastidor con un cuero. |
+| ![Boca abandonada](capturas/cueva_boca_abandonada.png) | **La boca de una cueva abandonada** (`--ir boca-abandonada`): en el desierto, la arenisca en estratos; la fachada de una civilización desaparecida (jambas, dintel, nichos y hornacina), la escalera rota y la reja caída a un costado. |
 | ![Guarida](capturas/cueva_fieras.png) | **Adentro de una guarida de fieras** (`--cueva animal:nido --antorcha`): el nido con sus huevos, a la luz de la antorcha. |
 | ![Cisterna](capturas/cueva_habitada.png) | **La Cisterna de los forajidos** (`--cueva forajidos:0 --antorcha`): la fogata, la columna de ladrillo, las pinturas y su antorcha, una telaraña y los charcos. |
 | ![Prisionero](capturas/cueva_prisionero.png) | **Un prisionero** (`--cueva forajidos:dialogo`): lo que dice, si se lo ve sincero, y romper las cadenas o dejarlo. |

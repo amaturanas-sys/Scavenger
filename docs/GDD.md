@@ -767,7 +767,10 @@ De las hojas del cuaderno del usuario; el detalle, en [PLAN_TACTICO_Y_CUEVAS.md]
   almacén del imperio. Se entra caminando por la boca: un vestíbulo, la bajada sin vuelta a la Cisterna Magna y el anillo de
   recámaras por donde se sale. Adentro, la oscuridad y las antorchas; F toma lo que hay (cofres, ánforas, armas, botín,
   vetas, huesos, nidos), enciende antorchas y fogatas, muestra las pinturas y libera prisioneros (se unen a la tribu o te
-  traicionan). Las habitadas tienen guardias que salen a la boca una vez por día.
+  traicionan). Las habitadas tienen guardias que salen a la boca una vez por día. Desde afuera, la boca dice de quién
+  es (v0.13.1): una escalera al saliente en las habitadas, el bastidor y la cortina de cuero de la tribu, la estacada
+  de los forajidos, los estandartes del imperio, y en las abandonadas una escalera rota y la fachada de una
+  civilización desaparecida.
 
 ### 2. Personaje y equipo (núcleo implementado — `src/sim/loadout.*`)
 - Personaje y vestuario personalizables (fase 3).

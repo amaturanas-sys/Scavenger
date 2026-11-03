@@ -300,6 +300,89 @@ static bool build_feature(VoxFeature f, int v, VoxGrid *g) {
     }
 }
 
+// ------------------------------------------------------------------ la roca de la boca de una cueva
+// En celdas de 0,4 m. La malla tiene el origen en el centro de la base de la rejilla: x de -4,8 a 4,8; z de -1,2 a 6,8
+// (se dibuja corrida MOUTH_MID hacia adentro); y desde el cimiento (MOUTH_GROUND capas bajo el suelo de la boca) hasta
+// 7,2 m sobre el.
+#define MOUTH_S 0.4f
+#define MOUTH_NX 24
+#define MOUTH_NY 25
+#define MOUTH_NZ 20
+#define MOUTH_GROUND 7
+#define MOUTH_Z0 (-1.2f)
+#define MOUTH_MID 2.8f // el centro de la rejilla, en el plano de la cueva
+const float VOXS_MOUTH_BOULDERS[2][3] = { { -3.15f, 0.55f, 1.35f }, { 3.55f, 0.95f, 1.25f } }; // fuera de escaleras y puntales
+
+static float mouth_u(float x) { return x / MOUTH_S + MOUTH_NX * 0.5f; } // de metros a celdas
+static float mouth_v(float y) { return y / MOUTH_S + MOUTH_GROUND; }
+static float mouth_w(float z) { return (z - MOUTH_Z0) / MOUTH_S; }
+
+static void mouth_ellipsoid(VoxGrid *g, float x, float y, float z, float rx, float ry, float rz) {
+    vox_ellipsoid(g, mouth_u(x), mouth_v(y), mouth_w(z), rx / MOUTH_S, ry / MOUTH_S, rz / MOUTH_S, M_STONE, false);
+}
+
+// Llena (o vacia, con M_NONE) las celdas cuyo centro cae en la caja (en metros).
+static void mouth_box(VoxGrid *g, float x0, float y0, float z0, float x1, float y1, float z1, uint8_t mat) {
+    vox_box(g, (int)ceilf(mouth_u(x0) - 0.5f), (int)ceilf(mouth_v(y0) - 0.5f), (int)ceilf(mouth_w(z0) - 0.5f), (int)floorf(mouth_u(x1) - 0.5f),
+            (int)floorf(mouth_v(y1) - 0.5f), (int)floorf(mouth_w(z1) - 0.5f), mat);
+}
+
+static bool build_cave_mouth(Region r, int v, bool facade, VoxGrid *g) {
+    uint32_t seed = 9100u + (uint32_t)r * 37u + (uint32_t)v * 11u + (facade ? 5u : 0u), rs = seed;
+    if (!vox_init(g, MOUTH_NX, MOUTH_NY, MOUTH_NZ, MOUTH_S)) return false;
+    // La cara: un risco casi vertical (z = 0,4), de 7,2 m de ancho y 4,8 de alto, con el lomo redondeado encima; los
+    // hombros y unos bultos le rompen la silueta, siempre dentro de la huella.
+    mouth_box(g, -3.6f, -2.8f, 0.4f, 3.6f, 4.8f, 6.4f, M_STONE);
+    mouth_ellipsoid(g, 0.0f, 4.8f, 3.6f, 3.8f, 1.8f + hrand(&rs) * 0.6f, 3.0f);
+    mouth_ellipsoid(g, -3.5f, 1.6f + hrand(&rs), 3.3f, 1.2f, 2.6f, 2.7f);
+    mouth_ellipsoid(g, 3.5f, 1.4f + hrand(&rs), 3.5f, 1.2f, 2.4f, 2.6f);
+    mouth_ellipsoid(g, -1.8f + hrand(&rs), 5.6f, 2.8f, 1.6f, 1.1f, 1.6f);
+    mouth_ellipsoid(g, 1.6f, 5.9f + hrand(&rs) * 0.4f, 3.6f, 1.8f, 1.2f, 1.8f);
+    erode_skin(g, seed, 0.45f, 0.24f);
+    if (facade) mouth_box(g, -3.0f, 0.0f, 0.4f, 3.0f, 5.0f, 1.2f, M_STONE); // la cara lisa donde se apoya la fachada
+    for (int b = 0; b < 2; b++) { // las dos rocas bajas del umbral
+        const float *k = VOXS_MOUTH_BOULDERS[b];
+        mouth_ellipsoid(g, k[0], 0.25f + 0.15f * (float)b, k[1], k[2], k[2] * 0.85f, k[2]);
+    }
+    // El cimiento: lo de cada columna baja hasta el fondo de la rejilla (en una ladera, nada queda en el aire).
+    for (int z = 0; z < g->nz; z++)
+        for (int x = 0; x < g->nx; x++) {
+            int low = 0;
+            while (low < g->ny && !vox_get(g, x, low, z)) low++;
+            if (low < g->ny) vox_box(g, x, 0, z, x, low, z, M_STONE);
+        }
+    // El tunel, mas ancho y mas alto que el de world_game.c (sus paredes oscuras lo tapan y no comparten plano), y el
+    // arco del frente: 3,2 m de ancho hasta los 2 m, que se cierra hasta los 3,2 m (un poco corrido, si es natural; mas
+    // derecho, si lo labraron).
+    mouth_box(g, -2.0f, -0.4f, 1.2f, 2.0f, 3.6f, 4.8f, M_NONE);
+    mouth_box(g, -1.6f, -0.4f, MOUTH_Z0, 1.6f, 2.0f, 1.2f, M_NONE);
+    static const float HW[4] = { 1.6f, 1.2f, 0.8f, 0.4f };
+    float shift = facade ? 0.0f : (float)((int)(hrand(&rs) * 3.0f) - 1) * MOUTH_S;
+    for (int b = 1; b < 4; b++) {
+        float hw = facade ? (b < 3 ? 1.6f : 1.2f) : HW[b], dx = b >= 2 ? shift : 0.0f;
+        mouth_box(g, -hw + dx, 1.6f + 0.4f * (float)b, MOUTH_Z0, hw + dx, 2.0f + 0.4f * (float)b, 1.2f, M_NONE);
+    }
+    // La piedra de la region: arenisca en estratos (desierto), granito (altiplano) o piedra con su liquen, y pasto en lo
+    // alto donde lo hay.
+    for (int y = 0; y < g->ny; y++)
+        for (int z = 0; z < g->nz; z++)
+            for (int x = 0; x < g->nx; x++) {
+                if (!vox_get(g, x, y, z)) continue;
+                if (r == REGION_DESERT) vox_set(g, x, y, z, stratum(y, seed));
+                else if (r == REGION_HIGHLAND) vox_set(g, x, y, z, vox_noise3(x * 0.7f, y * 0.7f, z * 0.7f, seed) > 0.6f ? M_GRANITE_D : M_GRANITE);
+            }
+    if (r == REGION_DESERT || r == REGION_HIGHLAND) return true;
+    stones_mixed(g, seed);
+    for (int z = 0; z < g->nz; z++)
+        for (int x = 0; x < g->nx; x++)
+            for (int y = g->ny - 1; y >= MOUTH_GROUND + 8; y--)
+                if (vox_get(g, x, y, z)) {
+                    vox_set(g, x, y, z, M_GRASS);
+                    break;
+                }
+    return true;
+}
+
 // ------------------------------------------------------------------ cache de modelos
 #define SITE_SLOTS (SITE_KINDS * REGION_COUNT)
 static struct {
@@ -313,6 +396,11 @@ static struct {
     Model model, fine;
     BkInfo info;
 } g_kit[BK_KINDS * REGION_COUNT * BK_VARIANTS];
+// La roca de las bocas de cueva: de lejos, sin refinar; de cerca, refinada (como el kit).
+static struct {
+    bool tried, ok, fine_tried, fine_ok;
+    Model model, fine;
+} g_mouths[REGION_COUNT * VF_VARIANTS * 2];
 static Vector3 g_lod_eye;
 static float g_lod_near = 1e9f; // sin voxs_set_lod, todo de cerca
 
@@ -434,7 +522,33 @@ void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float s
     if (g_feats[i].ok) draw_model(g_feats[i].model, g_feats[i].found_h, at, yaw, scale, tint);
 }
 
+static int mouth_slot(Region r, int v, bool facade, bool fine) {
+    int i = ((int)r * VF_VARIANTS + (v & (VF_VARIANTS - 1))) * 2 + (facade ? 1 : 0);
+    bool *tried = fine ? &g_mouths[i].fine_tried : &g_mouths[i].tried;
+    if (!*tried) {
+        *tried = true;
+        VoxGrid g;
+        if (build_cave_mouth(r, v & (VF_VARIANTS - 1), facade, &g)) {
+            if (fine) g_mouths[i].fine_ok = to_model(&g, r, &g_mouths[i].fine, true);
+            else g_mouths[i].ok = to_model(&g, r, &g_mouths[i].model, false);
+            vox_free(&g);
+        }
+    }
+    return (fine ? g_mouths[i].fine_ok : g_mouths[i].ok) ? i : -1;
+}
+
+void voxs_draw_cave_mouth(Region region, int variant, bool facade, Vector3 at, float yaw) {
+    if ((unsigned)region >= REGION_COUNT) region = REGION_STEPPE;
+    Vector3 p = { at.x + sinf(yaw) * MOUTH_MID, at.y, at.z + cosf(yaw) * MOUTH_MID }; // el centro de la rejilla
+    float dx = p.x - g_lod_eye.x, dz = p.z - g_lod_eye.z;
+    bool fine = dx * dx + dz * dz < g_lod_near * g_lod_near;
+    int i = mouth_slot(region, variant, facade, fine);
+    if (i < 0 && fine) i = mouth_slot(region, variant, facade, false), fine = false;
+    if (i >= 0) draw_model(fine ? g_mouths[i].fine : g_mouths[i].model, MOUTH_GROUND * MOUTH_S, p, yaw, 1.0f, WHITE);
+}
+
 void voxs_forget_gpu(void) {
+    memset(g_mouths, 0, sizeof(g_mouths));
     memset(g_kit, 0, sizeof(g_kit));
     memset(g_feats, 0, sizeof(g_feats));
     memset(g_sites, 0, sizeof(g_sites));
@@ -449,6 +563,11 @@ void voxs_unload(void) {
         if (g_kit[i].ok) UnloadModel(g_kit[i].model);
         if (g_kit[i].fine_ok) UnloadModel(g_kit[i].fine);
     }
+    for (int i = 0; i < REGION_COUNT * VF_VARIANTS * 2; i++) {
+        if (g_mouths[i].ok) UnloadModel(g_mouths[i].model);
+        if (g_mouths[i].fine_ok) UnloadModel(g_mouths[i].fine);
+    }
+    memset(g_mouths, 0, sizeof(g_mouths));
     memset(g_kit, 0, sizeof(g_kit));
     memset(g_feats, 0, sizeof(g_feats));
     memset(g_sites, 0, sizeof(g_sites));
