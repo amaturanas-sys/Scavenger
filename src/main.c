@@ -573,7 +573,7 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
             want = !strcmp(dash + 1, REG[s->region]);
         if (want) x = s->x + 58.0f, z = s->z + 20.0f, lx = s->x, lz = s->z, ok = true;
     }
-    if (!strncmp(what, "boca-", 5)) { // la boca de la cueva de ese tipo mas cercana al campamento, de frente, a 9 m
+    if (!strncmp(what, "boca-", 5)) { // la boca de la cueva de ese tipo mas cercana al campamento, de frente, a 6 m
         static const char *KINDS[CAVE_KINDS] = { "animal", "abandonada", "forajidos", "tribu", "imperio" };
         float best = 1e30f;
         for (int i = 0; i < w->cave_count; i++) {
@@ -581,7 +581,7 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
             float d = c->x * c->x + c->z * c->z;
             if (strcmp(what + 5, KINDS[c->kind]) != 0 || d > best) continue;
             best = d, ok = true;
-            cave_to_world(c, 0.0f, -9.0f, &x, &z);
+            cave_to_world(c, 0.0f, -6.0f, &x, &z);
             lx = c->x, lz = c->z;
         }
     }

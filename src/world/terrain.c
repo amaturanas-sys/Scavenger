@@ -418,6 +418,10 @@ static bool near_site(const World *w, float x, float z) {
         float dx = x - w->tribes[i].x, dz = z - w->tribes[i].z;
         if (dx * dx + dz * dz < 26.0f * 26.0f) return true;
     }
+    for (int i = 0; i < w->cave_count; i++) { // la boca de una cueva y su peñasco (src/game/world_game.c), despejados
+        float dx = x - w->caves[i].x, dz = z - w->caves[i].z;
+        if (dx * dx + dz * dz < 12.0f * 12.0f) return true;
+    }
     return false;
 }
 

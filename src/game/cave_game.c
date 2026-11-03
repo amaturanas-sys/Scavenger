@@ -101,9 +101,8 @@ static float wall_r(const CaveRoom *r, int room, float a) {
     return r->radius + 0.36f + 0.22f * sinf(3.0f * a + (float)room * 1.7f) + 0.12f * sinf(7.0f * a + (float)room * 0.9f);
 }
 
-// La altura de la boveda (sobre el suelo) a frac del radio de la pared.
-static float dome_y(int room, float frac) {
-    float height = room_height(room);
+// La altura de la boveda (sobre el suelo) a frac del radio de la pared, en una sala de ese alto.
+static float dome_h(float height, float frac) {
     if (frac >= 1.0f) return ring_h(2, height);
     for (int j = 2; j < ROOM_RINGS - 1; j++) {
         if (frac > RING_F[j] || frac < RING_F[j + 1]) continue;
@@ -111,6 +110,19 @@ static float dome_y(int room, float frac) {
         return ring_h(j, height) + (ring_h(j + 1, height) - ring_h(j, height)) * u;
     }
     return height;
+}
+
+static float dome_y(int room, float frac) { return dome_h(room_height(room), frac); }
+
+// El techo de verdad sobre (x, z): en una sala y en el vestibulo, la boveda tal como se dibuja (mas baja junto a la
+// pared que en el centro); en un pasillo, el suyo.
+static float rock_above(const Cave *c, float x, float z, int where, float floor_y) {
+    static const CaveRoom VEST = { 0.0f, CAVE_VEST_Z, 0.0f, CAVE_VEST_R };
+    const CaveRoom *r = where >= 0 && where < c->room_count ? &c->rooms[where] : where == CAVE_VESTIBULE ? &VEST : NULL;
+    if (!r) return cave_ceiling(c, where, floor_y);
+    float a = atan2f(x - r->x, z - r->z), d = sqrtf((x - r->x) * (x - r->x) + (z - r->z) * (z - r->z));
+    float height = where == CAVE_VESTIBULE ? CAVE_VEST_HEIGHT : room_height(where);
+    return r->floor_y + dome_h(height, d / wall_r(r, where == CAVE_VESTIBULE ? -1 : where, a));
 }
 
 // Donde se dibuja un objeto: lo de la pared, sobre la roca (inset: cuanto sobresale); yaw: mirando al centro.
@@ -944,7 +956,7 @@ void cv_camera(const Terrain *t, Camera3D *cam, float yaw, float pitch, float di
         float fy = 0.0f;
         int where = 0;
         if (!cave_floor(c, q.x, q.z, &fy, &where) || q.z < -0.5f) break; // ni detras de la boca (su luz, en z = -0,95)
-        if (q.y > cave_ceiling(c, where, fy) - 0.4f || q.y < fy + 0.3f) break;
+        if (q.y > rock_above(c, q.x, q.z, where, fy) - 0.4f || q.y < fy + 0.3f) break;
         ok = d;
     }
     cam->position = Vector3Add(target, Vector3Scale(back, ok));

@@ -395,6 +395,8 @@ El temple salió mal: %s. Puede quebrarse en un golpe.	The temper went wrong: %s
 Empuñadura: %s.	Grip: %s.
 Empuñas: %s.	You wield: %s.
 Empuñe: %s%s%s%s%s%s	Grip: %s%s%s%s%s%s
+En la cueva no se construye: sal primero.	You can't build inside the cave: go outside first.
+En la cueva no se puede: %s.	Not inside the cave: %s.
 Encendiste la antorcha (mano izquierda).	You light the torch (left hand).
 Enfundas: %s.	You sheathe: %s.
 Enfundaste las armas: manos libres.	Weapons sheathed: hands free.
@@ -643,6 +645,57 @@ una veta de hierro	an iron vein
 ¿Qué hacen %s? Acompañados corren menos riesgo y rinden más.	What do %s do? In pairs they risk less and achieve more.
 ¿Qué levantamos? La cuadrilla sale de la gente sin tarea de este campamento.	What shall we raise? The crew comes from this camp's idle people.
 ¿Qué oficio aprende %s? Un maestro del oficio en el campamento lo acelera mucho.	Which trade does %s learn? A master of the trade in camp speeds it up a lot.
+# --- src/game/cave_game.c
+%s te da las gracias, pero la tribu está llena: se va por su cuenta.	%s thanks you, but the tribe is full: they go their own way.
+%s, el %s, se une a la tribu: te espera en la boca de la cueva.	%s, the %s, joins the tribe: waiting for you at the cave mouth.
+%s, un %s encadenado	%s, a chained %s
+A caballo no se entra en la cueva: desmonta primero.	You can't ride into the cave: dismount first.
+Abres el cofre: %d × %s (el resto no te cabe).	You open the chest: %d × %s (the rest doesn't fit).
+Abres el cofre: %d × %s.	You open the chest: %d × %s.
+Conozco cada sendero de esta tierra. Rompe estas cadenas y cazaré para tu tribu.	I know every trail in this land. Break these chains and I will hunt for your tribe.
+Cueva: %s. %s	Cave: %s. %s
+Cueva: %s. Está oscuro: enciende la antorcha.	Cave: %s. It's dark: light your torch.
+Dejarlo	Leave him
+Enciendes la antorcha de la pared.	You light the wall torch.
+Enciendes la fogata: la recámara se ilumina.	You light the fire: the chamber lights up.
+F: abrir el cofre	F: open the chest
+F: arrancar la veta (%s)	F: pry out the vein (%s)
+F: deshacer el nido (%s)	F: pull apart the nest (%s)
+F: encender la antorcha de la pared	F: light the wall torch
+F: encender la fogata	F: light the fire
+F: hablar con el prisionero (un %s)	F: talk to the prisoner (a %s)
+F: juntar los huesos	F: gather the bones
+F: mirar las pinturas	F: look at the paintings
+F: tomar del depósito de armas (%s)	F: take from the weapon rack (%s)
+F: tomar el arma abandonada (%s)	F: take the abandoned weapon (%s)
+F: tomar el botín de la fiera (%s)	F: take the beast's hoard (%s)
+F: tomar el ánfora (%s)	F: take the amphora (%s)
+Hace falta tu antorcha encendida (la barra rápida).	You need your torch lit (quick bar).
+Hace mucho que nadie vive aquí.	Nobody has lived here for a long time.
+Hay antorchas al fondo: alguien vive aquí.	Torches burn further in: someone lives here.
+Hay enemigos en pie junto a la boca: no te dejan entrar.	Enemies stand by the mouth: they won't let you in.
+Huele a fiera.	It smells of beasts.
+La bajada es demasiado empinada para subirla: busca otra salida por las recámaras.	The slope down is too steep to climb: find another way out through the chambers.
+Marcas de los forajidos: rayas por cada caravana asaltada.	Outlaw marks: a stroke for every caravan they raided.
+Me agarraron con mis ovejas. Sácame de aquí y te seguiré a donde vayas.	They took me with my sheep. Get me out of here and I'll follow you anywhere.
+Me tienen forjando sus armas. Libérame y forjaré las tuyas.	They keep me forging their weapons. Free me and I'll forge yours.
+No sabes si fiarte.	You're not sure you can trust him.
+No soy como ellos... ya no. Suéltame: no te vas a arrepentir.	I'm not like them... not anymore. Let me go: you won't regret it.
+Pinturas de la tribu: jinetes, ciervos y el sol; cuentan de dónde vinieron.	Tribal paintings: riders, deer and the sun; they tell where the tribe came from.
+Pinturas muy viejas: manos en ocre y animales que ya no se ven en la estepa.	Very old paintings: ochre hands and animals no longer seen on the steppe.
+Romper las cadenas	Break the chains
+Sales de la cueva.	You leave the cave.
+Se lo ve sincero.	He seems sincere.
+Se une a la tribu, o te traiciona y huye	He joins the tribe, or betrays you and flees
+Sigue encadenado: puedes volver	He stays chained: you can come back
+Tiene mirada de lobo: puede traicionarte.	He has a wolf's look: he may betray you.
+Tomas %d × %s (el resto no te cabe).	You take %d × %s (the rest doesn't fit).
+Tomas %d × %s.	You take %d × %s.
+Un relieve del imperio: soldados en fila ante un rey, y una lista de lo que guardan aquí.	An imperial relief: soldiers lined up before a king, and a list of what is stored here.
+Una antorcha apagada: enciende la tuya para prenderla	An unlit torch: light yours to kindle it
+Una fogata apagada: hace falta tu antorcha encendida	A cold fire: it needs your lit torch
+¡%s (%s) te traiciona: te golpea y huye a la oscuridad!	%s (%s) betrays you: strikes you and flees into the dark!
+¡%s (%s) te traiciona: te golpea, te roba %s y huye!	%s (%s) betrays you: strikes you, steals %s and flees!
 # --- src/game/city_game.c
  y cercada	 and under siege
 %s está cercada: no entra grano y la gente del campo se refugia adentro.	%s is besieged: no grain comes in and the country folk take refuge inside.
@@ -720,6 +773,8 @@ Una escala apoyada en la muralla: F para subir.	A ladder against the wall: F to 
 A caballo no hay parry.	No parry on horseback.
 A caballo: golpe (H) y golpe pesado (mantener H); con una lanza, K la pone en ristre.	On horseback: strike (H) and heavy strike (hold H); with a lance, K couches it.
 A caballo: golpe y golpe pesado; con una lanza, K la pone en ristre.	On horseback: strike and heavy strike; with a lance, K couches it.
+A cubierto: C o moverte: salir	In cover: C or move: leave
+A cubierto: H te asoma para tirar · C o moverte: salir	In cover: H to lean out and shoot · C or move: leave
 Abatido: F lo toma prisionero · H lo remata	Downed: F takes them prisoner · H finishes them
 Acércate a un fuego (fogata, hoguera o algo que arda) para encender la flecha.	Get near a fire (campfire, bonfire or anything burning) to light the arrow.
 Agarrar: rehén	Grab: hostage
@@ -825,6 +880,7 @@ Solo las flechas y los virotes se encienden.	Only arrows and bolts can be lit.
 Soltar al rehén	Let the hostage go
 Sueltas al %s.	You let the %s go.
 Sueltas al rehén para montar.	You let the hostage go to mount.
+Sueltas el objetivo.	You release the target.
 Te ataca un %s: %s.	A %s attacks you: %s.
 Te desangras.	You bleed out.
 Te hieren: %s.	You're wounded: %s.
@@ -866,8 +922,11 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡Golpeaste el nido! Ahí vienen...	You hit the nest! Here they come...
 ¡Jinetes bandidos al galope! Derríbalos del caballo.	Bandit riders galloping in! Knock them off their horses.
 ¡La escolta de la caravana desenvaina!	The caravan's escort draws steel!
+¡La guardia del almacén imperial sale a tu encuentro!	The imperial storehouse guard comes out to meet you!
 ¡La lanza pesada rompe la formación! Alcanzas a %d de una sola carga.	The heavy lance breaks the formation! You strike %d in a single charge.
 ¡Lanza en ristre!	Lance couched!
+¡Los forajidos de la cueva salen a la boca!	The cave's outlaws come out of the mouth!
+¡Los guerreros de la tribu defienden su refugio!	The tribe's warriors defend their refuge!
 ¡Parry! El %s queda abierto.	Parry! The %s is wide open.
 ¡Te muerde un %s: veneno! Véndate con hierbas (B).	A %s bites you: poison! Bind it with herbs (B).
 ¡Tu %s se quiebra en el golpe! El temple había salido mal.	Your %s shatters on the blow! The temper had gone wrong.
@@ -1039,7 +1098,7 @@ Beber	Drink
 Casilla %d: %s.	Slot %d: %s.
 Casilla %d: elige un arma, un objeto o una habilidad	Slot %d: choose a weapon, an item or a skill
 Casilla vacía	Empty slot
-Empuña primero el arma de la casilla %d (tecla %d) para pasarla de mano.	First wield the weapon in slot %d (key %d) to switch its hand.
+Empuña primero el arma de la casilla %d para pasarla de mano.	Wield the weapon in slot %d first to switch its hand.
 Encender la flecha	Light the arrow
 Enter o un toque: asignar · Esc: cerrar	Enter or a tap: assign · Esc: close
 Esa habilidad ya no está activa.	That skill is no longer active.
@@ -1085,6 +1144,7 @@ montura con sed	mount thirsty
 %.1f kg (hasta %.0f sin frenarte)	%.1f kg (up to %.0f without slowing)
 %.1f kg: pesado, andas más lento (más de %.0f kg)	%.1f kg: heavy, you walk slower (over %.0f kg)
 %d · %.1f kg%s · Enter o clic: pasar (Mayús: todo)	%d · %.1f kg%s · Enter or click: move (Shift: all)
+%s no se usa desde la barra rápida.	%s can't be used from the quick bar.
 %s · Enter: cambiar · Supr o clic derecho: quitar	%s · Enter: change · Del or right-click: remove
 %s · Enter: cambiar · Supr: quitar	%s · Enter: change · Del: remove
 %s · Supr: quitar	%s · Del: remove
@@ -1099,6 +1159,7 @@ Cambias de mochila: ahora llevas la %s.	You switch backpacks: now carrying the %
 Cargas tu mochila en el lomo del %s.	You load your backpack on the %s's back.
 Cargas tu mochila en la carreta (Mayús+G junto a ella para recogerla).	You load your backpack onto the cart (Shift+G next to it to pick it up).
 Carreta de la tribu	Tribe wagon
+Casilla %d de la barra	Quick bar slot %d
 Con frío, pieles y abrigos; con sol y calor, sombrero, pañuelo y seda blanca. Las pieles de depredador espantan al enemigo.	In the cold, furs and coats; in sun and heat, a hat, a scarf and white silk. Predator pelts frighten the enemy.
 Contra el corte	Against cuts
 Contra el golpe	Against blows
@@ -1106,7 +1167,7 @@ Contra flechas y puntas	Against arrows and points
 Cubre su zona	Covers its zone
 Dejas la mochila en el suelo: vas más ligero (Mayús+G para recogerla).	You drop the backpack: you move lighter (Shift+G to pick it up).
 Envenenado	Poisoned
-Flechas: elegir · Q/E: contenedor · Enter: pasar · U: cambiar de mochila · Mayús+G: dejarla o recogerla	Arrows: choose · Q/E: container · Enter: move · U: switch backpack · Shift+G: drop it or pick it up
+Flechas: elegir · Q/E: contenedor · Enter: pasar · 1-0: a la barra · U: cambiar de mochila · Mayús+G: dejarla o recogerla	Arrows: select · Q/E: container · Enter: move · 1-0: to the bar · U: switch backpack · Shift+G: drop or pick it up
 Hace falta: %s (cerca) o una forja móvil a mano.	Needs: %s (nearby) or a mobile forge at hand.
 Herida	Wound
 Inventario	Inventory
@@ -1148,6 +1209,7 @@ Tu mochila va en la carreta: acércate a ella.	Your backpack is on the cart: go 
 Tu mochila va en un animal de carga: acércate a él.	Your backpack is on a pack animal: go to it.
 Un tatuaje es para siempre: la zona del cuerpo cambia a qué va el bonus. El tercer grado se bifurca: elegir una rama cierra la otra.	A tattoo is forever: the body zone changes what the bonus goes to. The third tier branches: choosing one branch closes the other.
 Un tatuaje no se puede quitar.	A tattoo can't be removed.
+Un toque (o su número) pone aquí lo elegido.	A tap (or its number) puts the selected item here.
 Untas con grasa: %s (%d %% -> %d %%).	Greased: %s (%d %% -> %d %%).
 Vida	Health
 abriga %+.0f°	warmth %+.0f°
@@ -1571,15 +1633,12 @@ Estás %s: bebe (N).	You are %s: drink (N).
 Fiebre y retortijones: espíritus malditos del agua. Toma hierbas (Mayús+N), descansa y bebe agua hervida.	Fever and cramps: cursed spirits from the water. Take herbs (Shift+N), rest and drink boiled water.
 Las hierbas alivian la fiebre.	The herbs ease the fever.
 Las hierbas echan a los espíritus malditos.	The herbs drive out the cursed spirits.
-Llenas el odre: +%d %s.	You fill the waterskin: +%d %s.
 No tienes hierbas para echar a los espíritus. Descansa y bebe agua hervida.	You have no herbs to drive out the spirits. Rest and drink boiled water.
 No tienes los espíritus del agua: guarda las hierbas.	You don't have the water spirits: save the herbs.
 No tienes nada que beber: llena el odre en la orilla (L) o bebe del río (N, mirando al agua).	You have nothing to drink: fill the waterskin at the shore (L) or drink from the river (N, facing the water).
 No tienes sed.	You are not thirsty.
 Te desmayaste de sed; en la columna te dieron de beber (moral -3).	You fainted from thirst; the column gave you water (morale -3).
 Te desmayaste de sed; la tribu te llevó al campamento y te dio de beber (moral -3).	You fainted from thirst; the tribe carried you to camp and gave you water (morale -3).
-agua cruda	raw water
-agua limpia	clean water
 # --- src/game/world_game.c
 El campamento de los %s (tribu %s): te observan, sin buscar pelea.	The camp of the %s (%s tribe): they watch you, without seeking a fight.
 Encuentras %s, de otros tiempos: queda en el mapa.	You find %s from other times: it is now on the map.
@@ -1590,6 +1649,8 @@ Llegas a %s, aldea del %s.	You reach %s, a village of the %s.
 Llegas a %s, capital del %s.	You reach %s, capital of the %s.
 Los %s, tribu amiga, te reciben junto a su fuego.	The %s, a friendly tribe, welcome you by their fire.
 Los %s, tribu amiga, te reciben y te señalan %s en el mapa.	The %s, a friendly tribe, welcome you and point out %s on the map.
+Una cueva (%s): marcada como peligro. Se entra por la boca.	A cave (%s): marked as danger. Enter through the mouth.
+Una cueva abandonada (huellas de %s): marcada como peligro.	An abandoned cave (%s tracks): marked as danger.
 Una guarida (%s): queda marcada como peligro en el mapa.	A den (%s): marked as danger on the map.
 amiga	friendly
 neutral	neutral
@@ -1831,6 +1892,16 @@ la torre de la muralla	the wall tower
 las cenizas y la yurta quemada	the ashes and the burnt yurt
 los escombros y el muro en ruinas	the rubble and the ruined wall
 yurta	yurt
+# --- src/sim/caves.c
+almacén del imperio	imperial storehouse
+cazador	hunter
+cueva abandonada	abandoned cave
+cueva de fieras	beasts' cave
+forajido	outlaw
+herrero	smith
+pastor	herder
+refugio de forajidos	outlaws' hideout
+refugio de una tribu	tribal refuge
 # --- src/sim/champion.c
 Acero Rizado	Rippled Steel
 Arco de Cuerno	Horn Bow
@@ -2178,17 +2249,14 @@ piernas	legs
 # --- src/sim/troop.c
 Dinastía de Jade	Jade Dynasty
 Kanato de Hierro	Iron Khanate
-cazador	hunter
 cocinero	cook
 constructor	builder
 curandero	healer
 druida	druid
 explorador	scout
 guardia	guard
-herrero	smith
 lugarteniente	lieutenant
 orfebre	goldsmith
-pastor	herder
 sin función	no role
 soldado	soldier
 # --- src/sim/water.c

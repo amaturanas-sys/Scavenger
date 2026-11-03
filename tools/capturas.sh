@@ -42,6 +42,26 @@ shot manos_nada 40 --enemigos bandidos --manos nada
 shot manos_rehen 60 --enemigos bandidos --rehen
 montage "$OUT"/manos_{escudo,espada,nada,rehen}.png -tile 2x2 -geometry +0+0 -depth 8 "$OUT/las_manos.png" 2>/dev/null &&
     echo "  las_manos.png"
+# El sistema tactico (A2 a A4): la fila de la barra rapida en el inventario (1-0), el objetivo elegido (O) y la cobertura
+# junto a una roca del mundo (C).
+shot tactico_barra 30 --inventario
+shot tactico_objetivo 50 --enemigos bandidos --objetivo
+shot tactico_cobertura 60 --cubierto --enemigos bandidos
+# Las cuevas (B1 a B3): las bocas (con los guardias de una habitada), adentro con la antorcha (la guarida de fieras, la
+# Cisterna de los forajidos), el prisionero y lo que pasa al liberarlo (se une, o traiciona), y la misma recamara a
+# oscuras y con la antorcha.
+shot cueva_boca_forajidos 45 --ir boca-forajidos --dron 7 --camara 0.3
+shot cueva_boca_fieras 45 --ir boca-animal --dron 6 --camara 0.3
+shot cueva_boca_imperio 45 --ir boca-imperio --dron 7 --camara 0.3
+shot cueva_fieras 40 --cueva animal:nido --antorcha
+shot cueva_habitada 40 --cueva forajidos:0 --antorcha
+shot cueva_prisionero 40 --cueva forajidos:dialogo --antorcha
+shot cueva_rescate 40 --cueva imperio:dialogo --antorcha --cueva-f
+shot cueva_traicion 40 --cueva forajidos:dialogo --antorcha --cueva-f
+shot cueva_oscura 40 --cueva abandonada:1
+shot cueva_antorcha 40 --cueva abandonada:1 --antorcha
+montage "$OUT"/cueva_{boca_forajidos,habitada,prisionero,oscura}.png -tile 2x2 -geometry +0+0 -depth 8 "$OUT/las_cuevas.png" 2>/dev/null &&
+    echo "  las_cuevas.png"
 # El mundo (docs/MUNDO.md): a pie en cada sitio (verano, mediodia) y la vista orbital.
 for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida tribu rival kurgan caravasar ovoo ciudad \
          lago desborde cascada lengua; do

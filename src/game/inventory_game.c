@@ -702,10 +702,10 @@ static void sync_packs(GameActions *ga, char *log, size_t len) {
 
 // ------------------------------------------------------------------ disposicion (dibujo y raton)
 #define PANE_W 300
-#define PANE_H 296
+#define PANE_H 272 // abajo: lo que llevas encima y la fila de la barra rapida (1-0); mas abajo, el registro
 #define PANE_Y 12
 #define INV_COLS 8
-#define INV_ROWS 6
+#define INV_ROWS 5
 #define INV_TILE 32
 #define INV_GAP 3
 
