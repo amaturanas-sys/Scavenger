@@ -5693,31 +5693,134 @@ static void test_world_dry(void) {
     CHECK(world_footprint_dry(w, w->settlements[0].x, w->settlements[0].z, WORLD_FOOT_CAPITAL, false));
 }
 
-static void test_caves_are_deterministic_and_reachable(void) {
-    World a, b;
-    int inhabited = 0;
-    world_generate(&a, 1206u);
-    world_generate(&b, 1206u);
-    CHECK(a.cave_count == a.den_count && a.cave_count > 0);
-    CHECK(a.cave_count == b.cave_count);
-    for (int i = 0; i < a.cave_count; i++) {
-        const Cave *ca = &a.caves[i], *cb = &b.caves[i];
-        CHECK(cave_layout_valid(ca));
-        CHECK(ca->room_count == cb->room_count && ca->x == cb->x && ca->z == cb->z);
-        for (int r = 0; r < ca->room_count; r++) CHECK(cave_room_reachable(ca, 0, r));
-        CHECK(ca->corridors[0].one_way);
-        CHECK(world_water(&a, ca->x, ca->z, 0.0f, NULL) < world_height(&a, ca->x, ca->z));
-        CHECK(ca->remains.stalactites > 0 && ca->remains.stalagmites > 0);
-        CHECK(ca->remains.nests > 0 && ca->remains.cistern_loot > 0);
-        CHECK(ca->remains.stalactites == cb->remains.stalactites && ca->remains.cistern_loot == cb->remains.cistern_loot);
-        CHECK(ca->kind == cb->kind && ca->prisoner_count == cb->prisoner_count);
-        if (ca->kind >= CAVE_BANDITS) {
-            inhabited++;
-            CHECK(ca->remains.wall_torches > 0 && ca->remains.prisoner_cells > 0);
-            CHECK(ca->traitor_risk >= 15 && ca->traitor_risk <= 70);
+// B1 a B3 (las cuevas, docs/PLAN_TACTICO_Y_CUEVAS.md): la planta de la hoja, el suelo que se pisa, la
+// bajada sin vuelta, siempre una salida, lo de adentro segun el tipo, el botin y los prisioneros.
+static void test_caves(void) {
+    static World a, b; // static: un World pesa cientos de KB (la pila de Windows es de 1 MB)
+    Inventory inv;
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    inventory_parse(&inv, text);
+    const unsigned seeds[] = { 1206u, 42u, 7u };
+    int kinds[CAVE_KINDS] = { 0 }, prisoners = 0, loot = 0, rooms_total = 0, rings[CAVE_ROOMS_MAX] = { 0 };
+    for (int si = 0; si < 3; si++) {
+        world_generate(&a, seeds[si]);
+        world_generate(&b, seeds[si]);
+        CHECK(a.cave_count == a.den_count && a.cave_count > 0 && a.cave_count == b.cave_count);
+        for (int i = 0; i < a.cave_count; i++) {
+            const Cave *c = &a.caves[i];
+            CHECK(memcmp(c, &b.caves[i], sizeof(Cave)) == 0); // determinista
+            CHECK(cave_layout_valid(c));
+            CHECK(c->x == a.dens[i].x && c->z == a.dens[i].z);
+            CHECK(world_water(&a, c->x, c->z, 0.0f, NULL) < world_height(&a, c->x, c->z) - 0.5f); // la boca, en seco
+            kinds[c->kind]++;
+            rings[c->room_count - 1]++;
+            rooms_total += c->room_count;
+            // El suelo: el centro de cada sala es suyo y a su altura; lejos de todo, roca.
+            for (int r = 0; r < c->room_count; r++) {
+                float y;
+                int w;
+                CHECK(cave_floor(c, c->rooms[r].x, c->rooms[r].z, &y, &w) && w == r && y == c->rooms[r].floor_y);
+            }
+            CHECK(!cave_floor(c, 300.0f, -300.0f, NULL, NULL));
+            // La bajada: a mitad de camino (del borde del vestibulo al de la Cisterna) se baja, no se sube.
+            float mid = (CAVE_VEST_Z + CAVE_VEST_R + c->rooms[0].z - c->rooms[0].radius) * 0.5f;
+            CHECK(cave_step_ok(c, 0.0f, mid, 0.0f, mid + 0.3f));
+            CHECK(!cave_step_ok(c, 0.0f, mid, 0.0f, mid - 0.3f));
+            CHECK(!cave_step_ok(c, 0.0f, mid, 4.0f, mid)); // ni se atraviesa la roca
+            // Desde la Cisterna no se sube la bajada: al entrar en ella por abajo, el paso no vale.
+            float cz = c->rooms[0].z - c->rooms[0].radius + 0.3f;
+            CHECK(!cave_step_ok(c, 0.0f, cz, 0.0f, cz - 0.6f));
+            // La entrada: en el suelo y aun junto a la boca (se puede volver); a la boca, se sale.
+            float ex, ez, eyaw;
+            cave_entry(c, &ex, &ez, &eyaw);
+            CHECK(cave_floor(c, ex, ez, NULL, NULL) && !cave_at_exit(c, ex, ez));
+            CHECK(cave_step_ok(c, ex, ez, ex, ez - 0.5f) && cave_at_exit(c, ex, ez - 0.85f));
+            // Siempre una salida: de cada sala se vuelve a la boca (por el anillo, no por la bajada).
+            for (int r = 0; r < c->room_count; r++) CHECK(cave_room_reachable(c, r, CAVE_MOUTH));
+            // Del mundo a la cueva y de vuelta: la boca en (0, 0) y +z hacia adentro, (sin yaw, cos yaw).
+            float wx, wz, lx, lz;
+            cave_to_world(c, 1.5f, 6.0f, &wx, &wz);
+            cave_from_world(c, wx, wz, &lx, &lz);
+            CHECK(fabsf(lx - 1.5f) < 1e-3f && fabsf(lz - 6.0f) < 1e-3f);
+            cave_to_world(c, 0.0f, 1.0f, &wx, &wz);
+            CHECK(fabsf(wx - c->x - sinf(c->yaw)) < 1e-3f && fabsf(wz - c->z - cosf(c->yaw)) < 1e-3f);
+            // El techo: sobre cada sala, su altura (la Cisterna, el doble); en un pasillo, el del pasillo.
+            CHECK(cave_ceiling(c, 0, c->rooms[0].floor_y) == c->rooms[0].floor_y + 2.0f * CAVE_ROOM_HEIGHT);
+            CHECK(cave_ceiling(c, 1, c->rooms[1].floor_y) == c->rooms[1].floor_y + CAVE_ROOM_HEIGHT);
+            CHECK(cave_ceiling(c, CAVE_IN_CORRIDOR + 1, -2.0f) == -2.0f + CAVE_CORRIDOR_HEIGHT);
+            // El vestibulo: llano, tras la boca; de su borde salen los tres pasillos de la boca, sin pisarse al salir.
+            {
+                float vy = -1.0f;
+                int vw = 0;
+                CHECK(cave_floor(c, 0.0f, CAVE_VEST_Z, &vy, &vw) && vw == CAVE_VESTIBULE && vy == 0.0f);
+                CHECK(cave_ceiling(c, CAVE_VESTIBULE, 0.0f) == CAVE_VEST_HEIGHT);
+                int from_mouth = 0;
+                for (int k = 0; k < c->corridor_count; k++) {
+                    if (c->corridors[k].from != CAVE_MOUTH) continue;
+                    from_mouth++;
+                    float ax, az, ay, bx, bz, by;
+                    cave_corridor_ends(c, k, &ax, &az, &ay, &bx, &bz, &by);
+                    CHECK(fabsf(sqrtf(ax * ax + (az - CAVE_VEST_Z) * (az - CAVE_VEST_Z)) - CAVE_VEST_R) < 1e-3f && ay == 0.0f);
+                    // A 2 m de su comienzo, cada pasillo de la boca es solo suyo (ni el vestibulo ni otro pasillo).
+                    float l = sqrtf((bx - ax) * (bx - ax) + (bz - az) * (bz - az)), px = ax + (bx - ax) / l * 2.0f, pz = az + (bz - az) / l * 2.0f;
+                    int pw = 0;
+                    CHECK(cave_floor(c, px, pz, NULL, &pw) && pw == CAVE_IN_CORRIDOR + k);
+                }
+                CHECK(from_mouth == 3);
+            }
+            // Lo de adentro: cada objeto en su sala, en el suelo de la cueva; lo que se toma existe.
+            int nest = 0, torch = 0, lit = 0, cell = 0, chest = 0, stal = 0;
+            for (int o = 0; o < c->object_count; o++) {
+                const CaveObject *ob = &c->objects[o];
+                CHECK(ob->room < c->room_count && cave_floor(c, ob->x, ob->z, NULL, NULL));
+                int n = 0;
+                const char *id = cave_object_loot(c, o, &n);
+                if (id) {
+                    loot++;
+                    CHECK(n > 0 && inventory_find(&inv, id) != NULL);
+                }
+                nest += ob->kind == COBJ_NEST, torch += ob->kind == COBJ_TORCH, lit += ob->kind == COBJ_TORCH && ob->lit;
+                cell += ob->kind == COBJ_CELL, chest += ob->kind == COBJ_CHEST, stal += ob->kind == COBJ_STALACTITE;
+                if (ob->kind == COBJ_CELL && ob->prisoner) {
+                    prisoners++;
+                    int pct = cave_betray_percent(c, o);
+                    CHECK(pct >= 5 && pct <= 90 && cave_prisoner_joins(c, o, 0.999f) && !cave_prisoner_joins(c, o, 0.0f));
+                }
+                if (ob->kind != COBJ_CELL) CHECK(!ob->prisoner);
+                // Lo de la pared no tapa la entrada de un pasillo (ni a un metro de cada lado).
+                bool on_wall = ob->kind == COBJ_TORCH || ob->kind == COBJ_VEIN || ob->kind == COBJ_WEB || ob->kind == COBJ_PAINTING ||
+                               ob->kind == COBJ_ARMS || ob->kind == COBJ_CELL;
+                const CaveRoom *rm = &c->rooms[ob->room];
+                float a = atan2f(ob->x - rm->x, ob->z - rm->z);
+                for (int k = -1; k <= 1 && on_wall; k++) {
+                    float b = a + (float)k / rm->radius;
+                    int where = 0;
+                    bool in = cave_floor(c, rm->x + sinf(b) * (rm->radius + 0.6f), rm->z + cosf(b) * (rm->radius + 0.6f), NULL, &where);
+                    CHECK(!in || where < CAVE_IN_CORRIDOR);
+                }
+            }
+            CHECK(stal > 0); // todas tienen estalactitas
+            if (c->kind == CAVE_ANIMAL) CHECK(nest > 0 && torch == 0 && cell == 0);
+            if (c->kind == CAVE_ABANDONED) CHECK(lit == 0); // las antorchas de las abandonadas, apagadas
+            if (c->kind >= CAVE_BANDITS) CHECK(lit > 0 && cell > 0 && chest > 0);
         }
     }
-    CHECK(inhabited > 0);
+    for (int k = 0; k < CAVE_KINDS; k++) CHECK(kinds[k] > 0); // de todos los tipos
+    CHECK(prisoners > 0 && loot > 0);
+    CHECK(rings[3] + rings[4] > 0 && rings[8] + rings[9] > 0); // de 3 a 9 recamaras
+    // Un forajido traiciona mas que un pastor, y en una cueva de forajidos mas que en la de una tribu.
+    Cave t;
+    memset(&t, 0, sizeof(t));
+    t.object_count = 2;
+    t.objects[0] = (CaveObject){ .kind = COBJ_CELL, .prisoner = 1 + PRISONER_SHEPHERD };
+    t.objects[1] = (CaveObject){ .kind = COBJ_CELL, .prisoner = 1 + PRISONER_OUTLAW };
+    t.kind = CAVE_TRIBE;
+    int shepherd_tribe = cave_betray_percent(&t, 0), outlaw_tribe = cave_betray_percent(&t, 1);
+    t.kind = CAVE_BANDITS;
+    CHECK(outlaw_tribe > shepherd_tribe && cave_betray_percent(&t, 1) > outlaw_tribe);
+    free(text);
 }
 
 int main(void) {
@@ -5786,7 +5889,7 @@ int main(void) {
     RUN(test_voxels);
     RUN(test_world_river_banks);
     RUN(test_world_water_never_floats);
-    RUN(test_caves_are_deterministic_and_reachable);
+    RUN(test_caves);
     RUN(test_swarms);
     RUN(test_fire_spread_and_rain);
     RUN(test_weather_hazards_random);

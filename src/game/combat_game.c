@@ -238,6 +238,16 @@ static void spawn_party(Combat *cb, const char *what, Vector3 c, float ang, cons
         n = 2 + rng_range(&cb->rng, 2);
         for (int i = 0; i < n; i++) kinds[i] = ENEMY_HORSE_ARCHER;
         snprintf(log, len, "%s", T("¡Arqueros a caballo! Rodean y tiran; si te acercas, se alejan al galope."));
+    } else if (!strcmp(what, "guardia_cueva") || !strcmp(what, "guerreros_cueva")) { // los de una cueva habitada (src/game/cave_game.c)
+        n = 2 + rng_range(&cb->rng, 2);
+        for (int i = 0; i < n; i++) kinds[i] = ENEMY_BANDIT;
+        kinds[n++] = ENEMY_ARCHER;
+        snprintf(log, len, "%s", !strcmp(what, "guardia_cueva") ? T("¡Los forajidos de la cueva salen a la boca!") : T("¡Los guerreros de la tribu defienden su refugio!"));
+    } else if (!strcmp(what, "guardia_imperial")) { // la guardia de un almacen del imperio en una cueva
+        n = 2 + rng_range(&cb->rng, 2);
+        for (int i = 0; i < n; i++) kinds[i] = ENEMY_SOLDIER;
+        kinds[n++] = ENEMY_CROSSBOWMAN;
+        snprintf(log, len, "%s", T("¡La guardia del almacén imperial sale a tu encuentro!"));
     } else if (!strcmp(what, "jinetes")) {
         n = 2 + rng_range(&cb->rng, 2);
         for (int i = 0; i < n; i++) kinds[i] = ENEMY_RIDER;
@@ -416,6 +426,12 @@ static Enemy *downed_near(Combat *cb, Vector3 pos, float reach) {
 int cb_punitive_alive(const Combat *cb) {
     int n = 0;
     for (int i = 0; i < CB_MAX_ENEMIES; i++) n += cb->enemies[i].used && cb->enemies[i].punitive && cb->enemies[i].state != EN_DEAD;
+    return n;
+}
+
+int cb_hostiles_near(const Combat *cb, Vector3 at, float r) {
+    int n = 0;
+    for (int i = 0; i < CB_MAX_ENEMIES; i++) n += standing(&cb->enemies[i]) && cb->enemies[i].state != EN_ICE && dist2(cb->enemies[i].pos, at) < r;
     return n;
 }
 
@@ -2938,6 +2954,19 @@ static void draw_chariot(const Enemy *e, int i, float time) {
     body_draw(&b, (Vector3){ pos.x - f.x * 0.3f, pos.y + CHARIOT_LIFT, pos.z - f.z * 0.3f }, e->yaw, bc, &e->armor);
 }
 
+void cb_draw_player_body(const Combat *cb, const GameActions *ga, const Player *p, float time, Color light) {
+    BodyPose b;
+    pose_player(&b, cb, p, time);
+    BodyColors c = { { 204, 164, 124, 255 }, { 150, 40, 40, 255 }, { 88, 66, 46, 255 } };
+    if (cb->hit_anim > 0.0f) c.cloth = (Color){ 240, 230, 220, 255 };
+    Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
+    body_set_tint(light);
+    body_draw(&b, pos, p->yaw, c, &cb->armor);
+    body_draw_outfit(&b, pos, p->yaw, &ga->outfit);
+    body_set_tint(WHITE);
+    if (player_has_shield(ga)) draw_shield_on(&b, pos, p->yaw, ColorTint((Color){ 150, 112, 70, 255 }, light));
+}
+
 void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const Terrain *t, const Player *p,
                    bool player_has_model, float time) {
     for (int i = 0; i < CB_MAX_ENEMIES; i++) {
@@ -3000,16 +3029,7 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
     for (int i = 0; i < CB_MAX_SHOTS; i++)
         if (cb->shots[i].p.alive) draw_shot(&cb->shots[i]);
     // El jugador sin modelo importado: cuerpo articulado con su armadura.
-    if (!player_has_model) {
-        BodyPose b;
-        pose_player(&b, cb, p, time);
-        BodyColors c = { { 204, 164, 124, 255 }, { 150, 40, 40, 255 }, { 88, 66, 46, 255 } };
-        if (cb->hit_anim > 0.0f) c.cloth = (Color){ 240, 230, 220, 255 };
-        Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
-        body_draw(&b, pos, p->yaw, c, &cb->armor);
-        body_draw_outfit(&b, pos, p->yaw, &ga->outfit);
-        if (player_has_shield(ga)) draw_shield_on(&b, pos, p->yaw, (Color){ 150, 112, 70, 255 });
-    }
+    if (!player_has_model) cb_draw_player_body(cb, ga, p, time, WHITE);
     // La lanza en ristre: larga, bajo el brazo, hacia donde va el caballo (y la punta, de hierro).
     if (cb->couch > 0.0f && ga->mounted >= 0) {
         float h = ga->animals[ga->mounted].yaw, y = p->pos.y + p->draw_lift + 1.25f;
@@ -3124,7 +3144,7 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
             ui_bar(w / 2 - 50, h - 70, 100, fminf(1.0f, cb->draw / rd->draw_time), UI_GOLD, UI_METAL_GOLD);
     }
 
-    if (g_hint[0] && !ph->down) ui_text_centered(g_hint, w / 2, h - 96, 10, UI_TURQUOISE);
+    if (g_hint[0] && !ph->down && !ga_in_cave()) ui_text_centered(g_hint, w / 2, h - 96, 10, UI_TURQUOISE); // en la cueva, el combate espera afuera
 
     if (ph->down) {
         DrawRectangle(0, 0, w, h, (Color){ 60, 0, 0, 90 });

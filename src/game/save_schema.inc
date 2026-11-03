@@ -625,6 +625,8 @@ static const SfField SF_F_GameActions[] = {
     SF_ARR(GameActions, ice_holes, "Vector3", SF_BYTES, NULL),
     SF_ONE(GameActions, ice_hole_count, "int", SF_INT, NULL),
     SF_ONE(GameActions, ice_hole_day, "int", SF_INT, NULL),
+    SF_ARR(GameActions, cave_done, "uint64_t", SF_UINT, NULL),
+    SF_ARR(GameActions, cave_guards_day, "int", SF_INT, NULL),
 };
 static const SfType SF_T_GameActions = SF_TYPE(GameActions, SF_F_GameActions);
 

@@ -134,10 +134,14 @@ static Color category_color(const char *cat) {
     return (Color){ 190, 160, 120, 255 };
 }
 
+static Color g_tint = { 255, 255, 255, 255 }; // la luz de alrededor (props_set_tint)
+
+void props_set_tint(Color tint) { g_tint = tint; }
+
 void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, float grow) {
     Model *m = cached_model(p, item);
     if (m && grow >= 1.0f) {
-        DrawModelEx(*m, pos, (Vector3){ 0, 1, 0 }, yaw * RAD2DEG, (Vector3){ 1, 1, 1 }, WHITE);
+        DrawModelEx(*m, pos, (Vector3){ 0, 1, 0 }, yaw * RAD2DEG, (Vector3){ 1, 1, 1 }, g_tint);
         return;
     }
     if (!m && grow >= 1.0f && voxs_draw_item(item, pos, yaw)) return; // las obras de la tribu, con el kit

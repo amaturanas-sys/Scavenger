@@ -44,6 +44,7 @@
 #define GA_LOOT 8  // bolsas de botin en el suelo
 #define GA_NEWS 4  // informes que recuerda cada campamento
 #define GA_ICE_HOLES 6 // agujeros para pescar en el hielo
+#define GA_CAVES 56    // las cuevas del mundo (CAVES_MAX de src/sim/world.h; src/game/cave_game.c lo comprueba)
 #define ICE_PICK_ID "utileria.herramienta.picahielo"
 #define ICE_HOLE_RADIUS 0.9f // m: el agujero para pescar (quien lo pisa cae al agua)
 
@@ -219,6 +220,11 @@ typedef struct {
     // durante la noche; quien pisa uno cae al agua (src/game/hazards_game.c).
     Vector3 ice_holes[GA_ICE_HOLES];
     int ice_hole_count, ice_hole_day; // el dia en que se abrieron + 1 (0: ninguno)
+    // Las cuevas (docs/PLAN_TACTICO_Y_CUEVAS.md, src/game/cave_game.c), por el indice de su guarida: lo que ya se
+    // tomo, se rescato o se encendio adentro (un bit por objeto de Cave.objects) y el dia (clock_day, desde 1) en
+    // que salieron sus guardias (0: nunca). Una partida vieja empieza con todo en su lugar.
+    uint64_t cave_done[GA_CAVES];
+    int cave_guards_day[GA_CAVES];
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);
@@ -255,6 +261,9 @@ void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p)
 void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day, float temp_mean,
                 char *log, size_t log_len);
 void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time, bool night);
+// Lo que el jugador tiene en las manos (las armas, el escudo, la antorcha encendida, lo que carga); ga_draw_world
+// lo dibuja, y adentro de una cueva src/game/cave_game.c, tenido con la luz del lugar (light; la llama, no).
+void ga_draw_held(const GameActions *ga, const Player *p, float time, Color light);
 // Dibuja al jugador con el modelo del protagonista y su animacion, si ya fue
 // importado. Devuelve false si no (el juego dibuja el marcador de siempre).
 bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time);
@@ -291,6 +300,9 @@ void ga_set_combat_near(bool near);
 void ga_set_target_animal(int index);
 int ga_take_target_request(void);
 
+// En una cueva (src/game/cave_game.c): solo empuñar, enfundar y la antorcha; F, lanzar y montar, no.
+void ga_set_in_cave(bool on);
+bool ga_in_cave(void);
 int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, const Player *p, bool night, Vector3 *pos, float *radius,
               int max);
 

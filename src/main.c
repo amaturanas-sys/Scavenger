@@ -31,6 +31,7 @@
 
 #include "game/actions_game.h"
 #include "game/combat_game.h"
+#include "game/cave_game.h"
 #include "game/disasters_game.h"
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
@@ -105,7 +106,7 @@ typedef struct {
 
 static float g_drone; // --dron: la camara a tantos metros (pruebas y capturas de una ciudad entera)
 
-static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const Terrain *t, float dt) {
+static void camera_input(CameraRig *rig, float dt) {
     // Orbita: Q/E o arrastre con boton derecho (sin arrastrar, el derecho cubre); rueda para el zoom.
     // Con Ctrl, Q/E cambian de objetivo en combate (KA_TARGET_LEFT/RIGHT): la camara no gira.
     if (IsKeyDown(KEY_Q) && !input_ctrl()) rig->yaw += 1.8f * dt;
@@ -116,6 +117,10 @@ static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const 
         rig->pitch = Clamp(rig->pitch + dy * 0.004f, 0.05f, 1.25f);
     }
     rig->dist = g_drone > 0.0f ? g_drone : Clamp(rig->dist - GetMouseWheelMove() * 0.8f, 3.0f, 16.0f);
+}
+
+static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const Terrain *t, float dt) {
+    camera_input(rig, dt);
 
     Vector3 target = { p->pos.x, p->pos.y + player_eye_height(p), p->pos.z };
     Vector3 back = { -sinf(rig->yaw) * cosf(rig->pitch), sinf(rig->pitch), -cosf(rig->yaw) * cosf(rig->pitch) };
@@ -128,6 +133,7 @@ static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const 
         floor_y = fmaxf(floor_y, terrain_height(t, q.x, q.z) + 1.2f * k / 4.0f);
     }
     if (cam->position.y < floor_y) cam->position.y = floor_y;
+    wd_camera_clear(t, target, &cam->position); // ni adentro del peñasco de una cueva
     cam->target = target;
 }
 
@@ -567,6 +573,18 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
             want = !strcmp(dash + 1, REG[s->region]);
         if (want) x = s->x + 58.0f, z = s->z + 20.0f, lx = s->x, lz = s->z, ok = true;
     }
+    if (!strncmp(what, "boca-", 5)) { // la boca de la cueva de ese tipo mas cercana al campamento, de frente, a 9 m
+        static const char *KINDS[CAVE_KINDS] = { "animal", "abandonada", "forajidos", "tribu", "imperio" };
+        float best = 1e30f;
+        for (int i = 0; i < w->cave_count; i++) {
+            const Cave *c = &w->caves[i];
+            float d = c->x * c->x + c->z * c->z;
+            if (strcmp(what + 5, KINDS[c->kind]) != 0 || d > best) continue;
+            best = d, ok = true;
+            cave_to_world(c, 0.0f, -9.0f, &x, &z);
+            lx = c->x, lz = c->z;
+        }
+    }
     for (int i = 0; i < w->den_count && !ok; i++)
         if (!strcmp(what, "guarida") && w->dens[i].region == REGION_FOREST)
             x = w->dens[i].x + 16.0f, z = w->dens[i].z + 6.0f, lx = w->dens[i].x, lz = w->dens[i].z, ok = true;
@@ -708,6 +726,10 @@ int main(int argc, char **argv) {
     int start_back = 0; // prueba: 1 a la espalda del primer enemigo, 2 ademas con el de rehen
     const char *start_hands = NULL; // prueba: "escudo" (la espada enfundada), "espada" (el escudo a la espalda) o "nada"
     bool start_cover = false; // prueba: junto al obstaculo mas cercano, a cubierto (C, A4)
+    const char *start_cave = NULL; // prueba: --cueva tipo[:lugar] (src/game/cave_game.h, cv_test_enter)
+    bool start_torch = false;      // prueba: --antorcha, encendida en la mano izquierda
+    bool start_cave_f = false;     // prueba: --cueva-f, como pulsar F adentro (al cuadro 20)
+    float start_walk = 0.0f;       // prueba: --caminar adelante|atras (desde el cuadro 7)
     int start_escort = -1; // prueba: con la escolta fuera y esa orden (SquadOrder)
     bool start_raid = false, start_guards = false; // prueba: un asalto al campamento; dos soldados de guardia
     MenuScreen start_menu_screen = MENU_TITLE;
@@ -763,6 +785,10 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--espalda")) start_back = 1;
         else if (!strcmp(argv[i], "--rehen")) start_back = 2;
         else if (!strcmp(argv[i], "--manos") && i + 1 < argc) start_hands = argv[++i];
+        else if (!strcmp(argv[i], "--cueva") && i + 1 < argc) start_cave = argv[++i];
+        else if (!strcmp(argv[i], "--antorcha")) start_torch = true;
+        else if (!strcmp(argv[i], "--cueva-f")) start_cave_f = true;
+        else if (!strcmp(argv[i], "--caminar") && i + 1 < argc) start_walk = !strcmp(argv[++i], "atras") ? -1.0f : 1.0f;
         else if (!strcmp(argv[i], "--cubierto")) start_cover = true;
         else if (!strcmp(argv[i], "--asalto")) start_raid = true;
         else if (!strcmp(argv[i], "--guardias")) start_guards = true;
@@ -1038,6 +1064,7 @@ int main(int argc, char **argv) {
             switch (menu_update(&menu, dt)) {
             case MENU_NEW_GAME:
                 game_new(&gs, &terrain, &camp, seed_given ? start_seed : fresh_seed(), 1, 4.0f, log, sizeof(log));
+                cv_reset(); // afuera de toda cueva
                 in_game = true;
                 menu.screen = MENU_HIDDEN;
                 break;
@@ -1045,6 +1072,7 @@ int main(int argc, char **argv) {
             case MENU_LOAD_SLOT:
                 if (save_read(menu.slot, &gs, err, sizeof(err))) {
                     world_reset(&terrain, &camp, g_hazards.seed); // el mundo de esa partida
+                    cv_reset(); // se guardo en la boca: aparece afuera
                     in_game = true;
                     menu.screen = MENU_HIDDEN;
                     snprintf(log, sizeof(log), T("Partida cargada (hueco %d)."), menu.slot + 1);
@@ -1227,6 +1255,7 @@ int main(int argc, char **argv) {
         if (start_load >= 0 && frame == 2) { // prueba: cargar un hueco al empezar
             if (save_read(start_load, &gs, err, sizeof(err))) {
                 world_reset(&terrain, &camp, g_hazards.seed);
+                cv_reset();
                 snprintf(log, sizeof(log), T("Partida cargada (hueco %d)."), start_load + 1);
                 if (ashore(&terrain, &player))
                     snprintf(log, sizeof(log), T("Partida cargada (hueco %d): donde estabas ahora hay agua y apareces en la orilla."), start_load + 1);
@@ -1252,13 +1281,20 @@ int main(int argc, char **argv) {
             PlayerInput in = blocked ? (PlayerInput){ 0 } : player_read_input();
             if (start_ride && frame > 6 && g_actions.mounted >= 0) in.move_z = 1.0f, in.run = true; // prueba: al galope
             if (start_migrate && !strcmp(start_migrate, "marcha") && frame > 8) in.move_z = 1.0f; // prueba: en marcha, al paso
+            if (start_walk != 0.0f && frame > 6) in.move_z = start_walk; // prueba: caminar (por la boca de una cueva, adentro)
             if (g_actions.mounted >= 0 && fg_mount_winded()) in.run = false; // la montura agotada no galopa
             player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards) * cb_speed_scale(&g_combat);
             player_set_endurance(health_endurance_scale(&g_combat.player)); // las secuelas (el tiburon) cansan mas
             player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
-            if (!g_actions.climbing) player_update(&player, &terrain, in, rig.yaw, dt);
-            if (in.toggle_sneak) ga_toggle_cover(&g_actions, &g_props, &terrain, &player); // C: junto a un obstaculo, cobertura
-            if (world_clamp(terrain.world, &player.pos.x, &player.pos.z)) { // la frontera invisible del gran circulo
+            // Adentro de una cueva se mueve alli (src/game/cave_game.c) y el mundo de afuera espera: el combate, la
+            // fauna, los peligros y los desastres; el reloj, la sed, el inventario, la barra rapida y la antorcha siguen.
+            bool cave = cv_inside();
+            if (!g_actions.climbing && !cave) player_update(&player, &terrain, in, rig.yaw, dt);
+            if (in.toggle_sneak && !cave) ga_toggle_cover(&g_actions, &g_props, &terrain, &player); // C: junto a un obstaculo, cobertura
+            cv_update(&g_actions, &g_combat, &troop, &g_props, &player, &terrain, in, &rig.yaw, world_time,
+                      !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log)); // la boca: entrar y salir
+            cave = cv_inside();
+            if (!cave && world_clamp(terrain.world, &player.pos.x, &player.pos.z)) { // la frontera invisible del gran circulo
                 static float told = -100.0f;
                 if (world_time - told > 30.0f) {
                     told = world_time;
@@ -1278,7 +1314,7 @@ int main(int argc, char **argv) {
             if (!gallery_mode) // la barra rapida (1..9) y su selector, antes que las acciones
                 hud_update(&g_actions, &g_props, &player, !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), log, sizeof(log));
             if (!gallery_mode) ga_update(&g_actions, &g_props, &terrain, &player, &troop, dt, log, sizeof(log));
-            if (!gallery_mode) ga_after_player(&g_actions, &g_props, &terrain, &player);
+            if (!gallery_mode && !cave) ga_after_player(&g_actions, &g_props, &terrain, &player);
             if (start_trap && frame == 3 && !gallery_mode) { // prueba: la tribu ya esta ubicada
                 hz_force(&g_hazards, start_trap, &player, &g_actions, &troop, &terrain);
                 start_trap = NULL;
@@ -1307,7 +1343,7 @@ int main(int argc, char **argv) {
                 float fx = g_actions.camps[0].x + 2.0f, fz = g_actions.camps[0].z;
                 tribe_fire = (Vector3){ fx, terrain_height(&terrain, fx, fz), fz };
             }
-            if (!gallery_mode)
+            if (!gallery_mode && !cave)
                 hz_update(&g_hazards, &g_climate, &terrain, &player, &g_actions, &g_props, &troop, tribe_fire, world_time,
                           dt, log, sizeof(log));
             if (!gallery_mode)
@@ -1321,10 +1357,10 @@ int main(int argc, char **argv) {
             if (!gallery_mode)
                 trv_update(&g_actions, &troop, &g_memory, &player, &terrain, clock_is_night(world_time),
                            !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
-            if (!gallery_mode) td_update(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, world_time, dt, log, sizeof(log));
+            if (!gallery_mode && !cave) td_update(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, world_time, dt, log, sizeof(log));
             if (!gallery_mode) ag_update(&g_actions, &troop, &g_climate, g_hazards.seed, world_time, dt, log, sizeof(log));
-            if (!gallery_mode) forge_update(&terrain, &player, &g_memory, world_time, log, sizeof(log)); // las vetas de hierro que pasas
-            if (!gallery_mode) wd_update(&g_actions, &g_combat, &terrain, &player, &g_memory, log, sizeof(log));
+            if (!gallery_mode && !cave) forge_update(&terrain, &player, &g_memory, world_time, log, sizeof(log)); // las vetas de hierro que pasas
+            if (!gallery_mode && !cave) wd_update(&g_actions, &g_combat, &terrain, &player, &g_memory, log, sizeof(log));
             if (!gallery_mode)
                 wg_update(&g_actions, &troop, &player, &g_props, &g_hazards, &g_climate, tribe_fire, &terrain,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
@@ -1346,22 +1382,22 @@ int main(int argc, char **argv) {
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             cb_set_shelters(camp.yurts, camp.yurt_count); // en un asalto, los pobladores corren a las yurtas
             // Un clic o un toque sobre un enemigo (no sobre el HUD) lo elige como objetivo.
-            if (!gallery_mode && !menu && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !hud_pointer_over() &&
+            if (!gallery_mode && !cave && !menu && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !hud_pointer_over() &&
                 !ig_blocks_input(&g_actions) && !g_actions.dlg.open)
                 cb_pick_target(&g_combat, &g_actions, &terrain, &player, cam, virtual_pointer(), VIRTUAL_W, VIRTUAL_H,
                                log, sizeof(log));
-            if (!gallery_mode)
+            if (!gallery_mode && !cave)
                 cb_update(&g_combat, &player, &g_actions, &troop, &g_props, &terrain, tribe_fire,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), clock_is_night(world_time),
                           g_climate.temp_mean < 0.0f,
                           rig.yaw, rig.pitch, dt, log, sizeof(log));
-            if (!gallery_mode) // las ciudades: armarlas, sus bajas, la expedicion de castigo, la guarnicion que sale, la muralla y el fuego
+            if (!gallery_mode && !cave) // las ciudades: armarlas, sus bajas, la expedicion de castigo, la guarnicion que sale, la muralla y el fuego
                 ct_update(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, clock_day(world_time), dt, log, sizeof(log));
             g_actions.grass = g_climate.snow_cover < 0.3f; // con nieve no hay pasto
-            if (!gallery_mode)
+            if (!gallery_mode && !cave)
                 fg_update(&g_actions, &g_combat, &player, &troop, &terrain, &g_memory, world_time, g_climate.temperature,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
-            if (!gallery_mode)
+            if (!gallery_mode && !cave)
                 dz_update(&g_dz, &g_climate, &camp, &g_actions, &g_props, &troop, &g_combat, &player, &terrain, world_time,
                           dt, log, sizeof(log));
             if (start_aim && !gallery_mode) { // prueba: arco tenso, para ver la curva de la mira
@@ -1398,6 +1434,16 @@ int main(int argc, char **argv) {
                         ga_toggle_cover(&g_actions, &g_props, &terrain, &player);
                     }
             }
+            if (start_torch && frame == 3 && !gallery_mode) { // prueba: la antorcha encendida en la mano izquierda
+                const InvItem *torch = inventory_find(&g_inventory, "utileria.objeto.antorcha");
+                if (torch) hands_equip(&g_actions.hands, torch, HAND_LEFT), g_actions.hands.sheathed = g_actions.hands.left_away = false, g_actions.torch_lit = true;
+            }
+            if (start_cave && frame == 4 && !gallery_mode) { // prueba: adentro de una cueva de ese tipo, en una sala o ante un objeto
+                if (!cv_test_enter(&g_actions, &player, &terrain, start_cave, &rig.yaw)) snprintf(log, sizeof(log), "--cueva %s: no hay", start_cave);
+                start_cave = NULL;
+            }
+            if (start_cave_f && frame == 20 && !gallery_mode) // prueba: F en la cueva (tomar, encender, liberar)
+                cv_test_press(&g_actions, &g_combat, &troop, &g_props, &player, &terrain, log, sizeof(log));
             if (start_hands && frame == 30 && !gallery_mode) { // prueba: como pulsar 1 (la espada) o 2 (el escudo)
                 if (!strcmp(start_hands, "escudo")) hands_toggle_hand(&g_actions.hands, HAND_RIGHT);
                 else if (!strcmp(start_hands, "espada")) hands_toggle_hand(&g_actions.hands, HAND_LEFT);
@@ -1411,8 +1457,8 @@ int main(int argc, char **argv) {
             advance_days(&troop, &rng, &day, world_time, &terrain, log, sizeof(log));
             if (input_action_pressed(KA_CARD) && !ig_blocks_input(&g_actions)) // U: la ficha del gran guerrero (en el inventario, U cambia la mochila)
                 show_card = !show_card && last_champion >= 0;
-            memmap_visit(&g_memory, player.pos.x, player.pos.z, dt, world_time);
-            { // la vista (tatuajes del grifo, lapislazuli): el mapa se descubre mas lejos
+            if (!cave) memmap_visit(&g_memory, player.pos.x, player.pos.z, dt, world_time);
+            if (!cave) { // la vista (tatuajes del grifo, lapislazuli): el mapa se descubre mas lejos
                 static float reveal_t = 0.0f;
                 float per = ig_stat(&g_actions, STAT_PERCEPTION);
                 if (per > 0.0f && (reveal_t += dt) > 1.0f) {
@@ -1420,7 +1466,7 @@ int main(int argc, char **argv) {
                     memmap_reveal(&g_memory, player.pos.x, player.pos.z, 30.0f * per, 30.0f, world_time);
                 }
             }
-            if (input_action_pressed(KA_MARK)) { // M: marcar el lugar (Ctrl+M es la vista orbital)
+            if (!cave && input_action_pressed(KA_MARK)) { // M: marcar el lugar (Ctrl+M es la vista orbital)
                 MarkerKind kind = IsKeyDown(KEY_LEFT_SHIFT) ? MARKER_DANGER : MARKER_INTEREST;
                 bool placed = memmap_toggle_marker(&g_memory, player.pos.x, player.pos.z, kind, 6.0f);
                 snprintf(log, sizeof(log), "%s", placed ? T("Marcaste este lugar en el mapa.") : T("Quitaste la marca."));
@@ -1432,6 +1478,9 @@ int main(int argc, char **argv) {
             pg_set_world(camp.yurts, camp.yurt_count, camp.fire, g_actions.camps[0].used, camp.trees, camp.tree_count);
             pg_update(&g_actions, &g_props, &terrain, cam, VIRTUAL_W, VIRTUAL_H, dt, log, sizeof(log));
             pg_camera(&cam);
+        } else if (cv_inside()) { // la camara de la cueva: la misma orbita, sin salir de la roca
+            camera_input(&rig, dt);
+            cv_camera(&terrain, &cam, rig.yaw, rig.pitch, rig.dist);
         } else {
             camera_update(&rig, &cam, &player, &terrain, dt);
             if (kit_type >= 0) { // --edificios: todas las variantes de un tipo, desde el frente y arriba
@@ -1474,6 +1523,13 @@ int main(int argc, char **argv) {
             ui_text(TextFormat(T("Vista orbital · mundo %u · estás en: %s"), terrain.seed, rg), 10, 10, 10, UI_GOLD_LIGHT);
             ui_text(T("Flechas: girar e inclinar · F5 o Esc: volver"), 10, VIRTUAL_H - 18, 10, UI_BONE_DIM);
         } else if (in_game) {
+        if (cv_inside()) { // adentro de una cueva: su roca, su oscuridad y su luz (src/game/cave_game.c)
+            ClearBackground(BLACK);
+            rlSetClipPlanes(0.05, 600.0);
+            BeginMode3D(cam);
+            cv_draw(&g_actions, &g_combat, &g_props, &terrain, world_time, (float)GetTime());
+            EndMode3D();
+        } else {
         // El firmamento: degradado, resplandor y sol (la galeria, siempre a media mañana).
         float sky_time = gallery_mode ? 400.0f : world_time;
         sky_draw_background(cam, sky_time, climate.clouds, VIRTUAL_W, VIRTUAL_H);
@@ -1542,12 +1598,14 @@ int main(int argc, char **argv) {
             light_radius[0] = !g_actions.fires_out && g_actions.camps[0].used && !g_actions.camps[0].moved ? 9.0f : 0.0f;
             int lights = 1 + ga_lights(&g_actions, &g_props, &troop, &player, clock_is_night(world_time), light_pos + 1, light_radius + 1,
                                        SKY_MAX_LIGHTS - 1);
+            lights += wd_cave_lights(&terrain, &player, light_pos + lights, light_radius + lights, SKY_MAX_LIGHTS - lights); // las bocas habitadas
             sky_draw_lights(cam, light_pos, light_radius, lights, world_time, (float)GetTime(), VIRTUAL_W, VIRTUAL_H);
             weather_draw_screen(&weather, &climate, VIRTUAL_W, VIRTUAL_H);
             cb_draw_overlay(&g_combat, &g_actions, &troop, cam, VIRTUAL_W, VIRTUAL_H);
             fg_draw_overlay(&g_actions, &terrain, cam, VIRTUAL_W, VIRTUAL_H);
             ag_draw_overlay(&g_actions, &troop, cam, VIRTUAL_W, VIRTUAL_H);
         }
+        } // afuera
         rlSetClipPlanes(RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
         if (kit_type >= 0) { // el nombre de cada fila (region) y lo que se ve
             ui_strip((Rectangle){ 0, 0, (float)VIRTUAL_W, 30 }, UI_METAL_GOLD);
@@ -1571,9 +1629,12 @@ int main(int argc, char **argv) {
         } else if (!menu_visible(&menu)) {
             draw_hud(&troop, world_time, ga_hands_text(&g_actions), log, log_age,
                      g_actions.menu_open || g_actions.inv_open || g_actions.equip_open);
-            minimap_set_world(&minimap, terrain.world, terrain.plain);
-            minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
-                         player.pos, rig.yaw, player.yaw, world_time);
+            if (cv_inside()) cv_draw_plan(&terrain, VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13, MINIMAP_RADIUS); // el plano de la cueva
+            else {
+                minimap_set_world(&minimap, terrain.world, terrain.plain);
+                minimap_draw(&minimap, &g_memory, (Vector2){ VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13 },
+                             player.pos, rig.yaw, player.yaw, world_time);
+            }
             draw_clock_bar(VIRTUAL_W - MINIMAP_RADIUS - 10, 2 * MINIMAP_RADIUS + 19, 2 * MINIMAP_RADIUS - 8, world_time);
             draw_weather_text(VIRTUAL_W - 14, 2 * MINIMAP_RADIUS + 27, &climate, terrain_region(&terrain, player.pos.x, player.pos.z));
             ga_draw_hud(&g_actions, &g_props, &troop, &player, VIRTUAL_W, VIRTUAL_H);
@@ -1590,13 +1651,16 @@ int main(int argc, char **argv) {
                 hud_quickbar(&g_actions, &g_props, &player, 6, VIRTUAL_H - 54);
                 hud_action_column(&g_actions, 6, 68);
                 hud_escort_orders(&g_actions, &troop, 42, VIRTUAL_H - 84); // atacar, defender, seguir (con la escolta fuera)
-                cb_draw_buttons(&g_combat, &g_actions, VIRTUAL_W, VIRTUAL_H); // H J K L, abajo a la derecha
+                if (!cv_inside()) cb_draw_buttons(&g_combat, &g_actions, VIRTUAL_W, VIRTUAL_H); // H J K L, abajo a la derecha
             }
-            fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             cg_draw_hud(&g_actions, &troop, VIRTUAL_W); // la tribu en marcha
-            td_draw_hud(VIRTUAL_W, VIRTUAL_H);
-            ct_draw_hud(VIRTUAL_W, VIRTUAL_H); // F junto a la muralla: la escala, la puerta
-            forge_draw_hud(&terrain, &player, VIRTUAL_W, VIRTUAL_H); // F junto a una veta
+            if (cv_inside()) cv_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H); // F en la cueva
+            else { // lo que hace F afuera
+                fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
+                td_draw_hud(VIRTUAL_W, VIRTUAL_H);
+                ct_draw_hud(VIRTUAL_W, VIRTUAL_H); // F junto a la muralla: la escala, la puerta
+                forge_draw_hud(&terrain, &player, VIRTUAL_W, VIRTUAL_H); // F junto a una veta
+            }
             ig_draw(&g_actions, &g_combat, &g_props, &player, VIRTUAL_W, VIRTUAL_H);
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions)) tg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
             hud_draw_picker(&g_actions, &g_props, &player, VIRTUAL_W, VIRTUAL_H); // elegir que va en una casilla

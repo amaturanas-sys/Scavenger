@@ -222,6 +222,9 @@ void cb_new_day(Combat *cb, Troop *troop);
 // Enemigos, proyectiles, la curva de la mira y el cuerpo del jugador (sin modelo). Dentro de BeginMode3D.
 void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const Terrain *t, const Player *p,
                    bool player_has_model, float time);
+// El jugador sin modelo importado: el cuerpo articulado, con su armadura, su ropa y el escudo, teñido con light (WHITE
+// afuera; en una cueva, la luz del lugar).
+void cb_draw_player_body(const Combat *cb, const GameActions *ga, const Player *p, float time, Color light);
 // Barras de vida sobre enemigos y companeros heridos. Fuera de BeginMode3D.
 void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop, Camera3D cam, int w, int h);
 // Vida del jugador (bajo el calor), panel de heridas (P) y aviso de abatido.
@@ -251,7 +254,10 @@ bool cb_punitive_near(const Combat *cb, Vector3 at, float r);
 void cb_punitive_withdraw(Combat *cb, Vector3 to);
 // Los de la ciudad idx en pie (la guardia y el ejercito que salio).
 int cb_city_standing(const Combat *cb, int city);
+// «guardia_cueva», «guerreros_cueva» y «guardia_imperial»: los que defienden una cueva habitada (src/game/cave_game.c).
 void cb_spawn_party_at(Combat *cb, const char *what, Vector3 at, const Terrain *t, char *log, size_t len);
+// Los enemigos en pie (ni caidos, ni abatidos, ni rehenes, ni en el hielo) a menos de r de at.
+int cb_hostiles_near(const Combat *cb, Vector3 at, float r);
 void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
                     size_t len);
 // Un animal ataca a una persona: kind 0 el jugador, 1 el integrante id, 2 el enemigo id (indice).

@@ -126,6 +126,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/death_game.c
     src/game/hud_game.c
     src/game/world_game.c
+    src/game/cave_game.c
     src/game/title_menu.c
     src/game/input.c
     src/game/inventory_game.c

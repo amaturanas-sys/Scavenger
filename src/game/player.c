@@ -58,6 +58,12 @@ void player_stamina_spend(float amount) {
     if (g_stamina <= 0.0f) g_winded = true;
 }
 
+void player_stamina_tick(bool running, bool moving, float dt) {
+    if (g_winded && g_stamina >= STAMINA_RECOVER) g_winded = false;
+    if (running) player_stamina_spend(STAMINA_RUN_COST * dt);
+    else g_stamina = fminf(1.0f, g_stamina + (moving ? STAMINA_REGEN_WALK : STAMINA_REGEN_REST) * g_endurance * dt);
+}
+
 void player_init(Player *p, const Terrain *t) {
     g_stamina = 1.0f, g_winded = false;
     *p = (Player){ 0 };
@@ -102,8 +108,7 @@ void player_update(Player *p, const Terrain *t, PlayerInput in, float cam_yaw, f
         p->yaw += diff * fminf(1.0f, TURN_RATE * dt);
     }
 
-    if (!mounted && p->stance == STANCE_RUN) player_stamina_spend(STAMINA_RUN_COST * dt);
-    else g_stamina = fminf(1.0f, g_stamina + (p->moving ? STAMINA_REGEN_WALK : STAMINA_REGEN_REST) * g_endurance * dt);
+    player_stamina_tick(!mounted && p->stance == STANCE_RUN, p->moving, dt);
 
     float ground = terrain_height(t, p->pos.x, p->pos.z);
     if (p->grounded && in.jump && p->crouching) { // agachado, Espacio lo levanta

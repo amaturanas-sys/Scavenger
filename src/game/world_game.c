@@ -47,7 +47,7 @@ void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, M
         snprintf(log, len, s->kind == SETTLE_CAPITAL ? T("Llegas a %s, capital del %s.") : T("Llegas a %s, aldea del %s."), s->name,
                  world_kingdom_name(s->region));
     }
-    // Una guarida: peligro, al mapa.
+    // Una guarida, con su cueva (src/sim/caves.h): peligro, al mapa.
     for (int i = 0; i < w->den_count && i < 64; i++) {
         const Den *d = &w->dens[i];
         if ((ga->seen_dens >> i) & 1u || dist_xz(d->x, d->z, p->pos.x, p->pos.z) > 45.0f) continue;
@@ -56,7 +56,12 @@ void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, M
         char who[48];
         snprintf(who, sizeof(who), "%s", T(species_def((Species)d->species)->name));
         if (who[0] >= 'A' && who[0] <= 'Z') who[0] = (char)(who[0] - 'A' + 'a');
-        snprintf(log, len, T("Una guarida (%s): queda marcada como peligro en el mapa."), who);
+        CaveKind kind = i < w->cave_count ? w->caves[i].kind : CAVE_ANIMAL;
+        if (kind >= CAVE_BANDITS)
+            snprintf(log, len, T("Una cueva (%s): marcada como peligro. Se entra por la boca."), T(cave_kind_name(kind)));
+        else if (kind == CAVE_ABANDONED)
+            snprintf(log, len, T("Una cueva abandonada (huellas de %s): marcada como peligro."), who);
+        else snprintf(log, len, T("Una guarida (%s): queda marcada como peligro en el mapa."), who);
     }
 
     // Las tribus nomadas.
@@ -135,58 +140,136 @@ static Color folk_color(Region rg, int k) {
 
 static bool g_fires_out;
 
-static Vector3 cave_point(const Cave *c, const CaveRoom *room, float y) {
-    float cs = cosf(c->yaw), sn = sinf(c->yaw);
-    return (Vector3){ c->x + room->x * cs - room->z * sn, y, c->z + room->x * sn + room->z * cs };
+// La boca de una cueva, desde afuera (el interior: src/game/cave_game.c). En las coordenadas de la cueva (la boca
+// en el origen, +z hacia adentro): un peñasco con un tunel que se oscurece hacia el fondo, y lo de cada tipo: huesos
+// en la de fieras, piedras caidas en la abandonada, antorchas en las habitadas, el portal de piedra labrada y los
+// estandartes en la del imperio, la cortina de cuero en la de una tribu.
+static void gradient_quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color front, Color back) { // a y b adelante; c y d al fondo
+    rlBegin(RL_TRIANGLES);
+    rlColor4ub(front.r, front.g, front.b, 255), rlVertex3f(a.x, a.y, a.z);
+    rlColor4ub(front.r, front.g, front.b, 255), rlVertex3f(b.x, b.y, b.z);
+    rlColor4ub(back.r, back.g, back.b, 255), rlVertex3f(c.x, c.y, c.z);
+    rlColor4ub(front.r, front.g, front.b, 255), rlVertex3f(a.x, a.y, a.z);
+    rlColor4ub(back.r, back.g, back.b, 255), rlVertex3f(c.x, c.y, c.z);
+    rlColor4ub(back.r, back.g, back.b, 255), rlVertex3f(d.x, d.y, d.z);
+    rlEnd();
 }
 
-static void draw_cave(const Terrain *t, const Cave *c) {
-    float ground = terrain_height(t, c->x, c->z);
-    Color rock = c->region == REGION_DESERT ? (Color){ 170, 120, 84, 255 } : (Color){ 112, 108, 100, 255 };
-    float cs = cosf(c->yaw), sn = sinf(c->yaw);
-    Vector3 left = { c->x - cs * 3.2f, ground + 1.8f, c->z - sn * 3.2f };
-    Vector3 right = { c->x + cs * 3.2f, ground + 1.8f, c->z + sn * 3.2f };
-    DrawCube(left, 1.5f, 3.6f, 2.0f, rock);
-    DrawCube(right, 1.5f, 3.6f, 2.0f, rock);
-    DrawCube((Vector3){ c->x, ground + 3.5f, c->z }, 7.8f, 1.2f, 2.0f, rock);
-    // Cara plana oscura: simula la profundidad del umbral sin ahuecar el terreno exterior.
-    Vector3 face = { c->x + cs * 0.9f, ground + 1.7f, c->z + sn * 0.9f };
-    DrawCube(face, 5.2f, 3.0f, 0.15f, (Color){ 12, 12, 14, 255 });
-    for (int i = 0; i < c->room_count; i++) {
-        const CaveRoom *r = &c->rooms[i];
-        Vector3 center = cave_point(c, r, ground + r->floor_y + 0.15f);
-        DrawCylinder(center, r->radius, r->radius, 0.25f, 12, (Color){ 28, 25, 24, 255 });
-        if (i > 0) {
-            DrawCylinder((Vector3){ center.x, center.y + 1.6f, center.z }, r->radius + 0.25f, r->radius + 0.25f, 3.2f, 12, rock);
+static void mouth_torch(float x, float z, float base, float time, int k) {
+    DrawCylinderEx((Vector3){ x, base, z }, (Vector3){ x, base + 1.7f, z }, 0.05f, 0.06f, 5, (Color){ 92, 66, 42, 255 });
+    float fl = 0.85f + 0.15f * sinf(time * 17.0f + (float)k);
+    DrawSphere((Vector3){ x, base + 1.85f, z }, 0.14f * fl, (Color){ 250, 150, 50, 255 });
+    DrawSphere((Vector3){ x, base + 1.88f, z }, 0.07f * fl, (Color){ 255, 236, 170, 255 });
+}
+
+static void draw_cave(const Terrain *t, const Cave *c, float time) {
+    // El pie del peñasco: lo mas bajo del terreno alrededor (en una ladera no queda en el aire).
+    float ground = terrain_height(t, c->x, c->z), base = ground;
+    for (int k = 0; k < 6; k++) {
+        float wx, wz;
+        cave_to_world(c, (k % 3 - 1) * 3.0f, (float)(k / 3) * 4.0f, &wx, &wz);
+        base = fminf(base, terrain_height(t, wx, wz));
+    }
+    base -= 0.4f;
+    Color rock = c->region == REGION_DESERT ? (Color){ 170, 120, 84, 255 } : c->region == REGION_HIGHLAND ? (Color){ 124, 126, 132, 255 } : (Color){ 112, 108, 100, 255 };
+    Color dark = ColorBrightness(rock, -0.25f), dressed = { 196, 184, 160, 255 };
+    bool empire = c->kind == CAVE_EMPIRE;
+    float top = ground - base + 3.0f; // el alto de la abertura (sobre el pie)
+    rlPushMatrix();
+    rlTranslatef(c->x, base, c->z);
+    rlRotatef(c->yaw * RAD2DEG, 0, 1, 0); // +z del dibujo: hacia adentro (cave_to_world)
+    // El peñasco: dos jambas, el dintel y un monticulo encima; la abertura, de 2,8 m.
+    DrawCube((Vector3){ -2.7f, top * 0.5f, 2.6f }, 2.6f, top, 4.6f, empire ? dressed : rock);
+    DrawCube((Vector3){ 2.7f, top * 0.5f, 2.6f }, 2.6f, top, 4.6f, empire ? dressed : rock);
+    DrawCube((Vector3){ 0.0f, top + 0.7f, 2.6f }, 8.0f, 1.4f, 4.6f, empire ? dressed : rock);
+    DrawSphereEx((Vector3){ -1.4f, top + 1.2f, 3.6f }, 2.6f, 6, 8, dark);
+    DrawSphereEx((Vector3){ 1.8f, top + 1.0f, 4.0f }, 2.9f, 6, 8, rock);
+    DrawSphereEx((Vector3){ -3.6f, top * 0.6f, 4.2f }, 2.2f, 6, 8, dark);
+    DrawSphereEx((Vector3){ 3.8f, top * 0.55f, 4.4f }, 2.3f, 6, 8, rock);
+    DrawCube((Vector3){ 0.0f, top * 0.5f + 0.2f, 5.6f }, 9.0f, top + 1.8f, 2.4f, dark); // el fondo del peñasco
+    // El tunel: se oscurece hacia adentro (a los 4 m ya no se ve nada). Sin descartar caras (vaciando el lote antes
+    // y despues: raylib dibuja al final).
+    rlDrawRenderBatchActive();
+    rlDisableBackfaceCulling();
+    float g0 = ground - base + 0.02f;
+    Color front = ColorBrightness(rock, -0.55f), back = { 6, 6, 7, 255 };
+    gradient_quad((Vector3){ -1.4f, g0, 0.3f }, (Vector3){ 1.4f, g0, 0.3f }, (Vector3){ 1.4f, g0, 4.3f }, (Vector3){ -1.4f, g0, 4.3f }, front, back);
+    gradient_quad((Vector3){ -1.4f, top, 0.3f }, (Vector3){ 1.4f, top, 0.3f }, (Vector3){ 1.4f, top, 4.3f }, (Vector3){ -1.4f, top, 4.3f }, front, back);
+    gradient_quad((Vector3){ -1.4f, g0, 0.3f }, (Vector3){ -1.4f, top, 0.3f }, (Vector3){ -1.4f, top, 4.3f }, (Vector3){ -1.4f, g0, 4.3f }, front, back);
+    gradient_quad((Vector3){ 1.4f, g0, 0.3f }, (Vector3){ 1.4f, top, 0.3f }, (Vector3){ 1.4f, top, 4.3f }, (Vector3){ 1.4f, g0, 4.3f }, front, back);
+    DrawCube((Vector3){ 0.0f, top * 0.5f, 4.35f }, 2.8f, top, 0.1f, back);
+    rlDrawRenderBatchActive();
+    rlEnableBackfaceCulling();
+    float t0 = ground - base;
+    switch (c->kind) {
+    case CAVE_ANIMAL: // huesos y un craneo a la entrada
+        for (int k = 0; k < 4; k++) {
+            float a = (float)k * 1.9f, x = -1.2f + (float)k * 0.8f, z = -1.4f + 0.3f * sinf(a);
+            DrawCylinderEx((Vector3){ x - cosf(a) * 0.3f, t0 + 0.04f, z - sinf(a) * 0.3f }, (Vector3){ x + cosf(a) * 0.3f, t0 + 0.04f, z + sinf(a) * 0.3f },
+                           0.035f, 0.035f, 4, (Color){ 222, 214, 192, 255 });
+        }
+        DrawSphere((Vector3){ 0.6f, t0 + 0.1f, -0.8f }, 0.13f, (Color){ 232, 224, 202, 255 });
+        break;
+    case CAVE_ABANDONED: // piedras caidas
+        DrawCube((Vector3){ -0.9f, t0 + 0.25f, -0.6f }, 0.7f, 0.5f, 0.6f, dark);
+        DrawCube((Vector3){ 1.1f, t0 + 0.18f, -1.3f }, 0.5f, 0.36f, 0.5f, rock);
+        DrawCube((Vector3){ 0.3f, t0 + 0.12f, 0.6f }, 0.4f, 0.24f, 0.35f, dark);
+        break;
+    default: // las habitadas: antorchas a los lados
+        mouth_torch(-1.7f, -0.4f, t0, time, 0);
+        mouth_torch(1.7f, -0.4f, t0, time, 1);
+        if (c->kind == CAVE_TRIBE) { // la cortina de cuero, corrida a un lado, y el sol pintado en el dintel
+            DrawCube((Vector3){ -0.9f, t0 + top * 0.5f, 0.35f }, 1.0f, top - t0, 0.05f, (Color){ 120, 84, 52, 255 });
+            DrawCylinderEx((Vector3){ 0.0f, top + 0.7f, 0.29f }, (Vector3){ 0.0f, top + 0.7f, 0.27f }, 0.35f, 0.35f, 10, (Color){ 168, 58, 36, 255 });
+        } else if (empire) { // los estandartes del imperio
+            for (int k = -1; k <= 1; k += 2) {
+                DrawCube((Vector3){ 3.0f * (float)k, top - 0.6f, -0.05f }, 0.9f, 1.6f, 0.05f, (Color){ 150, 32, 30, 255 });
+                DrawCube((Vector3){ 3.0f * (float)k, top - 0.6f, -0.08f }, 0.3f, 0.3f, 0.05f, (Color){ 220, 180, 70, 255 });
+            }
+        } else { // los forajidos: una estacada
+            for (int k = 0; k < 5; k++) {
+                float x = (k < 2 ? -3.8f : 2.2f) + (float)(k % 3) * 0.55f;
+                DrawCylinderEx((Vector3){ x, t0, -1.2f }, (Vector3){ x, t0 + 1.3f, -1.25f }, 0.07f, 0.03f, 4, (Color){ 104, 78, 52, 255 });
+            }
+        }
+        break;
+    }
+    rlPopMatrix();
+}
+
+// Adentro del peñasco de una boca (draw_cave), fuera del tunel: la roca.
+static bool in_outcrop(const Cave *c, float ground, Vector3 q) {
+    float lx, lz;
+    cave_from_world(c, q.x, q.z, &lx, &lz);
+    if (fabsf(lx) > 5.0f || lz < 0.2f || lz > 7.0f || q.y > ground + 6.5f) return false;
+    return !(fabsf(lx) < 1.3f && lz < 4.2f && q.y < ground + 2.8f);
+}
+
+void wd_camera_clear(const Terrain *t, Vector3 target, Vector3 *cam) {
+    const World *w = t->world;
+    for (int i = 0; i < w->cave_count; i++) {
+        const Cave *c = &w->caves[i];
+        if (dist_xz(c->x, c->z, target.x, target.z) > 25.0f) continue;
+        float ground = terrain_height(t, c->x, c->z);
+        for (int k = 0; k < 40 && in_outcrop(c, ground, *cam); k++) *cam = Vector3Lerp(*cam, target, 0.12f); // hacia el jugador
+    }
+}
+
+int wd_cave_lights(const Terrain *t, const Player *p, Vector3 *pos, float *radius, int max) {
+    const World *w = t->world;
+    int n = 0;
+    for (int i = 0; i < w->cave_count && n + 1 < max; i++) {
+        const Cave *c = &w->caves[i];
+        if (c->kind < CAVE_BANDITS || dist_xz(c->x, c->z, p->pos.x, p->pos.z) > 120.0f) continue;
+        float ground = terrain_height(t, c->x, c->z);
+        for (int k = -1; k <= 1 && n < max; k += 2) {
+            float wx, wz;
+            cave_to_world(c, 1.7f * (float)k, -0.4f, &wx, &wz);
+            pos[n] = (Vector3){ wx, ground + 1.9f, wz };
+            radius[n++] = 6.0f;
         }
     }
-    for (int i = 0; i < c->remains.stalactites && i < 8; i++) {
-        float a = (float)i * 2.4f + c->yaw;
-        DrawCylinder((Vector3){ c->x + cosf(a) * 5.0f, ground + 2.5f, c->z + sinf(a) * 5.0f }, 0.18f, 0.36f, 1.4f, 6, rock);
-    }
-    for (int i = 0; i < c->remains.stalagmites && i < 8; i++) {
-        float a = (float)i * 2.1f + c->yaw * 0.5f;
-        DrawCylinder((Vector3){ c->x + cosf(a) * 4.0f, ground + 0.45f, c->z + sinf(a) * 4.0f }, 0.30f, 0.08f, 0.9f, 6, rock);
-    }
-    for (int i = 0; i < c->remains.nests; i++) {
-        const CaveRoom *r = &c->rooms[1 + i % (c->room_count - 1)];
-        Vector3 nest = cave_point(c, r, ground + r->floor_y + 0.35f);
-        DrawCylinder(nest, 0.8f, 0.55f, 0.18f, 8, (Color){ 86, 62, 40, 255 });
-        for (int e = 0; e < c->remains.eggs && e < 3; e++)
-            DrawSphere((Vector3){ nest.x + 0.2f * e, nest.y + 0.18f, nest.z + 0.12f * e }, 0.12f, (Color){ 218, 198, 142, 255 });
-    }
-    if (c->kind >= CAVE_BANDITS) {
-        for (int i = 0; i < c->remains.wall_torches && i < 6; i++) {
-            float a = (float)i * 1.7f + c->yaw;
-            Vector3 torch = { c->x + cosf(a) * 5.5f, ground + 2.0f, c->z + sinf(a) * 5.5f };
-            DrawCylinder(torch, 0.10f, 0.08f, 0.8f, 6, (Color){ 220, 100, 35, 255 });
-        }
-        for (int i = 0; i < c->remains.brick_columns && i < 5; i++) {
-            const CaveRoom *r = &c->rooms[1 + i % (c->room_count - 1)];
-            Vector3 column = cave_point(c, r, ground + r->floor_y + 1.3f);
-            DrawCylinder(column, 0.45f, 0.55f, 2.6f, 8, (Color){ 132, 82, 58, 255 });
-        }
-    }
+    return n;
 }
 
 // Un campamento de tribu: yurtas (o las casas de su region) en corro, la del jefe mas grande, el
@@ -232,7 +315,7 @@ void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, flo
     g_fires_out = ga->fires_out; // la lluvia apaga tambien los fuegos de los demas
     const World *w = t->world;
     for (int i = 0; i < w->cave_count; i++)
-        if (dist_xz(w->caves[i].x, w->caves[i].z, p->pos.x, p->pos.z) < DEN_DRAW) draw_cave(t, &w->caves[i]);
+        if (dist_xz(w->caves[i].x, w->caves[i].z, p->pos.x, p->pos.z) < DEN_DRAW) draw_cave(t, &w->caves[i], time);
     for (int i = 0; i < w->tribe_count; i++)
         if (dist_xz(w->tribes[i].x, w->tribes[i].z, p->pos.x, p->pos.z) < TRIBE_DRAW) draw_tribe(t, &w->tribes[i], i, time);
     for (int i = 0; i < w->site_count; i++)

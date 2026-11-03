@@ -349,9 +349,19 @@ static int animal_ahead(const GameActions *ga, const Player *p, AnimalState stat
 }
 
 // ---------------------------------------------------------------- acciones del jugador
+// En una cueva (src/game/cave_game.c): afuera el mundo se detiene y el jugador queda en la boca; adentro
+// solo se empuña, se enfunda y se enciende la antorcha (F es de la cueva).
+static bool g_in_cave;
+void ga_set_in_cave(bool on) { g_in_cave = on; }
+bool ga_in_cave(void) { return g_in_cave; }
+
 static void start_action(GameActions *ga, ActionId a, const Props *props, const Player *p, char *log, size_t len) {
     const ActionDef *d = action_def(a);
     if (ga->doing >= 0 || ga->climbing) return;
+    if (g_in_cave && a != ACTION_CHANGE_GRIP && a != ACTION_SHEATHE && a != ACTION_LIGHT_TORCH) {
+        snprintf(log, len, T("En la cueva no se puede: %s."), T(d->name));
+        return;
+    }
     if (d->requires && !has_item(ga, d->requires)) {
         snprintf(log, len, T("Te falta: %s."), item_name(ga, d->requires));
         return;
@@ -692,6 +702,10 @@ static bool big_enough(const GameActions *ga, const BuildDef *d, int k, char *lo
 static void start_build(GameActions *ga, BuildId b, const Terrain *t, const Player *p, char *log, size_t len) {
     (void)t;
     const BuildDef *d = build_def(b);
+    if (g_in_cave) {
+        snprintf(log, len, "%s", T("En la cueva no se construye: sal primero."));
+        return;
+    }
     if (ga->project_count >= GA_MAX_PROJECTS) {
         snprintf(log, len, "%s", T("Demasiadas obras a la vez."));
         return;
@@ -950,7 +964,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     if (g_order_req >= 0) ga_escort_order(ga, g_order_req, log, log_len), g_order_req = -1;
     // O: el objetivo siguiente (con Mayus, el anterior); L: el menu de acciones (v0.12.0: Tab es el
     // inventario, docs/PLAN_TACTICO_Y_CUEVAS.md).
-    if (input_action_pressed(KA_TARGET) && g_combat_near && !ga->menu_open && !other_menu) g_target_req = input_mods() & KM_SHIFT ? -1 : 1;
+    if (input_action_pressed(KA_TARGET) && g_combat_near && !g_in_cave && !ga->menu_open && !other_menu) g_target_req = input_mods() & KM_SHIFT ? -1 : 1;
     if ((input_action_pressed(KA_MENU) || g_quick_menu) && !other_menu) ga->menu_open = !ga->menu_open;
     g_quick_menu = false;
     // Lo que pide la barra rapida del HUD (teclas 1..9 o toques).
@@ -1034,7 +1048,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             default: ig_repair(ga, props, p, troop, &rep[*cur], log, log_len); break;
             }
         }
-    } else if (ga->doing < 0 && !ga->climbing && !other_menu) {
+    } else if (ga->doing < 0 && !ga->climbing && !other_menu && !g_in_cave) { // en la cueva, F es de src/game/cave_game.c
         if (input_action_pressed(KA_INTERACT)) interact(ga, troop, props, t, p, log, log_len);
         if (input_action_pressed(KA_THROW)) start_action(ga, ACTION_THROW, props, p, log, log_len);
         if (input_action_pressed(KA_MOUNT)) { // montar / desmontar
@@ -1392,13 +1406,13 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
 }
 
 // ---------------------------------------------------------------- dibujo
-static void draw_held(const InvItem *it, Vector3 local, bool shield) {
+static void draw_held(const InvItem *it, Vector3 local, bool shield, Color light) {
     if (!it) return;
     Vector3 size = shield ? (Vector3){ it->w, it->h, fmaxf(it->l, 0.06f) }
                           : (Vector3){ fmaxf(it->w, 0.04f), it->h, fmaxf(it->l, 0.04f) };
     Vector3 c = { local.x, local.y + size.y * 0.5f, local.z };
-    DrawCubeV(c, size, (Color){ 170, 170, 175, 255 });
-    DrawCubeWiresV(c, size, (Color){ 60, 55, 50, 255 });
+    DrawCubeV(c, size, ColorTint((Color){ 170, 170, 175, 255 }, light));
+    DrawCubeWiresV(c, size, ColorTint((Color){ 60, 55, 50, 255 }, light));
 }
 
 static Color role_color(Role r) {
@@ -1480,6 +1494,10 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         DrawSphere((Vector3){ hand.x, hand.y + 0.62f, hand.z }, 0.1f * flick, (Color){ 250, 160, 50, 255 });
     }
 
+    ga_draw_held(ga, p, time, WHITE);
+}
+
+void ga_draw_held(const GameActions *ga, const Player *p, float time, Color light) {
     // Lo que el jugador tiene en las manos.
     rlPushMatrix();
     rlTranslatef(p->pos.x, p->pos.y + p->draw_lift, p->pos.z);
@@ -1490,12 +1508,12 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
     // Cada mano por separado: lo de fuera, en la mano; lo guardado, al cinto (el arma) o a la
     // espalda (el escudo).
     bool r_out = hands_out(h, HAND_RIGHT), l_out = hands_out(h, HAND_LEFT);
-    if (!r_out) draw_held(r, (Vector3){ -0.32f, 0.35f, -0.1f }, false);
-    else if (h->right.kind == INV_HANDS_TWO) draw_held(r, (Vector3){ 0.0f, 0.5f, 0.45f }, false);
-    else draw_held(r, (Vector3){ -0.45f, 0.75f, 0.2f }, false);
-    if (!l_out) draw_held(l, (Vector3){ 0.0f, 0.6f, -0.3f }, l && l->hands == INV_HANDS_SHIELD);
+    if (!r_out) draw_held(r, (Vector3){ -0.32f, 0.35f, -0.1f }, false, light);
+    else if (h->right.kind == INV_HANDS_TWO) draw_held(r, (Vector3){ 0.0f, 0.5f, 0.45f }, false, light);
+    else draw_held(r, (Vector3){ -0.45f, 0.75f, 0.2f }, false, light);
+    if (!l_out) draw_held(l, (Vector3){ 0.0f, 0.6f, -0.3f }, l && l->hands == INV_HANDS_SHIELD, light);
     else {
-        draw_held(l, (Vector3){ 0.5f, 0.7f, 0.3f }, l && l->hands == INV_HANDS_SHIELD);
+        draw_held(l, (Vector3){ 0.5f, 0.7f, 0.3f }, l && l->hands == INV_HANDS_SHIELD, light);
         if (ga->torch_lit && l) {
             float flick = 0.8f + 0.2f * sinf(time * 17.0f);
             DrawSphere((Vector3){ 0.5f, 0.7f + l->h + 0.08f, 0.3f }, 0.11f * flick, (Color){ 250, 160, 50, 255 });
@@ -1505,8 +1523,8 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         const InvItem *c = inventory_find(ga->inv, h->carried);
         if (c) {
             Vector3 size = { fmaxf(c->l, 0.1f), fmaxf(c->h, 0.1f), fmaxf(c->w, 0.1f) };
-            DrawCubeV((Vector3){ 0, 1.15f, 0.45f }, size, (Color){ 190, 150, 100, 255 });
-            DrawCubeWiresV((Vector3){ 0, 1.15f, 0.45f }, size, (Color){ 80, 60, 40, 255 });
+            DrawCubeV((Vector3){ 0, 1.15f, 0.45f }, size, ColorTint((Color){ 190, 150, 100, 255 }, light));
+            DrawCubeWiresV((Vector3){ 0, 1.15f, 0.45f }, size, ColorTint((Color){ 80, 60, 40, 255 }, light));
         }
     }
     rlPopMatrix();
