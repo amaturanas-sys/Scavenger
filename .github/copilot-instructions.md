@@ -138,11 +138,16 @@ Además:
 - **La línea `Co-authored-by: Copilot`** que agregas a los commits se deja: dice quién hizo qué.
 
 ## Las skills (sobre todo, para lo que se ve)
-- **Están en `.claude/skills/`,** y el modo agente de Copilot en VS Code las carga desde ahí: también lee
-  `.github/skills/` y `.agents/skills/`, pero no se copian. Cada una entra sola por su descripción, o
-  nombrándola en el pedido («usa la skill estetica»).
+- **Están en `.claude/skills/`,** y Copilot las carga desde ahí: el modo agente de VS Code (con el harness
+  Local o el de Copilot) y el agente de Copilot que abre PRs. También lee `.github/skills/` y
+  `.agents/skills/`, pero no se copian. Cada una entra sola por su descripción, o con `/` y su nombre
+  (`/estetica`), o nombrándola en el pedido («usa la skill estetica»).
 - **Para pulir lo que se ve, la skill `estetica`:** el ciclo mirar → cambiar → volver a mirar, y qué
   herramienta usar en cada caso. Con ella van `cad` (text-to-CAD), `modelos` (TRELLIS.2) y `animaciones`.
-- **Lo marcado «solo en Claude Code»** (los agentes `gamedev-*` y `/gamedev`) no aplica a ti.
+- **El agente `pulir`** (`.github/agents/pulir.agent.md`, en el selector de agentes del chat) trae
+  cargadas `estepa` y `estetica` y sigue ese ciclo hasta el PR. Cuando tocas modelos, texturas, íconos o
+  cómo se dibuja el mundo, entra solo `.github/instructions/arte.instructions.md`.
+- **Los agentes `gamedev-*` y `/gamedev` son de Claude Code:** VS Code puede mostrarlos en el selector,
+  porque lee `.claude/agents/`, pero no los uses.
 - **El entorno lo deja `.devcontainer/setup.sh`:** text-to-CAD en `.venv-cad` con Chromium, ImageMagick, y
   Node para Kiln. Si falta text-to-CAD: `python3 tools/assets/cad.py instalar`.

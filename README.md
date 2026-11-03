@@ -37,8 +37,8 @@ compila de cero y corre las pruebas. Además deja listo lo de las skills de dise
 `bash .devcontainer/setup.sh`.
 
 Copilot (modo agente de VS Code) carga por su cuenta las skills de `.claude/skills/`, las mismas de
-Claude Code. Para pulir lo que se ve, la skill `estetica`; el detalle está en
-[docs/GUIA_IA.md](docs/GUIA_IA.md), sección 3.
+Claude Code. Para pulir lo que se ve, la skill `estetica` (`/estetica` en el chat) o el agente `pulir` del
+selector de agentes; el detalle está en [docs/GUIA_IA.md](docs/GUIA_IA.md), sección 3.
 
 Para trabajar con Cline (o cualquier IA) en el Codespace: las reglas están en `.clinerules` y el detalle,
 con el prompt para empezar cada sesión y la plantilla para pedir tareas, en

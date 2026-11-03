@@ -137,7 +137,7 @@ gastar a Claude, y el flujo de arriba no cambia: rama, PR, y Claude verifica y f
 
 | Quién | Cómo las usa |
 |---|---|
-| Copilot (modo agente de VS Code) | Las carga por su cuenta desde `.claude/skills/` (también lee `.github/skills/` y `.agents/skills/`). Entra la que corresponde por su descripción, o la que se nombra en el pedido. |
+| Copilot (modo agente de VS Code, con el harness Local o el de Copilot, y el agente que abre PRs) | Las carga por su cuenta desde `.claude/skills/` (también lee `.github/skills/` y `.agents/skills/`). Entra la que corresponde por su descripción, la que se pide con `/` (`/estetica`) o la que se nombra en el pedido. |
 | Claude Code | Las carga por su cuenta. |
 | Cline | Se le pide que lea el `SKILL.md` de la que haga falta. |
 
@@ -154,11 +154,15 @@ gastar a Claude, y el flujo de arriba no cambia: rama, PR, y Claude verifica y f
   falta en las versiones de VS Code donde las skills todavía son experimentales. Un Codespace creado antes de
   este cambio lo toma con *Codespaces: Rebuild Container*. Si solo falta text-to-CAD, alcanza con
   `python3 tools/assets/cad.py instalar`.
+- **El agente `pulir`** (`.github/agents/pulir.agent.md`): se elige en el selector de agentes del chat de
+  Copilot. Trae cargadas `estepa` y `estetica` y sigue el ciclo hasta el PR, sin tocar `VERSION` ni fusionar.
+  Cuando Copilot toca modelos, texturas, íconos o cómo se dibuja el mundo, entra solo
+  `.github/instructions/arte.instructions.md`, con las medidas y lo que no se hace.
 - **Un pedido de ejemplo:** «Usa la skill estetica: saca fotos de `estructura.vivienda.yurta_comun` con
   `cad.py foto` y en el juego con `--ver`, compárala con su medida del inventario y con el estilo de
   `assets/models/README.md`, y propón qué pulir antes de tocar nada».
 - **Lo que solo existe en Claude Code** (los agentes `gamedev-*`, `/gamedev`) no está para Copilot ni para
-  Cline.
+  Cline. VS Code puede mostrar esos agentes en su selector, porque lee `.claude/agents/`: no se usan.
 
 ## 4. La verificación de Claude Code
 
