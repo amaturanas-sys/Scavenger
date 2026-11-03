@@ -5649,6 +5649,9 @@ static void test_caves_are_deterministic_and_reachable(void) {
         for (int r = 0; r < ca->room_count; r++) CHECK(cave_room_reachable(ca, 0, r));
         CHECK(ca->corridors[0].one_way);
         CHECK(world_water(&a, ca->x, ca->z, 0.0f, NULL) < world_height(&a, ca->x, ca->z));
+        CHECK(ca->remains.stalactites > 0 && ca->remains.stalagmites > 0);
+        CHECK(ca->remains.nests > 0 && ca->remains.cistern_loot > 0);
+        CHECK(ca->remains.stalactites == cb->remains.stalactites && ca->remains.cistern_loot == cb->remains.cistern_loot);
     }
 }
 

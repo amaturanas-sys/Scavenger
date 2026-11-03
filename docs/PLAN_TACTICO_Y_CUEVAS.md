@@ -102,8 +102,8 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 - **Pruebas:** todas las recámaras se alcanzan, la bajada no se sube, siempre hay salida, nunca inundada.
 
 ### B2 — Lo que dejan los animales (v0.13.1)
-- **Lo común a todas:** estalactitas, estalagmitas, telarañas e insectos, vetas minerales, sangre en las paredes o el suelo, huesos de presas y humanos, charcos, y lo que dejó alguien que murió ahí.
-- **Tipo A (animales: osos, lobos, hienas, pumas, tigres):** nidos, huevos, presas, armas abandonadas y algún botín en la Cisterna.
+- **Hecho (primera version):** `CaveRemains` genera de forma determinista estalactitas, estalagmitas, telarañas e insectos, vetas minerales, sangre, huesos, charcos y restos de una muerte.
+- **Hecho (primera version):** las cuevas de animales generan nidos, huevos, presas, armas abandonadas y botín de la Cisterna; la boca muestra parte de la escenografía.
 - **Tipo F (abandonadas):** lo de las C, D o E en ruinas y abandono, habitadas por animales oportunistas.
 
 ### B3 — Los habitados (v0.13.2)

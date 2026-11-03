@@ -160,6 +160,21 @@ static void draw_cave(const Terrain *t, const Cave *c) {
             DrawCylinder((Vector3){ center.x, center.y + 1.6f, center.z }, r->radius + 0.25f, r->radius + 0.25f, 3.2f, 12, rock);
         }
     }
+    for (int i = 0; i < c->remains.stalactites && i < 8; i++) {
+        float a = (float)i * 2.4f + c->yaw;
+        DrawCylinder((Vector3){ c->x + cosf(a) * 5.0f, ground + 2.5f, c->z + sinf(a) * 5.0f }, 0.18f, 0.36f, 1.4f, 6, rock);
+    }
+    for (int i = 0; i < c->remains.stalagmites && i < 8; i++) {
+        float a = (float)i * 2.1f + c->yaw * 0.5f;
+        DrawCylinder((Vector3){ c->x + cosf(a) * 4.0f, ground + 0.45f, c->z + sinf(a) * 4.0f }, 0.30f, 0.08f, 0.9f, 6, rock);
+    }
+    for (int i = 0; i < c->remains.nests; i++) {
+        const CaveRoom *r = &c->rooms[1 + i % (c->room_count - 1)];
+        Vector3 nest = cave_point(c, r, ground + r->floor_y + 0.35f);
+        DrawCylinder(nest, 0.8f, 0.55f, 0.18f, 8, (Color){ 86, 62, 40, 255 });
+        for (int e = 0; e < c->remains.eggs && e < 3; e++)
+            DrawSphere((Vector3){ nest.x + 0.2f * e, nest.y + 0.18f, nest.z + 0.12f * e }, 0.12f, (Color){ 218, 198, 142, 255 });
+    }
 }
 
 // Un campamento de tribu: yurtas (o las casas de su region) en corro, la del jefe mas grande, el

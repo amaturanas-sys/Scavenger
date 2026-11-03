@@ -15,6 +15,11 @@ typedef enum {
 } CaveKind;
 
 typedef struct {
+    int stalactites, stalagmites, webs, insects, mineral_veins, blood, bones, puddles;
+    int nests, eggs, prey, abandoned_weapons, cistern_loot;
+} CaveRemains;
+
+typedef struct {
     float x, z;       // metros, relativos a la boca
     float floor_y;    // altura relativa: la Cisterna esta en 0
     float radius;
@@ -32,6 +37,7 @@ typedef struct {
     int region;
     CaveKind kind;
     int animal_species;
+    CaveRemains remains;
     int room_count;
     CaveRoom rooms[CAVE_ROOMS_MAX]; // 0: Cisterna Magna; 1..n: anillo
     CaveCorridor corridors[CAVE_CORRIDORS_MAX];

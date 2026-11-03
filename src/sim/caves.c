@@ -31,6 +31,19 @@ void cave_generate(Cave *c, uint32_t world_seed, int index, float x, float z, in
     c->region = region;
     c->kind = CAVE_ANIMAL;
     c->animal_species = species;
+    c->remains.stalactites = 2 + (int)(unit(&state) * 7.0f);
+    c->remains.stalagmites = 2 + (int)(unit(&state) * 6.0f);
+    c->remains.webs = 1 + (int)(unit(&state) * 5.0f);
+    c->remains.insects = 1 + (int)(unit(&state) * 4.0f);
+    c->remains.mineral_veins = 1 + (int)(unit(&state) * 4.0f);
+    c->remains.blood = (int)(unit(&state) * 3.0f);
+    c->remains.bones = 2 + (int)(unit(&state) * 8.0f);
+    c->remains.puddles = (int)(unit(&state) * 3.0f);
+    c->remains.nests = 1 + (int)(unit(&state) * 2.0f);
+    c->remains.eggs = 1 + (int)(unit(&state) * 5.0f);
+    c->remains.prey = 1 + (int)(unit(&state) * 3.0f);
+    c->remains.abandoned_weapons = (int)(unit(&state) * 3.0f);
+    c->remains.cistern_loot = 1 + (int)(unit(&state) * 4.0f);
     c->room_count = ring + 1;
 
     c->rooms[0] = (CaveRoom){ 0.0f, 18.0f, 0.0f, 7.0f };
