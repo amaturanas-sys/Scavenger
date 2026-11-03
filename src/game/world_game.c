@@ -162,6 +162,52 @@ static void mouth_torch(float x, float z, float base, float time, int k) {
     DrawSphere((Vector3){ x, base + 1.88f, z }, 0.07f * fl, (Color){ 255, 236, 170, 255 });
 }
 
+static void draw_natural_mouth(Color rock, float top) {
+    // Anillo irregular y estrecho: la abertura conserva 2,8 m de paso, pero no parece un portal construido.
+    static const float inner_x[] = { -1.30f, -1.40f, -1.10f, -0.52f, 0.20f, 0.86f, 1.32f, 1.40f };
+    static const float inner_y[] = { 0.00f, 1.10f, 2.15f, 2.85f, 3.12f, 2.75f, 1.85f, 0.00f };
+    static const float outer_x[] = { -4.25f, -4.35f, -3.70f, -2.35f, 0.20f, 2.55f, 3.85f, 4.55f };
+    static const float outer_y[] = { 0.00f, 1.65f, 3.45f, 4.75f, 5.55f, 4.85f, 3.30f, 0.00f };
+    const int n = (int)(sizeof(inner_x) / sizeof(inner_x[0]));
+    Color facets[] = {
+        ColorBrightness(rock, -0.18f), rock, ColorBrightness(rock, 0.10f), ColorBrightness(rock, -0.08f),
+        ColorBrightness(rock, 0.04f), ColorBrightness(rock, -0.22f), ColorBrightness(rock, -0.04f),
+    };
+    float scale = top / 3.12f;
+    Vector3 in[8], out[8], deep[8];
+    for (int i = 0; i < n; i++) {
+        in[i] = (Vector3){ inner_x[i], inner_y[i] * scale, 0.28f };
+        out[i] = (Vector3){ outer_x[i], outer_y[i] * scale, 0.28f };
+        deep[i] = (Vector3){ outer_x[i], outer_y[i] * scale, 4.25f };
+    }
+    rlBegin(RL_TRIANGLES);
+    for (int i = 0; i < n - 1; i++) {
+        Color c = facets[i];
+        rlColor4ub(c.r, c.g, c.b, 255);
+        rlVertex3f(out[i].x, out[i].y, out[i].z);
+        rlVertex3f(out[i + 1].x, out[i + 1].y, out[i + 1].z);
+        rlVertex3f(in[i + 1].x, in[i + 1].y, in[i + 1].z);
+        rlVertex3f(out[i].x, out[i].y, out[i].z);
+        rlVertex3f(in[i + 1].x, in[i + 1].y, in[i + 1].z);
+        rlVertex3f(in[i].x, in[i].y, in[i].z);
+        // La cara exterior se mete en la ladera para que el borde no sea una lámina plana.
+        c = ColorBrightness(c, -0.20f);
+        rlColor4ub(c.r, c.g, c.b, 255);
+        rlVertex3f(out[i].x, out[i].y, out[i].z);
+        rlVertex3f(deep[i].x, deep[i].y, deep[i].z);
+        rlVertex3f(deep[i + 1].x, deep[i + 1].y, deep[i + 1].z);
+        rlVertex3f(out[i].x, out[i].y, out[i].z);
+        rlVertex3f(deep[i + 1].x, deep[i + 1].y, deep[i + 1].z);
+        rlVertex3f(out[i + 1].x, out[i + 1].y, out[i + 1].z);
+    }
+    rlEnd();
+    // Bloques bajos y facetados: rompen la silueta recta y dan escala al umbral.
+    DrawSphereEx((Vector3){ -3.2f, 0.65f, 0.55f }, 1.35f, 6, 5, ColorBrightness(rock, -0.12f));
+    DrawSphereEx((Vector3){ 3.35f, 0.80f, 0.70f }, 1.45f, 6, 5, ColorBrightness(rock, -0.20f));
+    DrawSphereEx((Vector3){ -2.15f, top * 0.92f, 1.10f }, 1.35f, 6, 5, ColorBrightness(rock, 0.04f));
+    DrawSphereEx((Vector3){ 1.95f, top * 1.05f, 1.35f }, 1.55f, 6, 5, ColorBrightness(rock, -0.08f));
+}
+
 static void draw_cave(const Terrain *t, const Cave *c, float time) {
     // El pie del peñasco: lo mas bajo del terreno alrededor (en una ladera no queda en el aire).
     float ground = terrain_height(t, c->x, c->z), base = ground;
@@ -172,21 +218,17 @@ static void draw_cave(const Terrain *t, const Cave *c, float time) {
     }
     base -= 0.4f;
     Color rock = c->region == REGION_DESERT ? (Color){ 170, 120, 84, 255 } : c->region == REGION_HIGHLAND ? (Color){ 124, 126, 132, 255 } : (Color){ 112, 108, 100, 255 };
-    Color dark = ColorBrightness(rock, -0.25f), dressed = { 196, 184, 160, 255 };
+    Color dark = ColorBrightness(rock, -0.25f);
     bool empire = c->kind == CAVE_EMPIRE;
     float top = ground - base + 3.0f; // el alto de la abertura (sobre el pie)
     rlPushMatrix();
     rlTranslatef(c->x, base, c->z);
     rlRotatef(c->yaw * RAD2DEG, 0, 1, 0); // +z del dibujo: hacia adentro (cave_to_world)
-    // El peñasco: dos jambas, el dintel y un monticulo encima; la abertura, de 2,8 m.
-    DrawCube((Vector3){ -2.7f, top * 0.5f, 2.6f }, 2.6f, top, 4.6f, empire ? dressed : rock);
-    DrawCube((Vector3){ 2.7f, top * 0.5f, 2.6f }, 2.6f, top, 4.6f, empire ? dressed : rock);
-    DrawCube((Vector3){ 0.0f, top + 0.7f, 2.6f }, 8.0f, 1.4f, 4.6f, empire ? dressed : rock);
-    DrawSphereEx((Vector3){ -1.4f, top + 1.2f, 3.6f }, 2.6f, 6, 8, dark);
-    DrawSphereEx((Vector3){ 1.8f, top + 1.0f, 4.0f }, 2.9f, 6, 8, rock);
-    DrawSphereEx((Vector3){ -3.1f, top * 0.6f, 4.4f }, 1.6f, 6, 8, dark); // a los costados, dentro de la huella (wd_keep_out_of_rock)
-    DrawSphereEx((Vector3){ 3.1f, top * 0.55f, 4.6f }, 1.6f, 6, 8, rock);
-    DrawCube((Vector3){ 0.0f, top * 0.5f + 0.2f, 5.6f }, 9.0f, top + 1.8f, 2.4f, dark); // el fondo del peñasco
+    // La boca es natural en todos los biomas; el tipo de cueva se lee después por sus adornos.
+    draw_natural_mouth(rock, top);
+    DrawSphereEx((Vector3){ -1.7f, top * 1.25f, 4.4f }, 2.5f, 6, 5, dark);
+    DrawSphereEx((Vector3){ 1.8f, top * 1.20f, 4.7f }, 2.8f, 6, 5, ColorBrightness(dark, 0.08f));
+    DrawSphereEx((Vector3){ 0.0f, top * 0.52f, 5.1f }, 2.2f, 6, 5, ColorBrightness(dark, -0.10f));
     // El tunel: se oscurece hacia adentro (a los 4 m ya no se ve nada). Sin descartar caras (vaciando el lote antes
     // y despues: raylib dibuja al final).
     rlDrawRenderBatchActive();
