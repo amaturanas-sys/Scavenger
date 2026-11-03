@@ -5703,7 +5703,7 @@ static void test_caves(void) {
     if (!text) return;
     inventory_parse(&inv, text);
     const unsigned seeds[] = { 1206u, 42u, 7u };
-    int kinds[CAVE_KINDS] = { 0 }, prisoners = 0, loot = 0, rooms_total = 0, rings[CAVE_ROOMS_MAX] = { 0 };
+    int kinds[CAVE_KINDS] = { 0 }, prisoners = 0, loot = 0, rings[CAVE_ROOMS_MAX] = { 0 };
     for (int si = 0; si < 3; si++) {
         world_generate(&a, seeds[si]);
         world_generate(&b, seeds[si]);
@@ -5716,7 +5716,6 @@ static void test_caves(void) {
             CHECK(world_water(&a, c->x, c->z, 0.0f, NULL) < world_height(&a, c->x, c->z) - 0.5f); // la boca, en seco
             kinds[c->kind]++;
             rings[c->room_count - 1]++;
-            rooms_total += c->room_count;
             // El suelo: el centro de cada sala es suyo y a su altura; lejos de todo, roca.
             for (int r = 0; r < c->room_count; r++) {
                 float y;
