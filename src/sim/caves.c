@@ -44,6 +44,20 @@ void cave_generate(Cave *c, uint32_t world_seed, int index, float x, float z, in
     c->remains.prey = 1 + (int)(unit(&state) * 3.0f);
     c->remains.abandoned_weapons = (int)(unit(&state) * 3.0f);
     c->remains.cistern_loot = 1 + (int)(unit(&state) * 4.0f);
+    if (unit(&state) < 0.18f) c->kind = CAVE_ABANDONED;
+    else if (unit(&state) < 0.38f) c->kind = CAVE_BANDITS;
+    else if (unit(&state) < 0.68f) c->kind = CAVE_TRIBE;
+    else if (unit(&state) < 0.88f) c->kind = CAVE_EMPIRE;
+    if (c->kind >= CAVE_BANDITS) {
+        c->remains.wall_torches = 2 + (int)(unit(&state) * 5.0f);
+        c->remains.brick_columns = 1 + (int)(unit(&state) * 5.0f);
+        c->remains.chests = (int)(unit(&state) * 4.0f);
+        c->remains.amphorae = 1 + (int)(unit(&state) * 6.0f);
+        c->remains.weapon_stores = 1 + (int)(unit(&state) * 3.0f);
+        c->remains.prisoner_cells = 1 + (int)(unit(&state) * 4.0f);
+        c->prisoner_count = (int)(unit(&state) * 4.0f);
+        c->traitor_risk = c->kind == CAVE_BANDITS ? 70 : c->kind == CAVE_TRIBE ? 35 : 15;
+    }
     c->room_count = ring + 1;
 
     c->rooms[0] = (CaveRoom){ 0.0f, 18.0f, 0.0f, 7.0f };

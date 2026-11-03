@@ -11,12 +11,16 @@
 typedef enum {
     CAVE_ANIMAL,
     CAVE_ABANDONED,
+    CAVE_BANDITS,
+    CAVE_TRIBE,
+    CAVE_EMPIRE,
     CAVE_KINDS
 } CaveKind;
 
 typedef struct {
     int stalactites, stalagmites, webs, insects, mineral_veins, blood, bones, puddles;
     int nests, eggs, prey, abandoned_weapons, cistern_loot;
+    int wall_torches, brick_columns, chests, amphorae, weapon_stores, prisoner_cells;
 } CaveRemains;
 
 typedef struct {
@@ -37,6 +41,8 @@ typedef struct {
     int region;
     CaveKind kind;
     int animal_species;
+    int prisoner_count;
+    int traitor_risk;
     CaveRemains remains;
     int room_count;
     CaveRoom rooms[CAVE_ROOMS_MAX]; // 0: Cisterna Magna; 1..n: anillo

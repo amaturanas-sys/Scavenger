@@ -5638,6 +5638,7 @@ static void test_world_dry(void) {
 
 static void test_caves_are_deterministic_and_reachable(void) {
     World a, b;
+    int inhabited = 0;
     world_generate(&a, 1206u);
     world_generate(&b, 1206u);
     CHECK(a.cave_count == a.den_count && a.cave_count > 0);
@@ -5652,7 +5653,14 @@ static void test_caves_are_deterministic_and_reachable(void) {
         CHECK(ca->remains.stalactites > 0 && ca->remains.stalagmites > 0);
         CHECK(ca->remains.nests > 0 && ca->remains.cistern_loot > 0);
         CHECK(ca->remains.stalactites == cb->remains.stalactites && ca->remains.cistern_loot == cb->remains.cistern_loot);
+        CHECK(ca->kind == cb->kind && ca->prisoner_count == cb->prisoner_count);
+        if (ca->kind >= CAVE_BANDITS) {
+            inhabited++;
+            CHECK(ca->remains.wall_torches > 0 && ca->remains.prisoner_cells > 0);
+            CHECK(ca->traitor_risk >= 15 && ca->traitor_risk <= 70);
+        }
     }
+    CHECK(inhabited > 0);
 }
 
 int main(void) {

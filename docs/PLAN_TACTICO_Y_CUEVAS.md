@@ -107,8 +107,8 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 - **Tipo F (abandonadas):** lo de las C, D o E en ruinas y abandono, habitadas por animales oportunistas.
 
 ### B3 — Los habitados (v0.13.2)
-- **Tipos C, D y E (forajidos, tribus, imperio):** pinturas rupestres, restos de fogatas, antorchas encendidas en las paredes, paredes y columnas de ladrillo, cofres, ánforas, cerámica, esculturas, depósitos de armas y armaduras, el calabozo con cadenas y grilletes.
-- **Los prisioneros:** al rescatarlos, una tirada decide si se unen a la tropa o te traicionan e intentan saquearte. Quién es cuenta: un forajido traiciona más que un pastor.
+- **Hecho (primera version):** la semilla clasifica cuevas en abandonadas, forajidos, tribus e imperios y genera antorchas, columnas, cofres, ánforas, depósitos de armas y celdas.
+- **Hecho (primera version):** cada cueva habitada tiene prisioneros y un riesgo de traición determinista: mayor en forajidos, menor en imperios.
 - **El tipo B (bestias terribles)** queda pendiente, como dice la hoja.
 
 ---

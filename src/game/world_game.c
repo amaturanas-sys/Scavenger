@@ -175,6 +175,18 @@ static void draw_cave(const Terrain *t, const Cave *c) {
         for (int e = 0; e < c->remains.eggs && e < 3; e++)
             DrawSphere((Vector3){ nest.x + 0.2f * e, nest.y + 0.18f, nest.z + 0.12f * e }, 0.12f, (Color){ 218, 198, 142, 255 });
     }
+    if (c->kind >= CAVE_BANDITS) {
+        for (int i = 0; i < c->remains.wall_torches && i < 6; i++) {
+            float a = (float)i * 1.7f + c->yaw;
+            Vector3 torch = { c->x + cosf(a) * 5.5f, ground + 2.0f, c->z + sinf(a) * 5.5f };
+            DrawCylinder(torch, 0.10f, 0.08f, 0.8f, 6, (Color){ 220, 100, 35, 255 });
+        }
+        for (int i = 0; i < c->remains.brick_columns && i < 5; i++) {
+            const CaveRoom *r = &c->rooms[1 + i % (c->room_count - 1)];
+            Vector3 column = cave_point(c, r, ground + r->floor_y + 1.3f);
+            DrawCylinder(column, 0.45f, 0.55f, 2.6f, 8, (Color){ 132, 82, 58, 255 });
+        }
+    }
 }
 
 // Un campamento de tribu: yurtas (o las casas de su region) en corro, la del jefe mas grande, el
