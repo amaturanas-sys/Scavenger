@@ -64,6 +64,9 @@ static float dist2(Vector3 a, Vector3 b) { return Vector2Distance((Vector2){ a.x
 static bool g_hud_attack_press, g_hud_attack_down, g_hud_block, g_hud_parry, g_hud_charge, g_hud_grab;
 static int g_back; // el enemigo con la espalda ganada + 1 (la daga sobre el; 0: ninguno)
 static bool g_click_used; // ese clic eligio un objetivo: no es un golpe
+// El clic con arma a distancia (A3, las hojas): izquierdo [0] y derecho [1].
+static float g_tclick_held[2], g_tclick_moved[2];
+static bool g_tclick_live[2], g_tclick_done[2], g_tclick_picked[2];
 
 static V3 to_v3(Vector3 v) { return (V3){ v.x, v.y, v.z }; }
 static Vector3 to_vec(V3 v) { return (Vector3){ v.x, v.y, v.z }; }
@@ -784,11 +787,15 @@ static Enemy *locked(Combat *cb) {
 
 const Enemy *cb_target(const Combat *cb) { return locked((Combat *)cb); }
 
+// Un animal se puede elegir de objetivo si es salvaje (para cazarlo o echarle el lazo): el ganado, los
+// domados y las monturas de la tribu no.
+static bool animal_targetable(const Animal *a) { return a->used && a->state == ANIMAL_WILD && !a->ridden; }
+
 static const Animal *locked_animal(const Combat *cb, const GameActions *ga) {
     int i = -cb->target_lock - 1;
     if (cb->target_lock >= 0 || !ga || i < 0 || i >= ga->animal_count) return NULL;
     const Animal *a = &ga->animals[i];
-    return a->used && a->state != ANIMAL_DEAD && !a->ridden ? a : NULL;
+    return animal_targetable(a) ? a : NULL;
 }
 
 const Animal *cb_target_animal(const Combat *cb, const GameActions *ga) {
@@ -802,7 +809,7 @@ static int target_cands(const Combat *cb, const GameActions *ga, TargetCand *c) 
     }
     for (int i = 0; ga && i < ga->animal_count && i < GA_MAX_ANIMALS; i++) {
         const Animal *a = &ga->animals[i];
-        c[CB_MAX_ENEMIES + i] = (TargetCand){ a->x, a->z, a->used && a->state != ANIMAL_DEAD && !a->ridden };
+        c[CB_MAX_ENEMIES + i] = (TargetCand){ a->x, a->z, animal_targetable(a) };
     }
     return CB_MAX_ENEMIES + (ga ? GA_MAX_ANIMALS : 0);
 }
@@ -830,34 +837,44 @@ void cb_cycle_target(Combat *cb, const GameActions *ga, const Terrain *terrain, 
     }
 }
 
+// La linea de vision entre dos puntos: la tapan el relieve y las formaciones de roca (los voxeles), si
+// la linea pasa a menos de 3 m del suelo junto a ellas.
 static bool target_line_of_sight(const Terrain *t, Vector3 from, Vector3 to) {
     if (!t) return true;
     for (int i = 1; i < 8; i++) {
         float k = i / 8.0f;
-        float x = Lerp(from.x, to.x, k), z = Lerp(from.z, to.z, k);
-        if (terrain_height(t, x, z) > Lerp(from.y, to.y, k) - 0.35f) return false;
+        float x = Lerp(from.x, to.x, k), z = Lerp(from.z, to.z, k), y = Lerp(from.y, to.y, k), ground = terrain_height(t, x, z);
+        if (ground > y - 0.35f) return false;
+        if (y - ground < 3.0f && terrain_near_feature(t, x, z, 0.0f)) return false;
     }
     return true;
 }
 
-static bool target_valid(const Combat *cb, const GameActions *ga, const Terrain *t, const Player *p) {
-    if (!cb->target_lock) return false;
-    Vector3 pos;
+// Donde esta el objetivo (el pecho) y si se lo ve; false si ya no vale (muerto o fuera).
+static bool target_pos(const Combat *cb, const GameActions *ga, const Terrain *t, Vector3 *out) {
     if (cb->target_lock > 0) {
         const Enemy *e = locked((Combat *)cb);
         if (!e) return false;
-        pos = (Vector3){ e->pos.x, e->pos.y + (e->mounted ? 2.1f : 1.1f), e->pos.z };
-    } else {
-        const Animal *a = locked_animal(cb, ga);
-        if (!a) return false;
-        pos = (Vector3){ a->x, terrain_height(t, a->x, a->z) + species_def(a->species)->size * 0.6f + a->alt, a->z };
+        *out = (Vector3){ e->pos.x, e->pos.y + (e->mounted ? 2.1f : 1.1f), e->pos.z };
+        return true;
     }
-    return dist2(pos, p->pos) <= TARGET_RANGE &&
-           target_line_of_sight(t, (Vector3){ p->pos.x, p->pos.y + player_eye_height(p), p->pos.z }, pos);
+    const Animal *a = locked_animal(cb, ga);
+    if (!a) return false;
+    *out = (Vector3){ a->x, terrain_height(t, a->x, a->z) + species_def(a->species)->size * 0.6f + a->alt, a->z };
+    return true;
 }
 
-static void keep_target(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p) {
-    if (cb->target_lock && !target_valid(cb, ga, t, p)) cb->target_lock = 0;
+// El objetivo se pierde muerto o a mas de TARGET_RANGE; sin verlo (el relieve, una roca), a los
+// TARGET_UNSEEN_S s; cubierto (C), no se pierde (las hojas: «objetivo se mantiene selecto»).
+static void keep_target(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p, float dt) {
+    if (!cb->target_lock) {
+        cb->target_unseen = 0.0f;
+        return;
+    }
+    Vector3 pos;
+    bool alive = target_pos(cb, ga, t, &pos);
+    bool seen = alive && target_line_of_sight(t, (Vector3){ p->pos.x, p->pos.y + player_eye_height(p), p->pos.z }, pos);
+    if (!target_hold(&cb->target_unseen, alive, alive ? dist2(pos, p->pos) : 1e9f, seen, p->covered, dt)) cb->target_lock = 0;
 }
 
 bool cb_pick_target(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p,
@@ -878,7 +895,7 @@ bool cb_pick_target(Combat *cb, const GameActions *ga, const Terrain *t, const P
     }
     for (int i = 0; ga && i < ga->animal_count && i < GA_MAX_ANIMALS; i++) {
         const Animal *a = &ga->animals[i];
-        if (!a->used || a->state == ANIMAL_DEAD || a->ridden) continue;
+        if (!animal_targetable(a)) continue;
         Vector3 pos = { a->x, terrain_height(t, a->x, a->z) + species_def(a->species)->size * 0.6f + a->alt, a->z };
         Vector3 to = Vector3Subtract(pos, cam.position);
         if (Vector3DotProduct(to, Vector3Subtract(cam.target, cam.position)) <= 0.0f ||
@@ -1476,11 +1493,10 @@ static bool aim_at_target(Combat *cb, const GameActions *ga, const Terrain *t, P
 static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *props, const RangedDef *rd, bool can_act,
                           float cam_yaw, float cam_pitch, float dt, char *log, size_t len) {
     const char *ammo = projectile_def(rd->projectile)->ammo;
-    bool click = !hud_pointer_over() && !g_click_used;
-    bool held = input_action_down(KA_ATTACK) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && click) || g_hud_attack_down;
-    bool released = input_action_released(KA_ATTACK) || (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && click) ||
-                    (cb->aiming && !held);
-    bool pressed = input_action_pressed(KA_ATTACK) || (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && click) || g_hud_attack_press;
+    // H (o su casilla) tensa y dispara; con un arma a distancia el clic elige objetivo (ranged_clicks).
+    bool held = input_action_down(KA_ATTACK) || g_hud_attack_down;
+    bool released = input_action_released(KA_ATTACK) || (cb->aiming && !held);
+    bool pressed = input_action_pressed(KA_ATTACK) || g_hud_attack_press;
     cb->aim_pitch = aim_pitch_from_camera(cam_pitch);
     if (!can_act) {
         cb->aiming = false;
@@ -1495,7 +1511,7 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
         return;
     }
     bool was_aiming = cb->aiming;
-    if (pressed && p->covered) p->covered = false; // asomarse al tensar desde la cobertura
+    if (pressed && p->covered) p->covered = false, p->peeking = true; // te asomas para tirar (A4)
     cb->aiming = held && cb->reload <= 0.0f && ammo_left > 0;
     float tension = rd->draw_time > 0.0f ? fminf(1.0f, cb->draw / rd->draw_time) : 1.0f;
     if (cb->aiming) {
@@ -1518,7 +1534,6 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
         steady *= 1.0f + 1.5f * wg_clumsy(ga);
         Shot *sh = fire(cb, rd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0, cb->arrow_lit, steady);
         if (sh && riding && shot_is_parthian(cb->pl_speed, rel)) sh->parthian = true;
-        if (p->cover_pos.x != 0.0f || p->cover_pos.z != 0.0f) p->covered = true;
         cb->arrow_lit = false;
         cb->reload = rd->reload;
         cb->draw = 0.0f;
@@ -1713,6 +1728,7 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
             continue;
         }
         e->alert = fmaxf(0.0f, e->alert - dt);
+        e->spot_flash = fmaxf(0.0f, e->spot_flash - dt);
         if (e->state == EN_DOWN) { // abatido: en el suelo hasta despertar; despierta herido, huye y avisa a los suyos
             e->speed = 0.0f;
             if (down_tick(&e->timer, dt)) {
@@ -1777,13 +1793,21 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         if (!cb->player.down) {
             float d = dist2(e->pos, p->pos);
             Vector3 eye = { e->pos.x, e->pos.y + (e->mounted ? 2.1f : 1.1f), e->pos.z };
-            bool visible = d < sight && !ga_cover_blocks(ga, p, e->pos) &&
-                           target_line_of_sight(t, eye, (Vector3){ p->pos.x, p->pos.y + player_eye_height(p), p->pos.z });
-            if (visible) e->spotting += dt;
+            bool covered = ga_cover_blocks(ga, p, e->pos);
+            bool visible = d < 2.0f || (d < sight && !covered &&
+                                        target_line_of_sight(t, eye, (Vector3){ p->pos.x, p->pos.y + player_eye_height(p), p->pos.z }));
+            if (visible) e->spotting += dt, e->last_seen = p->pos;
             else e->spotting = fmaxf(0.0f, e->spotting - dt * 0.5f);
-            float recognition = ga->torch_lit ? 3.0f : night ? 7.0f : 5.0f;
+            // Te reconoce a los 5 s de dia, 7 de noche o 3 con la antorcha; de cerca, antes (src/sim/stealth.h).
+            float recognition = stealth_recognition_seconds(night, ga->torch_lit, d, def->sight);
             bool recognized = e->spotting >= recognition;
-            if (recognized || (e->target == 0 && d < sight * 1.5f) || (e->alert > 0.0f && d < 60.0f))
+            if (recognized && e->target != 0) e->spot_flash = 1.5f; // el «!»
+            if (e->target == 0 && covered && !visible && e->alert <= 0.0f) {
+                // Cubierto: no te ve; va a buscarte donde te vio, y si alli no te encuentra, desiste.
+                Vector3 ls = e->last_seen.x == 0.0f && e->last_seen.z == 0.0f ? p->pos : e->last_seen;
+                if (dist2(e->pos, ls) > 2.0f) best = d, target = 0, tpos = ls;
+                else e->spotting = 0.0f;
+            } else if (recognized || (e->target == 0 && d < sight * 1.5f) || (e->alert > 0.0f && d < 60.0f))
                 best = d, target = 0, tpos = p->pos;
         }
         for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
@@ -2605,6 +2629,35 @@ void cb_request_bandage(void) { g_bandage_req = true; }
 static bool g_light_req; // encender la flecha, pedido desde la columna del HUD
 void cb_request_light_arrow(void) { g_light_req = true; }
 
+// Con un arma a distancia en la mano (las hojas, A3): un clic corto, izquierdo o derecho, elige al de
+// delante; con objetivo, pasa al de la izquierda (izquierdo) o al de la derecha (derecho). Mantenerlo
+// 1 s lo suelta. Arrastrar (la camara) no cuenta, ni el clic que ya eligio a alguien al tocarlo.
+static void ranged_clicks(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p, float dt, char *log, size_t len) {
+    for (int b = 0; b < 2; b++) {
+        int btn = b == 0 ? MOUSE_BUTTON_LEFT : MOUSE_BUTTON_RIGHT;
+        if (IsMouseButtonPressed(btn)) {
+            g_tclick_live[b] = !hud_pointer_over();
+            g_tclick_held[b] = g_tclick_moved[b] = 0.0f;
+            g_tclick_done[b] = false;
+            g_tclick_picked[b] = g_click_used; // un toque sobre alguien ya lo eligio (cb_pick_target)
+        }
+        if (!g_tclick_live[b]) continue;
+        bool up = IsMouseButtonReleased(btn);
+        if (IsMouseButtonDown(btn)) g_tclick_held[b] += dt;
+        Vector2 md = GetMouseDelta();
+        g_tclick_moved[b] += fabsf(md.x) + fabsf(md.y);
+        TargetClick c = target_click(g_tclick_held[b], g_tclick_moved[b] > 6.0f, up, g_tclick_done[b]);
+        if (c == TCLICK_RELEASE) {
+            if (cb->target_lock) snprintf(log, len, "%s", T("Sueltas el objetivo."));
+            cb->target_lock = 0;
+            g_tclick_done[b] = true;
+        } else if (c == TCLICK_SELECT && !g_tclick_picked[b]) {
+            cb_cycle_target(cb, ga, t, p, b == 0 ? TARGET_LEFT : TARGET_RIGHT, log, len);
+        }
+        if (up) g_tclick_live[b] = false;
+    }
+}
+
 void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *props, const Terrain *t, Vector3 camp_fire,
                bool input_ok, bool night, bool winter, float cam_yaw, float cam_pitch, float dt, char *log, size_t log_len) {
     float time = (float)GetTime();
@@ -2651,17 +2704,25 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
             snprintf(g_hint, sizeof(g_hint), "%s", T("Abatido: F lo toma prisionero · H lo remata"));
     }
     // El objetivo se pierde a TARGET_RANGE o si muere; O pasa al siguiente (Mayus+O, al anterior).
-    keep_target(cb, ga, t, p);
+    keep_target(cb, ga, t, p, dt);
+    if (rd && input_ok) ranged_clicks(cb, ga, t, p, dt, log, log_len);
+    // Con objetivo, el personaje lo mira siempre y camina de costado (las hojas); corriendo, a caballo
+    // o trepando, no.
+    Vector3 tp;
+    if (target_pos(cb, ga, t, &tp) && ga->mounted < 0 && !ga->climbing && !(p->stance == STANCE_RUN && p->moving))
+        p->yaw = atan2f(tp.x - p->pos.x, tp.z - p->pos.z);
+    const Animal *ta = locked_animal(cb, ga);
+    ga_set_target_animal(ta ? (int)(ta - ga->animals) : -1); // el lazo lo busca primero
     int req = ga_take_target_request();
     if (req && input_ok) cb_cycle_target(cb, ga, t, p, req, log, log_len);
     // Q/E: cambiar objetivo (izquierda/derecha)
-    if (input_action_pressed(KA_TARGET_LEFT) && input_ok) cb_cycle_target(cb, ga, t, p, -1, log, log_len);
-    if (input_action_pressed(KA_TARGET_RIGHT) && input_ok) cb_cycle_target(cb, ga, t, p, 1, log, log_len);
+    if (input_action_pressed(KA_TARGET_LEFT) && input_ok) cb_cycle_target(cb, ga, t, p, TARGET_LEFT, log, log_len);
+    if (input_action_pressed(KA_TARGET_RIGHT) && input_ok) cb_cycle_target(cb, ga, t, p, TARGET_RIGHT, log, log_len);
     // J (o el clic derecho sin arrastrar): cubrirse. Con escudo, de frente; sin escudo, con el arma
     // de mano, que cansa (agotado no se puede). A distancia, J baja el arma y solo cubre el escudo.
     bool shield = player_has_shield(ga);
     bool melee_weapon = !rd && hands_attack_weapon(&ga->hands, 1, NULL)[0] != '\0';
-    bool guard_key = input_action_down(KA_BLOCK) || input_right_hold() || g_hud_block;
+    bool guard_key = input_action_down(KA_BLOCK) || (!rd && input_right_hold()) || g_hud_block; // con arco, el clic derecho elige
     cb->blocking = can_act && guard_key && !ga->hands.sheathed && cb->stagger <= 0.0f && cb->exposed <= 0.0f && !cb->hostage &&
                    (shield || (melee_weapon && !player_winded()));
     // G: agarrar por la espalda (rehen) o soltarlo. Un golpe fuerte, caer o montar lo sueltan.
@@ -2701,8 +2762,20 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
             player_move(cb, p, ga, t, props, MOVE_KICK, log, log_len);
     } else {
         cb->aiming = false;
+        // Golpear, parar o cargar desde la cobertura te saca de ella (A4).
+        if (p->covered && (input_action_pressed(KA_ATTACK) || input_action_pressed(KA_PARRY) || input_action_pressed(KA_CHARGE) ||
+                           g_hud_attack_press || g_hud_parry || g_hud_charge))
+            p->covered = p->peeking = false;
         player_melee_input(cb, p, ga, troop, t, props, can_act && cb->stagger <= 0.0f && cb->exposed <= 0.0f, dt, log, log_len);
     }
+    // Asomado con el arco: al dejar de apuntar (la flecha suelta), vuelves a cubrirte si sigues junto al
+    // obstaculo (A4).
+    if (p->peeking && !cb->aiming) {
+        p->peeking = false;
+        if (dist2(p->pos, p->cover_pos) < p->cover_radius + 1.2f) p->covered = true;
+    }
+    if (p->covered && !g_hint[0])
+        snprintf(g_hint, sizeof(g_hint), "%s", rd ? T("A cubierto: H te asoma para tirar · C o moverte: salir") : T("A cubierto: C o moverte: salir"));
     if (input_ok && (input_action_pressed(KA_BANDAGE) || g_bandage_req)) bandage(cb, ga, troop, props, p, log, log_len);
     g_bandage_req = false;
     if (input_ok && input_debug() && IsKeyPressed(KEY_NINE)) { // prueba (con Ctrl+D): enemigos delante
@@ -2987,6 +3060,17 @@ void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop
         if (e->state == EN_DOWN) { // abatido: una barra gris con lo que le falta para despertar
             bar_at(cam, e->pos, 0.7f, e->timer / DOWN_WAKE_MAX, UI_BONE_DIM, w, h, false);
             continue;
+        }
+        // Te esta viendo y aun no te reconoce: un «?» que se aviva; te acaba de reconocer: un «!» (A3).
+        if ((e->target != 0 && e->spotting > 0.3f) || e->spot_flash > 0.0f) {
+            Vector3 head = { e->pos.x, e->pos.y + (e->mounted ? 3.5f : 2.45f), e->pos.z };
+            Vector3 to = Vector3Subtract(head, cam.position);
+            if (Vector3DotProduct(to, Vector3Subtract(cam.target, cam.position)) > 0.0f && Vector3Length(to) < 45.0f) {
+                Vector2 s = GetWorldToScreenEx(head, cam, w, h);
+                bool seen = e->spot_flash > 0.0f;
+                float k = seen ? 1.0f : Clamp(e->spotting / 3.0f, 0.25f, 1.0f);
+                ui_text_centered(seen ? "!" : "?", (int)s.x, (int)s.y - 6, 20, Fade(seen ? UI_CARNELIAN : UI_GOLD_LIGHT, k));
+            }
         }
         if (!target && e->shown <= 0.0f && e->target < 0) continue;
         float top = e->mounted ? 3.1f : 2.0f;

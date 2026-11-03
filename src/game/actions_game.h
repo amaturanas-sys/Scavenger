@@ -244,9 +244,10 @@ int ga_marching(const GameActions *ga);
 float ga_speed_scale(const GameActions *ga);
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
                size_t log_len);
-// C junto a un obstaculo activa o desactiva la cobertura; lejos de ellos queda como sigilo.
-void ga_toggle_cover(GameActions *ga, const Props *props, Player *p);
-// Una cobertura bloquea la linea de vision desde el lado opuesto del obstaculo.
+// C junto a un obstaculo (una roca, un tronco, una mata alta, un muro, una peña) te pega a el; otra vez,
+// sales. Lejos de todo, C queda como sigilo (A4).
+void ga_toggle_cover(GameActions *ga, const Props *props, const Terrain *t, Player *p);
+// La cobertura tapa al jugador de quien mira desde el otro lado del obstaculo (stealth_cover_blocks).
 bool ga_cover_blocks(const GameActions *ga, const Player *p, Vector3 observer);
 // Despues de mover al jugador: trepar, montura, escondite.
 void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p);

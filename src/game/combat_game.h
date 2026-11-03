@@ -91,7 +91,9 @@ typedef struct {
     float windup;      // s que le quedan al golpe que anuncia (levanta el arma); 0: ninguno
     int windup_move;   // el golpe anunciado (MeleeMove + 1)
     float alert;       // s que busca al jugador aunque no lo vea (lo avisaron: un abatido que huyo, un grito)
-    float spotting;    // s viendote: tarda en reconocerte (dia 5, noche 7, antorcha 3)
+    float spotting;    // s viendote: tarda en reconocerte (dia 5, noche 7, antorcha 3; de cerca, menos)
+    float spot_flash;  // s que le queda al «!» sobre su cabeza (te acaba de reconocer)
+    Vector3 last_seen; // donde te vio por ultima vez: cubierto (C), va a buscarte ahi
     // La monta (fase 6, src/sim/riding.h): el rumbo del caballo y la maniobra del arquero a caballo.
     float ride_yaw;    // hacia donde va el caballo (el jinete mira a su blanco)
     float orbit_dir;   // sentido en que rodea al blanco (+1 o -1; 0: sin elegir)
@@ -167,6 +169,7 @@ typedef struct {
     int loose_n;
     // Los cuatro botones.
     int target_lock;   // enemigo +1, animal -indice-1 (0: ninguno)
+    float target_unseen; // s sin ver al objetivo (src/sim/targeting.h, target_hold: a los 6 s se pierde)
     float parry_cd;    // espera hasta el proximo parry
     float exposed;     // s expuesto tras un parry a destiempo (ni se cubre ni ataca)
     // La espalda y los rehenes (fase 2).

@@ -19,8 +19,10 @@ typedef struct {
     bool grounded;
     bool sneaking;    // sigilo, alternado con C
     bool crouching;   // agachado, alternado con X
-    bool covered;     // pegado a un obstaculo, alternado con C junto a cobertura
-    Vector3 cover_pos;
+    bool covered;     // pegado a un obstaculo (C junto a el, A4); se va al moverse; al cargar, no
+    Vector3 cover_pos; // el centro del obstaculo (en el suelo)
+    float cover_radius; // su radio: tapa a quien mira desde el otro lado (stealth_cover_blocks)
+    bool peeking;     // asomado para tirar con el arco: al soltar vuelve a cubrirse si sigue junto a el
     bool moving;
     Stance stance;
     float noise;      // 0..1: cuanto ruido hace (lo escuchara la IA de sigilo)

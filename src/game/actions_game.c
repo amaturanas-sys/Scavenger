@@ -23,6 +23,7 @@
 #include "sim/anim_index.h"
 #include "sim/body.h"
 #include "sim/melee.h"
+#include "sim/stealth.h"
 #include "sim/clock.h"
 #include "world/body_draw.h"
 #include "world/hearth.h"
@@ -1167,44 +1168,69 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     }
 }
 
-static bool cover_prop(const InvItem *item) {
+// La cobertura (C, A4): lo solido de los objetos colocados (rocas, arboles, matas, ruinas, muros y
+// viviendas) y, en el mundo, los mismos troncos, rocas, matas altas y peñas que se dibujan
+// (terrain_cover_near). radius: lo que tapa (de un arbol, el tronco).
+static bool cover_prop(const InvItem *item, float *radius) {
     if (!item) return false;
     const char *id = item->id;
-    return !strcmp(id, "mapa.roca.pequena") || !strcmp(id, "mapa.roca.mediana") ||
-           !strcmp(id, "mapa.roca.grande") || !strcmp(id, "estructura.ruina.muro") ||
-           !strcmp(id, "estructura.defensa.muro_piedra") ||
-           !strcmp(id, "mapa.vegetacion.arbusto") || !strcmp(id, "mapa.vegetacion.pino") ||
-           !strcmp(id, "mapa.vegetacion.alerce") || !strcmp(id, "mapa.vegetacion.abedul") ||
-           !strcmp(id, "mapa.vegetacion.saxaul") || !strcmp(id, "mapa.vegetacion.palmera");
+    float half = 0.5f * fmaxf(item->l, item->w);
+    if (!strncmp(id, "mapa.vegetacion.", 16)) {
+        if (strstr(id, "arbusto") || strstr(id, "mata")) {
+            *radius = fminf(0.8f * half, 1.2f);
+            return *radius >= 0.3f;
+        }
+        *radius = 0.35f; // el tronco
+        return true;
+    }
+    if (!strncmp(id, "mapa.roca.", 10) || !strncmp(id, "estructura.ruina.", 17) || !strncmp(id, "estructura.defensa.", 19) ||
+        !strncmp(id, "estructura.vivienda.", 20)) {
+        *radius = Clamp(half, 0.4f, 3.0f);
+        return true;
+    }
+    return false;
 }
 
-void ga_toggle_cover(GameActions *ga, const Props *props, Player *p) {
-    if (p->covered) {
-        p->covered = false;
+// El obstaculo mas cercano, a menos de 1,6 m de su borde: su centro (en el suelo) y su radio.
+static bool cover_find(const Props *props, const Terrain *t, Vector3 pos, Vector3 *center, float *radius) {
+    float best = 1.6f;
+    bool found = false;
+    for (int i = 0; props && i < props->count; i++) {
+        float r = 0.0f;
+        if (!cover_prop(props->items[i].item, &r)) continue;
+        float d = dist2d(pos, props->items[i].pos) - r;
+        if (d < best) best = d, *center = props->items[i].pos, *radius = r, found = true;
+    }
+    Vector3 c = { 0 };
+    float r = 0.0f;
+    if (t && terrain_cover_near(t, pos.x, pos.z, best, &c, &r)) *center = c, *radius = r, found = true;
+    return found;
+}
+
+void ga_toggle_cover(GameActions *ga, const Props *props, const Terrain *t, Player *p) {
+    if (p->covered) { // C otra vez: sales de la cobertura (el sigilo lo alterna player_update)
+        p->covered = p->peeking = false;
         return;
     }
-    if (ga->mounted >= 0 || !props) return;
-    if (p->covered) return;
-    float best = 2.2f;
-    int found = -1;
-    for (int i = 0; i < props->count; i++) {
-        if (!cover_prop(props->items[i].item)) continue;
-        float d = dist2d(p->pos, props->items[i].pos);
-        if (d < best) best = d, found = i;
-    }
-    if (found >= 0) {
-        p->covered = true;
-        p->cover_pos = props->items[found].pos;
-        p->sneaking = true;
-        p->noise = 0.0f;
-    }
+    Vector3 c = { 0 };
+    float r = 0.0f;
+    if (ga->mounted >= 0 || ga->climbing || !cover_find(props, t, p->pos, &c, &r)) return; // lejos de todo: C es sigilo
+    // Te pegas al obstaculo, del lado en que estabas.
+    float dx = p->pos.x - c.x, dz = p->pos.z - c.z, len = sqrtf(dx * dx + dz * dz);
+    if (len < 0.01f) dx = -sinf(p->yaw), dz = -cosf(p->yaw), len = 1.0f;
+    float snap = r + 0.45f;
+    p->pos.x = c.x + dx / len * snap, p->pos.z = c.z + dz / len * snap;
+    if (t) p->pos.y = terrain_height(t, p->pos.x, p->pos.z);
+    p->covered = true, p->peeking = false;
+    p->cover_pos = c, p->cover_radius = r;
+    p->sneaking = true;
+    p->noise = 0.0f;
 }
 
 bool ga_cover_blocks(const GameActions *ga, const Player *p, Vector3 observer) {
-    if (!ga || !p || !p->covered) return false;
-    Vector2 player_side = { p->pos.x - p->cover_pos.x, p->pos.z - p->cover_pos.z };
-    Vector2 observer_side = { observer.x - p->cover_pos.x, observer.z - p->cover_pos.z };
-    return Vector2DotProduct(player_side, observer_side) < -0.05f;
+    (void)ga;
+    return p && p->covered &&
+           stealth_cover_blocks(p->pos.x, p->pos.z, p->cover_pos.x, p->cover_pos.z, p->cover_radius, observer.x, observer.z);
 }
 
 void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p) {
@@ -1524,7 +1550,7 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) 
     if (!body || !props_has_model(props, body)) return false;
     Hands drawn = hands_drawn(&ga->hands); // la animacion, segun lo que esta fuera (el escudo solo, la espada sola)
     HumanoidState hs = {
-        .moving = p->moving, .running = p->stance == STANCE_RUN, .sneaking = p->sneaking, .crouching = p->crouching, .grounded = p->grounded,
+        .moving = p->moving, .running = p->stance == STANCE_RUN, .sneaking = p->sneaking, .crouching = p->crouching || p->covered, .grounded = p->grounded,
         .hidden = ga->hidden, .climbing = ga->climbing, .climb_top = ga->climbing && ga->climb_t > 1.6f,
         .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = drawn.sheathed,
         .grip = hands_grip(&drawn), .doing = ga->doing, .building = -1,

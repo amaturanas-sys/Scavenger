@@ -3423,6 +3423,63 @@ static void test_keymap_four_buttons(void) {
           !strcmp(keymap_text(KA_TARGET), "O"));
 }
 
+// A3 (las hojas, docs/PLAN_TACTICO_Y_CUEVAS.md): hacia que lado cicla el objetivo, cuanto dura sin verlo,
+// el clic con arma a distancia y lo que tarda en reconocerte un enemigo.
+static void test_target_rules_a3(void) {
+    // Mirando al norte (+z): uno delante, otro a la izquierda (+x) y otro a la derecha (-x).
+    TargetCand c[3] = { { 0.0f, 10.0f, true }, { 6.0f, 10.0f, true }, { -6.0f, 10.0f, true } };
+    int front = target_cycle(c, 3, 0.0f, 0.0f, 0.0f, -1, TARGET_LEFT);
+    CHECK(front == 0);
+    CHECK(target_cycle(c, 3, 0.0f, 0.0f, 0.0f, front, TARGET_LEFT) == 1);
+    CHECK(target_cycle(c, 3, 0.0f, 0.0f, 0.0f, front, TARGET_RIGHT) == 2);
+    // Sin verlo: dura 6 s; cubierto, no se pierde; muerto o lejos, en el acto.
+    float unseen = 0.0f;
+    CHECK(target_hold(&unseen, true, 10.0f, false, false, 5.0f) && unseen > 4.9f);
+    CHECK(!target_hold(&unseen, true, 10.0f, false, false, 1.5f) && unseen == 0.0f);
+    for (int i = 0; i < 100; i++) CHECK(target_hold(&unseen, true, 10.0f, false, true, 1.0f)); // cubierto, cien segundos
+    CHECK(target_hold(&unseen, true, 10.0f, false, false, 3.0f) && target_hold(&unseen, true, 10.0f, true, false, 0.1f) &&
+          unseen == 0.0f); // al verlo otra vez, la cuenta vuelve a cero
+    CHECK(!target_hold(&unseen, false, 10.0f, true, false, 0.1f));
+    CHECK(!target_hold(&unseen, true, TARGET_RANGE + 1.0f, true, true, 0.1f));
+    // El clic: corto elige; mantenido 1 s suelta (una vez); arrastrado (la camara), nada.
+    CHECK(target_click(0.2f, false, true, false) == TCLICK_SELECT);
+    CHECK(target_click(0.5f, false, false, false) == TCLICK_NONE);
+    CHECK(target_click(1.0f, false, false, false) == TCLICK_RELEASE);
+    CHECK(target_click(1.3f, false, false, true) == TCLICK_NONE);
+    CHECK(target_click(1.3f, false, true, true) == TCLICK_NONE);
+    CHECK(target_click(0.2f, true, true, false) == TCLICK_NONE);
+    // Reconocerte: 5 s de dia, 7 de noche, 3 con la antorcha; de cerca, mucho menos.
+    CHECK(fabsf(stealth_recognition_seconds(false, false, 30.0f, 30.0f) - 5.0f) < 0.01f);
+    CHECK(fabsf(stealth_recognition_seconds(true, false, 30.0f, 30.0f) - 7.0f) < 0.01f);
+    CHECK(fabsf(stealth_recognition_seconds(true, true, 30.0f, 30.0f) - 3.0f) < 0.01f);
+    CHECK(stealth_recognition_seconds(false, false, 1.0f, 30.0f) <= 0.5f + 1e-4f);
+    float prev = 0.0f;
+    for (float d = 2.0f; d <= 30.0f; d += 1.0f) { // crece con la distancia
+        float sec = stealth_recognition_seconds(false, false, d, 30.0f);
+        CHECK(sec >= prev);
+        prev = sec;
+    }
+}
+
+// A4 (las hojas): la cobertura tapa al jugador de quien mira desde el otro lado del obstaculo, y no de
+// costado ni de frente; un tronco tapa menos que una peña.
+static void test_cover_rules_a4(void) {
+    // Pegado a una roca (centro 0,0; radio 0,6) por el sur, como la deja ga_toggle_cover (radio + 0,45 m).
+    float pz = -1.05f, cr = 0.6f;
+    CHECK(stealth_cover_blocks(0.0f, pz, 0.0f, 0.0f, cr, 0.0f, 12.0f));   // desde el norte, detras de la roca
+    CHECK(stealth_cover_blocks(0.0f, pz, 0.0f, 0.0f, cr, 2.0f, 12.0f));   // algo de lado, aun tapado
+    CHECK(!stealth_cover_blocks(0.0f, pz, 0.0f, 0.0f, cr, 12.0f, 0.0f));  // de costado: lo ve
+    CHECK(!stealth_cover_blocks(0.0f, pz, 0.0f, 0.0f, cr, 0.0f, -12.0f)); // de frente (de su lado): lo ve
+    CHECK(!stealth_cover_blocks(0.0f, pz, 0.0f, 0.0f, 0.0f, 0.0f, 12.0f)); // sin obstaculo, nada
+    int trunk = 0, rock = 0;
+    for (int a = 0; a < 360; a += 5) {
+        float ox = 15.0f * sinf((float)a * 0.0174533f), oz = 15.0f * cosf((float)a * 0.0174533f);
+        trunk += stealth_cover_blocks(0.0f, -(0.35f + 0.45f), 0.0f, 0.0f, 0.35f, ox, oz);
+        rock += stealth_cover_blocks(0.0f, -(3.0f + 0.45f), 0.0f, 0.0f, 3.0f, ox, oz);
+    }
+    CHECK(trunk > 0 && rock > trunk && rock < 36); // ni un tronco tapa nada, ni una peña tapa la mitad del mundo
+}
+
 static void test_melee_parry_window(void) {
     Rng rng;
     rng_seed(&rng, 7);
@@ -5759,6 +5816,8 @@ int main(void) {
     RUN(test_save_blocks_numbers_change_type);
     RUN(test_keymap_four_buttons);
     RUN(test_keymap_target_keys);
+    RUN(test_target_rules_a3);
+    RUN(test_cover_rules_a4);
     RUN(test_melee_parry_window);
     RUN(test_melee_weapon_block_costs_stamina);
     RUN(test_target_cycle);

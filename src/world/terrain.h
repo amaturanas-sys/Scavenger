@@ -113,6 +113,10 @@ void terrain_set_ripples(const Vector4 *bodies, int count);
 // ¿Hay una formacion de roca o hielo (cantos, basalto, farallones, tempanos, mesas...) a menos de margin m de (x, z)?
 // Solo en los chunks cargados (no tienen colision: para no dejar a nadie adentro de una).
 bool terrain_near_feature(const Terrain *t, float x, float z, float margin);
+// Lo que cubre en el mundo a menos de reach m del borde: el tronco de un arbol, una roca de un metro o mas,
+// una mata alta o una formacion de voxeles (los mismos que se dibujan). true con el mas cercano: su centro
+// (en el suelo) y su radio. La cobertura del jugador (C, A4) lo usa.
+bool terrain_cover_near(const Terrain *t, float x, float z, float reach, Vector3 *center, float *radius);
 // ¿Se dibuja el agua con su shader? (falso antes del primer chunk con agua, o si no compilo)
 bool terrain_water_shader(void);
 // Sin el shader del agua (--sin-shader: prueba del respaldo). Antes del primer chunk.

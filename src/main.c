@@ -20,6 +20,7 @@
 // --apuntar empuña el arco tenso (pruebas).
 // --manos escudo|espada|nada: la espada enfundada con el escudo en el brazo, el escudo a la espalda
 // con la espada en la mano, o todo guardado (como pulsar 1, 2 o enfundar todo; prueba de los botones).
+// --cubierto: junto al obstaculo mas cercano (un tronco, una roca, una peña), a cubierto (C).
 // --sin-teclado simula un dispositivo Android sin teclado (prueba del aviso).
 // --sin-shader dibuja el agua sin su shader, como si no compilara (prueba del respaldo).
 #include <math.h>
@@ -706,6 +707,7 @@ int main(int argc, char **argv) {
     bool start_crouch = false, start_target = false;
     int start_back = 0; // prueba: 1 a la espalda del primer enemigo, 2 ademas con el de rehen
     const char *start_hands = NULL; // prueba: "escudo" (la espada enfundada), "espada" (el escudo a la espalda) o "nada"
+    bool start_cover = false; // prueba: junto al obstaculo mas cercano, a cubierto (C, A4)
     int start_escort = -1; // prueba: con la escolta fuera y esa orden (SquadOrder)
     bool start_raid = false, start_guards = false; // prueba: un asalto al campamento; dos soldados de guardia
     MenuScreen start_menu_screen = MENU_TITLE;
@@ -761,6 +763,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--espalda")) start_back = 1;
         else if (!strcmp(argv[i], "--rehen")) start_back = 2;
         else if (!strcmp(argv[i], "--manos") && i + 1 < argc) start_hands = argv[++i];
+        else if (!strcmp(argv[i], "--cubierto")) start_cover = true;
         else if (!strcmp(argv[i], "--asalto")) start_raid = true;
         else if (!strcmp(argv[i], "--guardias")) start_guards = true;
         else if (!strcmp(argv[i], "--escolta")) { // [atacar|defender|seguir]
@@ -1254,7 +1257,7 @@ int main(int argc, char **argv) {
             player_set_endurance(health_endurance_scale(&g_combat.player)); // las secuelas (el tiburon) cansan mas
             player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
             if (!g_actions.climbing) player_update(&player, &terrain, in, rig.yaw, dt);
-            if (in.toggle_sneak) ga_toggle_cover(&g_actions, &g_props, &player);
+            if (in.toggle_sneak) ga_toggle_cover(&g_actions, &g_props, &terrain, &player); // C: junto a un obstaculo, cobertura
             if (world_clamp(terrain.world, &player.pos.x, &player.pos.z)) { // la frontera invisible del gran circulo
                 static float told = -100.0f;
                 if (world_time - told > 30.0f) {
@@ -1384,6 +1387,17 @@ int main(int argc, char **argv) {
             }
             if (start_back && frame == 30 && !gallery_mode) // prueba: la espalda ganada (y el rehen)
                 cb_test_back(&g_combat, &player, start_back == 2, log, sizeof(log));
+            if (start_cover && frame == 25 && !gallery_mode) { // prueba: el obstaculo mas cercano (un tronco, una roca, una peña), y C
+                Vector3 cc;
+                float cr;
+                for (float d = 2.0f; d < 90.0f && !player.covered; d += 2.0f)
+                    for (int k = 0; k < 12 && !player.covered; k++) {
+                        float a = (float)k * PI / 6.0f, x = player.pos.x + sinf(a) * d, z = player.pos.z + cosf(a) * d;
+                        if (!terrain_cover_near(&terrain, x, z, 1.0f, &cc, &cr)) continue;
+                        player.pos.x = x, player.pos.z = z, player.pos.y = terrain_height(&terrain, x, z);
+                        ga_toggle_cover(&g_actions, &g_props, &terrain, &player);
+                    }
+            }
             if (start_hands && frame == 30 && !gallery_mode) { // prueba: como pulsar 1 (la espada) o 2 (el escudo)
                 if (!strcmp(start_hands, "escudo")) hands_toggle_hand(&g_actions.hands, HAND_RIGHT);
                 else if (!strcmp(start_hands, "espada")) hands_toggle_hand(&g_actions.hands, HAND_LEFT);

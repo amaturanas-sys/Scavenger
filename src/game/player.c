@@ -90,7 +90,7 @@ void player_update(Player *p, const Terrain *t, PlayerInput in, float cam_yaw, f
     speed *= p->speed_scale > 0.0f ? p->speed_scale : 1.0f;
 
     if (p->moving) {
-        p->covered = false;
+        p->covered = p->peeking = false; // moverse deja la cobertura
         // Adelante = direccion a la que mira la camara (proyectada al suelo).
         Vector3 fwd = { sinf(cam_yaw), 0.0f, cosf(cam_yaw) };
         Vector3 right = { -fwd.z, 0.0f, fwd.x };
