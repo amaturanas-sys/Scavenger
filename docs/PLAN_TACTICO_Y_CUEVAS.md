@@ -132,6 +132,8 @@ En las coordenadas de la cueva, la boca está en (0, 0) y +z va hacia adentro.
 - Las cuevas no animales pueden mostrar señales de ocupación humana: una escalera de madera y una plataforma; las
   tribales añaden postes, las de forajidos una estacada improvisada, las imperiales una plataforma más cuidada y las
   abandonadas una escalera rota. Son elementos visuales y no cambian todavía las reglas de entrada.
+- Algunas cuevas abandonadas conservan una fachada antigua excavada: mampostería, dintel, nichos, hornacina y una reja
+  oxidada. Es una arquitectura de una civilización desaparecida, también puramente visual por ahora.
 - **El vestíbulo:** tras la boca, una cámara chica y llana (3 m de radio). De su borde salen, cada uno por su lado, los
   tres pasillos de la boca: las dos salidas (a las recámaras `a` e `i`, los extremos del anillo) y la bajada.
 - **La Cisterna Magna:** la sala más honda (7 a 9 m de radio, el doble de alto). **La bajada** llega a ella desde el

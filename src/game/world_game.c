@@ -256,6 +256,38 @@ static void draw_human_entrance(CaveKind kind, float top) {
     }
 }
 
+static void draw_ancient_facade(float top, Color rock) {
+    Color stone = ColorBrightness(rock, 0.18f);
+    Color joint = ColorBrightness(rock, -0.18f);
+    Color recess = ColorBrightness(rock, -0.62f);
+    float h = fminf(top, 3.8f);
+    // Restos de una fachada excavada: jambas, hiladas y un dintel, siempre alrededor del hueco existente.
+    DrawCube((Vector3){ -1.78f, h * 0.55f, 0.02f }, 0.48f, h * 1.1f, 0.36f, stone);
+    DrawCube((Vector3){ 1.78f, h * 0.55f, 0.02f }, 0.48f, h * 1.1f, 0.36f, stone);
+    DrawCube((Vector3){ 0.0f, h + 0.16f, 0.02f }, 4.05f, 0.42f, 0.36f, stone);
+    for (int i = 0; i < 5; i++) {
+        float x = -1.6f + (float)i * 0.8f;
+        DrawCube((Vector3){ x, h + 0.45f + (i & 1) * 0.12f, 0.04f }, 0.68f, 0.28f, 0.40f, joint);
+    }
+    // Dos nichos ciegos y una hornacina central: sugieren uso funerario o ritual sin añadir otra entrada.
+    for (int side = -1; side <= 1; side += 2) {
+        float x = (float)side * 1.18f;
+        DrawCube((Vector3){ x, 1.45f, -0.03f }, 0.58f, 0.92f, 0.06f, recess);
+        DrawCylinderEx((Vector3){ x - side * 0.22f, 1.90f, -0.08f },
+                       (Vector3){ x + side * 0.22f, 1.90f, -0.08f }, 0.22f, 0.22f, 6, stone);
+    }
+    DrawCube((Vector3){ 0.0f, h + 0.95f, 0.0f }, 0.72f, 0.66f, 0.08f, recess);
+    DrawCylinderEx((Vector3){ -0.30f, h + 1.18f, -0.05f }, (Vector3){ 0.30f, h + 1.18f, -0.05f },
+                   0.30f, 0.30f, 6, stone);
+    // Reja caída y oxidada: detalle de una entrada sellada, sin convertirla en una barrera de colisión.
+    for (int i = -2; i <= 2; i++) {
+        float x = (float)i * 0.43f;
+        DrawCylinderEx((Vector3){ x, 0.12f, 0.18f }, (Vector3){ x, h - 0.10f, 0.18f }, 0.035f, 0.035f, 4, joint);
+    }
+    DrawCylinderEx((Vector3){ -0.92f, 0.72f, 0.20f }, (Vector3){ 0.92f, 0.72f, 0.20f }, 0.04f, 0.04f, 4, joint);
+    DrawCylinderEx((Vector3){ -0.82f, 1.55f, 0.20f }, (Vector3){ 0.82f, 1.55f, 0.20f }, 0.04f, 0.04f, 4, joint);
+}
+
 static void draw_cave(const Terrain *t, const Cave *c, float time) {
     // El pie del peñasco: lo mas bajo del terreno alrededor (en una ladera no queda en el aire).
     float ground = terrain_height(t, c->x, c->z), base = ground;
@@ -275,6 +307,7 @@ static void draw_cave(const Terrain *t, const Cave *c, float time) {
     // La boca es natural en todos los biomas; el tipo de cueva se lee después por sus adornos.
     draw_natural_mouth(rock, top);
     if (c->kind != CAVE_ANIMAL) draw_human_entrance(c->kind, top);
+    if (c->kind == CAVE_ABANDONED) draw_ancient_facade(top, rock);
     DrawSphereEx((Vector3){ -1.7f, top * 1.25f, 4.4f }, 2.5f, 6, 5, dark);
     DrawSphereEx((Vector3){ 1.8f, top * 1.20f, 4.7f }, 2.8f, 6, 5, ColorBrightness(dark, 0.08f));
     DrawSphereEx((Vector3){ 0.0f, top * 0.52f, 5.1f }, 2.2f, 6, 5, ColorBrightness(dark, -0.10f));
