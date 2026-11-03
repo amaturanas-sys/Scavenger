@@ -86,9 +86,9 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 - **Pendiente:** mantener un segundo para soltar el objetivo y el cambio explícito de objetivo con los dos botones del ratón requieren separar el clic de ataque/bloqueo en la interfaz.
 
 ### A4 — A cubierto (v0.12.3)
-- `C` junto a una roca, un muro o un árbol te pega a él; lejos de todo, `C` sigue siendo sigilo.
-- Cubierto, no te ven del otro lado y el objetivo sigue elegido.
-- Con el arco, mantener `H` te asoma y apunta al objetivo; al soltar disparas y vuelves a cubrirte.
+- **Hecho:** `C` junto a una roca, un muro, un árbol o una mata te pega a él; lejos de todo, `C` sigue siendo sigilo.
+- **Hecho:** cubierto, no te ven desde el lado opuesto y el objetivo sigue elegido.
+- **Hecho:** con el arco, mantener `H` te asoma y apunta al objetivo; al soltar disparas y vuelves a cubrirte.
 
 ---
 

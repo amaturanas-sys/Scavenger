@@ -1495,6 +1495,7 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
         return;
     }
     bool was_aiming = cb->aiming;
+    if (pressed && p->covered) p->covered = false; // asomarse al tensar desde la cobertura
     cb->aiming = held && cb->reload <= 0.0f && ammo_left > 0;
     float tension = rd->draw_time > 0.0f ? fminf(1.0f, cb->draw / rd->draw_time) : 1.0f;
     if (cb->aiming) {
@@ -1517,6 +1518,7 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
         steady *= 1.0f + 1.5f * wg_clumsy(ga);
         Shot *sh = fire(cb, rd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0, cb->arrow_lit, steady);
         if (sh && riding && shot_is_parthian(cb->pl_speed, rel)) sh->parthian = true;
+        if (p->cover_pos.x != 0.0f || p->cover_pos.z != 0.0f) p->covered = true;
         cb->arrow_lit = false;
         cb->reload = rd->reload;
         cb->draw = 0.0f;
@@ -1775,7 +1777,8 @@ static void update_enemies(Combat *cb, Player *p, GameActions *ga, Troop *troop,
         if (!cb->player.down) {
             float d = dist2(e->pos, p->pos);
             Vector3 eye = { e->pos.x, e->pos.y + (e->mounted ? 2.1f : 1.1f), e->pos.z };
-            bool visible = d < sight && target_line_of_sight(t, eye, (Vector3){ p->pos.x, p->pos.y + player_eye_height(p), p->pos.z });
+            bool visible = d < sight && !ga_cover_blocks(ga, p, e->pos) &&
+                           target_line_of_sight(t, eye, (Vector3){ p->pos.x, p->pos.y + player_eye_height(p), p->pos.z });
             if (visible) e->spotting += dt;
             else e->spotting = fmaxf(0.0f, e->spotting - dt * 0.5f);
             float recognition = ga->torch_lit ? 3.0f : night ? 7.0f : 5.0f;

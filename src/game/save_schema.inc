@@ -25,6 +25,8 @@ static const SfField SF_F_Player[] = {
     SF_ONE(Player, grounded, "bool", SF_BOOL, NULL),
     SF_ONE(Player, sneaking, "bool", SF_BOOL, NULL),
     SF_ONE(Player, crouching, "bool", SF_BOOL, NULL),
+    SF_ONE(Player, covered, "bool", SF_BOOL, NULL),
+    SF_ONE(Player, cover_pos, "Vector3", SF_BYTES, NULL),
     SF_ONE(Player, moving, "bool", SF_BOOL, NULL),
     SF_ONE(Player, stance, "Stance", SF_INT, NULL),
     SF_ONE(Player, noise, "float", SF_FLOAT, NULL),

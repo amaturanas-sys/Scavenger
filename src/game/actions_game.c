@@ -1159,6 +1159,46 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     }
 }
 
+static bool cover_prop(const InvItem *item) {
+    if (!item) return false;
+    const char *id = item->id;
+    return !strcmp(id, "mapa.roca.pequena") || !strcmp(id, "mapa.roca.mediana") ||
+           !strcmp(id, "mapa.roca.grande") || !strcmp(id, "estructura.ruina.muro") ||
+           !strcmp(id, "estructura.defensa.muro_piedra") ||
+           !strcmp(id, "mapa.vegetacion.arbusto") || !strcmp(id, "mapa.vegetacion.pino") ||
+           !strcmp(id, "mapa.vegetacion.alerce") || !strcmp(id, "mapa.vegetacion.abedul") ||
+           !strcmp(id, "mapa.vegetacion.saxaul") || !strcmp(id, "mapa.vegetacion.palmera");
+}
+
+void ga_toggle_cover(GameActions *ga, const Props *props, Player *p) {
+    if (p->covered) {
+        p->covered = false;
+        return;
+    }
+    if (ga->mounted >= 0 || !props) return;
+    if (p->covered) return;
+    float best = 2.2f;
+    int found = -1;
+    for (int i = 0; i < props->count; i++) {
+        if (!cover_prop(props->items[i].item)) continue;
+        float d = dist2d(p->pos, props->items[i].pos);
+        if (d < best) best = d, found = i;
+    }
+    if (found >= 0) {
+        p->covered = true;
+        p->cover_pos = props->items[found].pos;
+        p->sneaking = true;
+        p->noise = 0.0f;
+    }
+}
+
+bool ga_cover_blocks(const GameActions *ga, const Player *p, Vector3 observer) {
+    if (!ga || !p || !p->covered) return false;
+    Vector2 player_side = { p->pos.x - p->cover_pos.x, p->pos.z - p->cover_pos.z };
+    Vector2 observer_side = { observer.x - p->cover_pos.x, observer.z - p->cover_pos.z };
+    return Vector2DotProduct(player_side, observer_side) < -0.05f;
+}
+
 void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p) {
     // Trepar: subir por la cuerda, pasar por encima del muro y bajar del otro lado.
     if (ga->climbing) {
@@ -1188,7 +1228,7 @@ void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p)
     }
     // Esconderse: agachado junto a la hierba alta, una roca o una mata (o en sigilo dentro de la
     // hierba alta) no se hace ruido y cuesta mucho verlo (player_visibility).
-    ga->hidden = false;
+    ga->hidden = p->covered;
     if ((p->sneaking || p->crouching) && ga->mounted < 0) {
         for (int i = 0; i < props->count; i++) {
             const char *id = props->items[i].item->id;

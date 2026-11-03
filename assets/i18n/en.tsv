@@ -1288,7 +1288,7 @@ B venda heridas con hierbas (o ungüento) · P equipo y heridas · Tab inventari
 B vendar · Mayús+L encender	B bandage · Shift+L light
 Beber de más emborracha: torpe con las armas, cansado y te tambaleas.	Drinking too much gets you drunk: clumsy with weapons, tired and staggering.
 Buscar reclutas, explorar y cazar son salidas: se van, no se los ve, y vuelven a los pocos minutos con su suerte. De noche es más peligroso.	Finding recruits, scouting and hunting are trips: they go out of sight and return a few minutes later, for better or worse. Night is riskier.
-C sigilo · X agacharse	C sneak · X crouch
+C sigilo o cobertura · X agacharse	C sneak or cover · X crouch
 Cada día, los del campamento con oficio trabajan lo que sobra del acopio: el cazador curte pieles y talla puntas de hueso, el pastor hace fieltro, el constructor labra madera y hace adobe, el cocinero velas de sebo, el curandero ungüento y el orfebre peines.	Every day, camp folk with a trade work the store's surplus: the hunter tans hides and carves bone points, the herder makes felt, the builder dresses timber and makes adobe, the cook tallow candles, the healer salve and the goldsmith combs.
 Cada partida nueva cambia los ríos, los lagos, las montañas y dónde están los pueblos y las guaridas.	Each new game changes the rivers, lakes, mountains and where villages and dens are.
 Cada región tiene su altura: la costa, la más baja; el altiplano, el más alto. Hace más frío cuanto más alto.	Each region has its own altitude: the coast is the lowest, the highland the highest. The higher, the colder.
@@ -1467,7 +1467,7 @@ Verde: el sitio vale. Rojo: fuera del campamento, en el agua, demasiado empinado
 Volver a una partida guardada	Return to a saved game
 Volver al juego (Esc)	Back to the game (Esc)
 WASD mover · Shift correr	WASD move · Shift run
-WASD mover · Shift correr · C sigilo · X agacharse (tras rocas, matas o hierba alta te ocultas)	WASD move · Shift run · C sneak · X crouch (you hide behind rocks, bushes or tall grass)
+WASD mover · Shift correr · C sigilo o cobertura · X agacharse (tras rocas, matas o hierba alta te ocultas)	WASD move · Shift run · C sneak or cover · X crouch (you hide behind rocks, bushes or tall grass)
 Y llama a dos integrantes de escolta (Y otra vez: vuelven al campamento). Pelean a tu lado con las mismas reglas que tú.	Y calls two members as an escort (Y again: back to camp). They fight by your side by the same rules as you.
 Y: dos integrantes te escoltan · Mayús+Y: despachar o mandar un mensajero · U: ficha del gran guerrero	Y: two members escort you · Shift+Y: dispatch or send a messenger · U: great warrior card
 Órdenes (Y+1, Y+2, Y+3, o las casillas sobre la barra rápida): atacar, defender o seguir.	Orders (Y+1, Y+2, Y+3, or the tiles above the quick bar): attack, defend or follow.

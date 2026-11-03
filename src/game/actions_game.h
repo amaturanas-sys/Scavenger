@@ -244,6 +244,10 @@ int ga_marching(const GameActions *ga);
 float ga_speed_scale(const GameActions *ga);
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
                size_t log_len);
+// C junto a un obstaculo activa o desactiva la cobertura; lejos de ellos queda como sigilo.
+void ga_toggle_cover(GameActions *ga, const Props *props, Player *p);
+// Una cobertura bloquea la linea de vision desde el lado opuesto del obstaculo.
+bool ga_cover_blocks(const GameActions *ga, const Player *p, Vector3 observer);
 // Despues de mover al jugador: trepar, montura, escondite.
 void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p);
 // Un dia nuevo: comida y recoleccion, efectos de las construcciones, trabajos de los NPCs.

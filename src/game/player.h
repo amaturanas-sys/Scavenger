@@ -1,4 +1,4 @@
-// Personaje del jugador: caminar, correr, sigilo (C), agacharse (X) y saltar.
+// Personaje del jugador: caminar, correr, sigilo o cobertura (C), agacharse (X) y saltar.
 //  - sigilo: pasos lentos y silenciosos;
 //  - agacharse: mas bajo y lento; tras la hierba alta, una roca o una mata se esconde, y cuesta
 //    mas verlo que de pie. El sigilo suma: agachado y en sigilo es lo mas dificil de ver.
@@ -19,6 +19,8 @@ typedef struct {
     bool grounded;
     bool sneaking;    // sigilo, alternado con C
     bool crouching;   // agachado, alternado con X
+    bool covered;     // pegado a un obstaculo, alternado con C junto a cobertura
+    Vector3 cover_pos;
     bool moving;
     Stance stance;
     float noise;      // 0..1: cuanto ruido hace (lo escuchara la IA de sigilo)

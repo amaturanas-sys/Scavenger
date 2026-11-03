@@ -42,7 +42,7 @@ static const HelpPage PAGES[] = {
     { N_("La estepa"), 0,
       { N_("Guías una tropa nómada por la estepa: caza, construye, pelea y sobrevive a las estaciones. Un día dura 30 minutos; en invierno las noches son largas."),
         "",
-        N_("WASD mover · Shift correr · C sigilo · X agacharse (tras rocas, matas o hierba alta te ocultas)"),
+        N_("WASD mover · Shift correr · C sigilo o cobertura · X agacharse (tras rocas, matas o hierba alta te ocultas)"),
         N_("Espacio saltar (o levantarse) · Q/E o arrastrar con el clic derecho: girar la cámara · M marcar el mapa"),
         N_("F hace casi todo: hablar y comerciar, tomar y recoger botín, el pozo y el horno, rescatar y atender a los animales"),
         N_("Esc, Atrás o Ctrl+P: menú (guardar, cargar) · F1 o Ctrl+H: controles en el juego"),
@@ -531,7 +531,7 @@ static void draw_help(const TitleMenu *m, int w, int h) {
 void menu_draw_controls(int x, int y, int w, int h) {
     ui_panel((Rectangle){ (float)x, (float)y, (float)w, (float)h }, UI_METAL_GOLD);
     static const char *cols[2][9] = {
-        { N_("WASD mover · Shift correr"), N_("C sigilo · X agacharse"), N_("Espacio saltar · Q/E cámara"), N_("H/clic golpe (mantén: pesado)"),
+        { N_("WASD mover · Shift correr"), N_("C sigilo o cobertura · X agacharse"), N_("Espacio saltar · Q/E cámara"), N_("H/clic golpe (mantén: pesado)"),
           N_("J/clic der. cubrirse"), N_("I parry · K carga o patada"), N_("O objetivo · Y+1-3 escolta"), N_("1 espada · 2 escudo · 3 odre"),
           N_("B vendar · Mayús+L encender") },
         { N_("L acciones/fabricar"), N_("F hablar/tomar/animales"), N_("Tab inventario · P equipo"), N_("R montar · T lanzar · Y escolta"),

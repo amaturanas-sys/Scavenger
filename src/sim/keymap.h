@@ -27,7 +27,7 @@ typedef enum {
     KA_CHARGE, // K: carga con escudo, o patada
     KA_TARGET, // O: el enemigo siguiente (Mayus+O: el anterior)
     // Moverse.
-    KA_SNEAK,  // C: sigilo
+    KA_SNEAK,  // C: sigilo; junto a un obstaculo, cobertura
     KA_CROUCH, // X: agacharse
     KA_JUMP,   // Espacio
     // El mundo.

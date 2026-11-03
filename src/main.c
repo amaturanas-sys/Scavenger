@@ -1254,6 +1254,7 @@ int main(int argc, char **argv) {
             player_set_endurance(health_endurance_scale(&g_combat.player)); // las secuelas (el tiburon) cansan mas
             player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
             if (!g_actions.climbing) player_update(&player, &terrain, in, rig.yaw, dt);
+            if (in.toggle_sneak) ga_toggle_cover(&g_actions, &g_props, &player);
             if (world_clamp(terrain.world, &player.pos.x, &player.pos.z)) { // la frontera invisible del gran circulo
                 static float told = -100.0f;
                 if (world_time - told > 30.0f) {
