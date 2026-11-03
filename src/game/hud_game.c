@@ -103,6 +103,8 @@ static int quickbar_key(int slot) {
     return slot == HUD_QUICK_SLOTS - 1 ? KEY_ZERO : KEY_ONE + slot;
 }
 
+int hud_slot_number(int slot) { return (slot + 1) % 10; } // la decima casilla es la tecla 0
+
 typedef struct {
     QbSlot s;
     IconId icon;
@@ -133,15 +135,6 @@ const QbSlot *hud_slots(void) {
     return g_slots;
 }
 
-bool hud_assign_item(int slot, const char *id) {
-    if (slot < 0 || slot >= HUD_QUICK_SLOTS || !id || !id[0]) return false;
-    QbSlot s = { QB_ITEM, 0, "" };
-    snprintf(s.id, sizeof(s.id), "%s", id);
-    g_slots[slot] = s;
-    g_slots_set = true;
-    return true;
-}
-
 // Para que sirve un objeto en la barra: beber, vendar, la antorcha o empuñarlo.
 typedef enum { USE_NONE, USE_DRINK, USE_BANDAGE, USE_TORCH, USE_WIELD, USE_ACTION } ItemUse;
 static ItemUse item_use(const GameActions *ga, const char *id) {
@@ -152,6 +145,30 @@ static ItemUse item_use(const GameActions *ga, const char *id) {
     if (strstr(id, "lazo") || strstr(id, "gancho_trepa") || strstr(id, "silla_montar")) return USE_ACTION;
     const InvItem *it = inventory_find(ga->inv, id);
     return it && it->hands != INV_HANDS_NONE ? USE_WIELD : USE_NONE;
+}
+
+bool hud_assign_item(const GameActions *ga, int slot, const char *id) {
+    if (slot < 0 || slot >= HUD_QUICK_SLOTS || !id || !id[0] || item_use(ga, id) == USE_NONE) return false;
+    if (!g_slots_set) default_slots(); // las demas casillas, las de serie
+    QbSlot s = { QB_ITEM, 0, "" };
+    snprintf(s.id, sizeof(s.id), "%s", id);
+    g_slots[slot] = s;
+    g_slots_set = true;
+    return true;
+}
+
+IconId hud_slot_icon(const GameActions *ga, int slot) {
+    if (!g_slots_set) default_slots();
+    if (slot < 0 || slot >= HUD_QUICK_SLOTS) return ICON_FALTA;
+    const QbSlot *s = &g_slots[slot];
+    if (s->kind == QB_ITEM) return icon_for_item(ga_best_weapon(ga, s->id));
+    if (s->kind == QB_SKILL) return ICON_NIVEL;
+    if (s->kind == QB_GRIP) {
+        GaGrip g = ga_grip(ga, s->grip);
+        const char *id = g.right ? g.right : g.left;
+        return id ? icon_for_item(id) : ICON_ENFUNDAR;
+    }
+    return ICON_FALTA;
 }
 
 static const char *item_label(const GameActions *ga, const char *id) {
@@ -285,7 +302,10 @@ static void use_slot(GameActions *ga, const Props *props, const Player *p, int k
         }
         switch (item_use(ga, s->id)) {
         case USE_TORCH: ga_quick_request_action(ACTION_LIGHT_TORCH); break;
-        case USE_DRINK: wg_request_drink(); break;
+        case USE_DRINK: // el odre: junto al agua lo llena; lo demas (vino, airag...) se bebe
+            if (strstr(s->id, "odre")) wg_request_odre();
+            else wg_request_drink();
+            break;
         case USE_BANDAGE: cb_request_bandage(); break;
         case USE_WIELD: ga_quick_request_wield(s->id); break; // en su mano: la guarda o la saca (solo esa mano)
         case USE_ACTION:
@@ -315,7 +335,7 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
         if (g_pick_cursor >= n) g_pick_cursor = n - 1;
         if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) || IsKeyPressed(quickbar_key(g_picking))) {
             g_slots[g_picking] = opt[g_pick_cursor].s;
-            snprintf(log, len, T("Casilla %d: %s."), g_picking + 1, opt[g_pick_cursor].title);
+            snprintf(log, len, T("Casilla %d: %s."), hud_slot_number(g_picking), opt[g_pick_cursor].title);
             g_picking = -1;
         } else if (input_pressed(IN_BACK)) g_picking = -1;
         return;
@@ -329,7 +349,7 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
         if ((mods & KM_ALT) || s->kind == QB_EMPTY) g_picking = k, g_pick_cursor = 0; // vacia (o Alt): elegir
         else if ((mods & KM_SHIFT) && wields(ga, s)) { // Mayús: el arma empuñada, a la otra mano
             if (slot_active(ga, s)) ga_quick_request_swap();
-            else snprintf(log, len, T("Empuña primero el arma de la casilla %d (tecla %d) para pasarla de mano."), k + 1, k + 1);
+            else snprintf(log, len, T("Empuña primero el arma de la casilla %d para pasarla de mano."), hud_slot_number(k));
         } else use_slot(ga, props, p, k, log, len);
     }
 }
@@ -361,13 +381,13 @@ void hud_quickbar(GameActions *ga, const Props *props, const Player *p, int x, i
             if (s->kind == QB_SKILL) ui_tile_bar(r, 1.0f - ga->ab_cd[s->grip] / fmaxf(1.0f, ability_def((AbilityId)s->grip)->cooldown), UI_TURQUOISE);
         }
         DrawRectangle((int)r.x + 1, (int)r.y + 1, 7, 9, (Color){ 16, 12, 9, 200 });
-        DrawText(TextFormat("%d", k == HUD_QUICK_SLOTS - 1 ? 0 : k + 1), (int)r.x + 2, (int)r.y + 1, 10,
-                 active ? UI_TURQ_LIGHT : UI_GOLD_LIGHT);
+        DrawText(TextFormat("%d", hud_slot_number(k)), (int)r.x + 2, (int)r.y + 1, 10, active ? UI_TURQ_LIGHT : UI_GOLD_LIGHT);
         if (g_picking == k) DrawRectangleLines((int)r.x - 1, (int)r.y - 1, (int)r.width + 2, (int)r.height + 2, UI_TURQUOISE);
         if (h) {
-            const char *how = empty          ? TextFormat(T("Tecla %d: elegir un arma, un objeto o una habilidad."), k + 1)
-                              : wields(ga, s) ? TextFormat(T("Tecla %d: empuñar o enfundar. Mayús+%d: a la otra mano. Alt+%d o clic derecho: cambiar."), k + 1, k + 1, k + 1)
-                                              : TextFormat(T("Tecla %d: usar. Alt+%d o clic derecho: cambiar."), k + 1, k + 1);
+            int nk = hud_slot_number(k);
+            const char *how = empty          ? TextFormat(T("Tecla %d: elegir un arma, un objeto o una habilidad."), nk)
+                              : wields(ga, s) ? TextFormat(T("Tecla %d: empuñar o enfundar. Mayús+%d: a la otra mano. Alt+%d o clic derecho: cambiar."), nk, nk, nk)
+                                              : TextFormat(T("Tecla %d: usar. Alt+%d o clic derecho: cambiar."), nk, nk);
             ui_legend(empty ? T("Casilla vacía") : o.title, how);
         }
         bool right = IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && ui_hover(r);
@@ -387,7 +407,7 @@ void hud_draw_picker(GameActions *ga, const Props *props, const Player *p, int w
     const int pw = cols * (tile + gap) + 20, ph = rows * (tile + gap) + 44;
     const int x0 = (w - pw) / 2, y0 = h - 70 - ph;
     ui_panel((Rectangle){ (float)x0, (float)y0, (float)pw, (float)ph }, UI_METAL_GOLD);
-    ui_text_centered(TextFormat(T("Casilla %d: elige un arma, un objeto o una habilidad"), g_picking + 1), w / 2, y0 + 10, 10, UI_GOLD_LIGHT);
+    ui_text_centered(TextFormat(T("Casilla %d: elige un arma, un objeto o una habilidad"), hud_slot_number(g_picking)), w / 2, y0 + 10, 10, UI_GOLD_LIGHT);
     for (int i = 0; i < n; i++) {
         Rectangle r = { (float)(x0 + 10 + (i % cols) * (tile + gap)), (float)(y0 + 26 + (i / cols) * (tile + gap)), tile, tile };
         hover(r);

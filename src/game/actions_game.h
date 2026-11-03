@@ -286,6 +286,8 @@ void ga_request_escort_order(int order); // desde el HUD, atendida en el proximo
 // El objetivo (src/game/combat_game.c): hay enemigos a tiro de objetivo; el pedido de O (1 el
 // siguiente, -1 el anterior con Mayus+O, 0 nada).
 void ga_set_combat_near(bool near);
+// El animal elegido como objetivo (indice en ga->animals, o -1): el lazo lo busca primero (A2 y A3).
+void ga_set_target_animal(int index);
 int ga_take_target_request(void);
 
 int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, const Player *p, bool night, Vector3 *pos, float *radius,

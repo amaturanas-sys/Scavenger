@@ -40,7 +40,13 @@ typedef struct {
 } QbSlot;
 void hud_reset(void); // las casillas de serie (partida nueva)
 const QbSlot *hud_slots(void); // las casillas, para guardarlas (src/game/save_game.c)
-bool hud_assign_item(int slot, const char *id); // asigna el objeto seleccionado del inventario
+// El numero de la casilla en su tecla: 1..9 y, la decima, 0.
+int hud_slot_number(int slot);
+// Asigna un objeto (el elegido en el inventario, Tab + numero) a esa casilla. false si no tiene uso en la
+// barra (beber, vendar, la antorcha, empuñar, el lazo, la trepa o la silla).
+bool hud_assign_item(const GameActions *ga, int slot, const char *id);
+// El icono de lo que guarda una casilla (para la fila de la barra en el inventario).
+IconId hud_slot_icon(const GameActions *ga, int slot);
 void hud_update(GameActions *ga, const Props *props, const Player *p, bool input_ok, char *log, size_t len);
 void hud_quickbar(GameActions *ga, const Props *props, const Player *p, int x, int y);
 bool hud_picker_open(void);

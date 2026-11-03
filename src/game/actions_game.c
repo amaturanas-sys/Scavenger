@@ -129,6 +129,7 @@ static bool g_quick_swap;              // pasar el arma a la otra mano (Mayus + 
 static int g_quick_craft = -1;         // receta pedida (la prueba --forja)
 static int g_target_req;               // O: 1 el enemigo siguiente, -1 el anterior (Mayus+O)
 static bool g_combat_near;             // hay enemigos a tiro de objetivo (lo pone src/game/combat_game.c)
+static int g_target_animal = -1;       // el animal elegido como objetivo (A3), para el lazo
 
 static bool preset_available(const GameActions *ga, int k) {
     for (int h = 0; h < 2; h++)
@@ -168,6 +169,8 @@ void ga_escort_order(GameActions *ga, int order, char *log, size_t len) {
                              : order == ORDER_DEFEND ? T("Escolta: te defienden; no se alejan de tu lado.")
                                                      : T("Escolta: te siguen sin pelear."));
 }
+void ga_set_target_animal(int index) { g_target_animal = index; }
+
 void ga_set_combat_near(bool near) { g_combat_near = near; }
 int ga_take_target_request(void) {
     int r = g_target_req;
@@ -412,12 +415,17 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
             return;
         }
         break;
-    case ACTION_THROW_LASSO:
-        if ((ga->target = animal_ahead(ga, p, ANIMAL_WILD, LASSO_RANGE, true)) < 0) {
+    case ACTION_THROW_LASSO: {
+        // El animal elegido como objetivo (O o un toque, A3), si esta a tiro; si no, el de delante.
+        int tg = g_target_animal;
+        bool aimed = tg >= 0 && tg < ga->animal_count && ga->animals[tg].used && ga->animals[tg].state == ANIMAL_WILD &&
+                     !ga->animals[tg].ridden && dist2d(p->pos, (Vector3){ ga->animals[tg].x, 0, ga->animals[tg].z }) < LASSO_RANGE;
+        if ((ga->target = aimed ? tg : animal_ahead(ga, p, ANIMAL_WILD, LASSO_RANGE, true)) < 0) {
             snprintf(log, len, "%s", T("No hay un animal salvaje a tiro de lazo delante."));
             return;
         }
         break;
+    }
     case ACTION_PAN:
         if (!ga->terrain || !gems_water_ahead(ga->terrain, p)) {
             snprintf(log, len, "%s", T("Para cribar hay que estar en la orilla, mirando al agua."));
