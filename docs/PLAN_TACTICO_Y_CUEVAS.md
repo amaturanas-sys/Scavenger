@@ -95,10 +95,10 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 ## Fase B — Cuevas (v0.13.x)
 
 ### B1 — La boca (v0.13.0)
-- **El generador** (`src/sim/caves.c`, desde la semilla del mundo): las cuevas en roca, laderas y farallones, nunca en zonas inundables. Las guaridas de hoy pasan a ser cuevas de animales.
+- **Hecho (primera version):** el generador (`src/sim/caves.c`, desde la semilla del mundo) convierte cada guarida en una cueva de animales con una planta determinista. La ubicacion sigue las reglas de terreno seco de las guaridas.
 - **El umbral:** un marco de roca con la textura del bioma y, detrás, la cara plana que finge el túnel y cambia de aspecto con el punto de vista del jugador.
-- **La planta:** la Cisterna Magna en el centro y de 3 a 9 recámaras alrededor, a distintas alturas, unidas por pasillos; la bajada desde el umbral, la más empinada y sin vuelta.
-- **Adentro es un espacio aparte** (el terreno no se puede ahuecar): oscuro, con la antorcha del jugador y las de las paredes.
+- **Hecho (primera version):** la Cisterna Magna queda en el centro y hay de 3 a 9 recámaras alrededor, a distintas alturas, unidas en anillo; la bajada desde el umbral es de un solo sentido.
+- **Hecho (primera version):** el dibujo añade el marco de roca, una cara plana oscura y el espacio interior representado aparte del terreno exterior.
 - **Pruebas:** todas las recámaras se alcanzan, la bajada no se sube, siempre hay salida, nunca inundada.
 
 ### B2 — Lo que dejan los animales (v0.13.1)

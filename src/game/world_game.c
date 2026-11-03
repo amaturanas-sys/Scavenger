@@ -135,17 +135,31 @@ static Color folk_color(Region rg, int k) {
 
 static bool g_fires_out;
 
-static void draw_den(const Terrain *t, const Den *d) {
-    float y = terrain_height(t, d->x, d->z);
-    Color rock = d->region == REGION_DESERT ? (Color){ 170, 120, 84, 255 } : (Color){ 112, 108, 100, 255 };
-    for (int i = 0; i < 6; i++) { // un monticulo de peñas
-        float a = (float)i * 1.05f, r = 2.4f + (float)(i % 2);
-        DrawSphere((Vector3){ d->x + cosf(a) * r, y + 0.6f, d->z + sinf(a) * r }, 1.6f + 0.4f * (float)(i % 3), rock);
+static Vector3 cave_point(const Cave *c, const CaveRoom *room, float y) {
+    float cs = cosf(c->yaw), sn = sinf(c->yaw);
+    return (Vector3){ c->x + room->x * cs - room->z * sn, y, c->z + room->x * sn + room->z * cs };
+}
+
+static void draw_cave(const Terrain *t, const Cave *c) {
+    float ground = terrain_height(t, c->x, c->z);
+    Color rock = c->region == REGION_DESERT ? (Color){ 170, 120, 84, 255 } : (Color){ 112, 108, 100, 255 };
+    float cs = cosf(c->yaw), sn = sinf(c->yaw);
+    Vector3 left = { c->x - cs * 3.2f, ground + 1.8f, c->z - sn * 3.2f };
+    Vector3 right = { c->x + cs * 3.2f, ground + 1.8f, c->z + sn * 3.2f };
+    DrawCube(left, 1.5f, 3.6f, 2.0f, rock);
+    DrawCube(right, 1.5f, 3.6f, 2.0f, rock);
+    DrawCube((Vector3){ c->x, ground + 3.5f, c->z }, 7.8f, 1.2f, 2.0f, rock);
+    // Cara plana oscura: simula la profundidad del umbral sin ahuecar el terreno exterior.
+    Vector3 face = { c->x + cs * 0.9f, ground + 1.7f, c->z + sn * 0.9f };
+    DrawCube(face, 5.2f, 3.0f, 0.15f, (Color){ 12, 12, 14, 255 });
+    for (int i = 0; i < c->room_count; i++) {
+        const CaveRoom *r = &c->rooms[i];
+        Vector3 center = cave_point(c, r, ground + r->floor_y + 0.15f);
+        DrawCylinder(center, r->radius, r->radius, 0.25f, 12, (Color){ 28, 25, 24, 255 });
+        if (i > 0) {
+            DrawCylinder((Vector3){ center.x, center.y + 1.6f, center.z }, r->radius + 0.25f, r->radius + 0.25f, 3.2f, 12, rock);
+        }
     }
-    DrawSphere((Vector3){ d->x, y + 1.6f, d->z }, 2.6f, rock);
-    DrawCylinder((Vector3){ d->x + 2.4f, y, d->z }, 1.0f, 0.9f, 1.4f, 8, (Color){ 20, 16, 14, 255 }); // la boca
-    for (int i = 0; i < 4; i++) // huesos
-        DrawCube((Vector3){ d->x + 4.0f + (float)i * 0.5f, y + 0.05f, d->z - 1.0f + (float)i * 0.7f }, 0.6f, 0.08f, 0.12f, (Color){ 226, 220, 200, 255 });
 }
 
 // Un campamento de tribu: yurtas (o las casas de su region) en corro, la del jefe mas grande, el
@@ -190,8 +204,8 @@ static void draw_site(const Terrain *t, const WorldSite *st, float time) {
 void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, float time) {
     g_fires_out = ga->fires_out; // la lluvia apaga tambien los fuegos de los demas
     const World *w = t->world;
-    for (int i = 0; i < w->den_count; i++)
-        if (dist_xz(w->dens[i].x, w->dens[i].z, p->pos.x, p->pos.z) < DEN_DRAW) draw_den(t, &w->dens[i]);
+    for (int i = 0; i < w->cave_count; i++)
+        if (dist_xz(w->caves[i].x, w->caves[i].z, p->pos.x, p->pos.z) < DEN_DRAW) draw_cave(t, &w->caves[i]);
     for (int i = 0; i < w->tribe_count; i++)
         if (dist_xz(w->tribes[i].x, w->tribes[i].z, p->pos.x, p->pos.z) < TRIBE_DRAW) draw_tribe(t, &w->tribes[i], i, time);
     for (int i = 0; i < w->site_count; i++)

@@ -66,6 +66,7 @@ add_library(estepa_sim STATIC
   src/sim/trade.c
   src/sim/riding.c
   src/sim/forge.c
+  src/sim/caves.c
   src/sim/city.c
   src/sim/army.c
   src/sim/flora.c

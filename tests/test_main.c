@@ -5636,6 +5636,22 @@ static void test_world_dry(void) {
     CHECK(world_footprint_dry(w, w->settlements[0].x, w->settlements[0].z, WORLD_FOOT_CAPITAL, false));
 }
 
+static void test_caves_are_deterministic_and_reachable(void) {
+    World a, b;
+    world_generate(&a, 1206u);
+    world_generate(&b, 1206u);
+    CHECK(a.cave_count == a.den_count && a.cave_count > 0);
+    CHECK(a.cave_count == b.cave_count);
+    for (int i = 0; i < a.cave_count; i++) {
+        const Cave *ca = &a.caves[i], *cb = &b.caves[i];
+        CHECK(cave_layout_valid(ca));
+        CHECK(ca->room_count == cb->room_count && ca->x == cb->x && ca->z == cb->z);
+        for (int r = 0; r < ca->room_count; r++) CHECK(cave_room_reachable(ca, 0, r));
+        CHECK(ca->corridors[0].one_way);
+        CHECK(world_water(&a, ca->x, ca->z, 0.0f, NULL) < world_height(&a, ca->x, ca->z));
+    }
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -5702,6 +5718,7 @@ int main(void) {
     RUN(test_voxels);
     RUN(test_world_river_banks);
     RUN(test_world_water_never_floats);
+    RUN(test_caves_are_deterministic_and_reachable);
     RUN(test_swarms);
     RUN(test_fire_spread_and_rain);
     RUN(test_weather_hazards_random);

@@ -1276,6 +1276,10 @@ static void settle_all(World *w) {
         if (settle(w, PLACE_SITE, i, &st->x, &st->z) && st->kind == SITE_HARBOR) st->yaw = atan2f(st->x, st->z); // mirando al mar
     }
     for (int i = 0; i < w->den_count; i++) settle(w, PLACE_DEN, i, &w->dens[i].x, &w->dens[i].z);
+    for (int i = 0; i < w->den_count && i < CAVES_MAX; i++) {
+        const Den *d = &w->dens[i];
+        cave_generate(&w->caves[w->cave_count++], w->seed, i, d->x, d->z, d->region, d->species);
+    }
 }
 
 void world_generate(World *w, uint32_t seed) {
