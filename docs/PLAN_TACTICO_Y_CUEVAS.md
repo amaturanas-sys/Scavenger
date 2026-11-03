@@ -78,11 +78,12 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 - **Pendiente:** las vendas y la comida desde la barra requieren una acción de consumo del jugador; no existe todavía una mecánica de hambre del jugador.
 
 ### A3 — El objetivo (v0.12.2)
-- Con un arma a distancia en la mano: clic izquierdo o derecho elige al de delante; los clics siguientes pasan al de la izquierda o al de la derecha; mantener 1 s lo suelta. En la tableta, un toque elige y mantenerlo lo suelta.
-- Con objetivo, el personaje lo mira siempre y se mueve de costado.
-- También los animales (cazar).
-- La línea de visión respeta el relieve, las rocas y los muros.
-- Lo que tarda en descubrirte un enemigo que te ve: 5 s de día, 7 s de noche, 3 s si llevas la antorcha (menos de cerca). «!» cuando te descubre; «?» si te pierde de vista: va a buscarte donde te vio.
+- **Hecho:** `O` y `Ctrl+Q`/`Ctrl+E` recorren enemigos y animales; el clic o toque sobre una silueta visible la elige.
+- **Hecho:** el objetivo se conserva en `Combat.target_lock` (enemigos positivos, animales negativos), se marca con un anillo dorado y se pierde al morir, alejarse o quedar tras una loma.
+- **Hecho:** las armas a distancia calculan la caída y orientan al jugador hacia el enemigo o animal elegido.
+- **Hecho:** la línea de visión del selector y de la detección respeta el relieve del terreno.
+- **Hecho:** un enemigo tarda 5 s en reconocerte de día, 7 s de noche y 3 s si llevas la antorcha; conserva la búsqueda si ya estaba alertado.
+- **Pendiente:** mantener un segundo para soltar el objetivo y el cambio explícito de objetivo con los dos botones del ratón requieren separar el clic de ataque/bloqueo en la interfaz.
 
 ### A4 — A cubierto (v0.12.3)
 - `C` junto a una roca, un muro o un árbol te pega a él; lejos de todo, `C` sigue siendo sigilo.

@@ -194,6 +194,7 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
   - **Lo que sueltan los enemigos** (escudos, armas) queda en el suelo. Si te lo arrancan a ti, su número (1 a 9 o 0) vuelve a empuñar.
 - **Armas de mano:**
   - Los números (1 a 9 o 0) empuñan lo que haya en esa casilla de la barra rápida; la misma tecla otra vez enfunda.
+  - **Objetivo (v0.12.2):** `O` recorre enemigos y animales; `Ctrl+Q` y `Ctrl+E` cambian al anterior o al siguiente. Un clic o toque sobre una silueta visible la elige; el anillo dorado la marca y las armas a distancia calculan la caída hacia ella. El objetivo se pierde a 25 m o detrás de una loma. Un enemigo tarda 5 s de día, 7 s de noche o 3 s con antorcha en reconocerte.
   - `Mayús+número` pasa el arma a la otra mano. Con el escudo o un arma a dos manos no se puede. Con la izquierda sola se golpea peor.
   - Con un arma en cada mano, el combo alterna derecha e izquierda.
 - **IA:** los bandidos y los captores llevan escudo a veces y se cubren cuando vas a golpear (no mientras anuncian su golpe). Contra tu escudo en guardia patean (a la carrera si vienen corriendo), agarran o enganchan (los fanáticos llevan hacha); contra tu arma en guardia patean o golpean pesado. Si estás en el suelo, rematan. La escolta pelea igual (los grandes guerreros, con guja).

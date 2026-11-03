@@ -659,6 +659,7 @@ static const SfField SF_F_Enemy[] = {
     SF_ONE(Enemy, windup, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, windup_move, "int", SF_INT, NULL),
     SF_ONE(Enemy, alert, "float", SF_FLOAT, NULL),
+    SF_ONE(Enemy, spotting, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, ride_yaw, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, orbit_dir, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, retreating, "bool", SF_BOOL, NULL),

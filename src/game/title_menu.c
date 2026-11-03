@@ -110,7 +110,7 @@ static const HelpPage PAGES[] = {
         N_("J o clic derecho sin arrastrar, mantener: con escudo cubre el frente (J + H: golpe de escudo); sin escudo paras con el arma: aguanta la mitad y cansa"),
         N_("I justo antes del golpe enemigo (el rombo dorado destella): hacha o guja le arrancan el escudo; manos o daga, llave y derribo; las demás desvían; solo con el escudo (la espada enfundada) lo desvías y lo aturdes con el canto. A destiempo quedas expuesto."),
         N_("K: con el escudo en el brazo, carga que empuja; sin él, patada (corriendo, con inercia: tumba aun con escudo)"),
-        N_("O: el objetivo siguiente (Mayús+O, el anterior), o toca al enemigo. Un anillo dorado lo marca y los golpes y las flechas van a él."),
+        N_("O: el objetivo siguiente (Mayús+O, el anterior), o toca al enemigo o animal. Un anillo dorado lo marca y los golpes y las flechas van a él."),
         N_("A caballo: H golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo.") } },
     { N_("Armas, aguante y heridas"), 1,
       { N_("1 a 9: la barra rápida. De serie, 1 la espada (otra vez: la enfundas), 2 el escudo (al brazo o a la espalda) y 3 el odre; cada uno se guarda sin tocar al otro · Mayús+número: a la otra mano · Alt+número o vacía: elegir qué va"),

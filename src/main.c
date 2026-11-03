@@ -1344,7 +1344,8 @@ int main(int argc, char **argv) {
             // Un clic o un toque sobre un enemigo (no sobre el HUD) lo elige como objetivo.
             if (!gallery_mode && !menu && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !hud_pointer_over() &&
                 !ig_blocks_input(&g_actions) && !g_actions.dlg.open)
-                cb_pick_target(&g_combat, cam, virtual_pointer(), VIRTUAL_W, VIRTUAL_H, log, sizeof(log));
+                cb_pick_target(&g_combat, &g_actions, &terrain, &player, cam, virtual_pointer(), VIRTUAL_W, VIRTUAL_H,
+                               log, sizeof(log));
             if (!gallery_mode)
                 cb_update(&g_combat, &player, &g_actions, &troop, &g_props, &terrain, tribe_fire,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), clock_is_night(world_time),
@@ -1370,7 +1371,7 @@ int main(int argc, char **argv) {
                 player.yaw = rig.yaw;
             }
             if (start_target && frame == 30 && !gallery_mode) // prueba: como pulsar O con enemigos cerca
-                cb_cycle_target(&g_combat, &player, 1, log, sizeof(log));
+                cb_cycle_target(&g_combat, &g_actions, &terrain, &player, 1, log, sizeof(log));
             if (start_guards && frame == 3 && !gallery_mode) // prueba: dos integrantes sin oficio clave pasan a soldados
                 for (int i = 0, k = 0; i < troop.count && k < 2; i++)
                     if (troop.members[i].role == ROLE_COOK || troop.members[i].role == ROLE_SCOUT || troop.members[i].role == ROLE_NONE)

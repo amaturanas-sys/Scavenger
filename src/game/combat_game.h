@@ -9,8 +9,9 @@
 //    (escudo, o el arma, que cansa), K carga con escudo o patada; J + H golpe de
 //    escudo; lo que hacen depende de lo que esta fuera (la espada, el escudo o los
 //    dos); los enemigos y la escolta usan las mismas reglas;
-//  - objetivo: O pasa al enemigo siguiente (Mayus+O, al anterior), un toque o un clic lo
-//    elige; anillo bajo los pies y su barra de vida resaltada; se pierde a 25 m;
+//  - objetivo: O pasa al siguiente (Mayus+O, al anterior), un toque o un clic lo
+//    elige entre enemigos y animales; anillo bajo los pies y su barra de vida resaltada;
+//    se pierde a 25 m;
 //  - armas a distancia: mantener H (o clic) para tensar y soltar para disparar;
 //    con objetivo, la mira calcula la caida sola; sin el, la camara alza o baja
 //    la mira y se ve la curva que hara el proyectil; J baja el arma;
@@ -90,6 +91,7 @@ typedef struct {
     float windup;      // s que le quedan al golpe que anuncia (levanta el arma); 0: ninguno
     int windup_move;   // el golpe anunciado (MeleeMove + 1)
     float alert;       // s que busca al jugador aunque no lo vea (lo avisaron: un abatido que huyo, un grito)
+    float spotting;    // s viendote: tarda en reconocerte (dia 5, noche 7, antorcha 3)
     // La monta (fase 6, src/sim/riding.h): el rumbo del caballo y la maniobra del arquero a caballo.
     float ride_yaw;    // hacia donde va el caballo (el jinete mira a su blanco)
     float orbit_dir;   // sentido en que rodea al blanco (+1 o -1; 0: sin elegir)
@@ -164,7 +166,7 @@ typedef struct {
     float loose_yaw[4];
     int loose_n;
     // Los cuatro botones.
-    int target_lock;   // enemigo elegido + 1 (0: ninguno)
+    int target_lock;   // enemigo +1, animal -indice-1 (0: ninguno)
     float parry_cd;    // espera hasta el proximo parry
     float exposed;     // s expuesto tras un parry a destiempo (ni se cubre ni ataca)
     // La espalda y los rehenes (fase 2).
@@ -177,9 +179,10 @@ typedef struct {
 } Combat;
 
 void cb_init(Combat *cb, unsigned seed);
-// Un clic o un toque sobre un enemigo lo elige como objetivo (y ese clic no es un golpe).
+// Un clic o un toque sobre un enemigo o animal lo elige como objetivo (y ese clic no es un golpe).
 // pointer: en la pantalla virtual de w x h. true si eligio a alguien.
-bool cb_pick_target(Combat *cb, Camera3D cam, Vector2 pointer, int w, int h, char *log, size_t len);
+bool cb_pick_target(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p,
+                    Camera3D cam, Vector2 pointer, int w, int h, char *log, size_t len);
 // Las yurtas del campamento inicial (src/world/camp.h), que no son objetos del mundo: alli se
 // esconden los pobladores en un asalto (con las tiendas, refugios y casas).
 void cb_set_shelters(const Vector3 *pos, int n);
@@ -194,9 +197,12 @@ void cb_test_raid(Combat *cb, const GameActions *ga, const Player *p, const Terr
 // vio; con hostage, ademas lo toma de rehen.
 void cb_test_back(Combat *cb, Player *p, bool hostage, char *log, size_t len);
 // O: el objetivo siguiente (dir 1) o el anterior (-1, Mayus+O), en orden alrededor del jugador.
-void cb_cycle_target(Combat *cb, const Player *p, int dir, char *log, size_t len);
+void cb_cycle_target(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p,
+                     int dir, char *log, size_t len);
 // El enemigo elegido (o NULL).
 const Enemy *cb_target(const Combat *cb);
+// El animal elegido (o NULL).
+const Animal *cb_target_animal(const Combat *cb, const GameActions *ga);
 // Hay un golpe enemigo en la ventana del parry (la casilla destella).
 bool cb_parry_cue(const Combat *cb);
 // Los cuatro botones de combate, abajo a la derecha (ataque, bloqueo, parry, carga o patada):
