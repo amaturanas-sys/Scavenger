@@ -81,13 +81,13 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 |---|---|---|
 | Moverse | WASD / flechas | Stick izquierdo |
 | Correr | Shift | LB |
-| Sigilo | C | Click stick derecho |
+| Sigilo; junto a un tronco, una roca o un muro, a cubierto | C (moverte o C otra vez te saca) | Click stick derecho |
 | Agacharse (más bajo y lento) | X | — |
 | Saltar | Espacio | A |
 | Cámara | Q / E, clic derecho + arrastrar, rueda | — |
 | Marcar sitio de interés / de peligro | M / Shift+M | — |
 | Menú de acciones, obras, fabricar y reparar | L (flechas + Enter; Q/E cambia de pestaña) | — |
-| Empuñar / enfundar (barra rápida) | 1 a 9: cada casilla saca o guarda lo suyo (de serie, 1 la espada, 2 el escudo, 3 el odre); Mayús+número: a la otra mano; Alt+número: elegir qué va | — |
+| Empuñar / enfundar (barra rápida) | 1 a 9 y 0: cada casilla saca o guarda lo suyo (de serie, 1 la espada, 2 el escudo, 3 el odre); Mayús+número: a la otra mano; Alt+número: elegir qué va | — |
 | Interactuar: hablar, tomar, botín, pozo, horno, rescatar, animales | F (Mayús+F: todo lo cercano, o sacrificar junto al ganado) | — |
 | Lanzar lo que llevas en brazos | T | — |
 | Agarrar por la espalda (rehén) | G | — |
@@ -95,8 +95,9 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Mochila (dejarla o recogerla) | Mayús+G (o la columna del HUD) | — |
 | Ficha del gran guerrero | U | — |
 | Montar / desmontar | R | — |
-| Inventario (bolsillos, mochila, alforjas, carreta, campamento) | Tab | — |
-| Objetivo siguiente / anterior | O / Mayús+O (también Ctrl+E / Ctrl+Q, un clic o un toque) | — |
+| Inventario (bolsillos, mochila, alforjas, carreta, campamento) | Tab (con algo elegido, un número, o un toque en la fila de abajo, lo pone en esa casilla de la barra) | — |
+| Objetivo siguiente / anterior | O / Mayús+O (también Ctrl+E / Ctrl+Q, o un clic o un toque sobre la silueta; con arco, el clic izquierdo y el derecho cambian, y mantener 1 s lo suelta) | — |
+| Entrar en una cueva | caminar por la boca (adentro, F toma, enciende y libera; se sale por la boca) | — |
 | Esconderse | agachado (X) tras rocas o matas; con sigilo (C) o agachado, en la hierba alta | — |
 | Beber / tomar hierbas contra los espíritus del agua | N / Mayús+N | — |
 | Vista orbital del mundo | F5 o Ctrl+M (flechas: girar e inclinar) | — |
@@ -255,7 +256,27 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
-Las manos (v0.12.0), la primera fase del sistema táctico de las hojas ([docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)):
+El sistema táctico y las cuevas (v0.13.0), el resto de las hojas ([docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)):
+- **La barra rápida, de 10 casillas** (`1` a `9` y `0`): con el inventario abierto (`Tab`), un número (o un toque en la fila
+  de abajo) pone lo elegido en esa casilla. El odre bebe o, junto al agua o a un pozo, se llena; el lazo va al animal
+  elegido; el gancho y la montura, también desde la barra.
+- **El objetivo:** enemigos y animales salvajes, con `O`, `Ctrl+Q`/`Ctrl+E` o un toque sobre la silueta. Con arco, el clic
+  cambia de objetivo y mantenerlo 1 s lo suelta. El personaje lo mira siempre y se pierde a los 25 m o tras 6 s sin verlo.
+- **Descubrirte lleva tiempo:** un enemigo tarda 5 s de día, 7 de noche y 3 con la antorcha (menos de cerca); mientras, un
+  «?» sobre él; al reconocerte, «!».
+- **A cubierto:** `C` junto a un tronco, una roca, una peña o una ruina te pega a él y no te ven desde el otro lado; con el
+  arco, `H` te asoma, disparas y vuelves.
+- **Las cuevas:** cada guarida tiene la suya (de fieras, abandonada, de forajidos, de una tribu o un almacén del imperio).
+  Se entra caminando por la boca: un vestíbulo, la bajada que no se sube a la Cisterna Magna y el anillo de recámaras
+  por donde se sale. Adentro está oscuro: la antorcha y las de las paredes alumbran. `F` toma lo que hay (cofres, ánforas,
+  armas, botín, vetas, huesos, nidos), enciende las antorchas y las fogatas, muestra las pinturas y libera a los
+  prisioneros, que se unen a la tribu o te traicionan. Las habitadas tienen guardias que salen a la boca una vez por día.
+- **Las partidas de antes** cargan igual: la décima casilla vacía y las cuevas sin tocar. Guardada adentro de una cueva,
+  la partida aparece en la boca.
+
+Pruebas: `--cubierto`, `--objetivo`, `--ir boca-forajidos` y `--cueva forajidos:0 --antorcha` (ver la «Captura automática»).
+
+Las manos (v0.12.0, que no se publicó sola: sale con la v0.13.0), la primera fase del sistema táctico de las hojas ([docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)):
 - **Las teclas de las hojas:** `H` ataque, `I` parry, `J` bloqueo, `K` carga o patada. `Tab` abre el inventario, `L` el menú de acciones y `O` elige el objetivo (`Mayús+O`, el anterior).
 - **La espada y el escudo, por separado:** de serie, `1` la espada (otra vez, la enfundas), `2` el escudo (al brazo o a la espalda) y `3` el odre; cada uno se guarda sin tocar al otro. Los cuatro botones cambian con lo que tengas fuera: con el escudo solo, puñetazo, parry con el escudo (lo desvía y lo aturde con el canto), cubrirse y carga. Elegir el arco guarda solos la espada y el escudo.
 - **Por la espalda y con un rehén:** `H` mata en silencio, `H` ejecuta al rehén e `I` lo empuja; `H` remata a un abatido.
@@ -480,4 +501,7 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --agachado --camara 0.2                             # agachado (X), de perfil
 ./build/estepa --enemigos bandidos --espalda                       # a la espalda de un bandido (la daga)
 ./build/estepa --enemigos bandidos --rehen                         # con un bandido de rehén
+./build/estepa --cubierto --enemigos bandidos                      # a cubierto junto a una roca (C)
+./build/estepa --ir boca-forajidos                                 # la boca de un refugio de forajidos (y sus guardias)
+./build/estepa --cueva forajidos:dialogo --antorcha                # adentro, ante un prisionero (--cueva-f: romper las cadenas)
 ```

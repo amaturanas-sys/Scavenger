@@ -1327,7 +1327,7 @@ tienes %d, hacen falta %d · potencia x%.2f	you have %d, %d needed · power x%.2
 ¿Qué pieza? Cada una va en su hueco y pesa distinto.	Which piece? Each goes in its own slot and weighs differently.
 # --- src/game/title_menu.c
 %s el hueco %d	%s slot %d
-1 a 9: la barra rápida. De serie, 1 la espada (otra vez: la enfundas), 2 el escudo (al brazo o a la espalda) y 3 el odre; cada uno se guarda sin tocar al otro · Mayús+número: a la otra mano · Alt+número o vacía: elegir qué va	1 to 9: the quick bar. By default, 1 the sword (again: you sheathe it), 2 the shield (on the arm or on the back) and 3 the waterskin; each one is stowed without touching the other · Shift+number: to the other hand · Alt+number or empty: choose what goes there
+1 a 9 y 0: la barra rápida. De serie, 1 la espada (otra vez: la enfundas), 2 el escudo (al brazo o a la espalda) y 3 el odre; cada uno se guarda sin tocar al otro · Mayús+número: a la otra mano · Alt+número o vacía: elegir qué va · en el inventario (Tab), un número pone ahí lo elegido	1 to 9 and 0: the quick bar. By default, 1 the sword (again: sheathe it), 2 the shield (on the arm or the back) and 3 the waterskin; each is put away without touching the other · Shift+number: to the other hand · Alt+number or empty: choose what goes there · in the inventory (Tab), a number puts the selected item there
 1 espada · 2 escudo · 3 odre	1 sword · 2 shield · 3 waterskin
 A / D o flechas	A / D or arrows
 A caballo	On horseback
@@ -1337,6 +1337,7 @@ A veces una banda asalta el campamento, más de noche: los que no pelean corren 
 Abatido, tu escolta te levanta. Si mueres (desangrado o sin socorro), vuelves a tu último lugar de descanso (campamento o tienda) y tus huesos quedan donde caíste. Tus compañeros mueren para siempre.	When downed, your escort lifts you. If you die (bled out or with no help), you return to your last resting place (camp or tent) and your bones stay where you fell. Your companions die for good.
 Abejas: con la antorcha encendida, el humo las calma y F toma la miel.	Bees: with the torch lit, the smoke calms them and F takes the honey.
 Acompañados corren menos riesgo y rinden más, y también el que sabe el oficio (explorador, cazador, pastor, soldado o guardia): el número en la casilla dice cuántos lo saben.	In pairs, or knowing the trade (scout, hunter, herder, soldier, guard), they risk less and do better: the tile's number says how many know it.
+Adentro está oscuro: enciende la antorcha (la barra rápida). Afuera el mundo espera; el reloj y la sed siguen.	It's dark inside: light your torch (quick bar). Outside, the world waits; the clock and thirst go on.
 Al caer: pulsa la serie de teclas (J K L U I O) a tiempo.	When you fall: press the key sequence (J K L U I O) in time.
 Al volver cuentan qué pasó: en el registro y en la ventana (Informes).	On their return they report: in the log and in the window (Reports).
 Arco a caballo: la carrera abre el tiro, y más hacia atrás (el disparo parto, alejándote al galope). La monta lo corrige; con objetivo (O) apuntas solo.	Bow on horseback: speed spreads the shot, and more so backwards (the Parthian shot, galloping away). Riding skill corrects it; with a target (O) you aim on your own.
@@ -1352,6 +1353,7 @@ Beber de más emborracha: torpe con las armas, cansado y te tambaleas.	Drinking 
 Buscar reclutas, explorar y cazar son salidas: se van, no se los ve, y vuelven a los pocos minutos con su suerte. De noche es más peligroso.	Finding recruits, scouting and hunting are trips: they go out of sight and return a few minutes later, for better or worse. Night is riskier.
 C sigilo o cobertura · X agacharse	C sneak or cover · X crouch
 Cada día, los del campamento con oficio trabajan lo que sobra del acopio: el cazador curte pieles y talla puntas de hueso, el pastor hace fieltro, el constructor labra madera y hace adobe, el cocinero velas de sebo, el curandero ungüento y el orfebre peines.	Every day, camp folk with a trade work the store's surplus: the hunter tans hides and carves bone points, the herder makes felt, the builder dresses timber and makes adobe, the cook tallow candles, the healer salve and the goldsmith combs.
+Cada guarida tiene su cueva: de fieras, abandonada, de forajidos, de una tribu o un almacén del imperio. Se entra caminando por la boca y se sale por ella.	Every den has its cave: a beasts' cave, an abandoned one, an outlaws' hideout, a tribal refuge or an imperial storehouse. Walk in through the mouth and leave the same way.
 Cada partida nueva cambia los ríos, los lagos, las montañas y dónde están los pueblos y las guaridas.	Each new game changes the rivers, lakes, mountains and where villages and dens are.
 Cada región tiene su altura: la costa, la más baja; el altiplano, el más alto. Hace más frío cuanto más alto.	Each region has its own altitude: the coast is the lowest, the highland the highest. The higher, the colder.
 Cada región tiene su reino, sus aldeas y su capital amurallada, sus fieras y sus tribus nómadas: rivales, neutrales o amigas. Ruinas y estructuras quedan en el mapa al verlas.	Each region has its kingdom, its villages and walled capital, its beasts and its nomad tribes: rival, neutral or friendly. Ruins and structures go on the map once you see them.
@@ -1366,6 +1368,7 @@ Cerrar el juego	Close the game
 Ciudades y reinos	Cities and kingdoms
 Clima y peligros	Weather and hazards
 Combate cuerpo a cuerpo	Melee combat
+Con el arco en la mano, el clic izquierdo o el derecho cambian de objetivo y mantenerlo 1 s lo suelta. A cubierto (C), H te asoma: disparas y vuelves.	With the bow in hand, left or right click switches target and holding it for 1 s releases it. In cover (C), H leans you out: you shoot and duck back.
 Con eso se fabrica (L, Fabricar): sillas, bridas, alforjas, aljabas, armadura laminar de cuero y el arco compuesto. Y se construye más duradero: casa de adobe, cabaña de troncos, choza de fieltro.	With that you craft (L, Craft): saddles, bridles, saddlebags, quivers, leather lamellar armor and the composite bow. And build to last: adobe house, log cabin, felt hut.
 Con la relación con el kanato en -40 (o mucho rencor en una ciudad) sale una expedición de castigo contra tu campamento, si su tesoro la paga.	With your relation to the khanate at -40 (or deep grudge in a city), a punitive expedition marches on your camp, if its treasury can pay for it.
 Construyen los del campamento que no tienen tarea; el que sabe el oficio trabaja el doble.	The camp's idle people do the building; whoever knows the trade works twice as fast.
@@ -1415,6 +1418,7 @@ F1/Ctrl+H cerrar esta ayuda	F1/Ctrl+H close this help
 F2, F3, F4 (o Ctrl+1, 2, 3): habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)	F2, F3, F4 (or Ctrl+1, 2, 3): active abilities · P equipment: armor, jewelry and tattoos (Q/E)
 F5 o Ctrl+M: vista orbital del mundo entero (flechas para girar e inclinar). El sol, la luna y las estrellas cruzan el cielo; el viento lleva las nubes y las cumbres altas quedan entre ellas.	F5 or Ctrl+M: orbital view of the whole world (arrows to turn and tilt). The sun, moon and stars cross the sky; the wind carries the clouds, and the high peaks stand among them.
 F5/Ctrl+M vista orbital	F5/Ctrl+M orbital view
+F: tomar lo que hay (cofres, ánforas, armas, botín, vetas, huesos, nidos), encender antorchas y fogatas con la tuya y mirar las pinturas.	F: take what's there (chests, amphorae, weapons, hoards, veins, bones, nests), light torches and fires with yours and look at the paintings.
 Fabricar a mano: flechas (leña, plumas, pedernal), cuerda (tendones), ungüento (hierbas y miel), coraza y botas (pieles). Lo forjado pide herrero y horno.	Craft by hand: arrows (wood, feathers, flint), rope (sinew), ointment (herbs and honey), cuirass and boots (hides). Forged goods need a smith and a furnace.
 Fauna y caza	Wildlife and hunting
 Forja móvil (se hace en el horno de acero): a mano en la mochila, las alforjas, la carreta o el acopio, también en la marcha. Repara el metal y hace puntas de flecha de hierro, cuchillos y sables con una hoja de acero.	Mobile forge (made at the steel furnace): at hand in the backpack, saddlebags, cart or store, also on the march. It repairs metal and makes iron arrowheads, knives and sabres from a steel blade.
@@ -1446,6 +1450,7 @@ L, Llenar el odre en la orilla: agua cruda (3 tragos por odre). Fabricar: agua c
 L, Obras (o el guardián, F) elige una obra: la cámara sube sobre el campamento.	L, Works (or the keeper, F) picks a building: the camera rises above the camp.
 L: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · Tab: inventario	L: actions, works, craft and repair (Q/E switches tab) · Tab: inventory
 La armadura va por piezas (casco, gorjal, coraza, hombreras, brazales, guantes, faldar, grebas, botas). Cada material para distinto el corte, el golpe y la flecha, y se gasta con los impactos.	Armour comes in pieces (helmet, gorget, cuirass, pauldrons, bracers, gauntlets, skirt, greaves, boots). Each material stops cuts, blows and arrows differently, and wears with hits.
+La bajada a la Cisterna Magna es empinada y no se sube: se sale por las recámaras del anillo.	The slope down to the Great Cistern is too steep to climb back: leave through the ring of chambers.
 La escolta y la guardia	The escort and the guard
 La espalda, rehenes y abatidos	Backstabs, hostages and the downed
 La estepa	The steppe
@@ -1461,8 +1466,10 @@ Lanza ligera, a pie y a caballo. Lanza pesada: solo a caballo; en ristre (K) der
 Las armas de la estepa	Steppe weapons
 Las caravanas traen acero wootz; la capital vende hojas de sable de acero.	Caravans bring wootz steel; the capital sells steel sabre blades.
 Las caravanas van y vuelven entre cada caravasar y la capital más cercana. Si la asaltas, su escolta pelea; vencida, la carga queda en el suelo, y el reino se entera.	Caravans go back and forth between each caravanserai and the nearest capital. Raid one and its escort fights; once beaten, the cargo is left on the ground, and the kingdom hears of it.
+Las cuevas	Caves
 Las estructuras se desgastan: la tribu las repara con troncos cada día. Sin mantenimiento, la lluvia torrencial las derrumba.	Structures wear out: the tribe repairs them with logs every day. Without upkeep, torrential rain brings them down.
 Las forja el herrero en los hornos de bronce y de acero; las tribus las venden.	The smith forges them in the bronze and steel furnaces; the tribes sell them.
+Las habitadas tienen guardias: salen a la boca una vez por día y, mientras sigan en pie, no te dejan entrar.	Inhabited caves have guards: they come out to the mouth once a day and, while they stand, won't let you in.
 Las mazas, las patadas y los escudos tumban sin matar, y también una herida que no es mortal: el enemigo queda abatido en el suelo. A los 30-90 s despierta, herido, y huye a avisar a los suyos.	Maces, kicks and shields knock down without killing, and so does a wound that isn't mortal: the enemy lies downed. After 30-90 s they wake up, wounded, and run off to warn their own.
 Las obras	Building works
 Las partidas guardadas, con su foto y su fecha	Saved games, with their picture and date
@@ -1474,6 +1481,7 @@ Los escribas cobran impuestos para el tesoro, que paga a los soldados. Con plata
 Los lagos helados se cruzan, pero el hielo puede romperse.	Frozen lakes can be crossed, but the ice may break.
 Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.	Menus are icons: hover with the mouse (or pick with the arrows) and the name shows below; click or Enter to use them.
 Los pobladores y sus tareas	Villagers and their tasks
+Los prisioneros: F habla con ellos. Liberados, se unen a la tribu con su oficio, o te traicionan: te golpean, te roban y huyen.	Prisoners: F talks to them. Freed, they join the tribe with their trade, or betray you: they strike you, rob you and flee.
 Los rayos caen sobre lo alto durante las tormentas.	Lightning strikes high ground during storms.
 Los reinos tienen ejército: infantes pesados con pavés en formación cerrada, soldados, arqueros, ballesteros y carros de guerra, rápidos en el llano y lentos en la cuesta o en el agua.	The kingdoms have armies: heavy infantry with pavises in close formation, soldiers, archers, crossbowmen and war chariots, fast on flat ground and slow on slopes or in water.
 Los soldados que se quedan en el campamento hacen la guardia: rondan un anillo a 40-60 m, salen al encuentro de quien lo cruce y vuelven si alguien entra. De noche llevan antorcha. El guardián (F) capacita soldados.	Soldiers who stay at the camp keep watch: they patrol a ring 40-60 m out, go out to meet whoever crosses it and come back if someone gets in. At night they carry torches. The keeper (F) trains soldiers.
@@ -1521,6 +1529,7 @@ Templar: filo duro y lomo flexible, el arma pega más. Si sale mal, queda frági
 Todo vale plata: el guardián (Estado) y el inventario dicen cuánto vale el acopio.	Everything is worth silver: the warden (Status) and the inventory tell what the store is worth.
 Un campamento de la tribu cerca la deja sin grano; las flechas encendidas que caen adentro queman su granero.	A tribe camp nearby cuts off its grain; fire arrows that land inside burn its granary.
 Un campamento rival cuyos guerreros ya salieron a tu encuentro se saquea con F, si no queda nadie en pie alrededor.	A rival camp whose warriors already rode out against you can be plundered with F, if no one is left standing around.
+Un enemigo tarda en reconocerte: 5 s de día, 7 de noche, 3 si llevas la antorcha (de cerca, menos); mientras, un «?» sobre él. C junto a un tronco, una roca o una ruina te cubre: desde el otro lado no te ve.	An enemy takes time to recognize you: 5 s by day, 7 at night, 3 if you carry the torch (less up close); meanwhile, a «?» above him. C next to a trunk, a rock or a ruin gives you cover: he can't see you from the other side.
 Una gran tierra casi redonda con cinco regiones: la estepa en el centro, rodeada de ríos que serpentean; el bosque al noroeste, el desierto al noreste, el altiplano al sureste y los fiordos al suroeste.	A vast, nearly round land with five regions: the steppe at the center, ringed by winding rivers; the forest to the northwest, the desert to the northeast, the highland to the southeast and the fjords to the southwest.
 Una tienda o un refugio lejos de los demás campamentos funda uno nuevo: nombra guardián a alguien de tu escolta.	A tent or shelter far from other camps founds a new one: name someone from your escort its keeper.
 Una tribu nueva en la estepa	A new tribe on the steppe

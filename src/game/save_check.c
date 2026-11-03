@@ -123,6 +123,10 @@ void save_summary(const GameState *g, FILE *o) {
                 a->n[ARMY_CHARIOT], ga->expedition_lost, ga->expedition_out, ga->expedition_sacked);
     }
     if (ga->vassal_season) fprintf(o, "  tributo de las ciudades tomadas: estacion %d\n", ga->vassal_season);
+    // v0.13.0: las cuevas, lo hecho adentro (un bit por objeto) y el dia en que salieron sus guardias (solo si hay algo).
+    for (int i = 0; i < GA_CAVES; i++)
+        if (ga->cave_done[i] || ga->cave_guards_day[i])
+            fprintf(o, "  cueva %d hecho %#llx guardias dia %d\n", i, (unsigned long long)ga->cave_done[i], ga->cave_guards_day[i]);
     int animals = 0;
     for (int i = 0; i < ga->animal_count && i < GA_MAX_ANIMALS; i++) {
         const Animal *a = &ga->animals[i];

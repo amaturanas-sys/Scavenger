@@ -100,6 +100,7 @@ Reglas:
 | `lanza` (v0.8.0) | El jugador a caballo con la lanza pesada, justo después de una carga que alcanzó a dos bandidos de una fila de tres (el primero cayó muerto). |
 | `forja` (v0.8.1) | El jugador junto a una veta del altiplano, ya marcada en el mapa, con el sable de acero frágil empuñado. En la mochila (la grande), la forja móvil y 2 de mineral recién picado, y las puntas de flecha de hierro a medio hacer (`CRAFT_IRON_POINTS`, una receta nueva). |
 | `asedio` (v0.9.1) | La relación con el kanato en −50: su capital en guerra (la ciudad 0), con una puerta quemada, una escala apoyada en un tramo de la muralla y cercada el día anterior; una aldea (la ciudad 1) ya tomada por la tribu. Una expedición de castigo de la capital marcha sobre el campamento inicial: diez hombres en formación cerrada (cuatro infantes pesados con pavés delante, dos soldados, dos ballesteros y dos arqueros) y dos carros de guerra que ya cargan contra el jugador. |
+| `cueva` (v0.13.0) | Guardada adentro de un refugio de forajidos, recién liberado el prisionero de una celda (que traicionó: un golpe y tres virotes menos). Para el mundo, el jugador está en la boca, afuera; allí aparece al cargarla. Los guardias de la cueva ya salieron ese día (están afuera, junto a la boca). |
 | `campos` (v0.9.0) | El jugador en un campo del kanato que acaba de saquear el último día de la primavera: el campo quemado, 5 sacos de grano en el suelo y cuatro soldados del reino (`ENEMY_SOLDIER`, de la guardia de la ciudad 0) que salen por la puerta. Ya empezó el verano: la economía de las ciudades corrió un día y la revisión del tributo quedó anotada. |
 
 `estepa --probar-partidas tests/partidas` (CI, en el job de Linux) hace esto con cada una:
@@ -169,6 +170,25 @@ La v0.10.3 duplicó los árboles del campamento: `WORLD_MAX_TREES` pasó de 80 a
 `Disasters.tree_burn` (lo quemado de cada árbol). Los primeros 80 árboles salen iguales de la
 semilla; en las partidas viejas, los nuevos cargan sanos (en cero). La gente con la que arranca cada
 ciudad cambió (`city_start`), pero eso solo cuenta en las partidas nuevas: las guardadas traen la suya.
+
+La v0.12.0 (A1, publicada con la v0.13.0) agregó `Hands.right_away` y `left_away` (cada mano se guarda por separado). En cero (las partidas
+viejas), las dos manos siguen a `sheathed`, como antes.
+
+La v0.13.0 (el sistema táctico y las cuevas, [PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)) agregó, sin migraciones:
+- la décima casilla de la barra rápida (`HUD_QUICK_SLOTS` pasó de 9 a 10): una partida con nueve carga con la décima vacía;
+- a `Combat.target_lock`, los animales: un número negativo (el animal `i` es `-i - 1`). Las partidas viejas solo tienen
+  enemigos (positivos) o nada (cero) y cargan igual. Al final de `Combat`, `target_unseen` (cuánto hace que no se ve al
+  objetivo), y al de `Enemy`, `spot_flash` (el «!») y `last_seen` (dónde te vio por última vez): en cero, como recién
+  llegados;
+- a `Player`, la cobertura (`covered`, `cover_pos`, `cover_radius` y `peeking`). Se guarda, pero al cargar nadie está
+  cubierto (`src/game/save_game.c`): el obstáculo puede no estar;
+- a `GameActions`, las cuevas: `cave_done` (por cueva, un bit por objeto: lo tomado, encendido o rescatado) y
+  `cave_guards_day` (el día en que salieron sus guardias). En cero, todo está en su lugar y los guardias salen al
+  acercarse.
+
+Las cuevas no se guardan: salen de la semilla del mundo, como los ríos. Guardada adentro de una cueva, la partida tiene
+al jugador en la boca, afuera, y allí aparece al cargarla. El resumen suma la línea de cada cueva con algo hecho o con
+guardias, solo si no es cero (los resúmenes viejos no cambian).
 
 ## El esquema congelado de las partidas planas
 

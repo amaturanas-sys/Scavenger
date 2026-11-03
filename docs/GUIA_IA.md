@@ -105,6 +105,8 @@ Cada paso evita un error que ya pasó (ver la sección 8).
    - Si `i18n.py check` falla, falta traducir: `python3 tools/assets/i18n.py faltan` los lista y se
      traducen en `assets/i18n/en.tsv`.
    - Si cambió un struct que se guarda: `python3 tools/save/esquema.py` (ver PARTIDAS.md).
+   - Sin `.venv` (un contenedor nuevo), la prueba de los modelos la pide una vez:
+     `python3 -m venv .venv && .venv/bin/pip install -r tools/modelos/requirements.txt`.
    - Cada salida se lee entera, sin `| head` ni `| tail`.
 5. **Mirar el juego** (sección 7): una captura del lugar que cambió, y abrir la imagen. Un juego que
    compila igual puede caerse en el primer cuadro.
@@ -248,6 +250,8 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | Un objeto de cerca | `--ver <id del inventario>` |
 | El asedio | `--asedio puerta`, `fuego`, `salida`, `quemada`, `tomada`… |
 | Combate | `--enemigos bandidos`, `culto`, `lobos`, `arqueros` |
+| El sistema táctico | `--manos escudo` (`espada`, `nada`), `--rehen`, `--objetivo`, `--cubierto`, `--inventario` (la fila de la barra) |
+| Las cuevas | `--ir boca-forajidos` (`animal`, `abandonada`, `tribu`, `imperio`): la boca, afuera; `--cueva forajidos:0 --antorcha`: adentro (lugar: una sala o `boca`, `celda`, `dialogo`, `nido`, `cofre`, `fogata`…); `--cueva-f` pulsa F; `--caminar adelante` (o `atras`) |
 | La galería de assets | `--galeria` |
 | El mapa del mundo | `--semilla 42 --mapa-mundo mapa.png` |
 | Las partidas de referencia | `--probar-partidas ../tests/partidas` |

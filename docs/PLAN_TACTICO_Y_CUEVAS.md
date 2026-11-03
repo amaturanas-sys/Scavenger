@@ -1,6 +1,8 @@
 # Plan: el sistema táctico y las cuevas (v0.12 y v0.13)
 
-> **Estado:** A1 (v0.12.0) hecha. Siguen A2, A3 y A4 (v0.12.x) y las cuevas, B1 a B3 (v0.13.x). Cada fase va en su propio PR, con CI en verde, y sale como una versión que se puede probar en la tablet.
+> **Estado:** hecho. Las siete fases se hicieron en siete PR apilados: A1 en el #138 (la v0.12.0, que no llegó a publicarse
+> sola) y de A2 a B3 del #139 al #144. La revisión final los corrigió y completó en la rama del #138, y salen juntas en la
+> **v0.13.0**. Lo que queda pendiente está marcado como tal en cada fase.
 
 Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un documento que las resume («actualización maestra»). Las hojas están en [`docs/hojas/`](hojas/):
 
@@ -29,7 +31,7 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 |---|---|---|
 | Cuatro botones | `H` golpe · `J` bloqueo · `K` parry · `L` carga o patada (v0.5.0) | Pasar a H I J K, según la espada y el escudo |
 | 1 enfunda, 2 escudo | Los números empuñan y enfundan, pero el arma y el escudo iban juntos («sable y escudo» en la casilla 1) | La espada y el escudo por separado |
-| Barra rápida | 10 casillas: beber, vendar, antorcha, armas y habilidades | Comida desde la barra; lo demás ya está en A2 |
+| Barra rápida | 9 casillas: beber, vendar, antorcha, armas y habilidades | La décima casilla, asignar desde el inventario, el odre, el lazo, el gancho y la montura |
 | Inventario | `I` abre una cuadrícula (flechas o WASD) | `Tab` lo abre; un número asigna lo elegido a esa casilla |
 | Agarre (`G`) | Rehén o escudo humano por la espalda; `K` ejecuta, `L` empuja (v0.5.1) | `H` ejecuta, `I` empuja |
 | Selector | `Tab` en combate, clic sobre el enemigo, `Ctrl+Q`/`Ctrl+E` | Los clics con arma a distancia, mirar siempre al objetivo, los animales |
@@ -42,7 +44,7 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 
 ## Fase A — Máquinas de estado (v0.12.x)
 
-### A1 — Las manos (v0.12.0) — hecha
+### A1 — Las manos (v0.12.0, publicada con la v0.13.0) — hecha
 
 **Cómo quedó:**
 - **Las teclas** (`src/sim/keymap.c`): `H` ataque, `I` parry, `J` bloqueo, `K` carga o patada; `Tab` inventario, `L` menú de acciones, `O` objetivo (`Mayús+O`, el anterior). Ya ninguna tecla hace dos cosas según el contexto (antes, `Tab` era objetivo en combate y menú fuera, y `Mayús+L` carga o flecha). `V` y `Z` siguen libres. El minijuego de los peligros (`J K L U I O`) no choca: atrapado, el resto de la entrada no cuenta.
@@ -68,48 +70,133 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 - **El HUD:** las cuatro casillas en el orden `H I J K`, con «Puñetazo» y «Parry con escudo»; la columna de acciones muestra `L` para el menú; la pantalla de controles (`F1`), el instructivo, los avisos y el README con las teclas nuevas.
 - **Pruebas:** `test_keymap_four_buttons` (las teclas nuevas; ninguna tecla hace dos cosas) y `test_hands_each_hand` (cada mano, las partidas de antes, el arco, pasar de mano, el parry con el escudo). En el juego: `--manos escudo|espada|nada`.
 
-### A2 — La barra rápida (v0.12.1)
-- **Hecho:** 10 casillas: `1` a `9` y `0`.
-- **Hecho:** `Tab` abre el inventario; con el cursor (flechas o WASD) y un número, lo elegido va a esa casilla.
-- **Hecho:** el odre bebe; junto al agua o a un pozo, lo llena.
-- **Hecho:** el lazo apunta y se lanza al animal elegido (el objetivo de A3, o el de delante).
-- **Hecho:** el gancho de asedio apunta a lo alto de un muro o una torre; la cuerda te sube, como en una tirolesa.
-- **Hecho:** la montura ensilla al animal domado que tengas cerca.
-- **Pendiente:** las vendas y la comida desde la barra requieren una acción de consumo del jugador; no existe todavía una mecánica de hambre del jugador.
+### A2 — La barra rápida (v0.13.0) — hecha
 
-### A3 — El objetivo (v0.12.2)
-- **Hecho:** `O` y `Ctrl+Q`/`Ctrl+E` recorren enemigos y animales; el clic o toque sobre una silueta visible la elige.
-- **Hecho:** el objetivo se conserva en `Combat.target_lock` (enemigos positivos, animales negativos), se marca con un anillo dorado y se pierde al morir, alejarse o quedar tras una loma.
-- **Hecho:** las armas a distancia calculan la caída y orientan al jugador hacia el enemigo o animal elegido.
-- **Hecho:** la línea de visión del selector y de la detección respeta el relieve del terreno.
-- **Hecho:** un enemigo tarda 5 s en reconocerte de día, 7 s de noche y 3 s si llevas la antorcha; conserva la búsqueda si ya estaba alertado.
-- **Pendiente:** mantener un segundo para soltar el objetivo y el cambio explícito de objetivo con los dos botones del ratón requieren separar el clic de ataque/bloqueo en la interfaz.
+- **10 casillas,** `1` a `9` y `0` (la casilla 10 es la tecla `0`; los textos dicen «0», no «10»). Las partidas de antes
+  (9 casillas) cargan con la décima vacía.
+- **Asignar desde el inventario:** `Tab` lo abre; con lo elegido (flechas o WASD), un número lo pone en esa casilla. En la
+  tableta, la fila de las diez casillas al pie del inventario se toca. Solo entra lo que se usa desde la barra (beber,
+  vendar, la antorcha, lo que se empuña, el lazo, el gancho y la montura); lo demás avisa «no se usa desde la barra
+  rápida».
+- **El odre:** junto a un pozo o al agua, lo llena con la acción de siempre (`ACTION_FILL_WATER`, 3 s y sus reglas); en
+  otro lado, bebe. La columna «Beber» y `N` beben siempre.
+- **El lazo** va al animal salvaje elegido (A3) si está a tiro; si no, al de delante.
+- **El gancho** lanza la trepa al muro que tengas delante (los muros de la tribu y la muralla de una ciudad), como desde
+  el menú. **La montura** ensilla al animal domado que tengas cerca.
+- **Pendiente:** la comida desde la barra (el jugador todavía no tiene hambre); el gancho en torres y la cuerda como
+  tirolesa, que dibuja la hoja.
 
-### A4 — A cubierto (v0.12.3)
-- **Hecho:** `C` junto a una roca, un muro, un árbol o una mata te pega a él; lejos de todo, `C` sigue siendo sigilo.
-- **Hecho:** cubierto, no te ven desde el lado opuesto y el objetivo sigue elegido.
-- **Hecho:** con el arco, mantener `H` te asoma y apunta al objetivo; al soltar disparas y vuelves a cubrirte.
+### A3 — El objetivo (v0.13.0) — hecha
+
+- **Qué se elige:** enemigos y animales **salvajes** (los de la tribu, el ganado y las monturas, no). `Combat.target_lock`:
+  el enemigo `i` es `i + 1`, el animal `i` es `-i - 1`, `0` es ninguno (las partidas de antes cargan igual).
+- **`O`** (`Mayús+O`, el anterior) y `Ctrl+Q`/`Ctrl+E` recorren a los que ves, de izquierda a derecha según la cámara.
+- **El clic o el toque sobre una silueta** la elige, con cualquier arma (en la tableta es la forma de elegir); ese clic no
+  golpea. **Con un arma a distancia en la mano** (decisión 4), además: el clic izquierdo pasa al de la izquierda, el
+  derecho al de la derecha, y mantener cualquiera 1 s (`TARGET_RELEASE_HOLD`) suelta el objetivo. Con arma de mano, el
+  clic fuera de una silueta golpea y el derecho bloquea; con arco, el disparo es `H` o su casilla.
+- **Mirar siempre al objetivo:** el personaje lo mira y camina de costado; corriendo, a caballo o trepando, no.
+- **Se pierde** al morir, a más de 25 m (`TARGET_RANGE`) o tras 6 s sin verlo (`TARGET_UNSEEN_S`; el relieve, una roca o
+  un muro tapan). **Cubierto (A4) no se pierde.**
+- **La línea de visión** mira el relieve y, a menos de 3 m del suelo, las peñas del mundo (roquedales, farallones, torres
+  de arenisca, seracs). El obstáculo de la cobertura (A4) tapa aparte.
+- **Lo que tarda en reconocerte** un enemigo que te ve (decisión 3): 5 s de día, 7 de noche, 3 con la antorcha; de cerca,
+  menos (`stealth_recognition_seconds`: a 2 m, la décima parte). Mientras, «?» sobre él; al reconocerte, «!». Si te
+  cubres (A4) antes de que te reconozca, va adonde te vio por última vez y, si allí no te encuentra, desiste.
+- **Pendiente:** nada de la hoja.
+
+### A4 — A cubierto (v0.13.0) — hecha
+
+- **`C` contextual** (decisión 2): junto a un obstáculo te pega a él (agachado y en sigilo, «OCULTO»); lejos de todo,
+  sigue siendo sigilo. Sirven los obstáculos **del mundo** (`terrain_cover_near`: troncos, rocas grandes, matas altas y
+  las peñas) y los que se ponen (vegetación, rocas, ruinas, defensas y viviendas).
+- **No te ven desde el otro lado:** el obstáculo tapa la línea entre quien mira y tú (`stealth_cover_blocks`, una prueba
+  de segmento contra el disco del obstáculo).
+- **Moverte o `C` te saca;** golpear cuerpo a cuerpo, también.
+- **Con el arco:** `H` te asoma y apunta al objetivo; al soltar disparas y, si sigues junto al obstáculo, vuelves a
+  cubrirte.
+- **Al cargar una partida** no se está a cubierto (decisión de la revisión: el obstáculo puede no estar).
 
 ---
 
-## Fase B — Cuevas (v0.13.x)
+## Fase B — Cuevas (v0.13.0) — hecha
 
-### B1 — La boca (v0.13.0)
-- **Hecho (primera version):** el generador (`src/sim/caves.c`, desde la semilla del mundo) convierte cada guarida en una cueva de animales con una planta determinista. La ubicacion sigue las reglas de terreno seco de las guaridas.
-- **El umbral:** un marco de roca con la textura del bioma y, detrás, la cara plana que finge el túnel y cambia de aspecto con el punto de vista del jugador.
-- **Hecho (primera version):** la Cisterna Magna queda en el centro y hay de 3 a 9 recámaras alrededor, a distintas alturas, unidas en anillo; la bajada desde el umbral es de un solo sentido.
-- **Hecho (primera version):** el dibujo añade el marco de roca, una cara plana oscura y el espacio interior representado aparte del terreno exterior.
-- **Pruebas:** todas las recámaras se alcanzan, la bajada no se sube, siempre hay salida, nunca inundada.
+### B1 — La boca y la planta
 
-### B2 — Lo que dejan los animales (v0.13.1)
-- **Hecho (primera version):** `CaveRemains` genera de forma determinista estalactitas, estalagmitas, telarañas e insectos, vetas minerales, sangre, huesos, charcos y restos de una muerte.
-- **Hecho (primera version):** las cuevas de animales generan nidos, huevos, presas, armas abandonadas y botín de la Cisterna; la boca muestra parte de la escenografía.
-- **Tipo F (abandonadas):** lo de las C, D o E en ruinas y abandono, habitadas por animales oportunistas.
+Cada guarida del mundo tiene su cueva (`src/sim/caves.c`, desde la semilla y su índice: sin archivos ni bibliotecas).
+En las coordenadas de la cueva, la boca está en (0, 0) y +z va hacia adentro.
 
-### B3 — Los habitados (v0.13.2)
-- **Hecho (primera version):** la semilla clasifica cuevas en abandonadas, forajidos, tribus e imperios y genera antorchas, columnas, cofres, ánforas, depósitos de armas y celdas.
-- **Hecho (primera version):** cada cueva habitada tiene prisioneros y un riesgo de traición determinista: mayor en forajidos, menor en imperios.
+- **Afuera,** la boca es un peñasco con un túnel que se oscurece hacia el fondo (`src/game/world_game.c`). Cerca de la
+  boca no crecen árboles (12 m) y la cámara no se mete en la roca. **Al caminar hacia adentro por la boca, se entra.**
+- **El vestíbulo:** tras la boca, una cámara chica y llana (3 m de radio). De su borde salen, cada uno por su lado, los
+  tres pasillos de la boca: las dos salidas (a las recámaras `a` e `i`, los extremos del anillo) y la bajada.
+- **La Cisterna Magna:** la sala más honda (7 a 9 m de radio, el doble de alto). **La bajada** llega a ella desde el
+  vestíbulo: es la más empinada (1,1 a 1,3 de pendiente; todos los demás pasillos, 0,8 o menos) y **no se sube**
+  (`cave_step_ok`).
+- **El anillo:** de 3 a 9 recámaras alrededor de la Cisterna y más altas (las de los extremos, a 4 m bajo la boca; las del
+  fondo, 1,5 m sobre la Cisterna), unidas una tras otra. La Cisterna sube al anillo por el fondo (con un anillo par, a sus
+  dos recámaras más hondas; con uno impar, a la del medio), así que de ella se sale recorriendo el anillo hasta `a` o `i`.
+- **Las reglas** (`cave_layout_valid`, probadas en `test_caves` con tres semillas): las salas no se pisan ni pisan el
+  vestíbulo; todo se alcanza desde la boca y de todo se vuelve a ella; la bajada es la única sin vuelta y la más
+  empinada (las demás, 0,8 o menos); los tres pasillos de la boca no se pisan a 2 m del vestíbulo; lo de la pared no
+  tapa pasillos; la boca, en seco; determinista.
+- **Adentro** (`src/game/cave_game.c`) es un espacio aparte: su cámara (que no sale de la roca ni sube sobre la bóveda),
+  su oscuridad y su luz (por vértice: las antorchas y la fogata encendidas, la boca de día, la antorcha del jugador y un
+  poco alrededor de él). El plano de la cueva reemplaza al minimapa y muestra las salas que ya viste. Afuera el mundo
+  espera: el combate, la fauna, los peligros, los desastres y las ciudades; el reloj, la sed, la salud (sangra y sana),
+  el inventario, la barra rápida y la antorcha siguen. Para el mundo, el jugador queda en la boca: **allí se guarda la
+  partida y allí aparece al cargarla.** Se sale caminando por la boca, sin girar de golpe.
+
+### B2 — Lo que hay adentro
+
+Cada cosa es un objeto con su sala y su lugar (`CaveObject`, hasta 64 por cueva: lo que se toma o se rescata, primero).
+Lo de la pared (celdas, antorchas, vetas, depósitos, pinturas, telarañas) no tapa la entrada de un pasillo. Qué es cada
+uno (la decisión de la revisión: nada declarado que no se vea o no se use):
+
+| Objeto | Dónde | Qué es |
+|---|---|---|
+| Estalactitas, estalagmitas | todas | se ven (las estalagmitas cortan el paso) |
+| Telarañas, insectos, sangre, charcos | todas | se ven (los insectos se mueven) |
+| Huesos | todas (más en las de fieras) | **se toman** (F): huesos |
+| Vetas | todas | **se toman**: mineral de hierro o cobre |
+| Nidos | fieras y abandonadas | **se toman**: plumas (los huevos quedan, a la vista: la fiera cría) |
+| Presas | fieras | se ven (la carroña) |
+| Armas abandonadas | fieras y abandonadas | **se toman**: una daga, un hacha de mano, una lanza o un cuchillo |
+| Botín | la Cisterna de las de fieras y abandonadas | **se toma**: gemas o una joya de plata |
+| Antorchas, fogata | las habitadas (encendidas) y las abandonadas (apagadas) | dan luz; las apagadas **se encienden** con la antorcha propia (F) |
+| Columnas de ladrillo, pinturas | las habitadas (y las ruinas de las abandonadas) | las columnas cortan el paso; las pinturas **se miran** (F: lo que cuentan) |
+| Cofres | las habitadas (alguno en las abandonadas) | **se abren**: plata, granates y flechas (forajidos); pieles, queso y carne seca, turquesas (tribu); oro, jade y lapislázuli (imperio) |
+| Ánforas | las habitadas (alguna en las abandonadas) | **se toman**: airag (en el imperio, un saco de grano) |
+| Depósitos de armas | las habitadas | **se toman**: un hacha de mano, una lanza o un casco (en el imperio, cascos de cuero y de bronce) |
+| Celdas | las habitadas (vacías en las abandonadas) | con un **prisionero** (B3) |
+
+Lo tomado, encendido o rescatado queda en `GameActions.cave_done` (un bit por objeto), que se guarda.
+
+### B3 — Los habitados
+
+- **Los tipos** (desde la semilla): de fieras (40 %), abandonadas (15 %), de forajidos (20 %), de una tribu (12 %) y
+  almacenes del imperio (13 %). Las fieras de la guarida solo rondan las de fieras y las abandonadas.
+- **Los guardias:** al acercarte a menos de 38 m de una habitada, una vez por día salen a la boca (forajidos con un
+  arquero; guerreros de la tribu; la guardia imperial con un ballestero) y pelean con el combate de siempre. **Mientras
+  sigan en pie junto a la boca, no te dejan entrar.** Adentro no hay combate: los enemigos de la cueva son los que salen a
+  la boca (decisión de la revisión: el combate del juego vive en el terreno de afuera).
+- **Los prisioneros:** en las celdas del calabozo (una recámara del fondo), un pastor, un cazador, un herrero o un
+  forajido. F abre el diálogo: lo que dice, si se lo ve sincero o con «mirada de lobo», y dos opciones: romper las
+  cadenas o dejarlo. Liberado, **se une a la tribu** con su oficio (pastor, cazador, herrero, soldado) y más lealtad, y te
+  espera en la boca; o **te traiciona** (`cave_betray_percent`: 10 % el pastor, 18 % el cazador, 14 % el herrero, 55 % el
+  forajido; +15 en una cueva de forajidos, −5 en la de una tribu; entre 5 y 90): te golpea, te roba hasta tres de algo de
+  la mochila (o de los bolsillos) y huye. Con la tribu llena, se va por su cuenta.
+- **Las antorchas y la oscuridad:** las habitadas están encendidas; las de fieras y las abandonadas, a oscuras: sin
+  antorcha se ve apenas alrededor (la entrada lo avisa). Afuera, de noche, las antorchas de la boca de las habitadas
+  alumbran.
 - **El tipo B (bestias terribles)** queda pendiente, como dice la hoja.
+
+### Pruebas en el juego
+
+`--cueva tipo[:lugar]` (tipo: `animal`, `abandonada`, `forajidos`, `tribu`, `imperio`; lugar: una sala o `boca`, `celda`,
+`dialogo`, `nido`, `huevos`, `presa`, `botin`, `arma`, `cofre`, `anfora`, `deposito`, `pintura`, `fogata`, `antorcha`,
+`veta`, `columna`), `--cueva-f` (F en el cuadro 20; con el diálogo abierto, romper las cadenas), `--antorcha` (encendida
+en la mano), `--caminar adelante|atras` e `--ir boca-<tipo>`. Las capturas: [CAPTURAS.md](CAPTURAS.md#las-cuevas).
 
 ---
 

@@ -60,6 +60,35 @@ Los cuatro botones (`H I J K`, abajo a la derecha) según lo que está fuera; la
 | ![Nada](capturas/manos_nada.png) | **Todo guardado** (`--manos nada`): puñetazo, la llave y patada; sin bloqueo. |
 | ![Rehén](capturas/manos_rehen.png) | **Con un rehén** (`--enemigos bandidos --rehen`): `H` lo ejecuta, `I` lo empuja, `G` lo suelta. |
 
+### La barra, el objetivo y la cobertura
+
+El resto del sistema táctico ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), A2 a A4):
+
+| | |
+|---|---|
+| ![Barra](capturas/tactico_barra.png) | **La barra rápida desde el inventario** (`--inventario`): abajo, la fila de las diez casillas (`1` a `0`); un número, o un toque en la fila, pone ahí lo elegido. |
+| ![Objetivo](capturas/tactico_objetivo.png) | **El objetivo** (`--enemigos bandidos --objetivo`, como pulsar `O`): el elegido lleva la barra de vida con marco dorado. |
+| ![Cobertura](capturas/tactico_cobertura.png) | **A cubierto** (`--cubierto --enemigos bandidos`): `C` junto a una roca del mundo; «OCULTO» arriba y lo que se puede hacer al pie. |
+
+## Las cuevas
+
+Una por guarida ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1 a B3). Con `--ir boca-<tipo>` (afuera) y
+`--cueva tipo[:lugar]` (adentro; `--antorcha`, encendida; `--cueva-f`, como pulsar F). El montaje:
+[`capturas/las_cuevas.png`](capturas/las_cuevas.png).
+
+| | |
+|---|---|
+| ![Boca de forajidos](capturas/cueva_boca_forajidos.png) | **La boca de un refugio de forajidos** (`--ir boca-forajidos`): el peñasco, el túnel, las antorchas y la estacada; sus guardias salen a pelear. |
+| ![Boca de fieras](capturas/cueva_boca_fieras.png) | **La boca de una guarida de fieras** (`--ir boca-animal`). |
+| ![Boca del imperio](capturas/cueva_boca_imperio.png) | **La boca de un almacén del imperio** (`--ir boca-imperio`): piedra labrada, estandartes y la guardia imperial. |
+| ![Guarida](capturas/cueva_fieras.png) | **Adentro de una guarida de fieras** (`--cueva animal:nido --antorcha`): el nido con sus huevos, a la luz de la antorcha. |
+| ![Cisterna](capturas/cueva_habitada.png) | **La Cisterna de los forajidos** (`--cueva forajidos:0 --antorcha`): la fogata, la columna de ladrillo, las pinturas y su antorcha, una telaraña y los charcos. |
+| ![Prisionero](capturas/cueva_prisionero.png) | **Un prisionero** (`--cueva forajidos:dialogo`): lo que dice, si se lo ve sincero, y romper las cadenas o dejarlo. |
+| ![Rescate](capturas/cueva_rescate.png) | **Se une a la tribu** (`--cueva imperio:dialogo --cueva-f`): la tropa pasa de 7 a 8 y la celda queda abierta. |
+| ![Traición](capturas/cueva_traicion.png) | **Te traiciona** (`--cueva forajidos:dialogo --cueva-f`): te golpea, te roba tres virotes y huye. |
+| ![A oscuras](capturas/cueva_oscura.png) | **Una recámara a oscuras** (`--cueva abandonada:1`): sin antorcha se ve apenas alrededor. |
+| ![Con la antorcha](capturas/cueva_antorcha.png) | **La misma, con la antorcha** (`--antorcha`). |
+
 ## El mundo
 
 Ver [MUNDO.md](MUNDO.md). Con `--ir lugar` y `--orbital`:

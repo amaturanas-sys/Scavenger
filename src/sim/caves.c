@@ -217,7 +217,7 @@ void cave_generate(Cave *c, uint32_t world_seed, int index, float x, float z, in
     for (int i = 1; i < ring; i++) add_corridor(c, i, i + 1, false);
     int mid = 1 + (ring - 1) / 2;
     add_corridor(c, 0, mid, false);
-    if (ring >= 5) add_corridor(c, 0, mid + 1, false);
+    if (ring % 2 == 0) add_corridor(c, 0, mid + 1, false); // con un anillo par, las dos del fondo estan igual de hondas
     furnish(c, &s);
 }
 

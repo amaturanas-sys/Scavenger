@@ -194,8 +194,8 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
   - **Lo que sueltan los enemigos** (escudos, armas) queda en el suelo. Si te lo arrancan a ti, su número (1 a 9 o 0) vuelve a empuñar.
 - **Armas de mano:**
   - Los números (1 a 9 o 0) empuñan lo que haya en esa casilla de la barra rápida; la misma tecla otra vez enfunda.
-  - **Objetivo (v0.12.2):** `O` recorre enemigos y animales; `Ctrl+Q` y `Ctrl+E` cambian al anterior o al siguiente. Un clic o toque sobre una silueta visible la elige; el anillo dorado la marca y las armas a distancia calculan la caída hacia ella. El objetivo se pierde a 25 m o detrás de una loma. Un enemigo tarda 5 s de día, 7 s de noche o 3 s con antorcha en reconocerte.
-  - **A cubierto (v0.12.3):** `C` junto a una roca, muro, árbol o mata pega al jugador a la cobertura; lejos de un obstáculo sigue siendo sigilo. Desde el lado opuesto no lo ven y el objetivo no se pierde. Al tensar el arco se asoma y, al disparar, vuelve a cubrirse.
+  - **Objetivo (v0.13.0):** `O` recorre enemigos y animales salvajes; `Ctrl+Q` y `Ctrl+E` cambian al de la izquierda o al de la derecha. Un clic o toque sobre una silueta visible la elige; el anillo dorado la marca, el personaje la mira y las armas a distancia calculan la caída hacia ella. Con arco, el clic izquierdo o el derecho cambian y mantenerlo 1 s lo suelta. El objetivo se pierde a 25 m o tras 6 s sin verlo (cubierto, no). Un enemigo tarda 5 s de día, 7 s de noche o 3 s con antorcha en reconocerte (de cerca, menos).
+  - **A cubierto (v0.13.0):** `C` junto a una roca, una peña, un tronco, una mata o una ruina pega al jugador a ella; lejos de un obstáculo sigue siendo sigilo. Desde el otro lado no lo ven y el objetivo no se pierde. Con el arco, `H` lo asoma y, al disparar, vuelve a cubrirse. Moverse o `C` lo sacan.
   - `Mayús+número` pasa el arma a la otra mano. Con el escudo o un arma a dos manos no se puede. Con la izquierda sola se golpea peor.
   - Con un arma en cada mano, el combo alterna derecha e izquierda.
 - **IA:** los bandidos y los captores llevan escudo a veces y se cubren cuando vas a golpear (no mientras anuncian su golpe). Contra tu escudo en guardia patean (a la carrera si vienen corriendo), agarran o enganchan (los fanáticos llevan hacha); contra tu arma en guardia patean o golpean pesado. Si estás en el suelo, rematan. La escolta pelea igual (los grandes guerreros, con guja).
@@ -752,6 +752,23 @@ Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su e
 - **Trepa:** se lanza a un muro (empalizada, muro o muralla) que esté delante. El jugador sube por la cuerda, pasa por encima y baja del otro lado.
 - **Esconderse:** acechando dentro de la hierba alta, el jugador queda oculto y no hace ruido (el HUD lo indica).
 
+### El sistema táctico y las cuevas (v0.12.0 y v0.13.0 — `src/sim/keymap.*`, `targeting.*`, `stealth.*`, `caves.*`; en juego `combat_game.*`, `hud_game.*`, `cave_game.*`)
+De las hojas del cuaderno del usuario; el detalle, en [PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md).
+- **Las manos (A1):** `H` ataque, `I` parry, `J` bloqueo, `K` carga o patada, según lo que esté fuera; la espada (`1`) y el
+  escudo (`2`) se guardan por separado.
+- **La barra rápida (A2):** 10 casillas (`1` a `9` y `0`). Con el inventario abierto (`Tab`), un número (o un toque en la fila
+  de abajo) pone lo elegido en esa casilla. El odre bebe o, junto al agua, se llena; el lazo, el gancho y la montura.
+- **El objetivo (A3):** `O`, `Ctrl+Q`/`Ctrl+E` o un toque sobre la silueta; enemigos y animales salvajes. Con arma a distancia,
+  el clic cambia de objetivo y mantenerlo 1 s lo suelta. El personaje mira siempre al objetivo. Un enemigo tarda 5 s en
+  reconocerte de día, 7 de noche y 3 si llevas la antorcha (de cerca, menos): «?» mientras, «!» al reconocerte.
+- **A cubierto (A4):** `C` junto a un tronco, una roca, una peña, una mata o una ruina te pega a él; no te ven desde el otro
+  lado. Con el arco, `H` te asoma, disparas y vuelves. Moverte o `C` te saca.
+- **Las cuevas (B1 a B3):** cada guarida tiene la suya (de la semilla): de fieras, abandonada, de forajidos, de una tribu o
+  almacén del imperio. Se entra caminando por la boca: un vestíbulo, la bajada sin vuelta a la Cisterna Magna y el anillo de
+  recámaras por donde se sale. Adentro, la oscuridad y las antorchas; F toma lo que hay (cofres, ánforas, armas, botín,
+  vetas, huesos, nidos), enciende antorchas y fogatas, muestra las pinturas y libera prisioneros (se unen a la tribu o te
+  traicionan). Las habitadas tienen guardias que salen a la boca una vez por día.
+
 ### 2. Personaje y equipo (núcleo implementado — `src/sim/loadout.*`)
 - Personaje y vestuario personalizables (fase 3).
 - **Árbol de habilidades** con buffs **activos** (con enfriamiento) y **pasivos**.
@@ -764,7 +781,7 @@ Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su e
 - Armas **a distancia**: arcos, ballestas, mosquetes, cañones.
 
 ### 4. Movimiento (caminar, correr, sigilo, agacharse y saltar implementados)
-- **Implementado:** caminar, correr, sigilo (`C`: más lento, emite menos ruido), agacharse (`X`: más bajo y lento, 2,2 m/s; con sigilo, 1,2 m/s) y saltar (`Espacio`; agachado, se levanta). Correr o montar cancelan el agacharse. El "ruido" de cada postura queda expuesto para la IA de detección.
+- **Implementado:** caminar, correr, sigilo (`C` lejos de todo: más lento, emite menos ruido; junto a un obstáculo, `C` cubre: ver «El sistema táctico y las cuevas»), agacharse (`X`: más bajo y lento, 2,2 m/s; con sigilo, 1,2 m/s) y saltar (`Espacio`; agachado, se levanta). Correr o montar cancelan el agacharse. El "ruido" de cada postura queda expuesto para la IA de detección.
 - **Esconderse:** agachado tras rocas o matas, o con sigilo (o agachado) en la hierba alta. Lo que ven los enemigos se multiplica: de pie ×1; sigilo ×0,45; agachado ×0,6; agachado con sigilo ×0,3; a cubierto, ×0,4 más.
 - **Pendiente:** esconderse en interiores, trepar árboles y muros.
 - **Monturas:** caballo (velocidad), camello (resistencia, desierto), elefante (fuerza, asedio); cada una con habilidades propias.

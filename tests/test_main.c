@@ -5739,6 +5739,9 @@ static void test_caves(void) {
             CHECK(cave_step_ok(c, ex, ez, ex, ez - 0.5f) && cave_at_exit(c, ex, ez - 0.85f));
             // Siempre una salida: de cada sala se vuelve a la boca (por el anillo, no por la bajada).
             for (int r = 0; r < c->room_count; r++) CHECK(cave_room_reachable(c, r, CAVE_MOUTH));
+            // La bajada, de 1,1 a 1,3; los demas pasillos, 0,8 o menos (se caminan en las dos direcciones).
+            CHECK(c->corridors[0].slope >= 1.1f - 1e-3f && c->corridors[0].slope <= 1.3f + 1e-3f);
+            for (int k = 1; k < c->corridor_count; k++) CHECK(c->corridors[k].slope <= 0.8f + 1e-3f);
             // Del mundo a la cueva y de vuelta: la boca en (0, 0) y +z hacia adentro, (sin yaw, cos yaw).
             float wx, wz, lx, lz;
             cave_to_world(c, 1.5f, 6.0f, &wx, &wz);
