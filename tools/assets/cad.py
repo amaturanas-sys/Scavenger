@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """text-to-cad (cadgen) para los modelos de ESTEPA.
 
-El skill CAD de text-to-cad vive en .claude/skills/cad (Claude Code lo carga
-solo en este repositorio). Este script prepara su entorno de Python y revisa
-los GLB del inventario sin tener que recordar rutas ni opciones.
+El skill CAD de text-to-cad vive en .claude/skills/cad (Claude Code y Copilot,
+en el modo agente de VS Code, lo cargan solos en este repositorio). Este script
+prepara su entorno de Python y revisa los GLB del inventario sin tener que
+recordar rutas ni opciones. El Codespace lo instala solo (.devcontainer/setup.sh).
 
 Uso:
   python3 tools/assets/cad.py instalar           crea .venv-cad con cadgen (version fijada por el skill)

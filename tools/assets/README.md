@@ -14,6 +14,9 @@ cd ~/kiln && npm install --omit=dev
 node scripts/create-workspace.mjs ~/kiln-workspace --harness claude
 ```
 
+Pide Node 20.15 o más: el Codespace trae Node 22 (`.devcontainer/devcontainer.json`). El `--harness` dice para qué agente se arma
+el espacio de trabajo: `claude` para Claude Code, `copilot` para la CLI de Copilot. El render de abajo es el mismo con cualquiera.
+
 ## Exportar un asset
 
 ```bash
@@ -31,7 +34,7 @@ node kiln.mjs render /ruta/al/repo/tools/assets/yurta_comun.kiln.js --render cpu
 
 # text-to-cad (activado)
 
-El skill **CAD** de [text-to-cad](https://github.com/earthtojake/text-to-cad) (MIT, cadgen 0.7.6) está en `.claude/skills/cad`: Claude Code lo carga solo al trabajar en este repositorio. Sirve para:
+El skill **CAD** de [text-to-cad](https://github.com/earthtojake/text-to-cad) (MIT, cadgen 0.7.6) está en `.claude/skills/cad`: Claude Code y Copilot (modo agente de VS Code, en el Codespace) lo cargan solos al trabajar en este repositorio. El ciclo para pulir lo que se ve, con esta y las demás herramientas, está en la skill `estetica`. Sirve para:
 - **Revisar un GLB importado:** fotos desde varias cámaras y el CAD Viewer para medirlo contra las medidas del inventario.
 - **Piezas de superficie dura** (ballestas, cañones, maquinaria de asedio, placas de armadura): se modelan en Python (build123d) y se exportan a GLB.
 

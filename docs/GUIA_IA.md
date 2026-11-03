@@ -130,6 +130,36 @@ Cada paso evita un error que ya pasó (ver la sección 8).
    Nunca `gh pr merge`: fusiona Claude.
 10. **Informar al usuario** (sección 10), con el enlace del PR.
 
+### Las skills en el Codespace (para pulir lo que se ve)
+
+Las skills del proyecto están en `.claude/skills/`. Se usan en el Codespace para refinar lo estético sin
+gastar a Claude, y el flujo de arriba no cambia: rama, PR, y Claude verifica y fusiona.
+
+| Quién | Cómo las usa |
+|---|---|
+| Copilot (modo agente de VS Code) | Las carga por su cuenta desde `.claude/skills/` (también lee `.github/skills/` y `.agents/skills/`). Entra la que corresponde por su descripción, o la que se nombra en el pedido. |
+| Claude Code | Las carga por su cuenta. |
+| Cline | Se le pide que lea el `SKILL.md` de la que haga falta. |
+
+- **Para lo que se ve, la skill `estetica`:**
+  - el ciclo mirar → cambiar → volver a mirar, con el antes y el después lado a lado;
+  - qué herramienta va para cada cosa: text-to-CAD (skill `cad`), la tubería de modelos (`modelos`), Kiln,
+    Nomad, las animaciones (`animaciones`), los íconos, las texturas, las nubes y el logo.
+- **El entorno lo deja `.devcontainer/setup.sh`:**
+  - text-to-CAD en `.venv-cad`, con Chromium y sus bibliotecas para las fotos;
+  - ImageMagick (`montage`);
+  - Node 22 para Kiln, que viene de `devcontainer.json`.
+
+  `devcontainer.json` también instala la extensión de Copilot Chat y activa `chat.useAgentSkills`, que hace
+  falta en las versiones de VS Code donde las skills todavía son experimentales. Un Codespace creado antes de
+  este cambio lo toma con *Codespaces: Rebuild Container*. Si solo falta text-to-CAD, alcanza con
+  `python3 tools/assets/cad.py instalar`.
+- **Un pedido de ejemplo:** «Usa la skill estetica: saca fotos de `estructura.vivienda.yurta_comun` con
+  `cad.py foto` y en el juego con `--ver`, compárala con su medida del inventario y con el estilo de
+  `assets/models/README.md`, y propón qué pulir antes de tocar nada».
+- **Lo que solo existe en Claude Code** (los agentes `gamedev-*`, `/gamedev`) no está para Copilot ni para
+  Cline.
+
 ## 4. La verificación de Claude Code
 
 Lo que hace Claude con cada PR del Codespace, antes de publicar:
