@@ -182,7 +182,9 @@ static void populate(GameActions *ga, const Player *p, const Terrain *t, bool ni
         float x = p->pos.x + cosf(ang) * r, z = p->pos.z + sinf(ang) * r;
         if (sqrtf(x * x + z * z) < CAMP_CLEAR) continue;
         // Cerca de una guarida, a menudo aparece su dueño (junto a ella).
+        // Las habitadas (forajidos, tribu, imperio) ya no son de fieras: las defienden sus guardias (src/game/cave_game.c).
         int den = wd_den_near(t, p->pos.x, p->pos.z, SPAWN_MAX + 60.0f);
+        if (den >= 0 && den < t->world->cave_count && t->world->caves[den].kind >= CAVE_BANDITS) den = -1;
         if (den >= 0 && rng_float(&ga->rng) < 0.5f) {
             const Den *d = &t->world->dens[den];
             float da = rng_float(&ga->rng) * 2.0f * PI;
@@ -476,7 +478,7 @@ bool fg_ice_fish(GameActions *ga, const Player *p, int hole, char *log, size_t l
         snprintf(log, len, "%s", T("No pica nada: aquí no hay peces. Prueba en otro lugar del lago, sobre lo más hondo."));
         return false;
     }
-    bool spear = !ga->hands.sheathed && strstr(ga->hands.right.id, "lanza") != NULL;
+    bool spear = hands_out(&ga->hands, HAND_RIGHT) && strstr(ga->hands.right.id, "lanza") != NULL;
     if (rng_float(&ga->rng) >= hazard_ice_fish_chance(swarm_alive(best), bd, spear)) {
         snprintf(log, len, "%s", spear ? T("Nada picó esta vez: espera otro poco.") : T("Nada picó esta vez: espera otro poco (con una lanza en la mano, pican más)."));
         return false;

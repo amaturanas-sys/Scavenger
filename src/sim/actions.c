@@ -15,23 +15,44 @@ void hands_init(Hands *h) { memset(h, 0, sizeof(*h)); }
 
 void hands_clear(Hands *h, HandSlot slot) { set_held(slot == HAND_RIGHT ? &h->right : &h->left, NULL, INV_HANDS_NONE); }
 
+// Lo que queda fuera en cada mano (una mano vacia no cuenta): sin nada fuera, sheathed; si algo
+// esta fuera, la otra mano puede estar guardada (right_away, left_away).
+static void set_out(Hands *h, bool right, bool left) {
+    bool r = right && h->right.id[0], l = left && h->left.id[0];
+    h->sheathed = !r && !l;
+    h->right_away = !h->sheathed && h->right.id[0] && !r;
+    h->left_away = !h->sheathed && h->left.id[0] && !l;
+}
+
+bool hands_out(const Hands *h, HandSlot slot) {
+    const Held *x = slot == HAND_RIGHT ? &h->right : &h->left;
+    if (!x->id[0] || h->sheathed) return false;
+    return slot == HAND_RIGHT ? !h->right_away : !h->left_away;
+}
+
 bool hands_equip(Hands *h, const InvItem *item, HandSlot slot) {
     if (!item || item->hands == INV_HANDS_NONE) return false;
+    // Lo empuñado queda fuera; lo de la otra mano, como estaba (el escudo guardado sigue guardado).
+    bool out_r = hands_out(h, HAND_RIGHT), out_l = hands_out(h, HAND_LEFT);
     switch (item->hands) {
     case INV_HANDS_TWO: // ocupa ambas manos
         set_held(&h->right, item->id, INV_HANDS_TWO);
         hands_clear(h, HAND_LEFT);
+        out_r = true;
         break;
     case INV_HANDS_SHIELD: // siempre en la izquierda
         if (h->right.kind == INV_HANDS_TWO) hands_clear(h, HAND_RIGHT);
         set_held(&h->left, item->id, INV_HANDS_SHIELD);
+        out_l = true;
         break;
     default: // una mano: la pedida; suelta lo de dos manos
         if (h->right.kind == INV_HANDS_TWO) hands_clear(h, HAND_RIGHT);
         set_held(slot == HAND_RIGHT ? &h->right : &h->left, item->id, INV_HANDS_ONE);
+        if (slot == HAND_RIGHT) out_r = true;
+        else out_l = true;
         break;
     }
-    h->sheathed = false; // empunar es desenfundar
+    set_out(h, out_r, out_l);
     return true;
 }
 
@@ -59,14 +80,40 @@ const char *grip_name(Grip g) {
 
 bool hands_toggle_sheathe(Hands *h) {
     if (hands_grip(h) == GRIP_EMPTY) return false;
-    h->sheathed = !h->sheathed;
+    bool any = hands_out(h, HAND_RIGHT) || hands_out(h, HAND_LEFT); // algo fuera: todo adentro
+    h->sheathed = any;
+    h->right_away = h->left_away = false;
     return true;
+}
+
+bool hands_toggle_hand(Hands *h, HandSlot slot) {
+    if (!(slot == HAND_RIGHT ? h->right.id : h->left.id)[0]) return false;
+    bool out_r = hands_out(h, HAND_RIGHT), out_l = hands_out(h, HAND_LEFT);
+    if (slot == HAND_RIGHT) out_r = !out_r;
+    else out_l = !out_l;
+    set_out(h, out_r, out_l);
+    return true;
+}
+
+Hands hands_drawn(const Hands *h) {
+    Hands d = *h;
+    if (!hands_out(h, HAND_RIGHT)) set_held(&d.right, NULL, INV_HANDS_NONE);
+    if (!hands_out(h, HAND_LEFT)) set_held(&d.left, NULL, INV_HANDS_NONE);
+    d.right_away = d.left_away = false;
+    d.sheathed = !d.right.id[0] && !d.left.id[0] && (h->right.id[0] || h->left.id[0]);
+    return d;
+}
+
+int hands_slot_of(const Hands *h, const char *id) {
+    if (!id || !id[0]) return -1;
+    if (!strcmp(h->right.id, id)) return HAND_RIGHT;
+    if (!strcmp(h->left.id, id)) return HAND_LEFT;
+    return -1;
 }
 
 bool hands_can_take(const Hands *h) {
     if (h->carried[0]) return false;
-    if (h->sheathed) return true;
-    return h->right.kind == INV_HANDS_NONE || h->left.kind == INV_HANDS_NONE;
+    return !hands_out(h, HAND_RIGHT) || !hands_out(h, HAND_LEFT); // una mano libre (o con lo suyo guardado)
 }
 
 bool hands_take(Hands *h, const char *id) {
@@ -85,8 +132,7 @@ bool hands_throw(Hands *h, char *out, int out_len) {
 bool hands_holding(const Hands *h, const char *id) {
     if (!id || !id[0]) return false;
     if (!strcmp(h->carried, id)) return true;
-    if (h->sheathed) return false;
-    return !strcmp(h->right.id, id) || !strcmp(h->left.id, id);
+    return (hands_out(h, HAND_RIGHT) && !strcmp(h->right.id, id)) || (hands_out(h, HAND_LEFT) && !strcmp(h->left.id, id));
 }
 
 // ---------------------------------------------------------------- acciones individuales

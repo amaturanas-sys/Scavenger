@@ -88,7 +88,7 @@ static void drink(GameActions *ga, const Props *props, Player *p, const Hazards 
         snprintf(log, len, "%s", T("Bebes del agua que corre por el suelo. Puede traer espíritus malditos..."));
         return;
     }
-    snprintf(log, len, "%s", T("No tienes nada que beber: llena el odre en la orilla (Tab) o bebe del río (N, mirando al agua)."));
+    snprintf(log, len, "%s", T("No tienes nada que beber: llena el odre en la orilla (L) o bebe del río (N, mirando al agua)."));
 }
 
 static void herbs(GameActions *ga, const Props *props, const Player *p, char *log, size_t len) {
@@ -110,6 +110,8 @@ static void herbs(GameActions *ga, const Props *props, const Player *p, char *lo
 
 static bool g_drink_req; // beber pedido desde el HUD (un toque)
 void wg_request_drink(void) { g_drink_req = true; }
+static bool g_odre_req; // el odre de la barra rapida: junto al agua o a un pozo lo llena, si no bebe
+void wg_request_odre(void) { g_odre_req = true; }
 
 void wg_update(GameActions *ga, Troop *troop, Player *p, const Props *props, const Hazards *hz, const Climate *c, Vector3 camp_fire,
                const Terrain *t, bool input_ok, float dt, char *log, size_t len) {
@@ -121,7 +123,14 @@ void wg_update(GameActions *ga, Troop *troop, Player *p, const Props *props, con
         if (shift && !g_drink_req) herbs(ga, props, p, log, len);
         else drink(ga, props, p, hz, c, log, len);
     }
-    g_drink_req = false;
+    // La casilla del odre (las hojas: «3 para beber; 3 junto a un punto de agua, llenar»): en la orilla
+    // mirando al agua o junto a un pozo, la accion de llenarlo (con su tiempo); si no, beber.
+    if (input_ok && g_odre_req) {
+        if (!ga_in_cave() && ga->terrain && (wg_at_well(ga->terrain, p->pos.x, p->pos.z) || gems_water_ahead(ga->terrain, p))) // en una cueva, bebe
+            ga_quick_request_action(ACTION_FILL_WATER);
+        else drink(ga, props, p, hz, c, log, len);
+    }
+    g_drink_req = g_odre_req = false;
     if (!was_sick && hydration_sick(&ga->hydro))
         snprintf(log, len, "%s", T("Fiebre y retortijones: espíritus malditos del agua. Toma hierbas (Mayús+N), descansa y bebe agua hervida."));
     else if (thirst_level(&ga->hydro) > was_thirst && thirst_level(&ga->hydro) >= THIRST_THIRSTY)

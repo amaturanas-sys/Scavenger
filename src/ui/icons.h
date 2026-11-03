@@ -153,10 +153,10 @@ typedef enum {
     ICON_VINO,
     ICON_ESPIRITUS,
     ICON_BEBER,
-    ICON_PARADA,           // parry (K)
+    ICON_PARADA,           // parry (I)
     ICON_PATADA,           // patada (L sin escudo)
-    ICON_CARGA,            // carga con escudo (L)
-    ICON_OBJETIVO,         // el objetivo (Tab en combate)
+    ICON_CARGA,            // carga con escudo (K)
+    ICON_OBJETIVO,         // el objetivo (O)
     ICON_FLECHA_ENCENDIDA, // encender la flecha (Mayus+L)
     ICON_AGACHARSE,        // agacharse (X)
     ICON_GIRAR_IZQ,        // ubicar una obra: girar a la izquierda (Q)

@@ -22,6 +22,12 @@
 void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, MemoryMap *mem, char *log, size_t len);
 // Asentamientos y guaridas cercanos. Dentro de BeginMode3D.
 void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, float time);
+// Las antorchas de la boca de las cuevas habitadas cercanas (la luz de noche, como ga_lights). Devuelve cuantas.
+int wd_cave_lights(const Terrain *t, const Player *p, Vector3 *pos, float *radius, int max);
+// El peñasco de la boca de una cueva es roca: quien camina afuera no lo atraviesa (por el tunel, si).
+void wd_keep_out_of_rock(const Terrain *t, Vector3 *pos);
+// La camara de afuera no se mete en el peñasco de una boca (por el tunel, si): la acerca a target.
+void wd_camera_clear(const Terrain *t, Vector3 target, Vector3 *cam);
 // La guarida cercana a (x, z) (a menos de radius), o -1: su especie aparece alli.
 int wd_den_near(const Terrain *t, float x, float z, float radius);
 

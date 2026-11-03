@@ -47,6 +47,12 @@ static int panel_y(const Dialog *d, int h) {
     return h - 22 - ph;
 }
 
+Rectangle dlg_panel(const Dialog *d, int h) {
+    if (!d->open) return (Rectangle){ 0 };
+    int y = panel_y(d, h);
+    return (Rectangle){ DLG_X, (float)y, DLG_W, (float)(h - 22 - y) };
+}
+
 static Rectangle opt_rect(const Dialog *d, int i, int h) {
     int y0 = panel_y(d, h) + UI_PANEL_INSET + 16 + (text_h(d) > 36 ? text_h(d) : 36) + 10;
     int c = i % DLG_COLS, r = i / DLG_COLS;

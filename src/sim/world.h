@@ -28,6 +28,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "caves.h"
+
 #define WORLD_RADIUS 4800.0f // m: radio medio de la tierra (el borde varia, fractal)
 #define SEA_LEVEL 0.0f
 
@@ -42,6 +44,7 @@ typedef enum { WATER_NONE, WATER_LAKE, WATER_RIVER, WATER_CANAL, WATER_SEA } Wat
 #define FALLS_MAX 48
 #define SETTLEMENTS_MAX 24
 #define DENS_MAX 56
+#define CAVES_MAX DENS_MAX
 #define CANAL_SAMPLES 360
 
 typedef struct {
@@ -164,6 +167,8 @@ typedef struct {
     int settlement_count;
     Den dens[DENS_MAX];
     int den_count;
+    Cave caves[CAVES_MAX];
+    int cave_count;
     TribeCamp tribes[TRIBES_MAX];
     int tribe_count;
     WorldSite sites[SITES_MAX];

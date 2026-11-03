@@ -27,11 +27,11 @@ void hud_stamina(int right_x, int y);
 // A caballo, en vez del aguante del jugador: el de la montura (y si tiene hambre o sed).
 void hud_mount(const GameActions *ga, int right_x, int y);
 
-// Barra rapida (abajo a la izquierda): 9 casillas con una empuñadura, un objeto del inventario
-// o una habilidad. Su tecla (1..9) o un toque la usa (un arma: empuñar; otra vez, enfundar);
+// Barra rapida (abajo a la izquierda): 10 casillas con una empuñadura, un objeto del inventario
+// o una habilidad. Sus teclas son 1..9 y 0 (un arma: empuñar; otra vez, enfundar);
 // Mayus+tecla pasa el arma empuñada a la otra mano; vacia (o Alt+tecla, o clic derecho) abre
 // el selector. hud_update atiende el teclado; hud_quickbar dibuja y atiende los toques.
-#define HUD_QUICK_SLOTS 9
+#define HUD_QUICK_SLOTS 10
 typedef enum { QB_EMPTY, QB_GRIP, QB_ITEM, QB_SKILL } QbKind;
 typedef struct {
     int kind;            // QbKind
@@ -40,6 +40,13 @@ typedef struct {
 } QbSlot;
 void hud_reset(void); // las casillas de serie (partida nueva)
 const QbSlot *hud_slots(void); // las casillas, para guardarlas (src/game/save_game.c)
+// El numero de la casilla en su tecla: 1..9 y, la decima, 0.
+int hud_slot_number(int slot);
+// Asigna un objeto (el elegido en el inventario, Tab + numero) a esa casilla. false si no tiene uso en la
+// barra (beber, vendar, la antorcha, empuñar, el lazo, la trepa o la silla).
+bool hud_assign_item(const GameActions *ga, int slot, const char *id);
+// El icono de lo que guarda una casilla (para la fila de la barra en el inventario).
+IconId hud_slot_icon(const GameActions *ga, int slot);
 void hud_update(GameActions *ga, const Props *props, const Player *p, bool input_ok, char *log, size_t len);
 void hud_quickbar(GameActions *ga, const Props *props, const Player *p, int x, int y);
 bool hud_picker_open(void);

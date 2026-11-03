@@ -35,6 +35,12 @@ bool stealth_backstab(float ex, float ez, float eyaw, float px, float pz, bool n
 // Cuanto ve (y oye) un enemigo a quien se acerca: facing (stealth_facing hacia el) y su ruido
 // [0, 1] (correr 1, caminar 0.5, sigilo 0.15, quieto 0). Multiplica la vista del enemigo.
 float stealth_sight_scale(float facing, float noise);
+// Cuanto tarda en reconocerte un enemigo que te ve (las hojas, A3): 5 s de dia, 7 de noche, 3 si llevas
+// la antorcha encendida; de cerca, menos (a 2 m, la decima parte), a lo lejos de su vista, todo.
+float stealth_recognition_seconds(bool night, bool torch, float dist, float sight);
+// La cobertura (C, A4): el obstaculo (centro c, radio cr) tapa al jugador (p) de quien mira desde o si
+// esta entre los dos y la linea de vista pasa por el.
+bool stealth_cover_blocks(float px, float pz, float cx, float cz, float cr, float ox, float oz);
 // Un testigo a esa distancia oye la ejecucion silenciosa.
 bool stealth_hears_kill(float dist);
 // Lo mismo, con la daga de anillo en la mano (ring): solo a menos de RING_ALERT_RANGE.

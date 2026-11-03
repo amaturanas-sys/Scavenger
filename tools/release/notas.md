@@ -1,4 +1,15 @@
-Primera versión jugable de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
+Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
+
+## Novedades: el sistema táctico y las cuevas
+
+- **Las manos:** `H` ataque, `I` parry, `J` bloqueo, `K` carga o patada, según lo que tengas fuera; la espada (`1`) y el escudo (`2`) se guardan por separado.
+- **La barra rápida, de 10 casillas** (`1` a `9` y `0`): con el inventario abierto (`Tab`), un número, o un toque en la fila de abajo, pone ahí lo elegido. El odre bebe o, junto al agua, se llena; el lazo va al animal elegido.
+- **El objetivo:** `O`, o un toque sobre la silueta, entre enemigos y animales salvajes; con arco, los clics cambian y mantener 1 s lo suelta. Un enemigo tarda 5 s en reconocerte de día, 7 de noche y 3 con la antorcha.
+- **A cubierto:** `C` junto a un tronco, una mata alta, una roca, una peña o una ruina; con el arco te asomas, disparas y vuelves.
+- **Las cuevas:** cada guarida tiene la suya. Se entra caminando por la boca. Adentro está oscuro: la antorcha, los cofres y las armas, los prisioneros que se unen a la tribu o te traicionan, y los guardias de las habitadas que salen a la boca.
+- Las partidas de antes cargan igual.
+
+El detalle, en el README («Novedades») y en `docs/PLAN_TACTICO_Y_CUEVAS.md`.
 
 ## Android
 
@@ -23,11 +34,13 @@ Descomprime **`scavengers-thrive-@VERSION@-windows.zip`** y ejecuta `ScavengersT
 | Acción | Tecla |
 |---|---|
 | Moverse / correr / saltar | WASD · Shift · Espacio |
-| Acechar | C |
+| Sigilo; junto a un obstáculo, cubrirse | C |
 | Cámara | Q / E, clic derecho + arrastrar, rueda |
-| Acciones, obras, fabricar | Tab |
-| Inventario | I |
-| Tomar / recoger botín | F / T |
+| Combate | H ataque · I parry · J bloqueo · K carga o patada |
+| Objetivo | O |
+| Acciones, obras, fabricar | L |
+| Inventario | Tab |
+| Tomar, hablar, recoger botín | F |
 | Montar | R |
 | Beber | N |
 | Vista orbital del mundo | F5 |

@@ -37,5 +37,8 @@ void dlg_close(Dialog *d);
 // Teclado y raton: devuelve el value de la opcion aceptada, DLG_BACK con Esc, o DLG_NONE.
 int dlg_update(Dialog *d);
 void dlg_draw(const Dialog *d, int w, int h);
+// El panel (alto 0 si esta cerrado): el registro va encima, porque la leyenda de la opcion
+// elegida ocupa la base de la pantalla.
+Rectangle dlg_panel(const Dialog *d, int h);
 
 #endif

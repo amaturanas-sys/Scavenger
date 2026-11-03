@@ -1,4 +1,4 @@
-// Personaje del jugador: caminar, correr, sigilo (C), agacharse (X) y saltar.
+// Personaje del jugador: caminar, correr, sigilo o cobertura (C), agacharse (X) y saltar.
 //  - sigilo: pasos lentos y silenciosos;
 //  - agacharse: mas bajo y lento; tras la hierba alta, una roca o una mata se esconde, y cuesta
 //    mas verlo que de pie. El sigilo suma: agachado y en sigilo es lo mas dificil de ver.
@@ -19,6 +19,10 @@ typedef struct {
     bool grounded;
     bool sneaking;    // sigilo, alternado con C
     bool crouching;   // agachado, alternado con X
+    bool covered;     // pegado a un obstaculo (C junto a el, A4); se va al moverse; al cargar, no
+    Vector3 cover_pos; // el centro del obstaculo (en el suelo)
+    float cover_radius; // su radio: tapa a quien mira desde el otro lado (stealth_cover_blocks)
+    bool peeking;     // asomado para tirar con el arco: al soltar vuelve a cubrirse si sigue junto a el
     bool moving;
     Stance stance;
     float noise;      // 0..1: cuanto ruido hace (lo escuchara la IA de sigilo)
@@ -44,6 +48,8 @@ float player_visibility(const Player *p, bool cover);
 float player_stamina(void);
 bool player_winded(void);
 void player_stamina_spend(float amount);
+// Gasta (corriendo) o recupera el aguante en dt: lo hace player_update; en una cueva, src/game/cave_game.c.
+void player_stamina_tick(bool running, bool moving, float dt);
 // Cuanto rinde el aguante [0,3, 1]: con secuelas (src/sim/health.h, health_endurance_scale) correr y saltar cansan
 // mas y se recupera mas despacio. Lo pone main cada cuadro.
 void player_set_endurance(float k);

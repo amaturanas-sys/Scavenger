@@ -23,6 +23,7 @@
 #include "sim/anim_index.h"
 #include "sim/body.h"
 #include "sim/melee.h"
+#include "sim/stealth.h"
 #include "sim/clock.h"
 #include "world/body_draw.h"
 #include "world/hearth.h"
@@ -102,6 +103,13 @@ static const char *preset_weapon(const GameActions *ga, const char *id) {
     return id;
 }
 
+const char *ga_best_weapon(const GameActions *ga, const char *id) { return preset_weapon(ga, id); }
+
+// La antorcha solo arde en la mano: guardada (o fuera de la mano), se apaga.
+static void torch_check(GameActions *ga) {
+    if (ga->torch_lit && !(hands_out(&ga->hands, HAND_LEFT) && strstr(ga->hands.left.id, "antorcha"))) ga->torch_lit = false;
+}
+
 static void apply_preset(GameActions *ga) {
     hands_clear(&ga->hands, HAND_RIGHT);
     hands_clear(&ga->hands, HAND_LEFT);
@@ -120,8 +128,9 @@ static int g_quick_action = -1;        // accion pedida
 static bool g_quick_menu;              // abrir el menu de acciones
 static bool g_quick_swap;              // pasar el arma a la otra mano (Mayus + numero)
 static int g_quick_craft = -1;         // receta pedida (la prueba --forja)
-static int g_target_req;               // Tab en combate: 1 el enemigo siguiente, -1 el anterior
+static int g_target_req;               // O: 1 el enemigo siguiente, -1 el anterior (Mayus+O)
 static bool g_combat_near;             // hay enemigos a tiro de objetivo (lo pone src/game/combat_game.c)
+static int g_target_animal = -1;       // el animal elegido como objetivo (A3), para el lazo
 
 static bool preset_available(const GameActions *ga, int k) {
     for (int h = 0; h < 2; h++)
@@ -136,7 +145,10 @@ GaGrip ga_grip(const GameActions *ga, int k) {
     if (k < 0 || k >= PRESET_COUNT) return g;
     g.right = preset_weapon(ga, PRESETS[k][0]), g.left = PRESETS[k][1];
     g.available = preset_available(ga, k);
-    g.active = ga->preset == k && !ga->hands.sheathed && !ga->torch_lit;
+    // Activa: las manos tienen de verdad sus armas (empuñar otra cosa desde la barra, la espada sola de la
+    // casilla 1, no la deja activa) y algo de ella esta fuera.
+    bool same = !strcmp(ga->hands.right.id, g.right ? g.right : "") && !strcmp(ga->hands.left.id, g.left ? g.left : "");
+    g.active = ga->preset == k && same && (hands_out(&ga->hands, HAND_RIGHT) || hands_out(&ga->hands, HAND_LEFT)) && !ga->torch_lit;
     return g;
 }
 
@@ -158,6 +170,8 @@ void ga_escort_order(GameActions *ga, int order, char *log, size_t len) {
                              : order == ORDER_DEFEND ? T("Escolta: te defienden; no se alejan de tu lado.")
                                                      : T("Escolta: te siguen sin pelear."));
 }
+void ga_set_target_animal(int index) { g_target_animal = index; }
+
 void ga_set_combat_near(bool near) { g_combat_near = near; }
 int ga_take_target_request(void) {
     int r = g_target_req;
@@ -335,9 +349,19 @@ static int animal_ahead(const GameActions *ga, const Player *p, AnimalState stat
 }
 
 // ---------------------------------------------------------------- acciones del jugador
+// En una cueva (src/game/cave_game.c): afuera el mundo se detiene y el jugador queda en la boca; adentro
+// solo se empuña, se enfunda y se enciende la antorcha (F es de la cueva).
+static bool g_in_cave;
+void ga_set_in_cave(bool on) { g_in_cave = on; }
+bool ga_in_cave(void) { return g_in_cave; }
+
 static void start_action(GameActions *ga, ActionId a, const Props *props, const Player *p, char *log, size_t len) {
     const ActionDef *d = action_def(a);
     if (ga->doing >= 0 || ga->climbing) return;
+    if (g_in_cave && a != ACTION_CHANGE_GRIP && a != ACTION_SHEATHE && a != ACTION_LIGHT_TORCH) {
+        snprintf(log, len, T("En la cueva no se puede: %s."), T(d->name));
+        return;
+    }
     if (d->requires && !has_item(ga, d->requires)) {
         snprintf(log, len, T("Te falta: %s."), item_name(ga, d->requires));
         return;
@@ -402,12 +426,17 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
             return;
         }
         break;
-    case ACTION_THROW_LASSO:
-        if ((ga->target = animal_ahead(ga, p, ANIMAL_WILD, LASSO_RANGE, true)) < 0) {
+    case ACTION_THROW_LASSO: {
+        // El animal elegido como objetivo (O o un toque, A3), si esta a tiro; si no, el de delante.
+        int tg = g_target_animal;
+        bool aimed = tg >= 0 && tg < ga->animal_count && ga->animals[tg].used && ga->animals[tg].state == ANIMAL_WILD &&
+                     !ga->animals[tg].ridden && dist2d(p->pos, (Vector3){ ga->animals[tg].x, 0, ga->animals[tg].z }) < LASSO_RANGE;
+        if ((ga->target = aimed ? tg : animal_ahead(ga, p, ANIMAL_WILD, LASSO_RANGE, true)) < 0) {
             snprintf(log, len, "%s", T("No hay un animal salvaje a tiro de lazo delante."));
             return;
         }
         break;
+    }
     case ACTION_PAN:
         if (!ga->terrain || !gems_water_ahead(ga->terrain, p)) {
             snprintf(log, len, "%s", T("Para cribar hay que estar en la orilla, mirando al agua."));
@@ -563,7 +592,7 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         break;
     case ACTION_SHEATHE:
         hands_toggle_sheathe(&ga->hands);
-        if (ga->hands.sheathed) ga->torch_lit = false;
+        torch_check(ga);
         snprintf(log, len, "%s", ga->hands.sheathed ? T("Enfundaste las armas: manos libres.") : T("Desenfundaste."));
         break;
     case ACTION_LIGHT_TORCH:
@@ -616,7 +645,7 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
         Vector3 at;
         if (t && fg_ice_hole_spot(ga, t, p, &at)) {
             fg_ice_hole_open(ga, at);
-            snprintf(log, len, "%s", T("Abriste un agujero en el hielo. Pesca en él (Tab → Acciones), y no lo pises."));
+            snprintf(log, len, "%s", T("Abriste un agujero en el hielo. Pesca en él (L → Acciones), y no lo pises."));
         }
         break;
     }
@@ -669,10 +698,14 @@ static bool big_enough(const GameActions *ga, const BuildDef *d, int k, char *lo
     return false;
 }
 
-// Tab -> Obras: si alcanza el acopio, la camara sube para ubicarla (src/game/place_game.c); se paga al colocarla.
+// L -> Obras: si alcanza el acopio, la camara sube para ubicarla (src/game/place_game.c); se paga al colocarla.
 static void start_build(GameActions *ga, BuildId b, const Terrain *t, const Player *p, char *log, size_t len) {
     (void)t;
     const BuildDef *d = build_def(b);
+    if (g_in_cave) {
+        snprintf(log, len, "%s", T("En la cueva no se construye: sal primero."));
+        return;
+    }
     if (ga->project_count >= GA_MAX_PROJECTS) {
         snprintf(log, len, "%s", T("Demasiadas obras a la vez."));
         return;
@@ -839,7 +872,7 @@ static void update_npcs(GameActions *ga, Props *props, const Terrain *t, const T
     }
 }
 
-// ---------------------------------------------------------------- menu Tab: disposicion
+// ---------------------------------------------------------------- menu de acciones (L): disposicion
 // Lo comparten el dibujo y el raton. Pantalla virtual de 640x360.
 #define TAB_W 520
 #define TAB_H 312
@@ -929,10 +962,10 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     ga->swap_anim = fmaxf(0.0f, ga->swap_anim - dt);
     bool other_menu = ga->inv_open || ga->equip_open || ga->dlg.open; // inventario, equipo o un dialogo
     if (g_order_req >= 0) ga_escort_order(ga, g_order_req, log, log_len), g_order_req = -1;
-    // Tab: en combate elige el objetivo (con Mayus, el anterior); si no, el menu de acciones.
-    bool tab = input_action_pressed(KA_MENU);
-    if (tab && g_combat_near && !ga->menu_open && !other_menu) g_target_req = input_mods() & KM_SHIFT ? -1 : 1;
-    else if ((tab || g_quick_menu) && !other_menu) ga->menu_open = !ga->menu_open;
+    // O: el objetivo siguiente (con Mayus, el anterior); L: el menu de acciones (v0.12.0: Tab es el
+    // inventario, docs/PLAN_TACTICO_Y_CUEVAS.md).
+    if (input_action_pressed(KA_TARGET) && g_combat_near && !g_in_cave && !ga->menu_open && !other_menu) g_target_req = input_mods() & KM_SHIFT ? -1 : 1;
+    if ((input_action_pressed(KA_MENU) || g_quick_menu) && !other_menu) ga->menu_open = !ga->menu_open;
     g_quick_menu = false;
     // Lo que pide la barra rapida del HUD (teclas 1..9 o toques).
     if (ga->doing < 0 && !ga->climbing && !other_menu && !ga->menu_open) {
@@ -948,15 +981,24 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             }
         }
         if (g_quick_wield[0]) { // un arma o un escudo suelto: a su mano
-            const InvItem *it = inventory_find(ga->inv, g_quick_wield);
-            if (!it || it->hands == INV_HANDS_NONE) snprintf(log, log_len, T("%s no se empuña."), item_name(ga, g_quick_wield));
-            else {
-                if (ga->hands.sheathed) hands_toggle_sheathe(&ga->hands);
-                if (it->hands != INV_HANDS_SHIELD) ga->torch_lit = false;
+            const char *id = preset_weapon(ga, g_quick_wield); // el mejor sable o el mejor arco que tengas
+            const InvItem *it = inventory_find(ga->inv, id);
+            int slot = hands_slot_of(&ga->hands, id);
+            if (!it || it->hands == INV_HANDS_NONE) snprintf(log, log_len, T("%s no se empuña."), item_name(ga, id));
+            else if (slot >= 0) { // ya esta en su mano: lo guarda o lo saca, y lo de la otra mano sigue igual
+                hands_toggle_hand(&ga->hands, (HandSlot)slot);
+                bool out = hands_out(&ga->hands, (HandSlot)slot), shield = it->hands == INV_HANDS_SHIELD;
+                snprintf(log, log_len,
+                         shield ? (out ? T("Te pones %s en el brazo.") : T("Te cuelgas %s a la espalda."))
+                                : (out ? T("Desenfundas: %s.") : T("Enfundas: %s.")),
+                         item_name(ga, id));
+                ga->swap_anim = 0.5f;
+            } else {
                 hands_equip(&ga->hands, it, it->hands == INV_HANDS_SHIELD ? HAND_LEFT : HAND_RIGHT);
                 ga->swap_anim = 0.5f;
-                snprintf(log, log_len, T("Empuñas: %s."), item_name(ga, g_quick_wield));
+                snprintf(log, log_len, T("Empuñas: %s."), item_name(ga, id));
             }
+            torch_check(ga);
         }
         if (g_quick_craft >= 0 && g_quick_craft < CRAFT_COUNT) start_craft(ga, (CraftId)g_quick_craft, props, p, troop, log, log_len);
         if (g_quick_action >= 0) start_action(ga, (ActionId)g_quick_action, props, p, log, log_len);
@@ -1006,7 +1048,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
             default: ig_repair(ga, props, p, troop, &rep[*cur], log, log_len); break;
             }
         }
-    } else if (ga->doing < 0 && !ga->climbing && !other_menu) {
+    } else if (ga->doing < 0 && !ga->climbing && !other_menu && !g_in_cave) { // en la cueva, F es de src/game/cave_game.c
         if (input_action_pressed(KA_INTERACT)) interact(ga, troop, props, t, p, log, log_len);
         if (input_action_pressed(KA_THROW)) start_action(ga, ACTION_THROW, props, p, log, log_len);
         if (input_action_pressed(KA_MOUNT)) { // montar / desmontar
@@ -1140,6 +1182,71 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     }
 }
 
+// La cobertura (C, A4): lo solido de los objetos colocados (rocas, arboles, matas, ruinas, muros y
+// viviendas) y, en el mundo, los mismos troncos, rocas, matas altas y peñas que se dibujan
+// (terrain_cover_near). radius: lo que tapa (de un arbol, el tronco).
+static bool cover_prop(const InvItem *item, float *radius) {
+    if (!item) return false;
+    const char *id = item->id;
+    float half = 0.5f * fmaxf(item->l, item->w);
+    if (!strncmp(id, "mapa.vegetacion.", 16)) {
+        if (strstr(id, "arbusto") || strstr(id, "mata")) {
+            *radius = fminf(0.8f * half, 1.2f);
+            return *radius >= 0.3f;
+        }
+        *radius = 0.35f; // el tronco
+        return true;
+    }
+    if (!strncmp(id, "mapa.roca.", 10) || !strncmp(id, "estructura.ruina.", 17) || !strncmp(id, "estructura.defensa.", 19) ||
+        !strncmp(id, "estructura.vivienda.", 20)) {
+        *radius = Clamp(half, 0.4f, 3.0f);
+        return true;
+    }
+    return false;
+}
+
+// El obstaculo mas cercano, a menos de 1,6 m de su borde: su centro (en el suelo) y su radio.
+static bool cover_find(const Props *props, const Terrain *t, Vector3 pos, Vector3 *center, float *radius) {
+    float best = 1.6f;
+    bool found = false;
+    for (int i = 0; props && i < props->count; i++) {
+        float r = 0.0f;
+        if (!cover_prop(props->items[i].item, &r)) continue;
+        float d = dist2d(pos, props->items[i].pos) - r;
+        if (d < best) best = d, *center = props->items[i].pos, *radius = r, found = true;
+    }
+    Vector3 c = { 0 };
+    float r = 0.0f;
+    if (t && terrain_cover_near(t, pos.x, pos.z, best, &c, &r)) *center = c, *radius = r, found = true;
+    return found;
+}
+
+void ga_toggle_cover(GameActions *ga, const Props *props, const Terrain *t, Player *p) {
+    if (p->covered) { // C otra vez: sales de la cobertura (el sigilo lo alterna player_update)
+        p->covered = p->peeking = false;
+        return;
+    }
+    Vector3 c = { 0 };
+    float r = 0.0f;
+    if (ga->mounted >= 0 || ga->climbing || !cover_find(props, t, p->pos, &c, &r)) return; // lejos de todo: C es sigilo
+    // Te pegas al obstaculo, del lado en que estabas.
+    float dx = p->pos.x - c.x, dz = p->pos.z - c.z, len = sqrtf(dx * dx + dz * dz);
+    if (len < 0.01f) dx = -sinf(p->yaw), dz = -cosf(p->yaw), len = 1.0f;
+    float snap = r + 0.45f;
+    p->pos.x = c.x + dx / len * snap, p->pos.z = c.z + dz / len * snap;
+    if (t) p->pos.y = terrain_height(t, p->pos.x, p->pos.z);
+    p->covered = true, p->peeking = false;
+    p->cover_pos = c, p->cover_radius = r;
+    p->sneaking = true;
+    p->noise = 0.0f;
+}
+
+bool ga_cover_blocks(const GameActions *ga, const Player *p, Vector3 observer) {
+    (void)ga;
+    return p && p->covered &&
+           stealth_cover_blocks(p->pos.x, p->pos.z, p->cover_pos.x, p->cover_pos.z, p->cover_radius, observer.x, observer.z);
+}
+
 void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p) {
     // Trepar: subir por la cuerda, pasar por encima del muro y bajar del otro lado.
     if (ga->climbing) {
@@ -1169,7 +1276,7 @@ void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p)
     }
     // Esconderse: agachado junto a la hierba alta, una roca o una mata (o en sigilo dentro de la
     // hierba alta) no se hace ruido y cuesta mucho verlo (player_visibility).
-    ga->hidden = false;
+    ga->hidden = p->covered;
     if ((p->sneaking || p->crouching) && ga->mounted < 0) {
         for (int i = 0; i < props->count; i++) {
             const char *id = props->items[i].item->id;
@@ -1259,7 +1366,7 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
         int before = stock_count(st, "utileria.material.arco_seco");
         if (stock_dry_day(st) <= 0) continue;
         int dry = stock_count(st, "utileria.material.arco_seco") - before;
-        if (dry > 0) cg_news(ga, k, TextFormat(T("Ya se secó el arco encolado (%d): termínalo con cola de hueso y tendón (Tab, Fabricar)."), dry));
+        if (dry > 0) cg_news(ga, k, TextFormat(T("Ya se secó el arco encolado (%d): termínalo con cola de hueso y tendón (L, Fabricar)."), dry));
     }
     // Efectos de lo construido en el campamento.
     const char *ids[PROPS_MAX + 8];
@@ -1299,13 +1406,13 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
 }
 
 // ---------------------------------------------------------------- dibujo
-static void draw_held(const InvItem *it, Vector3 local, bool shield) {
+static void draw_held(const InvItem *it, Vector3 local, bool shield, Color light) {
     if (!it) return;
     Vector3 size = shield ? (Vector3){ it->w, it->h, fmaxf(it->l, 0.06f) }
                           : (Vector3){ fmaxf(it->w, 0.04f), it->h, fmaxf(it->l, 0.04f) };
     Vector3 c = { local.x, local.y + size.y * 0.5f, local.z };
-    DrawCubeV(c, size, (Color){ 170, 170, 175, 255 });
-    DrawCubeWiresV(c, size, (Color){ 60, 55, 50, 255 });
+    DrawCubeV(c, size, ColorTint((Color){ 170, 170, 175, 255 }, light));
+    DrawCubeWiresV(c, size, ColorTint((Color){ 60, 55, 50, 255 }, light));
 }
 
 static Color role_color(Role r) {
@@ -1387,6 +1494,10 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         DrawSphere((Vector3){ hand.x, hand.y + 0.62f, hand.z }, 0.1f * flick, (Color){ 250, 160, 50, 255 });
     }
 
+    ga_draw_held(ga, p, time, WHITE);
+}
+
+void ga_draw_held(const GameActions *ga, const Player *p, float time, Color light) {
     // Lo que el jugador tiene en las manos.
     rlPushMatrix();
     rlTranslatef(p->pos.x, p->pos.y + p->draw_lift, p->pos.z);
@@ -1394,14 +1505,15 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
     const Hands *h = &ga->hands;
     const InvItem *r = h->right.id[0] ? inventory_find(ga->inv, h->right.id) : NULL;
     const InvItem *l = h->left.id[0] ? inventory_find(ga->inv, h->left.id) : NULL;
-    if (h->sheathed) {
-        draw_held(r, (Vector3){ -0.32f, 0.35f, -0.1f }, false);
-        draw_held(l, (Vector3){ 0.0f, 0.6f, -0.3f }, l && l->hands == INV_HANDS_SHIELD);
-    } else if (h->right.kind == INV_HANDS_TWO) {
-        draw_held(r, (Vector3){ 0.0f, 0.5f, 0.45f }, false);
-    } else {
-        draw_held(r, (Vector3){ -0.45f, 0.75f, 0.2f }, false);
-        draw_held(l, (Vector3){ 0.5f, 0.7f, 0.3f }, l && l->hands == INV_HANDS_SHIELD);
+    // Cada mano por separado: lo de fuera, en la mano; lo guardado, al cinto (el arma) o a la
+    // espalda (el escudo).
+    bool r_out = hands_out(h, HAND_RIGHT), l_out = hands_out(h, HAND_LEFT);
+    if (!r_out) draw_held(r, (Vector3){ -0.32f, 0.35f, -0.1f }, false, light);
+    else if (h->right.kind == INV_HANDS_TWO) draw_held(r, (Vector3){ 0.0f, 0.5f, 0.45f }, false, light);
+    else draw_held(r, (Vector3){ -0.45f, 0.75f, 0.2f }, false, light);
+    if (!l_out) draw_held(l, (Vector3){ 0.0f, 0.6f, -0.3f }, l && l->hands == INV_HANDS_SHIELD, light);
+    else {
+        draw_held(l, (Vector3){ 0.5f, 0.7f, 0.3f }, l && l->hands == INV_HANDS_SHIELD, light);
         if (ga->torch_lit && l) {
             float flick = 0.8f + 0.2f * sinf(time * 17.0f);
             DrawSphere((Vector3){ 0.5f, 0.7f + l->h + 0.08f, 0.3f }, 0.11f * flick, (Color){ 250, 160, 50, 255 });
@@ -1411,8 +1523,8 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
         const InvItem *c = inventory_find(ga->inv, h->carried);
         if (c) {
             Vector3 size = { fmaxf(c->l, 0.1f), fmaxf(c->h, 0.1f), fmaxf(c->w, 0.1f) };
-            DrawCubeV((Vector3){ 0, 1.15f, 0.45f }, size, (Color){ 190, 150, 100, 255 });
-            DrawCubeWiresV((Vector3){ 0, 1.15f, 0.45f }, size, (Color){ 80, 60, 40, 255 });
+            DrawCubeV((Vector3){ 0, 1.15f, 0.45f }, size, ColorTint((Color){ 190, 150, 100, 255 }, light));
+            DrawCubeWiresV((Vector3){ 0, 1.15f, 0.45f }, size, ColorTint((Color){ 80, 60, 40, 255 }, light));
         }
     }
     rlPopMatrix();
@@ -1437,7 +1549,7 @@ int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, con
             break;
         }
     }
-    if (ga->torch_lit && !ga->hands.sheathed && n < max) {
+    if (ga->torch_lit && hands_out(&ga->hands, HAND_LEFT) && n < max) {
         pos[n] = (Vector3){ p->pos.x, p->pos.y + p->draw_lift + 1.6f, p->pos.z };
         radius[n++] = 6.0f;
     }
@@ -1454,11 +1566,12 @@ int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, con
 bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) {
     const InvItem *body = inventory_find(ga->inv, "personaje.narrativo.protagonista");
     if (!body || !props_has_model(props, body)) return false;
+    Hands drawn = hands_drawn(&ga->hands); // la animacion, segun lo que esta fuera (el escudo solo, la espada sola)
     HumanoidState hs = {
-        .moving = p->moving, .running = p->stance == STANCE_RUN, .sneaking = p->sneaking, .crouching = p->crouching, .grounded = p->grounded,
+        .moving = p->moving, .running = p->stance == STANCE_RUN, .sneaking = p->sneaking, .crouching = p->crouching || p->covered, .grounded = p->grounded,
         .hidden = ga->hidden, .climbing = ga->climbing, .climb_top = ga->climbing && ga->climb_t > 1.6f,
-        .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = ga->hands.sheathed,
-        .grip = hands_grip(&ga->hands), .doing = ga->doing, .building = -1,
+        .mounted = ga->mounted >= 0, .carrying = ga->hands.carried[0] != '\0', .sheathed = drawn.sheathed,
+        .grip = hands_grip(&drawn), .doing = ga->doing, .building = -1,
         .down = ga->pl_down, .hit = ga->pl_hit, .attacking = ga->pl_attacking, .spear = ga->pl_spear,
         .blocking = ga->pl_blocking, .limping = ga->pl_limping, .ranged = ga->pl_ranged, .move = ga->pl_move, .holding = ga->pl_holding,
         .knocked = ga->pl_knocked, .swapping = ga->swap_anim > 0.0f,
@@ -1472,7 +1585,11 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) 
 const char *ga_hands_text(const GameActions *ga) {
     static char buf[128];
     const Hands *h = &ga->hands;
-    snprintf(buf, sizeof(buf), T("Empuñe: %s%s%s%s%s%s"), grip_name(hands_grip(h)), h->sheathed ? T(" (enfundado)") : "",
+    Hands d = hands_drawn(h);
+    const char *away = h->sheathed ? T(" (enfundado)") : h->right_away && h->right.id[0] ? T(" (arma enfundada)")
+                       : h->left_away && h->left.id[0] ? (h->left.kind == INV_HANDS_SHIELD ? T(" (escudo a la espalda)") : T(" (izquierda guardada)"))
+                                                       : "";
+    snprintf(buf, sizeof(buf), T("Empuñe: %s%s%s%s%s%s"), grip_name(hands_grip(h->sheathed ? h : &d)), away,
              ga->torch_lit ? T(", antorcha") : "", h->carried[0] ? T(", lleva algo") : "",
              ga->mounted >= 0 ? T(" · montado") : "", ga->hidden ? T(" · OCULTO") : "");
     return buf;

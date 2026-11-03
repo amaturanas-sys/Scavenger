@@ -99,6 +99,12 @@ static bool g_slots_set;      // si no, las de serie
 static int g_picking = -1;    // casilla que se esta eligiendo (-1: selector cerrado)
 static int g_pick_cursor;
 
+static int quickbar_key(int slot) {
+    return slot == HUD_QUICK_SLOTS - 1 ? KEY_ZERO : KEY_ONE + slot;
+}
+
+int hud_slot_number(int slot) { return (slot + 1) % 10; } // la decima casilla es la tecla 0
+
 typedef struct {
     QbSlot s;
     IconId icon;
@@ -108,10 +114,14 @@ typedef struct {
 
 static void default_slots(void) {
     memset(g_slots, 0, sizeof(g_slots));
-    g_slots[0] = (QbSlot){ QB_GRIP, 0, "" }; // sable y escudo
-    g_slots[1] = (QbSlot){ QB_GRIP, 3, "" }; // arco
-    g_slots[2] = (QbSlot){ QB_GRIP, 6, "" }; // lanza y escudo
-    g_slots[3] = (QbSlot){ QB_ITEM, 0, "utileria.objeto.antorcha" };
+    // Como en las hojas (docs/PLAN_TACTICO_Y_CUEVAS.md): 1 la espada (enfundar y desenfundar), 2 el
+    // escudo (al brazo o a la espalda), 3 el odre (beber).
+    g_slots[0] = (QbSlot){ QB_ITEM, 0, "arma.corta.sable" }; // el mejor sable que tengas
+    g_slots[1] = (QbSlot){ QB_ITEM, 0, "escudo.mano.mimbre" };
+    g_slots[2] = (QbSlot){ QB_ITEM, 0, "utileria.objeto.odre" };
+    g_slots[3] = (QbSlot){ QB_GRIP, 3, "" }; // arco
+    g_slots[4] = (QbSlot){ QB_GRIP, 6, "" }; // lanza y escudo
+    g_slots[5] = (QbSlot){ QB_ITEM, 0, "utileria.objeto.antorcha" };
     g_slots_set = true;
 }
 
@@ -126,14 +136,39 @@ const QbSlot *hud_slots(void) {
 }
 
 // Para que sirve un objeto en la barra: beber, vendar, la antorcha o empuñarlo.
-typedef enum { USE_NONE, USE_DRINK, USE_BANDAGE, USE_TORCH, USE_WIELD } ItemUse;
+typedef enum { USE_NONE, USE_DRINK, USE_BANDAGE, USE_TORCH, USE_WIELD, USE_ACTION } ItemUse;
 static ItemUse item_use(const GameActions *ga, const char *id) {
     if (!id || !id[0]) return USE_NONE;
     if (strstr(id, "antorcha")) return USE_TORCH;
     if (strstr(id, "agua") || strstr(id, "odre") || strstr(id, "vino") || strstr(id, "airag") || strstr(id, "cerveza")) return USE_DRINK;
     if (strstr(id, "unguento") || strstr(id, "hierbas")) return USE_BANDAGE;
+    if (strstr(id, "lazo") || strstr(id, "gancho_trepa") || strstr(id, "silla_montar")) return USE_ACTION;
     const InvItem *it = inventory_find(ga->inv, id);
     return it && it->hands != INV_HANDS_NONE ? USE_WIELD : USE_NONE;
+}
+
+bool hud_assign_item(const GameActions *ga, int slot, const char *id) {
+    if (slot < 0 || slot >= HUD_QUICK_SLOTS || !id || !id[0] || item_use(ga, id) == USE_NONE) return false;
+    if (!g_slots_set) default_slots(); // las demas casillas, las de serie
+    QbSlot s = { QB_ITEM, 0, "" };
+    snprintf(s.id, sizeof(s.id), "%s", id);
+    g_slots[slot] = s;
+    g_slots_set = true;
+    return true;
+}
+
+IconId hud_slot_icon(const GameActions *ga, int slot) {
+    if (!g_slots_set) default_slots();
+    if (slot < 0 || slot >= HUD_QUICK_SLOTS) return ICON_FALTA;
+    const QbSlot *s = &g_slots[slot];
+    if (s->kind == QB_ITEM) return icon_for_item(ga_best_weapon(ga, s->id));
+    if (s->kind == QB_SKILL) return ICON_NIVEL;
+    if (s->kind == QB_GRIP) {
+        GaGrip g = ga_grip(ga, s->grip);
+        const char *id = g.right ? g.right : g.left;
+        return id ? icon_for_item(id) : ICON_ENFUNDAR;
+    }
+    return ICON_FALTA;
 }
 
 static const char *item_label(const GameActions *ga, const char *id) {
@@ -166,11 +201,13 @@ static QbOption describe(const GameActions *ga, const Props *props, const Player
         o.ok = g.available;
         break;
     }
-    case QB_ITEM:
-        o.icon = icon_for_item(s->id);
-        o.title = item_label(ga, s->id);
+    case QB_ITEM: {
+        const char *id = ga_best_weapon(ga, s->id); // la espada de la casilla 1: la mejor que tengas
+        o.icon = icon_for_item(id);
+        o.title = item_label(ga, id);
         o.ok = has_carried(ga, props, p, s->id);
         break;
+    }
     case QB_SKILL:
         o.icon = ICON_NIVEL;
         o.title = T(ability_def((AbilityId)s->grip)->name);
@@ -190,7 +227,7 @@ static bool slot_active(const GameActions *ga, const QbSlot *s) {
     if (s->kind == QB_GRIP) return ga_grip(ga, s->grip).active;
     if (s->kind == QB_ITEM) {
         if (item_use(ga, s->id) == USE_TORCH) return ga->torch_lit;
-        return !ga->hands.sheathed && (!strcmp(ga->hands.right.id, s->id) || !strcmp(ga->hands.left.id, s->id));
+        return hands_holding(&ga->hands, ga_best_weapon(ga, s->id)); // fuera, en su mano
     }
     if (s->kind == QB_SKILL) return ga->ab_timer[s->grip] > 0.0f;
     return false;
@@ -265,11 +302,16 @@ static void use_slot(GameActions *ga, const Props *props, const Player *p, int k
         }
         switch (item_use(ga, s->id)) {
         case USE_TORCH: ga_quick_request_action(ACTION_LIGHT_TORCH); break;
-        case USE_DRINK: wg_request_drink(); break;
+        case USE_DRINK: // el odre: junto al agua lo llena; lo demas (vino, airag...) se bebe
+            if (strstr(s->id, "odre")) wg_request_odre();
+            else wg_request_drink();
+            break;
         case USE_BANDAGE: cb_request_bandage(); break;
-        case USE_WIELD:
-            if (slot_active(ga, s)) ga_quick_request_action(ACTION_SHEATHE); // otra vez: enfunda
-            else ga_quick_request_wield(s->id);
+        case USE_WIELD: ga_quick_request_wield(s->id); break; // en su mano: la guarda o la saca (solo esa mano)
+        case USE_ACTION:
+            if (strstr(s->id, "lazo")) ga_quick_request_action(ACTION_THROW_LASSO);
+            else if (strstr(s->id, "gancho_trepa")) ga_quick_request_action(ACTION_THROW_GRAPPLE);
+            else if (strstr(s->id, "silla_montar")) ga_quick_request_action(ACTION_SADDLE);
             break;
         default: break;
         }
@@ -291,9 +333,9 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
         if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) g_pick_cursor = (g_pick_cursor + 8) % n;
         if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) g_pick_cursor = (g_pick_cursor + n - 8 % n) % n;
         if (g_pick_cursor >= n) g_pick_cursor = n - 1;
-        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ONE + g_picking)) {
+        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) || IsKeyPressed(quickbar_key(g_picking))) {
             g_slots[g_picking] = opt[g_pick_cursor].s;
-            snprintf(log, len, T("Casilla %d: %s."), g_picking + 1, opt[g_pick_cursor].title);
+            snprintf(log, len, T("Casilla %d: %s."), hud_slot_number(g_picking), opt[g_pick_cursor].title);
             g_picking = -1;
         } else if (input_pressed(IN_BACK)) g_picking = -1;
         return;
@@ -302,12 +344,12 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
     if (input_action_down(KA_ESCORT)) return; // Y+1..3: ordenes a la escolta (src/game/hazards_game.c)
     unsigned mods = input_mods();
     for (int k = 0; k < HUD_QUICK_SLOTS; k++) {
-        if (!IsKeyPressed(KEY_ONE + k)) continue;
+        if (!IsKeyPressed(quickbar_key(k))) continue;
         const QbSlot *s = &g_slots[k];
         if ((mods & KM_ALT) || s->kind == QB_EMPTY) g_picking = k, g_pick_cursor = 0; // vacia (o Alt): elegir
         else if ((mods & KM_SHIFT) && wields(ga, s)) { // Mayús: el arma empuñada, a la otra mano
             if (slot_active(ga, s)) ga_quick_request_swap();
-            else snprintf(log, len, T("Empuña primero el arma de la casilla %d (tecla %d) para pasarla de mano."), k + 1, k + 1);
+            else snprintf(log, len, T("Empuña primero el arma de la casilla %d para pasarla de mano."), hud_slot_number(k));
         } else use_slot(ga, props, p, k, log, len);
     }
 }
@@ -339,12 +381,13 @@ void hud_quickbar(GameActions *ga, const Props *props, const Player *p, int x, i
             if (s->kind == QB_SKILL) ui_tile_bar(r, 1.0f - ga->ab_cd[s->grip] / fmaxf(1.0f, ability_def((AbilityId)s->grip)->cooldown), UI_TURQUOISE);
         }
         DrawRectangle((int)r.x + 1, (int)r.y + 1, 7, 9, (Color){ 16, 12, 9, 200 });
-        DrawText(TextFormat("%d", k + 1), (int)r.x + 2, (int)r.y + 1, 10, active ? UI_TURQ_LIGHT : UI_GOLD_LIGHT);
+        DrawText(TextFormat("%d", hud_slot_number(k)), (int)r.x + 2, (int)r.y + 1, 10, active ? UI_TURQ_LIGHT : UI_GOLD_LIGHT);
         if (g_picking == k) DrawRectangleLines((int)r.x - 1, (int)r.y - 1, (int)r.width + 2, (int)r.height + 2, UI_TURQUOISE);
         if (h) {
-            const char *how = empty          ? TextFormat(T("Tecla %d: elegir un arma, un objeto o una habilidad."), k + 1)
-                              : wields(ga, s) ? TextFormat(T("Tecla %d: empuñar o enfundar. Mayús+%d: a la otra mano. Alt+%d o clic derecho: cambiar."), k + 1, k + 1, k + 1)
-                                              : TextFormat(T("Tecla %d: usar. Alt+%d o clic derecho: cambiar."), k + 1, k + 1);
+            int nk = hud_slot_number(k);
+            const char *how = empty          ? TextFormat(T("Tecla %d: elegir un arma, un objeto o una habilidad."), nk)
+                              : wields(ga, s) ? TextFormat(T("Tecla %d: empuñar o enfundar. Mayús+%d: a la otra mano. Alt+%d o clic derecho: cambiar."), nk, nk, nk)
+                                              : TextFormat(T("Tecla %d: usar. Alt+%d o clic derecho: cambiar."), nk, nk);
             ui_legend(empty ? T("Casilla vacía") : o.title, how);
         }
         bool right = IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && ui_hover(r);
@@ -364,7 +407,7 @@ void hud_draw_picker(GameActions *ga, const Props *props, const Player *p, int w
     const int pw = cols * (tile + gap) + 20, ph = rows * (tile + gap) + 44;
     const int x0 = (w - pw) / 2, y0 = h - 70 - ph;
     ui_panel((Rectangle){ (float)x0, (float)y0, (float)pw, (float)ph }, UI_METAL_GOLD);
-    ui_text_centered(TextFormat(T("Casilla %d: elige un arma, un objeto o una habilidad"), g_picking + 1), w / 2, y0 + 10, 10, UI_GOLD_LIGHT);
+    ui_text_centered(TextFormat(T("Casilla %d: elige un arma, un objeto o una habilidad"), hud_slot_number(g_picking)), w / 2, y0 + 10, 10, UI_GOLD_LIGHT);
     for (int i = 0; i < n; i++) {
         Rectangle r = { (float)(x0 + 10 + (i % cols) * (tile + gap)), (float)(y0 + 26 + (i / cols) * (tile + gap)), tile, tile };
         hover(r);
@@ -412,7 +455,7 @@ typedef struct {
 } ColumnEntry;
 
 static const ColumnEntry COLUMN[] = {
-    { ICON_ACCIONES, COL_MENU, 0, "Tab" },
+    { ICON_ACCIONES, COL_MENU, 0, "L" },
     { ICON_BEBER, COL_DRINK, 0, "N" },
     { ICON_UNGUENTO, COL_BANDAGE, 0, "B" },
     { ICON_FOGATA, COL_ACTION, ACTION_PLACE_FIRE, "" },
@@ -427,7 +470,7 @@ static const ColumnEntry COLUMN[] = {
 
 // Con un arma que dispara flechas o virotes en la mano (se pueden encender).
 static bool arrows_in_hand(const GameActions *ga) {
-    const RangedDef *rd = ga->hands.sheathed ? NULL : ranged_def(ga->hands.right.id);
+    const RangedDef *rd = hands_out(&ga->hands, HAND_RIGHT) ? ranged_def(ga->hands.right.id) : NULL;
     return rd && (rd->projectile == PROJ_ARROW || rd->projectile == PROJ_BOLT);
 }
 
@@ -473,7 +516,7 @@ void hud_action_column(const GameActions *ga, int x, int y) {
                                 : e->kind == COL_PACK    ? T("Mochila")
                                 : e->kind == COL_ARROW   ? T("Encender la flecha")
                                                          : T(action_def(e->action)->name);
-            const char *detail = e->kind == COL_MENU      ? T("Tab: el menú de acciones, obras, fabricar y reparar.")
+            const char *detail = e->kind == COL_MENU      ? T("L: el menú de acciones, obras, fabricar y reparar.")
                                  : e->kind == COL_DRINK   ? T("N: bebe lo más seguro que tengas, o del río en la orilla.")
                                  : e->kind == COL_BANDAGE ? T("B: venda tus heridas (o levanta a un compañero abatido).")
                                  : e->kind == COL_PACK    ? T("Mayús+G: deja la mochila en el suelo para moverte ligero, o recógela.")

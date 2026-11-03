@@ -2,6 +2,10 @@
 
 #include "raymath.h"
 
+static Color g_tint = { 255, 255, 255, 255 }; // la luz de alrededor (body_set_tint)
+
+void body_set_tint(Color tint) { g_tint = tint; }
+
 static Vector3 world(V3 l, Vector3 pos, float yaw) {
     V3 w = body_to_world(l, (V3){ pos.x, pos.y, pos.z }, yaw);
     return (Vector3){ w.x, w.y, w.z };
@@ -25,6 +29,7 @@ void body_draw(const BodyPose *b, Vector3 pos, float yaw, BodyColors c, const Ar
         Color col = i == PART_HEAD || i == PART_NECK || i == PART_FOREARM_L || i == PART_FOREARM_R ? c.skin
                     : i >= PART_PELVIS && i != PART_UPPER_ARM_L && i != PART_UPPER_ARM_R ? c.legs
                                                                                           : c.cloth;
+        col = ColorTint(col, g_tint);
         if (i == PART_HEAD) DrawSphere(Vector3Lerp(a, e, 0.5f), s->radius * 1.05f, col);
         else DrawCapsule(a, e, s->radius, 6, 3, col);
         if (!armor) continue;
@@ -35,18 +40,18 @@ void body_draw(const BodyPose *b, Vector3 pos, float yaw, BodyColors c, const Ar
             float grow = 1.25f + 0.1f * (float)(k == SLOT_GLOVES || k == SLOT_BOOTS);
             if (k == SLOT_GLOVES || k == SLOT_BOOTS) { // solo el extremo del miembro
                 Vector3 m = Vector3Lerp(a, e, 0.65f);
-                DrawCapsule(m, e, s->radius * grow, 6, 3, armor_color(pc));
+                DrawCapsule(m, e, s->radius * grow, 6, 3, ColorTint(armor_color(pc), g_tint));
             } else if (i == PART_HEAD) {
-                DrawSphere(Vector3Lerp(a, e, 0.7f), s->radius * 1.2f, armor_color(pc));
+                DrawSphere(Vector3Lerp(a, e, 0.7f), s->radius * 1.2f, ColorTint(armor_color(pc), g_tint));
             } else {
-                DrawCapsule(a, e, s->radius * grow, 6, 3, armor_color(pc));
+                DrawCapsule(a, e, s->radius * grow, 6, 3, ColorTint(armor_color(pc), g_tint));
             }
             break;
         }
     }
 }
 
-static Color garment_color(const GarmentDef *g) { return (Color){ g->r, g->g, g->b, 255 }; }
+static Color garment_color(const GarmentDef *g) { return ColorTint((Color){ g->r, g->g, g->b, 255 }, g_tint); }
 
 void body_draw_outfit(const BodyPose *b, Vector3 pos, float yaw, const Outfit *o) {
     if (!o) return;

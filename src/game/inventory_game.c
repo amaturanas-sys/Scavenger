@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "game/forge_game.h"
+#include "game/hud_game.h"
 #include "game/input.h"
 #include "game/place_game.h"
 #include "raymath.h"
@@ -570,7 +571,7 @@ bool ig_take_loot(GameActions *ga, const Props *props, const Player *p, char *lo
     if (!b->n) ga->loot_age[k] = -1.0f;
     if (taken) snprintf(log, len, T("Recoges el botín: %s%s%s"), first, taken > 1 ? TextFormat(T(" y %d más"), taken - 1) : "",
                         b->n ? T(" (lo demás no te cabe).") : ".");
-    else snprintf(log, len, "%s", T("No te cabe nada del botín (I: inventario)."));
+    else snprintf(log, len, "%s", T("No te cabe nada del botín (Tab: inventario)."));
     return true;
 }
 
@@ -701,10 +702,10 @@ static void sync_packs(GameActions *ga, char *log, size_t len) {
 
 // ------------------------------------------------------------------ disposicion (dibujo y raton)
 #define PANE_W 300
-#define PANE_H 296
+#define PANE_H 272 // abajo: lo que llevas encima y la fila de la barra rapida (1-0); mas abajo, el registro
 #define PANE_Y 12
 #define INV_COLS 8
-#define INV_ROWS 6
+#define INV_ROWS 5
 #define INV_TILE 32
 #define INV_GAP 3
 
@@ -713,6 +714,15 @@ static int pane_x(int k) { return 14 + k * (PANE_W + 12); }
 static Rectangle cont_tab_rect(int k, int c, int nc) {
     int step = nc > 0 && nc * 28 > PANE_W - 30 ? (PANE_W - 30) / nc : 28; // muchos contenedores: se aprietan
     return (Rectangle){ (float)(pane_x(k) + UI_PANEL_INSET + 2 + c * step), (float)(PANE_Y + UI_PANEL_INSET), 24, 24 };
+}
+
+// La fila de la barra rapida bajo las columnas (A2): un toque pone lo elegido en esa casilla (en la
+// tableta no hay numeros).
+static Rectangle quick_rect(int k) { return (Rectangle){ (float)(120 + k * 23), (float)(PANE_Y + PANE_H + 3), 20, 20 }; }
+
+static void quick_assign(const GameActions *ga, int slot, const char *id, char *log, size_t len) {
+    if (hud_assign_item(ga, slot, id)) snprintf(log, len, T("Casilla %d: %s."), hud_slot_number(slot), item_name(ga, id));
+    else snprintf(log, len, T("%s no se usa desde la barra rápida."), item_name(ga, id));
 }
 
 static int inv_first_row(int cur) {
@@ -808,6 +818,10 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
         int nr = rows_of(ga, &conts[*cont], rows, 64);
         int *cur = &ga->inv_cursor[*pane];
         if (*cur >= nr) *cur = nr ? nr - 1 : 0;
+        if (*cur < nr) // Tab + un numero (o un toque en la fila de la barra): lo elegido, a esa casilla
+            for (int slot = 0; slot < HUD_QUICK_SLOTS; slot++)
+                if (IsKeyPressed(slot == HUD_QUICK_SLOTS - 1 ? KEY_ZERO : KEY_ONE + slot) || ui_click(quick_rect(slot)))
+                    quick_assign(ga, slot, rows[*cur].id, log, len);
         // Flechas (o WASD) por la cuadricula; por el borde se pasa a la otra columna.
         bool right = IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D), left = IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A);
         if (right && (nr == 0 || *cur % INV_COLS == INV_COLS - 1 || *cur == nr - 1) && *pane == 0) *pane = 1;
@@ -946,7 +960,14 @@ static void draw_inventory(const GameActions *ga, const Props *props, const Play
     if (heavy) ui_icon(ICON_VELOCIDAD, wr.x + 70, wr.y + 1, 16, UI_CARNELIAN);
     if (ui_hover(wr)) ui_legend(T("Llevas encima"), heavy ? TextFormat(T("%.1f kg: pesado, andas más lento (más de %.0f kg)"), kg, CARRY_LIMIT)
                                                     : TextFormat(T("%.1f kg (hasta %.0f sin frenarte)"), kg, CARRY_LIMIT));
-    ui_legend_default(T("Inventario"), T("Flechas: elegir · Q/E: contenedor · Enter: pasar · U: cambiar de mochila · Mayús+G: dejarla o recogerla"));
+    // La barra rapida: su numero (o un toque aqui) pone lo elegido en esa casilla.
+    for (int k = 0; k < HUD_QUICK_SLOTS; k++) {
+        Rectangle r = quick_rect(k);
+        bool hv = ui_tile(r, hud_slot_icon(ga, k), false, true);
+        DrawText(TextFormat("%d", hud_slot_number(k)), (int)r.x + 1, (int)r.y, 10, UI_GOLD_LIGHT);
+        if (hv) ui_legend(TextFormat(T("Casilla %d de la barra"), hud_slot_number(k)), T("Un toque (o su número) pone aquí lo elegido."));
+    }
+    ui_legend_default(T("Inventario"), T("Flechas: elegir · Q/E: contenedor · Enter: pasar · 1-0: a la barra · U: cambiar de mochila · Mayús+G: dejarla o recogerla"));
 }
 
 static IconId motif_icon(Motif m) {

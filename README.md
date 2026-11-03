@@ -81,13 +81,13 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 |---|---|---|
 | Moverse | WASD / flechas | Stick izquierdo |
 | Correr | Shift | LB |
-| Sigilo | C | Click stick derecho |
+| Sigilo; junto a un tronco, una roca o un muro, a cubierto | C (moverte o C otra vez te saca) | Click stick derecho |
 | Agacharse (más bajo y lento) | X | — |
 | Saltar | Espacio | A |
 | Cámara | Q / E, clic derecho + arrastrar, rueda | — |
 | Marcar sitio de interés / de peligro | M / Shift+M | — |
-| Menú de acciones, obras, fabricar y reparar | Tab (flechas + Enter; Q/E cambia de pestaña) | — |
-| Empuñar / enfundar (barra rápida) | 1 a 9 (otra vez: enfunda; Mayús+número: a la otra mano; Alt+número: elegir qué va) | — |
+| Menú de acciones, obras, fabricar y reparar | L (flechas + Enter; Q/E cambia de pestaña) | — |
+| Empuñar / enfundar (barra rápida) | 1 a 9 y 0: cada casilla saca o guarda lo suyo (de serie, 1 la espada, 2 el escudo, 3 el odre); Mayús+número: a la otra mano; Alt+número: elegir qué va | — |
 | Interactuar: hablar, tomar, botín, pozo, horno, rescatar, animales | F (Mayús+F: todo lo cercano, o sacrificar junto al ganado) | — |
 | Lanzar lo que llevas en brazos | T | — |
 | Agarrar por la espalda (rehén) | G | — |
@@ -95,7 +95,9 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Mochila (dejarla o recogerla) | Mayús+G (o la columna del HUD) | — |
 | Ficha del gran guerrero | U | — |
 | Montar / desmontar | R | — |
-| Inventario (bolsillos, mochila, alforjas, carreta, campamento) | I | — |
+| Inventario (bolsillos, mochila, alforjas, carreta, campamento) | Tab (con algo elegido, un número, o un toque en la fila de abajo, lo pone en esa casilla de la barra) | — |
+| Objetivo siguiente / anterior | O / Mayús+O (también Ctrl+E / Ctrl+Q, o un clic o un toque sobre la silueta; con arco, el clic izquierdo y el derecho cambian, y mantener 1 s lo suelta) | — |
+| Entrar en una cueva | caminar por la boca (adentro, F toma, enciende y libera; se sale por la boca) | — |
 | Esconderse | agachado (X) tras rocas o matas; con sigilo (C) o agachado, en la hierba alta | — |
 | Beber / tomar hierbas contra los espíritus del agua | N / Mayús+N | — |
 | Vista orbital del mundo | F5 o Ctrl+M (flechas: girar e inclinar) | — |
@@ -122,23 +124,30 @@ Peligros: `Y` escolta (dos integrantes te acompañan) · `F` junto a un compañe
 
 Menús: son **iconos**. Pasa el ratón por encima (o elige con las flechas) y su nombre aparece en la leyenda de la base de la pantalla; un clic elige y otro clic (o Enter) lo usa. En el inventario, `Q`/`E` cambia de contenedor y por el borde de la cuadrícula se pasa a la otra columna. En el equipo, el clic derecho (o `Supr`) quita la pieza.
 
-Combate de cuatro botones (las teclas o las cuatro casillas de abajo a la derecha, que se tocan en tableta):
-- **`H` o clic izquierdo, ataque:** golpe; tres seguidos, combo; mantener, golpe pesado. Con arco, ballesta u honda: mantener para tensar y soltar para disparar; con objetivo, la mira calcula sola la caída; sin él, la cámara alza la mira.
-- **`J` o clic derecho sin arrastrar, bloqueo (mantener):** con escudo cubre el frente (`J`+`H`: golpe de escudo); sin escudo paras con el arma, que aguanta la mitad del golpe y cansa. Con arma a distancia, `J` la baja.
-- **`K`, parry:** justo antes del golpe enemigo (el rival anuncia el golpe; en la ventana justa destella un rombo dorado sobre él y la casilla). Con hacha o guja le arrancas el escudo; sin armas o con daga, llave y derribo (lo desarmas); con las demás, desvías y queda abierto. A destiempo quedas expuesto un momento.
-- **`L`, carga o patada:** con escudo, carga que empuja y tumba al primero que encuentra; sin escudo, patada (corriendo, con inercia).
-- **Objetivo:** `Tab` en combate pasa al enemigo siguiente (`Mayús+Tab`, al anterior; también `Ctrl+E` y `Ctrl+Q`); también se elige con un clic o un toque. Un anillo dorado lo marca y su barra se resalta; los golpes van a él y las flechas lo buscan. Se pierde a 25 m o si muere. Fuera de combate, `Tab` abre el menú.
-- **La espalda:** por detrás los enemigos solo te oyen (en sigilo o agachado casi nada). A menos de 2 m de la espalda de uno que no te vio (o aturdido) aparece una daga sobre él: `K` lo mata en silencio (solo lo oyen los que están a menos de 6 m) y `G` lo toma de rehén.
-- **Rehén:** te cubres con él; los suyos no se acercan y no disparan si los tapa (si disparan, fallan más). Vas lento y con una sola mano. `G` lo suelta, `K` lo ejecuta y `L` lo empuja; un golpe fuerte te lo quita.
-- **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar. El abatido despierta a los 30-90 s, herido, y huye a avisar a los suyos. Junto a él, `F` lo toma prisionero y `H` o `K` lo rematan (a la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran).
-- **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+L` encender la flecha junto a un fuego (o la casilla de la columna) · `P` equipo (armadura, amuletos y heridas) · `I` inventario · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
+Combate de cuatro botones, como en las hojas del sistema táctico (v0.12.0, [docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)): las teclas o las cuatro casillas de abajo a la derecha, que se tocan en tableta. Lo que hace cada una depende de lo que tengas fuera: la espada (`1`), el escudo (`2`) o los dos; cada uno se guarda sin tocar al otro.
+
+| En la mano | `H` | `I` | `J` | `K` |
+|---|---|---|---|---|
+| La espada sola | golpe | parry | parar con el arma | patada |
+| El escudo solo (la espada enfundada) | puñetazo | parry con el escudo | cubrirse con el escudo | carga con escudo |
+| La espada y el escudo | golpe | parry con la espada | cubrirse con el escudo | carga con escudo |
+
+- **`H` o clic izquierdo, ataque:** golpe; tres seguidos, combo; mantener, golpe pesado. Con arco, ballesta u honda: mantener para tensar y soltar para disparar; con objetivo, la mira calcula sola la caída; sin él, la cámara alza la mira. Elegir el arco guarda solos la espada y el escudo.
+- **`I`, parry:** justo antes del golpe enemigo (el rival anuncia el golpe; en la ventana justa destella un rombo dorado sobre él y la casilla). Con hacha o guja le arrancas el escudo; sin armas o con daga, llave y derribo (lo desarmas); con las demás, desvías y queda abierto; solo con el escudo, lo desvías con el escudo y lo aturdes con el canto. A destiempo quedas expuesto un momento.
+- **`J` o clic derecho sin arrastrar, bloqueo (mantener):** con el escudo en el brazo cubre el frente (`J`+`H`: golpe de escudo); sin él paras con el arma, que aguanta la mitad del golpe y cansa. Con arma a distancia, `J` la baja.
+- **`K`, carga o patada:** con el escudo en el brazo, carga que empuja y tumba al primero que encuentra; sin él, patada (corriendo, con inercia).
+- **Objetivo:** `O` pasa al enemigo siguiente (`Mayús+O`, al anterior; también `Ctrl+E` y `Ctrl+Q`); también se elige con un clic o un toque. Un anillo dorado lo marca y su barra se resalta; los golpes van a él y las flechas lo buscan. Se pierde a 25 m o si muere.
+- **La espalda:** por detrás los enemigos solo te oyen (en sigilo o agachado casi nada). A menos de 2 m de la espalda de uno que no te vio (o aturdido) aparece una daga sobre él: `H` lo mata en silencio (solo lo oyen los que están a menos de 6 m) y `G` lo toma de rehén.
+- **Rehén:** te cubres con él; los suyos no se acercan y no disparan si los tapa (si disparan, fallan más). Vas lento y con una sola mano. `G` lo suelta, `H` lo ejecuta e `I` lo empuja y cae aturdido; un golpe fuerte te lo quita.
+- **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar. El abatido despierta a los 30-90 s, herido, y huye a avisar a los suyos. Junto a él, `F` lo toma prisionero y `H` lo remata (a la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran).
+- **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+L` encender la flecha junto a un fuego (o la casilla de la columna) · `P` equipo (armadura, amuletos y heridas) · `Tab` inventario · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
 
 Combate montado: a caballo se golpea con el arma (`H`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo. Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
 
 A caballo (v0.7.1):
 - **El rumbo:** el caballo va hacia donde lo llevas; el jinete puede girarse en la montura para apuntar.
 - **Lanza en ristre (`L` con una lanza):** al galope (desde 5 m/s), el primero que tengas delante recibe la carrera entera: hasta ×2,5 de daño, y casi siempre cae (un escudo que la para la frena). Un golpe por carga.
-- **Arco a caballo:** la carrera abre el tiro, y hacia atrás más: el **disparo parto**, alejándote al galope del que te persigue (con objetivo, `Tab`, apuntas solo; el aviso «¡Disparo parto!» sale si acierta). La monta (amuleto del caballo, tatuajes, joyas) y la puntería lo corrigen.
+- **Arco a caballo:** la carrera abre el tiro, y hacia atrás más: el **disparo parto**, alejándote al galope del que te persigue (con objetivo, `O`, apuntas solo; el aviso «¡Disparo parto!» sale si acierta). La monta (amuleto del caballo, tatuajes, joyas) y la puntería lo corrigen.
 - **El cansancio:** el galope gasta el aguante del caballo (unos 45 s); al paso y quieto se repone. Su barra reemplaza a la tuya bajo el minimapa. Agotado no galopa hasta recobrar el 35 %. Con hambre o sed se cansa antes y corre menos.
 - **Lo heredado:** cada caballo tiene su velocidad y su aguante (±25 %); al montar se ven («macho · velocidad +8 % · aguante +2 %»).
 - **Cría:** una hembra y un macho adultos de la tribu, bien comidos, en el campamento: la hembra queda preñada y a los 3 días nace la cría, que hereda el promedio de sus padres con algo de azar. A los 4 días es adulta (antes no se ensilla, ni da leche). La mula y el elefante no se crían. Los informes del guardián lo cuentan.
@@ -148,7 +157,7 @@ Pruebas: `--montado lanza|pesada|parto|agotado` (galopa solo hacia delante), `--
 
 Las armas de la estepa (v0.8.0):
 - **Arco simple y arco compuesto reflejo:** el simple es el de siempre (el del equipo inicial). El reflejo tira más fuerte y es corto: a caballo tira como a pie, también el disparo parto. La empuñadura del arco toma el reflejo si lo tienes.
-- **El arco reflejo, en tres etapas (Tab, Fabricar):** el alma de madera; el asta y el tendón, pegados con cola de hueso (huesos hervidos), que se cuelgan a secar 2 días en el acopio del campamento (el guardián avisa cuando están secos); y la cola de hueso y un tendón que lo terminan.
+- **El arco reflejo, en tres etapas (L, Fabricar):** el alma de madera; el asta y el tendón, pegados con cola de hueso (huesos hervidos), que se cuelgan a secar 2 días en el acopio del campamento (el guardián avisa cuando están secos); y la cola de hueso y un tendón que lo terminan.
 - **Sable de la estepa:** a caballo corta limpio, suma toda la carrera y nunca se traba. Las demás armas aprovechan la mitad, y al galope el hacha, la espada, la daga o la maza a veces se traban: el próximo golpe tarda más. La **akinakes**, la espada corta de los escitas, es rápida en los combos.
 - **Lanza ligera y lanza pesada:** la ligera, a pie y a caballo. La pesada (4 m, a dos manos) solo sirve a caballo: en ristre (`L`) derriba casi siempre y rompe la formación, porque sigue en los que vienen detrás en la línea de la carga.
 - **Sagaris:** el de pico perfora la armadura (la para como a una flecha); el de martillo aturde. Los dos enganchan el escudo en el golpe y en el parry.
@@ -162,7 +171,7 @@ Las armas de la estepa (v0.8.0):
 La forja (v0.8.1):
 - **El hierro:** vetas a cielo abierto en el altiplano (rocas herrumbradas) y hierro de pantano en las orillas de los lagos del bosque y de los fiordos (barro rojizo). Al pasar a unos 20 m quedan marcadas en el mapa (`M`), y los exploradores también las marcan. `F` junto a una veta pica el mineral: 2 cada vez (1 en el pantano), a lo que llevas o al acopio. El herrero lo funde en el horno de acero: 3 de mineral y 2 de carbón dan un hierro.
 - **La forja móvil (fuelle y hogar):** la hace el herrero en el horno de acero (cuero, hierro y piedra). Sirve si está a mano: en los bolsillos, la mochila, las alforjas o la carreta cercanas, o en el acopio del campamento (en la migración, en la columna). Con ella, en cualquier sitio: puntas de flecha de hierro (6 por tanda; con leña y plumas, 8 flechas), cuchillos de hierro y sables de acero con una hoja comprada. Repara el metal como un horno (sigue haciendo falta un herrero y el metal).
-- **El taller del herrero (`Tab` → Obras):** solo en un campamento grande, de 8 personas o más, y con herrero; el menú dice cuántos viven allí. En el taller se forjan el sable de acero wootz y la lanza de punta de acero, y se templa.
+- **El taller del herrero (`L` → Obras):** solo en un campamento grande, de 8 personas o más, y con herrero; el menú dice cuántos viven allí. En el taller se forjan el sable de acero wootz y la lanza de punta de acero, y se templa.
 - **El temple:** del sable de acero, el sable wootz o la daga de anillo, con carbón. Si sale bien, filo duro y lomo flexible: pega un 15 % más. Si sale mal, el arma queda frágil: pega un 10 % más, pero puede quebrarse en el golpe (5 %; 12 % si te lo paran) y se pierde. Con un herrero en la tribu sale bien el 65 % de las veces, con dos el 80 %, y la destreza del clan suma (hasta el 95 %). La empuñadura del sable nunca toma uno frágil.
 - **El comercio:** las caravanas traen acero wootz y la capital vende hojas de sable de acero.
 
@@ -192,7 +201,7 @@ Ejército y asedio (v0.9.1):
 - **Las expediciones de castigo:** con la relación con el kanato en −40 (o con mucho rencor en una ciudad), sale un ejército contra tu campamento, si su tesoro lo paga. Si estás cerca lo ves llegar; si llega, saquea el acopio (comida, grano y plata) y se vuelve, y el enojo se calma. Si estás lejos, el guardián te lo cuenta.
 - **La guerra:** con la relación por el suelo o con mucho rencor, la ciudad cierra su mercado y sus puertas. La muralla corta el paso, y su guarnición sale a pelear cuando te acercas.
 - **El asedio:**
-  - se entra trepando (la trepa, `Tab`), por una escala de asedio (se hace a mano con troncos y cuerda; `F` la apoya en la muralla y `F` sube) o quemando una puerta con flechas encendidas o con la antorcha (`F`);
+  - se entra trepando (la trepa, `L`), por una escala de asedio (se hace a mano con troncos y cuerda; `F` la apoya en la muralla y `F` sube) o quemando una puerta con flechas encendidas o con la antorcha (`F`);
   - un campamento de la tribu cerca de la ciudad la cerca: no entra grano. Las flechas encendidas que caen adentro queman su granero;
   - «Exigir la rendición» (en el palacio, o hablando con la guardia de una puerta): se rinde sin soldados, sin grano o en revuelta. «Pagar la paz» la vuelve a abrir.
 - **La ciudad tomada** te paga tributo cada estación (al acopio del campamento inicial) y su fundición es tu taller: dentro de su muralla se forja y se templa como en el taller del herrero. Si tomas la capital del kanato, ya no le debes tributo.
@@ -243,9 +252,37 @@ Una sola rama y más vida (v0.10.3):
 Las casas y los campos por persona (v0.10.4 y v0.10.7):
 - **Más casas y campos a la vista** con la misma gente: cada casa aloja 110 almas en la capital y 45 en la aldea (antes 150 y 70), y cada campo alimenta a 180 y 40 (antes 250 y 80). Los números están en `src/sim/city.h` (`CITY_MAX_ALMAS_*`).
 
-El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo anterior y `Ctrl+E` al siguiente, además de `Tab` y `Mayús+Tab`. La v0.10.6 no cambió el juego (solo la documentación de la tubería de modelos de la v0.9.3).
+El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo anterior y `Ctrl+E` al siguiente, además de `Tab` y `Mayús+Tab` (desde la v0.12.0, `O` y `Mayús+O`). La v0.10.6 no cambió el juego (solo la documentación de la tubería de modelos de la v0.9.3).
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
+
+El sistema táctico y las cuevas (v0.13.0), el resto de las hojas ([docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)):
+- **La barra rápida, de 10 casillas** (`1` a `9` y `0`): con el inventario abierto (`Tab`), un número (o un toque en la fila
+  de abajo) pone lo elegido en esa casilla. El odre bebe o, junto al agua o a un pozo, se llena; el lazo va al animal
+  elegido; el gancho y la montura, también desde la barra.
+- **El objetivo:** enemigos y animales salvajes, con `O`, `Ctrl+Q`/`Ctrl+E` o un toque sobre la silueta. Con arco, el clic
+  cambia de objetivo y mantenerlo 1 s lo suelta. El personaje lo mira siempre y se pierde a los 25 m o tras 6 s sin verlo.
+- **Descubrirte lleva tiempo:** un enemigo tarda 5 s de día, 7 de noche y 3 con la antorcha (menos de cerca); mientras, un
+  «?» sobre él; al reconocerte, «!».
+- **A cubierto:** `C` junto a un tronco, una roca, una peña o una ruina te pega a él y no te ven desde el otro lado; con el
+  arco, `H` te asoma, disparas y vuelves.
+- **Las cuevas:** cada guarida tiene la suya (de fieras, abandonada, de forajidos, de una tribu o un almacén del imperio).
+  Se entra caminando por la boca: un vestíbulo, la bajada que no se sube a la Cisterna Magna y el anillo de recámaras
+  por donde se sale. Adentro está oscuro: la antorcha y las de las paredes alumbran. `F` toma lo que hay (cofres, ánforas,
+  armas, botín, vetas, huesos, nidos), enciende las antorchas y las fogatas, muestra las pinturas y libera a los
+  prisioneros, que se unen a la tribu o te traicionan. Las habitadas tienen guardias que salen a la boca una vez por día.
+- **Las partidas de antes** cargan igual: la décima casilla vacía y las cuevas sin tocar. Guardada adentro de una cueva,
+  la partida aparece en la boca.
+
+Pruebas: `--cubierto`, `--objetivo`, `--ir boca-forajidos` y `--cueva forajidos:0 --antorcha` (ver la «Captura automática»).
+
+Las manos (v0.12.0, que no se publicó sola: sale con la v0.13.0), la primera fase del sistema táctico de las hojas ([docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)):
+- **Las teclas de las hojas:** `H` ataque, `I` parry, `J` bloqueo, `K` carga o patada. `Tab` abre el inventario, `L` el menú de acciones y `O` elige el objetivo (`Mayús+O`, el anterior).
+- **La espada y el escudo, por separado:** de serie, `1` la espada (otra vez, la enfundas), `2` el escudo (al brazo o a la espalda) y `3` el odre; cada uno se guarda sin tocar al otro. Los cuatro botones cambian con lo que tengas fuera: con el escudo solo, puñetazo, parry con el escudo (lo desvía y lo aturde con el canto), cubrirse y carga. Elegir el arco guarda solos la espada y el escudo.
+- **Por la espalda y con un rehén:** `H` mata en silencio, `H` ejecuta al rehén e `I` lo empuja; `H` remata a un abatido.
+- **Las partidas de antes** cargan igual y conservan su barra rápida: su casilla «sable y escudo» enfunda los dos, y `Alt+número` la cambia.
+
+Pruebas: `--manos escudo|espada|nada` (la espada enfundada con el escudo en el brazo, el escudo a la espalda, o todo guardado).
 
 Los bordes (v0.11.4), la fase 5 y última del diseño del agua ([docs/AGUA.md](docs/AGUA.md)):
 - **Un muro de roca tras el canal del bosque:** del otro lado del canal se alza un muro de estratos levantados, de unos 120 m, en grises y ocres. Se ve desde la orilla, que quedó despejada, y desde lejos; no se alcanza.
@@ -270,7 +307,7 @@ Hielo, nado y pesca (v0.11.2), la fase 3 del diseño del agua ([docs/AGUA.md](do
 - **La tribu y los enemigos nadan:** vadean hasta el pecho y, más hondo, cruzan un río a nado (un lago o el mar los rodean, como antes). Nadando van más lento, con la cabeza afuera, y nadie dispara (cuerpo a cuerpo, sí). Los carros de guerra no entran al agua honda.
 - **Los animales también:** cada uno vadea según su tamaño y nada más hondo. Un río lo cruzan a nado si huyen, cazan o siguen a la manada; pastando, lo rodean.
 - **El hielo se rompe bajo todos:** un caballo rompe el hielo delgado más del doble de veces que una cabra. El animal que cae forcejea y sale asustado, o se ahoga. El enemigo que cae pierde el caballo, forcejea sin pelear, helándose, y sale huyendo (si lo abaten en el agua, se ahoga). El de la tribu que cae cerca de ti espera con la cabeza afuera a que lo saques (`F`, con el minijuego).
-- **La pesca en el hielo:** con el **picahielo**, un objeto nuevo que va siempre en el equipo (también en las partidas guardadas), se abre un agujero delante (`Tab` → Acciones), sobre el hielo de un lago o un río hondo. Junto al agujero se pesca: acuden los peces de cerca, y con una lanza en la mano pican más. Los agujeros se hielan de nuevo durante la noche, y quien pisa uno cae al agua.
+- **La pesca en el hielo:** con el **picahielo**, un objeto nuevo que va siempre en el equipo (también en las partidas guardadas), se abre un agujero delante (`L` → Acciones), sobre el hielo de un lago o un río hondo. Junto al agujero se pesca: acuden los peces de cerca, y con una lanza en la mano pican más. Los agujeros se hielan de nuevo durante la noche, y quien pisa uno cae al agua.
 
 Pruebas: `--ir meandro --trampa nado` (la escolta cruza el río a nado hacia ti); `--dia 25 --ir lago` con `--trampa agujero` (sobre el hielo, junto a un agujero para pescar) o `--trampa hundido` (un compañero que rompió el hielo espera a que lo saques).
 
@@ -299,7 +336,7 @@ La verificación (v0.10.9):
 - **Las guardas del CI** (`tools/ci/guardas.py`): frenan pruebas borradas o recortadas, archivos vacíos o falsos en `assets/`, texto roto, tipos repetidos, enums que crecen por el medio, archivos sueltos y versiones sin novedades. En el Codespace, el pre-push (`.githooks/`) además impide subir a `main` o a `claude/*`.
 - **El Codespace roto, a salvo:** lo que tenía sin subir (el VAT de Copilot, el campamento nodal y el comienzo del agua) quedó en la rama `cline/rescate-codespace`, de archivo; `main` no se tocó.
 
-Fabricar y reparar (`Tab`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
+Fabricar y reparar (`L`, pestañas Fabricar y Reparar): a mano, flechas (leña + plumas + pedernal → 5), virotes, piedras de honda, cuerda de tendones, ungüento (hierbas + miel), coraza de cuero y botas de fieltro, y lo de los oficios (más abajo, «Oficios, comercio y saqueo»); lo forjado pide herrero y horno. Los ingredientes se recolectan: matas de hierbas y pedernal en el campo (`F`), plumas de las aves y hueso y tendones de los demás animales al despiezarlos (`F`). Reparar: fieltro y cuero con pieles (sin pieles, se untan con grasa: devuelve menos); bronce, hierro y acero con herrero, horno (o la forja móvil) y metal.
 
 Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comida, a veces un amuleto y piezas de su armadura con el desgaste que tengan); `F` junto a ella guarda lo que quepa.
 
@@ -316,9 +353,9 @@ Animales de la tribu:
 - **El hambre:** sobre la cabeza aparece un cuenco. Con mucha hambre adelgazan y al final se van y vuelven a ser salvajes.
 
 Campamentos:
-- **Fundar:** al levantar una tienda (`Tab`, «Instalar tienda») o un refugio lejos (más de 70 m) de los demás campamentos, nace uno nuevo. Hay que nombrar guardián a alguien de la escolta, que se queda a administrarlo.
+- **Fundar:** al levantar una tienda (`L`, «Instalar tienda») o un refugio lejos (más de 70 m) de los demás campamentos, nace uno nuevo. Hay que nombrar guardián a alguien de la escolta, que se queda a administrarlo.
 - **Lo propio de cada campamento:** su acopio y su gente. Las obras las levantan los del lugar; fuera de todo campamento, la escolta.
-- **Ubicar una obra:** al elegirla (`Tab` → Obras, o el guardián), la cámara sube sobre el campamento. La obra sigue al puntero, al dedo o a `WASD`; `Q`/`E` la giran, `Mayús` la alinea a una rejilla de 2 m. Verde: el sitio vale; rojo: no, y abajo dice por qué (fuera del campamento, en el agua, demasiado empinado o encima de algo). `Enter` o un clic sobre ella la coloca; `Esc` cancela sin gastar. Las cercas y los muros se marcan de un extremo al otro y se levantan por tramos de 4 m. Prueba: `--ubicar refugio|empalizada|muro|hoguera|totem|horno|bronce|acero|torre|corral|adobe|cabana|choza|taller`.
+- **Ubicar una obra:** al elegirla (`L` → Obras, o el guardián), la cámara sube sobre el campamento. La obra sigue al puntero, al dedo o a `WASD`; `Q`/`E` la giran, `Mayús` la alinea a una rejilla de 2 m. Verde: el sitio vale; rojo: no, y abajo dice por qué (fuera del campamento, en el agua, demasiado empinado o encima de algo). `Enter` o un clic sobre ella la coloca; `Esc` cancela sin gastar. Las cercas y los muros se marcan de un extremo al otro y se levantan por tramos de 4 m. Prueba: `--ubicar refugio|empalizada|muro|hoguera|totem|horno|bronce|acero|torre|corral|adobe|cabana|choza|taller`.
 - **El guardián (`F` junto a él):**
   - ordenar obras con el acopio del campamento;
   - elegir quién sale de escolta;
@@ -342,7 +379,7 @@ Pruebas: `--hablar guardian`, `--fundar`, `--migrar marcha|plantar` (`plantar`: 
 
 Oficios, comercio y saqueo:
 - **Los oficios trabajan cada día** lo que sobra del acopio de su campamento, una tanda por persona y guardando una reserva: el cazador curte pieles (cuero) y talla puntas de hueso; el pastor hace fieltro con pieles de cabra; el constructor labra madera y hace adobe; el cocinero, velas de sebo; el curandero, ungüento; el orfebre, peines. Lo que hicieron sale en los informes del campamento.
-- **Fabricar a mano (`Tab`, Fabricar):** cuero (2 pieles), silla de montar, brida, alforjas, aljaba, casco, brazales y grebas laminares de cuero; puntas y flechas de hueso, peine, piezas de arco (hueso y tendón) y el arco compuesto; velas, antorchas, queso seco, fieltro, madera labrada y adobe.
+- **Fabricar a mano (`L`, Fabricar):** cuero (2 pieles), silla de montar, brida, alforjas, aljaba, casco, brazales y grebas laminares de cuero; puntas y flechas de hueso, peine, piezas de arco (hueso y tendón) y el arco compuesto; velas, antorchas, queso seco, fieltro, madera labrada y adobe.
 - **Obras duraderas:** casa de adobe, cabaña de troncos y choza de fieltro. Abrigan a más gente que un refugio y se desgastan menos (el adobe, como la piedra).
 - **El valor:** todo se mide en plata, la moneda (50 g la unidad). El estado del guardián y el inventario dicen cuánto vale el acopio, y la leyenda de cada objeto, cuánto vale uno.
 - **Comerciar (`F`):** junto a una tribu amiga o neutral, una aldea, una capital, un caravasar o una caravana (abajo aparece «F: comerciar con...»). Vendes lo que llevas encima, en las alforjas, en la carreta o en las mochilas de la escolta (`Mayús`: todo de una vez) y compras lo suyo (`Mayús`: cinco). Cada mercado vende lo propio y lo de su región; lo que abunda en la región vale menos (×0,7) y lo que escasea, más (×1,5). Te pagan el 80 % del valor y te cobran el 125 %.
@@ -364,7 +401,7 @@ Ropa y clima:
 - **Frío:** pieles y abrigos de oso, reno, lobo, tigre, puma, hiena o lana de cabra, gorros de piel y botas de piel de reno.
 - **Sol y calor:** sombrero de ala ancha, pañuelo del desierto, túnica de seda blanca y manto blanco. El desierto quema de día (hasta +11°) y hiela de noche. Con calor te sofocas (más lento); con golpe de calor te desmayas y la tribu te lleva a la sombra. La sombra de las yurtas y el agua refrescan.
 - **Escarmiento:** las pieles de depredador espantan. Al verte de cerca, el enemigo puede echarse atrás, y herido huye antes (los fanáticos casi no se inmutan).
-- **Fabricar (`Tab`, a mano):** con las pieles del despiece (los depredadores, el reno y la cabra dan su piel), la lana de cabra (los pastores esquilan cada día) y la seda del botín de bandidos y jinetes.
+- **Fabricar (`L`, a mano):** con las pieles del despiece (los depredadores, el reno y la cabra dan su piel), la lana de cabra (los pastores esquilan cada día) y la seda del botín de bandidos y jinetes.
 - **La tribu se cambia sola** según el tiempo, con la ropa de su mochila y, en su campamento, la del acopio. Sin ropa adecuada pasa frío o calor (un copo o un sol sobre la cabeza) y baja la moral.
 
 Prueba: `--ropa`.
@@ -381,7 +418,7 @@ El mundo ([MUNDO.md](docs/MUNDO.md)):
 - **Estructuras:** kurganes, balbales, piedras de ciervos, fortalezas, ciudades enterradas, caravasares, torres, ovoos, pozos y embarcaderos; al verlas quedan en el mapa.
 - **Más vida:** arroyos, rocas, matas y flores; los animales rodean los lagos y beben desde la orilla.
 - **Agua:** una malla continua con el nivel en cada vértice: los ríos bajan en pendiente, sin escalones ni huecos en la orilla; textura de ondas y espuma en rompientes y rápidos.
-- **Pozos:** junto a un pozo (o la fuente de un caravasar) se bebe (N) y se llena el odre (Tab) con agua limpia, sin hervir.
+- **Pozos:** junto a un pozo (o la fuente de un caravasar) se bebe (N) y se llena el odre (L) con agua limpia, sin hervir.
 - **Paisajes de cada región:** playas de arena volcánica negra con roqueríos de basalto, farallones y espuma en los fiordos; lechos de cantos rodados y rápidos en los ríos; farallones en estratos, torres de arenisca y creta blanca en el desierto; seracs y témpanos en el glaciar.
 - **Voxeles:** las nubes son volúmenes de voxeles al modo de Nubis (perfil y erosión por ruido, luz del sol horneada) y las estructuras y casas son modelos de voxeles; las ruinas, erosionadas.
 - **`F5` o `Ctrl+M`:** vista orbital del mundo entero (flechas: girar e inclinar).
@@ -392,7 +429,7 @@ El agua:
 - **La sed** baja con el tiempo, más con calor y corriendo. Con sed vas más lento y te cansas; con la sed a cero te desmayas y la tribu te lleva al campamento a beber.
 - **`N` bebe** lo más seguro que tengas a mano: agua hervida, agua con vino, airag, cerveza, leche, vino y, al final, agua cruda. En la orilla, sin nada, bebes del río.
 - **Espíritus malditos:** el agua que corre por los suelos (ríos, lagos) puede traerlos, más con calor. Se incuban uno o dos minutos y luego dan fiebre: más lento, más sed, te cansas. Se van solos en unos minutos (antes descansando); las hierbas (`Mayús+N`) los cortan.
-- **Hervir el agua los elimina** (`Tab`, «Hervir agua», junto a un fuego, una leña). El alcohol también: la cerveza, el vino, el airag y el agua con vino son seguros. «Llenar el odre» en la orilla da agua cruda (3 tragos por odre).
+- **Hervir el agua los elimina** (`L`, «Hervir agua», junto a un fuego, una leña). El alcohol también: la cerveza, el vino, el airag y el agua con vino son seguros. «Llenar el odre» en la orilla da agua cruda (3 tragos por odre).
 - **El exceso de alcohol** emborracha: torpe (menos daño y peor puntería), fatigado y te tambaleas al andar. Se pasa con el tiempo.
 - **Fabricar:** agua con vino (2 de agua y 1 de vino), airag (2 de leche) y cerveza de pan. El vino y la cerveza también salen del botín de jinetes y bandidos.
 - **La tribu bebe cada día** del acopio. Si falta, del río cercano: hervida si hay leña (una cada cuatro); si no, cruda, y a algunos les caen los espíritus (fiebre: baja la vida y el ánimo). Sin agua cerca, pasan sed.
@@ -411,7 +448,7 @@ Tatuajes, joyas y nivel:
   - rompe rocas a golpes (la maza y el golpe pesado parten mejor);
   - `F` en los arrecifes de coral de los lagos;
   - cava trincheras;
-  - criba en la orilla (`Tab`, «Cribar en el agua»);
+  - criba en la orilla (`L`, «Cribar en el agua»);
   - el lingote de bronce sale del horno de bronce.
 - **Habilidades activas:** `F2`, `F3`, `F4` (o `Ctrl+1`, `Ctrl+2`, `Ctrl+3`).
 - **Menú de equipo (`P`):** pestañas Armadura, Joyas y Tatuajes (`Q`/`E`).
@@ -464,4 +501,7 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --agachado --camara 0.2                             # agachado (X), de perfil
 ./build/estepa --enemigos bandidos --espalda                       # a la espalda de un bandido (la daga)
 ./build/estepa --enemigos bandidos --rehen                         # con un bandido de rehén
+./build/estepa --cubierto --enemigos bandidos                      # a cubierto junto a una roca (C)
+./build/estepa --ir boca-forajidos                                 # la boca de un refugio de forajidos (y sus guardias)
+./build/estepa --cueva forajidos:dialogo --antorcha                # adentro, ante un prisionero (--cueva-f: romper las cadenas)
 ```

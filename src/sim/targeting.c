@@ -17,6 +17,28 @@ static float around(const TargetCand *c, float px, float pz, float yaw) {
     return a < 0.0f ? a + TWO_PI : a;
 }
 
+bool target_hold(float *unseen, bool alive, float dist, bool visible, bool covered, float dt) {
+    if (!alive || dist > TARGET_RANGE) {
+        *unseen = 0.0f;
+        return false;
+    }
+    if (visible || covered) {
+        *unseen = 0.0f;
+        return true;
+    }
+    *unseen += dt;
+    if (*unseen < TARGET_UNSEEN_S) return true;
+    *unseen = 0.0f;
+    return false;
+}
+
+TargetClick target_click(float held, bool moved, bool up, bool done) {
+    if (moved || done) return TCLICK_NONE;
+    if (!up && held >= TARGET_RELEASE_HOLD) return TCLICK_RELEASE;
+    if (up && held < TARGET_RELEASE_HOLD) return TCLICK_SELECT;
+    return TCLICK_NONE;
+}
+
 int target_cycle(const TargetCand *c, int n, float px, float pz, float yaw, int current, int dir) {
     if (!target_keep(c, n, current, px, pz)) {
         // Sin objetivo: el que mejor se ve delante (cerca y poco a un lado).

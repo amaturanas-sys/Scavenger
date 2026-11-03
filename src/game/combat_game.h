@@ -2,13 +2,16 @@
 // src/sim/combat.h con el jugador, la tribu, los enemigos y la interfaz:
 //  - salud del jugador: vida, sangre y heridas; abatido, lo levanta la escolta
 //    o despierta en el campamento;
-//  - cuerpo a cuerpo (src/sim/melee.h) con cuatro botones: H ataque (combo;
-//    mantener: pesado), J bloqueo (escudo, o el arma, que cansa), K parry en la
-//    ventana justa del golpe que anuncia el rival (engancha, hace la llave o
-//    desvia, segun el arma), L carga con escudo o patada; J + H golpe de escudo;
-//    los enemigos y la escolta usan las mismas reglas;
-//  - objetivo: Tab (en combate) pasa al enemigo siguiente, un toque o un clic lo
-//    elige; anillo bajo los pies y su barra de vida resaltada; se pierde a 25 m;
+//  - cuerpo a cuerpo (src/sim/melee.h) con cuatro botones, como en las hojas
+//    (docs/PLAN_TACTICO_Y_CUEVAS.md): H ataque (combo; mantener: pesado), I parry en
+//    la ventana justa del golpe que anuncia el rival (engancha, hace la llave o
+//    desvia, segun el arma; solo con el escudo, lo desvia y lo aturde), J bloqueo
+//    (escudo, o el arma, que cansa), K carga con escudo o patada; J + H golpe de
+//    escudo; lo que hacen depende de lo que esta fuera (la espada, el escudo o los
+//    dos); los enemigos y la escolta usan las mismas reglas;
+//  - objetivo: O pasa al siguiente (Mayus+O, al anterior), un toque o un clic lo
+//    elige entre enemigos y animales; anillo bajo los pies y su barra de vida resaltada;
+//    se pierde a 25 m;
 //  - armas a distancia: mantener H (o clic) para tensar y soltar para disparar;
 //    con objetivo, la mira calcula la caida sola; sin el, la camara alza o baja
 //    la mira y se ve la curva que hara el proyectil; J baja el arma;
@@ -88,6 +91,9 @@ typedef struct {
     float windup;      // s que le quedan al golpe que anuncia (levanta el arma); 0: ninguno
     int windup_move;   // el golpe anunciado (MeleeMove + 1)
     float alert;       // s que busca al jugador aunque no lo vea (lo avisaron: un abatido que huyo, un grito)
+    float spotting;    // s viendote: tarda en reconocerte (dia 5, noche 7, antorcha 3; de cerca, menos)
+    float spot_flash;  // s que le queda al «!» sobre su cabeza (te acaba de reconocer)
+    Vector3 last_seen; // donde te vio por ultima vez: cubierto (C), va a buscarte ahi
     // La monta (fase 6, src/sim/riding.h): el rumbo del caballo y la maniobra del arquero a caballo.
     float ride_yaw;    // hacia donde va el caballo (el jinete mira a su blanco)
     float orbit_dir;   // sentido en que rodea al blanco (+1 o -1; 0: sin elegir)
@@ -162,7 +168,8 @@ typedef struct {
     float loose_yaw[4];
     int loose_n;
     // Los cuatro botones.
-    int target_lock;   // enemigo elegido + 1 (0: ninguno)
+    int target_lock;   // enemigo +1, animal -indice-1 (0: ninguno)
+    float target_unseen; // s sin ver al objetivo (src/sim/targeting.h, target_hold: a los 6 s se pierde)
     float parry_cd;    // espera hasta el proximo parry
     float exposed;     // s expuesto tras un parry a destiempo (ni se cubre ni ataca)
     // La espalda y los rehenes (fase 2).
@@ -175,9 +182,10 @@ typedef struct {
 } Combat;
 
 void cb_init(Combat *cb, unsigned seed);
-// Un clic o un toque sobre un enemigo lo elige como objetivo (y ese clic no es un golpe).
+// Un clic o un toque sobre un enemigo o animal lo elige como objetivo (y ese clic no es un golpe).
 // pointer: en la pantalla virtual de w x h. true si eligio a alguien.
-bool cb_pick_target(Combat *cb, Camera3D cam, Vector2 pointer, int w, int h, char *log, size_t len);
+bool cb_pick_target(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p,
+                    Camera3D cam, Vector2 pointer, int w, int h, char *log, size_t len);
 // Las yurtas del campamento inicial (src/world/camp.h), que no son objetos del mundo: alli se
 // esconden los pobladores en un asalto (con las tiendas, refugios y casas).
 void cb_set_shelters(const Vector3 *pos, int n);
@@ -191,10 +199,13 @@ void cb_test_raid(Combat *cb, const GameActions *ga, const Player *p, const Terr
 // Prueba (--espalda, --rehen): el jugador, en sigilo, a la espalda del primer enemigo, que no lo
 // vio; con hostage, ademas lo toma de rehen.
 void cb_test_back(Combat *cb, Player *p, bool hostage, char *log, size_t len);
-// Tab: el objetivo siguiente (dir 1) o el anterior (-1), en orden alrededor del jugador.
-void cb_cycle_target(Combat *cb, const Player *p, int dir, char *log, size_t len);
+// O: el objetivo siguiente (dir 1) o el anterior (-1, Mayus+O), en orden alrededor del jugador.
+void cb_cycle_target(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p,
+                     int dir, char *log, size_t len);
 // El enemigo elegido (o NULL).
 const Enemy *cb_target(const Combat *cb);
+// El animal elegido (o NULL).
+const Animal *cb_target_animal(const Combat *cb, const GameActions *ga);
 // Hay un golpe enemigo en la ventana del parry (la casilla destella).
 bool cb_parry_cue(const Combat *cb);
 // Los cuatro botones de combate, abajo a la derecha (ataque, bloqueo, parry, carga o patada):
@@ -211,6 +222,9 @@ void cb_new_day(Combat *cb, Troop *troop);
 // Enemigos, proyectiles, la curva de la mira y el cuerpo del jugador (sin modelo). Dentro de BeginMode3D.
 void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const Terrain *t, const Player *p,
                    bool player_has_model, float time);
+// El jugador sin modelo importado: el cuerpo articulado, con su armadura, su ropa y el escudo, teñido con light (WHITE
+// afuera; en una cueva, la luz del lugar).
+void cb_draw_player_body(const Combat *cb, const GameActions *ga, const Player *p, float time, Color light);
 // Barras de vida sobre enemigos y companeros heridos. Fuera de BeginMode3D.
 void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop, Camera3D cam, int w, int h);
 // Vida del jugador (bajo el calor), panel de heridas (P) y aviso de abatido.
@@ -240,7 +254,10 @@ bool cb_punitive_near(const Combat *cb, Vector3 at, float r);
 void cb_punitive_withdraw(Combat *cb, Vector3 to);
 // Los de la ciudad idx en pie (la guardia y el ejercito que salio).
 int cb_city_standing(const Combat *cb, int city);
+// «guardia_cueva», «guerreros_cueva» y «guardia_imperial»: los que defienden una cueva habitada (src/game/cave_game.c).
 void cb_spawn_party_at(Combat *cb, const char *what, Vector3 at, const Terrain *t, char *log, size_t len);
+// Los enemigos en pie (ni caidos, ni abatidos, ni rehenes, ni en el hielo) a menos de r de at.
+int cb_hostiles_near(const Combat *cb, Vector3 at, float r);
 void cb_spawn_group(Combat *cb, GameActions *ga, const char *what, const Player *p, const Terrain *t, float dist, char *log,
                     size_t len);
 // Un animal ataca a una persona: kind 0 el jugador, 1 el integrante id, 2 el enemigo id (indice).

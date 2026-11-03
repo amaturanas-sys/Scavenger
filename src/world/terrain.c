@@ -418,6 +418,10 @@ static bool near_site(const World *w, float x, float z) {
         float dx = x - w->tribes[i].x, dz = z - w->tribes[i].z;
         if (dx * dx + dz * dz < 26.0f * 26.0f) return true;
     }
+    for (int i = 0; i < w->cave_count; i++) { // la boca de una cueva y su peñasco (src/game/world_game.c), despejados
+        float dx = x - w->caves[i].x, dz = z - w->caves[i].z;
+        if (dx * dx + dz * dz < 12.0f * 12.0f) return true;
+    }
     return false;
 }
 
@@ -821,9 +825,136 @@ static void mesh_water(const Terrain *t, Chunk *ch) {
     }
 }
 
+// Las casillas de arboles y de rocas y matas, deterministas por posicion: las usan el trozo que las dibuja
+// (build_chunk) y la cobertura (terrain_cover_near, A4), asi el arbol o la roca donde te cubres es el que se ve.
+#define TREE_GRID 12 // casillas de arboles por lado de trozo
+#define PROP_GRID 16 // casillas de rocas y matas por lado de trozo
+
+static int grid_chunk(int g, int n) { return g >= 0 ? g / n : -((-g + n - 1) / n); }
+
+// Un arbol en la casilla (gx, gz): su base, su altura y su copa.
+static bool tree_slot(const Terrain *t, int gx, int gz, Vector3 *base, float *height, float *radius, float *patch) {
+    const float slot = CHUNK_SIZE / TREE_GRID;
+    int cx = grid_chunk(gx, TREE_GRID), cz = grid_chunk(gz, TREE_GRID), ix = gx - cx * TREE_GRID, iz = gz - cz * TREE_GRID;
+    const float ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
+    uint32_t h = hash2(gx, gz, t->seed);
+    float r0 = (float)(h & 0xFFFF) / 65535.0f, r1 = (float)((h >> 16) & 0xFF) / 255.0f, r2 = (float)(h >> 24) / 255.0f;
+    float x = ox + (ix + 0.15f + 0.7f * r1) * slot, z = oz + (iz + 0.15f + 0.7f * r2) * slot;
+    if (x * x + z * z < 120.0f * 120.0f || world_edge_distance(t->world, x, z) < 110.0f) return false;
+    if (world_forest_wall(t->world, x, z) > 0.2f) return false; // el muro tras el canal: roca desnuda
+    if (world_canal_near(t->world, x, z, 14.0f)) return false;   // la orilla del canal, despejada: se ve el muro
+    float k[REGION_COUNT];
+    world_region_weights(t->world, x, z, k);
+    float y = terrain_height(t, x, z), wl = world_water(t->world, x, z, 0.0f, NULL);
+    float near_water = wl > -1e8f && y - wl < 6.0f ? 1.0f : 0.0f;
+    if (r0 > tree_density(k, near_water)) return false;
+    if (wl > y - 0.8f || y > t->look.snowline + 8.0f) return false; // en el agua o en el glaciar, no
+    if (world_river_bank(t->world, x, z, NULL) > 0.45f) return false; // el lecho que el rio lava
+    if (world_glacier_reach(t->world, x, z) <= 1.0f) return false;    // ni en la morrena (el glaciar avanza en invierno)
+    float sx = terrain_height(t, x + 2.0f, z) - y, sz = terrain_height(t, x, z + 2.0f) - y;
+    if (sx * sx + sz * sz > 2.2f) return false;
+    float dist;
+    int si = world_nearest_settlement(t->world, x, z, &dist);
+    if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 + 8.0f : VILLAGE_FIELDS_R1 + 6.0f)) return false; // claros de los pueblos (y sus campos)
+    if (near_site(t->world, x, z)) return false;
+    *base = (Vector3){ x, y, z };
+    *height = 5.0f + 5.0f * r1 * (0.6f + 0.4f * k[REGION_FOREST]);
+    *radius = 1.4f + 0.8f * r2;
+    *patch = r2;
+    return true;
+}
+
+// Una roca (1) o una mata (2) en la casilla (gx, gz), o nada (0): su base, tamaño y lo que pide su dibujo.
+typedef struct {
+    Vector3 base;
+    float size, size2, patch, slope;
+    uint32_t hash;
+    float k[REGION_COUNT];
+} PropSlot;
+
+static int prop_slot(const Terrain *t, int gx, int gz, PropSlot *o) {
+    const float pslot = CHUNK_SIZE / PROP_GRID;
+    int cx = grid_chunk(gx, PROP_GRID), cz = grid_chunk(gz, PROP_GRID), ix = gx - cx * PROP_GRID, iz = gz - cz * PROP_GRID;
+    const float ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
+    uint32_t h = hash2(gx, gz, t->seed ^ 0x5EEDu);
+    float r0 = (float)(h & 0xFFFF) / 65535.0f, r1 = (float)((h >> 16) & 0xFF) / 255.0f, r2 = (float)(h >> 24) / 255.0f;
+    float x = ox + (ix + 0.1f + 0.8f * r1) * pslot, z = oz + (iz + 0.1f + 0.8f * r2) * pslot;
+    if (x * x + z * z < 60.0f * 60.0f || world_edge_distance(t->world, x, z) < 90.0f) return 0;
+    float *k = o->k;
+    world_region_weights(t->world, x, z, k);
+    float rd = rock_density(k), wl = world_water(t->world, x, z, 0.0f, NULL), y = terrain_height(t, x, z);
+    float near_water = wl > -1e8f && y - wl < 5.0f ? 1.0f : 0.0f;
+    float bd = bush_density(k, near_water);
+    if (r0 > rd + bd) return 0;
+    if (wl > y - 0.4f) return 0; // en el agua, no
+    if (world_river_bank(t->world, x, z, NULL) > 0.45f || (k[REGION_FJORD] > 0.5f && y < SEA_LEVEL + 4.0f)) return 0; // ni en el lecho ni en la playa
+    float dist;
+    int si = world_nearest_settlement(t->world, x, z, &dist);
+    if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 + 4.0f : VILLAGE_FIELDS_R1 + 4.0f)) return 0;
+    if (near_site(t->world, x, z)) return 0;
+    float sx = terrain_height(t, x + 1.5f, z) - y, sz = terrain_height(t, x, z + 1.5f) - y;
+    o->slope = sqrtf(sx * sx + sz * sz) / 1.5f;
+    o->base = (Vector3){ x, y, z };
+    o->hash = h;
+    o->patch = r2;
+    if (r0 < rd) {
+        o->size = 0.4f + 1.4f * r1 * r1 + (k[REGION_HIGHLAND] + k[REGION_FJORD]) * 0.8f * r2;
+        return 1;
+    }
+    if (o->slope < 0.9f && y < t->look.snowline - 6.0f && world_glacier_reach(t->world, x, z) > 1.0f) { // ni en el glaciar ni en su morrena
+        o->size = 0.5f + 0.7f * r1;
+        o->size2 = 0.4f + 0.8f * r2 * (0.5f + k[REGION_FOREST]);
+        return 2;
+    }
+    return 0;
+}
+
+bool terrain_cover_near(const Terrain *t, float x, float z, float reach, Vector3 *center, float *radius) {
+    float best = 1e9f;
+    Vector3 bc = { 0 };
+    float br = 0.0f;
+    // Los troncos de los arboles (el tronco cubre; la copa no frena una flecha baja).
+    const float tslot = CHUNK_SIZE / TREE_GRID, pslot = CHUNK_SIZE / PROP_GRID;
+    int tgx = (int)floorf(x / tslot), tgz = (int)floorf(z / tslot);
+    for (int dz = -1; dz <= 1; dz++)
+        for (int dx = -1; dx <= 1; dx++) {
+            Vector3 base;
+            float height, rad, patch;
+            if (!tree_slot(t, tgx + dx, tgz + dz, &base, &height, &rad, &patch)) continue;
+            float d = sqrtf((base.x - x) * (base.x - x) + (base.z - z) * (base.z - z)) - 0.35f;
+            if (d < reach && d < best) best = d, bc = base, br = 0.35f;
+        }
+    // Las rocas de un metro o mas y las matas altas.
+    int pgx = (int)floorf(x / pslot), pgz = (int)floorf(z / pslot);
+    for (int dz = -1; dz <= 1; dz++)
+        for (int dx = -1; dx <= 1; dx++) {
+            PropSlot ps;
+            int kind = prop_slot(t, pgx + dx, pgz + dz, &ps);
+            float rad = kind == 1 ? ps.size * 0.6f : kind == 2 ? ps.size * 0.8f : 0.0f;
+            if (!kind || (kind == 1 && ps.size < 0.9f) || (kind == 2 && ps.size2 < 0.75f)) continue;
+            float d = sqrtf((ps.base.x - x) * (ps.base.x - x) + (ps.base.z - z) * (ps.base.z - z)) - rad;
+            if (d < reach && d < best) best = d, bc = ps.base, br = rad;
+        }
+    // Las formaciones de voxeles (peñas, basaltos, cantos).
+    for (int i = 0; i < CHUNK_SLOTS; i++) {
+        const Chunk *ch = &t->slots[i];
+        if (!ch->loaded) continue;
+        for (int k = 0; k < ch->feat_count; k++) {
+            const ChunkFeature *f = &ch->feat[k];
+            float rad = feature_radius(f->kind) * f->scale;
+            float d = sqrtf((x - f->x) * (x - f->x) + (z - f->z) * (z - f->z)) - rad;
+            if (d < reach && d < best) best = d, bc = (Vector3){ f->x, terrain_height(t, f->x, f->z), f->z }, br = rad;
+        }
+    }
+    if (best > 1e8f) return false;
+    if (center) *center = bc;
+    if (radius) *radius = br;
+    return true;
+}
+
 static Chunk build_chunk(const Terrain *t, int cx, int cz) {
-    enum { GROUND = CHUNK_CELLS * CHUNK_CELLS * 2, TREE_SLOTS = 12, TREES_MAX = TREE_SLOTS * TREE_SLOTS, TREE_TRIS = 22,
-           PROP_SLOTS = 16, PROP_TRIS = 15, CAP = GROUND + TREES_MAX * TREE_TRIS + PROP_SLOTS * PROP_SLOTS * PROP_TRIS };
+    enum { GROUND = CHUNK_CELLS * CHUNK_CELLS * 2, TREE_SLOTS = TREE_GRID, TREES_MAX = TREE_SLOTS * TREE_SLOTS, TREE_TRIS = 22,
+           PROP_SLOTS = PROP_GRID, PROP_TRIS = 15, CAP = GROUND + TREES_MAX * TREE_TRIS + PROP_SLOTS * PROP_SLOTS * PROP_TRIS };
     static float vbuf[CAP * 9], nbuf[CAP * 9];
     static float abuf[CAP * TRI_ATTRS], uvbuf[CAP * 6];
     TriBuf b = { vbuf, nbuf, abuf, uvbuf, 0, CAP, { 0 } };
@@ -865,66 +996,24 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             push_tri(&b, p10, p01, p11, at);
         }
     }
-    // Arboles (deterministas por posicion): segun la region, nunca en el agua, el campamento ni lo empinado.
-    const float slot = CHUNK_SIZE / TREE_SLOTS;
+    // Arboles (deterministas por posicion, tree_slot): segun la region, nunca en el agua, el campamento ni lo empinado.
     for (int iz = 0; iz < TREE_SLOTS; iz++)
         for (int ix = 0; ix < TREE_SLOTS; ix++) {
-            int gx = cx * TREE_SLOTS + ix, gz = cz * TREE_SLOTS + iz;
-            uint32_t h = hash2(gx, gz, t->seed);
-            float r0 = (float)(h & 0xFFFF) / 65535.0f, r1 = (float)((h >> 16) & 0xFF) / 255.0f, r2 = (float)(h >> 24) / 255.0f;
-            float x = ox + (ix + 0.15f + 0.7f * r1) * slot, z = oz + (iz + 0.15f + 0.7f * r2) * slot;
-            if (x * x + z * z < 120.0f * 120.0f || world_edge_distance(t->world, x, z) < 110.0f) continue;
-            if (world_forest_wall(t->world, x, z) > 0.2f) continue; // el muro tras el canal: roca desnuda
-            if (world_canal_near(t->world, x, z, 14.0f)) continue;   // la orilla del canal, despejada: se ve el muro
-            float k[REGION_COUNT];
-            world_region_weights(t->world, x, z, k);
-            float y = terrain_height(t, x, z), wl = world_water(t->world, x, z, 0.0f, NULL);
-            float near_water = wl > -1e8f && y - wl < 6.0f ? 1.0f : 0.0f;
-            if (r0 > tree_density(k, near_water)) continue;
-            if (wl > y - 0.8f || y > t->look.snowline + 8.0f) continue; // en el agua o en el glaciar, no
-            if (world_river_bank(t->world, x, z, NULL) > 0.45f) continue; // el lecho que el rio lava
-            if (world_glacier_reach(t->world, x, z) <= 1.0f) continue;    // ni en la morrena (el glaciar avanza en invierno)
-            float sx = terrain_height(t, x + 2.0f, z) - y, sz = terrain_height(t, x, z + 2.0f) - y;
-            if (sx * sx + sz * sz > 2.2f) continue;
-            float dist;
-            int si = world_nearest_settlement(t->world, x, z, &dist);
-            if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 + 8.0f : VILLAGE_FIELDS_R1 + 6.0f)) continue; // claros de los pueblos (y sus campos)
-            if (near_site(t->world, x, z)) continue;
-            float height = 5.0f + 5.0f * r1 * (0.6f + 0.4f * k[REGION_FOREST]);
-            push_tree(&b, (Vector3){ x, y, z }, height, 1.4f + 0.8f * r2, r2);
+            Vector3 base;
+            float height, radius, patch;
+            if (tree_slot(t, cx * TREE_SLOTS + ix, cz * TREE_SLOTS + iz, &base, &height, &radius, &patch)) push_tree(&b, base, height, radius, patch);
         }
-    // Rocas y matas (deterministas por posicion): ni en el agua, ni en el campamento, ni en los pueblos.
-    const float pslot = CHUNK_SIZE / PROP_SLOTS;
+    // Rocas y matas (deterministas por posicion, prop_slot): ni en el agua, ni en el campamento, ni en los pueblos.
     for (int iz = 0; iz < PROP_SLOTS; iz++)
         for (int ix = 0; ix < PROP_SLOTS; ix++) {
-            int gx = cx * PROP_SLOTS + ix, gz = cz * PROP_SLOTS + iz;
-            uint32_t h = hash2(gx, gz, t->seed ^ 0x5EEDu);
-            float r0 = (float)(h & 0xFFFF) / 65535.0f, r1 = (float)((h >> 16) & 0xFF) / 255.0f, r2 = (float)(h >> 24) / 255.0f;
-            float x = ox + (ix + 0.1f + 0.8f * r1) * pslot, z = oz + (iz + 0.1f + 0.8f * r2) * pslot;
-            if (x * x + z * z < 60.0f * 60.0f || world_edge_distance(t->world, x, z) < 90.0f) continue;
-            float k[REGION_COUNT];
-            world_region_weights(t->world, x, z, k);
-            float rd = rock_density(k), wl = world_water(t->world, x, z, 0.0f, NULL), y = terrain_height(t, x, z);
-            float near_water = wl > -1e8f && y - wl < 5.0f ? 1.0f : 0.0f;
-            float bd = bush_density(k, near_water);
-            if (r0 > rd + bd) continue;
-            if (wl > y - 0.4f) continue; // en el agua, no
-            if (world_river_bank(t->world, x, z, NULL) > 0.45f || (k[REGION_FJORD] > 0.5f && y < SEA_LEVEL + 4.0f)) continue; // ni en el lecho ni en la playa
-            float dist;
-            int si = world_nearest_settlement(t->world, x, z, &dist);
-            if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 + 4.0f : VILLAGE_FIELDS_R1 + 4.0f)) continue;
-            if (near_site(t->world, x, z)) continue;
-            float sx = terrain_height(t, x + 1.5f, z) - y, sz = terrain_height(t, x, z + 1.5f) - y;
-            float slope = sqrtf(sx * sx + sz * sz) / 1.5f;
+            PropSlot ps;
+            int kind = prop_slot(t, cx * PROP_SLOTS + ix, cz * PROP_SLOTS + iz, &ps);
+            if (!kind) continue;
             float at[TRI_ATTRS] = { 0 };
-            at[A_DESERT] = k[REGION_DESERT], at[A_FOREST] = k[REGION_FOREST], at[A_HIGH] = k[REGION_HIGHLAND], at[A_FJORD] = k[REGION_FJORD];
-            at[A_SLOPE] = slope;
-            if (r0 < rd) {
-                float size = 0.4f + 1.4f * r1 * r1 + (k[REGION_HIGHLAND] + k[REGION_FJORD]) * 0.8f * r2;
-                push_rock(&b, (Vector3){ x, y, z }, size, h, at);
-            } else if (slope < 0.9f && y < t->look.snowline - 6.0f && world_glacier_reach(t->world, x, z) > 1.0f) { // ni en el glaciar ni en su morrena
-                push_bush(&b, (Vector3){ x, y, z }, 0.5f + 0.7f * r1, 0.4f + 0.8f * r2 * (0.5f + k[REGION_FOREST]), r2, at);
-            }
+            at[A_DESERT] = ps.k[REGION_DESERT], at[A_FOREST] = ps.k[REGION_FOREST], at[A_HIGH] = ps.k[REGION_HIGHLAND], at[A_FJORD] = ps.k[REGION_FJORD];
+            at[A_SLOPE] = ps.slope;
+            if (kind == 1) push_rock(&b, ps.base, ps.size, ps.hash, at);
+            else push_bush(&b, ps.base, ps.size, ps.size2, ps.patch, at);
         }
     Chunk ch = { .loaded = true, .cx = cx, .cz = cz };
     // Formaciones de voxeles (de las fotos de cada region), por casillas de 6 m:

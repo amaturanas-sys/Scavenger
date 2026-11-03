@@ -1,18 +1,20 @@
 // Combate cuerpo a cuerpo (C puro): golpes, combos, patadas, escudos, agarres,
 // ganchos y parry. Las mismas reglas valen para el jugador, la tribu y los enemigos.
-// El jugador pelea con cuatro botones (H ataque, J bloqueo, K parry, L carga o patada):
+// El jugador pelea con cuatro botones (H ataque, I parry, J bloqueo, K carga o patada; lo que hace
+// cada uno depende de lo que tiene fuera: el arma, el escudo o las dos, docs/PLAN_TACTICO_Y_CUEVAS.md):
 //  - golpe ligero (H) y combos: tres golpes seguidos en la ventana; con armas
 //    cortas (daga, cuchillo, sable) los combos son mas rapidos; con largas (lanza,
 //    espada, guja) llegan mas lejos y el remate puede tumbar;
 //  - golpe pesado (mantener H): mas daño y rompe la guardia del escudo;
 //  - bloqueo (J): con escudo cubre el frente; sin escudo para con el arma, que aguanta
 //    la mitad del golpe y cansa (gasta aguante);
-//  - parry (K): el rival anuncia su golpe (levanta el arma un momento); en la ventana
+//  - parry (I): el rival anuncia su golpe (levanta el arma un momento); en la ventana
 //    justa, antes de que caiga, el parry le gana: con hacha o guja le engancha el
 //    escudo y se lo arranca, con las manos o una daga le hace una llave y lo tumba
-//    (desarmado), con las demas armas desvia el golpe y lo deja abierto; a destiempo,
-//    el que para queda expuesto;
-//  - carga o patada (L): con escudo, carga que empuja y puede tumbar; sin escudo,
+//    (desarmado), con las demas armas desvia el golpe y lo deja abierto, y solo con el
+//    escudo (el arma enfundada) lo desvia con el escudo y lo aturde; a destiempo, el que
+//    para queda expuesto;
+//  - carga o patada (K): con escudo, carga que empuja y puede tumbar; sin escudo,
 //    patada que aparta y desequilibra; a la carrera, con inercia, tumba incluso a
 //    quien se cubre con escudo;
 //  - golpe de escudo: cubriendose con el escudo (J) y atacando (H): aturde;
@@ -41,10 +43,10 @@ typedef enum {
     MOVE_SHIELD_CHARGE,// carga con escudo
     MOVE_GRAPPLE,      // agarre y llave
     MOVE_HOOK,         // enganchar el escudo
-    MOVE_PARRY,        // parry (K): el intento, hasta saber como sale
+    MOVE_PARRY,        // parry (I): el intento, hasta saber como sale
     MOVE_DEFLECT,      // desvio: el golpe del rival resbala por el arma
-    MOVE_BACKSTAB,     // por la espalda (K): ejecucion silenciosa (src/sim/stealth.h)
-    MOVE_FINISH,       // rematar a un abatido (H o K)
+    MOVE_BACKSTAB,     // por la espalda (H): ejecucion silenciosa (src/sim/stealth.h)
+    MOVE_FINISH,       // rematar a un abatido (H)
     MOVE_COUNT
 } MeleeMove;
 
@@ -117,9 +119,13 @@ typedef enum {
     PARRY_HOOK,    // hacha, guja, alabarda, sagaris: engancha el escudo y se lo arranca
     PARRY_GRAPPLE, // manos o daga: le toma el brazo armado, lo desarma y lo tumba
     PARRY_DEFLECT, // las demas: desvia el golpe y el rival queda abierto
+    PARRY_SHIELD,  // solo el escudo en el brazo (el arma enfundada): desvia con el escudo y lo aturde
 } ParryKind;
 
 ParryKind melee_parry_kind(const char *weapon);
+// El parry segun lo que esta fuera: con el arma, el del arma; solo con el escudo, el del escudo; con
+// las manos libres, la llave (docs/PLAN_TACTICO_Y_CUEVAS.md, A1).
+ParryKind hands_parry_kind(const Hands *h);
 // El parry llega a tiempo: al golpe del rival le quedan windup_left s (0: no hay golpe en camino).
 bool melee_parry_in_window(float windup_left);
 // Un parry a tiempo de me contra foe (el que golpeaba): el resultado es para foe. Un agarre que

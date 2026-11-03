@@ -25,6 +25,10 @@ static const SfField SF_F_Player[] = {
     SF_ONE(Player, grounded, "bool", SF_BOOL, NULL),
     SF_ONE(Player, sneaking, "bool", SF_BOOL, NULL),
     SF_ONE(Player, crouching, "bool", SF_BOOL, NULL),
+    SF_ONE(Player, covered, "bool", SF_BOOL, NULL),
+    SF_ONE(Player, cover_pos, "Vector3", SF_BYTES, NULL),
+    SF_ONE(Player, cover_radius, "float", SF_FLOAT, NULL),
+    SF_ONE(Player, peeking, "bool", SF_BOOL, NULL),
     SF_ONE(Player, moving, "bool", SF_BOOL, NULL),
     SF_ONE(Player, stance, "Stance", SF_INT, NULL),
     SF_ONE(Player, noise, "float", SF_FLOAT, NULL),
@@ -184,6 +188,8 @@ static const SfField SF_F_Hands[] = {
     SF_ONE(Hands, left, "Held", SF_STRUCT, &SF_T_Held),
     SF_ONE(Hands, sheathed, "bool", SF_BOOL, NULL),
     SF_ARR(Hands, carried, "char", SF_TEXT, NULL),
+    SF_ONE(Hands, right_away, "bool", SF_BOOL, NULL),
+    SF_ONE(Hands, left_away, "bool", SF_BOOL, NULL),
 };
 static const SfType SF_T_Hands = SF_TYPE(Hands, SF_F_Hands);
 
@@ -619,6 +625,8 @@ static const SfField SF_F_GameActions[] = {
     SF_ARR(GameActions, ice_holes, "Vector3", SF_BYTES, NULL),
     SF_ONE(GameActions, ice_hole_count, "int", SF_INT, NULL),
     SF_ONE(GameActions, ice_hole_day, "int", SF_INT, NULL),
+    SF_ARR(GameActions, cave_done, "uint64_t", SF_UINT, NULL),
+    SF_ARR(GameActions, cave_guards_day, "int", SF_INT, NULL),
 };
 static const SfType SF_T_GameActions = SF_TYPE(GameActions, SF_F_GameActions);
 
@@ -657,6 +665,9 @@ static const SfField SF_F_Enemy[] = {
     SF_ONE(Enemy, windup, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, windup_move, "int", SF_INT, NULL),
     SF_ONE(Enemy, alert, "float", SF_FLOAT, NULL),
+    SF_ONE(Enemy, spotting, "float", SF_FLOAT, NULL),
+    SF_ONE(Enemy, spot_flash, "float", SF_FLOAT, NULL),
+    SF_ONE(Enemy, last_seen, "Vector3", SF_BYTES, NULL),
     SF_ONE(Enemy, ride_yaw, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, orbit_dir, "float", SF_FLOAT, NULL),
     SF_ONE(Enemy, retreating, "bool", SF_BOOL, NULL),
@@ -752,6 +763,7 @@ static const SfField SF_F_Combat[] = {
     SF_ARR(Combat, loose_yaw, "float", SF_FLOAT, NULL),
     SF_ONE(Combat, loose_n, "int", SF_INT, NULL),
     SF_ONE(Combat, target_lock, "int", SF_INT, NULL),
+    SF_ONE(Combat, target_unseen, "float", SF_FLOAT, NULL),
     SF_ONE(Combat, parry_cd, "float", SF_FLOAT, NULL),
     SF_ONE(Combat, exposed, "float", SF_FLOAT, NULL),
     SF_ONE(Combat, hostage, "int", SF_INT, NULL),

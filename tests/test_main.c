@@ -1012,6 +1012,70 @@ static void test_hands_sheathe_take_throw(void) {
     CHECK(hands_can_take(&h)); // la izquierda quedo libre
 }
 
+// A1 (v0.12.0, docs/PLAN_TACTICO_Y_CUEVAS.md): el arma y el escudo se guardan por separado, como en las
+// hojas (1 enfunda la espada, 2 guarda el escudo), y el parry depende de lo que queda fuera.
+static void test_hands_each_hand(void) {
+    InvItem sable = make_item("arma.corta.sable", INV_HANDS_ONE), escudo = make_item("escudo.mano.mimbre", INV_HANDS_SHIELD);
+    InvItem arco = make_item("arma.distancia.arco_simple", INV_HANDS_TWO), antorcha = make_item("utileria.objeto.antorcha", INV_HANDS_ONE);
+    InvItem daga = make_item("arma.corta.daga", INV_HANDS_ONE);
+    Hands h;
+    hands_init(&h);
+    CHECK(!hands_toggle_hand(&h, HAND_RIGHT) && !hands_toggle_hand(&h, HAND_LEFT)); // nada que guardar
+    hands_equip(&h, &sable, HAND_RIGHT);
+    hands_equip(&h, &escudo, HAND_LEFT);
+    CHECK(hands_out(&h, HAND_RIGHT) && hands_out(&h, HAND_LEFT));
+    // 1: enfunda la espada; el escudo sigue en el brazo y el parry es con el escudo.
+    CHECK(hands_toggle_hand(&h, HAND_RIGHT) && !hands_out(&h, HAND_RIGHT) && hands_out(&h, HAND_LEFT) && !h.sheathed);
+    CHECK(!strcmp(hands_attack_weapon(&h, 1, NULL), "") && hands_parry_kind(&h) == PARRY_SHIELD);
+    Hands d = hands_drawn(&h);
+    CHECK(!d.right.id[0] && !strcmp(d.left.id, "escudo.mano.mimbre") && hands_grip(&d) == GRIP_SHIELD && !d.sheathed);
+    CHECK(!hands_holding(&h, "arma.corta.sable") && hands_holding(&h, "escudo.mano.mimbre"));
+    CHECK(hands_can_take(&h)); // la mano del arma, libre
+    // 2: guarda tambien el escudo: todo adentro, como enfundar todo; las manos, la llave.
+    CHECK(hands_toggle_hand(&h, HAND_LEFT) && h.sheathed && !hands_out(&h, HAND_LEFT));
+    CHECK(hands_parry_kind(&h) == PARRY_GRAPPLE && hands_drawn(&h).sheathed);
+    // 1 otra vez: la espada fuera, el escudo sigue a la espalda.
+    CHECK(hands_toggle_hand(&h, HAND_RIGHT) && hands_out(&h, HAND_RIGHT) && !hands_out(&h, HAND_LEFT) && !h.sheathed);
+    CHECK(!strcmp(hands_attack_weapon(&h, 1, NULL), "arma.corta.sable") && hands_parry_kind(&h) == PARRY_DEFLECT);
+    d = hands_drawn(&h);
+    CHECK(hands_grip(&d) == GRIP_ONE_HANDED && !d.left.id[0]);
+    // 2: el escudo al brazo; con los dos fuera, el parry es el del arma.
+    CHECK(hands_toggle_hand(&h, HAND_LEFT) && hands_out(&h, HAND_LEFT) && hands_parry_kind(&h) == PARRY_DEFLECT);
+    // Enfundar todo guarda los dos; otra vez, los saca; con uno guardado, guarda el que quedaba.
+    CHECK(hands_toggle_sheathe(&h) && h.sheathed && !hands_out(&h, HAND_RIGHT) && !hands_out(&h, HAND_LEFT));
+    CHECK(hands_toggle_sheathe(&h) && hands_out(&h, HAND_RIGHT) && hands_out(&h, HAND_LEFT));
+    hands_toggle_hand(&h, HAND_LEFT);
+    CHECK(hands_toggle_sheathe(&h) && h.sheathed);
+    // Empuñar algo saca solo eso: la antorcha en la izquierda no desenfunda la espada.
+    CHECK(hands_equip(&h, &antorcha, HAND_LEFT) && hands_out(&h, HAND_LEFT) && !hands_out(&h, HAND_RIGHT));
+    // Las partidas de antes (sin right_away ni left_away): las dos manos siguen a sheathed.
+    Hands old;
+    hands_init(&old);
+    hands_equip(&old, &sable, HAND_RIGHT);
+    hands_equip(&old, &escudo, HAND_LEFT);
+    old.right_away = old.left_away = false, old.sheathed = true;
+    CHECK(!hands_out(&old, HAND_RIGHT) && !hands_out(&old, HAND_LEFT));
+    old.sheathed = false;
+    CHECK(hands_out(&old, HAND_RIGHT) && hands_out(&old, HAND_LEFT));
+    // El arco (a dos manos) deja libres las dos manos; el escudo despues lo aparta.
+    CHECK(hands_equip(&old, &arco, HAND_RIGHT) && hands_out(&old, HAND_RIGHT) && !old.left.id[0]);
+    CHECK(hands_equip(&old, &escudo, HAND_LEFT) && !old.right.id[0] && hands_out(&old, HAND_LEFT));
+    // Pasar el arma a la otra mano lleva consigo lo guardado.
+    Hands sw;
+    hands_init(&sw);
+    hands_equip(&sw, &sable, HAND_RIGHT);
+    hands_equip(&sw, &daga, HAND_LEFT);
+    hands_toggle_hand(&sw, HAND_LEFT); // la daga, guardada
+    CHECK(hands_swap(&sw) && !strcmp(sw.left.id, "arma.corta.sable") && hands_out(&sw, HAND_LEFT) && !hands_out(&sw, HAND_RIGHT));
+    CHECK(hands_slot_of(&sw, "arma.corta.daga") == HAND_RIGHT && hands_slot_of(&sw, "escudo.mano.mimbre") == -1);
+    // El parry con el escudo: lo desvia y lo aturde con el canto (un poco de daño, sin tumbarlo).
+    Rng rng;
+    rng_seed(&rng, 3);
+    Fighter me = { .shield = true, .strength = 1.0f, .health = 1.0f }, foe = { .armed = true, .strength = 1.0f, .health = 1.0f };
+    MeleeResult r = melee_parry(PARRY_SHIELD, &me, &foe, &rng);
+    CHECK(r.landed && r.staggered && r.damage > 0.0f && !r.knocked_down && !r.disarmed && !r.shield_dropped);
+}
+
 static void test_action_catalog(void) {
     for (int a = 0; a < ACTION_COUNT; a++) {
         const ActionDef *d = action_def((ActionId)a);
@@ -3321,39 +3385,99 @@ static void test_keymap_target_keys(void) {
 
 // ---------------------------------------------------------------- fase 1: teclas, parry, bloqueo, objetivo
 static void test_keymap_four_buttons(void) {
-    // Los cuatro botones de combate: H J K L (con Mayus, corriendo, tambien), no las teclas viejas.
+    // Los cuatro botones de combate, como en las hojas (v0.12.0): H golpe, I parry, J bloqueo, K carga
+    // o patada (con Mayus, corriendo, tambien), no las teclas viejas.
     CHECK(keymap_matches(KA_ATTACK, 'H', 0) && keymap_matches(KA_ATTACK, 'H', KM_SHIFT));
     CHECK(!keymap_matches(KA_ATTACK, 'V', 0) && !keymap_matches(KA_ATTACK, 'H', KM_CTRL)); // Ctrl+H: los controles
     CHECK(keymap_matches(KA_BLOCK, 'J', 0) && !keymap_matches(KA_BLOCK, 'Z', 0));
-    CHECK(keymap_matches(KA_PARRY, 'K', 0) && !keymap_matches(KA_PARRY, 'U', 0) && !keymap_matches(KA_PARRY, 'O', 0));
-    CHECK(keymap_matches(KA_CHARGE, 'L', 0) && keymap_matches(KA_CHARGE, 'L', KM_SHIFT) && !keymap_matches(KA_CHARGE, 'J', 0));
-    // El mapa nuevo: X agacharse, C sigilo, F todo, Mayus+G mochila, Mayus+L flecha, U ficha.
+    CHECK(keymap_matches(KA_PARRY, 'I', 0) && !keymap_matches(KA_PARRY, 'K', 0) && !keymap_matches(KA_PARRY, 'U', 0));
+    CHECK(keymap_matches(KA_CHARGE, 'K', 0) && keymap_matches(KA_CHARGE, 'K', KM_SHIFT) && !keymap_matches(KA_CHARGE, 'L', 0));
+    // Tab abre el inventario (la I es el parry); L, el menu de acciones; O elige el objetivo.
+    CHECK(keymap_matches(KA_INVENTORY, KM_KEY_TAB, 0) && !keymap_matches(KA_INVENTORY, 'I', 0));
+    CHECK(keymap_matches(KA_MENU, 'L', 0) && !keymap_matches(KA_MENU, 'L', KM_SHIFT) && !keymap_matches(KA_MENU, KM_KEY_TAB, 0));
+    CHECK(keymap_matches(KA_TARGET, 'O', 0) && keymap_matches(KA_TARGET, 'O', KM_SHIFT) && !keymap_matches(KA_TARGET, KM_KEY_TAB, 0));
+    // El resto del mapa: X agacharse, C sigilo, F todo, Mayus+G mochila, Mayus+L flecha, U ficha.
     CHECK(keymap_matches(KA_CROUCH, 'X', 0) && keymap_matches(KA_SNEAK, 'C', 0));
     CHECK(keymap_matches(KA_INTERACT, 'F', 0) && keymap_matches(KA_INTERACT, 'F', KM_SHIFT) && !keymap_matches(KA_INTERACT, 'K', 0));
     CHECK(keymap_matches(KA_BACKPACK, 'G', KM_SHIFT) && !keymap_matches(KA_BACKPACK, 'G', 0));
     CHECK(keymap_matches(KA_GRAB, 'G', 0) && !keymap_matches(KA_GRAB, 'G', KM_SHIFT));
     CHECK(keymap_matches(KA_LIGHT_ARROW, 'L', KM_SHIFT) && !keymap_matches(KA_LIGHT_ARROW, 'L', 0));
-    CHECK(keymap_matches(KA_CARD, 'U', 0) && keymap_matches(KA_TARGET, KM_KEY_TAB, KM_SHIFT));
+    CHECK(keymap_matches(KA_CARD, 'U', 0));
     CHECK(!keymap_matches(KA_EQUIPMENT, 'P', KM_CTRL) && !keymap_matches(KA_MARK, 'M', KM_CTRL)); // Ctrl+P pausa, Ctrl+M orbital
     CHECK(keymap_matches(KA_ESCORT, 'Y', 0) && !keymap_matches(KA_ESCORT, 'Y', KM_SHIFT) && keymap_matches(KA_DISPATCH, 'Y', KM_SHIFT));
-    // Las teclas viejas quedan libres: V, Z y O no hacen nada.
-    for (int a = 0; a < KA_COUNT; a++)
-        CHECK(!keymap_matches((KeyAction)a, 'V', 0) && !keymap_matches((KeyAction)a, 'Z', 0) && !keymap_matches((KeyAction)a, 'O', 0));
-    // Ninguna tecla hace dos cosas, salvo los pares que decide el contexto: Tab (objetivo en
-    // combate, menu fuera) y Mayus+L (con arco enciende la flecha; con arma de mano, carga).
+    // Las teclas viejas quedan libres: V y Z no hacen nada.
+    for (int a = 0; a < KA_COUNT; a++) CHECK(!keymap_matches((KeyAction)a, 'V', 0) && !keymap_matches((KeyAction)a, 'Z', 0));
+    // Ninguna tecla hace dos cosas (ya no hace falta que el contexto decida: Tab no es objetivo y
+    // menu a la vez, ni Mayus+L carga y flecha).
     const int keys[] = { 'A', 'B', 'C', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z', KM_KEY_TAB, KM_KEY_SPACE };
     const unsigned mods[] = { 0, KM_SHIFT, KM_CTRL, KM_ALT, KM_SHIFT | KM_ALT };
     int clashes = 0;
     for (size_t k = 0; k < sizeof(keys) / sizeof(keys[0]); k++)
         for (size_t m = 0; m < sizeof(mods) / sizeof(mods[0]); m++)
             for (int a = 0; a < KA_COUNT; a++)
-                for (int b = a + 1; b < KA_COUNT; b++) {
-                    if (!keymap_matches((KeyAction)a, keys[k], mods[m]) || !keymap_matches((KeyAction)b, keys[k], mods[m])) continue;
-                    bool ok = (a == KA_TARGET && b == KA_MENU) || (a == KA_CHARGE && b == KA_LIGHT_ARROW);
-                    if (!ok) clashes++;
-                }
+                for (int b = a + 1; b < KA_COUNT; b++)
+                    clashes += keymap_matches((KeyAction)a, keys[k], mods[m]) && keymap_matches((KeyAction)b, keys[k], mods[m]);
     CHECK(clashes == 0);
-    CHECK(!strcmp(keymap_text(KA_ATTACK), "H") && !strcmp(keymap_text(KA_BACKPACK), "Mayús+G") && !strcmp(keymap_text(KA_TARGET), "Tab"));
+    CHECK(!strcmp(keymap_text(KA_ATTACK), "H") && !strcmp(keymap_text(KA_PARRY), "I") && !strcmp(keymap_text(KA_CHARGE), "K"));
+    CHECK(!strcmp(keymap_text(KA_BACKPACK), "Mayús+G") && !strcmp(keymap_text(KA_INVENTORY), "Tab") && !strcmp(keymap_text(KA_MENU), "L") &&
+          !strcmp(keymap_text(KA_TARGET), "O"));
+}
+
+// A3 (las hojas, docs/PLAN_TACTICO_Y_CUEVAS.md): hacia que lado cicla el objetivo, cuanto dura sin verlo,
+// el clic con arma a distancia y lo que tarda en reconocerte un enemigo.
+static void test_target_rules_a3(void) {
+    // Mirando al norte (+z): uno delante, otro a la izquierda (+x) y otro a la derecha (-x).
+    TargetCand c[3] = { { 0.0f, 10.0f, true }, { 6.0f, 10.0f, true }, { -6.0f, 10.0f, true } };
+    int front = target_cycle(c, 3, 0.0f, 0.0f, 0.0f, -1, TARGET_LEFT);
+    CHECK(front == 0);
+    CHECK(target_cycle(c, 3, 0.0f, 0.0f, 0.0f, front, TARGET_LEFT) == 1);
+    CHECK(target_cycle(c, 3, 0.0f, 0.0f, 0.0f, front, TARGET_RIGHT) == 2);
+    // Sin verlo: dura 6 s; cubierto, no se pierde; muerto o lejos, en el acto.
+    float unseen = 0.0f;
+    CHECK(target_hold(&unseen, true, 10.0f, false, false, 5.0f) && unseen > 4.9f);
+    CHECK(!target_hold(&unseen, true, 10.0f, false, false, 1.5f) && unseen == 0.0f);
+    for (int i = 0; i < 100; i++) CHECK(target_hold(&unseen, true, 10.0f, false, true, 1.0f)); // cubierto, cien segundos
+    CHECK(target_hold(&unseen, true, 10.0f, false, false, 3.0f) && target_hold(&unseen, true, 10.0f, true, false, 0.1f) &&
+          unseen == 0.0f); // al verlo otra vez, la cuenta vuelve a cero
+    CHECK(!target_hold(&unseen, false, 10.0f, true, false, 0.1f));
+    CHECK(!target_hold(&unseen, true, TARGET_RANGE + 1.0f, true, true, 0.1f));
+    // El clic: corto elige; mantenido 1 s suelta (una vez); arrastrado (la camara), nada.
+    CHECK(target_click(0.2f, false, true, false) == TCLICK_SELECT);
+    CHECK(target_click(0.5f, false, false, false) == TCLICK_NONE);
+    CHECK(target_click(1.0f, false, false, false) == TCLICK_RELEASE);
+    CHECK(target_click(1.3f, false, false, true) == TCLICK_NONE);
+    CHECK(target_click(1.3f, false, true, true) == TCLICK_NONE);
+    CHECK(target_click(0.2f, true, true, false) == TCLICK_NONE);
+    // Reconocerte: 5 s de dia, 7 de noche, 3 con la antorcha; de cerca, mucho menos.
+    CHECK(fabsf(stealth_recognition_seconds(false, false, 30.0f, 30.0f) - 5.0f) < 0.01f);
+    CHECK(fabsf(stealth_recognition_seconds(true, false, 30.0f, 30.0f) - 7.0f) < 0.01f);
+    CHECK(fabsf(stealth_recognition_seconds(true, true, 30.0f, 30.0f) - 3.0f) < 0.01f);
+    CHECK(stealth_recognition_seconds(false, false, 1.0f, 30.0f) <= 0.5f + 1e-4f);
+    float prev = 0.0f;
+    for (float d = 2.0f; d <= 30.0f; d += 1.0f) { // crece con la distancia
+        float sec = stealth_recognition_seconds(false, false, d, 30.0f);
+        CHECK(sec >= prev);
+        prev = sec;
+    }
+}
+
+// A4 (las hojas): la cobertura tapa al jugador de quien mira desde el otro lado del obstaculo, y no de
+// costado ni de frente; un tronco tapa menos que una peña.
+static void test_cover_rules_a4(void) {
+    // Pegado a una roca (centro 0,0; radio 0,6) por el sur, como la deja ga_toggle_cover (radio + 0,45 m).
+    float pz = -1.05f, cr = 0.6f;
+    CHECK(stealth_cover_blocks(0.0f, pz, 0.0f, 0.0f, cr, 0.0f, 12.0f));   // desde el norte, detras de la roca
+    CHECK(stealth_cover_blocks(0.0f, pz, 0.0f, 0.0f, cr, 2.0f, 12.0f));   // algo de lado, aun tapado
+    CHECK(!stealth_cover_blocks(0.0f, pz, 0.0f, 0.0f, cr, 12.0f, 0.0f));  // de costado: lo ve
+    CHECK(!stealth_cover_blocks(0.0f, pz, 0.0f, 0.0f, cr, 0.0f, -12.0f)); // de frente (de su lado): lo ve
+    CHECK(!stealth_cover_blocks(0.0f, pz, 0.0f, 0.0f, 0.0f, 0.0f, 12.0f)); // sin obstaculo, nada
+    int trunk = 0, rock = 0;
+    for (int a = 0; a < 360; a += 5) {
+        float ox = 15.0f * sinf((float)a * 0.0174533f), oz = 15.0f * cosf((float)a * 0.0174533f);
+        trunk += stealth_cover_blocks(0.0f, -(0.35f + 0.45f), 0.0f, 0.0f, 0.35f, ox, oz);
+        rock += stealth_cover_blocks(0.0f, -(3.0f + 0.45f), 0.0f, 0.0f, 3.0f, ox, oz);
+    }
+    CHECK(trunk > 0 && rock > trunk && rock < 36); // ni un tronco tapa nada, ni una peña tapa la mitad del mundo
 }
 
 static void test_melee_parry_window(void) {
@@ -5569,6 +5693,138 @@ static void test_world_dry(void) {
     CHECK(world_footprint_dry(w, w->settlements[0].x, w->settlements[0].z, WORLD_FOOT_CAPITAL, false));
 }
 
+// B1 a B3 (las cuevas, docs/PLAN_TACTICO_Y_CUEVAS.md): la planta de la hoja, el suelo que se pisa, la
+// bajada sin vuelta, siempre una salida, lo de adentro segun el tipo, el botin y los prisioneros.
+static void test_caves(void) {
+    static World a, b; // static: un World pesa cientos de KB (la pila de Windows es de 1 MB)
+    Inventory inv;
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    inventory_parse(&inv, text);
+    const unsigned seeds[] = { 1206u, 42u, 7u };
+    int kinds[CAVE_KINDS] = { 0 }, prisoners = 0, loot = 0, rings[CAVE_ROOMS_MAX] = { 0 };
+    for (int si = 0; si < 3; si++) {
+        world_generate(&a, seeds[si]);
+        world_generate(&b, seeds[si]);
+        CHECK(a.cave_count == a.den_count && a.cave_count > 0 && a.cave_count == b.cave_count);
+        for (int i = 0; i < a.cave_count; i++) {
+            const Cave *c = &a.caves[i];
+            CHECK(memcmp(c, &b.caves[i], sizeof(Cave)) == 0); // determinista
+            CHECK(cave_layout_valid(c));
+            CHECK(c->x == a.dens[i].x && c->z == a.dens[i].z);
+            CHECK(world_water(&a, c->x, c->z, 0.0f, NULL) < world_height(&a, c->x, c->z) - 0.5f); // la boca, en seco
+            kinds[c->kind]++;
+            rings[c->room_count - 1]++;
+            // El suelo: el centro de cada sala es suyo y a su altura; lejos de todo, roca.
+            for (int r = 0; r < c->room_count; r++) {
+                float y;
+                int w;
+                CHECK(cave_floor(c, c->rooms[r].x, c->rooms[r].z, &y, &w) && w == r && y == c->rooms[r].floor_y);
+            }
+            CHECK(!cave_floor(c, 300.0f, -300.0f, NULL, NULL));
+            // La bajada: a mitad de camino (del borde del vestibulo al de la Cisterna) se baja, no se sube.
+            float mid = (CAVE_VEST_Z + CAVE_VEST_R + c->rooms[0].z - c->rooms[0].radius) * 0.5f;
+            CHECK(cave_step_ok(c, 0.0f, mid, 0.0f, mid + 0.3f));
+            CHECK(!cave_step_ok(c, 0.0f, mid, 0.0f, mid - 0.3f));
+            CHECK(!cave_step_ok(c, 0.0f, mid, 4.0f, mid)); // ni se atraviesa la roca
+            // Desde la Cisterna no se sube la bajada: al entrar en ella por abajo, el paso no vale.
+            float cz = c->rooms[0].z - c->rooms[0].radius + 0.3f;
+            CHECK(!cave_step_ok(c, 0.0f, cz, 0.0f, cz - 0.6f));
+            // La entrada: en el suelo y aun junto a la boca (se puede volver); a la boca, se sale.
+            float ex, ez, eyaw;
+            cave_entry(c, &ex, &ez, &eyaw);
+            CHECK(cave_floor(c, ex, ez, NULL, NULL) && !cave_at_exit(c, ex, ez));
+            CHECK(cave_step_ok(c, ex, ez, ex, ez - 0.5f) && cave_at_exit(c, ex, ez - 0.85f));
+            // Siempre una salida: de cada sala se vuelve a la boca (por el anillo, no por la bajada).
+            for (int r = 0; r < c->room_count; r++) CHECK(cave_room_reachable(c, r, CAVE_MOUTH));
+            // La bajada, de 1,1 a 1,3; los demas pasillos, 0,8 o menos (se caminan en las dos direcciones).
+            CHECK(c->corridors[0].slope >= 1.1f - 1e-3f && c->corridors[0].slope <= 1.3f + 1e-3f);
+            for (int k = 1; k < c->corridor_count; k++) CHECK(c->corridors[k].slope <= 0.8f + 1e-3f);
+            // Del mundo a la cueva y de vuelta: la boca en (0, 0) y +z hacia adentro, (sin yaw, cos yaw).
+            float wx, wz, lx, lz;
+            cave_to_world(c, 1.5f, 6.0f, &wx, &wz);
+            cave_from_world(c, wx, wz, &lx, &lz);
+            CHECK(fabsf(lx - 1.5f) < 1e-3f && fabsf(lz - 6.0f) < 1e-3f);
+            cave_to_world(c, 0.0f, 1.0f, &wx, &wz);
+            CHECK(fabsf(wx - c->x - sinf(c->yaw)) < 1e-3f && fabsf(wz - c->z - cosf(c->yaw)) < 1e-3f);
+            // El techo: sobre cada sala, su altura (la Cisterna, el doble); en un pasillo, el del pasillo.
+            CHECK(cave_ceiling(c, 0, c->rooms[0].floor_y) == c->rooms[0].floor_y + 2.0f * CAVE_ROOM_HEIGHT);
+            CHECK(cave_ceiling(c, 1, c->rooms[1].floor_y) == c->rooms[1].floor_y + CAVE_ROOM_HEIGHT);
+            CHECK(cave_ceiling(c, CAVE_IN_CORRIDOR + 1, -2.0f) == -2.0f + CAVE_CORRIDOR_HEIGHT);
+            // El vestibulo: llano, tras la boca; de su borde salen los tres pasillos de la boca, sin pisarse al salir.
+            {
+                float vy = -1.0f;
+                int vw = 0;
+                CHECK(cave_floor(c, 0.0f, CAVE_VEST_Z, &vy, &vw) && vw == CAVE_VESTIBULE && vy == 0.0f);
+                CHECK(cave_ceiling(c, CAVE_VESTIBULE, 0.0f) == CAVE_VEST_HEIGHT);
+                int from_mouth = 0;
+                for (int k = 0; k < c->corridor_count; k++) {
+                    if (c->corridors[k].from != CAVE_MOUTH) continue;
+                    from_mouth++;
+                    float ax, az, ay, bx, bz, by;
+                    cave_corridor_ends(c, k, &ax, &az, &ay, &bx, &bz, &by);
+                    CHECK(fabsf(sqrtf(ax * ax + (az - CAVE_VEST_Z) * (az - CAVE_VEST_Z)) - CAVE_VEST_R) < 1e-3f && ay == 0.0f);
+                    // A 2 m de su comienzo, cada pasillo de la boca es solo suyo (ni el vestibulo ni otro pasillo).
+                    float l = sqrtf((bx - ax) * (bx - ax) + (bz - az) * (bz - az)), px = ax + (bx - ax) / l * 2.0f, pz = az + (bz - az) / l * 2.0f;
+                    int pw = 0;
+                    CHECK(cave_floor(c, px, pz, NULL, &pw) && pw == CAVE_IN_CORRIDOR + k);
+                }
+                CHECK(from_mouth == 3);
+            }
+            // Lo de adentro: cada objeto en su sala, en el suelo de la cueva; lo que se toma existe.
+            int nest = 0, torch = 0, lit = 0, cell = 0, chest = 0, stal = 0;
+            for (int o = 0; o < c->object_count; o++) {
+                const CaveObject *ob = &c->objects[o];
+                CHECK(ob->room < c->room_count && cave_floor(c, ob->x, ob->z, NULL, NULL));
+                int n = 0;
+                const char *id = cave_object_loot(c, o, &n);
+                if (id) {
+                    loot++;
+                    CHECK(n > 0 && inventory_find(&inv, id) != NULL);
+                }
+                nest += ob->kind == COBJ_NEST, torch += ob->kind == COBJ_TORCH, lit += ob->kind == COBJ_TORCH && ob->lit;
+                cell += ob->kind == COBJ_CELL, chest += ob->kind == COBJ_CHEST, stal += ob->kind == COBJ_STALACTITE;
+                if (ob->kind == COBJ_CELL && ob->prisoner) {
+                    prisoners++;
+                    int pct = cave_betray_percent(c, o);
+                    CHECK(pct >= 5 && pct <= 90 && cave_prisoner_joins(c, o, 0.999f) && !cave_prisoner_joins(c, o, 0.0f));
+                }
+                if (ob->kind != COBJ_CELL) CHECK(!ob->prisoner);
+                // Lo de la pared no tapa la entrada de un pasillo (ni a un metro de cada lado).
+                bool on_wall = ob->kind == COBJ_TORCH || ob->kind == COBJ_VEIN || ob->kind == COBJ_WEB || ob->kind == COBJ_PAINTING ||
+                               ob->kind == COBJ_ARMS || ob->kind == COBJ_CELL;
+                const CaveRoom *rm = &c->rooms[ob->room];
+                float wall_ang = atan2f(ob->x - rm->x, ob->z - rm->z);
+                for (int k = -1; k <= 1 && on_wall; k++) {
+                    float side_ang = wall_ang + (float)k / rm->radius;
+                    int where = 0;
+                    bool in = cave_floor(c, rm->x + sinf(side_ang) * (rm->radius + 0.6f), rm->z + cosf(side_ang) * (rm->radius + 0.6f), NULL, &where);
+                    CHECK(!in || where < CAVE_IN_CORRIDOR);
+                }
+            }
+            CHECK(stal > 0); // todas tienen estalactitas
+            if (c->kind == CAVE_ANIMAL) CHECK(nest > 0 && torch == 0 && cell == 0);
+            if (c->kind == CAVE_ABANDONED) CHECK(lit == 0); // las antorchas de las abandonadas, apagadas
+            if (c->kind >= CAVE_BANDITS) CHECK(lit > 0 && cell > 0 && chest > 0);
+        }
+    }
+    for (int k = 0; k < CAVE_KINDS; k++) CHECK(kinds[k] > 0); // de todos los tipos
+    CHECK(prisoners > 0 && loot > 0);
+    CHECK(rings[3] + rings[4] > 0 && rings[8] + rings[9] > 0); // de 3 a 9 recamaras
+    // Un forajido traiciona mas que un pastor, y en una cueva de forajidos mas que en la de una tribu.
+    Cave t;
+    memset(&t, 0, sizeof(t));
+    t.object_count = 2;
+    t.objects[0] = (CaveObject){ .kind = COBJ_CELL, .prisoner = 1 + PRISONER_SHEPHERD };
+    t.objects[1] = (CaveObject){ .kind = COBJ_CELL, .prisoner = 1 + PRISONER_OUTLAW };
+    t.kind = CAVE_TRIBE;
+    int shepherd_tribe = cave_betray_percent(&t, 0), outlaw_tribe = cave_betray_percent(&t, 1);
+    t.kind = CAVE_BANDITS;
+    CHECK(outlaw_tribe > shepherd_tribe && cave_betray_percent(&t, 1) > outlaw_tribe);
+    free(text);
+}
+
 int main(void) {
     RUN(test_recruit_and_roles);
     RUN(test_progress_levels);
@@ -5607,6 +5863,7 @@ int main(void) {
     RUN(test_champion_desertion_weighs_on_troop);
     RUN(test_hands_grips);
     RUN(test_hands_sheathe_take_throw);
+    RUN(test_hands_each_hand);
     RUN(test_action_catalog);
     RUN(test_build_needs_crew_and_skills);
     RUN(test_build_skill_morale_and_champions);
@@ -5634,6 +5891,7 @@ int main(void) {
     RUN(test_voxels);
     RUN(test_world_river_banks);
     RUN(test_world_water_never_floats);
+    RUN(test_caves);
     RUN(test_swarms);
     RUN(test_fire_spread_and_rain);
     RUN(test_weather_hazards_random);
@@ -5663,6 +5921,8 @@ int main(void) {
     RUN(test_save_blocks_numbers_change_type);
     RUN(test_keymap_four_buttons);
     RUN(test_keymap_target_keys);
+    RUN(test_target_rules_a3);
+    RUN(test_cover_rules_a4);
     RUN(test_melee_parry_window);
     RUN(test_melee_weapon_block_costs_stamina);
     RUN(test_target_cycle);

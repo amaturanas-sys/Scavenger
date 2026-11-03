@@ -66,6 +66,7 @@ add_library(estepa_sim STATIC
   src/sim/trade.c
   src/sim/riding.c
   src/sim/forge.c
+  src/sim/caves.c
   src/sim/city.c
   src/sim/army.c
   src/sim/flora.c
@@ -125,6 +126,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/death_game.c
     src/game/hud_game.c
     src/game/world_game.c
+    src/game/cave_game.c
     src/game/title_menu.c
     src/game/input.c
     src/game/inventory_game.c

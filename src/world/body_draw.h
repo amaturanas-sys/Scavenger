@@ -13,6 +13,9 @@ typedef struct {
 } BodyColors;
 
 void body_draw(const BodyPose *b, Vector3 pos, float yaw, BodyColors c, const Armor *armor);
+// La luz con que se tiñe todo lo que dibujan body_draw y body_draw_outfit (WHITE: como siempre; en una cueva, la del
+// lugar: src/game/cave_game.c).
+void body_set_tint(Color tint);
 // La ropa encima (src/sim/apparel.h): tunica, capa o abrigo, gorro o sombrero, pañuelo y botas.
 // Despues de body_draw, con la misma pose.
 void body_draw_outfit(const BodyPose *b, Vector3 pos, float yaw, const Outfit *o);

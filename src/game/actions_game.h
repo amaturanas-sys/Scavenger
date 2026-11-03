@@ -1,7 +1,7 @@
 // Acciones y vida del campamento en el juego. Conecta el nucleo (sim/actions,
 // sim/economy, sim/animals) con el jugador, el mundo y la interfaz:
-//  - menu de acciones (Tab), atajos (X empunadura, H enfundar, F tomar,
-//    T lanzar, R montar, I acopio) y acciones con duracion;
+//  - menu de acciones (L), atajos (1..9 la barra rapida: cada arma y el escudo se guardan por
+//    separado; F tomar, T lanzar, R montar, Tab inventario) y acciones con duracion;
 //  - acopio de la tribu: materiales, comida, recoleccion diaria;
 //  - obras en grupo: los NPCs elegidos caminan a la obra y trabajan alli;
 //  - NPCs que hacen acciones individuales (instalar una fogata o una tienda);
@@ -44,6 +44,7 @@
 #define GA_LOOT 8  // bolsas de botin en el suelo
 #define GA_NEWS 4  // informes que recuerda cada campamento
 #define GA_ICE_HOLES 6 // agujeros para pescar en el hielo
+#define GA_CAVES 56    // las cuevas del mundo (CAVES_MAX de src/sim/world.h; src/game/cave_game.c lo comprueba)
 #define ICE_PICK_ID "utileria.herramienta.picahielo"
 #define ICE_HOLE_RADIUS 0.9f // m: el agujero para pescar (quien lo pisa cae al agua)
 
@@ -161,7 +162,7 @@ typedef struct {
     // Menus de inventario y de equipo.
     bool inv_open, equip_open;
     int inv_pane, inv_cont[2], inv_cursor[2], equip_cursor;
-    // Menu de acciones (Tab) por pestañas: acciones, obras, fabricar, reparar.
+    // Menu de acciones (L) por pestañas: acciones, obras, fabricar, reparar.
     int menu_tab, tab_cursor[4];
     bool take_all; // F con Mayus: tomar todo lo de alrededor
     // Botin que dejan los enemigos al caer (F para recogerlo).
@@ -219,6 +220,11 @@ typedef struct {
     // durante la noche; quien pisa uno cae al agua (src/game/hazards_game.c).
     Vector3 ice_holes[GA_ICE_HOLES];
     int ice_hole_count, ice_hole_day; // el dia en que se abrieron + 1 (0: ninguno)
+    // Las cuevas (docs/PLAN_TACTICO_Y_CUEVAS.md, src/game/cave_game.c), por el indice de su guarida: lo que ya se
+    // tomo, se rescato o se encendio adentro (un bit por objeto de Cave.objects) y el dia (clock_day, desde 1) en
+    // que salieron sus guardias (0: nunca). Una partida vieja empieza con todo en su lugar.
+    uint64_t cave_done[GA_CAVES];
+    int cave_guards_day[GA_CAVES];
 } GameActions;
 
 void ga_init(GameActions *ga, const Inventory *inv, Props *props, const Terrain *t, unsigned seed);
@@ -244,12 +250,20 @@ int ga_marching(const GameActions *ga);
 float ga_speed_scale(const GameActions *ga);
 void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop *troop, float dt, char *log,
                size_t log_len);
+// C junto a un obstaculo (una roca, un tronco, una mata alta, un muro, una peña) te pega a el; otra vez,
+// sales. Lejos de todo, C queda como sigilo (A4).
+void ga_toggle_cover(GameActions *ga, const Props *props, const Terrain *t, Player *p);
+// La cobertura tapa al jugador de quien mira desde el otro lado del obstaculo (stealth_cover_blocks).
+bool ga_cover_blocks(const GameActions *ga, const Player *p, Vector3 observer);
 // Despues de mover al jugador: trepar, montura, escondite.
 void ga_after_player(GameActions *ga, Props *props, const Terrain *t, Player *p);
 // Un dia nuevo: comida y recoleccion, efectos de las construcciones, trabajos de los NPCs.
 void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, MemoryMap *mem, float now, int day, float temp_mean,
                 char *log, size_t log_len);
 void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time, bool night);
+// Lo que el jugador tiene en las manos (las armas, el escudo, la antorcha encendida, lo que carga); ga_draw_world
+// lo dibuja, y adentro de una cueva src/game/cave_game.c, tenido con la luz del lugar (light; la llama, no).
+void ga_draw_held(const GameActions *ga, const Player *p, float time, Color light);
 // Dibuja al jugador con el modelo del protagonista y su animacion, si ya fue
 // importado. Devuelve false si no (el juego dibuja el marcador de siempre).
 bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time);
@@ -267,9 +281,11 @@ typedef struct {
 int ga_grip_count(void);
 GaGrip ga_grip(const GameActions *ga, int k);
 bool ga_has_item(const GameActions *ga, const char *id); // en el equipo o en el acopio
+// El arma que de verdad se empuña por ese id: el mejor sable o el mejor arco que tengas.
+const char *ga_best_weapon(const GameActions *ga, const char *id);
 // Pedidos del HUD (teclas 1..9, toques o clics), atendidos en el proximo ga_update.
 void ga_quick_request_grip(int k);
-void ga_quick_request_wield(const char *id); // un arma o un escudo, a su mano
+void ga_quick_request_wield(const char *id); // un arma o un escudo, a su mano (si ya esta en ella, lo guarda o lo saca)
 void ga_quick_request_action(ActionId a);
 void ga_quick_request_menu(void);
 void ga_quick_request_swap(void); // pasar el arma empuñada a la otra mano
@@ -277,11 +293,16 @@ void ga_quick_request_craft(CraftId c); // empezar una receta (la prueba --forja
 // La orden a la escolta (SquadOrder: Y+1..3 o las casillas del HUD), con su aviso.
 void ga_escort_order(GameActions *ga, int order, char *log, size_t len);
 void ga_request_escort_order(int order); // desde el HUD, atendida en el proximo ga_update
-// Tab en combate (src/game/combat_game.c): hay enemigos a tiro de objetivo (Tab elige objetivo en
-// vez de abrir el menu); el pedido de Tab (1 el siguiente, -1 el anterior, 0 nada).
+// El objetivo (src/game/combat_game.c): hay enemigos a tiro de objetivo; el pedido de O (1 el
+// siguiente, -1 el anterior con Mayus+O, 0 nada).
 void ga_set_combat_near(bool near);
+// El animal elegido como objetivo (indice en ga->animals, o -1): el lazo lo busca primero (A2 y A3).
+void ga_set_target_animal(int index);
 int ga_take_target_request(void);
 
+// En una cueva (src/game/cave_game.c): solo empuñar, enfundar y la antorcha; F, lanzar y montar, no.
+void ga_set_in_cave(bool on);
+bool ga_in_cave(void);
 int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, const Player *p, bool night, Vector3 *pos, float *radius,
               int max);
 

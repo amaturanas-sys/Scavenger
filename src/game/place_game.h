@@ -1,5 +1,5 @@
 // La vista aerea para ubicar una obra (fase 4b; las reglas, en src/sim/placement.h):
-//  - al elegir una obra (Tab -> Obras, o el guardian del campamento), la camara sube sobre el
+//  - al elegir una obra (L -> Obras, o el guardian del campamento), la camara sube sobre el
 //    campamento, unos 60 m de radio a la vista (fuera de todo campamento, sobre el jugador);
 //  - la huella de la obra sigue al puntero (o al dedo, o a WASD y las flechas): verde si el
 //    sitio vale; roja si no, con el motivo. Q/E la giran; Mayus la alinea a la rejilla;

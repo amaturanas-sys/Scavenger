@@ -32,6 +32,7 @@ bool wg_at_well(const Terrain *t, float x, float z);
 int wg_ripples(const GameActions *ga, const Troop *troop, const Combat *cb, const Player *p, const Terrain *t, Vector4 *out, int max);
 // Sed, borrachera y enfermedad bajo la salud (alineado a la derecha).
 void wg_request_drink(void); // como pulsar N (desde el HUD)
+void wg_request_odre(void);  // la casilla del odre: junto al agua lo llena (ACTION_FILL_WATER), si no bebe
 void wg_draw_hud(const GameActions *ga, int right_x, int y);
 
 #endif

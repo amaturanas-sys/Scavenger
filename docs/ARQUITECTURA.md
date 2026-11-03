@@ -42,9 +42,10 @@ src/
     voxmat.h     los materiales de las estructuras de voxeles (src/world/voxstruct.c los pinta con la paleta de su region)
     flora.*      la vegetacion baja: donde crece cada mata (por celdas de 2 m, segun la region y el agua; ni en la roca, los rios, los pueblos o los campamentos), cuanto crece con la estacion y cuanto la mueven el viento y quien pasa
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano
-    keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H J K L, F, X...)
-    targeting.*  el selector de objetivo: el siguiente alrededor del jugador, se pierde a 25 m
-    stealth.*    la espalda (cono trasero, lo que ve un enemigo segun de donde vienes), el rehen que tapa el tiro (y cuando se suelta) y los abatidos
+    keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H I J K, Tab, L, O, F, X...)
+    targeting.*  el selector de objetivo (enemigos y animales salvajes): el siguiente a la izquierda o la derecha, se pierde a 25 m o tras 6 s sin verlo (cubierto, no), y los clics con arma a distancia (elegir, cambiar, mantener 1 s para soltar)
+    stealth.*    la espalda (cono trasero, lo que ve un enemigo segun de donde vienes), cuanto tarda en reconocerte (5, 7 o 3 s, menos de cerca), la cobertura (el obstaculo tapa a quien mira del otro lado), el rehen que tapa el tiro (y cuando se suelta) y los abatidos
+    caves.*      las cuevas de cada guarida (de la semilla): la planta (el vestibulo, la Cisterna, el anillo de recamaras, la bajada sin vuelta), el suelo y los pasos que valen, lo que hay adentro, lo que se toma y los prisioneros que se unen o traicionan (docs/PLAN_TACTICO_Y_CUEVAS.md)
     squad.*      la escolta con ordenes, la ronda de los guardias y la alarma de los pobladores
     placement.*  ubicar una obra: la huella girada, si el sitio vale (radio, agua, pendiente, lo que pisa), la rejilla y los muros de dos puntos
     camps.*      campamentos y sus tareas: capacitar, y las de la tribu (reclutas, explorar, cazar, pastorear, guardia) con su riesgo y lo que traen; migrar (levantar y plantar) y los pastos de cada region y estacion
@@ -61,8 +62,8 @@ src/
     gallery.*    galeria del inventario (--galeria)
     sky.*        cielo, tinte de noche, estrellas y brillo de los fuegos
     weather.*    lluvia, nieve, ventisca, relampagos y bruma
-    body_draw.*  dibuja el cuerpo articulado con su armadura
-    props.*      objetos sueltos en el mundo (modelo, el kit para las obras de la tribu, o marcador)
+    body_draw.*  dibuja el cuerpo articulado con su armadura (body_set_tint: teñido con la luz del lugar, en una cueva)
+    props.*      objetos sueltos en el mundo (modelo, el kit para las obras de la tribu, o marcador; props_set_tint: la luz del lugar)
   game/     Jugador e input
     player.*
     actions_game.*  menu de acciones, atajos, obras en curso
@@ -73,7 +74,9 @@ src/
     trade_game.*    comerciar (F en tribus, aldeas, capitales, caravasares y caravanas; con el tesoro y los precios de cada ciudad, y el tributo al kanato), las caravanas con su escolta, asaltarlas, saquear campamentos rivales y los campos de las ciudades
     hazards_game.*  peligros en el juego: calor corporal, hielo, socavones, escolta, rescates
     combat_game.*   combate (a pie y montado), enemigos (y el ejercito de los reinos: la formacion cerrada, el pavés que para flechas, el carro de guerra que hace pasadas y arrolla), botin, vendajes, salud de la tribu y del jugador
-    fauna_game.*    fauna en el mundo: aparicion por bioma, ataques, K (comer, despiezar, ordeñar)
+    fauna_game.*    fauna en el mundo: aparicion por bioma (y las fieras de las guaridas de animales y abandonadas), ataques, K (comer, despiezar, ordeñar)
+    world_game.*    los pueblos, las tribus, las estructuras y las guaridas del mundo al verlos (al mapa); la boca de cada cueva desde afuera (el peñasco y su tunel), sus antorchas de noche, y la camara que no se mete en la roca
+    cave_game.*     adentro de una cueva: entrar y salir por la boca, moverse por cave_floor, la camara bajo la boveda, la luz por vertice, F (tomar, encender, mirar, liberar), el dialogo con un prisionero, los guardias de las habitadas y el plano
     disasters_game.* fuego, rayos, lluvia torrencial, fogatas apagadas por la lluvia
     save_game.*     partidas guardadas: tres huecos con minifoto y fecha, por bloques (docs/PARTIDAS.md)
     save_schema.inc esquema de lo que se guarda (generado por tools/save/esquema.py)
@@ -98,6 +101,11 @@ docs/       Diseño, roadmap, arquitectura
 - Todo el mundo y el HUD se dibujan en un `RenderTexture` de **640×360** con filtro *point*, y se escala a la ventana conservando la proporción.
 - Iluminación **horneada** en los colores de vértice del terreno (ambiente + difusa del sol): sin shaders de luz, costo cero en GPU.
 - **Un solo shader propio, el del agua** (`src/world/terrain.c`, [AGUA.md](AGUA.md) fase 4): GLSL 330 en la PC y GLSL ES 100 en Android, del mismo código; lo demás usa el de raylib. Si no compila, el agua se dibuja como antes. El CI compila también la variante OpenGL ES 2.0 y la dibuja con Mesa.
+- **Las cuevas** (`src/game/cave_game.c`) son un espacio aparte, en sus coordenadas: la roca se arma con triángulos de
+  `rlgl` (las salas con bóveda, los pasillos por tramos de 1,3 m) y la luz se calcula en la CPU en cada vértice (las
+  antorchas y la fogata, la boca de día, la antorcha del jugador y un poco alrededor de él), sin shaders. Los modelos y el
+  cuerpo articulado se tiñen con la luz del lugar (`props_set_tint`, `body_set_tint`). Sin descarte de caras (se ven
+  desde adentro): se vacía el lote de raylib antes de cambiarlo.
 - Objetivo de rendimiento: 60 fps en Android de gama baja. Referencia actual: 60 fps con render **por software** (Mesa llvmpipe) en CI.
 
 ## Mundo

@@ -199,11 +199,22 @@ MeleeResult melee_parry(ParryKind k, const Fighter *me, const Fighter *foe, Rng 
         r.damage = move_def(MOVE_GRAPPLE)->damage * me->strength;
         break;
     }
+    case PARRY_SHIELD: // el golpe resbala por el escudo y el canto lo sacude: queda aturdido
+        r.staggered = true;
+        r.damage = move_def(MOVE_SHIELD_BASH)->damage * 0.5f * me->strength;
+        break;
     default: // el golpe resbala por el arma y el rival queda abierto
         r.staggered = true;
         break;
     }
     return r;
+}
+
+ParryKind hands_parry_kind(const Hands *h) {
+    const char *w = hands_attack_weapon(h, 1, NULL);
+    if (w[0]) return melee_parry_kind(w); // con el arma fuera, para el arma (aunque lleve escudo)
+    if (hands_out(h, HAND_LEFT) && h->left.kind == INV_HANDS_SHIELD) return PARRY_SHIELD; // solo el escudo
+    return PARRY_GRAPPLE; // las manos: la llave
 }
 
 bool hands_swap(Hands *h) {
@@ -212,14 +223,17 @@ bool hands_swap(Hands *h) {
     Held t = h->right;
     h->right = h->left;
     h->left = t;
+    bool away = h->right_away; // lo guardado va con su mano
+    h->right_away = h->left_away;
+    h->left_away = away;
     return true;
 }
 
 const char *hands_attack_weapon(const Hands *h, int combo_step, bool *off_hand) {
     if (off_hand) *off_hand = false;
-    if (h->sheathed) return "";
-    bool right_weapon = h->right.id[0] && h->right.kind != INV_HANDS_SHIELD;
-    bool left_weapon = h->left.id[0] && h->left.kind == INV_HANDS_ONE;
+    // Solo lo que esta fuera: la espada enfundada no golpea aunque el escudo siga en el brazo.
+    bool right_weapon = hands_out(h, HAND_RIGHT) && h->right.kind != INV_HANDS_SHIELD;
+    bool left_weapon = hands_out(h, HAND_LEFT) && h->left.kind == INV_HANDS_ONE;
     // Con un arma en cada mano, los golpes del combo alternan (derecha, izquierda, derecha).
     if (right_weapon && left_weapon && combo_step % 2 == 0) {
         if (off_hand) *off_hand = true;

@@ -98,7 +98,7 @@ static void lose_gear(GameActions *ga, char *what, size_t len) {
         snprintf(what, len, "%s", T("lo que cargabas"));
         ga->hands.carried[0] = '\0';
     }
-    if (ga->hands.right.id[0] && !ga->hands.sheathed) {
+    if (hands_out(&ga->hands, HAND_RIGHT)) { // el arma en la mano (la enfundada no se pierde)
         snprintf(what, len, "%s", what[0] ? T("lo que cargabas y tu arma") : T("tu arma"));
         memset(&ga->hands.right, 0, sizeof(ga->hands.right));
     }

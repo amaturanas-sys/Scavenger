@@ -3,7 +3,7 @@
 //    golpe pesado) y sueltan piedras, mineral y a veces una gema;
 //  - arrecifes de coral bajo el agua de los lagos: F junto a ellos (coral y perlas);
 //  - cavar una trinchera desentierra a veces lapislazuli, ambar, plata u oro;
-//  - cribar en el agua (accion del menu Tab) en la orilla: piedras rodadas y oro.
+//  - cribar en el agua (accion del menu L) en la orilla: piedras rodadas y oro.
 #ifndef ESTEPA_GEMS_GAME_H
 #define ESTEPA_GEMS_GAME_H
 

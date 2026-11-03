@@ -94,6 +94,6 @@ jobs:
             gh release upload "$TAG" dist/* --clobber
           else
             gh release create "$TAG" dist/* --target "$GITHUB_SHA" \
-              --title "Scavengers Thrive ${VERSION} — primera puesta en marcha" \
+              --title "Scavengers Thrive ${VERSION}" \
               --notes-file notas.md --latest
           fi

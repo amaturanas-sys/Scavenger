@@ -29,6 +29,22 @@ float stealth_sight_scale(float facing, float noise) {
     return behind + (1.0f - behind) * k;
 }
 
+float stealth_recognition_seconds(bool night, bool torch, float dist, float sight) {
+    float base = torch ? 3.0f : night ? 7.0f : 5.0f;
+    float span = sight > 2.5f ? sight - 2.0f : 0.5f;
+    float k = (dist - 2.0f) / span;
+    return base * (k < 0.1f ? 0.1f : k > 1.0f ? 1.0f : k);
+}
+
+bool stealth_cover_blocks(float px, float pz, float cx, float cz, float cr, float ox, float oz) {
+    float sx = px - ox, sz = pz - oz, len2 = sx * sx + sz * sz;
+    if (len2 < 1e-6f || cr <= 0.0f) return false;
+    float t = ((cx - ox) * sx + (cz - oz) * sz) / len2;
+    if (t <= 0.0f || t >= 1.0f) return false; // el obstaculo no esta entre los dos
+    float qx = ox + sx * t - cx, qz = oz + sz * t - cz;
+    return qx * qx + qz * qz < cr * cr;
+}
+
 bool stealth_hears_kill(float dist) { return dist <= SILENT_ALERT_RANGE; }
 
 bool stealth_hears_kill_with(float dist, bool ring) { return dist <= (ring ? RING_ALERT_RANGE : SILENT_ALERT_RANGE); }

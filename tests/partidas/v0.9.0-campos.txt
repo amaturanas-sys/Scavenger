@@ -195,4 +195,4 @@ memoria: 1 paginas, 1 marcas
   pagina (8, 4) luz 43.987 familiaridad 10.386 instantes 6238017.6
   marca 0 (1075.61, 621.01)
 muerte: descanso 0  (0.00, 0.00) muertes 0 restos 0 proximo 0
-barra: [1 0 ] [1 3 ] [1 6 ] [2 0 utileria.objeto.antorcha] [0 0 ] [0 0 ] [0 0 ] [0 0 ] [0 0 ]
+barra: [1 0 ] [1 3 ] [1 6 ] [2 0 utileria.objeto.antorcha] [0 0 ] [0 0 ] [0 0 ] [0 0 ] [0 0 ] [0 0 ]

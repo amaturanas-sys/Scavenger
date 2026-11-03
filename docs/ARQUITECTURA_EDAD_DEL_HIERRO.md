@@ -232,7 +232,7 @@ Hay dos ruinas, cada una con cuatro variantes:
   con su cúpula, otras con lo que queda del techo de caña) y dos columnas del templo. La arena las
   tapa en dunas hasta la mitad.
 
-**Las obras de la tribu** (las de `Tab` → Obras y las viviendas del campamento) se dibujan con el kit
+**Las obras de la tribu** (las de `L` → Obras y las viviendas del campamento) se dibujan con el kit
 mientras no tengan un modelo importado, a la medida de su objeto del inventario (`bk_for_item`).
 Van al estilo de la estepa, porque la tribu es nómada:
 - **Las obras:**

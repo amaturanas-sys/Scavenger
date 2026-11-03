@@ -371,6 +371,7 @@ static void apply(const Loaded *L, const SaveHeader *h, GameState *g) {
     *g->cam_yaw = L->misc.cam_yaw;
     *g->rng = L->misc.rng;
     *g->player = L->player;
+    g->player->covered = g->player->peeking = false; // la cobertura es del momento: al cargar, de pie (A4)
     *g->overlord = L->overlord;
     *g->troop = L->troop;
     g->troop->overlord = g->overlord;
