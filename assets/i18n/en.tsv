@@ -1571,12 +1571,15 @@ Estás %s: bebe (N).	You are %s: drink (N).
 Fiebre y retortijones: espíritus malditos del agua. Toma hierbas (Mayús+N), descansa y bebe agua hervida.	Fever and cramps: cursed spirits from the water. Take herbs (Shift+N), rest and drink boiled water.
 Las hierbas alivian la fiebre.	The herbs ease the fever.
 Las hierbas echan a los espíritus malditos.	The herbs drive out the cursed spirits.
+Llenas el odre: +%d %s.	You fill the waterskin: +%d %s.
 No tienes hierbas para echar a los espíritus. Descansa y bebe agua hervida.	You have no herbs to drive out the spirits. Rest and drink boiled water.
 No tienes los espíritus del agua: guarda las hierbas.	You don't have the water spirits: save the herbs.
 No tienes nada que beber: llena el odre en la orilla (L) o bebe del río (N, mirando al agua).	You have nothing to drink: fill the waterskin at the shore (L) or drink from the river (N, facing the water).
 No tienes sed.	You are not thirsty.
 Te desmayaste de sed; en la columna te dieron de beber (moral -3).	You fainted from thirst; the column gave you water (morale -3).
 Te desmayaste de sed; la tribu te llevó al campamento y te dio de beber (moral -3).	You fainted from thirst; the tribe carried you to camp and gave you water (morale -3).
+agua cruda	raw water
+agua limpia	clean water
 # --- src/game/world_game.c
 El campamento de los %s (tribu %s): te observan, sin buscar pelea.	The camp of the %s (%s tribe): they watch you, without seeking a fight.
 Encuentras %s, de otros tiempos: queda en el mapa.	You find %s from other times: it is now on the map.
