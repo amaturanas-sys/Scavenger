@@ -136,3 +136,13 @@ Además:
   los dos sobre la misma.
 - **Antes de cerrar la sesión,** commit y push de tu rama: nada queda solo en el Codespace.
 - **La línea `Co-authored-by: Copilot`** que agregas a los commits se deja: dice quién hizo qué.
+
+## Las skills (sobre todo, para lo que se ve)
+- **Están en `.claude/skills/`,** y el modo agente de Copilot en VS Code las carga desde ahí: también lee
+  `.github/skills/` y `.agents/skills/`, pero no se copian. Cada una entra sola por su descripción, o
+  nombrándola en el pedido («usa la skill estetica»).
+- **Para pulir lo que se ve, la skill `estetica`:** el ciclo mirar → cambiar → volver a mirar, y qué
+  herramienta usar en cada caso. Con ella van `cad` (text-to-CAD), `modelos` (TRELLIS.2) y `animaciones`.
+- **Lo marcado «solo en Claude Code»** (los agentes `gamedev-*` y `/gamedev`) no aplica a ti.
+- **El entorno lo deja `.devcontainer/setup.sh`:** text-to-CAD en `.venv-cad` con Chromium, ImageMagick, y
+  Node para Kiln. Si falta text-to-CAD: `python3 tools/assets/cad.py instalar`.

@@ -5,7 +5,8 @@ description: Convenciones de SCAVENGERS THRIVE (C11 + raylib, Windows y Android)
 
 # SCAVENGERS THRIVE - THEY COME FROM THE STEPPES
 
-Las skills genéricas de juego (Unity/Unreal, ECS, multijugador) se aplican con estas reglas.
+Las skills genéricas de juego (Unity/Unreal, ECS, multijugador) se aplican con estas reglas. Las de
+`.claude/skills/` las carga Claude Code y también Copilot en el Codespace (modo agente de VS Code).
 
 ## Arquitectura
 - `src/sim/`: C puro, sin raylib; todo lo que tiene reglas va aquí y se prueba en `tests/test_main.c`.
@@ -23,7 +24,8 @@ Las skills genéricas de juego (Unity/Unreal, ECS, multijugador) se aplican con 
 
 ## Antes de subir
 El flujo completo de cada cambio (rama desde `main`, pruebas, captura, docs, PR, CI, merge y release)
-está en `docs/GUIA_IA.md`; las reglas en corto, en `.clinerules` (las mismas para Cline y para Claude).
+está en `docs/GUIA_IA.md`; las reglas en corto, en `.clinerules` y `.github/copilot-instructions.md` (el mismo
+bloque para Cline, Copilot y Claude).
 ```sh
 cmake --build build && ./build/sim_tests
 python3 tools/assets/i18n.py extraer && python3 tools/assets/i18n.py check
@@ -40,4 +42,6 @@ cmake -E copy_directory assets build/assets && (cd build && xvfb-run -a ./estepa
 - Implementación: `game-developer`, `engine-patterns`, `cpp-pro` (aplicar en C11).
 - Pruebas y fallos: `test-master`, `debugging-wizard`; revisión: `code-reviewer`.
 - Documentación: `code-documenter` (los documentos del proyecto van en español, en `docs/`).
-- Equipo de agentes: `/gamedev <tarea>` (agentes `gamedev-*`).
+- Lo que se ve (modelos, texturas, íconos, interfaz): `estetica`, con `cad` (text-to-CAD), `modelos` y
+  `animaciones`.
+- Equipo de agentes: `/gamedev <tarea>` (agentes `gamedev-*`; solo en Claude Code).

@@ -1,20 +1,25 @@
 {
   "name": "SCAVENGERS THRIVE (C11 + raylib)",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+  },
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
-        "saoudrizwan.claude-dev"
+        "saoudrizwan.claude-dev",
+        "GitHub.copilot-chat"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
         "cmake.generator": "Ninja",
         "cmake.buildDirectory": "${workspaceFolder}/build",
         "cmake.configureOnOpen": false,
-        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+        "chat.useAgentSkills": true
       }
     }
   }

@@ -146,6 +146,7 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 - [x] Validador y documento generado (`tools/assets/inventario.py`), comprobados en CI.
 - [x] Galería en el juego (`--galeria`) para revisar los modelos a escala.
 - [x] Activar text-to-cad (skill CAD en `.claude/skills/cad`, `tools/assets/cad.py`).
+- [x] Las skills de diseño también para Copilot en el Codespace: la skill `estetica` y el entorno (text-to-CAD, ImageMagick y Node) en `.devcontainer/`.
 - [ ] Importar y refinar los modelos (text-to-cad + Kiln).
 - [ ] Usar los modelos del inventario en el mundo (NPCs, animales, armas equipadas, etc.).
 
@@ -159,4 +160,4 @@ Decisión: el port de Android replica la experiencia de PC y se juega con **tecl
 ## Herramientas
 - **Assets 3D:** inventario en `assets/inventario.tsv`; importación en [assets/models/README.md](../assets/models/README.md); Kiln (`tools/assets/*.kiln.js`) y text-to-cad para crear y refinar.
 - **Optimización:** Ghidra sobre nuestros propios builds. Ver [GHIDRA.md](GHIDRA.md).
-- **Skills y agentes de Claude Code:** `.claude/skills/` (programación de juegos, C/C++, pruebas, depuración, revisión, diseño de juego) y el equipo `gamedev-*` en `.claude/agents/` con `/gamedev <tarea>`. Origen y licencias en [.claude/skills/THIRD_PARTY.md](../.claude/skills/THIRD_PARTY.md); convenciones del proyecto en `.claude/skills/estepa/`.
+- **Skills y agentes:** `.claude/skills/` (programación de juegos, C/C++, pruebas, depuración, revisión, diseño de juego y `estetica` para pulir lo que se ve), que cargan Claude Code y Copilot en el Codespace, y el equipo `gamedev-*` en `.claude/agents/` con `/gamedev <tarea>` (solo Claude Code). Origen y licencias en [.claude/skills/THIRD_PARTY.md](../.claude/skills/THIRD_PARTY.md); convenciones del proyecto en `.claude/skills/estepa/`.
