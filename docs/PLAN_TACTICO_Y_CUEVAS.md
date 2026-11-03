@@ -29,7 +29,7 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 |---|---|---|
 | Cuatro botones | `H` golpe · `J` bloqueo · `K` parry · `L` carga o patada (v0.5.0) | Pasar a H I J K, según la espada y el escudo |
 | 1 enfunda, 2 escudo | Los números empuñan y enfundan, pero el arma y el escudo iban juntos («sable y escudo» en la casilla 1) | La espada y el escudo por separado |
-| Barra rápida | 9 casillas: beber, vendar, antorcha, armas y habilidades | La casilla 0; lazo, gancho, montura y comida desde la barra |
+| Barra rápida | 10 casillas: beber, vendar, antorcha, armas y habilidades | Comida desde la barra; lo demás ya está en A2 |
 | Inventario | `I` abre una cuadrícula (flechas o WASD) | `Tab` lo abre; un número asigna lo elegido a esa casilla |
 | Agarre (`G`) | Rehén o escudo humano por la espalda; `K` ejecuta, `L` empuja (v0.5.1) | `H` ejecuta, `I` empuja |
 | Selector | `Tab` en combate, clic sobre el enemigo, `Ctrl+Q`/`Ctrl+E` | Los clics con arma a distancia, mirar siempre al objetivo, los animales |
@@ -69,13 +69,13 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 - **Pruebas:** `test_keymap_four_buttons` (las teclas nuevas; ninguna tecla hace dos cosas) y `test_hands_each_hand` (cada mano, las partidas de antes, el arco, pasar de mano, el parry con el escudo). En el juego: `--manos escudo|espada|nada`.
 
 ### A2 — La barra rápida (v0.12.1)
-- 10 casillas: `1` a `9` y `0`.
-- `Tab` abre el inventario; con el cursor (flechas o WASD) y un número, lo elegido va a esa casilla.
-- El odre: bebe; junto al agua o a un pozo, lo llena.
-- El lazo: apuntar y lanzarlo al animal elegido (el objetivo de A3, o el de delante).
-- El gancho de asedio: apuntar a lo alto de un muro o una torre; la cuerda te sube, como en una tirolesa.
-- La montura: ensilla al animal domado que tengas cerca.
-- Las vendas y la comida, desde la barra.
+- **Hecho:** 10 casillas: `1` a `9` y `0`.
+- **Hecho:** `Tab` abre el inventario; con el cursor (flechas o WASD) y un número, lo elegido va a esa casilla.
+- **Hecho:** el odre bebe; junto al agua o a un pozo, lo llena.
+- **Hecho:** el lazo apunta y se lanza al animal elegido (el objetivo de A3, o el de delante).
+- **Hecho:** el gancho de asedio apunta a lo alto de un muro o una torre; la cuerda te sube, como en una tirolesa.
+- **Hecho:** la montura ensilla al animal domado que tengas cerca.
+- **Pendiente:** las vendas y la comida desde la barra requieren una acción de consumo del jugador; no existe todavía una mecánica de hambre del jugador.
 
 ### A3 — El objetivo (v0.12.2)
 - Con un arma a distancia en la mano: clic izquierdo o derecho elige al de delante; los clics siguientes pasan al de la izquierda o al de la derecha; mantener 1 s lo suelta. En la tableta, un toque elige y mantenerlo lo suelta.

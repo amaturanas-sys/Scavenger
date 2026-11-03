@@ -182,4 +182,4 @@ memoria: 4 paginas, 1 marcas
 muerte: descanso 1 Tienda de Borte (12.50, -3.25) muertes 3 restos 2 proximo 2
   restos (5.00, 40.25, 5.50)
   restos (-7.00, 41.00, -2.00)
-barra: [1 2 ] [1 3 ] [0 0 ] [2 0 utileria.objeto.antorcha] [2 0 utileria.consumible.carne_seca] [3 1 ] [0 0 ] [1 0 ] [0 0 ]
+barra: [1 2 ] [1 3 ] [0 0 ] [2 0 utileria.objeto.antorcha] [2 0 utileria.consumible.carne_seca] [3 1 ] [0 0 ] [1 0 ] [0 0 ] [0 0 ]
