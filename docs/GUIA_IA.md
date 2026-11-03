@@ -331,15 +331,30 @@ traba.
   - Lo que salió de ahí: el reparto de la sección 2 (el Codespace implementa y Claude verifica), las
     guardas de la sección 6, subir la rama al terminar cada sesión, las pruebas que solo crecen y las
     herramientas compartidas que no se cambian para que algo pase.
+- **v0.13.0: seis PR apilados (#139 a #144) que decían «Hecho» de lo que eran números.**
+  - Qué pasó:
+    - las cuevas (B1 a B3) declaraban restos, prisioneros, cofres y riesgo de traición que el jugador nunca
+      veía ni usaba; el interior se dibujaba afuera, sobre el terreno, y no se recorría; el anillo de
+      recámaras se armaba alrededor de la boca y no había salida (la única unión era la bajada sin vuelta);
+    - la cobertura (A4) volvía a cubrir en el sitio viejo después de disparar lejos de él, y solo contaba
+      objetos puestos, no los árboles y las rocas del mundo;
+    - el objetivo (A3) elegía también a los animales de la tribu y se perdía al instante sin línea de
+      visión; los 5 / 7 / 3 s eran iguales a 1 m que a 20 m;
+    - la barra (A2) llenaba el odre al instante, saltándose la acción, y la columna «Beber» llenaba en vez
+      de beber;
+    - el plan los daba por hechos («el gancho sube como una tirolesa»: no existía).
+  - Se revisaron y corrigieron en la rama del #138, con pruebas y capturas, y salieron juntos.
+  - Lo que salió de ahí: «Hecho» quiere decir que se ve o se usa en el juego, con su captura y su prueba;
+    un dato que nadie lee no se declara.
 
 ## 9. Estado actual y qué sigue
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.12.0. La primera fase del sistema táctico de las hojas del usuario: las manos. Las teclas
-  `H I J K` (ataque, parry, bloqueo, carga o patada), `Tab` inventario, `L` menú y `O` objetivo; la espada y
-  el escudo se guardan por separado (de serie, `1` y `2`), y los cuatro botones cambian con lo que está fuera
-  ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)).
+- **Versión:** 0.13.0. El sistema táctico y las cuevas de las hojas del usuario, entero
+  ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)): las manos (A1, la v0.12.0, que no se publicó sola),
+  la barra rápida de 10 casillas, el objetivo, la cobertura y las cuevas que se recorren por dentro, con sus
+  prisioneros y sus guardias.
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
@@ -348,17 +363,16 @@ traba.
   - las casas y los campos por persona (v0.10.4 y v0.10.7: 110 y 45 almas por casa, 180 y 40 por campo);
   - la verificación de la v0.10.9: el reparto Codespace → Claude, las reglas comunes y las guardas;
   - el agua, las cinco fases (v0.11.0 a v0.11.4);
-  - el sistema táctico: A1, las manos (v0.12.0).
+  - el sistema táctico y las cuevas: de A1 a B3 (v0.13.0).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
   - el campamento nodal: descartado por el usuario (duplicaba el campamento);
   - los cauces por estación: los rehizo la fase 2 del agua (v0.11.1).
 - **Lo que sigue:**
-  - **El sistema táctico y las cuevas** ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)): A2 la barra
-    rápida (10 casillas, `Tab` y un número, el odre, el lazo, el gancho y la montura desde la barra), A3 el
-    objetivo (los clics con arma a distancia, mirar al objetivo, la línea de visión y los 5 / 7 / 3 s), A4 a
-    cubierto (`C`), y las cuevas B1 a B3.
+  - **Lo que queda de las hojas** ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)): las bestias
+    terribles (el tipo B de cueva), la comida desde la barra (cuando el jugador tenga hambre) y el gancho en
+    las torres con la cuerda como tirolesa.
   - **Lo que espera material del usuario** (PLAN_HERRAMIENTAS_IA.md): las imágenes de la D.2 y los
     cuerpos riggeados y los videos de la C.1.
 
