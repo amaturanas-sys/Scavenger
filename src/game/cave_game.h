@@ -53,7 +53,7 @@ void cv_draw_hud(const GameActions *ga, int w, int h);
 // Pruebas (--cueva tipo[:lugar]): entra en la cueva de ese tipo mas cercana al campamento (animal, abandonada, forajidos,
 // tribu o imperio) y se para en el lugar: una sala (su numero), un pasillo (pasilloN: a su mitad, mirando a lo largo) o
 // ante un objeto (celda, dialogo: y le habla, nido, huevos, presa, botin, arma, cofre, anfora, deposito, pintura, fogata,
-// antorcha, veta, columna, estalactita, estalagmita). false si no hay de ese tipo.
+// antorcha, veta, columna, estalactita, estalagmita, huesos) o del decorado (roca). false si no hay de ese tipo.
 bool cv_test_enter(GameActions *ga, Player *p, const Terrain *t, const char *spec, float *cam_yaw);
 // Pruebas (--explorar): se para en la boca de la cueva mas cercana (a menos de 30 m) y pulsa F; false si no hay.
 bool cv_test_explore(Player *p, const Terrain *t);

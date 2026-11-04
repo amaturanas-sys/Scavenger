@@ -11,8 +11,11 @@
 #include "raylib.h"
 #include "sim/caves.h"
 
-// Los modelos de voxeles de los objetos de esta cueva (al cargarla, despues de cs_load).
+// Los modelos de voxeles de los objetos de esta cueva (al cargarla, despues de cs_load), y lo que se arme aparte de ellos
+// (las texturas de las pinturas, por ejemplo): se libera en cp_unload, al salir. cp_forget_gpu: ver terrain_forget_gpu.
 void cp_preload(const Cave *c);
+void cp_unload(void);
+void cp_forget_gpu(void);
 // Todos los objetos a menos de CS_VIEW del ojo (done: lo hecho en la cueva, GameActions.cave_done: tomado, encendido o
 // liberado). Entre BeginMode3D y EndMode3D, despues de cs_gather_lights.
 void cp_draw(const Cave *c, uint64_t done, Vector3 eye, float time);

@@ -31,6 +31,11 @@ void cp_preload(const Cave *c) {
     }
 }
 
+// Lo que cave_props arma por su cuenta (ademas de los modelos de voxeles, que libera cs_unload con vc_unload). Por ahora
+// nada: aqui se liberan las texturas de las pinturas (docs/PLAN_CUEVAS_GRANDES.md, C9).
+void cp_unload(void) {}
+void cp_forget_gpu(void) {}
+
 static void quad(Vector3 a, Color ca, Vector3 b, Color cb, Vector3 c, Color cc, Vector3 d, Color cd) {
     rlColor4ub(ca.r, ca.g, ca.b, 255), rlVertex3f(a.x, a.y, a.z);
     rlColor4ub(cb.r, cb.g, cb.b, 255), rlVertex3f(b.x, b.y, b.z);

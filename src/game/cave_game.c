@@ -388,7 +388,7 @@ static void leave(GameActions *ga, Player *p, const Terrain *t, float *cam_yaw, 
     if (ga->dlg.open && ga->talk_mode == TALK_PRISONER) dlg_close(&ga->dlg);
     g_cave = -1, g_talk = -1, g_obj = -1, g_hint[0] = '\0';
     ga_set_in_cave(false);
-    cs_unload(); // afuera, la cueva no ocupa nada
+    cp_unload(), cs_unload(); // afuera, la cueva no ocupa nada
     snprintf(log, len, "%s", T("Sales de la cueva."));
 }
 
@@ -446,7 +446,7 @@ void cv_reset(void) {
     g_block_told = -100.0f;
     ga_set_in_cave(false);
     props_set_tint(WHITE);
-    cs_unload();
+    cp_unload(), cs_unload();
 }
 
 void cv_update(GameActions *ga, Combat *cb, Troop *troop, const Props *props, Player *p, const Terrain *t, PlayerInput in, float *cam_yaw,
@@ -626,8 +626,10 @@ bool cv_test_enter(GameActions *ga, Player *p, const Terrain *t, const char *spe
         { "celda", COBJ_CELL },   { "dialogo", COBJ_CELL },  { "nido", COBJ_NEST },     { "huevos", COBJ_EGGS },  { "presa", COBJ_PREY },
         { "botin", COBJ_LOOT },   { "arma", COBJ_WEAPON },   { "cofre", COBJ_CHEST },   { "anfora", COBJ_AMPHORA }, { "deposito", COBJ_ARMS },
         { "pintura", COBJ_PAINTING }, { "fogata", COBJ_FIRE }, { "antorcha", COBJ_TORCH }, { "veta", COBJ_VEIN }, { "columna", COBJ_COLUMN },
-        { "estalactita", COBJ_STALACTITE }, { "estalagmita", COBJ_STALAGMITE },
+        { "estalactita", COBJ_STALACTITE }, { "estalagmita", COBJ_STALAGMITE }, { "huesos", COBJ_BONES },
     };
+    // Ante algo del decorado (src/sim/caves.h, cave_decor): las tareas de docs/PLAN_CUEVAS_GRANDES.md agregan aqui el suyo.
+    static const struct { const char *name; CaveDecorKind kind; } DECOR_SPOTS[] = { { "roca", CDEC_ROCK } };
     char kind[24];
     snprintf(kind, sizeof(kind), "%s", spec);
     char *colon = strchr(kind, ':');
@@ -676,6 +678,22 @@ bool cv_test_enter(GameActions *ga, Player *p, const Terrain *t, const char *spe
         g_in.yaw = a + PI;
         *cam_yaw = g_in.yaw;
         g_seen |= 1u << room;
+        return true;
+    }
+    for (size_t k = 0; k < sizeof(DECOR_SPOTS) / sizeof(DECOR_SPOTS[0]); k++) { // ante lo primero de ese decorado, mirandolo
+        if (strcmp(where, DECOR_SPOTS[k].name) != 0) continue;
+        int nd = 0;
+        const CaveDecor *d = cs_decor(&nd);
+        for (int i = 0; i < nd; i++) {
+            if (d[i].kind != DECOR_SPOTS[k].kind) continue;
+            const CaveRoom *rm = &c->rooms[d[i].room];
+            float a = atan2f(rm->x - d[i].x, rm->z - d[i].z), dd = d[i].radius + 1.6f; // del lado del centro de la sala
+            g_in.pos = (Vector3){ d[i].x + sinf(a) * dd, rm->floor_y, d[i].z + cosf(a) * dd };
+            g_in.yaw = a + PI;
+            *cam_yaw = g_in.yaw + 0.6f;
+            g_seen |= 1u << d[i].room;
+            return true;
+        }
         return true;
     }
     for (size_t k = 0; k < sizeof(SPOTS) / sizeof(SPOTS[0]); k++) { // ante el primer objeto de esa clase, mirandolo de costado

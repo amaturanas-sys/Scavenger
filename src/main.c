@@ -32,6 +32,7 @@
 #include "game/actions_game.h"
 #include "game/combat_game.h"
 #include "game/cave_game.h"
+#include "game/cave_props.h"
 #include "game/cave_scene.h"
 #include "game/disasters_game.h"
 #include "game/fauna_game.h"
@@ -889,6 +890,7 @@ int main(int argc, char **argv) {
     clouds_forget_gpu();
     voxs_forget_gpu();
     cs_forget_gpu(); // la escena de una cueva (y sus modelos de voxeles)
+    cp_forget_gpu();
     hearth_forget_gpu();
     RenderTexture2D lowres = LoadRenderTexture(VIRTUAL_W, VIRTUAL_H);
     SetTextureFilter(lowres.texture, TEXTURE_FILTER_POINT); // pixeles nitidos al escalar
@@ -1749,7 +1751,7 @@ int main(int argc, char **argv) {
     clouds_unload();
     hearth_unload();
     terrain_unload_gpu();
-    cs_unload();
+    cp_unload(), cs_unload();
     voxs_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();

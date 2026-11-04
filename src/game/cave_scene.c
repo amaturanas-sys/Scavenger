@@ -178,11 +178,32 @@ static bool build_room(const Cave *c, int room, Color rock, Color ground) {
             bv((Vector3){ cx + s * wr * f, fy + h, cz + co * wr * f }, grain(rock, seed * 1000 + j, k % segs));
         }
     }
-    int floor0 = b_nv;
-    for (int k = 0; k <= segs; k++) { // el suelo: del centro a la pared
-        float a = (float)(k % segs) * step, wr = cave_wall_radius(c, room, a), s = sinf(a), co = cosf(a);
-        for (int j = 0; j < FLOOR_RINGS; j++)
-            bv((Vector3){ cx + s * wr * FLOOR_F[j], fy, cz + co * wr * FLOOR_F[j] }, grain(ground, seed * 1000 + 500 + j, k % segs));
+    // El suelo: anillos del centro a la pared, cada uno con los tramos que le tocan por su largo (cerca del centro, pocos),
+    // cosidos entre si: triangulos parejos, sin astillas que rayen la luz (va por vertice).
+    int ring0[FLOOR_RINGS], ringn[FLOOR_RINGS];
+    for (int j = 0; j < FLOOR_RINGS; j++) {
+        int n = j == 0 ? 1 : j == FLOOR_RINGS - 1 ? segs : (int)((float)segs * FLOOR_F[j] + 0.5f);
+        if (j > 0 && n < 8) n = 8;
+        ring0[j] = b_nv, ringn[j] = n;
+        for (int k = 0; k <= (j == 0 ? 0 : n); k++) { // el ultimo repite el primero (la costura)
+            float a = (float)(k % (n > 0 ? n : 1)) * 2.0f * PI / (float)n, wr = cave_wall_radius(c, room, a);
+            bv((Vector3){ cx + sinf(a) * wr * FLOOR_F[j], fy, cz + cosf(a) * wr * FLOOR_F[j] }, grain(ground, seed * 1000 + 500 + j, k % (n > 0 ? n : 1)));
+        }
+    }
+    for (int j = 1; j < FLOOR_RINGS; j++) {
+        int i = 0, k = 0, na = j == 1 ? 1 : ringn[j - 1], nb = ringn[j];
+        while (i < na || k < nb) { // se avanza por el anillo que llega antes a su proximo angulo
+            int a0 = ring0[j - 1] + (j == 1 ? 0 : i), b0 = ring0[j] + k;
+            bool step_a = k >= nb || (j > 1 && i < na && (float)(i + 1) / (float)na < (float)(k + 1) / (float)nb);
+            if (step_a) {
+                if (b_ni + 3 <= BUILD_INDS) b_ind[b_ni++] = (unsigned short)a0, b_ind[b_ni++] = (unsigned short)(a0 + 1), b_ind[b_ni++] = (unsigned short)b0;
+                i++;
+            } else {
+                if (b_ni + 3 <= BUILD_INDS) b_ind[b_ni++] = (unsigned short)a0, b_ind[b_ni++] = (unsigned short)(b0 + 1), b_ind[b_ni++] = (unsigned short)b0;
+                k++;
+                if (j == 1 && k >= nb) i = na;
+            }
+        }
     }
     for (int k = 0; k < segs; k++) {
         float am = ((float)k + 0.5f) * step;
@@ -191,10 +212,6 @@ static bool build_room(const Cave *c, int room, Color rock, Color ground) {
             if (door && j == 0) continue;
             int a0 = wall0 + k * CAVE_PROFILE_PTS + j, a1 = wall0 + (k + 1) * CAVE_PROFILE_PTS + j;
             bquad(a0, a1, a1 + 1, a0 + 1);
-        }
-        for (int j = 0; j < FLOOR_RINGS - 1; j++) {
-            int f0 = floor0 + k * FLOOR_RINGS + j, f1 = floor0 + (k + 1) * FLOOR_RINGS + j;
-            bquad(f0, f1, f1 + 1, f0 + 1);
         }
     }
     return b_finish();
