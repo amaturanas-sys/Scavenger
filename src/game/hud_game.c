@@ -455,7 +455,7 @@ typedef struct {
 } ColumnEntry;
 
 static const ColumnEntry COLUMN[] = {
-    { ICON_ACCIONES, COL_MENU, 0, "L" },
+    { ICON_ACCIONES, COL_MENU, 0, "Tab" },
     { ICON_BEBER, COL_DRINK, 0, "N" },
     { ICON_UNGUENTO, COL_BANDAGE, 0, "B" },
     { ICON_FOGATA, COL_ACTION, ACTION_PLACE_FIRE, "" },
@@ -464,7 +464,7 @@ static const ColumnEntry COLUMN[] = {
     { ICON_TREPA, COL_ACTION, ACTION_THROW_GRAPPLE, "" },
     { ICON_HERVIR, COL_ACTION, ACTION_BOIL, "" },
     { ICON_MOCHILA, COL_PACK, 0, "" },           // Mayus+G (no cabe en la casilla: va en la leyenda)
-    { ICON_FLECHA_ENCENDIDA, COL_ARROW, 0, "" }, // Mayus+L; solo con arco o ballesta en la mano
+    { ICON_FLECHA_ENCENDIDA, COL_ARROW, 0, "" }, // Mayus+V; solo con arco o ballesta en la mano
 };
 #define COLUMN_COUNT ((int)(sizeof(COLUMN) / sizeof(COLUMN[0])))
 
@@ -516,11 +516,11 @@ void hud_action_column(const GameActions *ga, int x, int y) {
                                 : e->kind == COL_PACK    ? T("Mochila")
                                 : e->kind == COL_ARROW   ? T("Encender la flecha")
                                                          : T(action_def(e->action)->name);
-            const char *detail = e->kind == COL_MENU      ? T("L: el menú de acciones, obras, fabricar y reparar.")
+            const char *detail = e->kind == COL_MENU      ? T("Tab: el menú de acciones, obras, fabricar y reparar.")
                                  : e->kind == COL_DRINK   ? T("N: bebe lo más seguro que tengas, o del río en la orilla.")
                                  : e->kind == COL_BANDAGE ? T("B: venda tus heridas (o levanta a un compañero abatido).")
                                  : e->kind == COL_PACK    ? T("Mayús+G: deja la mochila en el suelo para moverte ligero, o recógela.")
-                                 : e->kind == COL_ARROW   ? T("Mayús+L: enciende la flecha en un fuego cercano (no con lluvia).")
+                                 : e->kind == COL_ARROW   ? T("Mayús+V: enciende la flecha en un fuego cercano (no con lluvia).")
                                                           : T(action_def(e->action)->desc);
             ui_legend(title, detail);
         }

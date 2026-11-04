@@ -5,11 +5,11 @@
 #include "sim/lang.h"
 
 static const KeyBind BINDS[KA_COUNT] = {
-    // Los cuatro botones de combate, como en las hojas (docs/PLAN_TACTICO_Y_CUEVAS.md): H I J K.
+    // Los cuatro botones de combate: H J K L.
     [KA_ATTACK] = { 'H', 0, KM_CTRL }, // Ctrl+H: los controles
-    [KA_BLOCK] = { 'J', 0, KM_CTRL },
-    [KA_PARRY] = { 'I', 0, KM_CTRL },
-    [KA_CHARGE] = { 'K', 0, KM_CTRL }, // con Mayus (corriendo) tambien: carga o patada a la carrera
+    [KA_BLOCK] = { 'K', 0, KM_CTRL },
+    [KA_PARRY] = { 'J', 0, KM_CTRL },
+    [KA_CHARGE] = { 'L', 0, KM_CTRL }, // con Mayus (corriendo) tambien: carga o patada a la carrera
     [KA_TARGET] = { 'O', 0, KM_CTRL }, // O de objetivo (Mayus+O: el anterior)
     [KA_SNEAK] = { 'C', 0, KM_CTRL },
     [KA_CROUCH] = { 'X', 0, KM_CTRL },
@@ -17,7 +17,7 @@ static const KeyBind BINDS[KA_COUNT] = {
     [KA_INTERACT] = { 'F', 0, KM_CTRL },
     [KA_GRAB] = { 'G', 0, KM_SHIFT | KM_CTRL },
     [KA_BACKPACK] = { 'G', KM_SHIFT, KM_CTRL },
-    [KA_LIGHT_ARROW] = { 'L', KM_SHIFT, KM_CTRL },
+    [KA_LIGHT_ARROW] = { 'V', KM_SHIFT, KM_CTRL },
     [KA_THROW] = { 'T', 0, KM_CTRL },
     [KA_MOUNT] = { 'R', 0, KM_CTRL },
     [KA_BANDAGE] = { 'B', 0, KM_CTRL },
@@ -27,8 +27,8 @@ static const KeyBind BINDS[KA_COUNT] = {
     [KA_TARGET_LEFT] = { 'Q', KM_CTRL, 0 }, // Ctrl+Q / Ctrl+E: Q y E solas giran la camara
     [KA_TARGET_RIGHT] = { 'E', KM_CTRL, 0 },
     [KA_MARK] = { 'M', 0, KM_CTRL }, // Ctrl+M: la vista orbital
-    [KA_MENU] = { 'L', 0, KM_SHIFT | KM_CTRL }, // Mayus+L: encender la flecha
-    [KA_INVENTORY] = { KM_KEY_TAB, 0, KM_CTRL },
+    [KA_MENU] = { KM_KEY_TAB, 0, KM_CTRL },
+    [KA_INVENTORY] = { 'I', 0, KM_CTRL },
     [KA_EQUIPMENT] = { 'P', 0, KM_CTRL }, // Ctrl+P: la pausa
     [KA_CARD] = { 'U', 0, KM_CTRL },
 };

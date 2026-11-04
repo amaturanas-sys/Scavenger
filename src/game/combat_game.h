@@ -3,19 +3,19 @@
 //  - salud del jugador: vida, sangre y heridas; abatido, lo levanta la escolta
 //    o despierta en el campamento;
 //  - cuerpo a cuerpo (src/sim/melee.h) con cuatro botones, como en las hojas
-//    (docs/PLAN_TACTICO_Y_CUEVAS.md): H ataque (combo; mantener: pesado), I parry en
+//    (docs/PLAN_TACTICO_Y_CUEVAS.md): H ataque (combo; mantener: pesado), J parry en
 //    la ventana justa del golpe que anuncia el rival (engancha, hace la llave o
-//    desvia, segun el arma; solo con el escudo, lo desvia y lo aturde), J bloqueo
-//    (escudo, o el arma, que cansa), K carga con escudo o patada; J + H golpe de
+//    desvia, segun el arma; solo con el escudo, lo desvia y lo aturde), K bloqueo
+//    (escudo, o el arma, que cansa), L carga con escudo o patada; K + H golpe de
 //    escudo; lo que hacen depende de lo que esta fuera (la espada, el escudo o los
 //    dos); los enemigos y la escolta usan las mismas reglas;
-//  - objetivo: O pasa al siguiente (Mayus+O, al anterior), un toque o un clic lo
-//    elige entre enemigos y animales; anillo bajo los pies y su barra de vida resaltada;
+//  - objetivo: O pasa al siguiente (Mayus+O, al anterior); clic izquierdo/derecho recorren
+//    como Ctrl+Q/Ctrl+E y Ctrl inicia o suelta la seleccion; anillo bajo los pies y su barra resaltada;
 //    se pierde a 25 m;
 //  - armas a distancia: mantener H (o clic) para tensar y soltar para disparar;
 //    con objetivo, la mira calcula la caida sola; sin el, la camara alza o baja
-//    la mira y se ve la curva que hara el proyectil; J baja el arma;
-//    Mayus+L junto a un fuego enciende la flecha: quema al que alcanza y prende el
+//    la mira y se ve la curva que hara el proyectil; K baja el arma;
+//    Mayus+V junto a un fuego enciende la flecha: quema al que alcanza y prende el
 //    pasto, los arboles y las estructuras donde cae (la lluvia la apaga);
 //  - armadura por piezas en todos los humanos (src/sim/armor.h);
 //  - cuerpo humano articulado por zonas (src/sim/body.h): los proyectiles
