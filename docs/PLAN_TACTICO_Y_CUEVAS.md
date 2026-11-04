@@ -165,7 +165,7 @@ En las coordenadas de la cueva, la boca está en (0, 0) y +z va hacia adentro.
   poco alrededor de él). El plano de la cueva reemplaza al minimapa y muestra las salas que ya viste. Afuera el mundo
   espera: el combate, la fauna, los peligros, los desastres y las ciudades; el reloj, la sed, la salud (sangra y sana),
   el inventario, la barra rápida y la antorcha siguen. Para el mundo, el jugador queda en la boca: **allí se guarda la
-  partida y allí aparece al cargarla.** Se sale caminando por la boca, sin girar de golpe.
+  partida y allí aparece al cargarla.** Se sale caminando por la boca, sin girar de golpe, y la cueva se libera.
 - **El material interior** conserva la geometría low-poly, pero rompe las superficies uniformes: la roca tiene estratos
   con variación determinista por anillo y faceta, y la base de las paredes queda más húmeda y oscura. El suelo usa una
   variación propia de grava por sector y se oscurece hacia el borde. Es solo renderizado: no cambia la planta, el paso,

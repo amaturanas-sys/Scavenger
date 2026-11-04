@@ -157,6 +157,25 @@ static Color grain(Color base, int a, int b) {
                     (unsigned char)fminf(255.0f, (float)base.b * k), 255 };
 }
 
+static Color material_tone(Color base, float factor, float blue) {
+    return (Color){ (unsigned char)fminf(255.0f, (float)base.r * factor),
+                    (unsigned char)fminf(255.0f, (float)base.g * factor),
+                    (unsigned char)fminf(255.0f, (float)base.b * factor + blue), 255 };
+}
+
+static Color rock_surface(Color base, int room, int ring, int segment) {
+    float band = 0.94f + 0.07f * sinf((float)ring * 2.4f + (float)room * 0.8f);
+    float facets = 0.94f + 0.12f * hash01(room * 31 + ring, segment);
+    float damp = ring < 2 ? 0.9f : 1.0f;
+    return material_tone(base, band * facets * damp, ring < 2 ? 3.0f : 0.0f);
+}
+
+static Color floor_surface(Color base, int room, int ring, int segment) {
+    float edge = 1.0f - 0.08f * (float)ring;
+    float gravel = 0.9f + 0.16f * hash01(room * 47 + ring, segment + 19);
+    return material_tone(base, edge * gravel, ring == 0 ? 2.0f : 0.0f);
+}
+
 // Una sala (o el vestibulo: CAVE_VESTIBULE, con la boca abierta hacia -z): la pared y la boveda del perfil de la sala
 // (cave_room_profile) y el suelo. Donde del otro lado de la pared hay un pasillo, la pared se abre hasta su techo.
 static bool build_room(const Cave *c, int room, Color rock, Color ground) {
@@ -175,7 +194,8 @@ static bool build_room(const Cave *c, int room, Color rock, Color ground) {
         for (int j = 0; j < CAVE_PROFILE_PTS; j++) {
             float f, h;
             cave_room_profile(c, room, j, &f, &h);
-            bv((Vector3){ cx + s * wr * f, fy + h, cz + co * wr * f }, grain(rock, seed * 1000 + j, k % segs));
+            bv((Vector3){ cx + s * wr * f, fy + h, cz + co * wr * f },
+               rock_surface(grain(rock, seed * 1000 + j, k % segs), room, j, k % segs));
         }
     }
     // El suelo: anillos del centro a la pared, cada uno con los tramos que le tocan por su largo (cerca del centro, pocos),
@@ -187,7 +207,8 @@ static bool build_room(const Cave *c, int room, Color rock, Color ground) {
         ring0[j] = b_nv, ringn[j] = n;
         for (int k = 0; k <= (j == 0 ? 0 : n); k++) { // el ultimo repite el primero (la costura)
             float a = (float)(k % (n > 0 ? n : 1)) * 2.0f * PI / (float)n, wr = cave_wall_radius(c, room, a);
-            bv((Vector3){ cx + sinf(a) * wr * FLOOR_F[j], fy, cz + cosf(a) * wr * FLOOR_F[j] }, grain(ground, seed * 1000 + 500 + j, k % (n > 0 ? n : 1)));
+            bv((Vector3){ cx + sinf(a) * wr * FLOOR_F[j], fy, cz + cosf(a) * wr * FLOOR_F[j] },
+               floor_surface(grain(ground, seed * 1000 + 500 + j, k % (n > 0 ? n : 1)), room, j, k % (n > 0 ? n : 1)));
         }
     }
     for (int j = 1; j < FLOOR_RINGS; j++) {
@@ -245,9 +266,11 @@ static bool build_corridor(const Cave *c, int k, Color rock, Color ground) {
                 float sg = side ? -1.0f : 1.0f, jit = 0.14f * sinf((float)i * 2.3f + (float)k * 1.1f + (float)side * 0.7f), w = WALL_HALF + jit;
                 for (int h = 0; h < 3; h++) {
                     float lift = (float)h * CAVE_CORRIDOR_HEIGHT * 0.5f, in = h == 2 ? 0.25f : 0.0f; // arriba, la boveda se cierra un poco
-                    bv((Vector3){ x + nx * sg * (w - in), y + lift - (h == 0 ? 0.2f : 0.0f), z + nz * sg * (w - in) }, grain(rock, k * 7000 + i, side * 3 + h));
+                    bv((Vector3){ x + nx * sg * (w - in), y + lift - (h == 0 ? 0.2f : 0.0f), z + nz * sg * (w - in) },
+                       rock_surface(grain(rock, k * 7000 + i, side * 3 + h), k, h, i));
                 }
-                bv((Vector3){ x + nx * sg * w, y + 0.015f, z + nz * sg * w }, grain(ground, k * 7000 + 900 + i, side));
+                bv((Vector3){ x + nx * sg * w, y + 0.015f, z + nz * sg * w },
+                   floor_surface(grain(ground, k * 7000 + 900 + i, side), k, side, i));
             }
         }
         for (int i = i0; i < i1; i++) {
