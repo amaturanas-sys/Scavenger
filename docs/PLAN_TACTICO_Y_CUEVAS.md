@@ -135,8 +135,9 @@ En las coordenadas de la cueva, la boca está en (0, 0) y +z va hacia adentro.
   - un cimiento de 2,8 m, para que en una ladera nada quede en el aire;
   - cuatro variantes por región, refinadas de cerca.
 
-  Cerca de la boca no crecen árboles (12 m) y la cámara no se mete en la roca. **Al caminar hacia adentro por la boca,
-  se entra.**
+  Cerca de la boca no crecen árboles (12 m) y la cámara no se mete en la roca ni la tiene entre ella y el jugador.
+  **Junto a la boca, F explora** (v0.14.0, [PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md)): la cueva se carga aparte y
+  se entra.
 - **Lo de cada tipo** va delante de la roca, sobre el suelo de la boca y fuera del paso (`src/game/world_game.c`). Se ve
   pero no tiene colisión, y no cambia las reglas de entrada:
   - **las habitadas:** antorchas a los lados, y una escalera de madera que sube a un saliente a 2 m (el del imperio, de
@@ -150,22 +151,29 @@ En las coordenadas de la cueva, la boca está en (0, 0) y +z va hacia adentro.
     reja oxidada, caída en el suelo a un costado.
 - **El vestíbulo:** tras la boca, una cámara chica y llana (3 m de radio). De su borde salen, cada uno por su lado, los
   tres pasillos de la boca: las dos salidas (a las recámaras `a` e `i`, los extremos del anillo) y la bajada.
-- **La Cisterna Magna:** la sala más honda (7 a 9 m de radio, el doble de alto). **La bajada** llega a ella desde el
-  vestíbulo: es la más empinada (1,1 a 1,3 de pendiente; todos los demás pasillos, 0,8 o menos) y **no se sube**
-  (`cave_step_ok`).
+- **La Cisterna Magna:** la sala más honda (desde la v0.14.0, de 13 a 17 m de radio, con la pared recta hasta 12 m y la
+  bóveda hasta 18). **La bajada** llega a ella desde el vestíbulo: es recta, la más empinada (1,1 a 1,3 de pendiente;
+  todos los demás pasillos, 0,8 o menos) y **no se sube** (`cave_step_ok`).
 - **El anillo:** de 3 a 9 recámaras alrededor de la Cisterna y más altas (las de los extremos, a 4 m bajo la boca; las del
-  fondo, 1,5 m sobre la Cisterna), unidas una tras otra. La Cisterna sube al anillo por el fondo (con un anillo par, a sus
-  dos recámaras más hondas; con uno impar, a la del medio), así que de ella se sale recorriendo el anillo hasta `a` o `i`.
+  fondo, 1,5 m sobre la Cisterna), unidas una tras otra. Cada una mide de 6,5 a 9,5 m de radio, con la pared recta hasta
+  6 m y la bóveda hasta 9: sobre todo su suelo, el techo está a más de tres personas. La Cisterna sube al anillo por el
+  fondo (con un anillo par, a sus dos recámaras más hondas; con uno impar, a la del medio), así que de ella se sale
+  recorriendo el anillo hasta `a` o `i`.
+- **Los pasillos** (v0.14.0): de 10 m o más (los de la boca, hasta unos 70) y con hasta tres vueltas, sin pisar salas
+  ajenas ni otros pasillos; todos menos la bajada.
 - **Las reglas** (`cave_layout_valid`, probadas en `test_caves` con tres semillas): las salas no se pisan ni pisan el
   vestíbulo; todo se alcanza desde la boca y de todo se vuelve a ella; la bajada es la única sin vuelta y la más
   empinada (las demás, 0,8 o menos); los tres pasillos de la boca no se pisan a 2 m del vestíbulo; lo de la pared no
-  tapa pasillos; la boca, en seco; determinista.
-- **Adentro** (`src/game/cave_game.c`) es un espacio aparte: su cámara (que no sale de la roca ni sube sobre la bóveda),
+  tapa pasillos; la boca, en seco; determinista. Desde la v0.14.0, también: el techo a más de tres personas, los
+  pasillos largos, con vueltas y sin cruzarse, el decorado lejos de las puertas, y los objetos iguales que en la v0.13
+  (las partidas viejas siguen valiendo).
+- **Adentro** (`src/game/cave_game.c`; lo que se carga al explorar, `src/game/cave_scene.c`) es un espacio aparte, que no
+  se cruza con el mundo de afuera ni lo dibuja: su cámara (que no sale de la roca ni sube sobre la bóveda),
   su oscuridad y su luz (por vértice: las antorchas y la fogata encendidas, la boca de día, la antorcha del jugador y un
   poco alrededor de él). El plano de la cueva reemplaza al minimapa y muestra las salas que ya viste. Afuera el mundo
   espera: el combate, la fauna, los peligros, los desastres y las ciudades; el reloj, la sed, la salud (sangra y sana),
   el inventario, la barra rápida y la antorcha siguen. Para el mundo, el jugador queda en la boca: **allí se guarda la
-  partida y allí aparece al cargarla.** Se sale caminando por la boca, sin girar de golpe.
+  partida y allí aparece al cargarla.** Se sale caminando por la boca, sin girar de golpe, y la cueva se libera.
 
 ### B2 — Lo que hay adentro
 
@@ -216,8 +224,10 @@ Lo tomado, encendido o rescatado queda en `GameActions.cave_done` (un bit por ob
 `--cueva tipo[:lugar]` (tipo: `animal`, `abandonada`, `forajidos`, `tribu`, `imperio`; lugar: una sala o `boca`, `celda`,
 `dialogo`, `nido`, `huevos`, `presa`, `botin`, `arma`, `cofre`, `anfora`, `deposito`, `pintura`, `fogata`, `antorcha`,
 `veta`, `columna`), `--cueva-f` (F en el cuadro 20; con el diálogo abierto, romper las cadenas), `--antorcha` (encendida
-en la mano), `--caminar adelante|atras` e `--ir boca-<tipo>` (la más cercana; `boca-<tipo>-ladera`, la de ese tipo con
-más desnivel en la boca; con `-lado` al final, desde un costado). Las capturas: [CAPTURAS.md](CAPTURAS.md#las-cuevas).
+en la mano), `--caminar adelante|atras`, `--ir boca-<tipo>` (la más cercana; `boca-<tipo>-ladera`, la de ese tipo con
+más desnivel en la boca; con `-lado` al final, desde un costado) y `--explorar` (F en la boca de la cueva más cercana).
+Desde la v0.14.0, `--cueva` también va a `pasilloN` (a la mitad de un pasillo), `estalactita`, `estalagmita`, `huesos` y
+`roca`. Las capturas: [CAPTURAS.md](CAPTURAS.md#las-cuevas).
 
 ---
 
