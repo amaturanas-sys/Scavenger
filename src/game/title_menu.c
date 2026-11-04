@@ -187,7 +187,7 @@ static const HelpPage PAGES[] = {
         N_("Golpea hacia el agua o tira una flecha para pescar."),
         N_("Abejas: con la antorcha encendida, el humo las calma y F toma la miel.") } },
     { N_("Las cuevas"), 4,
-      { N_("Cada guarida tiene su cueva: de fieras, abandonada, de forajidos, de una tribu o un almacén del imperio. Se entra caminando por la boca y se sale por ella."),
+      { N_("Cada guarida tiene su cueva: de fieras, abandonada, de forajidos, de una tribu o un almacén del imperio. Junto a la boca, F la explora (se carga aparte); se sale caminando por la boca."),
         N_("Las habitadas tienen guardias: salen a la boca una vez por día y, mientras sigan en pie, no te dejan entrar."),
         N_("Adentro está oscuro: enciende la antorcha (la barra rápida). Afuera el mundo espera; el reloj y la sed siguen."),
         N_("La bajada a la Cisterna Magna es empinada y no se sube: se sale por las recámaras del anillo."),

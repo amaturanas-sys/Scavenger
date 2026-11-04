@@ -1,13 +1,14 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: las bocas de las cuevas
+## Novedades: las cuevas grandes
 
-- **La roca, de voxeles:** cada boca es un risco de la piedra de su región, con su arco natural, el túnel detrás y dos rocas bajas en el umbral. En el desierto es arenisca en estratos; en el altiplano, granito; en el resto, piedra con liquen y pasto en lo alto. En una ladera no queda nada en el aire.
-- **De afuera se ve de quién es:** las habitadas tienen una escalera que sube a un saliente (el del imperio, de piedra y con baranda); la tribu, un bastidor con un cuero; los forajidos, su estacada. Las abandonadas tienen una escalera rota y la fachada de una civilización desaparecida, con su reja caída a un costado.
-- Todo está fuera del paso: se sigue entrando caminando por la boca.
-- Las partidas de antes cargan igual.
+- **Explorar:** junto a la boca de una cueva, `F` (o un toque en el aviso). La cueva se carga aparte y se entra; al salir caminando por la boca, se libera. Mientras tanto, el mundo de afuera espera.
+- **Más grandes y más altas:** las recámaras, de 6,5 a 9,5 m de radio, y la Cisterna Magna, de 13 a 17. El techo está a más de tres personas sobre todo el suelo.
+- **Pasillos largos y con vueltas:** de 10 m o más, con hasta tres vueltas. La bajada a la Cisterna sigue recta y no se sube.
+- **De voxeles:** las estalactitas, las estalagmitas y las rocas de cada sala.
+- Las partidas de antes cargan igual: lo que ya tomaste en una cueva sigue tomado.
 
-Lo de la versión 0.13.0 sigue igual: las manos (`H`, `I`, `J`, `K`), la barra rápida de 10 casillas, el objetivo (`O`), la cobertura (`C`) y el interior de las cuevas. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados «Las bocas de las cuevas» y «El sistema táctico y las cuevas») y en [docs/PLAN_TACTICO_Y_CUEVAS.md](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/docs/PLAN_TACTICO_Y_CUEVAS.md).
+Lo de antes sigue igual: las bocas de las cuevas de la 0.13.1, las manos (`H`, `I`, `J`, `K`), la barra rápida de 10 casillas, el objetivo (`O`) y la cobertura (`C`). El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», el apartado «Las cuevas grandes») y en [docs/PLAN_CUEVAS_GRANDES.md](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/docs/PLAN_CUEVAS_GRANDES.md).
 
 ## Android
 
@@ -38,7 +39,7 @@ Descomprime **`scavengers-thrive-@VERSION@-windows.zip`** y ejecuta `ScavengersT
 | Objetivo | O |
 | Acciones, obras, fabricar | L |
 | Inventario | Tab |
-| Tomar, hablar, recoger botín | F |
+| Tomar, hablar, recoger botín; explorar una cueva desde su boca | F |
 | Montar | R |
 | Beber | N |
 | Vista orbital del mundo | F5 |

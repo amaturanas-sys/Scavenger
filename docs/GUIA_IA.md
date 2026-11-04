@@ -285,7 +285,7 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | El asedio | `--asedio puerta`, `fuego`, `salida`, `quemada`, `tomada`… |
 | Combate | `--enemigos bandidos`, `culto`, `lobos`, `arqueros` |
 | El sistema táctico | `--manos escudo` (`espada`, `nada`), `--rehen`, `--objetivo`, `--cubierto`, `--inventario` (la fila de la barra) |
-| Las cuevas | `--ir boca-forajidos` (`animal`, `abandonada`, `tribu`, `imperio`): la boca, afuera (`boca-<tipo>-ladera`: la de ese tipo con más desnivel; con `-lado` al final, desde un costado); `--cueva forajidos:0 --antorcha`: adentro (lugar: una sala o `boca`, `celda`, `dialogo`, `nido`, `cofre`, `fogata`…); `--cueva-f` pulsa F; `--caminar adelante` (o `atras`) |
+| Las cuevas | `--ir boca-forajidos` (`animal`, `abandonada`, `tribu`, `imperio`): la boca, afuera (`boca-<tipo>-ladera`: la de ese tipo con más desnivel; con `-lado` al final, desde un costado); `--cueva forajidos:0 --antorcha`: adentro (lugar: una sala o `boca`, `pasilloN`, `celda`, `dialogo`, `nido`, `cofre`, `fogata`, `estalagmita`, `huesos`, `roca`…); `--cueva-f` pulsa F; `--explorar`: F en la boca más cercana (carga la cueva); `--caminar adelante` (o `atras`). La línea `CUEVA` de la consola dice lo que pesa cada cueva cargada |
 | La galería de assets | `--galeria` |
 | El mapa del mundo | `--semilla 42 --mapa-mundo mapa.png` |
 | Las partidas de referencia | `--probar-partidas ../tests/partidas` |
@@ -385,10 +385,10 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.13.1. Las bocas de las cuevas, del Codespace verificado (los PR #148 y #149 de Copilot): la
-  roca, de voxeles de la piedra de cada región, y lo de cada tipo delante, fuera del paso. Para Copilot, el
-  agente `pulir` y las instrucciones de lo que se ve, que llevan a las skills de `.claude/skills/` (lo útil de
-  #147, sin sus copias).
+- **Versión:** 0.14.0. Las cuevas grandes, la base ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md)): salas
+  y Cisterna más grandes y altas (el techo a más de tres personas), pasillos largos y con vueltas; junto a la boca,
+  F explora y la cueva se carga aparte; la roca, en mallas con la luz por vértice solo en lo cercano; las
+  estalactitas, las estalagmitas y las rocas, de voxeles. Las partidas viejas siguen valiendo.
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
@@ -398,13 +398,18 @@ traba.
   - la verificación de la v0.10.9: el reparto Codespace → Claude, las reglas comunes y las guardas;
   - el agua, las cinco fases (v0.11.0 a v0.11.4);
   - el sistema táctico y las cuevas: de A1 a B3 (v0.13.0).
-  - las bocas de las cuevas, de voxeles, con lo de cada tipo (v0.13.1).
+  - las bocas de las cuevas, de voxeles, con lo de cada tipo (v0.13.1);
+  - las cuevas grandes: la base (v0.14.0).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
   - el campamento nodal: descartado por el usuario (duplicaba el campamento);
   - los cauces por estación: los rehizo la fase 2 del agua (v0.11.1).
 - **Lo que sigue:**
+  - **Las tareas de las cuevas grandes para Copilot** ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md), de C1
+    a C16, en orden): los voxeles de lo de adentro (racimos, columnas, cofres, rocas, fuentes, el lago) y lo
+    demás según las referencias (huesos, antorchas, pinturas, celdas, túneles labrados, la boca vista desde
+    adentro), el rendimiento y las capturas. Hitos: v0.14.1 (C4), v0.14.2 (C10) y v0.14.3 (C16).
   - **Lo que queda de las hojas** ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)): las bestias
     terribles (el tipo B de cueva), la comida desde la barra (cuando el jugador tenga hambre) y el gancho en
     las torres con la cuerda como tirolesa.
