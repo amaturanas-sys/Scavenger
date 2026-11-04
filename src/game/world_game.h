@@ -28,7 +28,8 @@ int wd_cave_lights(const Terrain *t, const Player *p, Vector3 *pos, float *radiu
 void wd_keep_out_of_rock(const Terrain *t, Vector3 *pos);
 // Cuanto baja el terreno alrededor de la boca de una cueva (m; las pruebas buscan la mas empinada).
 float wd_cave_drop(const Terrain *t, const Cave *c);
-// La camara de afuera no se mete en el peñasco de una boca (por el tunel, si): la acerca a target.
+// La camara de afuera no se mete en la roca de una boca ni la deja entre ella y target (por el arco y el tunel, si): la
+// acerca a target.
 void wd_camera_clear(const Terrain *t, Vector3 target, Vector3 *cam);
 // La guarida cercana a (x, z) (a menos de radius), o -1: su especie aparece alli.
 int wd_den_near(const Terrain *t, float x, float z, float radius);

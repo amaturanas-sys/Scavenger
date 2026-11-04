@@ -404,15 +404,23 @@ static struct {
 static Vector3 g_lod_eye;
 static float g_lod_near = 1e9f; // sin voxs_set_lod, todo de cerca
 
+void voxs_palette(Region r, uint8_t out[M_COUNT][4]) { palette_for(r, out); }
+void voxs_erode_skin(VoxGrid *g, uint32_t seed, float freq, float cut) { erode_skin(g, seed, freq, cut); }
+float voxs_rand(uint32_t *s) { return hrand(s); }
+
 static bool to_model(VoxGrid *g, Region r, Model *out, bool refine) {
     // Estructuras y casas: el doble de resolucion (cada celda en 2x2x2, con las esquinas
     // redondeadas) y tono por celda. Las formaciones del paisaje (muchas a la vez) no se refinan.
-    g->jitter = 22;
-    if (refine) vox_refine(g);
     uint8_t pal[M_COUNT][4];
     palette_for(r, pal);
+    return voxs_grid_model(g, (const uint8_t(*)[4])pal, out, refine, 22);
+}
+
+bool voxs_grid_model(VoxGrid *g, const uint8_t (*pal)[4], Model *out, bool refine, uint8_t jitter) {
+    g->jitter = jitter;
+    if (refine) vox_refine(g);
     VoxMesh vm;
-    bool ok = vox_mesh(g, (const uint8_t(*)[4])pal, &vm) && vm.tris > 0;
+    bool ok = vox_mesh(g, pal, &vm) && vm.tris > 0;
     if (ok) {
         Mesh mesh = { 0 };
         mesh.triangleCount = vm.tris;
