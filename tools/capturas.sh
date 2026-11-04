@@ -55,6 +55,8 @@ shot cueva_boca_fieras 45 --ir boca-animal --dron 6 --camara 0.3
 shot cueva_boca_imperio 45 --ir boca-imperio --dron 7 --camara 0.3
 shot cueva_boca_tribu 45 --ir boca-tribu --dron 7 --camara 0.3
 shot cueva_boca_abandonada 45 --ir boca-abandonada --dron 7 --camara 0.3
+shot cueva_explorar 30 --ir boca-abandonada --caminar adelante
+shot cueva_pasillo 40 --cueva tribu:pasillo3 --antorcha
 shot cueva_fieras 40 --cueva animal:nido --antorcha
 shot cueva_habitada 40 --cueva forajidos:0 --antorcha
 shot cueva_prisionero 40 --cueva forajidos:dialogo --antorcha

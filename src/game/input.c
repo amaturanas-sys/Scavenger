@@ -12,6 +12,7 @@ static bool g_right_drag; // el boton derecho ya arrastra (gira la camara)
 static float g_right_moved;
 
 bool input_ctrl(void) { return IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL); }
+bool input_ctrl_pressed(void) { return IsKeyPressed(KEY_LEFT_CONTROL) || IsKeyPressed(KEY_RIGHT_CONTROL); }
 
 void input_inject(InputAction a) {
     if ((unsigned)a < IN_COUNT) g_injected[a] = true;

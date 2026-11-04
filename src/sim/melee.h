@@ -1,23 +1,23 @@
 // Combate cuerpo a cuerpo (C puro): golpes, combos, patadas, escudos, agarres,
 // ganchos y parry. Las mismas reglas valen para el jugador, la tribu y los enemigos.
-// El jugador pelea con cuatro botones (H ataque, I parry, J bloqueo, K carga o patada; lo que hace
+// El jugador pelea con cuatro botones (H ataque, J parry, K bloqueo, L carga o patada; lo que hace
 // cada uno depende de lo que tiene fuera: el arma, el escudo o las dos, docs/PLAN_TACTICO_Y_CUEVAS.md):
 //  - golpe ligero (H) y combos: tres golpes seguidos en la ventana; con armas
 //    cortas (daga, cuchillo, sable) los combos son mas rapidos; con largas (lanza,
 //    espada, guja) llegan mas lejos y el remate puede tumbar;
 //  - golpe pesado (mantener H): mas daño y rompe la guardia del escudo;
-//  - bloqueo (J): con escudo cubre el frente; sin escudo para con el arma, que aguanta
+//  - bloqueo (K): con escudo cubre el frente; sin escudo para con el arma, que aguanta
 //    la mitad del golpe y cansa (gasta aguante);
-//  - parry (I): el rival anuncia su golpe (levanta el arma un momento); en la ventana
+//  - parry (J): el rival anuncia su golpe (levanta el arma un momento); en la ventana
 //    justa, antes de que caiga, el parry le gana: con hacha o guja le engancha el
 //    escudo y se lo arranca, con las manos o una daga le hace una llave y lo tumba
 //    (desarmado), con las demas armas desvia el golpe y lo deja abierto, y solo con el
 //    escudo (el arma enfundada) lo desvia con el escudo y lo aturde; a destiempo, el que
 //    para queda expuesto;
-//  - carga o patada (K): con escudo, carga que empuja y puede tumbar; sin escudo,
+//  - carga o patada (L): con escudo, carga que empuja y puede tumbar; sin escudo,
 //    patada que aparta y desequilibra; a la carrera, con inercia, tumba incluso a
 //    quien se cubre con escudo;
-//  - golpe de escudo: cubriendose con el escudo (J) y atacando (H): aturde;
+//  - golpe de escudo: cubriendose con el escudo (K) y atacando (H): aturde;
 //  - agarre: del escudo (se lo arranca), del brazo armado (lo desarma) o de una
 //    extremidad, y lo tumba con una llave; si falla, el que agarra queda expuesto;
 //  - gancho: un arma con gancho (hacha, guja, alabarda, sagaris) engancha el escudo enemigo

@@ -11,6 +11,8 @@
 #include "raylib.h"
 #include "sim/buildkit.h"
 #include "sim/inventory.h"
+#include "sim/voxel.h"
+#include "sim/voxmat.h"
 #include "sim/world.h"
 
 // Dibuja una estructura del mundo (su clase y region) en (x, y, z) con giro yaw (radianes).
@@ -54,5 +56,13 @@ extern const float VOXS_MOUTH_BOULDERS[2][3];
 void voxs_draw_cave_mouth(Region region, int variant, bool facade, Vector3 at, float yaw);
 void voxs_unload(void);
 void voxs_forget_gpu(void); // ver terrain_forget_gpu
+
+// Para los modelos de voxeles de otros modulos (src/world/voxcave.c): la paleta de una region, la rejilla a modelo con
+// esa paleta (refine: el doble de resolucion, con las esquinas redondeadas; jitter: la variacion de tono por celda) y la
+// erosion de la piel de las formaciones (quita la superficie donde el ruido es bajo). voxs_rand: el azar de cada variante.
+void voxs_palette(Region r, uint8_t out[M_COUNT][4]);
+bool voxs_grid_model(VoxGrid *g, const uint8_t (*pal)[4], Model *out, bool refine, uint8_t jitter);
+void voxs_erode_skin(VoxGrid *g, uint32_t seed, float freq, float cut);
+float voxs_rand(uint32_t *s);
 
 #endif

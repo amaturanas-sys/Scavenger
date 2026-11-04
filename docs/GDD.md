@@ -160,7 +160,7 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
   - La tribu repara cada día las peores con troncos del acopio: cada constructor, dos; el resto entre todos, una.
   - Con lluvia torrencial (tormenta), las descuidadas (condición < 35 %) pueden **derrumbarse** y quedan escombros. El registro avisa cuántas están en riesgo.
 - **La lluvia apaga todo fuego:** incendios, la antorcha, las fogatas y los hornos (dejan de dar luz y calor hasta que escampa y la tribu los vuelve a encender), y las flechas encendidas, en la mano o en vuelo.
-- **Flechas encendidas** (`Mayús+L` junto a un fuego, con flechas o virotes):
+- **Flechas encendidas** (`Mayús+V` junto a un fuego, con flechas o virotes):
   - La flecha arde 25 s.
   - Al alcanzar a alguien suma una quemadura.
   - Donde cae prende el pasto, los árboles o las estructuras.
@@ -184,11 +184,11 @@ Detalle, reglas y parámetros para afinar: [MUNDO.md](MUNDO.md).
     - las demás: **desvío**, que lo deja abierto un segundo;
     - solo con el escudo en el brazo (la espada enfundada, v0.12.0): **lo desvía con el escudo** y lo aturde con el canto (un poco de daño, sin tumbarlo).
     A destiempo (o sin golpe que parar) el jugador queda **expuesto** 0,6 s: ni se cubre ni ataca.
-  - **Carga o patada:** `K`. Con el escudo en el brazo, **carga** que empuja y arrolla al primero que encuentra. Sin escudo, **patada**: aparta y desequilibra; contra un escudo en guardia solo le quita la guardia. **A la carrera, con inercia**, tumba incluso al que se cubre con escudo.
-  - **Objetivo:** `O` pasa al enemigo siguiente, en orden alrededor del jugador desde el que tiene delante (`Mayús+O`, al anterior; también `Ctrl+E` y `Ctrl+Q`, v0.10.5: `Q` y `E` solas giran la cámara; hasta la v0.12.0 era `Tab`); un clic o un toque sobre un enemigo lo elige. Un anillo dorado lo marca y su barra de vida se resalta. Los golpes van a él (el jugador se vuelve hacia él) y las armas a distancia le apuntan solas, con la caída calculada. Se pierde a 25 m o si muere; sin objetivo, se golpea al más cercano delante. `Tab` abre el inventario y `L` el menú de acciones.
+  - **Carga o patada:** `L`. Con el escudo en el brazo, **carga** que empuja y arrolla al primero que encuentra. Sin escudo, **patada**: aparta y desequilibra; contra un escudo en guardia solo le quita la guardia. **A la carrera, con inercia**, tumba incluso al que se cubre con escudo.
+  - **Objetivo:** `O` pasa al enemigo siguiente (`Mayús+O`, al anterior); los clics izquierdo/derecho equivalen a `Ctrl+Q`/`Ctrl+E` y `Ctrl` inicia o suelta la selección. Un anillo dorado lo marca y su barra de vida se resalta. Los golpes van a él (el jugador se vuelve hacia él) y las armas a distancia le apuntan solas, con la caída calculada. Se pierde a 25 m o si muere; sin objetivo, se golpea al más cercano delante. `I` abre el inventario y `Tab` el menú de acciones.
   - **La espalda** (v0.5.1, `src/sim/stealth.*`): de frente te ven; de lado, menos; por detrás solo te oyen (el ruido: correr se oye, el sigilo casi nada). A menos de 2 m, en el cono trasero de 70° de uno que no te notó (o aturdido), aparece una daga sobre él:
     - `H`: **ejecución silenciosa**, muerte en el acto; solo la oyen los que están a menos de 6 m.
-    - `G`: **rehén**. Va delante del jugador, sujeto por el cuello. Los de su bando (bandidos o culto) no se acercan a menos de 4,5 m ni atacan; el arquero no tira si el rehén le tapa el blanco, y si tira, falla más. El jugador va lento y con una sola mano (sin escudo ni armas a dos manos). `G` lo suelta, `H` lo ejecuta delante de los suyos e `I` lo empuja al suelo, aturdido; un golpe fuerte (o caer, o montar) lo suelta.
+    - `G`: **rehén**. Va delante del jugador, sujeto por el cuello. Los de su bando (bandidos o culto) no se acercan a menos de 4,5 m ni atacan; el arquero no tira si el rehén le tapa el blanco, y si tira, falla más. El jugador va lento y con una sola mano (sin escudo ni armas a dos manos). `G` lo suelta, `H` lo ejecuta delante de los suyos y `J` lo empuja al suelo, aturdido; un golpe fuerte (o caer, o montar) lo suelta.
   - **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar (mata una herida abierta grave en la cabeza o el cuello, muy grave en el pecho o el vientre, o desangrarse). El abatido queda en el suelo, con una barra gris de lo que le falta para despertar; a los 30-90 s se levanta herido, huye y avisa a los suyos (los de cerca van a por el jugador aunque no lo vean). `F` lo toma prisionero (lo que lleva queda en el suelo, como botín); `H` lo remata, y a la tribu le pesa como una ejecución menor (los compasivos y los devotos lo reprueban, los sanguinarios lo celebran; el reino también opina).
   - **En el suelo** (derribado unos 2,5 s) no se cubre ni ataca, y recibe más daño. **Desequilibrado**, no se puede cubrir. La armadura pesada cuesta más de tumbar.
   - **Lo que sueltan los enemigos** (escudos, armas) queda en el suelo. Si te lo arrancan a ti, su número (1 a 9 o 0) vuelve a empuñar.
@@ -756,7 +756,7 @@ Cada asentamiento del mundo (las capitales y las aldeas de `world.h`) tiene su e
 De las hojas del cuaderno del usuario; el detalle, en [PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md).
 - **Las manos (A1):** `H` ataque, `I` parry, `J` bloqueo, `K` carga o patada, según lo que esté fuera; la espada (`1`) y el
   escudo (`2`) se guardan por separado.
-- **La barra rápida (A2):** 10 casillas (`1` a `9` y `0`). Con el inventario abierto (`Tab`), un número (o un toque en la fila
+- **La barra rápida (A2):** 10 casillas (`1` a `9` y `0`). Con el inventario abierto (`I`), un número (o un toque en la fila
   de abajo) pone lo elegido en esa casilla. El odre bebe o, junto al agua, se llena; el lazo, el gancho y la montura.
 - **El objetivo (A3):** `O`, `Ctrl+Q`/`Ctrl+E` o un toque sobre la silueta; enemigos y animales salvajes. Con arma a distancia,
   el clic cambia de objetivo y mantenerlo 1 s lo suelta. El personaje mira siempre al objetivo. Un enemigo tarda 5 s en
@@ -764,8 +764,10 @@ De las hojas del cuaderno del usuario; el detalle, en [PLAN_TACTICO_Y_CUEVAS.md]
 - **A cubierto (A4):** `C` junto a un tronco, una roca, una peña, una mata o una ruina te pega a él; no te ven desde el otro
   lado. Con el arco, `H` te asoma, disparas y vuelves. Moverte o `C` te saca.
 - **Las cuevas (B1 a B3):** cada guarida tiene la suya (de la semilla): de fieras, abandonada, de forajidos, de una tribu o
-  almacén del imperio. Se entra caminando por la boca: un vestíbulo, la bajada sin vuelta a la Cisterna Magna y el anillo de
-  recámaras por donde se sale. Adentro, la oscuridad y las antorchas; F toma lo que hay (cofres, ánforas, armas, botín,
+  almacén del imperio. Junto a la boca, F la explora (se carga aparte): un vestíbulo, la bajada sin vuelta a la Cisterna
+  Magna y el anillo de recámaras por donde se sale, por pasillos largos y con vueltas. Las salas son grandes y altas (v0.14.0,
+  el techo a más de tres personas; [PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md)), con la roca, las estalactitas y las
+  estalagmitas de voxeles. Adentro, la oscuridad y las antorchas; F toma lo que hay (cofres, ánforas, armas, botín,
   vetas, huesos, nidos), enciende antorchas y fogatas, muestra las pinturas y libera prisioneros (se unen a la tribu o te
   traicionan). Las habitadas tienen guardias que salen a la boca una vez por día. Desde afuera, la boca dice de quién
   es (v0.13.1): una escalera al saliente en las habitadas, el bastidor y la cortina de cuero de la tribu, la estacada

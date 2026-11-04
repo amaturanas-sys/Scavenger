@@ -1,7 +1,7 @@
 // Acciones y vida del campamento en el juego. Conecta el nucleo (sim/actions,
 // sim/economy, sim/animals) con el jugador, el mundo y la interfaz:
-//  - menu de acciones (L), atajos (1..9 la barra rapida: cada arma y el escudo se guardan por
-//    separado; F tomar, T lanzar, R montar, Tab inventario) y acciones con duracion;
+//  - menu de acciones (Tab), atajos (1..9 la barra rapida: cada arma y el escudo se guardan por
+//    separado; F tomar, T lanzar, R montar, I inventario) y acciones con duracion;
 //  - acopio de la tribu: materiales, comida, recoleccion diaria;
 //  - obras en grupo: los NPCs elegidos caminan a la obra y trabajan alli;
 //  - NPCs que hacen acciones individuales (instalar una fogata o una tienda);

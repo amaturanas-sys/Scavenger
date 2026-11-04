@@ -22,6 +22,7 @@ typedef enum {
 
 // Ctrl apretado: las teclas simples (H, M, P, 1..3) no hacen lo suyo.
 bool input_ctrl(void);
+bool input_ctrl_pressed(void);
 // Teclas de prueba (1..8 tropa, 9 enemigos): solo con el panel de diagnostico (Ctrl+D) abierto.
 void input_set_debug(bool on);
 bool input_debug(void);

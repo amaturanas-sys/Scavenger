@@ -57,6 +57,7 @@ src/
   world/    Mundo (raylib)
     terrain.*    chunks con streaming, altura consultable
     voxstruct.*  estructuras de voxeles: los sitios del mundo, los edificios del kit (la muralla, las ruinas y las obras de la tribu sin modelo tambien) y la roca de la boca de las cuevas (con su arco y su tunel); de cerca, refinados; de lejos, simples
+    voxcave.*    lo de adentro de las cuevas, de voxeles (estalactitas, estalagmitas, rocas y lo que agreguen las tareas de docs/PLAN_CUEVAS_GRANDES.md): se arma al cargar la cueva y se libera al salir
     vegetation.* el pasto, la stipa, las flores, los helechos y los juncos alrededor del jugador (una ventana de celdas que sigue al jugador; triangulos de color con rlgl)
     camp.*       campamento, props
     gallery.*    galeria del inventario (--galeria)
@@ -76,7 +77,9 @@ src/
     combat_game.*   combate (a pie y montado), enemigos (y el ejercito de los reinos: la formacion cerrada, el pavés que para flechas, el carro de guerra que hace pasadas y arrolla), botin, vendajes, salud de la tribu y del jugador
     fauna_game.*    fauna en el mundo: aparicion por bioma (y las fieras de las guaridas de animales y abandonadas), ataques, K (comer, despiezar, ordeñar)
     world_game.*    los pueblos, las tribus, las estructuras y las guaridas del mundo al verlos (al mapa); la boca de cada cueva desde afuera (la roca de voxstruct, el tunel oscuro y lo de cada tipo delante: escaleras, salientes, estacada, estandartes, la fachada de las abandonadas), sus antorchas de noche, y la camara y quien camina, que no se meten en la roca
-    cave_game.*     adentro de una cueva: entrar y salir por la boca, moverse por cave_floor, la camara bajo la boveda, la luz por vertice, F (tomar, encender, mirar, liberar), el dialogo con un prisionero, los guardias de las habitadas y el plano
+    cave_game.*     adentro de una cueva: explorar desde la boca (F) y salir por ella, moverse por cave_floor (y el decorado), la camara bajo la boveda, F (tomar, encender, mirar, liberar), el dialogo con un prisionero, los guardias de las habitadas y el plano
+    cave_scene.*    la escena de una cueva, que se carga al explorar y se libera al salir: las mallas de la roca (el vestibulo, las salas y los pasillos, en trozos), el decorado, la luz por vertice (solo en lo que esta cerca, con las llamas que lo alcanzan) y la boca vista desde adentro
+    cave_props.*    como se ve cada objeto de la cueva (estalactitas y estalagmitas de voxeles, cofres, celdas, pinturas, antorchas...), con la luz de la escena
     disasters_game.* fuego, rayos, lluvia torrencial, fogatas apagadas por la lluvia
     save_game.*     partidas guardadas: tres huecos con minifoto y fecha, por bloques (docs/PARTIDAS.md)
     save_schema.inc esquema de lo que se guarda (generado por tools/save/esquema.py)
