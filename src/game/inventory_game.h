@@ -2,7 +2,7 @@
 //  - lo que se lleva encima: bolsillos (lo pequeño) y mochila; las alforjas de las
 //    monturas ensilladas; la carreta de la tribu; el acopio y la armeria del campamento
 //    (solo cerca de cada uno);
-//  - Tab: menu de inventario, dos columnas para pasar cosas de un contenedor a otro;
+//  - I: menu de inventario, dos columnas para pasar cosas de un contenedor a otro;
 //  - P: menu de equipo: las nueve piezas de armadura y los tres amuletos, con su estado
 //    y su proteccion; poner, cambiar y quitar piezas; las heridas al lado;
 //  - lo que se gasta en el campo (flechas, hierbas, carne) sale de lo que llevas encima

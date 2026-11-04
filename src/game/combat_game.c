@@ -64,9 +64,6 @@ static float dist2(Vector3 a, Vector3 b) { return Vector2Distance((Vector2){ a.x
 static bool g_hud_attack_press, g_hud_attack_down, g_hud_block, g_hud_parry, g_hud_charge, g_hud_grab;
 static int g_back; // el enemigo con la espalda ganada + 1 (la daga sobre el; 0: ninguno)
 static bool g_click_used; // ese clic eligio un objetivo: no es un golpe
-// El clic con arma a distancia (A3, las hojas): izquierdo [0] y derecho [1].
-static float g_tclick_held[2], g_tclick_moved[2];
-static bool g_tclick_live[2], g_tclick_done[2], g_tclick_picked[2];
 
 static V3 to_v3(Vector3 v) { return (V3){ v.x, v.y, v.z }; }
 static Vector3 to_vec(V3 v) { return (Vector3){ v.x, v.y, v.z }; }
@@ -1523,7 +1520,7 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
     cb->ammo_shown = ammo_left;
     if (pressed && ammo_left <= 0) {
         char what[32];
-        snprintf(log, len, T("No te quedan %ss a mano (Tab: inventario)."), lower_name(T(projectile_def(rd->projectile)->name), what, sizeof(what)));
+        snprintf(log, len, T("No te quedan %ss a mano (I: inventario)."), lower_name(T(projectile_def(rd->projectile)->name), what, sizeof(what)));
         return;
     }
     bool was_aiming = cb->aiming;
@@ -2249,7 +2246,7 @@ static void bandage(Combat *cb, GameActions *ga, Troop *troop, const Props *prop
         return;
     }
     if (!herbs && ig_count(ga, props, p, "utileria.consumible.unguento") <= 0) {
-        snprintf(log, len, "%s", T("No llevas hierbas curativas (Tab: inventario)."));
+        snprintf(log, len, "%s", T("No llevas hierbas curativas (I: inventario)."));
         return;
     }
     // 2) Tus propias heridas: con ungüento (si llevas), mejor que con hierbas.
@@ -2363,7 +2360,7 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
 }
 
 // Los cuatro botones con un arma de mano (o sin armas): H ataque (suelta pronto, golpe y combo;
-// mantenida, golpe pesado), I parry, J bloqueo (lo lee cb_update), K carga con escudo o patada
+// mantenida, golpe pesado), J parry, K bloqueo (lo lee cb_update), L carga con escudo o patada
 // (a la carrera, con inercia). Cubriendose con escudo, H es golpe de escudo.
 // H junto a un abatido: rematarlo. A la tribu le pesa segun sus rasgos (src/sim/troop.h).
 static void player_finish(Combat *cb, Player *p, Troop *troop, Enemy *e, char *log, size_t len) {
@@ -2416,18 +2413,17 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, Troop *tr
                                bool can_fight, float dt, char *log, size_t len) {
     bool shield = player_has_shield(ga);
     bool running = p->stance == STANCE_RUN && p->moving;
-    bool click = !hud_pointer_over() && !g_click_used; // un clic en el HUD, o el que eligio objetivo, no es un golpe
-    bool h_press = input_action_pressed(KA_ATTACK) || (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && click) || g_hud_attack_press;
-    bool h_down = input_action_down(KA_ATTACK) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && click) || g_hud_attack_down;
-    bool parry_press = input_action_pressed(KA_PARRY) || g_hud_parry;    // I
-    bool charge_press = input_action_pressed(KA_CHARGE) || g_hud_charge; // K
+    bool h_press = input_action_pressed(KA_ATTACK) || g_hud_attack_press;
+    bool h_down = input_action_down(KA_ATTACK) || g_hud_attack_down;
+    bool parry_press = input_action_pressed(KA_PARRY) || g_hud_parry;    // J
+    bool charge_press = input_action_pressed(KA_CHARGE) || g_hud_charge; // L
     if (!can_fight) {
         cb->v_hold = 0.0f;
         return;
     }
     bool ready = cb->attack_cd <= 0.0f;
     bool riding = ga->mounted >= 0;
-    // A caballo: con una lanza, K la pone en ristre (la carga); el parry, la carga con escudo y las
+    // A caballo: con una lanza, L la pone en ristre (la carga); el parry, la carga con escudo y las
     // patadas, a pie.
     if (riding && charge_press && lance_in_hand(ga)) {
         if (cb->couch <= 0.0f && cb->couch_cd <= 0.0f) {
@@ -2437,10 +2433,10 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, Troop *tr
         return;
     }
     if (riding && ready && (parry_press || charge_press || (cb->blocking && h_press))) {
-        snprintf(log, len, "%s", T("A caballo: golpe (H) y golpe pesado (mantener H); con una lanza, K la pone en ristre."));
+        snprintf(log, len, "%s", T("A caballo: golpe (H) y golpe pesado (mantener H); con una lanza, L la pone en ristre."));
         return;
     }
-    // Con un rehen (las hojas): H lo ejecuta, I lo empuja y cae aturdido; K no hace nada (las manos
+    // Con un rehen (las hojas): H lo ejecuta, J lo empuja y cae aturdido; L no hace nada (las manos
     // estan ocupadas).
     Enemy *hostage = hostage_of(cb);
     if (hostage) {
@@ -2476,7 +2472,7 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, Troop *tr
         player_parry(cb, p, ga, props, log, len);
         return;
     }
-    // K: con el escudo en el brazo, carga que empuja y arrolla al primero que encuentra delante; sin
+    // L: con el escudo en el brazo, carga que empuja y arrolla al primero que encuentra delante; sin
     // el escudo (o con el a la espalda), patada.
     if (ready && charge_press && cb->charge_timer <= 0.0f) {
         if (shield) {
@@ -2645,33 +2641,15 @@ void cb_request_bandage(void) { g_bandage_req = true; }
 static bool g_light_req; // encender la flecha, pedido desde la columna del HUD
 void cb_request_light_arrow(void) { g_light_req = true; }
 
-// Con un arma a distancia en la mano (las hojas, A3): un clic corto, izquierdo o derecho, elige al de
-// delante; con objetivo, pasa al de la izquierda (izquierdo) o al de la derecha (derecho). Mantenerlo
-// 1 s lo suelta. Arrastrar (la camara) no cuenta, ni el clic que ya eligio a alguien al tocarlo.
-static void ranged_clicks(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p, float dt, char *log, size_t len) {
-    for (int b = 0; b < 2; b++) {
-        int btn = b == 0 ? MOUSE_BUTTON_LEFT : MOUSE_BUTTON_RIGHT;
-        if (IsMouseButtonPressed(btn)) {
-            g_tclick_live[b] = !hud_pointer_over();
-            g_tclick_held[b] = g_tclick_moved[b] = 0.0f;
-            g_tclick_done[b] = false;
-            g_tclick_picked[b] = g_click_used; // un toque sobre alguien ya lo eligio (cb_pick_target)
-        }
-        if (!g_tclick_live[b]) continue;
-        bool up = IsMouseButtonReleased(btn);
-        if (IsMouseButtonDown(btn)) g_tclick_held[b] += dt;
-        Vector2 md = GetMouseDelta();
-        g_tclick_moved[b] += fabsf(md.x) + fabsf(md.y);
-        TargetClick c = target_click(g_tclick_held[b], g_tclick_moved[b] > 6.0f, up, g_tclick_done[b]);
-        if (c == TCLICK_RELEASE) {
-            if (cb->target_lock) snprintf(log, len, "%s", T("Sueltas el objetivo."));
-            cb->target_lock = 0;
-            g_tclick_done[b] = true;
-        } else if (c == TCLICK_SELECT && !g_tclick_picked[b]) {
-            cb_cycle_target(cb, ga, t, p, b == 0 ? TARGET_LEFT : TARGET_RIGHT, log, len);
-        }
-        if (up) g_tclick_live[b] = false;
-    }
+// Un clic corto cambia de objetivo como Ctrl+Q/Ctrl+E. El derecho sigue pudiendo arrastrar la
+// camara; el arrastre no cuenta como seleccion. La seleccion directa con el puntero la reemplaza
+// este mapa unico para que teclado, raton y tactil hagan lo mismo.
+static void mouse_target_clicks(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p, char *log, size_t len) {
+    if (hud_pointer_over()) return;
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        cb_cycle_target(cb, ga, t, p, TARGET_LEFT, log, len);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        cb_cycle_target(cb, ga, t, p, TARGET_RIGHT, log, len);
 }
 
 void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *props, const Terrain *t, Vector3 camp_fire,
@@ -2721,7 +2699,7 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     }
     // El objetivo se pierde a TARGET_RANGE o si muere; O pasa al siguiente (Mayus+O, al anterior).
     keep_target(cb, ga, t, p, dt);
-    if (rd && input_ok) ranged_clicks(cb, ga, t, p, dt, log, log_len);
+    if (input_ok) mouse_target_clicks(cb, ga, t, p, log, log_len);
     // Con objetivo, el personaje lo mira siempre y camina de costado (las hojas); corriendo, a caballo
     // o trepando, no.
     Vector3 tp;
@@ -2731,14 +2709,23 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     ga_set_target_animal(ta ? (int)(ta - ga->animals) : -1); // el lazo lo busca primero
     int req = ga_take_target_request();
     if (req && input_ok) cb_cycle_target(cb, ga, t, p, req, log, log_len);
+    // Ctrl inicia la seleccion si no hay objetivo y la finaliza/omite si ya lo hay.
+    if (input_ctrl_pressed() && input_ok && !IsKeyPressed(KEY_Q) && !IsKeyPressed(KEY_E)) {
+        if (cb->target_lock) {
+            cb->target_lock = 0;
+            snprintf(log, log_len, "%s", T("Sueltas el objetivo."));
+        } else {
+            cb_cycle_target(cb, ga, t, p, TARGET_RIGHT, log, log_len);
+        }
+    }
     // Q/E: cambiar objetivo (izquierda/derecha)
     if (input_action_pressed(KA_TARGET_LEFT) && input_ok) cb_cycle_target(cb, ga, t, p, TARGET_LEFT, log, log_len);
     if (input_action_pressed(KA_TARGET_RIGHT) && input_ok) cb_cycle_target(cb, ga, t, p, TARGET_RIGHT, log, log_len);
-    // J (o el clic derecho sin arrastrar): cubrirse. Con escudo, de frente; sin escudo, con el arma
-    // de mano, que cansa (agotado no se puede). A distancia, J baja el arma y solo cubre el escudo.
+    // K: cubrirse. Con escudo, de frente; sin escudo, con el arma de mano, que cansa (agotado no se
+    // puede). A distancia, K baja el arma y solo cubre el escudo.
     bool shield = player_has_shield(ga);
     bool melee_weapon = !rd && hands_attack_weapon(&ga->hands, 1, NULL)[0] != '\0';
-    bool guard_key = input_action_down(KA_BLOCK) || (!rd && input_right_hold()) || g_hud_block; // con arco, el clic derecho elige
+    bool guard_key = input_action_down(KA_BLOCK) || g_hud_block;
     cb->blocking = can_act && guard_key && !ga->hands.sheathed && cb->stagger <= 0.0f && cb->exposed <= 0.0f && !cb->hostage &&
                    (shield || (melee_weapon && !player_winded()));
     // G: agarrar por la espalda (rehen) o soltarlo. Un golpe fuerte, caer o montar lo sueltan.
@@ -3134,7 +3121,7 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
         const InvItem *wi = inventory_find(ga->inv, rd->weapon);
         const ProjectileDef *pd = projectile_def(rd->projectile);
         const char *fire = cb->arrow_lit                   ? TextFormat(T(" · ENCENDIDA (%.0f s)"), cb->arrow_lit_timer)
-                           : ga->fire_near && !ga->raining && rd->projectile <= PROJ_BOLT ? T(" · Mayús+L: encender")
+                           : ga->fire_near && !ga->raining && rd->projectile <= PROJ_BOLT ? T(" · Mayús+V: encender")
                                                                                            : "";
         const char *line = TextFormat("%s · %ss: %d%s%s", wi ? T(wi->name) : T("Arma"), T(pd->name), cb->ammo_shown,
                                       cb->reload > 0.0f ? T(" · recargando") : "", fire);
@@ -3154,7 +3141,7 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
 }
 
 // Los cuatro botones de combate, abajo a la derecha (donde antes iban las habilidades): lo
-// mismo que H I J K con el dedo o el raton, en ese orden (las hojas, docs/PLAN_TACTICO_Y_CUEVAS.md).
+// mismo que H J K L con el dedo o el raton, en ese orden (las hojas, docs/PLAN_TACTICO_Y_CUEVAS.md).
 // Cada casilla dice si se puede usar y cambia con lo que esta fuera (la espada, el escudo o los dos;
 // el arco: disparar y bajar el arma); el parry destella en la ventana justa.
 void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
@@ -3165,7 +3152,7 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
     bool shield = player_has_shield(ga), riding = ga->mounted >= 0;
     bool free = !cb->player.down && cb->knock <= 0.0f && !ga->climbing && cb->stagger <= 0.0f && cb->exposed <= 0.0f;
     bool ready = free && cb->attack_cd <= 0.0f, cue = !rd && !riding && cb_parry_cue(cb);
-    // Con un rehen, H lo ejecuta e I lo empuja; con la espalda ganada, H ejecuta en silencio; junto a
+    // Con un rehen, H lo ejecuta y J lo empuja; con la espalda ganada, H ejecuta en silencio; junto a
     // un abatido, H lo remata. G (agarrar o soltar) aparece a la izquierda.
     bool holding = cb->hostage != 0, back = g_back > 0, downed = g_capture_d <= CB_DOWNED_REACH && !riding;
     if (holding || back) {
@@ -3200,12 +3187,12 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
                      : rd          ? T("H o clic: tensa y suelta. Apunta al objetivo (o al más cercano delante).")
                      : weapon[0]   ? T("H o clic: golpe (encadena hasta tres). Mantener: golpe pesado.")
                                    : T("H o clic: puñetazo (con el arma enfundada).");
-        } else if (i == 1 && holding) { // I: empujar al rehen
+        } else if (i == 1 && holding) { // J: empujar al rehen
             key = keymap_text(KA_PARRY);
             icon = ICON_PATADA;
             title = T("Empujar al rehén");
-            detail = T("I: lo empujas y cae de bruces, aturdido.");
-        } else if (i == 1) { // I: parry
+            detail = T("J: lo empujas y cae de bruces, aturdido.");
+        } else if (i == 1) { // J: parry
             key = keymap_text(KA_PARRY);
             icon = ICON_PARADA;
             on = cue;
@@ -3215,38 +3202,38 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
             detail = rd       ? T("Con un arma a distancia no hay parry.")
                      : riding ? T("A caballo no hay parry.")
                      : k == PARRY_HOOK
-                         ? T("I justo antes del golpe enemigo: enganchas su escudo y se lo arrancas. A destiempo, quedas expuesto.")
+                         ? T("J justo antes del golpe enemigo: enganchas su escudo y se lo arrancas. A destiempo, quedas expuesto.")
                      : k == PARRY_GRAPPLE
-                         ? T("I justo antes del golpe enemigo: llave y derribo, y lo desarmas. A destiempo, quedas expuesto.")
+                         ? T("J justo antes del golpe enemigo: llave y derribo, y lo desarmas. A destiempo, quedas expuesto.")
                      : k == PARRY_SHIELD
-                         ? T("I justo antes del golpe enemigo: lo desvías con el escudo y lo aturdes con el canto. A destiempo, quedas expuesto.")
-                         : T("I justo antes del golpe enemigo: desvías y queda abierto un segundo. A destiempo, quedas expuesto.");
-        } else if (i == 2) { // J: bloqueo
+                         ? T("J justo antes del golpe enemigo: lo desvías con el escudo y lo aturdes con el canto. A destiempo, quedas expuesto.")
+                         : T("J justo antes del golpe enemigo: desvías y queda abierto un segundo. A destiempo, quedas expuesto.");
+        } else if (i == 2) { // K: bloqueo
             key = keymap_text(KA_BLOCK);
             icon = shield ? ICON_ESCUDO : ICON_COBERTURA;
             on = cb->blocking;
             ok = free && !ga->hands.sheathed && !holding && (shield || rd || (weapon[0] && !player_winded()));
             title = rd ? T("Bajar el arma") : shield ? T("Cubrirse") : T("Parar con el arma");
-            detail = rd       ? T("J: baja el arma (si llevas escudo, te cubre).")
-                     : shield ? T("J o clic derecho, mantener: el escudo cubre el frente. Con H, golpe de escudo.")
-                              : T("J o clic derecho, mantener: paras con el arma; aguanta la mitad y cansa.");
-        } else if (riding && lance_in_hand(ga)) { // K a caballo con lanza: en ristre
+            detail = rd       ? T("K: baja el arma (si llevas escudo, te cubre).")
+                     : shield ? T("K mantener: el escudo cubre el frente. Con H, golpe de escudo.")
+                              : T("K mantener: paras con el arma; aguanta la mitad y cansa.");
+        } else if (riding && lance_in_hand(ga)) { // L a caballo con lanza: en ristre
             key = keymap_text(KA_CHARGE);
             icon = ICON_LANZA;
             on = cb->couch > 0.0f;
             ok = cb->couch_cd <= 0.0f;
             title = T("Lanza en ristre");
-            detail = T("K: bajas la lanza. Al galope, el primero que tengas delante recibe todo el peso de la carrera y casi siempre cae.");
-        } else { // K: carga o patada
+            detail = T("L: bajas la lanza. Al galope, el primero que tengas delante recibe todo el peso de la carrera y casi siempre cae.");
+        } else { // L: carga o patada
             key = keymap_text(KA_CHARGE);
             bool charge = shield && !rd;
             icon = charge ? ICON_CARGA : ICON_PATADA;
             on = cb->charge_timer > 0.0f;
             ok = ready && !riding && !holding;
             title = charge ? T("Carga con escudo") : T("Patada");
-            detail = riding   ? T("A caballo: golpe y golpe pesado; con una lanza, K la pone en ristre.")
-                     : charge ? T("K: carga con el escudo; empuja y tumba al primero que encuentra.")
-                              : T("K: patada que empuja y desequilibra. Corriendo, patada a la carrera.");
+            detail = riding   ? T("A caballo: golpe y golpe pesado; con una lanza, L la pone en ristre.")
+                     : charge ? T("L: carga con el escudo; empuja y tumba al primero que encuentra.")
+                              : T("L: patada que empuja y desequilibra. Corriendo, patada a la carrera.");
         }
         bool hover = hud_hover(r);
         ui_tile(r, icon, on, ok);

@@ -1028,7 +1028,10 @@ int main(int argc, char **argv) {
     while (!WindowShouldClose() && !quit) {
         float dt = fminf(GetFrameTime(), 0.05f);
         input_update();
-        if (input_last_key() && !simulate_no_keyboard) keyboard_override = true; // llego una tecla: hay teclado
+        if (input_last_key() && !simulate_no_keyboard) {
+            keyboard_override = true;
+            has_keyboard = true;
+        } // llego una tecla: hay teclado; no bloquear esta misma entrada
         if (!has_keyboard && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) keyboard_override = true;
         if (input_pressed(IN_DIAG)) show_diag = !show_diag;
         input_set_debug(show_diag);
@@ -1393,11 +1396,6 @@ int main(int argc, char **argv) {
                 tg_update(&g_actions, &g_combat, &troop, &g_props, &player,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), dt, log, sizeof(log));
             cb_set_shelters(camp.yurts, camp.yurt_count); // en un asalto, los pobladores corren a las yurtas
-            // Un clic o un toque sobre un enemigo (no sobre el HUD) lo elige como objetivo.
-            if (!gallery_mode && !cave && !menu && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !hud_pointer_over() &&
-                !ig_blocks_input(&g_actions) && !g_actions.dlg.open)
-                cb_pick_target(&g_combat, &g_actions, &terrain, &player, cam, virtual_pointer(), VIRTUAL_W, VIRTUAL_H,
-                               log, sizeof(log));
             if (!gallery_mode && !cave)
                 cb_update(&g_combat, &player, &g_actions, &troop, &g_props, &terrain, tribe_fire,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), clock_is_night(world_time),

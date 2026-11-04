@@ -3385,23 +3385,23 @@ static void test_keymap_target_keys(void) {
 
 // ---------------------------------------------------------------- fase 1: teclas, parry, bloqueo, objetivo
 static void test_keymap_four_buttons(void) {
-    // Los cuatro botones de combate, como en las hojas (v0.12.0): H golpe, I parry, J bloqueo, K carga
-    // o patada (con Mayus, corriendo, tambien), no las teclas viejas.
+        // Los cuatro botones de combate: H golpe, J parry, K bloqueo, L carga
+        // o patada (con Mayus, corriendo, tambien).
     CHECK(keymap_matches(KA_ATTACK, 'H', 0) && keymap_matches(KA_ATTACK, 'H', KM_SHIFT));
     CHECK(!keymap_matches(KA_ATTACK, 'V', 0) && !keymap_matches(KA_ATTACK, 'H', KM_CTRL)); // Ctrl+H: los controles
-    CHECK(keymap_matches(KA_BLOCK, 'J', 0) && !keymap_matches(KA_BLOCK, 'Z', 0));
-    CHECK(keymap_matches(KA_PARRY, 'I', 0) && !keymap_matches(KA_PARRY, 'K', 0) && !keymap_matches(KA_PARRY, 'U', 0));
-    CHECK(keymap_matches(KA_CHARGE, 'K', 0) && keymap_matches(KA_CHARGE, 'K', KM_SHIFT) && !keymap_matches(KA_CHARGE, 'L', 0));
-    // Tab abre el inventario (la I es el parry); L, el menu de acciones; O elige el objetivo.
-    CHECK(keymap_matches(KA_INVENTORY, KM_KEY_TAB, 0) && !keymap_matches(KA_INVENTORY, 'I', 0));
-    CHECK(keymap_matches(KA_MENU, 'L', 0) && !keymap_matches(KA_MENU, 'L', KM_SHIFT) && !keymap_matches(KA_MENU, KM_KEY_TAB, 0));
+    CHECK(keymap_matches(KA_BLOCK, 'K', 0) && !keymap_matches(KA_BLOCK, 'Z', 0));
+    CHECK(keymap_matches(KA_PARRY, 'J', 0) && !keymap_matches(KA_PARRY, 'K', 0) && !keymap_matches(KA_PARRY, 'U', 0));
+    CHECK(keymap_matches(KA_CHARGE, 'L', 0) && keymap_matches(KA_CHARGE, 'L', KM_SHIFT) && !keymap_matches(KA_CHARGE, 'K', 0));
+    // I abre el inventario; Tab, el menu de acciones; O elige el objetivo.
+    CHECK(keymap_matches(KA_INVENTORY, 'I', 0) && !keymap_matches(KA_INVENTORY, KM_KEY_TAB, 0));
+    CHECK(keymap_matches(KA_MENU, KM_KEY_TAB, 0) && !keymap_matches(KA_MENU, 'L', 0));
     CHECK(keymap_matches(KA_TARGET, 'O', 0) && keymap_matches(KA_TARGET, 'O', KM_SHIFT) && !keymap_matches(KA_TARGET, KM_KEY_TAB, 0));
-    // El resto del mapa: X agacharse, C sigilo, F todo, Mayus+G mochila, Mayus+L flecha, U ficha.
+    // El resto del mapa: X agacharse, C sigilo, F todo, Mayus+G mochila, Mayus+V flecha, U ficha.
     CHECK(keymap_matches(KA_CROUCH, 'X', 0) && keymap_matches(KA_SNEAK, 'C', 0));
     CHECK(keymap_matches(KA_INTERACT, 'F', 0) && keymap_matches(KA_INTERACT, 'F', KM_SHIFT) && !keymap_matches(KA_INTERACT, 'K', 0));
     CHECK(keymap_matches(KA_BACKPACK, 'G', KM_SHIFT) && !keymap_matches(KA_BACKPACK, 'G', 0));
     CHECK(keymap_matches(KA_GRAB, 'G', 0) && !keymap_matches(KA_GRAB, 'G', KM_SHIFT));
-    CHECK(keymap_matches(KA_LIGHT_ARROW, 'L', KM_SHIFT) && !keymap_matches(KA_LIGHT_ARROW, 'L', 0));
+    CHECK(keymap_matches(KA_LIGHT_ARROW, 'V', KM_SHIFT) && !keymap_matches(KA_LIGHT_ARROW, 'V', 0));
     CHECK(keymap_matches(KA_CARD, 'U', 0));
     CHECK(!keymap_matches(KA_EQUIPMENT, 'P', KM_CTRL) && !keymap_matches(KA_MARK, 'M', KM_CTRL)); // Ctrl+P pausa, Ctrl+M orbital
     CHECK(keymap_matches(KA_ESCORT, 'Y', 0) && !keymap_matches(KA_ESCORT, 'Y', KM_SHIFT) && keymap_matches(KA_DISPATCH, 'Y', KM_SHIFT));
@@ -3418,8 +3418,8 @@ static void test_keymap_four_buttons(void) {
                 for (int b = a + 1; b < KA_COUNT; b++)
                     clashes += keymap_matches((KeyAction)a, keys[k], mods[m]) && keymap_matches((KeyAction)b, keys[k], mods[m]);
     CHECK(clashes == 0);
-    CHECK(!strcmp(keymap_text(KA_ATTACK), "H") && !strcmp(keymap_text(KA_PARRY), "I") && !strcmp(keymap_text(KA_CHARGE), "K"));
-    CHECK(!strcmp(keymap_text(KA_BACKPACK), "Mayús+G") && !strcmp(keymap_text(KA_INVENTORY), "Tab") && !strcmp(keymap_text(KA_MENU), "L") &&
+    CHECK(!strcmp(keymap_text(KA_ATTACK), "H") && !strcmp(keymap_text(KA_PARRY), "J") && !strcmp(keymap_text(KA_CHARGE), "L"));
+    CHECK(!strcmp(keymap_text(KA_BACKPACK), "Mayús+G") && !strcmp(keymap_text(KA_INVENTORY), "I") && !strcmp(keymap_text(KA_MENU), "Tab") &&
           !strcmp(keymap_text(KA_TARGET), "O"));
 }
 

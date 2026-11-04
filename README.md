@@ -101,8 +101,8 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Mochila (dejarla o recogerla) | Mayús+G (o la columna del HUD) | — |
 | Ficha del gran guerrero | U | — |
 | Montar / desmontar | R | — |
-| Inventario (bolsillos, mochila, alforjas, carreta, campamento) | Tab (con algo elegido, un número, o un toque en la fila de abajo, lo pone en esa casilla de la barra) | — |
-| Objetivo siguiente / anterior | O / Mayús+O (también Ctrl+E / Ctrl+Q, o un clic o un toque sobre la silueta; con arco, el clic izquierdo y el derecho cambian, y mantener 1 s lo suelta) | — |
+| Inventario (bolsillos, mochila, alforjas, carreta, campamento) | I (con algo elegido, un número, o un toque en la fila de abajo, lo pone en esa casilla de la barra) | — |
+| Objetivo siguiente / anterior | O / Mayús+O; clic derecho / izquierdo; Ctrl+E / Ctrl+Q | — |
 | Entrar en una cueva | caminar por la boca (adentro, F toma, enciende y libera; se sale por la boca) | — |
 | Esconderse | agachado (X) tras rocas o matas; con sigilo (C) o agachado, en la hierba alta | — |
 | Beber / tomar hierbas contra los espíritus del agua | N / Mayús+N | — |
@@ -138,15 +138,15 @@ Combate de cuatro botones, como en las hojas del sistema táctico (v0.12.0, [doc
 | El escudo solo (la espada enfundada) | puñetazo | parry con el escudo | cubrirse con el escudo | carga con escudo |
 | La espada y el escudo | golpe | parry con la espada | cubrirse con el escudo | carga con escudo |
 
-- **`H` o clic izquierdo, ataque:** golpe; tres seguidos, combo; mantener, golpe pesado. Con arco, ballesta u honda: mantener para tensar y soltar para disparar; con objetivo, la mira calcula sola la caída; sin él, la cámara alza la mira. Elegir el arco guarda solos la espada y el escudo.
-- **`I`, parry:** justo antes del golpe enemigo (el rival anuncia el golpe; en la ventana justa destella un rombo dorado sobre él y la casilla). Con hacha o guja le arrancas el escudo; sin armas o con daga, llave y derribo (lo desarmas); con las demás, desvías y queda abierto; solo con el escudo, lo desvías con el escudo y lo aturdes con el canto. A destiempo quedas expuesto un momento.
-- **`J` o clic derecho sin arrastrar, bloqueo (mantener):** con el escudo en el brazo cubre el frente (`J`+`H`: golpe de escudo); sin él paras con el arma, que aguanta la mitad del golpe y cansa. Con arma a distancia, `J` la baja.
-- **`K`, carga o patada:** con el escudo en el brazo, carga que empuja y tumba al primero que encuentra; sin él, patada (corriendo, con inercia).
+- **`H`, ataque:** golpe; tres seguidos, combo; mantener, golpe pesado. Con arco, ballesta u honda: mantener para tensar y soltar para disparar; con objetivo, la mira calcula sola la caída; sin él, la cámara alza la mira. Elegir el arco guarda solos la espada y el escudo.
+- **`J`, parry:** justo antes del golpe enemigo, desvía o engancha el ataque en la ventana justa.
+- **`K`, bloqueo (mantener):** con el escudo en el brazo cubre el frente (`K`+`H`: golpe de escudo); sin él paras con el arma, que aguanta la mitad del golpe y cansa. Con arma a distancia, `K` la baja.
+- **`L`, carga o patada:** con el escudo en el brazo, carga que empuja y tumba al primero que encuentra; sin él, patada (corriendo, con inercia).
 - **Objetivo:** `O` pasa al enemigo siguiente (`Mayús+O`, al anterior; también `Ctrl+E` y `Ctrl+Q`); también se elige con un clic o un toque. Un anillo dorado lo marca y su barra se resalta; los golpes van a él y las flechas lo buscan. Se pierde a 25 m o si muere.
 - **La espalda:** por detrás los enemigos solo te oyen (en sigilo o agachado casi nada). A menos de 2 m de la espalda de uno que no te vio (o aturdido) aparece una daga sobre él: `H` lo mata en silencio (solo lo oyen los que están a menos de 6 m) y `G` lo toma de rehén.
-- **Rehén:** te cubres con él; los suyos no se acercan y no disparan si los tapa (si disparan, fallan más). Vas lento y con una sola mano. `G` lo suelta, `H` lo ejecuta e `I` lo empuja y cae aturdido; un golpe fuerte te lo quita.
+- **Rehén:** te cubres con él; los suyos no se acercan y no disparan si los tapa (si disparan, fallan más). Vas lento y con una sola mano. `G` lo toma o lo suelta, `H` lo ejecuta y `J` lo empuja; un golpe fuerte te lo quita.
 - **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar. El abatido despierta a los 30-90 s, herido, y huye a avisar a los suyos. Junto a él, `F` lo toma prisionero y `H` lo remata (a la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran).
-- **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+L` encender la flecha junto a un fuego (o la casilla de la columna) · `P` equipo (armadura, amuletos y heridas) · `Tab` inventario · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
+- **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+V` encender la flecha junto a un fuego (o la casilla de la columna) · `P` equipo · `I` inventario · `Tab` menú de acciones · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
 
 Combate montado: a caballo se golpea con el arma (`H`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo. Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
 
@@ -301,7 +301,7 @@ El sistema táctico y las cuevas (v0.13.0), el resto de las hojas ([docs/PLAN_TA
 Pruebas: `--cubierto`, `--objetivo`, `--ir boca-forajidos` y `--cueva forajidos:0 --antorcha` (ver la «Captura automática»).
 
 Las manos (v0.12.0, que no se publicó sola: sale con la v0.13.0), la primera fase del sistema táctico de las hojas ([docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)):
-- **Las teclas de las hojas:** `H` ataque, `I` parry, `J` bloqueo, `K` carga o patada. `Tab` abre el inventario, `L` el menú de acciones y `O` elige el objetivo (`Mayús+O`, el anterior).
+- **Las teclas de las hojas:** `H` ataque, `J` parry, `K` bloqueo, `L` carga o patada. `G` rehén, `I` inventario, `Tab` menú de acciones y `O` objetivo (`Mayús+O`, el anterior).
 - **La espada y el escudo, por separado:** de serie, `1` la espada (otra vez, la enfundas), `2` el escudo (al brazo o a la espalda) y `3` el odre; cada uno se guarda sin tocar al otro. Los cuatro botones cambian con lo que tengas fuera: con el escudo solo, puñetazo, parry con el escudo (lo desvía y lo aturde con el canto), cubrirse y carga. Elegir el arco guarda solos la espada y el escudo.
 - **Por la espalda y con un rehén:** `H` mata en silencio, `H` ejecuta al rehén e `I` lo empuja; `H` remata a un abatido.
 - **Las partidas de antes** cargan igual y conservan su barra rápida: su casilla «sable y escudo» enfunda los dos, y `Alt+número` la cambia.

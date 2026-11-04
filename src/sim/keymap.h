@@ -22,9 +22,9 @@ typedef enum {
     // Los cuatro botones de combate (lo que hacen cambia con lo que se tiene fuera: arma, escudo).
     KA_ATTACK, // H (y clic izquierdo): golpe, combo, mantener: pesado; a distancia, tensar y disparar;
                // con la espalda ganada, por la espalda; con un rehen, ejecutarlo; junto a un abatido, rematar
-    KA_BLOCK,  // J (y clic derecho sin arrastrar), mantener: cubrirse con el escudo o el arma
-    KA_PARRY,  // I: parry o contra en la ventana justa; con un rehen, empujarlo
-    KA_CHARGE, // K: carga con escudo, o patada
+    KA_BLOCK,  // K: mantener: cubrirse con el escudo o el arma
+    KA_PARRY,  // J: parry o contra en la ventana justa; con un rehen, empujarlo
+    KA_CHARGE, // L: carga con escudo, o patada
     KA_TARGET, // O: el enemigo siguiente (Mayus+O: el anterior)
     // Moverse.
     KA_SNEAK,  // C: sigilo; junto a un obstaculo, cobertura
@@ -34,7 +34,7 @@ typedef enum {
     KA_INTERACT,    // F: hablar, tomar, botin, animales, pozo, horno (Mayus+F: tomar todo o sacrificar)
     KA_GRAB,        // G: agarrar por la espalda (rehen o escudo humano) y soltarlo
     KA_BACKPACK,    // Mayus+G: dejar o recoger la mochila
-    KA_LIGHT_ARROW, // Mayus+L: encender la flecha junto a un fuego
+    KA_LIGHT_ARROW, // Mayus+V: encender la flecha junto a un fuego
     KA_THROW,       // T: lanzar lo que se lleva en brazos
     KA_MOUNT,       // R: montar y desmontar
     KA_BANDAGE,     // B: vendar
@@ -44,8 +44,8 @@ typedef enum {
     KA_TARGET_LEFT, // Ctrl+Q: objetivo anterior
     KA_TARGET_RIGHT, // Ctrl+E: objetivo siguiente
     KA_MARK,        // M: marcar el mapa (Mayus+M: peligro)
-    KA_MENU,        // L: acciones, obras, fabricar, reparar
-    KA_INVENTORY,   // Tab: el inventario (y, con el cursor y un numero, la barra rapida)
+    KA_MENU,        // Tab: acciones, obras, fabricar, reparar
+    KA_INVENTORY,   // I: el inventario (y, con el cursor y un numero, la barra rapida)
     KA_EQUIPMENT,   // P
     KA_CARD,        // U: la ficha del gran guerrero
     KA_COUNT

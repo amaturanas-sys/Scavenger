@@ -962,7 +962,7 @@ void ga_update(GameActions *ga, Props *props, const Terrain *t, Player *p, Troop
     ga->swap_anim = fmaxf(0.0f, ga->swap_anim - dt);
     bool other_menu = ga->inv_open || ga->equip_open || ga->dlg.open; // inventario, equipo o un dialogo
     if (g_order_req >= 0) ga_escort_order(ga, g_order_req, log, log_len), g_order_req = -1;
-    // O: el objetivo siguiente (con Mayus, el anterior); L: el menu de acciones (v0.12.0: Tab es el
+    // O: el objetivo siguiente (con Mayus, el anterior); Tab: el menu de acciones; I, el
     // inventario, docs/PLAN_TACTICO_Y_CUEVAS.md).
     if (input_action_pressed(KA_TARGET) && g_combat_near && !g_in_cave && !ga->menu_open && !other_menu) g_target_req = input_mods() & KM_SHIFT ? -1 : 1;
     if ((input_action_pressed(KA_MENU) || g_quick_menu) && !other_menu) ga->menu_open = !ga->menu_open;
