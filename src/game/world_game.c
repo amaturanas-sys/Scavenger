@@ -58,7 +58,7 @@ void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, M
         if (who[0] >= 'A' && who[0] <= 'Z') who[0] = (char)(who[0] - 'A' + 'a');
         CaveKind kind = i < w->cave_count ? w->caves[i].kind : CAVE_ANIMAL;
         if (kind >= CAVE_BANDITS)
-            snprintf(log, len, T("Una cueva (%s): marcada como peligro. Se entra por la boca."), T(cave_kind_name(kind)));
+            snprintf(log, len, T("Una cueva (%s): marcada como peligro. Junto a la boca, F la explora."), T(cave_kind_name(kind)));
         else if (kind == CAVE_ABANDONED)
             snprintf(log, len, T("Una cueva abandonada (huellas de %s): marcada como peligro."), who);
         else snprintf(log, len, T("Una guarida (%s): queda marcada como peligro en el mapa."), who);
@@ -338,12 +338,17 @@ static void draw_cave(const Terrain *t, const Cave *c, float time) {
     rlPopMatrix();
 }
 
-// Adentro del peñasco de una boca (draw_cave), fuera del tunel: la roca.
+// Adentro de la roca de una boca (voxs_draw_cave_mouth): toda la huella, hasta lo alto de la roca (7,4 m), menos el arco
+// (3,2 m de ancho hasta los 2 m, que se cierra hasta los 3,2) y el tunel oscuro detras.
 static bool in_outcrop(const Cave *c, float ground, Vector3 q) {
-    float lx, lz;
+    float lx, lz, h = q.y - ground;
     cave_from_world(c, q.x, q.z, &lx, &lz);
-    if (fabsf(lx) > 5.0f || lz < 0.2f || lz > 7.0f || q.y > ground + 6.5f) return false;
-    return !(fabsf(lx) < 1.3f && lz < 4.2f && q.y < ground + 2.8f);
+    if (fabsf(lx) > 5.0f || lz < 0.2f || lz > 7.0f || h > 7.4f) return false;
+    if (lz < 1.2f) { // el labio del arco
+        float half = h < 2.0f ? 1.5f : h < 2.4f ? 1.1f : h < 2.8f ? 0.7f : h < 3.2f ? 0.3f : 0.0f;
+        return !(fabsf(lx) < half);
+    }
+    return !(fabsf(lx) < 1.3f && lz < 4.2f && h < 2.9f);
 }
 
 void wd_keep_out_of_rock(const Terrain *t, Vector3 *pos) {
@@ -388,7 +393,14 @@ void wd_camera_clear(const Terrain *t, Vector3 target, Vector3 *cam) {
         const Cave *c = &w->caves[i];
         if (dist_xz(c->x, c->z, target.x, target.z) > 25.0f) continue;
         float ground = terrain_height(t, c->x, c->z);
-        for (int k = 0; k < 40 && in_outcrop(c, ground, *cam); k++) *cam = Vector3Lerp(*cam, target, 0.12f); // hacia el jugador
+        // Del jugador hacia la camara: si la roca se cruza (la camara detras del risco, o adentro), la camara queda antes;
+        // por el arco y el tunel se ve.
+        Vector3 from = target, to = *cam;
+        for (int k = 1; k <= 32; k++)
+            if (in_outcrop(c, ground, Vector3Lerp(from, to, (float)k / 32.0f))) {
+                *cam = Vector3Lerp(from, to, (float)(k - 1) / 32.0f);
+                break;
+            }
     }
 }
 

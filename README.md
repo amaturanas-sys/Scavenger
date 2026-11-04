@@ -94,7 +94,7 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Marcar sitio de interés / de peligro | M / Shift+M | — |
 | Menú de acciones, obras, fabricar y reparar | L (flechas + Enter; Q/E cambia de pestaña) | — |
 | Empuñar / enfundar (barra rápida) | 1 a 9 y 0: cada casilla saca o guarda lo suyo (de serie, 1 la espada, 2 el escudo, 3 el odre); Mayús+número: a la otra mano; Alt+número: elegir qué va | — |
-| Interactuar: hablar, tomar, botín, pozo, horno, rescatar, animales | F (Mayús+F: todo lo cercano, o sacrificar junto al ganado) | — |
+| Interactuar: hablar, tomar, botín, pozo, horno, rescatar, animales; junto a la boca de una cueva, explorarla | F (Mayús+F: todo lo cercano, o sacrificar junto al ganado) | — |
 | Lanzar lo que llevas en brazos | T | — |
 | Agarrar por la espalda (rehén) | G | — |
 | Escolta: llamar o despedir / órdenes | Y / Y+1 atacar, Y+2 defender, Y+3 seguir (o las casillas sobre la barra rápida) | — |
@@ -261,6 +261,25 @@ Las casas y los campos por persona (v0.10.4 y v0.10.7):
 El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo anterior y `Ctrl+E` al siguiente, además de `Tab` y `Mayús+Tab` (desde la v0.12.0, `O` y `Mayús+O`). La v0.10.6 no cambió el juego (solo la documentación de la tubería de modelos de la v0.9.3).
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
+
+Las cuevas grandes (v0.14.0), la base del plan de [docs/PLAN_CUEVAS_GRANDES.md](docs/PLAN_CUEVAS_GRANDES.md):
+- **Explorar:** junto a la boca, `F` (o un toque en el aviso). La cueva se carga aparte, con «Explorando la cueva...» en
+  pantalla, y se entra; al salir caminando por la boca, se libera. Mientras tanto el mundo de afuera ni se mueve ni se
+  dibuja.
+- **Más grandes y más altas:** las recámaras, de 6,5 a 9,5 m de radio, y la Cisterna Magna, de 13 a 17. Sobre todo el
+  suelo, el techo está a más de tres personas: la pared sube recta hasta 6 m (la Cisterna, 12) y la bóveda, hasta 9 (18).
+- **Pasillos largos y con vueltas:** de 10 m o más (los de la boca, hasta unos 70) y con hasta tres vueltas. La bajada a la
+  Cisterna sigue recta, empinada y sin vuelta.
+- **De voxeles:** las estalactitas, más largas; las estalagmitas, de calcita con sus anillos; y las rocas sueltas de cada
+  sala (las grandes, junto a la pared, tapan el paso).
+- **Las partidas de antes** cargan igual: cada objeto de cada cueva es el mismo, y lo que ya tomaste sigue tomado.
+
+Lo que sigue (los voxeles de las columnas, los cofres, las fuentes y el lago; los huesos, las antorchas, las pinturas, las
+celdas, los túneles labrados y la boca vista desde adentro, según las referencias del usuario) está en el plan, en
+tareas para Copilot.
+
+Pruebas: `--explorar` (F en la boca más cercana) y, en `--cueva`, `pasilloN`, `estalactita`, `estalagmita`, `huesos` y
+`roca`.
 
 Las bocas de las cuevas (v0.13.1), la fase B1 pulida ([docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)):
 - **La roca, de voxeles:** cada boca es un risco de la piedra de su región, con su arco natural, el túnel hueco detrás y
@@ -528,5 +547,7 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --cubierto --enemigos bandidos                      # a cubierto junto a una roca (C)
 ./build/estepa --ir boca-forajidos                                 # la boca de un refugio de forajidos (y sus guardias)
 ./build/estepa --ir boca-abandonada-ladera --dron 7                # la abandonada con más desnivel, desde arriba (con -lado al final, de costado)
+./build/estepa --ir boca-abandonada --explorar                     # F en la boca: «Explorando la cueva...» y adentro
+./build/estepa --cueva tribu:pasillo3 --antorcha                   # a la mitad de un pasillo, con sus vueltas
 ./build/estepa --cueva forajidos:dialogo --antorcha                # adentro, ante un prisionero (--cueva-f: romper las cadenas)
 ```

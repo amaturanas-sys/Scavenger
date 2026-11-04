@@ -764,8 +764,10 @@ De las hojas del cuaderno del usuario; el detalle, en [PLAN_TACTICO_Y_CUEVAS.md]
 - **A cubierto (A4):** `C` junto a un tronco, una roca, una peña, una mata o una ruina te pega a él; no te ven desde el otro
   lado. Con el arco, `H` te asoma, disparas y vuelves. Moverte o `C` te saca.
 - **Las cuevas (B1 a B3):** cada guarida tiene la suya (de la semilla): de fieras, abandonada, de forajidos, de una tribu o
-  almacén del imperio. Se entra caminando por la boca: un vestíbulo, la bajada sin vuelta a la Cisterna Magna y el anillo de
-  recámaras por donde se sale. Adentro, la oscuridad y las antorchas; F toma lo que hay (cofres, ánforas, armas, botín,
+  almacén del imperio. Junto a la boca, F la explora (se carga aparte): un vestíbulo, la bajada sin vuelta a la Cisterna
+  Magna y el anillo de recámaras por donde se sale, por pasillos largos y con vueltas. Las salas son grandes y altas (v0.14.0,
+  el techo a más de tres personas; [PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md)), con la roca, las estalactitas y las
+  estalagmitas de voxeles. Adentro, la oscuridad y las antorchas; F toma lo que hay (cofres, ánforas, armas, botín,
   vetas, huesos, nidos), enciende antorchas y fogatas, muestra las pinturas y libera prisioneros (se unen a la tribu o te
   traicionan). Las habitadas tienen guardias que salen a la boca una vez por día. Desde afuera, la boca dice de quién
   es (v0.13.1): una escalera al saliente en las habitadas, el bastidor y la cortina de cuero de la tribu, la estacada
