@@ -5695,6 +5695,105 @@ static void test_world_dry(void) {
 
 // B1 a B3 (las cuevas, docs/PLAN_TACTICO_Y_CUEVAS.md): la planta de la hoja, el suelo que se pisa, la
 // bajada sin vuelta, siempre una salida, lo de adentro segun el tipo, el botin y los prisioneros.
+// La huella de los objetos de las cuevas (tipo, sala, prisionero, encendida y huevos, en orden): la de la v0.13. Los
+// objetos se guardan por su numero (GameActions.cave_done), asi que la planta nueva no los cambia.
+static uint32_t cave_objects_print(const World *w) {
+    uint32_t h = 2166136261u;
+    for (int i = 0; i < w->cave_count; i++) {
+        const Cave *c = &w->caves[i];
+        h = (h ^ (uint32_t)c->object_count) * 16777619u;
+        h = (h ^ (uint32_t)c->kind) * 16777619u;
+        h = (h ^ (uint32_t)c->room_count) * 16777619u;
+        for (int o = 0; o < c->object_count; o++) {
+            const CaveObject *ob = &c->objects[o];
+            uint32_t v = ob->kind | (uint32_t)ob->room << 8 | (uint32_t)ob->prisoner << 16 | (ob->lit ? 1u : 0u) << 24;
+            if (ob->kind == COBJ_EGGS) v ^= (uint32_t)(int)ob->size << 28;
+            h = (h ^ v) * 16777619u;
+        }
+    }
+    return h;
+}
+
+// Las cuevas grandes (v0.14.0, docs/PLAN_CUEVAS_GRANDES.md), en el mundo de la ultima semilla de test_caves.
+static void test_caves_big(const World *a) {
+    int tortuous = 0, corridors = 0;
+    for (int i = 0; i < a->cave_count; i++) {
+        const Cave *c = &a->caves[i];
+        CHECK(c->rooms[0].radius >= 13.0f - 1e-3f); // la Cisterna, de 13 a 17 m
+        for (int r = 1; r < c->room_count; r++) CHECK(c->rooms[r].radius >= 6.5f - 1e-3f); // las recamaras, de 6,5 a 9,5
+        // Sobre todo el suelo de cada sala, el techo a mas de tres personas.
+        for (int r = 0; r < c->room_count; r++) {
+            const CaveRoom *rm = &c->rooms[r];
+            for (int k = 0; k < 24; k++)
+                for (float f = 0.0f; f < 1.2f; f += 0.1f) {
+                    float ang = (float)k * 0.2618f, x = rm->x + sinf(ang) * rm->radius * f, z = rm->z + cosf(ang) * rm->radius * f, y = 0.0f;
+                    int w = 0;
+                    if (!cave_floor(c, x, z, &y, &w) || w != r) continue;
+                    CHECK(cave_rock_above(c, x, z, w, y) - y >= 3.0f * CAVE_PERSON_HEIGHT);
+                }
+            // El perfil: la pared recta (hasta el techo de los pasillos y hasta la boveda) y la boveda hasta la clave.
+            float f0, h0, f1, h1;
+            cave_room_profile(c, r, 1, &f0, &h0);
+            CHECK(f0 == 1.0f && h0 == CAVE_CORRIDOR_HEIGHT);
+            cave_room_profile(c, r, 2, &f0, &h0);
+            CHECK(f0 == 1.0f && h0 >= 3.0f * CAVE_PERSON_HEIGHT);
+            cave_room_profile(c, r, CAVE_PROFILE_PTS - 1, &f1, &h1);
+            CHECK(f1 == 0.0f && fabsf(rm->floor_y + h1 - cave_ceiling(c, r, rm->floor_y)) < 1e-3f);
+        }
+        for (int k = 0; k < c->corridor_count; k++) {
+            const CaveCorridor *cr = &c->corridors[k];
+            float ax, az, ay, bx, bz, by;
+            cave_corridor_ends(c, k, &ax, &az, &ay, &bx, &bz, &by);
+            float chord = sqrtf((bx - ax) * (bx - ax) + (bz - az) * (bz - az));
+            CHECK(cr->length >= CAVE_CORRIDOR_MIN && cr->length >= chord - 1e-3f);
+            if (k == 0) CHECK(cr->length < chord + 1e-3f); // la bajada, recta
+            else corridors++, tortuous += cr->length > 1.03f * chord; // los demas, con vueltas
+            // Por su eje se camina de punta a punta: en el suelo, a la altura que toca, y lejos de los otros pasillos (salvo
+            // junto a la sala que comparten).
+            for (float t = 0.04f; t < 0.97f; t += 0.03f) {
+                float x, z, y, dx, dz, fy = 0.0f;
+                int w = 0;
+                cave_corridor_at(c, k, t, &x, &z, &y, &dx, &dz);
+                CHECK(fabsf(dx * dx + dz * dz - 1.0f) < 1e-3f);
+                CHECK(cave_floor(c, x, z, &fy, &w));
+                if (w != CAVE_IN_CORRIDOR + k) continue; // junto a una sala, es de la sala
+                CHECK(fabsf(fy - y) < 1e-3f && cave_corridor_distance(c, k, x, z) < 1e-3f);
+                for (int m = 0; m < c->corridor_count; m++) {
+                    if (m == k) continue;
+                    const CaveCorridor *o = &c->corridors[m];
+                    bool shared = o->from == cr->from || o->to == cr->from || o->from == cr->to || o->to == cr->to;
+                    if (!shared) CHECK(cave_corridor_distance(c, m, x, z) > 2.0f * CAVE_CORRIDOR_HALF);
+                }
+            }
+        }
+        // El decorado: determinista, en el suelo de su sala, lejos de las puertas; lo que tapa, junto a la pared, de modo que
+        // del centro de la sala se llega a cada puerta.
+        CaveDecor d[CAVE_DECOR_MAX], d2[CAVE_DECOR_MAX];
+        int n = cave_decor(c, d, CAVE_DECOR_MAX);
+        CHECK(n > 0 && n == cave_decor(c, d2, CAVE_DECOR_MAX) && memcmp(d, d2, sizeof(CaveDecor) * (size_t)n) == 0);
+        for (int k = 0; k < n; k++) {
+            const CaveRoom *rm = &c->rooms[d[k].room];
+            float y = 0.0f;
+            int w = 0;
+            CHECK(d[k].kind < CDEC_KINDS && d[k].variant < 4 && d[k].radius > 0.0f && d[k].size > 0.0f);
+            CHECK(cave_floor(c, d[k].x, d[k].z, &y, &w) && w == d[k].room && y == d[k].y);
+            float dc = sqrtf((d[k].x - rm->x) * (d[k].x - rm->x) + (d[k].z - rm->z) * (d[k].z - rm->z));
+            if (d[k].blocks) CHECK(dc - d[k].radius >= rm->radius * 0.5f - 1e-3f);
+        }
+        for (int r = 0; r < c->room_count; r++) {
+            const CaveRoom *rm = &c->rooms[r];
+            CHECK(!cave_decor_blocked(d, n, rm->x, rm->z)); // el centro, libre
+            for (int k = 0; k < 72; k++) {
+                float ang = (float)k * 0.0873f;
+                if (!cave_door_at(c, r, ang)) continue;
+                for (float f = 0.0f; f < 0.97f; f += 0.05f)
+                    CHECK(!cave_decor_blocked(d, n, rm->x + sinf(ang) * rm->radius * f, rm->z + cosf(ang) * rm->radius * f));
+            }
+        }
+    }
+    CHECK(corridors > 0 && tortuous * 10 >= corridors * 9); // casi todos con vueltas
+}
+
 static void test_caves(void) {
     static World a, b; // static: un World pesa cientos de KB (la pila de Windows es de 1 MB)
     Inventory inv;
@@ -5708,6 +5807,8 @@ static void test_caves(void) {
         world_generate(&a, seeds[si]);
         world_generate(&b, seeds[si]);
         CHECK(a.cave_count == a.den_count && a.cave_count > 0 && a.cave_count == b.cave_count);
+        static const uint32_t PRINTS[3] = { 0x96FCB157u, 0xD3F64685u, 0xEC1C1BDBu }; // los de la v0.13 (partidas viejas)
+        CHECK(cave_objects_print(&a) == PRINTS[si]);
         for (int i = 0; i < a.cave_count; i++) {
             const Cave *c = &a.caves[i];
             CHECK(memcmp(c, &b.caves[i], sizeof(Cave)) == 0); // determinista
@@ -5765,8 +5866,9 @@ static void test_caves(void) {
                     float ax, az, ay, bx, bz, by;
                     cave_corridor_ends(c, k, &ax, &az, &ay, &bx, &bz, &by);
                     CHECK(fabsf(sqrtf(ax * ax + (az - CAVE_VEST_Z) * (az - CAVE_VEST_Z)) - CAVE_VEST_R) < 1e-3f && ay == 0.0f);
-                    // A 2 m de su comienzo, cada pasillo de la boca es solo suyo (ni el vestibulo ni otro pasillo).
-                    float l = sqrtf((bx - ax) * (bx - ax) + (bz - az) * (bz - az)), px = ax + (bx - ax) / l * 2.0f, pz = az + (bz - az) / l * 2.0f;
+                    // A 2 m de su comienzo (por su eje), cada pasillo de la boca es solo suyo (ni el vestibulo ni otro pasillo).
+                    float px, pz;
+                    cave_corridor_at(c, k, 2.0f / c->corridors[k].length, &px, &pz, NULL, NULL, NULL);
                     int pw = 0;
                     CHECK(cave_floor(c, px, pz, NULL, &pw) && pw == CAVE_IN_CORRIDOR + k);
                 }
@@ -5796,12 +5898,15 @@ static void test_caves(void) {
                                ob->kind == COBJ_ARMS || ob->kind == COBJ_CELL;
                 const CaveRoom *rm = &c->rooms[ob->room];
                 float wall_ang = atan2f(ob->x - rm->x, ob->z - rm->z);
-                for (int k = -1; k <= 1 && on_wall; k++) {
-                    float side_ang = wall_ang + (float)k / rm->radius;
-                    int where = 0;
-                    bool in = cave_floor(c, rm->x + sinf(side_ang) * (rm->radius + 0.6f), rm->z + cosf(side_ang) * (rm->radius + 0.6f), NULL, &where);
-                    CHECK(!in || where < CAVE_IN_CORRIDOR);
-                }
+                for (int k = -1; k <= 1 && on_wall; k++) CHECK(!cave_door_at(c, ob->room, wall_ang + (float)k / rm->radius));
+                CHECK(on_wall == cave_object_on_wall(ob->kind));
+                // Donde se dibuja: lo de la pared, sobre la roca (no mas alla); las estalactitas, de la boveda, y a mas de
+                // la pared recta sobre el suelo (no tapan el paso).
+                float wx, wy, wz, wyaw;
+                cave_object_at(c, o, &wx, &wy, &wz, &wyaw);
+                float wd = sqrtf((wx - rm->x) * (wx - rm->x) + (wz - rm->z) * (wz - rm->z));
+                if (on_wall) CHECK(wd <= cave_wall_radius(c, ob->room, wall_ang) + 1e-3f && wd > rm->radius - 0.5f);
+                if (ob->kind == COBJ_STALACTITE) CHECK(wy - rm->floor_y >= CAVE_WALL_HEIGHT - 1e-3f && wy <= cave_ceiling(c, ob->room, rm->floor_y) + 1e-3f);
             }
             CHECK(stal > 0); // todas tienen estalactitas
             if (c->kind == CAVE_ANIMAL) CHECK(nest > 0 && torch == 0 && cell == 0);
@@ -5812,6 +5917,7 @@ static void test_caves(void) {
     for (int k = 0; k < CAVE_KINDS; k++) CHECK(kinds[k] > 0); // de todos los tipos
     CHECK(prisoners > 0 && loot > 0);
     CHECK(rings[3] + rings[4] > 0 && rings[8] + rings[9] > 0); // de 3 a 9 recamaras
+    test_caves_big(&a);
     // Un forajido traiciona mas que un pastor, y en una cueva de forajidos mas que en la de una tribu.
     Cave t;
     memset(&t, 0, sizeof(t));
