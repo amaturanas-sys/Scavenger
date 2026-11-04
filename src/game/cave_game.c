@@ -232,6 +232,25 @@ static Color grain(Color base, int a, int b) {
                     (unsigned char)fminf(255.0f, (float)base.b * k), 255 };
 }
 
+static Color material_tone(Color base, float factor, float blue) {
+    return (Color){ (unsigned char)fminf(255.0f, (float)base.r * factor),
+                    (unsigned char)fminf(255.0f, (float)base.g * factor),
+                    (unsigned char)fminf(255.0f, (float)base.b * factor + blue), 255 };
+}
+
+static Color rock_surface(Color base, int room, int ring, int segment) {
+    float band = 0.94f + 0.07f * sinf((float)ring * 2.4f + (float)room * 0.8f);
+    float facets = 0.94f + 0.12f * hash01(room * 31 + ring, segment);
+    float damp = ring < 2 ? 0.9f : 1.0f;
+    return material_tone(base, band * facets * damp, ring < 2 ? 3.0f : 0.0f);
+}
+
+static Color floor_surface(Color base, int room, int ring, int segment) {
+    float edge = 1.0f - 0.08f * (float)ring;
+    float gravel = 0.9f + 0.16f * hash01(room * 47 + ring, segment + 19);
+    return material_tone(base, edge * gravel, ring == 0 ? 2.0f : 0.0f);
+}
+
 // Una sala (o el vestibulo: room = -1, con la boca abierta hacia -z).
 static void draw_room(const Cave *c, int room, Color rock, Color ground) {
     static const CaveRoom VEST = { 0.0f, CAVE_VEST_Z, 0.0f, CAVE_VEST_R };
@@ -245,12 +264,12 @@ static void draw_room(const Cave *c, int room, Color rock, Color ground) {
         for (int j = 0; j < ROOM_RINGS; j++) {
             float rad = wr * RING_F[j];
             wp[j][k] = (Vector3){ r->x + s * rad, r->floor_y + ring_h(j, height), r->z + co * rad };
-            wc[j][k] = shade_v(grain(rock, room * 1000 + j, k % ROOM_SEGS), wp[j][k]);
+            wc[j][k] = shade_v(rock_surface(grain(rock, room * 1000 + j, k % ROOM_SEGS), room, j, k % ROOM_SEGS), wp[j][k]);
         }
         for (int j = 0; j < FLOOR_RINGS; j++) {
             float rad = wr * FLOOR_F[j];
             fp[j][k] = (Vector3){ r->x + s * rad, r->floor_y, r->z + co * rad };
-            fc[j][k] = shade_v(grain(ground, room * 1000 + 500 + j, k % ROOM_SEGS), fp[j][k]);
+            fc[j][k] = shade_v(floor_surface(grain(ground, room * 1000 + 500 + j, k % ROOM_SEGS), room, j, k % ROOM_SEGS), fp[j][k]);
         }
     }
     // Las puertas: donde del otro lado de la pared hay un pasillo, la pared se abre hasta el alto del pasillo.
@@ -293,10 +312,10 @@ static void draw_corridor(const Cave *c, int k, Color rock, Color ground) {
             for (int h = 0; h < 3; h++) {
                 float lift = (float)h * CAVE_CORRIDOR_HEIGHT * 0.5f, in = h == 2 ? 0.25f : 0.0f; // arriba, la boveda se cierra un poco
                 P[i][side][h] = (Vector3){ cx + nx * sg * (w - in), y + lift - (h == 0 ? 0.2f : 0.0f), cz + nz * sg * (w - in) };
-                C[i][side][h] = shade_v(grain(rock, k * 7000 + i, side * 3 + h), P[i][side][h]);
+                C[i][side][h] = shade_v(rock_surface(grain(rock, k * 7000 + i, side * 3 + h), k, h, i), P[i][side][h]);
             }
             F[i][side] = (Vector3){ cx + nx * sg * w, y, cz + nz * sg * w };
-            FC[i][side] = shade_v(grain(ground, k * 7000 + 900 + i, side), F[i][side]);
+            FC[i][side] = shade_v(floor_surface(grain(ground, k * 7000 + 900 + i, side), k, side, i), F[i][side]);
         }
     }
     rlBegin(RL_TRIANGLES);
