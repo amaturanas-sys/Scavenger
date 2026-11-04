@@ -5902,11 +5902,11 @@ static void test_caves(void) {
                 CHECK(on_wall == cave_object_on_wall(ob->kind));
                 // Donde se dibuja: lo de la pared, sobre la roca (no mas alla); las estalactitas, de la boveda, y a mas de
                 // la pared recta sobre el suelo (no tapan el paso).
-                float wx, wy, wz, wyaw;
-                cave_object_at(c, o, &wx, &wy, &wz, &wyaw);
-                float wd = sqrtf((wx - rm->x) * (wx - rm->x) + (wz - rm->z) * (wz - rm->z));
+                float ox, oy, oz, oyaw;
+                cave_object_at(c, o, &ox, &oy, &oz, &oyaw);
+                float wd = sqrtf((ox - rm->x) * (ox - rm->x) + (oz - rm->z) * (oz - rm->z));
                 if (on_wall) CHECK(wd <= cave_wall_radius(c, ob->room, wall_ang) + 1e-3f && wd > rm->radius - 0.5f);
-                if (ob->kind == COBJ_STALACTITE) CHECK(wy - rm->floor_y >= CAVE_WALL_HEIGHT - 1e-3f && wy <= cave_ceiling(c, ob->room, rm->floor_y) + 1e-3f);
+                if (ob->kind == COBJ_STALACTITE) CHECK(oy - rm->floor_y >= CAVE_WALL_HEIGHT - 1e-3f && oy <= cave_ceiling(c, ob->room, rm->floor_y) + 1e-3f);
             }
             CHECK(stal > 0); // todas tienen estalactitas
             if (c->kind == CAVE_ANIMAL) CHECK(nest > 0 && torch == 0 && cell == 0);
