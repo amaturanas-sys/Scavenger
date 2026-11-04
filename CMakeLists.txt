@@ -127,6 +127,8 @@ if(ESTEPA_BUILD_GAME)
     src/game/hud_game.c
     src/game/world_game.c
     src/game/cave_game.c
+    src/game/cave_scene.c
+    src/game/cave_props.c
     src/game/title_menu.c
     src/game/input.c
     src/game/inventory_game.c
@@ -142,6 +144,7 @@ if(ESTEPA_BUILD_GAME)
     src/world/sky.c
     src/world/clouds.c
     src/world/voxstruct.c
+    src/world/voxcave.c
     src/world/weather.c
     src/world/body_draw.c
     src/world/vegetation.c

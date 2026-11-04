@@ -72,7 +72,7 @@ El resto del sistema táctico ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.
 
 ## Las cuevas
 
-Una por guarida ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1 a B3). Con `--ir boca-<tipo>` (afuera) y
+Una por guarida ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1 a B3, y [PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md)). Con `--ir boca-<tipo>` (afuera), `--explorar` (F en la boca) y
 `--cueva tipo[:lugar]` (adentro; `--antorcha`, encendida; `--cueva-f`, como pulsar F). El montaje:
 [`capturas/las_cuevas.png`](capturas/las_cuevas.png).
 
@@ -83,13 +83,15 @@ Una por guarida ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1 a B3).
 | ![Boca del imperio](capturas/cueva_boca_imperio.png) | **La boca de un almacén del imperio** (`--ir boca-imperio`): el saliente de piedra con su baranda, los estandartes y la guardia imperial. |
 | ![Boca de una tribu](capturas/cueva_boca_tribu.png) | **La boca de un refugio de una tribu** (`--ir boca-tribu`): la cortina de cuero corrida, el sol pintado sobre el arco y el bastidor con un cuero. |
 | ![Boca abandonada](capturas/cueva_boca_abandonada.png) | **La boca de una cueva abandonada** (`--ir boca-abandonada`): en el desierto, la arenisca en estratos; la fachada de una civilización desaparecida (jambas, dintel, nichos y hornacina), la escalera rota y la reja caída a un costado. |
+| ![Explorar](capturas/cueva_explorar.png) | **Junto a la boca, F explora** (`--ir boca-abandonada --caminar adelante`; con `--explorar`, como si se pulsara): el aviso «F: explorar la cueva». La cueva se carga aparte, con «Explorando la cueva...» en pantalla. |
+| ![Pasillo](capturas/cueva_pasillo.png) | **Un pasillo con sus vueltas** (`--cueva tribu:pasillo3 --antorcha`): de 10 m o más, alumbrado por la antorcha. |
 | ![Guarida](capturas/cueva_fieras.png) | **Adentro de una guarida de fieras** (`--cueva animal:nido --antorcha`): el nido con sus huevos, a la luz de la antorcha. |
-| ![Cisterna](capturas/cueva_habitada.png) | **La Cisterna de los forajidos** (`--cueva forajidos:0 --antorcha`): la fogata, la columna de ladrillo, las pinturas y su antorcha, una telaraña y los charcos. |
+| ![Cisterna](capturas/cueva_habitada.png) | **La Cisterna de los forajidos** (`--cueva forajidos:0 --antorcha`): la fogata, una pintura, los charcos y las rocas de voxeles del decorado; la sala, de unos 15 m de radio, se pierde en lo oscuro más allá de la luz. |
 | ![Prisionero](capturas/cueva_prisionero.png) | **Un prisionero** (`--cueva forajidos:dialogo`): lo que dice, si se lo ve sincero, y romper las cadenas o dejarlo. |
 | ![Rescate](capturas/cueva_rescate.png) | **Se une a la tribu** (`--cueva imperio:dialogo --cueva-f`): la tropa pasa de 7 a 8 y la celda queda abierta. |
 | ![Traición](capturas/cueva_traicion.png) | **Te traiciona** (`--cueva forajidos:dialogo --cueva-f`): te golpea, te roba tres virotes y huye. |
 | ![A oscuras](capturas/cueva_oscura.png) | **Una recámara a oscuras** (`--cueva abandonada:1`): sin antorcha se ve apenas alrededor. |
-| ![Con la antorcha](capturas/cueva_antorcha.png) | **La misma, con la antorcha** (`--antorcha`). |
+| ![Con la antorcha](capturas/cueva_antorcha.png) | **La misma, con la antorcha** (`--antorcha`): una estalagmita de voxeles y una roca del decorado. |
 
 ## El mundo
 

@@ -658,11 +658,13 @@ Cueva: %s. Está oscuro: enciende la antorcha.	Cave: %s. It's dark: light your t
 Dejarlo	Leave him
 Enciendes la antorcha de la pared.	You light the wall torch.
 Enciendes la fogata: la recámara se ilumina.	You light the fire: the chamber lights up.
+Explorando la cueva...	Exploring the cave...
 F: abrir el cofre	F: open the chest
 F: arrancar la veta (%s)	F: pry out the vein (%s)
 F: deshacer el nido (%s)	F: pull apart the nest (%s)
 F: encender la antorcha de la pared	F: light the wall torch
 F: encender la fogata	F: light the fire
+F: explorar la cueva	F: explore the cave
 F: hablar con el prisionero (un %s)	F: talk to the prisoner (a %s)
 F: juntar los huesos	F: gather the bones
 F: mirar las pinturas	F: look at the paintings
@@ -679,6 +681,7 @@ La bajada es demasiado empinada para subirla: busca otra salida por las recámar
 Marcas de los forajidos: rayas por cada caravana asaltada.	Outlaw marks: a stroke for every caravan they raided.
 Me agarraron con mis ovejas. Sácame de aquí y te seguiré a donde vayas.	They took me with my sheep. Get me out of here and I'll follow you anywhere.
 Me tienen forjando sus armas. Libérame y forjaré las tuyas.	They keep me forging their weapons. Free me and I'll forge yours.
+No hay memoria para explorar esta cueva.	There is not enough memory to explore this cave.
 No sabes si fiarte.	You're not sure you can trust him.
 No soy como ellos... ya no. Suéltame: no te vas a arrepentir.	I'm not like them... not anymore. Let me go: you won't regret it.
 Pinturas de la tribu: jinetes, ciervos y el sol; cuentan de dónde vinieron.	Tribal paintings: riders, deer and the sun; they tell where the tribe came from.
@@ -1353,7 +1356,7 @@ Beber de más emborracha: torpe con las armas, cansado y te tambaleas.	Drinking 
 Buscar reclutas, explorar y cazar son salidas: se van, no se los ve, y vuelven a los pocos minutos con su suerte. De noche es más peligroso.	Finding recruits, scouting and hunting are trips: they go out of sight and return a few minutes later, for better or worse. Night is riskier.
 C sigilo o cobertura · X agacharse	C sneak or cover · X crouch
 Cada día, los del campamento con oficio trabajan lo que sobra del acopio: el cazador curte pieles y talla puntas de hueso, el pastor hace fieltro, el constructor labra madera y hace adobe, el cocinero velas de sebo, el curandero ungüento y el orfebre peines.	Every day, camp folk with a trade work the store's surplus: the hunter tans hides and carves bone points, the herder makes felt, the builder dresses timber and makes adobe, the cook tallow candles, the healer salve and the goldsmith combs.
-Cada guarida tiene su cueva: de fieras, abandonada, de forajidos, de una tribu o un almacén del imperio. Se entra caminando por la boca y se sale por ella.	Every den has its cave: a beasts' cave, an abandoned one, an outlaws' hideout, a tribal refuge or an imperial storehouse. Walk in through the mouth and leave the same way.
+Cada guarida tiene su cueva: de fieras, abandonada, de forajidos, de una tribu o un almacén del imperio. Junto a la boca, F la explora (se carga aparte); se sale caminando por la boca.	Every den has its cave: a beasts' cave, an abandoned one, an outlaws' hideout, a tribal refuge or an imperial storehouse. At the mouth, F explores it (it loads on its own); walk out through the mouth to leave.
 Cada partida nueva cambia los ríos, los lagos, las montañas y dónde están los pueblos y las guaridas.	Each new game changes the rivers, lakes, mountains and where villages and dens are.
 Cada región tiene su altura: la costa, la más baja; el altiplano, el más alto. Hace más frío cuanto más alto.	Each region has its own altitude: the coast is the lowest, the highland the highest. The higher, the colder.
 Cada región tiene su reino, sus aldeas y su capital amurallada, sus fieras y sus tribus nómadas: rivales, neutrales o amigas. Ruinas y estructuras quedan en el mapa al verlas.	Each region has its kingdom, its villages and walled capital, its beasts and its nomad tribes: rival, neutral or friendly. Ruins and structures go on the map once you see them.
@@ -1658,7 +1661,7 @@ Llegas a %s, aldea del %s.	You reach %s, a village of the %s.
 Llegas a %s, capital del %s.	You reach %s, capital of the %s.
 Los %s, tribu amiga, te reciben junto a su fuego.	The %s, a friendly tribe, welcome you by their fire.
 Los %s, tribu amiga, te reciben y te señalan %s en el mapa.	The %s, a friendly tribe, welcome you and point out %s on the map.
-Una cueva (%s): marcada como peligro. Se entra por la boca.	A cave (%s): marked as danger. Enter through the mouth.
+Una cueva (%s): marcada como peligro. Junto a la boca, F la explora.	A cave (%s): marked as danger. At the mouth, F explores it.
 Una cueva abandonada (huellas de %s): marcada como peligro.	An abandoned cave (%s tracks): marked as danger.
 Una guarida (%s): queda marcada como peligro en el mapa.	A den (%s): marked as danger on the map.
 amiga	friendly

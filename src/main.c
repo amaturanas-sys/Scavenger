@@ -32,6 +32,8 @@
 #include "game/actions_game.h"
 #include "game/combat_game.h"
 #include "game/cave_game.h"
+#include "game/cave_props.h"
+#include "game/cave_scene.h"
 #include "game/disasters_game.h"
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
@@ -740,6 +742,7 @@ int main(int argc, char **argv) {
     const char *start_cave = NULL; // prueba: --cueva tipo[:lugar] (src/game/cave_game.h, cv_test_enter)
     bool start_torch = false;      // prueba: --antorcha, encendida en la mano izquierda
     bool start_cave_f = false;     // prueba: --cueva-f, como pulsar F adentro (al cuadro 20)
+    bool start_explore = false;    // prueba: --explorar, F en la boca de la cueva mas cercana (al cuadro 8)
     float start_walk = 0.0f;       // prueba: --caminar adelante|atras (desde el cuadro 7)
     int start_escort = -1; // prueba: con la escolta fuera y esa orden (SquadOrder)
     bool start_raid = false, start_guards = false; // prueba: un asalto al campamento; dos soldados de guardia
@@ -799,6 +802,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--cueva") && i + 1 < argc) start_cave = argv[++i];
         else if (!strcmp(argv[i], "--antorcha")) start_torch = true;
         else if (!strcmp(argv[i], "--cueva-f")) start_cave_f = true;
+        else if (!strcmp(argv[i], "--explorar")) start_explore = true;
         else if (!strcmp(argv[i], "--caminar") && i + 1 < argc) start_walk = !strcmp(argv[++i], "atras") ? -1.0f : 1.0f;
         else if (!strcmp(argv[i], "--cubierto")) start_cover = true;
         else if (!strcmp(argv[i], "--asalto")) start_raid = true;
@@ -885,6 +889,8 @@ int main(int argc, char **argv) {
     terrain_forget_gpu();
     clouds_forget_gpu();
     voxs_forget_gpu();
+    cs_forget_gpu(); // la escena de una cueva (y sus modelos de voxeles)
+    cp_forget_gpu();
     hearth_forget_gpu();
     RenderTexture2D lowres = LoadRenderTexture(VIRTUAL_W, VIRTUAL_H);
     SetTextureFilter(lowres.texture, TEXTURE_FILTER_POINT); // pixeles nitidos al escalar
@@ -1454,6 +1460,8 @@ int main(int argc, char **argv) {
                 if (!cv_test_enter(&g_actions, &player, &terrain, start_cave, &rig.yaw)) snprintf(log, sizeof(log), "--cueva %s: no hay", start_cave);
                 start_cave = NULL;
             }
+            if (start_explore && frame == 8 && !gallery_mode && !cv_test_explore(&player, &terrain)) // prueba: explorar la cueva mas cercana
+                snprintf(log, sizeof(log), "%s", "--explorar: no hay una cueva a menos de 30 m");
             if (start_cave_f && frame == 20 && !gallery_mode) // prueba: F en la cueva (tomar, encender, liberar)
                 cv_test_press(&g_actions, &g_combat, &troop, &g_props, &player, &terrain, log, sizeof(log));
             if (start_hands && frame == 30 && !gallery_mode) { // prueba: como pulsar 1 (la espada) o 2 (el escudo)
@@ -1666,8 +1674,8 @@ int main(int argc, char **argv) {
                 if (!cv_inside()) cb_draw_buttons(&g_combat, &g_actions, VIRTUAL_W, VIRTUAL_H); // H J K L, abajo a la derecha
             }
             cg_draw_hud(&g_actions, &troop, VIRTUAL_W); // la tribu en marcha
-            if (cv_inside()) cv_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H); // F en la cueva
-            else { // lo que hace F afuera
+            cv_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H); // F en la cueva, o en su boca: explorar
+            if (!cv_inside()) { // lo que hace F afuera
                 fg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H);
                 td_draw_hud(VIRTUAL_W, VIRTUAL_H);
                 ct_draw_hud(VIRTUAL_W, VIRTUAL_H); // F junto a la muralla: la escala, la puerta
@@ -1680,6 +1688,7 @@ int main(int argc, char **argv) {
             if (show_card) draw_champion_card(&troop, last_champion);
             if (show_controls) menu_draw_controls(VIRTUAL_W / 2 - 200, 90, 400, 140);
             hz_draw_fade(&g_hazards, VIRTUAL_W, VIRTUAL_H); // al despertar en la playa (el tiburon), sobre todo
+            if (cv_loading()) cv_draw_loading(&terrain, VIRTUAL_W, VIRTUAL_H); // explorar: la cueva se carga aparte
         }
         }
         menu_draw(&menu, in_game,
@@ -1742,6 +1751,7 @@ int main(int argc, char **argv) {
     clouds_unload();
     hearth_unload();
     terrain_unload_gpu();
+    cp_unload(), cs_unload();
     voxs_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();

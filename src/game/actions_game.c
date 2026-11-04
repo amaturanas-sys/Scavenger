@@ -1,5 +1,6 @@
 #include "game/actions_game.h"
 
+#include "game/cave_game.h"
 #include "game/combat_game.h"
 #include "game/input.h"
 #include "game/fauna_game.h"
@@ -924,6 +925,7 @@ static bool oven_near(const Props *props, const Player *p) {
 // caravana, o saquear un campamento rival (src/game/trade_game.c); el pozo (sacar agua) y el horno
 // (fabricar).
 static void interact(GameActions *ga, Troop *troop, Props *props, const Terrain *t, Player *p, char *log, size_t len) {
+    if (cv_claimed_interact()) return; // en la boca de una cueva, F fue para explorar (src/game/cave_game.c)
     if (cg_try_talk(ga, troop, p) || tg_try_talk(ga, troop, p, log, len)) return;
     int near = props_nearest(props, p->pos, REACH, true);
     float prop_d = near >= 0 ? dist2d(p->pos, props->items[near].pos) : 1e9f;
