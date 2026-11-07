@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "raylib.h"
+#include "sim/targeting.h"
 
 #define DRAG_PIXELS 6.0f // lo que se mueve el raton con el boton derecho antes de girar la camara
 
@@ -10,16 +11,23 @@ static bool g_injected[IN_COUNT];
 static int g_last_key;
 static bool g_right_drag; // el boton derecho ya arrastra (gira la camara)
 static float g_right_moved;
+static CtrlTap g_ctrl_tap; // Ctrl sola: inicia o suelta el objetivo (sim/targeting.h)
+static bool g_ctrl_tapped;
 
 bool input_ctrl(void) { return IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL); }
-bool input_ctrl_pressed(void) { return IsKeyPressed(KEY_LEFT_CONTROL) || IsKeyPressed(KEY_RIGHT_CONTROL); }
+bool input_ctrl_tapped(void) { return g_ctrl_tapped; }
 
 void input_inject(InputAction a) {
     if ((unsigned)a < IN_COUNT) g_injected[a] = true;
 }
 
 void input_update(void) {
-    for (int k = GetKeyPressed(); k; k = GetKeyPressed()) g_last_key = k;
+    bool other = IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || GetMouseWheelMove() != 0.0f;
+    for (int k = GetKeyPressed(); k; k = GetKeyPressed()) {
+        g_last_key = k;
+        if (k != KEY_LEFT_CONTROL && k != KEY_RIGHT_CONTROL) other = true; // un atajo con Ctrl, no Ctrl sola
+    }
+    g_ctrl_tapped = ctrl_tap(&g_ctrl_tap, input_ctrl(), other, GetFrameTime());
     if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) g_right_drag = false, g_right_moved = 0.0f;
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
         Vector2 d = GetMouseDelta();

@@ -611,6 +611,7 @@ Somos %d en %s. Elige a uno o dos y dales una tarea: acompañados corren menos r
 Una obra con el acopio de este campamento	A work using this camp's store
 Vamos en marcha con todo cargado (%d viviendas y el acopio). ¿Plantamos aquí el campamento?	We are on the march with everything loaded (%d dwellings and the store). Shall we pitch the camp here?
 Volver	Back
+agua	water
 aprende %s (%d%%)	learning %s (%d%%)
 aprendiendo un oficio	learning a trade
 buscando reclutas	finding recruits
@@ -622,6 +623,7 @@ explorando	scouting
 hace la ronda	on patrol
 hierro de pantano	bog iron
 la ciudadela de %s	the citadel of %s
+malherido	badly hurt
 nada	nothing
 nada nuevo a la vista.	nothing new in sight.
 ocupado en una tarea	busy with a task
@@ -780,12 +782,14 @@ Abatido: F lo toma prisionero · H lo remata	Downed: F takes them prisoner · H 
 Acércate a un fuego (fogata, hoguera o algo que arda) para encender la flecha.	Get near a fire (campfire, bonfire or anything burning) to light the arrow.
 Agarrar: rehén	Grab: hostage
 Agarras al %s por el cuello: es tu rehén.	You grab the %s by the neck: your hostage.
+Agarre	Grapple
 Arma	Weapon
 Arrollas al %s con el caballo: queda abatido.	You ride down the %s: it lies downed.
 Arrollas al %s con el caballo: queda en el suelo. Deja botín (F).	You ride down the %s: it stays down. Loot dropped (F).
 Atacar	Attack
 Atas al %s y lo tomas prisionero; lo que llevaba queda en el suelo (F).	You tie up the %s and take them prisoner; what they carried stays on the ground (F).
 Bajar el arma	Lower the weapon
+Carga con escudo	Shield charge
 Con esta lluvia la flecha no prende.	The arrow won't light in this rain.
 Con un arma a distancia en las manos no puedes agarrar a nadie.	You can't grab anyone with a ranged weapon in your hands.
 Con un arma a distancia no hay parry.	No parry with a ranged weapon.
@@ -814,12 +818,15 @@ G agarra por la espalda (sin que te vean, o a uno aturdido). La mochila va con M
 G: lo agarras por el cuello y te cubres con él; los suyos no se acercan ni disparan.	G: grab them by the neck and shield yourself; their own won't come closer or shoot.
 G: lo sueltas.	G: let them go.
 Gancho	Hook
+Golpe	Strike
+Golpe de escudo	Shield bash
+Golpe pesado	Heavy strike
 H junto a un abatido: lo rematas (a la tribu no le es indiferente).	H next to a downed foe: you finish them (the tribe cares).
-H o clic: golpe (encadena hasta tres). Mantener: golpe pesado.	H or click: strike (chains up to three). Hold: heavy strike.
-H o clic: puñetazo (con el arma enfundada).	H or click: punch (with the weapon sheathed).
-H o clic: tensa y suelta. Apunta al objetivo (o al más cercano delante).	H or click: draw and release. Aims at the target (or the nearest one ahead).
+H: golpe (encadena hasta tres). Mantener: golpe pesado.	H: strike (chains up to three). Hold: heavy strike.
 H: lo ejecutas delante de los suyos.	H: you execute them in front of their own.
 H: lo matas en silencio; solo lo oyen los que están a menos de 6 m.	H: a silent kill; only those within 6 m hear it.
+H: puñetazo (con el arma enfundada).	H: punch (with the weapon sheathed).
+H: tensa y suelta. Apunta al objetivo (o al más cercano delante).	H: draw and release. Aims at the target (or the nearest one ahead).
 J justo antes del golpe enemigo: desvías y queda abierto un segundo. A destiempo, quedas expuesto.	J just before the enemy's blow: deflect and leave them open for a second. Mistimed, you're exposed.
 J justo antes del golpe enemigo: enganchas su escudo y se lo arrancas. A destiempo, quedas expuesto.	J just before the enemy's blow: hook their shield and tear it away. Mistimed, you're exposed.
 J justo antes del golpe enemigo: llave y derribo, y lo desarmas. A destiempo, quedas expuesto.	J just before the enemy's blow: lock and take them down, disarming them. Mistimed, you're exposed.
@@ -855,14 +862,19 @@ Paras con el arma el ataque del %s: aguanta la mitad.	You parry the %s's attack 
 Paras con el arma el golpe del %s: aguanta la mitad y cansa.	You parry the %s's blow with your weapon: it stops half and tires you.
 Paras el ataque del %s con el escudo.	You block the %s's attack with your shield.
 Paras el golpe del %s.	You block the %s's blow.
+Parry	Parry
 Parry a destiempo: ¡quedas expuesto!	Mistimed parry: you're exposed!
 Parry al aire: nadie te está golpeando. Quedas expuesto.	Parry at thin air: no one is striking you. You're exposed.
 Parry con escudo	Shield parry
+Patada	Kick
+Patada a la carrera	Running kick
+Por la espalda	From behind
 Por la espalda: H lo ejecuta en silencio · G lo toma de rehén	From behind: H kills silently · G takes a hostage
 Por la espalda: el %s cae sin un grito.	From behind: the %s falls without a cry.
 Por la espalda: el %s cae sin un grito... pero alguien lo oyó.	From behind: the %s falls without a cry... but someone heard it.
 Puñetazo	Punch
 Rehén: G lo suelta · H lo ejecuta · I lo empuja	Hostage: G lets go · H executes · I shoves
+Rematar	Finish off
 Rematas al %s de un flechazo. Deja botín (F).	You finish the %s with an arrow. It leaves loot (F).
 Rematas al %s: deja botín (F). La tribu lo ve.	You finish the %s: it leaves loot (F). The tribe sees it.
 Si tu escolta está cerca, te levantará; si no, la tribu te buscará.	If your escort is near, they'll lift you; if not, the tribe will find you.
@@ -1100,6 +1112,7 @@ Flechas: elegir · Enter: asignar · Esc: cerrar	Arrows: choose · Enter: assign
 Manos libres	Empty hands
 Mayús+G: deja la mochila en el suelo para moverte ligero, o recógela.	Shift+G: drop the backpack to move light, or pick it up.
 Mayús+V: enciende la flecha en un fuego cercano (no con lluvia).	Shift+V: light the arrow at a nearby fire (not in the rain).
+Mochila	Backpack
 N: bebe lo más seguro que tengas, o del río en la orilla.	N: drink the safest water you carry, or from the river at the bank.
 Tab: el menú de acciones, obras, fabricar y reparar.	Tab: actions, works, crafting and repairs menu.
 Tecla %d: elegir un arma, un objeto o una habilidad.	Key %d: choose a weapon, an item or a skill.
@@ -1144,6 +1157,7 @@ Acopio y armería del campamento	Camp store and armory
 Acopio y armería, cargados en la columna	Store and armory, loaded in the column
 Alforjas (%s)	Saddlebags (%s)
 Armadura	Armour
+Bolsillos	Pockets
 Cambias de mochila: ahora llevas la %s.	You switch backpacks: now carrying the %s.
 Cargas tu mochila en el lomo del %s.	You load your backpack on the %s's back.
 Cargas tu mochila en la carreta (Mayús+G junto a ella para recogerla).	You load your backpack onto the cart (Shift+G next to it to pick it up).
@@ -1780,7 +1794,6 @@ Una en cada mano, a dos manos, arma y escudo...	One in each hand, two-handed, we
 Una fogata pequeña para una persona o dos.	A small campfire for one or two people.
 a dos manos	two-handed
 a una mano	one-handed
-agua	water
 agujero en el hielo	hole in the ice
 animal salvaje	wild animal
 arma y escudo	weapon and shield
@@ -2089,7 +2102,6 @@ socavón de nieve	snow sinkhole
 Congelación	Frostbite
 Corte	Cut
 Fractura	Fracture
-Golpe	Strike
 Mordida	Bite
 Quemadura	Burn
 abatido	downed
@@ -2121,7 +2133,6 @@ la pelvis	the pelvis
 la pierna derecha	the right leg
 la pierna izquierda	the left leg
 leve	light
-malherido	badly hurt
 moderada	moderate
 muerto	dead
 sano	healthy
@@ -2161,22 +2172,11 @@ velocidad	speed
 vida	health
 vista	sight
 # --- src/sim/melee.c
-Agarre	Grapple
-Carga con escudo	Shield charge
 Desvío	Deflect
 Gancho al escudo	Shield hook
-Golpe de escudo	Shield bash
-Golpe pesado	Heavy strike
-Parry	Parry
-Patada	Kick
-Patada a la carrera	Running kick
-Por la espalda	From behind
-Rematar	Finish off
 # --- src/sim/storage.c
 Acopio del campamento	Camp store
-Bolsillos	Pockets
 Carreta	Cart
-Mochila	Backpack
 mochila grande	large backpack
 mochila mediana	medium backpack
 mochila pequeña	small backpack

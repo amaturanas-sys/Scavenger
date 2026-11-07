@@ -39,6 +39,20 @@ TargetClick target_click(float held, bool moved, bool up, bool done) {
     return TCLICK_NONE;
 }
 
+bool ctrl_tap(CtrlTap *t, bool down, bool other, float dt) {
+    bool tapped = false;
+    if (down) {
+        if (!t->down) t->armed = true, t->held = 0.0f; // recien apretada
+        else t->held += dt;
+        if (other || t->held > TARGET_TAP_MAX) t->armed = false; // un atajo (Ctrl+Q...) o mantenida
+    } else if (t->down) {
+        tapped = t->armed && !other;
+        t->armed = false;
+    }
+    t->down = down;
+    return tapped;
+}
+
 int target_cycle(const TargetCand *c, int n, float px, float pz, float yaw, int current, int dir) {
     if (!target_keep(c, n, current, px, pz)) {
         // Sin objetivo: el que mejor se ve delante (cerca y poco a un lado).

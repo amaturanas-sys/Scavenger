@@ -3448,6 +3448,20 @@ static void test_target_rules_a3(void) {
     CHECK(target_click(1.3f, false, false, true) == TCLICK_NONE);
     CHECK(target_click(1.3f, false, true, true) == TCLICK_NONE);
     CHECK(target_click(0.2f, true, true, false) == TCLICK_NONE);
+    // Ctrl sola (v0.14.0): apretar y soltar enseguida vale; con otra tecla en el medio (Ctrl+Q, Ctrl+P)
+    // o en el mismo cuadro, o mantenida, no.
+    {
+        CtrlTap t = { false, false, 0.0f };
+        CHECK(!ctrl_tap(&t, true, false, 0.016f) && !ctrl_tap(&t, true, false, 0.016f) && ctrl_tap(&t, false, false, 0.016f));
+        CHECK(!ctrl_tap(&t, false, false, 0.016f)); // una sola vez
+        CHECK(!ctrl_tap(&t, true, false, 0.016f) && !ctrl_tap(&t, true, true, 0.016f) && !ctrl_tap(&t, false, false, 0.016f));
+        CHECK(!ctrl_tap(&t, true, true, 0.016f) && !ctrl_tap(&t, false, false, 0.016f)); // Ctrl y Q en el mismo cuadro
+        CHECK(!ctrl_tap(&t, true, false, 0.016f) && !ctrl_tap(&t, false, true, 0.016f)); // se suelta con otra tecla
+        bool any = !ctrl_tap(&t, true, false, 0.016f);
+        for (int i = 0; i < 40; i++) any = any && !ctrl_tap(&t, true, false, 0.016f); // 0,64 s apretada
+        CHECK(any && !ctrl_tap(&t, false, false, 0.016f));
+        CHECK(!ctrl_tap(&t, true, false, 0.016f) && ctrl_tap(&t, false, false, 0.016f)); // despues, vale de nuevo
+    }
     // Reconocerte: 5 s de dia, 7 de noche, 3 con la antorcha; de cerca, mucho menos.
     CHECK(fabsf(stealth_recognition_seconds(false, false, 30.0f, 30.0f) - 5.0f) < 0.01f);
     CHECK(fabsf(stealth_recognition_seconds(true, false, 30.0f, 30.0f) - 7.0f) < 0.01f);

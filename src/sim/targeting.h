@@ -37,4 +37,15 @@ bool target_hold(float *unseen, bool alive, float dist, bool visible, bool cover
 typedef enum { TCLICK_NONE, TCLICK_SELECT, TCLICK_RELEASE } TargetClick;
 TargetClick target_click(float held, bool moved, bool up, bool done);
 
+// Ctrl sola (v0.14.0): inicia la seleccion o suelta el objetivo al soltarla, si mientras estuvo
+// apretada no llego otra tecla ni un clic y no paso de TARGET_TAP_MAX s. Asi Ctrl+Q, Ctrl+P, Ctrl+H
+// o Ctrl+M no tocan el objetivo. Se llama una vez por cuadro: down, Ctrl apretada; other, otra tecla
+// o un clic en este cuadro. true: se solto en este cuadro y vale como toque.
+#define TARGET_TAP_MAX 0.5f
+typedef struct {
+    bool down, armed;
+    float held;
+} CtrlTap;
+bool ctrl_tap(CtrlTap *t, bool down, bool other, float dt);
+
 #endif

@@ -22,7 +22,9 @@ typedef enum {
 
 // Ctrl apretado: las teclas simples (H, M, P, 1..3) no hacen lo suyo.
 bool input_ctrl(void);
-bool input_ctrl_pressed(void);
+// Ctrl sola, apretada y soltada sin otra tecla ni clic en el medio (v0.14.0: inicia o suelta el
+// objetivo; Ctrl+Q, Ctrl+P, Ctrl+H... no cuentan). Vale en el cuadro en que se suelta.
+bool input_ctrl_tapped(void);
 // Teclas de prueba (1..8 tropa, 9 enemigos): solo con el panel de diagnostico (Ctrl+D) abierto.
 void input_set_debug(bool on);
 bool input_debug(void);
