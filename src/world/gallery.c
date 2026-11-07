@@ -8,6 +8,7 @@
 #include "raymath.h"
 #include "ui/theme.h"
 #include "sim/lang.h"
+#include "voxmodel.h"
 #include "voxstruct.h"
 
 #define ROW_GAP 8.0f  // separacion entre filas (categorias)
@@ -64,8 +65,8 @@ bool gallery_init(Gallery *g, const Terrain *t, Vector3 origin) {
         inventory_path(it, path, sizeof(path));
         const char *full = platform_asset_path(path);
         if (!it->texture && platform_asset_exists(full)) {
-            e->model = LoadModel(full);
-            e->loaded = e->model.meshCount > 0;
+            if (it->voxel) e->loaded = vm_load(full, it->h, &e->model);
+            else e->model = LoadModel(full), e->loaded = e->model.meshCount > 0;
             if (e->loaded) g->loaded++;
         }
     }

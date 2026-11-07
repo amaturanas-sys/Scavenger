@@ -30,6 +30,7 @@ typedef struct {
     int tris_max;
     InvState state;
     bool texture; // formato:textura (calcomania o textura, no modelo)
+    bool voxel;   // formato:voxel (un .vox de MagicaVoxel en lugar del GLB: src/world/voxmodel.h)
     InvHands hands;
 } InvItem;
 

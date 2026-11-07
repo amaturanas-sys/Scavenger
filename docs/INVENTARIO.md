@@ -40,7 +40,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `material` | libre |
 | `rig` | `ave`, `cuadrupedo`, `humanoide`, `ninguno` |
 | `especial` | `gran_guerrero`, `hito`, `legado`, `narrativo`, `rastro_padre` |
-| `formato` | `modelo`, `textura` |
+| `formato` | `modelo`, `textura`, `voxel` |
 | `estilo` | libre |
 | `requiere` | libre |
 | `motivo` | libre |
