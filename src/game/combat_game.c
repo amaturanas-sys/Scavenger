@@ -1501,12 +1501,12 @@ static bool aim_at_target(Combat *cb, const GameActions *ga, const Terrain *t, P
     return true;
 }
 
-// Arco, honda, ballesta o mosquete: mantener H (o clic) tensa y soltar dispara. Con objetivo la
+// Arco, honda, ballesta o mosquete: mantener H (o su casilla) tensa y soltar dispara. Con objetivo la
 // mira es sola; sin el, apunta donde mira la camara.
 static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *props, const RangedDef *rd, bool can_act,
                           float cam_yaw, float cam_pitch, float dt, char *log, size_t len) {
     const char *ammo = projectile_def(rd->projectile)->ammo;
-    // H (o su casilla) tensa y dispara; con un arma a distancia el clic elige objetivo (ranged_clicks).
+    // H (o su casilla) tensa y dispara; el clic cambia de objetivo (mouse_target_clicks).
     bool held = input_action_down(KA_ATTACK) || g_hud_attack_down;
     bool released = input_action_released(KA_ATTACK) || (cb->aiming && !held);
     bool pressed = input_action_pressed(KA_ATTACK) || g_hud_attack_press;
@@ -2641,15 +2641,36 @@ void cb_request_bandage(void) { g_bandage_req = true; }
 static bool g_light_req; // encender la flecha, pedido desde la columna del HUD
 void cb_request_light_arrow(void) { g_light_req = true; }
 
-// Un clic corto cambia de objetivo como Ctrl+Q/Ctrl+E. El derecho sigue pudiendo arrastrar la
-// camara; el arrastre no cuenta como seleccion. La seleccion directa con el puntero la reemplaza
-// este mapa unico para que teclado, raton y tactil hagan lo mismo.
-static void mouse_target_clicks(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p, char *log, size_t len) {
-    if (hud_pointer_over()) return;
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-        cb_cycle_target(cb, ga, t, p, TARGET_LEFT, log, len);
-    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-        cb_cycle_target(cb, ga, t, p, TARGET_RIGHT, log, len);
+// Un clic corto, izquierdo o derecho, cambia de objetivo como Ctrl+Q/Ctrl+E (v0.14.0), con cualquier
+// arma: el izquierdo pasa al de la izquierda y el derecho al de la derecha; sin objetivo, elige al de
+// delante. Teclado, raton y dedo hacen lo mismo. Cuenta al soltar; no cuenta si empezo sobre el HUD,
+// si se arrastro (la camara, con el raton o el dedo) ni si se mantuvo (target_click, sim/targeting.h).
+// Lo arrastrado se mide en la pantalla virtual desde donde se apreto: en Android, GetMouseDelta no
+// vuelve a cero entre un toque y otro.
+#define TCLICK_DRAG 4.0f // pixeles virtuales (640x360)
+static float g_tclick_held[2];
+static Vector2 g_tclick_from[2];
+static bool g_tclick_live[2], g_tclick_moved[2];
+
+static void mouse_target_clicks(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p, float dt, char *log, size_t len) {
+    Vector2 at = ui_pointer();
+    for (int b = 0; b < 2; b++) {
+        int btn = b == 0 ? MOUSE_BUTTON_LEFT : MOUSE_BUTTON_RIGHT;
+        if (IsMouseButtonPressed(btn)) {
+            g_tclick_live[b] = !hud_pointer_over();
+            g_tclick_held[b] = 0.0f;
+            g_tclick_from[b] = at;
+            g_tclick_moved[b] = false;
+        }
+        if (!g_tclick_live[b]) continue;
+        bool up = IsMouseButtonReleased(btn);
+        if (IsMouseButtonDown(btn)) g_tclick_held[b] += dt;
+        if (Vector2Distance(at, g_tclick_from[b]) > TCLICK_DRAG) g_tclick_moved[b] = true;
+        if (b == 1 && IsMouseButtonDown(btn) && !input_right_hold()) g_tclick_moved[b] = true; // ya gira la camara
+        if (target_click(g_tclick_held[b], g_tclick_moved[b], up, false) == TCLICK_SELECT)
+            cb_cycle_target(cb, ga, t, p, b == 0 ? TARGET_LEFT : TARGET_RIGHT, log, len);
+        if (up) g_tclick_live[b] = false;
+    }
 }
 
 void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *props, const Terrain *t, Vector3 camp_fire,
@@ -2699,7 +2720,7 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     }
     // El objetivo se pierde a TARGET_RANGE o si muere; O pasa al siguiente (Mayus+O, al anterior).
     keep_target(cb, ga, t, p, dt);
-    if (input_ok) mouse_target_clicks(cb, ga, t, p, log, log_len);
+    if (input_ok) mouse_target_clicks(cb, ga, t, p, dt, log, log_len);
     // Con objetivo, el personaje lo mira siempre y camina de costado (las hojas); corriendo, a caballo
     // o trepando, no.
     Vector3 tp;
@@ -2709,8 +2730,9 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     ga_set_target_animal(ta ? (int)(ta - ga->animals) : -1); // el lazo lo busca primero
     int req = ga_take_target_request();
     if (req && input_ok) cb_cycle_target(cb, ga, t, p, req, log, log_len);
-    // Ctrl inicia la seleccion si no hay objetivo y la finaliza/omite si ya lo hay.
-    if (input_ctrl_pressed() && input_ok && !IsKeyPressed(KEY_Q) && !IsKeyPressed(KEY_E)) {
+    // Ctrl sola (apretada y soltada sin otra tecla: Ctrl+Q, Ctrl+P o Ctrl+H no cuentan): sin objetivo,
+    // elige al de delante; con objetivo, lo suelta.
+    if (input_ctrl_tapped() && input_ok) {
         if (cb->target_lock) {
             cb->target_lock = 0;
             snprintf(log, log_len, "%s", T("Sueltas el objetivo."));
@@ -3184,9 +3206,9 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
             on = cb->attack_anim > 0.0f || cb->aiming;
             title = downed && !rd ? T("Rematar") : rd ? T("Disparar") : weapon[0] ? T("Atacar") : T("Puñetazo");
             detail = downed && !rd ? T("H junto a un abatido: lo rematas (a la tribu no le es indiferente).")
-                     : rd          ? T("H o clic: tensa y suelta. Apunta al objetivo (o al más cercano delante).")
-                     : weapon[0]   ? T("H o clic: golpe (encadena hasta tres). Mantener: golpe pesado.")
-                                   : T("H o clic: puñetazo (con el arma enfundada).");
+                     : rd          ? T("H: tensa y suelta. Apunta al objetivo (o al más cercano delante).")
+                     : weapon[0]   ? T("H: golpe (encadena hasta tres). Mantener: golpe pesado.")
+                                   : T("H: puñetazo (con el arma enfundada).");
         } else if (i == 1 && holding) { // J: empujar al rehen
             key = keymap_text(KA_PARRY);
             icon = ICON_PATADA;

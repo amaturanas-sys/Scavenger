@@ -92,7 +92,7 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Saltar | Espacio | A |
 | Cámara | Q / E, clic derecho + arrastrar, rueda | — |
 | Marcar sitio de interés / de peligro | M / Shift+M | — |
-| Menú de acciones, obras, fabricar y reparar | L (flechas + Enter; Q/E cambia de pestaña) | — |
+| Menú de acciones, obras, fabricar y reparar | Tab (flechas + Enter; Q/E cambia de pestaña) | — |
 | Empuñar / enfundar (barra rápida) | 1 a 9 y 0: cada casilla saca o guarda lo suyo (de serie, 1 la espada, 2 el escudo, 3 el odre); Mayús+número: a la otra mano; Alt+número: elegir qué va | — |
 | Interactuar: hablar, tomar, botín, pozo, horno, rescatar, animales; junto a la boca de una cueva, explorarla | F (Mayús+F: todo lo cercano, o sacrificar junto al ganado) | — |
 | Lanzar lo que llevas en brazos | T | — |
@@ -102,8 +102,8 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Ficha del gran guerrero | U | — |
 | Montar / desmontar | R | — |
 | Inventario (bolsillos, mochila, alforjas, carreta, campamento) | I (con algo elegido, un número, o un toque en la fila de abajo, lo pone en esa casilla de la barra) | — |
-| Objetivo siguiente / anterior | O / Mayús+O; clic derecho / izquierdo; Ctrl+E / Ctrl+Q | — |
-| Entrar en una cueva | caminar por la boca (adentro, F toma, enciende y libera; se sale por la boca) | — |
+| Objetivo siguiente / anterior | O / Mayús+O; un clic corto, derecho / izquierdo (o un toque); Ctrl+E / Ctrl+Q; Ctrl sola: elegir o soltar | — |
+| Entrar en una cueva | F junto a la boca: se carga aparte (adentro, F toma, enciende y libera; se sale caminando por la boca) | — |
 | Esconderse | agachado (X) tras rocas o matas; con sigilo (C) o agachado, en la hierba alta | — |
 | Beber / tomar hierbas contra los espíritus del agua | N / Mayús+N | — |
 | Vista orbital del mundo | F5 o Ctrl+M (flechas: girar e inclinar) | — |
@@ -273,6 +273,11 @@ Las cuevas grandes (v0.14.0), la base del plan de [docs/PLAN_CUEVAS_GRANDES.md](
 - **De voxeles:** las estalactitas, más largas; las estalagmitas, de calcita con sus anillos; y las rocas sueltas de cada
   sala (las grandes, junto a la pared, tapan el paso).
 - **Las partidas de antes** cargan igual: cada objeto de cada cueva es el mismo, y lo que ya tomaste sigue tomado.
+- **Los controles de combate, otros:** `H` ataque, `J` parry, `K` bloqueo y `L` carga o patada; `I` el inventario, `Tab` el
+  menú de acciones y `Mayús+V` encender la flecha. El clic ya no golpea: un clic corto (o un toque), izquierdo o derecho,
+  cambia de objetivo como `Ctrl+Q`/`Ctrl+E` (arrastrar la cámara no cuenta), y `Ctrl` sola lo elige o lo suelta. La primera
+  tecla en una tableta con teclado ya cuenta.
+- **Los materiales de la roca:** estratos, facetas, la base húmeda de las paredes y la grava del suelo, que cambian sala por sala.
 
 Lo que sigue (los voxeles de las columnas, los cofres, las fuentes y el lago; los huesos, las antorchas, las pinturas, las
 celdas, los túneles labrados y la boca vista desde adentro, según las referencias del usuario) está en el plan, en
@@ -320,7 +325,7 @@ El sistema táctico y las cuevas (v0.13.0), el resto de las hojas ([docs/PLAN_TA
 Pruebas: `--cubierto`, `--objetivo`, `--ir boca-forajidos` y `--cueva forajidos:0 --antorcha` (ver la «Captura automática»).
 
 Las manos (v0.12.0, que no se publicó sola: sale con la v0.13.0), la primera fase del sistema táctico de las hojas ([docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)):
-- **Las teclas de las hojas:** `H` ataque, `J` parry, `K` bloqueo, `L` carga o patada. `G` rehén, `I` inventario, `Tab` menú de acciones y `O` objetivo (`Mayús+O`, el anterior).
+- **Las teclas de las hojas:** `H` ataque, `I` parry, `J` bloqueo, `K` carga o patada. `Tab` abre el inventario, `L` el menú de acciones y `O` elige el objetivo (`Mayús+O`, el anterior). Desde la v0.14.0 son otras: `J` parry, `K` bloqueo, `L` carga o patada, `I` inventario y `Tab` acciones.
 - **La espada y el escudo, por separado:** de serie, `1` la espada (otra vez, la enfundas), `2` el escudo (al brazo o a la espalda) y `3` el odre; cada uno se guarda sin tocar al otro. Los cuatro botones cambian con lo que tengas fuera: con el escudo solo, puñetazo, parry con el escudo (lo desvía y lo aturde con el canto), cubrirse y carga. Elegir el arco guarda solos la espada y el escudo.
 - **Por la espalda y con un rehén:** `H` mata en silencio, `H` ejecuta al rehén e `I` lo empuja; `H` remata a un abatido.
 - **Las partidas de antes** cargan igual y conservan su barra rápida: su casilla «sable y escudo» enfunda los dos, y `Alt+número` la cambia.

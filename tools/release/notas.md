@@ -6,9 +6,16 @@ Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la t
 - **Más grandes y más altas:** las recámaras, de 6,5 a 9,5 m de radio, y la Cisterna Magna, de 13 a 17. El techo está a más de tres personas sobre todo el suelo.
 - **Pasillos largos y con vueltas:** de 10 m o más, con hasta tres vueltas. La bajada a la Cisterna sigue recta y no se sube.
 - **De voxeles:** las estalactitas, las estalagmitas y las rocas de cada sala.
+- **La roca, con sus materiales:** estratos, facetas, la base húmeda de las paredes y la grava del suelo, distintos en cada sala.
 - Las partidas de antes cargan igual: lo que ya tomaste en una cueva sigue tomado.
 
-Lo de antes sigue igual: las bocas de las cuevas de la 0.13.1, las manos (`H`, `I`, `J`, `K`), la barra rápida de 10 casillas, el objetivo (`O`) y la cobertura (`C`). El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», el apartado «Las cuevas grandes») y en [docs/PLAN_CUEVAS_GRANDES.md](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/docs/PLAN_CUEVAS_GRANDES.md).
+## Novedades: los controles de combate
+
+- `H` ataque · `J` parry · `K` bloqueo · `L` carga o patada; `I` el inventario, `Tab` el menú de acciones y `Mayús+V` encender la flecha.
+- El clic ya no golpea: un clic corto (o un toque), izquierdo o derecho, cambia de objetivo como `Ctrl+Q`/`Ctrl+E`; arrastrar la cámara no cuenta. `Ctrl` sola elige el objetivo o lo suelta.
+- En una tableta con teclado, la primera tecla ya cuenta.
+
+Lo de antes sigue igual: las bocas de las cuevas de la 0.13.1, la espada y el escudo por separado, la barra rápida de 10 casillas, el objetivo con `O` y la cobertura (`C`). El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», el apartado «Las cuevas grandes») y en [docs/PLAN_CUEVAS_GRANDES.md](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/docs/PLAN_CUEVAS_GRANDES.md).
 
 ## Android
 
@@ -35,10 +42,10 @@ Descomprime **`scavengers-thrive-@VERSION@-windows.zip`** y ejecuta `ScavengersT
 | Moverse / correr / saltar | WASD · Shift · Espacio |
 | Sigilo; junto a un obstáculo, cubrirse | C |
 | Cámara | Q / E, clic derecho + arrastrar, rueda |
-| Combate | H ataque · I parry · J bloqueo · K carga o patada |
-| Objetivo | O |
-| Acciones, obras, fabricar | L |
-| Inventario | Tab |
+| Combate | H ataque · J parry · K bloqueo · L carga o patada |
+| Objetivo | O · un clic corto · Ctrl sola: elegir o soltar |
+| Acciones, obras, fabricar | Tab |
+| Inventario | I |
 | Tomar, hablar, recoger botín; explorar una cueva desde su boca | F |
 | Montar | R |
 | Beber | N |
