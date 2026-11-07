@@ -193,6 +193,60 @@ def check_model(it, path):
     return errors, warnings
 
 
+VOX_MAX = 128  # celdas por eje que lee el juego (VOXFILE_MAX, src/sim/voxfile.h)
+VOX_TRIS_AVISO, VOX_TRIS_MAX = 8000, 20000  # dos triangulos por cara a la vista (sin mallado codicioso)
+
+
+def check_vox(it, path):
+    """Errores y avisos de un .vox importado (formato:voxel; sin dependencias): que el juego lo lea, los
+    triangulos que salen (dos por cara a la vista) y las medidas, con el alto del inventario."""
+    import struct
+
+    rel = os.path.relpath(path, ROOT)
+    with open(path, "rb") as f:
+        data = f.read()
+    if len(data) < 20 or data[:4] != b"VOX ":
+        return [f"{rel}: no es un .vox de MagicaVoxel"], []
+    pos, end, size, cells = 8, len(data), None, None
+    if data[8:12] == b"MAIN":
+        n, m = struct.unpack_from("<ii", data, 12)
+        pos, end = 20 + n, min(len(data), 20 + n + m)
+    while pos + 12 <= end:
+        cid = data[pos:pos + 4]
+        n, m = struct.unpack_from("<ii", data, pos + 4)
+        if n < 0 or m < 0 or pos + 12 + n > end:
+            return [f"{rel}: un trozo '{cid.decode('latin-1')}' se sale del archivo"], []
+        body = data[pos + 12:pos + 12 + n]
+        if cid == b"SIZE" and size is None and n >= 12:
+            size = struct.unpack_from("<iii", body)
+        elif cid == b"XYZI" and cells is None and size and n >= 4:
+            count = struct.unpack_from("<i", body)[0]
+            raw = body[4:4 + 4 * count]
+            cells = {(raw[i], raw[i + 1], raw[i + 2]) for i in range(0, len(raw) - 3, 4) if raw[i + 3]}
+        pos += 12 + n + m
+    if not size or cells is None:
+        return [f"{rel}: sin modelo (SIZE y XYZI)"], []
+    if max(size) > VOX_MAX or min(size) < 1:
+        return [f"{rel}: {size[0]}x{size[1]}x{size[2]} celdas (el juego lee hasta {VOX_MAX} por eje)"], []
+    if not cells:
+        return [f"{rel}: no tiene celdas llenas"], []
+    errors, warnings = [], []
+    faces = sum(1 for (x, y, z) in cells for d in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))
+                if (x + d[0], y + d[1], z + d[2]) not in cells)
+    tris = 2 * faces
+    if tris > VOX_TRIS_MAX:
+        errors.append(f"{rel}: {tris} triangulos (los .vox, como mucho {VOX_TRIS_MAX}); baja --res en tools/voxeles")
+    elif tris > VOX_TRIS_AVISO:
+        warnings.append(f"{rel}: {tris} triangulos: pesa en Android (mas de {VOX_TRIS_AVISO})")
+    ancho, alto, largo = dims(it)
+    if alto > 0:  # el juego lo escala al alto del inventario; lo demas sigue las proporciones del .vox
+        k = alto / size[2]
+        for got, want, name in ((size[1] * k, largo, "largo (X)"), (size[0] * k, ancho, "ancho (Z)")):
+            if want >= 0.05 and not 0.5 <= got / want <= 2.0:
+                warnings.append(f"{rel}: {name} de {got:.2f} m con el alto del inventario (inventario {want:g} m)")
+    return errors, warnings
+
+
 def check(quiet=False):
     items, errors = inventario.load()
     warnings, count = [], 0
@@ -203,7 +257,7 @@ def check(quiet=False):
         if not os.path.isfile(path):
             continue
         count += 1
-        e, w = check_model(it, path)
+        e, w = check_vox(it, path) if path.endswith(".vox") else check_model(it, path)
         errors += e
         warnings += w
     known = {it["id"] for it in items}

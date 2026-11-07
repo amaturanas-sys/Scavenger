@@ -9,7 +9,7 @@ import tempfile
 import traceback
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -95,6 +95,48 @@ def test_vistas_voltear():
         assert np.array_equal(f1, f2)
 
 
+def hoja_de_dos_objetos(tmp):
+    """Una hoja como las de Canva: dos filas (dos objetos), cada una frente | lado | espalda, con una raya
+    gris de punta a punta entre las vistas. Arriba: un marco (una caja con un hueco grande en el medio, de
+    frente); abajo: un cilindro de 16 de diametro y 24 de alto, rojo de frente y azul de espalda."""
+    W, H = 3 * 40 * PX, 2 * 34 * PX
+    img = Image.new("RGB", (W, H), (255, 255, 255))
+    d = ImageDraw.Draw(img)
+    for c in (40 * PX, 80 * PX):
+        d.rectangle([c - 1, 0, c + 1, H - 1], fill=(200, 200, 200))  # las rayas entre vistas
+    def caja(col, row, x0, z0, w, h, color):
+        X0, Y0 = col * 40 * PX + 4 * PX + x0 * PX, row * 34 * PX + 4 * PX + (24 - z0 - h) * PX
+        d.rectangle([X0, Y0, X0 + w * PX - 1, Y0 + h * PX - 1], fill=color)
+    # Fila 1: el marco de 20 x 24 con un hueco de 12 x 14; de lado, 6 de fondo.
+    for col in (0, 2):
+        caja(col, 0, 0, 0, 20, 24, GREEN)
+        caja(col, 0, 4, 5, 12, 14, (255, 255, 255))
+    caja(1, 0, 0, 0, 6, 24, GREEN)
+    # Fila 2: el cilindro (de frente y de lado, un rectangulo de 16 x 24).
+    caja(0, 1, 0, 0, 16, 24, RED)
+    caja(1, 1, 0, 0, 16, 24, GREEN)
+    caja(2, 1, 0, 0, 16, 24, BLUE)
+    p = os.path.join(tmp, "hoja.png")
+    img.save(p)
+    return p
+
+
+def test_hoja():
+    with tempfile.TemporaryDirectory() as tmp:
+        p = hoja_de_dos_objetos(tmp)
+        marco, _ = voxeles.desde_hoja(p, res=24, filas=2, fila=1)
+        assert marco.shape == (20, 6, 24), marco.shape
+        assert not marco[10, 3, 12] and marco[1, 3, 12]  # el hueco queda hueco
+        cil, rgb = voxeles.desde_hoja(p, res=24, filas=2, fila=2, seccion="elipse")
+        caja, _ = voxeles.desde_hoja(p, res=24, filas=2, fila=2)
+        assert cil.shape == (16, 16, 24) and caja.sum() == 16 * 16 * 24
+        area = cil[:, :, 12].sum()
+        assert abs(area - np.pi * 8 * 8) < 0.12 * np.pi * 8 * 8, area  # una elipse (un circulo), no la caja
+        assert cil[:, :, 12].any(axis=1).all() and cil[:, :, 12].any(axis=0).all()  # las siluetas, enteras
+        assert cerca(rgb[8, 0, 12], RED) and cerca(rgb[8, 15, 12], BLUE)  # el frente rojo, la espalda azul
+        assert cerca(rgb[15, 8, 12], GREEN)  # el costado, del lado
+
+
 def escribir_ply(path, pts, f_dc, opacity_logit):
     n = len(pts)
     head = ("ply\nformat binary_little_endian 1.0\nelement vertex %d\nproperty float x\nproperty float y\n"
@@ -177,6 +219,7 @@ def main():
         ("test_vistas_L (fondo blanco)", lambda: test_vistas_L(False)),
         ("test_vistas_L (transparente)", lambda: test_vistas_L(True)),
         ("test_vistas_voltear", test_vistas_voltear),
+        ("test_hoja", test_hoja),
         ("test_splat_esfera", test_splat_esfera),
         ("test_malla_caja", test_malla_caja),
         ("test_frente_a_menos_y", test_frente_a_menos_y),
