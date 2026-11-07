@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**437 objetos** · 4 con modelo · 433 pendientes.
+**437 objetos** · 12 con modelo · 425 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -11,15 +11,15 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
-| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 29 | 0 | 1 | 0 |
-| [Estructuras](#estructura) | 43 | 41 | 1 | 1 | 0 |
+| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 28 | 0 | 2 | 0 |
+| [Estructuras](#estructura) | 43 | 40 | 1 | 2 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 46 | 46 | 0 | 0 | 0 |
-| [Armas](#arma) | 44 | 44 | 0 | 0 | 0 |
+| [Armas](#arma) | 44 | 40 | 0 | 4 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
 | [Escudos](#escudo) | 6 | 5 | 0 | 1 | 0 |
 | [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
-| [Armaduras (por piezas)](#armadura) | 48 | 48 | 0 | 0 | 0 |
+| [Armaduras (por piezas)](#armadura) | 48 | 46 | 0 | 2 | 0 |
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
@@ -69,7 +69,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.vegetacion.hierba_alta` | Hierba alta (escondite) | 2x1x2 | 40 | pendiente | `bioma:estepa` `uso:escondite` | El jugador puede esconderse dentro. |
 | `mapa.vegetacion.mata_hierbas` | Mata de hierbas curativas | 0.8x0.6x0.8 | 80 | pendiente | `bioma:estepa` `uso:recolectable` | F para recoger hierbas curativas. |
 | `mapa.vegetacion.arbusto` | Arbusto estepario | 1x0.8x1 | 40 | pendiente | `bioma:estepa` `uso:decorado` |  |
-| `mapa.vegetacion.pino` | Pino | 3x10x3 | 120 | pendiente | `bioma:bosque` `uso:trepable` |  |
+| `mapa.vegetacion.pino` | Pino | 3x10x3 | 120 | importado | `bioma:bosque` `uso:trepable` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
 | `mapa.vegetacion.alerce` | Alerce | 3x12x3 | 120 | pendiente | `bioma:bosque` `uso:trepable` |  |
 | `mapa.vegetacion.abedul` | Abedul | 2.5x8x2.5 | 100 | pendiente | `bioma:estepa` `bioma:bosque` `uso:decorado` |  |
 | `mapa.vegetacion.saxaul` | Saxaúl (arbusto del desierto) | 2x2x2 | 60 | pendiente | `bioma:desierto` `uso:recolectable` | Leña en el desierto. |
@@ -118,7 +118,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.imperio.fundicion` | Fundición / taller industrial | 18x10x14 | 1200 | pendiente | `bioma:ciudad` `faccion:imperio` `especial:narrativo` | Capacidad industrial del imperio. |
 | `estructura.imperio.cadalso` | Cadalso de ejecución pública | 6x3x6 | 250 | pendiente | `bioma:ciudad` `faccion:imperio` `acto:2` `especial:narrativo` | Escena de la huida del acto II. |
 | `estructura.culto.altar` | Altar del culto | 12x6x12 | 1500 | pendiente | `bioma:ciudad` `faccion:culto` `acto:4` `especial:narrativo` `uso:destructible` | Objetivo del asalto final. |
-| `estructura.culto.templo` | Templo del culto | 24x14x30 | 2500 | pendiente | `bioma:ciudad` `faccion:culto` `acto:4` |  |
+| `estructura.culto.templo` | Templo del culto | 24x14x30 | 2500 | importado | `bioma:ciudad` `faccion:culto` `acto:4` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
 | `estructura.culto.jaula_sacrificio` | Jaula de cautivos para el sacrificio | 3x2.5x3 | 200 | pendiente | `faccion:culto` `uso:interactuable` `material:hierro` | Rescates del acto III. |
 | `estructura.ruina.muro` | Muro en ruinas | 6x3x1 | 150 | pendiente | `bioma:cualquiera` `uso:decorado` `material:piedra` |  |
 | `estructura.ruina.yurta_quemada` | Yurta quemada | 4.5x1.5x4.5 | 250 | pendiente | `faccion:nomada` `acto:1` `uso:decorado` | Restos de la masacre. |
@@ -211,15 +211,15 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
 | `arma.corta.cuchillo` | Cuchillo de hueso y hierro | 0.05x0.3x0.03 | 60 | pendiente | `uso:equipable` `manos:una` |  |
-| `arma.corta.daga` | Daga | 0.05x0.4x0.03 | 80 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.corta.daga` | Daga | 0.05x0.4x0.03 | 80 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
 | `arma.corta.sable` | Sable de la estepa | 0.08x0.9x0.03 | 120 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` | Curvo y de un filo: a caballo corta limpio, no se traba y suma la carrera. |
-| `arma.corta.hacha_mano` | Hacha de mano | 0.15x0.6x0.04 | 100 | pendiente | `uso:equipable` `manos:una` |  |
-| `arma.corta.maza` | Maza | 0.1x0.7x0.1 | 100 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.corta.hacha_mano` | Hacha de mano | 0.15x0.6x0.04 | 100 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `arma.corta.maza` | Maza | 0.1x0.7x0.1 | 100 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
 | `arma.larga.lanza` | Lanza ligera | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` | A pie y a caballo; en ristre (L), la carga. |
 | `arma.larga.guja` | Guja | 0.2x2.2x0.05 | 120 | pendiente | `uso:equipable` `manos:dos` |  |
 | `arma.larga.pica` | Pica imperial | 0.1x4.5x0.1 | 80 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
 | `arma.larga.alabarda` | Alabarda | 0.3x2.2x0.05 | 140 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
-| `arma.larga.espada_larga` | Espada larga | 0.2x1.2x0.03 | 120 | pendiente | `uso:equipable` `manos:una` |  |
+| `arma.larga.espada_larga` | Espada larga | 0.2x1.2x0.03 | 120 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
 | `arma.distancia.arco_compuesto` | Arco compuesto reflejo | 0.1x1.2x0.05 | 150 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:nomada` `manos:dos` | Asta, madera y tendón: corto y potente, a caballo tira como a pie. Se hace en tres etapas. |
 | `arma.distancia.arco_largo` | Arco largo | 0.08x1.8x0.05 | 120 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
 | `arma.distancia.ballesta` | Ballesta | 0.7x0.25x0.9 | 250 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
@@ -304,7 +304,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
-| `armadura.casco.laminar_cuero` | Casco laminar de cuero | 0.3x0.35x0.3 | 150 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
+| `armadura.casco.laminar_cuero` | Casco laminar de cuero | 0.3x0.35x0.3 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
 | `armadura.cuello.laminar_cuero` | Gorjal / cofia laminar de cuero | 0.35x0.2x0.35 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.torso.laminar_cuero` | Coraza / peto laminar de cuero | 0.5x0.6x0.35 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.hombreras.laminar_cuero` | Hombreras (par) laminar de cuero | 0.6x0.2x0.3 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
@@ -351,7 +351,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `armadura.casco.oro_padre` | Casco de oro del padre | 0.3x0.4x0.3 | 300 | pendiente | `uso:equipable` `rig:humanoide` `especial:legado` `material:oro` `acto:1` | Lo lleva el padre en el prólogo. |
 | `armadura.montura.barda_cuero` | Barda de cuero para caballo | 0.8x1.2x2 | 400 | pendiente | `uso:equipable` `rig:cuadrupedo` `faccion:nomada` `material:cuero` |  |
 | `armadura.montura.barda_hierro` | Barda de hierro para caballo | 0.8x1.2x2 | 500 | pendiente | `uso:equipable` `rig:cuadrupedo` `faccion:imperio` `material:hierro` |  |
-| `armadura.casco.bronce` | Casco de bronce | 0.3x0.35x0.3 | 150 | pendiente | `uso:equipable` `rig:humanoide` `material:bronce` | Se forja en el horno de bronce. |
+| `armadura.casco.bronce` | Casco de bronce | 0.3x0.35x0.3 | 150 | importado | `uso:equipable` `rig:humanoide` `material:bronce` `formato:voxel` | Se forja en el horno de bronce. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
 
 <a id="vestimenta"></a>
 
