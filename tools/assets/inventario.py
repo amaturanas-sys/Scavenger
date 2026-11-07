@@ -11,6 +11,7 @@ Uso:
 Cada id "categoria.subcategoria.nombre" corresponde a un archivo fijo:
   assets/models/categoria/subcategoria/nombre.glb     (modelos)
   assets/textures/categoria/subcategoria/nombre.png   (etiqueta formato:textura)
+  assets/models/categoria/subcategoria/nombre.vox     (etiqueta formato:voxel: MagicaVoxel, tools/voxeles)
 Sin dependencias: solo la biblioteca estandar de Python 3.
 """
 import os
@@ -50,7 +51,7 @@ TAGS = {
     "material": None,
     "rig": {"humanoide", "cuadrupedo", "ave", "ninguno"},
     "especial": {"legado", "narrativo", "rastro_padre", "gran_guerrero", "hito"},
-    "formato": {"modelo", "textura"},
+    "formato": {"modelo", "textura", "voxel"},
     "estilo": None,
     "requiere": None,
     "motivo": None,
@@ -91,6 +92,8 @@ def path_of(it):
     rel = it["id"].replace(".", "/")
     if "formato:textura" in it["tags"]:
         return os.path.join("assets", "textures", rel + ".png")
+    if "formato:voxel" in it["tags"]:  # un .vox de MagicaVoxel (tools/voxeles)
+        return os.path.join("assets", "models", rel + ".vox")
     return os.path.join("assets", "models", rel + ".glb")
 
 
@@ -128,10 +131,10 @@ def validate(items):
 
     # Archivos que no corresponden a ningun id del inventario.
     known = {os.path.normpath(path_of(it)) for it in items}
-    for base, ext in (("assets/models", ".glb"), ("assets/textures", ".png")):
+    for base, exts in (("assets/models", (".glb", ".gltf", ".vox")), ("assets/textures", (".png",))):
         for dirpath, _, files in os.walk(os.path.join(ROOT, base)):
             for name in files:
-                if name.endswith(ext) or name.endswith(".gltf"):
+                if name.endswith(exts):
                     rel = os.path.normpath(os.path.relpath(os.path.join(dirpath, name), ROOT))
                     stem, dot, extension = rel.rpartition(".")
                     if "@" in os.path.basename(stem):

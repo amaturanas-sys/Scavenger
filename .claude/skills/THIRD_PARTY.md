@@ -13,8 +13,13 @@ licencia compatible (MIT o Apache-2.0). Copiadas sin cambios; las licencias est�
 | `game-mechanics-designer` | claude-skill-registry ← 4444J99/a-i--skills | Apache-2.0 |
 | `mobile-games` | claude-skill-registry ← cgyudistira/code-agents | MIT |
 | `gd-design-game-loop` | claude-skill-registry ← feliperyba/ralph-orchestra | MIT |
+| `scenario-blender-expert`, `scenario-blender-rigging`, `scenario-blender-animation`, `scenario-blender-export`, `scenario-blender-retopology` | [scenario-labs/skills](https://github.com/scenario-labs/skills) (`skills/dcc/blender/`, a4a8409) | MIT |
 
 Las de claude-skill-registry traen `SOURCE.json` con el autor y la URL original.
+
+De scenario-labs entran solo las de Blender que corren en local, sin cuenta (Blender por Python, sin
+interfaz): el esqueleto, los clips y el GLB de las skills `animaciones` y `modelos`. Lo que piden de su MCP
+o de su servicio pago (la generación de Scenario) no se usa.
 
 Quedaron fuera las de motores que no usamos (Unity, Unreal, Godot, Three.js, Orleans) y las
 del registro sin licencia declarada o con licencia restringida.

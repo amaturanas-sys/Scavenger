@@ -51,6 +51,7 @@
 #include "../src/sim/water.h"
 #include "../src/sim/world.h"
 #include "../src/sim/hydro.h"
+#include "../src/sim/voxfile.h"
 
 static int g_failed = 0, g_checks = 0;
 
@@ -5729,6 +5730,66 @@ static uint32_t cave_objects_print(const World *w) {
 }
 
 // Las cuevas grandes (v0.14.0, docs/PLAN_CUEVAS_GRANDES.md), en el mundo de la ultima semilla de test_caves.
+// ---------------------------------------------------------------------------------------- los .vox
+static void put32(uint8_t *p, int32_t v) {
+    uint32_t u = (uint32_t)v;
+    p[0] = (uint8_t)u, p[1] = (uint8_t)(u >> 8), p[2] = (uint8_t)(u >> 16), p[3] = (uint8_t)(u >> 24);
+}
+
+// Un .vox chico a mano: 2 (x) x 3 (y, fondo) x 4 (z, alto), una celda en (0, 0, 0) con el color 9, sin paleta.
+static size_t tiny_vox(uint8_t f[64]) {
+    memcpy(f, "VOX ", 4), put32(f + 4, 150);
+    memcpy(f + 8, "MAIN", 4), put32(f + 12, 0), put32(f + 16, 44);
+    memcpy(f + 20, "SIZE", 4), put32(f + 24, 12), put32(f + 28, 0), put32(f + 32, 2), put32(f + 36, 3), put32(f + 40, 4);
+    memcpy(f + 44, "XYZI", 4), put32(f + 48, 8), put32(f + 52, 0), put32(f + 56, 1);
+    f[60] = 0, f[61] = 0, f[62] = 0, f[63] = 9;
+    return 64;
+}
+
+static void test_voxfile(void) {
+    // Ida y vuelta: lo que se escribe se lee igual, la rejilla y la paleta.
+    VoxGrid g, r;
+    uint8_t pal[256][4], pal2[256][4];
+    CHECK(vox_init(&g, 3, 4, 5, 0.1f));
+    vox_set(&g, 0, 0, 0, 1), vox_set(&g, 2, 3, 4, 200), vox_set(&g, 1, 2, 3, 7);
+    for (int i = 0; i < 256; i++) pal[i][0] = (uint8_t)i, pal[i][1] = (uint8_t)(255 - i), pal[i][2] = (uint8_t)(i * 3), pal[i][3] = 255;
+    static uint8_t buf[4096];
+    size_t n = voxfile_write(&g, (const uint8_t(*)[4])pal, buf, sizeof(buf));
+    CHECK(n > 0 && voxfile_write(&g, (const uint8_t(*)[4])pal, buf, n - 1) == 0);
+    CHECK(voxfile_read(buf, n, 0.25f, &r, pal2));
+    CHECK(r.nx == 3 && r.ny == 4 && r.nz == 5 && fabsf(r.size - 0.25f) < 1e-6f && vox_count(&r) == 3);
+    CHECK(vox_get(&r, 0, 0, 0) == 1 && vox_get(&r, 2, 3, 4) == 200 && vox_get(&r, 1, 2, 3) == 7);
+    bool same = true;
+    for (int i = 1; i < 255; i++) same = same && !memcmp(pal[i], pal2[i], 4);
+    CHECK(same);
+    vox_free(&r);
+    vox_free(&g);
+    // Los ejes: el frente del .vox (y = 0) va a +X del juego, lo de arriba (z) a y y la x (a la derecha, de
+    // frente) a -Z. Sin paleta, grises.
+    uint8_t f[64];
+    size_t fl = tiny_vox(f);
+    CHECK(voxfile_read(f, fl, 0.1f, &r, pal2));
+    CHECK(r.nx == 3 && r.ny == 4 && r.nz == 2 && vox_count(&r) == 1 && vox_get(&r, 2, 0, 1) == 9);
+    CHECK(pal2[9][0] == pal2[9][1] && pal2[9][1] == pal2[9][2] && pal2[9][3] == 255 && pal2[0][3] == 0);
+    vox_free(&r);
+    // Roto, de mas o sin modelo: no se lee y no queda nada reservado.
+    CHECK(!voxfile_read(buf, n - 1, 0.1f, &r, pal2) && !r.m);
+    CHECK(!voxfile_read(f, 10, 0.1f, &r, pal2) && !voxfile_read(NULL, 0, 0.1f, &r, pal2));
+    tiny_vox(f), put32(f + 32, 0);
+    CHECK(!voxfile_read(f, fl, 0.1f, &r, pal2)); // tamaño 0
+    tiny_vox(f), put32(f + 36, VOXFILE_MAX + 1);
+    CHECK(!voxfile_read(f, fl, 0.1f, &r, pal2)); // demasiado grande
+    tiny_vox(f), put32(f + 56, 1000);
+    CHECK(!voxfile_read(f, fl, 0.1f, &r, pal2)); // mas celdas de las que trae
+    tiny_vox(f), put32(f + 24, 1000);
+    CHECK(!voxfile_read(f, fl, 0.1f, &r, pal2)); // un trozo que se sale del archivo
+    tiny_vox(f), memcpy(f + 44, "XXXX", 4);
+    CHECK(!voxfile_read(f, fl, 0.1f, &r, pal2) && !r.m); // sin celdas
+    tiny_vox(f), f[60] = 5; // una celda fuera de la rejilla: se salta
+    CHECK(voxfile_read(f, fl, 0.1f, &r, pal2) && vox_count(&r) == 0);
+    vox_free(&r);
+}
+
 static void test_caves_big(const World *a) {
     int tortuous = 0, corridors = 0;
     for (int i = 0; i < a->cave_count; i++) {
@@ -6042,6 +6103,7 @@ int main(void) {
     RUN(test_keymap_four_buttons);
     RUN(test_keymap_target_keys);
     RUN(test_target_rules_a3);
+    RUN(test_voxfile);
     RUN(test_cover_rules_a4);
     RUN(test_melee_parry_window);
     RUN(test_melee_weapon_block_costs_stamina);

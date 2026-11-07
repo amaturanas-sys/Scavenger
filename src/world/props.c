@@ -7,6 +7,7 @@
 #include "platform.h"
 #include "raymath.h"
 #include "rlgl.h"
+#include "voxmodel.h"
 #include "voxstruct.h"
 
 void props_init(Props *p, const Inventory *inv) {
@@ -83,6 +84,11 @@ static int load_slot(Props *p, const InvItem *item, int variant) {
     p->cache[slot].anim_count = 0;
     if (item->texture) return slot;
     if (!platform_asset_exists(full)) return slot; // en Android, dentro del APK
+    if (item->voxel) { // un .vox: a la altura de sus medidas, sin animaciones
+        p->cache[slot].loaded = vm_load(full, item->h, &p->cache[slot].model);
+        platform_note_asset(full, p->cache[slot].loaded);
+        return slot;
+    }
     p->cache[slot].model = LoadModel(full);
     p->cache[slot].loaded = p->cache[slot].model.meshCount > 0;
     platform_note_asset(full, p->cache[slot].loaded);

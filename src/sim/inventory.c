@@ -77,6 +77,7 @@ static bool parse_line(const char *p, const char *eol, InvItem *it) {
     for (int s = 0; s < INV_ESTADO_COUNT; s++)
         if (!strcmp(state, STATE_NAMES[s])) it->state = (InvState)s;
     it->texture = strstr(tags, "formato:textura") != NULL;
+    it->voxel = strstr(tags, "formato:voxel") != NULL;
     it->hands = strstr(tags, "manos:una")      ? INV_HANDS_ONE
                 : strstr(tags, "manos:dos")    ? INV_HANDS_TWO
                 : strstr(tags, "manos:escudo") ? INV_HANDS_SHIELD
@@ -127,5 +128,5 @@ int inventory_path(const InvItem *item, char *buf, size_t len) {
     snprintf(rel, sizeof(rel), "%s", item->id);
     for (char *c = rel; *c; c++)
         if (*c == '.') *c = '/';
-    return snprintf(buf, len, item->texture ? "assets/textures/%s.png" : "assets/models/%s.glb", rel);
+    return snprintf(buf, len, item->texture ? "assets/textures/%s.png" : item->voxel ? "assets/models/%s.vox" : "assets/models/%s.glb", rel);
 }
