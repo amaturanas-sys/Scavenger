@@ -143,6 +143,12 @@ def validate(items, clips):
         path = os.path.join(ROOT, inventario.path_of(it))
         if not os.path.isfile(path):
             continue
+        if path.endswith(".vox"):  # un .vox (formato:voxel) es quieto: no trae clips
+            need = [c["clip"] for c in mclips if c["prioridad"] == "obligatoria"]
+            if need:
+                errors.append(f"{inventario.path_of(it)}: es un .vox (quieto) y este id pide {', '.join(need)}; "
+                              "usa un GLB animado o deja el id sin formato:voxel")
+            continue
         names = glb_animations(path)
         if names is None:
             errors.append(f"{inventario.path_of(it)}: no es un GLB valido")

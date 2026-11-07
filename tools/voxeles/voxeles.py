@@ -2,6 +2,7 @@
 """Modelos de voxeles para el juego (.vox de MagicaVoxel), desde tres vistas, un splat de Idol o un GLB.
 
   python3 tools/voxeles/voxeles.py vistas FRENTE.png LADO.png ARRIBA.png -o salida.vox [--res 40] [--colores 24]
+  python3 tools/voxeles/voxeles.py hoja HOJA.png -o salida.vox [--filas 4 --fila 2] [--res 48]
   python3 tools/voxeles/voxeles.py splat objeto.ply -o salida.vox [--res 48] [--arriba y]
   python3 tools/voxeles/voxeles.py malla objeto.glb -o salida.vox [--res 48] [--frente +x]
   python3 tools/voxeles/voxeles.py ver modelo.vox -o vista.png
@@ -11,6 +12,10 @@ bordes). Frente: el objeto de frente. Lado: su lado derecho, con el frente a la 
 (--voltear-lado si esta a la derecha). Arriba: visto desde arriba, con el frente abajo (--voltear-arriba si
 esta arriba). El volumen es lo que cae dentro de las tres siluetas; el color de cada cara sale de la vista
 que la mira. Siempre con --vista-previa (o el comando ver) para mirarlo antes de traerlo al juego.
+
+Una hoja: una imagen con las tres vistas en fila, frente | lado | espalda (sin la de arriba), como las que
+genera Canva; con --filas, varios objetos uno debajo del otro (--fila elige cual). La forma sale del frente y
+del lado; el color de atras, de la espalda.
 
 La salida va a assets/models/<categoria>/.../<nombre>.vox, con la etiqueta formato:voxel en
 assets/inventario.tsv: el juego la carga como los GLB, a la altura de sus medidas (src/world/voxfile.c).
@@ -73,27 +78,74 @@ def guardar(path, filled, rgb, ncolors):
 
 
 # ---------------------------------------------------------------------------------------- vistas
-def silueta(path, umbral):
-    """(mascara, rgb) recortadas al objeto. Fondo: la transparencia o el color de los bordes."""
+def mascara(a, umbral):
+    """Lo que no es fondo en una imagen RGBA (int16): la transparencia o lo que se aparta del color de los bordes."""
+    if a[..., 3].min() < 250:
+        return a[..., 3] > 127
+    border = np.concatenate([a[0, :, :3], a[-1, :, :3], a[:, 0, :3], a[:, -1, :3]])
+    bg = np.median(border, axis=0)
+    return np.abs(a[..., :3] - bg).sum(axis=2) > umbral
+
+
+def objeto(m, rgb, donde="la imagen"):
+    """(mascara, rgb) del objeto: la mancha mas grande, sin agujeros y recortada a su caja."""
     from scipy import ndimage
 
-    a = np.asarray(Image.open(path).convert("RGBA")).astype(np.int16)
-    if a[..., 3].min() < 250:
-        m = a[..., 3] > 127
-    else:
-        border = np.concatenate([a[0, :, :3], a[-1, :, :3], a[:, 0, :3], a[:, -1, :3]])
-        bg = np.median(border, axis=0)
-        m = np.abs(a[..., :3] - bg).sum(axis=2) > umbral
     m = ndimage.binary_opening(m, iterations=1) if m.sum() > 400 else m
     lab, n = ndimage.label(m)
     if n == 0:
-        raise ValueError(f"{path}: no se encontro el objeto (prueba otro --umbral)")
+        raise ValueError(f"{donde}: no se encontro el objeto (prueba otro --umbral)")
     sizes = ndimage.sum(m, lab, range(1, n + 1))
-    m = lab == (int(np.argmax(sizes)) + 1)  # el objeto: la mancha mas grande
-    m = ndimage.binary_fill_holes(m)
+    m = lab == (int(np.argmax(sizes)) + 1)
+    # Los agujeros chicos (ruido) se tapan; los grandes (entre las ruedas, un arco, el armazon) quedan.
+    holes, nh = ndimage.label(ndimage.binary_fill_holes(m) & ~m)
+    if nh:
+        area = ndimage.sum(np.ones_like(m), holes, range(1, nh + 1))
+        small = np.flatnonzero(area < max(4.0, 0.002 * m.sum())) + 1
+        m = m | np.isin(holes, small)
     ys, xs = np.nonzero(m)
     y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
-    return m[y0:y1, x0:x1], a[y0:y1, x0:x1, :3].astype(np.float32)
+    return m[y0:y1, x0:x1], rgb[y0:y1, x0:x1, :3].astype(np.float32)
+
+
+def silueta(path, umbral):
+    """(mascara, rgb) recortadas al objeto. Fondo: la transparencia o el color de los bordes."""
+    a = np.asarray(Image.open(path).convert("RGBA")).astype(np.int16)
+    return objeto(mascara(a, umbral), a, path)
+
+
+def tramos(perfil, n, donde):
+    """Los n tramos de un perfil (filas o columnas con algo): si hay mas, se juntan los separados por menos."""
+    idx = np.flatnonzero(perfil)
+    if len(idx) == 0:
+        raise ValueError(f"{donde}: vacia")
+    cuts = np.flatnonzero(np.diff(idx) > 1)
+    runs = [[idx[0], idx[-1] + 1]] if len(cuts) == 0 else []
+    if len(cuts):
+        starts = np.concatenate([[idx[0]], idx[cuts + 1]])
+        ends = np.concatenate([idx[cuts] + 1, [idx[-1] + 1]])
+        runs = [[int(a), int(b)] for a, b in zip(starts, ends)]
+    while len(runs) > n:  # el hueco mas angosto no separa dos vistas: se juntan
+        gaps = [runs[i + 1][0] - runs[i][1] for i in range(len(runs) - 1)]
+        i = int(np.argmin(gaps))
+        runs[i:i + 2] = [[runs[i][0], runs[i + 1][1]]]
+    if len(runs) < n:
+        raise ValueError(f"{donde}: se esperaban {n} partes separadas por fondo y hay {len(runs)}")
+    return runs
+
+
+def hoja(path, umbral=40, filas=1, fila=1):
+    """Las tres vistas (frente, lado, espalda) de la fila elegida de una hoja: [(mascara, rgb)] * 3."""
+    a = np.asarray(Image.open(path).convert("RGBA")).astype(np.int16)
+    m = mascara(a, umbral)
+    # Lo que va de punta a punta (las rayas que separan las vistas en algunas hojas) no es objeto.
+    m[:, m.mean(axis=0) > 0.97] = False
+    r0, r1 = tramos(m.any(axis=1), filas, path)[fila - 1]
+    m, a = m[r0:r1], a[r0:r1]
+    views = []
+    for c0, c1 in tramos(m.any(axis=0), 3, path):
+        views.append(objeto(m[:, c0:c1], a[:, c0:c1], path))
+    return views
 
 
 def remuestrear(mask, rgb, w, h):
@@ -135,6 +187,56 @@ def desde_vistas(frente, lado, arriba, res=40, umbral=40, voltear_lado=False, vo
     for mask, src in ((d[4] | d[5], top), (d[0] | d[1], side), (d[2], np.broadcast_to(Fc[:, None, :, :], rgb.shape))):
         rgb[mask] = src[mask]  # en orden: arriba y abajo, los lados y, sobre todo, el frente
     log(f"[voxeles] vistas: {nx}x{ny}x{nz} celdas (frente {wf}x{hf} px, lado {ds}x{hs}, arriba {tm.shape[1]}x{tm.shape[0]})")
+    return filled, rgb
+
+
+def corridas(v):
+    """Los tramos [a, b) de True de un vector."""
+    d = np.diff(np.concatenate([[0], v.astype(np.int8), [0]]))
+    return list(zip(np.flatnonzero(d == 1), np.flatnonzero(d == -1)))
+
+
+def secciones_elipse(F, S):
+    """Sin vista de arriba: en cada altura, una elipse en cada rectangulo que dejan el frente y el lado (lo
+    redondo: animales, cascos, piedras). Toca los cuatro lados del rectangulo: las siluetas no cambian."""
+    nx, nz = F.shape
+    ny = S.shape[0]
+    filled = np.zeros((nx, ny, nz), bool)
+    for z in range(nz):
+        for x0, x1 in corridas(F[:, z]):
+            for y0, y1 in corridas(S[:, z]):
+                xs = (np.arange(x0, x1) + 0.5 - (x0 + x1) / 2.0) / ((x1 - x0) / 2.0)
+                ys = (np.arange(y0, y1) + 0.5 - (y0 + y1) / 2.0) / ((y1 - y0) / 2.0)
+                e = xs[:, None] ** 2 + ys[None, :] ** 2 <= 1.0
+                e[(x1 - x0) // 2, :] = True  # la cruz del centro, entera: las siluetas quedan iguales
+                e[:, (y1 - y0) // 2] = True
+                filled[x0:x1, y0:y1, z] |= e
+    return filled
+
+
+def desde_hoja(path, res=48, umbral=40, filas=1, fila=1, voltear_lado=False, seccion="caja"):
+    """(filled, rgb) desde una hoja: la forma, del frente y del lado; el color de atras, de la espalda."""
+    (fm, fc), (sm, sc), (bm, bc) = hoja(path, umbral, filas, fila)
+    if voltear_lado:
+        sm, sc = sm[:, ::-1], sc[:, ::-1]
+    hf, wf = fm.shape
+    hs, ds = sm.shape
+    X, Z, Y = float(wf), float(hf), ds * hf / float(hs)
+    k = res / max(X, Y, Z)
+    nx, ny, nz = (max(1, int(round(v * k))) for v in (X, Y, Z))
+    F, Fc = remuestrear(fm, fc, nx, nz)
+    S, Sc = remuestrear(sm, sc, ny, nz)
+    _, Bc = remuestrear(bm[:, ::-1], bc[:, ::-1], nx, nz)  # la espalda, espejada: su izquierda es nuestra derecha
+    F, Fc = F[::-1].T, Fc[::-1].transpose(1, 0, 2)  # [x, z]
+    S, Sc = S[::-1].T, Sc[::-1].transpose(1, 0, 2)  # [y, z]
+    Bc = Bc[::-1].transpose(1, 0, 2)
+    filled = secciones_elipse(F, S) if seccion == "elipse" else F[:, None, :] & S[None, :, :]
+    side = np.broadcast_to(Sc[None, :, :, :], filled.shape + (3,))
+    rgb = side.copy()  # de base (arriba, abajo y los lados), el color del lado
+    _, d = expuestas(filled)
+    rgb[d[3]] = np.broadcast_to(Bc[:, None, :, :], rgb.shape)[d[3]]  # atras, la espalda
+    rgb[d[2]] = np.broadcast_to(Fc[:, None, :, :], rgb.shape)[d[2]]  # y sobre todo, el frente
+    log(f"[voxeles] hoja (fila {fila} de {filas}): {nx}x{ny}x{nz} celdas (frente {wf}x{hf} px, lado {ds}x{hs})")
     return filled, rgb
 
 
@@ -397,6 +499,15 @@ def main(argv=None):
     v.add_argument("--umbral", type=int, default=40, help="cuanto se aparta del fondo (suma RGB)")
     v.add_argument("--voltear-lado", action="store_true")
     v.add_argument("--voltear-arriba", action="store_true")
+    h = sub.add_parser("hoja", parents=[common])
+    h.add_argument("imagen")
+    h.add_argument("--res", type=int, default=48, help="celdas del lado mas largo")
+    h.add_argument("--umbral", type=int, default=40, help="cuanto se aparta del fondo (suma RGB)")
+    h.add_argument("--filas", type=int, default=1, help="objetos en la hoja, uno debajo del otro")
+    h.add_argument("--fila", type=int, default=1, help="cual (1 es el de arriba)")
+    h.add_argument("--voltear-lado", action="store_true", help="en la vista de lado, el frente esta a la derecha")
+    h.add_argument("--seccion", choices=("caja", "elipse"), default="caja",
+                   help="cada altura: caja (carros, casas, muros) o elipse (animales, cascos, piedras)")
     s = sub.add_parser("splat", parents=[common])
     s.add_argument("ply")
     s.add_argument("--res", type=int, default=48)
@@ -418,6 +529,8 @@ def main(argv=None):
         return 0
     if a.cmd == "vistas":
         filled, rgb = desde_vistas(a.frente, a.lado, a.arriba, a.res, a.umbral, a.voltear_lado, a.voltear_arriba)
+    elif a.cmd == "hoja":
+        filled, rgb = desde_hoja(a.imagen, a.res, a.umbral, a.filas, a.fila, a.voltear_lado, a.seccion)
     elif a.cmd == "splat":
         filled, rgb = desde_splat(a.ply, a.res, a.arriba, a.girar, a.opacidad, a.densidad)
     else:

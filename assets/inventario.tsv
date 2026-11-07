@@ -28,7 +28,7 @@ mapa.hito.ovoo	Ovoo (túmulo de piedras chamánico)	bioma:estepa,uso:interactuab
 mapa.hito.kurgan	Kurgán (túmulo funerario)	bioma:estepa,especial:hito,especial:rastro_padre	14x3x14	200	pendiente	
 mapa.hito.tumba_helada	Tumba helada del padre	bioma:glaciar,acto:3,especial:narrativo,especial:legado	8x4x8	800	pendiente	Kurgán congelado al estilo de Pazyryk; prueba final del acto III.
 mapa.hito.campamento_abandonado	Campamento abandonado del padre	acto:3,especial:rastro_padre	10x3x10	400	pendiente	
-mapa.hito.piedra_ciervo	Piedra-ciervo	bioma:estepa,material:piedra,especial:rastro_padre	0.6x3x0.4	150	pendiente	Estela con ciervos de estilo animal.
+mapa.hito.piedra_ciervo	Piedra-ciervo	bioma:estepa,material:piedra,especial:rastro_padre,formato:voxel	0.6x3x0.4	150	importado	Estela con ciervos de estilo animal. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva.
 mapa.hito.balbal	Balbal (estatua de piedra)	bioma:estepa,material:piedra	0.6x1.8x0.5	150	pendiente	
 estructura.vivienda.yurta_comun	Yurta común	faccion:nomada,uso:habitable,material:fieltro	4.5x2.6x4.5	300	kiln	Ya existe (Kiln). Puerta hacia +X.
 estructura.vivienda.yurta_jefe	Yurta del jefe	faccion:nomada,uso:habitable,material:fieltro	7x3.4x7	600	pendiente	Más grande, con estandarte y ornamento.
@@ -44,7 +44,7 @@ estructura.vivienda.palacio	Palacio imperial	bioma:ciudad,faccion:imperio,acto:2
 estructura.campamento.fogata	Fogata	faccion:nomada,uso:interactuable	1.2x0.5x1.2	60	pendiente	Hoy es un primitivo procedural.
 estructura.campamento.corral	Corral de cuerdas y estacas	faccion:nomada,uso:decorado,material:madera	10x1.2x10	150	pendiente	
 estructura.campamento.secadero	Secadero de carne	faccion:nomada,uso:interactuable,material:madera	3x2x1	80	pendiente	
-estructura.campamento.forja	Forja portátil	faccion:nomada,uso:interactuable,material:hierro	2x1.5x2	300	pendiente	Función: herrero.
+estructura.campamento.forja	Forja portátil	faccion:nomada,uso:interactuable,material:hierro,formato:voxel	2x1.5x2	300	importado	Función: herrero. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva.
 estructura.campamento.enfermeria	Yurta enfermería	faccion:nomada,uso:interactuable,material:fieltro	4x2.6x4	350	pendiente	Función: curandero.
 estructura.campamento.jaula_prisioneros	Jaula de prisioneros	faccion:cualquiera,uso:interactuable,material:madera	3x2x3	150	pendiente	
 estructura.campamento.poste_ejecucion	Poste de castigo	faccion:cualquiera,uso:interactuable,material:madera	0.5x2.5x0.5	50	pendiente	
@@ -182,7 +182,7 @@ proyectil.bala.canon	Bala de cañón	uso:municion	0.15x0.15x0.15	20	pendiente
 proyectil.piedra.honda	Piedra de honda	uso:municion	0.05x0.05x0.05	8	pendiente	
 escudo.mano.mimbre	Escudo redondo de mimbre	uso:equipable,faccion:nomada,material:madera,manos:escudo	0.6x0.6x0.08	80	pendiente	
 escudo.mano.cuero	Escudo de cuero endurecido	uso:equipable,faccion:nomada,material:cuero,manos:escudo	0.55x0.55x0.06	80	pendiente	
-escudo.mano.umbo	Escudo de madera con umbo	uso:equipable,faccion:neutral,material:madera,manos:escudo	0.8x0.8x0.1	100	pendiente	
+escudo.mano.umbo	Escudo de madera con umbo	uso:equipable,faccion:neutral,material:madera,manos:escudo,formato:voxel	0.8x0.8x0.1	100	importado	Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva.
 escudo.grande.paves	Pavés imperial	uso:equipable,faccion:imperio,material:madera,manos:escudo	0.7x1.5x0.15	120	pendiente	
 escudo.mano.lamina	Escudo de láminas de hierro	uso:equipable,faccion:imperio,material:hierro,manos:escudo	0.6x0.8x0.08	120	pendiente	
 escudo.mano.culto	Escudo ceremonial del culto	uso:equipable,faccion:culto,material:bronce,manos:escudo	0.7x0.9x0.08	200	pendiente	

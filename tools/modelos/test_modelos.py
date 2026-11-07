@@ -156,8 +156,11 @@ def test_cline(tmp):
 def test_traer(tmp):
     """traer en una copia del repositorio: el inventario, los documentos y el manifiesto."""
     root = os.path.join(tmp, "repo")
-    for rel in ("assets/inventario.tsv", "assets/animaciones.tsv", "docs/INVENTARIO.md",
-                "assets/models/estructura/vivienda/yurta_comun.glb"):
+    items, _ = inventario.load()
+    imported = [inventario.path_of(it) for it in items if it["estado"] != "pendiente"]  # sus GLB y sus .vox
+    for rel in ["assets/inventario.tsv", "assets/animaciones.tsv", "docs/INVENTARIO.md"] + imported:
+        if not os.path.isfile(os.path.join(inventario.ROOT, rel)):
+            continue
         os.makedirs(os.path.dirname(os.path.join(root, rel)), exist_ok=True)
         shutil.copyfile(os.path.join(inventario.ROOT, rel), os.path.join(root, rel))
     saved = {}

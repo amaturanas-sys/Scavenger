@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**437 objetos** · 1 con modelo · 436 pendientes.
+**437 objetos** · 4 con modelo · 433 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -11,13 +11,13 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
-| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 30 | 0 | 0 | 0 |
-| [Estructuras](#estructura) | 43 | 42 | 1 | 0 | 0 |
+| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 29 | 0 | 1 | 0 |
+| [Estructuras](#estructura) | 43 | 41 | 1 | 1 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 46 | 46 | 0 | 0 | 0 |
 | [Armas](#arma) | 44 | 44 | 0 | 0 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
-| [Escudos](#escudo) | 6 | 6 | 0 | 0 | 0 |
+| [Escudos](#escudo) | 6 | 5 | 0 | 1 | 0 |
 | [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
 | [Armaduras (por piezas)](#armadura) | 48 | 48 | 0 | 0 | 0 |
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
@@ -79,7 +79,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.hito.kurgan` | Kurgán (túmulo funerario) | 14x3x14 | 200 | pendiente | `bioma:estepa` `especial:hito` `especial:rastro_padre` |  |
 | `mapa.hito.tumba_helada` | Tumba helada del padre | 8x4x8 | 800 | pendiente | `bioma:glaciar` `acto:3` `especial:narrativo` `especial:legado` | Kurgán congelado al estilo de Pazyryk; prueba final del acto III. |
 | `mapa.hito.campamento_abandonado` | Campamento abandonado del padre | 10x3x10 | 400 | pendiente | `acto:3` `especial:rastro_padre` |  |
-| `mapa.hito.piedra_ciervo` | Piedra-ciervo | 0.6x3x0.4 | 150 | pendiente | `bioma:estepa` `material:piedra` `especial:rastro_padre` | Estela con ciervos de estilo animal. |
+| `mapa.hito.piedra_ciervo` | Piedra-ciervo | 0.6x3x0.4 | 150 | importado | `bioma:estepa` `material:piedra` `especial:rastro_padre` `formato:voxel` | Estela con ciervos de estilo animal. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
 | `mapa.hito.balbal` | Balbal (estatua de piedra) | 0.6x1.8x0.5 | 150 | pendiente | `bioma:estepa` `material:piedra` |  |
 | `mapa.agua.coral` | Arrecife de coral | 1.5x0.8x1.5 | 120 | pendiente | `bioma:cualquiera` `uso:decorado` `uso:recolectable` | Bajo el agua de los lagos: coral rojo y perlas. |
 
@@ -103,7 +103,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.campamento.fogata` | Fogata | 1.2x0.5x1.2 | 60 | pendiente | `faccion:nomada` `uso:interactuable` | Hoy es un primitivo procedural. |
 | `estructura.campamento.corral` | Corral de cuerdas y estacas | 10x1.2x10 | 150 | pendiente | `faccion:nomada` `uso:decorado` `material:madera` |  |
 | `estructura.campamento.secadero` | Secadero de carne | 3x2x1 | 80 | pendiente | `faccion:nomada` `uso:interactuable` `material:madera` |  |
-| `estructura.campamento.forja` | Forja portátil | 2x1.5x2 | 300 | pendiente | `faccion:nomada` `uso:interactuable` `material:hierro` | Función: herrero. |
+| `estructura.campamento.forja` | Forja portátil | 2x1.5x2 | 300 | importado | `faccion:nomada` `uso:interactuable` `material:hierro` `formato:voxel` | Función: herrero. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
 | `estructura.campamento.enfermeria` | Yurta enfermería | 4x2.6x4 | 350 | pendiente | `faccion:nomada` `uso:interactuable` `material:fieltro` | Función: curandero. |
 | `estructura.campamento.jaula_prisioneros` | Jaula de prisioneros | 3x2x3 | 150 | pendiente | `faccion:cualquiera` `uso:interactuable` `material:madera` |  |
 | `estructura.campamento.poste_ejecucion` | Poste de castigo | 0.5x2.5x0.5 | 50 | pendiente | `faccion:cualquiera` `uso:interactuable` `material:madera` |  |
@@ -276,7 +276,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 |---|---|---|---|---|---|---|
 | `escudo.mano.mimbre` | Escudo redondo de mimbre | 0.6x0.6x0.08 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:madera` `manos:escudo` |  |
 | `escudo.mano.cuero` | Escudo de cuero endurecido | 0.55x0.55x0.06 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:cuero` `manos:escudo` |  |
-| `escudo.mano.umbo` | Escudo de madera con umbo | 0.8x0.8x0.1 | 100 | pendiente | `uso:equipable` `faccion:neutral` `material:madera` `manos:escudo` |  |
+| `escudo.mano.umbo` | Escudo de madera con umbo | 0.8x0.8x0.1 | 100 | importado | `uso:equipable` `faccion:neutral` `material:madera` `manos:escudo` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
 | `escudo.grande.paves` | Pavés imperial | 0.7x1.5x0.15 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:madera` `manos:escudo` |  |
 | `escudo.mano.lamina` | Escudo de láminas de hierro | 0.6x0.8x0.08 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:hierro` `manos:escudo` |  |
 | `escudo.mano.culto` | Escudo ceremonial del culto | 0.7x0.9x0.08 | 200 | pendiente | `uso:equipable` `faccion:culto` `material:bronce` `manos:escudo` |  |
