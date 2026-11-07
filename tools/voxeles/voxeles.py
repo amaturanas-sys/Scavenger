@@ -82,7 +82,9 @@ def mascara(a, umbral):
     """Lo que no es fondo en una imagen RGBA (int16): la transparencia o lo que se aparta del color de los bordes."""
     if a[..., 3].min() < 250:
         return a[..., 3] > 127
-    border = np.concatenate([a[0, :, :3], a[-1, :, :3], a[:, 0, :3], a[:, -1, :3]])
+    # El fondo: un anillo un poco hacia adentro del borde (algunas hojas traen un marco de otro color).
+    d = max(1, int(round(0.03 * min(a.shape[:2]))))
+    border = np.concatenate([a[d, :, :3], a[-1 - d, :, :3], a[:, d, :3], a[:, -1 - d, :3]])
     bg = np.median(border, axis=0)
     return np.abs(a[..., :3] - bg).sum(axis=2) > umbral
 
@@ -134,12 +136,16 @@ def tramos(perfil, n, donde):
     return runs
 
 
-def hoja(path, umbral=40, filas=1, fila=1):
-    """Las tres vistas (frente, lado, espalda) de la fila elegida de una hoja: [(mascara, rgb)] * 3."""
+def hoja(path, umbral=40, filas=1, fila=1, vertical=False):
+    """Las tres vistas (frente, lado, espalda) de la fila elegida de una hoja: [(mascara, rgb)] * 3. vertical:
+    las tres, una debajo de la otra (las aves con las alas abiertas)."""
     a = np.asarray(Image.open(path).convert("RGBA")).astype(np.int16)
     m = mascara(a, umbral)
     # Lo que va de punta a punta (las rayas que separan las vistas en algunas hojas) no es objeto.
     m[:, m.mean(axis=0) > 0.97] = False
+    m[m.mean(axis=1) > 0.97, :] = False
+    if vertical:
+        return [objeto(m[r0:r1], a[r0:r1], path) for r0, r1 in tramos(m.any(axis=1), 3, path)]
     r0, r1 = tramos(m.any(axis=1), filas, path)[fila - 1]
     m, a = m[r0:r1], a[r0:r1]
     views = []
@@ -214,9 +220,9 @@ def secciones_elipse(F, S):
     return filled
 
 
-def desde_hoja(path, res=48, umbral=40, filas=1, fila=1, voltear_lado=False, seccion="caja"):
+def desde_hoja(path, res=48, umbral=40, filas=1, fila=1, voltear_lado=False, seccion="caja", vertical=False):
     """(filled, rgb) desde una hoja: la forma, del frente y del lado; el color de atras, de la espalda."""
-    (fm, fc), (sm, sc), (bm, bc) = hoja(path, umbral, filas, fila)
+    (fm, fc), (sm, sc), (bm, bc) = hoja(path, umbral, filas, fila, vertical)
     if voltear_lado:
         sm, sc = sm[:, ::-1], sc[:, ::-1]
     hf, wf = fm.shape
@@ -506,6 +512,7 @@ def main(argv=None):
     h.add_argument("--filas", type=int, default=1, help="objetos en la hoja, uno debajo del otro")
     h.add_argument("--fila", type=int, default=1, help="cual (1 es el de arriba)")
     h.add_argument("--voltear-lado", action="store_true", help="en la vista de lado, el frente esta a la derecha")
+    h.add_argument("--vertical", action="store_true", help="las tres vistas, una debajo de la otra")
     h.add_argument("--seccion", choices=("caja", "elipse"), default="caja",
                    help="cada altura: caja (carros, casas, muros) o elipse (animales, cascos, piedras)")
     s = sub.add_parser("splat", parents=[common])
@@ -530,7 +537,7 @@ def main(argv=None):
     if a.cmd == "vistas":
         filled, rgb = desde_vistas(a.frente, a.lado, a.arriba, a.res, a.umbral, a.voltear_lado, a.voltear_arriba)
     elif a.cmd == "hoja":
-        filled, rgb = desde_hoja(a.imagen, a.res, a.umbral, a.filas, a.fila, a.voltear_lado, a.seccion)
+        filled, rgb = desde_hoja(a.imagen, a.res, a.umbral, a.filas, a.fila, a.voltear_lado, a.seccion, a.vertical)
     elif a.cmd == "splat":
         filled, rgb = desde_splat(a.ply, a.res, a.arriba, a.girar, a.opacidad, a.densidad)
     else:
