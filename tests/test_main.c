@@ -1709,6 +1709,16 @@ static void test_voxels(void) {
     for (int i = 0; i < m.tris * 3; i++) miny = fminf(miny, m.pos[i * 3 + 1]), maxy = fmaxf(maxy, m.pos[i * 3 + 1]);
     CHECK(fabsf(miny) < 1e-4f && fabsf(maxy - 1.5f) < 1e-4f); // 3 celdas de 0,5 m desde la base
     vox_mesh_free(&m);
+    // Apoyado en el suelo: de la cara de abajo de la base queda el borde (8 de las 9); la del centro no se arma.
+    g.on_ground = true;
+    CHECK(vox_exposed_faces(&g) == 53);
+    CHECK(vox_mesh(&g, PAL, &m) && m.tris == 106);
+    int down = 0;
+    for (int t = 0; t < m.tris; t++) down += m.nrm[t * 9 + 1] < -0.5f;
+    CHECK(down == 16); // 8 caras de abajo, las del borde
+    vox_mesh_free(&m);
+    vox_box(&g, 0, 5, 0, 2, 5, 2, 1); // una losa en el aire, lejos del suelo: se arma entera por abajo
+    CHECK(vox_exposed_faces(&g) == 53 + 9 + 9 + 12);
     vox_free(&g);
     // Erosion: las ruinas pierden celdas, mas arriba que abajo.
     CHECK(vox_init(&g, 12, 12, 12, 0.5f));

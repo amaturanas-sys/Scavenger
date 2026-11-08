@@ -199,6 +199,20 @@ VOX_MAX = 128  # celdas por eje que lee el juego (VOXFILE_MAX, src/sim/voxfile.h
 VOX_TRIS_AVISO, VOX_TRIS_MAX = 8000, 20000  # dos triangulos por cara a la vista (sin mallado codicioso)
 
 
+def caras_vox(cells):
+    """Las caras que arma el juego de un .vox del inventario (z arriba): las que dan al aire, salvo la de abajo de
+    la base que tiene vecinas a los cuatro lados (la tapa el suelo; src/sim/voxel.c, on_ground)."""
+    n = 0
+    for (x, y, z) in cells:
+        for d in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
+            if (x + d[0], y + d[1], z + d[2]) in cells:
+                continue
+            if d == (0, 0, -1) and z == 0 and all(c in cells for c in ((x - 1, y, 0), (x + 1, y, 0), (x, y - 1, 0), (x, y + 1, 0))):
+                continue
+            n += 1
+    return n
+
+
 def check_vox(it, path):
     """Errores y avisos de un .vox importado (formato:voxel; sin dependencias): que el juego lo lea, los
     triangulos que salen (dos por cara a la vista) y las medidas, con el alto del inventario."""
@@ -233,9 +247,7 @@ def check_vox(it, path):
     if not cells:
         return [f"{rel}: no tiene celdas llenas"], []
     errors, warnings = [], []
-    faces = sum(1 for (x, y, z) in cells for d in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))
-                if (x + d[0], y + d[1], z + d[2]) not in cells)
-    tris = 2 * faces
+    tris = 2 * caras_vox(cells)
     if tris > VOX_TRIS_MAX:
         errors.append(f"{rel}: {tris} triangulos (los .vox, como mucho {VOX_TRIS_MAX}); baja --res en tools/voxeles")
     elif tris > VOX_TRIS_AVISO:

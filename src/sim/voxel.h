@@ -23,6 +23,10 @@ typedef struct {
     uint8_t *m;     // material (0 vacio) o densidad (1..255) de cada celda: x + nx * (z + nz * y)
     uint8_t *light; // opcional: luz horneada por celda (0..255), para las nubes
     uint8_t jitter; // 0..40: variacion de tono por celda (piedras, tablas, fieltro: menos plano)
+    // Apoyado en el suelo (los .vox del inventario): la cara de abajo de la base solo se arma en el borde, donde
+    // una ladera la deja a la vista; la de adentro la tapa el suelo y no la ve nadie (en el templo, un cuarto de
+    // los triangulos). Las nubes no: se miran desde abajo.
+    bool on_ground;
 } VoxGrid;
 
 bool vox_init(VoxGrid *g, int nx, int ny, int nz, float size);

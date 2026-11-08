@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import estructuras  # noqa: E402
 import vox  # noqa: E402
 import voxeles  # noqa: E402
 
@@ -232,6 +233,72 @@ def test_cli():
         assert voxeles.main(["ver", out, "-o", prev]) == 0
 
 
+def test_templo_forma():
+    """El templo armado a mano: las medidas del inventario, simetrico, la escalera de un escalon por celda hasta la
+    puerta abierta, sin aire encerrado (sus caras no las ve nadie) y con los triangulos que admite modelos.py."""
+    from scipy import ndimage
+
+    o = estructuras.templo()
+    assert o.metros() == (24.0, 14.0, 30.0), o.metros()
+    lleno = o.lleno
+    assert (lleno == lleno[:, ::-1]).all()  # simetrico de lado a lado
+    for u in range(16):  # el escalon u pisa a u + 1 celdas y arriba hay aire hasta la cornisa del portico
+        col = lleno[u, 23]
+        assert col[:u + 1].all() and not col[u + 1:22].any(), u
+    assert not lleno[16:19, 22:26, 16:22].any() and lleno[19, 22:26, 16:22].all()  # el vano y su fondo
+    vacio = np.pad(~lleno, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    assert (lab[vacio] == lab[0, 0, 0]).all()  # todo el aire llega de afuera
+    rgb, vis = estructuras.colorear(o)
+    grid, pal = estructuras.a_vox(o, rgb, vis)
+    assert grid.shape == (48, 60, 28) and (grid[:, :, 27] > 0).any()  # 14 m: los pilonos llegan arriba
+    assert (grid[:, 0] > 0).any() and (grid[:, 59] > 0).any()
+    assert estructuras.triangulos(grid) < 20000
+
+
+def test_templo_colores():
+    """Con una hoja sintetica (frente rojo, lado verde, espalda azul): cada cara toma su vista, cada piedra queda
+    de un solo tono y el hueco de la puerta llega tal cual a la paleta."""
+    with tempfile.TemporaryDirectory() as tmp:
+        img = Image.new("RGB", (1700, 500), (255, 255, 255))
+        d = ImageDraw.Draw(img)
+        d.rectangle([40, 100, 459, 445], fill=RED)  # frente, 420 x 346 (como la hoja del templo)
+        d.rectangle([500, 147, 1197, 445], fill=GREEN)  # lado, 698 x 299
+        d.rectangle([1240, 141, 1671, 445], fill=BLUE)  # espalda, 432 x 305
+        p = os.path.join(tmp, "hoja.png")
+        img.save(p)
+        o = estructuras.templo()
+        rgb, vis = estructuras.colorear(o, voxeles.hoja(p), estructuras.ALTURAS["templo"], luz=1.0)
+        dom = np.argmax(rgb, axis=-1)
+        assert vis[0, 40, 2] and dom[0, 40, 2] == 0  # el frente del zocalo: rojo
+        assert vis[40, 0, 2] and dom[40, 0, 2] == 1  # su costado: verde
+        assert vis[59, 40, 2] and dom[59, 40, 2] == 2  # su espalda: azul
+        for u0 in range(6, 54, 6):  # las piedras del costado del zocalo (6 x 3 celdas): de un solo tono cada una
+            piedra = rgb[u0:u0 + 6, 0, 0:3].reshape(-1, 3)
+            assert np.ptp(piedra, axis=0).max() < 1e-3, u0
+        tonos = {round(float(rgb[u0, 0, 0, 1]), 1) for u0 in range(6, 54, 6)}
+        assert len(tonos) >= 5, tonos  # y no todas del mismo
+        grid, pal = estructuras.a_vox(o, rgb, vis)
+        fondo = grid[47 - 23, 19, 18]  # el fondo de la puerta (x del .vox: el ancho al reves)
+        assert tuple(pal[fondo - 1]) == estructuras.HUECO, pal[fondo - 1]
+
+
+def test_triangulos_con_suelo():
+    """estructuras.triangulos cuenta lo que arma el juego (on_ground) y lo mismo que modelos.py check."""
+    sys.path.insert(0, os.path.join(HERE, "..", "modelos"))
+    import modelos
+
+    g = np.ones((3, 3, 3), np.uint8)
+    assert estructuras.triangulos(g) == 106  # las 54 caras, menos la de abajo del centro de la base
+    g[1, 1, 2] = 0  # un hueco arriba no cambia la base
+    cells = {tuple(int(v) for v in c) for c in np.argwhere(g > 0)}
+    assert 2 * modelos.caras_vox(cells) == estructuras.triangulos(g)
+    o = estructuras.templo()
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    cells = {tuple(int(v) for v in c) for c in np.argwhere(grid > 0)}
+    assert 2 * modelos.caras_vox(cells) == estructuras.triangulos(grid)
+
+
 def main():
     tests = [
         ("test_vox_ida_y_vuelta", test_vox_ida_y_vuelta),
@@ -244,6 +311,9 @@ def main():
         ("test_malla_caja", test_malla_caja),
         ("test_frente_a_menos_y", test_frente_a_menos_y),
         ("test_cli", test_cli),
+        ("test_templo_forma", test_templo_forma),
+        ("test_templo_colores", test_templo_colores),
+        ("test_triangulos_con_suelo", test_triangulos_con_suelo),
     ]
     fails = 0
     for name, fn in tests:

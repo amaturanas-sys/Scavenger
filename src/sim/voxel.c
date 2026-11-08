@@ -222,13 +222,21 @@ static const int FACE_V[6][4][3] = {
 };
 static const float FACE_SHADE[6] = { 0.82f, 0.74f, 1.0f, 0.55f, 0.88f, 0.68f };
 
+// Una cara que se arma: da al aire y no es la de abajo de la base, tapada por el suelo (on_ground; el borde de la
+// base, si: una ladera lo deja a la vista).
+static bool face_shown(const VoxGrid *g, int x, int y, int z, int f) {
+    if (vox_get(g, x + FACE_N[f][0], y + FACE_N[f][1], z + FACE_N[f][2])) return false;
+    if (f != 3 || y != 0 || !g->on_ground) return true;
+    return !(vox_get(g, x - 1, 0, z) && vox_get(g, x + 1, 0, z) && vox_get(g, x, 0, z - 1) && vox_get(g, x, 0, z + 1));
+}
+
 int vox_exposed_faces(const VoxGrid *g) {
     int n = 0;
     for (int y = 0; y < g->ny; y++)
         for (int z = 0; z < g->nz; z++)
             for (int x = 0; x < g->nx; x++) {
                 if (!g->m[idx(g, x, y, z)]) continue;
-                for (int f = 0; f < 6; f++) n += !vox_get(g, x + FACE_N[f][0], y + FACE_N[f][1], z + FACE_N[f][2]);
+                for (int f = 0; f < 6; f++) n += face_shown(g, x, y, z, f);
             }
     return n;
 }
@@ -285,7 +293,7 @@ bool vox_mesh(const VoxGrid *g, const uint8_t (*palette)[4], VoxMesh *out) {
                     }
                 }
                 for (int f = 0; f < 6; f++) {
-                    if (vox_get(g, x + FACE_N[f][0], y + FACE_N[f][1], z + FACE_N[f][2])) continue;
+                    if (!face_shown(g, x, y, z, f)) continue;
                     float p[4][3], c[4];
                     for (int k = 0; k < 4; k++) {
                         const int *cv = FACE_V[f][k];

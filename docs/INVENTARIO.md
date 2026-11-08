@@ -118,7 +118,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.imperio.fundicion` | Fundición / taller industrial | 18x10x14 | 1200 | pendiente | `bioma:ciudad` `faccion:imperio` `especial:narrativo` | Capacidad industrial del imperio. |
 | `estructura.imperio.cadalso` | Cadalso de ejecución pública | 6x3x6 | 250 | pendiente | `bioma:ciudad` `faccion:imperio` `acto:2` `especial:narrativo` | Escena de la huida del acto II. |
 | `estructura.culto.altar` | Altar del culto | 12x6x12 | 1500 | pendiente | `bioma:ciudad` `faccion:culto` `acto:4` `especial:narrativo` `uso:destructible` | Objetivo del asalto final. |
-| `estructura.culto.templo` | Templo del culto | 24x14x30 | 2500 | importado | `bioma:ciudad` `faccion:culto` `acto:4` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `estructura.culto.templo` | Templo del culto | 24x14x30 | 2500 | importado | `bioma:ciudad` `faccion:culto` `acto:4` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py templo): celdas de 0.5 m, la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva. |
 | `estructura.culto.jaula_sacrificio` | Jaula de cautivos para el sacrificio | 3x2.5x3 | 200 | pendiente | `faccion:culto` `uso:interactuable` `material:hierro` | Rescates del acto III. |
 | `estructura.ruina.muro` | Muro en ruinas | 6x3x1 | 150 | pendiente | `bioma:cualquiera` `uso:decorado` `material:piedra` |  |
 | `estructura.ruina.yurta_quemada` | Yurta quemada | 4.5x1.5x4.5 | 250 | pendiente | `faccion:nomada` `acto:1` `uso:decorado` | Restos de la masacre. |
