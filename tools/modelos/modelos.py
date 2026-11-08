@@ -21,7 +21,9 @@ Opciones de la conversion:
   --rotar E:G,...  giros previos alrededor de x, y o z (una espada acostada que va de pie: z:90)
   --escala S       el factor a mano (si no, manda el lado mas largo del inventario)
   --origen x,y,z   el punto (m, del modelo ya escalado) que queda en el origen: el agarre de un arma
-  --colores N      colores de la paleta (24)
+  --colores N      colores de la paleta (24; con --suave, 0: sin paleta)
+  --suave          al estilo de PS2 (personas, animales y armas): normales suaves y color por vertice, en
+                   lugar del facetado de colores planos
   --sin-luz        sin la luz horneada
   --limpiar F      quita los pedazos sueltos de menos de F del area (0.01; 0: ninguno)
   --riggeado       un modelo con esqueleto y clips (RigNet, GRAIL): no se convierte, se valida y se copia
@@ -274,7 +276,7 @@ def check(quiet=False):
 
 
 def traer(mid, url=None, archivo=None, girar=0.0, rotar=None, escala=None, origen=None, colores=24, luz=True, limpiar=0.01,
-          riggeado=False, fuente="otro", reemplazar=False, log=print):
+          riggeado=False, fuente="otro", reemplazar=False, log=print, suave=False):
     items, errors = inventario.load()
     if errors:
         raise SystemExit("\n".join(errors))
@@ -334,9 +336,11 @@ def traer(mid, url=None, archivo=None, girar=0.0, rotar=None, escala=None, orige
         import lowres  # las dependencias de la conversion, solo aca
 
         data, informe = lowres.convertir(src, dims(it), int(it["tris_max"]) or 300, girar=girar, rotar=rotar, escala=escala,
-                                         origen=origen, colores=colores, luz=luz, limpiar=limpiar, nombre=mid)
+                                         origen=origen, colores=colores, luz=luz, limpiar=limpiar, nombre=mid, suave=suave)
         entry["params"] = {"girar": girar, "rotar": informe["rotar"], "escala": informe["escala"], "origen": informe["origen"],
                            "colores": colores, "luz": luz, "limpiar": limpiar}
+        if suave:
+            entry["params"]["suave"] = True
         entry["tris"] = informe["tris"]
         entry["source"]["tris"] = informe["tris_fuente"]
         log(f"[modelos] {informe['tris_fuente']} -> {informe['tris']} triangulos (tris_max {it['tris_max']}), "
@@ -440,8 +444,9 @@ def conversion_args(p):
     p.add_argument("--rotar", default="")
     p.add_argument("--escala", type=float, default=None)
     p.add_argument("--origen", default=None)
-    p.add_argument("--colores", type=int, default=24)
+    p.add_argument("--colores", type=int, default=None)
     p.add_argument("--sin-luz", action="store_true")
+    p.add_argument("--suave", action="store_true")
     p.add_argument("--limpiar", type=float, default=0.01)
 
 
@@ -473,8 +478,9 @@ def main(argv):
         return check()
     if a.cmd == "estado":
         return estado(a.id)
-    opts = dict(girar=a.girar, rotar=parse_rotations(a.rotar), escala=a.escala, origen=parse_origin(a.origen), colores=a.colores,
-                luz=not a.sin_luz, limpiar=a.limpiar)
+    colores = a.colores if a.colores is not None else (0 if a.suave else 24)
+    opts = dict(girar=a.girar, rotar=parse_rotations(a.rotar), escala=a.escala, origen=parse_origin(a.origen), colores=colores,
+                luz=not a.sin_luz, limpiar=a.limpiar, suave=a.suave)
     if a.cmd == "bajar":
         return bajar(a.id, a.fuente, a.salida, **opts)
     if a.cmd == "traer":

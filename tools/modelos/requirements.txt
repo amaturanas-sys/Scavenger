@@ -4,4 +4,6 @@ numpy>=1.26
 scipy>=1.11
 trimesh>=4.4
 fast-simplification>=0.1.7
+# La superficie suave de un volumen (tools/voxeles: voxeles.py ... -o algo.glb): marching cubes y su alisado.
+PyMCubes>=0.1.4
 pillow>=10.0

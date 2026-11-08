@@ -17,7 +17,12 @@ Una hoja: una imagen con las tres vistas en fila, frente | lado | espalda (sin l
 genera Canva; con --filas, varios objetos uno debajo del otro (--fila elige cual). La forma sale del frente y
 del lado; el color de atras, de la espalda.
 
-La salida va a assets/models/<categoria>/.../<nombre>.vox, con la etiqueta formato:voxel en
+Con -o algo.glb, en lugar de voxeles sale la superficie suave del mismo volumen (marching cubes sobre el
+volumen alisado, con el color de cada vertice): la fuente densa para tools/modelos/modelos.py traer --suave,
+que la lleva al estilo de PS2 (personas, animales y armas, que en voxeles no quedan bien). Para eso conviene
+--res 96 o 128.
+
+La salida .vox va a assets/models/<categoria>/.../<nombre>.vox, con la etiqueta formato:voxel en
 assets/inventario.tsv: el juego la carga como los GLB, a la altura de sus medidas (src/world/voxfile.c).
 Dependencias: las de tools/modelos/requirements.txt (numpy, scipy, Pillow; trimesh para malla).
 """
@@ -202,15 +207,25 @@ def corridas(v):
     return list(zip(np.flatnonzero(d == 1), np.flatnonzero(d == -1)))
 
 
-def secciones_elipse(F, S):
+def secciones_elipse(F, S, miembros=False):
     """Sin vista de arriba: en cada altura, una elipse en cada rectangulo que dejan el frente y el lado (lo
-    redondo: animales, cascos, piedras). Toca los cuatro lados del rectangulo: las siluetas no cambian."""
+    redondo: animales, cascos, piedras). Toca los cuatro lados del rectangulo: las siluetas no cambian.
+    Con miembros (personas): en las alturas con tres tramos o mas en el frente (los brazos al lado del torso, las
+    manos al lado de los muslos), los tramos angostos (menos de 0.65 del mas ancho) no toman la profundidad del
+    lado, que es la del torso (de costado, el brazo se le superpone), sino una seccion redonda en el medio de ese
+    tramo del lado: sin brazos como tablas."""
     nx, nz = F.shape
     ny = S.shape[0]
     filled = np.zeros((nx, ny, nz), bool)
     for z in range(nz):
-        for x0, x1 in corridas(F[:, z]):
+        frente = corridas(F[:, z])
+        ancho = max((b - a for a, b in frente), default=0)
+        for x0, x1 in frente:
+            redondo = miembros and len(frente) >= 3 and (x1 - x0) < 0.65 * ancho
             for y0, y1 in corridas(S[:, z]):
+                if redondo and (y1 - y0) > 1.3 * (x1 - x0):
+                    c, h = (y0 + y1) / 2.0, max(1.0, 0.65 * (x1 - x0))
+                    y0, y1 = max(y0, int(np.floor(c - h))), min(y1, int(np.ceil(c + h)))
                 xs = (np.arange(x0, x1) + 0.5 - (x0 + x1) / 2.0) / ((x1 - x0) / 2.0)
                 ys = (np.arange(y0, y1) + 0.5 - (y0 + y1) / 2.0) / ((y1 - y0) / 2.0)
                 e = xs[:, None] ** 2 + ys[None, :] ** 2 <= 1.0
@@ -236,7 +251,10 @@ def desde_hoja(path, res=48, umbral=40, filas=1, fila=1, voltear_lado=False, sec
     F, Fc = F[::-1].T, Fc[::-1].transpose(1, 0, 2)  # [x, z]
     S, Sc = S[::-1].T, Sc[::-1].transpose(1, 0, 2)  # [y, z]
     Bc = Bc[::-1].transpose(1, 0, 2)
-    filled = secciones_elipse(F, S) if seccion == "elipse" else F[:, None, :] & S[None, :, :]
+    if seccion in ("elipse", "miembros"):
+        filled = secciones_elipse(F, S, miembros=seccion == "miembros")
+    else:
+        filled = F[:, None, :] & S[None, :, :]
     side = np.broadcast_to(Sc[None, :, :, :], filled.shape + (3,))
     rgb = side.copy()  # de base (arriba, abajo y los lados), el color del lado
     _, d = expuestas(filled)
@@ -425,6 +443,45 @@ def colores_de_malla(mesh, points, kdtree):
     return vcol[near]
 
 
+# ---------------------------------------------------------------------------------------- superficie suave
+def superficie(filled, rgb):
+    """La superficie suave del volumen: (vertices, caras, colores RGB), en los ejes de un GLB del juego (x
+    hacia el frente, y arriba, z a la izquierda) y en celdas. mcubes.smooth alisa sin perder lo fino (las
+    patas, las hojas de las armas): la superficie sigue pasando entre las celdas llenas y las vacias."""
+    import mcubes
+    import trimesh
+    from scipy.spatial import cKDTree
+
+    pad = np.pad(filled, 2)
+    field = mcubes.smooth(pad)
+    v, f = mcubes.marching_cubes(field, 0.0)
+    v = v - 2.0
+    surf, _ = expuestas(filled)
+    cells = np.argwhere(surf)
+    _, near = cKDTree(cells).query(v)
+    col = rgb[tuple(cells[near].T)]
+    # Del .vox (x a la derecha, y hacia atras, z arriba) al GLB: el frente (y = 0) hacia +X.
+    sx, sy, _ = filled.shape
+    out = np.stack([sy - 1 - v[:, 1], v[:, 2], sx - 1 - v[:, 0]], axis=1)
+    mesh = trimesh.Trimesh(out, f, process=True)
+    mesh.update_faces(mesh.nondegenerate_faces())  # marching cubes deja triangulos sin area: rompen la malla
+    mesh.remove_unreferenced_vertices()
+    mesh.merge_vertices()
+    mesh.fix_normals()
+    keep = mesh.vertices  # process=True puede juntar vertices: el color se vuelve a buscar
+    _, near = cKDTree(out).query(keep)
+    return np.asarray(mesh.vertices), np.asarray(mesh.faces), col[near]
+
+
+def guardar_glb(path, filled, rgb):
+    import trimesh
+
+    v, f, c = superficie(filled, rgb)
+    rgba = np.concatenate([np.clip(c, 0, 255).astype(np.uint8), np.full((len(c), 1), 255, np.uint8)], axis=1)
+    trimesh.Trimesh(v, f, vertex_colors=rgba, process=False).export(path)
+    log(f"[voxeles] {path}: superficie suave de {len(f)} triangulos (para modelos.py traer --suave)")
+
+
 # ---------------------------------------------------------------------------------------- ver
 def primera(filled, axis, desde_el_final):
     """Para cada rayo a lo largo de axis: si toca algo y el indice de la primera celda llena."""
@@ -513,8 +570,9 @@ def main(argv=None):
     h.add_argument("--fila", type=int, default=1, help="cual (1 es el de arriba)")
     h.add_argument("--voltear-lado", action="store_true", help="en la vista de lado, el frente esta a la derecha")
     h.add_argument("--vertical", action="store_true", help="las tres vistas, una debajo de la otra")
-    h.add_argument("--seccion", choices=("caja", "elipse"), default="caja",
-                   help="cada altura: caja (carros, casas, muros) o elipse (animales, cascos, piedras)")
+    h.add_argument("--seccion", choices=("caja", "elipse", "miembros"), default="caja",
+                   help="cada altura: caja (carros, casas, muros), elipse (animales, cascos, piedras) o miembros "
+                        "(personas: elipse, y los brazos redondos)")
     s = sub.add_parser("splat", parents=[common])
     s.add_argument("ply")
     s.add_argument("--res", type=int, default=48)
@@ -548,6 +606,9 @@ def main(argv=None):
     if max(filled.shape) > vox.MAX:
         log(f"[voxeles] {filled.shape}: mas de {vox.MAX} celdas por eje; baja --res")
         return 1
+    if a.salida.lower().endswith(".glb"):
+        guardar_glb(a.salida, filled, rgb)
+        return 0
     grid, pal = guardar(a.salida, filled, rgb, a.colores)
     if a.vista_previa:
         vista_previa(grid, np.concatenate([pal, np.full((len(pal), 1), 255, np.uint8)], axis=1), a.vista_previa)

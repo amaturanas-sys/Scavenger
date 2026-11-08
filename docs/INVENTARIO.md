@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**437 objetos** · 12 con modelo · 425 pendientes.
+**450 objetos** · 16 con modelo · 434 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -14,17 +14,17 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 28 | 0 | 2 | 0 |
 | [Estructuras](#estructura) | 43 | 40 | 1 | 2 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
-| [Animales](#animal) | 46 | 46 | 0 | 0 | 0 |
-| [Armas](#arma) | 44 | 40 | 0 | 4 | 0 |
+| [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
+| [Armas](#arma) | 44 | 39 | 0 | 5 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
-| [Escudos](#escudo) | 6 | 5 | 0 | 1 | 0 |
+| [Escudos](#escudo) | 6 | 4 | 0 | 2 | 0 |
 | [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
-| [Armaduras (por piezas)](#armadura) | 48 | 46 | 0 | 2 | 0 |
+| [Armaduras (por piezas)](#armadura) | 48 | 44 | 0 | 4 | 0 |
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
 | [Utilería y consumibles](#utileria) | 87 | 87 | 0 | 0 | 0 |
-| [Personajes y NPCs](#personaje) | 39 | 39 | 0 | 0 | 0 |
+| [Personajes y NPCs](#personaje) | 47 | 47 | 0 | 0 | 0 |
 
 ## Etiquetas
 
@@ -157,21 +157,26 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
-| `animal.montura.caballo_estepario` | Caballo estepario | 0.6x1.5x2.2 | 900 | pendiente | `faccion:nomada` `uso:montable` `rig:cuadrupedo` |  |
-| `animal.montura.caballo_guerra` | Caballo de guerra | 0.7x1.7x2.4 | 1000 | pendiente | `uso:montable` `rig:cuadrupedo` | Admite barda (armadura de caballo). |
+| `animal.montura.caballo_estepario` | Caballo estepario | 0.61x1.94x2.46 | 900 | pendiente | `faccion:nomada` `uso:montable` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.58 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.montura.caballo_estepario_2` | Caballo estepario (variante 2) | 0.61x1.89x2.39 | 900 | pendiente | `faccion:nomada` `uso:montable` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.58 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.montura.caballo_estepario_3` | Caballo estepario (variante 3) | 0.58x1.93x2.34 | 900 | pendiente | `faccion:nomada` `uso:montable` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.58 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.montura.caballo_guerra` | Caballo de guerra | 0.74x2.22x2.78 | 1000 | pendiente | `uso:montable` `rig:cuadrupedo` | Admite barda (armadura de caballo). Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.75 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.montura.camello_bactriano` | Camello bactriano | 0.8x2.2x3 | 1000 | pendiente | `bioma:desierto` `uso:montable` `rig:cuadrupedo` |  |
-| `animal.montura.dromedario` | Dromedario | 0.8x2.2x3 | 1000 | pendiente | `bioma:desierto` `uso:montable` `rig:cuadrupedo` |  |
+| `animal.montura.dromedario` | Dromedario | 0.76x2.6x3.26 | 1000 | pendiente | `bioma:desierto` `uso:montable` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 2 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.montura.elefante_guerra` | Elefante de guerra | 2x3.2x5 | 1500 | pendiente | `uso:montable` `rig:cuadrupedo` `talla:gigante` | Fuerza y asedio. |
 | `animal.montura.reno` | Reno de tiro | 0.6x1.3x2 | 800 | pendiente | `bioma:fiordo` `bioma:glaciar` `uso:montable` `rig:cuadrupedo` |  |
 | `animal.ganado.oveja` | Oveja | 0.4x0.8x1.1 | 400 | pendiente | `faccion:nomada` `rig:cuadrupedo` |  |
 | `animal.ganado.cabra` | Cabra | 0.4x0.8x1.1 | 400 | pendiente | `faccion:nomada` `rig:cuadrupedo` |  |
 | `animal.ganado.yak` | Yak | 0.9x1.7x2.5 | 800 | pendiente | `bioma:glaciar` `rig:cuadrupedo` |  |
-| `animal.ganado.buey` | Buey | 0.8x1.6x2.5 | 700 | pendiente | `rig:cuadrupedo` |  |
-| `animal.ganado.perro_pastor` | Perro pastor (mastín) | 0.35x0.8x1.1 | 500 | pendiente | `faccion:nomada` `rig:cuadrupedo` |  |
-| `animal.salvaje.lobo` | Lobo | 0.3x0.8x1.4 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` |  |
-| `animal.salvaje.tigre` | Tigre | 0.5x1x2.6 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` |  |
-| `animal.salvaje.oso` | Oso pardo | 0.9x1.3x2.2 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` |  |
-| `animal.salvaje.ciervo` | Ciervo | 0.5x1.9x1.8 | 500 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` |  |
+| `animal.ganado.buey` | Buey | 1.17x2.12x3.15 | 700 | pendiente | `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.88 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.ganado.vaca` | Vaca | 0.86x1.77x2.68 | 700 | pendiente | `faccion:nomada` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.62 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. La hoja la dibuja mirando a la derecha (--voltear-lado). |
+| `animal.ganado.perro_pastor` | Perro pastor (mastín) | 0.35x0.94x1.24 | 500 | pendiente | `faccion:nomada` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 0.78 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.salvaje.lobo` | Lobo | 0.35x1.06x1.37 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 0.85 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.salvaje.tigre` | Tigre | 0.45x1.27x2.09 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.1 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.salvaje.oso` | Oso pardo | 0.97x1.59x2.55 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.5 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.salvaje.oso_polar` | Oso polar | 0.95x1.69x3.02 | 700 | pendiente | `faccion:salvaje` `bioma:glaciar` `bioma:fiordo` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.6 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.salvaje.ciervo` | Ciervo | 0.94x2.23x2.11 | 500 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.45 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.salvaje.cierva` | Cierva | 0.44x1.7x1.83 | 500 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.2 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.salvaje.ibice` | Íbice | 0.4x1.2x1.4 | 500 | pendiente | `faccion:salvaje` `bioma:glaciar` `rig:cuadrupedo` |  |
 | `animal.salvaje.zorro` | Zorro | 0.25x0.45x0.9 | 300 | pendiente | `faccion:salvaje` `rig:cuadrupedo` |  |
 | `animal.salvaje.leopardo_nieves` | Leopardo de las nieves | 0.4x0.7x2 | 600 | pendiente | `faccion:salvaje` `bioma:glaciar` `rig:cuadrupedo` |  |
@@ -181,11 +186,11 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `animal.montura.mula` | Mula | 0.6x1.5x2 | 800 | pendiente | `uso:montable` `rig:cuadrupedo` | Montura de carga: resiste el desierto. |
 | `animal.montura.burro` | Burro | 0.5x1.2x1.6 | 700 | pendiente | `bioma:desierto` `uso:montable` `rig:cuadrupedo` |  |
 | `animal.ganado.becerro` | Becerro | 0.4x1x1.4 | 500 | pendiente | `faccion:nomada` `rig:cuadrupedo` | Se pastorea; carne y piel al sacrificarlo. |
-| `animal.salvaje.perro_salvaje` | Perro asilvestrado | 0.3x0.7x1.1 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Caza en jauría; domable (pelea, lazo y comida). |
-| `animal.salvaje.puma` | Puma | 0.4x0.8x1.9 | 600 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Cazador solitario: acecha. |
+| `animal.salvaje.perro_salvaje` | Perro asilvestrado | 0.3x0.84x1.07 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Caza en jauría; domable (pelea, lazo y comida). Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 0.65 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.salvaje.puma` | Puma | 0.35x0.99x1.65 | 600 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Cazador solitario: acecha. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 0.8 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.salvaje.hiena` | Hiena | 0.35x0.85x1.3 | 500 | pendiente | `faccion:salvaje` `bioma:desierto` `rig:cuadrupedo` | Siempre hostil; en clan. |
-| `animal.salvaje.coyote` | Coyote | 0.3x0.6x1.1 | 400 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Siempre hostil; en pareja o grupo. |
-| `animal.salvaje.jabali` | Jabalí | 0.45x0.9x1.4 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Siempre hostil; embiste. |
+| `animal.salvaje.coyote` | Coyote | 0.26x0.76x1.01 | 400 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Siempre hostil; en pareja o grupo. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 0.62 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.salvaje.jabali` | Jabalí | 0.52x1.11x1.81 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Siempre hostil; embiste. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.1 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.salvaje.antilope` | Antílope saiga | 0.35x0.8x1.3 | 500 | pendiente | `faccion:salvaje` `bioma:estepa` `rig:cuadrupedo` | Presa: manadas. |
 | `animal.salvaje.reno` | Reno salvaje | 0.6x1.3x2 | 600 | pendiente | `faccion:salvaje` `bioma:glaciar` `rig:cuadrupedo` | Presa: manadas del frío. |
 | `animal.salvaje.gacela` | Gacela | 0.3x0.9x1.2 | 500 | pendiente | `faccion:salvaje` `bioma:desierto` `rig:cuadrupedo` | Presa: la más rápida. |
@@ -211,15 +216,15 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
 | `arma.corta.cuchillo` | Cuchillo de hueso y hierro | 0.05x0.3x0.03 | 60 | pendiente | `uso:equipable` `manos:una` |  |
-| `arma.corta.daga` | Daga | 0.05x0.4x0.03 | 80 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
-| `arma.corta.sable` | Sable de la estepa | 0.08x0.9x0.03 | 120 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` | Curvo y de un filo: a caballo corta limpio, no se traba y suma la carrera. |
-| `arma.corta.hacha_mano` | Hacha de mano | 0.15x0.6x0.04 | 100 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
-| `arma.corta.maza` | Maza | 0.1x0.7x0.1 | 100 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `arma.corta.daga` | Daga | 0.09x0.4x0.03 | 80 | importado | `uso:equipable` `manos:una` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma plana); las medidas, las de la imagen. |
+| `arma.corta.sable` | Sable de la estepa | 0.52x0.9x0.03 | 120 | importado | `uso:equipable` `faccion:nomada` `manos:una` | Curvo y de un filo: a caballo corta limpio, no se traba y suma la carrera. Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma plana --girar 90); las medidas, las de la imagen. |
+| `arma.corta.hacha_mano` | Hacha de mano | 0.24x0.6x0.04 | 100 | importado | `uso:equipable` `manos:una` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma plana); las medidas, las de la imagen. |
+| `arma.corta.maza` | Maza | 0.27x0.7x0.27 | 100 | importado | `uso:equipable` `manos:una` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma revolucion); las medidas, las de la imagen. |
 | `arma.larga.lanza` | Lanza ligera | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` | A pie y a caballo; en ristre (L), la carga. |
 | `arma.larga.guja` | Guja | 0.2x2.2x0.05 | 120 | pendiente | `uso:equipable` `manos:dos` |  |
 | `arma.larga.pica` | Pica imperial | 0.1x4.5x0.1 | 80 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
 | `arma.larga.alabarda` | Alabarda | 0.3x2.2x0.05 | 140 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
-| `arma.larga.espada_larga` | Espada larga | 0.2x1.2x0.03 | 120 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `arma.larga.espada_larga` | Espada larga | 0.23x1.2x0.03 | 120 | importado | `uso:equipable` `manos:una` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma plana); las medidas, las de la imagen. |
 | `arma.distancia.arco_compuesto` | Arco compuesto reflejo | 0.1x1.2x0.05 | 150 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:nomada` `manos:dos` | Asta, madera y tendón: corto y potente, a caballo tira como a pie. Se hace en tres etapas. |
 | `arma.distancia.arco_largo` | Arco largo | 0.08x1.8x0.05 | 120 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
 | `arma.distancia.ballesta` | Ballesta | 0.7x0.25x0.9 | 250 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
@@ -276,9 +281,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 |---|---|---|---|---|---|---|
 | `escudo.mano.mimbre` | Escudo redondo de mimbre | 0.6x0.6x0.08 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:madera` `manos:escudo` |  |
 | `escudo.mano.cuero` | Escudo de cuero endurecido | 0.55x0.55x0.06 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:cuero` `manos:escudo` |  |
-| `escudo.mano.umbo` | Escudo de madera con umbo | 0.8x0.8x0.1 | 100 | importado | `uso:equipable` `faccion:neutral` `material:madera` `manos:escudo` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `escudo.mano.umbo` | Escudo de madera con umbo | 0.8x0.8x0.18 | 100 | importado | `uso:equipable` `faccion:neutral` `material:madera` `manos:escudo` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma disco); las medidas, las de la imagen. |
 | `escudo.grande.paves` | Pavés imperial | 0.7x1.5x0.15 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:madera` `manos:escudo` |  |
-| `escudo.mano.lamina` | Escudo de láminas de hierro | 0.6x0.8x0.08 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:hierro` `manos:escudo` |  |
+| `escudo.mano.lamina` | Escudo de láminas de hierro | 0.51x0.8x0.21 | 120 | importado | `uso:equipable` `faccion:imperio` `material:hierro` `manos:escudo` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma disco); las medidas, las de la imagen. La hoja lo dibuja de tablas, con borde y umbo de hierro. |
 | `escudo.mano.culto` | Escudo ceremonial del culto | 0.7x0.9x0.08 | 200 | pendiente | `uso:equipable` `faccion:culto` `material:bronce` `manos:escudo` |  |
 
 <a id="totem"></a>
@@ -304,7 +309,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
-| `armadura.casco.laminar_cuero` | Casco laminar de cuero | 0.3x0.35x0.3 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `armadura.casco.laminar_cuero` | Casco laminar de cuero | 0.25x0.35x0.27 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma secciones); las medidas, las de la imagen. |
 | `armadura.cuello.laminar_cuero` | Gorjal / cofia laminar de cuero | 0.35x0.2x0.35 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.torso.laminar_cuero` | Coraza / peto laminar de cuero | 0.5x0.6x0.35 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.hombreras.laminar_cuero` | Hombreras (par) laminar de cuero | 0.6x0.2x0.3 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
@@ -320,7 +325,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `armadura.brazales.fieltro` | Brazales (par) de fieltro acolchado | 0.15x0.3x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
 | `armadura.faldar.fieltro` | Faldar de fieltro acolchado | 0.5x0.4x0.4 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
 | `armadura.botas.fieltro` | Botas (par) de fieltro acolchado | 0.15x0.35x0.3 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
-| `armadura.casco.escamas_hierro` | Casco de escamas de hierro | 0.3x0.35x0.3 | 150 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
+| `armadura.casco.escamas_hierro` | Casco de escamas de hierro | 0.18x0.35x0.18 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma secciones); las medidas, las de la imagen. La hoja lo dibuja cónico, con nasal y carrilleras. |
 | `armadura.cuello.escamas_hierro` | Gorjal / cofia de escamas de hierro | 0.35x0.2x0.35 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
 | `armadura.torso.escamas_hierro` | Coraza / peto de escamas de hierro | 0.5x0.6x0.35 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
 | `armadura.hombreras.escamas_hierro` | Hombreras (par) de escamas de hierro | 0.6x0.2x0.3 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
@@ -329,7 +334,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `armadura.faldar.escamas_hierro` | Faldar de escamas de hierro | 0.5x0.4x0.4 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
 | `armadura.grebas.escamas_hierro` | Grebas (par) de escamas de hierro | 0.15x0.45x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
 | `armadura.botas.escamas_hierro` | Botas (par) de escamas de hierro | 0.15x0.35x0.3 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
-| `armadura.casco.malla` | Casco de malla | 0.3x0.35x0.3 | 150 | pendiente | `uso:equipable` `rig:humanoide` `faccion:neutral` `material:hierro` |  |
+| `armadura.casco.malla` | Casco de malla | 0.26x0.35x0.28 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:neutral` `material:hierro` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma secciones); las medidas, las de la imagen. La hoja lo dibuja como casco de anteojos (nasal y antiparras). |
 | `armadura.cuello.malla` | Gorjal / cofia de malla | 0.35x0.2x0.35 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:neutral` `material:hierro` |  |
 | `armadura.torso.malla` | Coraza / peto de malla | 0.5x0.6x0.35 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:neutral` `material:hierro` |  |
 | `armadura.hombreras.malla` | Hombreras (par) de malla | 0.6x0.2x0.3 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:neutral` `material:hierro` |  |
@@ -351,7 +356,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `armadura.casco.oro_padre` | Casco de oro del padre | 0.3x0.4x0.3 | 300 | pendiente | `uso:equipable` `rig:humanoide` `especial:legado` `material:oro` `acto:1` | Lo lleva el padre en el prólogo. |
 | `armadura.montura.barda_cuero` | Barda de cuero para caballo | 0.8x1.2x2 | 400 | pendiente | `uso:equipable` `rig:cuadrupedo` `faccion:nomada` `material:cuero` |  |
 | `armadura.montura.barda_hierro` | Barda de hierro para caballo | 0.8x1.2x2 | 500 | pendiente | `uso:equipable` `rig:cuadrupedo` `faccion:imperio` `material:hierro` |  |
-| `armadura.casco.bronce` | Casco de bronce | 0.3x0.35x0.3 | 150 | importado | `uso:equipable` `rig:humanoide` `material:bronce` `formato:voxel` | Se forja en el horno de bronce. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `armadura.casco.bronce` | Casco de bronce | 0.17x0.35x0.26 | 150 | importado | `uso:equipable` `rig:humanoide` `material:bronce` | Se forja en el horno de bronce. Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma secciones --cresta); las medidas, las de la imagen. |
 
 <a id="vestimenta"></a>
 
@@ -542,8 +547,16 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
 | `personaje.base.cuerpo_nino` | Cuerpo base: niño | 0.35x1.2x0.25 | 800 | pendiente | `rig:humanoide` `talla:pequena` | Malla base modular: ropa y armadura encajan encima. |
-| `personaje.base.cuerpo_comun` | Cuerpo base: adulto común | 0.5x1.7x0.3 | 1200 | pendiente | `rig:humanoide` `talla:comun` |  |
-| `personaje.base.cuerpo_robusto` | Cuerpo base: adulto robusto | 0.6x1.85x0.35 | 1300 | pendiente | `rig:humanoide` `talla:grande` |  |
+| `personaje.base.cuerpo_comun` | Cuerpo base: adulto común | 0.53x1.7x0.29 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_robusto` | Cuerpo base: adulto robusto | 0.57x1.85x0.33 | 1300 | pendiente | `rig:humanoide` `talla:grande` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_comun_2` | Cuerpo base: adulto común (variante 2) | 0.54x1.7x0.3 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (el adulto común); el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_comun_3` | Cuerpo base: adulto común (variante 3) | 0.51x1.7x0.29 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (el adulto común); el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_comun_4` | Cuerpo base: adulto común (variante 4) | 0.53x1.7x0.29 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (el adulto común); el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_mujer` | Cuerpo base: mujer adulta | 0.46x1.6x0.25 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (la mujer estándar); el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_mujer_2` | Cuerpo base: mujer adulta (variante 2) | 0.51x1.6x0.26 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (la mujer estándar); el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_mujer_3` | Cuerpo base: mujer adulta (variante 3) | 0.48x1.6x0.27 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (la mujer estándar); el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_mujer_4` | Cuerpo base: mujer adulta (variante 4) | 0.45x1.6x0.26 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (la mujer estándar); el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_mujer_5` | Cuerpo base: mujer adulta (variante 5) | 0.46x1.6x0.28 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (la mujer estándar); el ancho y el fondo, los de la imagen. |
 | `personaje.base.cuerpo_gigante` | Cuerpo base: gigante (gran guerrero) | 0.75x2.3x0.45 | 1500 | pendiente | `rig:humanoide` `talla:gigante` `especial:gran_guerrero` | Talla x1.2–1.45 del común. |
 | `personaje.base.cuerpo_anciano` | Cuerpo base: anciano | 0.5x1.6x0.3 | 1200 | pendiente | `rig:humanoide` `talla:comun` |  |
 | `personaje.narrativo.protagonista` | Protagonista ({NOMBRE}) | 0.5x1.75x0.3 | 2000 | pendiente | `rig:humanoide` `acto:2` `especial:narrativo` `uso:personalizable` | Personalizable: nombre, aspecto, ropa. |

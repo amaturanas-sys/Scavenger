@@ -3,8 +3,10 @@
 salida de TRELLIS.2 (una vasija densa con textura). Corre en el CI (con las dependencias de
 requirements.txt) y a mano: python3 tools/modelos/test_modelos.py
 """
+import json
 import os
 import shutil
+import struct
 import sys
 import tempfile
 import traceback
@@ -208,8 +210,43 @@ def test_traer(tmp):
             setattr(mod, name, value)
 
 
+def test_suave(tmp):
+    """--suave (estilo PS2): vertices compartidos con indices, normales unitarias y el color por vertice; el
+    mismo presupuesto, la base en el suelo y la mancha roja (hacia -Z en la fuente) hacia +X."""
+    src = os.path.join(tmp, "vasija.glb")
+    if not os.path.isfile(src):
+        fuente_trellis(src)
+    data, info = lowres.convertir(src, (0.6, 0.5, 0.6), 200, girar=90, colores=0, suave=True)
+    assert info["suave"] and info["tris"] <= 200, info
+    with tempfile.NamedTemporaryFile(suffix=".glb", delete=False) as f:
+        f.write(data)
+        name = f.name
+    try:
+        g = glb.Glb(name)
+    finally:
+        os.unlink(name)
+    assert g.triangulos() == info["tris"]
+    prim = g.json["meshes"][0]["primitives"][0]
+    assert "indices" in prim and {"POSITION", "NORMAL", "COLOR_0"} <= set(prim["attributes"])
+    acc, view = g.json["accessors"], g.json["bufferViews"]
+
+    def read(i, dtype, width):
+        a, v = acc[i], view[acc[i]["bufferView"]]
+        start = v.get("byteOffset", 0) + a.get("byteOffset", 0)
+        return np.frombuffer(g.bin[start:start + a["count"] * width * np.dtype(dtype).itemsize], dtype=dtype).reshape(-1, width)
+
+    pos = read(prim["attributes"]["POSITION"], "<f4", 3)
+    nor = read(prim["attributes"]["NORMAL"], "<f4", 3)
+    col = read(prim["attributes"]["COLOR_0"], "u1", 4)[:, :3].astype(int)
+    assert len(pos) < 3 * info["tris"]  # comparte vertices (el facetado repite tres por cara)
+    assert np.allclose(np.linalg.norm(nor, axis=1), 1.0, atol=1e-3)
+    assert abs(pos[:, 1].min()) < 1e-4 and abs(pos[:, 1].max() - 0.5) < 0.12  # la base en el suelo
+    red = (col[:, 0] > col[:, 1] + 30) & (col[:, 0] > col[:, 2] + 30)
+    assert red.any() and pos[red][:, 0].mean() > 0
+
+
 def main():
-    tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer]
+    tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave]
     failed = 0
     tmp = tempfile.mkdtemp(prefix="modelos-")
     try:

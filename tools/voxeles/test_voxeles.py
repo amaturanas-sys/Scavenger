@@ -137,6 +137,25 @@ def test_hoja():
         assert cerca(rgb[15, 8, 12], GREEN)  # el costado, del lado
 
 
+def test_superficie_suave():
+    """-o algo.glb: la superficie suave del volumen, cerrada, con color por vertice y el frente hacia +X."""
+    import trimesh
+
+    with tempfile.TemporaryDirectory() as tmp:
+        p = hoja_de_dos_objetos(tmp)
+        out = os.path.join(tmp, "cil.glb")
+        assert voxeles.main(["hoja", p, "--filas", "2", "--fila", "2", "--res", "32", "--seccion", "elipse", "-o", out]) == 0
+        m = trimesh.load(out, force="mesh")
+    assert m.is_watertight and len(m.faces) > 200
+    ext = m.extents  # un cilindro de 16 x 16 x 24 celdas (a res 32: 21 x 21 x 32)
+    assert abs(ext[1] - 32) < 2.5 and abs(ext[0] - ext[2]) < 2.5, ext
+    cols = np.asarray(m.visual.vertex_colors)[:, :3].astype(int)
+    v = np.asarray(m.vertices)
+    front = v[:, 0] > v[:, 0].max() - 1.0  # el frente (rojo) hacia +X; la espalda (azul) hacia -X
+    back = v[:, 0] < v[:, 0].min() + 1.0
+    assert cerca(np.median(cols[front], axis=0), RED, 50) and cerca(np.median(cols[back], axis=0), BLUE, 50)
+
+
 def escribir_ply(path, pts, f_dc, opacity_logit):
     n = len(pts)
     head = ("ply\nformat binary_little_endian 1.0\nelement vertex %d\nproperty float x\nproperty float y\n"
@@ -220,6 +239,7 @@ def main():
         ("test_vistas_L (transparente)", lambda: test_vistas_L(True)),
         ("test_vistas_voltear", test_vistas_voltear),
         ("test_hoja", test_hoja),
+        ("test_superficie_suave", test_superficie_suave),
         ("test_splat_esfera", test_splat_esfera),
         ("test_malla_caja", test_malla_caja),
         ("test_frente_a_menos_y", test_frente_a_menos_y),
