@@ -38,14 +38,14 @@ importante.
 | Perro pastor (mastín) | 0.78 m (est.) | — | pastor de Asia central (estándar FCI: los machos, desde 0.70 m) | 50 kg o más |
 | Perro asilvestrado | 0.65 m (est.) | 1.00 m (est.) | perros asilvestrados grandes, de tipo guardián | 30–40 kg |
 
-Sin id propio todavía (`arte/modelos/sin_id/`):
+Con id en el inventario, todavía sin especie en la simulación:
 
-| Animal | A la cruz | Población o raza |
+| Animal (id) | A la cruz | Población o raza |
 |---|---|---|
-| Oso polar | 1.60 m | machos adultos (2.7 m de cabeza y cuerpo, 600–700 kg) |
-| Cierva | 1.20 m (est.) | hembra del ciervo del Caspio, escalada del macho |
-| Vaca | 1.62 m | vacas de Chianina (900–1000 kg) |
-| Caballos | 1.58 m | como el caballo estepario |
+| Oso polar (`animal.salvaje.oso_polar`) | 1.60 m | machos adultos (2.7 m de cabeza y cuerpo, 600–700 kg) |
+| Cierva (`animal.salvaje.cierva`) | 1.20 m (est.) | hembra del ciervo del Caspio, escalada del macho |
+| Vaca (`animal.ganado.vaca`) | 1.62 m | vacas de Chianina (900–1000 kg) |
+| Caballo estepario, variantes 2 y 3 | 1.58 m | como el caballo estepario |
 
 Las personas no siguen esta regla: el cuerpo común mide 1.70 m, el robusto 1.85 m y la mujer estándar 1.60 m.
 

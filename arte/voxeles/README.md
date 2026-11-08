@@ -6,7 +6,8 @@ del inventario va cada uno, se miran con `python3 tools/voxeles/voxeles.py ver <
 en MagicaVoxel.
 
 Los voxeles quedan para lo construido y lo de la tierra. Las personas, los animales y las armas van en
-low-poly suave, al estilo de PS2 (`arte/modelos/para_riggear/` y `arte/modelos/sin_id/`).
+low-poly con textura, al estilo de PS2 (`tools/modelos/piezas.py`): los quietos en `assets/models/`, los que se
+animan en `arte/modelos/para_riggear/`.
 
 - `estructuras/carreta.vox` y `carro_varas.vox`: los vehículos piden el clip `rodar`.
 - `estructuras/atalaya.vox` y `muro_ruina.vox`: hoy los dibuja el kit de edificios; un `.vox` los reemplazaría.

@@ -68,6 +68,40 @@
       "tris": 500,
       "updated_at": "2026-11-08T18:36:28+00:00"
     },
+    "animal.ganado.vaca": {
+      "file": "arte/modelos/para_riggear/animal.ganado.vaca.glb",
+      "category": "animal",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c28.jpg",
+        "sha256": "576ce5186fa11f3ac2133054e7f01f3096b4753957145db3618025bfc92f93a9"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": 1.62,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 700,
+      "updated_at": "2026-11-08T18:45:46+00:00"
+    },
     "animal.montura.caballo_estepario": {
       "file": "arte/modelos/para_riggear/animal.montura.caballo_estepario.glb",
       "category": "animal",
@@ -101,6 +135,74 @@
       },
       "tris": 900,
       "updated_at": "2026-11-08T18:35:58+00:00"
+    },
+    "animal.montura.caballo_estepario_2": {
+      "file": "arte/modelos/para_riggear/animal.montura.caballo_estepario_2.glb",
+      "category": "animal",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c12.jpg",
+        "sha256": "f9de106d922ecd346f43ed08015babc2784cfd0bfe6253abfa670cc2d1fa0a10"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": 1.58,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 900,
+      "updated_at": "2026-11-08T18:45:52+00:00"
+    },
+    "animal.montura.caballo_estepario_3": {
+      "file": "arte/modelos/para_riggear/animal.montura.caballo_estepario_3.glb",
+      "category": "animal",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c14.jpg",
+        "sha256": "ed8737b392635fe13d55ac0c00e07ef28d7b73fd532ac6e872cb7a8148360499"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": 1.58,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 900,
+      "updated_at": "2026-11-08T18:45:57+00:00"
     },
     "animal.montura.caballo_guerra": {
       "file": "arte/modelos/para_riggear/animal.montura.caballo_guerra.glb",
@@ -169,6 +271,40 @@
       },
       "tris": 998,
       "updated_at": "2026-11-08T18:36:10+00:00"
+    },
+    "animal.salvaje.cierva": {
+      "file": "arte/modelos/para_riggear/animal.salvaje.cierva.glb",
+      "category": "animal",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c24.jpg",
+        "sha256": "c6426d751b6ec55c3a284b43e812406d9b76d3fc97edcbd834d0a04ec787563a"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": 1.2,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 498,
+      "updated_at": "2026-11-08T18:45:40+00:00"
     },
     "animal.salvaje.ciervo": {
       "file": "arte/modelos/para_riggear/animal.salvaje.ciervo.glb",
@@ -339,6 +475,40 @@
       },
       "tris": 700,
       "updated_at": "2026-11-08T18:35:32+00:00"
+    },
+    "animal.salvaje.oso_polar": {
+      "file": "arte/modelos/para_riggear/animal.salvaje.oso_polar.glb",
+      "category": "animal",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c20.jpg",
+        "sha256": "8ae11cbe330ea7ebf7418f9dc29fb7a962d1124e20a93ef017d3cd147ffcc5cd"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": 1.6,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 700,
+      "updated_at": "2026-11-08T18:45:35+00:00"
     },
     "animal.salvaje.perro_salvaje": {
       "file": "arte/modelos/para_riggear/animal.salvaje.perro_salvaje.glb",
@@ -813,6 +983,278 @@
       },
       "tris": 1200,
       "updated_at": "2026-11-08T18:37:29+00:00"
+    },
+    "personaje.base.cuerpo_comun_2": {
+      "file": "arte/modelos/para_riggear/personaje.base.cuerpo_comun_2.glb",
+      "category": "personaje",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c01.jpg",
+        "sha256": "278c8736bf172bc2855df80e2ca7bbb9d60cd0a352bd8db34e5122e77f2d4be5"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": true,
+        "res": 128,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 1198,
+      "updated_at": "2026-11-08T18:46:02+00:00"
+    },
+    "personaje.base.cuerpo_comun_3": {
+      "file": "arte/modelos/para_riggear/personaje.base.cuerpo_comun_3.glb",
+      "category": "personaje",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c05.jpg",
+        "sha256": "787c5d4a2352cbd66c8caddd0e483ba606db53a1db579329b726d573f1496845"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": true,
+        "res": 128,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 1200,
+      "updated_at": "2026-11-08T18:46:07+00:00"
+    },
+    "personaje.base.cuerpo_comun_4": {
+      "file": "arte/modelos/para_riggear/personaje.base.cuerpo_comun_4.glb",
+      "category": "personaje",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c09.jpg",
+        "sha256": "036ba87822794a8e126193022543cc2c3548f16c31a45598e44fae793e3ea99a"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": true,
+        "res": 128,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 1200,
+      "updated_at": "2026-11-08T18:46:11+00:00"
+    },
+    "personaje.base.cuerpo_mujer": {
+      "file": "arte/modelos/para_riggear/personaje.base.cuerpo_mujer.glb",
+      "category": "personaje",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c02.jpg",
+        "sha256": "31b59290ef055137800aa6efcce3fc442a8a2954acdf80e40da917e09d035191"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": true,
+        "res": 128,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 1198,
+      "updated_at": "2026-11-08T18:46:16+00:00"
+    },
+    "personaje.base.cuerpo_mujer_2": {
+      "file": "arte/modelos/para_riggear/personaje.base.cuerpo_mujer_2.glb",
+      "category": "personaje",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c04.jpg",
+        "sha256": "39013047d99633b33e6ca78db2274638064ed7086da5030d728d13ae92212b96"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": true,
+        "res": 128,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 1200,
+      "updated_at": "2026-11-08T18:46:20+00:00"
+    },
+    "personaje.base.cuerpo_mujer_3": {
+      "file": "arte/modelos/para_riggear/personaje.base.cuerpo_mujer_3.glb",
+      "category": "personaje",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c06.jpg",
+        "sha256": "31b906bd62b64987b7eaa7b671e6765a64b1cf87ca057247416ff4ddedff123a"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": true,
+        "res": 128,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 1200,
+      "updated_at": "2026-11-08T18:46:25+00:00"
+    },
+    "personaje.base.cuerpo_mujer_4": {
+      "file": "arte/modelos/para_riggear/personaje.base.cuerpo_mujer_4.glb",
+      "category": "personaje",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c08.jpg",
+        "sha256": "bc9659908c606bf67e4885a96210a3f86690f2a7b3521bdd51ee75d36e09536f"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": true,
+        "res": 128,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 1200,
+      "updated_at": "2026-11-08T18:46:29+00:00"
+    },
+    "personaje.base.cuerpo_mujer_5": {
+      "file": "arte/modelos/para_riggear/personaje.base.cuerpo_mujer_5.glb",
+      "category": "personaje",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c10.jpg",
+        "sha256": "fad9b06b8506f912b8387d71072e471b88e178c484c6699c4d078c758fbdb21f"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": true,
+        "res": 128,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 1200,
+      "updated_at": "2026-11-08T18:46:34+00:00"
     },
     "personaje.base.cuerpo_robusto": {
       "file": "arte/modelos/para_riggear/personaje.base.cuerpo_robusto.glb",
