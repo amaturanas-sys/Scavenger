@@ -283,6 +283,26 @@ def test_templo_colores():
         assert tuple(pal[fondo - 1]) == estructuras.HUECO, pal[fondo - 1]
 
 
+def test_forja_forma():
+    """La forja armada a mano: el alto del inventario (1.5 m) en una sola pieza, sin aire encerrado, abierta al
+    frente y de un solo costado (no se ve a traves), y bajo el aviso de triangulos de Android."""
+    from scipy import ndimage
+
+    o = estructuras.forja()
+    assert o.metros() == (1.32, 1.5, 1.86), o.metros()
+    lleno = o.lleno
+    _, piezas = ndimage.label(lleno)
+    assert piezas == 1, piezas
+    vacio = np.pad(~lleno, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    assert (lab[vacio] == lab[0, 0, 0]).all()
+    assert not lleno[10:12, 8:14, 5:12].any()  # la boca del frente
+    assert not lleno[20, 5:7, 7].any() and lleno[20, 15:17, 7].all()  # abierta en -Z, cerrada en +Z
+    assert lleno[20, :, 7].any()  # de costado no se ve a traves
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert estructuras.triangulos(grid) < 8000
+
+
 def test_triangulos_juntos():
     """modelos.tris_vox cuenta lo que arma el juego (src/sim/voxel.c: las caras juntas y la base en el suelo): la
     figura de prueba de tests/test_main.c (merge_fixture) da los mismos triangulos que alla (MERGE_FIXTURE_TRIS)."""
@@ -325,6 +345,7 @@ def main():
         ("test_cli", test_cli),
         ("test_templo_forma", test_templo_forma),
         ("test_templo_colores", test_templo_colores),
+        ("test_forja_forma", test_forja_forma),
         ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0

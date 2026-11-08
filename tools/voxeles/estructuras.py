@@ -31,7 +31,7 @@ sys.path.insert(0, HERE)
 import vox  # noqa: E402
 import voxeles  # noqa: E402
 
-CELDA = 0.5  # metros por celda, como los sitios grandes del kit (src/world/voxstruct.c)
+CELDA = 0.5  # metros por celda (el templo), como los sitios grandes del kit (src/world/voxstruct.c)
 HUECO = (40, 32, 26)  # lo oscuro de una puerta, sin luz
 # La hoja ya trae su luz y el juego sombrea cada cara otra vez (src/sim/voxel.c: 0.82 el frente, 0.68 a 0.88 los
 # lados): sin aclarar, todo queda mas apagado que en la hoja.
@@ -42,8 +42,9 @@ class Obra:
     """Una rejilla (u, z, y) con la parte de cada celda (0: vacia) y el estilo de cada parte:
     (alto de la hilada, largo de la piedra, color sin hoja, vista de las caras de arriba)."""
 
-    def __init__(self, largo, ancho, alto):
+    def __init__(self, largo, ancho, alto, celda=CELDA):
         self.parte = np.zeros((largo, ancho, alto), np.uint8)
+        self.celda = celda  # metros por celda: solo para medir (el juego la escala al alto del inventario)
         self.nombres = [""]
         self.estilo = {}
 
@@ -81,7 +82,7 @@ class Obra:
     def metros(self):
         """(ancho Z, alto Y, largo X) en metros, como las medidas del inventario."""
         u, z, y = self.parte.shape
-        return z * CELDA, y * CELDA, u * CELDA
+        return round(z * self.celda, 3), round(y * self.celda, 3), round(u * self.celda, 3)
 
 
 # ---------------------------------------------------------------------------------------------- recetas
@@ -144,7 +145,62 @@ def templo():
     return o
 
 
-RECETAS = {"templo": templo}
+def forja():
+    """estructura.campamento.forja: la forja portatil, 1.32 x 1.5 x 1.86 m en celdas de 6 cm (el alto del inventario
+    y las proporciones de la hoja, que caben en sus 2 x 2 m). Zocalo de piedra con la boca del cenicero; el fogon de
+    ladrillo, abierto al frente en arco y a los lados, a oscuras adentro; la campana de barro, que se angosta y
+    retrocede hilada por hilada hasta la chimenea, con su ventana; y dos fuelles de cuero en su bastidor de madera,
+    adelante y a los costados, con la tobera de hierro que entra en la pared."""
+    o = Obra(31, 22, 25, celda=0.06)
+    o.estilo.update({
+        "piedra": (2, 3, (112, 100, 86), "lado"),
+        "ladrillo": (1, 2, (158, 80, 50), "frente"),
+        "barro": (2, 3, (192, 122, 74), "lado"),
+        "madera": (1, 5, (150, 105, 60), "lado"),
+        "cuero": (2, 2, (95, 55, 40), "lado"),
+        "hierro": (1, 6, (70, 70, 74), "lado"),
+        "hollin": (0, 0, (34, 26, 22), "frente"),
+    })
+    # El zocalo y el fogon (paredes de dos celdas: afuera ladrillo, adentro hollin).
+    o.caja("piedra", (8, 30), (4, 17), (0, 3))
+    o.caja("ladrillo", (10, 29), (5, 16), (4, 12))
+    o.vaciar((12, 27), (7, 14), (5, 11))
+    o.marcar("hollin", (11, 28), (6, 15), (4, 12))
+    # La boca en arco al frente y la del costado que muestra la hoja (-Z; su borde de arriba sube con la campana).
+    # Una sola: con las dos enfrentadas se veia a traves.
+    o.vaciar((10, 11), (8, 13), (5, 11))
+    o.vaciar((10, 11), (9, 12), (12, 12))
+    for u in range(15, 27):
+        o.vaciar((u, u), (5, 6), (6, min(11, 9 + (u - 15) // 3)))
+    # El cenicero, en el frente del zocalo, y la ranura de atras con su caño.
+    o.vaciar((8, 9), (9, 12), (0, 2))
+    o.marcar("hollin", (10, 10), (9, 12), (0, 2))
+    o.vaciar((29, 29), (9, 9), (4, 11), espejo=True)
+    o.marcar("hierro", (29, 29), (10, 11), (4, 11))
+    # La campana: cada hilada empieza mas atras y es mas angosta, hasta el ancho de la chimenea.
+    for y, (u0, z0) in zip(range(13, 21), ((11, 5), (12, 5), (12, 6), (14, 6), (16, 7), (18, 7), (21, 8), (23, 8))):
+        o.caja("barro", (u0, 29), (z0, 21 - z0), (y, y))
+    o.vaciar((12, 12), (9, 12), (14, 15))  # la ventana de la campana
+    o.marcar("hollin", (13, 13), (9, 12), (14, 15))
+    o.caja("barro", (24, 28), (8, 13), (21, 24))  # la chimenea, con su boca oscura arriba
+    o.vaciar((25, 27), (9, 12), (24, 24))
+    o.marcar("hollin", (25, 27), (9, 12), (23, 23))
+    # Los fuelles (a cada lado): el bastidor, el cuero que se angosta hacia atras y la tobera.
+    for u, z in ((1, 0), (10, 0), (1, 4)):
+        o.caja("madera", (u, u), (z, z), (3, 12), espejo=True)
+    for y in (4, 11):
+        o.caja("madera", (0, 10), (0, 0), (y, y), espejo=True)
+        o.caja("madera", (0, 10), (4, 4), (y, y), espejo=True)
+        o.caja("madera", (1, 1), (0, 4), (y, y), espejo=True)
+        o.caja("madera", (10, 10), (0, 4), (y, y), espejo=True)
+    o.caja("cuero", (2, 6), (1, 3), (5, 10), espejo=True)
+    o.caja("cuero", (7, 7), (1, 3), (6, 9), espejo=True)
+    o.caja("cuero", (8, 8), (2, 3), (7, 8), espejo=True)
+    o.caja("hierro", (8, 13), (4, 4), (7, 8), espejo=True)
+    return o
+
+
+RECETAS = {"templo": templo, "forja": forja}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
 # pixeles de la vista recortada. La hoja del templo exagera lo alto en el frente (los pilonos miden 340 px de
@@ -155,6 +211,7 @@ ALTURAS = {
         "lado": ([0, 6, 12, 18, 21, 23, 25, 28], [0, 66.5, 132, 191, 222, 248, 270, 299], 299),
         "espalda": ([0, 6, 12, 18, 21, 23, 25, 28], [0, 69, 138, 198, 228, 255, 268, 304], 305),
     },
+    "forja": {v: ([0, 25], [0, 511], 511) for v in ("frente", "lado", "espalda")},  # las tres vistas, a la misma escala
 }
 
 
