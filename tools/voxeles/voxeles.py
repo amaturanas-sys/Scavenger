@@ -207,15 +207,25 @@ def corridas(v):
     return list(zip(np.flatnonzero(d == 1), np.flatnonzero(d == -1)))
 
 
-def secciones_elipse(F, S):
+def secciones_elipse(F, S, miembros=False):
     """Sin vista de arriba: en cada altura, una elipse en cada rectangulo que dejan el frente y el lado (lo
-    redondo: animales, cascos, piedras). Toca los cuatro lados del rectangulo: las siluetas no cambian."""
+    redondo: animales, cascos, piedras). Toca los cuatro lados del rectangulo: las siluetas no cambian.
+    Con miembros (personas): en las alturas con tres tramos o mas en el frente (los brazos al lado del torso, las
+    manos al lado de los muslos), los tramos angostos (menos de 0.65 del mas ancho) no toman la profundidad del
+    lado, que es la del torso (de costado, el brazo se le superpone), sino una seccion redonda en el medio de ese
+    tramo del lado: sin brazos como tablas."""
     nx, nz = F.shape
     ny = S.shape[0]
     filled = np.zeros((nx, ny, nz), bool)
     for z in range(nz):
-        for x0, x1 in corridas(F[:, z]):
+        frente = corridas(F[:, z])
+        ancho = max((b - a for a, b in frente), default=0)
+        for x0, x1 in frente:
+            redondo = miembros and len(frente) >= 3 and (x1 - x0) < 0.65 * ancho
             for y0, y1 in corridas(S[:, z]):
+                if redondo and (y1 - y0) > 1.3 * (x1 - x0):
+                    c, h = (y0 + y1) / 2.0, max(1.0, 0.65 * (x1 - x0))
+                    y0, y1 = max(y0, int(np.floor(c - h))), min(y1, int(np.ceil(c + h)))
                 xs = (np.arange(x0, x1) + 0.5 - (x0 + x1) / 2.0) / ((x1 - x0) / 2.0)
                 ys = (np.arange(y0, y1) + 0.5 - (y0 + y1) / 2.0) / ((y1 - y0) / 2.0)
                 e = xs[:, None] ** 2 + ys[None, :] ** 2 <= 1.0
@@ -241,7 +251,10 @@ def desde_hoja(path, res=48, umbral=40, filas=1, fila=1, voltear_lado=False, sec
     F, Fc = F[::-1].T, Fc[::-1].transpose(1, 0, 2)  # [x, z]
     S, Sc = S[::-1].T, Sc[::-1].transpose(1, 0, 2)  # [y, z]
     Bc = Bc[::-1].transpose(1, 0, 2)
-    filled = secciones_elipse(F, S) if seccion == "elipse" else F[:, None, :] & S[None, :, :]
+    if seccion in ("elipse", "miembros"):
+        filled = secciones_elipse(F, S, miembros=seccion == "miembros")
+    else:
+        filled = F[:, None, :] & S[None, :, :]
     side = np.broadcast_to(Sc[None, :, :, :], filled.shape + (3,))
     rgb = side.copy()  # de base (arriba, abajo y los lados), el color del lado
     _, d = expuestas(filled)
@@ -557,8 +570,9 @@ def main(argv=None):
     h.add_argument("--fila", type=int, default=1, help="cual (1 es el de arriba)")
     h.add_argument("--voltear-lado", action="store_true", help="en la vista de lado, el frente esta a la derecha")
     h.add_argument("--vertical", action="store_true", help="las tres vistas, una debajo de la otra")
-    h.add_argument("--seccion", choices=("caja", "elipse"), default="caja",
-                   help="cada altura: caja (carros, casas, muros) o elipse (animales, cascos, piedras)")
+    h.add_argument("--seccion", choices=("caja", "elipse", "miembros"), default="caja",
+                   help="cada altura: caja (carros, casas, muros), elipse (animales, cascos, piedras) o miembros "
+                        "(personas: elipse, y los brazos redondos)")
     s = sub.add_parser("splat", parents=[common])
     s.add_argument("ply")
     s.add_argument("--res", type=int, default=48)

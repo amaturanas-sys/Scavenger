@@ -157,21 +157,21 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
-| `animal.montura.caballo_estepario` | Caballo estepario | 0.6x1.5x2.2 | 900 | pendiente | `faccion:nomada` `uso:montable` `rig:cuadrupedo` |  |
-| `animal.montura.caballo_guerra` | Caballo de guerra | 0.7x1.7x2.4 | 1000 | pendiente | `uso:montable` `rig:cuadrupedo` | Admite barda (armadura de caballo). |
+| `animal.montura.caballo_estepario` | Caballo estepario | 0.55x1.73x2.2 | 900 | pendiente | `faccion:nomada` `uso:montable` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen. |
+| `animal.montura.caballo_guerra` | Caballo de guerra | 0.64x1.91x2.4 | 1000 | pendiente | `uso:montable` `rig:cuadrupedo` | Admite barda (armadura de caballo). Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen. |
 | `animal.montura.camello_bactriano` | Camello bactriano | 0.8x2.2x3 | 1000 | pendiente | `bioma:desierto` `uso:montable` `rig:cuadrupedo` |  |
-| `animal.montura.dromedario` | Dromedario | 0.8x2.2x3 | 1000 | pendiente | `bioma:desierto` `uso:montable` `rig:cuadrupedo` |  |
+| `animal.montura.dromedario` | Dromedario | 0.69x2.39x3 | 1000 | pendiente | `bioma:desierto` `uso:montable` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen. |
 | `animal.montura.elefante_guerra` | Elefante de guerra | 2x3.2x5 | 1500 | pendiente | `uso:montable` `rig:cuadrupedo` `talla:gigante` | Fuerza y asedio. |
 | `animal.montura.reno` | Reno de tiro | 0.6x1.3x2 | 800 | pendiente | `bioma:fiordo` `bioma:glaciar` `uso:montable` `rig:cuadrupedo` |  |
 | `animal.ganado.oveja` | Oveja | 0.4x0.8x1.1 | 400 | pendiente | `faccion:nomada` `rig:cuadrupedo` |  |
 | `animal.ganado.cabra` | Cabra | 0.4x0.8x1.1 | 400 | pendiente | `faccion:nomada` `rig:cuadrupedo` |  |
 | `animal.ganado.yak` | Yak | 0.9x1.7x2.5 | 800 | pendiente | `bioma:glaciar` `rig:cuadrupedo` |  |
-| `animal.ganado.buey` | Buey | 0.8x1.6x2.5 | 700 | pendiente | `rig:cuadrupedo` |  |
+| `animal.ganado.buey` | Buey | 0.93x1.68x2.5 | 700 | pendiente | `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen. |
 | `animal.ganado.perro_pastor` | Perro pastor (mastín) | 0.35x0.8x1.1 | 500 | pendiente | `faccion:nomada` `rig:cuadrupedo` |  |
-| `animal.salvaje.lobo` | Lobo | 0.3x0.8x1.4 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` |  |
-| `animal.salvaje.tigre` | Tigre | 0.5x1x2.6 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` |  |
-| `animal.salvaje.oso` | Oso pardo | 0.9x1.3x2.2 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` |  |
-| `animal.salvaje.ciervo` | Ciervo | 0.5x1.9x1.8 | 500 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` |  |
+| `animal.salvaje.lobo` | Lobo | 0.36x1.08x1.4 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen. |
+| `animal.salvaje.tigre` | Tigre | 0.56x1.57x2.6 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen. |
+| `animal.salvaje.oso` | Oso pardo | 0.84x1.37x2.2 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen. |
+| `animal.salvaje.ciervo` | Ciervo | 0.8x1.9x1.8 | 500 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen. |
 | `animal.salvaje.ibice` | Íbice | 0.4x1.2x1.4 | 500 | pendiente | `faccion:salvaje` `bioma:glaciar` `rig:cuadrupedo` |  |
 | `animal.salvaje.zorro` | Zorro | 0.25x0.45x0.9 | 300 | pendiente | `faccion:salvaje` `rig:cuadrupedo` |  |
 | `animal.salvaje.leopardo_nieves` | Leopardo de las nieves | 0.4x0.7x2 | 600 | pendiente | `faccion:salvaje` `bioma:glaciar` `rig:cuadrupedo` |  |
@@ -182,10 +182,10 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `animal.montura.burro` | Burro | 0.5x1.2x1.6 | 700 | pendiente | `bioma:desierto` `uso:montable` `rig:cuadrupedo` |  |
 | `animal.ganado.becerro` | Becerro | 0.4x1x1.4 | 500 | pendiente | `faccion:nomada` `rig:cuadrupedo` | Se pastorea; carne y piel al sacrificarlo. |
 | `animal.salvaje.perro_salvaje` | Perro asilvestrado | 0.3x0.7x1.1 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Caza en jauría; domable (pelea, lazo y comida). |
-| `animal.salvaje.puma` | Puma | 0.4x0.8x1.9 | 600 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Cazador solitario: acecha. |
+| `animal.salvaje.puma` | Puma | 0.41x1.14x1.9 | 600 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Cazador solitario: acecha. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen. |
 | `animal.salvaje.hiena` | Hiena | 0.35x0.85x1.3 | 500 | pendiente | `faccion:salvaje` `bioma:desierto` `rig:cuadrupedo` | Siempre hostil; en clan. |
 | `animal.salvaje.coyote` | Coyote | 0.3x0.6x1.1 | 400 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Siempre hostil; en pareja o grupo. |
-| `animal.salvaje.jabali` | Jabalí | 0.45x0.9x1.4 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Siempre hostil; embiste. |
+| `animal.salvaje.jabali` | Jabalí | 0.4x0.85x1.4 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Siempre hostil; embiste. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen. |
 | `animal.salvaje.antilope` | Antílope saiga | 0.35x0.8x1.3 | 500 | pendiente | `faccion:salvaje` `bioma:estepa` `rig:cuadrupedo` | Presa: manadas. |
 | `animal.salvaje.reno` | Reno salvaje | 0.6x1.3x2 | 600 | pendiente | `faccion:salvaje` `bioma:glaciar` `rig:cuadrupedo` | Presa: manadas del frío. |
 | `animal.salvaje.gacela` | Gacela | 0.3x0.9x1.2 | 500 | pendiente | `faccion:salvaje` `bioma:desierto` `rig:cuadrupedo` | Presa: la más rápida. |
@@ -542,8 +542,8 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
 | `personaje.base.cuerpo_nino` | Cuerpo base: niño | 0.35x1.2x0.25 | 800 | pendiente | `rig:humanoide` `talla:pequena` | Malla base modular: ropa y armadura encajan encima. |
-| `personaje.base.cuerpo_comun` | Cuerpo base: adulto común | 0.5x1.7x0.3 | 1200 | pendiente | `rig:humanoide` `talla:comun` |  |
-| `personaje.base.cuerpo_robusto` | Cuerpo base: adulto robusto | 0.6x1.85x0.35 | 1300 | pendiente | `rig:humanoide` `talla:grande` |  |
+| `personaje.base.cuerpo_comun` | Cuerpo base: adulto común | 0.53x1.7x0.29 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_robusto` | Cuerpo base: adulto robusto | 0.57x1.85x0.33 | 1300 | pendiente | `rig:humanoide` `talla:grande` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen. |
 | `personaje.base.cuerpo_gigante` | Cuerpo base: gigante (gran guerrero) | 0.75x2.3x0.45 | 1500 | pendiente | `rig:humanoide` `talla:gigante` `especial:gran_guerrero` | Talla x1.2–1.45 del común. |
 | `personaje.base.cuerpo_anciano` | Cuerpo base: anciano | 0.5x1.6x0.3 | 1200 | pendiente | `rig:humanoide` `talla:comun` |  |
 | `personaje.narrativo.protagonista` | Protagonista ({NOMBRE}) | 0.5x1.75x0.3 | 2000 | pendiente | `rig:humanoide` `acto:2` `especial:narrativo` `uso:personalizable` | Personalizable: nombre, aspecto, ropa. |

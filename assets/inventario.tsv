@@ -84,21 +84,21 @@ vehiculo.tierra.kibitka	Carro con yurta montada (kibitka)	faccion:nomada,uso:con
 vehiculo.tierra.carreta_mercancias	Carreta de mercancías	faccion:neutral,uso:conducible,material:madera	2x2x4	400	pendiente	
 vehiculo.tierra.carruaje	Carruaje imperial	faccion:imperio,uso:conducible	2.2x2.8x5	900	pendiente	
 vehiculo.tierra.trineo	Trineo	bioma:glaciar,uso:conducible,material:madera	1.2x0.8x3	200	pendiente	
-animal.montura.caballo_estepario	Caballo estepario	faccion:nomada,uso:montable,rig:cuadrupedo	0.6x1.5x2.2	900	pendiente	
-animal.montura.caballo_guerra	Caballo de guerra	uso:montable,rig:cuadrupedo	0.7x1.7x2.4	1000	pendiente	Admite barda (armadura de caballo).
+animal.montura.caballo_estepario	Caballo estepario	faccion:nomada,uso:montable,rig:cuadrupedo	0.55x1.73x2.2	900	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen.
+animal.montura.caballo_guerra	Caballo de guerra	uso:montable,rig:cuadrupedo	0.64x1.91x2.4	1000	pendiente	Admite barda (armadura de caballo). Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen.
 animal.montura.camello_bactriano	Camello bactriano	bioma:desierto,uso:montable,rig:cuadrupedo	0.8x2.2x3	1000	pendiente	
-animal.montura.dromedario	Dromedario	bioma:desierto,uso:montable,rig:cuadrupedo	0.8x2.2x3	1000	pendiente	
+animal.montura.dromedario	Dromedario	bioma:desierto,uso:montable,rig:cuadrupedo	0.69x2.39x3	1000	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen.
 animal.montura.elefante_guerra	Elefante de guerra	uso:montable,rig:cuadrupedo,talla:gigante	2x3.2x5	1500	pendiente	Fuerza y asedio.
 animal.montura.reno	Reno de tiro	bioma:fiordo,bioma:glaciar,uso:montable,rig:cuadrupedo	0.6x1.3x2	800	pendiente	
 animal.ganado.oveja	Oveja	faccion:nomada,rig:cuadrupedo	0.4x0.8x1.1	400	pendiente	
 animal.ganado.cabra	Cabra	faccion:nomada,rig:cuadrupedo	0.4x0.8x1.1	400	pendiente	
 animal.ganado.yak	Yak	bioma:glaciar,rig:cuadrupedo	0.9x1.7x2.5	800	pendiente	
-animal.ganado.buey	Buey	rig:cuadrupedo	0.8x1.6x2.5	700	pendiente	
+animal.ganado.buey	Buey	rig:cuadrupedo	0.93x1.68x2.5	700	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen.
 animal.ganado.perro_pastor	Perro pastor (mastín)	faccion:nomada,rig:cuadrupedo	0.35x0.8x1.1	500	pendiente	
-animal.salvaje.lobo	Lobo	faccion:salvaje,rig:cuadrupedo	0.3x0.8x1.4	500	pendiente	
-animal.salvaje.tigre	Tigre	faccion:salvaje,bioma:bosque,rig:cuadrupedo	0.5x1x2.6	700	pendiente	
-animal.salvaje.oso	Oso pardo	faccion:salvaje,bioma:bosque,rig:cuadrupedo	0.9x1.3x2.2	700	pendiente	
-animal.salvaje.ciervo	Ciervo	faccion:salvaje,bioma:bosque,rig:cuadrupedo	0.5x1.9x1.8	500	pendiente	
+animal.salvaje.lobo	Lobo	faccion:salvaje,rig:cuadrupedo	0.36x1.08x1.4	500	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen.
+animal.salvaje.tigre	Tigre	faccion:salvaje,bioma:bosque,rig:cuadrupedo	0.56x1.57x2.6	700	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen.
+animal.salvaje.oso	Oso pardo	faccion:salvaje,bioma:bosque,rig:cuadrupedo	0.84x1.37x2.2	700	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen.
+animal.salvaje.ciervo	Ciervo	faccion:salvaje,bioma:bosque,rig:cuadrupedo	0.8x1.9x1.8	500	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen.
 animal.salvaje.ibice	Íbice	faccion:salvaje,bioma:glaciar,rig:cuadrupedo	0.4x1.2x1.4	500	pendiente	
 animal.salvaje.zorro	Zorro	faccion:salvaje,rig:cuadrupedo	0.25x0.45x0.9	300	pendiente	
 animal.salvaje.leopardo_nieves	Leopardo de las nieves	faccion:salvaje,bioma:glaciar,rig:cuadrupedo	0.4x0.7x2	600	pendiente	
@@ -109,10 +109,10 @@ animal.montura.mula	Mula	uso:montable,rig:cuadrupedo	0.6x1.5x2	800	pendiente	Mon
 animal.montura.burro	Burro	bioma:desierto,uso:montable,rig:cuadrupedo	0.5x1.2x1.6	700	pendiente	
 animal.ganado.becerro	Becerro	faccion:nomada,rig:cuadrupedo	0.4x1x1.4	500	pendiente	Se pastorea; carne y piel al sacrificarlo.
 animal.salvaje.perro_salvaje	Perro asilvestrado	faccion:salvaje,rig:cuadrupedo	0.3x0.7x1.1	500	pendiente	Caza en jauría; domable (pelea, lazo y comida).
-animal.salvaje.puma	Puma	faccion:salvaje,rig:cuadrupedo	0.4x0.8x1.9	600	pendiente	Cazador solitario: acecha.
+animal.salvaje.puma	Puma	faccion:salvaje,rig:cuadrupedo	0.41x1.14x1.9	600	pendiente	Cazador solitario: acecha. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen.
 animal.salvaje.hiena	Hiena	faccion:salvaje,bioma:desierto,rig:cuadrupedo	0.35x0.85x1.3	500	pendiente	Siempre hostil; en clan.
 animal.salvaje.coyote	Coyote	faccion:salvaje,rig:cuadrupedo	0.3x0.6x1.1	400	pendiente	Siempre hostil; en pareja o grupo.
-animal.salvaje.jabali	Jabalí	faccion:salvaje,rig:cuadrupedo	0.45x0.9x1.4	500	pendiente	Siempre hostil; embiste.
+animal.salvaje.jabali	Jabalí	faccion:salvaje,rig:cuadrupedo	0.4x0.85x1.4	500	pendiente	Siempre hostil; embiste. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: el largo es el de la especie (src/sim/animals.c); el alto y el ancho, los de la imagen.
 animal.salvaje.antilope	Antílope saiga	faccion:salvaje,bioma:estepa,rig:cuadrupedo	0.35x0.8x1.3	500	pendiente	Presa: manadas.
 animal.salvaje.reno	Reno salvaje	faccion:salvaje,bioma:glaciar,rig:cuadrupedo	0.6x1.3x2	600	pendiente	Presa: manadas del frío.
 animal.salvaje.gacela	Gacela	faccion:salvaje,bioma:desierto,rig:cuadrupedo	0.3x0.9x1.2	500	pendiente	Presa: la más rápida.
@@ -341,8 +341,8 @@ utileria.material.hoja_acero	Hoja de sable de acero	uso:material,material:hierro
 utileria.material.puntas_hierro	Puntas de flecha de hierro	uso:material,material:hierro	0.03x0.06x0.02	10	pendiente	De la forja móvil: más flechas por tanda.
 utileria.material.pedernal	Pedernal	uso:recolectable,uso:material,material:piedra	0.15x0.1x0.15	30	pendiente	Se recoge en la estepa: puntas de flecha.
 personaje.base.cuerpo_nino	Cuerpo base: niño	rig:humanoide,talla:pequena	0.35x1.2x0.25	800	pendiente	Malla base modular: ropa y armadura encajan encima.
-personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.5x1.7x0.3	1200	pendiente	
-personaje.base.cuerpo_robusto	Cuerpo base: adulto robusto	rig:humanoide,talla:grande	0.6x1.85x0.35	1300	pendiente	
+personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.53x1.7x0.29	1200	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen.
+personaje.base.cuerpo_robusto	Cuerpo base: adulto robusto	rig:humanoide,talla:grande	0.57x1.85x0.33	1300	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen.
 personaje.base.cuerpo_gigante	Cuerpo base: gigante (gran guerrero)	rig:humanoide,talla:gigante,especial:gran_guerrero	0.75x2.3x0.45	1500	pendiente	Talla x1.2–1.45 del común.
 personaje.base.cuerpo_anciano	Cuerpo base: anciano	rig:humanoide,talla:comun	0.5x1.6x0.3	1200	pendiente	
 personaje.narrativo.protagonista	Protagonista ({NOMBRE})	rig:humanoide,acto:2,especial:narrativo,uso:personalizable	0.5x1.75x0.3	2000	pendiente	Personalizable: nombre, aspecto, ropa.

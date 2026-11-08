@@ -7,26 +7,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/animal.ganado.buey.glb",
-        "sha256": "8849c433ebad4ed9b94e8ca7d7f79a49ca466fc632a8bdde5518686fe8172e53",
-        "tris": 52104
+        "file": "c27.jpg",
+        "sha256": "134f197063d3e07b06b20ab853fef8f31c58c83cb63f714bfaf1572159c217ae"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.022279123122713525,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 700,
-      "updated_at": "2026-11-07T19:44:23+00:00"
+      "tris": 698,
+      "updated_at": "2026-11-08T14:26:05+00:00"
     },
     "animal.montura.caballo_estepario": {
       "file": "arte/modelos/para_riggear/animal.montura.caballo_estepario.glb",
@@ -35,26 +38,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/animal.montura.caballo_estepario.glb",
-        "sha256": "8b0b00943eb8a1ceec42554cbbf2ecb8cf18f0e804915a55138edab0f2a03bb0",
-        "tris": 38712
+        "file": "c11.jpg",
+        "sha256": "345983385de97a4c1e65181a39e142c062ed8c3640c3c434173f206bba2f37a0"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.019596292754607645,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 898,
-      "updated_at": "2026-11-07T19:44:19+00:00"
+      "tris": 900,
+      "updated_at": "2026-11-08T14:25:39+00:00"
     },
     "animal.montura.caballo_guerra": {
       "file": "arte/modelos/para_riggear/animal.montura.caballo_guerra.glb",
@@ -63,26 +69,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/animal.montura.caballo_guerra.glb",
-        "sha256": "1d3216cf4b5164081f0f98ebca0363d23375063407f96b33ab6a7a157874ae0b",
-        "tris": 40752
+        "file": "c13.jpg",
+        "sha256": "f318924c97187956e7cc5a0a3231c74d6ec184603e4067df3e587caab0f7fa0f"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.02149324196684741,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 998,
-      "updated_at": "2026-11-07T19:44:20+00:00"
+      "tris": 1000,
+      "updated_at": "2026-11-08T14:25:47+00:00"
     },
     "animal.montura.dromedario": {
       "file": "arte/modelos/para_riggear/animal.montura.dromedario.glb",
@@ -91,26 +100,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/animal.montura.dromedario.glb",
-        "sha256": "710dcb08dedd6000b8fb230ad5eeb24057a083b2ae17e48e12f9159df5175c26",
-        "tris": 41312
+        "file": "c21.jpg",
+        "sha256": "9c14a249fb5c4a40ed50f489220e15f213214512a35945dc126ac7c0c2143bb9"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.0270571087865131,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 1000,
-      "updated_at": "2026-11-07T19:44:21+00:00"
+      "tris": 998,
+      "updated_at": "2026-11-08T14:25:56+00:00"
     },
     "animal.salvaje.ciervo": {
       "file": "arte/modelos/para_riggear/animal.salvaje.ciervo.glb",
@@ -119,26 +131,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/animal.salvaje.ciervo.glb",
-        "sha256": "9cb34e293e28f09ccb441a57630b40d946db02dfabcb5324233fdc16a005ffb2",
-        "tris": 34764
+        "file": "c23.jpg",
+        "sha256": "fdf0d57379ead8721145a6899a59148f308f537f2e18efa486914c56f93f6c81"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.01823853972467171,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 499,
-      "updated_at": "2026-11-07T19:44:14+00:00"
+      "tris": 500,
+      "updated_at": "2026-11-08T14:25:18+00:00"
     },
     "animal.salvaje.jabali": {
       "file": "arte/modelos/para_riggear/animal.salvaje.jabali.glb",
@@ -147,26 +162,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/animal.salvaje.jabali.glb",
-        "sha256": "ef84c38c3f71128f59a9bd27fd1561414e2084f001545b4aa04389e00e292bf6",
-        "tris": 46152
+        "file": "c22.jpg",
+        "sha256": "0298658e6e734ce787fe9351885b6e53ada7afc36edb59c74ee68003bdaa3bb7"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.012435806653475974,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 500,
-      "updated_at": "2026-11-07T19:44:13+00:00"
+      "tris": 498,
+      "updated_at": "2026-11-08T14:25:09+00:00"
     },
     "animal.salvaje.lobo": {
       "file": "arte/modelos/para_riggear/animal.salvaje.lobo.glb",
@@ -175,26 +193,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/animal.salvaje.lobo.glb",
-        "sha256": "4d32c5269bac75eba92648d5c3d012a5e0f324be048d67e9439380ac71f9361b",
-        "tris": 45832
+        "file": "c15.jpg",
+        "sha256": "ececc5e0897b67f57af698ef7ec52313384483b962e97aa5d47e5395d3386460"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.01252466344744314,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 498,
-      "updated_at": "2026-11-07T19:44:10+00:00"
+      "tris": 500,
+      "updated_at": "2026-11-08T14:24:47+00:00"
     },
     "animal.salvaje.oso": {
       "file": "arte/modelos/para_riggear/animal.salvaje.oso.glb",
@@ -203,26 +224,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/animal.salvaje.oso.glb",
-        "sha256": "10b96d902f0c92e43ddf9780bcb1fda06802c72b48f1b1defca6ba212675988f",
-        "tris": 59596
+        "file": "c19.jpg",
+        "sha256": "222847449ccb203e5e4fc0725f9bf0d8294253e0f57e04bb00eca374be9c68ca"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.019632224469735365,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
       "tris": 700,
-      "updated_at": "2026-11-07T19:44:12+00:00"
+      "updated_at": "2026-11-08T14:24:59+00:00"
     },
     "animal.salvaje.puma": {
       "file": "arte/modelos/para_riggear/animal.salvaje.puma.glb",
@@ -231,26 +255,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/animal.salvaje.puma.glb",
-        "sha256": "47ec584069a5b7b475e25747e270d653bbfa17a1802aed21313780f65c91964e",
-        "tris": 40136
+        "file": "c25.jpg",
+        "sha256": "47ad33ab9b287c39ce4af102531a1fdcbb7b751d0133e4894476f527529a532c"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.016825406478591192,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 596,
-      "updated_at": "2026-11-07T19:44:15+00:00"
+      "tris": 598,
+      "updated_at": "2026-11-08T14:25:25+00:00"
     },
     "animal.salvaje.tigre": {
       "file": "arte/modelos/para_riggear/animal.salvaje.tigre.glb",
@@ -259,26 +286,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/animal.salvaje.tigre.glb",
-        "sha256": "dbb34115a9039a61fade105f8aa345c1f2f0fc010cd1434a33f1c6a68f761c89",
-        "tris": 53032
+        "file": "c26.jpg",
+        "sha256": "a18495e2cdeab0f381cea44681468a77fef2fb8b50035ad24d7bbef911e79f25"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.02329470972082226,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 696,
-      "updated_at": "2026-11-07T19:44:17+00:00"
+      "tris": 698,
+      "updated_at": "2026-11-08T14:25:32+00:00"
     },
     "arma.corta.daga": {
       "file": "assets/models/arma/corta/daga.glb",
@@ -489,26 +519,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/personaje.base.cuerpo_comun.glb",
-        "sha256": "e16db9f776e1cec6f1fa6ab026c638e3738afebf2e4930310d1759e5fba3c288",
-        "tris": 30144
+        "file": "c03.jpg",
+        "sha256": "3a248cf1f50c2531e014cc65f3fc2e7c1e47f20562946aef1c05ee85af9c9874"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.013175997363702762,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": true,
+        "res": 128,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
       "tris": 1200,
-      "updated_at": "2026-11-07T19:44:24+00:00"
+      "updated_at": "2026-11-08T14:26:12+00:00"
     },
     "personaje.base.cuerpo_robusto": {
       "file": "arte/modelos/para_riggear/personaje.base.cuerpo_robusto.glb",
@@ -517,26 +550,29 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/personaje.base.cuerpo_robusto.glb",
-        "sha256": "342d2ed4d8daa4c7a1c674216ccec690a4f3d7f92b33bd1f47585772da31ace8",
-        "tris": 31272
+        "file": "c07.jpg",
+        "sha256": "02a4be7a4fe58f977d3d5f8e99b049d37d7ab190e79a38145a1da83c0141e5ef"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.014508958174421917,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": true,
+        "res": 128,
+        "umbral": 20,
+        "ancla": null,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 1299,
-      "updated_at": "2026-11-07T19:44:25+00:00"
+      "tris": 1298,
+      "updated_at": "2026-11-08T14:26:19+00:00"
     }
   }
 }

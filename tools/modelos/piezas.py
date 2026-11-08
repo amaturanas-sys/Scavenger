@@ -12,20 +12,26 @@ Formas:
   secciones   una elipse por altura: el ancho del frente por el largo del lado (cascos: una sola pieza a cada
               altura, en anillos limpios).
   volumen     lo que cae dentro del frente y del lado (con secciones elipticas), alisado y reducido a
-              tris_max (personas, animales: varias piezas a la misma altura, como las patas).
+              tris_max (personas, animales: varias piezas a la misma altura, como las patas). Lo de arriba toma
+              la textura de la espalda y lo de abajo la del frente (no hay vista de arriba). Con pelaje blanco
+              (patas, panza), --umbral 20: con 40 el blanco se va con el fondo y las patas salen partidas.
 La textura: las tres vistas de la hoja en un atlas; cada cara toma la vista que la mira (el frente, la espalda
 o el lado).
 
-Ejes y origen (assets/models/README.md): +Y arriba, +X el frente (la vista de frente de la hoja), metros, al
-alto del inventario (lo demas sigue a la imagen). Origen:
+Ejes y origen (assets/models/README.md): +Y arriba, +X el frente (la vista de frente de la hoja), metros (ver
+Medidas). Origen:
   --agarre auto|F   armas: el centro del agarre (auto: el tramo mas angosto de abajo; F: fraccion del alto)
   --agarre escudo   el centro de atras (la manija detras del umbo)
   --agarre base     el centro de la base (cascos: el centro de la abertura; personas y animales)
   --invertir        la hoja lo dibuja al reves (la hoja de una espada hacia abajo): se gira 180 grados
                     alrededor de X, y queda hacia +Y
 
+Medidas: manda el largo del inventario en los animales (es el tamaño de la especie en la simulacion) y el alto en
+lo demas; las otras salen de la imagen (--ancla alto|largo para elegir).
+
 Otras opciones: --grosor M (plana: el grosor en metros; si no, el de la vista de lado), --cresta (secciones: la
-cresta o el penacho de arriba, de otro color, va aparte como una aleta plana), --filas N --fila K
+cresta o el penacho de arriba, de otro color, va aparte como una aleta plana), --miembros (volumen: los brazos
+redondos, no tan hondos como el torso), --res N (volumen: celdas del lado mas largo), --filas N --fila K
 (varios objetos en la hoja), --vertical (las vistas una debajo de la otra),
 --umbral U (el fondo), --voltear-lado, --textura 256, --salida RUTA (si no, la del id; personas y animales van
 a arte/modelos/para_riggear/), --sin-inventario (no toca assets/inventario.tsv ni el manifiesto).
@@ -362,19 +368,24 @@ def aleta(side_mask, alto, tris_max, ancho_m):
     return _hacia_afuera(v[:, [2, 1, 0]], f)  # el ancho de plana (X) pasa a Z; el largo del lado, a X
 
 
-def volumen(hoja, kw, alto, tris_max, res=96):
-    """El volumen de voxeles.desde_hoja (secciones elipticas), su superficie suave y reducida a tris_max."""
+def volumen(hoja, kw, alto, tris_max, vistas, res=96, miembros=False):
+    """El volumen de voxeles.desde_hoja (secciones elipticas; con miembros, los brazos redondos), su superficie suave
+    y reducida a tris_max, en metros y en el marco de las vistas (el de uvs): la escala de cada eje sale de las celdas
+    del volumen y de los pixeles de las vistas, no de la malla, que pierde las puntas finas (cuernos, pezuñas) al
+    alisar y al reducir; estirarla a su alto corria la textura (el lomo tomaba lo de arriba del lomo)."""
     import lowres
 
-    filled, rgb = voxeles.desde_hoja(hoja, res=res, seccion="elipse", **kw)
+    filled, rgb = voxeles.desde_hoja(hoja, res=res, seccion="miembros" if miembros else "elipse", **kw)
     v, f, _ = voxeles.superficie(filled, rgb)
     import trimesh
 
     v2, f2 = lowres._decimate(trimesh.Trimesh(v, f, process=False), tris_max)
-    v2 = np.asarray(v2)
-    lo, hi = v2.min(axis=0), v2.max(axis=0)
-    k = alto / max(hi[1] - lo[1], 1e-9)
-    v2 = (v2 - np.array([(lo[0] + hi[0]) / 2, lo[1], (lo[2] + hi[2]) / 2])) * k
+    v2 = np.asarray(v2, dtype=np.float64)
+    nx, ny, nz = filled.shape  # de lado a lado, de adelante atras, arriba
+    (hf, wf), (hs, ds) = vistas[0][0].shape, vistas[1][0].shape
+    largo, ancho = ds * alto / hs, wf * alto / hf  # el lado y el frente, en metros
+    v2 = np.stack([(v2[:, 0] + 0.5 - ny / 2.0) * largo / ny, (v2[:, 1] + 0.5) * alto / nz,
+                   (v2[:, 2] + 0.5 - nx / 2.0) * ancho / nx], axis=1)
     return _hacia_afuera(v2, np.asarray(f2, dtype=np.int64))
 
 
@@ -396,8 +407,10 @@ def _rellenar(rgb, mask, umbral=40, borde=2, huecos=False):
     abertura de un casco, entre los pinchos de una maza) pasa a sombra; el borde de la silueta (borde pixeles,
     mezclados con el fondo por el antialias) y lo de afuera toman el color del pixel de adentro mas cercano: sin
     rayas claras donde una cara cae un poco fuera de la silueta. Las partes mas finas que el doble del borde quedan
-    como estan. Con huecos (secciones y volumen, donde un anillo cubre toda la fila), lo de afuera entre dos partes
-    de una misma fila (entre las carrilleras de un casco, entre las patas) tambien pasa a sombra: es una abertura."""
+    como estan. Con huecos (secciones, donde un anillo cubre toda la fila), lo de afuera entre dos partes de una
+    misma fila (entre las carrilleras de un casco) tambien pasa a sombra: es una abertura. En volumen no: la malla
+    no cubre esos huecos (las patas van separadas), y las caras de cerca, entre las puntas de una cornamenta o los
+    cuernos, saldrian negras."""
     from scipy import ndimage
 
     out = rgb.astype(np.float64).copy()
@@ -439,24 +452,39 @@ def atlas(vistas, size=TEX_MAX, huecos=False):
     return img, places
 
 
-def uvs(v, f, vistas, places, alto, side):
+def uvs(v, f, vistas, places, alto, side, encima=None):
     """Por cara, la vista que la mira: +X el frente, -X la espalda, lo demas el lado (los dos lados, del mismo).
-    Devuelve las coordenadas de textura de cada vertice de cada cara (caras x 3 x 2)."""
+    encima (volumen: animales y personas, que se ven desde arriba): que toma lo de arriba, que ninguna vista mira.
+      "espalda": la espalda, donde cae dentro de su silueta (si no, como "lado").
+      "lado": el lado, un poco por debajo del borde (el color del lomo, sin el borde).
+    Lo de abajo, el frente (el pecho y la panza). Devuelve las coordenadas de textura de cada vertice de cada cara
+    (caras x 3 x 2)."""
+    from scipy import ndimage
+
     tri = v[f]
     nrm = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
     nrm /= np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-12)
     out = np.zeros((len(f), 3, 2))
     (fm, _), (sm, _), (bm, _) = vistas
     sf, ss, sb = alto / fm.shape[0], alto / sm.shape[0], alto / bm.shape[0]
+    nucleo = ndimage.binary_erosion(bm, iterations=3) if encima == "espalda" else None
+    bajar = 0.03 * sm.shape[0]  # "lado": tres centesimos del alto por debajo del borde de arriba
     for i in range(len(f)):
-        nx = nrm[i, 0]
+        nx, ny = nrm[i, 0], nrm[i, 1]
         p = tri[i]
-        if nx > 0.5:
+        arriba = encima and ny > 0.5 and abs(nx) <= 0.5
+        view = None
+        if nx > 0.5 or (encima and ny < -0.5):
             view, col, row = 0, fm.shape[1] / 2.0 - p[:, 2] / sf, fm.shape[0] - p[:, 1] / sf
-        elif nx < -0.5:
+        elif nx < -0.5 or (arriba and encima == "espalda"):
             view, col, row = 2, bm.shape[1] / 2.0 + p[:, 2] / sb, bm.shape[0] - p[:, 1] / sb
-        else:  # la hoja muestra el lado desde -Z (el frente a la izquierda); el de +Z, por simetria, es el mismo punto
-            view, row = 1, sm.shape[0] - p[:, 1] / ss
+            if arriba:
+                c = np.clip(col.astype(int), 0, bm.shape[1] - 1)
+                r = np.clip(row.astype(int), 0, bm.shape[0] - 1)
+                if not nucleo[r, c].all():
+                    view = None
+        if view is None:  # la hoja muestra el lado desde -Z (el frente a la izquierda); el de +Z es el mismo punto
+            view, row = 1, sm.shape[0] - p[:, 1] / ss + (bajar if arriba else 0.0)
             col = sm.shape[1] / 2.0 - p[:, 0] / ss
         h, w = vistas[view][0].shape
         col, row = np.clip(col, 0.5, w - 0.5), np.clip(row, 0.5, h - 0.5)
@@ -548,7 +576,7 @@ def glb_textura(v, f, uv, tex, nombre):
 
 def construir(mid, hoja, forma, filas=1, fila=1, vertical=False, umbral=40, voltear_lado=False, invertir=False,
               agarre="base", segmentos=8, textura=TEX_MAX, res=96, alto=None, tris_max=None, grosor=None,
-              con_cresta=False):
+              con_cresta=False, miembros=False, ancla=None):
     """Devuelve (bytes del GLB, informe)."""
     items, _ = inventario.load()
     it = modelos.find_item(items, mid)
@@ -556,6 +584,9 @@ def construir(mid, hoja, forma, filas=1, fila=1, vertical=False, umbral=40, volt
         raise SystemExit(f"{mid}: no esta en assets/inventario.tsv")
     ancho, alto_inv, largo = modelos.dims(it)
     alto = alto or alto_inv
+    # La medida que manda (lo demas sale de la imagen): el largo en los animales (es su tamaño en la simulacion,
+    # src/sim/animals.c), el alto en lo demas.
+    ancla = ancla or ("largo" if it["categoria"] == "animal" else "alto")
     tris_max = tris_max or int(it["tris_max"]) or 300
     vistas = voxeles.hoja(hoja, umbral, filas, fila, vertical)
     nb = None  # los vertices del cuerpo (el origen de la base): todos, salvo la cresta
@@ -583,11 +614,11 @@ def construir(mid, hoja, forma, filas=1, fila=1, vertical=False, umbral=40, volt
             v, f = secciones(vistas[0], vistas[1], alto, tris_max, segmentos)
     elif forma == "volumen":
         v, f = volumen(hoja, dict(umbral=umbral, filas=filas, fila=fila, voltear_lado=voltear_lado, vertical=vertical),
-                       alto, tris_max, res)
+                       alto, tris_max, vistas, res, miembros)
     else:
         raise SystemExit("--forma: plana, revolucion, disco, secciones o volumen")
-    tex, places = atlas(vistas, textura, huecos=forma in ("secciones", "volumen"))
-    uv = uvs(v, f, vistas, places, alto, tex.size[0])
+    tex, places = atlas(vistas, textura, huecos=forma == "secciones")
+    uv = uvs(v, f, vistas, places, alto, tex.size[0], encima="lado" if forma == "volumen" else None)
     # El origen (y, si hace falta, el giro de 180 grados alrededor de X: la hoja hacia arriba).
     lo, hi = v.min(axis=0), v.max(axis=0)
     techo = hi[1]  # el y de antes de girar es techo - y
@@ -610,6 +641,8 @@ def construir(mid, hoja, forma, filas=1, fila=1, vertical=False, umbral=40, volt
             zc = (fm.shape[1] / 2.0 - (left[0] + right[0]) / 2.0) * sf * (-1.0 if invertir else 1.0)
         o = np.array([(lo[0] + hi[0]) / 2, yg, zc])
     v = v - o
+    if ancla == "largo":
+        v = v * (largo / max(float(np.ptp(v[:, 0])), 1e-9))
     data = glb_textura(v, f, uv, tex, mid)
     lo, hi = v.min(axis=0), v.max(axis=0)
     informe = {"tris": int(len(f)), "tris_max": tris_max, "caja_m": [round(float(x), 4) for x in (hi - lo)],
@@ -635,11 +668,15 @@ def main(argv=None):
     ap.add_argument("--res", type=int, default=96)
     ap.add_argument("--grosor", type=float, default=None, help="plana: el grosor en m (si no, el del lado)")
     ap.add_argument("--cresta", action="store_true", help="secciones: la cresta de arriba, de otro color, como aleta")
+    ap.add_argument("--miembros", action="store_true", help="volumen: los brazos redondos, no tan hondos como el torso")
+    ap.add_argument("--ancla", choices=("alto", "largo"), help="la medida del inventario que manda (si no: el largo en "
+                                                                "los animales, el alto en lo demas)")
     ap.add_argument("--salida")
     ap.add_argument("--sin-inventario", action="store_true")
     a = ap.parse_args(argv)
     data, informe = construir(a.id, a.hoja, a.forma, a.filas, a.fila, a.vertical, a.umbral, a.voltear_lado, a.invertir,
-                              a.agarre, a.segmentos, a.textura, a.res, grosor=a.grosor, con_cresta=a.cresta)
+                              a.agarre, a.segmentos, a.textura, a.res, grosor=a.grosor, con_cresta=a.cresta,
+                              miembros=a.miembros, ancla=a.ancla)
     items, _ = inventario.load()
     it = modelos.find_item(items, a.id)
     rig = bool(modelos.needs_clips(items, it))
@@ -659,7 +696,8 @@ def main(argv=None):
             "file": os.path.relpath(dest, inventario.ROOT).replace(os.sep, "/"), "category": it["categoria"], "has_rig": False,
             "source": {"tool": "otro", "url": "", "file": os.path.basename(a.hoja), "sha256": sha},
             "params": {"piezas": a.forma, "filas": a.filas, "fila": a.fila, "invertir": a.invertir, "agarre": a.agarre,
-                       "segmentos": a.segmentos, "grosor": a.grosor, "cresta": a.cresta, "textura": informe["textura"]},
+                       "segmentos": a.segmentos, "grosor": a.grosor, "cresta": a.cresta, "miembros": a.miembros,
+                       "res": a.res, "umbral": a.umbral, "ancla": a.ancla, "textura": informe["textura"]},
             "tris": informe["tris"], "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         }
         modelos.save_manifest(man)
