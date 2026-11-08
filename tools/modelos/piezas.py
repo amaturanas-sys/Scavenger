@@ -440,10 +440,11 @@ def _rellenar(rgb, mask, umbral=40, borde=2, huecos=False):
     return out
 
 
-def atlas(vistas, size=TEX_MAX, huecos=False):
+def atlas(vistas, size=TEX_MAX, huecos=False, umbral=40):
     """Las vistas (frente, lado, espalda), una al lado de la otra, en una textura cuadrada potencia de dos.
     Devuelve (imagen, [(x0, y0, k) por vista]): el pixel (c, r) de la vista va a (x0 + c k, y0 + r k)."""
-    crops = [_rellenar(rgb, m, huecos=huecos) for m, rgb in vistas]
+    crops = [_rellenar(rgb, m, umbral=umbral, huecos=huecos) for m, rgb in vistas]  # el umbral de la hoja: con
+    # uno mayor, el pelaje casi blanco (que la mascara si toma) pasaba a sombra
     gap = 2
     wsum = sum(c.shape[1] for c in crops) + gap * (len(crops) + 1)
     hmax = max(c.shape[0] for c in crops) + 2 * gap
@@ -655,7 +656,7 @@ def construir(mid, hoja, forma, filas=1, fila=1, vertical=False, umbral=40, volt
                        alto, tris_max, vistas, res, miembros)
     else:
         raise SystemExit("--forma: plana, revolucion, disco, secciones o volumen")
-    tex, places = atlas(vistas, textura, huecos=forma == "secciones")
+    tex, places = atlas(vistas, textura, huecos=forma == "secciones", umbral=umbral)
     uv = uvs(v, f, vistas, places, alto, tex.size[0], encima="lado" if forma == "volumen" else None)
     # El origen (y, si hace falta, el giro de 180 grados alrededor de X: la hoja hacia arriba).
     lo, hi = v.min(axis=0), v.max(axis=0)
@@ -713,6 +714,7 @@ def main(argv=None):
     ap.add_argument("--grosor", type=float, default=None, help="plana: el grosor en m (si no, el del lado)")
     ap.add_argument("--cresta", action="store_true", help="secciones: la cresta de arriba, de otro color, como aleta")
     ap.add_argument("--miembros", action="store_true", help="volumen: los brazos redondos, no tan hondos como el torso")
+    ap.add_argument("--alto", type=float, help="el alto en metros, en vez del del inventario (personas sin id propio)")
     ap.add_argument("--cruz", type=float, help="animales: la altura a la cruz en metros (la escala sale de ahi, y no del "
                                                "inventario)")
     ap.add_argument("--cruz-columna", type=float, help="donde medir la cruz, en fraccion del ancho de la vista de lado "
@@ -726,7 +728,7 @@ def main(argv=None):
     ap.add_argument("--sin-inventario", action="store_true")
     a = ap.parse_args(argv)
     data, informe = construir(a.id, a.hoja, a.forma, a.filas, a.fila, a.vertical, a.umbral, a.voltear_lado, a.invertir,
-                              a.agarre, a.segmentos, a.textura, a.res, grosor=a.grosor, con_cresta=a.cresta,
+                              a.agarre, a.segmentos, a.textura, a.res, alto=a.alto, grosor=a.grosor, con_cresta=a.cresta,
                               miembros=a.miembros, ancla=a.ancla, girar=a.girar, cruz=a.cruz,
                               cruz_columna=a.cruz_columna)
     items, _ = inventario.load()

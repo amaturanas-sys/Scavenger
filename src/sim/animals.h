@@ -84,7 +84,8 @@ typedef struct {
     AnimalClass cls;
     float speed;       // m/s a la carrera
     float walk;        // m/s al paso
-    float size;        // m de largo: un depredador caza presas de hasta hunt_max
+    float size;        // m de largo (cabeza y cuerpo, sin la cola; los mas grandes de la especie, docs/TAMANOS.md):
+                       // un depredador caza presas de hasta hunt_max
     float hp, damage, reach, cooldown;
     WoundKind wound;
     float sense;       // m: nota a depredadores (presa) u objetivos (cazador)

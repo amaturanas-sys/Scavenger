@@ -23,13 +23,50 @@
         "res": 112,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": 1.88,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 698,
-      "updated_at": "2026-11-08T14:26:05+00:00"
+      "updated_at": "2026-11-08T18:36:16+00:00"
+    },
+    "animal.ganado.perro_pastor": {
+      "file": "arte/modelos/para_riggear/animal.ganado.perro_pastor.glb",
+      "category": "animal",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c17.jpg",
+        "sha256": "f8a5e01951086ea5c3ac185a60fdaae6784ba3f10b4ed5c966d2c4431178a121"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": 0.78,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 500,
+      "updated_at": "2026-11-08T18:36:28+00:00"
     },
     "animal.montura.caballo_estepario": {
       "file": "arte/modelos/para_riggear/animal.montura.caballo_estepario.glb",
@@ -54,13 +91,16 @@
         "res": 112,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": 1.58,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 900,
-      "updated_at": "2026-11-08T14:25:39+00:00"
+      "updated_at": "2026-11-08T18:35:58+00:00"
     },
     "animal.montura.caballo_guerra": {
       "file": "arte/modelos/para_riggear/animal.montura.caballo_guerra.glb",
@@ -85,13 +125,16 @@
         "res": 112,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": 1.75,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 1000,
-      "updated_at": "2026-11-08T14:25:47+00:00"
+      "updated_at": "2026-11-08T18:36:04+00:00"
     },
     "animal.montura.dromedario": {
       "file": "arte/modelos/para_riggear/animal.montura.dromedario.glb",
@@ -116,13 +159,16 @@
         "res": 112,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": 2.0,
+        "cruz_columna": 0.4,
         "textura": [
           256,
           256
         ]
       },
       "tris": 998,
-      "updated_at": "2026-11-08T14:25:56+00:00"
+      "updated_at": "2026-11-08T18:36:10+00:00"
     },
     "animal.salvaje.ciervo": {
       "file": "arte/modelos/para_riggear/animal.salvaje.ciervo.glb",
@@ -147,13 +193,50 @@
         "res": 112,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": 1.45,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 500,
-      "updated_at": "2026-11-08T14:25:18+00:00"
+      "updated_at": "2026-11-08T18:35:43+00:00"
+    },
+    "animal.salvaje.coyote": {
+      "file": "arte/modelos/para_riggear/animal.salvaje.coyote.glb",
+      "category": "animal",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c16.jpg",
+        "sha256": "822e1123ad3ddcd76eb63eb1065129a56c27b5461e84d0004529dc28350ef44b"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": 0.62,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 400,
+      "updated_at": "2026-11-08T18:36:22+00:00"
     },
     "animal.salvaje.jabali": {
       "file": "arte/modelos/para_riggear/animal.salvaje.jabali.glb",
@@ -178,13 +261,16 @@
         "res": 112,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": 1.1,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 498,
-      "updated_at": "2026-11-08T14:25:09+00:00"
+      "updated_at": "2026-11-08T18:35:38+00:00"
     },
     "animal.salvaje.lobo": {
       "file": "arte/modelos/para_riggear/animal.salvaje.lobo.glb",
@@ -209,13 +295,16 @@
         "res": 112,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": 0.85,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 500,
-      "updated_at": "2026-11-08T14:24:47+00:00"
+      "updated_at": "2026-11-08T18:35:25+00:00"
     },
     "animal.salvaje.oso": {
       "file": "arte/modelos/para_riggear/animal.salvaje.oso.glb",
@@ -240,13 +329,50 @@
         "res": 112,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": 1.5,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 700,
-      "updated_at": "2026-11-08T14:24:59+00:00"
+      "updated_at": "2026-11-08T18:35:32+00:00"
+    },
+    "animal.salvaje.perro_salvaje": {
+      "file": "arte/modelos/para_riggear/animal.salvaje.perro_salvaje.glb",
+      "category": "animal",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c18.jpg",
+        "sha256": "12c29652ad90033440761db5305593ba72ec7e9da59862f236f0a4bb279a5eb8"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": 0.65,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 498,
+      "updated_at": "2026-11-08T18:36:34+00:00"
     },
     "animal.salvaje.puma": {
       "file": "arte/modelos/para_riggear/animal.salvaje.puma.glb",
@@ -271,13 +397,16 @@
         "res": 112,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": 0.8,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 598,
-      "updated_at": "2026-11-08T14:25:25+00:00"
+      "updated_at": "2026-11-08T18:35:48+00:00"
     },
     "animal.salvaje.tigre": {
       "file": "arte/modelos/para_riggear/animal.salvaje.tigre.glb",
@@ -302,13 +431,16 @@
         "res": 112,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": 1.1,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 698,
-      "updated_at": "2026-11-08T14:25:32+00:00"
+      "updated_at": "2026-11-08T18:35:53+00:00"
     },
     "arma.corta.daga": {
       "file": "assets/models/arma/corta/daga.glb",
@@ -391,6 +523,40 @@
       "tris": 80,
       "updated_at": "2026-11-08T13:57:12+00:00"
     },
+    "arma.corta.sable": {
+      "file": "assets/models/arma/corta/sable.glb",
+      "category": "arma",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "t47.png",
+        "sha256": "8ce4a7a3d6f209e3d28ab581002314f282fed617b1b4144c3c57e9437e6caba7"
+      },
+      "params": {
+        "piezas": "plana",
+        "filas": 4,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "auto",
+        "segmentos": 8,
+        "grosor": 0.03,
+        "cresta": false,
+        "miembros": false,
+        "res": 96,
+        "umbral": 40,
+        "ancla": null,
+        "girar": 90,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 116,
+      "updated_at": "2026-11-08T18:33:39+00:00"
+    },
     "arma.larga.espada_larga": {
       "file": "assets/models/arma/larga/espada_larga.glb",
       "category": "arma",
@@ -445,6 +611,40 @@
       "tris": 144,
       "updated_at": "2026-11-08T13:57:15+00:00"
     },
+    "armadura.casco.escamas_hierro": {
+      "file": "assets/models/armadura/casco/escamas_hierro.glb",
+      "category": "armadura",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "t48.png",
+        "sha256": "57e7b9d6052d1266349ff387449b048188bc09c94b6d25c040fb553c76c28df8"
+      },
+      "params": {
+        "piezas": "secciones",
+        "filas": 4,
+        "fila": 4,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 96,
+        "umbral": 40,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 144,
+      "updated_at": "2026-11-08T18:33:42+00:00"
+    },
     "armadura.casco.laminar_cuero": {
       "file": "assets/models/armadura/casco/laminar_cuero.glb",
       "category": "armadura",
@@ -471,6 +671,74 @@
       },
       "tris": 144,
       "updated_at": "2026-11-08T13:57:14+00:00"
+    },
+    "armadura.casco.malla": {
+      "file": "assets/models/armadura/casco/malla.glb",
+      "category": "armadura",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "t48.png",
+        "sha256": "57e7b9d6052d1266349ff387449b048188bc09c94b6d25c040fb553c76c28df8"
+      },
+      "params": {
+        "piezas": "secciones",
+        "filas": 4,
+        "fila": 2,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 96,
+        "umbral": 40,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 144,
+      "updated_at": "2026-11-08T18:33:41+00:00"
+    },
+    "escudo.mano.lamina": {
+      "file": "assets/models/escudo/mano/lamina.glb",
+      "category": "escudo",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "t47.png",
+        "sha256": "8ce4a7a3d6f209e3d28ab581002314f282fed617b1b4144c3c57e9437e6caba7"
+      },
+      "params": {
+        "piezas": "disco",
+        "filas": 4,
+        "fila": 3,
+        "invertir": false,
+        "agarre": "escudo",
+        "segmentos": 12,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 96,
+        "umbral": 40,
+        "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 120,
+      "updated_at": "2026-11-08T18:33:40+00:00"
     },
     "escudo.mano.umbo": {
       "file": "assets/models/escudo/mano/umbo.glb",
@@ -535,13 +803,16 @@
         "res": 128,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 1200,
-      "updated_at": "2026-11-08T14:26:12+00:00"
+      "updated_at": "2026-11-08T18:37:29+00:00"
     },
     "personaje.base.cuerpo_robusto": {
       "file": "arte/modelos/para_riggear/personaje.base.cuerpo_robusto.glb",
@@ -566,13 +837,16 @@
         "res": 128,
         "umbral": 20,
         "ancla": null,
+        "girar": 0,
+        "cruz": null,
+        "cruz_columna": null,
         "textura": [
           256,
           256
         ]
       },
       "tris": 1298,
-      "updated_at": "2026-11-08T14:26:19+00:00"
+      "updated_at": "2026-11-08T18:37:33+00:00"
     }
   }
 }
