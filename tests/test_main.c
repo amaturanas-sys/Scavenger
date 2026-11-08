@@ -1287,6 +1287,33 @@ static void test_animals_classes(void) {
     }
 }
 
+// Las tallas son las de los ejemplares mas grandes de cada especie (cabeza y cuerpo, docs/TAMANOS.md) y, con ellas,
+// cada depredador caza las mismas presas que antes; el coyote ya no caza la tortuga marina adulta (la laud, 1.8 m).
+static void test_animals_tallas(void) {
+    CHECK(species_def(SPECIES_BEAR)->size > species_def(SPECIES_TIGER)->size); // el Kodiak, mas largo que el tigre
+    CHECK(species_def(SPECIES_DEER)->size > species_def(SPECIES_WOLF)->size);
+    CHECK(species_def(SPECIES_ELEPHANT)->size >= 6.0f && species_def(SPECIES_CROCODILE)->size >= 5.0f);
+    const struct {
+        Species pred, prey;
+        bool caza;
+    } casos[] = {
+        { SPECIES_WOLF, SPECIES_DEER, true },       { SPECIES_WOLF, SPECIES_HORSE, true },
+        { SPECIES_WOLF, SPECIES_MULE, true },       { SPECIES_WOLF, SPECIES_OX, false },
+        { SPECIES_DOG, SPECIES_DONKEY, true },      { SPECIES_DOG, SPECIES_DEER, false },
+        { SPECIES_TIGER, SPECIES_CAMEL, true },     { SPECIES_TIGER, SPECIES_ELEPHANT, false },
+        { SPECIES_PUMA, SPECIES_HORSE, true },      { SPECIES_PUMA, SPECIES_OX, false },
+        { SPECIES_BEAR, SPECIES_DEER, true },       { SPECIES_BEAR, SPECIES_OX, false },
+        { SPECIES_HYENA, SPECIES_HORSE, true },     { SPECIES_HYENA, SPECIES_OX, false },
+        { SPECIES_CROCODILE, SPECIES_MULE, true },  { SPECIES_CROCODILE, SPECIES_OX, false },
+        { SPECIES_COYOTE, SPECIES_GOAT, true },     { SPECIES_COYOTE, SPECIES_GAZELLE, true },
+        { SPECIES_COYOTE, SPECIES_ANTELOPE, false }, { SPECIES_COYOTE, SPECIES_TURTLE, false },
+        { SPECIES_FALCON, SPECIES_HARE, true },     { SPECIES_FALCON, SPECIES_GAZELLE, false },
+        { SPECIES_EAGLE, SPECIES_HARE, true },      { SPECIES_EAGLE, SPECIES_GOAT, false },
+    };
+    for (size_t i = 0; i < sizeof casos / sizeof casos[0]; i++)
+        CHECK((species_def(casos[i].prey)->size <= species_def(casos[i].pred)->hunt_max) == casos[i].caza);
+}
+
 static void test_animals_flee_and_wander(void) {
     Rng r;
     rng_seed(&r, 3);
@@ -6055,6 +6082,7 @@ int main(void) {
     RUN(test_crafting);
     RUN(test_build_materials_and_crew_presence);
     RUN(test_animals_classes);
+    RUN(test_animals_tallas);
     RUN(test_animals_flee_and_wander);
     RUN(test_animals_birds);
     RUN(test_animals_tame_saddle_ride);
