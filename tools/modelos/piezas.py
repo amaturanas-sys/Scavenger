@@ -8,7 +8,8 @@ cascos; y para el volumen de personas y animales.
 Formas:
   plana       la silueta del frente, extruida al grosor del lado (espadas, hachas, dagas, escudos no redondos).
   revolucion  el perfil del frente girado alrededor del eje vertical (mazas, astas).
-  disco       el perfil del lado girado alrededor del eje X (escudos redondos: la tabla, el borde y el umbo).
+  disco       el perfil del lado girado alrededor del eje X (escudos redondos u ovalados: la tabla, el borde y el
+              umbo; el ancho, el del frente).
   secciones   una elipse por altura: el ancho del frente por el largo del lado (cascos: una sola pieza a cada
               altura, en anillos limpios).
   volumen     lo que cae dentro del frente y del lado (con secciones elipticas), alisado y reducido a
@@ -25,9 +26,11 @@ Medidas). Origen:
   --agarre base     el centro de la base (cascos: el centro de la abertura; personas y animales)
   --invertir        la hoja lo dibuja al reves (la hoja de una espada hacia abajo): se gira 180 grados
                     alrededor de X, y queda hacia +Y
+  --girar 90|-90    la hoja lo dibuja acostado (un sable en horizontal): el frente y la espalda se giran en su
+                    plano hasta que quede parado
 
-Medidas: manda el largo del inventario en los animales (es el tamaño de la especie en la simulacion) y el alto en
-lo demas; las otras salen de la imagen (--ancla alto|largo para elegir).
+Medidas: manda el alto del inventario y lo demas sale de la imagen; --ancla largo, el largo; --cruz M (animales),
+la altura a la cruz: la de los ejemplares mas grandes de la especie (docs/TAMANOS.md).
 
 Otras opciones: --grosor M (plana: el grosor en metros; si no, el de la vista de lado), --cresta (secciones: la
 cresta o el penacho de arriba, de otro color, va aparte como una aleta plana), --miembros (volumen: los brazos
@@ -212,9 +215,10 @@ def _girar(prof, segmentos, punto):
     return _hacia_afuera(np.array(v, dtype=np.float64), np.array(faces, dtype=np.int64))
 
 
-def disco(side, alto, tris_max, segmentos=12):
+def disco(side, alto, tris_max, segmentos=12, front=None):
     """Revolucion alrededor del eje X (escudos redondos): a cada distancia del centro, lo que el lado sobresale
-    adelante (el umbo) y atras, girado. El alto es el diametro."""
+    adelante (el umbo) y atras, girado. El alto es el diametro; con front, el ancho (Z) se estira al del frente
+    (escudos ovalados)."""
     sm, _ = side
     H, W = sm.shape
     s = alto / H
@@ -231,7 +235,12 @@ def disco(side, alto, tris_max, segmentos=12):
     chain = np.concatenate([[[0.0, frente[0]]], np.stack([r, frente], axis=1), [[R, frente[-1]], [R, atras[-1]]],
                             np.stack([r, atras], axis=1)[::-1], [[0.0, atras[0]]]])
     prof = simplificar(chain, max(4, tris_max // (2 * segmentos) + 2))
-    return _girar(prof, segmentos, lambda ri, hi, a: (hi, yc + ri * np.cos(a), ri * np.sin(a)))
+    kz = 1.0
+    if front is not None:
+        fm = front[0]
+        cols = np.flatnonzero(fm.any(axis=0))
+        kz = (cols[-1] + 1 - cols[0]) * alto / fm.shape[0] / max(2 * R, 1e-9)
+    return _girar(prof, segmentos, lambda ri, hi, a: (hi, yc + ri * np.cos(a), kz * ri * np.sin(a)))
 
 
 def revolucion(front, alto, tris_max, segmentos=8):
@@ -495,6 +504,31 @@ def uvs(v, f, vistas, places, alto, side, encima=None):
 
 
 # ---------------------------------------------------------------- origen y GLB
+def cruz_px(sm, columna=None):
+    """La cruz de un cuadrupedo en la vista de lado (el frente a la izquierda): (fila, columna). Las patas, en la
+    franja de abajo (del 75 al 92 % del alto, sobre las pezuñas); las de adelante, las tiras de antes del hueco mas
+    grande; la cruz, el borde de arriba del cuerpo sobre la parte de atras de las patas de adelante (el cuello sale
+    hacia adelante de ahi): el primer tramo largo de esa columna (un decimo del alto), no una punta de cornamenta
+    que pasa por encima.
+    columna (fraccion del ancho, desde el frente) la fija a mano (la joroba de un dromedario empieza justo ahi)."""
+    rows = np.flatnonzero(sm.any(axis=1))
+    top, h = rows[0], rows[-1] + 1 - rows[0]
+    banda = top + int(0.75 * h)
+    if columna is not None:
+        c = int(np.clip(columna * sm.shape[1], 0, sm.shape[1] - 1))
+    else:
+        franja = sm[banda: top + int(0.92 * h)].any(axis=0)
+        tiras = [(a, b) for a, b in voxeles.corridas(franja) if b - a >= 2]
+        if not tiras:
+            raise SystemExit("--cruz: no encuentro las patas en la vista de lado")
+        huecos = [tiras[i + 1][0] - tiras[i][1] for i in range(len(tiras) - 1)]
+        corte = int(np.argmax(huecos)) + 1 if huecos else len(tiras)
+        c = tiras[corte - 1][1] - 1
+    tramos = voxeles.corridas(sm[:, c])
+    cuerpo = [t for t in tramos if t[1] - t[0] >= 0.1 * h] or tramos  # sin las puntas finas que pasan por encima
+    return int(cuerpo[0][0]), c
+
+
 def agarre_auto(fm, invertido):
     """La altura del agarre (desde abajo, en fraccion del alto). Con guarda (espadas, dagas), el tramo angosto entre
     el pomo y la guarda; sin guarda (hachas, mazas), el tramo angosto mas largo entre el 6 y el 45 % de abajo (sin la
@@ -576,7 +610,7 @@ def glb_textura(v, f, uv, tex, nombre):
 
 def construir(mid, hoja, forma, filas=1, fila=1, vertical=False, umbral=40, voltear_lado=False, invertir=False,
               agarre="base", segmentos=8, textura=TEX_MAX, res=96, alto=None, tris_max=None, grosor=None,
-              con_cresta=False, miembros=False, ancla=None):
+              con_cresta=False, miembros=False, ancla=None, girar=0, cruz=None, cruz_columna=None):
     """Devuelve (bytes del GLB, informe)."""
     items, _ = inventario.load()
     it = modelos.find_item(items, mid)
@@ -589,6 +623,10 @@ def construir(mid, hoja, forma, filas=1, fila=1, vertical=False, umbral=40, volt
     ancla = ancla or ("largo" if it["categoria"] == "animal" else "alto")
     tris_max = tris_max or int(it["tris_max"]) or 300
     vistas = voxeles.hoja(hoja, umbral, filas, fila, vertical)
+    if girar:  # la hoja lo dibuja acostado: el frente y la espalda (espejada) se giran en su plano
+        k = {90: 1, -90: -1, 180: 2}[girar]
+        vistas[0] = tuple(np.rot90(a, k) for a in vistas[0])
+        vistas[2] = tuple(np.rot90(a, -k) for a in vistas[2])
     nb = None  # los vertices del cuerpo (el origen de la base): todos, salvo la cresta
     if voltear_lado:
         sm, sc = vistas[1]
@@ -598,7 +636,7 @@ def construir(mid, hoja, forma, filas=1, fila=1, vertical=False, umbral=40, volt
     elif forma == "revolucion":
         v, f = revolucion(vistas[0], alto, tris_max, segmentos)
     elif forma == "disco":
-        v, f = disco(vistas[1], alto, tris_max, segmentos)
+        v, f = disco(vistas[1], alto, tris_max, segmentos, front=vistas[0])
     elif forma == "secciones":
         partes = cresta(vistas) if con_cresta else None
         if con_cresta and partes is None:
@@ -641,11 +679,17 @@ def construir(mid, hoja, forma, filas=1, fila=1, vertical=False, umbral=40, volt
             zc = (fm.shape[1] / 2.0 - (left[0] + right[0]) / 2.0) * sf * (-1.0 if invertir else 1.0)
         o = np.array([(lo[0] + hi[0]) / 2, yg, zc])
     v = v - o
-    if ancla == "largo":
+    cruz_m = None
+    if cruz:  # la altura a la cruz manda (animales: la de los mas grandes de su especie)
+        r, _ = cruz_px(vistas[1][0], cruz_columna)
+        cruz_m = (vistas[1][0].shape[0] - r) * alto / vistas[1][0].shape[0]
+        v = v * (cruz / cruz_m)
+    elif ancla == "largo":
         v = v * (largo / max(float(np.ptp(v[:, 0])), 1e-9))
     data = glb_textura(v, f, uv, tex, mid)
     lo, hi = v.min(axis=0), v.max(axis=0)
     informe = {"tris": int(len(f)), "tris_max": tris_max, "caja_m": [round(float(x), 4) for x in (hi - lo)],
+               "cruz_m": cruz,
                "inventario_m": [largo, alto_inv, ancho], "textura": list(tex.size), "origen": o.round(4).tolist(),
                "bytes": len(data)}
     return data, informe
@@ -669,6 +713,13 @@ def main(argv=None):
     ap.add_argument("--grosor", type=float, default=None, help="plana: el grosor en m (si no, el del lado)")
     ap.add_argument("--cresta", action="store_true", help="secciones: la cresta de arriba, de otro color, como aleta")
     ap.add_argument("--miembros", action="store_true", help="volumen: los brazos redondos, no tan hondos como el torso")
+    ap.add_argument("--cruz", type=float, help="animales: la altura a la cruz en metros (la escala sale de ahi, y no del "
+                                               "inventario)")
+    ap.add_argument("--cruz-columna", type=float, help="donde medir la cruz, en fraccion del ancho de la vista de lado "
+                                                       "desde el frente (si no, sobre las patas de adelante)")
+    ap.add_argument("--girar", type=int, default=0, choices=(0, 90, -90, 180),
+                    help="la hoja lo dibuja acostado: gira el frente (y la espalda, al reves) en su plano, en grados "
+                         "antihorarios, hasta que quede parado")
     ap.add_argument("--ancla", choices=("alto", "largo"), help="la medida del inventario que manda (si no: el largo en "
                                                                 "los animales, el alto en lo demas)")
     ap.add_argument("--salida")
@@ -676,7 +727,8 @@ def main(argv=None):
     a = ap.parse_args(argv)
     data, informe = construir(a.id, a.hoja, a.forma, a.filas, a.fila, a.vertical, a.umbral, a.voltear_lado, a.invertir,
                               a.agarre, a.segmentos, a.textura, a.res, grosor=a.grosor, con_cresta=a.cresta,
-                              miembros=a.miembros, ancla=a.ancla)
+                              miembros=a.miembros, ancla=a.ancla, girar=a.girar, cruz=a.cruz,
+                              cruz_columna=a.cruz_columna)
     items, _ = inventario.load()
     it = modelos.find_item(items, a.id)
     rig = bool(modelos.needs_clips(items, it))
@@ -697,7 +749,9 @@ def main(argv=None):
             "source": {"tool": "otro", "url": "", "file": os.path.basename(a.hoja), "sha256": sha},
             "params": {"piezas": a.forma, "filas": a.filas, "fila": a.fila, "invertir": a.invertir, "agarre": a.agarre,
                        "segmentos": a.segmentos, "grosor": a.grosor, "cresta": a.cresta, "miembros": a.miembros,
-                       "res": a.res, "umbral": a.umbral, "ancla": a.ancla, "textura": informe["textura"]},
+                       "res": a.res, "umbral": a.umbral, "ancla": a.ancla, "girar": a.girar, "cruz": a.cruz,
+                       "cruz_columna": a.cruz_columna,
+                       "textura": informe["textura"]},
             "tris": informe["tris"], "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         }
         modelos.save_manifest(man)
