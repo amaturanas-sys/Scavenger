@@ -196,21 +196,123 @@ def check_model(it, path):
 
 
 VOX_MAX = 128  # celdas por eje que lee el juego (VOXFILE_MAX, src/sim/voxfile.h)
-VOX_TRIS_AVISO, VOX_TRIS_MAX = 8000, 20000  # dos triangulos por cara a la vista (sin mallado codicioso)
+VOX_TRIS_AVISO, VOX_TRIS_MAX = 8000, 20000  # los que arma el juego (tris_vox: las caras planas juntas)
 
 
-def caras_vox(cells):
-    """Las caras que arma el juego de un .vox del inventario (z arriba): las que dan al aire, salvo la de abajo de
-    la base que tiene vecinas a los cuatro lados (la tapa el suelo; src/sim/voxel.c, on_ground)."""
-    n = 0
-    for (x, y, z) in cells:
-        for d in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
-            if (x + d[0], y + d[1], z + d[2]) in cells:
+# Las caras de una celda, como en src/sim/voxel.c: la normal, las 4 esquinas (antihorario visto desde afuera) y
+# los ejes de su plano en el orden en que se barren.
+FACE_N = ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))
+FACE_V = (((1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)), ((0, 0, 1), (0, 1, 1), (0, 1, 0), (0, 0, 0)),
+          ((0, 1, 0), (0, 1, 1), (1, 1, 1), (1, 1, 0)), ((0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1)),
+          ((1, 0, 1), (1, 1, 1), (0, 1, 1), (0, 0, 1)), ((0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0)))
+FACE_AX = ((0, 1, 2), (0, 1, 2), (1, 0, 2), (1, 0, 2), (2, 0, 1), (2, 0, 1))
+
+
+def tris_vox(cells, size):
+    """Los triangulos que arma el juego de un .vox del inventario, con el mismo recorrido que src/sim/voxel.c
+    (on_ground y merge): las caras al aire, sin la de abajo de la base que tapa el suelo; las de un mismo plano,
+    material y oclusion pareja, juntas en rectangulos (las de sombra de rincon, solo a lo largo del rincon); cada
+    rectangulo, con todos los vertices de otros que caen en su borde (n vertices, n - 2 triangulos).
+    cells: {(x, y, z) del .vox: indice de color}; size: (sx, sy, sz) del .vox."""
+    sx, sy, sz = size
+    G = {(sy - 1 - y, z, sx - 1 - x): m for (x, y, z), m in cells.items()}  # los ejes del juego (y arriba)
+
+    def shown(c, f):
+        n = FACE_N[f]
+        if (c[0] + n[0], c[1] + n[1], c[2] + n[2]) in G:
+            return False
+        if f != 3 or c[1] != 0:
+            return True
+        x, z = c[0], c[2]
+        return not ((x - 1, 0, z) in G and (x + 1, 0, z) in G and (x, 0, z - 1) in G and (x, 0, z + 1) in G)
+
+    def occ(c, f, cv):
+        n = FACE_N[f]
+        o = (c[0] + n[0], c[1] + n[1], c[2] + n[2])
+        d = []
+        for a in range(3):
+            if not n[a]:
+                v = [0, 0, 0]
+                v[a] = 1 if cv[a] else -1
+                d.append(v)
+        s, t = d
+        s1 = (o[0] + s[0], o[1] + s[1], o[2] + s[2]) in G
+        s2 = (o[0] + t[0], o[1] + t[1], o[2] + t[2]) in G
+        dg = (o[0] + s[0] + t[0], o[1] + s[1] + t[1], o[2] + s[2] + t[2]) in G
+        return 3 if s1 and s2 else s1 + s2 + dg
+
+    def junta(f, o):  # 0: pareja; 1: a lo largo de b; 2: a lo largo de a; -1: sola
+        if o[0] == o[1] == o[2] == o[3]:
+            return 0
+        aa, ab = FACE_AX[f][1], FACE_AX[f][2]
+        por_b = por_a = True
+        for p in range(4):
+            for q in range(p + 1, 4):
+                if FACE_V[f][p][aa] == FACE_V[f][q][aa] and o[p] != o[q]:
+                    por_b = False
+                if FACE_V[f][p][ab] == FACE_V[f][q][ab] and o[p] != o[q]:
+                    por_a = False
+        return 1 if por_b else 2 if por_a else -1
+
+    rects, planos = [], {}
+    for c, m in G.items():
+        for f in range(6):
+            if not shown(c, f):
                 continue
-            if d == (0, 0, -1) and z == 0 and all(c in cells for c in ((x - 1, y, 0), (x + 1, y, 0), (x, y - 1, 0), (x, y + 1, 0))):
+            o = tuple(occ(c, f, cv) for cv in FACE_V[f])
+            k = junta(f, o)
+            an, aa, ab = FACE_AX[f]
+            if k < 0:
+                rects.append((f, c, 1, 1))
+            else:
+                planos.setdefault((f, c[an]), {})[(c[aa], c[ab])] = (m, o, k)
+    for (f, s), pl in planos.items():
+        an, aa, ab = FACE_AX[f]
+        for (i, j) in sorted(pl):
+            k = pl.get((i, j))
+            if k is None:
                 continue
-            n += 1
-    return n
+            ea = eb = 1
+            if k[2] != 2:
+                while pl.get((i, j + eb)) == k:
+                    eb += 1
+            if k[2] != 1:
+                while all(pl.get((i + ea, j + t)) == k for t in range(eb)):
+                    ea += 1
+            for u in range(ea):
+                for t in range(eb):
+                    del pl[(i + u, j + t)]
+            c = [0, 0, 0]
+            c[an], c[aa], c[ab] = s, i, j
+            rects.append((f, tuple(c), ea, eb))
+
+    def esquinas(f, c, ea, eb):
+        an, aa, ab = FACE_AX[f]
+        out = []
+        for cv in FACE_V[f]:
+            L = [0, 0, 0]
+            L[an] = c[an] + cv[an]
+            L[aa] = c[aa] + (ea if cv[aa] else 0)
+            L[ab] = c[ab] + (eb if cv[ab] else 0)
+            out.append(tuple(L))
+        return out
+
+    red = set()
+    for r in rects:
+        red.update(esquinas(*r))
+    tris = 0
+    for r in rects:
+        P, n = esquinas(*r), 4
+        for q in range(4):
+            A, B = P[q], P[(q + 1) % 4]
+            ax = 0 if A[0] != B[0] else 1 if A[1] != B[1] else 2
+            lo, hi = sorted((A[ax], B[ax]))
+            for k in range(lo + 1, hi):
+                L = list(A)
+                L[ax] = k
+                n += tuple(L) in red
+        tris += n - 2
+    return tris
 
 
 def check_vox(it, path):
@@ -238,7 +340,7 @@ def check_vox(it, path):
         elif cid == b"XYZI" and cells is None and size and n >= 4:
             count = struct.unpack_from("<i", body)[0]
             raw = body[4:4 + 4 * count]
-            cells = {(raw[i], raw[i + 1], raw[i + 2]) for i in range(0, len(raw) - 3, 4) if raw[i + 3]}
+            cells = {(raw[i], raw[i + 1], raw[i + 2]): raw[i + 3] for i in range(0, len(raw) - 3, 4) if raw[i + 3]}
         pos += 12 + n + m
     if not size or cells is None:
         return [f"{rel}: sin modelo (SIZE y XYZI)"], []
@@ -247,7 +349,7 @@ def check_vox(it, path):
     if not cells:
         return [f"{rel}: no tiene celdas llenas"], []
     errors, warnings = [], []
-    tris = 2 * caras_vox(cells)
+    tris = tris_vox(cells, size)
     if tris > VOX_TRIS_MAX:
         errors.append(f"{rel}: {tris} triangulos (los .vox, como mucho {VOX_TRIS_MAX}); baja --res en tools/voxeles")
     elif tris > VOX_TRIS_AVISO:

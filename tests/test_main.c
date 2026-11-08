@@ -1754,6 +1754,102 @@ static void test_voxels(void) {
     vox_free(&g);
 }
 
+// La figura de prueba de las caras juntas (la misma en tools/voxeles/test_voxeles.py): una losa, un bloque de otro
+// material encima (rincones con sombra), una cornisa que vuela, un tunel que lo atraviesa y una muesca en la base.
+#define MERGE_FIXTURE_TRIS 274 // con on_ground; lo mismo en tools/voxeles/test_voxeles.py
+static bool merge_fixture(VoxGrid *g) {
+    if (!vox_init(g, 8, 7, 7, 0.5f)) return false;
+    vox_box(g, 0, 0, 0, 7, 1, 6, 1);
+    vox_box(g, 2, 2, 2, 5, 4, 4, 2);
+    vox_box(g, 1, 5, 1, 6, 5, 5, 1);
+    vox_carve(g, 6, 0, 2, 7, 1, 4);
+    vox_carve(g, 3, 3, 0, 4, 3, 6);
+    return true;
+}
+
+// Las aristas de la malla en medias celdas: cerrada (sin rendijas ni juntas en T) si cada arista (a, b) tiene su
+// vuelta (b, a) las mismas veces.
+static bool mesh_closed(const VoxMesh *m, const VoxGrid *g) {
+    const float s = g->size, ox = -g->nx * s * 0.5f, oz = -g->nz * s * 0.5f;
+    int ne = m->tris * 3;
+    int(*e)[6] = malloc((size_t)ne * sizeof(*e));
+    if (!e) return false;
+    for (int t = 0; t < m->tris; t++)
+        for (int k = 0; k < 3; k++) {
+            const float *a = &m->pos[(t * 3 + k) * 3], *b = &m->pos[(t * 3 + (k + 1) % 3) * 3];
+            int *o = e[t * 3 + k];
+            o[0] = (int)lroundf(2.0f * (a[0] - ox) / s), o[1] = (int)lroundf(2.0f * a[1] / s), o[2] = (int)lroundf(2.0f * (a[2] - oz) / s);
+            o[3] = (int)lroundf(2.0f * (b[0] - ox) / s), o[4] = (int)lroundf(2.0f * b[1] / s), o[5] = (int)lroundf(2.0f * (b[2] - oz) / s);
+        }
+    bool closed = true;
+    for (int i = 0; i < ne && closed; i++) {
+        int same = 0, back = 0;
+        for (int j = 0; j < ne; j++) {
+            same += !memcmp(e[j], e[i], sizeof(int[6]));
+            back += !memcmp(e[j], e[i] + 3, sizeof(int[3])) && !memcmp(e[j] + 3, e[i], sizeof(int[3]));
+        }
+        closed = same == back;
+    }
+    free(e);
+    return closed;
+}
+
+// Area por direccion de la normal y color integrado (area x color medio de cada triangulo).
+static void mesh_sums(const VoxMesh *m, double area[6], double color[3]) {
+    for (int i = 0; i < 6; i++) area[i] = 0.0;
+    for (int i = 0; i < 3; i++) color[i] = 0.0;
+    for (int t = 0; t < m->tris; t++) {
+        const float *p = &m->pos[t * 9], *n = &m->nrm[t * 9];
+        double u[3] = { p[3] - p[0], p[4] - p[1], p[5] - p[2] }, v[3] = { p[6] - p[0], p[7] - p[1], p[8] - p[2] };
+        double cx = u[1] * v[2] - u[2] * v[1], cy = u[2] * v[0] - u[0] * v[2], cz = u[0] * v[1] - u[1] * v[0];
+        double a = 0.5 * sqrt(cx * cx + cy * cy + cz * cz);
+        int d = n[0] > 0.5f ? 0 : n[0] < -0.5f ? 1 : n[1] > 0.5f ? 2 : n[1] < -0.5f ? 3 : n[2] > 0.5f ? 4 : 5;
+        area[d] += a;
+        for (int c = 0; c < 3; c++)
+            color[c] += a * (m->col[t * 12 + c] + m->col[t * 12 + 4 + c] + m->col[t * 12 + 8 + c]) / 3.0;
+    }
+}
+
+// Las caras juntas: la misma figura, el mismo color en cada punto, cerrada y con muchos menos triangulos.
+static void test_voxels_merge(void) {
+    static const uint8_t PAL[3][4] = { { 0, 0, 0, 0 }, { 200, 100, 50, 255 }, { 90, 140, 200, 255 } };
+    VoxGrid g;
+    VoxMesh plain, merged;
+    CHECK(vox_init(&g, 4, 4, 4, 0.5f));
+    vox_box(&g, 0, 0, 0, 2, 2, 2, 1);
+    g.merge = true;
+    CHECK(vox_mesh(&g, PAL, &merged) && merged.tris == 12); // el cubo: un rectangulo por lado
+    CHECK(mesh_closed(&merged, &g));
+    vox_mesh_free(&merged);
+    vox_free(&g);
+
+    CHECK(merge_fixture(&g));
+    CHECK(vox_mesh(&g, PAL, &plain));
+    g.merge = true;
+    CHECK(vox_mesh(&g, PAL, &merged));
+    CHECK(merged.tris < plain.tris);
+    CHECK(mesh_closed(&plain, &g) && mesh_closed(&merged, &g));
+    double ap[6], am[6], cp[3], cm[3];
+    mesh_sums(&plain, ap, cp);
+    mesh_sums(&merged, am, cm);
+    for (int d = 0; d < 6; d++) CHECK(fabs(ap[d] - am[d]) < 1e-4);         // la misma superficie, lado por lado
+    for (int c = 0; c < 3; c++) CHECK(fabs(cp[c] - cm[c]) < 1e-3 * cp[c]); // y el mismo color
+    vox_mesh_free(&plain);
+    vox_mesh_free(&merged);
+    // Como en el juego (apoyado en el suelo): el numero que cuenta tambien tools/modelos/modelos.py (tris_vox).
+    g.on_ground = true;
+    CHECK(vox_mesh(&g, PAL, &merged) && merged.tris == MERGE_FIXTURE_TRIS);
+    vox_mesh_free(&merged);
+    // Sin merge (o con variacion por celda) nada cambia: el kit, las cuevas y las nubes se arman como antes.
+    g.merge = false;
+    CHECK(vox_mesh(&g, PAL, &plain) && plain.tris == 2 * vox_exposed_faces(&g));
+    vox_mesh_free(&plain);
+    g.merge = true, g.jitter = 6;
+    CHECK(vox_mesh(&g, PAL, &plain) && plain.tris == 2 * vox_exposed_faces(&g));
+    vox_mesh_free(&plain);
+    vox_free(&g);
+}
+
 // Un lago redondo de 20 m de radio y 2 m de hondo en el origen (orilla con pendiente).
 static float test_round_lake(void *ud, float x, float z) {
     (void)ud;
@@ -6108,6 +6204,7 @@ int main(void) {
     RUN(test_animals_swim_and_ice);
     RUN(test_world_tribes_and_sites);
     RUN(test_voxels);
+    RUN(test_voxels_merge);
     RUN(test_world_river_banks);
     RUN(test_world_water_never_floats);
     RUN(test_caves);

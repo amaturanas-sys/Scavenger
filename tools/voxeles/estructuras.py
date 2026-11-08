@@ -293,14 +293,14 @@ def a_vox(obra, rgb, vis, ncolores=32):
 
 
 def triangulos(grid):
-    """Los que arma el juego (src/sim/voxel.c, on_ground; como cuenta tools/modelos/modelos.py check): dos por
-    cara al aire, sin la de abajo de la base donde tiene vecinas a los cuatro lados (la tapa el suelo)."""
-    lleno = grid > 0
-    _, d = voxeles.expuestas(lleno)
-    base = lleno[:, :, 0]
-    p = np.pad(base, 1)
-    tapada = base & p[:-2, 1:-1] & p[2:, 1:-1] & p[1:-1, :-2] & p[1:-1, 2:]
-    return 2 * (int(sum(m.sum() for m in d)) - int(tapada.sum()))
+    """Los que arma el juego del .vox (src/sim/voxel.c: las caras planas juntas y la base en el suelo), contados
+    como en tools/modelos/modelos.py check."""
+    sys.path.insert(0, os.path.join(HERE, "..", "modelos"))
+    import modelos
+
+    xs, ys, zs = np.nonzero(grid)
+    cells = {(int(x), int(y), int(z)): int(grid[x, y, z]) for x, y, z in zip(xs, ys, zs)}
+    return modelos.tris_vox(cells, grid.shape)
 
 
 def main(argv=None):

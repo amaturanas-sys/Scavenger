@@ -283,20 +283,32 @@ def test_templo_colores():
         assert tuple(pal[fondo - 1]) == estructuras.HUECO, pal[fondo - 1]
 
 
-def test_triangulos_con_suelo():
-    """estructuras.triangulos cuenta lo que arma el juego (on_ground) y lo mismo que modelos.py check."""
+def test_triangulos_juntos():
+    """modelos.tris_vox cuenta lo que arma el juego (src/sim/voxel.c: las caras juntas y la base en el suelo): la
+    figura de prueba de tests/test_main.c (merge_fixture) da los mismos triangulos que alla (MERGE_FIXTURE_TRIS)."""
     sys.path.insert(0, os.path.join(HERE, "..", "modelos"))
     import modelos
 
+    nx, ny, nz = 8, 7, 7  # en los ejes del juego (y arriba), como en la prueba en C
+    celdas = {}
+    for (x0, y0, z0, x1, y1, z1, m) in ((0, 0, 0, 7, 1, 6, 1), (2, 2, 2, 5, 4, 4, 2), (1, 5, 1, 6, 5, 5, 1),
+                                        (6, 0, 2, 7, 1, 4, 0), (3, 3, 0, 4, 3, 6, 0)):
+        for x in range(x0, x1 + 1):
+            for y in range(y0, y1 + 1):
+                for z in range(z0, z1 + 1):
+                    if m:
+                        celdas[(x, y, z)] = m
+                    else:
+                        celdas.pop((x, y, z), None)
+    vox_cells = {(nz - 1 - z, nx - 1 - x, y): m for (x, y, z), m in celdas.items()}
+    assert modelos.tris_vox(vox_cells, (nz, nx, ny)) == 274
     g = np.ones((3, 3, 3), np.uint8)
-    assert estructuras.triangulos(g) == 106  # las 54 caras, menos la de abajo del centro de la base
-    g[1, 1, 2] = 0  # un hueco arriba no cambia la base
-    cells = {tuple(int(v) for v in c) for c in np.argwhere(g > 0)}
-    assert 2 * modelos.caras_vox(cells) == estructuras.triangulos(g)
+    # El cubo apoyado: arriba 2; de la base queda el anillo del borde (4 rectangulos, 12), y sus esquinas parten
+    # el borde de abajo de tres de los lados (12 en los costados): 26, lo mismo que arma el juego.
+    assert estructuras.triangulos(g) == 26
     o = estructuras.templo()
     grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
-    cells = {tuple(int(v) for v in c) for c in np.argwhere(grid > 0)}
-    assert 2 * modelos.caras_vox(cells) == estructuras.triangulos(grid)
+    assert estructuras.triangulos(grid) < 8000  # el templo, bajo el aviso de Android
 
 
 def main():
@@ -313,7 +325,7 @@ def main():
         ("test_cli", test_cli),
         ("test_templo_forma", test_templo_forma),
         ("test_templo_colores", test_templo_colores),
-        ("test_triangulos_con_suelo", test_triangulos_con_suelo),
+        ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0
     for name, fn in tests:

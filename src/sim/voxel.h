@@ -27,6 +27,11 @@ typedef struct {
     // una ladera la deja a la vista; la de adentro la tapa el suelo y no la ve nadie (en el templo, un cuarto de
     // los triangulos). Las nubes no: se miran desde abajo.
     bool on_ground;
+    // Juntar las caras planas (los .vox del inventario, sin variacion por celda ni luz horneada): las caras de un
+    // mismo plano, material y oclusion pareja en sus cuatro esquinas van en un rectangulo; las que tienen
+    // sombra de rincon quedan solas. Los vertices de un rectangulo que caen en el borde de otro se reparten
+    // (sin juntas en T: no se abren rendijas). La figura y el color de cada punto son los mismos.
+    bool merge;
 } VoxGrid;
 
 bool vox_init(VoxGrid *g, int nx, int ny, int nz, float size);
