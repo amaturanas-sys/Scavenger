@@ -287,26 +287,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/arma.corta.daga.glb",
-        "sha256": "a6bb714c7cfcb246a935bf17df525e6514cd42bd86e79c0e41a544d519da8d34",
-        "tris": 9140
+        "file": "t46.png",
+        "sha256": "dcf39a01aea154483e2c3935ae973eae50b9ed1df9390071128b639fbefb2b29"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.00412038134207213,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "plana",
+        "filas": 4,
+        "fila": 3,
+        "invertir": true,
+        "agarre": "auto",
+        "segmentos": 8,
+        "grosor": 0.03,
+        "cresta": false,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 80,
-      "updated_at": "2026-11-07T19:44:03+00:00"
+      "tris": 76,
+      "updated_at": "2026-11-08T13:57:10+00:00"
     },
     "arma.corta.hacha_mano": {
       "file": "assets/models/arma/corta/hacha_mano.glb",
@@ -315,26 +314,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/arma.corta.hacha_mano.glb",
-        "sha256": "d98ddf073c7d89da81c0d31c4da78f69946a13f6643292bfa498c520d8168d2f",
-        "tris": 18096
+        "file": "t46.png",
+        "sha256": "dcf39a01aea154483e2c3935ae973eae50b9ed1df9390071128b639fbefb2b29"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.006334958373837686,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "plana",
+        "filas": 4,
+        "fila": 2,
+        "invertir": false,
+        "agarre": "auto",
+        "segmentos": 8,
+        "grosor": 0.04,
+        "cresta": false,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 100,
-      "updated_at": "2026-11-07T19:44:02+00:00"
+      "tris": 88,
+      "updated_at": "2026-11-08T13:57:09+00:00"
     },
     "arma.corta.maza": {
       "file": "assets/models/arma/corta/maza.glb",
@@ -343,26 +341,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/arma.corta.maza.glb",
-        "sha256": "2b0eaec6c84ef35ae22328f15d7328ea3117bfa82b9fec4674413dd4b7e39566",
-        "tris": 15764
+        "file": "t47.png",
+        "sha256": "8ce4a7a3d6f209e3d28ab581002314f282fed617b1b4144c3c57e9437e6caba7"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.007263182717880821,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "revolucion",
+        "filas": 4,
+        "fila": 2,
+        "invertir": false,
+        "agarre": "auto",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 100,
-      "updated_at": "2026-11-07T19:44:04+00:00"
+      "tris": 80,
+      "updated_at": "2026-11-08T13:57:12+00:00"
     },
     "arma.larga.espada_larga": {
       "file": "assets/models/arma/larga/espada_larga.glb",
@@ -371,26 +368,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/arma.larga.espada_larga.glb",
-        "sha256": "3f9c5d106640cc974ed653bfbf6f46a99b5e082b668db869eedb02bd97acd227",
-        "tris": 6272
+        "file": "t46.png",
+        "sha256": "dcf39a01aea154483e2c3935ae973eae50b9ed1df9390071128b639fbefb2b29"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.01235852810484129,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "plana",
+        "filas": 4,
+        "fila": 1,
+        "invertir": true,
+        "agarre": "auto",
+        "segmentos": 8,
+        "grosor": 0.03,
+        "cresta": false,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 118,
-      "updated_at": "2026-11-07T19:44:02+00:00"
+      "tris": 116,
+      "updated_at": "2026-11-08T13:57:08+00:00"
     },
     "armadura.casco.bronce": {
       "file": "assets/models/armadura/casco/bronce.glb",
@@ -399,26 +395,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/armadura.casco.bronce.glb",
-        "sha256": "0c3b6637d0288b5d8a1c03b966f5d3dec00d2577886d1f76b5687fb2b24da8d5",
-        "tris": 58744
+        "file": "t48.png",
+        "sha256": "57e7b9d6052d1266349ff387449b048188bc09c94b6d25c040fb553c76c28df8"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.0035170380582654633,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "secciones",
+        "filas": 4,
+        "fila": 3,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": true,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 150,
-      "updated_at": "2026-11-07T19:44:08+00:00"
+      "tris": 144,
+      "updated_at": "2026-11-08T13:57:15+00:00"
     },
     "armadura.casco.laminar_cuero": {
       "file": "assets/models/armadura/casco/laminar_cuero.glb",
@@ -427,26 +422,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/armadura.casco.laminar_cuero.glb",
-        "sha256": "d1a25bfd3d11ad40c6e61fda328cae8c5d20141b0dbf0a0ed6b6dcd55afa9deb",
-        "tris": 63940
+        "file": "t48.png",
+        "sha256": "57e7b9d6052d1266349ff387449b048188bc09c94b6d25c040fb553c76c28df8"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.003791281965625584,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "secciones",
+        "filas": 4,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 148,
-      "updated_at": "2026-11-07T19:44:07+00:00"
+      "tris": 144,
+      "updated_at": "2026-11-08T13:57:14+00:00"
     },
     "escudo.mano.umbo": {
       "file": "assets/models/escudo/mano/umbo.glb",
@@ -455,26 +449,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "arte/modelos/fuentes/escudo.mano.umbo.glb",
-        "sha256": "274439657c0a160607ae113935a3c0b7e5cd255918e54eb924d5ad2969d78114",
-        "tris": 43524
+        "file": "t46.png",
+        "sha256": "dcf39a01aea154483e2c3935ae973eae50b9ed1df9390071128b639fbefb2b29"
       },
       "params": {
-        "girar": 0.0,
-        "rotar": [],
-        "escala": 0.008562078862778275,
-        "origen": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "colores": 0,
-        "luz": true,
-        "limpiar": 0.01,
-        "suave": true
+        "piezas": "disco",
+        "filas": 4,
+        "fila": 4,
+        "invertir": false,
+        "agarre": "escudo",
+        "segmentos": 12,
+        "grosor": null,
+        "cresta": false,
+        "textura": [
+          256,
+          256
+        ]
       },
-      "tris": 98,
-      "updated_at": "2026-11-07T19:44:05+00:00"
+      "tris": 96,
+      "updated_at": "2026-11-08T13:57:13+00:00"
     },
     "estructura.vivienda.yurta_comun": {
       "file": "assets/models/estructura/vivienda/yurta_comun.glb",
