@@ -10,6 +10,9 @@ convertir(fuente, medidas, tris_max, ...) devuelve el GLB low-poly (bytes) y un 
      vertice), lo reduce a una paleta corta y le hornea la luz del sol del juego (la misma del
      terreno, src/world/terrain.c): un facetado de colores planos, sin texturas, que raylib dibuja
      de una vez.
+     suave=True (personas, animales y armas, al estilo de PS2): los vertices se comparten, la normal de
+     cada uno es el promedio de sus caras y el color (y la luz) va por vertice, asi que se interpola
+     entre las caras en lugar de facetarlas.
 Dependencias (no las necesita el juego ni el chequeo del CI): tools/modelos/requirements.txt.
 """
 import io
@@ -101,7 +104,7 @@ def _load(path):
 
 def _drop_crumbs(mesh, keep=0.02):
     """Quita los pedacitos sueltos (menos de keep del area): el ruido que deja la generacion."""
-    parts = mesh.split(only_watertight=False)
+    parts = mesh.split(only_watertight=False, repair=False)  # medir el area no necesita reparar (ni networkx)
     if len(parts) <= 1:
         return mesh
     total = sum(p.area for p in parts)
@@ -202,8 +205,87 @@ def _glb_bytes(positions, normals, colors, name):
     return out.getvalue()
 
 
+def _glb_bytes_suave(positions, normals, colors, faces, name):
+    """Un GLB con indices: los vertices compartidos, su normal suave y su color (sombreado de Gouraud)."""
+    n = len(positions)
+    pos = positions.astype("<f4").tobytes()
+    nor = normals.astype("<f4").tobytes()
+    col = np.concatenate([colors.astype(np.uint8), np.full((n, 1), 255, np.uint8)], axis=1).tobytes()
+    big = n > 65535
+    idx = faces.astype("<u4" if big else "<u2").ravel().tobytes()
+    idx += b"\x00" * (-len(idx) % 4)
+    blob = pos + nor + col + idx
+    o_col, o_idx = len(pos) + len(nor), len(pos) + len(nor) + len(col)
+    doc = {
+        "asset": {"version": "2.0", "generator": "estepa tools/modelos/lowres.py (suave)"},
+        "scene": 0,
+        "scenes": [{"nodes": [0]}],
+        "nodes": [{"name": name, "mesh": 0}],
+        "meshes": [{"name": name, "primitives": [{"attributes": {"POSITION": 0, "NORMAL": 1, "COLOR_0": 2}, "indices": 3,
+                                                  "material": 0}]}],
+        "materials": [{"name": "suave", "pbrMetallicRoughness": {"baseColorFactor": [1, 1, 1, 1], "metallicFactor": 0, "roughnessFactor": 1}}],
+        "buffers": [{"byteLength": len(blob)}],
+        "bufferViews": [
+            {"buffer": 0, "byteOffset": 0, "byteLength": len(pos), "target": 34962},
+            {"buffer": 0, "byteOffset": len(pos), "byteLength": len(nor), "target": 34962},
+            {"buffer": 0, "byteOffset": o_col, "byteLength": len(col), "target": 34962},
+            {"buffer": 0, "byteOffset": o_idx, "byteLength": faces.size * (4 if big else 2), "target": 34963},
+        ],
+        "accessors": [
+            {"bufferView": 0, "componentType": 5126, "count": n, "type": "VEC3",
+             "min": positions.min(axis=0).tolist(), "max": positions.max(axis=0).tolist()},
+            {"bufferView": 1, "componentType": 5126, "count": n, "type": "VEC3"},
+            {"bufferView": 2, "componentType": 5121, "normalized": True, "count": n, "type": "VEC4"},
+            {"bufferView": 3, "componentType": 5125 if big else 5123, "count": int(faces.size), "type": "SCALAR"},
+        ],
+    }
+    js = json.dumps(doc, separators=(",", ":")).encode("utf-8")
+    js += b" " * (-len(js) % 4)
+    out = io.BytesIO()
+    out.write(struct.pack("<4sII", b"glTF", 2, 12 + 8 + len(js) + 8 + len(blob)))
+    out.write(struct.pack("<I4s", len(js), b"JSON") + js)
+    out.write(struct.pack("<I4s", len(blob), b"BIN\x00") + blob)
+    return out.getvalue()
+
+
+def _suave(v, f, cloud_p, cloud_c, colores, luz):
+    """Vertices compartidos con normal suave (el promedio de sus caras, por area) y color por vertice: el
+    promedio de la superficie original alrededor de cada uno (sin paleta, salvo colores > 0)."""
+    tri = v[f]
+    fn = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])  # largo: el doble del area
+    keep = np.linalg.norm(fn, axis=1) > 1e-12 * max(1.0, float(np.linalg.norm(fn, axis=1).max(initial=0.0)))
+    f, fn = f[keep], fn[keep]
+    if len(f) == 0:
+        raise ConversionError("no quedo ninguna cara")
+    used = np.unique(f)
+    remap = np.full(len(v), -1, dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    v, f = v[used], remap[f]
+    vn = np.zeros_like(v)
+    for k in range(3):
+        np.add.at(vn, f[:, k], fn)
+    vn /= np.maximum(np.linalg.norm(vn, axis=1, keepdims=True), 1e-12)
+    # El color: los puntos de la fuente mas cercanos a cada vertice (y a medio camino de sus vecinos).
+    tree = cKDTree(cloud_p)
+    edge = float(np.median(np.linalg.norm(v[f[:, 0]] - v[f[:, 1]], axis=1))) or 1e-3
+    near = tree.query_ball_point(v, r=edge * 0.5)
+    cols = np.empty((len(v), 3))
+    _, nearest = tree.query(v, k=1)
+    for i, ids in enumerate(near):
+        cols[i] = cloud_c[ids].mean(axis=0) if len(ids) else cloud_c[nearest[i]]
+    if colores > 0:  # una paleta corta, como el facetado
+        q = Image.fromarray(np.clip(np.rint(cols), 0, 255).astype(np.uint8).reshape(1, -1, 3), "RGB").quantize(
+            colors=min(colores, 256), method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+        pal = np.asarray(q.getpalette()[: 3 * 256], dtype=np.float64).reshape(-1, 3)
+        cols = pal[np.asarray(q, dtype=np.int64).reshape(-1)]
+    palette = len(np.unique(np.rint(cols).astype(np.int64), axis=0))
+    if luz:
+        cols = cols * (AMBIENT + DIFFUSE * np.clip(vn @ SUN, 0.0, 1.0))[:, None]
+    return v, f, vn, cols, palette
+
+
 def convertir(fuente, medidas, tris_max, girar=0.0, rotar=None, escala=None, origen=None, colores=24, luz=True, limpiar=0.01,
-              nombre="modelo"):
+              nombre="modelo", suave=False):
     """fuente: ruta a un GLB (o glTF/OBJ). medidas: (ancho, alto, largo) en m, las del inventario.
     rotar: giros previos [(eje, grados), ...] (una espada acostada: [('z', 90)]); girar: el giro
     final alrededor de +Y, para el frente. escala: el factor a mano (si no, el lado mas largo del
@@ -220,6 +302,8 @@ def convertir(fuente, medidas, tris_max, girar=0.0, rotar=None, escala=None, ori
     mesh = trimesh.Trimesh(np.asarray(mesh.vertices) @ rot.T, np.asarray(mesh.faces), process=False)
     cloud_p = cloud_p @ rot.T
     v, f = _decimate(mesh, tris_max)
+    if suave:
+        return _convertir_suave(v, f, cloud_p, cloud_c, medidas, tris_in, girar, rotar, escala, origen, colores, luz, nombre)
     tri = v[f]  # (caras, 3, 3), todavia en las unidades de la fuente
     normals = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
     lens = np.linalg.norm(normals, axis=1)
@@ -261,6 +345,44 @@ def convertir(fuente, medidas, tris_max, girar=0.0, rotar=None, escala=None, ori
         "origen": [float(x) for x in (origen if origen is not None else (0.0, 0.0, 0.0))],
         "caja_m": [round(float(x), 4) for x in (hi - lo)],  # X (largo), Y (alto), Z (ancho)
         "paleta": int(palette),
+        "bytes": len(data),
+    }
+    return data, informe
+
+
+def _a_medidas(pts, medidas, escala, origen):
+    """A las medidas del inventario (largo en X, alto en Y, ancho en Z: el lado mas largo manda), con el
+    origen en el centro de la base (o en origen). Devuelve (puntos, escala)."""
+    lo, hi = pts.min(axis=0), pts.max(axis=0)
+    ancho, alto, largo = medidas
+    target = np.array([largo, alto, ancho], dtype=np.float64)
+    if escala is None:
+        axis = int(np.argmax(target))
+        if hi[axis] - lo[axis] <= 1e-12:
+            raise ConversionError("el modelo es plano en el eje de su medida mas larga: revisa --girar")
+        escala = float(target[axis] / (hi[axis] - lo[axis]))
+    base = np.array([(lo[0] + hi[0]) * 0.5, lo[1], (lo[2] + hi[2]) * 0.5])
+    out = (pts - base) * escala
+    if origen is not None:
+        out = out - np.asarray(origen, dtype=np.float64)
+    return out, float(escala)
+
+
+def _convertir_suave(v, f, cloud_p, cloud_c, medidas, tris_in, girar, rotar, escala, origen, colores, luz, nombre):
+    v, f, vn, cols, palette = _suave(v, f, cloud_p, cloud_c, colores, luz)
+    positions, escala = _a_medidas(v, medidas, escala, origen)
+    data = _glb_bytes_suave(positions, vn, np.clip(np.rint(cols), 0, 255), f, nombre)
+    lo, hi = positions.min(axis=0), positions.max(axis=0)
+    informe = {
+        "tris_fuente": int(tris_in),
+        "tris": int(len(f)),
+        "escala": float(escala),
+        "girar": float(girar),
+        "rotar": [[a, float(d)] for a, d in (rotar or [])],
+        "origen": [float(x) for x in (origen if origen is not None else (0.0, 0.0, 0.0))],
+        "caja_m": [round(float(x), 4) for x in (hi - lo)],
+        "paleta": int(palette),
+        "suave": True,
         "bytes": len(data),
     }
     return data, informe

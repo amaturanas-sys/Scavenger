@@ -17,7 +17,12 @@ Una hoja: una imagen con las tres vistas en fila, frente | lado | espalda (sin l
 genera Canva; con --filas, varios objetos uno debajo del otro (--fila elige cual). La forma sale del frente y
 del lado; el color de atras, de la espalda.
 
-La salida va a assets/models/<categoria>/.../<nombre>.vox, con la etiqueta formato:voxel en
+Con -o algo.glb, en lugar de voxeles sale la superficie suave del mismo volumen (marching cubes sobre el
+volumen alisado, con el color de cada vertice): la fuente densa para tools/modelos/modelos.py traer --suave,
+que la lleva al estilo de PS2 (personas, animales y armas, que en voxeles no quedan bien). Para eso conviene
+--res 96 o 128.
+
+La salida .vox va a assets/models/<categoria>/.../<nombre>.vox, con la etiqueta formato:voxel en
 assets/inventario.tsv: el juego la carga como los GLB, a la altura de sus medidas (src/world/voxfile.c).
 Dependencias: las de tools/modelos/requirements.txt (numpy, scipy, Pillow; trimesh para malla).
 """
@@ -425,6 +430,45 @@ def colores_de_malla(mesh, points, kdtree):
     return vcol[near]
 
 
+# ---------------------------------------------------------------------------------------- superficie suave
+def superficie(filled, rgb):
+    """La superficie suave del volumen: (vertices, caras, colores RGB), en los ejes de un GLB del juego (x
+    hacia el frente, y arriba, z a la izquierda) y en celdas. mcubes.smooth alisa sin perder lo fino (las
+    patas, las hojas de las armas): la superficie sigue pasando entre las celdas llenas y las vacias."""
+    import mcubes
+    import trimesh
+    from scipy.spatial import cKDTree
+
+    pad = np.pad(filled, 2)
+    field = mcubes.smooth(pad)
+    v, f = mcubes.marching_cubes(field, 0.0)
+    v = v - 2.0
+    surf, _ = expuestas(filled)
+    cells = np.argwhere(surf)
+    _, near = cKDTree(cells).query(v)
+    col = rgb[tuple(cells[near].T)]
+    # Del .vox (x a la derecha, y hacia atras, z arriba) al GLB: el frente (y = 0) hacia +X.
+    sx, sy, _ = filled.shape
+    out = np.stack([sy - 1 - v[:, 1], v[:, 2], sx - 1 - v[:, 0]], axis=1)
+    mesh = trimesh.Trimesh(out, f, process=True)
+    mesh.update_faces(mesh.nondegenerate_faces())  # marching cubes deja triangulos sin area: rompen la malla
+    mesh.remove_unreferenced_vertices()
+    mesh.merge_vertices()
+    mesh.fix_normals()
+    keep = mesh.vertices  # process=True puede juntar vertices: el color se vuelve a buscar
+    _, near = cKDTree(out).query(keep)
+    return np.asarray(mesh.vertices), np.asarray(mesh.faces), col[near]
+
+
+def guardar_glb(path, filled, rgb):
+    import trimesh
+
+    v, f, c = superficie(filled, rgb)
+    rgba = np.concatenate([np.clip(c, 0, 255).astype(np.uint8), np.full((len(c), 1), 255, np.uint8)], axis=1)
+    trimesh.Trimesh(v, f, vertex_colors=rgba, process=False).export(path)
+    log(f"[voxeles] {path}: superficie suave de {len(f)} triangulos (para modelos.py traer --suave)")
+
+
 # ---------------------------------------------------------------------------------------- ver
 def primera(filled, axis, desde_el_final):
     """Para cada rayo a lo largo de axis: si toca algo y el indice de la primera celda llena."""
@@ -548,6 +592,9 @@ def main(argv=None):
     if max(filled.shape) > vox.MAX:
         log(f"[voxeles] {filled.shape}: mas de {vox.MAX} celdas por eje; baja --res")
         return 1
+    if a.salida.lower().endswith(".glb"):
+        guardar_glb(a.salida, filled, rgb)
+        return 0
     grid, pal = guardar(a.salida, filled, rgb, a.colores)
     if a.vista_previa:
         vista_previa(grid, np.concatenate([pal, np.full((len(pal), 1), 255, np.uint8)], axis=1), a.vista_previa)

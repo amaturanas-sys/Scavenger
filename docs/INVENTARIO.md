@@ -211,15 +211,15 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
 | `arma.corta.cuchillo` | Cuchillo de hueso y hierro | 0.05x0.3x0.03 | 60 | pendiente | `uso:equipable` `manos:una` |  |
-| `arma.corta.daga` | Daga | 0.05x0.4x0.03 | 80 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `arma.corta.daga` | Daga | 0.05x0.4x0.03 | 80 | importado | `uso:equipable` `manos:una` | Low-poly suave (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/voxeles hoja -o .glb, modelos.py traer --suave). |
 | `arma.corta.sable` | Sable de la estepa | 0.08x0.9x0.03 | 120 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` | Curvo y de un filo: a caballo corta limpio, no se traba y suma la carrera. |
-| `arma.corta.hacha_mano` | Hacha de mano | 0.15x0.6x0.04 | 100 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
-| `arma.corta.maza` | Maza | 0.1x0.7x0.1 | 100 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `arma.corta.hacha_mano` | Hacha de mano | 0.15x0.6x0.04 | 100 | importado | `uso:equipable` `manos:una` | Low-poly suave (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/voxeles hoja -o .glb, modelos.py traer --suave). |
+| `arma.corta.maza` | Maza | 0.1x0.7x0.1 | 100 | importado | `uso:equipable` `manos:una` | Low-poly suave (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/voxeles hoja -o .glb, modelos.py traer --suave). |
 | `arma.larga.lanza` | Lanza ligera | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` | A pie y a caballo; en ristre (L), la carga. |
 | `arma.larga.guja` | Guja | 0.2x2.2x0.05 | 120 | pendiente | `uso:equipable` `manos:dos` |  |
 | `arma.larga.pica` | Pica imperial | 0.1x4.5x0.1 | 80 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
 | `arma.larga.alabarda` | Alabarda | 0.3x2.2x0.05 | 140 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
-| `arma.larga.espada_larga` | Espada larga | 0.2x1.2x0.03 | 120 | importado | `uso:equipable` `manos:una` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `arma.larga.espada_larga` | Espada larga | 0.2x1.2x0.03 | 120 | importado | `uso:equipable` `manos:una` | Low-poly suave (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/voxeles hoja -o .glb, modelos.py traer --suave). |
 | `arma.distancia.arco_compuesto` | Arco compuesto reflejo | 0.1x1.2x0.05 | 150 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:nomada` `manos:dos` | Asta, madera y tendón: corto y potente, a caballo tira como a pie. Se hace en tres etapas. |
 | `arma.distancia.arco_largo` | Arco largo | 0.08x1.8x0.05 | 120 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
 | `arma.distancia.ballesta` | Ballesta | 0.7x0.25x0.9 | 250 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
@@ -276,7 +276,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 |---|---|---|---|---|---|---|
 | `escudo.mano.mimbre` | Escudo redondo de mimbre | 0.6x0.6x0.08 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:madera` `manos:escudo` |  |
 | `escudo.mano.cuero` | Escudo de cuero endurecido | 0.55x0.55x0.06 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:cuero` `manos:escudo` |  |
-| `escudo.mano.umbo` | Escudo de madera con umbo | 0.8x0.8x0.1 | 100 | importado | `uso:equipable` `faccion:neutral` `material:madera` `manos:escudo` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `escudo.mano.umbo` | Escudo de madera con umbo | 0.8x0.8x0.1 | 100 | importado | `uso:equipable` `faccion:neutral` `material:madera` `manos:escudo` | Low-poly suave (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/voxeles hoja -o .glb, modelos.py traer --suave). |
 | `escudo.grande.paves` | Pavés imperial | 0.7x1.5x0.15 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:madera` `manos:escudo` |  |
 | `escudo.mano.lamina` | Escudo de láminas de hierro | 0.6x0.8x0.08 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:hierro` `manos:escudo` |  |
 | `escudo.mano.culto` | Escudo ceremonial del culto | 0.7x0.9x0.08 | 200 | pendiente | `uso:equipable` `faccion:culto` `material:bronce` `manos:escudo` |  |
@@ -304,7 +304,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
-| `armadura.casco.laminar_cuero` | Casco laminar de cuero | 0.3x0.35x0.3 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `armadura.casco.laminar_cuero` | Casco laminar de cuero | 0.3x0.35x0.3 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | Low-poly suave (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/voxeles hoja -o .glb, modelos.py traer --suave). |
 | `armadura.cuello.laminar_cuero` | Gorjal / cofia laminar de cuero | 0.35x0.2x0.35 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.torso.laminar_cuero` | Coraza / peto laminar de cuero | 0.5x0.6x0.35 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.hombreras.laminar_cuero` | Hombreras (par) laminar de cuero | 0.6x0.2x0.3 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
@@ -351,7 +351,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `armadura.casco.oro_padre` | Casco de oro del padre | 0.3x0.4x0.3 | 300 | pendiente | `uso:equipable` `rig:humanoide` `especial:legado` `material:oro` `acto:1` | Lo lleva el padre en el prólogo. |
 | `armadura.montura.barda_cuero` | Barda de cuero para caballo | 0.8x1.2x2 | 400 | pendiente | `uso:equipable` `rig:cuadrupedo` `faccion:nomada` `material:cuero` |  |
 | `armadura.montura.barda_hierro` | Barda de hierro para caballo | 0.8x1.2x2 | 500 | pendiente | `uso:equipable` `rig:cuadrupedo` `faccion:imperio` `material:hierro` |  |
-| `armadura.casco.bronce` | Casco de bronce | 0.3x0.35x0.3 | 150 | importado | `uso:equipable` `rig:humanoide` `material:bronce` `formato:voxel` | Se forja en el horno de bronce. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `armadura.casco.bronce` | Casco de bronce | 0.3x0.35x0.3 | 150 | importado | `uso:equipable` `rig:humanoide` `material:bronce` | Se forja en el horno de bronce. Low-poly suave (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/voxeles hoja -o .glb, modelos.py traer --suave). |
 
 <a id="vestimenta"></a>
 
