@@ -392,6 +392,44 @@ def test_atalaya_forma():
     assert estructuras.triangulos(grid) < 8000
 
 
+def test_muro_en_ruinas():
+    """El muro en ruinas. Sin hoja, un muro entero: la base de dos hiladas de piedra (piedras de 1.2 m) y 12 hiladas
+    de ladrillo trabado, 3 m en 57 celdas; la junta de cada hilada, hundida una celda, y las de entre ladrillos, de
+    color. El del repo (desde la hoja): una pieza, sin aire encerrado, los ladrillos al frente y el barro hundido
+    donde se cayeron, y bajo el aviso de triangulos de Android."""
+    from scipy import ndimage
+
+    base = estructuras.BASE_MURO
+    o = estructuras.muro_en_ruinas()
+    D, W, H = o.parte.shape
+    assert H == base + 4 * 12 == 57 and o.metros()[1] == 3.0, (o.parte.shape, o.metros())
+    lad = np.array([n.startswith("ladrillo") for n in o.nombres])
+    junta = o.nombres.index("junta")
+    for y in range(base, H):
+        fila, atras = o.parte[0, :, y], o.parte[1, :, y]
+        if (y - base) % 4 == 0:  # la junta de la hilada: hundida (en las puntas no: atras esta la cara del costado)
+            assert (fila[1:-1] == 0).all() and (atras == junta).all(), (y, fila, atras)
+        else:  # los ladrillos (5 celdas) y la junta de entre ellos (1), al frente
+            assert lad[fila].sum() + (fila == junta).sum() == W and 9 <= (fila == junta).sum() <= 12, (y, fila)
+    assert (o.parte[0, 1:-1, 4] == 0).all()  # la junta entre las dos hiladas de la base
+    piedra = np.array([n.startswith("piedra") for n in o.nombres])
+    assert piedra[o.parte[0, :, :4]].sum() == 4 * (W - 2)  # tres piedras por hilada: dos juntas
+
+    g, _ = vox.leer(os.path.join(HERE, "..", "..", "assets", "models", "estructura", "ruina", "muro.vox"))
+    f = g > 0
+    assert f.shape == (65, 22, 57), f.shape  # 3.42 x 1.16 x 3 m
+    _, piezas = ndimage.label(f)
+    assert piezas == 1, piezas
+    vacio = np.pad(~f, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    assert (lab[vacio] == lab[0, 0, 0]).all()
+    cara = f.any(axis=1)[:, base:]  # lo que se ve de frente, sobre la base
+    adelante = f[:, 0, base:] & cara
+    hundido = ~f[:, 0, base:] & f[:, 1, base:] & cara
+    assert 0.3 < adelante.sum() / cara.sum() < 0.7 and hundido.sum() / cara.sum() > 0.3, (adelante.sum(), hundido.sum())
+    assert estructuras.triangulos(g) < 8000
+
+
 def test_triangulos_juntos():
     """modelos.tris_vox cuenta lo que arma el juego (src/sim/voxel.c: las caras juntas y la base en el suelo): la
     figura de prueba de tests/test_main.c (merge_fixture) da los mismos triangulos que alla (MERGE_FIXTURE_TRIS)."""
@@ -438,6 +476,7 @@ def main():
         ("test_pino_simetrico", test_pino_simetrico),
         ("test_piedra_tallada", test_piedra_tallada),
         ("test_atalaya_forma", test_atalaya_forma),
+        ("test_muro_en_ruinas", test_muro_en_ruinas),
         ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0

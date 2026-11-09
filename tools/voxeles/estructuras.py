@@ -487,8 +487,250 @@ def atalaya(vistas=None, celda=0.15):
     return o
 
 
+# ------------------------------------------------------------------------------------------ el muro en ruinas
+BASE_MURO = 9  # la base: dos hiladas de piedra de 4 celdas con su junta (la fila 4); la fila 9, la junta de asiento
+
+
+def _ladrillo_px(m, c, umbral=38.0):
+    """Los pixeles de ladrillo de una vista: lo rojizo (R - G de la mediana de 7 px, que borra el granulado) sobre el
+    barro y la piedra de la base (en la hoja del muro, el ladrillo da 45 a 55 y el barro y la piedra, 20 a 30)."""
+    from scipy import ndimage
+
+    return (ndimage.median_filter(c[..., 0] - c[..., 1], size=7) > umbral) & m
+
+
+def _sin_ladrillos(m, c, lad):
+    """El color de la vista con barro donde hay ladrillos (y donde hay sombra): cada pixel toma el del barro mas
+    cercano (el color del nucleo que queda a la vista donde se cayeron)."""
+    from scipy import ndimage
+
+    barro = m & ~ndimage.binary_dilation(lad, iterations=3)
+    if not barro.any():
+        return c
+    lum = c.mean(axis=2)
+    barro &= lum >= np.percentile(lum[barro], 15)  # sin las sombras ni las grietas (quedarian como agujeros)
+    _, (iy, ix) = ndimage.distance_transform_edt(~barro, return_indices=True)
+    return c[iy, ix]
+
+
+def _celdas_de(img, n, filas):
+    """img (h, w[, 3]) a celdas: el promedio de cada rectangulo, con n columnas parejas y las filas dadas (sus bordes,
+    en pixeles desde abajo). Devuelve (n, len(filas) - 1[, 3]), con y = 0 abajo."""
+    img = np.asarray(img, np.float32)
+    h, w = img.shape[:2]
+    cols = np.linspace(0, w, n + 1)
+    out = np.zeros((n, len(filas) - 1) + img.shape[2:], np.float32)
+    for y in range(len(filas) - 1):
+        r0 = int(np.clip(round(h - filas[y + 1]), 0, h - 1))
+        r1 = int(np.clip(round(h - filas[y]), r0 + 1, h))
+        for a in range(n):
+            c0 = int(np.clip(round(cols[a]), 0, w - 1))
+            c1 = int(np.clip(round(cols[a + 1]), c0 + 1, w))
+            out[a, y] = img[r0:r1, c0:c1].reshape((-1,) + img.shape[2:]).mean(axis=0)
+    return out
+
+
+def _aparejo(a, y, desfase, traba, paso=6):
+    """El ladrillo de la celda (a, y) de una cara del muro, o None si es junta. a: a lo largo de la cara; y: el alto.
+    Hiladas de 4 celdas desde BASE_MURO (la junta abajo y 3 de ladrillo) y ladrillos de `paso` celdas (paso - 1 y la
+    junta), trabados media pieza; desfase y traba corren el aparejo para que calce con el de la hoja."""
+    h, r = divmod(y - BASE_MURO, 4)
+    if r == 0:
+        return None
+    j, p = divmod(a + desfase + ((h + traba) % 2) * (paso // 2), paso)
+    return None if p == paso - 1 else (h, j)
+
+
+class _Cara:
+    """Una cara del muro vista en la hoja: su silueta, su ladrillo y su color en celdas (a, y), y el aparejo que mejor
+    calza con los ladrillos de la hoja, con los que estan (la mitad de sus celdas, al menos, son de ladrillo)."""
+
+    def __init__(self, m, c, n, H, voltear, juntas_base=True):
+        lad = _ladrillo_px(m, c)
+        h = m.shape[0]
+        fr = lad.sum(axis=1) / np.maximum(m.sum(axis=1), 1)
+        bajo = int(np.flatnonzero(fr > 0.05).max()) if (fr > 0.05).any() else int(0.84 * h)
+        base_px = h - bajo - 4  # el ultimo ladrillo y la junta de asiento: ahi empieza la base
+        filas = np.interp(np.arange(H + 1), [0, BASE_MURO, H], [0, base_px, h])
+        orden = (lambda x: x[::-1]) if voltear else (lambda x: x)  # de frente, +Z queda a la izquierda de la imagen
+        self.sil = orden(_celdas_de(m, n, filas)) >= 0.5
+        self.frac = orden(_celdas_de(lad, n, filas))
+        self.barro = orden(_celdas_de(_sin_ladrillos(m, c, lad), n, filas))
+        con = _celdas_de(c * lad[..., None], n, filas)
+        self.ladrillo = orden(con / np.maximum(_celdas_de(lad, n, filas), 1e-4)[..., None])
+        self.juntas_base = juntas_base
+        self._calzar(n, H)
+
+    def _calzar(self, n, H):
+        mejor = None
+        for traba in (0, 1):
+            for desfase in range(6):
+                suma, cuenta, juntas = {}, {}, 0.0
+                for a in range(n):
+                    for y in range(BASE_MURO, H):
+                        k = _aparejo(a, y, desfase, traba)
+                        if k is None:
+                            juntas += 1.0 - self.frac[a, y]
+                            continue
+                        suma[k] = suma.get(k, 0.0) + float(self.frac[a, y])
+                        cuenta[k] = cuenta.get(k, 0) + 1
+                presentes = {k for k in suma if suma[k] >= 0.5 * cuenta[k]}
+                acuerdo = juntas + sum(suma[k] if k in presentes else cuenta[k] - suma[k] for k in suma)
+                if mejor is None or acuerdo > mejor[0]:
+                    mejor = (acuerdo, desfase, traba, presentes)
+        _, self.desfase, self.traba, self.presentes = mejor
+
+    def material(self, a, y):
+        """"piedra", "junta", ("ladrillo", clave) o "barro" de la celda (a, y) de la cara. Las juntas del aparejo van
+        solo al lado de un ladrillo que esta; donde se cayeron todos, el barro es parejo."""
+        if y < BASE_MURO:  # piedras de 22 celdas (1.2 m, como en la hoja: tres por hilada); de costado, una sola
+            return "junta" if y == 4 or (self.juntas_base and (a + 3) % 23 == 22) else "piedra"
+        k = _aparejo(a, y, self.desfase, self.traba)
+        if k is not None:
+            return ("ladrillo", k) if k in self.presentes else "barro"
+        for da in (-1, 0, 1):  # los ocho vecinos: la junta de asiento bajo la junta de arriba, tambien
+            for dy in (-1, 0, 1):
+                if y + dy >= BASE_MURO and _aparejo(a + da, y + dy, self.desfase, self.traba) in self.presentes:
+                    return "junta"
+        return "barro"
+
+
+def muro_en_ruinas(vistas=None, alto_m=3.0, hiladas=12, tonos=(4, 3, 8), mancha=3, tallado="hiladas"):  # noqa: C901
+    """estructura.ruina.muro: el muro de ladrillo de la hoja, 3 m de alto (el inventario) en celdas de 5.3 cm (la
+    base de dos hiladas de piedra de 0.47 m y 12 hiladas de ladrillo, como en la hoja). La forma, de las tres
+    siluetas (frente, lado y espalda): lo alto a un lado, la rotura en escalones y el grueso que va de 1.1 m en la
+    base a 0.4 m arriba. En el frente y la espalda, el aparejo trabado de la hoja (ladrillos de 5 x 3 celdas con su
+    junta), con los ladrillos que la hoja muestra; el barro del nucleo, donde se cayeron, queda una celda hundido.
+    tallado: que juntas se hunden tambien ("juntas": todas; "hiladas": las de cada hilada y las de la base, y las de
+    entre ladrillos van de color; "barro": ninguna). Con todas pasa el aviso de triangulos de Android (8498). Los
+    costados llevan el aparejo de la vista de lado, sin hundir (los escalones de la rotura son chicos). Los colores,
+    de la hoja: cada ladrillo, su promedio; el barro y la piedra de la base, a manchas de `mancha` celdas; arriba
+    (sin vista), el barro comun con un tono por mancha. tonos = (barro, piedra, ladrillos). Sin hoja, un muro
+    entero."""
+    H = BASE_MURO + 4 * hiladas
+    celda = alto_m / H
+    if vistas:
+        (fm, fc), (sm, sc), (bm, bc) = vistas
+        W = int(round(fm.shape[1] / fm.shape[0] * H))
+        D = int(round(sm.shape[1] / sm.shape[0] * H))
+        caras = {"frente": _Cara(fm, fc, W, H, True), "lado": _Cara(sm, sc, D, H, False, juntas_base=False),
+                 "espalda": _Cara(bm, bc, W, H, False)}
+        # La forma: el perfil de arriba del frente (cada columna, llena desde el suelo: el pie roto de la hoja no
+        # deja el muro en el aire) y el grueso del lado, desde el frente (una cara plana: lo que sobresale son los
+        # ladrillos) hasta atras, en escalones que solo se angostan hacia arriba. La espalda es el mismo dibujo
+        # visto de atras, con diferencias de una celda: no recorta la forma, solo pone sus ladrillos.
+        fr = caras["frente"].sil
+        alto = np.where(fr.any(axis=1), H - np.argmax(fr[:, ::-1], axis=1), 0)
+        junta_arriba = (alto - 1 >= BASE_MURO) & ((alto - 1 - BASE_MURO) % 4 == 0)
+        alto[junta_arriba] -= 1  # la junta de asiento de una hilada que se cayo, se cae con ella
+        lado = caras["lado"].sil
+        fondo = np.where(lado.any(axis=0), D - np.argmax(lado[::-1], axis=0), 0)
+        fondo = np.maximum.accumulate(fondo[::-1])[::-1]
+        ys, us = np.arange(H), np.arange(D)
+        lleno = (ys[None, None, :] < alto[None, :, None]) & (us[:, None, None] < fondo[None, None, :])
+    else:
+        W, D = 65, 22
+        m = np.ones((H * 8, W * 8), bool)
+        c = np.ones(m.shape + (3,), np.float32) * np.array([150, 80, 50], np.float32)
+        c[-BASE_MURO * 8:] = (130, 115, 95)
+        caras = {"frente": _Cara(m, c, W, H, True), "espalda": _Cara(m, c, W, H, False),
+                 "lado": _Cara(m[:, :D * 8], c[:, :D * 8], D, H, False, juntas_base=False)}
+        lleno = np.ones((D, W, H), bool)
+
+    def cara_de(expo, u, z, y):
+        """(cara, a, b, plano) de la celda a la vista: la cara de la hoja que la mira, sus coordenadas en esa vista
+        y el plano donde esta (para las manchas). Lo que solo se ve de arriba no tiene vista (va el barro comun)."""
+        if expo["frente"][u, z, y]:
+            return "frente", z, y, ("frente", u)
+        if expo["espalda"][u, z, y]:
+            return "espalda", z, y, ("espalda", u)
+        if expo["lado"][u, z, y]:
+            return "lado", u, y, ("lado", z)
+        return "lado", u, y, ("arriba", y)
+
+    # El frente y la espalda: lo que no es ladrillo ni piedra (las juntas y el barro) queda una celda mas adentro.
+    expo = _caras(lleno)
+    mat, quitar = {}, []
+    for u, z, y in np.argwhere(expo["frente"] | expo["espalda"] | expo["lado"]).tolist():
+        cara, a, _, _ = cara_de(expo, u, z, y)
+        mat[(u, z, y)] = (cara, caras[cara].material(a, y))
+    for (u, z, y), (cara, m_) in mat.items():
+        hunde = m_ == "barro" or (m_ == "junta" and (tallado == "juntas" or (tallado == "hiladas" and (
+            y < BASE_MURO or (y - BASE_MURO) % 4 == 0))))
+        if cara != "lado" and hunde:
+            ad = (u + 1, z, y) if cara == "frente" else (u - 1, z, y)
+            if 0 <= ad[0] < D and lleno[ad] and ad not in mat:
+                quitar.append(((u, z, y), ad, m_))
+    for celda_, _, _ in quitar:
+        lleno[celda_] = False
+    juntas = {ad for _, ad, m_ in quitar if m_ == "junta"}
+
+    # Que va en cada celda a la vista: el ladrillo (su tono), la junta, la piedra de la base o el barro (a manchas).
+    expo = _caras(lleno)
+    vis = expo["frente"] | expo["espalda"] | expo["lado"] | expo["arriba"] | expo["abajo"]
+    lad_col, lad_de, manchas, de_mancha, fijas = {}, {}, {"barro": {}, "piedra": {}}, {}, {}
+    for u, z, y in np.argwhere(vis).tolist():
+        cara, a, b, plano = cara_de(expo, u, z, y)
+        m_ = mat.get((u, z, y), (cara, None))
+        if isinstance(m_[1], tuple):  # un ladrillo (de la cara que lo puso)
+            clave = (m_[0], m_[1][1])
+            a_l = z if m_[0] != "lado" else u
+            lad_col.setdefault(clave, []).append(caras[m_[0]].ladrillo[a_l, y])
+            lad_de[(u, z, y)] = clave
+            continue
+        if (u, z, y) in juntas or m_[1] == "junta":
+            fijas[(u, z, y)] = "junta"
+            continue
+        tipo = "piedra" if y < BASE_MURO else "barro"
+        if plano[0] == "arriba":  # lo de arriba no tiene vista: el barro de siempre, con un tono por mancha
+            clave = (tipo, plano, u // (mancha + 1), z // (mancha + 1))  # (mas grandes: es mucho y se ve poco)
+            manchas[tipo].setdefault(clave, [])
+        else:
+            clave = (tipo, plano, a // mancha, b // mancha)
+            manchas[tipo].setdefault(clave, []).append(caras[cara].barro[a, y])
+        de_mancha[(u, z, y)] = (tipo, clave)
+    for tipo, ms in manchas.items():
+        hay = [np.asarray(v, np.float32) for v in ms.values() if v]
+        comun = np.median(np.concatenate(hay), axis=0) if hay else np.array([140, 112, 84], np.float32)
+        for clave, v in ms.items():
+            if not v:
+                v.append(comun * _tono(clave, 0.08))
+
+    def a_tonos(cols, n):
+        cols = np.clip(np.asarray(cols, np.float32).reshape(-1, 3) * LUZ, 0, 255).astype(np.uint8)
+        return voxeles.cuantizar(cols, n)
+
+    tupla = lambda c: tuple(int(v) for v in c)  # noqa: E731
+    o = Obra(D, W, H, celda=celda)
+    claves = sorted(lad_col)
+    i_lad, p_lad = a_tonos([np.median(lad_col[k], axis=0) for k in claves], tonos[2])
+    for k, c in enumerate(p_lad):
+        o.estilo[f"ladrillo{k}"] = (0, 0, tupla(c), "frente")
+    tono = {}
+    for tipo, n in (("barro", tonos[0]), ("piedra", tonos[1])):
+        ks = sorted(manchas[tipo], key=repr)
+        if not ks:
+            continue
+        idx, pal = a_tonos([np.mean(manchas[tipo][k], axis=0) for k in ks], n)
+        for k, c in enumerate(pal):
+            o.estilo[f"{tipo}{k}"] = (0, 0, tupla(c), "lado")
+        tono.update({k: f"{tipo}{int(i) - 1}" for k, i in zip(ks, idx)})
+    todo_barro = np.concatenate([np.asarray(v, np.float32).reshape(-1, 3) for v in manchas["barro"].values()])
+    o.estilo["junta"] = (0, 0, tupla(np.clip(np.median(todo_barro, axis=0) * 0.62 * LUZ, 0, 255)), "lado")
+
+    o.parte[lleno] = o.id(min(tono.values()) if tono else "junta")  # lo de adentro (no se ve)
+    tono_lad = dict(zip(claves, (int(i) - 1 for i in i_lad)))
+    for celda_, clave in lad_de.items():
+        o.parte[celda_] = o.id(f"ladrillo{tono_lad[clave]}")
+    for celda_, (tipo, clave) in de_mancha.items():
+        o.parte[celda_] = o.id(tono[clave])
+    for celda_, nombre in fijas.items():
+        o.parte[celda_] = o.id(nombre)
+    return o
+
 RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo, "atalaya": atalaya,
-           "piedra_ciervo_sol": piedra_ciervo_sol, "piedra_ciervo_felinos": piedra_ciervo_felinos}
+           "piedra_ciervo_sol": piedra_ciervo_sol, "piedra_ciervo_felinos": piedra_ciervo_felinos,
+           "muro_en_ruinas": muro_en_ruinas}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
 # pixeles de la vista recortada. La hoja del templo exagera lo alto en el frente (los pilonos miden 340 px de
@@ -505,6 +747,7 @@ ALTURAS = {
     "piedra_ciervo_sol": {v: ([0, 75], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
     "piedra_ciervo_felinos": {v: ([0, 75], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
     "atalaya": {v: ([0, 40], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
+    "muro_en_ruinas": {v: ([0, 57], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},  # (colores fijos)
 }
 
 

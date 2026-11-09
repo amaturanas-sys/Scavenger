@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**450 objetos** · 17 con modelo · 433 pendientes.
+**450 objetos** · 18 con modelo · 432 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -12,7 +12,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
 | [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 28 | 0 | 2 | 0 |
-| [Estructuras](#estructura) | 43 | 39 | 1 | 3 | 0 |
+| [Estructuras](#estructura) | 43 | 38 | 1 | 4 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
 | [Armas](#arma) | 44 | 39 | 0 | 5 | 0 |
@@ -120,7 +120,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.culto.altar` | Altar del culto | 12x6x12 | 1500 | pendiente | `bioma:ciudad` `faccion:culto` `acto:4` `especial:narrativo` `uso:destructible` | Objetivo del asalto final. |
 | `estructura.culto.templo` | Templo del culto | 24x14x30 | 2500 | importado | `bioma:ciudad` `faccion:culto` `acto:4` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py templo): celdas de 0.5 m, la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva. |
 | `estructura.culto.jaula_sacrificio` | Jaula de cautivos para el sacrificio | 3x2.5x3 | 200 | pendiente | `faccion:culto` `uso:interactuable` `material:hierro` | Rescates del acto III. |
-| `estructura.ruina.muro` | Muro en ruinas | 6x3x1 | 150 | pendiente | `bioma:cualquiera` `uso:decorado` `material:piedra` |  |
+| `estructura.ruina.muro` | Muro en ruinas | 6x3x1 | 150 | importado | `bioma:cualquiera` `uso:decorado` `material:piedra` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py muro_en_ruinas), celdas de 5.3 cm: la base de dos hiladas de piedra y 12 hiladas de ladrillo trabado, la rotura en escalones y el barro del nucleo hundido donde se cayeron los ladrillos, con la forma y los colores de la hoja de tres vistas generada por el usuario con Canva (3.42 x 1.16 m de la hoja: el inventario dice 6 x 1). Reemplaza al del kit de edificios (src/sim/buildkit.c). |
 | `estructura.ruina.yurta_quemada` | Yurta quemada | 4.5x1.5x4.5 | 250 | pendiente | `faccion:nomada` `acto:1` `uso:decorado` | Restos de la masacre. |
 | `estructura.ruina.escombros` | Escombros | 3x0.8x3 | 80 | pendiente | `bioma:cualquiera` `uso:decorado` | Lo que deja la lluvia torrencial de una estructura sin mantenimiento. |
 | `estructura.ruina.cenizas` | Cenizas de una estructura | 3x0.5x3 | 80 | pendiente | `bioma:cualquiera` `uso:decorado` | Lo que deja el fuego. |

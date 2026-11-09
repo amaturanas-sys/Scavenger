@@ -61,7 +61,7 @@ estructura.imperio.cadalso	Cadalso de ejecución pública	bioma:ciudad,faccion:i
 estructura.culto.altar	Altar del culto	bioma:ciudad,faccion:culto,acto:4,especial:narrativo,uso:destructible	12x6x12	1500	pendiente	Objetivo del asalto final.
 estructura.culto.templo	Templo del culto	bioma:ciudad,faccion:culto,acto:4,formato:voxel	24x14x30	2500	importado	Voxeles armados a mano (tools/voxeles/estructuras.py templo): celdas de 0.5 m, la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva.
 estructura.culto.jaula_sacrificio	Jaula de cautivos para el sacrificio	faccion:culto,uso:interactuable,material:hierro	3x2.5x3	200	pendiente	Rescates del acto III.
-estructura.ruina.muro	Muro en ruinas	bioma:cualquiera,uso:decorado,material:piedra	6x3x1	150	pendiente	
+estructura.ruina.muro	Muro en ruinas	bioma:cualquiera,uso:decorado,material:piedra,formato:voxel	6x3x1	150	importado	Voxeles armados a mano (tools/voxeles/estructuras.py muro_en_ruinas), celdas de 5.3 cm: la base de dos hiladas de piedra y 12 hiladas de ladrillo trabado, la rotura en escalones y el barro del nucleo hundido donde se cayeron los ladrillos, con la forma y los colores de la hoja de tres vistas generada por el usuario con Canva (3.42 x 1.16 m de la hoja: el inventario dice 6 x 1). Reemplaza al del kit de edificios (src/sim/buildkit.c).
 estructura.ruina.yurta_quemada	Yurta quemada	faccion:nomada,acto:1,uso:decorado	4.5x1.5x4.5	250	pendiente	Restos de la masacre.
 estructura.ruina.escombros	Escombros	bioma:cualquiera,uso:decorado	3x0.8x3	80	pendiente	Lo que deja la lluvia torrencial de una estructura sin mantenimiento.
 estructura.ruina.cenizas	Cenizas de una estructura	bioma:cualquiera,uso:decorado	3x0.5x3	80	pendiente	Lo que deja el fuego.
