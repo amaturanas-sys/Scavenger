@@ -1744,6 +1744,7 @@ las murallas	the city walls
 las puertas acodadas	the bent gates
 las tiendas y las chozas de fieltro	the tents and the felt huts
 las torres	the towers
+los asentamientos antiguos	the ancient settlements
 los corrales	the corrals
 los cuarteles	the barracks
 los escombros y los muros en ruinas	the rubble and the ruined walls
@@ -1918,6 +1919,7 @@ la tienda ligera y la choza de fieltro	the light tent and the felt hut
 la torre de la muralla	the wall tower
 las cenizas y la yurta quemada	the ashes and the burnt yurt
 los escombros y el muro en ruinas	the rubble and the ruined wall
+los vestigios de un asentamiento antiguo	the remains of an ancient settlement
 yurta	yurt
 # --- src/sim/caves.c
 almacén del imperio	imperial storehouse

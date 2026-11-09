@@ -19,6 +19,7 @@
 #include "../src/sim/armor.h"
 #include "../src/sim/ballistics.h"
 #include "../src/sim/body.h"
+#include "../src/sim/ancient.h"
 #include "../src/sim/buildkit.h"
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
@@ -5213,6 +5214,87 @@ static uint32_t test_bk_hash(const VoxGrid *g) {
 // semilla y otra cosa con otra; las chicas caben en su huella; la puerta da al frente, a ras del
 // piso, y lleva a su vestibulo (cerrada, de afuera no se llega adentro); lo de adentro, que no se
 // ve, queda relleno (ningun hueco techado sin salida) y las caras, ya refinadas, no se pasan.
+// Los vestigios de los asentamientos antiguos (src/sim/ancient.h): la misma planta de la misma semilla; el
+// palacio con su patio de al menos 4 m y las casas, sin pisarse y con su calle, adentro de su cuadrado; todos
+// los cuartos se alcanzan desde afuera por sus puertas (la planta entera, antes del tiempo); lo que queda,
+// casi todo a ras del suelo, con brechas y nunca mas alto que ANC_HEIGHT_MAX; de dos a cuatro tramos de pie,
+// sobre muros de afuera y lejos de las puertas.
+#define ANC_TEST_N 184 // 2 * (ANC_HALF + 1) / 0.25: celdas de 0.25 m con un metro de calle alrededor
+static void test_ancient(void) {
+    static AncientPlan a, b;
+    static uint8_t reached[ANC_TEST_N * ANC_TEST_N];
+    static int queue[ANC_TEST_N * ANC_TEST_N];
+    ancient_plan(&a, 77u);
+    ancient_plan(&b, 77u);
+    CHECK(!memcmp(&a, &b, sizeof(a)));
+    ancient_plan(&b, 78u);
+    CHECK(memcmp(&a, &b, sizeof(a)) != 0);
+    int few = 0, small_court = 0, overlap = 0, out = 0, standing_bad = 0, too_tall = 0, unreachable = 0, inside = 0, samples = 0, breaches = 0;
+    double sum_h = 0.0;
+    const int N = ANC_TEST_N;
+    const float c0 = -(ANC_HALF + 1.0f);
+    CHECK((float)N * 0.25f == 2.0f * (ANC_HALF + 1.0f));
+    for (uint32_t s = 1; s <= 40; s++) {
+        AncientPlan *p = &a;
+        ancient_plan(p, s * 2654435761u);
+        few += p->building_count < 3 || p->rooms < 8;
+        small_court += p->court.x1 - p->court.x0 < 3.99f || p->court.z1 - p->court.z0 < 3.99f;
+        for (int i = 0; i < p->building_count; i++) {
+            const AncRect *r = &p->buildings[i];
+            out += r->x0 < -ANC_HALF || r->z0 < -ANC_HALF || r->x1 > ANC_HALF || r->z1 > ANC_HALF;
+            for (int j = i + 1; j < p->building_count; j++) {
+                const AncRect *q = &p->buildings[j];
+                overlap += r->x0 - 2.49f < q->x1 && q->x0 - 2.49f < r->x1 && r->z0 - 2.49f < q->z1 && q->z0 - 2.49f < r->z1;
+            }
+        }
+        standing_bad += p->standing_count < 2 || p->standing_count > ANC_STANDING_MAX;
+        for (int i = 0; i < p->standing_count; i++) {
+            const AncStanding *st = &p->standing[i];
+            bool on_outer = false;
+            for (int w = 0; w < p->wall_count; w++) {
+                const AncRect *r = &p->walls[w].r;
+                on_outer |= p->walls[w].outer && st->x >= r->x0 && st->x <= r->x1 && st->z >= r->z0 && st->z <= r->z1;
+            }
+            for (int d = 0; d < p->door_count; d++) {
+                const AncRect *r = &p->doors[d];
+                on_outer &= !(st->r.x0 < r->x1 && r->x0 < st->r.x1 && st->r.z0 < r->z1 && r->z0 < st->r.z1);
+            }
+            standing_bad += !on_outer;
+        }
+        // Lo que queda de alto y, en la planta entera, que se llegue a todos los cuartos desde afuera.
+        memset(reached, 0, sizeof(reached));
+        int head = 0, tail = 0;
+        reached[0] = 1, queue[tail++] = 0;
+        while (head < tail) {
+            int k = queue[head++], x = k % N, z = k / N;
+            static const int D[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+            for (int d = 0; d < 4; d++) {
+                int nx = x + D[d][0], nz = z + D[d][1];
+                if (nx < 0 || nz < 0 || nx >= N || nz >= N || reached[nx + nz * N]) continue;
+                if (ancient_wall_at(p, c0 + ((float)nx + 0.5f) * 0.25f, c0 + ((float)nz + 0.5f) * 0.25f)) continue;
+                reached[nx + nz * N] = 1, queue[tail++] = nx + nz * N;
+            }
+        }
+        for (int z = 0; z < N; z++)
+            for (int x = 0; x < N; x++) {
+                float px = c0 + ((float)x + 0.5f) * 0.25f, pz = c0 + ((float)z + 0.5f) * 0.25f;
+                bool wall = ancient_wall_at(p, px, pz);
+                if (wall) {
+                    float h = ancient_height(p, px, pz);
+                    samples++, sum_h += h, breaches += h == 0.0f, too_tall += h > ANC_HEIGHT_MAX + 1e-4f;
+                    continue;
+                }
+                for (int i = 0; i < p->building_count; i++) {
+                    const AncRect *r = &p->buildings[i];
+                    if (px > r->x0 && px < r->x1 && pz > r->z0 && pz < r->z1) inside++, unreachable += !reached[x + z * N];
+                }
+            }
+    }
+    CHECK(few == 0 && small_court == 0 && overlap == 0 && out == 0 && standing_bad == 0);
+    CHECK(inside > 1000 && unreachable == 0);
+    CHECK(samples > 1000 && too_tall == 0 && breaches > 0 && sum_h / samples < 1.0 && sum_h / samples > 0.3);
+}
+
 static void test_buildkit(void) {
     for (int r = 0; r < REGION_COUNT; r++) {
         CHECK(bk_available(BK_HOUSE, (Region)r) && bk_available(BK_PALACE, (Region)r) && bk_available(BK_GRANARY, (Region)r));
@@ -5243,7 +5325,7 @@ static void test_buildkit(void) {
                     bad_det++;
                 vox_free(&h);
                 uint32_t hash = test_bk_hash(&g);
-                bool wall = t == BK_WALL || t == BK_TOWER || t == BK_GATE, ruin = t == BK_RUIN_FORT || t == BK_RUIN_CITY; // la muralla; las ruinas
+                bool wall = t == BK_WALL || t == BK_TOWER || t == BK_GATE, ruin = t == BK_RUIN_FORT || t == BK_RUIN_CITY || t == BK_RUIN_TOWN; // la muralla; las ruinas
                 bool big = t == BK_PALACE || t == BK_BARRACKS || wall || ruin || t == BK_CORRAL; // sin chicas
                 if (v % 2 == 1 && hash == prev && t != BK_WALL && t != BK_TOWER) same++; // los tramos y las torres pueden repetirse
                 prev = hash;
@@ -5805,6 +5887,43 @@ static void test_water_seasons(void) {
     }
 }
 
+// Los vestigios de los asentamientos antiguos en el mundo: van despues de los demas sitios (los indices de
+// antes, que las partidas guardan como vistos, no se mueven), en un llano (a una sola altura los arma el kit),
+// lejos de los pueblos, las tribus, las guaridas y los otros sitios; son ruinas y tienen nombre.
+static void test_ancient_towns_in_world(void) {
+    static const uint32_t SEEDS[] = { 1206u, 7u, 42u, 1984u, 2024u, 31337u };
+    int towns = 0, order = 0, steep = 0, close = 0, worlds_without = 0;
+    for (size_t i = 0; i < sizeof(SEEDS) / sizeof(SEEDS[0]); i++) {
+        const World *w = world_for_seed(SEEDS[i]);
+        int here = 0;
+        bool seen_town = false;
+        CHECK(w->site_count <= SITES_MAX);
+        for (int k = 0; k < w->site_count; k++) {
+            const WorldSite *st = &w->sites[k];
+            if (st->kind != SITE_ANCIENT_TOWN) {
+                order += seen_town;
+                continue;
+            }
+            seen_town = true, here++;
+            float lo = world_height(w, st->x, st->z), hi = lo;
+            for (int a = 0; a < 16; a++) {
+                float r = a < 8 ? 9.0f : 19.0f, ang = (float)a * 0.785398f + 0.2f;
+                float h = world_height(w, st->x + cosf(ang) * r, st->z + sinf(ang) * r);
+                lo = fminf(lo, h), hi = fmaxf(hi, h);
+            }
+            steep += hi - lo > 1.6f;
+            for (int o = 0; o < w->site_count; o++)
+                close += o != k && hypotf(w->sites[o].x - st->x, w->sites[o].z - st->z) < 160.0f;
+            for (int o = 0; o < w->settlement_count; o++) close += hypotf(w->settlements[o].x - st->x, w->settlements[o].z - st->z) < 140.0f;
+            for (int o = 0; o < w->tribe_count; o++) close += hypotf(w->tribes[o].x - st->x, w->tribes[o].z - st->z) < 120.0f;
+            for (int o = 0; o < w->den_count; o++) close += hypotf(w->dens[o].x - st->x, w->dens[o].z - st->z) < 70.0f;
+        }
+        towns += here, worlds_without += here == 0;
+    }
+    CHECK(towns >= 6 * 5 && worlds_without == 0 && order == 0 && steep == 0 && close == 0);
+    CHECK(site_is_ruin(SITE_ANCIENT_TOWN) && site_name(SITE_ANCIENT_TOWN)[0] != '?' && WORLD_FOOT_TOWN >= ANC_HALF * 1.41f);
+}
+
 static void test_world_dry(void) {
     // La linea de nieve del verano de world.h es la de src/sim/climate.c (la mas alta del año).
     float top = -1e9f;
@@ -5833,8 +5952,10 @@ static void test_world_dry(void) {
             snowy += world_height(w, w->tribes[k].x, w->tribes[k].z) > snow;
             things++;
         }
-        for (int k = 0; k < w->site_count; k++, things++)
-            wet += test_wet_circle(w, w->sites[k].x, w->sites[k].z, WORLD_FOOT_SITE, w->sites[k].kind == SITE_HARBOR);
+        for (int k = 0; k < w->site_count; k++, things++) {
+            float foot = w->sites[k].kind == SITE_ANCIENT_TOWN ? WORLD_FOOT_TOWN : WORLD_FOOT_SITE;
+            wet += test_wet_circle(w, w->sites[k].x, w->sites[k].z, foot, w->sites[k].kind == SITE_HARBOR);
+        }
         for (int k = 0; k < w->den_count; k++, things++) wet += test_wet_circle(w, w->dens[k].x, w->dens[k].z, WORLD_FOOT_DEN, false);
     }
     CHECK(things > 700 && wet == 0 && snowy == 0 && lots_wet == 0);
@@ -6276,7 +6397,9 @@ int main(void) {
     RUN(test_cities);
     RUN(test_army);
     RUN(test_flora);
+    RUN(test_ancient);
     RUN(test_buildkit);
+    RUN(test_ancient_towns_in_world);
     RUN(test_world_dry);
     RUN(test_hydro_basics);
     RUN(test_water_flows_down);

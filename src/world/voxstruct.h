@@ -17,6 +17,9 @@
 
 // Dibuja una estructura del mundo (su clase y region) en (x, y, z) con giro yaw (radianes).
 void voxs_draw_site(SiteKind kind, Region region, Vector3 at, float yaw, Color tint);
+// La variante del kit con que se arma una ruina del mundo en ese lugar (0..BK_VARIANTS-1): la de la planta
+// de un asentamiento antiguo (bk_variant_seed de BK_RUIN_TOWN), con la que se ponen sus tramos de pie.
+int voxs_site_variant(Vector3 at);
 // Un edificio del kit de la edad del hierro (src/sim/buildkit.h): su tipo, su region y su variante
 // (0..BK_VARIANTS-1; la 0 y la 1, chicas). Cada uno se arma la primera vez que se dibuja: a menos
 // de VOXS_KIT_NEAR m del ojo (voxs_set_lod), refinado; mas lejos, con la mitad de detalle.

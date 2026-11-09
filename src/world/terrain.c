@@ -411,8 +411,8 @@ static float tree_density(const float *k, float near_water) {
 // Claro alrededor de las estructuras y de los campamentos de tribus (ni arboles ni rocas encima).
 static bool near_site(const World *w, float x, float z) {
     for (int i = 0; i < w->site_count; i++) {
-        float dx = x - w->sites[i].x, dz = z - w->sites[i].z;
-        if (dx * dx + dz * dz < 32.0f * 32.0f) return true;
+        float dx = x - w->sites[i].x, dz = z - w->sites[i].z, r = w->sites[i].kind == SITE_ANCIENT_TOWN ? 38.0f : 32.0f;
+        if (dx * dx + dz * dz < r * r) return true;
     }
     for (int i = 0; i < w->tribe_count; i++) {
         float dx = x - w->tribes[i].x, dz = z - w->tribes[i].z;

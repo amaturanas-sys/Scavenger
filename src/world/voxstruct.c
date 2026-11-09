@@ -443,12 +443,13 @@ static void draw_model(Model m, float found_h, Vector3 at, float yaw, float scal
     DrawModelEx(m, p, (Vector3){ 0, 1, 0 }, yaw * RAD2DEG, (Vector3){ scale, scale, scale }, tint);
 }
 
+int voxs_site_variant(Vector3 at) { return (int)(fabsf(at.x) * 0.37f + fabsf(at.z) * 0.61f) % BK_VARIANTS; }
+
 void voxs_draw_site(SiteKind kind, Region region, Vector3 at, float yaw, Color tint) {
     if ((unsigned)kind >= SITE_KINDS || (unsigned)region >= REGION_COUNT) return;
-    if (kind == SITE_RUINED_FORT || kind == SITE_BURIED_CITY) { // las ruinas, del kit: una de sus variantes, segun donde esten
-        BkType t = kind == SITE_RUINED_FORT ? BK_RUIN_FORT : BK_RUIN_CITY;
-        int v = (int)(fabsf(at.x) * 0.37f + fabsf(at.z) * 0.61f) % BK_VARIANTS;
-        voxs_draw_kit(t, bk_available(t, region) ? region : REGION_DESERT, v, at, yaw, 1.0f, tint);
+    if (kind == SITE_RUINED_FORT || kind == SITE_BURIED_CITY || kind == SITE_ANCIENT_TOWN) { // las ruinas, del kit: una de sus variantes, segun donde esten
+        BkType t = kind == SITE_RUINED_FORT ? BK_RUIN_FORT : kind == SITE_BURIED_CITY ? BK_RUIN_CITY : BK_RUIN_TOWN;
+        voxs_draw_kit(t, bk_available(t, region) ? region : REGION_DESERT, voxs_site_variant(at), at, yaw, 1.0f, tint);
         return;
     }
     int i = (int)kind * REGION_COUNT + (int)region;

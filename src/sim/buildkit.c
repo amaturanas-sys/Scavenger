@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sim/ancient.h"
 #include "sim/army.h"
 #include "sim/forge.h"
 #include "sim/lang.h"
@@ -1092,6 +1093,43 @@ static bool ruin_city(Kit *k) {
     return true;
 }
 
+// Los vestigios de un asentamiento antiguo (src/sim/ancient.h): la planta del palacio y las casas, con los
+// muros a la altura que les dejo el tiempo (casi todos a ras del suelo, con brechas): el zocalo de piedra y,
+// arriba, el ladrillo cocido (el del muro en ruinas del inventario) o, donde se cayo, el barro del nucleo;
+// lo caido al pie (ladrillo y barro) y el pasto, el musgo o la arena encima. Los tramos de pie no van aca:
+// son el modelo del muro en ruinas, que src/game/world_game.c pone donde dice la planta. plan: la semilla de
+// la planta (la de la variante: la misma con que se ponen los tramos de pie).
+static bool ruin_town(Kit *k, uint32_t plan) {
+    AncientPlan p;
+    ancient_plan(&p, plan);
+    if (!grid_m(k, ANC_HALF + 1.0f, ANC_HALF + 1.0f, ANC_HEIGHT_MAX + 0.5f)) return false;
+    VoxGrid *g = k->g;
+    float c = g->size;
+    for (int z = 0; z < g->nz; z++)
+        for (int x = 0; x < g->nx; x++) {
+            float px = ((float)x + 0.5f - (float)g->nx * 0.5f) * c, pz = ((float)z + 0.5f - (float)g->nz * 0.5f) * c;
+            float h = ancient_height(&p, px, pz);
+            if (h <= 0.0f) continue;
+            int top = k->gy + (int)ceilf(h / c) - 1;
+            for (int y = 0; y <= top && y < g->ny; y++) {
+                uint8_t m = M_STONE; // el cimiento y el zocalo (la primera celda sobre el suelo)
+                if (y > k->gy) m = vox_noise3((float)x * 0.35f, (float)y * 0.5f, (float)z * 0.35f, k->s) > 0.4f ? M_CLAY : M_ADOBE; // a manchas de un par de metros
+                put(k, x, y, z, m);
+            }
+        }
+    for (int i = 0; i < 16 && p.wall_count > 0; i++) { // lo caido, al pie de los muros (de un lado o del otro)
+        const AncWall *w = &p.walls[ki(k, 0, p.wall_count - 1)];
+        bool ax = w->r.x1 - w->r.x0 >= w->r.z1 - w->r.z0;
+        float side = kc(k, 0.5f) ? 1.0f : -1.0f, r = 0.6f + kr(k) * 0.6f;
+        float x = ax ? w->r.x0 + kr(k) * (w->r.x1 - w->r.x0) : (side > 0.0f ? w->r.x1 + r * 0.6f : w->r.x0 - r * 0.6f);
+        float z = ax ? (side > 0.0f ? w->r.z1 + r * 0.6f : w->r.z0 - r * 0.6f) : w->r.z0 + kr(k) * (w->r.z1 - w->r.z0);
+        vox_ellipsoid(g, x / c + (float)g->nx * 0.5f, (float)k->gy, z / c + (float)g->nz * 0.5f, r / c, r * 0.5f / c, r / c, kc(k, 0.6f) ? M_CLAY : M_ADOBE, true);
+    }
+    stones(k, k->s + 3u);
+    overgrow(k, k->s + 11u, 0.22f);
+    return true;
+}
+
 // ---------------------------------------------------------------- las obras de la tribu
 // A la medida de su id del inventario (assets/inventario.tsv), en celdas de 0,25 m, con el frente a +X.
 
@@ -1552,6 +1590,7 @@ bool bk_build(BkType t, Region r, uint32_t seed, bool small, VoxGrid *g, BkInfo 
     case BK_TENT: ok = tent(&k); break;
     case BK_RUBBLE: ok = rubble(&k); break;
     case BK_ASHES: ok = ashes(&k); break;
+    case BK_RUIN_TOWN: ok = ruin_town(&k, seed); break;
     default: break;
     }
     if (!ok) {
@@ -1621,6 +1660,7 @@ const char *bk_name(BkType t, Region r) {
     case BK_TENT: return N_("la tienda ligera y la choza de fieltro");
     case BK_RUBBLE: return N_("los escombros y el muro en ruinas");
     case BK_ASHES: return N_("las cenizas y la yurta quemada");
+    case BK_RUIN_TOWN: return N_("los vestigios de un asentamiento antiguo");
     default: return "?";
     }
 }

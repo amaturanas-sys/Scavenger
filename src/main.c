@@ -487,6 +487,7 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
         { "kurgan", SITE_KURGAN },       { "balbales", SITE_BALBALS },        { "piedra", SITE_DEER_STONE }, { "fortaleza", SITE_RUINED_FORT },
         { "ciudad", SITE_BURIED_CITY },  { "petroglifos", SITE_PETROGLYPHS }, { "caravasar", SITE_CARAVANSERAI },
         { "torre", SITE_WATCHTOWER },    { "ovoo", SITE_OVOO },               { "pozo", SITE_WELL },         { "embarcadero", SITE_HARBOR },
+        { "asentamiento", SITE_ANCIENT_TOWN },
     };
     for (size_t k = 0; k < sizeof(SITE_PLACES) / sizeof(SITE_PLACES[0]) && !ok; k++) // una estructura: a unos pasos, mirandola
         for (int i = 0; i < w->site_count && !ok; i++)
@@ -680,14 +681,15 @@ static void draw_diagnostics(bool has_keyboard) {
 // La vista del kit de edificios (--edificios tipo[:region]).
 static const char *KIT_TYPES[BK_KINDS] = { "casa",       "palacio",    "fundicion", "cuartel", "carpinteria",     "granero", "templo",  "carreta",
                                            "muralla",    "torre",      "puerta",    "fortaleza", "enterrada",      "refugio", "empalizada", "muro",
-                                           "horno",      "horno_fundicion", "atalaya", "corral", "taller",        "tienda",  "escombros", "cenizas" };
+                                           "horno",      "horno_fundicion", "atalaya", "corral", "taller",        "tienda",  "escombros", "cenizas",
+                                           "asentamiento" };
 static const char *KIT_NAMES[BK_KINDS] = { N_("las casas"),         N_("los palacios"),       N_("las fundiciones"),       N_("los cuarteles"),
                                            N_("las carpinterías"), N_("los graneros"),       N_("los templos del fuego"), N_("las carretas-casa"),
                                            N_("las murallas"),      N_("las torres"),         N_("las puertas acodadas"),  N_("las fortalezas derruidas"),
                                            N_("las ciudades enterradas"), N_("los refugios"), N_("las empalizadas"),       N_("los muros de piedra seca"),
                                            N_("los hornos de cocina"), N_("los hornos de fundición"), N_("las atalayas"),  N_("los corrales"),
                                            N_("los talleres del herrero"), N_("las tiendas y las chozas de fieltro"), N_("los escombros y los muros en ruinas"),
-                                           N_("las cenizas y las yurtas quemadas") };
+                                           N_("las cenizas y las yurtas quemadas"), N_("los asentamientos antiguos") };
 static const char *KIT_REGIONS[REGION_COUNT] = { "estepa", "bosque", "altiplano", "fiordos", "desierto" };
 
 static void kit_parse(const char *arg, int *type, int *region) {
@@ -1576,7 +1578,7 @@ int main(int argc, char **argv) {
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) forge_draw_world(&terrain, player.pos); // las vetas de hierro cercanas
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime(), clock_is_night(world_time));
-        if (!gallery_mode) wd_draw_world(&g_actions, &terrain, &player, (float)GetTime());
+        if (!gallery_mode) wd_draw_world(&g_actions, &g_props, &terrain, &player, (float)GetTime());
         if (!gallery_mode) ct_draw_world(&g_actions, &terrain, &player, (float)GetTime(), world_time); // las ciudades y aldeas
         if (!gallery_mode) dg_draw_world(&terrain); // calaveras y huesos donde murio el jugador
         if (!gallery_mode) fg_draw_world(&g_actions, &g_props, &terrain, (float)GetTime());

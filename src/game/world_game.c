@@ -6,6 +6,8 @@
 
 #include "raymath.h"
 #include "rlgl.h"
+#include "sim/ancient.h"
+#include "sim/buildkit.h"
 #include "sim/lang.h"
 #include "world/body_draw.h"
 #include "world/hearth.h"
@@ -454,13 +456,38 @@ static void draw_tribe(const Terrain *t, const TribeCamp *tc, int idx, float tim
     }
 }
 
-// Una estructura: el modelo de voxeles de su clase, al estilo de su region (src/world/voxstruct.c).
-static void draw_site(const Terrain *t, const WorldSite *st, float time) {
-    (void)time;
-    voxs_draw_site(st->kind, st->region, (Vector3){ st->x, terrain_height(t, st->x, st->z), st->z }, st->yaw, WHITE);
+// Una estructura: el modelo de voxeles de su clase, al estilo de su region (src/world/voxstruct.c). En los
+// vestigios de un asentamiento antiguo, ademas, los tramos de pie de su planta (src/sim/ancient.h): el muro en
+// ruinas del inventario, a la altura del medio del sitio y girado como el.
+static struct { // los tramos de pie de cada sitio, sacados de su planta la primera vez que se dibuja
+    bool done;
+    uint32_t seed;
+    int n;
+    AncStanding st[ANC_STANDING_MAX];
+} g_standing[SITES_MAX];
+
+static void draw_site(Props *props, const Terrain *t, const WorldSite *st, int idx) {
+    Vector3 at = { st->x, terrain_height(t, st->x, st->z), st->z };
+    voxs_draw_site(st->kind, st->region, at, st->yaw, WHITE);
+    if (st->kind != SITE_ANCIENT_TOWN || !props || idx < 0 || idx >= SITES_MAX) return;
+    const InvItem *wall = inventory_find(props->inv, "estructura.ruina.muro");
+    uint32_t seed = bk_variant_seed(BK_RUIN_TOWN, st->region, voxs_site_variant(at));
+    if (!wall) return;
+    if (!g_standing[idx].done || g_standing[idx].seed != seed) { // (otro mundo: la misma ranura, otra planta)
+        AncientPlan plan;
+        ancient_plan(&plan, seed);
+        g_standing[idx].done = true, g_standing[idx].seed = seed, g_standing[idx].n = plan.standing_count;
+        memcpy(g_standing[idx].st, plan.standing, sizeof(plan.standing));
+    }
+    float c = cosf(st->yaw), s = sinf(st->yaw);
+    for (int i = 0; i < g_standing[idx].n; i++) {
+        const AncStanding *sp = &g_standing[idx].st[i];
+        Vector3 pos = { at.x + sp->x * c + sp->z * s, at.y, at.z - sp->x * s + sp->z * c }; // como gira DrawModelEx
+        props_draw_item(props, wall, pos, st->yaw + sp->yaw, 1.0f);
+    }
 }
 
-void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, float time) {
+void wd_draw_world(const GameActions *ga, Props *props, const Terrain *t, const Player *p, float time) {
     g_fires_out = ga->fires_out; // la lluvia apaga tambien los fuegos de los demas
     const World *w = t->world;
     for (int i = 0; i < w->cave_count; i++)
@@ -468,5 +495,5 @@ void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, flo
     for (int i = 0; i < w->tribe_count; i++)
         if (dist_xz(w->tribes[i].x, w->tribes[i].z, p->pos.x, p->pos.z) < TRIBE_DRAW) draw_tribe(t, &w->tribes[i], i, time);
     for (int i = 0; i < w->site_count; i++)
-        if (dist_xz(w->sites[i].x, w->sites[i].z, p->pos.x, p->pos.z) < SITE_DRAW) draw_site(t, &w->sites[i], time);
+        if (dist_xz(w->sites[i].x, w->sites[i].z, p->pos.x, p->pos.z) < SITE_DRAW) draw_site(props, t, &w->sites[i], i);
 }

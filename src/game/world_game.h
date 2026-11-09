@@ -14,14 +14,17 @@
 #include "game/actions_game.h"
 #include "game/combat_game.h"
 #include "sim/memory_map.h"
+#include "world/props.h"
 
 //  - las tribus nomadas: las rivales salen al paso con sus jinetes; las neutrales observan;
 //    las amigables comparten noticias (marcan en el mapa una estructura cercana);
 //  - las estructuras (kurganes, balbales, piedras de ciervos, fortalezas, ciudades enterradas,
-//    petroglifos, caravasares, torres, ovoos, pozos, embarcaderos): al verlas, al mapa.
+//    petroglifos, caravasares, torres, ovoos, pozos, embarcaderos y los vestigios de los asentamientos
+//    antiguos): al verlas, al mapa.
 void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, MemoryMap *mem, char *log, size_t len);
-// Asentamientos y guaridas cercanos. Dentro de BeginMode3D.
-void wd_draw_world(const GameActions *ga, const Terrain *t, const Player *p, float time);
+// Asentamientos y guaridas cercanos. Dentro de BeginMode3D. props: con que se dibujan los tramos de pie de
+// los asentamientos antiguos (el muro en ruinas del inventario); NULL, sin ellos.
+void wd_draw_world(const GameActions *ga, Props *props, const Terrain *t, const Player *p, float time);
 // Las antorchas de la boca de las cuevas habitadas cercanas (la luz de noche, como ga_lights). Devuelve cuantas.
 int wd_cave_lights(const Terrain *t, const Player *p, Vector3 *pos, float *radius, int max);
 // El peñasco de la boca de una cueva es roca: quien camina afuera no lo atraviesa (por el tunel, si).

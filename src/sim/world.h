@@ -145,6 +145,8 @@ typedef enum {
     SITE_OVOO,         // altar de piedras con cintas (en uso)
     SITE_WELL,         // pozo (en uso)
     SITE_HARBOR,       // embarcadero de la costa (en uso)
+    SITE_ANCIENT_TOWN, // vestigios de un asentamiento antiguo (src/sim/ancient.h): la planta de cuartos, casi a ras
+                       // del suelo; van al final del mundo, con su propio azar (lo de antes queda igual)
     SITE_KINDS
 } SiteKind;
 #define SITES_MAX 64
@@ -184,6 +186,7 @@ typedef struct {
 #define WORLD_FOOT_VILLAGE 24.0f // el anillo de casas de la aldea
 #define WORLD_FOOT_TRIBE 20.0f   // el corro de casas o yurtas de una tribu
 #define WORLD_FOOT_SITE 18.0f    // una estructura (la fortaleza en ruinas y la ciudad enterrada, las mas grandes)
+#define WORLD_FOOT_TOWN 31.5f    // los vestigios de un asentamiento antiguo: hasta la esquina de la planta de 44 m (src/sim/ancient.h)
 #define WORLD_FOOT_DEN 8.0f      // una guarida
 // La linea de nieve del verano, en m sobre el llano del campamento (src/sim/climate.c: la mas alta
 // del año): mas arriba hay nieve todo el año y glaciar. Los pueblos y las tribus, siempre por debajo
