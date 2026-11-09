@@ -333,6 +333,39 @@ def test_pino_simetrico():
     assert estructuras.triangulos(grid) < 8000
 
 
+def test_piedra_tallada():
+    """La piedra-ciervo: los surcos de una cara salen de lo mas oscuro que su alrededor (sin el granulado ni el borde,
+    y sin rellenar los contornos); un trazo en diagonal queda seguido; la del repo es una losa (corte recto) con los
+    ciervos tallados una celda en el frente, y bajo el aviso de Android."""
+    rng = np.random.default_rng(3)
+    h, w = 300, 160
+    rgb = 120 + rng.integers(-14, 15, size=(h, w, 1)) * np.ones((1, 1, 3))  # piedra granulada
+    m = np.zeros((h, w), bool)
+    m[10:290, 10:150] = True
+    rgb[80:86, 40:120] -= 60  # un rectangulo dibujado con un surco de 6 px (los de la hoja: 6 a 10)
+    rgb[160:166, 40:120] -= 60
+    rgb[80:166, 40:46] -= 60
+    rgb[80:166, 114:120] -= 60
+    s = estructuras.surcos(m, rgb.astype(np.float32), minimo=50)
+    assert s[83, 80] and s[120, 43] and not s[120, 80], (s[83, 80], s[120, 43], s[120, 80])  # el trazo, no el relleno
+    assert s[200:, :].sum() == 0 and s[:20, :].sum() == 0  # ni el granulado ni el borde
+    d = np.zeros((5, 5), bool)
+    d[0, 0] = d[1, 1] = d[2, 2] = True
+    seguido = estructuras._trazo_seguido(d)
+    assert seguido[1, 0] and seguido[2, 1]  # cada escalon, unido por el costado
+    g, _ = vox.leer(os.path.join(HERE, "..", "..", "assets", "models", "mapa", "hito", "piedra_ciervo.vox"))
+    f = g > 0
+    sx, sy, sz = f.shape
+    assert sz == 75 and sy <= 12  # 3 m en celdas de 4 cm; una losa delgada
+    medio = f[:, :, sz // 2]
+    zs = np.flatnonzero(medio.any(axis=1))
+    assert medio[zs[0] + 2:zs[-1] - 1, 2:sy - 2].all()  # de corte recto (no una lente)
+    frente = np.argmax(f, axis=1)  # la primera celda de cada columna, de adelante hacia atras
+    hundidas = ((frente == 1) & f.any(axis=1)).sum()
+    assert hundidas > 150, hundidas  # los ciervos, tallados una celda
+    assert estructuras.triangulos(g) < 8000
+
+
 def test_triangulos_juntos():
     """modelos.tris_vox cuenta lo que arma el juego (src/sim/voxel.c: las caras juntas y la base en el suelo): la
     figura de prueba de tests/test_main.c (merge_fixture) da los mismos triangulos que alla (MERGE_FIXTURE_TRIS)."""
@@ -377,6 +410,7 @@ def main():
         ("test_templo_colores", test_templo_colores),
         ("test_forja_forma", test_forja_forma),
         ("test_pino_simetrico", test_pino_simetrico),
+        ("test_piedra_tallada", test_piedra_tallada),
         ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0

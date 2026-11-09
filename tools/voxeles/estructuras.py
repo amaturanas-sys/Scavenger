@@ -287,7 +287,96 @@ def pino(vistas=None):
     return o
 
 
-RECETAS = {"templo": templo, "forja": forja, "pino": pino}
+def surcos(mascara, rgb, ventana=41, umbral=8.0, minimo=400):  # noqa: C901
+    """Lo tallado de una cara de la hoja: lo que queda mas oscuro que su alrededor. La mediana de 9 px borra el
+    granulado del dibujo sin correr los bordes; el alrededor, el promedio de una caja de `ventana` px; despues se
+    cierran los cortes de los trazos y se tiran las manchas de menos de `minimo` px. Los contornos no se rellenan:
+    en las piedras-ciervo lo tallado es el surco, no el cuerpo del animal."""
+    from scipy import ndimage
+
+    lum = rgb.mean(axis=2)
+    nucleo = ndimage.binary_erosion(mascara, iterations=10)  # el borde de la piedra no es un surco
+    lisa = ndimage.median_filter(np.where(mascara, lum, lum[mascara].mean()), size=9)
+    s = ((ndimage.uniform_filter(lisa, ventana) - lisa) > umbral) & nucleo
+    s = ndimage.binary_closing(s, iterations=2) & nucleo
+    lab, n = ndimage.label(s)
+    if n == 0:
+        return s
+    area = ndimage.sum(np.ones_like(lab), lab, range(1, n + 1))
+    return np.isin(lab, np.flatnonzero(area >= minimo) + 1)
+
+
+def _a_celdas(m, ancho, alto, cuanto=0.5):
+    """Una mascara de la hoja (filas de arriba abajo) a celdas (ancho x alto, y = 0 abajo): la celda va si lo que
+    cubre tiene al menos `cuanto` de la mascara."""
+    from PIL import Image
+
+    f = np.asarray(Image.fromarray(m.astype(np.float32), "F").resize((ancho, alto), Image.BOX))
+    return (f >= cuanto)[::-1].T  # (ancho, alto)
+
+
+def _trazo_seguido(m):
+    """Un trazo de celdas en diagonal queda punteado (dos celdas que solo se tocan por la esquina no hacen un surco):
+    se agrega la celda de al lado que las une."""
+    m = m.copy()
+    a, b = m.shape
+    for z in range(a - 1):
+        for y in range(b):
+            for dy in (1, -1):
+                y2 = y + dy
+                if 0 <= y2 < b and m[z, y] and m[z + 1, y2] and not m[z + 1, y] and not m[z, y2]:
+                    m[z + 1, y] = True
+    return m
+
+
+def losa_tallada(vistas, alto_m, celda, piedra=(120, 108, 96), grano=4):
+    """Una estela de piedra desde su hoja: la silueta del frente y la del lado (corte recto: una losa), los surcos del
+    frente tallados una celda (el dibujo) y las grietas de la espalda, otra. Sin hoja, una losa lisa de 0.6 x 0.4."""
+    H = int(round(alto_m / celda))
+    if not vistas:
+        W, D = int(round(0.6 / celda)), int(round(0.4 / celda))
+        o = Obra(D, W, H, celda=celda)
+        o.estilo.update({"piedra": (grano, grano, piedra, "lado"), "surco": (1, 1, piedra, "frente"), "grieta": (1, 1, piedra, "espalda")})
+        o.caja("piedra", (0, D - 1), (0, W - 1), (0, H - 1))
+        return o
+    (fm, fc), (sm, sc), (bm, bc) = vistas
+    W = int(round(fm.shape[1] / fm.shape[0] * H))
+    D = int(round(sm.shape[1] / sm.shape[0] * H))
+    frente = _a_celdas(fm, W, H)[::-1]  # de frente, +Z queda a la izquierda de la imagen: z = 0 es la derecha
+    lado = _a_celdas(sm, D, H)  # el frente a la izquierda: u = 0
+    o = Obra(D, W, H, celda=celda)
+    o.estilo.update({
+        "piedra": (grano, grano, piedra, "lado"),  # manchas de la piedra de `grano` celdas (menos, y no se juntan)
+        "surco": (1, 1, tuple(int(v * 0.6) for v in piedra), "frente"),
+        "grieta": (1, 1, tuple(int(v * 0.65) for v in piedra), "espalda"),
+    })
+    lleno = frente[None, :, :] & lado[:, None, :]
+    o.parte[lleno] = o.id("piedra")
+    # Los surcos del frente: la celda de adelante de cada columna, afuera; la de atras queda como el fondo del surco.
+    tallado = _trazo_seguido(_a_celdas(surcos(fm, fc), W, H, 0.25)[::-1])
+    grietas = _trazo_seguido(_a_celdas(surcos(bm, bc, umbral=10.0, minimo=600), W, H, 0.25))  # de espalda, +Z a la derecha
+    for z, y in zip(*np.nonzero(tallado)):
+        us = np.flatnonzero(o.parte[:, z, y])
+        if len(us) > 2:
+            o.parte[us[0], z, y] = 0
+            o.parte[us[1], z, y] = o.id("surco")
+    for z, y in zip(*np.nonzero(grietas)):
+        us = np.flatnonzero(o.parte[:, z, y])
+        if len(us) > 2 and o.parte[us[-1], z, y] == o.id("piedra"):
+            o.parte[us[-1], z, y] = 0
+            o.parte[us[-2], z, y] = o.id("grieta")
+    return o
+
+
+def piedra_ciervo(vistas=None):
+    """mapa.hito.piedra_ciervo: la estela con tres ciervos de la hoja, 3 m de alto (el inventario) en celdas de 4 cm.
+    Una losa de corte recto (antes salia de seccion eliptica: una lente vista de arriba), con los tres ciervos y
+    sus astas tallados como surcos de una celda en el frente, y las grietas de la espalda. El ancho y el grueso, los
+    de la hoja."""
+    return losa_tallada(vistas, 3.0, 0.04)
+
+
+RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
 # pixeles de la vista recortada. La hoja del templo exagera lo alto en el frente (los pilonos miden 340 px de
@@ -299,6 +388,7 @@ ALTURAS = {
         "espalda": ([0, 6, 12, 18, 21, 23, 25, 28], [0, 69, 138, 198, 228, 255, 268, 304], 305),
     },
     "forja": {v: ([0, 25], [0, 511], 511) for v in ("frente", "lado", "espalda")},  # las tres vistas, a la misma escala
+    "piedra_ciervo": {v: ([0, 75], [0, a], a) for v, a in (("frente", 830), ("lado", 836), ("espalda", 829))},
 }
 
 
