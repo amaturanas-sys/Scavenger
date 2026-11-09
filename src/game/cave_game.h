@@ -43,8 +43,9 @@ void cv_reset(void);
 // cam_yaw: el de la camara (al entrar mira adentro; al salir, afuera).
 void cv_update(GameActions *ga, Combat *cb, Troop *troop, const Props *props, Player *p, const Terrain *t, PlayerInput in,
                float *cam_yaw, float world_time, bool input_ok, float dt, char *log, size_t len);
-// La camara adentro (yaw, pitch y dist: los de la camara de siempre), sin salirse de la roca.
-void cv_camera(const Terrain *t, Camera3D *cam, float yaw, float pitch, float dist);
+// La camara adentro (yaw, pitch, dist y lift: los de la camara de afuera, src/sim/camview.h), sin salirse
+// de la roca.
+void cv_camera(const Terrain *t, Camera3D *cam, float yaw, float pitch, float dist, float lift);
 // Lo de adentro, entre BeginMode3D y EndMode3D: la roca, lo que hay, los prisioneros y el jugador, con su luz.
 void cv_draw(GameActions *ga, const Combat *cb, Props *props, const Terrain *t, float world_time, float time);
 // El plano de la cueva (en lugar del minimapa: centro cx, cy y radio r) y lo que hace F.

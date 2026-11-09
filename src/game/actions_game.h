@@ -20,6 +20,7 @@
 #include "sim/animals.h"
 #include "sim/apparel.h"
 #include "sim/army.h"
+#include "sim/body.h"
 #include "sim/water.h"
 #include "sim/economy.h"
 #include "sim/memory_map.h"
@@ -263,7 +264,12 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
 void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time, bool night);
 // Lo que el jugador tiene en las manos (las armas, el escudo, la antorcha encendida, lo que carga); ga_draw_world
 // lo dibuja, y adentro de una cueva src/game/cave_game.c, tenido con la luz del lugar (light; la llama, no).
-void ga_draw_held(const GameActions *ga, const Player *p, float time, Color light);
+void ga_draw_held(const GameActions *ga, Props *props, const Player *p, float time, Color light);
+// Lo empuñado y lo guardado sobre el cuerpo articulado del jugador (sin modelo del protagonista:
+// cb_draw_player_body): el arma en la mano, siguiendo el antebrazo al andar y al golpear; guardada, al
+// cinto; el escudo guardado, a la espalda (en el brazo lo pone combat_game.c). Con modelo, el modelo; si
+// no, una vara de su largo.
+void ga_draw_held_body(const GameActions *ga, Props *props, const BodyPose *b, Vector3 pos, float yaw, float time, Color light);
 // Dibuja al jugador con el modelo del protagonista y su animacion, si ya fue
 // importado. Devuelve false si no (el juego dibuja el marcador de siempre).
 bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time);
@@ -287,7 +293,6 @@ const char *ga_best_weapon(const GameActions *ga, const char *id);
 void ga_quick_request_grip(int k);
 void ga_quick_request_wield(const char *id); // un arma o un escudo, a su mano (si ya esta en ella, lo guarda o lo saca)
 void ga_quick_request_action(ActionId a);
-void ga_quick_request_menu(void);
 void ga_quick_request_swap(void); // pasar el arma empuñada a la otra mano
 void ga_quick_request_craft(CraftId c); // empezar una receta (la prueba --forja)
 // La orden a la escolta (SquadOrder: Y+1..3 o las casillas del HUD), con su aviso.

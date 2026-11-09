@@ -13,6 +13,7 @@
 #include <stdbool.h>
 
 #define KM_KEY_SPACE 32
+#define KM_KEY_ENTER 257 // (el de la parte numerica tambien: src/game/input.c)
 #define KM_KEY_TAB 258
 
 // Modificadores.
@@ -31,14 +32,16 @@ typedef enum {
     KA_CROUCH, // X: agacharse
     KA_JUMP,   // Espacio
     // El mundo.
-    KA_INTERACT,    // F: hablar, tomar, botin, animales, pozo, horno (Mayus+F: tomar todo o sacrificar)
+    KA_INTERACT,    // F: lo que se hace con las cosas: tomar, botin, animales, pozo, horno, rescatar, saquear
+                    // (Mayus+F: tomar todo o sacrificar). Hablar es Enter (KA_TALK).
     KA_GRAB,        // G: agarrar por la espalda (rehen o escudo humano) y soltarlo
     KA_BACKPACK,    // Mayus+G: dejar o recoger la mochila
     KA_LIGHT_ARROW, // Mayus+V: encender la flecha junto a un fuego
     KA_THROW,       // T: lanzar lo que se lleva en brazos
     KA_MOUNT,       // R: montar y desmontar
     KA_BANDAGE,     // B: vendar
-    KA_DRINK,       // N: beber (Mayus+N: con hierbas)
+    KA_DRINK,       // sin tecla (era N): beber y llenar el odre van en su casilla de la barra rapida, y las hierbas
+                    // contra la fiebre, en B (vendar). N es la camara (KA_CAMERA).
     KA_ESCORT,      // Y: escolta
     KA_DISPATCH,    // Mayus+Y: despachar a la tribu (viajes, mensajes)
     KA_TARGET_LEFT, // Ctrl+Q: objetivo anterior
@@ -48,6 +51,9 @@ typedef enum {
     KA_INVENTORY,   // I: el inventario (y, con el cursor y un numero, la barra rapida)
     KA_EQUIPMENT,   // P
     KA_CARD,        // U: la ficha del gran guerrero
+    KA_TALK,        // Enter: hablar (el guardian, el druida, el orfebre, los prisioneros, la guardia de una puerta) y
+                    // comerciar: lo que abre un dialogo
+    KA_CAMERA,      // N: la vista de la camara, cerca, media o lejos (Mayus+N: la anterior; src/sim/camview.h)
     KA_COUNT
 } KeyAction;
 

@@ -50,6 +50,12 @@ bool wg_water_near(const Terrain *t, float x, float z) {
     return false;
 }
 
+// La tecla de la casilla de la barra rapida con el odre ("3" de serie), o NULL si no esta en la barra.
+static const char *odre_key(void) {
+    int k = hud_slot_with("odre");
+    return k >= 0 ? TextFormat("%d", hud_slot_number(k)) : NULL;
+}
+
 // Lo mas seguro primero; la cruda al final (con riesgo).
 static const DrinkKind ORDER[] = { DRINK_BOILED, DRINK_WATERED_WINE, DRINK_AIRAG, DRINK_BEER, DRINK_MILK, DRINK_WINE, DRINK_RAW };
 
@@ -88,27 +94,27 @@ static void drink(GameActions *ga, const Props *props, Player *p, const Hazards 
         snprintf(log, len, "%s", T("Bebes del agua que corre por el suelo. Puede traer espíritus malditos..."));
         return;
     }
-    snprintf(log, len, "%s", T("No tienes nada que beber: llena el odre en la orilla (L) o bebe del río (N, mirando al agua)."));
+    const char *key = odre_key();
+    if (key) snprintf(log, len, T("No tienes nada que beber: llena el odre en la orilla o en un pozo (%s, mirando al agua)."), key);
+    else snprintf(log, len, "%s", T("No tienes nada que beber: pon el odre en la barra rápida y llénalo en la orilla o en un pozo."));
 }
 
-static void herbs(GameActions *ga, const Props *props, const Player *p, char *log, size_t len) {
-    if (ga->hydro.curse <= 0.0f) {
-        snprintf(log, len, "%s", T("No tienes los espíritus del agua: guarda las hierbas."));
-        return;
-    }
+bool wg_take_herbs(GameActions *ga, const Props *props, const Player *p, char *log, size_t len) {
+    if (ga->hydro.curse <= 0.0f) return false; // sin la fiebre del agua, las hierbas son para vendar
     const char *id = ig_count(ga, props, p, "utileria.consumible.hierbas") > 0 ? "utileria.consumible.hierbas"
                      : ig_count(ga, props, p, "utileria.consumible.unguento") > 0 ? "utileria.consumible.unguento"
                                                                                    : NULL;
     if (!id) {
         snprintf(log, len, "%s", T("No tienes hierbas para echar a los espíritus. Descansa y bebe agua hervida."));
-        return;
+        return true;
     }
     ig_use(ga, props, p, id, 1);
     hydration_herbs(&ga->hydro);
     snprintf(log, len, "%s", ga->hydro.curse > 0.0f ? T("Las hierbas alivian la fiebre.") : T("Las hierbas echan a los espíritus malditos."));
+    return true;
 }
 
-static bool g_drink_req; // beber pedido desde el HUD (un toque)
+static bool g_drink_req; // beber, pedido por una casilla de la barra rapida (vino, airag, agua...)
 void wg_request_drink(void) { g_drink_req = true; }
 static bool g_odre_req; // el odre de la barra rapida: junto al agua o a un pozo lo llena, si no bebe
 void wg_request_odre(void) { g_odre_req = true; }
@@ -118,23 +124,23 @@ void wg_update(GameActions *ga, Troop *troop, Player *p, const Props *props, con
     bool was_sick = hydration_sick(&ga->hydro);
     ThirstLevel was_thirst = thirst_level(&ga->hydro);
     hydration_update(&ga->hydro, heat_thirst_scale(&hz->heat) * (p->stance == STANCE_RUN && p->moving ? 1.3f : 1.0f), !p->moving, dt);
-    bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
-    if (input_ok && (input_action_pressed(KA_DRINK) || g_drink_req)) {
-        if (shift && !g_drink_req) herbs(ga, props, p, log, len);
-        else drink(ga, props, p, hz, c, log, len);
-    }
+    if (input_ok && g_drink_req) drink(ga, props, p, hz, c, log, len);
     // La casilla del odre (las hojas: «3 para beber; 3 junto a un punto de agua, llenar»): en la orilla
-    // mirando al agua o junto a un pozo, la accion de llenarlo (con su tiempo); si no, beber.
+    // mirando al agua o junto a un pozo, la accion de llenarlo (con su tiempo) si queda lugar en los
+    // odres; si no, beber (sin odre, del rio o del pozo).
     if (input_ok && g_odre_req) {
-        if (!ga_in_cave() && ga->terrain && (wg_at_well(ga->terrain, p->pos.x, p->pos.z) || gems_water_ahead(ga->terrain, p))) // en una cueva, bebe
-            ga_quick_request_action(ACTION_FILL_WATER);
+        bool water = !ga_in_cave() && ga->terrain && (wg_at_well(ga->terrain, p->pos.x, p->pos.z) || gems_water_ahead(ga->terrain, p)); // en una cueva, bebe
+        if (water && wg_water_room(ga, props, p) > 0) ga_quick_request_action(ACTION_FILL_WATER);
         else drink(ga, props, p, hz, c, log, len);
     }
     g_drink_req = g_odre_req = false;
     if (!was_sick && hydration_sick(&ga->hydro))
-        snprintf(log, len, "%s", T("Fiebre y retortijones: espíritus malditos del agua. Toma hierbas (Mayús+N), descansa y bebe agua hervida."));
-    else if (thirst_level(&ga->hydro) > was_thirst && thirst_level(&ga->hydro) >= THIRST_THIRSTY)
-        snprintf(log, len, T("Estás %s: bebe (N)."), thirst_name(thirst_level(&ga->hydro)));
+        snprintf(log, len, "%s", T("Fiebre y retortijones: espíritus malditos del agua. Toma hierbas (B), descansa y bebe agua hervida."));
+    else if (thirst_level(&ga->hydro) > was_thirst && thirst_level(&ga->hydro) >= THIRST_THIRSTY) {
+        const char *key = odre_key();
+        if (key) snprintf(log, len, T("Estás %s: bebe con el odre (%s)."), thirst_name(thirst_level(&ga->hydro)), key);
+        else snprintf(log, len, T("Estás %s: pon el odre en la barra rápida para beber."), thirst_name(thirst_level(&ga->hydro)));
+    }
     // Borracho: se tambalea al andar.
     float clumsy = hydration_clumsy(&ga->hydro);
     if (clumsy > 0.2f && p->moving && ga->mounted < 0) {

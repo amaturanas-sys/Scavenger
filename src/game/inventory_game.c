@@ -786,8 +786,6 @@ static Rectangle equip_item_rect(const GameActions *ga, int i) {
     return ga->equip_tab == TAB_ARMOR ? equip_rect(i) : ga->equip_tab == TAB_WEAR ? wear_rect(i) : ga->equip_tab == TAB_JEWELS ? jewel_rect(i) : node_rect(i);
 }
 
-static bool g_pack_req; // la mochila pedida desde la columna del HUD
-void ig_request_pack(void) { g_pack_req = true; }
 
 void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool input_ok, char *log, size_t len) {
     sync_packs(ga, log, len);
@@ -795,8 +793,7 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
         if (ga->loot_age[i] >= 0.0f && (ga->loot_age[i] += GetFrameTime()) > LOOT_SECONDS) ga->loot_age[i] = -1.0f;
     pack_follow(ga, props);
     // Mayus+G: dejar o recoger la mochila (G sola agarra: src/game/combat_game.c).
-    bool pack = input_action_pressed(KA_BACKPACK) || g_pack_req;
-    g_pack_req = false;
+    bool pack = input_action_pressed(KA_BACKPACK);
     if (input_ok && pack && !ga->inv_open && !ga->equip_open) pack_toggle(ga, props, p, log, len);
     if (input_ok && input_action_pressed(KA_INVENTORY) && !ga->equip_open) ga->inv_open = !ga->inv_open;
     if (input_ok && input_action_pressed(KA_EQUIPMENT) && !ga->inv_open) ga->equip_open = !ga->equip_open;
@@ -880,7 +877,7 @@ void ig_update(GameActions *ga, Combat *cb, Props *props, const Player *p, bool 
             if (ga->equip_tab == TAB_ARMOR) equip_armor(ga, cb, props, p, *cur, take, log, len);
             else if (ga->equip_tab == TAB_WEAR) equip_garment(ga, props, p, *cur, take, log, len);
             else if (ga->equip_tab == TAB_JEWELS) equip_jewel(ga, props, p, *cur, take, log, len);
-            else snprintf(log, len, "%s", take ? T("Un tatuaje no se puede quitar.") : T("Los tatuajes los hace un druida: háblale (F)."));
+            else snprintf(log, len, "%s", take ? T("Un tatuaje no se puede quitar.") : T("Los tatuajes los hace un druida: háblale (Enter)."));
         }
     }
 }

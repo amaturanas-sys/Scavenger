@@ -18,8 +18,10 @@
 
 #include "game/actions_game.h"
 
-// F: hablar con el guardian mas cercano (a menos de 3 m). true si habia uno.
+// Enter: hablar con el guardian mas cercano (a menos de 3 m). true si habia uno.
 bool cg_try_talk(GameActions *ga, const Troop *troop, const Player *p);
+// El guardian al alcance de la voz (su indice en la tropa), o -1: la pista «Enter: hablar».
+int cg_talk_target(const GameActions *ga, const Troop *troop, const Player *p);
 // Una estructura basica quedo en (x, z): si esta lejos de todo campamento, se ofrece fundar uno.
 void cg_basic_structure(GameActions *ga, float x, float z);
 // now: tiempo de juego (s); de el salen el dia, la estacion y la noche. mem: el mapa de memoria, donde

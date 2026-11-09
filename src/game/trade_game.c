@@ -59,7 +59,7 @@ static int g_nroutes;
 static const World *g_routes_world;
 static uint32_t g_routes_seed; // world_for_seed reusa sus huecos: el mismo puntero puede ser otro mundo
 static Caravan g_car[CARAVANS_MAX];
-static bool g_talk_req; // F pidio comerciar (lo atiende td_update)
+static bool g_talk_req; // Enter pidio comerciar o F saquear (lo atiende td_update)
 static char g_hint[96];  // «F: comerciar...» al alcance
 
 static float dist_xz(float ax, float az, float bx, float bz) { return sqrtf((ax - bx) * (ax - bx) + (az - bz) * (az - bz)); }
@@ -154,29 +154,42 @@ static bool loot_at_hand(const GameActions *ga, const Player *p) {
     return false;
 }
 
-bool td_try_talk(GameActions *ga, const Terrain *t, const Player *p) {
-    if (!t || !t->world || loot_at_hand(ga, p)) return false; // el botin a tus pies se toma primero
+static bool market_request(GameActions *ga, const Terrain *t, const Player *p, bool talk) {
+    if (!t || !t->world) return false;
     ensure_routes(t->world);
     Market m;
-    if (!market_near(ga, t, p, &m)) return false;
+    int what = market_near(ga, t, p, &m);
+    if (talk ? what != 1 : what != 2 && what != 3) return false;
     g_talk_req = true;
     return true;
 }
 
-// La pista de F: con quien se comercia (o que se saquea) aqui.
+bool td_try_talk(GameActions *ga, const Terrain *t, const Player *p) { return market_request(ga, t, p, true); }
+bool td_can_talk(const GameActions *ga, const Terrain *t, const Player *p) {
+    if (!t || !t->world) return false;
+    ensure_routes(t->world);
+    Market m;
+    return market_near(ga, t, p, &m) == 1;
+}
+bool td_try_loot(GameActions *ga, const Terrain *t, const Player *p) {
+    return !loot_at_hand(ga, p) && market_request(ga, t, p, false); // el botin a tus pies se toma primero
+}
+
+// La pista: con quien se comercia o se habla (Enter) o que se saquea (F) aqui.
 static void update_hint(const GameActions *ga, const Terrain *t, const Player *p) {
     const World *w = t->world;
     g_hint[0] = '\0';
     Market m;
-    int what = ga->dlg.open || ga->menu_open || ga->inv_open || loot_at_hand(ga, p) || ct_hint()[0] ? 0 : market_near(ga, t, p, &m);
+    int what = ga->dlg.open || ga->menu_open || ga->inv_open || ct_hint()[0] ? 0 : market_near(ga, t, p, &m);
+    if (what >= 2 && loot_at_hand(ga, p)) what = 0; // F toma primero el botin a tus pies
     if (what == 3) snprintf(g_hint, sizeof(g_hint), T("F: saquear los campos de %s"), w->settlements[m.idx].name);
     else if (what == 2) snprintf(g_hint, sizeof(g_hint), T("F: saquear el campamento de los %s"), w->tribes[m.idx].name);
-    else if (what == 1 && m.kind == MARKET_TRIBE) snprintf(g_hint, sizeof(g_hint), T("F: comerciar con los %s"), w->tribes[m.idx].name);
+    else if (what == 1 && m.kind == MARKET_TRIBE) snprintf(g_hint, sizeof(g_hint), T("Enter: comerciar con los %s"), w->tribes[m.idx].name);
     else if (what == 1 && m.kind != MARKET_CARAVAN && ct_at_war(ga, t, ga->troop_ref, m.idx))
-        snprintf(g_hint, sizeof(g_hint), T("F: hablar con la guardia de %s"), w->settlements[m.idx].name);
-    else if (what == 1 && m.kind != MARKET_CARAVAN) snprintf(g_hint, sizeof(g_hint), T("F: comerciar en %s"), w->settlements[m.idx].name);
+        snprintf(g_hint, sizeof(g_hint), T("Enter: hablar con la guardia de %s"), w->settlements[m.idx].name);
+    else if (what == 1 && m.kind != MARKET_CARAVAN) snprintf(g_hint, sizeof(g_hint), T("Enter: comerciar en %s"), w->settlements[m.idx].name);
     else if (what == 1)
-        snprintf(g_hint, sizeof(g_hint), "%s", m.idx >= 100 ? T("F: comerciar en el caravasar") : T("F: comerciar con la caravana (o asaltarla)"));
+        snprintf(g_hint, sizeof(g_hint), "%s", m.idx >= 100 ? T("Enter: comerciar en el caravasar") : T("Enter: comerciar con la caravana (o asaltarla)"));
 }
 
 void td_draw_hud(int w, int h) {
@@ -769,7 +782,7 @@ void td_test(GameActions *ga, Combat *cb, Troop *troop, const Props *props, cons
         g_talk_req = true;
         return;
     }
-    if (!strcmp(what, "cerca")) return; // solo al alcance de F (la pista)
+    if (!strcmp(what, "cerca")) return; // solo al alcance de Enter (la pista)
     // Algo que vender, y plata para comprar.
     static const struct {
         const char *id;

@@ -60,6 +60,7 @@ add_library(estepa_sim STATIC
   src/sim/anim_index.c
   src/sim/save_format.c
   src/sim/keymap.c
+  src/sim/camview.c
   src/sim/targeting.c
   src/sim/stealth.c
   src/sim/squad.c

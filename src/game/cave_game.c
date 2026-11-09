@@ -200,7 +200,7 @@ static void hint_for(const GameActions *ga, const Cave *c, int i) {
     case COBJ_CELL: {
         char who[32];
         snprintf(who, sizeof(who), "%s", T(cave_prisoner_name((PrisonerKind)((o->prisoner - 1) % PRISONER_KINDS))));
-        snprintf(g_hint, sizeof(g_hint), T("F: hablar con el prisionero (un %s)"), who);
+        snprintf(g_hint, sizeof(g_hint), T("Enter: hablar con el prisionero (un %s)"), who);
         break;
     }
     case COBJ_TORCH:
@@ -496,14 +496,19 @@ void cv_update(GameActions *ga, Combat *cb, Troop *troop, const Props *props, Pl
     g_obj = nearest_object(ga, c);
     hint_for(ga, c, g_obj);
     bool tap = g_hint[0] && ui_click(g_hint_rect);
-    if (g_obj >= 0 && input_ok && ga->doing < 0 && !ga->dlg.open && (input_action_pressed(KA_INTERACT) || tap))
+    bool cell = g_obj >= 0 && c->objects[g_obj].kind == COBJ_CELL; // al prisionero se le habla (Enter); lo demas, F
+    if (cell && input_ok && !ga->dlg.open && input_action_pressed(KA_INTERACT))
+        snprintf(log, len, "%s", T("F es para las cosas: para hablar con el prisionero, Enter."));
+    if (g_obj >= 0 && input_ok && ga->doing < 0 && !ga->dlg.open && (input_action_pressed(cell ? KA_TALK : KA_INTERACT) || tap)) {
+        if (cell) input_use_enter(); // ese Enter no elige tambien «Romper las cadenas»
         interact(ga, troop, props, p, c, g_obj, log, len);
+    }
 }
 
-void cv_camera(const Terrain *t, Camera3D *cam, float yaw, float pitch, float dist) {
+void cv_camera(const Terrain *t, Camera3D *cam, float yaw, float pitch, float dist, float lift) {
     const Cave *c = cave_at(t, g_cave);
     if (!c) return;
-    Vector3 target = { g_in.pos.x, g_in.pos.y + player_eye_height(&g_in), g_in.pos.z };
+    Vector3 target = { g_in.pos.x, g_in.pos.y + player_eye_height(&g_in) + lift, g_in.pos.z };
     Vector3 back = { -sinf(yaw) * cosf(pitch), sinf(pitch), -cosf(yaw) * cosf(pitch) };
     float want = fminf(dist, 5.5f), ok = 0.5f;
     // Hacia atras hasta la roca: la camara no sale de la cueva (ni por el techo ni por el suelo).
@@ -534,9 +539,9 @@ void cv_draw(GameActions *ga, const Combat *cb, Props *props, const Terrain *t, 
     // El jugador, con la luz de donde esta (la llama de su antorcha, no).
     Color here = cs_shade(WHITE, (Vector3){ g_in.pos.x, g_in.pos.y + 1.0f, g_in.pos.z });
     props_set_tint(here);
-    if (!ga_draw_player(ga, props, &g_in, time)) cb_draw_player_body(cb, ga, &g_in, time, here);
+    if (!ga_draw_player(ga, props, &g_in, time)) cb_draw_player_body(cb, ga, props, &g_in, time, here);
     props_set_tint(WHITE);
-    ga_draw_held(ga, &g_in, time, here);
+    ga_draw_held(ga, props, &g_in, time, here);
     rlDrawRenderBatchActive();
     rlEnableBackfaceCulling();
     hearth_draw_flames(time, 0.0f);

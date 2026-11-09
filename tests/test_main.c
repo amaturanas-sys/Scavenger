@@ -34,6 +34,7 @@
 #include "../src/sim/rng.h"
 #include "../src/sim/save_format.h"
 #include "../src/sim/keymap.h"
+#include "../src/sim/camview.h"
 #include "../src/sim/targeting.h"
 #include "../src/sim/stealth.h"
 #include "../src/sim/squad.h"
@@ -3531,9 +3532,14 @@ static void test_keymap_four_buttons(void) {
     CHECK(keymap_matches(KA_INVENTORY, 'I', 0) && !keymap_matches(KA_INVENTORY, KM_KEY_TAB, 0));
     CHECK(keymap_matches(KA_MENU, KM_KEY_TAB, 0) && !keymap_matches(KA_MENU, 'L', 0));
     CHECK(keymap_matches(KA_TARGET, 'O', 0) && keymap_matches(KA_TARGET, 'O', KM_SHIFT) && !keymap_matches(KA_TARGET, KM_KEY_TAB, 0));
-    // El resto del mapa: X agacharse, C sigilo, F todo, Mayus+G mochila, Mayus+V flecha, U ficha.
+    // El resto del mapa: X agacharse, C sigilo, F las cosas, Enter hablar, N la camara, Mayus+G mochila,
+    // Mayus+V flecha, U ficha.
     CHECK(keymap_matches(KA_CROUCH, 'X', 0) && keymap_matches(KA_SNEAK, 'C', 0));
     CHECK(keymap_matches(KA_INTERACT, 'F', 0) && keymap_matches(KA_INTERACT, 'F', KM_SHIFT) && !keymap_matches(KA_INTERACT, 'K', 0));
+    CHECK(!keymap_matches(KA_INTERACT, KM_KEY_ENTER, 0) && !keymap_matches(KA_TALK, 'F', 0)); // hablar ya no es F
+    CHECK(keymap_matches(KA_TALK, KM_KEY_ENTER, 0) && keymap_matches(KA_TALK, KM_KEY_ENTER, KM_SHIFT));
+    CHECK(!keymap_matches(KA_TALK, KM_KEY_ENTER, KM_CTRL) && !keymap_matches(KA_TALK, KM_KEY_ENTER, KM_ALT));
+    CHECK(keymap_matches(KA_CAMERA, 'N', 0) && keymap_matches(KA_CAMERA, 'N', KM_SHIFT) && !keymap_matches(KA_CAMERA, 'N', KM_CTRL));
     CHECK(keymap_matches(KA_BACKPACK, 'G', KM_SHIFT) && !keymap_matches(KA_BACKPACK, 'G', 0));
     CHECK(keymap_matches(KA_GRAB, 'G', 0) && !keymap_matches(KA_GRAB, 'G', KM_SHIFT));
     CHECK(keymap_matches(KA_LIGHT_ARROW, 'V', KM_SHIFT) && !keymap_matches(KA_LIGHT_ARROW, 'V', 0));
@@ -3544,7 +3550,8 @@ static void test_keymap_four_buttons(void) {
     for (int a = 0; a < KA_COUNT; a++) CHECK(!keymap_matches((KeyAction)a, 'V', 0) && !keymap_matches((KeyAction)a, 'Z', 0));
     // Ninguna tecla hace dos cosas (ya no hace falta que el contexto decida: Tab no es objetivo y
     // menu a la vez, ni Mayus+L carga y flecha).
-    const int keys[] = { 'A', 'B', 'C', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z', KM_KEY_TAB, KM_KEY_SPACE };
+    const int keys[] = { 'A', 'B', 'C', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z',
+                         KM_KEY_TAB, KM_KEY_SPACE, KM_KEY_ENTER };
     const unsigned mods[] = { 0, KM_SHIFT, KM_CTRL, KM_ALT, KM_SHIFT | KM_ALT };
     int clashes = 0;
     for (size_t k = 0; k < sizeof(keys) / sizeof(keys[0]); k++)
@@ -3556,6 +3563,47 @@ static void test_keymap_four_buttons(void) {
     CHECK(!strcmp(keymap_text(KA_ATTACK), "H") && !strcmp(keymap_text(KA_PARRY), "J") && !strcmp(keymap_text(KA_CHARGE), "L"));
     CHECK(!strcmp(keymap_text(KA_BACKPACK), "Mayús+G") && !strcmp(keymap_text(KA_INVENTORY), "I") && !strcmp(keymap_text(KA_MENU), "Tab") &&
           !strcmp(keymap_text(KA_TARGET), "O"));
+    CHECK(!strcmp(keymap_text(KA_TALK), "Enter") && !strcmp(keymap_text(KA_CAMERA), "N") && !strcmp(keymap_text(KA_INTERACT), "F"));
+    // Beber ya no tiene tecla (va en la casilla del odre): ni N ni otra la disparan.
+    CHECK(!keymap_matches(KA_DRINK, 'N', 0) && !keymap_matches(KA_DRINK, 0, 0) && keymap_text(KA_DRINK)[0] == '\0');
+}
+
+// Las vistas de la camara (N): cerca, como la imagen de referencia del usuario (la cabeza a media
+// pantalla, el cuadro corta por las rodillas y los pies quedan fuera), y dos mas lejos con el cuerpo
+// entero. Lejos es la camara de siempre: la de las capturas viejas y la de la mira.
+static void test_camera_views(void) {
+    const float eye = 1.6f; // de pie (src/game/player.c: player_eye_height)
+    const CamPreset *n = camview_preset(CAMVIEW_NEAR), *m = camview_preset(CAMVIEW_MID), *f = camview_preset(CAMVIEW_FAR);
+    float head = camview_screen_y(n, eye, 1.8f), knee = camview_screen_y(n, eye, 0.5f), feet = camview_screen_y(n, eye, 0.0f);
+    CHECK(head > 0.40f && head < 0.52f);  // la coronilla, a la mitad
+    CHECK(knee > 0.88f && knee < 1.02f);  // el borde de abajo, por las rodillas
+    CHECK(feet > 1.0f);                   // los pies, fuera de cuadro
+    CHECK(fabsf(camview_screen_y(n, eye, eye + n->lift) - 0.5f) < 1e-4f); // mira al punto sobre los ojos
+    // Media y lejos: el cuerpo entero adentro, cada vez mas chico.
+    for (int v = CAMVIEW_MID; v < CAMVIEW_COUNT; v++) {
+        const CamPreset *c = camview_preset((CamView)v);
+        CHECK(camview_screen_y(c, eye, 0.0f) < 0.85f && camview_screen_y(c, eye, 1.8f) > 0.40f);
+    }
+    float tall[CAMVIEW_COUNT];
+    for (int v = 0; v < CAMVIEW_COUNT; v++)
+        tall[v] = camview_screen_y(camview_preset((CamView)v), eye, 0.0f) - camview_screen_y(camview_preset((CamView)v), eye, 1.8f);
+    CHECK(tall[CAMVIEW_NEAR] > 2.0f * tall[CAMVIEW_MID] && tall[CAMVIEW_MID] > 1.5f * tall[CAMVIEW_FAR]);
+    CHECK(n->dist < m->dist && m->dist < f->dist && n->pitch < m->pitch && m->pitch < f->pitch);
+    CHECK(fabsf(f->dist - 11.0f) < 1e-4f && fabsf(f->pitch - 0.38f) < 1e-4f); // la de siempre
+    CHECK(n->dist >= CAMVIEW_DIST_MIN && f->dist <= CAMVIEW_DIST_MAX);
+    // N recorre las tres y vuelve; Mayus+N, al reves.
+    CHECK(camview_next(CAMVIEW_NEAR) == CAMVIEW_MID && camview_next(CAMVIEW_MID) == CAMVIEW_FAR && camview_next(CAMVIEW_FAR) == CAMVIEW_NEAR);
+    for (int v = 0; v < CAMVIEW_COUNT; v++) {
+        CHECK(camview_prev(camview_next((CamView)v)) == (CamView)v);
+        CHECK(camview_name((CamView)v)[0] != '\0');
+        // La mira: con la inclinacion de su vista, tira como la vista lejana; inclinar la camara la mueve igual.
+        const CamPreset *c = camview_preset((CamView)v);
+        CHECK(fabsf(camview_aim_pitch((CamView)v, c->pitch) - f->pitch) < 1e-5f);
+        CHECK(fabsf(camview_aim_pitch((CamView)v, c->pitch + 0.2f) - (f->pitch + 0.2f)) < 1e-5f);
+    }
+    CHECK(camview_parse("cerca") == CAMVIEW_NEAR && camview_parse("media") == CAMVIEW_MID && camview_parse("lejos") == CAMVIEW_FAR);
+    CHECK(camview_parse("orbital") == -1 && camview_parse(NULL) == -1);
+    CHECK(camview_preset((CamView)99) == n); // fuera de rango: cerca
 }
 
 // A3 (las hojas, docs/PLAN_TACTICO_Y_CUEVAS.md): hacia que lado cicla el objetivo, cuanto dura sin verlo,
@@ -6361,6 +6409,7 @@ int main(void) {
     RUN(test_save_blocks_numbers_change_type);
     RUN(test_keymap_four_buttons);
     RUN(test_keymap_target_keys);
+    RUN(test_camera_views);
     RUN(test_target_rules_a3);
     RUN(test_voxfile);
     RUN(test_cover_rules_a4);

@@ -57,6 +57,7 @@
 #include "raymath.h"
 #include "sim/champion.h"
 #include "sim/climate.h"
+#include "sim/camview.h"
 #include "sim/clock.h"
 #include "sim/inventory.h"
 #include "sim/loadout.h"
@@ -102,11 +103,28 @@ static Combat g_combat;     // salud, heridas, enemigos y combate
 static Disasters g_dz; // fuego, rayos y lluvia torrencial
 static Climate g_climate;   // clima del cuadro anterior (lo usan los peligros)
 
+// La camara orbita al jugador. N cambia de vista (src/sim/camview.h): cerca, sobre el hombro (la de serie),
+// a media distancia y lejos; la rueda acerca y aleja, y el arrastre con el boton derecho la inclina.
 typedef struct {
     float yaw, pitch, dist;
+    CamView view;
+    float want_pitch, want_dist; // adonde llegan, suaves, al cambiar de vista o con la rueda
+    float lift;                  // el punto que mira, sobre los ojos (el de la vista)
+    float eye;                   // la altura de los ojos, suave (agacharse no salta)
+    float ride;                  // 0 a pie, 1 a caballo: mas alto y mas lejos
+    float bump;                  // rad: lo que sube sobre una obra que tiene detras (una yurta, una tienda)
 } CameraRig;
 
+#define RIDE_LIFT 1.1f // m: lo que sube el jinete (player.draw_lift a caballo)
+
 static float g_drone; // --dron: la camara a tantos metros (pruebas y capturas de una ciudad entera)
+
+// La vista v: la camara va hacia sus medidas (snap: llega ya, al empezar).
+static void camera_set_view(CameraRig *rig, CamView v, bool snap) {
+    const CamPreset *c = camview_preset(v);
+    rig->view = v, rig->want_pitch = c->pitch, rig->want_dist = c->dist;
+    if (snap) rig->pitch = c->pitch, rig->dist = c->dist, rig->lift = c->lift;
+}
 
 static void camera_input(CameraRig *rig, float dt) {
     // Orbita: Q/E o arrastre con boton derecho (sin arrastrar, el derecho cubre); rueda para el zoom.
@@ -116,26 +134,114 @@ static void camera_input(CameraRig *rig, float dt) {
     float dx, dy;
     if (input_right_drag(&dx, &dy)) {
         rig->yaw -= dx * 0.006f;
-        rig->pitch = Clamp(rig->pitch + dy * 0.004f, 0.05f, 1.25f);
+        rig->pitch = rig->want_pitch = Clamp(rig->pitch + dy * 0.004f, 0.05f, 1.25f);
     }
-    rig->dist = g_drone > 0.0f ? g_drone : Clamp(rig->dist - GetMouseWheelMove() * 0.8f, 3.0f, 16.0f);
+    rig->want_dist = Clamp(rig->want_dist - GetMouseWheelMove() * 0.8f, CAMVIEW_DIST_MIN, CAMVIEW_DIST_MAX);
+    if (g_drone > 0.0f) rig->want_dist = g_drone;
+    float k = 1.0f - expf(-10.0f * dt); // en un cuarto de segundo
+    rig->pitch += (rig->want_pitch - rig->pitch) * k;
+    rig->dist += (rig->want_dist - rig->dist) * k;
+    rig->lift += (camview_preset(rig->view)->lift - rig->lift) * k;
+    if (g_drone > 0.0f) rig->dist = g_drone;
 }
 
-static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const Terrain *t, float dt) {
-    camera_input(rig, dt);
+// ¿q esta adentro de la yurta del campamento inicial en y (de 2,25 m de radio: la pared de 1,5 m y el techo hasta
+// 2,6 m en el centro), o de la estructura pr del inventario (una caja de sus medidas, con su yaw)? Sin mirar el alto
+// (flat), solo la planta.
+static bool in_yurt(Vector3 y, Vector3 q, bool flat) {
+    float r = sqrtf((q.x - y.x) * (q.x - y.x) + (q.z - y.z) * (q.z - y.z));
+    return r < 2.25f && (flat || (q.y > y.y - 0.5f && q.y < y.y + 2.6f - 1.1f * r / 2.25f));
+}
+static bool in_prop(const Prop *pr, Vector3 q, bool flat) {
+    const InvItem *it = pr->item;
+    float dx = q.x - pr->pos.x, dz = q.z - pr->pos.z;
+    float c = cosf(pr->yaw), s = sinf(pr->yaw);
+    float lx = dx * c - dz * s, lz = dx * s + dz * c; // al espacio del modelo (el largo en x, el ancho en z)
+    return fabsf(lx) < it->l * 0.5f && fabsf(lz) < it->w * 0.5f && (flat || (q.y > pr->pos.y - 0.5f && q.y < pr->pos.y + it->h));
+}
 
-    Vector3 target = { p->pos.x, p->pos.y + player_eye_height(p), p->pos.z };
-    Vector3 back = { -sinf(rig->yaw) * cosf(rig->pitch), sinf(rig->pitch), -cosf(rig->yaw) * cosf(rig->pitch) };
-    cam->position = Vector3Add(target, Vector3Scale(back, rig->dist));
+// Las obras que pueden tapar la camara en este cuadro: las yurtas del campamento inicial y las estructuras del
+// inventario puestas en el mundo a menos de 25 m del jugador, salvo la que lo tiene adentro (se puede entrar en una
+// yurta: la camara no la puede esquivar). Lo bajo (menos de 1 m) no tapa.
+#define BLOCKERS_MAX 24
+typedef struct {
+    Vector3 yurt[CAMP_MAX_YURTS];
+    const Prop *prop[BLOCKERS_MAX];
+    int ny, np;
+} Blockers;
+
+static void blockers_near(Blockers *b, const Camp *camp, const Props *props, Vector3 who) {
+    b->ny = b->np = 0;
+    for (int i = 0; i < camp->yurt_count; i++)
+        if (!in_yurt(camp->yurts[i], who, true)) b->yurt[b->ny++] = camp->yurts[i];
+    for (int i = 0; i < props->count && b->np < BLOCKERS_MAX; i++) {
+        const Prop *pr = &props->items[i];
+        float dx = pr->pos.x - who.x, dz = pr->pos.z - who.z;
+        if (pr->flying || pr->item->h < 1.0f || dx * dx + dz * dz > 25.0f * 25.0f || strncmp(pr->item->id, "estructura.", 11) != 0) continue;
+        if (!in_prop(pr, who, true)) b->prop[b->np++] = pr;
+    }
+}
+
+static bool structure_at(const Blockers *b, Vector3 q) {
+    for (int i = 0; i < b->ny; i++)
+        if (in_yurt(b->yurt[i], q, false)) return true;
+    for (int i = 0; i < b->np; i++)
+        if (in_prop(b->prop[i], q, false)) return true;
+    return false;
+}
+
+// ¿El brazo de la camara (del jugador a ella) cruza una obra?
+static bool arm_blocked(const Blockers *b, Vector3 target, Vector3 cam) {
+    if (!b->ny && !b->np) return false;
+    for (int k = 1; k <= 16; k++)
+        if (structure_at(b, Vector3Lerp(target, cam, (float)k / 16.0f))) return true;
+    return false;
+}
+
+static Vector3 camera_at(Vector3 target, float yaw, float pitch, float dist) {
+    Vector3 back = { -sinf(yaw) * cosf(pitch), sinf(pitch), -cosf(yaw) * cosf(pitch) };
+    return Vector3Add(target, Vector3Scale(back, dist));
+}
+
+// La camara no se mete adentro de una obra: del jugador hacia la camara, si el brazo cruza una, la camara queda
+// antes (si subir por encima no alcanzo: camera_update).
+static void camera_clear_structures(const Blockers *b, Vector3 target, Vector3 *cam) {
+    Vector3 from = target, to = *cam;
+    for (int k = 1; k <= 24 && (b->ny || b->np); k++)
+        if (structure_at(b, Vector3Lerp(from, to, (float)k / 24.0f))) {
+            *cam = Vector3Lerp(from, to, fmaxf((float)(k - 1) / 24.0f - 0.04f, 0.08f)); // un poco antes de la pared
+            return;
+        }
+}
+
+static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const Terrain *t, const Camp *camp, float dt) {
+    camera_input(rig, dt);
+    float k = 1.0f - expf(-8.0f * dt);
+    rig->eye += (player_eye_height(p) - rig->eye) * k;
+    rig->ride += ((p->draw_lift > 0.0f ? 1.0f : 0.0f) - rig->ride) * k;
+    float dist = rig->dist + rig->ride * CAMVIEW_MOUNTED;
+
+    Vector3 target = { p->pos.x, p->pos.y + rig->eye + rig->lift + rig->ride * RIDE_LIFT, p->pos.z };
+    // Con una obra detras (una yurta, una tienda), la camara sube por encima antes que meterse adentro o pegarse a la
+    // nuca: la menor inclinacion de mas que deja libre el brazo; sube rapido y baja suave.
+    Blockers blk;
+    blockers_near(&blk, camp, &g_props, target);
+    float need = 0.0f;
+    while (need < 1.2f && arm_blocked(&blk, target, camera_at(target, rig->yaw, rig->pitch + need, dist))) need += 0.15f;
+    rig->bump += (need - rig->bump) * (need > rig->bump ? 1.0f - expf(-14.0f * dt) : 1.0f - expf(-3.0f * dt));
+    float pitch = fminf(rig->pitch + rig->bump, 1.35f);
+    Vector3 back = { -sinf(rig->yaw) * cosf(pitch), sinf(pitch), -cosf(rig->yaw) * cosf(pitch) };
+    cam->position = Vector3Add(target, Vector3Scale(back, dist));
     // Nunca bajo el suelo (las laderas, los muros): la camara sube sobre el terreno que tenga
     // detras y en el brazo que la une al jugador.
     float floor_y = -1e9f;
     for (int k = 1; k <= 4; k++) {
-        Vector3 q = Vector3Add(target, Vector3Scale(back, rig->dist * k / 4.0f));
+        Vector3 q = Vector3Add(target, Vector3Scale(back, dist * k / 4.0f));
         floor_y = fmaxf(floor_y, terrain_height(t, q.x, q.z) + 1.2f * k / 4.0f);
     }
     if (cam->position.y < floor_y) cam->position.y = floor_y;
     wd_camera_clear(t, target, &cam->position); // ni adentro del peñasco de una cueva
+    camera_clear_structures(&blk, target, &cam->position); // ni de una yurta
     cam->target = target;
 }
 
@@ -763,6 +869,7 @@ int main(int argc, char **argv) {
     int start_picker = -1;
     float start_heading = -1.0f;      // --rumbo grados: hacia donde mira la camara (0 sur, 90 este, 180 norte, 270 oeste)
     float start_pitch = -1.0f;        // --camara inclinacion: 0.05 casi de canto (se ve el cielo), 1.25 desde arriba
+    int start_view = -1;              // --vista cerca|media|lejos (src/sim/camview.h); si no, la guardada
     int map_size = 1024;
     bool start_orbital = false;       // --orbital [grados] [inclinacion]: la vista orbital
     float start_orbit_deg = 30.0f, start_orbit_tilt = 0.55f;
@@ -825,6 +932,10 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--selector") && i + 1 < argc) start_picker = atoi(argv[++i]) - 1; // prueba: el selector de una casilla
         else if (!strcmp(argv[i], "--rumbo") && i + 1 < argc) start_heading = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--camara") && i + 1 < argc) start_pitch = (float)atof(argv[++i]);
+        else if (!strcmp(argv[i], "--vista") && i + 1 < argc) {
+            start_view = camview_parse(argv[++i]);
+            if (start_view < 0) printf("--vista: cerca, media o lejos\n");
+        }
         else if (!strcmp(argv[i], "--dron") && i + 1 < argc) g_drone = (float)atof(argv[++i]); // la camara lejos, para ver una ciudad entera
         else if (!strcmp(argv[i], "--mapa-tam") && i + 1 < argc) map_size = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--orbital")) {
@@ -935,8 +1046,9 @@ int main(int argc, char **argv) {
         UnloadFileText(inv_text);
     }
     props_init(&g_props, &g_inventory);
-    CameraRig rig = { .yaw = PI, .pitch = 0.38f, .dist = 11.0f };
+    CameraRig rig = { .yaw = PI, .eye = 1.6f };
     settings_init(); // idioma (y sus traducciones), antes del primer texto de la partida
+    camera_set_view(&rig, (CamView)(start_view >= 0 ? start_view : settings_camera()), true); // --vista, o la guardada
     GameState gs = { &world_time, &day, &last_champion, &rig.yaw, &rng, &player, &overlord, &troop, &g_actions,
                      &g_props, &g_combat, &g_hazards, &g_dz, &g_memory, &g_inventory };
     game_new(&gs, &terrain, &camp, start_seed, start_day, start_minute, log, sizeof(log));
@@ -1010,7 +1122,7 @@ int main(int argc, char **argv) {
 
     Camera3D cam = { .up = { 0, 1, 0 }, .fovy = 55.0f, .projection = CAMERA_PERSPECTIVE };
     if (start_lake || start_goto) rig.yaw = player.yaw; // mirando al agua (o a lo que interesa)
-    if (start_pitch >= 0.0f) rig.pitch = start_pitch;
+    if (start_pitch >= 0.0f) rig.pitch = rig.want_pitch = start_pitch;
     if (start_heading >= 0.0f) rig.yaw = player.yaw = start_heading * DEG2RAD;
 
     // Menu de entrada: al arrancar normalmente; las pruebas (--screenshot, --galeria...) van
@@ -1261,7 +1373,7 @@ int main(int argc, char **argv) {
             tg_try_talk(&g_actions, &troop, &player, log, sizeof(log));
             start_talk = 0;
         }
-        if (start_tab >= 0 && frame == 3) { // prueba: menu de acciones, L (0 acciones, 1 obras, 2 fabricar, 3 reparar)
+        if (start_tab >= 0 && frame == 3) { // prueba: menu de acciones, Tab (0 acciones, 1 obras, 2 fabricar, 3 reparar)
             g_actions.menu_open = true;
             g_actions.menu_tab = start_tab;
             start_tab = -1;
@@ -1307,7 +1419,14 @@ int main(int argc, char **argv) {
             if (g_actions.mounted >= 0 && fg_mount_winded()) in.run = false; // la montura agotada no galopa
             player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards) * cb_speed_scale(&g_combat);
             player_set_endurance(health_endurance_scale(&g_combat.player)); // las secuelas (el tiburon) cansan mas
-            player.draw_lift = g_actions.mounted >= 0 ? 1.1f : 0.0f;
+            player.draw_lift = g_actions.mounted >= 0 ? RIDE_LIFT : 0.0f;
+            // N: la vista de la camara siguiente (Mayus+N: la anterior); queda para la proxima partida.
+            if (!menu && !ig_blocks_input(&g_actions) && !g_actions.dlg.open && !orbital && !pg_active() &&
+                input_action_pressed(KA_CAMERA)) {
+                camera_set_view(&rig, (input_mods() & KM_SHIFT) ? camview_prev(rig.view) : camview_next(rig.view), false);
+                settings_set_camera((int)rig.view);
+                snprintf(log, sizeof(log), T("Cámara: %s (N cambia)."), T(camview_name(rig.view)));
+            }
             // Adentro de una cueva se mueve alli (src/game/cave_game.c) y el mundo de afuera espera: el combate, la
             // fauna, los peligros y los desastres; el reloj, la sed, el inventario, la barra rapida y la antorcha siguen.
             bool cave = cv_inside();
@@ -1408,7 +1527,7 @@ int main(int argc, char **argv) {
                 cb_update(&g_combat, &player, &g_actions, &troop, &g_props, &terrain, tribe_fire,
                           !menu && !hz_blocks_input(&g_hazards) && !ig_blocks_input(&g_actions), clock_is_night(world_time),
                           g_climate.temp_mean < 0.0f,
-                          rig.yaw, rig.pitch, dt, log, sizeof(log));
+                          rig.yaw, camview_aim_pitch(rig.view, rig.pitch), dt, log, sizeof(log)); // la mira, como en la vista lejana
             if (!gallery_mode && !cave) // las ciudades: armarlas, sus bajas, la expedicion de castigo, la guarnicion que sale, la muralla y el fuego
                 ct_update(&g_actions, &g_combat, &troop, &g_props, &terrain, &player, clock_day(world_time), dt, log, sizeof(log));
             g_actions.grass = g_climate.snow_cover < 0.3f; // con nieve no hay pasto
@@ -1500,9 +1619,9 @@ int main(int argc, char **argv) {
             pg_camera(&cam);
         } else if (cv_inside()) { // la camara de la cueva: la misma orbita, sin salir de la roca
             camera_input(&rig, dt);
-            cv_camera(&terrain, &cam, rig.yaw, rig.pitch, rig.dist);
+            cv_camera(&terrain, &cam, rig.yaw, rig.pitch, rig.dist, rig.lift);
         } else {
-            camera_update(&rig, &cam, &player, &terrain, dt);
+            camera_update(&rig, &cam, &player, &terrain, &camp, dt);
             if (kit_type >= 0) { // --edificios: todas las variantes de un tipo, desde el frente y arriba
                 int rows = kit_region >= 0 ? 1 : REGION_COUNT;
                 Vector3 a = kit_spot(&terrain, kit_type, 0, 0), b = kit_spot(&terrain, kit_type, rows - 1, BK_VARIANTS - 1);
@@ -1666,10 +1785,9 @@ int main(int argc, char **argv) {
             wg_draw_hud(&g_actions, VIRTUAL_W - 14, vy + 44);
             if (g_actions.mounted >= 0) hud_mount(&g_actions, VIRTUAL_W - 14, vy + 66); // a caballo corre la montura
             else hud_stamina(VIRTUAL_W - 14, vy + 66);
-            // Barra rapida (1..9) abajo a la izquierda y la columna de acciones en el borde.
+            // La barra rapida (1..9) abajo a la izquierda. Las acciones, las obras y fabricar van en Tab.
             if (!ig_blocks_input(&g_actions) && !ga_menu_open(&g_actions) && !g_actions.dlg.open) {
                 hud_quickbar(&g_actions, &g_props, &player, 6, VIRTUAL_H - 54);
-                hud_action_column(&g_actions, 6, 68);
                 hud_escort_orders(&g_actions, &troop, 42, VIRTUAL_H - 84); // atacar, defender, seguir (con la escolta fuera)
                 if (!cv_inside()) cb_draw_buttons(&g_combat, &g_actions, VIRTUAL_W, VIRTUAL_H); // H J K L, abajo a la derecha
             }

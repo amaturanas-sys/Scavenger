@@ -2271,6 +2271,8 @@ static void bandage(Combat *cb, GameActions *ga, Troop *troop, const Props *prop
         snprintf(log, len, T("Vendas las heridas de %s."), m->name);
         return;
     }
+    // 4) La fiebre de los espiritus del agua: las hierbas (src/game/water_game.c).
+    if (wg_take_herbs(ga, props, p, log, len)) return;
     snprintf(log, len, "%s", T("No hay heridas que vendar."));
 }
 
@@ -2638,8 +2640,6 @@ bool cb_test_ride(Combat *cb, GameActions *ga, Player *p, const Terrain *t, cons
 static char g_hint[96]; // lo que se puede hacer ahi (junto a un abatido, con la espalda ganada...)
 static bool g_bandage_req; // vendar pedido desde el HUD
 void cb_request_bandage(void) { g_bandage_req = true; }
-static bool g_light_req; // encender la flecha, pedido desde la columna del HUD
-void cb_request_light_arrow(void) { g_light_req = true; }
 
 // Un clic corto, izquierdo o derecho, cambia de objetivo como Ctrl+Q/Ctrl+E (v0.14.0), con cualquier
 // arma: el izquierdo pasa al de la izquierda y el derecho al de la derecha; sin objetivo, elige al de
@@ -2769,8 +2769,7 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     g_jolt = false;
     if (cb->hostage) snprintf(g_hint, sizeof(g_hint), "%s", T("Rehén: G lo suelta · H lo ejecuta · I lo empuja"));
     else if (back) snprintf(g_hint, sizeof(g_hint), "%s", T("Por la espalda: H lo ejecuta en silencio · G lo toma de rehén"));
-    if (rd && can_act && (input_action_pressed(KA_LIGHT_ARROW) || g_light_req)) light_arrow(cb, ga, rd, log, log_len);
-    g_light_req = false;
+    if (rd && can_act && input_action_pressed(KA_LIGHT_ARROW)) light_arrow(cb, ga, rd, log, log_len);
     if (cb->arrow_lit) {
         cb->arrow_lit_timer -= dt;
         if (ga->raining || cb->arrow_lit_timer <= 0.0f || !rd) {
@@ -2963,7 +2962,7 @@ static void draw_chariot(const Enemy *e, int i, float time) {
     body_draw(&b, (Vector3){ pos.x - f.x * 0.3f, pos.y + CHARIOT_LIFT, pos.z - f.z * 0.3f }, e->yaw, bc, &e->armor);
 }
 
-void cb_draw_player_body(const Combat *cb, const GameActions *ga, const Player *p, float time, Color light) {
+void cb_draw_player_body(const Combat *cb, const GameActions *ga, Props *props, const Player *p, float time, Color light) {
     BodyPose b;
     pose_player(&b, cb, p, time);
     BodyColors c = { { 204, 164, 124, 255 }, { 150, 40, 40, 255 }, { 88, 66, 46, 255 } };
@@ -2974,6 +2973,7 @@ void cb_draw_player_body(const Combat *cb, const GameActions *ga, const Player *
     body_draw_outfit(&b, pos, p->yaw, &ga->outfit);
     body_set_tint(WHITE);
     if (player_has_shield(ga)) draw_shield_on(&b, pos, p->yaw, ColorTint((Color){ 150, 112, 70, 255 }, light));
+    ga_draw_held_body(ga, props, &b, pos, p->yaw, time, light); // el arma en la mano, lo guardado al cinto y a la espalda
 }
 
 void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const Terrain *t, const Player *p,
@@ -3038,7 +3038,7 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
     for (int i = 0; i < CB_MAX_SHOTS; i++)
         if (cb->shots[i].p.alive) draw_shot(&cb->shots[i]);
     // El jugador sin modelo importado: cuerpo articulado con su armadura.
-    if (!player_has_model) cb_draw_player_body(cb, ga, p, time, WHITE);
+    if (!player_has_model) cb_draw_player_body(cb, ga, props, p, time, WHITE);
     // La lanza en ristre: larga, bajo el brazo, hacia donde va el caballo (y la punta, de hierro).
     if (cb->couch > 0.0f && ga->mounted >= 0) {
         float h = ga->animals[ga->mounted].yaw, y = p->pos.y + p->draw_lift + 1.25f;

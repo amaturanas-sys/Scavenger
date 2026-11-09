@@ -7,11 +7,12 @@
 #include "raylib.h"
 
 static const char *settings_path(void) { return TextFormat("%s/ajustes.txt", platform_save_dir()); }
+static int g_camera; // CamView (src/sim/camview.h)
 
 static void save(void) {
     FILE *f = fopen(settings_path(), "w");
     if (!f) return;
-    fprintf(f, "idioma=%s\n", lang_code(lang_get()));
+    fprintf(f, "idioma=%s\ncamara=%d\n", lang_code(lang_get()), g_camera);
     fclose(f);
 }
 
@@ -36,12 +37,22 @@ void settings_init(void) {
         if (k)
             for (int l = 0; l < LANG_COUNT; l++)
                 if (!strncmp(k + 7, lang_code((Lang)l), 2)) lang = (Lang)l;
+        const char *cam = strstr(txt, "camara=");
+        if (cam && cam[7] >= '0' && cam[7] <= '9') g_camera = cam[7] - '0'; // fuera de rango: camview lo lleva a cerca
     }
     lang_set(lang);
 }
 
 void settings_next_lang(void) {
     lang_set((Lang)((lang_get() + 1) % LANG_COUNT));
+    save();
+}
+
+int settings_camera(void) { return g_camera; }
+
+void settings_set_camera(int view) {
+    if (view == g_camera) return;
+    g_camera = view;
     save();
 }
 
