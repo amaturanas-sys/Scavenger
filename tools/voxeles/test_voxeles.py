@@ -475,6 +475,30 @@ def test_carros_y_puerta():
     assert estructuras.triangulos(grid) < 8000
 
 
+def test_arboles_de_hoja():
+    """El roble y el sauce: el mismo de los cuatro lados y en el espejo (como el pino), una sola pieza, sin aire
+    encerrado, sus medidas, el tronco a la vista (las hojas del roble empiezan a 3.6 m; las cortinas del sauce dejan
+    huecos y llegan a 1.5 m del suelo) y bajo el aviso de Android."""
+    for receta, medidas in ((estructuras.roble, (8.788, 10.0, 8.788)), (estructuras.sauce, (6.75, 9.0, 6.75))):
+        o = receta()
+        p = o.parte
+        assert o.metros() == medidas, (receta.__name__, o.metros())
+        for q in (p[::-1], p[:, ::-1], np.transpose(p, (1, 0, 2))):
+            assert (q == p).all(), receta.__name__
+        assert _una_pieza_cerrada(o.lleno), receta.__name__
+        hojas = np.isin(p, [o.nombres.index(n) for n in ("copa", "copa_sombra", "copa_puntas")])
+        tronco = p == o.nombres.index("tronco")
+        bajo = int(np.flatnonzero(hojas.any(axis=(0, 1))).min())
+        if receta is estructuras.roble:
+            assert bajo * o.celda >= 3.6 - 1e-6 and tronco[:, :, :bajo].any(), bajo
+        else:
+            assert abs(bajo * o.celda - 1.5) < 1e-6, bajo
+            anillo = hojas[:, :, 10]  # a 2.5 m: las tiras de las cortinas, con huecos entre ellas
+            assert 20 < anillo.sum() < 0.5 * np.pi * 12 ** 2, anillo.sum()
+        grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+        assert estructuras.triangulos(grid) < 8000, receta.__name__
+
+
 def test_triangulos_juntos():
     """modelos.tris_vox cuenta lo que arma el juego (src/sim/voxel.c: las caras juntas y la base en el suelo): la
     figura de prueba de tests/test_main.c (merge_fixture) da los mismos triangulos que alla (MERGE_FIXTURE_TRIS)."""
@@ -523,6 +547,7 @@ def main():
         ("test_atalaya_forma", test_atalaya_forma),
         ("test_muro_en_ruinas", test_muro_en_ruinas),
         ("test_carros_y_puerta", test_carros_y_puerta),
+        ("test_arboles_de_hoja", test_arboles_de_hoja),
         ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0

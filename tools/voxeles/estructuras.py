@@ -974,10 +974,151 @@ def puerta_fortificada():
     return o
 
 
+# -------------------------------------------------------------------------------------------- arboles de hoja
+def _rama(o, parte, a, b, grosor=2):
+    """Una rama recta de a a b (u, z, y en celdas, medidos desde el borde: la celda i va de i a i + 1; puede ir en
+    diagonal en las tres), de `grosor` celdas de lado: cubos centrados a pasos chicos, asi cada tramo toca al
+    siguiente por una cara."""
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    n = int(np.ceil(np.abs(b - a).max() * 3)) + 1
+    for t in np.linspace(0.0, 1.0, n):
+        u0, z0, y0 = (int(np.floor(v - grosor / 2.0 + 0.5)) for v in a + (b - a) * t)
+        o.caja(parte, (u0, u0 + grosor - 1), (z0, z0 + grosor - 1), (max(y0, 0), y0 + grosor - 1))
+
+
+def _copa(o, racimos, cima=None):
+    """La copa: la union de los racimos (esferas o elipsoides: (u, z, y, radio[, radio de alto]) en celdas), sin
+    aire encerrado. Cada celda de la
+    copa (la de los racimos y la que ya habia: con racimos = [], se vuelven a pintar las hojas) toma el verde de la
+    cara que tiene al aire: arriba, el claro (las puntas al sol); abajo, el de la sombra; de costado, el medio. Lo
+    de adentro va del medio (no se ve)."""
+    from scipy import ndimage
+
+    L, W, H = o.parte.shape
+    uu, zz, yy = np.meshgrid(np.arange(L) + 0.5, np.arange(W) + 0.5, np.arange(H) + 0.5, indexing="ij")
+    copa = np.isin(o.parte, [o.nombres.index(n) for n in ("copa", "copa_sombra", "copa_puntas") if n in o.nombres])
+    for racimo in racimos:  # (u, z, y, radio[, radio de alto]): esferas o elipsoides
+        u, z, y, r = racimo[:4]
+        ry = racimo[4] if len(racimo) > 4 else r
+        copa |= ((uu - u) ** 2 + (zz - z) ** 2) / (r * r) + (yy - y) ** 2 / (ry * ry) <= 1.0
+    madera = o.lleno & ~copa
+    copa = ndimage.binary_fill_holes(copa | madera) & ~madera  # (los huecos entre racimos, llenos)
+    p = np.pad(copa | madera, 1)
+    arriba = ~p[1:-1, 1:-1, 2:]
+    abajo = ~p[1:-1, 1:-1, :-2]
+    o.parte[copa] = o.id("copa")
+    o.parte[copa & abajo] = o.id("copa_sombra")
+    o.parte[copa & arriba] = o.id("copa_puntas")
+
+
+def _simetrizar(o):
+    """El arbol, el mismo de los cuatro lados y en el espejo (como el pino): la madera y las hojas, cada una la union
+    de sus ocho giros y reflejos en (u, z); las ramas en diagonal redondean distinto a cada lado. Despues hay que
+    volver a pintar las hojas (_copa con racimos = [])."""
+    def d4(m):
+        t = np.transpose(m, (1, 0, 2))
+        out = np.zeros_like(m)
+        for q in (m, t):
+            out |= q | q[::-1] | q[:, ::-1] | q[::-1, ::-1]
+        return out
+
+    tronco = d4(o.parte == o.id("tronco"))
+    hojas = d4(o.lleno) & ~tronco
+    o.parte[:] = 0
+    o.parte[hojas] = o.id("copa")
+    o.parte[tronco] = o.id("tronco")
+
+
+def _estilo_arbol(o, vistas, defecto):
+    tronco, (sombra, medio, puntas) = tonos_de_arbol(vistas) if vistas else defecto
+    o.estilo.update({"tronco": (0, 0, tronco, "lado"), "copa_sombra": (0, 0, sombra, "lado"),
+                     "copa": (0, 0, medio, "lado"), "copa_puntas": (0, 0, puntas, "lado")})
+
+
+def roble(vistas=None):
+    """mapa.vegetacion.roble: el arbol frondoso de la hoja (un roble de copa ancha), 10 m de alto y 9 m de copa, en
+    celdas de 30 cm (con 25 la copa redonda pasa el aviso de Android: 9922 triangulos), simetrico como el pino (el
+    mismo de los cuatro lados y en el espejo). El tronco de 0.9 m con el pie ensanchado, a la vista hasta 3.7 m;
+    ocho ramas que salen abiertas y otras ocho que suben a la copa; la copa, la union de racimos en tres anillos de
+    ocho (los de abajo, mas afuera y caidos, como en la hoja) y uno arriba. El color, de la hoja: el tronco y tres
+    verdes (arriba al sol, de costado y abajo a la sombra)."""
+    H, W = 33, 31
+    celda = 10.0 / H
+    o = Obra(W, W, H, celda=celda)
+    _estilo_arbol(o, vistas, ((92, 82, 70), [(42, 60, 34), (62, 86, 46), (92, 118, 62)]))
+    a = lambda metros: metros / celda  # noqa: E731 - de metros a celdas
+    c = W / 2.0
+    m = W // 2  # el tronco: 3 x 3 celdas al medio
+    o.caja("tronco", (m - 2, m + 2), (m - 1, m + 1), (0, 0))  # el pie, en cruz
+    o.caja("tronco", (m - 1, m + 1), (m - 2, m + 2), (0, 0))
+    o.caja("tronco", (m - 1, m + 1), (m - 1, m + 1), (0, int(a(6.0))))
+    for k in range(8):  # las ramas: abiertas desde el tronco hacia los racimos de abajo, y las que suben
+        th = k * np.pi / 4
+        _rama(o, "tronco", (c, c, a(3.9)), (c + a(2.6) * np.cos(th), c + a(2.6) * np.sin(th), a(5.2)))
+        th2 = th + np.pi / 8
+        _rama(o, "tronco", (c, c, a(4.8)), (c + a(1.25) * np.cos(th2), c + a(1.25) * np.sin(th2), a(6.6)))
+    # La copa empieza a 3.7 m (los racimos de afuera) y mas arriba al medio: con la camara de siempre (a unos 30
+    # grados), una copa de 4.4 m de radio tapa lo que esta a menos de 2.5 m bajo su borde; asi el tronco se ve.
+    racimos = [(c, c, a(8.1), a(1.875))]
+    for k in range(8):
+        th = k * np.pi / 4
+        for (r, y, rad, fase) in ((1.625, 7.1, 1.625, 0.0), (2.75, 5.8, 1.5, np.pi / 8), (3.25, 4.9, 1.2, 0.0)):
+            racimos.append((c + a(r) * np.cos(th + fase), c + a(r) * np.sin(th + fase), a(y), a(rad)))
+    _copa(o, racimos)
+    _simetrizar(o)
+    _copa(o, [])
+    return o
+
+
+def sauce(vistas=None):
+    """mapa.vegetacion.sauce: el sauce llorón de la hoja, 9 m de alto y 7 m de copa, en celdas de 25 cm, simetrico
+    como el pino. El tronco grueso (1 m) con el pie ensanchado, a la vista hasta los 3 m; ocho ramas que suben
+    abiertas a la cupula; la cupula de racimos y, colgando de su panza, las cortinas: tiras de una celda en dos
+    anillos (el de afuera mas largo, hasta 1.5 m del suelo), con huecos entre ellas por donde se ve el tronco. El
+    color, de la hoja: el tronco y tres verdes."""
+    H, W = 36, 29
+    o = Obra(W, W, H, celda=0.25)
+    _estilo_arbol(o, vistas, ((96, 88, 66), [(70, 88, 44), (98, 120, 58), (130, 152, 80)]))
+    c = W / 2.0
+    m = W // 2
+    o.caja("tronco", (m - 2, m + 2), (m - 2, m + 2), (0, 1))  # el pie
+    o.caja("tronco", (m - 3, m + 3), (m - 1, m + 1), (0, 0))
+    o.caja("tronco", (m - 1, m + 1), (m - 3, m + 3), (0, 0))
+    o.caja("tronco", (m - 1, m + 1), (m - 1, m + 1), (0, 22))
+    for k in range(8):
+        th = k * np.pi / 4 + np.pi / 8
+        _rama(o, "tronco", (c, c, 13.0), (c + 6.0 * np.cos(th), c + 6.0 * np.sin(th), 25.0))
+    racimos = [(c, c, 28.5, 6.5)]
+    for k in range(8):
+        th = k * np.pi / 4
+        racimos.append((c + 7.5 * np.cos(th), c + 7.5 * np.sin(th), 26.0, 5.6))
+    _copa(o, racimos)
+    _simetrizar(o)  # la cupula y el tronco, parejos antes de colgar las cortinas
+    cupula = o.lleno.copy()
+    # Las cortinas: dos anillos de tiras que cuelgan de la panza de la cupula hasta su largo (32 afuera y 16
+    # adentro, corridas). Las del primer octavo y sus ocho reflejos, celda por celda (asi el arbol queda parejo sin
+    # tiras repetidas). Con un quiebre hacia afuera a media altura (una campana) se ven rotas y pasan el aviso.
+    reflejos = lambda x, y: {(sx * a, sy * b) for (a, b) in ((x, y), (y, x)) for sx in (1, -1) for sy in (1, -1)}  # noqa: E731
+    for (r, n, fase, largos) in ((11.5, 32, 0.0, (6, 9, 7, 9, 6)), (8.5, 16, np.pi / 16, (11, 13))):
+        for k in range(n):
+            th = fase + k * 2 * np.pi / n
+            if th > np.pi / 4 + 1e-9:
+                break
+            for esc in np.arange(1.0, 0.0, -0.04):  # si en su columna no hay cupula, un poco mas adentro
+                x, y = int(round(r * esc * np.cos(th))), int(round(r * esc * np.sin(th)))
+                ys = np.flatnonzero(cupula[m + x, m + y, 15:]) + 15
+                if len(ys):
+                    break
+            for (a, b) in reflejos(x, y):
+                o.caja("copa", (m + a, m + a), (m + b, m + b), (largos[k], int(ys.min()) - 1))
+    _simetrizar(o)
+    _copa(o, [])  # los verdes otra vez: las puntas de las tiras, a la sombra; sus caras de arriba, al sol
+    return o
+
 RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo, "atalaya": atalaya,
            "piedra_ciervo_sol": piedra_ciervo_sol, "piedra_ciervo_felinos": piedra_ciervo_felinos,
            "muro_en_ruinas": muro_en_ruinas, "carreta": carreta, "carro_varas": carro_varas,
-           "puerta_fortificada": puerta_fortificada}
+           "puerta_fortificada": puerta_fortificada, "roble": roble, "sauce": sauce}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
 # pixeles de la vista recortada. La hoja del templo exagera lo alto en el frente (los pilonos miden 340 px de

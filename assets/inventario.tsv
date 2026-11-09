@@ -21,6 +21,8 @@ mapa.vegetacion.arbusto	Arbusto estepario	bioma:estepa,uso:decorado	1x0.8x1	40	p
 mapa.vegetacion.pino	Pino	bioma:bosque,uso:trepable,formato:voxel	3x10x3	120	importado	Voxeles armados a mano (tools/voxeles/estructuras.py pino), simetrico: ocho pisos de ramas alrededor del tronco, 5 m de copa y el tronco a la vista hasta 2.3 m, con los colores de la hoja de tres vistas generada por el usuario con Canva. En el paisaje: alturas y tonos que varian, hasta 12 m.
 mapa.vegetacion.alerce	Alerce	bioma:bosque,uso:trepable	3x12x3	120	pendiente	
 mapa.vegetacion.abedul	Abedul	bioma:estepa,bioma:bosque,uso:decorado	2.5x8x2.5	100	pendiente	
+mapa.vegetacion.roble	Roble	bioma:bosque,bioma:estepa,uso:trepable,formato:voxel	8.8x10x8.8	120	importado	Voxeles armados a mano (tools/voxeles/estructuras.py roble), celdas de 30 cm, simetrico como el pino: el tronco a la vista hasta los 4 m, ocho ramas abiertas y la copa de racimos en tres anillos, con el tronco y tres verdes de la hoja del arbol frondoso generada por el usuario con Canva.
+mapa.vegetacion.sauce	Sauce llorón	bioma:estepa,bioma:bosque,uso:decorado,formato:voxel	6.8x9x6.8	120	importado	Junto al agua. Voxeles armados a mano (tools/voxeles/estructuras.py sauce), celdas de 25 cm, simetrico como el pino: el tronco grueso a la vista, la cupula y las cortinas que cuelgan hasta 1.5 m del suelo, con el tronco y tres verdes de la hoja generada por el usuario con Canva.
 mapa.vegetacion.saxaul	Saxaúl (arbusto del desierto)	bioma:desierto,uso:recolectable	2x2x2	60	pendiente	Leña en el desierto.
 mapa.vegetacion.palmera	Palmera datilera	bioma:desierto,uso:recolectable	3x7x3	100	pendiente	
 mapa.vegetacion.liquen	Liquen y musgo de tundra	bioma:glaciar,bioma:fiordo,uso:decorado	1x0.1x1	20	pendiente	
