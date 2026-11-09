@@ -5337,7 +5337,9 @@ static void test_buildkit(void) {
     CHECK(sand * 2 > ground && in.h > 2.0f);
     vox_free(&g);
     // Las obras de la tribu sin modelo se dibujan con el kit, a la medida de su id del inventario (las
-    // casas, que el kit hace de muchas medidas, se escalan a su lugar).
+    // casas, que el kit hace de muchas medidas, se escalan a su lugar). Las que ya tienen su modelo
+    // importado (la atalaya, con la escalera larga de su hoja) lo dibujan a el: el kit queda de
+    // respaldo y no tiene que medir lo mismo, pero se sigue armando.
     Inventory inv;
     char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
     CHECK(text != NULL);
@@ -5362,7 +5364,8 @@ static void test_buildkit(void) {
                 misfit++;
                 continue;
             }
-            if (t != BK_HOUSE && (fabsf(in.l - it->l) > 1.5f || fabsf(in.w - it->w) > 1.5f || fabsf(in.h - it->h) > 0.75f)) misfit++;
+            bool own_model = it->state == INV_IMPORTADO || it->state == INV_REFINADO;
+            if (t != BK_HOUSE && !own_model && (fabsf(in.l - it->l) > 1.5f || fabsf(in.w - it->w) > 1.5f || fabsf(in.h - it->h) > 0.75f)) misfit++;
             vox_free(&g);
         }
     }
