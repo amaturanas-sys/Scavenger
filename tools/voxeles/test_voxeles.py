@@ -430,6 +430,51 @@ def test_muro_en_ruinas():
     assert estructuras.triangulos(g) < 8000
 
 
+def _una_pieza_cerrada(lleno):
+    """Una sola pieza y sin aire encerrado (lo de adentro no se ve y el juego no arma sus caras)."""
+    from scipy import ndimage
+
+    _, piezas = ndimage.label(lleno)
+    vacio = np.pad(~lleno, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    return piezas == 1 and bool((lab[vacio] == lab[0, 0, 0]).all())
+
+
+def test_carros_y_puerta():
+    """La carreta (cuatro ruedas de disco con sus huecos), el carro de la yunta (ruedas de ocho rayos, la lanza y el
+    yugo arriba del poste, a lo ancho) y la puerta fortificada (simetrica, la puerta a oscuras al fondo del vano y
+    seis escalones hasta el umbral): sus medidas, una sola pieza, sin aire encerrado y bajo el aviso de Android."""
+    o = estructuras.carreta()
+    assert o.metros() == (2.429, 2.0, 4.643), o.metros()
+    assert _una_pieza_cerrada(o.lleno)
+    for uc in (10, 55):  # el disco de cada rueda: lleno, con un hueco por cuadrante junto al cubo
+        for z in (1, 2, 31, 32):
+            assert o.lleno[uc + 3, z, 12] and not o.lleno[uc + 2, z, 12] and not o.lleno[uc - 3, z, 7], (uc, z)
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert estructuras.triangulos(grid) < 8000
+
+    o = estructuras.carro_varas()
+    assert o.metros() == (2.5, 2.5, 6.375), o.metros()
+    assert _una_pieza_cerrada(o.lleno)
+    hierro, rayo = o.nombres.index("hierro"), o.nombres.index("rayo")
+    assert o.parte[84, 1, 0] == hierro and o.parte[84, 1, 31] == hierro  # la llanta, abajo y arriba
+    assert o.parte[84, 1, 8] == rayo and not o.lleno[81, 1, 8]  # un rayo hacia abajo y el hueco entre dos
+    assert o.lleno[1, 9:31, 26].all() and not o.lleno[1, 9:31, 28].any()  # el yugo, a lo ancho arriba del poste
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert estructuras.triangulos(grid) < 8000
+
+    o = estructuras.puerta_fortificada()
+    assert o.metros() == (12.5, 10.0, 5.0), o.metros()
+    assert _una_pieza_cerrada(o.lleno)
+    assert (o.parte == o.parte[:, ::-1]).all()
+    puerta = o.nombres.index("puerta")
+    assert not o.lleno[5:7, 24:28, 6:18].any() and (o.parte[7, 24:28, 6:18] == puerta).all()  # el vano, a oscuras
+    escalones = [int(o.lleno[:5, 25, y].sum()) for y in range(6)]
+    assert escalones == [5, 5, 4, 3, 2, 1], escalones
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert estructuras.triangulos(grid) < 8000
+
+
 def test_triangulos_juntos():
     """modelos.tris_vox cuenta lo que arma el juego (src/sim/voxel.c: las caras juntas y la base en el suelo): la
     figura de prueba de tests/test_main.c (merge_fixture) da los mismos triangulos que alla (MERGE_FIXTURE_TRIS)."""
@@ -477,6 +522,7 @@ def main():
         ("test_piedra_tallada", test_piedra_tallada),
         ("test_atalaya_forma", test_atalaya_forma),
         ("test_muro_en_ruinas", test_muro_en_ruinas),
+        ("test_carros_y_puerta", test_carros_y_puerta),
         ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0

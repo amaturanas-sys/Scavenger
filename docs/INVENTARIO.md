@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**450 objetos** · 18 con modelo · 432 pendientes.
+**450 objetos** · 21 con modelo · 429 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -12,8 +12,8 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
 | [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 28 | 0 | 2 | 0 |
-| [Estructuras](#estructura) | 43 | 38 | 1 | 4 | 0 |
-| [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
+| [Estructuras](#estructura) | 43 | 37 | 1 | 5 | 0 |
+| [Vehículos](#vehiculo) | 11 | 9 | 0 | 2 | 0 |
 | [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
 | [Armas](#arma) | 44 | 39 | 0 | 5 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
@@ -110,7 +110,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.campamento.empalizada` | Empalizada modular | 4x2.5x0.4 | 80 | pendiente | `faccion:nomada` `uso:destructible` `material:madera` |  |
 | `estructura.campamento.atalaya` | Atalaya de madera | 3x6x3 | 200 | importado | `faccion:nomada` `uso:trepable` `material:madera` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py atalaya), celdas de 15 cm: la torre de 2.5 m con sus tres pisos, las cruces, la escalera de mano al frente y la escalera larga atras, con los colores de la hoja de tres vistas generada por el usuario con Canva. Con la escalera de atras ocupa 6 m de largo. Reemplaza a la del kit de edificios (src/sim/buildkit.c). |
 | `estructura.imperio.muralla` | Muralla modular | 8x8x3 | 200 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:trepable` `material:piedra` |  |
-| `estructura.imperio.puerta` | Puerta de la ciudad | 10x10x5 | 600 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:destructible` `material:madera` |  |
+| `estructura.imperio.puerta` | Puerta de la ciudad | 10x10x5 | 600 | importado | `bioma:ciudad` `faccion:imperio` `uso:destructible` `material:madera` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py puerta_fortificada), celdas de 25 cm: dos torres con su corona y su pretil, el muro con el portico y la puerta, la escalinata y el zocalo, con los colores de la hoja de tres vistas generada por el usuario con Canva (12.5 m de ancho; el fondo, 5 m, del inventario: la vista de lado de la hoja dibuja un cuerpo de 24 m que no concuerda con la espalda). |
 | `estructura.imperio.torre` | Torre de vigilancia | 5x14x5 | 400 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:trepable` `material:piedra` |  |
 | `estructura.imperio.cuartel` | Cuartel | 16x6x10 | 600 | pendiente | `bioma:ciudad` `faccion:imperio` |  |
 | `estructura.imperio.granero` | Granero | 10x7x8 | 400 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:interactuable` | Las cosechas marchitas (acto II). |
@@ -145,9 +145,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `vehiculo.agua.velero` | Velero | 3x8x9 | 600 | pendiente | `bioma:fiordo` `uso:conducible` `material:madera` |  |
 | `vehiculo.agua.barco_carga` | Barco de carga | 6x14x20 | 1500 | pendiente | `bioma:fiordo` `uso:conducible` `faccion:neutral` |  |
 | `vehiculo.agua.barco_guerra` | Barco de guerra con cañones | 8x18x28 | 2500 | pendiente | `bioma:fiordo` `uso:conducible` `faccion:imperio` |  |
-| `vehiculo.tierra.carreta_bueyes` | Yunta de bueyes con carreta | 2.5x2.5x6 | 600 | pendiente | `faccion:nomada` `uso:conducible` `material:madera` | Mueve el campamento. Los bueyes: animal.ganado.buey. |
+| `vehiculo.tierra.carreta_bueyes` | Yunta de bueyes con carreta | 2.5x2.5x6 | 600 | importado | `faccion:nomada` `uso:conducible` `material:madera` `formato:voxel` | Mueve el campamento. Los bueyes: animal.ganado.buey. Voxeles armados a mano (tools/voxeles/estructuras.py carro_varas), celdas de 6.25 cm: el carro de la yunta (la caja con sus herrajes, dos ruedas de rayos de 2 m, la lanza con el tornapunta y el poste del yugo con el yugo), de la hoja del carro de varas generada por el usuario con Canva; los bueyes no van en el modelo. |
 | `vehiculo.tierra.kibitka` | Carro con yurta montada (kibitka) | 4x4x6 | 800 | pendiente | `faccion:nomada` `uso:conducible` |  |
-| `vehiculo.tierra.carreta_mercancias` | Carreta de mercancías | 2x2x4 | 400 | pendiente | `faccion:neutral` `uso:conducible` `material:madera` |  |
+| `vehiculo.tierra.carreta_mercancias` | Carreta de mercancías | 2x2x4 | 400 | importado | `faccion:neutral` `uso:conducible` `material:madera` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py carreta), celdas de 7 cm: la caja de tablas con sus postes, las cuatro ruedas de disco de 1.43 m, los ejes y la vara que los une, con tres tonos de madera de la hoja de tres vistas generada por el usuario con Canva (2.43 x 4.64 m de la hoja). |
 | `vehiculo.tierra.carruaje` | Carruaje imperial | 2.2x2.8x5 | 900 | pendiente | `faccion:imperio` `uso:conducible` |  |
 | `vehiculo.tierra.trineo` | Trineo | 1.2x0.8x3 | 200 | pendiente | `bioma:glaciar` `uso:conducible` `material:madera` |  |
 

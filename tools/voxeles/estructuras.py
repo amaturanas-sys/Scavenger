@@ -48,6 +48,7 @@ class Obra:
         self.celda = celda  # metros por celda: solo para medir (el juego la escala al alto del inventario)
         self.nombres = [""]
         self.estilo = {}
+        self.recorte = {}  # vista -> (desde, hasta): el tramo de la vista (fraccion del ancho) que va de punta a punta
 
     @property
     def lleno(self):
@@ -728,9 +729,255 @@ def muro_en_ruinas(vistas=None, alto_m=3.0, hiladas=12, tonos=(4, 3, 8), mancha=
         o.parte[celda_] = o.id(nombre)
     return o
 
+# ------------------------------------------------------------------------------------------- carros y carretas
+def tonos_por_brillo(vistas, cuantiles=(20, 50, 80), defecto=((84, 58, 40), (112, 80, 55), (146, 104, 70))):
+    """Tonos de la hoja (las tres vistas) por su brillo: la mediana de cada franja de +-10 alrededor de cada
+    percentil, aclarados como lo demas (LUZ). Para las piezas de madera de los carros: oscuro, medio y claro."""
+    if not vistas:
+        return [tuple(v) for v in defecto]
+    px = np.concatenate([c[m] for m, c in vistas])
+    brillo = px.sum(axis=1)
+    out = []
+    for q in cuantiles:
+        sel = (brillo >= np.percentile(brillo, max(q - 10, 0))) & (brillo <= np.percentile(brillo, min(q + 10, 100)))
+        out.append(tuple(int(v) for v in np.clip(np.median(px[sel], axis=0) * LUZ, 0, 255)))
+    return out
+
+
+def _rueda(o, centro, radio, z0, z1, cubo=(None, None), huecos=2.5, llanta="llanta", disco="rueda", rayo="rayo"):
+    """Una rueda de disco en el plano (u, y), de z0 a z1: la llanta (lo de afuera, 1.6 celdas), la cruz de los rayos,
+    el disco entre ellos con cuatro huecos en diagonal (a `huecos` celdas del centro) y el cubo, que sobresale hasta
+    cubo = (z de afuera, z de adentro)."""
+    uc, yc = centro
+    L, _, H = o.parte.shape
+    for u in range(L):
+        for y in range(H):
+            du, dy = u + 0.5 - uc, y + 0.5 - yc
+            r = (du * du + dy * dy) ** 0.5
+            if r > radio:
+                continue
+            if r > radio - 1.6:
+                parte = llanta
+            elif abs(du) < 1.0 or abs(dy) < 1.0:
+                parte = rayo
+            elif abs(abs(du) - huecos) < 1.0 and abs(abs(dy) - huecos) < 1.0:
+                continue  # los huecos entre los rayos, junto al cubo
+            else:
+                parte = disco
+            o.caja(parte, (u, u), (z0, z1), (y, y))
+    if cubo[0] is not None:
+        u0, y0 = int(np.floor(uc - 1.5)), int(np.floor(yc - 1.5))
+        o.caja("cubo", (u0, u0 + 2), (min(cubo), max(cubo)), (y0, y0 + 2))
+
+
+def carreta(vistas=None):
+    """vehiculo.tierra.carreta_mercancias: la carreta de cuatro ruedas de la hoja, 2 m de alto (el inventario) en
+    celdas de 7 cm (28 de alto: el pixel de la hoja). La caja: los costados y los testeros de dos tablas, con el
+    larguero abajo y el liston arriba, los postes de las esquinas y el del medio de cada costado, y el piso. Abajo,
+    las ruedas de disco de 1.43 m (la llanta, la cruz de los rayos, el cubo y cuatro huecos), los dos ejes, las patas
+    que apoyan la caja en los ejes y la vara que los une. Tres tonos de madera, de la hoja."""
+    celda = 2.0 / 28
+    L, W, H = 65, 34, 28
+    o = Obra(L, W, H, celda=celda)
+    oscuro, medio, claro = tonos_por_brillo(vistas)
+    for nombre, color in (("poste", oscuro), ("larguero", oscuro), ("tabla", medio), ("tabla_clara", claro),
+                          ("liston", medio), ("llanta", claro), ("rueda", oscuro), ("rayo", medio), ("cubo", medio),
+                          ("eje", oscuro)):
+        o.estilo[nombre] = (0, 0, color, "lado")
+    z0, z1 = 5, W - 6  # la caja, entre las ruedas
+    caja = (16, 24)  # del piso al liston
+    franjas = (("larguero", 16, 17), ("tabla", 18, 20), ("tabla_clara", 21, 23), ("liston", 24, 24))
+    for parte, y0, y1 in franjas:  # los costados y los testeros (estos, una celda adentro de los postes)
+        o.caja(parte, (2, L - 3), (z0, z0), (y0, y1), espejo=True)
+        o.caja(parte, (1, 1), (z0 + 2, z1 - 2), (y0, y1))
+        o.caja(parte, (L - 2, L - 2), (z0 + 2, z1 - 2), (y0, y1))
+    o.caja("tabla", (2, L - 3), (z0 + 1, z1 - 1), (caja[0], caja[0]))  # el piso
+    for u in (0, L - 2):  # los postes de las esquinas, mas altos que el liston
+        o.caja("poste", (u, u + 1), (z0, z0 + 1), (caja[0], H - 1), espejo=True)
+    o.caja("poste", (31, 32), (z0, z0), (caja[0], H - 2), espejo=True)  # el del medio de cada costado
+    for uc in (10, 55):  # los ejes, las ruedas y las patas
+        o.caja("eje", (uc - 1, uc), (1, W - 2), (10, 11))
+        o.caja("eje", (uc - 1, uc), (z0, z0 + 1), (12, caja[0] - 1), espejo=True)
+        _rueda(o, (uc, 10.0), 10.0, 1, 2, cubo=(0, 3))
+        _rueda(o, (uc, 10.0), 10.0, W - 3, W - 2, cubo=(W - 1, W - 4))
+    o.caja("eje", (10, 54), (W // 2 - 1, W // 2), (10, 11))  # la vara que une los ejes
+    return o
+
+
+def _rueda_rayos(o, centro, radio, z0, z1, rayos=8, cubo=(None, None)):
+    """Una rueda de rayos en el plano (u, y), de z0 a z1: la llanta de hierro (1.5 celdas), las pinas de madera
+    (otras 1.5), `rayos` rayos de 1.6 celdas de grueso y el cubo cuadrado con su fleje, que sobresale hasta
+    cubo = (z de afuera, z de adentro)."""
+    uc, yc = centro
+    L, _, H = o.parte.shape
+    paso = 2 * np.pi / rayos
+    for u in range(L):
+        for y in range(H):
+            du, dy = u + 0.5 - uc, y + 0.5 - yc
+            r = float(np.hypot(du, dy))
+            if r > radio:
+                continue
+            if r > radio - 1.5:
+                parte = "hierro"
+            elif r > radio - 3.0:
+                parte = "pina"
+            else:
+                ang = np.arctan2(dy, du) % paso
+                if min(ang, paso - ang) * r > 0.8 and r > 2.5:
+                    continue
+                parte = "rayo"
+            o.caja(parte, (u, u), (z0, z1), (y, y))
+    if cubo[0] is not None:
+        u0, y0 = int(round(uc - 2.5)), int(round(yc - 2.5))
+        o.caja("hierro", (u0, u0 + 4), (min(cubo), max(cubo)), (y0, y0 + 4))
+        o.caja("cubo", (u0 + 1, u0 + 3), (min(cubo), max(cubo)), (y0 + 1, y0 + 3))
+
+
+def tonos_madera_y_hierro(vistas):
+    """Los colores de un carro con herrajes: tres tonos de la madera (lo pardo: R > B + 20; percentiles 20, 50 y
+    80 del brillo) y el hierro (lo gris: R, G y B parejos), aclarados como lo demas (LUZ)."""
+    if not vistas:
+        return [(96, 70, 46), (128, 94, 60), (160, 120, 78)], (92, 92, 96)
+    px = np.concatenate([c[m] for m, c in vistas])
+    madera = px[px[:, 0] > px[:, 2] + 20]
+    gris = px[(np.abs(px[:, 0] - px[:, 2]) < 12) & (np.abs(px[:, 1] - px[:, 2]) < 12) & (px.sum(axis=1) < 600)]
+    tonos = tonos_por_brillo([(np.ones(len(madera), bool), madera)])
+    hierro = np.median(gris, axis=0) if len(gris) > 50 else np.array([80, 80, 84], float)
+    return tonos, tuple(int(v) for v in np.clip(hierro * LUZ, 0, 255))
+
+
+def carro_varas(vistas=None):
+    """vehiculo.tierra.carreta_bueyes: el carro de la yunta, de la hoja del carro de varas: 2.5 m de alto (el
+    inventario) en celdas de 6.25 cm (40 de alto: el pixel de la hoja). La caja de tablas sobre el eje (los postes
+    de las esquinas con sus herrajes, el piso y el larguero), las dos ruedas de 2 m (llanta de hierro, pinas, ocho
+    rayos y el cubo con su fleje), el eje, la lanza que va del eje hacia adelante con sus flejes y el tornapunta que
+    la une al frente de la caja, y al final de la lanza el poste del yugo con el yugo encima, de 1.4 m, donde van los
+    cuellos de los bueyes (animal.ganado.buey, 2.12 m de alto). Los colores (tres tonos de madera y el hierro), de
+    la hoja. La vista de frente de la hoja esta en perspectiva: la forma sale de la de lado."""
+    celda = 2.5 / 40
+    L, W, H = 102, 40, 40
+    o = Obra(L, W, H, celda=celda)
+    (oscuro, medio, claro), hierro = tonos_madera_y_hierro(vistas)
+    for nombre, color in (("tabla", medio), ("tabla_clara", claro), ("poste", oscuro), ("larguero", oscuro),
+                          ("pina", medio), ("rayo", claro), ("cubo", oscuro), ("lanza", medio), ("hierro", hierro)):
+        o.estilo[nombre] = (0, 0, color, "lado")
+    zc = W // 2  # la lanza y el yugo, al medio
+    u0, u1 = 51, L - 1  # la caja
+    z0, z1 = 5, W - 6
+    piso, tope = 24, 37
+    # La caja: los costados y los testeros de tablas (dos tonos por tabla), el piso, el larguero y los postes.
+    for y in range(piso, tope + 1):
+        parte = "tabla" if ((y - piso) // 3) % 2 == 0 else "tabla_clara"
+        o.caja(parte, (u0 + 2, u1 - 2), (z0, z0), (y, y), espejo=True)
+        o.caja(parte, (u0, u0), (z0 + 2, z1 - 2), (y, y))
+        o.caja(parte, (u1, u1), (z0 + 2, z1 - 2), (y, y))
+    o.caja("tabla", (u0 + 1, u1 - 1), (z0 + 1, z1 - 1), (piso, piso))
+    o.caja("larguero", (u0, u1), (z0, z0 + 1), (piso - 1, piso - 1), espejo=True)
+    for u in (u0, u1 - 1):
+        o.caja("poste", (u, u + 1), (z0, z0 + 1), (piso - 1, H - 1), espejo=True)
+        for y in (piso - 1, piso, tope - 3, tope - 2):  # los herrajes de las esquinas
+            o.caja("hierro", (u, u + 1), (z0, z0 + 1), (y, y), espejo=True)
+    # El eje y las ruedas.
+    uc, yc, R = 84.5, 16.0, 16.0
+    o.caja("larguero", (83, 85), (1, W - 2), (15, 17))
+    o.caja("larguero", (83, 85), (z0, z0 + 1), (18, piso - 2), espejo=True)  # los soportes de la caja
+    _rueda_rayos(o, (uc, yc), R, 1, 2, cubo=(0, 3))
+    _rueda_rayos(o, (uc, yc), R, W - 3, W - 2, cubo=(W - 1, W - 4))
+    # La lanza: del eje hacia adelante, con sus flejes; el tornapunta, de la lanza al frente de la caja.
+    o.caja("lanza", (2, 83), (zc - 1, zc), (19, 21))
+    for ua in (15, 35, 53):
+        o.caja("hierro", (ua, ua + 2), (zc - 2, zc + 1), (18, 22))
+    for k in range(u0 - 36):  # el tornapunta: de la lanza (u 36) al frente de la caja, 0.4 m mas arriba
+        y = 22 + int(round(k * 5 / (u0 - 37)))
+        o.caja("lanza", (36 + k, 36 + k), (zc - 1, zc), (y - 1, y))
+    # El poste del yugo, al final de la lanza, y el yugo encima (a lo ancho), con sus herrajes.
+    o.caja("poste", (0, 2), (zc - 2, zc + 1), (13, 25))
+    o.caja("lanza", (0, 2), (zc - 11, zc + 10), (25, 27))
+    for (za, zb) in ((zc - 11, zc - 10), (zc - 2, zc + 1), (zc + 9, zc + 10)):
+        o.caja("hierro", (0, 2), (za, zb), (25, 27))
+    o.caja("hierro", (0, 2), (zc - 2, zc + 1), (13, 14))
+    return o
+
+
+def puerta_fortificada():
+    """estructura.imperio.puerta: la puerta fortificada de la hoja, 10 m de alto (el inventario) en celdas de 25 cm:
+    dos torres de 3.5 m de lado con su corona (la faja de piedra que vuela, tres ventanas por cara y la cornisa de
+    ladrillo, que arriba es un pretil alrededor del techo), el muro de 8 m entre ellas con el portico (dos columnas de ladrillo, el marco de la puerta, el dintel
+    y su cornisa) y la puerta de 1 x 3 m a oscuras; atras, las pilastras y la puerta ciega con su faja de ladrillo;
+    el zocalo de dos gradas alrededor, el de cada torre y la escalinata de seis escalones hasta el umbral. Las vistas
+    de la hoja no concuerdan (de lado, un cuerpo de 24 m que baja hasta una torre chica; de espalda, las dos torres
+    del frente): va el frente y la espalda, con el fondo del inventario (5 m), y los costados toman de la vista de
+    lado solo el tramo de la torre."""
+    L, W, H = 21, 52, 40
+    o = Obra(L, W, H, celda=0.25)
+    o.estilo.update({
+        "zocalo": (2, 5, (150, 130, 100), "lado"),
+        "escalera": (1, 4, (150, 132, 104), "frente"),
+        "torre": (2, 4, (172, 142, 106), "lado"),
+        "muro": (2, 4, (170, 140, 104), "frente"),
+        "panel": (2, 3, (150, 120, 88), "lado"),
+        "cornisa": (1, 3, (190, 160, 122), "lado"),
+        "dintel": (1, 3, (176, 146, 110), "frente"),
+        "pilastra": (2, 3, (176, 146, 110), "espalda"),
+        "ladrillo": (0, 0, (150, 78, 50), "frente"),
+        "columna": (0, 0, (164, 86, 54), "frente"),
+        "puerta": (0, 0, HUECO, "frente"),
+    })
+    o.recorte["lado"] = (0.0, 0.16)
+    u0, u1 = 5, 16  # el cuerpo: del frente a la espalda (3 m)
+    t0, t1 = 4, 17  # la torre de la izquierda (de frente, a la derecha de la imagen); la otra, en espejo
+    # El zocalo: dos gradas alrededor de todo, y la de cada torre.
+    o.caja("zocalo", (2, 19), (1, W - 2), (0, 2))
+    o.caja("zocalo", (3, 18), (2, W - 3), (3, 5))
+    o.caja("zocalo", (4, 17), (t0 - 1, t1 + 1), (6, 8), espejo=True)
+    # Las torres y el muro de entre ellas.
+    o.caja("torre", (u0, u1), (t0, t1), (0, H - 1), espejo=True)
+    o.caja("muro", (u0, u1), (t1 + 1, W - 2 - t1), (0, 31))
+    # La corona de cada torre: la faja que vuela, las ventanas de cada cara y la cornisa de ladrillo.
+    o.caja("cornisa", (u0 - 1, u1 + 1), (t0 - 1, t1 + 1), (33, 33), espejo=True)
+    o.caja("ladrillo", (u0 - 1, u1 + 1), (t0 - 1, t1 + 1), (38, 39), espejo=True)
+    o.vaciar((u0 + 1, u1 - 1), (t0 + 1, t1 - 1), (39, 39), espejo=True)  # el pretil: adentro, el techo de piedra
+    o.marcar("torre", (u0 + 1, u1 - 1), (t0 + 1, t1 - 1), (38, 38), espejo=True)
+    for k in (3, 6, 7, 10):
+        o.vaciar((u0, u0), (t0 + k, t0 + k), (35, 36), espejo=True)  # al frente
+        o.marcar("puerta", (u0 + 1, u0 + 1), (t0 + k, t0 + k), (35, 36), espejo=True)
+        o.vaciar((u1, u1), (t0 + k, t0 + k), (35, 36), espejo=True)  # atras
+        o.marcar("puerta", (u1 - 1, u1 - 1), (t0 + k, t0 + k), (35, 36), espejo=True)
+        uu = u0 + k - 1 if k < 7 else u0 + k  # de costado (12 celdas: 2, 5, 6 y 9 desde el frente)
+        for z, adentro in ((t0, t0 + 1), (t1, t1 - 1)):  # afuera y adentro (la de adentro, sobre el muro)
+            o.vaciar((uu, uu), (z, z), (35, 36), espejo=True)
+            o.marcar("puerta", (uu, uu), (adentro, adentro), (35, 36), espejo=True)
+    # Los paneles rehundidos del frente de cada torre.
+    for k in (2, 9):
+        o.vaciar((u0, u0), (t0 + k, t0 + k + 1), (21, 30), espejo=True)
+        o.marcar("panel", (u0 + 1, u0 + 1), (t0 + k, t0 + k + 1), (21, 30), espejo=True)
+    # El muro del medio: su cornisa, los paños de ladrillo, el portico y la puerta.
+    zc0, zc1 = t1 + 1, W - 2 - t1  # 18..33
+    o.caja("cornisa", (u0 - 1, u1 + 1), (zc0, zc1), (31, 31))
+    o.marcar("ladrillo", (u0, u0), (zc0, zc0 + 1), (9, 19), espejo=True)
+    o.caja("columna", (u0 - 1, u0 - 1), (21, 22), (6, 23), espejo=True)
+    o.marcar("ladrillo", (u0, u0), (23, 23), (6, 19), espejo=True)
+    o.caja("dintel", (u0 - 1, u0 - 1), (19, 32), (24, 28))
+    o.caja("ladrillo", (u0 - 1, u0 - 1), (21, 30), (26, 26))
+    o.caja("cornisa", (u0 - 2, u0 - 1), (18, 33), (29, 29))
+    o.vaciar((u0, u0 + 1), (24, 27), (6, 17))  # la puerta: entra 0.75 m y su fondo queda a oscuras
+    o.marcar("puerta", (u0, u0 + 2), (23, 28), (5, 18))
+    # Atras: las pilastras, la puerta ciega y la faja de ladrillo.
+    o.caja("pilastra", (u1 + 1, u1 + 1), (zc0, zc0 + 1), (6, 28), espejo=True)
+    o.vaciar((u1, u1), (23, 28), (6, 24))
+    o.marcar("panel", (u1 - 1, u1 - 1), (23, 28), (6, 24))
+    o.marcar("ladrillo", (u1, u1), (zc0 + 2, zc1 - 2), (29, 30))
+    # La escalinata: seis escalones del suelo (u = 0) al umbral de la puerta (y = 6), entre las torres.
+    o.vaciar((0, u0 - 1), (19, 32), (0, 8))
+    for y in range(6):
+        o.caja("escalera", (max(0, y - 1), u0 - 1), (19, 32), (y, y))
+    return o
+
+
 RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo, "atalaya": atalaya,
            "piedra_ciervo_sol": piedra_ciervo_sol, "piedra_ciervo_felinos": piedra_ciervo_felinos,
-           "muro_en_ruinas": muro_en_ruinas}
+           "muro_en_ruinas": muro_en_ruinas, "carreta": carreta, "carro_varas": carro_varas,
+           "puerta_fortificada": puerta_fortificada}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
 # pixeles de la vista recortada. La hoja del templo exagera lo alto en el frente (los pilonos miden 340 px de
@@ -748,6 +995,9 @@ ALTURAS = {
     "piedra_ciervo_felinos": {v: ([0, 75], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
     "atalaya": {v: ([0, 40], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
     "muro_en_ruinas": {v: ([0, 57], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},  # (colores fijos)
+    "carreta": {v: ([0, 28], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
+    "carro_varas": {v: ([0, 40], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
+    "puerta_fortificada": {v: ([0, 40], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
 }
 
 
@@ -822,6 +1072,9 @@ def colorear(obra, vistas=None, alturas=None, luz=LUZ):
         def muestra(vista, c0, c1, y0, y1):
             img = planas[vista]
             w = img.shape[1]
+            if vista in obra.recorte:  # solo un tramo de la vista (la del lado de la puerta: la torre)
+                a, b = obra.recorte[vista]
+                c0, c1 = a + (b - a) * c0, a + (b - a) * c1
             x0, x1 = int(np.clip(c0 * w, 0, w - 1)), int(np.clip(np.ceil(c1 * w), 1, w))
             r0, r1 = fila(vista, y0, y1)
             return np.median(img[r0:max(r1, r0 + 1), x0:max(x1, x0 + 1)].reshape(-1, 3), axis=0)
