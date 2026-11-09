@@ -376,7 +376,20 @@ def piedra_ciervo(vistas=None):
     return losa_tallada(vistas, 3.0, 0.04)
 
 
-RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo}
+def piedra_ciervo_sol(vistas=None):
+    """arte/voxeles/estructuras/piedra_ciervo_sol: otra estela (sin id todavia), 3 m en celdas de 4 cm: dos ciervos
+    encabritados frente a frente, con sus astas, un sol arriba y otro abajo, y la guarda en zigzag."""
+    return losa_tallada(vistas, 3.0, 0.04)
+
+
+def piedra_ciervo_felinos(vistas=None):
+    """arte/voxeles/estructuras/piedra_ciervo_felinos: otra estela (sin id todavia), 3 m en celdas de 4 cm: dos
+    felinos frente a frente, el sol, las espirales, el rombo del medio y la guarda en zigzag."""
+    return losa_tallada(vistas, 3.0, 0.04)
+
+
+RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo,
+           "piedra_ciervo_sol": piedra_ciervo_sol, "piedra_ciervo_felinos": piedra_ciervo_felinos}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
 # pixeles de la vista recortada. La hoja del templo exagera lo alto en el frente (los pilonos miden 340 px de
@@ -389,6 +402,9 @@ ALTURAS = {
     },
     "forja": {v: ([0, 25], [0, 511], 511) for v in ("frente", "lado", "espalda")},  # las tres vistas, a la misma escala
     "piedra_ciervo": {v: ([0, 75], [0, a], a) for v, a in (("frente", 830), ("lado", 836), ("espalda", 829))},
+    # Las otras estelas, a una sola escala (las vistas recortadas, de punta a punta).
+    "piedra_ciervo_sol": {v: ([0, 75], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
+    "piedra_ciervo_felinos": {v: ([0, 75], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
 }
 
 
