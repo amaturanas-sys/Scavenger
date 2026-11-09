@@ -309,6 +309,28 @@ def test_forja_forma():
     assert estructuras.triangulos(grid) < 8000
 
 
+def test_pino_simetrico():
+    """El pino: 10 m de alto, el mismo de los cuatro lados y en el espejo (forma y color: la parte de cada celda), en
+    una sola pieza, sin aire encerrado, con el tronco a la vista debajo de la copa y bajo el aviso de Android."""
+    from scipy import ndimage
+
+    o = estructuras.pino()
+    assert o.metros()[1] == 10.0 and o.metros()[0] == o.metros()[2], o.metros()
+    p = o.parte
+    for q in (p[::-1], p[:, ::-1], np.rot90(p, 1, axes=(0, 1)), np.transpose(p, (1, 0, 2))):
+        assert (q == p).all()
+    _, piezas = ndimage.label(o.lleno)
+    assert piezas == 1, piezas
+    vacio = np.pad(~o.lleno, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    assert (lab[vacio] == lab[0, 0, 0]).all()
+    tronco = o.nombres.index("tronco")
+    abajo = p[:, :, :8]
+    assert (abajo[abajo > 0] == tronco).all() and (abajo == tronco).sum() == 4 * 8  # 2 x 2 celdas, hasta la copa
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert estructuras.triangulos(grid) < 8000
+
+
 def test_triangulos_juntos():
     """modelos.tris_vox cuenta lo que arma el juego (src/sim/voxel.c: las caras juntas y la base en el suelo): la
     figura de prueba de tests/test_main.c (merge_fixture) da los mismos triangulos que alla (MERGE_FIXTURE_TRIS)."""
@@ -352,6 +374,7 @@ def main():
         ("test_templo_forma", test_templo_forma),
         ("test_templo_colores", test_templo_colores),
         ("test_forja_forma", test_forja_forma),
+        ("test_pino_simetrico", test_pino_simetrico),
         ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0

@@ -18,7 +18,7 @@ mapa.agua.tempano	Témpano de hielo	bioma:fiordo,uso:decorado	3x1x3	60	pendiente
 mapa.vegetacion.hierba_alta	Hierba alta (escondite)	bioma:estepa,uso:escondite	2x1x2	40	pendiente	El jugador puede esconderse dentro.
 mapa.vegetacion.mata_hierbas	Mata de hierbas curativas	bioma:estepa,uso:recolectable	0.8x0.6x0.8	80	pendiente	F para recoger hierbas curativas.
 mapa.vegetacion.arbusto	Arbusto estepario	bioma:estepa,uso:decorado	1x0.8x1	40	pendiente	
-mapa.vegetacion.pino	Pino	bioma:bosque,uso:trepable,formato:voxel	3x10x3	120	importado	Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva.
+mapa.vegetacion.pino	Pino	bioma:bosque,uso:trepable,formato:voxel	3x10x3	120	importado	Voxeles armados a mano (tools/voxeles/estructuras.py pino), simetrico: ocho pisos de ramas alrededor del tronco, 4.4 m de copa (la proporcion de la hoja), con los colores de la hoja de tres vistas generada por el usuario con Canva.
 mapa.vegetacion.alerce	Alerce	bioma:bosque,uso:trepable	3x12x3	120	pendiente	
 mapa.vegetacion.abedul	Abedul	bioma:estepa,bioma:bosque,uso:decorado	2.5x8x2.5	100	pendiente	
 mapa.vegetacion.saxaul	Saxaúl (arbusto del desierto)	bioma:desierto,uso:recolectable	2x2x2	60	pendiente	Leña en el desierto.

@@ -218,7 +218,74 @@ def forja():
     return o
 
 
-RECETAS = {"templo": templo, "forja": forja}
+def tonos_de_arbol(vistas):
+    """Los colores de un arbol de la hoja (las tres vistas): el tronco (lo marron del pie, al medio) y tres verdes de
+    la copa (sombra, medio y puntas: los percentiles 20, 55 y 85 del brillo de lo verde), aclarados como lo demas
+    (LUZ)."""
+    verdes, troncos = [], []
+    for m, c in vistas:
+        h, w = m.shape
+        sel = m & (c[..., 1] > c[..., 0] + 4) & (c[..., 1] > c[..., 2])
+        verdes.append(c[sel])
+        pie = np.zeros_like(m)
+        pie[int(0.9 * h):, int(0.4 * w):int(0.6 * w)] = True
+        troncos.append(c[pie & m & ~sel])
+    verdes, troncos = np.concatenate(verdes), np.concatenate(troncos)
+    brillo = verdes.sum(axis=1)
+    tonos = [np.median(verdes[(brillo >= np.percentile(brillo, q - 10)) & (brillo <= np.percentile(brillo, q + 10))], axis=0)
+             for q in (20, 55, 85)]
+    tronco = np.median(troncos, axis=0) if len(troncos) else np.array([88, 70, 54], float)
+    aclara = lambda c: tuple(int(v) for v in np.clip(np.asarray(c) * LUZ, 0, 255))  # noqa: E731
+    return aclara(tronco), [aclara(t) for t in tonos]
+
+
+def pino(vistas=None):
+    """mapa.vegetacion.pino: 10 m de alto (el inventario) y 4.4 m de copa (la proporcion de los pinos de la hoja,
+    entre el angosto y los anchos; con los 3 m del inventario quedaba una columna), simetrico: cada celda se llena
+    segun su distancia al eje,
+    asi el arbol es el mismo de los cuatro lados y en el espejo. La hoja trae tres pinos distintos (dos anchos y uno
+    angosto), no tres vistas de uno: de ahi salia antes una copa achatada, mas ancha de frente que de costado. El
+    tronco de 2 x 2 celdas; la copa en ocho pisos de ramas, cada uno una falda que se angosta hacia arriba, con ocho
+    lobulos que se corren media rama de un piso al otro. El color, de la hoja: el tronco y tres verdes (las puntas
+    de abajo de cada piso, claras; lo de adentro, a la sombra)."""
+    H, W = 54, 24  # 10 m de alto: celdas de 0.185 m; 24 de ancho = 4.44 m
+    o = Obra(W, W, H, celda=10.0 / H)
+    tronco, (sombra, medio, puntas) = tonos_de_arbol(vistas) if vistas else ((88, 70, 54), [(40, 58, 36), (58, 82, 46), (86, 112, 64)])
+    o.estilo.update({
+        "tronco": (0, 0, tronco, "lado"),
+        "copa_sombra": (0, 0, sombra, "lado"),
+        "copa": (0, 0, medio, "lado"),
+        "copa_puntas": (0, 0, puntas, "lado"),
+    })
+    c = W / 2.0
+    m = W // 2 - 1  # el tronco: las 2 x 2 celdas del medio
+    base, cima, pisos = 8, H - 1, 8  # la copa empieza a 1.5 m: debajo se ve el tronco, como en la hoja
+    alto_piso = (cima - base + 1) / pisos
+    rmax = c
+    for y in range(base, H):
+        k = min(int((y - base) / alto_piso), pisos - 1)
+        y0 = base + k * alto_piso
+        t = (y - y0) / alto_piso  # 0 abajo del piso, 1 arriba
+        r_piso = rmax * (cima + 1 - y0) / (cima + 1 - base)
+        for u in range(W):
+            for z in range(W):
+                du, dz = u + 0.5 - c, z + 0.5 - c
+                d, th = np.hypot(du, dz), np.arctan2(dz, du)
+                r = r_piso * (1.0 - 0.38 * t) * (1.0 + 0.09 * np.cos(8 * th + (k % 2) * np.pi))  # media rama: fase pi
+                if d > r:  # la punta termina donde la copa ya no llega a las celdas del medio
+                    continue
+                if t < 0.25 and d > r - 1.6:
+                    parte = "copa_puntas"
+                elif d < r - 2.4:
+                    parte = "copa_sombra"
+                else:
+                    parte = "copa"
+                o.caja(parte, (u, u), (z, z), (y, y))
+    o.caja("tronco", (m, m + 1), (m, m + 1), (0, base + 1))  # lo que se ve, debajo de la copa (adentro va tapado)
+    return o
+
+
+RECETAS = {"templo": templo, "forja": forja, "pino": pino}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
 # pixeles de la vista recortada. La hoja del templo exagera lo alto en el frente (los pilonos miden 340 px de
@@ -390,8 +457,9 @@ def main(argv=None):
     ap.add_argument("--colores", type=int, default=32, help="colores de la paleta (1 a 255)")
     ap.add_argument("--vista-previa", help="PNG con el frente, el lado, arriba y la isometrica")
     a = ap.parse_args(argv)
-    obra = RECETAS[a.receta]()
     vistas = voxeles.hoja(a.hoja, a.umbral) if a.hoja else None
+    receta = RECETAS[a.receta]
+    obra = receta(vistas) if receta.__code__.co_argcount else receta()  # las que sacan algo de la hoja (el pino)
     rgb, vis = colorear(obra, vistas, ALTURAS.get(a.receta))
     grid, pal = a_vox(obra, rgb, vis, a.colores)
     n = vox.escribir(a.salida, grid, pal)
