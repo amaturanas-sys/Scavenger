@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**450 objetos** · 16 con modelo · 434 pendientes.
+**450 objetos** · 17 con modelo · 433 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -12,7 +12,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
 | [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 28 | 0 | 2 | 0 |
-| [Estructuras](#estructura) | 43 | 40 | 1 | 2 | 0 |
+| [Estructuras](#estructura) | 43 | 39 | 1 | 3 | 0 |
 | [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
 | [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
 | [Armas](#arma) | 44 | 39 | 0 | 5 | 0 |
@@ -108,7 +108,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.campamento.jaula_prisioneros` | Jaula de prisioneros | 3x2x3 | 150 | pendiente | `faccion:cualquiera` `uso:interactuable` `material:madera` |  |
 | `estructura.campamento.poste_ejecucion` | Poste de castigo | 0.5x2.5x0.5 | 50 | pendiente | `faccion:cualquiera` `uso:interactuable` `material:madera` |  |
 | `estructura.campamento.empalizada` | Empalizada modular | 4x2.5x0.4 | 80 | pendiente | `faccion:nomada` `uso:destructible` `material:madera` |  |
-| `estructura.campamento.atalaya` | Atalaya de madera | 3x6x3 | 200 | pendiente | `faccion:nomada` `uso:trepable` `material:madera` |  |
+| `estructura.campamento.atalaya` | Atalaya de madera | 3x6x3 | 200 | importado | `faccion:nomada` `uso:trepable` `material:madera` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py atalaya), celdas de 15 cm: la torre de 2.5 m con sus tres pisos, las cruces, la escalera de mano al frente y la escalera larga atras, con los colores de la hoja de tres vistas generada por el usuario con Canva. Con la escalera de atras ocupa 6 m de largo. Reemplaza a la del kit de edificios (src/sim/buildkit.c). |
 | `estructura.imperio.muralla` | Muralla modular | 8x8x3 | 200 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:trepable` `material:piedra` |  |
 | `estructura.imperio.puerta` | Puerta de la ciudad | 10x10x5 | 600 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:destructible` `material:madera` |  |
 | `estructura.imperio.torre` | Torre de vigilancia | 5x14x5 | 400 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:trepable` `material:piedra` |  |

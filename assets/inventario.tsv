@@ -49,7 +49,7 @@ estructura.campamento.enfermeria	Yurta enfermería	faccion:nomada,uso:interactua
 estructura.campamento.jaula_prisioneros	Jaula de prisioneros	faccion:cualquiera,uso:interactuable,material:madera	3x2x3	150	pendiente	
 estructura.campamento.poste_ejecucion	Poste de castigo	faccion:cualquiera,uso:interactuable,material:madera	0.5x2.5x0.5	50	pendiente	
 estructura.campamento.empalizada	Empalizada modular	faccion:nomada,uso:destructible,material:madera	4x2.5x0.4	80	pendiente	
-estructura.campamento.atalaya	Atalaya de madera	faccion:nomada,uso:trepable,material:madera	3x6x3	200	pendiente	
+estructura.campamento.atalaya	Atalaya de madera	faccion:nomada,uso:trepable,material:madera,formato:voxel	3x6x3	200	importado	Voxeles armados a mano (tools/voxeles/estructuras.py atalaya), celdas de 15 cm: la torre de 2.5 m con sus tres pisos, las cruces, la escalera de mano al frente y la escalera larga atras, con los colores de la hoja de tres vistas generada por el usuario con Canva. Con la escalera de atras ocupa 6 m de largo. Reemplaza a la del kit de edificios (src/sim/buildkit.c).
 estructura.imperio.muralla	Muralla modular	bioma:ciudad,faccion:imperio,uso:trepable,material:piedra	8x8x3	200	pendiente	
 estructura.imperio.puerta	Puerta de la ciudad	bioma:ciudad,faccion:imperio,uso:destructible,material:madera	10x10x5	600	pendiente	
 estructura.imperio.torre	Torre de vigilancia	bioma:ciudad,faccion:imperio,uso:trepable,material:piedra	5x14x5	400	pendiente	

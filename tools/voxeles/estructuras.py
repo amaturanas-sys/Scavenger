@@ -388,7 +388,106 @@ def piedra_ciervo_felinos(vistas=None):
     return losa_tallada(vistas, 3.0, 0.04)
 
 
-RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo,
+def _linea(o, parte, a, b, plano):
+    """Una viga en diagonal de la celda a a la b (dos coordenadas del plano; la tercera fija en `plano`, que dice
+    cual es: ("z", valor) o ("u", valor)), como una escalera de celdas que se tocan por el costado."""
+    (p0, y0), (p1, y1) = a, b
+    n = max(abs(p1 - p0), abs(y1 - y0))
+    ult = None
+    for k in range(n + 1):
+        p, y = int(round(p0 + (p1 - p0) * k / n)), int(round(y0 + (y1 - y0) * k / n))
+        celdas = [(p, y)] if ult is None or (ult[0] == p or ult[1] == y) else [(p, ult[1]), (p, y)]
+        for (pp, yy) in celdas:
+            if plano[0] == "z":
+                o.caja(parte, (pp, pp), (plano[1], plano[1]), (yy, yy))
+            else:
+                o.caja(parte, (plano[1], plano[1]), (pp, pp), (yy, yy))
+        ult = (p, y)
+
+
+def tonos_de_madera(vistas):
+    """Los colores de una armazon de madera de la hoja (las tres vistas): la madera (la mediana), las tablas (lo mas
+    claro de la madera: el percentil 70 del brillo) y la soga de las ataduras (lo claro y amarillento), aclarados
+    como lo demas (LUZ). Colores fijos: en piezas finas, el color de la hoja por tramos no deja juntar las caras."""
+    px = np.concatenate([c[m] for m, c in vistas])
+    brillo = px.sum(axis=1)
+    madera = np.median(px, axis=0)
+    tabla = np.median(px[(brillo >= np.percentile(brillo, 60)) & (brillo <= np.percentile(brillo, 80))], axis=0)
+    claro = px[(brillo >= np.percentile(brillo, 92)) & (px[:, 0] > px[:, 2] + 15)]
+    soga = np.median(claro, axis=0) if len(claro) > 20 else np.array([176, 160, 120], float)
+    aclara = lambda c: tuple(int(v) for v in np.clip(np.asarray(c) * LUZ, 0, 255))  # noqa: E731
+    return aclara(madera), aclara(tabla), aclara(soga)
+
+
+def atalaya(vistas=None, celda=0.15):
+    """estructura.campamento.atalaya: la atalaya de madera de la hoja, 6 m de alto (el inventario), en celdas de
+    15 cm (los postes de la hoja miden 0.3 m: 2 x 2 celdas; las vigas, 0.15: una). La torre de 2.5 m de lado: cuatro
+    postes, tres pisos (1.9, 3.7 y 5.4 m) con su viga de borde, el piso de tablas con el hueco de la escalera, la
+    baranda arriba y una baranda baja en cada piso; las cruces de refuerzo de la hoja (de costado, una diagonal por
+    piso; de frente y de espalda, en lambda abajo y en V arriba); la escalera de mano al medio del frente; y atras,
+    la escalera larga que baja de la plataforma hasta el suelo a 3.3 m de la torre, sobre las vigas de los pisos que
+    se alargan y sus postes. Las ataduras de soga, en cada encuentro de poste y viga. Los colores, de la hoja."""
+    c = lambda m: int(round(m / celda))  # noqa: E731 - de metros a celdas
+    H, W = c(6.0), c(2.5) | 1  # impar: la escalera de mano, al medio
+    torre = c(2.5)
+    u0, u1 = 1, torre  # la torre: la escalera de mano va delante, en u 0
+    pie = u1 + c(3.3)  # donde la escalera larga toca el suelo
+    o = Obra(pie + 1, W, H, celda=celda)
+    madera, tabla, soga = tonos_de_madera(vistas) if vistas else ((110, 92, 70), (128, 106, 80), (176, 160, 120))
+    o.estilo.update({"madera": (0, 0, madera, "lado"), "tabla": (0, 0, tabla, "lado"), "soga": (0, 0, soga, "lado")})
+    medio = W // 2
+    pisos = [(c(h) - 1, c(h)) for h in (1.9, 3.7)] + [(c(5.4) - 2, c(5.4))]
+    postes = [(u, z) for u in (u0, u1 - 1) for z in (0, W - 2)]
+    for (u, z) in postes:  # los postes, hasta arriba de la baranda
+        o.caja("madera", (u, u + 1), (z, z + 1), (0, H - 1))
+    for (a, b) in pisos:
+        o.caja("madera", (u0, u1), (0, 0), (a, b), espejo=True)  # las vigas de borde
+        o.caja("madera", (u0, u0), (0, W - 1), (a, b))
+        o.caja("madera", (u1, u1), (0, W - 1), (a, b))
+        o.caja("tabla", (u0 + 1, u1 - 1), (1, W - 2), (b, b))  # el piso de tablas, con el hueco de la escalera
+        o.vaciar((u0 + 1, u0 + 2), (medio - 1, medio + 1), (b, b))
+        for (u, z) in postes:  # la soga, arriba y abajo de cada viga
+            for y in (a - 1, b + 1):
+                o.caja("soga", (u, u + 1), (z, z + 1), (y, y))
+    for h in (2.35, 4.15, 5.8):  # las barandas: baja en cada piso, la de arriba a la altura del pecho
+        y = c(h)
+        o.caja("madera", (u0, u1), (0, 0), (y, y), espejo=True)
+        o.caja("madera", (u0, u0), (0, W - 1), (y, y))
+        o.caja("madera", (u1, u1), (0, W - 1), (y, y))
+    tramos = [(1, pisos[0][0] - 1), (pisos[0][1] + 1, pisos[1][0] - 1), (pisos[1][1] + 1, pisos[2][0] - 1)]
+    for z in (0, W - 1):  # las cruces de los costados: una diagonal por piso, que sube hacia atras
+        for (y0, y1) in tramos:
+            _linea(o, "madera", (u0 + 2, y0), (u1 - 2, y1), ("z", z))
+    for u in (u0, u1):  # al frente y atras: en lambda abajo, en V arriba (se juntan al medio)
+        y0, y1 = tramos[0]
+        _linea(o, "madera", (2, y0), (medio, y1), ("u", u))
+        _linea(o, "madera", (W - 3, y0), (medio, y1), ("u", u))
+        for (y0, y1) in tramos[1:]:
+            _linea(o, "madera", (2, y1), (medio, y0 + 1), ("u", u))
+            _linea(o, "madera", (W - 3, y1), (medio, y0 + 1), ("u", u))
+    # La escalera de mano, delante del frente: dos largueros y un peldaño cada 0.3 m.
+    arriba = pisos[2][1]
+    o.caja("madera", (0, 0), (medio - 2, medio - 2), (0, arriba), espejo=True)
+    for y in range(c(0.3), arriba, c(0.3)):
+        o.caja("tabla", (0, 0), (medio - 1, medio + 1), (y, y))
+    # Atras: las vigas de los pisos que se alargan, sus postes, la diagonal y la escalera larga.
+    (a1, b1), (a2, b2) = pisos[0], pisos[1]
+    p2, p1 = u1 + c(1.6), u1 + c(2.6)  # los postes de atras (sobre la viga del primer piso y desde el suelo)
+    o.caja("madera", (u1, p1 + 1), (0, 0), (a1, b1), espejo=True)
+    o.caja("madera", (u1, p2 + 1), (0, 0), (a2, b2), espejo=True)
+    o.caja("madera", (p2, p2 + 1), (0, 0), (b1 + 1, b2 + c(0.5)), espejo=True)
+    o.caja("madera", (p1, p1 + 1), (0, 0), (0, a1 - 1), espejo=True)
+    for z in (0, W - 1):
+        _linea(o, "madera", (u1 + 1, a1 - 1), (p1 - 1, 1), ("z", z))
+    for u in range(u1 + 1, pie + 1):
+        y = int(round(arriba - arriba * (u - u1 - 1) / (pie - u1 - 1)))
+        y_sig = int(round(arriba - arriba * (u - u1) / (pie - u1 - 1))) if u < pie else 0
+        o.caja("madera", (u, u), (medio - 2, medio - 2), (max(y_sig, 0), y), espejo=True)  # los largueros
+        o.caja("tabla", (u, u), (medio - 1, medio + 1), (y, y))  # el escalon
+    return o
+
+
+RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo, "atalaya": atalaya,
            "piedra_ciervo_sol": piedra_ciervo_sol, "piedra_ciervo_felinos": piedra_ciervo_felinos}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
@@ -405,6 +504,7 @@ ALTURAS = {
     # Las otras estelas, a una sola escala (las vistas recortadas, de punta a punta).
     "piedra_ciervo_sol": {v: ([0, 75], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
     "piedra_ciervo_felinos": {v: ([0, 75], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
+    "atalaya": {v: ([0, 40], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
 }
 
 

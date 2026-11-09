@@ -366,6 +366,32 @@ def test_piedra_tallada():
     assert estructuras.triangulos(g) < 8000
 
 
+def test_atalaya_forma():
+    """La atalaya de madera: 6 m de alto (el inventario) y 2.55 m de lado; la escalera larga de atras la alarga a 6 m
+    de punta a punta. Una sola pieza (cada escalon toca al siguiente por el costado, no por la esquina), sin aire
+    encerrado, igual a los dos lados (el espejo en z), apoyada en los postes, la escalera de mano y el pie de la
+    escalera larga, y bajo el aviso de triangulos de Android."""
+    from scipy import ndimage
+
+    o = estructuras.atalaya()
+    assert o.metros() == (2.55, 6.0, 6.0), o.metros()
+    lleno = o.lleno
+    _, piezas = ndimage.label(lleno)
+    assert piezas == 1, piezas
+    vacio = np.pad(~lleno, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    assert (lab[vacio] == lab[0, 0, 0]).all()
+    assert (o.parte == o.parte[:, ::-1]).all()
+    suelo = np.flatnonzero(lleno[:, :, 0].any(axis=1)).tolist()
+    assert suelo == [0, 1, 2, 16, 17, 34, 35, 38, 39], suelo  # la escalera de mano, los postes y el pie de atras
+    tabla = o.nombres.index("tabla")
+    arriba = o.parte[2:16, 1:16, 36]  # el piso de tablas de la plataforma, con el hueco de la escalera de mano
+    assert (arriba == tabla).sum() == 14 * 15 - 6 and (arriba[:2, 6:9] == 0).all()
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert grid.shape == (17, 40, 40), grid.shape
+    assert estructuras.triangulos(grid) < 8000
+
+
 def test_triangulos_juntos():
     """modelos.tris_vox cuenta lo que arma el juego (src/sim/voxel.c: las caras juntas y la base en el suelo): la
     figura de prueba de tests/test_main.c (merge_fixture) da los mismos triangulos que alla (MERGE_FIXTURE_TRIS)."""
@@ -411,6 +437,7 @@ def main():
         ("test_forja_forma", test_forja_forma),
         ("test_pino_simetrico", test_pino_simetrico),
         ("test_piedra_tallada", test_piedra_tallada),
+        ("test_atalaya_forma", test_atalaya_forma),
         ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0
