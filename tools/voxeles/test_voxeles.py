@@ -310,8 +310,9 @@ def test_forja_forma():
 
 
 def test_pino_simetrico():
-    """El pino: 10 m de alto, el mismo de los cuatro lados y en el espejo (forma y color: la parte de cada celda), en
-    una sola pieza, sin aire encerrado, con el tronco a la vista debajo de la copa y bajo el aviso de Android."""
+    """El pino: 10 m de alto y 5 m de copa, el mismo de los cuatro lados y en el espejo (forma y color: la parte de
+    cada celda), en una sola pieza, sin aire encerrado, con el tronco a la vista hasta 2.3 m y bajo el aviso de
+    Android."""
     from scipy import ndimage
 
     o = estructuras.pino()
@@ -325,8 +326,9 @@ def test_pino_simetrico():
     lab, _ = ndimage.label(vacio)
     assert (lab[vacio] == lab[0, 0, 0]).all()
     tronco = o.nombres.index("tronco")
-    abajo = p[:, :, :8]
-    assert (abajo[abajo > 0] == tronco).all() and (abajo == tronco).sum() == 4 * 8  # 2 x 2 celdas, hasta la copa
+    abajo = p[:, :, :12]
+    assert (abajo[abajo > 0] == tronco).all() and (abajo == tronco).sum() == 4 * 12  # 2 x 2 celdas, hasta 2.3 m
+    assert o.metros() == (5.0, 10.0, 5.0), o.metros()
     grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
     assert estructuras.triangulos(grid) < 8000
 

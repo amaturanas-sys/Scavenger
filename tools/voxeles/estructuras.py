@@ -240,15 +240,15 @@ def tonos_de_arbol(vistas):
 
 
 def pino(vistas=None):
-    """mapa.vegetacion.pino: 10 m de alto (el inventario) y 4.4 m de copa (la proporcion de los pinos de la hoja,
-    entre el angosto y los anchos; con los 3 m del inventario quedaba una columna), simetrico: cada celda se llena
-    segun su distancia al eje,
+    """mapa.vegetacion.pino: 10 m de alto (el inventario) y 5 m de copa (la de los pinos anchos de la hoja; el
+    usuario: en el paisaje iran con alturas y tonos que varian, hasta 12 m), simetrico: cada celda se llena segun su
+    distancia al eje,
     asi el arbol es el mismo de los cuatro lados y en el espejo. La hoja trae tres pinos distintos (dos anchos y uno
     angosto), no tres vistas de uno: de ahi salia antes una copa achatada, mas ancha de frente que de costado. El
     tronco de 2 x 2 celdas; la copa en ocho pisos de ramas, cada uno una falda que se angosta hacia arriba, con ocho
     lobulos que se corren media rama de un piso al otro. El color, de la hoja: el tronco y tres verdes (las puntas
     de abajo de cada piso, claras; lo de adentro, a la sombra)."""
-    H, W = 54, 24  # 10 m de alto: celdas de 0.185 m; 24 de ancho = 4.44 m
+    H, W = 52, 26  # 10 m de alto: celdas de 0.192 m; 26 de ancho = 5 m
     o = Obra(W, W, H, celda=10.0 / H)
     tronco, (sombra, medio, puntas) = tonos_de_arbol(vistas) if vistas else ((88, 70, 54), [(40, 58, 36), (58, 82, 46), (86, 112, 64)])
     o.estilo.update({
@@ -259,7 +259,9 @@ def pino(vistas=None):
     })
     c = W / 2.0
     m = W // 2 - 1  # el tronco: las 2 x 2 celdas del medio
-    base, cima, pisos = 8, H - 1, 8  # la copa empieza a 1.5 m: debajo se ve el tronco, como en la hoja
+    # La copa empieza a 2.3 m: el tronco se ve aun con la camara de siempre (a unos 30 grados, una falda de 2.5 m
+    # de radio tapa lo que esta a menos de 1.4 m bajo ella).
+    base, cima, pisos = 12, H - 1, 8
     alto_piso = (cima - base + 1) / pisos
     rmax = c
     for y in range(base, H):

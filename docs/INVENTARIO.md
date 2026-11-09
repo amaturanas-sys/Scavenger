@@ -69,7 +69,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.vegetacion.hierba_alta` | Hierba alta (escondite) | 2x1x2 | 40 | pendiente | `bioma:estepa` `uso:escondite` | El jugador puede esconderse dentro. |
 | `mapa.vegetacion.mata_hierbas` | Mata de hierbas curativas | 0.8x0.6x0.8 | 80 | pendiente | `bioma:estepa` `uso:recolectable` | F para recoger hierbas curativas. |
 | `mapa.vegetacion.arbusto` | Arbusto estepario | 1x0.8x1 | 40 | pendiente | `bioma:estepa` `uso:decorado` |  |
-| `mapa.vegetacion.pino` | Pino | 3x10x3 | 120 | importado | `bioma:bosque` `uso:trepable` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py pino), simetrico: ocho pisos de ramas alrededor del tronco, 4.4 m de copa (la proporcion de la hoja), con los colores de la hoja de tres vistas generada por el usuario con Canva. |
+| `mapa.vegetacion.pino` | Pino | 3x10x3 | 120 | importado | `bioma:bosque` `uso:trepable` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py pino), simetrico: ocho pisos de ramas alrededor del tronco, 5 m de copa y el tronco a la vista hasta 2.3 m, con los colores de la hoja de tres vistas generada por el usuario con Canva. En el paisaje: alturas y tonos que varian, hasta 12 m. |
 | `mapa.vegetacion.alerce` | Alerce | 3x12x3 | 120 | pendiente | `bioma:bosque` `uso:trepable` |  |
 | `mapa.vegetacion.abedul` | Abedul | 2.5x8x2.5 | 100 | pendiente | `bioma:estepa` `bioma:bosque` `uso:decorado` |  |
 | `mapa.vegetacion.saxaul` | Saxaúl (arbusto del desierto) | 2x2x2 | 60 | pendiente | `bioma:desierto` `uso:recolectable` | Leña en el desierto. |
