@@ -48,7 +48,6 @@ class Obra:
         self.celda = celda  # metros por celda: solo para medir (el juego la escala al alto del inventario)
         self.nombres = [""]
         self.estilo = {}
-        self.recorte = {}  # vista -> (desde, hasta): el tramo de la vista (fraccion del ancho) que va de punta a punta
 
     @property
     def lleno(self):
@@ -899,22 +898,27 @@ def carro_varas(vistas=None):
     return o
 
 
-def puerta_fortificada():
-    """estructura.imperio.puerta: la puerta fortificada de la hoja, 10 m de alto (el inventario) en celdas de 25 cm:
-    dos torres de 3.5 m de lado con su corona (la faja de piedra que vuela, tres ventanas por cara y la cornisa de
-    ladrillo, que arriba es un pretil alrededor del techo), el muro de 8 m entre ellas con el portico (dos columnas de ladrillo, el marco de la puerta, el dintel
-    y su cornisa) y la puerta de 1 x 3 m a oscuras; atras, las pilastras y la puerta ciega con su faja de ladrillo;
-    el zocalo de dos gradas alrededor, el de cada torre y la escalinata de seis escalones hasta el umbral. Las vistas
-    de la hoja no concuerdan (de lado, un cuerpo de 24 m que baja hasta una torre chica; de espalda, las dos torres
-    del frente): va el frente y la espalda, con el fondo del inventario (5 m), y los costados toman de la vista de
-    lado solo el tramo de la torre."""
-    L, W, H = 21, 52, 40
-    o = Obra(L, W, H, celda=0.25)
+def puerta_fortificada(vistas=None, celda=1.0 / 3.0):
+    """estructura.imperio.puerta: la puerta fortificada de la hoja, la version larga (la vista de lado): 10 m de
+    alto (el inventario), 13 de ancho y 24 de largo, en celdas de 1/3 m (con 25 cm, las piedras de cada cara pasan
+    el aviso de Android: 10 435 triangulos). Al frente, la portada: dos torres de
+    3.5 m con su corona (la faja que vuela, tres ventanas por cara y la cornisa de ladrillo con su pretil) y, entre
+    ellas y media celda atras, el portico (dos columnas de ladrillo, el marco, el dintel con su cornisa y la puerta
+    a oscuras) con la escalinata de seis escalones. Detras, el cuerpo de todo el ancho baja en cuatro tramos
+    (8, 6.25, 4.5 y 3.25 m), cada uno con su friso de paños de ladrillo bajo el borde; en el costado del primero,
+    la abertura con dos columnas y la escalera de adentro a la vista. Al final, dos torres de 6.75 m con su corona
+    y entre ellas el muro de la puerta ciega con sus pilastras. El zocalo de gradas alrededor de todo. La espalda
+    de la hoja (las dos torres altas del frente) no concuerda con el lado: atras va lo que dice el lado, con los
+    elementos de la espalda."""
+    c = lambda m: int(round(m / celda))  # noqa: E731 - de metros a celdas
+    L, W, H = c(24.0), c(13.0), c(10.0)
+    o = Obra(L, W, H, celda=celda)
     o.estilo.update({
         "zocalo": (2, 5, (150, 130, 100), "lado"),
         "escalera": (1, 4, (150, 132, 104), "frente"),
         "torre": (2, 4, (172, 142, 106), "lado"),
         "muro": (2, 4, (170, 140, 104), "frente"),
+        "cuerpo": (2, 6, (168, 138, 102), "lado"),
         "panel": (2, 3, (150, 120, 88), "lado"),
         "cornisa": (1, 3, (190, 160, 122), "lado"),
         "dintel": (1, 3, (176, 146, 110), "frente"),
@@ -923,54 +927,95 @@ def puerta_fortificada():
         "columna": (0, 0, (164, 86, 54), "frente"),
         "puerta": (0, 0, HUECO, "frente"),
     })
-    o.recorte["lado"] = (0.0, 0.16)
-    u0, u1 = 5, 16  # el cuerpo: del frente a la espalda (3 m)
-    t0, t1 = 4, 17  # la torre de la izquierda (de frente, a la derecha de la imagen); la otra, en espejo
-    # El zocalo: dos gradas alrededor de todo, y la de cada torre.
-    o.caja("zocalo", (2, 19), (1, W - 2), (0, 2))
-    o.caja("zocalo", (3, 18), (2, W - 3), (3, 5))
-    o.caja("zocalo", (4, 17), (t0 - 1, t1 + 1), (6, 8), espejo=True)
-    # Las torres y el muro de entre ellas.
-    o.caja("torre", (u0, u1), (t0, t1), (0, H - 1), espejo=True)
-    o.caja("muro", (u0, u1), (t1 + 1, W - 2 - t1), (0, 31))
-    # La corona de cada torre: la faja que vuela, las ventanas de cada cara y la cornisa de ladrillo.
-    o.caja("cornisa", (u0 - 1, u1 + 1), (t0 - 1, t1 + 1), (33, 33), espejo=True)
-    o.caja("ladrillo", (u0 - 1, u1 + 1), (t0 - 1, t1 + 1), (38, 39), espejo=True)
-    o.vaciar((u0 + 1, u1 - 1), (t0 + 1, t1 - 1), (39, 39), espejo=True)  # el pretil: adentro, el techo de piedra
-    o.marcar("torre", (u0 + 1, u1 - 1), (t0 + 1, t1 - 1), (38, 38), espejo=True)
-    for k in (3, 6, 7, 10):
-        o.vaciar((u0, u0), (t0 + k, t0 + k), (35, 36), espejo=True)  # al frente
-        o.marcar("puerta", (u0 + 1, u0 + 1), (t0 + k, t0 + k), (35, 36), espejo=True)
-        o.vaciar((u1, u1), (t0 + k, t0 + k), (35, 36), espejo=True)  # atras
-        o.marcar("puerta", (u1 - 1, u1 - 1), (t0 + k, t0 + k), (35, 36), espejo=True)
-        uu = u0 + k - 1 if k < 7 else u0 + k  # de costado (12 celdas: 2, 5, 6 y 9 desde el frente)
-        for z, adentro in ((t0, t0 + 1), (t1, t1 - 1)):  # afuera y adentro (la de adentro, sobre el muro)
-            o.vaciar((uu, uu), (z, z), (35, 36), espejo=True)
-            o.marcar("puerta", (uu, uu), (adentro, adentro), (35, 36), espejo=True)
-    # Los paneles rehundidos del frente de cada torre.
-    for k in (2, 9):
-        o.vaciar((u0, u0), (t0 + k, t0 + k + 1), (21, 30), espejo=True)
-        o.marcar("panel", (u0 + 1, u0 + 1), (t0 + k, t0 + k + 1), (21, 30), espejo=True)
-    # El muro del medio: su cornisa, los paños de ladrillo, el portico y la puerta.
-    zc0, zc1 = t1 + 1, W - 2 - t1  # 18..33
-    o.caja("cornisa", (u0 - 1, u1 + 1), (zc0, zc1), (31, 31))
-    o.marcar("ladrillo", (u0, u0), (zc0, zc0 + 1), (9, 19), espejo=True)
-    o.caja("columna", (u0 - 1, u0 - 1), (21, 22), (6, 23), espejo=True)
-    o.marcar("ladrillo", (u0, u0), (23, 23), (6, 19), espejo=True)
-    o.caja("dintel", (u0 - 1, u0 - 1), (19, 32), (24, 28))
-    o.caja("ladrillo", (u0 - 1, u0 - 1), (21, 30), (26, 26))
-    o.caja("cornisa", (u0 - 2, u0 - 1), (18, 33), (29, 29))
-    o.vaciar((u0, u0 + 1), (24, 27), (6, 17))  # la puerta: entra 0.75 m y su fondo queda a oscuras
-    o.marcar("puerta", (u0, u0 + 2), (23, 28), (5, 18))
-    # Atras: las pilastras, la puerta ciega y la faja de ladrillo.
-    o.caja("pilastra", (u1 + 1, u1 + 1), (zc0, zc0 + 1), (6, 28), espejo=True)
-    o.vaciar((u1, u1), (23, 28), (6, 24))
-    o.marcar("panel", (u1 - 1, u1 - 1), (23, 28), (6, 24))
-    o.marcar("ladrillo", (u1, u1), (zc0 + 2, zc1 - 2), (29, 30))
-    # La escalinata: seis escalones del suelo (u = 0) al umbral de la puerta (y = 6), entre las torres.
-    o.vaciar((0, u0 - 1), (19, 32), (0, 8))
-    for y in range(6):
-        o.caja("escalera", (max(0, y - 1), u0 - 1), (19, 32), (y, y))
+
+    def r(a, b):  # un tramo [a, b) en metros, como rango inclusivo de celdas
+        return (c(a), c(b) - 1)
+
+    def rz(a, b):  # de lado: lo centrado, con las mismas celdas a cada lado del medio
+        return (c(a), W - 1 - c(a)) if abs(a + b - 13.0) < 1e-6 else r(a, b)
+
+    def caja(parte, u, z, y, espejo=False):
+        o.caja(parte, r(*u), rz(*z), r(*y), espejo=espejo)
+
+    def vaciar(u, z, y, espejo=False):
+        o.vaciar(r(*u), rz(*z), r(*y), espejo=espejo)
+
+    def marcar(parte, u, z, y, espejo=False):
+        o.marcar(parte, r(*u), rz(*z), r(*y), espejo=espejo)
+
+    # El zocalo: dos gradas alrededor de todo.
+    caja("zocalo", (0.0, 24.0), (0.25, 12.75), (0.0, 0.75))
+    caja("zocalo", (0.25, 23.5), (0.5, 12.5), (0.75, 1.5))
+    # Las torres del frente, su grada, el muro del portico (media celda atras) y el cuerpo en cuatro tramos.
+    caja("zocalo", (0.5, 4.0), (0.75, 4.75), (1.5, 2.25), espejo=True)
+    caja("torre", (0.75, 3.75), (1.0, 4.5), (0.0, 10.0), espejo=True)
+    caja("muro", (1.25, 3.75), (4.5, 8.5), (0.0, 8.0))
+    tramos = ((3.75, 11.75, 8.0), (11.75, 14.75, 6.25), (14.75, 17.5, 4.5), (17.5, 20.0, 3.25))
+    for (u0, u1, alto) in tramos:
+        caja("cuerpo", (u0, u1), (1.0, 12.0), (0.0, alto))
+    # Las torres de atras, su grada y el muro de la puerta ciega entre ellas.
+    caja("zocalo", (19.75, 22.5), (0.75, 4.25), (1.5, 2.25), espejo=True)
+    caja("torre", (20.0, 22.25), (1.0, 4.0), (0.0, 6.75), espejo=True)
+    caja("muro", (20.0, 21.5), (4.0, 9.0), (0.0, 4.5))
+    # Las coronas: la faja que vuela, las ventanas de cada cara y la cornisa de ladrillo con su pretil.
+    for (u0, u1, z1, faja, vent, corn, top) in ((0.75, 3.75, 4.5, 8.25, 8.75, 9.5, 10.0), (20.0, 22.25, 4.0, 4.25, 4.75, 6.0, 6.75)):
+        caja("cornisa", (u0 - 0.25, u1 + 0.25), (0.75, z1 + 0.25), (faja, faja + 0.25), espejo=True)
+        caja("ladrillo", (u0 - 0.25, u1 + 0.25), (0.75, z1 + 0.25), (corn, top), espejo=True)
+        vaciar((u0 + 0.25, u1 - 0.25), (1.25, z1 - 0.25), (top - 0.25, top), espejo=True)
+        marcar("torre", (u0 + 0.25, u1 - 0.25), (1.25, z1 - 0.25), (top - 0.5, top - 0.25), espejo=True)
+        largo, ancho = u1 - u0, z1 - 1.0
+        for f in (0.25, 0.5, 0.75):  # tres ventanas por cara, a un cuarto, la mitad y tres cuartos
+            uz = round((u0 + f * largo) / celda) * celda
+            zz = round((1.0 + f * ancho) / celda) * celda
+            for (uu, zr, adentro) in ((u0, (zz, zz + celda), (u0 + celda, zz)), (u1 - celda, (zz, zz + celda), (u1 - 2 * celda, zz))):
+                vaciar((uu, uu + celda), zr, (vent, vent + 0.5), espejo=True)
+                marcar("puerta", (adentro[0], adentro[0] + celda), zr, (vent, vent + 0.5), espejo=True)
+            vaciar((uz, uz + celda), (1.0, 1.0 + celda), (vent, vent + 0.5), espejo=True)
+            marcar("puerta", (uz, uz + celda), (1.0 + celda, 1.0 + 2 * celda), (vent, vent + 0.5), espejo=True)
+            vaciar((uz, uz + celda), (z1 - celda, z1), (vent, vent + 0.5), espejo=True)
+            marcar("puerta", (uz, uz + celda), (z1 - 2 * celda, z1 - celda), (vent, vent + 0.5), espejo=True)
+    # Los paneles rehundidos del frente de las torres de adelante.
+    for z0 in (1.5, 3.25):
+        vaciar((0.75, 1.0), (z0, z0 + 0.5), (5.25, 7.75), espejo=True)
+        marcar("panel", (1.0, 1.25), (z0, z0 + 0.5), (5.25, 7.75), espejo=True)
+    # El portico: los paños de ladrillo, las columnas, el marco, el dintel, su cornisa y la puerta a oscuras.
+    marcar("ladrillo", (1.25, 1.5), (4.5, 5.0), (2.25, 5.0), espejo=True)
+    caja("columna", (1.0, 1.25), (5.25, 5.75), (1.5, 6.0), espejo=True)
+    marcar("ladrillo", (1.25, 1.5), (5.75, 6.0), (1.5, 5.0), espejo=True)
+    caja("dintel", (1.0, 1.25), (4.75, 8.25), (6.0, 7.25))
+    caja("ladrillo", (1.0, 1.25), (5.25, 7.75), (6.5, 6.75))
+    caja("cornisa", (0.75, 1.25), (4.5, 8.5), (7.25, 7.5))
+    # La puerta, en celdas desde la cara del muro: dos de hondo; adentro (las jambas, el piso, el techo y el
+    # fondo), a oscuras; las jambas de adelante quedan de ladrillo.
+    uf, (zd0, zd1), (yd0, yd1) = c(1.25), rz(6.0, 7.0), (c(1.5), c(4.5) - 1)
+    o.vaciar((uf, uf + 1), (zd0, zd1), (yd0, yd1))
+    o.marcar("puerta", (uf + 1, uf + 2), (zd0 - 1, zd1 + 1), (yd0 - 1, yd1 + 1))
+    # La escalinata: un escalon por celda del suelo (u = 0) al umbral (1.5 m), entre las gradas de las torres.
+    vaciar((0.0, 1.25), (4.75, 8.25), (0.0, 2.25))
+    z_esc = rz(4.75, 8.25)
+    for k in range(c(1.5)):
+        o.caja("escalera", (max(0, k - 1), c(1.25) - 1), z_esc, (k, k))
+    # Los frisos: paños de ladrillo de 0.75 m con postes de piedra, bajo el borde de cada tramo, en los
+    # costados y en la cara de atras de cada escalon.
+    for (u0, u1, alto) in tramos:
+        y = (alto - 0.75, alto - 0.25)
+        for a in np.arange(u0 + 0.25, u1 - 0.75 + 1e-6, 1.0):
+            marcar("ladrillo", (a, a + 0.75), (1.0, 1.25), y, espejo=True)
+        for a in np.arange(1.5, 6.25 - 0.75 + 1e-6, 1.0):  # de la orilla al medio, y en espejo
+            marcar("ladrillo", (u1 - 0.25, u1), (a, a + 0.75), y, espejo=True)
+    # La abertura del costado del primer tramo: hundida medio metro, con dos columnas y, adentro (a oscuras), la
+    # escalera que sube hacia el frente.
+    zf, (ua0, ua1), (ya0, ya1) = c(1.0), r(7.0, 11.5), r(2.25, 4.5)  # en celdas, desde la cara del costado
+    o.vaciar((ua0, ua1), (zf, zf + 1), (ya0, ya1), espejo=True)
+    o.marcar("puerta", (ua0, ua1), (zf + 2, zf + 2), (ya0, ya1), espejo=True)
+    for u0 in (8.25, 10.0):
+        o.caja("columna", r(u0, u0 + 0.5), (zf, zf), (ya0, ya1), espejo=True)
+    for u in range(ua0 + 1, ua1 + 1):  # la escalera, contra el fondo: sube del fondo de atras hacia el frente
+        o.caja("escalera", (u, u), (zf + 1, zf + 1), (ya0, ya0 + int(round((ua1 - u) * (ya1 - ya0) / (ua1 - ua0)))), espejo=True)
+    # Atras: las pilastras y la puerta ciega del muro entre las torres.
+    caja("pilastra", (21.5, 21.75), (4.0, 4.5), (1.5, 4.25), espejo=True)
+    vaciar((21.25, 21.5), (5.75, 7.25), (1.5, 3.75))
+    marcar("panel", (21.0, 21.25), (5.75, 7.25), (1.5, 3.75))
     return o
 
 
@@ -1138,7 +1183,7 @@ ALTURAS = {
     "muro_en_ruinas": {v: ([0, 57], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},  # (colores fijos)
     "carreta": {v: ([0, 28], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
     "carro_varas": {v: ([0, 40], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
-    "puerta_fortificada": {v: ([0, 40], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},
+    "puerta_fortificada": {v: ([0, 30], [0, 1.0], 1.0) for v in ("frente", "lado", "espalda")},  # celdas de 1/3 m
 }
 
 
@@ -1213,9 +1258,6 @@ def colorear(obra, vistas=None, alturas=None, luz=LUZ):
         def muestra(vista, c0, c1, y0, y1):
             img = planas[vista]
             w = img.shape[1]
-            if vista in obra.recorte:  # solo un tramo de la vista (la del lado de la puerta: la torre)
-                a, b = obra.recorte[vista]
-                c0, c1 = a + (b - a) * c0, a + (b - a) * c1
             x0, x1 = int(np.clip(c0 * w, 0, w - 1)), int(np.clip(np.ceil(c1 * w), 1, w))
             r0, r1 = fila(vista, y0, y1)
             return np.median(img[r0:max(r1, r0 + 1), x0:max(x1, x0 + 1)].reshape(-1, 3), axis=0)

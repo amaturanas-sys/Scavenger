@@ -442,8 +442,9 @@ def _una_pieza_cerrada(lleno):
 
 def test_carros_y_puerta():
     """La carreta (cuatro ruedas de disco con sus huecos), el carro de la yunta (ruedas de ocho rayos, la lanza y el
-    yugo arriba del poste, a lo ancho) y la puerta fortificada (simetrica, la puerta a oscuras al fondo del vano y
-    seis escalones hasta el umbral): sus medidas, una sola pieza, sin aire encerrado y bajo el aviso de Android."""
+    yugo arriba del poste, a lo ancho) y la puerta fortificada larga (simetrica, la puerta a oscuras al fondo del
+    vano, la escalinata hasta el umbral, los tramos que bajan hasta la torre de atras y la abertura del costado):
+    sus medidas, una sola pieza, sin aire encerrado y bajo el aviso de Android."""
     o = estructuras.carreta()
     assert o.metros() == (2.429, 2.0, 4.643), o.metros()
     assert _una_pieza_cerrada(o.lleno)
@@ -463,14 +464,17 @@ def test_carros_y_puerta():
     grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
     assert estructuras.triangulos(grid) < 8000
 
-    o = estructuras.puerta_fortificada()
-    assert o.metros() == (12.5, 10.0, 5.0), o.metros()
+    o = estructuras.puerta_fortificada()  # la version larga (la vista de lado), en celdas de 1/3 m
+    assert o.metros() == (12.333, 10.0, 24.0), o.metros()
     assert _una_pieza_cerrada(o.lleno)
     assert (o.parte == o.parte[:, ::-1]).all()
     puerta = o.nombres.index("puerta")
-    assert not o.lleno[5:7, 24:28, 6:18].any() and (o.parte[7, 24:28, 6:18] == puerta).all()  # el vano, a oscuras
-    escalones = [int(o.lleno[:5, 25, y].sum()) for y in range(6)]
-    assert escalones == [5, 5, 4, 3, 2, 1], escalones
+    assert not o.lleno[4:6, 18:21, 4:14].any() and (o.parte[6, 18:21, 4:14] == puerta).all()  # el vano, a oscuras
+    escalones = [int(o.lleno[:4, 19, y].sum()) for y in range(5)]
+    assert escalones == [4, 4, 3, 2, 0], escalones  # hasta el umbral
+    alto = [int(np.flatnonzero(o.lleno[u, 6]).max()) + 1 for u in (10, 20, 40, 48, 55, 63)]  # (10: el pretil)
+    assert alto == [30, 24, 19, 14, 10, 20], alto  # la torre, los cuatro tramos que bajan y la torre de atras
+    assert (o.parte[22:33, 5, 8:13] == puerta).any() and not o.lleno[22:33, 3, 8:13].all()  # la abertura del costado
     grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
     assert estructuras.triangulos(grid) < 8000
 
