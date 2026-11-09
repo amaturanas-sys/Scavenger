@@ -44,7 +44,7 @@ estructura.vivienda.palacio	Palacio imperial	bioma:ciudad,faccion:imperio,acto:2
 estructura.campamento.fogata	Fogata	faccion:nomada,uso:interactuable	1.2x0.5x1.2	60	pendiente	Hoy es un primitivo procedural.
 estructura.campamento.corral	Corral de cuerdas y estacas	faccion:nomada,uso:decorado,material:madera	10x1.2x10	150	pendiente	
 estructura.campamento.secadero	Secadero de carne	faccion:nomada,uso:interactuable,material:madera	3x2x1	80	pendiente	
-estructura.campamento.forja	Forja portátil	faccion:nomada,uso:interactuable,material:hierro,formato:voxel	2x1.5x2	300	importado	Función: herrero. Voxeles armados a mano (tools/voxeles/estructuras.py forja): celdas de 6 cm, la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva.
+estructura.campamento.forja	Forja portátil	faccion:nomada,uso:interactuable,material:hierro,formato:voxel	2x1.5x2	300	importado	Función: herrero. Horno cerrado con la llamarada adentro y un fuelle de acordeon al costado: voxeles armados a mano (tools/voxeles/estructuras.py forja), celdas de 6 cm, con la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva.
 estructura.campamento.enfermeria	Yurta enfermería	faccion:nomada,uso:interactuable,material:fieltro	4x2.6x4	350	pendiente	Función: curandero.
 estructura.campamento.jaula_prisioneros	Jaula de prisioneros	faccion:cualquiera,uso:interactuable,material:madera	3x2x3	150	pendiente	
 estructura.campamento.poste_ejecucion	Poste de castigo	faccion:cualquiera,uso:interactuable,material:madera	0.5x2.5x0.5	50	pendiente	

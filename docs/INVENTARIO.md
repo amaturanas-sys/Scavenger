@@ -103,7 +103,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.campamento.fogata` | Fogata | 1.2x0.5x1.2 | 60 | pendiente | `faccion:nomada` `uso:interactuable` | Hoy es un primitivo procedural. |
 | `estructura.campamento.corral` | Corral de cuerdas y estacas | 10x1.2x10 | 150 | pendiente | `faccion:nomada` `uso:decorado` `material:madera` |  |
 | `estructura.campamento.secadero` | Secadero de carne | 3x2x1 | 80 | pendiente | `faccion:nomada` `uso:interactuable` `material:madera` |  |
-| `estructura.campamento.forja` | Forja portátil | 2x1.5x2 | 300 | importado | `faccion:nomada` `uso:interactuable` `material:hierro` `formato:voxel` | Función: herrero. Voxeles armados a mano (tools/voxeles/estructuras.py forja): celdas de 6 cm, la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva. |
+| `estructura.campamento.forja` | Forja portátil | 2x1.5x2 | 300 | importado | `faccion:nomada` `uso:interactuable` `material:hierro` `formato:voxel` | Función: herrero. Horno cerrado con la llamarada adentro y un fuelle de acordeon al costado: voxeles armados a mano (tools/voxeles/estructuras.py forja), celdas de 6 cm, con la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva. |
 | `estructura.campamento.enfermeria` | Yurta enfermería | 4x2.6x4 | 350 | pendiente | `faccion:nomada` `uso:interactuable` `material:fieltro` | Función: curandero. |
 | `estructura.campamento.jaula_prisioneros` | Jaula de prisioneros | 3x2x3 | 150 | pendiente | `faccion:cualquiera` `uso:interactuable` `material:madera` |  |
 | `estructura.campamento.poste_ejecucion` | Poste de castigo | 0.5x2.5x0.5 | 50 | pendiente | `faccion:cualquiera` `uso:interactuable` `material:madera` |  |

@@ -40,7 +40,8 @@ LUZ = 1.15
 
 class Obra:
     """Una rejilla (u, z, y) con la parte de cada celda (0: vacia) y el estilo de cada parte:
-    (alto de la hilada, largo de la piedra, color sin hoja, vista de las caras de arriba)."""
+    (alto de la hilada, largo de la piedra, color sin hoja, vista de las caras de arriba[, vista de todas sus caras]).
+    La ultima, cuando la hoja dibuja otra cosa donde va la parte (una pared que en la hoja tiene un hueco)."""
 
     def __init__(self, largo, ancho, alto, celda=CELDA):
         self.parte = np.zeros((largo, ancho, alto), np.uint8)
@@ -80,9 +81,11 @@ class Obra:
         return (n - 1 - z[1], n - 1 - z[0])
 
     def metros(self):
-        """(ancho Z, alto Y, largo X) en metros, como las medidas del inventario."""
-        u, z, y = self.parte.shape
-        return round(z * self.celda, 3), round(y * self.celda, 3), round(u * self.celda, 3)
+        """(ancho Z, alto Y, largo X) en metros, como las medidas del inventario: lo que ocupa de lado a lado y de
+        adelante atras (los margenes vacios no van al .vox) y el alto entero (el suelo es la celda 0)."""
+        us, zs = np.nonzero(self.lleno.any(axis=2))
+        return (round((zs.max() - zs.min() + 1) * self.celda, 3), round(self.parte.shape[2] * self.celda, 3),
+                round((us.max() - us.min() + 1) * self.celda, 3))
 
 
 # ---------------------------------------------------------------------------------------------- recetas
@@ -146,32 +149,41 @@ def templo():
 
 
 def forja():
-    """estructura.campamento.forja: la forja portatil, 1.32 x 1.5 x 1.86 m en celdas de 6 cm (el alto del inventario
-    y las proporciones de la hoja, que caben en sus 2 x 2 m). Zocalo de piedra con la boca del cenicero; el fogon de
-    ladrillo, abierto al frente en arco y a los lados, a oscuras adentro; la campana de barro, que se angosta y
-    retrocede hilada por hilada hasta la chimenea, con su ventana; y dos fuelles de cuero en su bastidor de madera,
-    adelante y a los costados, con la tobera de hierro que entra en la pared."""
+    """estructura.campamento.forja: la forja portatil, en celdas de 6 cm con el alto del inventario (1.5 m) y las
+    proporciones de la hoja. Un horno cerrado: el zocalo de piedra con la boca del cenicero; la camara de ladrillo,
+    abierta solo al frente en arco, con la llamarada adentro (brasas, llamas y su centro); la campana de barro, que
+    se angosta y retrocede hilada por hilada hasta la chimenea, con su ventana. Al costado (-Z, donde lo dibuja la
+    hoja), un fuelle de acordeon sobre sus patas: los pliegues entre dos tablas, la de arriba inclinada hacia la
+    boquilla, y la tobera de hierro que dobla y entra en la pared, junto a las brasas."""
     o = Obra(31, 22, 25, celda=0.06)
     o.estilo.update({
         "piedra": (2, 3, (112, 100, 86), "lado"),
         "ladrillo": (1, 2, (158, 80, 50), "frente"),
+        "ladrillo_ciego": (1, 2, (158, 80, 50), "frente", "frente"),  # los costados, cerrados: la hoja tiene ahi un hueco
         "barro": (2, 3, (192, 122, 74), "lado"),
         "madera": (1, 5, (150, 105, 60), "lado"),
-        "cuero": (2, 2, (95, 55, 40), "lado"),
+        "cuero": (1, 1, (110, 64, 42), "lado"),
+        "pliegue": (0, 0, (62, 36, 26), "lado"),
         "hierro": (1, 6, (70, 70, 74), "lado"),
         "hollin": (0, 0, (34, 26, 22), "frente"),
+        "brasa": (0, 0, (200, 64, 24), "frente"),
+        "llama": (0, 0, (246, 136, 32), "frente"),
+        "llama_viva": (0, 0, (255, 214, 96), "frente"),
     })
-    # El zocalo y el fogon (paredes de dos celdas: afuera ladrillo, adentro hollin).
+    # El zocalo y la camara (paredes de dos celdas: afuera ladrillo, adentro hollin), abierta solo al frente.
     o.caja("piedra", (8, 30), (4, 17), (0, 3))
     o.caja("ladrillo", (10, 29), (5, 16), (4, 12))
     o.vaciar((12, 27), (7, 14), (5, 11))
     o.marcar("hollin", (11, 28), (6, 15), (4, 12))
-    # La boca en arco al frente y la del costado que muestra la hoja (-Z; su borde de arriba sube con la campana).
-    # Una sola: con las dos enfrentadas se veia a traves.
+    o.marcar("ladrillo_ciego", (12, 28), (5, 5), (5, 12), espejo=True)
     o.vaciar((10, 11), (8, 13), (5, 11))
     o.vaciar((10, 11), (9, 12), (12, 12))
-    for u in range(15, 27):
-        o.vaciar((u, u), (5, 6), (6, min(11, 9 + (u - 15) // 3)))
+    # La llamarada: la cama de brasas, las llamas que se angostan hacia arriba y su centro, mas claro.
+    o.caja("brasa", (13, 24), (8, 13), (5, 5))
+    o.caja("llama", (14, 20), (9, 12), (6, 6))
+    o.caja("llama", (15, 19), (9, 12), (7, 7))
+    o.caja("llama", (16, 18), (10, 11), (8, 8))
+    o.caja("llama_viva", (15, 19), (10, 11), (6, 7))
     # El cenicero, en el frente del zocalo, y la ranura de atras con su caño.
     o.vaciar((8, 9), (9, 12), (0, 2))
     o.marcar("hollin", (10, 10), (9, 12), (0, 2))
@@ -185,18 +197,24 @@ def forja():
     o.caja("barro", (24, 28), (8, 13), (21, 24))  # la chimenea, con su boca oscura arriba
     o.vaciar((25, 27), (9, 12), (24, 24))
     o.marcar("hollin", (25, 27), (9, 12), (23, 23))
-    # Los fuelles (a cada lado): el bastidor, el cuero que se angosta hacia atras y la tobera.
-    for u, z in ((1, 0), (10, 0), (1, 4)):
-        o.caja("madera", (u, u), (z, z), (3, 12), espejo=True)
-    for y in (4, 11):
-        o.caja("madera", (0, 10), (0, 0), (y, y), espejo=True)
-        o.caja("madera", (0, 10), (4, 4), (y, y), espejo=True)
-        o.caja("madera", (1, 1), (0, 4), (y, y), espejo=True)
-        o.caja("madera", (10, 10), (0, 4), (y, y), espejo=True)
-    o.caja("cuero", (2, 6), (1, 3), (5, 10), espejo=True)
-    o.caja("cuero", (7, 7), (1, 3), (6, 9), espejo=True)
-    o.caja("cuero", (8, 8), (2, 3), (7, 8), espejo=True)
-    o.caja("hierro", (8, 13), (4, 4), (7, 8), espejo=True)
+    # El fuelle de acordeon: cuatro patas, la tabla de abajo, los pliegues (cresta y hondura, una celda cada uno,
+    # mas bajos hacia la boquilla), la tabla de arriba con su manija y la boquilla.
+    for u in (2, 8):
+        for z in (0, 4):
+            o.caja("madera", (u, u), (z, z), (0, 3))
+    o.caja("madera", (1, 9), (0, 4), (4, 4))
+    for u in range(1, 9):
+        alto = 10 - (u - 1) // 2
+        if u % 2:
+            o.caja("cuero", (u, u), (0, 4), (5, alto))
+        else:
+            o.caja("pliegue", (u, u), (1, 3), (5, alto))
+        o.caja("madera", (u, u), (0, 4), (alto + 1, alto + 1))
+    o.caja("madera", (0, 0), (1, 3), (11, 11))  # la manija
+    o.caja("madera", (9, 9), (1, 3), (5, 6))  # la boquilla
+    # La tobera: de la boquilla hacia atras y, doblando, a traves de la pared hasta las brasas.
+    o.caja("hierro", (10, 13), (2, 2), (6, 6))
+    o.caja("hierro", (13, 13), (2, 6), (6, 6))
     return o
 
 
@@ -292,7 +310,7 @@ def colorear(obra, vistas=None, alturas=None, luz=LUZ):
 
         for u, z, y in celdas_vis:
             estilo = obra.estilo[nombres[obra.parte[u, z, y]]]
-            v = cual[u, z, y]
+            v = estilo[4] if len(estilo) > 4 else cual[u, z, y]  # una parte puede tomar el color de otra vista
             if estilo[0] == 0:
                 rgb[u, z, y] = estilo[2]
             elif v == "frente" or v == "arriba-frente":  # de frente, +Z queda a la izquierda de la imagen
@@ -346,7 +364,10 @@ def a_vox(obra, rgb, vis, ncolores=32):
         g[fijos & np.all(col == c, axis=-1)] = len(pal) + j + 1
     pal = np.concatenate([pal, extra]) if len(extra) else pal
     g[obra.lleno & ~vis] = 1  # lo de adentro no se ve
-    return np.ascontiguousarray(np.transpose(g, (1, 0, 2))[::-1]), pal
+    g = np.transpose(g, (1, 0, 2))[::-1]
+    # Sin margenes vacios a los costados ni adelante y atras: el juego pone el origen en el centro de la base.
+    xs, ys = np.nonzero((g > 0).any(axis=2))
+    return np.ascontiguousarray(g[xs.min():xs.max() + 1, ys.min():ys.max() + 1]), pal
 
 
 def triangulos(grid):

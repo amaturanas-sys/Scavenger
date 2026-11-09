@@ -284,12 +284,13 @@ def test_templo_colores():
 
 
 def test_forja_forma():
-    """La forja armada a mano: el alto del inventario (1.5 m) en una sola pieza, sin aire encerrado, abierta al
-    frente y de un solo costado (no se ve a traves), y bajo el aviso de triangulos de Android."""
+    """La forja armada a mano: un horno cerrado (abierto solo al frente) con la llamarada adentro, que se ve por la
+    boca, y un fuelle de acordeon al costado; el alto del inventario (1.5 m), una sola pieza, sin aire encerrado y
+    bajo el aviso de triangulos de Android."""
     from scipy import ndimage
 
     o = estructuras.forja()
-    assert o.metros() == (1.32, 1.5, 1.86), o.metros()
+    assert o.metros() == (1.08, 1.5, 1.86), o.metros()
     lleno = o.lleno
     _, piezas = ndimage.label(lleno)
     assert piezas == 1, piezas
@@ -297,9 +298,14 @@ def test_forja_forma():
     lab, _ = ndimage.label(vacio)
     assert (lab[vacio] == lab[0, 0, 0]).all()
     assert not lleno[10:12, 8:14, 5:12].any()  # la boca del frente
-    assert not lleno[20, 5:7, 7].any() and lleno[20, 15:17, 7].all()  # abierta en -Z, cerrada en +Z
-    assert lleno[20, :, 7].any()  # de costado no se ve a traves
+    assert lleno[12:28, 5, 5:12].all() and lleno[12:28, 16, 5:12].all()  # los costados, cerrados
+    fuego = {o.nombres.index(n) for n in ("brasa", "llama", "llama_viva")}
+    for z, y in ((10, 6), (11, 7), (10, 5)):  # por la boca, lo primero que se ve es fuego
+        u = int(np.argmax(lleno[10:, z, y])) + 10
+        assert o.parte[u, z, y] in fuego, (z, y, o.nombres[o.parte[u, z, y]])
+    assert (o.parte[:, :5] == o.nombres.index("pliegue")).any()  # el acordeon, al costado
     grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert grid.shape == (18, 31, 25), grid.shape  # sin margenes vacios (un solo fuelle)
     assert estructuras.triangulos(grid) < 8000
 
 
