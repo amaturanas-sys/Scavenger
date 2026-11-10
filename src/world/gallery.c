@@ -8,6 +8,7 @@
 #include "raymath.h"
 #include "ui/theme.h"
 #include "sim/lang.h"
+#include "vegetation.h"
 #include "voxmodel.h"
 #include "voxstruct.h"
 
@@ -84,12 +85,13 @@ void gallery_draw(const Gallery *g) {
             continue;
         }
         // Marcador: caja con las medidas del inventario (largo en X, ancho en Z). Las obras de la
-        // tribu, como en el juego: con el kit de edificios, dentro de la caja en alambre.
+        // tribu y las matas, como en el juego (con el kit de edificios y con las hojas de la vegetacion),
+        // dentro de la caja en alambre.
         Color c = category_color(it->category);
         float h = it->texture || it->h <= 0.0f ? 0.03f : it->h;
         Vector3 size = { fmaxf(it->l, 0.05f), h, fmaxf(it->w, 0.05f) };
         Vector3 center = { e->pos.x, e->pos.y + h * 0.5f, e->pos.z };
-        if (!voxs_draw_item(it, e->pos, 0.0f)) DrawCubeV(center, size, c);
+        if (!voxs_draw_item(it, e->pos, 0.0f) && !vegetation_draw_prop(it->id, it->w, it->l, e->pos, 0.0f)) DrawCubeV(center, size, c);
         DrawCubeWiresV(center, size, ColorBrightness(c, -0.45f));
         // Flecha de frente (+X): la direccion en la que debe mirar el modelo.
         Vector3 front = { e->pos.x + size.x * 0.5f, e->pos.y + h * 0.5f, e->pos.z };

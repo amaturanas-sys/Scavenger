@@ -1696,6 +1696,8 @@ int main(int argc, char **argv) {
                 if (g_actions.camps[i].used && !g_actions.camps[i].migrating)
                     clear[nclear++] = (VegClearing){ g_actions.camps[i].x, g_actions.camps[i].z, 16.0f };
             vegetation_draw(&terrain, cam, &climate, (float)GetTime(), &g_dz.fire, clear, nclear, &player.pos, 1);
+        } else {
+            vegetation_look(cam, &climate, (float)GetTime()); // las matas del inventario en la galeria (props)
         }
         if (gallery_mode && kit_type < 0) gallery_draw(&gallery);
         if (kit_type >= 0)

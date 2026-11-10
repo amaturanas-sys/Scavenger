@@ -506,6 +506,31 @@ def test_arboles_de_hoja():
         assert estructuras.triangulos(grid) < 8000, receta.__name__
 
 
+def test_lo_natural():
+    """Las rocas, el pedernal, el monton de piedras, el barro y la leña de los campamentos (sin hoja: el color celda por
+    celda): sus medidas (las del inventario), siempre iguales, bajo el aviso de Android; el pedernal casi negro con su
+    corteza y sus vetas blancas; el liquen de la roca, en lo que mira arriba."""
+    medidas = {"roca": (0.6, 0.3, 0.6), "roca_mediana": (1.5, 1.08, 1.38), "pedernal": (0.12, 0.09, 0.15),
+               "piedras": (0.4, 0.325, 0.475), "barro": (0.36, 0.3, 0.4), "lena": (0.46, 0.22, 0.82)}
+    for nombre, m in medidas.items():
+        o = estructuras.RECETAS[nombre]()
+        assert o.metros() == m, (nombre, o.metros())
+        grid, pal = estructuras.a_vox(o, *estructuras.colores(o))
+        grid2, pal2 = estructuras.a_vox(*(lambda q: (q, *estructuras.colores(q)))(estructuras.RECETAS[nombre]()))
+        assert (grid == grid2).all() and (pal == pal2).all(), nombre
+        assert estructuras.triangulos(grid) < 8000, nombre
+    o = estructuras.pedernal()
+    rgb, vis = estructuras.colores(o)
+    brillo = rgb[vis].sum(axis=1)
+    assert np.median(brillo) < 3 * 90 and 0.05 < (brillo > 3 * 170).mean() < 0.5, (np.median(brillo), (brillo > 510).mean())
+    o = estructuras.roca()
+    rgb, vis = estructuras.colores(o)
+    verde = vis & (rgb[..., 1] > rgb[..., 0] + 8)  # el liquen verde
+    p = np.pad(o.lleno, 1)
+    arriba = ~p[1:-1, 1:-1, 2:]
+    assert verde.any() and (verde & ~arriba).sum() < 0.35 * verde.sum()
+
+
 def test_triangulos_juntos():
     """modelos.tris_vox cuenta lo que arma el juego (src/sim/voxel.c: las caras juntas y la base en el suelo): la
     figura de prueba de tests/test_main.c (merge_fixture) da los mismos triangulos que alla (MERGE_FIXTURE_TRIS)."""
@@ -555,6 +580,7 @@ def main():
         ("test_muro_en_ruinas", test_muro_en_ruinas),
         ("test_carros_y_puerta", test_carros_y_puerta),
         ("test_arboles_de_hoja", test_arboles_de_hoja),
+        ("test_lo_natural", test_lo_natural),
         ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0

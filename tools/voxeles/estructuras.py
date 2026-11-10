@@ -1196,10 +1196,196 @@ def arce(vistas=None):
     return o
 
 
+# ---------------------------------------------------------------------------------------------- lo natural
+# Las piedras, el pedernal, el barro y la leña que se recogen alrededor de los campamentos: sin hoja de tres vistas, de
+# las fotos de referencia del usuario (una roca oscura facetada con vetas blancas, tocones y troncos de madera lavada).
+# El color va celda por celda (obra.rgb), sin hiladas: la faceta de cada piedra, la veta de la madera.
+def _obra_libre(lleno, rgb, celda):
+    """Una obra de una sola parte con el color de cada celda ya puesto. lleno (L, W, H) bool; rgb (L, W, H, 3). Sin
+    las capas vacias de abajo ni de arriba: el juego apoya el .vox en el suelo y lo escala al alto del inventario."""
+    ys = np.flatnonzero(lleno.any(axis=(0, 1)))
+    lleno, rgb = lleno[:, :, ys.min():ys.max() + 1], rgb[:, :, ys.min():ys.max() + 1]
+    o = Obra(*lleno.shape, celda=celda)
+    o.estilo["masa"] = (1, 1, (128, 128, 128), "lado")  # (no es de color fijo: a_vox lo junta en la paleta)
+    o.parte[lleno] = o.id("masa")
+    o.rgb = np.clip(rgb, 0, 255).astype(np.float32)
+    return o
+
+
+def _centros(forma):
+    L, W, H = forma
+    return np.meshgrid(np.arange(L) + 0.5, np.arange(W) + 0.5, np.arange(H) + 0.5, indexing="ij")
+
+
+def _canto(forma, rng, centro, ejes, planos=16, filo=(0.84, 0.97)):
+    """Un canto facetado en la rejilla `forma`: la interseccion de `planos` semiespacios casi tangentes al elipsoide de
+    centro y semiejes dados (en celdas; sus normales al azar). La rejilla empieza en el suelo: con el centro bajo cero,
+    lo de abajo queda enterrado. Devuelve (lleno, faceta: el plano mas cercano de cada celda, normales)."""
+    uu, zz, yy = _centros(forma)
+    a, b, c = ejes
+    p = np.stack([uu - centro[0], zz - centro[1], yy - centro[2]], axis=-1)
+    n = rng.normal(size=(planos, 3))
+    n /= np.linalg.norm(n, axis=1, keepdims=True)
+    d = np.sqrt((a * n[:, 0]) ** 2 + (b * n[:, 1]) ** 2 + (c * n[:, 2]) ** 2) * rng.uniform(*filo, size=planos)
+    lado = p @ n.T - d  # (L, W, H, planos): <= 0 adentro de cada plano
+    lleno = (lado <= 0).all(axis=-1) & (((p / np.array(ejes)) ** 2).sum(axis=-1) <= 1.15)  # las aristas, un poco afuera
+    return lleno, lado.argmax(axis=-1), n
+
+
+def _tonos_por_faceta(faceta, base, rng, n_planos, amplitud=0.13, grano=0.04):
+    """El color de cada celda: el de su faceta (cada una, un tono parejo: los planos de la foto) con un poco de grano."""
+    tono = rng.uniform(1.0 - amplitud, 1.0 + amplitud, size=n_planos)
+    rgb = np.asarray(base, np.float32) * tono[faceta][..., None]
+    return rgb * rng.uniform(1.0 - grano, 1.0 + grano, size=faceta.shape)[..., None]
+
+
+def roca(alto=0.4, ancho=0.6, celda=0.03, semilla=11):
+    """mapa.roca.pequena (y con otras medidas, la mediana): el canto gris de la estepa, facetado como la roca de la
+    foto del usuario, medio enterrado, con liquen ocre y verde en lo que mira arriba. Se rompe para buscar gemas."""
+    rng = np.random.RandomState(semilla)
+    L = W = int(round(ancho / celda)) + 2
+    H = int(round(alto / celda))
+    c = H / 0.85  # el elipsoide entero: lo de abajo (un 15 %) queda enterrado
+    lleno, faceta, n = _canto((L, W, H + 1), rng, (L / 2.0, W / 2.0, H - c), (L / 2.0 - 1, W / 2.0 - 1.4, c), planos=11,
+                              filo=(0.66, 0.9))
+    rgb = _tonos_por_faceta(faceta, (132, 128, 120), rng, len(n))
+    arriba = n[faceta][..., 2] > 0.55
+    liquen = arriba & (rng.uniform(size=lleno.shape) < 0.16)
+    rgb[liquen] = np.where(rng.uniform(size=(int(liquen.sum()), 1)) < 0.5, (172, 150, 84), (118, 132, 86))
+    return _obra_libre(lleno, rgb, celda)
+
+
+def roca_mediana():
+    """mapa.roca.mediana: el canto de 1 m de alto (1.5 m de lado), en celdas de 6 cm."""
+    return roca(alto=1.0, ancho=1.5, celda=0.06, semilla=23)
+
+
+def pedernal():
+    """utileria.material.pedernal: el nodulo de pedernal de la foto del usuario, de 15 cm: casi negro, con facetas
+    de lascado mas claras y la corteza blanca en algunas caras, en celdas de 1 cm."""
+    rng = np.random.RandomState(5)
+    L, W, H = 17, 17, 12
+    lleno, faceta, n = _canto((L, W, H), rng, (8.5, 8.5, -0.5), (7.6, 6.4, 10.5), planos=14, filo=(0.7, 0.92))
+    rgb = _tonos_por_faceta(faceta, (48, 50, 58), rng, len(n), amplitud=0.3, grano=0.06)
+    # La corteza blanca, en una o dos caras de abajo o del costado (las que no se lascaron), y las vetas blancas que lo
+    # cruzan, como en la foto.
+    de_lado = np.flatnonzero(n[:, 2] < 0.2)
+    corteza = np.zeros(len(n), bool)
+    corteza[rng.choice(de_lado, size=min(2, len(de_lado)), replace=False)] = True
+    uu, zz, yy = _centros((L, W, H))
+    veta = np.zeros(lleno.shape, bool)
+    for _ in range(2):
+        nv = rng.normal(size=3)
+        nv /= np.linalg.norm(nv)
+        veta |= np.abs((uu - 8.5) * nv[0] + (zz - 8.5) * nv[1] + (yy - 4.0) * nv[2] - rng.uniform(-2, 2)) < 0.45
+    blanca = (corteza[faceta] | veta) & lleno
+    rgb[blanca] = np.array((204, 198, 186), np.float32) * rng.uniform(0.9, 1.05, size=(int(blanca.sum()), 1))
+    return _obra_libre(lleno, rgb, 0.01)
+
+
+def piedras():
+    """utileria.material.piedra: un monton de cinco piedras de campo (grises y pardas, facetadas como la roca), dos
+    abajo, dos al costado y una encima, de 40 cm de alto, en celdas de 2.5 cm."""
+    rng = np.random.RandomState(7)
+    L, W, H = 22, 22, 18
+    lleno = np.zeros((L, W, H), bool)
+    rgb = np.zeros((L, W, H, 3), np.float32)
+    for (u, z, y, r, base) in ((7.0, 8.0, 3.0, 5.5, (136, 130, 120)), (15.0, 9.0, 3.0, 5.0, (150, 138, 120)),
+                               (10.0, 15.5, 2.5, 4.5, (118, 116, 112)), (16.0, 16.0, 2.5, 4.0, (146, 136, 118)),
+                               (11.0, 11.0, 9.5, 5.0, (128, 122, 114))):
+        m, faceta, n = _canto((L, W, H), rng, (u, z, y), (r, r * 0.85, r * 0.7), planos=12)
+        m &= ~lleno
+        rgb[m] = _tonos_por_faceta(faceta, base, rng, len(n))[m]
+        lleno |= m
+    return _obra_libre(lleno, rgb, 0.025)
+
+
+def barro():
+    """utileria.material.barro: el monton de barro para el adobe, de 30 cm: rojizo, mas oscuro donde esta mojado, con
+    dos adobes ya cortados apoyados al costado, en celdas de 2 cm."""
+    rng = np.random.RandomState(9)
+    L, W, H = 21, 21, 16
+    uu, zz, yy = _centros((L, W, H))
+    du, dz = (uu - 10.5) / 9.5, (zz - 10.5) / 9.0
+    r = np.sqrt(du * du + dz * dz)
+    ruido = 0.12 * np.sin(np.arctan2(dz, du) * 5 + 1.3) + 0.08 * np.cos(np.arctan2(dz, du) * 9 + 0.4)
+    alto = 13.5 * np.clip(1.0 - r ** 2 + ruido * (1.0 - r), 0, None) ** 0.55  # una loma redonda, no un cono
+    lleno = yy <= alto
+    seco, mojado = np.array((160, 104, 70), np.float32), np.array((112, 68, 46), np.float32)
+    k = np.clip(0.5 + 0.5 * np.sin(uu * 0.9 + zz * 0.6) * np.cos(zz * 0.8 - yy * 0.7), 0, 1)[..., None]
+    rgb = seco * k + mojado * (1 - k)
+    rgb *= rng.uniform(0.94, 1.06, size=(L, W, H, 1))
+    adobe = np.array((178, 132, 88), np.float32)
+    for (u0, u1, z0, z1, y1) in ((1, 3, 3, 9, 8), (15, 20, 1, 3, 5)):  # los adobes: uno de pie y uno echado
+        m = (uu > u0) & (uu < u1 + 1) & (zz > z0) & (zz < z1 + 1) & (yy < y1 + 1)
+        lleno |= m
+        rgb[m] = adobe * rng.uniform(0.95, 1.05)
+    return _obra_libre(lleno, rgb, 0.02)
+
+
+def _rama_redonda(forma, pts, radios):
+    """Las celdas a menos del radio de una linea quebrada (pts: (u, z, y) en celdas; radios: el del comienzo y el del
+    final), con el angulo de cada celda alrededor del tramo (la veta) y lo que va a lo largo."""
+    largo_total = sum(np.linalg.norm(np.subtract(pts[i + 1], pts[i])) for i in range(len(pts) - 1))
+    uu, zz, yy = _centros(forma)
+    p = np.stack([uu, zz, yy], axis=-1)
+    mejor = np.full(forma, np.inf)
+    ang = np.zeros(forma)
+    largo = np.zeros(forma)
+    total = 0.0
+    for i in range(len(pts) - 1):
+        a, b = np.asarray(pts[i], float), np.asarray(pts[i + 1], float)
+        t = b - a
+        lt = np.linalg.norm(t)
+        t /= lt
+        e1 = np.cross(t, (0, 0, 1.0)) if abs(t[2]) < 0.9 else np.cross(t, (1.0, 0, 0))
+        e1 /= np.linalg.norm(e1)
+        e2 = np.cross(t, e1)
+        v = p - a
+        s = np.clip(v @ t, 0, lt)
+        q = v - s[..., None] * t
+        d = np.linalg.norm(q, axis=-1)
+        r = radios[0] + (radios[1] - radios[0]) * (total + s) / largo_total
+        ok = d - r < mejor
+        mejor = np.where(ok, d - r, mejor)
+        ang = np.where(ok, np.arctan2(q @ e2, q @ e1), ang)
+        largo = np.where(ok, total + s, largo)
+        total += lt
+    return mejor, ang, largo
+
+
+def lena():
+    """utileria.objeto.lena: los restos de madera de las fotos del usuario: dos ramas gruesas de madera lavada, gris y
+    parda, con su veta a lo largo, nudos y los cortes claros, cruzadas sobre una tercera mas fina; 80 cm de largo y
+    30 de alto, en celdas de 2 cm."""
+    rng = np.random.RandomState(3)
+    L, W, H = 41, 26, 16
+    lleno = np.zeros((L, W, H), bool)
+    rgb = np.zeros((L, W, H, 3), np.float32)
+    ramas = (([(1, 6, 3.2), (14, 9, 3.6), (27, 12, 3.4), (39, 17, 3.0)], (3.2, 2.6)),
+             ([(4, 21, 3.0), (17, 16, 3.4), (31, 10, 4.6), (38, 7, 5.6)], (2.9, 2.2)),
+             ([(8, 3, 8.6), (20, 12, 9.4), (33, 22, 8.4)], (2.4, 1.8)))
+    for k, (pts, (r0, r1)) in enumerate(ramas):
+        largo_total = sum(np.linalg.norm(np.subtract(pts[i + 1], pts[i])) for i in range(len(pts) - 1))
+        d, ang, largo = _rama_redonda((L, W, H), pts, (r0, r1))
+        m = (d <= 0) & ~lleno
+        veta = 0.5 + 0.5 * np.cos(ang * 5 + largo * 0.15 + k)
+        base = np.array((150, 138, 122), np.float32) * (0.78 + 0.3 * veta)[..., None]
+        corte = (largo < 1.2) | (largo > largo_total - 1.2)  # los extremos cortados: la madera clara de adentro
+        base[corte] = (178, 152, 116)
+        rgb[m] = base[m]
+        lleno |= m
+    nudos = lleno & (rng.uniform(size=lleno.shape) < 0.02)
+    rgb[nudos] = (92, 80, 68)
+    rgb *= rng.uniform(0.95, 1.05, size=(L, W, H, 1))
+    return _obra_libre(lleno, rgb, 0.02)
+
+
 RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo, "atalaya": atalaya,
            "piedra_ciervo_sol": piedra_ciervo_sol, "piedra_ciervo_felinos": piedra_ciervo_felinos,
            "muro_en_ruinas": muro_en_ruinas, "carreta": carreta, "carro_varas": carro_varas,
-           "puerta_fortificada": puerta_fortificada, "roble": roble, "sauce": sauce, "arce": arce}
+           "puerta_fortificada": puerta_fortificada, "roble": roble, "sauce": sauce, "arce": arce, "roca": roca,
+           "roca_mediana": roca_mediana, "pedernal": pedernal, "piedras": piedras, "barro": barro, "lena": lena}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
 # pixeles de la vista recortada. La hoja del templo exagera lo alto en el frente (los pilonos miden 340 px de
@@ -1336,6 +1522,15 @@ def colorear(obra, vistas=None, alturas=None, luz=LUZ):
     return np.clip(rgb, 0, 255), vis
 
 
+def colores(obra, vistas=None, alturas=None):
+    """(rgb, celdas a la vista): las de la hoja o las de cada parte (colorear), o las ya puestas celda por celda (lo
+    natural: obra.rgb)."""
+    if getattr(obra, "rgb", None) is None:
+        return colorear(obra, vistas, alturas)
+    caras = _caras(obra.lleno)
+    return obra.rgb, caras["frente"] | caras["espalda"] | caras["lado"] | caras["arriba"] | caras["abajo"]
+
+
 def a_vox(obra, rgb, vis, ncolores=32):
     """(grid (sx, sy, sz) del .vox, paleta (k, 3)): x = el ancho al reves (de frente, +Z a la izquierda),
     y = u (0, el frente) y z = el alto. Los colores fijos (las partes sin piedras, como el hueco de la puerta) van
@@ -1382,8 +1577,8 @@ def main(argv=None):
     a = ap.parse_args(argv)
     vistas = voxeles.hoja(a.hoja, a.umbral) if a.hoja else None
     receta = RECETAS[a.receta]
-    obra = receta(vistas) if receta.__code__.co_argcount else receta()  # las que sacan algo de la hoja (el pino)
-    rgb, vis = colorear(obra, vistas, ALTURAS.get(a.receta))
+    obra = receta(vistas) if receta.__code__.co_argcount and receta is not roca else receta()  # las que sacan algo de la hoja
+    rgb, vis = colores(obra, vistas, ALTURAS.get(a.receta))
     grid, pal = a_vox(obra, rgb, vis, a.colores)
     n = vox.escribir(a.salida, grid, pal)
     ancho, alto, largo = obra.metros()

@@ -6,8 +6,8 @@ mapa.suelo.desierto	Suelo: Desierto	bioma:desierto,formato:textura	4x0x4	0	pendi
 mapa.suelo.bosque	Suelo: Bosque de coníferas	bioma:bosque,formato:textura	4x0x4	0	pendiente	Textura de suelo para los chunks del terreno (paleta del bioma).
 mapa.suelo.fiordo	Suelo: Costa de fiordos	bioma:fiordo,formato:textura	4x0x4	0	pendiente	Textura de suelo para los chunks del terreno (paleta del bioma).
 mapa.suelo.glaciar	Suelo: Altiplano glaciar	bioma:glaciar,formato:textura	4x0x4	0	pendiente	Textura de suelo para los chunks del terreno (paleta del bioma).
-mapa.roca.pequena	Roca pequeña	bioma:cualquiera,uso:decorado,material:piedra	0.6x0.4x0.6	40	pendiente	
-mapa.roca.mediana	Roca mediana	bioma:cualquiera,uso:decorado,material:piedra	1.5x1x1.5	80	pendiente	
+mapa.roca.pequena	Roca pequeña	bioma:cualquiera,uso:decorado,material:piedra,formato:voxel	0.6x0.3x0.6	40	importado	Junto a los campamentos: se rompe para buscar gemas. Voxeles armados a mano (tools/voxeles/estructuras.py roca), celdas de 3 cm: el canto gris de la estepa, facetado como la roca de la foto de referencia del usuario, medio enterrado y con liquen ocre y verde arriba.
+mapa.roca.mediana	Roca mediana	bioma:cualquiera,uso:decorado,material:piedra,formato:voxel	1.5x1.08x1.38	80	importado	Junto a los campamentos: se rompe para buscar gemas. Voxeles armados a mano (tools/voxeles/estructuras.py roca_mediana), celdas de 6 cm: el canto gris facetado, como la roca pequeña.
 mapa.roca.grande	Peñasco (escalable)	bioma:cualquiera,uso:trepable,material:piedra	4x3x4	160	pendiente	
 mapa.relieve.acantilado	Acantilado modular	bioma:fiordo,bioma:glaciar,uso:trepable,material:piedra	8x6x2	300	pendiente	
 mapa.relieve.duna	Duna	bioma:desierto,uso:decorado	20x4x10	120	pendiente	
@@ -15,9 +15,9 @@ mapa.relieve.grieta_glaciar	Grieta de glaciar	bioma:glaciar,uso:peligro	6x3x2	15
 mapa.agua.oasis	Oasis	bioma:desierto,uso:recolectable	12x1x12	250	pendiente	Agua potable: clave en el desierto (acto III).
 mapa.agua.rio	Tramo de río modular	bioma:cualquiera,uso:navegable	8x0.5x8	120	pendiente	
 mapa.agua.tempano	Témpano de hielo	bioma:fiordo,uso:decorado	3x1x3	60	pendiente	
-mapa.vegetacion.hierba_alta	Hierba alta (escondite)	bioma:estepa,uso:escondite	2x1x2	40	pendiente	El jugador puede esconderse dentro.
-mapa.vegetacion.mata_hierbas	Mata de hierbas curativas	bioma:estepa,uso:recolectable	0.8x0.6x0.8	80	pendiente	F para recoger hierbas curativas.
-mapa.vegetacion.arbusto	Arbusto estepario	bioma:estepa,uso:decorado	1x0.8x1	40	pendiente	
+mapa.vegetacion.hierba_alta	Hierba alta (escondite)	bioma:estepa,uso:escondite	2x1x2	40	pendiente	El jugador puede esconderse dentro. Hoy se dibuja con las hojas de la vegetacion (src/world/vegetation.c: vegetation_draw_prop), como las matas de la estepa de la foto de referencia del usuario: stipa con sus plumas y pasto, de 1 m, que se mecen con el viento y toman el color de la estacion.
+mapa.vegetacion.mata_hierbas	Mata de hierbas curativas	bioma:estepa,uso:recolectable	0.8x0.6x0.8	80	pendiente	F para recoger hierbas curativas. Hoy se dibuja con las hojas de la vegetacion (src/world/vegetation.c: vegetation_draw_prop), como las hierbas de la foto de referencia del usuario: salvia, menta y tomillo, con espigas moradas y amarillas mientras estan verdes.
+mapa.vegetacion.arbusto	Arbusto estepario	bioma:estepa,uso:decorado	1x0.8x1	40	pendiente	Hoy se dibuja con las hojas de la vegetacion (src/world/vegetation.c: vegetation_draw_prop): un arbusto de hojas anchas verde oscuro, pardo en el invierno.
 mapa.vegetacion.pino	Pino	bioma:bosque,uso:trepable,formato:voxel	3x10x3	120	importado	Voxeles armados a mano (tools/voxeles/estructuras.py pino), simetrico: ocho pisos de ramas alrededor del tronco, 5 m de copa y el tronco a la vista hasta 2.3 m, con los colores de la hoja de tres vistas generada por el usuario con Canva. En el paisaje: alturas y tonos que varian, hasta 12 m.
 mapa.vegetacion.alerce	Alerce	bioma:bosque,uso:trepable	3x12x3	120	pendiente	
 mapa.vegetacion.abedul	Abedul	bioma:estepa,bioma:bosque,uso:decorado	2.5x8x2.5	100	pendiente	
@@ -318,10 +318,10 @@ utileria.herramienta.picahielo	Picahielo	uso:equipable,manos:dos,material:hierro
 utileria.herramienta.gancho_trepa	Trepa (gancho con cuerda)	uso:equipable,manos:una,material:hierro	0.3x0.4x0.3	80	pendiente	Se lanza para escalar muros en los asedios.
 utileria.herramienta.escala_asedio	Escala de asedio	uso:herramienta,material:madera	0.5x2.9x0.15	120	pendiente	En dos tramos que se atan al pie de la muralla (12 kg). F junto a la muralla de una ciudad en guerra: se apoya y se sube por ella, de ida y de vuelta.
 utileria.herramienta.forja_movil	Forja móvil (fuelle y hogar)	uso:herramienta,material:hierro	0.6x0.5x0.6	120	pendiente	Fuelle de cuero y hogar de carbón (10 kg): en la mochila, las alforjas, la carreta o el acopio, repara y hace puntas, cuchillos y sables en cualquier sitio.
-utileria.objeto.lena	Haz de leña	uso:recolectable,material:madera	0.5x0.3x0.8	40	pendiente	Material de fogatas, hogueras y hornos.
+utileria.objeto.lena	Haz de leña	uso:recolectable,material:madera,formato:voxel	0.46x0.22x0.82	40	importado	Material de fogatas, hogueras y hornos. Voxeles armados a mano (tools/voxeles/estructuras.py lena), celdas de 2 cm: los restos de madera lavada de las fotos de referencia del usuario, dos ramas gruesas grises y pardas con su veta, nudos y los cortes claros, cruzadas sobre una mas fina.
 utileria.material.troncos	Troncos	uso:recolectable,uso:material,material:madera	0.4x0.4x2	40	pendiente	Material del acopio de la tribu.
-utileria.material.piedra	Piedras	uso:recolectable,uso:material,material:piedra	0.5x0.4x0.5	30	pendiente	Material del acopio de la tribu.
-utileria.material.barro	Barro (adobe)	uso:recolectable,uso:material,material:barro	0.4x0.3x0.4	30	pendiente	Material del acopio de la tribu.
+utileria.material.piedra	Piedras	uso:recolectable,uso:material,material:piedra,formato:voxel	0.4x0.33x0.48	30	importado	Material del acopio de la tribu. Voxeles armados a mano (tools/voxeles/estructuras.py piedras), celdas de 2.5 cm: un monton de cinco piedras de campo grises y pardas, facetadas.
+utileria.material.barro	Barro (adobe)	uso:recolectable,uso:material,material:barro,formato:voxel	0.36x0.3x0.4	30	importado	Material del acopio de la tribu. Voxeles armados a mano (tools/voxeles/estructuras.py barro), celdas de 2 cm: la loma de barro rojizo, mas oscuro donde esta mojado, con dos adobes cortados al costado.
 utileria.material.pieles	Pieles curtidas	uso:recolectable,uso:material,material:cuero	0.6x0.2x0.8	40	pendiente	Material del acopio de la tribu.
 utileria.material.cuerda	Rollo de cuerda	uso:recolectable,uso:material	0.3x0.15x0.3	40	pendiente	Material del acopio de la tribu.
 utileria.material.carbon	Carbón vegetal	uso:recolectable,uso:material	0.4x0.3x0.4	30	pendiente	Material del acopio de la tribu.
@@ -347,7 +347,7 @@ utileria.material.mineral_hierro	Mineral de hierro	uso:recolectable,uso:material
 utileria.material.acero_wootz	Acero wootz (torta)	uso:material,material:hierro	0.12x0.04x0.12	20	pendiente	El acero de crisol que traen las caravanas: el mejor sable.
 utileria.material.hoja_acero	Hoja de sable de acero	uso:material,material:hierro	0.05x0.8x0.02	40	pendiente	Hoja terminada de la capital: con la forja móvil se le pone empuñadura.
 utileria.material.puntas_hierro	Puntas de flecha de hierro	uso:material,material:hierro	0.03x0.06x0.02	10	pendiente	De la forja móvil: más flechas por tanda.
-utileria.material.pedernal	Pedernal	uso:recolectable,uso:material,material:piedra	0.15x0.1x0.15	30	pendiente	Se recoge en la estepa: puntas de flecha.
+utileria.material.pedernal	Pedernal	uso:recolectable,uso:material,material:piedra,formato:voxel	0.12x0.09x0.15	30	importado	Se recoge en la estepa: puntas de flecha. Voxeles armados a mano (tools/voxeles/estructuras.py pedernal), celdas de 1 cm: el nodulo casi negro de la foto de referencia del usuario, con facetas de lascado mas claras, la corteza blanca en una o dos caras y dos vetas blancas.
 personaje.base.cuerpo_nino	Cuerpo base: niño	rig:humanoide,talla:pequena	0.35x1.2x0.25	800	pendiente	Malla base modular: ropa y armadura encajan encima.
 personaje.base.cuerpo_comun	Cuerpo base: adulto común	rig:humanoide,talla:comun	0.53x1.7x0.29	1200	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen.
 personaje.base.cuerpo_robusto	Cuerpo base: adulto robusto	rig:humanoide,talla:grande	0.57x1.85x0.33	1300	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen.
