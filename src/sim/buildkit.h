@@ -54,6 +54,9 @@ typedef enum {
     BK_TENT,       // las chicas, la tienda ligera de cuero; las grandes, la choza de fieltro
     BK_RUBBLE,     // las chicas, los escombros; las grandes, un muro en ruinas
     BK_ASHES,      // las chicas, las cenizas de una obra; las grandes, una yurta quemada
+    // Los vestigios de un asentamiento antiguo (src/sim/ancient.h): la planta del palacio y las casas, casi a
+    // ras del suelo; los tramos de pie son el muro en ruinas del inventario. Grandes, en todas las regiones.
+    BK_RUIN_TOWN,
     BK_KINDS
 } BkType;
 

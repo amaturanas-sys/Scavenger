@@ -18,9 +18,11 @@ mapa.agua.tempano	Témpano de hielo	bioma:fiordo,uso:decorado	3x1x3	60	pendiente
 mapa.vegetacion.hierba_alta	Hierba alta (escondite)	bioma:estepa,uso:escondite	2x1x2	40	pendiente	El jugador puede esconderse dentro.
 mapa.vegetacion.mata_hierbas	Mata de hierbas curativas	bioma:estepa,uso:recolectable	0.8x0.6x0.8	80	pendiente	F para recoger hierbas curativas.
 mapa.vegetacion.arbusto	Arbusto estepario	bioma:estepa,uso:decorado	1x0.8x1	40	pendiente	
-mapa.vegetacion.pino	Pino	bioma:bosque,uso:trepable,formato:voxel	3x10x3	120	importado	Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva.
+mapa.vegetacion.pino	Pino	bioma:bosque,uso:trepable,formato:voxel	3x10x3	120	importado	Voxeles armados a mano (tools/voxeles/estructuras.py pino), simetrico: ocho pisos de ramas alrededor del tronco, 5 m de copa y el tronco a la vista hasta 2.3 m, con los colores de la hoja de tres vistas generada por el usuario con Canva. En el paisaje: alturas y tonos que varian, hasta 12 m.
 mapa.vegetacion.alerce	Alerce	bioma:bosque,uso:trepable	3x12x3	120	pendiente	
 mapa.vegetacion.abedul	Abedul	bioma:estepa,bioma:bosque,uso:decorado	2.5x8x2.5	100	pendiente	
+mapa.vegetacion.roble	Roble	bioma:bosque,bioma:estepa,uso:trepable,formato:voxel	8.8x10x8.8	120	importado	Voxeles armados a mano (tools/voxeles/estructuras.py roble), celdas de 30 cm, simetrico como el pino: el tronco a la vista hasta los 4 m, ocho ramas abiertas y la copa de racimos en tres anillos, con el tronco y tres verdes de la hoja del arbol frondoso generada por el usuario con Canva.
+mapa.vegetacion.sauce	Sauce llorón	bioma:estepa,bioma:bosque,uso:decorado,formato:voxel	6.8x9x6.8	120	importado	Junto al agua. Voxeles armados a mano (tools/voxeles/estructuras.py sauce), celdas de 25 cm, simetrico como el pino: el tronco grueso a la vista, la cupula y las cortinas que cuelgan hasta 1.5 m del suelo, con el tronco y tres verdes de la hoja generada por el usuario con Canva.
 mapa.vegetacion.saxaul	Saxaúl (arbusto del desierto)	bioma:desierto,uso:recolectable	2x2x2	60	pendiente	Leña en el desierto.
 mapa.vegetacion.palmera	Palmera datilera	bioma:desierto,uso:recolectable	3x7x3	100	pendiente	
 mapa.vegetacion.liquen	Liquen y musgo de tundra	bioma:glaciar,bioma:fiordo,uso:decorado	1x0.1x1	20	pendiente	
@@ -28,7 +30,7 @@ mapa.hito.ovoo	Ovoo (túmulo de piedras chamánico)	bioma:estepa,uso:interactuab
 mapa.hito.kurgan	Kurgán (túmulo funerario)	bioma:estepa,especial:hito,especial:rastro_padre	14x3x14	200	pendiente	
 mapa.hito.tumba_helada	Tumba helada del padre	bioma:glaciar,acto:3,especial:narrativo,especial:legado	8x4x8	800	pendiente	Kurgán congelado al estilo de Pazyryk; prueba final del acto III.
 mapa.hito.campamento_abandonado	Campamento abandonado del padre	acto:3,especial:rastro_padre	10x3x10	400	pendiente	
-mapa.hito.piedra_ciervo	Piedra-ciervo	bioma:estepa,material:piedra,especial:rastro_padre,formato:voxel	0.6x3x0.4	150	importado	Estela con ciervos de estilo animal. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva.
+mapa.hito.piedra_ciervo	Piedra-ciervo	bioma:estepa,material:piedra,especial:rastro_padre,formato:voxel	1.36x3x0.44	150	importado	Estela con ciervos de estilo animal. Voxeles armados a mano (tools/voxeles/estructuras.py piedra_ciervo): una losa de corte recto en celdas de 4 cm, con los tres ciervos y sus astas tallados como surcos en el frente y las grietas de la espalda, sacados de la hoja de tres vistas generada por el usuario con Canva (el ancho y el grueso, los de la hoja, por decision del usuario).
 mapa.hito.balbal	Balbal (estatua de piedra)	bioma:estepa,material:piedra	0.6x1.8x0.5	150	pendiente	
 estructura.vivienda.yurta_comun	Yurta común	faccion:nomada,uso:habitable,material:fieltro	4.5x2.6x4.5	300	kiln	Ya existe (Kiln). Puerta hacia +X.
 estructura.vivienda.yurta_jefe	Yurta del jefe	faccion:nomada,uso:habitable,material:fieltro	7x3.4x7	600	pendiente	Más grande, con estandarte y ornamento.
@@ -44,14 +46,14 @@ estructura.vivienda.palacio	Palacio imperial	bioma:ciudad,faccion:imperio,acto:2
 estructura.campamento.fogata	Fogata	faccion:nomada,uso:interactuable	1.2x0.5x1.2	60	pendiente	Hoy es un primitivo procedural.
 estructura.campamento.corral	Corral de cuerdas y estacas	faccion:nomada,uso:decorado,material:madera	10x1.2x10	150	pendiente	
 estructura.campamento.secadero	Secadero de carne	faccion:nomada,uso:interactuable,material:madera	3x2x1	80	pendiente	
-estructura.campamento.forja	Forja portátil	faccion:nomada,uso:interactuable,material:hierro,formato:voxel	2x1.5x2	300	importado	Función: herrero. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva.
+estructura.campamento.forja	Forja portátil	faccion:nomada,uso:interactuable,material:hierro,formato:voxel	2x1.5x2	300	importado	Función: herrero. Horno cerrado con la llamarada adentro y un fuelle de acordeon al costado: voxeles armados a mano (tools/voxeles/estructuras.py forja), celdas de 6 cm, con la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva.
 estructura.campamento.enfermeria	Yurta enfermería	faccion:nomada,uso:interactuable,material:fieltro	4x2.6x4	350	pendiente	Función: curandero.
 estructura.campamento.jaula_prisioneros	Jaula de prisioneros	faccion:cualquiera,uso:interactuable,material:madera	3x2x3	150	pendiente	
 estructura.campamento.poste_ejecucion	Poste de castigo	faccion:cualquiera,uso:interactuable,material:madera	0.5x2.5x0.5	50	pendiente	
 estructura.campamento.empalizada	Empalizada modular	faccion:nomada,uso:destructible,material:madera	4x2.5x0.4	80	pendiente	
-estructura.campamento.atalaya	Atalaya de madera	faccion:nomada,uso:trepable,material:madera	3x6x3	200	pendiente	
+estructura.campamento.atalaya	Atalaya de madera	faccion:nomada,uso:trepable,material:madera,formato:voxel	2.55x6x6	200	importado	Voxeles armados a mano (tools/voxeles/estructuras.py atalaya), celdas de 15 cm: la torre de 2.5 m con sus tres pisos, las cruces, la escalera de mano al frente y la escalera larga atras, con los colores de la hoja de tres vistas generada por el usuario con Canva. Con la escalera de atras ocupa 6 m de largo (las medidas de la hoja: el usuario las confirmo). Reemplaza a la del kit de edificios (src/sim/buildkit.c).
 estructura.imperio.muralla	Muralla modular	bioma:ciudad,faccion:imperio,uso:trepable,material:piedra	8x8x3	200	pendiente	
-estructura.imperio.puerta	Puerta de la ciudad	bioma:ciudad,faccion:imperio,uso:destructible,material:madera	10x10x5	600	pendiente	
+estructura.imperio.puerta	Puerta de la ciudad	bioma:ciudad,faccion:imperio,uso:destructible,material:madera,formato:voxel	12.3x10x24	600	importado	Voxeles armados a mano (tools/voxeles/estructuras.py puerta_fortificada), celdas de 1/3 m, la version larga de la hoja de tres vistas generada por el usuario con Canva (la vista de lado): la portada con dos torres y el portico, el cuerpo que baja en cuatro tramos con sus frisos de ladrillo y la abertura de la escalera, y al final dos torres chicas con el muro de la puerta ciega.
 estructura.imperio.torre	Torre de vigilancia	bioma:ciudad,faccion:imperio,uso:trepable,material:piedra	5x14x5	400	pendiente	
 estructura.imperio.cuartel	Cuartel	bioma:ciudad,faccion:imperio	16x6x10	600	pendiente	
 estructura.imperio.granero	Granero	bioma:ciudad,faccion:imperio,uso:interactuable	10x7x8	400	pendiente	Las cosechas marchitas (acto II).
@@ -59,9 +61,9 @@ estructura.imperio.molino	Molino	bioma:ciudad,faccion:imperio	6x10x6	500	pendien
 estructura.imperio.fundicion	Fundición / taller industrial	bioma:ciudad,faccion:imperio,especial:narrativo	18x10x14	1200	pendiente	Capacidad industrial del imperio.
 estructura.imperio.cadalso	Cadalso de ejecución pública	bioma:ciudad,faccion:imperio,acto:2,especial:narrativo	6x3x6	250	pendiente	Escena de la huida del acto II.
 estructura.culto.altar	Altar del culto	bioma:ciudad,faccion:culto,acto:4,especial:narrativo,uso:destructible	12x6x12	1500	pendiente	Objetivo del asalto final.
-estructura.culto.templo	Templo del culto	bioma:ciudad,faccion:culto,acto:4,formato:voxel	24x14x30	2500	importado	Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva.
+estructura.culto.templo	Templo del culto	bioma:ciudad,faccion:culto,acto:4,formato:voxel	24x14x30	2500	importado	Voxeles armados a mano (tools/voxeles/estructuras.py templo): celdas de 0.5 m, la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva.
 estructura.culto.jaula_sacrificio	Jaula de cautivos para el sacrificio	faccion:culto,uso:interactuable,material:hierro	3x2.5x3	200	pendiente	Rescates del acto III.
-estructura.ruina.muro	Muro en ruinas	bioma:cualquiera,uso:decorado,material:piedra	6x3x1	150	pendiente	
+estructura.ruina.muro	Muro en ruinas	bioma:cualquiera,uso:decorado,material:piedra,formato:voxel	3.42x3x1.16	150	importado	Voxeles armados a mano (tools/voxeles/estructuras.py muro_en_ruinas), celdas de 5.3 cm: la base de dos hiladas de piedra y 12 hiladas de ladrillo trabado, la rotura en escalones y el barro del nucleo hundido donde se cayeron los ladrillos, con la forma y los colores de la hoja de tres vistas generada por el usuario con Canva. Reemplaza al del kit de edificios (src/sim/buildkit.c). En el mundo es el tramo que quedo de pie en los vestigios de los asentamientos antiguos (src/sim/ancient.h): de dos a cuatro por planta, sobre los muros de afuera.
 estructura.ruina.yurta_quemada	Yurta quemada	faccion:nomada,acto:1,uso:decorado	4.5x1.5x4.5	250	pendiente	Restos de la masacre.
 estructura.ruina.escombros	Escombros	bioma:cualquiera,uso:decorado	3x0.8x3	80	pendiente	Lo que deja la lluvia torrencial de una estructura sin mantenimiento.
 estructura.ruina.cenizas	Cenizas de una estructura	bioma:cualquiera,uso:decorado	3x0.5x3	80	pendiente	Lo que deja el fuego.
@@ -79,9 +81,9 @@ vehiculo.agua.balsa	Balsa	bioma:cualquiera,uso:conducible,material:madera	2.5x0.
 vehiculo.agua.velero	Velero	bioma:fiordo,uso:conducible,material:madera	3x8x9	600	pendiente	
 vehiculo.agua.barco_carga	Barco de carga	bioma:fiordo,uso:conducible,faccion:neutral	6x14x20	1500	pendiente	
 vehiculo.agua.barco_guerra	Barco de guerra con cañones	bioma:fiordo,uso:conducible,faccion:imperio	8x18x28	2500	pendiente	
-vehiculo.tierra.carreta_bueyes	Yunta de bueyes con carreta	faccion:nomada,uso:conducible,material:madera	2.5x2.5x6	600	pendiente	Mueve el campamento. Los bueyes: animal.ganado.buey.
+vehiculo.tierra.carreta_bueyes	Yunta de bueyes con carreta	faccion:nomada,uso:conducible,material:madera,formato:voxel	2.5x2.5x6	600	importado	Mueve el campamento. Los bueyes: animal.ganado.buey. Voxeles armados a mano (tools/voxeles/estructuras.py carro_varas), celdas de 6.25 cm: el carro de la yunta (la caja con sus herrajes, dos ruedas de rayos de 2 m, la lanza con el tornapunta y el poste del yugo con el yugo), de la hoja del carro de varas generada por el usuario con Canva; los bueyes no van en el modelo.
 vehiculo.tierra.kibitka	Carro con yurta montada (kibitka)	faccion:nomada,uso:conducible	4x4x6	800	pendiente	
-vehiculo.tierra.carreta_mercancias	Carreta de mercancías	faccion:neutral,uso:conducible,material:madera	2x2x4	400	pendiente	
+vehiculo.tierra.carreta_mercancias	Carreta de mercancías	faccion:neutral,uso:conducible,material:madera,formato:voxel	2x2x4	400	importado	Voxeles armados a mano (tools/voxeles/estructuras.py carreta), celdas de 7 cm: la caja de tablas con sus postes, las cuatro ruedas de disco de 1.43 m, los ejes y la vara que los une, con tres tonos de madera de la hoja de tres vistas generada por el usuario con Canva (2.43 x 4.64 m de la hoja).
 vehiculo.tierra.carruaje	Carruaje imperial	faccion:imperio,uso:conducible	2.2x2.8x5	900	pendiente	
 vehiculo.tierra.trineo	Trineo	bioma:glaciar,uso:conducible,material:madera	1.2x0.8x3	200	pendiente	
 animal.montura.caballo_estepario	Caballo estepario	faccion:nomada,uso:montable,rig:cuadrupedo	0.61x1.94x2.46	900	pendiente	Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.58 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen.

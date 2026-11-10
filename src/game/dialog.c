@@ -69,7 +69,7 @@ int dlg_update(Dialog *d) {
     if ((IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) && d->cursor + DLG_COLS < d->n) d->cursor += DLG_COLS;
     if ((IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) && d->cursor >= DLG_COLS) d->cursor -= DLG_COLS;
     if (d->cursor >= d->n) d->cursor = d->n - 1;
-    bool accept = IsKeyPressed(KEY_ENTER);
+    bool accept = input_enter_pressed(); // no el que abrio el dialogo (Enter: hablar)
     for (int i = 0; i < d->n; i++) {
         Rectangle r = opt_rect(d, i, 360);
         if (ui_pointer_moved() && ui_hover(r)) d->cursor = i;

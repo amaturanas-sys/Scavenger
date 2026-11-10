@@ -224,7 +224,7 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
                    bool player_has_model, float time);
 // El jugador sin modelo importado: el cuerpo articulado, con su armadura, su ropa y el escudo, teñido con light (WHITE
 // afuera; en una cueva, la luz del lugar).
-void cb_draw_player_body(const Combat *cb, const GameActions *ga, const Player *p, float time, Color light);
+void cb_draw_player_body(const Combat *cb, const GameActions *ga, Props *props, const Player *p, float time, Color light);
 // Barras de vida sobre enemigos y companeros heridos. Fuera de BeginMode3D.
 void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop, Camera3D cam, int w, int h);
 // Vida del jugador (bajo el calor), panel de heridas (P) y aviso de abatido.
@@ -234,7 +234,6 @@ void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop
 float cb_capture_dist(void);
 void cb_request_capture(void);
 void cb_request_bandage(void);     // como pulsar B (desde el HUD)
-void cb_request_light_arrow(void); // como Mayus+L (desde la columna del HUD)
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h);
 // Prueba: hace aparecer enemigos cerca del jugador ("bandidos", "culto", "arqueros"),
 // o fieras por nombre ("lobos", "tigre", "jabali"...).

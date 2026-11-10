@@ -1013,7 +1013,7 @@ void ct_test(GameActions *ga, Combat *cb, Troop *troop, const Props *props, cons
         if (ladder) c->ladders |= 1 << seg;
         p->pos = wall_point(t, s, a, ladder ? 4.5f : 1.8f);
         p->yaw = atan2f(s->x - p->pos.x, s->z - p->pos.z);
-        snprintf(log, len, "%s", ladder ? T("Una escala apoyada en la muralla: F para subir.") : T("Al pie de la muralla: la trepa (L) se engancha en las almenas."));
+        snprintf(log, len, "%s", ladder ? T("Una escala apoyada en la muralla: F para subir.") : T("Al pie de la muralla: la trepa (Tab) se engancha en las almenas."));
         return;
     }
     if (!strcmp(what, "trepar")) { // (despues de «trepa») la trepa ya enganchada: a escalar

@@ -17,6 +17,9 @@
 
 // Dibuja una estructura del mundo (su clase y region) en (x, y, z) con giro yaw (radianes).
 void voxs_draw_site(SiteKind kind, Region region, Vector3 at, float yaw, Color tint);
+// La variante del kit con que se arma una ruina del mundo en ese lugar (0..BK_VARIANTS-1): la de la planta
+// de un asentamiento antiguo (bk_variant_seed de BK_RUIN_TOWN), con la que se ponen sus tramos de pie.
+int voxs_site_variant(Vector3 at);
 // Un edificio del kit de la edad del hierro (src/sim/buildkit.h): su tipo, su region y su variante
 // (0..BK_VARIANTS-1; la 0 y la 1, chicas). Cada uno se arma la primera vez que se dibuja: a menos
 // de VOXS_KIT_NEAR m del ojo (voxs_set_lod), refinado; mas lejos, con la mitad de detalle.
@@ -56,6 +59,11 @@ extern const float VOXS_MOUTH_BOULDERS[2][3];
 void voxs_draw_cave_mouth(Region region, int variant, bool facade, Vector3 at, float yaw);
 void voxs_unload(void);
 void voxs_forget_gpu(void); // ver terrain_forget_gpu
+// ¿Hay una celda llena de un edificio, una ruina o una formacion dibujados cerca del ojo en el cuadro anterior
+// (voxs_set_lod empieza cada cuadro) en q? La camara (src/main.c) no se mete adentro. Los que tienen adentro a who
+// (el jugador, metido en una casa) no cuentan: la camara no los puede esquivar. voxs_near_count: cuantos hay.
+bool voxs_solid_at(Vector3 q, Vector3 who);
+int voxs_near_count(void);
 
 // Para los modelos de voxeles de otros modulos (src/world/voxcave.c): la paleta de una region, la rejilla a modelo con
 // esa paleta (refine: el doble de resolucion, con las esquinas redondeadas; jitter: la variacion de tono por celda) y la

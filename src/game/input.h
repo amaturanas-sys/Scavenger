@@ -42,6 +42,11 @@ unsigned input_mods(void); // KM_SHIFT | KM_CTRL | KM_ALT apretados
 bool input_action_pressed(KeyAction a);
 bool input_action_down(KeyAction a);
 bool input_action_released(KeyAction a);
+// Enter (o el de la parte numerica): aceptar en un dialogo. Un Enter ya usado en este cuadro
+// (input_use_enter: el que abrio un dialogo, KA_TALK, o el que acepto en el selector de la barra
+// rapida) no acepta ni habla otra vez: los dialogos se atienden despues que las acciones.
+bool input_enter_pressed(void);
+void input_use_enter(void);
 // El boton derecho: mantenido sin arrastrar es cubrirse; arrastrado, gira la camara (dx, dy:
 // lo que se movio el raton en este cuadro).
 bool input_right_hold(void);

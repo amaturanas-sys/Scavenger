@@ -21,7 +21,7 @@ static const KeyBind BINDS[KA_COUNT] = {
     [KA_THROW] = { 'T', 0, KM_CTRL },
     [KA_MOUNT] = { 'R', 0, KM_CTRL },
     [KA_BANDAGE] = { 'B', 0, KM_CTRL },
-    [KA_DRINK] = { 'N', 0, KM_CTRL },
+    [KA_DRINK] = { 0, 0, 0 }, // sin tecla: ninguna la dispara (0 no es una tecla de raylib)
     [KA_ESCORT] = { 'Y', 0, KM_SHIFT | KM_CTRL },
     [KA_DISPATCH] = { 'Y', KM_SHIFT, KM_CTRL },
     [KA_TARGET_LEFT] = { 'Q', KM_CTRL, 0 }, // Ctrl+Q / Ctrl+E: Q y E solas giran la camara
@@ -31,6 +31,8 @@ static const KeyBind BINDS[KA_COUNT] = {
     [KA_INVENTORY] = { 'I', 0, KM_CTRL },
     [KA_EQUIPMENT] = { 'P', 0, KM_CTRL }, // Ctrl+P: la pausa
     [KA_CARD] = { 'U', 0, KM_CTRL },
+    [KA_TALK] = { KM_KEY_ENTER, 0, KM_CTRL | KM_ALT },
+    [KA_CAMERA] = { 'N', 0, KM_CTRL }, // con Mayus, la vista anterior; Ctrl+N: tecla de prueba (adelanta el reloj)
 };
 
 const KeyBind *keymap_bind(KeyAction a) { return (unsigned)a < KA_COUNT ? &BINDS[a] : &BINDS[0]; }
@@ -38,7 +40,7 @@ const KeyBind *keymap_bind(KeyAction a) { return (unsigned)a < KA_COUNT ? &BINDS
 bool keymap_matches(KeyAction a, int key, unsigned mods) {
     if ((unsigned)a >= KA_COUNT) return false;
     const KeyBind *b = &BINDS[a];
-    return b->key == key && (mods & b->need) == b->need && !(mods & b->forbid);
+    return b->key && b->key == key && (mods & b->need) == b->need && !(mods & b->forbid); // sin tecla: nada
 }
 
 const char *keymap_text(KeyAction a) {
@@ -46,7 +48,9 @@ const char *keymap_text(KeyAction a) {
     static int next;
     const KeyBind *b = keymap_bind(a);
     char key[16];
+    if (!b->key) return ""; // sin tecla
     if (b->key == KM_KEY_TAB) snprintf(key, sizeof(key), "Tab");
+    else if (b->key == KM_KEY_ENTER) snprintf(key, sizeof(key), "Enter");
     else if (b->key == KM_KEY_SPACE) snprintf(key, sizeof(key), "%s", T("Espacio"));
     else snprintf(key, sizeof(key), "%c", (char)b->key);
     char *out = buf[next++ % 4];

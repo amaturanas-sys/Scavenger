@@ -144,6 +144,16 @@ static Color g_tint = { 255, 255, 255, 255 }; // la luz de alrededor (props_set_
 
 void props_set_tint(Color tint) { g_tint = tint; }
 
+bool props_draw_item_matrix(Props *p, const InvItem *item, Matrix transform) {
+    Model *m = cached_model(p, item);
+    if (!m) return false;
+    Matrix saved = m->transform;
+    m->transform = MatrixMultiply(saved, transform);
+    DrawModel(*m, (Vector3){ 0, 0, 0 }, 1.0f, g_tint);
+    m->transform = saved;
+    return true;
+}
+
 void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, float grow) {
     Model *m = cached_model(p, item);
     if (m && grow >= 1.0f) {

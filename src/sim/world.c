@@ -1192,6 +1192,19 @@ static bool snow_free(const World *w, float x, float z, float r) {
 // ¿Sirve (x, z) para la cosa idx de esa clase? Las mismas reglas que al sembrarla (su region muy
 // adentro, lo seco y llano, las distancias a lo demas y al campamento) y, ademas, la huella en seco
 // y, los pueblos y las tribus, por debajo de la nieve de todo el año.
+// Un llano para la planta de un asentamiento antiguo: el kit la arma a una sola altura (la del medio), asi
+// que entre el centro, un anillo de 9 m y otro de 19 m, menos de 1.2 m de diferencia.
+static bool town_flat(const World *w, float x, float z) {
+    float lo = world_height(w, x, z), hi = lo;
+    for (int ring = 1; ring <= 2; ring++)
+        for (int k = 0; k < 8; k++) {
+            float a = (float)k * (PI_F / 4.0f) + (float)ring * 0.39f, r = ring == 1 ? 9.0f : 19.0f;
+            float h = world_height(w, x + cosf(a) * r, z + sinf(a) * r);
+            lo = fminf(lo, h), hi = fmaxf(hi, h);
+        }
+    return hi - lo < 1.2f;
+}
+
 static bool place_ok(const World *w, PlaceKind kind, int idx, float x, float z) {
     Region rg;
     float inset, foot, home, d2 = x * x + z * z;
@@ -1221,7 +1234,12 @@ static bool place_ok(const World *w, PlaceKind kind, int idx, float x, float z) 
         break;
     case PLACE_SITE: {
         const WorldSite *st = &w->sites[idx];
-        rg = st->region, home = 250.0f, foot = WORLD_FOOT_SITE;
+        rg = st->region, home = 250.0f, foot = st->kind == SITE_ANCIENT_TOWN ? WORLD_FOOT_TOWN : WORLD_FOOT_SITE;
+        if (st->kind == SITE_ANCIENT_TOWN) { // la planta, en un llano y lejos de las guaridas (la boca de la cueva)
+            if (!town_flat(w, x, z)) return false;
+            for (int o = 0; o < w->den_count; o++)
+                if (near_any(x, z, w->dens[o].x, w->dens[o].z, 70.0f)) return false;
+        }
         sea_ok = st->kind == SITE_HARBOR;
         inset = sea_ok ? 0.0f : 300.0f;
         if (sea_ok) { // el embarcadero, en la costa
@@ -1280,6 +1298,28 @@ static void settle_all(World *w) {
         const Den *d = &w->dens[i];
         cave_generate(&w->caves[w->cave_count++], w->seed, i, d->x, d->z, d->region, d->species);
     }
+}
+
+// Los vestigios de los asentamientos antiguos (src/sim/ancient.h): despues de todo lo demas y con su propio
+// azar, asi lo que ya estaba queda igual (sus lugares y los indices de los sitios, que las partidas guardan
+// como vistos). En un llano de cada region, lejos de los pueblos, de las tribus, de las guaridas y de los
+// otros sitios (place_ok); donde no hay lugar, uno menos.
+static void place_ancient_towns(World *w) {
+    static const struct { Region rg; int n; } RULES[] = {
+        { REGION_STEPPE, 3 }, { REGION_DESERT, 2 }, { REGION_HIGHLAND, 2 }, { REGION_FOREST, 1 }, { REGION_FJORD, 1 },
+    };
+    Rng rng;
+    rng_seed(&rng, w->seed ^ 0xA9C1E470u);
+    for (size_t r = 0; r < sizeof(RULES) / sizeof(RULES[0]); r++)
+        for (int k = 0, made = 0; k < RULES[r].n * 30 && made < RULES[r].n && w->site_count < SITES_MAX; k++) {
+            float x, z;
+            if (!find_spot(w, &rng, RULES[r].rg, 300.0f, &x, &z)) continue;
+            WorldSite *st = &w->sites[w->site_count];
+            st->x = x, st->z = z, st->region = RULES[r].rg, st->kind = SITE_ANCIENT_TOWN;
+            st->yaw = rng_float(&rng) * 2.0f * PI_F;
+            if (!place_ok(w, PLACE_SITE, w->site_count, x, z)) continue;
+            w->site_count++, made++;
+        }
 }
 
 void world_generate(World *w, uint32_t seed) {
@@ -1438,16 +1478,18 @@ void world_generate(World *w, uint32_t seed) {
         }
     }
     settle_all(w);
+    place_ancient_towns(w);
 }
 
 const char *site_name(SiteKind k) {
     static const char *N[SITE_KINDS] = { N_("un kurgán"), N_("una hilera de balbales"), N_("una piedra de ciervos"),
                                          N_("una fortaleza en ruinas"), N_("una ciudad enterrada en la arena"), N_("rocas grabadas"),
-                                         N_("un caravasar"), N_("una torre de vigía"), N_("un ovoo"), N_("un pozo"), N_("un embarcadero") };
+                                         N_("un caravasar"), N_("una torre de vigía"), N_("un ovoo"), N_("un pozo"), N_("un embarcadero"),
+                                         N_("los vestigios de un asentamiento antiguo") };
     return (unsigned)k < SITE_KINDS ? N[k] : "?";
 }
 
-bool site_is_ruin(SiteKind k) { return k <= SITE_PETROGLYPHS; }
+bool site_is_ruin(SiteKind k) { return k <= SITE_PETROGLYPHS || k == SITE_ANCIENT_TOWN; }
 
 const World *world_for_seed(uint32_t seed) {
     static World cache[2];

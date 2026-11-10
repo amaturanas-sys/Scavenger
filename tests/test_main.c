@@ -19,6 +19,7 @@
 #include "../src/sim/armor.h"
 #include "../src/sim/ballistics.h"
 #include "../src/sim/body.h"
+#include "../src/sim/ancient.h"
 #include "../src/sim/buildkit.h"
 #include "../src/sim/clock.h"
 #include "../src/sim/inventory.h"
@@ -33,6 +34,7 @@
 #include "../src/sim/rng.h"
 #include "../src/sim/save_format.h"
 #include "../src/sim/keymap.h"
+#include "../src/sim/camview.h"
 #include "../src/sim/targeting.h"
 #include "../src/sim/stealth.h"
 #include "../src/sim/squad.h"
@@ -1709,6 +1711,16 @@ static void test_voxels(void) {
     for (int i = 0; i < m.tris * 3; i++) miny = fminf(miny, m.pos[i * 3 + 1]), maxy = fmaxf(maxy, m.pos[i * 3 + 1]);
     CHECK(fabsf(miny) < 1e-4f && fabsf(maxy - 1.5f) < 1e-4f); // 3 celdas de 0,5 m desde la base
     vox_mesh_free(&m);
+    // Apoyado en el suelo: de la cara de abajo de la base queda el borde (8 de las 9); la del centro no se arma.
+    g.on_ground = true;
+    CHECK(vox_exposed_faces(&g) == 53);
+    CHECK(vox_mesh(&g, PAL, &m) && m.tris == 106);
+    int down = 0;
+    for (int t = 0; t < m.tris; t++) down += m.nrm[t * 9 + 1] < -0.5f;
+    CHECK(down == 16); // 8 caras de abajo, las del borde
+    vox_mesh_free(&m);
+    vox_box(&g, 0, 5, 0, 2, 5, 2, 1); // una losa en el aire, lejos del suelo: se arma entera por abajo
+    CHECK(vox_exposed_faces(&g) == 53 + 9 + 9 + 12);
     vox_free(&g);
     // Erosion: las ruinas pierden celdas, mas arriba que abajo.
     CHECK(vox_init(&g, 12, 12, 12, 0.5f));
@@ -1741,6 +1753,102 @@ static void test_voxels(void) {
                 if (x <= 6) west += g.light[x + 20 * (z + 20 * y)], nw++;
             }
     CHECK(ne > 0 && nw > 0 && east / ne > west / nw);
+    vox_free(&g);
+}
+
+// La figura de prueba de las caras juntas (la misma en tools/voxeles/test_voxeles.py): una losa, un bloque de otro
+// material encima (rincones con sombra), una cornisa que vuela, un tunel que lo atraviesa y una muesca en la base.
+#define MERGE_FIXTURE_TRIS 274 // con on_ground; lo mismo en tools/voxeles/test_voxeles.py
+static bool merge_fixture(VoxGrid *g) {
+    if (!vox_init(g, 8, 7, 7, 0.5f)) return false;
+    vox_box(g, 0, 0, 0, 7, 1, 6, 1);
+    vox_box(g, 2, 2, 2, 5, 4, 4, 2);
+    vox_box(g, 1, 5, 1, 6, 5, 5, 1);
+    vox_carve(g, 6, 0, 2, 7, 1, 4);
+    vox_carve(g, 3, 3, 0, 4, 3, 6);
+    return true;
+}
+
+// Las aristas de la malla en medias celdas: cerrada (sin rendijas ni juntas en T) si cada arista (a, b) tiene su
+// vuelta (b, a) las mismas veces.
+static bool mesh_closed(const VoxMesh *m, const VoxGrid *g) {
+    const float s = g->size, ox = -g->nx * s * 0.5f, oz = -g->nz * s * 0.5f;
+    int ne = m->tris * 3;
+    int(*e)[6] = malloc((size_t)ne * sizeof(*e));
+    if (!e) return false;
+    for (int t = 0; t < m->tris; t++)
+        for (int k = 0; k < 3; k++) {
+            const float *a = &m->pos[(t * 3 + k) * 3], *b = &m->pos[(t * 3 + (k + 1) % 3) * 3];
+            int *o = e[t * 3 + k];
+            o[0] = (int)lroundf(2.0f * (a[0] - ox) / s), o[1] = (int)lroundf(2.0f * a[1] / s), o[2] = (int)lroundf(2.0f * (a[2] - oz) / s);
+            o[3] = (int)lroundf(2.0f * (b[0] - ox) / s), o[4] = (int)lroundf(2.0f * b[1] / s), o[5] = (int)lroundf(2.0f * (b[2] - oz) / s);
+        }
+    bool closed = true;
+    for (int i = 0; i < ne && closed; i++) {
+        int same = 0, back = 0;
+        for (int j = 0; j < ne; j++) {
+            same += !memcmp(e[j], e[i], sizeof(int[6]));
+            back += !memcmp(e[j], e[i] + 3, sizeof(int[3])) && !memcmp(e[j] + 3, e[i], sizeof(int[3]));
+        }
+        closed = same == back;
+    }
+    free(e);
+    return closed;
+}
+
+// Area por direccion de la normal y color integrado (area x color medio de cada triangulo).
+static void mesh_sums(const VoxMesh *m, double area[6], double color[3]) {
+    for (int i = 0; i < 6; i++) area[i] = 0.0;
+    for (int i = 0; i < 3; i++) color[i] = 0.0;
+    for (int t = 0; t < m->tris; t++) {
+        const float *p = &m->pos[t * 9], *n = &m->nrm[t * 9];
+        double u[3] = { p[3] - p[0], p[4] - p[1], p[5] - p[2] }, v[3] = { p[6] - p[0], p[7] - p[1], p[8] - p[2] };
+        double cx = u[1] * v[2] - u[2] * v[1], cy = u[2] * v[0] - u[0] * v[2], cz = u[0] * v[1] - u[1] * v[0];
+        double a = 0.5 * sqrt(cx * cx + cy * cy + cz * cz);
+        int d = n[0] > 0.5f ? 0 : n[0] < -0.5f ? 1 : n[1] > 0.5f ? 2 : n[1] < -0.5f ? 3 : n[2] > 0.5f ? 4 : 5;
+        area[d] += a;
+        for (int c = 0; c < 3; c++)
+            color[c] += a * (m->col[t * 12 + c] + m->col[t * 12 + 4 + c] + m->col[t * 12 + 8 + c]) / 3.0;
+    }
+}
+
+// Las caras juntas: la misma figura, el mismo color en cada punto, cerrada y con muchos menos triangulos.
+static void test_voxels_merge(void) {
+    static const uint8_t PAL[3][4] = { { 0, 0, 0, 0 }, { 200, 100, 50, 255 }, { 90, 140, 200, 255 } };
+    VoxGrid g;
+    VoxMesh plain, merged;
+    CHECK(vox_init(&g, 4, 4, 4, 0.5f));
+    vox_box(&g, 0, 0, 0, 2, 2, 2, 1);
+    g.merge = true;
+    CHECK(vox_mesh(&g, PAL, &merged) && merged.tris == 12); // el cubo: un rectangulo por lado
+    CHECK(mesh_closed(&merged, &g));
+    vox_mesh_free(&merged);
+    vox_free(&g);
+
+    CHECK(merge_fixture(&g));
+    CHECK(vox_mesh(&g, PAL, &plain));
+    g.merge = true;
+    CHECK(vox_mesh(&g, PAL, &merged));
+    CHECK(merged.tris < plain.tris);
+    CHECK(mesh_closed(&plain, &g) && mesh_closed(&merged, &g));
+    double ap[6], am[6], cp[3], cm[3];
+    mesh_sums(&plain, ap, cp);
+    mesh_sums(&merged, am, cm);
+    for (int d = 0; d < 6; d++) CHECK(fabs(ap[d] - am[d]) < 1e-4);         // la misma superficie, lado por lado
+    for (int c = 0; c < 3; c++) CHECK(fabs(cp[c] - cm[c]) < 1e-3 * cp[c]); // y el mismo color
+    vox_mesh_free(&plain);
+    vox_mesh_free(&merged);
+    // Como en el juego (apoyado en el suelo): el numero que cuenta tambien tools/modelos/modelos.py (tris_vox).
+    g.on_ground = true;
+    CHECK(vox_mesh(&g, PAL, &merged) && merged.tris == MERGE_FIXTURE_TRIS);
+    vox_mesh_free(&merged);
+    // Sin merge (o con variacion por celda) nada cambia: el kit, las cuevas y las nubes se arman como antes.
+    g.merge = false;
+    CHECK(vox_mesh(&g, PAL, &plain) && plain.tris == 2 * vox_exposed_faces(&g));
+    vox_mesh_free(&plain);
+    g.merge = true, g.jitter = 6;
+    CHECK(vox_mesh(&g, PAL, &plain) && plain.tris == 2 * vox_exposed_faces(&g));
+    vox_mesh_free(&plain);
     vox_free(&g);
 }
 
@@ -3424,9 +3532,14 @@ static void test_keymap_four_buttons(void) {
     CHECK(keymap_matches(KA_INVENTORY, 'I', 0) && !keymap_matches(KA_INVENTORY, KM_KEY_TAB, 0));
     CHECK(keymap_matches(KA_MENU, KM_KEY_TAB, 0) && !keymap_matches(KA_MENU, 'L', 0));
     CHECK(keymap_matches(KA_TARGET, 'O', 0) && keymap_matches(KA_TARGET, 'O', KM_SHIFT) && !keymap_matches(KA_TARGET, KM_KEY_TAB, 0));
-    // El resto del mapa: X agacharse, C sigilo, F todo, Mayus+G mochila, Mayus+V flecha, U ficha.
+    // El resto del mapa: X agacharse, C sigilo, F las cosas, Enter hablar, N la camara, Mayus+G mochila,
+    // Mayus+V flecha, U ficha.
     CHECK(keymap_matches(KA_CROUCH, 'X', 0) && keymap_matches(KA_SNEAK, 'C', 0));
     CHECK(keymap_matches(KA_INTERACT, 'F', 0) && keymap_matches(KA_INTERACT, 'F', KM_SHIFT) && !keymap_matches(KA_INTERACT, 'K', 0));
+    CHECK(!keymap_matches(KA_INTERACT, KM_KEY_ENTER, 0) && !keymap_matches(KA_TALK, 'F', 0)); // hablar ya no es F
+    CHECK(keymap_matches(KA_TALK, KM_KEY_ENTER, 0) && keymap_matches(KA_TALK, KM_KEY_ENTER, KM_SHIFT));
+    CHECK(!keymap_matches(KA_TALK, KM_KEY_ENTER, KM_CTRL) && !keymap_matches(KA_TALK, KM_KEY_ENTER, KM_ALT));
+    CHECK(keymap_matches(KA_CAMERA, 'N', 0) && keymap_matches(KA_CAMERA, 'N', KM_SHIFT) && !keymap_matches(KA_CAMERA, 'N', KM_CTRL));
     CHECK(keymap_matches(KA_BACKPACK, 'G', KM_SHIFT) && !keymap_matches(KA_BACKPACK, 'G', 0));
     CHECK(keymap_matches(KA_GRAB, 'G', 0) && !keymap_matches(KA_GRAB, 'G', KM_SHIFT));
     CHECK(keymap_matches(KA_LIGHT_ARROW, 'V', KM_SHIFT) && !keymap_matches(KA_LIGHT_ARROW, 'V', 0));
@@ -3437,7 +3550,8 @@ static void test_keymap_four_buttons(void) {
     for (int a = 0; a < KA_COUNT; a++) CHECK(!keymap_matches((KeyAction)a, 'V', 0) && !keymap_matches((KeyAction)a, 'Z', 0));
     // Ninguna tecla hace dos cosas (ya no hace falta que el contexto decida: Tab no es objetivo y
     // menu a la vez, ni Mayus+L carga y flecha).
-    const int keys[] = { 'A', 'B', 'C', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z', KM_KEY_TAB, KM_KEY_SPACE };
+    const int keys[] = { 'A', 'B', 'C', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z',
+                         KM_KEY_TAB, KM_KEY_SPACE, KM_KEY_ENTER };
     const unsigned mods[] = { 0, KM_SHIFT, KM_CTRL, KM_ALT, KM_SHIFT | KM_ALT };
     int clashes = 0;
     for (size_t k = 0; k < sizeof(keys) / sizeof(keys[0]); k++)
@@ -3449,6 +3563,47 @@ static void test_keymap_four_buttons(void) {
     CHECK(!strcmp(keymap_text(KA_ATTACK), "H") && !strcmp(keymap_text(KA_PARRY), "J") && !strcmp(keymap_text(KA_CHARGE), "L"));
     CHECK(!strcmp(keymap_text(KA_BACKPACK), "Mayús+G") && !strcmp(keymap_text(KA_INVENTORY), "I") && !strcmp(keymap_text(KA_MENU), "Tab") &&
           !strcmp(keymap_text(KA_TARGET), "O"));
+    CHECK(!strcmp(keymap_text(KA_TALK), "Enter") && !strcmp(keymap_text(KA_CAMERA), "N") && !strcmp(keymap_text(KA_INTERACT), "F"));
+    // Beber ya no tiene tecla (va en la casilla del odre): ni N ni otra la disparan.
+    CHECK(!keymap_matches(KA_DRINK, 'N', 0) && !keymap_matches(KA_DRINK, 0, 0) && keymap_text(KA_DRINK)[0] == '\0');
+}
+
+// Las vistas de la camara (N): cerca, como la imagen de referencia del usuario (la cabeza a media
+// pantalla, el cuadro corta por las rodillas y los pies quedan fuera), y dos mas lejos con el cuerpo
+// entero. Lejos es la camara de siempre: la de las capturas viejas y la de la mira.
+static void test_camera_views(void) {
+    const float eye = 1.6f; // de pie (src/game/player.c: player_eye_height)
+    const CamPreset *n = camview_preset(CAMVIEW_NEAR), *m = camview_preset(CAMVIEW_MID), *f = camview_preset(CAMVIEW_FAR);
+    float head = camview_screen_y(n, eye, 1.8f), knee = camview_screen_y(n, eye, 0.5f), feet = camview_screen_y(n, eye, 0.0f);
+    CHECK(head > 0.40f && head < 0.52f);  // la coronilla, a la mitad
+    CHECK(knee > 0.88f && knee < 1.02f);  // el borde de abajo, por las rodillas
+    CHECK(feet > 1.0f);                   // los pies, fuera de cuadro
+    CHECK(fabsf(camview_screen_y(n, eye, eye + n->lift) - 0.5f) < 1e-4f); // mira al punto sobre los ojos
+    // Media y lejos: el cuerpo entero adentro, cada vez mas chico.
+    for (int v = CAMVIEW_MID; v < CAMVIEW_COUNT; v++) {
+        const CamPreset *c = camview_preset((CamView)v);
+        CHECK(camview_screen_y(c, eye, 0.0f) < 0.85f && camview_screen_y(c, eye, 1.8f) > 0.40f);
+    }
+    float tall[CAMVIEW_COUNT];
+    for (int v = 0; v < CAMVIEW_COUNT; v++)
+        tall[v] = camview_screen_y(camview_preset((CamView)v), eye, 0.0f) - camview_screen_y(camview_preset((CamView)v), eye, 1.8f);
+    CHECK(tall[CAMVIEW_NEAR] > 2.0f * tall[CAMVIEW_MID] && tall[CAMVIEW_MID] > 1.5f * tall[CAMVIEW_FAR]);
+    CHECK(n->dist < m->dist && m->dist < f->dist && n->pitch < m->pitch && m->pitch < f->pitch);
+    CHECK(fabsf(f->dist - 11.0f) < 1e-4f && fabsf(f->pitch - 0.38f) < 1e-4f); // la de siempre
+    CHECK(n->dist >= CAMVIEW_DIST_MIN && f->dist <= CAMVIEW_DIST_MAX);
+    // N recorre las tres y vuelve; Mayus+N, al reves.
+    CHECK(camview_next(CAMVIEW_NEAR) == CAMVIEW_MID && camview_next(CAMVIEW_MID) == CAMVIEW_FAR && camview_next(CAMVIEW_FAR) == CAMVIEW_NEAR);
+    for (int v = 0; v < CAMVIEW_COUNT; v++) {
+        CHECK(camview_prev(camview_next((CamView)v)) == (CamView)v);
+        CHECK(camview_name((CamView)v)[0] != '\0');
+        // La mira: con la inclinacion de su vista, tira como la vista lejana; inclinar la camara la mueve igual.
+        const CamPreset *c = camview_preset((CamView)v);
+        CHECK(fabsf(camview_aim_pitch((CamView)v, c->pitch) - f->pitch) < 1e-5f);
+        CHECK(fabsf(camview_aim_pitch((CamView)v, c->pitch + 0.2f) - (f->pitch + 0.2f)) < 1e-5f);
+    }
+    CHECK(camview_parse("cerca") == CAMVIEW_NEAR && camview_parse("media") == CAMVIEW_MID && camview_parse("lejos") == CAMVIEW_FAR);
+    CHECK(camview_parse("orbital") == -1 && camview_parse(NULL) == -1);
+    CHECK(camview_preset((CamView)99) == n); // fuera de rango: cerca
 }
 
 // A3 (las hojas, docs/PLAN_TACTICO_Y_CUEVAS.md): hacia que lado cicla el objetivo, cuanto dura sin verlo,
@@ -5107,6 +5262,107 @@ static uint32_t test_bk_hash(const VoxGrid *g) {
 // semilla y otra cosa con otra; las chicas caben en su huella; la puerta da al frente, a ras del
 // piso, y lleva a su vestibulo (cerrada, de afuera no se llega adentro); lo de adentro, que no se
 // ve, queda relleno (ningun hueco techado sin salida) y las caras, ya refinadas, no se pasan.
+// Los vestigios de los asentamientos antiguos (src/sim/ancient.h): la misma planta de la misma semilla; el
+// palacio con su patio de al menos 4 m y las casas, sin pisarse y con su calle, adentro de su cuadrado; todos
+// los cuartos se alcanzan desde afuera por sus puertas (la planta entera, antes del tiempo); lo que queda,
+// casi todo a ras del suelo, con brechas y nunca mas alto que ANC_HEIGHT_MAX; de dos a cuatro tramos de pie,
+// sobre muros de afuera y lejos de las puertas.
+#define ANC_TEST_N 184 // 2 * (ANC_HALF + 1) / 0.25: celdas de 0.25 m con un metro de calle alrededor
+static bool anc_rect_same(AncRect a, AncRect b) { return a.x0 == b.x0 && a.z0 == b.z0 && a.x1 == b.x1 && a.z1 == b.z1; }
+// Dos plantas iguales, campo por campo: memcmp no sirve, el relleno de AncWall (tras su bool) no tiene valor
+// definido y en MSVC sale distinto en cada copia.
+static bool anc_same(const AncientPlan *a, const AncientPlan *b) {
+    if (a->seed != b->seed || a->building_count != b->building_count || a->wall_count != b->wall_count || a->door_count != b->door_count ||
+        a->standing_count != b->standing_count || a->rooms != b->rooms || !anc_rect_same(a->court, b->court))
+        return false;
+    for (int i = 0; i < a->building_count; i++)
+        if (!anc_rect_same(a->buildings[i], b->buildings[i])) return false;
+    for (int i = 0; i < a->wall_count; i++)
+        if (!anc_rect_same(a->walls[i].r, b->walls[i].r) || a->walls[i].h != b->walls[i].h || a->walls[i].outer != b->walls[i].outer) return false;
+    for (int i = 0; i < a->door_count; i++)
+        if (!anc_rect_same(a->doors[i], b->doors[i])) return false;
+    for (int i = 0; i < a->standing_count; i++) {
+        const AncStanding *s = &a->standing[i], *t = &b->standing[i];
+        if (s->x != t->x || s->z != t->z || s->yaw != t->yaw || !anc_rect_same(s->r, t->r)) return false;
+    }
+    return true;
+}
+
+static void test_ancient(void) {
+    static AncientPlan a, b;
+    static uint8_t reached[ANC_TEST_N * ANC_TEST_N];
+    static int queue[ANC_TEST_N * ANC_TEST_N];
+    ancient_plan(&a, 77u);
+    ancient_plan(&b, 77u);
+    CHECK(anc_same(&a, &b));
+    ancient_plan(&b, 78u);
+    CHECK(!anc_same(&a, &b));
+    int few = 0, small_court = 0, overlap = 0, out = 0, standing_bad = 0, too_tall = 0, unreachable = 0, inside = 0, samples = 0, breaches = 0;
+    double sum_h = 0.0;
+    const int N = ANC_TEST_N;
+    const float c0 = -(ANC_HALF + 1.0f);
+    CHECK((float)N * 0.25f == 2.0f * (ANC_HALF + 1.0f));
+    for (uint32_t s = 1; s <= 40; s++) {
+        AncientPlan *p = &a;
+        ancient_plan(p, s * 2654435761u);
+        few += p->building_count < 3 || p->rooms < 8;
+        small_court += p->court.x1 - p->court.x0 < 3.99f || p->court.z1 - p->court.z0 < 3.99f;
+        for (int i = 0; i < p->building_count; i++) {
+            const AncRect *r = &p->buildings[i];
+            out += r->x0 < -ANC_HALF || r->z0 < -ANC_HALF || r->x1 > ANC_HALF || r->z1 > ANC_HALF;
+            for (int j = i + 1; j < p->building_count; j++) {
+                const AncRect *q = &p->buildings[j];
+                overlap += r->x0 - 2.49f < q->x1 && q->x0 - 2.49f < r->x1 && r->z0 - 2.49f < q->z1 && q->z0 - 2.49f < r->z1;
+            }
+        }
+        standing_bad += p->standing_count < 2 || p->standing_count > ANC_STANDING_MAX;
+        for (int i = 0; i < p->standing_count; i++) {
+            const AncStanding *st = &p->standing[i];
+            bool on_outer = false;
+            for (int w = 0; w < p->wall_count; w++) {
+                const AncRect *r = &p->walls[w].r;
+                on_outer |= p->walls[w].outer && st->x >= r->x0 && st->x <= r->x1 && st->z >= r->z0 && st->z <= r->z1;
+            }
+            for (int d = 0; d < p->door_count; d++) {
+                const AncRect *r = &p->doors[d];
+                on_outer &= !(st->r.x0 < r->x1 && r->x0 < st->r.x1 && st->r.z0 < r->z1 && r->z0 < st->r.z1);
+            }
+            standing_bad += !on_outer;
+        }
+        // Lo que queda de alto y, en la planta entera, que se llegue a todos los cuartos desde afuera.
+        memset(reached, 0, sizeof(reached));
+        int head = 0, tail = 0;
+        reached[0] = 1, queue[tail++] = 0;
+        while (head < tail) {
+            int k = queue[head++], x = k % N, z = k / N;
+            static const int D[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+            for (int d = 0; d < 4; d++) {
+                int nx = x + D[d][0], nz = z + D[d][1];
+                if (nx < 0 || nz < 0 || nx >= N || nz >= N || reached[nx + nz * N]) continue;
+                if (ancient_wall_at(p, c0 + ((float)nx + 0.5f) * 0.25f, c0 + ((float)nz + 0.5f) * 0.25f)) continue;
+                reached[nx + nz * N] = 1, queue[tail++] = nx + nz * N;
+            }
+        }
+        for (int z = 0; z < N; z++)
+            for (int x = 0; x < N; x++) {
+                float px = c0 + ((float)x + 0.5f) * 0.25f, pz = c0 + ((float)z + 0.5f) * 0.25f;
+                bool wall = ancient_wall_at(p, px, pz);
+                if (wall) {
+                    float h = ancient_height(p, px, pz);
+                    samples++, sum_h += h, breaches += h == 0.0f, too_tall += h > ANC_HEIGHT_MAX + 1e-4f;
+                    continue;
+                }
+                for (int i = 0; i < p->building_count; i++) {
+                    const AncRect *r = &p->buildings[i];
+                    if (px > r->x0 && px < r->x1 && pz > r->z0 && pz < r->z1) inside++, unreachable += !reached[x + z * N];
+                }
+            }
+    }
+    CHECK(few == 0 && small_court == 0 && overlap == 0 && out == 0 && standing_bad == 0);
+    CHECK(inside > 1000 && unreachable == 0);
+    CHECK(samples > 1000 && too_tall == 0 && breaches > 0 && sum_h / samples < 1.0 && sum_h / samples > 0.3);
+}
+
 static void test_buildkit(void) {
     for (int r = 0; r < REGION_COUNT; r++) {
         CHECK(bk_available(BK_HOUSE, (Region)r) && bk_available(BK_PALACE, (Region)r) && bk_available(BK_GRANARY, (Region)r));
@@ -5137,7 +5393,7 @@ static void test_buildkit(void) {
                     bad_det++;
                 vox_free(&h);
                 uint32_t hash = test_bk_hash(&g);
-                bool wall = t == BK_WALL || t == BK_TOWER || t == BK_GATE, ruin = t == BK_RUIN_FORT || t == BK_RUIN_CITY; // la muralla; las ruinas
+                bool wall = t == BK_WALL || t == BK_TOWER || t == BK_GATE, ruin = t == BK_RUIN_FORT || t == BK_RUIN_CITY || t == BK_RUIN_TOWN; // la muralla; las ruinas
                 bool big = t == BK_PALACE || t == BK_BARRACKS || wall || ruin || t == BK_CORRAL; // sin chicas
                 if (v % 2 == 1 && hash == prev && t != BK_WALL && t != BK_TOWER) same++; // los tramos y las torres pueden repetirse
                 prev = hash;
@@ -5231,7 +5487,9 @@ static void test_buildkit(void) {
     CHECK(sand * 2 > ground && in.h > 2.0f);
     vox_free(&g);
     // Las obras de la tribu sin modelo se dibujan con el kit, a la medida de su id del inventario (las
-    // casas, que el kit hace de muchas medidas, se escalan a su lugar).
+    // casas, que el kit hace de muchas medidas, se escalan a su lugar). Las que ya tienen su modelo
+    // importado (la atalaya, con la escalera larga de su hoja) lo dibujan a el: el kit queda de
+    // respaldo y no tiene que medir lo mismo, pero se sigue armando.
     Inventory inv;
     char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
     CHECK(text != NULL);
@@ -5256,7 +5514,8 @@ static void test_buildkit(void) {
                 misfit++;
                 continue;
             }
-            if (t != BK_HOUSE && (fabsf(in.l - it->l) > 1.5f || fabsf(in.w - it->w) > 1.5f || fabsf(in.h - it->h) > 0.75f)) misfit++;
+            bool own_model = it->state == INV_IMPORTADO || it->state == INV_REFINADO;
+            if (t != BK_HOUSE && !own_model && (fabsf(in.l - it->l) > 1.5f || fabsf(in.w - it->w) > 1.5f || fabsf(in.h - it->h) > 0.75f)) misfit++;
             vox_free(&g);
         }
     }
@@ -5696,6 +5955,43 @@ static void test_water_seasons(void) {
     }
 }
 
+// Los vestigios de los asentamientos antiguos en el mundo: van despues de los demas sitios (los indices de
+// antes, que las partidas guardan como vistos, no se mueven), en un llano (a una sola altura los arma el kit),
+// lejos de los pueblos, las tribus, las guaridas y los otros sitios; son ruinas y tienen nombre.
+static void test_ancient_towns_in_world(void) {
+    static const uint32_t SEEDS[] = { 1206u, 7u, 42u, 1984u, 2024u, 31337u };
+    int towns = 0, order = 0, steep = 0, close = 0, worlds_without = 0;
+    for (size_t i = 0; i < sizeof(SEEDS) / sizeof(SEEDS[0]); i++) {
+        const World *w = world_for_seed(SEEDS[i]);
+        int here = 0;
+        bool seen_town = false;
+        CHECK(w->site_count <= SITES_MAX);
+        for (int k = 0; k < w->site_count; k++) {
+            const WorldSite *st = &w->sites[k];
+            if (st->kind != SITE_ANCIENT_TOWN) {
+                order += seen_town;
+                continue;
+            }
+            seen_town = true, here++;
+            float lo = world_height(w, st->x, st->z), hi = lo;
+            for (int a = 0; a < 16; a++) {
+                float r = a < 8 ? 9.0f : 19.0f, ang = (float)a * 0.785398f + 0.2f;
+                float h = world_height(w, st->x + cosf(ang) * r, st->z + sinf(ang) * r);
+                lo = fminf(lo, h), hi = fmaxf(hi, h);
+            }
+            steep += hi - lo > 1.6f;
+            for (int o = 0; o < w->site_count; o++)
+                close += o != k && hypotf(w->sites[o].x - st->x, w->sites[o].z - st->z) < 160.0f;
+            for (int o = 0; o < w->settlement_count; o++) close += hypotf(w->settlements[o].x - st->x, w->settlements[o].z - st->z) < 140.0f;
+            for (int o = 0; o < w->tribe_count; o++) close += hypotf(w->tribes[o].x - st->x, w->tribes[o].z - st->z) < 120.0f;
+            for (int o = 0; o < w->den_count; o++) close += hypotf(w->dens[o].x - st->x, w->dens[o].z - st->z) < 70.0f;
+        }
+        towns += here, worlds_without += here == 0;
+    }
+    CHECK(towns >= 6 * 5 && worlds_without == 0 && order == 0 && steep == 0 && close == 0);
+    CHECK(site_is_ruin(SITE_ANCIENT_TOWN) && site_name(SITE_ANCIENT_TOWN)[0] != '?' && WORLD_FOOT_TOWN >= ANC_HALF * 1.41f);
+}
+
 static void test_world_dry(void) {
     // La linea de nieve del verano de world.h es la de src/sim/climate.c (la mas alta del año).
     float top = -1e9f;
@@ -5724,8 +6020,10 @@ static void test_world_dry(void) {
             snowy += world_height(w, w->tribes[k].x, w->tribes[k].z) > snow;
             things++;
         }
-        for (int k = 0; k < w->site_count; k++, things++)
-            wet += test_wet_circle(w, w->sites[k].x, w->sites[k].z, WORLD_FOOT_SITE, w->sites[k].kind == SITE_HARBOR);
+        for (int k = 0; k < w->site_count; k++, things++) {
+            float foot = w->sites[k].kind == SITE_ANCIENT_TOWN ? WORLD_FOOT_TOWN : WORLD_FOOT_SITE;
+            wet += test_wet_circle(w, w->sites[k].x, w->sites[k].z, foot, w->sites[k].kind == SITE_HARBOR);
+        }
         for (int k = 0; k < w->den_count; k++, things++) wet += test_wet_circle(w, w->dens[k].x, w->dens[k].z, WORLD_FOOT_DEN, false);
     }
     CHECK(things > 700 && wet == 0 && snowy == 0 && lots_wet == 0);
@@ -6098,6 +6396,7 @@ int main(void) {
     RUN(test_animals_swim_and_ice);
     RUN(test_world_tribes_and_sites);
     RUN(test_voxels);
+    RUN(test_voxels_merge);
     RUN(test_world_river_banks);
     RUN(test_world_water_never_floats);
     RUN(test_caves);
@@ -6130,6 +6429,7 @@ int main(void) {
     RUN(test_save_blocks_numbers_change_type);
     RUN(test_keymap_four_buttons);
     RUN(test_keymap_target_keys);
+    RUN(test_camera_views);
     RUN(test_target_rules_a3);
     RUN(test_voxfile);
     RUN(test_cover_rules_a4);
@@ -6166,7 +6466,9 @@ int main(void) {
     RUN(test_cities);
     RUN(test_army);
     RUN(test_flora);
+    RUN(test_ancient);
     RUN(test_buildkit);
+    RUN(test_ancient_towns_in_world);
     RUN(test_world_dry);
     RUN(test_hydro_basics);
     RUN(test_water_flows_down);

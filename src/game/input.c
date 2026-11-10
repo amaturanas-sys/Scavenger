@@ -13,6 +13,7 @@ static bool g_right_drag; // el boton derecho ya arrastra (gira la camara)
 static float g_right_moved;
 static CtrlTap g_ctrl_tap; // Ctrl sola: inicia o suelta el objetivo (sim/targeting.h)
 static bool g_ctrl_tapped;
+static bool g_enter_used; // el Enter de este cuadro ya abrio un dialogo
 
 bool input_ctrl(void) { return IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL); }
 bool input_ctrl_tapped(void) { return g_ctrl_tapped; }
@@ -22,6 +23,7 @@ void input_inject(InputAction a) {
 }
 
 void input_update(void) {
+    g_enter_used = false;
     bool other = IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || GetMouseWheelMove() != 0.0f;
     for (int k = GetKeyPressed(); k; k = GetKeyPressed()) {
         g_last_key = k;
@@ -48,12 +50,17 @@ unsigned input_mods(void) {
 
 static bool action_key(KeyAction a, bool (*test)(int)) {
     const KeyBind *b = keymap_bind(a);
-    return test(b->key) && keymap_matches(a, b->key, input_mods());
+    if (b->key == KM_KEY_ENTER && g_enter_used) return false; // ese Enter ya lo uso un selector o un dialogo
+    bool key = test(b->key) || (b->key == KM_KEY_ENTER && test(KEY_KP_ENTER));
+    return key && keymap_matches(a, b->key, input_mods());
 }
 
 bool input_action_pressed(KeyAction a) { return action_key(a, IsKeyPressed); }
 bool input_action_down(KeyAction a) { return action_key(a, IsKeyDown); }
 bool input_action_released(KeyAction a) { return action_key(a, IsKeyReleased); }
+
+bool input_enter_pressed(void) { return !g_enter_used && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)); }
+void input_use_enter(void) { g_enter_used = true; }
 
 bool input_right_hold(void) { return IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !g_right_drag; }
 

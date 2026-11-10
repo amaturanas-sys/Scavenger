@@ -23,7 +23,7 @@ que la lleva al estilo de PS2 (personas, animales y armas, que en voxeles no que
 --res 96 o 128.
 
 La salida .vox va a assets/models/<categoria>/.../<nombre>.vox, con la etiqueta formato:voxel en
-assets/inventario.tsv: el juego la carga como los GLB, a la altura de sus medidas (src/world/voxfile.c).
+assets/inventario.tsv: el juego la carga como los GLB, a la altura de sus medidas (src/world/voxmodel.c).
 Dependencias: las de tools/modelos/requirements.txt (numpy, scipy, Pillow; trimesh para malla).
 """
 import argparse

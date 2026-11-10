@@ -9,10 +9,10 @@ OUT="$ROOT/docs/capturas"
 mkdir -p "$OUT"
 cd "$BUILD"
 export LIBGL_ALWAYS_SOFTWARE=1
-shot() { # nombre cuadros [opciones...]
+shot() { # nombre cuadros [opciones...] (con la camara lejana, la de siempre; --vista cerca en las opciones la cambia)
   local name="$1" frames="$2"
   shift 2
-  xvfb-run -a -s "-screen 0 1280x720x24" ./estepa --screenshot "$OUT/$name.png" --frames "$frames" "$@" >/dev/null 2>&1
+  xvfb-run -a -s "-screen 0 1280x720x24" ./estepa --vista lejos --screenshot "$OUT/$name.png" --frames "$frames" "$@" >/dev/null 2>&1
   test -s "$OUT/$name.png" && echo "  $name.png"
 }
 echo "Capturas en $OUT:"
@@ -21,7 +21,7 @@ xvfb-run -a -s "-screen 0 1280x720x24" ./estepa --screenshot /tmp/estepa_guardad
 shot 01_titulo 20 --menu
 shot 02_cargar 20 --huecos
 shot 03_instructivo 20 --instructivo
-shot 04_juego 60
+shot 04_juego 60 --vista cerca
 shot 05_controles 30 --controles
 shot 06_pausa 30 --pausa
 shot 07_guardar 30 --guardar
@@ -68,7 +68,7 @@ montage "$OUT"/cueva_{boca_forajidos,habitada,prisionero,oscura}.png -tile 2x2 -
     echo "  las_cuevas.png"
 # El mundo (docs/MUNDO.md): a pie en cada sitio (verano, mediodia) y la vista orbital.
 for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida tribu rival kurgan caravasar ovoo ciudad \
-         lago desborde cascada lengua; do
+         asentamiento lago desborde cascada lengua; do
     shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.12
 done
 mkdir -p "$ROOT/docs/mundo"
@@ -118,7 +118,7 @@ montage "$OUT"/borde_{muro_canal,muro_lejos,tiburon,playa}.png -tile 2x2 -geomet
 # El kit de edificios (docs/ARQUITECTURA_EDAD_DEL_HIERRO.md): las variantes de cada tipo en cada region
 # (la muralla, las ruinas y las obras de la tribu tambien) y las plazas de las cinco capitales, desde arriba.
 for k in casa palacio fundicion cuartel carpinteria granero templo carreta muralla torre puerta fortaleza enterrada \
-         refugio empalizada muro horno horno_fundicion atalaya corral taller tienda escombros cenizas; do
+         refugio empalizada muro horno horno_fundicion atalaya corral taller tienda escombros cenizas asentamiento; do
     shot "kit_$k" 60 --edificios "$k"
 done
 # La puerta acodada en el asedio: desde el patio del antemuro, y la guarnicion que sale.

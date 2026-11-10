@@ -299,6 +299,7 @@ Refugiado	Refugee
 Refugio de ramas y pieles	Branch and hide shelter
 Refugio excavado en la nieve	Snow dugout shelter
 Reno de tiro	Draft reindeer
+Roble	Oak
 Roca mediana	Medium rock
 Roca pequeña	Small rock
 Rollo de cuerda	Coil of rope
@@ -310,6 +311,7 @@ Sable wootz frágil (mal templado)	Brittle wootz sabre (badly tempered)
 Sable wootz templado	Tempered wootz sabre
 Sacerdote del culto	Cult priest
 Saco de grano	Sack of grain
+Sauce llorón	Weeping willow
 Saxaúl (arbusto del desierto)	Saxaul (desert shrub)
 Secadero de carne	Meat drying rack
 Seda	Silk
@@ -387,7 +389,7 @@ Zorro	Fox
 %s · Enter o clic otra vez: reparar	%s · Enter or click again: repair
 , antorcha	, torch
 , lleva algo	, carrying
-Abriste un agujero en el hielo. Pesca en él (L → Acciones), y no lo pises.	You cut a hole in the ice. Fish in it (L → Actions), and don't step in it.
+Abriste un agujero en el hielo. Pesca en él (Tab → Acciones), y no lo pises.	You cut a hole in the ice. Fish in it (Tab → Actions), and don't step in it.
 Acciones	Actions
 Cambia la estación (%s): aquí el pasto no alcanza y el ganado pasará hambre. Conviene migrar.	The season turns (%s): the grass here is not enough and the herd will go hungry. Better to migrate.
 Cambia la estación (%s): aquí hay buen pasto; los pastores juntan más forraje.	The season turns (%s): the grass is good here; the herders gather more fodder.
@@ -413,10 +415,12 @@ En la cueva no se puede: %s.	Not inside the cave: %s.
 Encendiste la antorcha (mano izquierda).	You light the torch (left hand).
 Enfundas: %s.	You sheathe: %s.
 Enfundaste las armas: manos libres.	Weapons sheathed: hands free.
+Enter: hablar con %s, %s	Enter: talk to %s, %s
 Es un potro: todavía no se ensilla (crece en %.0f días).	It's a foal: it can't be saddled yet (grown in %.0f days).
 Escolta: te defienden; no se alejan de tu lado.	Escort: they defend you; they won't leave your side.
 Escolta: te siguen sin pelear.	Escort: they follow you without fighting.
 Escolta: ¡al ataque! Van a tu objetivo o al enemigo más cercano.	Escort: attack! They go for your target or the nearest enemy.
+F es para las cosas: para hablar o comerciar, Enter.	F is for things: to talk or trade, Enter.
 Fabricando: %s.	Crafting: %s.
 Fabricar	Craft
 Falta en el acopio: %s (%d de %d).	Missing from the store: %s (%d of %d).
@@ -482,10 +486,13 @@ Vacío	Empty
 Ya es de la tribu.	It already belongs to the tribe.
 Ya estás fabricando algo: %s.	You are already crafting: %s.
 Ya llevas algo: T para lanzarlo.	You already carry something: T to throw it.
-Ya se secó el arco encolado (%d): termínalo con cola de hueso y tendón (L, Fabricar).	The glued bow has dried (%d): finish it with bone glue and sinew (L, Craft).
+Ya se secó el arco encolado (%d): termínalo con cola de hueso y tendón (Tab, Fabricar).	The glued bow has dried (%d): finish it with bone glue and sinew (Tab, Craft).
 a mano	by hand
 da %d x %s · se seca en el acopio	makes %d x %s · dries in the camp store
 da %d x %s · va a la mochila (o al acopio)	makes %d x %s · goes to the pack (or the store)
+el druida	the druid
+el guardián	the keeper
+el orfebre	the goldsmith
 en el acopio	in the store
 falta	missing
 guardada	stored
@@ -571,7 +578,7 @@ Disolver	Dissolve
 Disolver el campamento	Dissolve the camp
 El campamento está en orden. Somos %d (%d sin tarea) y hay %d tareas en marcha. ¿Qué ordenas?	The camp is in order. We are %d (%d idle) with %d tasks under way. Your orders?
 Elige primero a quién	First choose who
-En marcha con %s · F junto a %s: plantar el campamento	On the march with %s · F next to %s: pitch the camp
+En marcha con %s · Enter junto a %s: plantar el campamento	On the march with %s · Enter next to %s: pitch the camp
 Enseñar un oficio a alguien sin tarea	Teach a trade to someone idle
 Escolta	Escort
 Estado	Status
@@ -594,7 +601,7 @@ Lo que contaron los últimos que volvieron	What the last ones back reported
 Lo que contaron los últimos que volvieron a %s:	What the last ones back at %s reported:
 Migrar	Migrate
 Más gente	More people
-Nace %s. %s queda de guardián: háblale (F) para administrarlo.	%s is born. %s stays as keeper: talk to them (F) to run it.
+Nace %s. %s queda de guardián: háblale (Enter) para administrarlo.	%s is born. %s stays as keeper: talk to them (Enter) to run it.
 No alcanza el acopio de %s para eso.	The stores of %s are not enough for that.
 No fundar	Don't found
 No hay ganado suelto en el campamento	No free livestock in the camp
@@ -630,7 +637,6 @@ aprendiendo un oficio	learning a trade
 buscando reclutas	finding recruits
 cazando	hunting
 de guardia	on guard
-el guardián	the keeper
 en una obra	at a building site
 explorando	scouting
 hace la ronda	on patrol
@@ -671,14 +677,15 @@ Cueva: %s. Está oscuro: enciende la antorcha.	Cave: %s. It's dark: light your t
 Dejarlo	Leave him
 Enciendes la antorcha de la pared.	You light the wall torch.
 Enciendes la fogata: la recámara se ilumina.	You light the fire: the chamber lights up.
+Enter: hablar con el prisionero (un %s)	Enter: talk to the prisoner (a %s)
 Explorando la cueva...	Exploring the cave...
+F es para las cosas: para hablar con el prisionero, Enter.	F is for things: to talk to the prisoner, Enter.
 F: abrir el cofre	F: open the chest
 F: arrancar la veta (%s)	F: pry out the vein (%s)
 F: deshacer el nido (%s)	F: pull apart the nest (%s)
 F: encender la antorcha de la pared	F: light the wall torch
 F: encender la fogata	F: light the fire
 F: explorar la cueva	F: explore the cave
-F: hablar con el prisionero (un %s)	F: talk to the prisoner (a %s)
 F: juntar los huesos	F: gather the bones
 F: mirar las pinturas	F: look at the paintings
 F: tomar del depósito de armas (%s)	F: take from the weapon rack (%s)
@@ -718,7 +725,7 @@ Una fogata apagada: hace falta tu antorcha encendida	A cold fire: it needs your 
 %s no está en guerra contigo.	%s is not at war with you.
 %s no se rinde: le quedan %d soldados (se rinde con %d), grano para %d días y el descontento es del %d %%.	%s will not surrender: it has %d soldiers left (it gives up at %d), grain for %d days, and unrest at %d %%.
 %s: %d almas. El granero da para %d días. %s	%s: %d souls. The granary holds %d days of food. %s
-Al pie de la muralla: la trepa (L) se engancha en las almenas.	At the foot of the wall: the grappling hook (L) catches on the battlements.
+Al pie de la muralla: la trepa (Tab) se engancha en las almenas.	At the foot of the wall: the grappling hook (Tab) catches on the battlements.
 Apoyas la escala en la muralla de %s: F para subir.	You set the ladder against the wall of %s: F to climb.
 Arde un techo en %s: se queman %d raciones de su granero.	A roof burns in %s: %d rations of its granary go up in flames.
 Desmonta antes de subir por la escala (R).	Dismount before climbing the ladder (R).
@@ -1108,14 +1115,10 @@ tu compañero	your companion
 ¡Salvaste a %s! La tribu lo celebra (moral +3).	You saved %s! The tribe cheers (morale +3).
 ¡Socavón de nieve!	Snow sinkhole!
 # --- src/game/hud_game.c
-Acciones, obras y fabricar	Actions, works and crafting
-B: venda tus heridas (o levanta a un compañero abatido).	B: bandage your wounds (or lift a downed companion).
-Beber	Drink
 Casilla %d: %s.	Slot %d: %s.
 Casilla %d: elige un arma, un objeto o una habilidad	Slot %d: choose a weapon, an item or a skill
 Casilla vacía	Empty slot
 Empuña primero el arma de la casilla %d para pasarla de mano.	Wield the weapon in slot %d first to switch its hand.
-Encender la flecha	Light the arrow
 Enter o un toque: asignar · Esc: cerrar	Enter or a tap: assign · Esc: close
 Esa habilidad ya no está activa.	That skill is no longer active.
 Escolta: atacar	Escort: attack
@@ -1123,16 +1126,10 @@ Escolta: defender	Escort: defend
 Escolta: seguir	Escort: follow
 Flechas: elegir · Enter: asignar · Esc: cerrar	Arrows: choose · Enter: assign · Esc: close
 Manos libres	Empty hands
-Mayús+G: deja la mochila en el suelo para moverte ligero, o recógela.	Shift+G: drop the backpack to move light, or pick it up.
-Mayús+V: enciende la flecha en un fuego cercano (no con lluvia).	Shift+V: light the arrow at a nearby fire (not in the rain).
-Mochila	Backpack
-N: bebe lo más seguro que tengas, o del río en la orilla.	N: drink the safest water you carry, or from the river at the bank.
-Tab: el menú de acciones, obras, fabricar y reparar.	Tab: actions, works, crafting and repairs menu.
 Tecla %d: elegir un arma, un objeto o una habilidad.	Key %d: choose a weapon, an item or a skill.
 Tecla %d: empuñar o enfundar. Mayús+%d: a la otra mano. Alt+%d o clic derecho: cambiar.	Key %d: wield or sheathe. Shift+%d: to the other hand. Alt+%d or right click: change.
 Tecla %d: usar. Alt+%d o clic derecho: cambiar.	Key %d: use. Alt+%d or right click: change.
 Vaciar la casilla	Clear the slot
-Vendar	Bandage
 Y+1: van a tu objetivo o al enemigo más cercano.	Y+1: they go for your target or the nearest enemy.
 Y+2: se quedan a tu lado y paran a quien se te acerque.	Y+2: they stay by your side and stop whoever comes close.
 Y+3: te siguen sin pelear.	Y+3: they follow you without fighting.
@@ -1191,7 +1188,7 @@ Joyas	Jewels
 La armadura frena	Armor slows you
 Llevas encima	Carrying
 Lo que llevas no cabe en la %s: vacíala antes.	What you carry doesn't fit in the %s: empty it first.
-Los tatuajes los hace un druida: háblale (F).	Tattoos are made by a druid: talk to them (F).
+Los tatuajes los hace un druida: háblale (Enter).	Tattoos are made by a druid: talk to them (Enter).
 Mochila de %s	%s's backpack
 Nivel %d	Level %d
 No cabe en %s (peso, talla o huecos).	Won't fit in %s (weight, size or slots).
@@ -1345,6 +1342,7 @@ tienes %d, hacen falta %d · potencia x%.2f	you have %d, %d needed · power x%.2
 %s el hueco %d	%s slot %d
 1 a 9 y 0: la barra rápida. De serie, 1 la espada (otra vez: la enfundas), 2 el escudo (al brazo o a la espalda) y 3 el odre; cada uno se guarda sin tocar al otro · Mayús+número: a la otra mano · Alt+número o vacía: elegir qué va · en el inventario (I), un número pone ahí lo elegido	1 to 9 and 0: the quick bar. By default, 1 is the sword (again: sheathe it), 2 the shield (arm or back) and 3 the waterskin; each is put away independently · Shift+number: to the other hand · Alt+number or empty: choose what goes there · in the inventory (I), a number assigns the selected item
 1 espada · 2 escudo · 3 odre	1 sword · 2 shield · 3 waterskin
+3, el odre de la barra rápida, bebe lo más seguro que tengas; en la orilla o junto a un pozo lo llena, y lleno, bebes de allí. Con calor da más sed; sin agua te desmayas.	3, the waterskin on the quick bar, drinks the safest thing you have; at the shore or by a well it fills the waterskin, and once it is full you drink from there. Heat makes you thirstier; without water you faint.
 A / D o flechas	A / D or arrows
 A caballo	On horseback
 A caballo: H golpe con más alcance y la inercia del galope; la lanza derriba; al galope arrollas. Un derribo te tira del caballo.	On horseback: H strikes with more reach and the gallop's momentum; the lance knocks down; at a gallop you trample. A knockdown throws you off the horse.
@@ -1363,7 +1361,7 @@ Arcos, flechas y armaduras	Bows, arrows and armour
 Armas, aguante y heridas	Weapons, stamina and wounds
 Arqueros a caballo: rodean y tiran; si te acercas, se alejan al galope y vuelven. Persíguelos a caballo o devuélveles las flechas.	Horse archers: they circle and shoot; if you close in, they gallop away and come back. Chase them on horseback or shoot back.
 Atacar: van a tu objetivo (O) o al enemigo más cercano. Defender: se quedan a tu lado y paran a quien se te acerque. Seguir: no pelean.	Attack: they go for your target (O) or the nearest enemy. Defend: they stay by your side and stop whoever comes close. Follow: they don't fight.
-B venda heridas con hierbas (o ungüento) · P equipo y heridas · I inventario	B binds wounds with herbs (or ointment) · P equipment and wounds · I inventory
+B venda heridas con hierbas (o ungüento); sin heridas, las hierbas bajan la fiebre del agua · P equipo y heridas · I inventario	B binds wounds with herbs (or ointment); with no wounds, the herbs bring down the water fever · P equipment and wounds · I inventory
 B vendar · Mayús+V encender	B bind · Shift+V light
 Beber de más emborracha: torpe con las armas, cansado y te tambaleas.	Drinking too much gets you drunk: clumsy with weapons, tired and staggering.
 Buscar reclutas, explorar y cazar son salidas: se van, no se los ve, y vuelven a los pocos minutos con su suerte. De noche es más peligroso.	Finding recruits, scouting and hunting are trips: they go out of sight and return a few minutes later, for better or worse. Night is riskier.
@@ -1384,7 +1382,7 @@ Cerrar el juego	Close the game
 Ciudades y reinos	Cities and kingdoms
 Clima y peligros	Weather and hazards
 Combate cuerpo a cuerpo	Melee combat
-Con eso se fabrica (L, Fabricar): sillas, bridas, alforjas, aljabas, armadura laminar de cuero y el arco compuesto. Y se construye más duradero: casa de adobe, cabaña de troncos, choza de fieltro.	With that you craft (L, Craft): saddles, bridles, saddlebags, quivers, leather lamellar armor and the composite bow. And build to last: adobe house, log cabin, felt hut.
+Con eso se fabrica (Tab, Fabricar): sillas, bridas, alforjas, aljabas, armadura laminar de cuero y el arco compuesto. Y se construye más duradero: casa de adobe, cabaña de troncos, choza de fieltro.	With that you craft (Tab, Craft): saddles, bridles, saddlebags, quivers, leather lamellar armor and the composite bow. And build to last: adobe house, log cabin, felt hut.
 Con la relación con el kanato en -40 (o mucho rencor en una ciudad) sale una expedición de castigo contra tu campamento, si su tesoro la paga.	With your relation to the khanate at -40 (or deep grudge in a city), a punitive expedition marches on your camp, if its treasury can pay for it.
 Construyen los del campamento que no tienen tarea; el que sabe el oficio trabaja el doble.	The camp's idle people do the building; whoever knows the trade works twice as fast.
 Continuar	Continue
@@ -1399,36 +1397,37 @@ Dejar la partida (lo no guardado se pierde)	Leave the game (unsaved progress is 
 Día %d · %s · tribu de %d	Day %d · %s · tribe of %d
 Ejército y asedio	Army and siege
 El agua	Water
-El agua que corre por los suelos puede traer espíritus malditos: al rato, fiebre (más lento, más sed). Mayús+N: hierbas.	Water running on the ground may carry cursed spirits: after a while, fever (slower, thirstier). Shift+N: herbs.
+El agua que corre por los suelos puede traer espíritus malditos: al rato, fiebre (más lento, más sed). B, sin heridas que vendar: hierbas.	Water running on the ground may carry cursed spirits: after a while, fever (slower, thirstier). B, with no wounds to bind: herbs.
 El borde: los fiordos dan al mar, el desierto termina en un cañón y un muro de estratos, el altiplano en un muro de hielo y el bosque en un canal sinuoso del que salen ríos.	The edge: the fjords open onto the sea, the desert ends in a canyon and a layered rock wall, the highland in a wall of ice, and the forest in a winding canal that feeds rivers.
 El caballo se cansa al galope: su barra reemplaza a la tuya. Agotado no galopa hasta recobrar el aliento; con hambre o sed se cansa antes y corre menos.	The horse tires at a gallop: its bar replaces yours. Spent, it won't gallop until it gets its wind back; hungry or thirsty, it tires sooner and runs slower.
 El desierto quema de día y hiela de noche. Con calor te sofocas: busca sombra (las yurtas) o el agua; con golpe de calor te desmayas.	The desert burns by day and freezes by night. Heat overwhelms you: seek shade (the yurts) or water; with heatstroke you faint.
 El frío baja tu calor: busca el fuego y las yurtas; la ropa mojada enfría.	Cold drains your warmth: seek fire and yurts; wet clothes chill you.
 El mundo	The world
+El odre lleno en la orilla trae agua cruda (3 tragos por odre); el del pozo, limpia. Fabricar: agua con vino, airag y cerveza de pan.	A waterskin filled at the shore holds raw water (3 sips per waterskin); one filled at a well, clean water. Craft: watered wine, airag and bread beer.
 El pasto sigue a las estaciones: la estepa en primavera y otoño, las montañas en verano, el desierto en invierno. Sin pasto, el ganado pasa hambre.	Grass follows the seasons: steppe in spring and autumn, mountains in summer, desert in winter. Without it, the herd goes hungry.
 El pavés para casi todas las flechas de frente: flanquéalos. Con la mitad de sus filas caídas, la formación se rompe.	The pavise stops almost every arrow from the front: flank them. With half its ranks down, the formation breaks.
-El reflejo se hace en tres etapas (L, Fabricar): el alma de madera; el asta y el tendón con cola de hueso, que secan dos días colgados en el acopio; y la cola que lo termina.	The reflex bow takes three stages (L, Craft): the wooden core; horn and sinew with bone glue, which dry for two days hanging in the store; and the glue that finishes it.
+El reflejo se hace en tres etapas (Tab, Fabricar): el alma de madera; el asta y el tendón con cola de hueso, que secan dos días colgados en el acopio; y la cola que lo termina.	The reflex bow takes three stages (Tab, Craft): the wooden core; horn and sinew with bone glue, which dry for two days hanging in the store; and the glue that finishes it.
 El tributo al Kanato de Hierro se paga en su capital, una vez por estación. Si una estación pasa sin pagarlo, la relación baja.	The tribute to the Iron Khanate is paid in its capital, once a season. If a season passes unpaid, your standing drops.
 En guerra, la ciudad cierra sus puertas y su guarnición sale a pelear. Se entra trepando (la trepa, L), por una escala (F la apoya) o quemando una puerta: flechas encendidas o la antorcha (F).	At war, the city shuts its gates and its garrison sallies out to fight. Get in by climbing (the grappling hook, L), by a ladder (F sets it) or by burning a gate: fire arrows or the torch (F).
 En la capital, el palacio y, alrededor, la fundición, el cuartel y la carpintería. Afuera, los campos y los corrales.	In the capital, the palace and, around it, the foundry, the barracks and the carpentry. Outside, the fields and the corrals.
 En uno de los tres huecos, con una foto de este momento	In one of the three slots, with a picture of this moment
 En verano el pasto seco arde: los incendios corren con el viento.	In summer dry grass burns: wildfires run with the wind.
+Enter junto al guardián: obras, escolta, pobladores (sus tareas), capacitar en un oficio, estado, migrar y disolver el campamento.	Enter next to the keeper: builds, escort, villagers (their tasks), training a trade, status, migrating and dissolving the camp.
 Enter, un clic sobre la obra o la casilla de aceptar la coloca y paga el acopio; Esc cancela sin gastar nada.	Enter, a click on the building or the accept tile places it and pays from the stores; Esc cancels without spending anything.
 Esa partida es de otra versión del juego.	That save is from another game version.
 Esc, Atrás o Ctrl+P: menú (guardar, cargar) · F1 o Ctrl+H: controles en el juego	Esc, Back or Ctrl+P: menu (save, load) · F1 or Ctrl+H: in-game controls
 Esc/Atrás/Ctrl+P menú	Esc/Back/Ctrl+P menu
 Ese hueco tiene una partida: Enter otra vez para sobrescribirla.	That slot has a save: Enter again to overwrite it.
-Espacio saltar (o levantarse) · Q/E o arrastrar con el clic derecho: girar la cámara · M marcar el mapa	Space jump (or stand up) · Q/E or right-click drag: turn the camera · M mark the map
+Espacio saltar (o levantarse) · Q/E o arrastrar con el clic derecho: girar la cámara · N: la cámara cerca, a media distancia o lejos (la rueda acerca y aleja) · M marcar el mapa	Space jump (or stand up) · Q/E or right-click drag: turn the camera · N: the camera close, at mid distance or far (the wheel zooms in and out) · M mark the map
 Espacio saltar · Q/E cámara	Space jump · Q/E camera
 Explorar: marcan en tu mapa (M) agua, pastos junto a los ríos, campamentos rivales y ciudadelas, y aprenden el camino para que los despaches allí (Mayús+Y).	Scouting: they mark water, riverside pastures, rival camps and citadels on your map (M) and learn the way there (Shift+Y dispatches).
 F despieza un cadáver, ordeña la cabra · Mayús+F sacrifica el ganado.	F butchers a carcass, milks the goat · Shift+F slaughters livestock.
 F en un campo: lo saqueas (sacos de grano, que la tribu come) y sale su guardia. Les queda rencor: con mucho, no comercian contigo.	F in a field: you plunder it (sacks of grain, which the tribe eats) and its guard marches out. They hold a grudge: a big one, and they won't trade.
-F hablar/tomar/animales	F talk/take/animals
-F hace casi todo: hablar y comerciar, tomar y recoger botín, el pozo y el horno, rescatar y atender a los animales	F does almost everything: talk and trade, take and pick up loot, the well and the oven, rescue and tend the animals
 F junto a una tribu amiga o neutral, una aldea, una capital, un caravasar o una caravana: vende lo que llevas (encima, en las alforjas, en la carreta) y compra lo suyo. Lo que abunda en la región vale menos; lo que escasea, más.	F by a friendly or neutral tribe, a village, a capital, a caravanserai or a caravan: sell what you carry (on you, in the saddlebags, in the cart) and buy their goods. What abounds in the region is cheaper; what is scarce, dearer.
 F junto a una veta: picas el mineral (2 cada vez; en el pantano, 1). El herrero lo funde en el horno de acero, con carbón.	F by a vein: you mine ore (2 each time; 1 at a bog). The smith smelts it in the steel furnace, with charcoal.
 F junto al guardián, Pobladores: la gente del campamento con su oficio, salud, ánimo y lo que hace. Elige a uno o dos y «Dar una tarea».	F next to the keeper, Villagers: the camp's people with trade, health, morale and task. Pick one or two and «Give a task».
-F junto al guardián: obras, escolta, pobladores (sus tareas), capacitar en un oficio, estado, migrar y disolver el campamento.	F next to the keeper: builds, escort, villagers (their tasks), training a trade, status, migrating and dissolving the camp.
+F tomar/animales · Enter hablar	F take/animals · Enter talk
+F, con las cosas: tomar y recoger botín, el pozo y el horno, rescatar y atender a los animales · Enter, con la gente: hablar y comerciar	F, with things: take and pick up loot, the well and the oven, rescue and tend the animals · Enter, with people: talk and trade
 F1/Ctrl+H cerrar esta ayuda	F1/Ctrl+H close this help
 F2, F3, F4 (o Ctrl+1, 2, 3): habilidades activas · P equipo: armadura, joyas y tatuajes (Q/E)	F2, F3, F4 (or Ctrl+1, 2, 3): active abilities · P equipment: armor, jewelry and tattoos (Q/E)
 F5 o Ctrl+M: vista orbital del mundo entero (flechas para girar e inclinar). El sol, la luna y las estrellas cruzan el cielo; el viento lleva las nubes y las cumbres altas quedan entre ellas.	F5 or Ctrl+M: orbital view of the whole world (arrows to turn and tilt). The sun, moon and stars cross the sky; the wind carries the clouds, and the high peaks stand among them.
@@ -1449,7 +1448,7 @@ H golpea con más alcance y la inercia del galope; al galope arrollas a quien te
 H lo mata en silencio: solo lo oyen los que están a menos de 6 m.	H kills silently: only those within 6 m hear it.
 H: golpe; tres seguidos: combo · mantener: golpe pesado (rompe guardias)	H: strike; three in a row: combo · hold: heavy strike (breaks guards)
 Heridos, se retiran detrás de ti; abatidos, B los levanta. Los soldados pegan más fuerte.	Wounded, they fall back behind you; downed, B gets them up. Soldiers hit harder.
-Hervirla los echa (L, Hervir agua, junto a un fuego). El alcohol también: cerveza, vino, airag y agua con vino son seguros.	Boiling drives them out (L, Boil water, by a fire). So does alcohol: beer, wine, airag and watered wine are safe.
+Hervirla los echa (Tab, Hervir agua, junto a un fuego). El alcohol también: cerveza, vino, airag y agua con vino son seguros.	Boiling drives them out (Tab, Boil water, by a fire). So does alcohol: beer, wine, airag and watered wine are safe.
 Hierro: vetas a cielo abierto en el altiplano y hierro de pantano en las orillas de los lagos del bosque y de los fiordos. Al pasar cerca quedan en tu mapa (M); los exploradores también las marcan.	Iron: open-air veins in the highlands and bog iron on the shores of the forest and fjord lakes. Walk close and they go on your map (M); scouts mark them too.
 I inventario · P equipo	I inventory · P equipment
 I inventario · Y+1-3 escolta	I inventory · Y+1-3 escort
@@ -1461,8 +1460,6 @@ Joyas (cambiables): el orfebre (F) hace anillos (dos por mano), brazaletes, coll
 Junto a un abatido: F lo toma prisionero (lo que lleva queda en el suelo); H lo remata. A la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran.	Next to a downed foe: F takes them prisoner (what they carry stays on the ground); H finishes them. The tribe cares: the merciful and the devout disapprove, the bloodthirsty cheer.
 K mantener: con escudo cubre el frente (K + H: golpe de escudo); sin escudo paras con el arma: aguanta la mitad y cansa	K hold: with a shield, cover your front (K + H: shield bash); without one, parry with your weapon: it stops half and tires you
 L carga o patada · Ctrl objetivo	L charge or kick · Ctrl target
-L, Llenar el odre en la orilla: agua cruda (3 tragos por odre). Fabricar: agua con vino, airag y cerveza de pan.	L, Fill the waterskin at the shore: raw water (3 sips per waterskin). Craft: watered wine, airag and bread beer.
-L, Obras (o el guardián, F) elige una obra: la cámara sube sobre el campamento.	L, Works (or the keeper, F) picks a building: the camera rises above the camp.
 L: con el escudo en el brazo, carga que empuja; sin él, patada (corriendo, con inercia: tumba aun con escudo)	L: with a shield on your arm, charge and shove; without one, kick (running momentum can knock down even a shielded foe)
 La armadura va por piezas (casco, gorjal, coraza, hombreras, brazales, guantes, faldar, grebas, botas). Cada material para distinto el corte, el golpe y la flecha, y se gasta con los impactos.	Armour comes in pieces (helmet, gorget, cuirass, pauldrons, bracers, gauntlets, skirt, greaves, boots). Each material stops cuts, blows and arrows differently, and wears with hits.
 La bajada a la Cisterna Magna es empinada y no se sube: se sale por las recámaras del anillo.	The slope down to the Great Cistern is too steep to climb back: leave through the ring of chambers.
@@ -1497,17 +1494,16 @@ Los escribas cobran impuestos para el tesoro, que paga a los soldados. Con plata
 Los lagos helados se cruzan, pero el hielo puede romperse.	Frozen lakes can be crossed, but the ice may break.
 Los menús son iconos: pasa el ratón (o elige con las flechas) y su nombre aparece abajo; clic o Enter para usarlos.	Menus are icons: hover with the mouse (or pick with the arrows) and the name shows below; click or Enter to use them.
 Los pobladores y sus tareas	Villagers and their tasks
-Los prisioneros: F habla con ellos. Liberados, se unen a la tribu con su oficio, o te traicionan: te golpean, te roban y huyen.	Prisoners: F talks to them. Freed, they join the tribe with their trade, or betray you: they strike you, rob you and flee.
+Los prisioneros: Enter habla con ellos. Liberados, se unen a la tribu con su oficio, o te traicionan: te golpean, te roban y huyen.	Prisoners: Enter talks to them. Freed, they join the tribe with their trade, or betray you: they strike you, rob you and flee.
 Los rayos caen sobre lo alto durante las tormentas.	Lightning strikes high ground during storms.
 Los reinos tienen ejército: infantes pesados con pavés en formación cerrada, soldados, arqueros, ballesteros y carros de guerra, rápidos en el llano y lentos en la cuesta o en el agua.	The kingdoms have armies: heavy infantry with pavises in close formation, soldiers, archers, crossbowmen and war chariots, fast on flat ground and slow on slopes or in water.
-Los soldados que se quedan en el campamento hacen la guardia: rondan un anillo a 40-60 m, salen al encuentro de quien lo cruce y vuelven si alguien entra. De noche llevan antorcha. El guardián (F) capacita soldados.	Soldiers who stay at the camp keep watch: they patrol a ring 40-60 m out, go out to meet whoever crosses it and come back if someone gets in. At night they carry torches. The keeper (F) trains soldiers.
-M mapa · N beber · U ficha	M map · N drink · U card
-Mayús+G (o la columna) deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	Shift+G (or the column) drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
-Mayús+V (o la columna) junto a un fuego enciende la flecha: quema y prende lo que toca.	Shift+V (or the column) near a fire lights the arrow: it burns and ignites what it touches.
-Migrar: cargan yurtas, tiendas, chozas y el acopio, y te siguen con el rebaño; F junto al guardián lo planta donde quieras.	Migrate: yurts, tents, huts and the store are loaded and follow you with the herd; F next to the keeper pitches it anywhere.
+Los soldados que se quedan en el campamento hacen la guardia: rondan un anillo a 40-60 m, salen al encuentro de quien lo cruce y vuelven si alguien entra. De noche llevan antorcha. El guardián (Enter) capacita soldados.	Soldiers who stay at the camp keep watch: they patrol a ring 40-60 m out, go out to meet whoever crosses it and come back if someone gets in. At night they carry torches. The keeper (Enter) trains soldiers.
+M mapa · N cámara · U ficha	M map · N camera · U card
+Mayús+G deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	Shift+G drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
+Mayús+V junto a un fuego enciende la flecha: quema y prende lo que toca.	Shift+V near a fire lights the arrow: it burns and ignites what it touches.
+Migrar: cargan yurtas, tiendas, chozas y el acopio, y te siguen con el rebaño; Enter junto al guardián lo planta donde quieras.	Migrate: yurts, tents, huts and the store are loaded and follow you with the herd; Enter next to the keeper pitches it anywhere.
 Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta y desmonta.	Mounts (horse, mule, donkey, ox, camel, elephant): lasso and saddle; R mounts and dismounts.
 Mueve la obra con el puntero, el dedo o WASD; Q/E la giran; Mayús (o la casilla) la alinea a una rejilla de 2 m.	Move the building with the pointer, your finger or WASD; Q/E turn it; Shift (or the tile) snaps it to a 2 m grid.
-N bebe lo más seguro que tengas; en la orilla, sin nada, bebes del río. Con calor da más sed; sin agua te desmayas.	N drinks the safest thing you have; at the shore, with nothing, you drink from the river. Heat makes you thirstier; without water you faint.
 Nueva partida	New game
 O: el objetivo siguiente (Mayús+O, el anterior); clic izquierdo/derecho recorren como Ctrl+Q/Ctrl+E; Ctrl inicia o suelta la selección.	O: next target (Shift+O, previous); left/right click cycle like Ctrl+Q/Ctrl+E; Ctrl starts or releases targeting.
 Oficios y comercio	Crafts and commerce
@@ -1516,7 +1512,7 @@ P equipo, pestaña Ropa: cabeza, cuello y cara, cuerpo, capa o abrigo y pies. Ca
 Partida de otra versión del juego	Save from another game version
 Pastorear: sacan el ganado a comer y a beber cerca del campamento y vuelven con leche. Con dos pastores se pierden menos animales ante las fieras.	Herding: they take the livestock to eat and drink near the camp and come back with milk. With two herders fewer animals are lost to beasts.
 Pausa	Pause
-Piedras: rompe rocas a golpes, F en los corales del lago, cava trincheras o criba en la orilla (L).	Gems: break rocks with blows, F at lake corals, dig trenches or pan on the shore (L).
+Piedras: rompe rocas a golpes, F en los corales del lago, cava trincheras o criba en la orilla (Tab).	Gems: break rocks with blows, F at lake corals, dig trenches or pan on the shore (Tab).
 Por detrás solo te oyen: en sigilo o agachado te acercas sin que te noten; caminando o corriendo, te oyen antes.	From behind they can only hear you: sneaking or crouching you get close unnoticed; walking or running, they hear you sooner.
 Página anterior	Previous page
 Página siguiente	Next page
@@ -1530,15 +1526,16 @@ Sagaris: el de pico perfora la armadura, el de martillo aturde; los dos engancha
 Salir	Quit
 Salir al título	Back to title
 Salir del juego	Quit game
-Se fabrican a mano (L, Fabricar) con las pieles del despiece, la lana de las cabras (los pastores las esquilan) y la seda del botín.	Made by hand (L, Craft) from butchered pelts, goat wool (herders shear the goats) and looted silk.
+Se fabrican a mano (Tab, Fabricar) con las pieles del despiece, la lana de las cabras (los pastores las esquilan) y la seda del botín.	Made by hand (Tab, Craft) from butchered pelts, goat wool (herders shear the goats) and looted silk.
 Serpientes, escorpiones, arañas y avispas envenenan: véndate (B).	Snakes, scorpions, spiders and wasps are venomous: bandage yourself (B).
 Sin soldados, sin grano o en revuelta, exígele la rendición (F en la puerta o en el palacio): te paga tributo y su fundición es tu taller.	Without soldiers, without grain or in revolt, demand its surrender (F at the gate or the palace): it pays you tribute and its foundry is your workshop.
 Socavones de nieve y arena movediza aparecen cada día en otro lugar.	Snow sinkholes and quicksand appear somewhere new every day.
 Su mercado (F): con el granero vacío, la comida vale más; con la armería llena, las armas, menos. Su tesoro paga lo que vendes. «La ciudad» dice cómo está.	Its market (F): with an empty granary, food costs more; with a full armory, weapons cost less. Its treasury pays for what you sell. 'The city' tells how it fares.
 Subes de nivel peleando, cazando, fabricando, construyendo y domando.	You level up by fighting, hunting, crafting, building and taming.
 Tab acciones/fabricar	Tab actions/crafting
+Tab, Obras (o el guardián, Enter) elige una obra: la cámara sube sobre el campamento.	Tab, Works (or the keeper, Enter) picks a building: the camera rises above the camp.
 Tab: acciones, obras, fabricar y reparar (Q/E cambia de pestaña) · I: inventario	Tab: actions, works, crafting and repairs (Q/E changes tab) · I: inventory
-Taller del herrero (L, Obras): solo en un campamento grande, de 8 personas o más, y con herrero. Forja el sable wootz y la lanza de punta de acero, y templa.	Smith's workshop (L, Works): only in a large camp, 8 people or more, and with a smith. It forges the wootz sabre and the steel-tipped lance, and tempers.
+Taller del herrero (Tab, Obras): solo en un campamento grande, de 8 personas o más, y con herrero. Forja el sable wootz y la lanza de punta de acero, y templa.	Smith's workshop (Tab, Works): only in a large camp, 8 people or more, and with a smith. It forges the wootz sabre and the steel-tipped lance, and tempers.
 Tatuajes (para siempre): habla (F) con el druida, elige motivo y zona. Lobo, ciervo, grifo, tamga y olas suben en tres grados; el tercero se bifurca y elegir una rama cierra la otra. La zona del cuerpo cambia a qué va el bonus.	Tattoos (forever): talk (F) to the druid, choose motif and zone. Wolf, deer, griffin, tamga and waves rise in three tiers; the third branches and choosing one closes the other. The body zone changes what the bonus goes to.
 Tatuajes y joyas	Tattoos and jewels
 Templar: filo duro y lomo flexible, el arma pega más. Si sale mal, queda frágil y se quiebra en un golpe (más si te lo paran). Sale mejor con más herreros (hasta dos) y la destreza del clan.	Tempering: hard edge and flexible spine, the weapon hits harder. If it goes wrong, it turns brittle and shatters on a blow (more so when parried). More smiths (up to two) and the clan's craft make it go better.
@@ -1571,13 +1568,13 @@ Compras %d × %s por %d de plata.	You buy %d × %s for %d silver.
 Con pocos soldados, sin grano o en revuelta, se rinde: es de la tribu, te paga tributo y su fundición es tu taller.	With few soldiers, no grain or in revolt, it surrenders: it becomes the tribe's, pays you tribute, and its foundry is your workshop.
 El caravasar	The caravanserai
 El tesoro de la ciudad no tiene plata para pagarte.	The city's treasury has no silver to pay you.
+Enter: comerciar con la caravana (o asaltarla)	Enter: trade with the caravan (or raid it)
+Enter: comerciar con los %s	Enter: trade with the %s
+Enter: comerciar en %s	Enter: trade in %s
+Enter: comerciar en el caravasar	Enter: trade at the caravanserai
+Enter: hablar con la guardia de %s	Enter: talk to the guards of %s
 Es de la tribu: te recibe como a su señor.	It belongs to the tribe: it greets you as its lord.
 Exigir la rendición	Demand surrender
-F: comerciar con la caravana (o asaltarla)	F: trade with the caravan (or raid it)
-F: comerciar con los %s	F: trade with the %s
-F: comerciar en %s	F: trade in %s
-F: comerciar en el caravasar	F: trade at the caravanserai
-F: hablar con la guardia de %s	F: talk to the guards of %s
 F: saquear el campamento de los %s	F: plunder the camp of the %s
 F: saquear los campos de %s	F: plunder the fields of %s
 La ciudad	The city
@@ -1654,13 +1651,14 @@ Bebes del pozo: agua honda y limpia.	You drink from the well: deep, clean water.
 Bebes: %s.	You drink: %s.
 Bebes: %s. El agua cruda puede traer espíritus malditos: mejor hervida.	You drink: %s. Raw water may carry cursed spirits: better boiled.
 Bebes: %s. Estás %s: torpe con las armas y te cansas antes.	You drink: %s. You are %s: clumsy with weapons and you tire sooner.
-Estás %s: bebe (N).	You are %s: drink (N).
-Fiebre y retortijones: espíritus malditos del agua. Toma hierbas (Mayús+N), descansa y bebe agua hervida.	Fever and cramps: cursed spirits from the water. Take herbs (Shift+N), rest and drink boiled water.
+Estás %s: bebe con el odre (%s).	You are %s: drink from the waterskin (%s).
+Estás %s: pon el odre en la barra rápida para beber.	You are %s: put the waterskin on the quick bar to drink.
+Fiebre y retortijones: espíritus malditos del agua. Toma hierbas (B), descansa y bebe agua hervida.	Fever and cramps: cursed spirits from the water. Take herbs (B), rest and drink boiled water.
 Las hierbas alivian la fiebre.	The herbs ease the fever.
 Las hierbas echan a los espíritus malditos.	The herbs drive out the cursed spirits.
 No tienes hierbas para echar a los espíritus. Descansa y bebe agua hervida.	You have no herbs to drive out the spirits. Rest and drink boiled water.
-No tienes los espíritus del agua: guarda las hierbas.	You don't have the water spirits: save the herbs.
-No tienes nada que beber: llena el odre en la orilla (L) o bebe del río (N, mirando al agua).	You have nothing to drink: fill the waterskin at the shore (L) or drink from the river (N, facing the water).
+No tienes nada que beber: llena el odre en la orilla o en un pozo (%s, mirando al agua).	You have nothing to drink: fill the waterskin at the shore or at a well (%s, facing the water).
+No tienes nada que beber: pon el odre en la barra rápida y llénalo en la orilla o en un pozo.	You have nothing to drink: put the waterskin on the quick bar and fill it at the shore or at a well.
 No tienes sed.	You are not thirsty.
 Te desmayaste de sed; en la columna te dieron de beber (moral -3).	You fainted from thirst; the column gave you water (morale -3).
 Te desmayaste de sed; la tribu te llevó al campamento y te dio de beber (moral -3).	You fainted from thirst; the tribe carried you to camp and gave you water (morale -3).
@@ -1689,6 +1687,7 @@ Capturaste a un gran guerrero: %s, %s.	You captured a great warrior: %s, %s.
 Cautivo	Captive
 Conecta un teclado para jugar	Connect a keyboard to play
 Ctrl+D: cerrar	Ctrl+D: close
+Cámara: %s (N cambia).	Camera: %s (N switches).
 Del otro lado del gran canal se alza un muro de roca: no hay vado.	Beyond the great canal rises a wall of rock: there is no ford.
 Desterraste a un integrante.	You banished a member.
 Dia %d: %d desertores, %d grandes guerreros.	Day %d: %d deserters, %d great warriors.
@@ -1742,6 +1741,7 @@ las murallas	the city walls
 las puertas acodadas	the bent gates
 las tiendas y las chozas de fieltro	the tents and the felt huts
 las torres	the towers
+los asentamientos antiguos	the ancient settlements
 los corrales	the corrals
 los cuarteles	the barracks
 los escombros y los muros en ruinas	the rubble and the ruined walls
@@ -1916,7 +1916,12 @@ la tienda ligera y la choza de fieltro	the light tent and the felt hut
 la torre de la muralla	the wall tower
 las cenizas y la yurta quemada	the ashes and the burnt yurt
 los escombros y el muro en ruinas	the rubble and the ruined wall
+los vestigios de un asentamiento antiguo	the remains of an ancient settlement
 yurta	yurt
+# --- src/sim/camview.c
+a media distancia	at mid distance
+cerca, sobre el hombro	close, over the shoulder
+lejos	far
 # --- src/sim/caves.c
 almacén del imperio	imperial storehouse
 cazador	hunter
@@ -2190,6 +2195,7 @@ Gancho al escudo	Shield hook
 # --- src/sim/storage.c
 Acopio del campamento	Camp store
 Carreta	Cart
+Mochila	Backpack
 mochila grande	large backpack
 mochila mediana	medium backpack
 mochila pequeña	small backpack

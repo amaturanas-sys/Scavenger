@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import estructuras  # noqa: E402
 import vox  # noqa: E402
 import voxeles  # noqa: E402
 
@@ -232,6 +233,304 @@ def test_cli():
         assert voxeles.main(["ver", out, "-o", prev]) == 0
 
 
+def test_templo_forma():
+    """El templo armado a mano: las medidas del inventario, simetrico, la escalera de un escalon por celda hasta la
+    puerta abierta, sin aire encerrado (sus caras no las ve nadie) y con los triangulos que admite modelos.py."""
+    from scipy import ndimage
+
+    o = estructuras.templo()
+    assert o.metros() == (24.0, 14.0, 30.0), o.metros()
+    lleno = o.lleno
+    assert (lleno == lleno[:, ::-1]).all()  # simetrico de lado a lado
+    for u in range(16):  # el escalon u pisa a u + 1 celdas y arriba hay aire hasta la cornisa del portico
+        col = lleno[u, 23]
+        assert col[:u + 1].all() and not col[u + 1:22].any(), u
+    assert not lleno[16:19, 22:26, 16:22].any() and lleno[19, 22:26, 16:22].all()  # el vano y su fondo
+    vacio = np.pad(~lleno, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    assert (lab[vacio] == lab[0, 0, 0]).all()  # todo el aire llega de afuera
+    rgb, vis = estructuras.colorear(o)
+    grid, pal = estructuras.a_vox(o, rgb, vis)
+    assert grid.shape == (48, 60, 28) and (grid[:, :, 27] > 0).any()  # 14 m: los pilonos llegan arriba
+    assert (grid[:, 0] > 0).any() and (grid[:, 59] > 0).any()
+    assert estructuras.triangulos(grid) < 20000
+
+
+def test_templo_colores():
+    """Con una hoja sintetica (frente rojo, lado verde, espalda azul): cada cara toma su vista, cada piedra queda
+    de un solo tono y el hueco de la puerta llega tal cual a la paleta."""
+    with tempfile.TemporaryDirectory() as tmp:
+        img = Image.new("RGB", (1700, 500), (255, 255, 255))
+        d = ImageDraw.Draw(img)
+        d.rectangle([40, 100, 459, 445], fill=RED)  # frente, 420 x 346 (como la hoja del templo)
+        d.rectangle([500, 147, 1197, 445], fill=GREEN)  # lado, 698 x 299
+        d.rectangle([1240, 141, 1671, 445], fill=BLUE)  # espalda, 432 x 305
+        p = os.path.join(tmp, "hoja.png")
+        img.save(p)
+        o = estructuras.templo()
+        rgb, vis = estructuras.colorear(o, voxeles.hoja(p), estructuras.ALTURAS["templo"], luz=1.0)
+        dom = np.argmax(rgb, axis=-1)
+        assert vis[0, 40, 2] and dom[0, 40, 2] == 0  # el frente del zocalo: rojo
+        assert vis[40, 0, 2] and dom[40, 0, 2] == 1  # su costado: verde
+        assert vis[59, 40, 2] and dom[59, 40, 2] == 2  # su espalda: azul
+        for u0 in range(6, 54, 6):  # las piedras del costado del zocalo (6 x 3 celdas): de un solo tono cada una
+            piedra = rgb[u0:u0 + 6, 0, 0:3].reshape(-1, 3)
+            assert np.ptp(piedra, axis=0).max() < 1e-3, u0
+        tonos = {round(float(rgb[u0, 0, 0, 1]), 1) for u0 in range(6, 54, 6)}
+        assert len(tonos) >= 5, tonos  # y no todas del mismo
+        grid, pal = estructuras.a_vox(o, rgb, vis)
+        fondo = grid[47 - 23, 19, 18]  # el fondo de la puerta (x del .vox: el ancho al reves)
+        assert tuple(pal[fondo - 1]) == estructuras.HUECO, pal[fondo - 1]
+
+
+def test_forja_forma():
+    """La forja armada a mano: un horno cerrado (abierto solo al frente) con la llamarada adentro, que se ve por la
+    boca, y un fuelle de acordeon al costado; el alto del inventario (1.5 m), una sola pieza, sin aire encerrado y
+    bajo el aviso de triangulos de Android."""
+    from scipy import ndimage
+
+    o = estructuras.forja()
+    assert o.metros() == (1.08, 1.5, 1.86), o.metros()
+    lleno = o.lleno
+    _, piezas = ndimage.label(lleno)
+    assert piezas == 1, piezas
+    vacio = np.pad(~lleno, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    assert (lab[vacio] == lab[0, 0, 0]).all()
+    assert not lleno[10:12, 8:14, 5:12].any()  # la boca del frente
+    assert lleno[12:28, 5, 5:12].all() and lleno[12:28, 16, 5:12].all()  # los costados, cerrados
+    fuego = {o.nombres.index(n) for n in ("brasa", "llama", "llama_viva")}
+    for z, y in ((10, 6), (11, 7), (10, 5)):  # por la boca, lo primero que se ve es fuego
+        u = int(np.argmax(lleno[10:, z, y])) + 10
+        assert o.parte[u, z, y] in fuego, (z, y, o.nombres[o.parte[u, z, y]])
+    assert (o.parte[:, :5] == o.nombres.index("pliegue")).any()  # el acordeon, al costado
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert grid.shape == (18, 31, 25), grid.shape  # sin margenes vacios (un solo fuelle)
+    assert estructuras.triangulos(grid) < 8000
+
+
+def test_pino_simetrico():
+    """El pino: 10 m de alto y 5 m de copa, el mismo de los cuatro lados y en el espejo (forma y color: la parte de
+    cada celda), en una sola pieza, sin aire encerrado, con el tronco a la vista hasta 2.3 m y bajo el aviso de
+    Android."""
+    from scipy import ndimage
+
+    o = estructuras.pino()
+    assert o.metros()[1] == 10.0 and o.metros()[0] == o.metros()[2], o.metros()
+    p = o.parte
+    for q in (p[::-1], p[:, ::-1], np.rot90(p, 1, axes=(0, 1)), np.transpose(p, (1, 0, 2))):
+        assert (q == p).all()
+    _, piezas = ndimage.label(o.lleno)
+    assert piezas == 1, piezas
+    vacio = np.pad(~o.lleno, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    assert (lab[vacio] == lab[0, 0, 0]).all()
+    tronco = o.nombres.index("tronco")
+    abajo = p[:, :, :12]
+    assert (abajo[abajo > 0] == tronco).all() and (abajo == tronco).sum() == 4 * 12  # 2 x 2 celdas, hasta 2.3 m
+    assert o.metros() == (5.0, 10.0, 5.0), o.metros()
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert estructuras.triangulos(grid) < 8000
+
+
+def test_piedra_tallada():
+    """La piedra-ciervo: los surcos de una cara salen de lo mas oscuro que su alrededor (sin el granulado ni el borde,
+    y sin rellenar los contornos); un trazo en diagonal queda seguido; la del repo es una losa (corte recto) con los
+    ciervos tallados una celda en el frente, y bajo el aviso de Android."""
+    rng = np.random.default_rng(3)
+    h, w = 300, 160
+    rgb = 120 + rng.integers(-14, 15, size=(h, w, 1)) * np.ones((1, 1, 3))  # piedra granulada
+    m = np.zeros((h, w), bool)
+    m[10:290, 10:150] = True
+    rgb[80:86, 40:120] -= 60  # un rectangulo dibujado con un surco de 6 px (los de la hoja: 6 a 10)
+    rgb[160:166, 40:120] -= 60
+    rgb[80:166, 40:46] -= 60
+    rgb[80:166, 114:120] -= 60
+    s = estructuras.surcos(m, rgb.astype(np.float32), minimo=50)
+    assert s[83, 80] and s[120, 43] and not s[120, 80], (s[83, 80], s[120, 43], s[120, 80])  # el trazo, no el relleno
+    assert s[200:, :].sum() == 0 and s[:20, :].sum() == 0  # ni el granulado ni el borde
+    d = np.zeros((5, 5), bool)
+    d[0, 0] = d[1, 1] = d[2, 2] = True
+    seguido = estructuras._trazo_seguido(d)
+    assert seguido[1, 0] and seguido[2, 1]  # cada escalon, unido por el costado
+    g, _ = vox.leer(os.path.join(HERE, "..", "..", "assets", "models", "mapa", "hito", "piedra_ciervo.vox"))
+    f = g > 0
+    sx, sy, sz = f.shape
+    assert sz == 75 and sy <= 12  # 3 m en celdas de 4 cm; una losa delgada
+    medio = f[:, :, sz // 2]
+    zs = np.flatnonzero(medio.any(axis=1))
+    assert medio[zs[0] + 2:zs[-1] - 1, 2:sy - 2].all()  # de corte recto (no una lente)
+    frente = np.argmax(f, axis=1)  # la primera celda de cada columna, de adelante hacia atras
+    hundidas = ((frente == 1) & f.any(axis=1)).sum()
+    assert hundidas > 150, hundidas  # los ciervos, tallados una celda
+    assert estructuras.triangulos(g) < 8000
+
+
+def test_atalaya_forma():
+    """La atalaya de madera: 6 m de alto (el inventario) y 2.55 m de lado; la escalera larga de atras la alarga a 6 m
+    de punta a punta. Una sola pieza (cada escalon toca al siguiente por el costado, no por la esquina), sin aire
+    encerrado, igual a los dos lados (el espejo en z), apoyada en los postes, la escalera de mano y el pie de la
+    escalera larga, y bajo el aviso de triangulos de Android."""
+    from scipy import ndimage
+
+    o = estructuras.atalaya()
+    assert o.metros() == (2.55, 6.0, 6.0), o.metros()
+    lleno = o.lleno
+    _, piezas = ndimage.label(lleno)
+    assert piezas == 1, piezas
+    vacio = np.pad(~lleno, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    assert (lab[vacio] == lab[0, 0, 0]).all()
+    assert (o.parte == o.parte[:, ::-1]).all()
+    suelo = np.flatnonzero(lleno[:, :, 0].any(axis=1)).tolist()
+    assert suelo == [0, 1, 2, 16, 17, 34, 35, 38, 39], suelo  # la escalera de mano, los postes y el pie de atras
+    tabla = o.nombres.index("tabla")
+    arriba = o.parte[2:16, 1:16, 36]  # el piso de tablas de la plataforma, con el hueco de la escalera de mano
+    assert (arriba == tabla).sum() == 14 * 15 - 6 and (arriba[:2, 6:9] == 0).all()
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert grid.shape == (17, 40, 40), grid.shape
+    assert estructuras.triangulos(grid) < 8000
+
+
+def test_muro_en_ruinas():
+    """El muro en ruinas. Sin hoja, un muro entero: la base de dos hiladas de piedra (piedras de 1.2 m) y 12 hiladas
+    de ladrillo trabado, 3 m en 57 celdas; la junta de cada hilada, hundida una celda, y las de entre ladrillos, de
+    color. El del repo (desde la hoja): una pieza, sin aire encerrado, los ladrillos al frente y el barro hundido
+    donde se cayeron, y bajo el aviso de triangulos de Android."""
+    from scipy import ndimage
+
+    base = estructuras.BASE_MURO
+    o = estructuras.muro_en_ruinas()
+    D, W, H = o.parte.shape
+    assert H == base + 4 * 12 == 57 and o.metros()[1] == 3.0, (o.parte.shape, o.metros())
+    lad = np.array([n.startswith("ladrillo") for n in o.nombres])
+    junta = o.nombres.index("junta")
+    for y in range(base, H):
+        fila, atras = o.parte[0, :, y], o.parte[1, :, y]
+        if (y - base) % 4 == 0:  # la junta de la hilada: hundida (en las puntas no: atras esta la cara del costado)
+            assert (fila[1:-1] == 0).all() and (atras == junta).all(), (y, fila, atras)
+        else:  # los ladrillos (5 celdas) y la junta de entre ellos (1), al frente
+            assert lad[fila].sum() + (fila == junta).sum() == W and 9 <= (fila == junta).sum() <= 12, (y, fila)
+    assert (o.parte[0, 1:-1, 4] == 0).all()  # la junta entre las dos hiladas de la base
+    piedra = np.array([n.startswith("piedra") for n in o.nombres])
+    assert piedra[o.parte[0, :, :4]].sum() == 4 * (W - 2)  # tres piedras por hilada: dos juntas
+
+    g, _ = vox.leer(os.path.join(HERE, "..", "..", "assets", "models", "estructura", "ruina", "muro.vox"))
+    f = g > 0
+    assert f.shape == (65, 22, 57), f.shape  # 3.42 x 1.16 x 3 m
+    _, piezas = ndimage.label(f)
+    assert piezas == 1, piezas
+    vacio = np.pad(~f, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    assert (lab[vacio] == lab[0, 0, 0]).all()
+    cara = f.any(axis=1)[:, base:]  # lo que se ve de frente, sobre la base
+    adelante = f[:, 0, base:] & cara
+    hundido = ~f[:, 0, base:] & f[:, 1, base:] & cara
+    assert 0.3 < adelante.sum() / cara.sum() < 0.7 and hundido.sum() / cara.sum() > 0.3, (adelante.sum(), hundido.sum())
+    assert estructuras.triangulos(g) < 8000
+
+
+def _una_pieza_cerrada(lleno):
+    """Una sola pieza y sin aire encerrado (lo de adentro no se ve y el juego no arma sus caras)."""
+    from scipy import ndimage
+
+    _, piezas = ndimage.label(lleno)
+    vacio = np.pad(~lleno, 1, constant_values=True)
+    lab, _ = ndimage.label(vacio)
+    return piezas == 1 and bool((lab[vacio] == lab[0, 0, 0]).all())
+
+
+def test_carros_y_puerta():
+    """La carreta (cuatro ruedas de disco con sus huecos), el carro de la yunta (ruedas de ocho rayos, la lanza y el
+    yugo arriba del poste, a lo ancho) y la puerta fortificada larga (simetrica, la puerta a oscuras al fondo del
+    vano, la escalinata hasta el umbral, los tramos que bajan hasta la torre de atras y la abertura del costado):
+    sus medidas, una sola pieza, sin aire encerrado y bajo el aviso de Android."""
+    o = estructuras.carreta()
+    assert o.metros() == (2.429, 2.0, 4.643), o.metros()
+    assert _una_pieza_cerrada(o.lleno)
+    for uc in (10, 55):  # el disco de cada rueda: lleno, con un hueco por cuadrante junto al cubo
+        for z in (1, 2, 31, 32):
+            assert o.lleno[uc + 3, z, 12] and not o.lleno[uc + 2, z, 12] and not o.lleno[uc - 3, z, 7], (uc, z)
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert estructuras.triangulos(grid) < 8000
+
+    o = estructuras.carro_varas()
+    assert o.metros() == (2.5, 2.5, 6.375), o.metros()
+    assert _una_pieza_cerrada(o.lleno)
+    hierro, rayo = o.nombres.index("hierro"), o.nombres.index("rayo")
+    assert o.parte[84, 1, 0] == hierro and o.parte[84, 1, 31] == hierro  # la llanta, abajo y arriba
+    assert o.parte[84, 1, 8] == rayo and not o.lleno[81, 1, 8]  # un rayo hacia abajo y el hueco entre dos
+    assert o.lleno[1, 9:31, 26].all() and not o.lleno[1, 9:31, 28].any()  # el yugo, a lo ancho arriba del poste
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert estructuras.triangulos(grid) < 8000
+
+    o = estructuras.puerta_fortificada()  # la version larga (la vista de lado), en celdas de 1/3 m
+    assert o.metros() == (12.333, 10.0, 24.0), o.metros()
+    assert _una_pieza_cerrada(o.lleno)
+    assert (o.parte == o.parte[:, ::-1]).all()
+    puerta = o.nombres.index("puerta")
+    assert not o.lleno[4:6, 18:21, 4:14].any() and (o.parte[6, 18:21, 4:14] == puerta).all()  # el vano, a oscuras
+    escalones = [int(o.lleno[:4, 19, y].sum()) for y in range(5)]
+    assert escalones == [4, 4, 3, 2, 0], escalones  # hasta el umbral
+    alto = [int(np.flatnonzero(o.lleno[u, 6]).max()) + 1 for u in (10, 20, 40, 48, 55, 63)]  # (10: el pretil)
+    assert alto == [30, 24, 19, 14, 10, 20], alto  # la torre, los cuatro tramos que bajan y la torre de atras
+    assert (o.parte[22:33, 5, 8:13] == puerta).any() and not o.lleno[22:33, 3, 8:13].all()  # la abertura del costado
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert estructuras.triangulos(grid) < 8000
+
+
+def test_arboles_de_hoja():
+    """El roble y el sauce: el mismo de los cuatro lados y en el espejo (como el pino), una sola pieza, sin aire
+    encerrado, sus medidas, el tronco a la vista (las hojas del roble empiezan a 3.6 m; las cortinas del sauce dejan
+    huecos y llegan a 1.5 m del suelo) y bajo el aviso de Android."""
+    for receta, medidas in ((estructuras.roble, (8.788, 10.0, 8.788)), (estructuras.sauce, (6.75, 9.0, 6.75))):
+        o = receta()
+        p = o.parte
+        assert o.metros() == medidas, (receta.__name__, o.metros())
+        for q in (p[::-1], p[:, ::-1], np.transpose(p, (1, 0, 2))):
+            assert (q == p).all(), receta.__name__
+        assert _una_pieza_cerrada(o.lleno), receta.__name__
+        hojas = np.isin(p, [o.nombres.index(n) for n in ("copa", "copa_sombra", "copa_puntas")])
+        tronco = p == o.nombres.index("tronco")
+        bajo = int(np.flatnonzero(hojas.any(axis=(0, 1))).min())
+        if receta is estructuras.roble:
+            assert bajo * o.celda >= 3.6 - 1e-6 and tronco[:, :, :bajo].any(), bajo
+        else:
+            assert abs(bajo * o.celda - 1.5) < 1e-6, bajo
+            anillo = hojas[:, :, 10]  # a 2.5 m: las tiras de las cortinas, con huecos entre ellas
+            assert 20 < anillo.sum() < 0.5 * np.pi * 12 ** 2, anillo.sum()
+        grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+        assert estructuras.triangulos(grid) < 8000, receta.__name__
+
+
+def test_triangulos_juntos():
+    """modelos.tris_vox cuenta lo que arma el juego (src/sim/voxel.c: las caras juntas y la base en el suelo): la
+    figura de prueba de tests/test_main.c (merge_fixture) da los mismos triangulos que alla (MERGE_FIXTURE_TRIS)."""
+    sys.path.insert(0, os.path.join(HERE, "..", "modelos"))
+    import modelos
+
+    nx, ny, nz = 8, 7, 7  # en los ejes del juego (y arriba), como en la prueba en C
+    celdas = {}
+    for (x0, y0, z0, x1, y1, z1, m) in ((0, 0, 0, 7, 1, 6, 1), (2, 2, 2, 5, 4, 4, 2), (1, 5, 1, 6, 5, 5, 1),
+                                        (6, 0, 2, 7, 1, 4, 0), (3, 3, 0, 4, 3, 6, 0)):
+        for x in range(x0, x1 + 1):
+            for y in range(y0, y1 + 1):
+                for z in range(z0, z1 + 1):
+                    if m:
+                        celdas[(x, y, z)] = m
+                    else:
+                        celdas.pop((x, y, z), None)
+    vox_cells = {(nz - 1 - z, nx - 1 - x, y): m for (x, y, z), m in celdas.items()}
+    assert modelos.tris_vox(vox_cells, (nz, nx, ny)) == 274
+    g = np.ones((3, 3, 3), np.uint8)
+    # El cubo apoyado: arriba 2; de la base queda el anillo del borde (4 rectangulos, 12), y sus esquinas parten
+    # el borde de abajo de tres de los lados (12 en los costados): 26, lo mismo que arma el juego.
+    assert estructuras.triangulos(g) == 26
+    o = estructuras.templo()
+    grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
+    assert estructuras.triangulos(grid) < 8000  # el templo, bajo el aviso de Android
+
+
 def main():
     tests = [
         ("test_vox_ida_y_vuelta", test_vox_ida_y_vuelta),
@@ -244,6 +543,16 @@ def main():
         ("test_malla_caja", test_malla_caja),
         ("test_frente_a_menos_y", test_frente_a_menos_y),
         ("test_cli", test_cli),
+        ("test_templo_forma", test_templo_forma),
+        ("test_templo_colores", test_templo_colores),
+        ("test_forja_forma", test_forja_forma),
+        ("test_pino_simetrico", test_pino_simetrico),
+        ("test_piedra_tallada", test_piedra_tallada),
+        ("test_atalaya_forma", test_atalaya_forma),
+        ("test_muro_en_ruinas", test_muro_en_ruinas),
+        ("test_carros_y_puerta", test_carros_y_puerta),
+        ("test_arboles_de_hoja", test_arboles_de_hoja),
+        ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0
     for name, fn in tests:

@@ -42,7 +42,9 @@ src/
     voxmat.h     los materiales de las estructuras de voxeles (src/world/voxstruct.c los pinta con la paleta de su region)
     flora.*      la vegetacion baja: donde crece cada mata (por celdas de 2 m, segun la region y el agua; ni en la roca, los rios, los pueblos o los campamentos), cuanto crece con la estacion y cuanto la mueven el viento y quien pasa
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano
-    keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H I J K, Tab, L, O, F, X...)
+    keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H J K L, Tab, O, F, Enter, N, X...)
+    camview.*    las vistas de la camara que N alterna (cerca, sobre el hombro; media; lejos): distancia, inclinacion y altura, y el encuadre de cada una (donde cae cada altura del cuerpo en la pantalla)
+    ancient.*    los asentamientos antiguos: la planta (el palacio con su patio, las casas con sus cuartos, las calles, las puertas), lo que queda de alto de cada muro y los tramos de pie
     targeting.*  el selector de objetivo (enemigos y animales salvajes): el siguiente a la izquierda o la derecha, se pierde a 25 m o tras 6 s sin verlo (cubierto, no), y los clics con arma a distancia (elegir, cambiar, mantener 1 s para soltar)
     stealth.*    la espalda (cono trasero, lo que ve un enemigo segun de donde vienes), cuanto tarda en reconocerte (5, 7 o 3 s, menos de cerca), la cobertura (el obstaculo tapa a quien mira del otro lado), el rehen que tapa el tiro (y cuando se suelta) y los abatidos
     caves.*      las cuevas de cada guarida (de la semilla): la planta (el vestibulo, la Cisterna, el anillo de recamaras, la bajada sin vuelta), el suelo y los pasos que valen, lo que hay adentro, lo que se toma y los prisioneros que se unen o traicionan (docs/PLAN_TACTICO_Y_CUEVAS.md)
@@ -68,7 +70,7 @@ src/
   game/     Jugador e input
     player.*
     actions_game.*  menu de acciones, atajos, obras en curso
-    camp_game.*     el guardian (F): obras, escolta, pobladores y sus tareas, capacitar, migrar (levantar, la columna, plantar) y disolver
+    camp_game.*     el guardian (Enter): obras, escolta, pobladores y sus tareas, capacitar, migrar (levantar, la columna, plantar) y disolver
     place_game.*    la vista aerea para ubicar una obra: la huella verde o roja, girar, rejilla, muros de dos puntos
     city_game.*     las ciudades en el juego: la economia de cada dia, el tributo, las bajas de su guardia, su informe y el dibujo (los edificios del kit: palacio, talleres, casas, graneros, templo y carretas; campos segun la estacion, corrales, labradores y guardias); y el asedio (la guerra, la muralla que corta el paso, las puertas que arden, las escalas, la guarnicion que sale, el cerco, la rendicion y la ciudad tomada) y las expediciones de castigo
     forge_game.*    la forja en el juego: las vetas que se ven, se marcan al pasar y se pican (F), la estacion a mano (forja movil, hornos, taller) y la tirada del temple

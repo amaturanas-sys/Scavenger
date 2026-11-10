@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**450 objetos** · 16 con modelo · 434 pendientes.
+**452 objetos** · 23 con modelo · 429 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -11,9 +11,9 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
-| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 30 | 28 | 0 | 2 | 0 |
-| [Estructuras](#estructura) | 43 | 40 | 1 | 2 | 0 |
-| [Vehículos](#vehiculo) | 11 | 11 | 0 | 0 | 0 |
+| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 32 | 28 | 0 | 4 | 0 |
+| [Estructuras](#estructura) | 43 | 37 | 1 | 5 | 0 |
+| [Vehículos](#vehiculo) | 11 | 9 | 0 | 2 | 0 |
 | [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
 | [Armas](#arma) | 44 | 39 | 0 | 5 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
@@ -69,9 +69,11 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.vegetacion.hierba_alta` | Hierba alta (escondite) | 2x1x2 | 40 | pendiente | `bioma:estepa` `uso:escondite` | El jugador puede esconderse dentro. |
 | `mapa.vegetacion.mata_hierbas` | Mata de hierbas curativas | 0.8x0.6x0.8 | 80 | pendiente | `bioma:estepa` `uso:recolectable` | F para recoger hierbas curativas. |
 | `mapa.vegetacion.arbusto` | Arbusto estepario | 1x0.8x1 | 40 | pendiente | `bioma:estepa` `uso:decorado` |  |
-| `mapa.vegetacion.pino` | Pino | 3x10x3 | 120 | importado | `bioma:bosque` `uso:trepable` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `mapa.vegetacion.pino` | Pino | 3x10x3 | 120 | importado | `bioma:bosque` `uso:trepable` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py pino), simetrico: ocho pisos de ramas alrededor del tronco, 5 m de copa y el tronco a la vista hasta 2.3 m, con los colores de la hoja de tres vistas generada por el usuario con Canva. En el paisaje: alturas y tonos que varian, hasta 12 m. |
 | `mapa.vegetacion.alerce` | Alerce | 3x12x3 | 120 | pendiente | `bioma:bosque` `uso:trepable` |  |
 | `mapa.vegetacion.abedul` | Abedul | 2.5x8x2.5 | 100 | pendiente | `bioma:estepa` `bioma:bosque` `uso:decorado` |  |
+| `mapa.vegetacion.roble` | Roble | 8.8x10x8.8 | 120 | importado | `bioma:bosque` `bioma:estepa` `uso:trepable` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py roble), celdas de 30 cm, simetrico como el pino: el tronco a la vista hasta los 4 m, ocho ramas abiertas y la copa de racimos en tres anillos, con el tronco y tres verdes de la hoja del arbol frondoso generada por el usuario con Canva. |
+| `mapa.vegetacion.sauce` | Sauce llorón | 6.8x9x6.8 | 120 | importado | `bioma:estepa` `bioma:bosque` `uso:decorado` `formato:voxel` | Junto al agua. Voxeles armados a mano (tools/voxeles/estructuras.py sauce), celdas de 25 cm, simetrico como el pino: el tronco grueso a la vista, la cupula y las cortinas que cuelgan hasta 1.5 m del suelo, con el tronco y tres verdes de la hoja generada por el usuario con Canva. |
 | `mapa.vegetacion.saxaul` | Saxaúl (arbusto del desierto) | 2x2x2 | 60 | pendiente | `bioma:desierto` `uso:recolectable` | Leña en el desierto. |
 | `mapa.vegetacion.palmera` | Palmera datilera | 3x7x3 | 100 | pendiente | `bioma:desierto` `uso:recolectable` |  |
 | `mapa.vegetacion.liquen` | Liquen y musgo de tundra | 1x0.1x1 | 20 | pendiente | `bioma:glaciar` `bioma:fiordo` `uso:decorado` |  |
@@ -79,7 +81,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.hito.kurgan` | Kurgán (túmulo funerario) | 14x3x14 | 200 | pendiente | `bioma:estepa` `especial:hito` `especial:rastro_padre` |  |
 | `mapa.hito.tumba_helada` | Tumba helada del padre | 8x4x8 | 800 | pendiente | `bioma:glaciar` `acto:3` `especial:narrativo` `especial:legado` | Kurgán congelado al estilo de Pazyryk; prueba final del acto III. |
 | `mapa.hito.campamento_abandonado` | Campamento abandonado del padre | 10x3x10 | 400 | pendiente | `acto:3` `especial:rastro_padre` |  |
-| `mapa.hito.piedra_ciervo` | Piedra-ciervo | 0.6x3x0.4 | 150 | importado | `bioma:estepa` `material:piedra` `especial:rastro_padre` `formato:voxel` | Estela con ciervos de estilo animal. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `mapa.hito.piedra_ciervo` | Piedra-ciervo | 1.36x3x0.44 | 150 | importado | `bioma:estepa` `material:piedra` `especial:rastro_padre` `formato:voxel` | Estela con ciervos de estilo animal. Voxeles armados a mano (tools/voxeles/estructuras.py piedra_ciervo): una losa de corte recto en celdas de 4 cm, con los tres ciervos y sus astas tallados como surcos en el frente y las grietas de la espalda, sacados de la hoja de tres vistas generada por el usuario con Canva (el ancho y el grueso, los de la hoja, por decision del usuario). |
 | `mapa.hito.balbal` | Balbal (estatua de piedra) | 0.6x1.8x0.5 | 150 | pendiente | `bioma:estepa` `material:piedra` |  |
 | `mapa.agua.coral` | Arrecife de coral | 1.5x0.8x1.5 | 120 | pendiente | `bioma:cualquiera` `uso:decorado` `uso:recolectable` | Bajo el agua de los lagos: coral rojo y perlas. |
 
@@ -103,14 +105,14 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.campamento.fogata` | Fogata | 1.2x0.5x1.2 | 60 | pendiente | `faccion:nomada` `uso:interactuable` | Hoy es un primitivo procedural. |
 | `estructura.campamento.corral` | Corral de cuerdas y estacas | 10x1.2x10 | 150 | pendiente | `faccion:nomada` `uso:decorado` `material:madera` |  |
 | `estructura.campamento.secadero` | Secadero de carne | 3x2x1 | 80 | pendiente | `faccion:nomada` `uso:interactuable` `material:madera` |  |
-| `estructura.campamento.forja` | Forja portátil | 2x1.5x2 | 300 | importado | `faccion:nomada` `uso:interactuable` `material:hierro` `formato:voxel` | Función: herrero. Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `estructura.campamento.forja` | Forja portátil | 2x1.5x2 | 300 | importado | `faccion:nomada` `uso:interactuable` `material:hierro` `formato:voxel` | Función: herrero. Horno cerrado con la llamarada adentro y un fuelle de acordeon al costado: voxeles armados a mano (tools/voxeles/estructuras.py forja), celdas de 6 cm, con la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva. |
 | `estructura.campamento.enfermeria` | Yurta enfermería | 4x2.6x4 | 350 | pendiente | `faccion:nomada` `uso:interactuable` `material:fieltro` | Función: curandero. |
 | `estructura.campamento.jaula_prisioneros` | Jaula de prisioneros | 3x2x3 | 150 | pendiente | `faccion:cualquiera` `uso:interactuable` `material:madera` |  |
 | `estructura.campamento.poste_ejecucion` | Poste de castigo | 0.5x2.5x0.5 | 50 | pendiente | `faccion:cualquiera` `uso:interactuable` `material:madera` |  |
 | `estructura.campamento.empalizada` | Empalizada modular | 4x2.5x0.4 | 80 | pendiente | `faccion:nomada` `uso:destructible` `material:madera` |  |
-| `estructura.campamento.atalaya` | Atalaya de madera | 3x6x3 | 200 | pendiente | `faccion:nomada` `uso:trepable` `material:madera` |  |
+| `estructura.campamento.atalaya` | Atalaya de madera | 2.55x6x6 | 200 | importado | `faccion:nomada` `uso:trepable` `material:madera` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py atalaya), celdas de 15 cm: la torre de 2.5 m con sus tres pisos, las cruces, la escalera de mano al frente y la escalera larga atras, con los colores de la hoja de tres vistas generada por el usuario con Canva. Con la escalera de atras ocupa 6 m de largo (las medidas de la hoja: el usuario las confirmo). Reemplaza a la del kit de edificios (src/sim/buildkit.c). |
 | `estructura.imperio.muralla` | Muralla modular | 8x8x3 | 200 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:trepable` `material:piedra` |  |
-| `estructura.imperio.puerta` | Puerta de la ciudad | 10x10x5 | 600 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:destructible` `material:madera` |  |
+| `estructura.imperio.puerta` | Puerta de la ciudad | 12.3x10x24 | 600 | importado | `bioma:ciudad` `faccion:imperio` `uso:destructible` `material:madera` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py puerta_fortificada), celdas de 1/3 m, la version larga de la hoja de tres vistas generada por el usuario con Canva (la vista de lado): la portada con dos torres y el portico, el cuerpo que baja en cuatro tramos con sus frisos de ladrillo y la abertura de la escalera, y al final dos torres chicas con el muro de la puerta ciega. |
 | `estructura.imperio.torre` | Torre de vigilancia | 5x14x5 | 400 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:trepable` `material:piedra` |  |
 | `estructura.imperio.cuartel` | Cuartel | 16x6x10 | 600 | pendiente | `bioma:ciudad` `faccion:imperio` |  |
 | `estructura.imperio.granero` | Granero | 10x7x8 | 400 | pendiente | `bioma:ciudad` `faccion:imperio` `uso:interactuable` | Las cosechas marchitas (acto II). |
@@ -118,9 +120,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.imperio.fundicion` | Fundición / taller industrial | 18x10x14 | 1200 | pendiente | `bioma:ciudad` `faccion:imperio` `especial:narrativo` | Capacidad industrial del imperio. |
 | `estructura.imperio.cadalso` | Cadalso de ejecución pública | 6x3x6 | 250 | pendiente | `bioma:ciudad` `faccion:imperio` `acto:2` `especial:narrativo` | Escena de la huida del acto II. |
 | `estructura.culto.altar` | Altar del culto | 12x6x12 | 1500 | pendiente | `bioma:ciudad` `faccion:culto` `acto:4` `especial:narrativo` `uso:destructible` | Objetivo del asalto final. |
-| `estructura.culto.templo` | Templo del culto | 24x14x30 | 2500 | importado | `bioma:ciudad` `faccion:culto` `acto:4` `formato:voxel` | Voxeles (tools/voxeles hoja) desde una hoja de tres vistas generada por el usuario con Canva. |
+| `estructura.culto.templo` | Templo del culto | 24x14x30 | 2500 | importado | `bioma:ciudad` `faccion:culto` `acto:4` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py templo): celdas de 0.5 m, la distribucion y el color de la hoja de tres vistas generada por el usuario con Canva. |
 | `estructura.culto.jaula_sacrificio` | Jaula de cautivos para el sacrificio | 3x2.5x3 | 200 | pendiente | `faccion:culto` `uso:interactuable` `material:hierro` | Rescates del acto III. |
-| `estructura.ruina.muro` | Muro en ruinas | 6x3x1 | 150 | pendiente | `bioma:cualquiera` `uso:decorado` `material:piedra` |  |
+| `estructura.ruina.muro` | Muro en ruinas | 3.42x3x1.16 | 150 | importado | `bioma:cualquiera` `uso:decorado` `material:piedra` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py muro_en_ruinas), celdas de 5.3 cm: la base de dos hiladas de piedra y 12 hiladas de ladrillo trabado, la rotura en escalones y el barro del nucleo hundido donde se cayeron los ladrillos, con la forma y los colores de la hoja de tres vistas generada por el usuario con Canva. Reemplaza al del kit de edificios (src/sim/buildkit.c). En el mundo es el tramo que quedo de pie en los vestigios de los asentamientos antiguos (src/sim/ancient.h): de dos a cuatro por planta, sobre los muros de afuera. |
 | `estructura.ruina.yurta_quemada` | Yurta quemada | 4.5x1.5x4.5 | 250 | pendiente | `faccion:nomada` `acto:1` `uso:decorado` | Restos de la masacre. |
 | `estructura.ruina.escombros` | Escombros | 3x0.8x3 | 80 | pendiente | `bioma:cualquiera` `uso:decorado` | Lo que deja la lluvia torrencial de una estructura sin mantenimiento. |
 | `estructura.ruina.cenizas` | Cenizas de una estructura | 3x0.5x3 | 80 | pendiente | `bioma:cualquiera` `uso:decorado` | Lo que deja el fuego. |
@@ -145,9 +147,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `vehiculo.agua.velero` | Velero | 3x8x9 | 600 | pendiente | `bioma:fiordo` `uso:conducible` `material:madera` |  |
 | `vehiculo.agua.barco_carga` | Barco de carga | 6x14x20 | 1500 | pendiente | `bioma:fiordo` `uso:conducible` `faccion:neutral` |  |
 | `vehiculo.agua.barco_guerra` | Barco de guerra con cañones | 8x18x28 | 2500 | pendiente | `bioma:fiordo` `uso:conducible` `faccion:imperio` |  |
-| `vehiculo.tierra.carreta_bueyes` | Yunta de bueyes con carreta | 2.5x2.5x6 | 600 | pendiente | `faccion:nomada` `uso:conducible` `material:madera` | Mueve el campamento. Los bueyes: animal.ganado.buey. |
+| `vehiculo.tierra.carreta_bueyes` | Yunta de bueyes con carreta | 2.5x2.5x6 | 600 | importado | `faccion:nomada` `uso:conducible` `material:madera` `formato:voxel` | Mueve el campamento. Los bueyes: animal.ganado.buey. Voxeles armados a mano (tools/voxeles/estructuras.py carro_varas), celdas de 6.25 cm: el carro de la yunta (la caja con sus herrajes, dos ruedas de rayos de 2 m, la lanza con el tornapunta y el poste del yugo con el yugo), de la hoja del carro de varas generada por el usuario con Canva; los bueyes no van en el modelo. |
 | `vehiculo.tierra.kibitka` | Carro con yurta montada (kibitka) | 4x4x6 | 800 | pendiente | `faccion:nomada` `uso:conducible` |  |
-| `vehiculo.tierra.carreta_mercancias` | Carreta de mercancías | 2x2x4 | 400 | pendiente | `faccion:neutral` `uso:conducible` `material:madera` |  |
+| `vehiculo.tierra.carreta_mercancias` | Carreta de mercancías | 2x2x4 | 400 | importado | `faccion:neutral` `uso:conducible` `material:madera` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py carreta), celdas de 7 cm: la caja de tablas con sus postes, las cuatro ruedas de disco de 1.43 m, los ejes y la vara que los une, con tres tonos de madera de la hoja de tres vistas generada por el usuario con Canva (2.43 x 4.64 m de la hoja). |
 | `vehiculo.tierra.carruaje` | Carruaje imperial | 2.2x2.8x5 | 900 | pendiente | `faccion:imperio` `uso:conducible` |  |
 | `vehiculo.tierra.trineo` | Trineo | 1.2x0.8x3 | 200 | pendiente | `bioma:glaciar` `uso:conducible` `material:madera` |  |
 

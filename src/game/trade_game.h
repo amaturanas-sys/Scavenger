@@ -18,11 +18,16 @@
 #include "game/actions_game.h"
 #include "game/combat_game.h"
 
-// ¿Hay con quien comerciar (o algo que saquear) al alcance de F? Lo pide al proximo td_update.
+// Enter: ¿hay con quien comerciar (una tribu, una aldea, una capital, un caravasar, una caravana) o
+// la guardia de una puerta cerrada con quien hablar? Abre el dialogo en el proximo td_update.
 bool td_try_talk(GameActions *ga, const Terrain *t, const Player *p);
+// ¿Hay con quien comerciar o hablar (Enter) al alcance? Sin abrir nada: la pista de F («para hablar, Enter»).
+bool td_can_talk(const GameActions *ga, const Terrain *t, const Player *p);
+// F: ¿hay algo que saquear (un campamento rival, los campos de una ciudad)? Lo hace el proximo td_update.
+bool td_try_loot(GameActions *ga, const Terrain *t, const Player *p);
 void td_update(GameActions *ga, Combat *cb, Troop *troop, const Props *props, const Terrain *t, const Player *p, float now, float dt,
                char *log, size_t len);
-// La pista de F («F: comerciar con los...»), sobre la de la fauna.
+// La pista («Enter: comerciar con los...», «F: saquear...»), sobre la de la fauna.
 void td_draw_hud(int w, int h);
 // Las caravanas. Dentro de BeginMode3D.
 void td_draw_world(const GameActions *ga, Props *props, const Terrain *t, const Player *p, float time);

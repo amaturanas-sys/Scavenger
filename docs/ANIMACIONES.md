@@ -3,7 +3,7 @@
 > Generado por `tools/assets/animaciones.py doc` a partir de [`assets/animaciones.tsv`](../assets/animaciones.tsv)
 > y del [inventario](INVENTARIO.md). No editar a mano.
 
-**110 clips** en 4 tipos de esqueleto · **109 modelos animados**.
+**110 clips** en 4 tipos de esqueleto · **105 modelos animados**.
 
 ## Cómo se nombran y se usan
 
@@ -136,13 +136,13 @@
 
 | Clip | Bucle | Prioridad | Descripción | Lo usa | Se aplica a |
 |---|---|---|---|---|---|
-| `rodar` | si | obligatoria | Ruedas girando. | vehículos | `vehiculo.tierra.`, `asedio.maquina.ariete`, `asedio.maquina.torre_asedio` |
+| `rodar` | si | obligatoria | Ruedas girando. | vehículos | `id:vehiculo.tierra.kibitka`, `id:vehiculo.tierra.carruaje`, `asedio.maquina.ariete`, `asedio.maquina.torre_asedio` |
 | `remar` | si | obligatoria | Remos. | vehículos | `vehiculo.agua.bote_remos`, `vehiculo.agua.canoa_pieles` |
 | `vela` | si | obligatoria | Vela al viento. | vehículos | `vehiculo.agua.velero`, `vehiculo.agua.barco_carga`, `vehiculo.agua.barco_guerra` |
 | `disparar` | no | obligatoria | Disparo de la máquina. | asedio | `asedio.maquina.trebuchet`, `asedio.maquina.catapulta`, `arma.distancia.canon` |
 | `golpear` | no | obligatoria | Golpe del ariete. | asedio | `asedio.maquina.ariete` |
-| `abrir` | no | obligatoria | Abrirse. | interactuar | `estructura.imperio.puerta`, `utileria.objeto.cofre`, `estructura.campamento.jaula_prisioneros`, `estructura.culto.jaula_sacrificio` |
-| `cerrar` | no | obligatoria | Cerrarse. | interactuar | `estructura.imperio.puerta`, `utileria.objeto.cofre`, `estructura.campamento.jaula_prisioneros`, `estructura.culto.jaula_sacrificio` |
+| `abrir` | no | obligatoria | Abrirse. | interactuar | `utileria.objeto.cofre`, `estructura.campamento.jaula_prisioneros`, `estructura.culto.jaula_sacrificio` |
+| `cerrar` | no | obligatoria | Cerrarse. | interactuar | `utileria.objeto.cofre`, `estructura.campamento.jaula_prisioneros`, `estructura.culto.jaula_sacrificio` |
 | `ondear` | si | opcional | Ondear al viento. |  | `totem.clan.sulde`, `totem.clan.estandarte_tamga` |
 
 ## Modelos y sus clips
@@ -237,11 +237,8 @@
 | `animal.ave.halcon` (Halcón (cetrería)) | ave | 7 | 0 | posado, despegar, volar, planear, aterrizar, atacar_picado, morir |
 | `animal.ave.buitre` (Buitre) | ave | 6 | 0 | posado, despegar, volar, planear, aterrizar, morir |
 | `animal.ave.cuervo` (Cuervo) | ave | 7 | 0 | posado, despegar, volar, planear, aterrizar, atacar_picado, morir |
-| `vehiculo.tierra.carreta_bueyes` (Yunta de bueyes con carreta) | mecanismo | 1 | 0 | rodar |
 | `vehiculo.tierra.kibitka` (Carro con yurta montada (kibitka)) | mecanismo | 1 | 0 | rodar |
-| `vehiculo.tierra.carreta_mercancias` (Carreta de mercancías) | mecanismo | 1 | 0 | rodar |
 | `vehiculo.tierra.carruaje` (Carruaje imperial) | mecanismo | 1 | 0 | rodar |
-| `vehiculo.tierra.trineo` (Trineo) | mecanismo | 1 | 0 | rodar |
 | `asedio.maquina.ariete` (Ariete cubierto) | mecanismo | 2 | 0 | rodar, golpear |
 | `asedio.maquina.torre_asedio` (Torre de asedio) | mecanismo | 1 | 0 | rodar |
 | `vehiculo.agua.bote_remos` (Bote de remos) | mecanismo | 1 | 0 | remar |
@@ -253,7 +250,6 @@
 | `asedio.maquina.trebuchet` (Trebuchet) | mecanismo | 1 | 0 | disparar |
 | `asedio.maquina.catapulta` (Catapulta) | mecanismo | 1 | 0 | disparar |
 | `estructura.campamento.jaula_prisioneros` (Jaula de prisioneros) | mecanismo | 2 | 0 | abrir, cerrar |
-| `estructura.imperio.puerta` (Puerta de la ciudad) | mecanismo | 2 | 0 | abrir, cerrar |
 | `estructura.culto.jaula_sacrificio` (Jaula de cautivos para el sacrificio) | mecanismo | 2 | 0 | abrir, cerrar |
 | `utileria.objeto.cofre` (Cofre de botín) | mecanismo | 2 | 0 | abrir, cerrar |
 | `totem.clan.sulde` (Sulde (estandarte de crines)) | mecanismo | 0 | 1 | ondear |

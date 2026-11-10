@@ -91,7 +91,7 @@ static int member_index(const Troop *troop, int id) {
     return -1;
 }
 
-bool cg_try_talk(GameActions *ga, const Troop *troop, const Player *p) {
+int cg_talk_target(const GameActions *ga, const Troop *troop, const Player *p) {
     int best = -1;
     float bd = TALK_RANGE;
     for (int i = 0; i < troop->count && i < TROOP_MAX; i++) {
@@ -101,6 +101,11 @@ bool cg_try_talk(GameActions *ga, const Troop *troop, const Player *p) {
         float d = dist_xz(ga->npcs[i].pos, p->pos.x, p->pos.z);
         if (d < bd) bd = d, best = i;
     }
+    return best;
+}
+
+bool cg_try_talk(GameActions *ga, const Troop *troop, const Player *p) {
+    int best = cg_talk_target(ga, troop, p);
     if (best < 0) return false;
     ga->talk_member = troop->members[best].id;
     ga->talk_mode = CG_ROOT;
@@ -644,7 +649,7 @@ void cg_draw_hud(const GameActions *ga, const Troop *troop, int w) {
         const CampSite *c = &ga->camps[k];
         if (!c->used || !c->migrating) continue;
         const Member *g = troop_find((Troop *)troop, c->guardian);
-        ui_text_centered(TextFormat(T("En marcha con %s · F junto a %s: plantar el campamento"), c->name, g ? g->name : T("el guardián")), w / 2, 56, 10,
+        ui_text_centered(TextFormat(T("En marcha con %s · Enter junto a %s: plantar el campamento"), c->name, g ? g->name : T("el guardián")), w / 2, 56, 10,
                          UI_GOLD);
         return;
     }
@@ -854,7 +859,7 @@ static void choose(GameActions *ga, Troop *troop, Props *props, const Terrain *t
             // La escolta sin casa se queda en el campamento nuevo.
             for (int i = 0; i < troop->count && i < TROOP_MAX; i++)
                 if (troop->members[i].camp < 0) troop->members[i].camp = nk;
-            snprintf(log, len, T("Nace %s. %s queda de guardián: háblale (F) para administrarlo."), ga->camps[nk].name, troop->members[mi].name);
+            snprintf(log, len, T("Nace %s. %s queda de guardián: háblale (Enter) para administrarlo."), ga->camps[nk].name, troop->members[mi].name);
             tg_xp(ga, XP_DISCOVER, log, len);
         }
         dlg_close(&ga->dlg);

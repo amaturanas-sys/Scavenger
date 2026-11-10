@@ -15,8 +15,10 @@
 
 void tg_init(GameActions *ga);
 bool tg_blocks_input(const GameActions *ga); // un dialogo abierto
-// F: hablar con el druida o el orfebre mas cercano (a menos de 3 m). true si habia con quien.
+// Enter: hablar con el druida o el orfebre mas cercano (a menos de 3 m). true si habia con quien.
 bool tg_try_talk(GameActions *ga, const Troop *troop, const Player *p, char *log, size_t len);
+// El druida o el orfebre al alcance de la voz (su indice en la tropa), o -1.
+int tg_talk_target(const GameActions *ga, const Troop *troop, const Player *p);
 void tg_update(GameActions *ga, Combat *cb, Troop *troop, Props *props, const Player *p, bool input_ok, float dt, char *log,
                size_t len);
 // Suma experiencia y avisa si sube de nivel.

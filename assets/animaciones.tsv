@@ -1,5 +1,6 @@
 # Índice de animaciones de ESTEPA: clips por tipo de esqueleto (rig) y a qué modelos se aplican.
 # Columnas separadas por TAB. aplica: * (todos los modelos del rig), prefijos de id, id:<id exacto> o etiquetas clave:valor, separados por comas.
+# La carreta, el carro de la yunta y la puerta fortificada son de voxeles (formato:voxel, quietos): sin rodar ni abrir hasta que tengan un GLB animado.
 rig	clip	descripcion	bucle	aplica	prioridad	acciones
 humanoide	idle	De pie, respirando.	si	*	obligatoria	quieto
 humanoide	caminar	Caminar.	si	*	obligatoria	moverse
@@ -103,11 +104,11 @@ ave	planear	Planear.	si	*	obligatoria
 ave	aterrizar	Aterrizar (en el brazo, en el suelo).	no	*	obligatoria	
 ave	atacar_picado	Caer en picado sobre la presa.	no	animal.ave.aguila,animal.ave.halcon,animal.ave.cuervo	obligatoria	combate
 ave	morir	Caer abatida.	no	*	obligatoria	combate
-mecanismo	rodar	Ruedas girando.	si	vehiculo.tierra.,asedio.maquina.ariete,asedio.maquina.torre_asedio	obligatoria	vehículos
+mecanismo	rodar	Ruedas girando.	si	id:vehiculo.tierra.kibitka,id:vehiculo.tierra.carruaje,asedio.maquina.ariete,asedio.maquina.torre_asedio	obligatoria	vehículos
 mecanismo	remar	Remos.	si	vehiculo.agua.bote_remos,vehiculo.agua.canoa_pieles	obligatoria	vehículos
 mecanismo	vela	Vela al viento.	si	vehiculo.agua.velero,vehiculo.agua.barco_carga,vehiculo.agua.barco_guerra	obligatoria	vehículos
 mecanismo	disparar	Disparo de la máquina.	no	asedio.maquina.trebuchet,asedio.maquina.catapulta,arma.distancia.canon	obligatoria	asedio
 mecanismo	golpear	Golpe del ariete.	no	asedio.maquina.ariete	obligatoria	asedio
-mecanismo	abrir	Abrirse.	no	estructura.imperio.puerta,utileria.objeto.cofre,estructura.campamento.jaula_prisioneros,estructura.culto.jaula_sacrificio	obligatoria	interactuar
-mecanismo	cerrar	Cerrarse.	no	estructura.imperio.puerta,utileria.objeto.cofre,estructura.campamento.jaula_prisioneros,estructura.culto.jaula_sacrificio	obligatoria	interactuar
+mecanismo	abrir	Abrirse.	no	utileria.objeto.cofre,estructura.campamento.jaula_prisioneros,estructura.culto.jaula_sacrificio	obligatoria	interactuar
+mecanismo	cerrar	Cerrarse.	no	utileria.objeto.cofre,estructura.campamento.jaula_prisioneros,estructura.culto.jaula_sacrificio	obligatoria	interactuar
 mecanismo	ondear	Ondear al viento.	si	totem.clan.sulde,totem.clan.estandarte_tamga	opcional	

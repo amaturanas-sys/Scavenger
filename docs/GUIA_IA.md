@@ -278,7 +278,7 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | Para ver | Comando |
 |---|---|
 | El arranque | `./estepa --frames 60 --screenshot shot.png` |
-| Un lugar del mundo | `--ir estepa`, `bosque`, `altiplano`, `desierto`, `mar`, `capital`, `aldea`, `fortaleza`, `ciudad`, `plaza-<región>`… (con `--dia 11 --minuto 7` es verano al mediodía; `--camara`, `--dron 40` desde arriba) |
+| Un lugar del mundo | `--ir estepa`, `bosque`, `altiplano`, `desierto`, `mar`, `capital`, `aldea`, `fortaleza`, `ciudad`, `plaza-<región>`… (con `--dia 11 --minuto 7` es verano al mediodía; `--camara`, `--dron 40` desde arriba; `--vista cerca\|media\|lejos`) |
 | El agua | `--ir lago`, `desborde`, `cascada`, `meandro`, `trenzado`, `arroyo`, `rapidos` |
 | El kit de edificios | `--edificios casa` (o `palacio`, `muralla`, `puerta`, `fortaleza`, `refugio`… ; `:región` para una sola fila) |
 | Un objeto de cerca | `--ver <id del inventario>` |
@@ -388,7 +388,11 @@ traba.
 - **Versión:** 0.14.0. Las cuevas grandes, la base ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md)): salas
   y Cisterna más grandes y altas (el techo a más de tres personas), pasillos largos y con vueltas; junto a la boca,
   F explora y la cueva se carga aparte; la roca, en mallas con la luz por vértice solo en lo cercano; las
-  estalactitas, las estalagmitas y las rocas, de voxeles. Las partidas viejas siguen valiendo.
+  estalactitas, las estalagmitas y las rocas, de voxeles. Además: los controles de combate nuevos (#154 y #157);
+  los voxeles desde las hojas del usuario (`tools/voxeles`) y las estructuras armadas a mano con su hoja; las
+  personas, los animales y las armas al estilo PS2 (#161); los asentamientos antiguos (`src/sim/ancient.c`); y la
+  cámara cerca, detrás y a la altura de la cabeza (`N` cambia de vista, `src/sim/camview.c`), con `F` para las cosas,
+  `Enter` para hablar y comerciar, y sin la columna de acciones del HUD. Las partidas viejas siguen valiendo.
 - **Hecho:**
   - el plan grande (fases 0 a 8b);
   - las tuberías de modelos y animaciones (v0.9.3);
@@ -399,7 +403,8 @@ traba.
   - el agua, las cinco fases (v0.11.0 a v0.11.4);
   - el sistema táctico y las cuevas: de A1 a B3 (v0.13.0).
   - las bocas de las cuevas, de voxeles, con lo de cada tipo (v0.13.1);
-  - las cuevas grandes: la base (v0.14.0).
+  - las cuevas grandes: la base; los voxeles desde las hojas; los modelos al estilo PS2; los asentamientos
+    antiguos; la cámara cerca con `F` y `Enter` (v0.14.0).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

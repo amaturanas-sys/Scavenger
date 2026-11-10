@@ -69,5 +69,8 @@ bool props_has_model(Props *p, const InvItem *item);
 // Dibuja con el clip de animacion pedido (por nombre); si el modelo no lo trae,
 // usa "idle"; si no hay modelo, el marcador. time: segundos (el clip se repite).
 void props_draw_item_anim(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time);
+// El modelo del id con una transformacion cualquiera (un arma en la mano: src/game/actions_game.c). false si no
+// tiene modelo (el que llama dibuja su marcador).
+bool props_draw_item_matrix(Props *p, const InvItem *item, Matrix transform);
 
 #endif

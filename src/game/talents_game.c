@@ -125,8 +125,8 @@ static const Member *talk_member(const GameActions *ga, const Troop *troop) {
     return NULL;
 }
 
-bool tg_try_talk(GameActions *ga, const Troop *troop, const Player *p, char *log, size_t len) {
-    const Member *best = NULL;
+int tg_talk_target(const GameActions *ga, const Troop *troop, const Player *p) {
+    int best = -1;
     float bd = TALK_RANGE;
     for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
         const Member *m = &troop->members[k];
@@ -134,9 +134,15 @@ bool tg_try_talk(GameActions *ga, const Troop *troop, const Player *p, char *log
         if (m->status != STATUS_ACTIVE || m->health.down || n->member_id != m->id) continue;
         if (m->role != ROLE_DRUID && m->role != ROLE_GOLDSMITH) continue;
         float d = dist_xz(n->pos, p->pos);
-        if (d < bd) bd = d, best = m;
+        if (d < bd) bd = d, best = k;
     }
-    if (!best) return false;
+    return best;
+}
+
+bool tg_try_talk(GameActions *ga, const Troop *troop, const Player *p, char *log, size_t len) {
+    int k = tg_talk_target(ga, troop, p);
+    if (k < 0) return false;
+    const Member *best = &troop->members[k];
     ga->talk_member = best->id;
     ga->talk_mode = best->role == ROLE_DRUID ? TK_DRUID : TK_SMITH;
     ga->dlg.open = false; // empieza con el cursor al principio

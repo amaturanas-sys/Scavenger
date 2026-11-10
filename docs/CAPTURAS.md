@@ -20,7 +20,7 @@ Los menús usan **iconos** (siluetas del atlas [`assets/ui/iconos.png`](../asset
 
 | | |
 |---|---|
-| ![Juego](capturas/04_juego.png) | **El juego**: HUD compacto, brújula, clima y salud. |
+| ![Juego](capturas/04_juego.png) | **El juego**: la cámara cerca, detrás del personaje (`N`: media o lejos), el HUD compacto, la brújula, el clima y la salud. |
 | ![Controles](capturas/05_controles.png) | **Controles** (F1, `--controles`). |
 | ![Pausa](capturas/06_pausa.png) | **Pausa** (Esc, `--pausa`): continuar, guardar, cargar, instructivo, al título, salir. |
 | ![Guardar](capturas/07_guardar.png) | **Guardar** (`--guardar`): la minifoto es la partida al pausar. |
@@ -197,6 +197,7 @@ Ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md). Con `--e
 | ![Tiendas](capturas/kit_tienda.png) | **La tienda ligera y la choza de fieltro** (`--edificios tienda`). |
 | ![Escombros](capturas/kit_escombros.png) | **Los escombros y el muro en ruinas** (`--edificios escombros`). |
 | ![Cenizas](capturas/kit_cenizas.png) | **Las cenizas y la yurta quemada** (`--edificios cenizas`). |
+| ![Asentamientos](capturas/kit_asentamiento.png) | **Los asentamientos antiguos**: las cuatro plantas de cada región, con los muros casi a ras del suelo (`--edificios asentamiento`; los tramos de pie, en el mundo: `--ir asentamiento`). |
 | ![Estepa](capturas/kit_plaza_estepa.png) | **La capital del kanato** (`--ir plaza-estepa`). |
 | ![Bosque](capturas/kit_plaza_bosque.png) | **La capital del bosque** (`--ir plaza-bosque`). |
 | ![Altiplano](capturas/kit_plaza_altiplano.png) | **La capital del altiplano** (`--ir plaza-altiplano`). |

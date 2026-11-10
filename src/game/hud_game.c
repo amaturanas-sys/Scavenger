@@ -16,8 +16,7 @@
 
 #define VITAL_BAR 80   // px de cada barra de la placa
 #define QUICK_TILE 26  // px de cada casilla de la barra rapida
-#define COLUMN_TILE 22 // px de cada casilla de la columna
-#define COLUMN_GAP 1
+#define ORDER_TILE 22  // px de cada casilla de las ordenes a la escolta
 #define TILE_GAP 3
 
 // Lo que ocupo el HUD en el cuadro anterior: un clic (o un toque, que llega sin pasar antes por
@@ -133,6 +132,13 @@ void hud_reset(void) {
 const QbSlot *hud_slots(void) {
     if (!g_slots_set) default_slots();
     return g_slots;
+}
+
+int hud_slot_with(const char *part) {
+    if (!g_slots_set) default_slots();
+    for (int k = 0; k < HUD_QUICK_SLOTS; k++)
+        if (g_slots[k].kind == QB_ITEM && strstr(g_slots[k].id, part)) return k;
+    return -1;
 }
 
 // Para que sirve un objeto en la barra: beber, vendar, la antorcha o empuñarlo.
@@ -296,7 +302,7 @@ static void use_slot(GameActions *ga, const Props *props, const Player *p, int k
         break;
     }
     case QB_ITEM:
-        if (!has_carried(ga, props, p, s->id)) {
+        if (!has_carried(ga, props, p, s->id) && !strstr(s->id, "odre")) { // sin odre, su casilla bebe del rio o del pozo
             snprintf(log, len, T("No tienes %s."), item_label(ga, s->id));
             break;
         }
@@ -333,7 +339,8 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
         if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) g_pick_cursor = (g_pick_cursor + 8) % n;
         if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) g_pick_cursor = (g_pick_cursor + n - 8 % n) % n;
         if (g_pick_cursor >= n) g_pick_cursor = n - 1;
-        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) || IsKeyPressed(quickbar_key(g_picking))) {
+        if (input_enter_pressed() || IsKeyPressed(KEY_SPACE) || IsKeyPressed(quickbar_key(g_picking))) {
+            input_use_enter(); // ese Enter no habla con quien este cerca (KA_TALK)
             g_slots[g_picking] = opt[g_pick_cursor].s;
             snprintf(log, len, T("Casilla %d: %s."), hud_slot_number(g_picking), opt[g_pick_cursor].title);
             g_picking = -1;
@@ -445,43 +452,15 @@ void hud_load(const QbSlot *s, int n) {
     memcpy(g_slots, slots, sizeof(g_slots));
 }
 
-// ------------------------------------------------------------------ columna de acciones
-typedef enum { COL_MENU, COL_DRINK, COL_BANDAGE, COL_ACTION, COL_PACK, COL_ARROW } ColumnKind;
-typedef struct {
-    IconId icon;
-    ColumnKind kind;
-    ActionId action;
-    const char *key; // tecla (o "" si solo desde el menu o la columna)
-} ColumnEntry;
-
-static const ColumnEntry COLUMN[] = {
-    { ICON_ACCIONES, COL_MENU, 0, "Tab" },
-    { ICON_BEBER, COL_DRINK, 0, "N" },
-    { ICON_UNGUENTO, COL_BANDAGE, 0, "B" },
-    { ICON_FOGATA, COL_ACTION, ACTION_PLACE_FIRE, "" },
-    { ICON_TIENDA, COL_ACTION, ACTION_PLACE_TENT, "" },
-    { ICON_LAZO, COL_ACTION, ACTION_THROW_LASSO, "" },
-    { ICON_TREPA, COL_ACTION, ACTION_THROW_GRAPPLE, "" },
-    { ICON_HERVIR, COL_ACTION, ACTION_BOIL, "" },
-    { ICON_MOCHILA, COL_PACK, 0, "" },           // Mayus+G (no cabe en la casilla: va en la leyenda)
-    { ICON_FLECHA_ENCENDIDA, COL_ARROW, 0, "" }, // Mayus+V; solo con arco o ballesta en la mano
-};
-#define COLUMN_COUNT ((int)(sizeof(COLUMN) / sizeof(COLUMN[0])))
-
-// Con un arma que dispara flechas o virotes en la mano (se pueden encender).
-static bool arrows_in_hand(const GameActions *ga) {
-    const RangedDef *rd = hands_out(&ga->hands, HAND_RIGHT) ? ranged_def(ga->hands.right.id) : NULL;
-    return rd && (rd->projectile == PROJ_ARROW || rd->projectile == PROJ_BOLT);
-}
-
+// ------------------------------------------------------------------ ordenes a la escolta
 void hud_escort_orders(const GameActions *ga, const Troop *troop, int x, int y) {
     bool out = false;
     for (int i = 0; i < troop->count && i < TROOP_MAX && !out; i++) out = ga->npcs[i].escort && troop->members[i].status == STATUS_ACTIVE;
     if (!out) return;
     static const IconId ICONS[ORDER_COUNT] = { ICON_SOLDADO, ICON_ESCUDO, ICON_TRIBU };
-    plate(x - 3, y - 3, ORDER_COUNT * (COLUMN_TILE + TILE_GAP) - TILE_GAP + 6, COLUMN_TILE + 6);
+    plate(x - 3, y - 3, ORDER_COUNT * (ORDER_TILE + TILE_GAP) - TILE_GAP + 6, ORDER_TILE + 6);
     for (int k = 0; k < ORDER_COUNT; k++) {
-        Rectangle r = { (float)(x + k * (COLUMN_TILE + TILE_GAP)), (float)y, COLUMN_TILE, COLUMN_TILE };
+        Rectangle r = { (float)(x + k * (ORDER_TILE + TILE_GAP)), (float)y, ORDER_TILE, ORDER_TILE };
         hover(r);
         bool h = ui_tile(r, ICONS[k], ga->escort_order == k, true);
         ui_tile_badge(r, TextFormat("%d", k + 1), UI_GOLD_LIGHT);
@@ -491,47 +470,5 @@ void hud_escort_orders(const GameActions *ga, const Troop *troop, int x, int y) 
                       : k == ORDER_DEFEND ? T("Y+2: se quedan a tu lado y paran a quien se te acerque.")
                                           : T("Y+3: te siguen sin pelear."));
         if (ui_click(r)) ga_request_escort_order(k);
-    }
-}
-
-void hud_action_column(const GameActions *ga, int x, int y) {
-    const ColumnEntry *shown[COLUMN_COUNT];
-    int n = 0;
-    for (int i = 0; i < COLUMN_COUNT; i++)
-        if (COLUMN[i].kind != COL_ARROW || arrows_in_hand(ga)) shown[n++] = &COLUMN[i];
-    plate(x - 3, y - 3, COLUMN_TILE + 6, n * (COLUMN_TILE + COLUMN_GAP) - COLUMN_GAP + 6);
-    for (int i = 0; i < n; i++) {
-        const ColumnEntry *e = shown[i];
-        Rectangle r = { (float)x, (float)(y + i * (COLUMN_TILE + COLUMN_GAP)), COLUMN_TILE, COLUMN_TILE };
-        bool busy = ga->doing >= 0 && e->kind == COL_ACTION;
-        bool selected = e->kind == COL_MENU ? ga->menu_open : e->kind == COL_ACTION && ga->doing == (int)e->action;
-        bool usable = e->kind == COL_ARROW ? ga->fire_near && !ga->raining : !busy || selected;
-        hover(r);
-        bool h = ui_tile(r, e->icon, selected, usable);
-        if (e->key[0]) ui_tile_badge(r, e->key, UI_GOLD_LIGHT);
-        if (h) {
-            const char *title = e->kind == COL_MENU      ? T("Acciones, obras y fabricar")
-                                : e->kind == COL_DRINK   ? T("Beber")
-                                : e->kind == COL_BANDAGE ? T("Vendar")
-                                : e->kind == COL_PACK    ? T("Mochila")
-                                : e->kind == COL_ARROW   ? T("Encender la flecha")
-                                                         : T(action_def(e->action)->name);
-            const char *detail = e->kind == COL_MENU      ? T("Tab: el menú de acciones, obras, fabricar y reparar.")
-                                 : e->kind == COL_DRINK   ? T("N: bebe lo más seguro que tengas, o del río en la orilla.")
-                                 : e->kind == COL_BANDAGE ? T("B: venda tus heridas (o levanta a un compañero abatido).")
-                                 : e->kind == COL_PACK    ? T("Mayús+G: deja la mochila en el suelo para moverte ligero, o recógela.")
-                                 : e->kind == COL_ARROW   ? T("Mayús+V: enciende la flecha en un fuego cercano (no con lluvia).")
-                                                          : T(action_def(e->action)->desc);
-            ui_legend(title, detail);
-        }
-        if (!ui_click(r)) continue;
-        switch (e->kind) {
-        case COL_MENU: ga_quick_request_menu(); break;
-        case COL_DRINK: wg_request_drink(); break;
-        case COL_BANDAGE: cb_request_bandage(); break;
-        case COL_PACK: ig_request_pack(); break;
-        case COL_ARROW: cb_request_light_arrow(); break;
-        default: ga_quick_request_action(e->action); break;
-        }
     }
 }

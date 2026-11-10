@@ -1,7 +1,8 @@
 // El agua en el juego (src/sim/water.h):
-//  - N bebe lo mas seguro que tengas a mano (hervida, agua con vino, airag, cerveza, leche,
-//    vino; la cruda al final); en la orilla, sin nada, bebe del rio (con riesgo);
-//  - Mayus+N toma hierbas contra los espiritus malditos;
+//  - la casilla del odre en la barra rapida (3 de serie) bebe lo mas seguro que tengas a mano
+//    (hervida, agua con vino, airag, cerveza, leche, vino; la cruda al final); en la orilla o junto a
+//    un pozo llena el odre si le queda lugar, y si no bebe de alli (del rio, con riesgo);
+//  - B (vendar), sin heridas, toma hierbas contra la fiebre de los espiritus malditos;
 //  - el calor da mas sed; enfermo, fiebre; borracho, torpe, fatigado y se tambalea;
 //  - con la sed a cero se desmaya y la tribu lo lleva al campamento;
 //  - cada dia la tribu bebe del acopio o del rio (hervida si hay leña).
@@ -31,8 +32,11 @@ bool wg_at_well(const Terrain *t, float x, float z);
 // que vadean o nadan a menos de 70 m, los mas cercanos primero, para terrain_set_ripples (x, z, radio, cuanta).
 int wg_ripples(const GameActions *ga, const Troop *troop, const Combat *cb, const Player *p, const Terrain *t, Vector4 *out, int max);
 // Sed, borrachera y enfermedad bajo la salud (alineado a la derecha).
-void wg_request_drink(void); // como pulsar N (desde el HUD)
-void wg_request_odre(void);  // la casilla del odre: junto al agua lo llena (ACTION_FILL_WATER), si no bebe
+void wg_request_drink(void); // una casilla de la barra rapida con algo de beber (vino, airag...): lo mas seguro
+void wg_request_odre(void);  // la casilla del odre: junto al agua, si le queda lugar, lo llena (ACTION_FILL_WATER); si no, bebe
+// Con la fiebre de los espiritus del agua, toma hierbas (o ungüento) y devuelve true (sin hierbas lo dice);
+// sin fiebre, false (B sigue: no hay heridas que vendar).
+bool wg_take_herbs(GameActions *ga, const Props *props, const Player *p, char *log, size_t len);
 void wg_draw_hud(const GameActions *ga, int right_x, int y);
 
 #endif

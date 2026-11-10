@@ -42,6 +42,8 @@ void hud_reset(void); // las casillas de serie (partida nueva)
 const QbSlot *hud_slots(void); // las casillas, para guardarlas (src/game/save_game.c)
 // El numero de la casilla en su tecla: 1..9 y, la decima, 0.
 int hud_slot_number(int slot);
+// La primera casilla de la barra con un objeto cuyo id lleva part ("odre"), o -1.
+int hud_slot_with(const char *part);
 // Asigna un objeto (el elegido en el inventario, Tab + numero) a esa casilla. false si no tiene uso en la
 // barra (beber, vendar, la antorcha, empuñar, el lazo, la trepa o la silla).
 bool hud_assign_item(const GameActions *ga, int slot, const char *id);
@@ -54,8 +56,6 @@ void hud_open_picker(int slot); // 0..8 (prueba: --selector N)
 void hud_draw_picker(GameActions *ga, const Props *props, const Player *p, int w, int h);
 // Una partida cargada: sus n casillas (NULL o dañadas: las de serie).
 void hud_load(const QbSlot *s, int n);
-// Columna de acciones (borde izquierdo): dibuja y atiende los clics o toques.
-void hud_action_column(const GameActions *ga, int x, int y);
 // Ordenes a la escolta (atacar, defender, seguir), solo con la escolta fuera: tres casillas en
 // fila desde (x, y). Lo mismo que Y+1..3.
 void hud_escort_orders(const GameActions *ga, const Troop *troop, int x, int y);
