@@ -825,7 +825,8 @@ static void kit_parse(const char *arg, int *type, int *region) {
 
 // Donde va cada uno: las variantes a lo largo de x, las regiones (filas) a lo largo de z.
 static Vector3 kit_spot(const Terrain *t, int type, int row, int variant) {
-    float sp = type == BK_RUIN_FORT || type == BK_RUIN_CITY ? 34.0f
+    float sp = type == BK_RUIN_TOWN                         ? 52.0f // la planta, de 44 m
+             : type == BK_RUIN_FORT || type == BK_RUIN_CITY ? 34.0f
              : type == BK_PALACE || type == BK_GATE         ? 24.0f
              : type == BK_BARRACKS                          ? 18.0f
              : type == BK_CORRAL                            ? 14.0f
@@ -1753,8 +1754,9 @@ int main(int argc, char **argv) {
         rlSetClipPlanes(RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
         if (kit_type >= 0) { // el nombre de cada fila (region) y lo que se ve
             ui_strip((Rectangle){ 0, 0, (float)VIRTUAL_W, 30 }, UI_METAL_GOLD);
-            const char *what = kit_type >= BK_SHELTER ? T("Kit de edificios: %s · las obras de la tribu sin modelo: 0 y 1, las chicas; 2 y 3, las grandes")
-                             : kit_type == BK_RUIN_FORT || kit_type == BK_RUIN_CITY ? T("Kit de edificios: %s · cuatro ruinas, una por sitio")
+            bool ruins = kit_type == BK_RUIN_FORT || kit_type == BK_RUIN_CITY || kit_type == BK_RUIN_TOWN;
+            const char *what = kit_type >= BK_SHELTER && !ruins ? T("Kit de edificios: %s · las obras de la tribu sin modelo: 0 y 1, las chicas; 2 y 3, las grandes")
+                             : ruins ? T("Kit de edificios: %s · cuatro ruinas, una por sitio")
                                                                                      : T("Kit de edificios: %s · variantes 0 y 1, chicas (aldeas y tribus); 2 y 3, grandes (capitales)");
             ui_text(TextFormat(what, kit_region >= 0 ? T(bk_name((BkType)kit_type, (Region)kit_region)) : T(KIT_NAMES[kit_type])), 6, 7, 10, UI_GOLD_LIGHT);
             for (int row = 0; row < (kit_region >= 0 ? 1 : REGION_COUNT); row++) {

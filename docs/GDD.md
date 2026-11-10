@@ -411,7 +411,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   | Grande | 40 kg | 28 | ×0,9, aun vacía |
 
   - Se cambia de mochila con `U` sobre otra en el inventario; lo que llevas tiene que caber.
-  - `Mayús+G` (o la casilla de la columna) la deja en el suelo y la recoge al momento: útil para pelear más ligero.
+  - `Mayús+G` la deja en el suelo y la recoge al momento: útil para pelear más ligero.
   - Junto a la carreta, o a una mula, burro, camello, caballo o buey ensillado, `Mayús+G` la carga en ellos; la mochila sigue al animal o al carro.
 - **La gente también lleva mochila** (`Member.pack`, `Member.bag`):
   - las de la escolta que está al lado son contenedores en el inventario;
@@ -465,7 +465,7 @@ Todas las acciones las puede hacer el jugador y también los NPCs (la IA que las
   - **levantar:** el guardián desarma las viviendas portátiles (yurta común, yurta del jefe, tienda ligera y choza de fieltro) y las cuenta en `CampSite.load`. El campamento queda en marcha (`migrating`) y no cuenta para `camp_at`, `camp_nearest` ni la distancia mínima. Las obras fijas quedan en el sitio viejo;
   - **la columna:** la gente que está en el campamento pasa a escolta, sin obra, trabajo ni guardia; las salidas siguen y, al volver, alcanzan la columna. El rebaño sigue al jugador desde más lejos (`CARAVAN_RANGE` 60 m, lo pierde a 90 m) aunque esté quieto;
   - **en marcha:** el acopio es el de la columna (el inventario lo muestra, de ahí comen la escolta y la columna, y el agua se busca donde va el jugador). En el sitio viejo ya no hay asaltos, descanso, cría ni faenas de los pastores. Si el jugador se desmaya, la columna lo atiende donde está. Si muere toda la columna, la caravana se pierde con su carga;
-  - **plantar:** `F` junto al guardián, en seco, sin mucha pendiente y a más de 70 m de los demás. Las viviendas se arman en corros de 8 (a 12 m, la segunda vuelta a 18 m), con la puerta hacia el fogón que encienden si no hay uno. La gente vuelve a sus casas alrededor del fuego y el rebaño cercano pasta allí. Lo que no cabe sigue cargado. Si es el campamento inicial, su fuego pasa a ser el nuevo (calor, abrigo, adonde te llevan al desmayarte) y sus yurtas de origen ya no están.
+  - **plantar:** `Enter` junto al guardián, en seco, sin mucha pendiente y a más de 70 m de los demás. Las viviendas se arman en corros de 8 (a 12 m, la segunda vuelta a 18 m), con la puerta hacia el fogón que encienden si no hay uno. La gente vuelve a sus casas alrededor del fuego y el rebaño cercano pasta allí. Lo que no cabe sigue cargado. Si es el campamento inicial, su fuego pasa a ser el nuevo (calor, abrigo, adonde te llevan al desmayarte) y sus yurtas de origen ya no están.
 - **Pastos de cada estación** (v0.7.2, `pasture_quality`): un valor entre 0,1 y 1,2 por región y estación.
 
   | Región | Primavera | Verano | Otoño | Invierno |

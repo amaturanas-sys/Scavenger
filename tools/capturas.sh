@@ -68,7 +68,7 @@ montage "$OUT"/cueva_{boca_forajidos,habitada,prisionero,oscura}.png -tile 2x2 -
     echo "  las_cuevas.png"
 # El mundo (docs/MUNDO.md): a pie en cada sitio (verano, mediodia) y la vista orbital.
 for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida tribu rival kurgan caravasar ovoo ciudad \
-         lago desborde cascada lengua; do
+         asentamiento lago desborde cascada lengua; do
     shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.12
 done
 mkdir -p "$ROOT/docs/mundo"
@@ -118,7 +118,7 @@ montage "$OUT"/borde_{muro_canal,muro_lejos,tiburon,playa}.png -tile 2x2 -geomet
 # El kit de edificios (docs/ARQUITECTURA_EDAD_DEL_HIERRO.md): las variantes de cada tipo en cada region
 # (la muralla, las ruinas y las obras de la tribu tambien) y las plazas de las cinco capitales, desde arriba.
 for k in casa palacio fundicion cuartel carpinteria granero templo carreta muralla torre puerta fortaleza enterrada \
-         refugio empalizada muro horno horno_fundicion atalaya corral taller tienda escombros cenizas; do
+         refugio empalizada muro horno horno_fundicion atalaya corral taller tienda escombros cenizas asentamiento; do
     shot "kit_$k" 60 --edificios "$k"
 done
 # La puerta acodada en el asedio: desde el patio del antemuro, y la guarnicion que sale.

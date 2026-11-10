@@ -90,22 +90,24 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Sigilo; junto a un tronco, una roca o un muro, a cubierto | C (moverte o C otra vez te saca) | Click stick derecho |
 | Agacharse (más bajo y lento) | X | — |
 | Saltar | Espacio | A |
-| Cámara | Q / E, clic derecho + arrastrar, rueda | — |
+| Cámara | Q / E, clic derecho + arrastrar, rueda; N: cerca (de serie, sobre el hombro), a media distancia o lejos (Mayús+N, la anterior) | — |
 | Marcar sitio de interés / de peligro | M / Shift+M | — |
 | Menú de acciones, obras, fabricar y reparar | Tab (flechas + Enter; Q/E cambia de pestaña) | — |
 | Empuñar / enfundar (barra rápida) | 1 a 9 y 0: cada casilla saca o guarda lo suyo (de serie, 1 la espada, 2 el escudo, 3 el odre); Mayús+número: a la otra mano; Alt+número: elegir qué va | — |
-| Interactuar: hablar, tomar, botín, pozo, horno, rescatar, animales; junto a la boca de una cueva, explorarla | F (Mayús+F: todo lo cercano, o sacrificar junto al ganado) | — |
+| Interactuar con las cosas: tomar, botín, pozo, horno, rescatar, animales, saquear; junto a la boca de una cueva, explorarla | F (Mayús+F: todo lo cercano, o sacrificar junto al ganado) | — |
+| Hablar y comerciar: el guardián, el druida, el orfebre, los prisioneros, una tribu, una aldea, una capital, una caravana | Enter (la pista lo dice cuando hay alguien al alcance) | — |
 | Lanzar lo que llevas en brazos | T | — |
 | Agarrar por la espalda (rehén) | G | — |
 | Escolta: llamar o despedir / órdenes | Y / Y+1 atacar, Y+2 defender, Y+3 seguir (o las casillas sobre la barra rápida) | — |
-| Mochila (dejarla o recogerla) | Mayús+G (o la columna del HUD) | — |
+| Mochila (dejarla o recogerla) | Mayús+G | — |
 | Ficha del gran guerrero | U | — |
 | Montar / desmontar | R | — |
 | Inventario (bolsillos, mochila, alforjas, carreta, campamento) | I (con algo elegido, un número, o un toque en la fila de abajo, lo pone en esa casilla de la barra) | — |
 | Objetivo siguiente / anterior | O / Mayús+O; un clic corto, derecho / izquierdo (o un toque); Ctrl+E / Ctrl+Q; Ctrl sola: elegir o soltar | — |
-| Entrar en una cueva | F junto a la boca: se carga aparte (adentro, F toma, enciende y libera; se sale caminando por la boca) | — |
+| Entrar en una cueva | F junto a la boca: se carga aparte (adentro, F toma y enciende, y Enter habla con los prisioneros; se sale caminando por la boca) | — |
 | Esconderse | agachado (X) tras rocas o matas; con sigilo (C) o agachado, en la hierba alta | — |
-| Beber / tomar hierbas contra los espíritus del agua | N / Mayús+N | — |
+| Beber / llenar el odre | la casilla del odre en la barra rápida (3 de serie): junto al agua o a un pozo lo llena si le queda lugar; si no, bebe | — |
+| Tomar hierbas contra los espíritus del agua | B, sin heridas que vendar | — |
 | Vista orbital del mundo | F5 o Ctrl+M (flechas: girar e inclinar) | — |
 | Pausa / controles | Esc, Atrás o Ctrl+P / F1 o Ctrl+H | — |
 | Diagnóstico (OpenGL, teclado, assets) | Ctrl+D | — |
@@ -119,7 +121,7 @@ La escolta y la guardia:
 
 Pruebas: `--escolta [atacar|defender|seguir]`, `--guardias` (dos soldados de guardia), `--asalto`.
 
-La tribu (`F` junto al guardián → **Pobladores**): la gente del campamento con su oficio, salud, ánimo y tarea. Elige a uno o dos y dales una tarea:
+La tribu (`Enter` junto al guardián → **Pobladores**): la gente del campamento con su oficio, salud, ánimo y tarea. Elige a uno o dos y dales una tarea:
 - **Salidas** (se van y no se los ve hasta que vuelven): buscar reclutas, explorar recursos (marcan en el mapa agua, pastos, campamentos rivales y ciudadelas) y cazar (carne, pieles, huesos, tendones y grasa, según la región y la estación).
 - **En el campamento:** pastorear (el ganado come y bebe y da leche; con dos pastores se pierden menos animales) y guardia (un turno haciendo la ronda).
 - Acompañados, y si saben el oficio, corren menos riesgo y rinden más. Al volver cuentan qué pasó: en el registro y en la ventana («Informes»).
@@ -146,7 +148,7 @@ Combate de cuatro botones, como en las hojas del sistema táctico (v0.12.0, [doc
 - **La espalda:** por detrás los enemigos solo te oyen (en sigilo o agachado casi nada). A menos de 2 m de la espalda de uno que no te vio (o aturdido) aparece una daga sobre él: `H` lo mata en silencio (solo lo oyen los que están a menos de 6 m) y `G` lo toma de rehén.
 - **Rehén:** te cubres con él; los suyos no se acercan y no disparan si los tapa (si disparan, fallan más). Vas lento y con una sola mano. `G` lo toma o lo suelta, `H` lo ejecuta y `J` lo empuja; un golpe fuerte te lo quita.
 - **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar. El abatido despierta a los 30-90 s, herido, y huye a avisar a los suyos. Junto a él, `F` lo toma prisionero y `H` lo remata (a la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran).
-- **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+V` encender la flecha junto a un fuego (o la casilla de la columna) · `P` equipo · `I` inventario · `Tab` menú de acciones · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
+- **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+V` encender la flecha junto a un fuego · `P` equipo · `I` inventario · `Tab` menú de acciones · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
 
 Combate montado: a caballo se golpea con el arma (`H`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo. Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
 
@@ -261,6 +263,31 @@ Las casas y los campos por persona (v0.10.4 y v0.10.7):
 El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo anterior y `Ctrl+E` al siguiente, además de `Tab` y `Mayús+Tab` (desde la v0.12.0, `O` y `Mayús+O`). La v0.10.6 no cambió el juego (solo la documentación de la tubería de modelos de la v0.9.3).
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
+
+La cámara cerca, `F` y `Enter` (v0.14.0):
+- **La cámara, cerca:** de serie va detrás del personaje, a la altura de su cabeza: se lo ve de la cabeza a las rodillas,
+  y adelante el paisaje. `N` pasa a media distancia y a lejos (`Mayús+N`, la anterior); la vista elegida queda para la
+  próxima partida. A caballo sube y se aleja. Con una yurta, una casa, una muralla o una ruina detrás, sube por encima o
+  se acerca en vez de meterse adentro. Para las pruebas, `--vista cerca|media|lejos`.
+- **`F` para las cosas, `Enter` para la gente:** `F` toma, recoge botín, saca agua, usa el horno, rescata, atiende a los
+  animales, saquea y explora una cueva; `Enter` habla con el guardián, el druida, el orfebre y los prisioneros, y
+  comercia. Con alguien al alcance, la pista lo dice; `F` junto a alguien avisa que es con `Enter`.
+- **Sin la columna de acciones:** lo que tenía está en `Tab`, en la barra rápida o en su tecla. Beber y llenar el odre
+  van en su casilla (`3`); las hierbas contra la fiebre del agua, en `B` cuando no hay heridas que vendar.
+- **El arma en la mano:** sigue al antebrazo (con su modelo, si lo tiene); guardada, cuelga del cinto, y el escudo
+  guardado va a la espalda.
+
+Las estructuras de voxeles y los modelos (v0.14.0):
+- **Voxeles desde las hojas del usuario** (`tools/voxeles`): tres vistas, un splat de Idol o un GLB, a `.vox`, que el
+  juego lee (`--vox`). Armados a mano, con la distribución y el color de su hoja: el templo del culto, la forja
+  portátil, la piedra-ciervo y sus dos estelas, la atalaya de madera, el muro en ruinas, la carreta, el carro de la
+  yunta, la puerta fortificada de 24 m, el pino, el roble y el sauce llorón. Las caras planas se juntan en rectángulos
+  (el templo pasa de 16 708 a 4646 triángulos).
+- **Los asentamientos antiguos:** los vestigios de pueblos de otros tiempos, como en las excavaciones: un palacio con su
+  patio y casas de dos a cinco cuartos separadas por calles, con los muros casi a ras del suelo y unos pocos tramos de
+  pie. Aparecen solos en el mundo, de uno a tres por región (`--ir asentamiento`, `--edificios asentamiento`).
+- **Personas, animales y armas al estilo PS2** (`tools/modelos/piezas.py`): pocas caras y la textura de su hoja. Los
+  animales, al tamaño de los ejemplares más grandes de su especie.
 
 Las cuevas grandes (v0.14.0), la base del plan de [docs/PLAN_CUEVAS_GRANDES.md](docs/PLAN_CUEVAS_GRANDES.md):
 - **Explorar:** junto a la boca, `F` (o un toque en el aviso). La cueva se carga aparte, con «Explorando la cueva...» en
@@ -390,7 +417,7 @@ Botín: los enemigos abatidos dejan una bolsa (su arma, su escudo, flechas, comi
 
 Mochilas:
 - **Tamaños:** pequeña (15 kg, 12 huecos), mediana (25 kg, 18) o grande (40 kg, 28). La grande frena aun vacía.
-- **`Mayús+G` (o la casilla de la columna):** deja la mochila (en la carreta o en el lomo de una mula, burro, camello, caballo o buey ensillado si están al lado; si no, en el suelo) y la recoge. Sin ella vas más ligero para pelear.
+- **`Mayús+G`:** deja la mochila (en la carreta o en el lomo de una mula, burro, camello, caballo o buey ensillado si están al lado; si no, en el suelo) y la recoge. Sin ella vas más ligero para pelear.
 - **`U` sobre una mochila en el inventario:** cambias de mochila (lo que llevas tiene que caber).
 - **La escolta lleva mochila:** las de quien esté a tu lado aparecen como contenedores en el inventario. Al disolver un campamento, la gente carga lo que quepa.
 
@@ -404,7 +431,7 @@ Campamentos:
 - **Fundar:** al levantar una tienda (`L`, «Instalar tienda») o un refugio lejos (más de 70 m) de los demás campamentos, nace uno nuevo. Hay que nombrar guardián a alguien de la escolta, que se queda a administrarlo.
 - **Lo propio de cada campamento:** su acopio y su gente. Las obras las levantan los del lugar; fuera de todo campamento, la escolta.
 - **Ubicar una obra:** al elegirla (`L` → Obras, o el guardián), la cámara sube sobre el campamento. La obra sigue al puntero, al dedo o a `WASD`; `Q`/`E` la giran, `Mayús` la alinea a una rejilla de 2 m. Verde: el sitio vale; rojo: no, y abajo dice por qué (fuera del campamento, en el agua, demasiado empinado o encima de algo). `Enter` o un clic sobre ella la coloca; `Esc` cancela sin gastar. Las cercas y los muros se marcan de un extremo al otro y se levantan por tramos de 4 m. Prueba: `--ubicar refugio|empalizada|muro|hoguera|totem|horno|bronce|acero|torre|corral|adobe|cabana|choza|taller`.
-- **El guardián (`F` junto a él):**
+- **El guardián (`Enter` junto a él):**
   - ordenar obras con el acopio del campamento;
   - elegir quién sale de escolta;
   - reclutar gente nueva: alguien sale a buscarla con comida;
@@ -420,7 +447,7 @@ Migrar (v0.7.2):
 - **Levantar el campamento (el guardián, «Migrar»):** desarman las yurtas, las tiendas y las chozas de fieltro y las cargan con el acopio. Las demás obras (pozos, hornos, corrales, cercas) quedan donde estaban.
 - **La columna:** la gente del campamento te sigue como escolta, y el rebaño también, desde más lejos (hasta 60 m) y aunque estés quieto. Los que estaban de salida vuelven a la columna; los que despaches allí la alcanzan.
 - **En marcha:** el acopio va con la columna. Lo usas desde el inventario, y de él comen la escolta y la columna. Si te desmayas, la columna te atiende ahí mismo. Si muere toda la columna, la caravana se pierde con su carga.
-- **Plantarlo:** `F` junto al guardián, en un sitio seco y llano a más de 70 m de los demás campamentos. Las viviendas se arman en corro alrededor de un fogón, con la puerta hacia él, y la gente y el rebaño se quedan. Si es el campamento inicial, el fuego de la tribu pasa a ser ese fogón: ahí te llevan si te desmayas.
+- **Plantarlo:** `Enter` junto al guardián, en un sitio seco y llano a más de 70 m de los demás campamentos. Las viviendas se arman en corro alrededor de un fogón, con la puerta hacia él, y la gente y el rebaño se quedan. Si es el campamento inicial, el fuego de la tribu pasa a ser ese fogón: ahí te llevan si te desmayas.
 - **Los pastos de cada estación:** el pasto rinde según la región y la estación. La estepa rinde en primavera (y algo en otoño), las montañas en verano y el desierto en invierno. Con buen pasto, cada pastor junta 1 o 2 de forraje por día; con poco, el ganado del campamento pasa hambre. Al cambiar la estación, el guardián avisa en sus informes si conviene migrar.
 
 Pruebas: `--hablar guardian`, `--fundar`, `--migrar marcha|plantar` (`plantar`: lo lleva 170 m y lo planta).
@@ -430,7 +457,7 @@ Oficios, comercio y saqueo:
 - **Fabricar a mano (`L`, Fabricar):** cuero (2 pieles), silla de montar, brida, alforjas, aljaba, casco, brazales y grebas laminares de cuero; puntas y flechas de hueso, peine, piezas de arco (hueso y tendón) y el arco compuesto; velas, antorchas, queso seco, fieltro, madera labrada y adobe.
 - **Obras duraderas:** casa de adobe, cabaña de troncos y choza de fieltro. Abrigan a más gente que un refugio y se desgastan menos (el adobe, como la piedra).
 - **El valor:** todo se mide en plata, la moneda (50 g la unidad). El estado del guardián y el inventario dicen cuánto vale el acopio, y la leyenda de cada objeto, cuánto vale uno.
-- **Comerciar (`F`):** junto a una tribu amiga o neutral, una aldea, una capital, un caravasar o una caravana (abajo aparece «F: comerciar con...»). Vendes lo que llevas encima, en las alforjas, en la carreta o en las mochilas de la escolta (`Mayús`: todo de una vez) y compras lo suyo (`Mayús`: cinco). Cada mercado vende lo propio y lo de su región; lo que abunda en la región vale menos (×0,7) y lo que escasea, más (×1,5). Te pagan el 80 % del valor y te cobran el 125 %.
+- **Comerciar (`Enter`):** junto a una tribu amiga o neutral, una aldea, una capital, un caravasar o una caravana (abajo aparece «Enter: comerciar con...»). Vendes lo que llevas encima, en las alforjas, en la carreta o en las mochilas de la escolta (`Mayús`: todo de una vez) y compras lo suyo (`Mayús`: cinco). Cada mercado vende lo propio y lo de su región; lo que abunda en la región vale menos (×0,7) y lo que escasea, más (×1,5). Te pagan el 80 % del valor y te cobran el 125 %.
 - **Caravanas:** van y vuelven, al paso de los camellos, entre cada caravasar y la capital más cercana, con dos jinetes de escolta; se detienen a comerciar. **Asaltarla** baja 10 la relación con el reino: su escolta (dos jinetes, un bandido y un arquero) pelea y, vencida, la carga queda en el suelo (seda, especias, vino, plata, oro y una turquesa). La caravana vuelve a salir de su caravasar a los dos días.
 - **Saquear:** un campamento rival cuyos guerreros ya salieron al paso se saquea con `F` junto a su fuego si no queda nadie en pie a 40 m: cuero, fieltro, carne seca, pieles y plata. Se rearma al alejarte 600 m.
 
@@ -475,8 +502,8 @@ Pruebas: `--semilla N` fija el mundo; `--ir lugar` lleva a `estepa`, `meandro`, 
 
 El agua:
 - **La sed** baja con el tiempo, más con calor y corriendo. Con sed vas más lento y te cansas; con la sed a cero te desmayas y la tribu te lleva al campamento a beber.
-- **`N` bebe** lo más seguro que tengas a mano: agua hervida, agua con vino, airag, cerveza, leche, vino y, al final, agua cruda. En la orilla, sin nada, bebes del río.
-- **Espíritus malditos:** el agua que corre por los suelos (ríos, lagos) puede traerlos, más con calor. Se incuban uno o dos minutos y luego dan fiebre: más lento, más sed, te cansas. Se van solos en unos minutos (antes descansando); las hierbas (`Mayús+N`) los cortan.
+- **La casilla del odre** (`3` de serie) **bebe** lo más seguro que tengas a mano: agua hervida, agua con vino, airag, cerveza, leche, vino y, al final, agua cruda. En la orilla o junto a un pozo llena el odre si le queda lugar; lleno (o sin odre), bebes de allí.
+- **Espíritus malditos:** el agua que corre por los suelos (ríos, lagos) puede traerlos, más con calor. Se incuban uno o dos minutos y luego dan fiebre: más lento, más sed, te cansas. Se van solos en unos minutos (antes descansando); las hierbas (`B`, sin heridas que vendar) los cortan.
 - **Hervir el agua los elimina** (`L`, «Hervir agua», junto a un fuego, una leña). El alcohol también: la cerveza, el vino, el airag y el agua con vino son seguros. «Llenar el odre» en la orilla da agua cruda (3 tragos por odre).
 - **El exceso de alcohol** emborracha: torpe (menos daño y peor puntería), fatigado y te tambaleas al andar. Se pasa con el tiempo.
 - **Fabricar:** agua con vino (2 de agua y 1 de vino), airag (2 de leche) y cerveza de pan. El vino y la cerveza también salen del botín de jinetes y bandidos.
@@ -485,11 +512,11 @@ El agua:
 
 Tatuajes, joyas y nivel:
 - **Nivel:** subes peleando, cazando, fabricando, construyendo y domando.
-- **Tatuajes:** `F` junto al druida (Ulagan, en el campamento).
+- **Tatuajes:** `Enter` junto al druida (Ulagan, en el campamento).
   - Son permanentes: eliges motivo (lobo, ciervo, grifo, tamga, olas), grado (I, II, III; el III se bifurca en dos ramas que se excluyen) y zona del cuerpo.
   - La zona cambia a qué atributo va el bonus y cuánto pesa.
   - Tinta: carbón y hierbas (y miel en el tercer grado).
-- **Joyas:** el orfebre (Altani, `F`) hace anillos (dos por mano), brazaletes, collar, aretes y hebilla.
+- **Joyas:** el orfebre (Altani, `Enter`) hace anillos (dos por mano), brazaletes, collar, aretes y hebilla.
   - Se hacen con metal (bronce, plata, oro: la potencia) y una piedra (el efecto).
   - Sin encantar no hacen nada: el druida las encanta con un efecto pasivo (un atributo) o activo (una habilidad), por hierbas y miel.
 - **Piedras y metales:**
@@ -555,4 +582,7 @@ La clave de desarrollo es solo para builds de prueba. Para publicar en Google Pl
 ./build/estepa --ir boca-abandonada --explorar                     # F en la boca: «Explorando la cueva...» y adentro
 ./build/estepa --cueva tribu:pasillo3 --antorcha                   # a la mitad de un pasillo, con sus vueltas
 ./build/estepa --cueva forajidos:dialogo --antorcha                # adentro, ante un prisionero (--cueva-f: romper las cadenas)
+./build/estepa --vista media                                       # la cámara a media distancia (cerca, media o lejos; N en el juego)
+./build/estepa --ir asentamiento --vista lejos                     # los vestigios de un asentamiento antiguo
+./build/estepa --edificios asentamiento                            # sus cuatro variantes de planta en cada región
 ```

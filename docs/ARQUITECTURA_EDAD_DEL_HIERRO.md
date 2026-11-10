@@ -244,6 +244,9 @@ Van al estilo de la estepa, porque la tribu es nómada:
 - **Las viviendas:** la tienda ligera y la choza de fieltro. La casa de adobe (del desierto), la
   cabaña de troncos (del bosque) y la yurta del jefe van a su tamaño.
 - **Lo que queda de ellas:** los escombros, el muro en ruinas, las cenizas y la yurta quemada.
+- **Los asentamientos antiguos** (v0.14.0, `BK_RUIN_TOWN`): la planta de `src/sim/ancient.c` en voxeles de 0,25 m, con
+  el zócalo de piedra, el ladrillo y el barro, los muros casi a ras del suelo, sus brechas y los escombros con pasto;
+  los tramos de pie son el muro en ruinas del inventario, que pone `src/game/world_game.c`.
 - En cuanto llega el modelo de una (la tubería de modelos, `tools/modelos`), se usa el modelo.
 
 | | |
@@ -257,7 +260,7 @@ Van al estilo de la estepa, porque la tribu es nómada:
 
 **Para mirarlo:**
 - `--edificios` con muralla, torre, puerta, fortaleza, enterrada, refugio, empalizada, muro, horno,
-  horno_fundicion, atalaya, corral, taller, tienda, escombros o cenizas. Lo que es de una sola región
+  horno_fundicion, atalaya, corral, taller, tienda, escombros, cenizas o asentamiento. Lo que es de una sola región
   (la ciudad enterrada y las obras de la tribu) se ve en una fila.
 - `--ver <id>` muestra una obra de cerca, como en el juego.
 - `--asedio puerta` y `--asedio salida` muestran la puerta acodada en el asedio.
