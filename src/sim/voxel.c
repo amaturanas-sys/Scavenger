@@ -108,6 +108,63 @@ bool vox_refine(VoxGrid *g) {
     return true;
 }
 
+bool vox_downsample(const VoxGrid *src, int f, int need, VoxGrid *out) {
+    memset(out, 0, sizeof(*out));
+    if (f < 1 || !src->m) return false;
+    if (!vox_init(out, (src->nx + f - 1) / f, (src->ny + f - 1) / f, (src->nz + f - 1) / f, src->size * (float)f)) return false;
+    for (int y = 0; y < out->ny; y++)
+        for (int z = 0; z < out->nz; z++)
+            for (int x = 0; x < out->nx; x++) {
+                int count[256] = { 0 }, full = 0, best = 0;
+                for (int dy = 0; dy < f; dy++)
+                    for (int dz = 0; dz < f; dz++)
+                        for (int dx = 0; dx < f; dx++) {
+                            uint8_t v = vox_get(src, x * f + dx, y * f + dy, z * f + dz);
+                            if (v) count[v]++, full++;
+                        }
+                if (full < need || !full) continue;
+                for (int v = 1; v < 256; v++)
+                    if (count[v] > count[best]) best = v;
+                out->m[idx(out, x, y, z)] = (uint8_t)best;
+            }
+    out->jitter = src->jitter, out->on_ground = src->on_ground, out->merge = src->merge;
+    return true;
+}
+
+bool vox_paint_hidden(VoxGrid *g) {
+    size_t n = (size_t)g->nx * (size_t)g->ny * (size_t)g->nz;
+    if (!g->m || !n) return true;
+    int *queue = malloc(n * sizeof(int));
+    uint8_t *seen = calloc(n, 1);
+    if (!queue || !seen) {
+        free(queue), free(seen);
+        return false;
+    }
+    static const int D[6][3] = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+    size_t head = 0, tail = 0;
+    for (int y = 0; y < g->ny; y++) // las de afuera: con alguna vecina vacia (o fuera de la rejilla)
+        for (int z = 0; z < g->nz; z++)
+            for (int x = 0; x < g->nx; x++) {
+                int i = idx(g, x, y, z);
+                if (!g->m[i]) continue;
+                bool out = false;
+                for (int f = 0; f < 6 && !out; f++) out = !vox_get(g, x + D[f][0], y + D[f][1], z + D[f][2]);
+                if (out) seen[i] = 1, queue[tail++] = i;
+            }
+    while (head < tail) { // y de ahi hacia adentro, capa por capa
+        int i = queue[head++], x = i % g->nx, z = (i / g->nx) % g->nz, y = i / (g->nx * g->nz);
+        for (int f = 0; f < 6; f++) {
+            int a = x + D[f][0], b = y + D[f][1], c = z + D[f][2];
+            if (a < 0 || b < 0 || c < 0 || a >= g->nx || b >= g->ny || c >= g->nz) continue;
+            int j = idx(g, a, b, c);
+            if (!g->m[j] || seen[j]) continue;
+            g->m[j] = g->m[i], seen[j] = 1, queue[tail++] = j;
+        }
+    }
+    free(queue), free(seen);
+    return true;
+}
+
 // ------------------------------------------------------------------ ruido
 static uint32_t hash4(int x, int y, int z, uint32_t s) {
     uint32_t h = (uint32_t)x * 0x8DA6B343u ^ (uint32_t)y * 0xD8163841u ^ (uint32_t)z * 0xCB1AB31Fu ^ s * 0x165667B1u;

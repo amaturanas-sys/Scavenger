@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**452 objetos** · 23 con modelo · 429 pendientes.
+**453 objetos** · 24 con modelo · 429 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -11,7 +11,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
-| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 32 | 28 | 0 | 4 | 0 |
+| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 33 | 28 | 0 | 5 | 0 |
 | [Estructuras](#estructura) | 43 | 37 | 1 | 5 | 0 |
 | [Vehículos](#vehiculo) | 11 | 9 | 0 | 2 | 0 |
 | [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
@@ -74,6 +74,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.vegetacion.abedul` | Abedul | 2.5x8x2.5 | 100 | pendiente | `bioma:estepa` `bioma:bosque` `uso:decorado` |  |
 | `mapa.vegetacion.roble` | Roble | 8.8x10x8.8 | 120 | importado | `bioma:bosque` `bioma:estepa` `uso:trepable` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py roble), celdas de 30 cm, simetrico como el pino: el tronco a la vista hasta los 4 m, ocho ramas abiertas y la copa de racimos en tres anillos, con el tronco y tres verdes de la hoja del arbol frondoso generada por el usuario con Canva. |
 | `mapa.vegetacion.sauce` | Sauce llorón | 6.8x9x6.8 | 120 | importado | `bioma:estepa` `bioma:bosque` `uso:decorado` `formato:voxel` | Junto al agua. Voxeles armados a mano (tools/voxeles/estructuras.py sauce), celdas de 25 cm, simetrico como el pino: el tronco grueso a la vista, la cupula y las cortinas que cuelgan hasta 1.5 m del suelo, con el tronco y tres verdes de la hoja generada por el usuario con Canva. |
+| `mapa.vegetacion.arce` | Arce | 8.03x11x8.03 | 120 | importado | `bioma:bosque` `uso:trepable` `formato:voxel` | En el bosque, menos que el pino (src/sim/flora.c: flora_tree_kind). Voxeles armados a mano (tools/voxeles/estructuras.py arce), celdas de 30 cm, simetrico como el pino, sin hoja de tres vistas: la corteza gris a la vista hasta los 3.5 m, cuatro ramas madre en V y la copa ovalada de racimos en tres anillos. En el mundo (src/world/trees.c), rojo y naranja en otoño y pelado en invierno. |
 | `mapa.vegetacion.saxaul` | Saxaúl (arbusto del desierto) | 2x2x2 | 60 | pendiente | `bioma:desierto` `uso:recolectable` | Leña en el desierto. |
 | `mapa.vegetacion.palmera` | Palmera datilera | 3x7x3 | 100 | pendiente | `bioma:desierto` `uso:recolectable` |  |
 | `mapa.vegetacion.liquen` | Liquen y musgo de tundra | 1x0.1x1 | 20 | pendiente | `bioma:glaciar` `bioma:fiordo` `uso:decorado` |  |

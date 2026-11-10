@@ -56,6 +56,17 @@ void vox_erode(VoxGrid *g, uint32_t seed, float amount);
 // Las formas ganan detalle sin cambiar de tamaño. false si no hay memoria.
 bool vox_refine(VoxGrid *g);
 
+// La rejilla con f veces menos detalle (los arboles de lejos, src/world/trees.c): cada celda gruesa junta f x f x f
+// de las finas y queda llena si lo estan al menos need de ellas, con el material que mas se repite (a igualdad, el
+// de numero mas bajo). La misma figura y el mismo tamaño en metros. false si f < 1 o no hay memoria.
+bool vox_downsample(const VoxGrid *src, int f, int need, VoxGrid *out);
+
+// Lo de adentro (las celdas con sus seis vecinas llenas: no se ven) toma el material de la celda a la vista mas
+// cercana, de afuera hacia adentro. Los .vox rellenan lo de adentro con un color cualquiera (el 1, negro): al bajar
+// el detalle (vox_downsample) o al quitar una parte (las hojas de un arbol pelado), queda a la vista. Lo de la orilla
+// de la rejilla cuenta como a la vista. false si no hay memoria (y no cambia nada).
+bool vox_paint_hidden(VoxGrid *g);
+
 // Ruido de valores 3D en [0, 1] (suave), para la erosion y las nubes.
 float vox_noise3(float x, float y, float z, uint32_t seed);
 

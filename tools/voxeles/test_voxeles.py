@@ -480,10 +480,11 @@ def test_carros_y_puerta():
 
 
 def test_arboles_de_hoja():
-    """El roble y el sauce: el mismo de los cuatro lados y en el espejo (como el pino), una sola pieza, sin aire
+    """El roble, el sauce y el arce: el mismo de los cuatro lados y en el espejo (como el pino), una sola pieza, sin aire
     encerrado, sus medidas, el tronco a la vista (las hojas del roble empiezan a 3.6 m; las cortinas del sauce dejan
     huecos y llegan a 1.5 m del suelo) y bajo el aviso de Android."""
-    for receta, medidas in ((estructuras.roble, (8.788, 10.0, 8.788)), (estructuras.sauce, (6.75, 9.0, 6.75))):
+    for receta, medidas in ((estructuras.roble, (8.788, 10.0, 8.788)), (estructuras.sauce, (6.75, 9.0, 6.75)),
+                            (estructuras.arce, (8.027, 11.0, 8.027))):
         o = receta()
         p = o.parte
         assert o.metros() == medidas, (receta.__name__, o.metros())
@@ -495,6 +496,8 @@ def test_arboles_de_hoja():
         bajo = int(np.flatnonzero(hojas.any(axis=(0, 1))).min())
         if receta is estructuras.roble:
             assert bajo * o.celda >= 3.6 - 1e-6 and tronco[:, :, :bajo].any(), bajo
+        elif receta is estructuras.arce:  # la copa ovalada: el tronco a la vista hasta los 3.5 m
+            assert bajo * o.celda >= 3.5 and tronco[:, :, :bajo].any(), bajo
         else:
             assert abs(bajo * o.celda - 1.5) < 1e-6, bajo
             anillo = hojas[:, :, 10]  # a 2.5 m: las tiras de las cortinas, con huecos entre ellas

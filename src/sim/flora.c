@@ -25,19 +25,22 @@ static uint32_t hash3(int x, int z, uint32_t s) {
 float flora_density(FloraKind kind, const float k[REGION_COUNT], float near_water) {
     float nw = clamp01(near_water);
     switch (kind) {
-    case FLORA_GRASS: // en el desierto, solo junto al agua (los oasis)
-        return k[REGION_STEPPE] * 0.88f + k[REGION_FOREST] * 0.35f + k[REGION_HIGHLAND] * 0.51f + k[REGION_FJORD] * 0.64f +
+    case FLORA_GRASS: // en el desierto, solo junto al agua (los oasis); en el bosque, el pasto entre los helechos
+        return k[REGION_STEPPE] * 1.3f + k[REGION_FOREST] * 1.15f + k[REGION_HIGHLAND] * 0.6f + k[REGION_FJORD] * 0.7f +
                k[REGION_DESERT] * (0.024f + 0.56f * nw);
     case FLORA_STIPA: // la estepa seca: lejos del agua
-        return (k[REGION_STEPPE] * 0.48f + k[REGION_HIGHLAND] * 0.08f + k[REGION_DESERT] * 0.04f) * (1.0f - 0.7f * nw);
+        return (k[REGION_STEPPE] * 0.7f + k[REGION_HIGHLAND] * 0.08f + k[REGION_DESERT] * 0.04f) * (1.0f - 0.7f * nw);
     case FLORA_FLOWER:
-        return k[REGION_STEPPE] * 0.1f + k[REGION_HIGHLAND] * 0.08f + k[REGION_FOREST] * 0.03f + k[REGION_FJORD] * 0.04f;
+        return k[REGION_STEPPE] * 0.15f + k[REGION_HIGHLAND] * 0.08f + k[REGION_FOREST] * 0.04f + k[REGION_FJORD] * 0.04f;
     case FLORA_FERN:
         return k[REGION_FOREST] * 0.44f + k[REGION_FJORD] * 0.14f;
-    case FLORA_REED: // las orillas
+    case FLORA_REED: // las orillas (en la estepa, tan juntos que no queda suelo pelado)
         return nw * nw *
-               (k[REGION_STEPPE] * 1.0f + k[REGION_FOREST] * 0.7f + k[REGION_HIGHLAND] * 0.24f + k[REGION_FJORD] * 0.4f +
+               (k[REGION_STEPPE] * 1.3f + k[REGION_FOREST] * 0.7f + k[REGION_HIGHLAND] * 0.24f + k[REGION_FJORD] * 0.4f +
                 k[REGION_DESERT] * 0.9f);
+    case FLORA_HERB: // el ajenjo, el tomillo y la salvia de la estepa seca (en la orilla, menos)
+        return (k[REGION_STEPPE] * 0.3f + k[REGION_HIGHLAND] * 0.1f + k[REGION_FOREST] * 0.03f + k[REGION_DESERT] * 0.03f) *
+               (1.0f - 0.5f * nw);
     default: return 0.0f;
     }
 }
@@ -124,8 +127,27 @@ int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out) {
     return n;
 }
 
+// ---------------------------------------------------------------- los arboles
+TreeKind flora_tree_kind(const float k[REGION_COUNT], float near_water, float r) {
+    float nw = clamp01(near_water);
+    // Los sauces: junto al agua dulce, mas en el bosque y la costa que en la estepa, el desierto y el altiplano.
+    float willow = nw * (0.8f * (k[REGION_FOREST] + k[REGION_FJORD]) + 0.6f * (k[REGION_STEPPE] + k[REGION_DESERT]) + 0.3f * k[REGION_HIGHLAND]);
+    willow = fminf(willow, 0.85f);
+    float maple = 0.3f * k[REGION_FOREST] * (1.0f - willow); // en el bosque, uno de cada tres o cuatro
+    if (r < willow) return TREE_WILLOW;
+    if (r < willow + maple) return TREE_MAPLE;
+    return TREE_PINE;
+}
+
+TreeSeason flora_tree_season(float greenness, float autumn, float snow_cover) {
+    if (snow_cover > 0.35f) return TREES_SNOW;
+    if (autumn > 0.5f) return TREES_AUTUMN;
+    if (greenness < 0.12f) return TREES_BARE; // las hojas cayeron (o todavia no brotan)
+    return TREES_SUMMER;
+}
+
 // ---------------------------------------------------------------- la estacion
-static const float FULL_HEIGHT[FLORA_KINDS] = { 0.5f, 0.85f, 0.32f, 0.65f, 1.6f };
+static const float FULL_HEIGHT[FLORA_KINDS] = { 0.5f, 0.85f, 0.32f, 0.65f, 1.6f, 0.4f };
 
 float flora_height(FloraKind kind, float year, float greenness, float autumn) {
     if ((unsigned)kind >= FLORA_KINDS) return 0.0f;
@@ -139,6 +161,9 @@ float flora_height(FloraKind kind, float year, float greenness, float autumn) {
         break;
     case FLORA_REED: // los tallos secos quedan de pie todo el invierno
         grow = 0.7f + 0.3f * clamp01(g + a);
+        break;
+    case FLORA_HERB: // matas lenosas: se secan pero el invierno no las tumba del todo
+        grow = 0.45f + 0.55f * clamp01(g * 1.5f + a * 0.8f);
         break;
     default: // el pasto y la stipa: crecen en primavera, se secan de pie y el invierno los aplasta
         grow = 0.3f + 0.7f * clamp01(g * 1.6f + a * 0.9f);

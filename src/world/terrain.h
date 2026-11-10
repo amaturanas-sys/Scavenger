@@ -40,12 +40,21 @@ typedef struct {
     unsigned char kind, variant;
 } ChunkFeature;
 
+// Los arboles de cada chunk (los modelos de voxeles del pino, el sauce y el arce: src/world/trees.h), por casillas de 4 m.
+#define CHUNK_TREES 144
+typedef struct {
+    float x, y, z, scale, yaw; // la base, la escala del modelo (1: el alto del inventario) y el giro
+    unsigned char kind;        // TreeKind (src/sim/flora.h)
+} ChunkTree;
+
 #define TERRAIN_WATER_MESHES 3 // el agua, el hielo y la espuma de cada chunk
 typedef struct {
     bool loaded;
     int cx, cz;
     ChunkFeature feat[CHUNK_FEATS];
     int feat_count;
+    ChunkTree trees[CHUNK_TREES];
+    int tree_count;
     Model model;
     float *tri;             // por triangulo: lo que hace falta para recolorear con la estacion
     Model water[TERRAIN_WATER_MESHES];
@@ -130,6 +139,9 @@ void terrain_init(Terrain *t, unsigned seed);
 void terrain_update(Terrain *t, Vector3 pos);
 // Dibuja los chunks y, debajo, el horizonte lejano (malla gruesa hasta ~2,4 km).
 void terrain_draw(const Terrain *t);
+// Los arboles de los chunks cargados, en su estacion (despues de terrain_draw, dentro de BeginMode3D): los de cerca con
+// todo su detalle y solo los que caen delante de la camara (src/world/trees.h).
+void terrain_draw_trees(const Terrain *t, Camera3D cam);
 // Color de la bruma del horizonte (el del cielo); recolorea si cambio.
 void terrain_set_haze(Terrain *t, Color haze);
 void terrain_unload(Terrain *t);

@@ -90,7 +90,7 @@ void vegetation_stats(int *planted, int *drawn) {
 typedef struct {
     float year, plume, snow;
     bool cattail; // los juncos con su espiga parda: del verano al invierno
-    Color stipa_tip, fern, reed;
+    Color stipa_tip, fern, reed, herb;
 } VegLook;
 
 // El pasto: el color del suelo de su region y su estacion (src/world/terrain.c: ground_color).
@@ -211,6 +211,30 @@ static void draw_tuft(const FloraTuft *t, const Climate *c, const VegLook *L, fl
         }
         break;
     }
+    case FLORA_HERB: { // hojas anchas grises que se abren desde el pie; en flor, una o dos espigas moradas
+        Color cb = shade(L->herb, 0.62f * v), ct = mixc(shade(L->herb, 1.15f * v), snow, L->snow * 0.5f);
+        int n = lod == 3 ? 6 : lod == 2 ? 4 : 2;
+        for (int j = 0; j < n; j++) {
+            float a = a0 + (float)j * 6.2832f / (float)n, ox = cosf(a), oz = sinf(a);
+            float hj = h * (0.5f + 0.15f * fmodf(t->rnd * 4.3f + (float)j * 0.53f, 1.0f));
+            blade(b, hj, ox, oz, 0.55f, bx * 0.5f, bz * 0.5f, 0.07f * s, -oz, ox, cb, ct, 0.0f, 1.0f, cb);
+        }
+        if (L->plume > 0.05f && lod > 1) { // las espigas: el tomillo y la salvia moradas, algun ajenjo amarillo
+            static const Color BLOOM[3] = { { 150, 108, 196, 255 }, { 116, 104, 200, 255 }, { 206, 186, 92, 255 } };
+            Color petal = mixc(cb, shade(BLOOM[(int)(t->rnd * 613.0f) % 3], v), L->plume);
+            int spikes = lod == 3 ? 2 : 1;
+            for (int j = 0; j < spikes; j++) {
+                float a = a0 + 1.1f + (float)j * 2.6f, ox = cosf(a) * 0.12f, oz = sinf(a) * 0.12f;
+                float f2 = (ox + bx) * (ox + bx) + (oz + bz) * (oz + bz), k = f2 > 0.8f ? sqrtf(0.8f / f2) : 1.0f;
+                float hs = h * (0.95f - 0.15f * (float)j);
+                blade(b, hs, ox / 0.12f, oz / 0.12f, 0.12f, bx, bz, 0.012f * s, fx, fz, cb, cb, 0.0f, 1.0f, cb);
+                Vector3 tip = { b.x + (ox + bx) * k * hs, b.y + hs * sqrtf(1.0f - fminf(f2, 0.8f)), b.z + (oz + bz) * k * hs };
+                blossom(tip, 0.03f * s, petal);
+                blossom((Vector3){ tip.x, tip.y - 0.05f * s, tip.z }, 0.035f * s, shade(petal, 0.85f));
+            }
+        }
+        break;
+    }
     case FLORA_REED: { // tallos altos casi derechos; del verano al invierno, la espiga parda
         Color cb = shade(L->reed, 0.6f * v), cm = shade(L->reed, 0.9f * v), ct = mixc(shade(L->reed, 1.05f * v), snow, L->snow * 0.6f);
         int n = lod == 3 ? 4 : lod == 2 ? 3 : 1;
@@ -255,6 +279,8 @@ void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float tim
     float dormant = 1.0f - clamp01(c->greenness + c->autumn);
     L.fern = mixc(mixc((Color){ 156, 92, 44, 255 }, (Color){ 70, 116, 56, 255 }, c->greenness * 1.4f), (Color){ 112, 88, 64, 255 }, dormant);
     L.reed = mixc((Color){ 184, 162, 108, 255 }, (Color){ 88, 124, 62, 255 }, c->greenness * (1.0f - c->autumn));
+    // Las hierbas aromaticas: el gris verdoso del ajenjo y la salvia; en otoño, pardas; dormidas, grises.
+    L.herb = mixc(mixc((Color){ 150, 126, 86, 255 }, (Color){ 120, 142, 104, 255 }, c->greenness * 1.3f), (Color){ 132, 124, 104, 255 }, dormant);
     float lean = flora_lean(c->wind);
     // Los focos y la tierra calcinada cerca.
     Burnt burnt[VEG_BURNT];

@@ -1,6 +1,6 @@
 // La vegetacion baja (C puro): las matas de pasto, la stipa (el pasto pluma de la estepa), las
-// flores, los helechos del bosque y los juncos de las orillas, que src/world/vegetation.c dibuja
-// alrededor del jugador. Las reglas:
+// flores, los helechos del bosque, los juncos de las orillas y las hierbas aromaticas de la estepa
+// (ajenjo, tomillo y salvia), que src/world/vegetation.c dibuja alrededor del jugador. Las reglas:
 //  - donde crecen (flora_cell): por celdas del suelo de 2 m, siempre las mismas para el mismo
 //    mundo; cuantas y de que clase segun la region y el agua cerca (flora_density); ni en el agua
 //    honda, ni en la tierra pelada y la roca de las cuestas, ni en el lecho de los rios, la playa
@@ -25,12 +25,13 @@ typedef enum {
     FLORA_FLOWER, // flores de la primavera: tulipanes y lirios de la estepa, flores del altiplano
     FLORA_FERN,   // helechos del sotobosque
     FLORA_REED,   // juncos de las orillas de lagos y rios (tambien en el agua baja)
+    FLORA_HERB,   // hierbas aromaticas de la estepa (ajenjo, tomillo, salvia): hojas grises y espigas moradas
     FLORA_KINDS
 } FloraKind;
 
 #define FLORA_CELL 2.0f    // m: las celdas del suelo (src/world/terrain.h: CHUNK_SIZE / CHUNK_CELLS)
-#define FLORA_PER_CELL 8   // matas como mucho por celda (dos por m2)
-#define FLORA_CANDIDATE_M2 (FLORA_CELL * FLORA_CELL / (float)FLORA_PER_CELL) // lo que ocupa cada candidato: medio m2
+#define FLORA_PER_CELL 12  // matas como mucho por celda (tres por m2)
+#define FLORA_CANDIDATE_M2 (FLORA_CELL * FLORA_CELL / (float)FLORA_PER_CELL) // lo que ocupa cada candidato: un tercio de m2
 #define FLORA_CAMP_R 18.0f // el campamento inicial, en el origen: el pasto pisoteado
 #define FLORA_TRAMPLE_R 1.1f
 
@@ -61,8 +62,25 @@ int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out);
 // alto a comienzos del verano, se seca de pie y el invierno la aplasta (los juncos secos quedan de
 // pie). Las flores, solo en primavera (si no, 0).
 float flora_height(FloraKind kind, float year, float greenness, float autumn);
-// Las plumas de la stipa [0, 1]: de fines de la primavera a mediados del verano.
+// Las plumas de la stipa [0, 1]: de fines de la primavera a mediados del verano. Las hierbas
+// aromaticas florecen al mismo tiempo (sus espigas moradas).
 float flora_plume(float year);
+
+// Los arboles del mundo (los modelos de voxeles del inventario: src/world/trees.c; donde va cada uno, src/world/terrain.c).
+typedef enum {
+    TREE_PINE,   // mapa.vegetacion.pino: el del bosque, el altiplano y la costa; alguno suelto en la estepa
+    TREE_WILLOW, // mapa.vegetacion.sauce: junto a los lagos y los rios, sobre todo en el bosque y la costa
+    TREE_MAPLE,  // mapa.vegetacion.arce: en el bosque, menos que el pino
+    TREE_KINDS
+} TreeKind;
+// La clase de un arbol con los pesos de las regiones k, el agua cerca (near_water [0, 1]: 1 junto a un lago o un
+// rio; el mar no cuenta) y su azar r en [0, 1).
+TreeKind flora_tree_kind(const float k[REGION_COUNT], float near_water, float r);
+// Como estan los arboles con el aspecto del paisaje (greenness, autumn y snow_cover del clima, src/sim/climate.h):
+// en verano (y desde que brota la primavera), como en su modelo; en otoño, el arce rojo y el sauce amarillo; pelados el
+// arce y el sauce cuando caen las hojas y hasta que reverdece; con nieve, el pino nevado (el arce y el sauce, pelados).
+typedef enum { TREES_SUMMER, TREES_AUTUMN, TREES_BARE, TREES_SNOW, TREES_SEASONS } TreeSeason;
+TreeSeason flora_tree_season(float greenness, float autumn, float snow_cover);
 
 // El viento (wind [0, 1] del clima): cuanto se inclina la punta a favor (m por m de alto) y cuanto
 // se mece alrededor en el instante t (phase: la de la mata; las olas cruzan el pasto si la fase

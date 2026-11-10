@@ -1160,10 +1160,45 @@ def sauce(vistas=None):
     _copa(o, [])  # los verdes otra vez: las puntas de las tiras, a la sombra; sus caras de arriba, al sol
     return o
 
+def arce(vistas=None):
+    """mapa.vegetacion.arce: el arce del bosque, 11 m de alto y 8.6 m de copa, en celdas de 30 cm, simetrico como el
+    pino (el mismo de los cuatro lados y en el espejo). Sin hoja de tres vistas: la forma de los arces del bosque
+    templado (el real y el campestre). El tronco gris de 0.9 m con el pie ensanchado, a la vista hasta los 3.5 m,
+    que se abre en cuatro ramas madre en V y otras ocho que suben; la copa ovalada, mas alta que ancha (la del roble
+    es achatada y la del sauce cae), de racimos en tres anillos y la cima. Los colores: la corteza gris y tres verdes
+    de hoja ancha, mas vivos que los del pino; en otoño el juego pinta la copa de rojo y naranja y en invierno la
+    deja pelada (src/world/trees.c)."""
+    H, W = 37, 29
+    celda = 11.0 / H
+    o = Obra(W, W, H, celda=celda)
+    _estilo_arbol(o, vistas, ((112, 104, 94), [(48, 84, 38), (72, 116, 50), (108, 150, 70)]))
+    a = lambda metros: metros / celda  # noqa: E731 - de metros a celdas
+    c = W / 2.0
+    m = W // 2  # el tronco: 3 x 3 celdas al medio
+    o.caja("tronco", (m - 2, m + 2), (m - 1, m + 1), (0, 0))  # el pie, en cruz
+    o.caja("tronco", (m - 1, m + 1), (m - 2, m + 2), (0, 0))
+    o.caja("tronco", (m - 1, m + 1), (m - 1, m + 1), (0, int(a(5.5))))
+    for k in range(4):  # las ramas madre: se abren en V desde los 3 m
+        th = k * np.pi / 2 + np.pi / 4
+        _rama(o, "tronco", (c, c, a(3.0)), (c + a(1.8) * np.cos(th), c + a(1.8) * np.sin(th), a(6.5)))
+    for k in range(8):  # y las que suben al medio de la copa
+        th = k * np.pi / 4
+        _rama(o, "tronco", (c, c, a(4.5)), (c + a(1.1) * np.cos(th), c + a(1.1) * np.sin(th), a(8.0)))
+    racimos = [(c, c, a(9.3), a(1.8), a(1.6))]
+    for k in range(8):
+        th = k * np.pi / 4
+        for (r, y, rad, fase) in ((1.6, 8.3, 1.7, np.pi / 8), (2.5, 6.6, 1.6, 0.0), (2.2, 4.9, 1.3, np.pi / 8)):
+            racimos.append((c + a(r) * np.cos(th + fase), c + a(r) * np.sin(th + fase), a(y), a(rad)))
+    _copa(o, racimos)
+    _simetrizar(o)
+    _copa(o, [])
+    return o
+
+
 RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo, "atalaya": atalaya,
            "piedra_ciervo_sol": piedra_ciervo_sol, "piedra_ciervo_felinos": piedra_ciervo_felinos,
            "muro_en_ruinas": muro_en_ruinas, "carreta": carreta, "carro_varas": carro_varas,
-           "puerta_fortificada": puerta_fortificada, "roble": roble, "sauce": sauce}
+           "puerta_fortificada": puerta_fortificada, "roble": roble, "sauce": sauce, "arce": arce}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
 # pixeles de la vista recortada. La hoja del templo exagera lo alto en el frente (los pilonos miden 340 px de

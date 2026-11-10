@@ -152,6 +152,7 @@ if(ESTEPA_BUILD_GAME)
     src/world/weather.c
     src/world/body_draw.c
     src/world/vegetation.c
+    src/world/trees.c
     src/entities/character.c
     src/entities/equipment.c)
 
