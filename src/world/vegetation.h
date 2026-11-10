@@ -26,5 +26,13 @@ void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float tim
                      int nclear, const Vector3 *walkers, int nwalkers);
 // Cuantas matas hay sembradas en la ventana y cuantas se dibujaron en el ultimo cuadro.
 void vegetation_stats(int *planted, int *drawn);
+// La estacion, el viento y la camara con que se dibujan las matas sueltas (vegetation_draw_prop). vegetation_draw lo
+// hace solo; la galeria, que no dibuja la vegetacion, lo pide aparte (sin clima: el verano).
+void vegetation_look(Camera3D cam, const Climate *c, float time);
+// Los objetos del inventario que son matas (src/world/props.c, mientras no tengan modelo): la hierba alta del escondite
+// (mapa.vegetacion.hierba_alta: stipa con sus plumas y pasto de 1 m), las hierbas curativas (mata_hierbas: salvia,
+// menta y tomillo, en flor mientras estan verdes) y el arbusto (arbusto). w y l: sus medidas; en pos, girada yaw. Con
+// las hojas de la vegetacion: se mecen con el viento y toman el color de la estacion. false si el id no es de ellas.
+bool vegetation_draw_prop(const char *id, float w, float l, Vector3 pos, float yaw);
 
 #endif

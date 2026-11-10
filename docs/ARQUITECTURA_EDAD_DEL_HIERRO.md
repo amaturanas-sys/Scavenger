@@ -38,8 +38,12 @@ lo que importa es la silueta, los materiales y el color.
 - **Heródoto** (IV, 46): los carros son su única casa y la llevan adonde van.
 - **Pazyryk, kurgán 5:** un carro de cuatro ruedas, de más de 1,8 m de diámetro, con una casilla
   desmontable cubierta de fieltro.
-- **En el kit:** un carro de cuatro o seis ruedas con una casilla de fieltro abovedada y la lanza al
-  frente.
+- **En el kit** (rehecho en la v0.14.1, en celdas de 12,5 cm): la casilla de fieltro, de paredes rectas de
+  reja con su faja de color y bóveda con arcos más oscuros, va sobre una plataforma de tablas; la plataforma,
+  a 1 m, sobre dos largueros que apoyan en los ejes; los ejes, en el centro de las ruedas de rayos (1,25 m,
+  seis rayos y el cubo), que quedan por fuera y sin tocarse. Al frente, el pescante, la entrada con su
+  marco y el fieltro arrollado, y la lanza que sale del eje de adelante y sube al yugo con sus gamellas.
+  Las grandes, más largas: con seis ruedas, o con la carga atrás.
 
 ### Kurganes y estelas (para las ruinas, más adelante)
 - **Arzhan 1** (Tuvá, siglos IX–VIII a. C.): un sistema radial de cámaras de troncos de alerce bajo

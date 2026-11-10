@@ -758,45 +758,89 @@ static bool temple(Kit *k) {
     return true;
 }
 
-static bool wagon(Kit *k) {
-    // El carro: la plataforma a 0,75 m, cuatro o seis ruedas grandes, la casilla de fieltro en
-    // boveda (uno o tres cuartos) y la lanza al frente, con su yugo.
-    int L = k->small ? ki(k, 11, 13) : ki(k, 13, 16), W = ki(k, 6, 7), bed = k->gy + 3, R = W / 2 + 1;
-    bool six = kc(k, 0.4f), three = !k->small && kc(k, 0.5f);
-    Rect a;
-    if (!grid_rect(k, L, W, 3 + R + 4, 9, CELL, &a)) return false;
-    fill(k, a.x0, bed, a.z0, a.x1, bed, a.z1, M_WOOD_DARK);
-    int axles[3] = { a.x0 + 3, a.x1 - 3, (a.x0 + a.x1) / 2 };
-    for (int i = 0; i < (six ? 3 : 2); i++) {
-        wheel(k, axles[i], k->gy + 3, a.z0 - 1, 3);
-        wheel(k, axles[i], k->gy + 3, a.z1 + 1, 3);
-        fill(k, axles[i], k->gy + 3, a.z0 - 1, axles[i], k->gy + 3, a.z1 + 1, M_WOOD_DARK); // el eje
-    }
-    float cz = (float)(a.z0 + a.z1 + 1) * 0.5f, cy = (float)bed + 0.5f;
-    for (int x = a.x0 + 1; x <= a.x1 - 1; x++) // la boveda de fieltro
-        for (int y = bed + 1; y <= bed + R + 1; y++)
-            for (int z = a.z0; z <= a.z1; z++) {
-                float dz = (float)z + 0.5f - cz, dy = (float)y + 0.5f - cy, d = sqrtf(dz * dz + dy * dy);
-                if (d <= (float)R + 0.3f && d > (float)R - 1.0f) put(k, x, y, z, M_FELT);
-            }
-    for (int s = 0; s <= 1; s++) { // las puntas, cerradas con fieltro gris; adelante, la entrada
-        int x = s ? a.x1 - 1 : a.x0 + 1;
-        for (int y = bed + 1; y <= bed + R + 1; y++)
-            for (int z = a.z0; z <= a.z1; z++) {
-                float dz = (float)z + 0.5f - cz, dy = (float)y + 0.5f - cy;
-                if (sqrtf(dz * dz + dy * dy) <= (float)R + 0.3f) put(k, x, y, z, M_FELT_DARK);
-            }
-    }
-    hole(k, a.x1 - 1, bed + 1, (int)cz - 1, a.x1 - 1, bed + 3, (int)cz);
-    if (three) // tres cuartos: dos tabiques que se ven como franjas
-        for (int s = 1; s <= 2; s++) {
-            int x = a.x0 + 1 + (L - 2) * s / 3;
-            for (int y = bed + 1; y <= bed + R + 1; y++)
-                for (int z = a.z0; z <= a.z1; z++)
-                    if (vox_get(k->g, x, y, z) == M_FELT) put(k, x, y, z, M_FELT_DARK);
+// Una rueda de rayos en el plano (x, y), de z0 a z1: la llanta (lo de afuera), seis rayos y el cubo, que asoma
+// una celda mas hacia afuera (zh). r: el radio en celdas; (cx, cy): el centro, en el eje.
+static void spoked_wheel(Kit *k, int cx, int cy, int z0, int z1, int zh, int r) {
+    for (int y = cy - r; y <= cy + r; y++)
+        for (int x = cx - r; x <= cx + r; x++) {
+            float dx = (float)(x - cx), dy = (float)(y - cy), d = sqrtf(dx * dx + dy * dy);
+            if (d > (float)r + 0.3f) continue;
+            float a = atan2f(dy, dx), off = fmodf(a + 6.2831853f, 1.0471976f); // de un rayo al siguiente, 60 grados
+            bool rim = d > (float)r - 1.0f, hub = d < 1.3f, spoke = fminf(off, 1.0471976f - off) * d < 0.55f;
+            if (!rim && !hub && !spoke) continue;
+            for (int z = z0; z <= z1; z++) put(k, x, y, z, rim || hub ? M_WOOD_DARK : M_WOOD);
+            if (hub) put(k, x, y, zh, M_WOOD_DARK);
         }
-    fill(k, a.x1 + 1, bed, (int)cz - 1, a.x1 + 7, bed, (int)cz - 1, M_WOOD_DARK); // la lanza
-    fill(k, a.x1 + 7, bed, (int)cz - 4, a.x1 + 7, bed, (int)cz + 2, M_WOOD);      // el yugo
+}
+
+static bool wagon(Kit *k) {
+    // La carreta-casa (kibitka): la casilla de fieltro va sobre una plataforma de tablas, la plataforma sobre los
+    // ejes y los ejes en el centro de las ruedas, que quedan por fuera; entre las de adelante y las de atras hay
+    // aire. Las ruedas, de rayos y de 1,25 m; la casilla, de paredes rectas de reja con fieltro y boveda, con la
+    // entrada al frente, sobre el pescante; la lanza sale de debajo, del eje de adelante, y lleva el yugo de la
+    // yunta. En celdas de 12,5 cm (las ruedas, con sus rayos). Las grandes, mas largas: con seis ruedas, o con
+    // la carga atras.
+    const float cell = 0.125f;
+    int L = k->small ? ki(k, 26, 30) : ki(k, 34, 40), W = ki(k, 14, 16), R = 5;
+    int pole = 16, yoke = 6; // la lanza, 2 m adelante del pescante; el yugo, a cada lado
+    Rect a;
+    if (!grid_rect(k, L, W, R + 3 + 6 + W / 2 + 3, pole + 2, cell, &a)) return false;
+    int ax = k->gy + R, frame = ax + 1, bed = ax + 2, zc0 = (a.z0 + a.z1) / 2, zc1 = (a.z0 + a.z1 + 1) / 2;
+    bool six = L >= 38, cargo = !k->small && !six;
+    uint8_t felt = kc(k, 0.7f) ? M_FELT : M_FELT_DARK, band = kc(k, 0.5f) ? M_RED : kc(k, 0.5f) ? M_BLUE : M_YELLOW;
+    // Los ejes y las ruedas (por fuera de la plataforma, sin tocarse).
+    int axles[3], n = six ? 3 : 2;
+    axles[0] = a.x0 + R + 2, axles[1] = a.x1 - R - 2, axles[2] = (axles[0] + axles[1]) / 2;
+    for (int i = 0; i < n; i++) {
+        fill(k, axles[i], ax, a.z0 - 2, axles[i], ax, a.z1 + 2, M_WOOD_DARK);
+        spoked_wheel(k, axles[i], ax, a.z0 - 3, a.z0 - 2, a.z0 - 4, R);
+        spoked_wheel(k, axles[i], ax, a.z1 + 2, a.z1 + 3, a.z1 + 4, R);
+    }
+    // El bastidor (dos largueros sobre los ejes) y la plataforma de tablas, con su canto mas oscuro.
+    fill(k, a.x0, frame, a.z0 + 1, a.x1, frame, a.z0 + 2, M_WOOD_DARK);
+    fill(k, a.x0, frame, a.z1 - 2, a.x1, frame, a.z1 - 1, M_WOOD_DARK);
+    fill(k, a.x0, bed, a.z0, a.x1, bed, a.z1, M_WOOD);
+    for (int x = a.x0; x <= a.x1; x += 3) fill(k, x, bed, a.z0, x, bed, a.z1, M_WOOD_DARK); // las juntas de las tablas
+    // La casilla: de la plataforma menos el pescante (adelante) y un reborde atras.
+    int hx0 = a.x0 + 2, hx1 = a.x1 - 5, wall0 = bed + 1, wall1 = bed + 6;
+    fill(k, hx0, wall0, a.z0, hx1, wall1, a.z1, felt);
+    fill(k, hx0, wall1, a.z0, hx1, wall1, a.z1, band); // la faja de arriba de la reja
+    float cz = (float)(a.z0 + a.z1 + 1) * 0.5f, rv = (float)W * 0.5f;
+    for (int x = hx0; x <= hx1; x++) // la boveda: de la faja hacia arriba
+        for (int y = wall1 + 1; y <= wall1 + 1 + (int)rv; y++)
+            for (int z = a.z0; z <= a.z1; z++) {
+                float dz = (float)z + 0.5f - cz, dy = (float)(y - wall1) - 0.5f;
+                if (sqrtf(dz * dz + dy * dy) <= rv + 0.2f) put(k, x, y, z, felt);
+            }
+    for (int x = hx0 + 4; x < hx1 - 1; x += 7) // los arcos de la boveda, mas oscuros
+        recolor(k, x, wall1 + 1, a.z0, x, wall1 + 2 + (int)rv, a.z1, felt, felt == M_FELT ? M_FELT_DARK : M_HIDE);
+    // La entrada al frente: el vano oscuro, el marco y la puerta de fieltro arrollada encima.
+    int dtop = wall1 + 3; // el vano entra en la boveda: 1,1 m de alto
+    hole(k, hx1, wall0, zc0 - 2, hx1, dtop, zc1 + 2);
+    fill(k, hx1 - 1, wall0, zc0 - 2, hx1 - 1, dtop, zc1 + 2, M_SHADOW);
+    fill(k, hx1, wall0, zc0 - 3, hx1, dtop + 1, zc0 - 3, M_WOOD_DARK);
+    fill(k, hx1, wall0, zc1 + 3, hx1, dtop + 1, zc1 + 3, M_WOOD_DARK);
+    fill(k, hx1, dtop + 1, zc0 - 3, hx1, dtop + 1, zc1 + 3, M_WOOD_DARK);
+    fill(k, hx1 + 1, dtop + 1, zc0 - 2, hx1 + 1, dtop + 2, zc1 + 2, M_FELT_DARK);
+    // El pescante: el asiento del boyero, adelante de la entrada.
+    fill(k, a.x1 - 1, bed + 1, zc0 - 3, a.x1, bed + 2, zc1 + 3, M_WOOD_DARK);
+    // La lanza: del eje de adelante (por debajo de la plataforma) hasta el yugo, subiendo un poco.
+    for (int x = axles[1], prev = ax; x <= a.x1 + pole; x++) { // en cada escalon, las dos celdas: una pieza seguida
+        int y = ax + (x > a.x1 ? (x - a.x1) * 3 / pole : 0);
+        fill(k, x, prev, zc0, x, y, zc1, M_WOOD_DARK);
+        prev = y;
+    }
+    int ty = ax + 3, tx = a.x1 + pole;
+    fill(k, tx, ty + 1, zc0 - yoke, tx, ty + 1, zc1 + yoke, M_WOOD); // el yugo, con las dos gamellas
+    for (int s = 0; s <= 1; s++) {
+        int z = s ? zc1 + yoke - 2 : zc0 - yoke + 2;
+        fill(k, tx, ty - 1, z - 1, tx, ty, z - 1, M_WOOD_DARK);
+        fill(k, tx, ty - 1, z + 1, tx, ty, z + 1, M_WOOD_DARK);
+    }
+    if (cargo) { // la carga en el reborde de atras: fardos de cuero y un cofre
+        fill(k, a.x0, bed + 1, a.z0 + 1, a.x0 + 1, bed + 3, zc0 - 1, M_HIDE);
+        fill(k, a.x0, bed + 1, zc1 + 1, a.x0 + 1, bed + 2, a.z1 - 1, M_WOOD_DARK);
+    }
     return true;
 }
 

@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**452 objetos** · 23 con modelo · 429 pendientes.
+**453 objetos** · 33 con modelo · 420 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -11,7 +11,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
-| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 32 | 28 | 0 | 4 | 0 |
+| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 33 | 25 | 0 | 8 | 0 |
 | [Estructuras](#estructura) | 43 | 37 | 1 | 5 | 0 |
 | [Vehículos](#vehiculo) | 11 | 9 | 0 | 2 | 0 |
 | [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 87 | 87 | 0 | 0 | 0 |
+| [Utilería y consumibles](#utileria) | 87 | 81 | 0 | 6 | 0 |
 | [Personajes y NPCs](#personaje) | 47 | 47 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -57,8 +57,8 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.suelo.bosque` | Suelo: Bosque de coníferas | 4x0x4 | 0 | pendiente | `bioma:bosque` `formato:textura` | Textura de suelo para los chunks del terreno (paleta del bioma). |
 | `mapa.suelo.fiordo` | Suelo: Costa de fiordos | 4x0x4 | 0 | pendiente | `bioma:fiordo` `formato:textura` | Textura de suelo para los chunks del terreno (paleta del bioma). |
 | `mapa.suelo.glaciar` | Suelo: Altiplano glaciar | 4x0x4 | 0 | pendiente | `bioma:glaciar` `formato:textura` | Textura de suelo para los chunks del terreno (paleta del bioma). |
-| `mapa.roca.pequena` | Roca pequeña | 0.6x0.4x0.6 | 40 | pendiente | `bioma:cualquiera` `uso:decorado` `material:piedra` |  |
-| `mapa.roca.mediana` | Roca mediana | 1.5x1x1.5 | 80 | pendiente | `bioma:cualquiera` `uso:decorado` `material:piedra` |  |
+| `mapa.roca.pequena` | Roca pequeña | 0.6x0.3x0.6 | 40 | importado | `bioma:cualquiera` `uso:decorado` `material:piedra` `formato:voxel` | Junto a los campamentos: se rompe para buscar gemas. Voxeles armados a mano (tools/voxeles/estructuras.py roca), celdas de 3 cm: el canto gris de la estepa, facetado como la roca de la foto de referencia del usuario, medio enterrado y con liquen ocre y verde arriba. |
+| `mapa.roca.mediana` | Roca mediana | 1.5x1.08x1.38 | 80 | importado | `bioma:cualquiera` `uso:decorado` `material:piedra` `formato:voxel` | Junto a los campamentos: se rompe para buscar gemas. Voxeles armados a mano (tools/voxeles/estructuras.py roca_mediana), celdas de 6 cm: el canto gris facetado, como la roca pequeña. |
 | `mapa.roca.grande` | Peñasco (escalable) | 4x3x4 | 160 | pendiente | `bioma:cualquiera` `uso:trepable` `material:piedra` |  |
 | `mapa.relieve.acantilado` | Acantilado modular | 8x6x2 | 300 | pendiente | `bioma:fiordo` `bioma:glaciar` `uso:trepable` `material:piedra` |  |
 | `mapa.relieve.duna` | Duna | 20x4x10 | 120 | pendiente | `bioma:desierto` `uso:decorado` |  |
@@ -66,14 +66,15 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.agua.oasis` | Oasis | 12x1x12 | 250 | pendiente | `bioma:desierto` `uso:recolectable` | Agua potable: clave en el desierto (acto III). |
 | `mapa.agua.rio` | Tramo de río modular | 8x0.5x8 | 120 | pendiente | `bioma:cualquiera` `uso:navegable` |  |
 | `mapa.agua.tempano` | Témpano de hielo | 3x1x3 | 60 | pendiente | `bioma:fiordo` `uso:decorado` |  |
-| `mapa.vegetacion.hierba_alta` | Hierba alta (escondite) | 2x1x2 | 40 | pendiente | `bioma:estepa` `uso:escondite` | El jugador puede esconderse dentro. |
-| `mapa.vegetacion.mata_hierbas` | Mata de hierbas curativas | 0.8x0.6x0.8 | 80 | pendiente | `bioma:estepa` `uso:recolectable` | F para recoger hierbas curativas. |
-| `mapa.vegetacion.arbusto` | Arbusto estepario | 1x0.8x1 | 40 | pendiente | `bioma:estepa` `uso:decorado` |  |
+| `mapa.vegetacion.hierba_alta` | Hierba alta (escondite) | 2x1x2 | 40 | pendiente | `bioma:estepa` `uso:escondite` | El jugador puede esconderse dentro. Hoy se dibuja con las hojas de la vegetacion (src/world/vegetation.c: vegetation_draw_prop), como las matas de la estepa de la foto de referencia del usuario: stipa con sus plumas y pasto, de 1 m, que se mecen con el viento y toman el color de la estacion. |
+| `mapa.vegetacion.mata_hierbas` | Mata de hierbas curativas | 0.8x0.6x0.8 | 80 | pendiente | `bioma:estepa` `uso:recolectable` | F para recoger hierbas curativas. Hoy se dibuja con las hojas de la vegetacion (src/world/vegetation.c: vegetation_draw_prop), como las hierbas de la foto de referencia del usuario: salvia, menta y tomillo, con espigas moradas y amarillas mientras estan verdes. |
+| `mapa.vegetacion.arbusto` | Arbusto estepario | 1x0.8x1 | 40 | pendiente | `bioma:estepa` `uso:decorado` | Hoy se dibuja con las hojas de la vegetacion (src/world/vegetation.c: vegetation_draw_prop): un arbusto de hojas anchas verde oscuro, pardo en el invierno. |
 | `mapa.vegetacion.pino` | Pino | 3x10x3 | 120 | importado | `bioma:bosque` `uso:trepable` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py pino), simetrico: ocho pisos de ramas alrededor del tronco, 5 m de copa y el tronco a la vista hasta 2.3 m, con los colores de la hoja de tres vistas generada por el usuario con Canva. En el paisaje: alturas y tonos que varian, hasta 12 m. |
 | `mapa.vegetacion.alerce` | Alerce | 3x12x3 | 120 | pendiente | `bioma:bosque` `uso:trepable` |  |
 | `mapa.vegetacion.abedul` | Abedul | 2.5x8x2.5 | 100 | pendiente | `bioma:estepa` `bioma:bosque` `uso:decorado` |  |
 | `mapa.vegetacion.roble` | Roble | 8.8x10x8.8 | 120 | importado | `bioma:bosque` `bioma:estepa` `uso:trepable` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py roble), celdas de 30 cm, simetrico como el pino: el tronco a la vista hasta los 4 m, ocho ramas abiertas y la copa de racimos en tres anillos, con el tronco y tres verdes de la hoja del arbol frondoso generada por el usuario con Canva. |
 | `mapa.vegetacion.sauce` | Sauce llorón | 6.8x9x6.8 | 120 | importado | `bioma:estepa` `bioma:bosque` `uso:decorado` `formato:voxel` | Junto al agua. Voxeles armados a mano (tools/voxeles/estructuras.py sauce), celdas de 25 cm, simetrico como el pino: el tronco grueso a la vista, la cupula y las cortinas que cuelgan hasta 1.5 m del suelo, con el tronco y tres verdes de la hoja generada por el usuario con Canva. |
+| `mapa.vegetacion.arce` | Arce | 8.03x11x8.03 | 120 | importado | `bioma:bosque` `uso:trepable` `formato:voxel` | En el bosque, menos que el pino (src/sim/flora.c: flora_tree_kind). Voxeles armados a mano (tools/voxeles/estructuras.py arce), celdas de 30 cm, simetrico como el pino, sin hoja de tres vistas: la corteza gris a la vista hasta los 3.5 m, cuatro ramas madre en V y la copa ovalada de racimos en tres anillos. En el mundo (src/world/trees.c), rojo y naranja en otoño y pelado en invierno. |
 | `mapa.vegetacion.saxaul` | Saxaúl (arbusto del desierto) | 2x2x2 | 60 | pendiente | `bioma:desierto` `uso:recolectable` | Leña en el desierto. |
 | `mapa.vegetacion.palmera` | Palmera datilera | 3x7x3 | 100 | pendiente | `bioma:desierto` `uso:recolectable` |  |
 | `mapa.vegetacion.liquen` | Liquen y musgo de tundra | 1x0.1x1 | 20 | pendiente | `bioma:glaciar` `bioma:fiordo` `uso:decorado` |  |
@@ -83,7 +84,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.hito.campamento_abandonado` | Campamento abandonado del padre | 10x3x10 | 400 | pendiente | `acto:3` `especial:rastro_padre` |  |
 | `mapa.hito.piedra_ciervo` | Piedra-ciervo | 1.36x3x0.44 | 150 | importado | `bioma:estepa` `material:piedra` `especial:rastro_padre` `formato:voxel` | Estela con ciervos de estilo animal. Voxeles armados a mano (tools/voxeles/estructuras.py piedra_ciervo): una losa de corte recto en celdas de 4 cm, con los tres ciervos y sus astas tallados como surcos en el frente y las grietas de la espalda, sacados de la hoja de tres vistas generada por el usuario con Canva (el ancho y el grueso, los de la hoja, por decision del usuario). |
 | `mapa.hito.balbal` | Balbal (estatua de piedra) | 0.6x1.8x0.5 | 150 | pendiente | `bioma:estepa` `material:piedra` |  |
-| `mapa.agua.coral` | Arrecife de coral | 1.5x0.8x1.5 | 120 | pendiente | `bioma:cualquiera` `uso:decorado` `uso:recolectable` | Bajo el agua de los lagos: coral rojo y perlas. |
+| `mapa.agua.coral` | Arrecife de coral | 1.25x0.8x1.3 | 120 | importado | `bioma:cualquiera` `uso:decorado` `uso:recolectable` `formato:voxel` | Bajo el agua de los lagos: coral rojo y perlas. Voxeles armados a mano (tools/voxeles/estructuras.py coral), celdas de 5 cm: una loma de roca clara con ramas de coral rojas y naranjas que se abren hacia arriba. |
 
 <a id="estructura"></a>
 
@@ -147,9 +148,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `vehiculo.agua.velero` | Velero | 3x8x9 | 600 | pendiente | `bioma:fiordo` `uso:conducible` `material:madera` |  |
 | `vehiculo.agua.barco_carga` | Barco de carga | 6x14x20 | 1500 | pendiente | `bioma:fiordo` `uso:conducible` `faccion:neutral` |  |
 | `vehiculo.agua.barco_guerra` | Barco de guerra con cañones | 8x18x28 | 2500 | pendiente | `bioma:fiordo` `uso:conducible` `faccion:imperio` |  |
-| `vehiculo.tierra.carreta_bueyes` | Yunta de bueyes con carreta | 2.5x2.5x6 | 600 | importado | `faccion:nomada` `uso:conducible` `material:madera` `formato:voxel` | Mueve el campamento. Los bueyes: animal.ganado.buey. Voxeles armados a mano (tools/voxeles/estructuras.py carro_varas), celdas de 6.25 cm: el carro de la yunta (la caja con sus herrajes, dos ruedas de rayos de 2 m, la lanza con el tornapunta y el poste del yugo con el yugo), de la hoja del carro de varas generada por el usuario con Canva; los bueyes no van en el modelo. |
+| `vehiculo.tierra.carreta_bueyes` | Yunta de bueyes con carreta | 1.63x1.63x4.16 | 600 | importado | `faccion:nomada` `uso:conducible` `material:madera` `formato:voxel` | Mueve el campamento. Los bueyes: animal.ganado.buey. Voxeles armados a mano (tools/voxeles/estructuras.py carro_varas), celdas de 4.1 cm: el carro de la yunta (la caja con sus herrajes, dos ruedas de rayos de 1.3 m, la lanza con el tornapunta y el poste del yugo con el yugo), de la hoja del carro de varas generada por el usuario con Canva; los bueyes no van en el modelo. A la escala de la gente (1.70 m): las ruedas de 1.3 m, el piso de la caja a 1 m y sus tablas a la altura del pecho (antes, ruedas de 2 m y el piso a 1.5 m). |
 | `vehiculo.tierra.kibitka` | Carro con yurta montada (kibitka) | 4x4x6 | 800 | pendiente | `faccion:nomada` `uso:conducible` |  |
-| `vehiculo.tierra.carreta_mercancias` | Carreta de mercancías | 2x2x4 | 400 | importado | `faccion:neutral` `uso:conducible` `material:madera` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py carreta), celdas de 7 cm: la caja de tablas con sus postes, las cuatro ruedas de disco de 1.43 m, los ejes y la vara que los une, con tres tonos de madera de la hoja de tres vistas generada por el usuario con Canva (2.43 x 4.64 m de la hoja). |
+| `vehiculo.tierra.carreta_mercancias` | Carreta de mercancías | 1.7x1.4x3.25 | 400 | importado | `faccion:neutral` `uso:conducible` `material:madera` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py carreta), celdas de 5 cm: la caja de tablas con sus postes, las cuatro ruedas de disco de 1 m, los ejes y la vara que los une, con tres tonos de madera de la hoja de tres vistas generada por el usuario con Canva. A la escala de la gente (1.70 m): el piso a 0.8 m y la baranda a 1.4 m (de la hoja salia de 2.43 x 4.64 m, con ruedas de 1.43 m). |
 | `vehiculo.tierra.carruaje` | Carruaje imperial | 2.2x2.8x5 | 900 | pendiente | `faccion:imperio` `uso:conducible` |  |
 | `vehiculo.tierra.trineo` | Trineo | 1.2x0.8x3 | 200 | pendiente | `bioma:glaciar` `uso:conducible` `material:madera` |  |
 
@@ -454,9 +455,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
-| `utileria.objeto.caldero` | Caldero | 0.6x0.5x0.6 | 80 | pendiente | `faccion:nomada` `material:hierro` |  |
-| `utileria.objeto.odre` | Odre de cuero | 0.3x0.4x0.2 | 60 | pendiente | `uso:recolectable` `material:cuero` |  |
-| `utileria.objeto.cofre` | Cofre de botín | 0.8x0.5x0.5 | 100 | pendiente | `uso:interactuable` `material:madera` |  |
+| `utileria.objeto.caldero` | Caldero | 0.54x0.5x0.58 | 80 | importado | `faccion:nomada` `material:hierro` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py caldero), celdas de 2 cm: el caldero escita de bronce, la olla honda sobre su pie de cono hueco, las dos asas de pie sobre el borde y el guiso adentro, con la patina oscura y verde. |
+| `utileria.objeto.odre` | Odre de cuero | 0.32x0.4x0.18 | 60 | importado | `uso:recolectable` `material:cuero` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py odre), celdas de 2 cm: la bolsa de cuero con su costura, el cuello atado con un cordel y la correa de colgar. |
+| `utileria.objeto.cofre` | Cofre de botín | 0.8x0.5x0.5 | 100 | pendiente | `uso:interactuable` `material:madera` | Se abre y se cierra (assets/animaciones.tsv: abrir y cerrar), asi que va con un GLB animado. La forma ya esta en tools/voxeles/estructuras.py cofre (la tapa abombada, dos flejes de hierro y la cerradura de bronce al frente). |
 | `utileria.objeto.barril_polvora` | Barril de pólvora | 0.6x0.8x0.6 | 80 | pendiente | `faccion:imperio` `uso:destructible` |  |
 | `utileria.objeto.saco_grano` | Saco de grano | 0.5x0.6x0.4 | 60 | pendiente | `uso:recolectable` |  |
 | `utileria.objeto.antorcha` | Antorcha | 0.1x0.7x0.1 | 40 | pendiente | `uso:equipable` `manos:una` |  |
@@ -483,10 +484,10 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
 | `utileria.herramienta.escala_asedio` | Escala de asedio | 0.5x2.9x0.15 | 120 | pendiente | `uso:herramienta` `material:madera` | En dos tramos que se atan al pie de la muralla (12 kg). F junto a la muralla de una ciudad en guerra: se apoya y se sube por ella, de ida y de vuelta. |
 | `utileria.herramienta.forja_movil` | Forja móvil (fuelle y hogar) | 0.6x0.5x0.6 | 120 | pendiente | `uso:herramienta` `material:hierro` | Fuelle de cuero y hogar de carbón (10 kg): en la mochila, las alforjas, la carreta o el acopio, repara y hace puntas, cuchillos y sables en cualquier sitio. |
-| `utileria.objeto.lena` | Haz de leña | 0.5x0.3x0.8 | 40 | pendiente | `uso:recolectable` `material:madera` | Material de fogatas, hogueras y hornos. |
+| `utileria.objeto.lena` | Haz de leña | 0.46x0.22x0.82 | 40 | importado | `uso:recolectable` `material:madera` `formato:voxel` | Material de fogatas, hogueras y hornos. Voxeles armados a mano (tools/voxeles/estructuras.py lena), celdas de 2 cm: los restos de madera lavada de las fotos de referencia del usuario, dos ramas gruesas grises y pardas con su veta, nudos y los cortes claros, cruzadas sobre una mas fina. |
 | `utileria.material.troncos` | Troncos | 0.4x0.4x2 | 40 | pendiente | `uso:recolectable` `uso:material` `material:madera` | Material del acopio de la tribu. |
-| `utileria.material.piedra` | Piedras | 0.5x0.4x0.5 | 30 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Material del acopio de la tribu. |
-| `utileria.material.barro` | Barro (adobe) | 0.4x0.3x0.4 | 30 | pendiente | `uso:recolectable` `uso:material` `material:barro` | Material del acopio de la tribu. |
+| `utileria.material.piedra` | Piedras | 0.4x0.33x0.48 | 30 | importado | `uso:recolectable` `uso:material` `material:piedra` `formato:voxel` | Material del acopio de la tribu. Voxeles armados a mano (tools/voxeles/estructuras.py piedras), celdas de 2.5 cm: un monton de cinco piedras de campo grises y pardas, facetadas. |
+| `utileria.material.barro` | Barro (adobe) | 0.36x0.3x0.4 | 30 | importado | `uso:recolectable` `uso:material` `material:barro` `formato:voxel` | Material del acopio de la tribu. Voxeles armados a mano (tools/voxeles/estructuras.py barro), celdas de 2 cm: la loma de barro rojizo, mas oscuro donde esta mojado, con dos adobes cortados al costado. |
 | `utileria.material.pieles` | Pieles curtidas | 0.6x0.2x0.8 | 40 | pendiente | `uso:recolectable` `uso:material` `material:cuero` | Material del acopio de la tribu. |
 | `utileria.material.cuerda` | Rollo de cuerda | 0.3x0.15x0.3 | 40 | pendiente | `uso:recolectable` `uso:material` | Material del acopio de la tribu. |
 | `utileria.material.carbon` | Carbón vegetal | 0.4x0.3x0.4 | 30 | pendiente | `uso:recolectable` `uso:material` | Material del acopio de la tribu. |
@@ -512,7 +513,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.material.acero_wootz` | Acero wootz (torta) | 0.12x0.04x0.12 | 20 | pendiente | `uso:material` `material:hierro` | El acero de crisol que traen las caravanas: el mejor sable. |
 | `utileria.material.hoja_acero` | Hoja de sable de acero | 0.05x0.8x0.02 | 40 | pendiente | `uso:material` `material:hierro` | Hoja terminada de la capital: con la forja móvil se le pone empuñadura. |
 | `utileria.material.puntas_hierro` | Puntas de flecha de hierro | 0.03x0.06x0.02 | 10 | pendiente | `uso:material` `material:hierro` | De la forja móvil: más flechas por tanda. |
-| `utileria.material.pedernal` | Pedernal | 0.15x0.1x0.15 | 30 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Se recoge en la estepa: puntas de flecha. |
+| `utileria.material.pedernal` | Pedernal | 0.12x0.09x0.15 | 30 | importado | `uso:recolectable` `uso:material` `material:piedra` `formato:voxel` | Se recoge en la estepa: puntas de flecha. Voxeles armados a mano (tools/voxeles/estructuras.py pedernal), celdas de 1 cm: el nodulo casi negro de la foto de referencia del usuario, con facetas de lascado mas claras, la corteza blanca en una o dos caras y dos vetas blancas. |
 | `utileria.gema.turquesa` | Turquesa | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
 | `utileria.gema.cornalina` | Cornalina | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |
 | `utileria.gema.lapislazuli` | Lapislázuli | 0.03x0.02x0.03 | 20 | pendiente | `uso:recolectable` `uso:material` `material:piedra` | Piedra preciosa: rocas, corales, excavaciones y ríos. |

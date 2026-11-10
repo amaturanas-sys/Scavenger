@@ -1813,6 +1813,38 @@ static void mesh_sums(const VoxMesh *m, double area[6], double color[3]) {
 }
 
 // Las caras juntas: la misma figura, el mismo color en cada punto, cerrada y con muchos menos triangulos.
+// La rejilla con menos detalle (los arboles de lejos): la misma figura y el mismo tamaño en metros; lo suelto se va;
+// cada celda gruesa, del material que mas se repite.
+static void test_vox_downsample(void) {
+    VoxGrid g, d;
+    CHECK(vox_init(&g, 10, 9, 8, 0.25f));
+    vox_box(&g, 0, 0, 0, 7, 5, 7, 2);
+    vox_box(&g, 0, 4, 0, 7, 5, 7, 3); // arriba, otro material
+    vox_set(&g, 9, 8, 0, 5);          // una celda suelta
+    vox_set(&g, 0, 0, 0, 7);
+    g.on_ground = g.merge = true;
+    CHECK(!vox_downsample(&g, 0, 1, &d) && d.m == NULL);
+    CHECK(vox_downsample(&g, 2, 2, &d));
+    CHECK(d.nx == 5 && d.ny == 5 && d.nz == 4 && fabsf(d.size - 0.5f) < 1e-6f && d.on_ground && d.merge);
+    CHECK(vox_count(&d) == 4 * 3 * 4 && vox_get(&d, 4, 4, 0) == 0); // la caja de 8 x 6 x 8, en 4 x 3 x 4; la suelta, no
+    CHECK(vox_get(&d, 0, 0, 0) == 2 && vox_get(&d, 2, 2, 2) == 3 && vox_get(&d, 1, 1, 1) == 2);
+    vox_free(&d);
+    CHECK(vox_downsample(&g, 2, 1, &d) && vox_get(&d, 4, 4, 0) == 5); // con una basta, la suelta queda
+    vox_free(&d);
+    vox_free(&g);
+    // Lo de adentro (negro, el 1 de los .vox) toma el material de la piel mas cercana: la de arriba, arriba; la de abajo,
+    // abajo. Lo de afuera no cambia.
+    CHECK(vox_init(&g, 5, 7, 5, 0.1f));
+    vox_box(&g, 0, 0, 0, 4, 6, 4, 1);
+    vox_box(&g, 0, 0, 0, 4, 2, 4, 4);
+    vox_box(&g, 0, 4, 0, 4, 6, 4, 6);
+    vox_box(&g, 1, 1, 1, 3, 5, 3, 1); // el relleno
+    CHECK(vox_paint_hidden(&g));
+    CHECK(vox_get(&g, 2, 1, 2) == 4 && vox_get(&g, 2, 2, 2) == 4 && vox_get(&g, 2, 5, 2) == 6 && vox_get(&g, 2, 4, 2) == 6);
+    CHECK(vox_get(&g, 0, 3, 0) == 1 && vox_get(&g, 2, 3, 0) == 1 && vox_count(&g) == 5 * 7 * 5); // la franja de afuera sigue negra
+    vox_free(&g);
+}
+
 static void test_voxels_merge(void) {
     static const uint8_t PAL[3][4] = { { 0, 0, 0, 0 }, { 200, 100, 50, 255 }, { 90, 140, 200, 255 } };
     VoxGrid g;
@@ -4954,6 +4986,11 @@ static void test_flora(void) {
     CHECK(flora_density(FLORA_GRASS, desert, 0.0f) < 0.05f && flora_density(FLORA_GRASS, desert, 1.0f) > 0.3f);
     CHECK(flora_density(FLORA_REED, steppe, 0.0f) == 0.0f && flora_density(FLORA_REED, steppe, 1.0f) > 0.3f);
     CHECK(flora_density(FLORA_FERN, forest, 0.0f) > 0.1f && flora_density(FLORA_FERN, steppe, 0.0f) == 0.0f);
+    // La estepa, tupida (mas de dos matas por m2, con sus hierbas aromaticas); el bosque, con pasto entre los helechos.
+    float dense = 0.0f;
+    for (int k = 0; k < FLORA_KINDS; k++) dense += flora_density((FloraKind)k, steppe, 0.0f);
+    CHECK(dense > 2.2f && flora_density(FLORA_HERB, steppe, 0.0f) > 0.2f && flora_density(FLORA_HERB, forest, 0.0f) < 0.1f);
+    CHECK(flora_density(FLORA_GRASS, forest, 0.0f) > 0.9f && flora_density(FLORA_GRASS, forest, 0.0f) > flora_density(FLORA_FERN, forest, 0.0f));
     // Cada candidato da una mata con la probabilidad de su densidad por lo que ocupa (y nunca mas de una).
     int count[FLORA_KINDS] = { 0 }, none = 0;
     for (int i = 0; i < 10000; i++) {
@@ -5006,7 +5043,8 @@ static void test_flora(void) {
     float x, z;
     world_region_point(w, REGION_STEPPE, 260.0f, &x, &z);
     int st = flora_count(w, x, z, 24, count);
-    CHECK(st > 24 * 24 && count[FLORA_GRASS] > count[FLORA_STIPA] && count[FLORA_STIPA] > 0 && count[FLORA_FERN] == 0);
+    CHECK(st > 2 * 24 * 24 && count[FLORA_GRASS] > count[FLORA_STIPA] && count[FLORA_STIPA] > 0 && count[FLORA_FERN] == 0);
+    CHECK(count[FLORA_HERB] > 0 && count[FLORA_HERB] < count[FLORA_STIPA]);
     world_edge_point(w, REGION_FOREST, 420.0f, &x, &z);
     flora_count(w, x, z, 24, count);
     CHECK(count[FLORA_FERN] > 0 && count[FLORA_STIPA] == 0);
@@ -5029,6 +5067,7 @@ static void test_flora(void) {
           flora_height(FLORA_FLOWER, 0.85f, 0.0f, 0.0f) == 0.0f && flora_height(FLORA_FLOWER, 0.2f, 0.0f, 0.0f) == 0.0f);
     CHECK(flora_height(FLORA_REED, 0.85f, 0.0f, 0.0f) >= 0.7f * flora_height(FLORA_REED, 0.3f, 1.0f, 0.0f));
     CHECK(flora_height(FLORA_FERN, 0.85f, 0.0f, 0.0f) < 0.3f * flora_height(FLORA_FERN, 0.3f, 1.0f, 0.0f));
+    CHECK(flora_height(FLORA_HERB, 0.85f, 0.0f, 0.0f) >= 0.4f * flora_height(FLORA_HERB, 0.3f, 1.0f, 0.0f)); // lenosas: no se tumban
     CHECK(flora_plume(0.3f) > 0.99f && flora_plume(0.02f) == 0.0f && flora_plume(0.7f) == 0.0f && flora_plume(0.95f) == 0.0f);
     // Con el clima del juego: el pasto de verano, mas alto que el del invierno.
     Climate cs = climate_at((float)(DAYS_PER_SEASON + 3) * GAME_SECONDS_PER_DAY + 400.0f, 1206u);
@@ -5046,6 +5085,35 @@ static void test_flora(void) {
     }
     CHECK(calm > 0.0f && calm <= 0.05f + 1e-4f && storm > 2.0f * calm && storm <= 0.27f + 1e-4f);
     CHECK(flora_trample(0.0f) == 1.0f && flora_trample(FLORA_TRAMPLE_R) == 0.0f && flora_trample(0.3f) > flora_trample(0.7f));
+
+    // Los arboles: en el bosque, el pino y menos arces; junto al agua dulce, sauces (sobre todo en el bosque y la
+    // costa); lejos del agua, ningun sauce; fuera del bosque, ningun arce.
+    float fjord[REGION_COUNT] = { 0 };
+    fjord[REGION_FJORD] = 1.0f;
+    int trees[4][TREE_KINDS] = { { 0 } };
+    for (int i = 0; i < 1000; i++) {
+        float r = ((float)i + 0.5f) / 1000.0f;
+        trees[0][flora_tree_kind(forest, 0.0f, r)]++;
+        trees[1][flora_tree_kind(forest, 1.0f, r)]++;
+        trees[2][flora_tree_kind(steppe, 1.0f, r)]++;
+        trees[3][flora_tree_kind(fjord, 1.0f, r)]++;
+        CHECK(flora_tree_kind(steppe, 0.0f, r) == TREE_PINE && flora_tree_kind(fjord, 0.0f, r) == TREE_PINE);
+    }
+    CHECK(trees[0][TREE_WILLOW] == 0 && trees[0][TREE_MAPLE] > 200 && trees[0][TREE_MAPLE] < trees[0][TREE_PINE]);
+    CHECK(trees[1][TREE_WILLOW] > 700 && trees[3][TREE_WILLOW] > 700 && trees[2][TREE_WILLOW] > 500 && trees[2][TREE_WILLOW] < trees[1][TREE_WILLOW]);
+    CHECK(trees[2][TREE_MAPLE] == 0 && trees[3][TREE_MAPLE] == 0);
+    // Sus estaciones a lo largo del año (el clima de la semilla 1206): verdes en verano, de colores en otoño, pelados
+    // al caer las hojas y nevados en invierno; nunca nevados en verano.
+    int seen[TREES_SEASONS] = { 0 };
+    for (int d = 0; d < DAYS_PER_YEAR; d++) {
+        Climate cd = climate_at(((float)d + 0.5f) * GAME_SECONDS_PER_DAY, 1206u);
+        TreeSeason ts = flora_tree_season(cd.greenness, cd.autumn, cd.snow_cover);
+        seen[ts]++;
+        if (cd.year > 0.25f && cd.year < 0.45f) CHECK(ts == TREES_SUMMER);
+    }
+    CHECK(seen[TREES_SUMMER] > 0 && seen[TREES_AUTUMN] > 0 && seen[TREES_BARE] + seen[TREES_SNOW] > 0 && seen[TREES_SNOW] > 0);
+    CHECK(flora_tree_season(0.8f, 0.0f, 0.0f) == TREES_SUMMER && flora_tree_season(0.0f, 0.9f, 0.0f) == TREES_AUTUMN);
+    CHECK(flora_tree_season(0.0f, 0.2f, 0.1f) == TREES_BARE && flora_tree_season(0.0f, 0.0f, 0.9f) == TREES_SNOW);
 }
 
 static void test_army(void) {
@@ -6397,6 +6465,7 @@ int main(void) {
     RUN(test_world_tribes_and_sites);
     RUN(test_voxels);
     RUN(test_voxels_merge);
+    RUN(test_vox_downsample);
     RUN(test_world_river_banks);
     RUN(test_world_water_never_floats);
     RUN(test_caves);

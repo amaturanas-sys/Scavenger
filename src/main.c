@@ -78,6 +78,7 @@
 #include "rlgl.h"
 #include "world/weather.h"
 #include "world/terrain.h"
+#include "world/trees.h"
 #include "world/vegetation.h"
 #include "world/worldview.h"
 #include "sim/lang.h"
@@ -1006,6 +1007,7 @@ int main(int argc, char **argv) {
 
     // Contexto nuevo: lo que los modulos guardaban de una corrida anterior (Android) ya no vale.
     terrain_forget_gpu();
+    trees_forget_gpu();
     clouds_forget_gpu();
     voxs_forget_gpu();
     cs_forget_gpu(); // la escena de una cueva (y sus modelos de voxeles)
@@ -1052,6 +1054,7 @@ int main(int argc, char **argv) {
         UnloadFileText(inv_text);
     }
     props_init(&g_props, &g_inventory);
+    trees_init(&g_inventory); // los arboles del mundo: su .vox y su alto, del inventario
     CameraRig rig = { .yaw = PI, .eye = 1.6f };
     settings_init(); // idioma (y sus traducciones), antes del primer texto de la partida
     camera_set_view(&rig, (CamView)(start_view >= 0 ? start_view : settings_camera()), true); // --vista, o la guardada
@@ -1683,6 +1686,7 @@ int main(int argc, char **argv) {
         voxs_set_lod(cam.position, gallery_mode ? 1e9f : VOXS_KIT_NEAR); // la galeria y el kit, todo de cerca
         BeginMode3D(cam);
         terrain_draw(&terrain);
+        terrain_draw_trees(&terrain, cam); // el pino, el sauce y el arce de voxeles (src/world/trees.h)
         camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used && !g_actions.camps[0].moved,
                   g_dz.tree_burn); // migrado, su fogata queda apagada
         if (!gallery_mode) { // el pasto, la stipa, las flores, los helechos y los juncos cercanos
@@ -1692,6 +1696,8 @@ int main(int argc, char **argv) {
                 if (g_actions.camps[i].used && !g_actions.camps[i].migrating)
                     clear[nclear++] = (VegClearing){ g_actions.camps[i].x, g_actions.camps[i].z, 16.0f };
             vegetation_draw(&terrain, cam, &climate, (float)GetTime(), &g_dz.fire, clear, nclear, &player.pos, 1);
+        } else {
+            vegetation_look(cam, &climate, (float)GetTime()); // las matas del inventario en la galeria (props)
         }
         if (gallery_mode && kit_type < 0) gallery_draw(&gallery);
         if (kit_type >= 0)
@@ -1858,6 +1864,9 @@ int main(int argc, char **argv) {
             int planted, drawn;
             vegetation_stats(&planted, &drawn);
             printf("Vegetacion: %d matas sembradas, %d dibujadas (en %.0f, %.0f)\n", planted, drawn, player.pos.x, player.pos.z);
+            int lods[3];
+            int trees = trees_drawn(lods);
+            printf("Arboles: %d dibujados (%d de cerca, %d a media distancia, %d de lejos)\n", trees, lods[0], lods[1], lods[2]);
             break;
         }
     }
@@ -1878,6 +1887,7 @@ int main(int argc, char **argv) {
     terrain_unload_gpu();
     cp_unload(), cs_unload();
     voxs_unload();
+    trees_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();
     return 0;

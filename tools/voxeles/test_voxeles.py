@@ -446,7 +446,7 @@ def test_carros_y_puerta():
     vano, la escalinata hasta el umbral, los tramos que bajan hasta la torre de atras y la abertura del costado):
     sus medidas, una sola pieza, sin aire encerrado y bajo el aviso de Android."""
     o = estructuras.carreta()
-    assert o.metros() == (2.429, 2.0, 4.643), o.metros()
+    assert o.metros() == (1.7, 1.4, 3.25), o.metros()
     assert _una_pieza_cerrada(o.lleno)
     for uc in (10, 55):  # el disco de cada rueda: lleno, con un hueco por cuadrante junto al cubo
         for z in (1, 2, 31, 32):
@@ -455,7 +455,7 @@ def test_carros_y_puerta():
     assert estructuras.triangulos(grid) < 8000
 
     o = estructuras.carro_varas()
-    assert o.metros() == (2.5, 2.5, 6.375), o.metros()
+    assert o.metros() == (1.63, 1.63, 4.156), o.metros()
     assert _una_pieza_cerrada(o.lleno)
     hierro, rayo = o.nombres.index("hierro"), o.nombres.index("rayo")
     assert o.parte[84, 1, 0] == hierro and o.parte[84, 1, 31] == hierro  # la llanta, abajo y arriba
@@ -480,10 +480,11 @@ def test_carros_y_puerta():
 
 
 def test_arboles_de_hoja():
-    """El roble y el sauce: el mismo de los cuatro lados y en el espejo (como el pino), una sola pieza, sin aire
+    """El roble, el sauce y el arce: el mismo de los cuatro lados y en el espejo (como el pino), una sola pieza, sin aire
     encerrado, sus medidas, el tronco a la vista (las hojas del roble empiezan a 3.6 m; las cortinas del sauce dejan
     huecos y llegan a 1.5 m del suelo) y bajo el aviso de Android."""
-    for receta, medidas in ((estructuras.roble, (8.788, 10.0, 8.788)), (estructuras.sauce, (6.75, 9.0, 6.75))):
+    for receta, medidas in ((estructuras.roble, (8.788, 10.0, 8.788)), (estructuras.sauce, (6.75, 9.0, 6.75)),
+                            (estructuras.arce, (8.027, 11.0, 8.027))):
         o = receta()
         p = o.parte
         assert o.metros() == medidas, (receta.__name__, o.metros())
@@ -495,12 +496,41 @@ def test_arboles_de_hoja():
         bajo = int(np.flatnonzero(hojas.any(axis=(0, 1))).min())
         if receta is estructuras.roble:
             assert bajo * o.celda >= 3.6 - 1e-6 and tronco[:, :, :bajo].any(), bajo
+        elif receta is estructuras.arce:  # la copa ovalada: el tronco a la vista hasta los 3.5 m
+            assert bajo * o.celda >= 3.5 and tronco[:, :, :bajo].any(), bajo
         else:
             assert abs(bajo * o.celda - 1.5) < 1e-6, bajo
             anillo = hojas[:, :, 10]  # a 2.5 m: las tiras de las cortinas, con huecos entre ellas
             assert 20 < anillo.sum() < 0.5 * np.pi * 12 ** 2, anillo.sum()
         grid, _ = estructuras.a_vox(o, *estructuras.colorear(o))
         assert estructuras.triangulos(grid) < 8000, receta.__name__
+
+
+def test_lo_natural():
+    """Las rocas, el pedernal, el monton de piedras, el barro, la leña, el caldero, el cofre, el odre y el coral de los
+    campamentos (sin hoja: el color celda por
+    celda): sus medidas (las del inventario), siempre iguales, bajo el aviso de Android; el pedernal casi negro con su
+    corteza y sus vetas blancas; el liquen de la roca, en lo que mira arriba."""
+    medidas = {"roca": (0.6, 0.3, 0.6), "roca_mediana": (1.5, 1.08, 1.38), "pedernal": (0.12, 0.09, 0.15),
+               "piedras": (0.4, 0.325, 0.475), "barro": (0.36, 0.3, 0.4), "lena": (0.46, 0.22, 0.82),
+               "caldero": (0.54, 0.5, 0.58), "cofre": (0.8, 0.5, 0.5), "odre": (0.32, 0.4, 0.18), "coral": (1.25, 0.8, 1.3)}
+    for nombre, m in medidas.items():
+        o = estructuras.RECETAS[nombre]()
+        assert o.metros() == m, (nombre, o.metros())
+        grid, pal = estructuras.a_vox(o, *estructuras.colores(o))
+        grid2, pal2 = estructuras.a_vox(*(lambda q: (q, *estructuras.colores(q)))(estructuras.RECETAS[nombre]()))
+        assert (grid == grid2).all() and (pal == pal2).all(), nombre
+        assert estructuras.triangulos(grid) < 8000, nombre
+    o = estructuras.pedernal()
+    rgb, vis = estructuras.colores(o)
+    brillo = rgb[vis].sum(axis=1)
+    assert np.median(brillo) < 3 * 90 and 0.05 < (brillo > 3 * 170).mean() < 0.5, (np.median(brillo), (brillo > 510).mean())
+    o = estructuras.roca()
+    rgb, vis = estructuras.colores(o)
+    verde = vis & (rgb[..., 1] > rgb[..., 0] + 8)  # el liquen verde
+    p = np.pad(o.lleno, 1)
+    arriba = ~p[1:-1, 1:-1, 2:]
+    assert verde.any() and (verde & ~arriba).sum() < 0.35 * verde.sum()
 
 
 def test_triangulos_juntos():
@@ -552,6 +582,7 @@ def main():
         ("test_muro_en_ruinas", test_muro_en_ruinas),
         ("test_carros_y_puerta", test_carros_y_puerta),
         ("test_arboles_de_hoja", test_arboles_de_hoja),
+        ("test_lo_natural", test_lo_natural),
         ("test_triangulos_juntos", test_triangulos_juntos),
     ]
     fails = 0

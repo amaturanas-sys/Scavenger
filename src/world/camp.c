@@ -5,6 +5,7 @@
 
 #include "../sim/rng.h"
 #include "hearth.h"
+#include "trees.h"
 #include "platform.h"
 #include "raymath.h"
 
@@ -67,7 +68,8 @@ void camp_draw(const Camp *c, float time, float snow, bool fire_lit, const float
     hearth_draw_base(c->fire, 1.3f, 7u, fire_lit);
     (void)time;
 
-    // Arboles low-poly: tronco + copa conica (quemados: negros; calcinados, sin copa).
+    // Los pinos de voxeles (src/world/trees.h), de 5 a 10 m: quemandose, oscuros; calcinados, el tronco negro.
+    TreeSeason season = snow > 0.35f ? TREES_SNOW : TREES_SUMMER;
     for (int i = 0; i < c->tree_count; i++) {
         Vector3 b = c->trees[i];
         float h = c->tree_h[i];
@@ -76,15 +78,8 @@ void camp_draw(const Camp *c, float time, float snow, bool fire_lit, const float
             DrawCylinder(b, 0.1f, 0.2f, h * 0.6f, 5, (Color){ 34, 30, 28, 255 });
             continue;
         }
-        if (burn > 0.0f) {
-            DrawCylinder(b, 0.15f, 0.25f, h * 0.35f, 5, (Color){ 44, 36, 30, 255 });
-            DrawCylinder((Vector3){ b.x, b.y + h * 0.3f, b.z }, 0.0f, h * 0.22f, h * 0.6f, 6, (Color){ 52, 50, 40, 255 });
-            continue;
-        }
-        DrawCylinder(b, 0.18f, 0.25f, h * 0.35f, 5, (Color){ 96, 70, 46, 255 });
-        DrawCylinder((Vector3){ b.x, b.y + h * 0.3f, b.z }, 0.0f, h * 0.32f, h * 0.75f, 6, (Color){ 74, 104, 60, 255 });
-        if (snow > 0.3f) // la nieve se posa en la mitad alta de la copa
-            DrawCylinder((Vector3){ b.x, b.y + h * 0.66f, b.z }, 0.0f, h * 0.17f, h * 0.4f, 6, (Color){ 236, 240, 245, 255 });
+        float yaw = (float)((unsigned)(fabsf(b.x) * 131.0f + fabsf(b.z) * 71.0f) % 628u) * 0.01f;
+        trees_draw(TREE_PINE, season, b, 0.5f + (h - 3.0f) / 6.0f, yaw, burn > 0.0f ? (Color){ 64, 54, 48, 255 } : WHITE);
     }
 }
 

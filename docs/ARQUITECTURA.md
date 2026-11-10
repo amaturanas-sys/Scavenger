@@ -40,7 +40,7 @@ src/
     fire.*       fuego que se propaga y se apaga, incendios, rayos, mantenimiento de estructuras
     buildkit.*   el kit de edificios de la edad del hierro: casas, palacios, talleres, graneros, templos del fuego y carretas de cada region, la muralla de las capitales (tramos, torres y puertas acodadas), las ruinas y las obras de la tribu, con piezas de 1 m y reglas con semilla (la puerta al frente, lo de adentro relleno, cuatro variantes), en voxeles
     voxmat.h     los materiales de las estructuras de voxeles (src/world/voxstruct.c los pinta con la paleta de su region)
-    flora.*      la vegetacion baja: donde crece cada mata (por celdas de 2 m, segun la region y el agua; ni en la roca, los rios, los pueblos o los campamentos), cuanto crece con la estacion y cuanto la mueven el viento y quien pasa
+    flora.*      la vegetacion baja: donde crece cada mata (por celdas de 2 m, segun la region y el agua; ni en la roca, los rios, los pueblos o los campamentos), cuanto crece con la estacion y cuanto la mueven el viento y quien pasa; y de que clase es cada arbol (flora_tree_kind) y como esta en cada estacion (flora_tree_season)
     melee.*      cuerpo a cuerpo: combos, pesado, patadas, escudo, agarre, gancho, parry, cambiar de mano
     keymap.*     el mapa de teclas: cada accion con su tecla y sus modificadores (H J K L, Tab, O, F, Enter, N, X...)
     camview.*    las vistas de la camara que N alterna (cerca, sobre el hombro; media; lejos): distancia, inclinacion y altura, y el encuadre de cada una (donde cae cada altura del cuerpo en la pantalla)
@@ -60,7 +60,8 @@ src/
     terrain.*    chunks con streaming, altura consultable
     voxstruct.*  estructuras de voxeles: los sitios del mundo, los edificios del kit (la muralla, las ruinas y las obras de la tribu sin modelo tambien) y la roca de la boca de las cuevas (con su arco y su tunel); de cerca, refinados; de lejos, simples
     voxcave.*    lo de adentro de las cuevas, de voxeles (estalactitas, estalagmitas, rocas y lo que agreguen las tareas de docs/PLAN_CUEVAS_GRANDES.md): se arma al cargar la cueva y se libera al salir
-    vegetation.* el pasto, la stipa, las flores, los helechos y los juncos alrededor del jugador (una ventana de celdas que sigue al jugador; triangulos de color con rlgl)
+    vegetation.* el pasto, la stipa, las flores, los helechos, los juncos y las hierbas aromaticas alrededor del jugador (una ventana de celdas que sigue al jugador; triangulos de color con rlgl), y las matas sueltas del inventario (la hierba alta, las hierbas curativas, el arbusto) con las mismas hojas
+    trees.*      los arboles del mundo con sus .vox del inventario (el pino, el sauce y el arce): tres detalles segun la distancia (vox_downsample), sus estaciones (pelados, de otoño, nevados), solo los que caen delante de la camara
     camp.*       campamento, props
     gallery.*    galeria del inventario (--galeria)
     sky.*        cielo, tinte de noche, estrellas y brillo de los fuegos

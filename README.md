@@ -264,6 +264,22 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+El paisaje de voxeles (v0.14.1):
+- **Los árboles, de voxeles:** los pinos del paisaje y los del campamento son el pino de voxeles del inventario. Junto a
+  los lagos y los ríos crecen sauces llorones, sobre todo en el bosque y la costa, y en el bosque hay arces, menos que
+  pinos. Cambian con el año: en otoño el arce se pone rojo y naranja y el sauce amarillo; al caer la hoja quedan
+  pelados; en invierno, los pinos nevados. De cerca, con todo su detalle; de lejos, con menos. Con la cámara lejana en
+  el bosque, la copa que tapa al personaje no se dibuja.
+- **Más hierbas en la estepa y más pasto en el bosque:** hasta tres matas por m²; entre el pasto y la stipa de la
+  estepa, el ajenjo, el tomillo y la salvia, con sus espigas moradas cuando la stipa echa sus plumas.
+- **Sin cajas junto a los campamentos:** la hierba alta del escondite, las hierbas curativas y el arbusto, con las hojas
+  de la vegetación (se mecen con el viento); las rocas, el pedernal, el montón de piedras, el barro, la leña, el
+  caldero, el odre y el arrecife de coral, de voxeles. El cofre espera un modelo animado (se abre y se cierra).
+- **Los carros, a la escala de la gente:** el carro de la yunta, con ruedas de 1,3 m y el piso de la caja a 1 m (antes,
+  ruedas de 2 m y el piso a 1,5 m); la carreta de mercancías, con ruedas de 1 m.
+- **La carreta-casa de las tribus, rehecha:** la casilla de fieltro va sobre la plataforma, la plataforma sobre los ejes
+  y las ruedas de rayos, de 1,25 m, por fuera y sin tocarse; adelante, la lanza con el yugo.
+
 La cámara cerca, `F` y `Enter` (v0.14.0):
 - **La cámara, cerca:** de serie va detrás del personaje, a la altura de su cabeza: se lo ve de la cabeza a las rodillas,
   y adelante el paisaje. `N` pasa a media distancia y a lejos (`Mayús+N`, la anterior); la vista elegida queda para la

@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 #include "raymath.h"
@@ -90,7 +91,7 @@ void vegetation_stats(int *planted, int *drawn) {
 typedef struct {
     float year, plume, snow;
     bool cattail; // los juncos con su espiga parda: del verano al invierno
-    Color stipa_tip, fern, reed;
+    Color stipa_tip, fern, reed, herb;
 } VegLook;
 
 // El pasto: el color del suelo de su region y su estacion (src/world/terrain.c: ground_color).
@@ -211,6 +212,30 @@ static void draw_tuft(const FloraTuft *t, const Climate *c, const VegLook *L, fl
         }
         break;
     }
+    case FLORA_HERB: { // hojas anchas grises que se abren desde el pie; en flor, una o dos espigas moradas
+        Color cb = shade(L->herb, 0.62f * v), ct = mixc(shade(L->herb, 1.15f * v), snow, L->snow * 0.5f);
+        int n = lod == 3 ? 6 : lod == 2 ? 4 : 2;
+        for (int j = 0; j < n; j++) {
+            float a = a0 + (float)j * 6.2832f / (float)n, ox = cosf(a), oz = sinf(a);
+            float hj = h * (0.5f + 0.15f * fmodf(t->rnd * 4.3f + (float)j * 0.53f, 1.0f));
+            blade(b, hj, ox, oz, 0.55f, bx * 0.5f, bz * 0.5f, 0.07f * s, -oz, ox, cb, ct, 0.0f, 1.0f, cb);
+        }
+        if (L->plume > 0.05f && lod > 1) { // las espigas: el tomillo y la salvia moradas, algun ajenjo amarillo
+            static const Color BLOOM[3] = { { 150, 108, 196, 255 }, { 116, 104, 200, 255 }, { 206, 186, 92, 255 } };
+            Color petal = mixc(cb, shade(BLOOM[(int)(t->rnd * 613.0f) % 3], v), L->plume);
+            int spikes = lod == 3 ? 2 : 1;
+            for (int j = 0; j < spikes; j++) {
+                float a = a0 + 1.1f + (float)j * 2.6f, ox = cosf(a) * 0.12f, oz = sinf(a) * 0.12f;
+                float f2 = (ox + bx) * (ox + bx) + (oz + bz) * (oz + bz), k = f2 > 0.8f ? sqrtf(0.8f / f2) : 1.0f;
+                float hs = h * (0.95f - 0.15f * (float)j);
+                blade(b, hs, ox / 0.12f, oz / 0.12f, 0.12f, bx, bz, 0.012f * s, fx, fz, cb, cb, 0.0f, 1.0f, cb);
+                Vector3 tip = { b.x + (ox + bx) * k * hs, b.y + hs * sqrtf(1.0f - fminf(f2, 0.8f)), b.z + (oz + bz) * k * hs };
+                blossom(tip, 0.03f * s, petal);
+                blossom((Vector3){ tip.x, tip.y - 0.05f * s, tip.z }, 0.035f * s, shade(petal, 0.85f));
+            }
+        }
+        break;
+    }
     case FLORA_REED: { // tallos altos casi derechos; del verano al invierno, la espiga parda
         Color cb = shade(L->reed, 0.6f * v), cm = shade(L->reed, 0.9f * v), ct = mixc(shade(L->reed, 1.05f * v), snow, L->snow * 0.6f);
         int n = lod == 3 ? 4 : lod == 2 ? 3 : 1;
@@ -241,6 +266,92 @@ typedef struct {
     float x, z, r2, grow; // grow: cuanto volvio a crecer (lo calcinado reverdece al desvanecerse)
 } Burnt;
 
+// El cuadro: la estacion, el viento y la camara (vegetation_look), para las matas sueltas.
+static VegLook g_look;
+static Climate g_clim;
+static Camera3D g_cam;
+static float g_time, g_lean;
+static bool g_have_look;
+
+void vegetation_look(Camera3D cam, const Climate *c, float time) {
+    Climate cc = *c;
+    if (cc.year == 0.0f && cc.greenness == 0.0f && cc.autumn == 0.0f && cc.snow_cover == 0.0f) // sin clima (la galeria): el verano
+        cc.year = 0.3f, cc.greenness = 0.8f, cc.wind = 0.3f;
+    VegLook L = { .year = cc.year, .plume = flora_plume(cc.year), .snow = clamp01(cc.snow_cover), .stipa_tip = { 214, 210, 188, 255 } };
+    L.cattail = cc.year > 0.3f && cc.year < 0.95f;
+    float dormant = 1.0f - clamp01(cc.greenness + cc.autumn);
+    L.fern = mixc(mixc((Color){ 156, 92, 44, 255 }, (Color){ 70, 116, 56, 255 }, cc.greenness * 1.4f), (Color){ 112, 88, 64, 255 }, dormant);
+    L.reed = mixc((Color){ 184, 162, 108, 255 }, (Color){ 88, 124, 62, 255 }, cc.greenness * (1.0f - cc.autumn));
+    // Las hierbas aromaticas: el gris verdoso del ajenjo y la salvia; en otoño, pardas; dormidas, grises.
+    L.herb = mixc(mixc((Color){ 150, 126, 86, 255 }, (Color){ 120, 142, 104, 255 }, cc.greenness * 1.3f), (Color){ 132, 124, 104, 255 }, dormant);
+    g_look = L, g_clim = cc, g_cam = cam, g_time = time, g_lean = flora_lean(cc.wind), g_have_look = true;
+}
+
+static uint32_t prop_hash(uint32_t h) {
+    h ^= h >> 16;
+    h *= 0x7FEB352Du;
+    h ^= h >> 15;
+    h *= 0x846CA68Bu;
+    return h ^ (h >> 16);
+}
+
+bool vegetation_draw_prop(const char *id, float w, float l, Vector3 pos, float yaw) {
+    int kind = !strcmp(id, "mapa.vegetacion.hierba_alta") ? 0 : !strcmp(id, "mapa.vegetacion.mata_hierbas") ? 1
+             : !strcmp(id, "mapa.vegetacion.arbusto")                                                    ? 2
+                                                                                                          : -1;
+    if (kind < 0) return false;
+    if (!g_have_look) vegetation_look((Camera3D){ .position = { pos.x + 6.0f, pos.y + 3.0f, pos.z }, .target = pos, .fovy = 55.0f }, &(Climate){ 0 }, 0.0f);
+    float k[REGION_COUNT] = { 0 };
+    k[REGION_STEPPE] = 1.0f;
+    if (g_world) world_region_weights(g_world, pos.x, pos.z, k);
+    VegLook L = g_look;
+    if (kind == 1) { // las curativas: mas verdes que el ajenjo, y en flor mientras estan verdes
+        L.herb = mixc(L.herb, (Color){ 92, 138, 80, 255 }, 0.55f * g_clim.greenness);
+        L.plume = fmaxf(L.plume, 0.75f * g_clim.greenness);
+    } else if (kind == 2) { // el arbusto: el follaje mas oscuro de las matas de la estepa
+        L.herb = mixc(mixc(L.fern, (Color){ 78, 96, 54, 255 }, 0.6f), (Color){ 128, 110, 80, 255 }, 1.0f - clamp01(g_clim.greenness + g_clim.autumn));
+        L.plume = 0.0f;
+    }
+    uint32_t seed = prop_hash((uint32_t)(int)floorf(pos.x * 7.0f) * 73856093u ^ (uint32_t)(int)floorf(pos.z * 7.0f) * 19349663u);
+    int n = kind == 0 ? 42 : kind == 1 ? 9 : 11; // la hierba alta, tupida: es un escondite
+    float spread = kind == 0 ? 0.5f : 0.45f, rx = fmaxf(l, 0.3f) * spread, rz = fmaxf(w, 0.3f) * spread, cy = cosf(yaw), sy = sinf(yaw);
+    rlDrawRenderBatchActive();
+    rlDisableBackfaceCulling(); // hojas de una sola cara: se ven de los dos lados
+    rlBegin(RL_TRIANGLES);
+    for (int i = 0; i < n; i++) {
+        uint32_t h = prop_hash(seed + (uint32_t)i * 0x9E3779B9u);
+        float ra = (float)(h & 0x3FF) / 1024.0f, rb = (float)((h >> 10) & 0x3FF) / 1024.0f, rc = (float)((h >> 20) & 0x3FF) / 1024.0f;
+        float ang = ra * 6.2832f, rad = powf(rb, 0.6f); // mas tupida al medio
+        float lx = cosf(ang) * rad * rx, lz = sinf(ang) * rad * rz;
+        FloraTuft t = { 0 };
+        t.x = pos.x + lx * cy + lz * sy, t.y = pos.y, t.z = pos.z - lx * sy + lz * cy;
+        t.rnd = rc, t.patch = 0.5f;
+        t.forest = (unsigned char)(k[REGION_FOREST] * 255.0f), t.high = (unsigned char)(k[REGION_HIGHLAND] * 255.0f);
+        t.fjord = (unsigned char)(k[REGION_FJORD] * 255.0f), t.desert = (unsigned char)(k[REGION_DESERT] * 255.0f);
+        if (kind == 0) { // la stipa con sus plumas y matas de pasto, de un metro: alcanza para esconderse
+            bool stipa = rc < 0.62f;
+            t.kind = stipa ? FLORA_STIPA : FLORA_GRASS;
+            t.size = stipa ? 1.05f + 0.25f * rb : 1.7f + 0.4f * ra;
+        } else {
+            t.kind = FLORA_HERB;
+            t.size = kind == 1 ? 1.3f + 0.35f * rb : 1.9f + 0.4f * rb;
+        }
+        float full = flora_height((FloraKind)t.kind, 0.3f, 1.0f, 0.0f); // lo mas alto del año
+        float h0 = fmaxf(flora_height((FloraKind)t.kind, g_clim.year, g_clim.greenness, g_clim.autumn), 0.6f * full) * t.size;
+        float phase = -(t.x * WIND_DIR.x + t.z * WIND_DIR.y) * 0.45f + t.rnd * 1.5f;
+        float sw = g_lean + flora_sway(g_time, g_clim.wind, phase), side = 0.35f * flora_sway(g_time * 1.3f, g_clim.wind, phase + 1.7f);
+        float bx = WIND_DIR.x * sw - WIND_DIR.y * side, bz = WIND_DIR.y * sw + WIND_DIR.x * side;
+        Vector3 to = { t.x - g_cam.position.x, t.y + h0 * 0.5f - g_cam.position.y, t.z - g_cam.position.z };
+        float cd = Vector3Length(to), hd = sqrtf(to.x * to.x + to.z * to.z);
+        float fx = hd > 0.01f ? -to.z / hd : 1.0f, fz = hd > 0.01f ? to.x / hd : 0.0f;
+        draw_tuft(&t, &g_clim, &L, h0, cd < 12.0f ? 3 : cd < 24.0f ? 2 : 1, bx, bz, fx, fz);
+    }
+    rlEnd();
+    rlDrawRenderBatchActive();
+    rlEnableBackfaceCulling();
+    return true;
+}
+
 void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float time, const FireField *fire, const VegClearing *clear,
                      int nclear, const Vector3 *walkers, int nwalkers) {
     g_drawn = 0;
@@ -250,12 +361,9 @@ void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float tim
     // La estacion.
     float hk[FLORA_KINDS];
     for (int k = 0; k < FLORA_KINDS; k++) hk[k] = flora_height((FloraKind)k, c->year, c->greenness, c->autumn);
-    VegLook L = { .year = c->year, .plume = flora_plume(c->year), .snow = clamp01(c->snow_cover), .stipa_tip = { 214, 210, 188, 255 } };
-    L.cattail = c->year > 0.3f && c->year < 0.95f;
-    float dormant = 1.0f - clamp01(c->greenness + c->autumn);
-    L.fern = mixc(mixc((Color){ 156, 92, 44, 255 }, (Color){ 70, 116, 56, 255 }, c->greenness * 1.4f), (Color){ 112, 88, 64, 255 }, dormant);
-    L.reed = mixc((Color){ 184, 162, 108, 255 }, (Color){ 88, 124, 62, 255 }, c->greenness * (1.0f - c->autumn));
-    float lean = flora_lean(c->wind);
+    vegetation_look(cam, c, time);
+    VegLook L = g_look;
+    float lean = g_lean;
     // Los focos y la tierra calcinada cerca.
     Burnt burnt[VEG_BURNT];
     int nb = 0;
