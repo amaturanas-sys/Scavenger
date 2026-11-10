@@ -59,6 +59,11 @@ extern const float VOXS_MOUTH_BOULDERS[2][3];
 void voxs_draw_cave_mouth(Region region, int variant, bool facade, Vector3 at, float yaw);
 void voxs_unload(void);
 void voxs_forget_gpu(void); // ver terrain_forget_gpu
+// ¿Hay una celda llena de un edificio, una ruina o una formacion dibujados cerca del ojo en el cuadro anterior
+// (voxs_set_lod empieza cada cuadro) en q? La camara (src/main.c) no se mete adentro. Los que tienen adentro a who
+// (el jugador, metido en una casa) no cuentan: la camara no los puede esquivar. voxs_near_count: cuantos hay.
+bool voxs_solid_at(Vector3 q, Vector3 who);
+int voxs_near_count(void);
 
 // Para los modelos de voxeles de otros modulos (src/world/voxcave.c): la paleta de una region, la rejilla a modelo con
 // esa paleta (refine: el doble de resolucion, con las esquinas redondeadas; jitter: la variacion de tono por celda) y la

@@ -1,6 +1,7 @@
 #include "voxstruct.h"
 
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "raymath.h"
@@ -383,18 +384,53 @@ static bool build_cave_mouth(Region r, int v, bool facade, VoxGrid *g) {
     return true;
 }
 
+// ------------------------------------------------------------------ lo que ocupa cada modelo
+// Un bit por celda de ~0,5 m, armado una vez junto con el modelo (antes de refinarlo): lo que tapa la camara
+// (voxs_solid_at). La rejilla, centrada en x y z como la malla, desde el fondo del cimiento.
+typedef struct {
+    uint8_t *bits;
+    int nx, ny, nz;
+    float cell, ox, oz; // m: el lado de la celda y la esquina de la rejilla
+} VoxOcc;
+
+static void occ_build(VoxOcc *o, const VoxGrid *g) {
+    if (o->bits || !g->m || g->size <= 0.0f) return;
+    int f = (int)lroundf(0.5f / g->size);
+    if (f < 1) f = 1;
+    o->nx = (g->nx + f - 1) / f, o->ny = (g->ny + f - 1) / f, o->nz = (g->nz + f - 1) / f;
+    o->cell = g->size * (float)f;
+    o->ox = -(float)g->nx * g->size * 0.5f, o->oz = -(float)g->nz * g->size * 0.5f;
+    size_t n = (size_t)o->nx * (size_t)o->ny * (size_t)o->nz;
+    o->bits = calloc((n + 7) / 8, 1);
+    if (!o->bits) return;
+    for (int y = 0; y < g->ny; y++)
+        for (int z = 0; z < g->nz; z++)
+            for (int x = 0; x < g->nx; x++) {
+                if (!g->m[(size_t)x + (size_t)g->nx * ((size_t)z + (size_t)g->nz * (size_t)y)]) continue;
+                size_t i = (size_t)(x / f) + (size_t)o->nx * ((size_t)(z / f) + (size_t)o->nz * (size_t)(y / f));
+                o->bits[i >> 3] |= (uint8_t)(1u << (i & 7));
+            }
+}
+
+static void occ_free(VoxOcc *o) {
+    free(o->bits);
+    memset(o, 0, sizeof(*o));
+}
+
 // ------------------------------------------------------------------ cache de modelos
 #define SITE_SLOTS (SITE_KINDS * REGION_COUNT)
 static struct {
     bool tried, ok;
     Model model;
     float found_h; // m de cimiento (se dibuja hundido)
+    VoxOcc occ;
 } g_sites[SITE_SLOTS], g_feats[VF_KINDS * VF_VARIANTS];
 // El kit: de lejos, el modelo sin refinar; de cerca, el refinado (se arma la primera vez que hace falta).
 static struct {
     bool tried, ok, fine_tried, fine_ok;
     Model model, fine;
     BkInfo info;
+    VoxOcc occ;
 } g_kit[BK_KINDS * REGION_COUNT * BK_VARIANTS];
 // La roca de las bocas de cueva: de lejos, sin refinar; de cerca, refinada (como el kit).
 static struct {
@@ -403,6 +439,47 @@ static struct {
 } g_mouths[REGION_COUNT * VF_VARIANTS * 2];
 static Vector3 g_lod_eye;
 static float g_lod_near = 1e9f; // sin voxs_set_lod, todo de cerca
+
+// Los modelos dibujados cerca del ojo en el cuadro anterior (voxs_set_lod empieza la lista de cada cuadro).
+#define NEAR_MAX 48
+static struct {
+    const VoxOcc *occ;
+    Vector3 base;          // el fondo de la rejilla en el mundo (donde se dibuja, menos el cimiento)
+    float c, s, inv, r;    // su giro, 1/escala y el radio de su planta (m)
+} g_near[NEAR_MAX];
+static int g_near_n;
+
+static void remember(const VoxOcc *o, float found_h, Vector3 at, float yaw, float scale) {
+    if (!o->bits || g_near_n >= NEAR_MAX || scale <= 0.0f) return;
+    float hx = (float)o->nx * o->cell * 0.5f, hz = (float)o->nz * o->cell * 0.5f, r = sqrtf(hx * hx + hz * hz) * scale;
+    float dx = at.x - g_lod_eye.x, dz = at.z - g_lod_eye.z;
+    if (dx * dx + dz * dz > (r + 24.0f) * (r + 24.0f)) return; // lejos del brazo de la camara
+    g_near[g_near_n].occ = o;
+    g_near[g_near_n].base = (Vector3){ at.x, at.y - found_h * scale, at.z };
+    g_near[g_near_n].c = cosf(yaw), g_near[g_near_n].s = sinf(yaw), g_near[g_near_n].inv = 1.0f / scale, g_near[g_near_n].r = r;
+    g_near_n++;
+}
+
+// ¿q cae en una celda llena del modelo i de la lista? (al reves del giro de DrawModelEx)
+static bool near_hit(int i, Vector3 q) {
+    const VoxOcc *o = g_near[i].occ;
+    float dx = q.x - g_near[i].base.x, dz = q.z - g_near[i].base.z;
+    if (dx * dx + dz * dz > g_near[i].r * g_near[i].r) return false;
+    float c = g_near[i].c, s = g_near[i].s, k = g_near[i].inv;
+    float lx = (dx * c - dz * s) * k, lz = (dx * s + dz * c) * k, ly = (q.y - g_near[i].base.y) * k;
+    int x = (int)floorf((lx - o->ox) / o->cell), y = (int)floorf(ly / o->cell), z = (int)floorf((lz - o->oz) / o->cell);
+    if (x < 0 || y < 0 || z < 0 || x >= o->nx || y >= o->ny || z >= o->nz) return false;
+    size_t b = (size_t)x + (size_t)o->nx * ((size_t)z + (size_t)o->nz * (size_t)y);
+    return (o->bits[b >> 3] >> (b & 7)) & 1u;
+}
+
+bool voxs_solid_at(Vector3 q, Vector3 who) {
+    for (int i = 0; i < g_near_n; i++)
+        if (near_hit(i, q) && !near_hit(i, who)) return true;
+    return false;
+}
+
+int voxs_near_count(void) { return g_near_n; }
 
 void voxs_palette(Region r, uint8_t out[M_COUNT][4]) { palette_for(r, out); }
 void voxs_erode_skin(VoxGrid *g, uint32_t seed, float freq, float cut) { erode_skin(g, seed, freq, cut); }
@@ -458,11 +535,14 @@ void voxs_draw_site(SiteKind kind, Region region, Vector3 at, float yaw, Color t
         VoxGrid g;
         if (build_site2(kind, region, &g, 1000u + (uint32_t)i * 17u)) {
             g_sites[i].found_h = FOUND * g.size;
+            occ_build(&g_sites[i].occ, &g);
             g_sites[i].ok = to_model(&g, region, &g_sites[i].model, true);
             vox_free(&g);
         }
     }
-    if (g_sites[i].ok) draw_model(g_sites[i].model, g_sites[i].found_h, at, yaw, 1.0f, tint);
+    if (!g_sites[i].ok) return;
+    draw_model(g_sites[i].model, g_sites[i].found_h, at, yaw, 1.0f, tint);
+    remember(&g_sites[i].occ, g_sites[i].found_h, at, yaw, 1.0f);
 }
 
 static int kit_slot(BkType t, Region region, int variant, bool fine) {
@@ -475,6 +555,7 @@ static int kit_slot(BkType t, Region region, int variant, bool fine) {
         BkInfo info;
         if (bk_build(t, region, bk_variant_seed(t, region, v), v < 2, &g, &info)) {
             g_kit[i].info = info;
+            occ_build(&g_kit[i].occ, &g);
             if (fine) g_kit[i].fine_ok = to_model(&g, region, &g_kit[i].fine, true);
             else g_kit[i].ok = to_model(&g, region, &g_kit[i].model, false);
             vox_free(&g);
@@ -486,6 +567,7 @@ static int kit_slot(BkType t, Region region, int variant, bool fine) {
 void voxs_set_lod(Vector3 eye, float near_m) {
     g_lod_eye = eye;
     g_lod_near = near_m;
+    g_near_n = 0; // un cuadro nuevo: la lista de lo dibujado cerca empieza de cero
 }
 
 void voxs_draw_kit(BkType t, Region region, int variant, Vector3 at, float yaw, float scale, Color tint) {
@@ -493,7 +575,9 @@ void voxs_draw_kit(BkType t, Region region, int variant, Vector3 at, float yaw, 
     bool fine = dx * dx + dz * dz < g_lod_near * g_lod_near;
     int i = kit_slot(t, region, variant, fine);
     if (i < 0 && fine) i = kit_slot(t, region, variant, false), fine = false;
-    if (i >= 0) draw_model(fine ? g_kit[i].fine : g_kit[i].model, g_kit[i].info.found, at, yaw, scale, tint);
+    if (i < 0) return;
+    draw_model(fine ? g_kit[i].fine : g_kit[i].model, g_kit[i].info.found, at, yaw, scale, tint);
+    remember(&g_kit[i].occ, g_kit[i].info.found, at, yaw, scale);
 }
 
 bool voxs_kit_info(BkType t, Region region, int variant, BkInfo *out) {
@@ -523,12 +607,15 @@ void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float s
         g_feats[i].tried = true;
         VoxGrid g;
         if (build_feature(f, variant & (VF_VARIANTS - 1), &g)) {
+            occ_build(&g_feats[i].occ, &g);
             g_feats[i].ok = to_model(&g, REGION_STEPPE, &g_feats[i].model, false);
             g_feats[i].found_h = (f == VF_ICEBERG ? 3 : f == VF_FLOE ? 1 : FOUND) * g.size;
             vox_free(&g);
         }
     }
-    if (g_feats[i].ok) draw_model(g_feats[i].model, g_feats[i].found_h, at, yaw, scale, tint);
+    if (!g_feats[i].ok) return;
+    draw_model(g_feats[i].model, g_feats[i].found_h, at, yaw, scale, tint);
+    remember(&g_feats[i].occ, g_feats[i].found_h, at, yaw, scale);
 }
 
 static int mouth_slot(Region r, int v, bool facade, bool fine) {
@@ -556,7 +643,16 @@ void voxs_draw_cave_mouth(Region region, int variant, bool facade, Vector3 at, f
     if (i >= 0) draw_model(fine ? g_mouths[i].fine : g_mouths[i].model, MOUTH_GROUND * MOUTH_S, p, yaw, 1.0f, WHITE);
 }
 
+// La ocupacion de todos los modelos (memoria nuestra, no de la GPU) y la lista de los cercanos.
+static void forget_occupancy(void) {
+    for (int i = 0; i < SITE_SLOTS; i++) occ_free(&g_sites[i].occ);
+    for (int i = 0; i < VF_KINDS * VF_VARIANTS; i++) occ_free(&g_feats[i].occ);
+    for (int i = 0; i < BK_KINDS * REGION_COUNT * BK_VARIANTS; i++) occ_free(&g_kit[i].occ);
+    g_near_n = 0;
+}
+
 void voxs_forget_gpu(void) {
+    forget_occupancy(); // los modelos se vuelven a armar, y con ellos su ocupacion
     memset(g_mouths, 0, sizeof(g_mouths));
     memset(g_kit, 0, sizeof(g_kit));
     memset(g_feats, 0, sizeof(g_feats));
@@ -564,6 +660,7 @@ void voxs_forget_gpu(void) {
 }
 
 void voxs_unload(void) {
+    forget_occupancy();
     for (int i = 0; i < SITE_SLOTS; i++)
         if (g_sites[i].ok) UnloadModel(g_sites[i].model);
     for (int i = 0; i < VF_KINDS * VF_VARIANTS; i++)

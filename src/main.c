@@ -160,18 +160,23 @@ static bool in_prop(const Prop *pr, Vector3 q, bool flat) {
     return fabsf(lx) < it->l * 0.5f && fabsf(lz) < it->w * 0.5f && (flat || (q.y > pr->pos.y - 0.5f && q.y < pr->pos.y + it->h));
 }
 
-// Las obras que pueden tapar la camara en este cuadro: las yurtas del campamento inicial y las estructuras del
-// inventario puestas en el mundo a menos de 25 m del jugador, salvo la que lo tiene adentro (se puede entrar en una
-// yurta: la camara no la puede esquivar). Lo bajo (menos de 1 m) no tapa.
+// Lo que puede tapar la camara en este cuadro: las yurtas del campamento inicial, las estructuras del inventario
+// puestas en el mundo a menos de 25 m del jugador (salvo la que lo tiene adentro: se puede entrar en una yurta, y la
+// camara no la puede esquivar; lo bajo, de menos de 1 m, no tapa) y los edificios, las ruinas y las formaciones de
+// voxeles dibujados cerca (src/world/voxstruct.h: las ciudades, las aldeas, los campamentos de las tribus).
 #define BLOCKERS_MAX 24
 typedef struct {
     Vector3 yurt[CAMP_MAX_YURTS];
     const Prop *prop[BLOCKERS_MAX];
     int ny, np;
+    Vector3 who;
+    bool vox;
 } Blockers;
 
 static void blockers_near(Blockers *b, const Camp *camp, const Props *props, Vector3 who) {
     b->ny = b->np = 0;
+    b->who = who;
+    b->vox = voxs_near_count() > 0;
     for (int i = 0; i < camp->yurt_count; i++)
         if (!in_yurt(camp->yurts[i], who, true)) b->yurt[b->ny++] = camp->yurts[i];
     for (int i = 0; i < props->count && b->np < BLOCKERS_MAX; i++) {
@@ -187,12 +192,12 @@ static bool structure_at(const Blockers *b, Vector3 q) {
         if (in_yurt(b->yurt[i], q, false)) return true;
     for (int i = 0; i < b->np; i++)
         if (in_prop(b->prop[i], q, false)) return true;
-    return false;
+    return b->vox && voxs_solid_at(q, b->who);
 }
 
 // ¿El brazo de la camara (del jugador a ella) cruza una obra?
 static bool arm_blocked(const Blockers *b, Vector3 target, Vector3 cam) {
-    if (!b->ny && !b->np) return false;
+    if (!b->ny && !b->np && !b->vox) return false;
     for (int k = 1; k <= 16; k++)
         if (structure_at(b, Vector3Lerp(target, cam, (float)k / 16.0f))) return true;
     return false;
@@ -207,7 +212,7 @@ static Vector3 camera_at(Vector3 target, float yaw, float pitch, float dist) {
 // antes (si subir por encima no alcanzo: camera_update).
 static void camera_clear_structures(const Blockers *b, Vector3 target, Vector3 *cam) {
     Vector3 from = target, to = *cam;
-    for (int k = 1; k <= 24 && (b->ny || b->np); k++)
+    for (int k = 1; k <= 24 && (b->ny || b->np || b->vox); k++)
         if (structure_at(b, Vector3Lerp(from, to, (float)k / 24.0f))) {
             *cam = Vector3Lerp(from, to, fmaxf((float)(k - 1) / 24.0f - 0.04f, 0.08f)); // un poco antes de la pared
             return;
