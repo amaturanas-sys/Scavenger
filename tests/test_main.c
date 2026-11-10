@@ -5268,15 +5268,35 @@ static uint32_t test_bk_hash(const VoxGrid *g) {
 // casi todo a ras del suelo, con brechas y nunca mas alto que ANC_HEIGHT_MAX; de dos a cuatro tramos de pie,
 // sobre muros de afuera y lejos de las puertas.
 #define ANC_TEST_N 184 // 2 * (ANC_HALF + 1) / 0.25: celdas de 0.25 m con un metro de calle alrededor
+static bool anc_rect_same(AncRect a, AncRect b) { return a.x0 == b.x0 && a.z0 == b.z0 && a.x1 == b.x1 && a.z1 == b.z1; }
+// Dos plantas iguales, campo por campo: memcmp no sirve, el relleno de AncWall (tras su bool) no tiene valor
+// definido y en MSVC sale distinto en cada copia.
+static bool anc_same(const AncientPlan *a, const AncientPlan *b) {
+    if (a->seed != b->seed || a->building_count != b->building_count || a->wall_count != b->wall_count || a->door_count != b->door_count ||
+        a->standing_count != b->standing_count || a->rooms != b->rooms || !anc_rect_same(a->court, b->court))
+        return false;
+    for (int i = 0; i < a->building_count; i++)
+        if (!anc_rect_same(a->buildings[i], b->buildings[i])) return false;
+    for (int i = 0; i < a->wall_count; i++)
+        if (!anc_rect_same(a->walls[i].r, b->walls[i].r) || a->walls[i].h != b->walls[i].h || a->walls[i].outer != b->walls[i].outer) return false;
+    for (int i = 0; i < a->door_count; i++)
+        if (!anc_rect_same(a->doors[i], b->doors[i])) return false;
+    for (int i = 0; i < a->standing_count; i++) {
+        const AncStanding *s = &a->standing[i], *t = &b->standing[i];
+        if (s->x != t->x || s->z != t->z || s->yaw != t->yaw || !anc_rect_same(s->r, t->r)) return false;
+    }
+    return true;
+}
+
 static void test_ancient(void) {
     static AncientPlan a, b;
     static uint8_t reached[ANC_TEST_N * ANC_TEST_N];
     static int queue[ANC_TEST_N * ANC_TEST_N];
     ancient_plan(&a, 77u);
     ancient_plan(&b, 77u);
-    CHECK(!memcmp(&a, &b, sizeof(a)));
+    CHECK(anc_same(&a, &b));
     ancient_plan(&b, 78u);
-    CHECK(memcmp(&a, &b, sizeof(a)) != 0);
+    CHECK(!anc_same(&a, &b));
     int few = 0, small_court = 0, overlap = 0, out = 0, standing_bad = 0, too_tall = 0, unreachable = 0, inside = 0, samples = 0, breaches = 0;
     double sum_h = 0.0;
     const int N = ANC_TEST_N;
