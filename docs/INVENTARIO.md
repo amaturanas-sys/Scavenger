@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**453 objetos** · 30 con modelo · 423 pendientes.
+**453 objetos** · 33 con modelo · 420 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -11,7 +11,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
-| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 33 | 26 | 0 | 7 | 0 |
+| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 33 | 25 | 0 | 8 | 0 |
 | [Estructuras](#estructura) | 43 | 37 | 1 | 5 | 0 |
 | [Vehículos](#vehiculo) | 11 | 9 | 0 | 2 | 0 |
 | [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
@@ -23,7 +23,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 87 | 83 | 0 | 4 | 0 |
+| [Utilería y consumibles](#utileria) | 87 | 81 | 0 | 6 | 0 |
 | [Personajes y NPCs](#personaje) | 47 | 47 | 0 | 0 | 0 |
 
 ## Etiquetas
@@ -84,7 +84,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.hito.campamento_abandonado` | Campamento abandonado del padre | 10x3x10 | 400 | pendiente | `acto:3` `especial:rastro_padre` |  |
 | `mapa.hito.piedra_ciervo` | Piedra-ciervo | 1.36x3x0.44 | 150 | importado | `bioma:estepa` `material:piedra` `especial:rastro_padre` `formato:voxel` | Estela con ciervos de estilo animal. Voxeles armados a mano (tools/voxeles/estructuras.py piedra_ciervo): una losa de corte recto en celdas de 4 cm, con los tres ciervos y sus astas tallados como surcos en el frente y las grietas de la espalda, sacados de la hoja de tres vistas generada por el usuario con Canva (el ancho y el grueso, los de la hoja, por decision del usuario). |
 | `mapa.hito.balbal` | Balbal (estatua de piedra) | 0.6x1.8x0.5 | 150 | pendiente | `bioma:estepa` `material:piedra` |  |
-| `mapa.agua.coral` | Arrecife de coral | 1.5x0.8x1.5 | 120 | pendiente | `bioma:cualquiera` `uso:decorado` `uso:recolectable` | Bajo el agua de los lagos: coral rojo y perlas. |
+| `mapa.agua.coral` | Arrecife de coral | 1.25x0.8x1.3 | 120 | importado | `bioma:cualquiera` `uso:decorado` `uso:recolectable` `formato:voxel` | Bajo el agua de los lagos: coral rojo y perlas. Voxeles armados a mano (tools/voxeles/estructuras.py coral), celdas de 5 cm: una loma de roca clara con ramas de coral rojas y naranjas que se abren hacia arriba. |
 
 <a id="estructura"></a>
 
@@ -455,9 +455,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
-| `utileria.objeto.caldero` | Caldero | 0.6x0.5x0.6 | 80 | pendiente | `faccion:nomada` `material:hierro` |  |
-| `utileria.objeto.odre` | Odre de cuero | 0.3x0.4x0.2 | 60 | pendiente | `uso:recolectable` `material:cuero` |  |
-| `utileria.objeto.cofre` | Cofre de botín | 0.8x0.5x0.5 | 100 | pendiente | `uso:interactuable` `material:madera` |  |
+| `utileria.objeto.caldero` | Caldero | 0.54x0.5x0.58 | 80 | importado | `faccion:nomada` `material:hierro` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py caldero), celdas de 2 cm: el caldero escita de bronce, la olla honda sobre su pie de cono hueco, las dos asas de pie sobre el borde y el guiso adentro, con la patina oscura y verde. |
+| `utileria.objeto.odre` | Odre de cuero | 0.32x0.4x0.18 | 60 | importado | `uso:recolectable` `material:cuero` `formato:voxel` | Voxeles armados a mano (tools/voxeles/estructuras.py odre), celdas de 2 cm: la bolsa de cuero con su costura, el cuello atado con un cordel y la correa de colgar. |
+| `utileria.objeto.cofre` | Cofre de botín | 0.8x0.5x0.5 | 100 | pendiente | `uso:interactuable` `material:madera` | Se abre y se cierra (assets/animaciones.tsv: abrir y cerrar), asi que va con un GLB animado. La forma ya esta en tools/voxeles/estructuras.py cofre (la tapa abombada, dos flejes de hierro y la cerradura de bronce al frente). |
 | `utileria.objeto.barril_polvora` | Barril de pólvora | 0.6x0.8x0.6 | 80 | pendiente | `faccion:imperio` `uso:destructible` |  |
 | `utileria.objeto.saco_grano` | Saco de grano | 0.5x0.6x0.4 | 60 | pendiente | `uso:recolectable` |  |
 | `utileria.objeto.antorcha` | Antorcha | 0.1x0.7x0.1 | 40 | pendiente | `uso:equipable` `manos:una` |  |

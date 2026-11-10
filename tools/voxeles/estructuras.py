@@ -1381,11 +1381,106 @@ def lena():
     return _obra_libre(lleno, rgb, 0.02)
 
 
+def caldero():
+    """utileria.objeto.caldero: el caldero escita de bronce, de 50 cm: la olla honda sobre su pie de cono hueco, las
+    dos asas de pie sobre el borde y el guiso adentro; el bronce pardo con la patina oscura y verde, en celdas de 2 cm."""
+    rng = np.random.RandomState(13)
+    L = W = 31
+    H = 25
+    uu, zz, yy = _centros((L, W, H))
+    r = np.hypot(uu - 15.5, zz - 15.5)
+    pie = (yy < 8) & (r <= 6.0 - (yy - 0.5) * 0.3) & (r >= 4.0 - (yy - 0.5) * 0.3)  # el pie: un cono hueco
+    ro = 13.5 * np.sqrt(np.clip(1.0 - ((21.5 - yy) / 14.5) ** 2, 0, None))  # la olla: media elipse hasta el borde
+    olla = (yy >= 7) & (yy < 22) & (r <= ro) & ((r >= ro - 1.6) | (yy < 10))
+    guiso = (yy >= 10) & (yy < 18) & (r < ro - 1.4)
+    asas = np.zeros_like(olla)
+    for s in (-1, 1):  # las asas: dos arcos de pie sobre el borde, a cada lado
+        du, dy = uu - (15.5 + s * 11.5), yy - 22.0
+        asas |= (np.abs(zz - 15.5) <= 0.9) & (np.hypot(du, dy) <= 3.2) & (np.hypot(du, dy) >= 1.9) & (yy >= 21)
+    lleno = pie | olla | guiso | asas
+    bronce = np.array((126, 94, 60), np.float32)
+    rgb = np.zeros((L, W, H, 3), np.float32) + bronce
+    mancha = np.clip(0.5 + 0.5 * np.sin(uu * 0.7 + yy * 0.5) * np.cos(zz * 0.6 - yy * 0.4), 0, 1)[..., None]
+    rgb = rgb * (0.75 + 0.35 * mancha)
+    verde = lleno & (rng.uniform(size=lleno.shape) < 0.05)
+    rgb[verde] = (88, 116, 96)
+    rgb[guiso] = (96, 68, 44)
+    rgb[asas] = bronce * 0.85
+    return _obra_libre(lleno, rgb, 0.02)
+
+
+def cofre():
+    """utileria.objeto.cofre: el cofre de tablas de 80 x 50 x 50 cm, con la tapa un poco abombada, dos flejes de hierro
+    que lo abrazan y la cerradura de bronce al frente (+X), en celdas de 2.5 cm. Todavia no va al inventario como .vox:
+    el cofre se abre y se cierra (assets/animaciones.tsv), y eso pide un GLB animado; esta es su forma."""
+    L, W, H = 20, 32, 20
+    uu, zz, yy = _centros((L, W, H))
+    cuerpo = yy < 14
+    tapa = (yy >= 14) & (yy < 14 + 6 * np.sqrt(np.clip(1.0 - ((uu - 10.0) / 10.5) ** 2, 0, 1)))  # la tapa abombada
+    lleno = cuerpo | tapa
+    rgb = np.zeros((L, W, H, 3), np.float32)
+    tabla = (np.floor(yy / 3.5) % 2)[..., None]  # las tablas, de dos tonos
+    rgb[:] = np.array((124, 84, 50), np.float32) * (0.9 + 0.15 * tabla)
+    rgb[tapa] = (112, 76, 46)
+    junta = (yy > 13) & (yy < 15)
+    rgb[junta & lleno] = (70, 50, 34)
+    for z0 in (5, 26):  # los flejes
+        f = (zz > z0) & (zz < z0 + 2)
+        rgb[f & lleno] = (66, 66, 70)
+    cerradura = (uu < 1) & (np.abs(zz - 16.0) < 2.0) & (yy > 10) & (yy < 15)
+    rgb[cerradura] = (176, 144, 72)
+    return _obra_libre(lleno, rgb, 0.025)
+
+
+def odre():
+    """utileria.objeto.odre: el odre de cuero, de 40 cm: la bolsa (mas ancha abajo), las costuras oscuras, el cuello
+    atado con un cordel claro y la correa de colgar, en celdas de 2 cm."""
+    L, W, H = 11, 16, 20
+    uu, zz, yy = _centros((L, W, H))
+    ancho = 7.0 * np.sqrt(np.clip(1.0 - ((yy - 7.0) / 9.5) ** 2, 0, None))
+    bolsa = (yy < 16) & (((zz - 8.0) / np.maximum(ancho, 0.01)) ** 2 + ((uu - 5.5) / np.maximum(ancho * 0.7, 0.01)) ** 2 <= 1.0)
+    cuello = (yy >= 15) & (yy < 19.5) & (np.hypot(uu - 5.5, zz - 8.0) <= 1.6)
+    correa = (np.abs(uu - 5.5) < 0.8) & (np.hypot(zz - 8.0, yy - 13.0) <= 7.6) & (np.hypot(zz - 8.0, yy - 13.0) >= 6.6) & (yy > 13)
+    lleno = bolsa | cuello | correa
+    rgb = np.zeros((L, W, H, 3), np.float32) + np.array((134, 92, 56), np.float32)
+    rgb[bolsa & (np.abs(zz - 8.0) < 0.6)] = (96, 64, 40)  # la costura
+    rgb[cuello] = (106, 72, 46)
+    rgb[cuello & (yy > 16) & (yy < 18)] = (196, 178, 128)  # el cordel
+    rgb[correa] = (88, 60, 38)
+    return _obra_libre(lleno, rgb, 0.02)
+
+
+def coral():
+    """mapa.agua.coral: el arrecife de coral rojo de los lagos, de 1.5 x 0.8 m: una loma de roca clara con ramas de
+    coral que se abren hacia arriba (rojas y naranjas), donde se buscan el coral rojo y las perlas; en celdas de 5 cm."""
+    rng = np.random.RandomState(17)
+    L = W = 30
+    H = 16
+    uu, zz, yy = _centros((L, W, H))
+    r = np.hypot((uu - 15.0) / 14.0, (zz - 15.0) / 12.5)
+    lleno = yy < 4.5 * np.clip(1.0 - r * r, 0, None)
+    rgb = np.zeros((L, W, H, 3), np.float32) + np.array((150, 134, 114), np.float32)
+    for k in range(9):  # las ramas: de la loma hacia arriba y afuera, cada una con dos brotes
+        a = k * 2 * np.pi / 9 + rng.uniform(-0.3, 0.3)
+        d = rng.uniform(2.0, 8.0)
+        base = (15.0 + d * np.cos(a), 15.0 + d * np.sin(a), 2.0)
+        punta = (base[0] + 3.0 * np.cos(a), base[1] + 3.0 * np.sin(a), rng.uniform(9.0, 14.5))
+        col = np.array((196, 58, 48) if k % 3 else (226, 120, 64), np.float32)
+        for pts in ([base, punta], [punta, (punta[0] + 2.5 * np.cos(a + 0.8), punta[1] + 2.5 * np.sin(a + 0.8), min(punta[2] + 1.5, 15.4))],
+                    [punta, (punta[0] + 2.5 * np.cos(a - 0.8), punta[1] + 2.5 * np.sin(a - 0.8), min(punta[2] + 1.2, 15.4))]):
+            dd, _, _ = _rama_redonda((L, W, H), pts, (1.3, 0.8))
+            m = dd <= 0
+            rgb[m & ~lleno] = col
+            lleno |= m
+    return _obra_libre(lleno, rgb, 0.05)
+
+
 RECETAS = {"templo": templo, "forja": forja, "pino": pino, "piedra_ciervo": piedra_ciervo, "atalaya": atalaya,
            "piedra_ciervo_sol": piedra_ciervo_sol, "piedra_ciervo_felinos": piedra_ciervo_felinos,
            "muro_en_ruinas": muro_en_ruinas, "carreta": carreta, "carro_varas": carro_varas,
            "puerta_fortificada": puerta_fortificada, "roble": roble, "sauce": sauce, "arce": arce, "roca": roca,
-           "roca_mediana": roca_mediana, "pedernal": pedernal, "piedras": piedras, "barro": barro, "lena": lena}
+           "roca_mediana": roca_mediana, "pedernal": pedernal, "piedras": piedras, "barro": barro, "lena": lena,
+           "caldero": caldero, "cofre": cofre, "odre": odre, "coral": coral}
 
 # Donde cae cada altura en cada vista de la hoja: (celdas, pixeles desde el suelo de esa vista) y el alto total en
 # pixeles de la vista recortada. La hoja del templo exagera lo alto en el frente (los pilonos miden 340 px de

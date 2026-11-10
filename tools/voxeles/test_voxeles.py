@@ -507,11 +507,13 @@ def test_arboles_de_hoja():
 
 
 def test_lo_natural():
-    """Las rocas, el pedernal, el monton de piedras, el barro y la leña de los campamentos (sin hoja: el color celda por
+    """Las rocas, el pedernal, el monton de piedras, el barro, la leña, el caldero, el cofre, el odre y el coral de los
+    campamentos (sin hoja: el color celda por
     celda): sus medidas (las del inventario), siempre iguales, bajo el aviso de Android; el pedernal casi negro con su
     corteza y sus vetas blancas; el liquen de la roca, en lo que mira arriba."""
     medidas = {"roca": (0.6, 0.3, 0.6), "roca_mediana": (1.5, 1.08, 1.38), "pedernal": (0.12, 0.09, 0.15),
-               "piedras": (0.4, 0.325, 0.475), "barro": (0.36, 0.3, 0.4), "lena": (0.46, 0.22, 0.82)}
+               "piedras": (0.4, 0.325, 0.475), "barro": (0.36, 0.3, 0.4), "lena": (0.46, 0.22, 0.82),
+               "caldero": (0.54, 0.5, 0.58), "cofre": (0.8, 0.5, 0.5), "odre": (0.32, 0.4, 0.18), "coral": (1.25, 0.8, 1.3)}
     for nombre, m in medidas.items():
         o = estructuras.RECETAS[nombre]()
         assert o.metros() == m, (nombre, o.metros())

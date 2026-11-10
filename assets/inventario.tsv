@@ -289,9 +289,9 @@ asedio.maquina.torre_asedio	Torre de asedio	faccion:imperio,acto:1,uso:conducibl
 asedio.maquina.trebuchet	Trebuchet	faccion:imperio,acto:1,uso:conducible,uso:destructible	5x10x8	900	pendiente	La maquinaria que aplasta al padre en el prólogo.
 asedio.maquina.catapulta	Catapulta	faccion:imperio,acto:1,uso:conducible,uso:destructible	3x3x4	600	pendiente	La maquinaria que aplasta al padre en el prólogo.
 asedio.maquina.mantelete	Mantelete	faccion:imperio,acto:1,uso:conducible,uso:destructible	2.5x2x0.3	100	pendiente	La maquinaria que aplasta al padre en el prólogo.
-utileria.objeto.caldero	Caldero	faccion:nomada,material:hierro	0.6x0.5x0.6	80	pendiente	
-utileria.objeto.odre	Odre de cuero	uso:recolectable,material:cuero	0.3x0.4x0.2	60	pendiente	
-utileria.objeto.cofre	Cofre de botín	uso:interactuable,material:madera	0.8x0.5x0.5	100	pendiente	
+utileria.objeto.caldero	Caldero	faccion:nomada,material:hierro,formato:voxel	0.54x0.5x0.58	80	importado	Voxeles armados a mano (tools/voxeles/estructuras.py caldero), celdas de 2 cm: el caldero escita de bronce, la olla honda sobre su pie de cono hueco, las dos asas de pie sobre el borde y el guiso adentro, con la patina oscura y verde.
+utileria.objeto.odre	Odre de cuero	uso:recolectable,material:cuero,formato:voxel	0.32x0.4x0.18	60	importado	Voxeles armados a mano (tools/voxeles/estructuras.py odre), celdas de 2 cm: la bolsa de cuero con su costura, el cuello atado con un cordel y la correa de colgar.
+utileria.objeto.cofre	Cofre de botín	uso:interactuable,material:madera	0.8x0.5x0.5	100	pendiente	Se abre y se cierra (assets/animaciones.tsv: abrir y cerrar), asi que va con un GLB animado. La forma ya esta en tools/voxeles/estructuras.py cofre (la tapa abombada, dos flejes de hierro y la cerradura de bronce al frente).
 utileria.objeto.barril_polvora	Barril de pólvora	faccion:imperio,uso:destructible	0.6x0.8x0.6	80	pendiente	
 utileria.objeto.saco_grano	Saco de grano	uso:recolectable	0.5x0.6x0.4	60	pendiente	
 utileria.objeto.antorcha	Antorcha	uso:equipable,manos:una	0.1x0.7x0.1	40	pendiente	
@@ -421,7 +421,7 @@ utileria.gema.coral	Coral rojo	uso:recolectable,uso:material,material:piedra	0.0
 utileria.material.bronce	Lingote de bronce	uso:material,material:bronce	0.2x0.05x0.08	20	pendiente	Metal de joyas y forja.
 utileria.material.plata	Plata	uso:recolectable,uso:material,material:plata	0.15x0.05x0.08	20	pendiente	Metal de joyas.
 utileria.material.oro	Oro	uso:recolectable,uso:material,material:oro	0.12x0.04x0.07	20	pendiente	Metal de joyas.
-mapa.agua.coral	Arrecife de coral	bioma:cualquiera,uso:decorado,uso:recolectable	1.5x0.8x1.5	120	pendiente	Bajo el agua de los lagos: coral rojo y perlas.
+mapa.agua.coral	Arrecife de coral	bioma:cualquiera,uso:decorado,uso:recolectable,formato:voxel	1.25x0.8x1.3	120	importado	Bajo el agua de los lagos: coral rojo y perlas. Voxeles armados a mano (tools/voxeles/estructuras.py coral), celdas de 5 cm: una loma de roca clara con ramas de coral rojas y naranjas que se abren hacia arriba.
 utileria.consumible.forraje	Forraje	uso:recolectable,uso:consumible,material:fibra	0.4x0.3x0.4	30	pendiente	Hierba seca para los herbívoros de la tribu cuando no hay pasto (se corta de la hierba alta; los pastores lo juntan).
 utileria.mochila.pequena	Mochila pequeña	uso:equipable,material:cuero	0.35x0.4x0.2	80	pendiente	15 kg, 12 huecos; no frena.
 utileria.mochila.mediana	Mochila mediana	uso:equipable,material:cuero	0.4x0.55x0.25	100	pendiente	25 kg, 18 huecos; frena un poco.
