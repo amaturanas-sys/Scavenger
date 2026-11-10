@@ -181,17 +181,17 @@ def test_traer(tmp):
         if not os.path.isfile(src):
             fuente_trellis(src)
         quiet = lambda *_: None  # noqa: E731
-        assert modelos.traer("utileria.objeto.caldero", archivo=src, girar=90, fuente="trellis2", log=quiet) == 0
-        out = os.path.join(root, "assets", "models", "utileria", "objeto", "caldero.glb")
+        assert modelos.traer("utileria.objeto.yunque", archivo=src, girar=90, fuente="trellis2", log=quiet) == 0
+        out = os.path.join(root, "assets", "models", "utileria", "objeto", "yunque.glb")
         assert os.path.isfile(out) and glb.Glb(out).triangulos() <= 80
         items, _ = inventario.load()
-        assert modelos.find_item(items, "utileria.objeto.caldero")["estado"] == "importado"
+        assert modelos.find_item(items, "utileria.objeto.yunque")["estado"] == "importado"
         doc = open(os.path.join(root, "docs", "INVENTARIO.md"), encoding="utf-8").read()
         assert doc == inventario.render_doc(items) + "\n", "docs/INVENTARIO.md al dia"
-        entry = modelos.load_manifest()["models"]["utileria.objeto.caldero"]
+        entry = modelos.load_manifest()["models"]["utileria.objeto.yunque"]
         assert entry["source"]["tool"] == "trellis2" and len(entry["source"]["sha256"]) == 64 and entry["params"]["girar"] == 90
         try:
-            modelos.traer("utileria.objeto.caldero", archivo=src, log=quiet)
+            modelos.traer("utileria.objeto.yunque", archivo=src, log=quiet)
             raise AssertionError("sin --reemplazar no pisa un modelo")
         except SystemExit:
             pass

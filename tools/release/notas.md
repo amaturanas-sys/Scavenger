@@ -1,29 +1,16 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: la cámara cerca, `F` y `Enter`
+## Novedades: el paisaje
 
-- **La cámara, cerca:** detrás del personaje y a la altura de su cabeza, como en los juegos de mundo abierto: se lo ve de la cabeza a las rodillas y adelante el paisaje. `N` pasa a media distancia y a lejos (`Mayús+N`, la anterior), y la vista elegida queda guardada. No se mete en las yurtas, las casas, las murallas ni las ruinas: sube por encima o se acerca.
-- **`F` para las cosas, `Enter` para la gente:** `F` toma, recoge botín, saca agua, usa el horno, rescata, atiende a los animales, saquea y explora una cueva; `Enter` habla con el guardián, el druida, el orfebre y los prisioneros, y comercia. Con alguien al alcance, la pista lo dice.
-- **Sin la columna de acciones:** lo que tenía está en `Tab`, en la barra rápida o en su tecla. Beber y llenar el odre van en su casilla (`3`); las hierbas contra la fiebre del agua, en `B` cuando no hay heridas que vendar.
-- **El arma en la mano:** sigue al antebrazo al andar y al golpear; guardada, cuelga del cinto, y el escudo guardado va a la espalda.
+- **Los árboles, de voxeles:** los pinos del paisaje y del campamento son el pino de voxeles. Junto a los lagos y los ríos crecen sauces llorones, sobre todo en el bosque y la costa, y en el bosque hay arces, menos que pinos. En otoño el arce se pone rojo y naranja y el sauce amarillo; al caer la hoja quedan pelados; en invierno, los pinos nevados.
+- **Más hierbas en la estepa y más pasto en el bosque:** entre el pasto y la stipa de la estepa, el ajenjo, el tomillo y la salvia, con sus espigas moradas.
+- **Sin cajas junto a los campamentos:** la hierba alta del escondite, las hierbas curativas y el arbusto se mecen con el viento; las rocas, el pedernal, las piedras, el barro, la leña, el caldero, el odre y el arrecife de coral tienen modelo.
+- **Los carros, a la escala de la gente:** el carro de la yunta, con ruedas de 1,3 m y el piso de la caja a la altura de la cintura; la carreta de mercancías, con ruedas de 1 m.
+- **La carreta-casa de las tribus, rehecha:** la casilla de fieltro sobre la plataforma, la plataforma sobre los ejes y las ruedas de rayos por fuera, sin tocarse; adelante, la lanza con el yugo.
 
-## Novedades: el mundo y los modelos
+Sigue lo de la v0.14.0: la cámara cerca (`N` cambia la vista), `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate.
 
-- **Los asentamientos antiguos:** los vestigios de pueblos de otros tiempos, como en las excavaciones: un palacio con su patio y casas con sus cuartos, separadas por calles, con los muros casi a ras del suelo y unos tramos de pie. De uno a tres por región.
-- **Estructuras armadas a mano en voxeles**, con la distribución y el color de sus hojas: el templo del culto, la forja portátil, la piedra-ciervo, la atalaya, el muro en ruinas, la carreta, el carro de la yunta, la puerta fortificada, el pino, el roble y el sauce llorón.
-- **Personas, animales y armas al estilo PS2**, con la textura de su hoja; los animales, al tamaño de los más grandes de su especie.
-
-## Novedades: las cuevas grandes
-
-- **Explorar:** junto a la boca de una cueva, `F` (o un toque en el aviso). La cueva se carga aparte y se entra; al salir caminando por la boca, se libera. Mientras tanto, el mundo de afuera espera.
-- **Más grandes y más altas:** las recámaras, de 6,5 a 9,5 m de radio, y la Cisterna Magna, de 13 a 17, con pasillos de 10 m o más y hasta tres vueltas. Las estalactitas, las estalagmitas y las rocas, de voxeles; la roca, con sus estratos y su grava.
-
-## Novedades: los controles de combate
-
-- `H` ataque · `J` parry · `K` bloqueo · `L` carga o patada; `I` el inventario, `Tab` el menú de acciones y `Mayús+V` encender la flecha.
-- El clic ya no golpea: un clic corto (o un toque), izquierdo o derecho, cambia de objetivo como `Ctrl+Q`/`Ctrl+E`; arrastrar la cámara no cuenta. `Ctrl` sola elige el objetivo o lo suelta.
-
-Las partidas de antes cargan igual. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.14.0).
+Las partidas de antes cargan igual. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.14.1 y la v0.14.0).
 
 ## Android
 

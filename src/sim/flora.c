@@ -133,7 +133,7 @@ TreeKind flora_tree_kind(const float k[REGION_COUNT], float near_water, float r)
     // Los sauces: junto al agua dulce, mas en el bosque y la costa que en la estepa, el desierto y el altiplano.
     float willow = nw * (0.8f * (k[REGION_FOREST] + k[REGION_FJORD]) + 0.6f * (k[REGION_STEPPE] + k[REGION_DESERT]) + 0.3f * k[REGION_HIGHLAND]);
     willow = fminf(willow, 0.85f);
-    float maple = 0.3f * k[REGION_FOREST] * (1.0f - willow); // en el bosque, uno de cada tres o cuatro
+    float maple = 0.3f * k[REGION_FOREST] * (1.0f - willow); // en el bosque, 3 de 10 (en damero: uno de cada seis arboles)
     if (r < willow) return TREE_WILLOW;
     if (r < willow + maple) return TREE_MAPLE;
     return TREE_PINE;

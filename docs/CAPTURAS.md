@@ -100,7 +100,7 @@ Ver [MUNDO.md](MUNDO.md). Con `--ir lugar` y `--orbital`:
 | | |
 |---|---|
 | ![Orbital](capturas/orbital_1206_30.png) | **Vista orbital** (F5, `--orbital 30 0.5`): el gran círculo con sus cinco regiones, el canal, el mar y el muro; torres doradas: capitales; blancas: aldeas; rojas: guaridas; turquesa: el jugador. |
-| ![Bosque](capturas/mundo_bosque.png) | **Bosque de coníferas** (`--ir bosque`). |
+| ![Bosque](capturas/mundo_bosque.png) | **Bosque de coníferas** (`--ir bosque`): los pinos y los arces de voxeles (v0.14.1); con la cámara lejana, la copa que tapa al personaje no se dibuja. |
 | ![Altiplano](capturas/mundo_altiplano.png) | **Altiplano glaciar** (`--ir altiplano`). |
 | ![Mar](capturas/mundo_mar.png) | **Costa de fiordos y el mar** (`--ir mar`). |
 | ![Muro](capturas/mundo_muro.png) | **El cañón y el muro del desierto** (`--ir muro`). |

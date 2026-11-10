@@ -385,7 +385,11 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.14.0. Las cuevas grandes, la base ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md)): salas
+- **Versión:** 0.14.1. El paisaje de voxeles: los árboles del mundo con sus `.vox` (el pino; los sauces junto al
+  agua; los arces del bosque), con su detalle según la distancia y sus estaciones (`src/world/trees.c`); más hierbas
+  en la estepa y más pasto en el bosque; sin cajas junto a los campamentos (las matas con las hojas de la vegetación;
+  las rocas, el pedernal, las piedras, el barro, la leña, el caldero, el odre y el coral, de voxeles); los carros a la
+  escala de la gente y la carreta-casa rehecha. Antes, la 0.14.0: las cuevas grandes, la base ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md)): salas
   y Cisterna más grandes y altas (el techo a más de tres personas), pasillos largos y con vueltas; junto a la boca,
   F explora y la cueva se carga aparte; la roca, en mallas con la luz por vértice solo en lo cercano; las
   estalactitas, las estalagmitas y las rocas, de voxeles. Además: los controles de combate nuevos (#154 y #157);
@@ -404,7 +408,9 @@ traba.
   - el sistema táctico y las cuevas: de A1 a B3 (v0.13.0).
   - las bocas de las cuevas, de voxeles, con lo de cada tipo (v0.13.1);
   - las cuevas grandes: la base; los voxeles desde las hojas; los modelos al estilo PS2; los asentamientos
-    antiguos; la cámara cerca con `F` y `Enter` (v0.14.0).
+    antiguos; la cámara cerca con `F` y `Enter` (v0.14.0);
+  - el paisaje de voxeles: los árboles, la vegetación más tupida, los recolectables con modelo, los carros a escala
+    y la carreta-casa (v0.14.1).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
