@@ -446,7 +446,7 @@ def test_carros_y_puerta():
     vano, la escalinata hasta el umbral, los tramos que bajan hasta la torre de atras y la abertura del costado):
     sus medidas, una sola pieza, sin aire encerrado y bajo el aviso de Android."""
     o = estructuras.carreta()
-    assert o.metros() == (2.429, 2.0, 4.643), o.metros()
+    assert o.metros() == (1.7, 1.4, 3.25), o.metros()
     assert _una_pieza_cerrada(o.lleno)
     for uc in (10, 55):  # el disco de cada rueda: lleno, con un hueco por cuadrante junto al cubo
         for z in (1, 2, 31, 32):
@@ -455,7 +455,7 @@ def test_carros_y_puerta():
     assert estructuras.triangulos(grid) < 8000
 
     o = estructuras.carro_varas()
-    assert o.metros() == (2.5, 2.5, 6.375), o.metros()
+    assert o.metros() == (1.63, 1.63, 4.156), o.metros()
     assert _una_pieza_cerrada(o.lleno)
     hierro, rayo = o.nombres.index("hierro"), o.nombres.index("rayo")
     assert o.parte[84, 1, 0] == hierro and o.parte[84, 1, 31] == hierro  # la llanta, abajo y arriba

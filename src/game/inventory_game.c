@@ -579,7 +579,7 @@ void ig_draw_world(const GameActions *ga, const Terrain *t, float time) {
     if (ga->pack_size > PACK_NONE && ga->pack_where != PACKW_WORN) { // la mochila que dejaste
         const InvItem *it = inventory_find(ga->inv, pack_id((PackSize)ga->pack_size));
         Vector3 p = ga->pack_pos;
-        float lift = ga->pack_where == PACKW_GROUND ? 0.0f : 1.25f; // sobre la carreta o el lomo del animal
+        float lift = ga->pack_where == PACKW_GROUND ? 0.0f : ga->pack_where == PACKW_CART ? 1.0f : 1.25f; // en el piso de la carreta o el lomo del animal
         p.y = (ga->pack_where == PACKW_GROUND ? terrain_height(t, p.x, p.z) : p.y) + lift;
         Vector3 sz = it ? (Vector3){ it->w, it->h, it->l } : (Vector3){ 0.4f, 0.55f, 0.25f };
         DrawCubeV((Vector3){ p.x, p.y + sz.y * 0.5f, p.z }, sz, (Color){ 112, 78, 46, 255 });

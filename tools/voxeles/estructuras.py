@@ -770,12 +770,13 @@ def _rueda(o, centro, radio, z0, z1, cubo=(None, None), huecos=2.5, llanta="llan
 
 
 def carreta(vistas=None):
-    """vehiculo.tierra.carreta_mercancias: la carreta de cuatro ruedas de la hoja, 2 m de alto (el inventario) en
-    celdas de 7 cm (28 de alto: el pixel de la hoja). La caja: los costados y los testeros de dos tablas, con el
-    larguero abajo y el liston arriba, los postes de las esquinas y el del medio de cada costado, y el piso. Abajo,
-    las ruedas de disco de 1.43 m (la llanta, la cruz de los rayos, el cubo y cuatro huecos), los dos ejes, las patas
-    que apoyan la caja en los ejes y la vara que los une. Tres tonos de madera, de la hoja."""
-    celda = 2.0 / 28
+    """vehiculo.tierra.carreta_mercancias: la carreta de cuatro ruedas de la hoja, 1.4 m de alto (el inventario, a la
+    escala de la gente: el piso a 0.8 m) en celdas de 5 cm (28 de alto: el pixel de la hoja). La caja: los costados y
+    los testeros de dos tablas, con el larguero abajo y el liston arriba, los postes de las esquinas y el del medio de
+    cada costado, y el piso. Abajo, las ruedas de disco de 1 m (la llanta, la cruz de los rayos, el cubo y cuatro
+    huecos), los dos ejes, las patas que apoyan la caja en los ejes y la vara que los une. Tres tonos de madera, de la
+    hoja."""
+    celda = 1.4 / 28
     L, W, H = 65, 34, 28
     o = Obra(L, W, H, celda=celda)
     oscuro, medio, claro = tonos_por_brillo(vistas)
@@ -846,14 +847,14 @@ def tonos_madera_y_hierro(vistas):
 
 
 def carro_varas(vistas=None):
-    """vehiculo.tierra.carreta_bueyes: el carro de la yunta, de la hoja del carro de varas: 2.5 m de alto (el
-    inventario) en celdas de 6.25 cm (40 de alto: el pixel de la hoja). La caja de tablas sobre el eje (los postes
-    de las esquinas con sus herrajes, el piso y el larguero), las dos ruedas de 2 m (llanta de hierro, pinas, ocho
-    rayos y el cubo con su fleje), el eje, la lanza que va del eje hacia adelante con sus flejes y el tornapunta que
-    la une al frente de la caja, y al final de la lanza el poste del yugo con el yugo encima, de 1.4 m, donde van los
-    cuellos de los bueyes (animal.ganado.buey, 2.12 m de alto). Los colores (tres tonos de madera y el hierro), de
-    la hoja. La vista de frente de la hoja esta en perspectiva: la forma sale de la de lado."""
-    celda = 2.5 / 40
+    """vehiculo.tierra.carreta_bueyes: el carro de la yunta, de la hoja del carro de varas: 1.63 m de alto (el
+    inventario, a la escala de la gente: el piso de la caja a 1 m) en celdas de 4.1 cm (40 de alto: el pixel de la
+    hoja). La caja de tablas sobre el eje (los postes de las esquinas con sus herrajes, el piso y el larguero), las dos
+    ruedas de 1.3 m (llanta de hierro, pinas, ocho rayos y el cubo con su fleje), el eje, la lanza que va del eje hacia
+    adelante con sus flejes y el tornapunta que la une al frente de la caja, y al final de la lanza el poste del yugo
+    con el yugo encima, a 0.9 m. Los colores (tres tonos de madera y el hierro), de la hoja. La vista de frente de la
+    hoja esta en perspectiva: la forma sale de la de lado."""
+    celda = 1.63 / 40
     L, W, H = 102, 40, 40
     o = Obra(L, W, H, celda=celda)
     (oscuro, medio, claro), hierro = tonos_madera_y_hierro(vistas)
