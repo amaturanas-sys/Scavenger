@@ -109,32 +109,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "c11.jpg",
-        "sha256": "345983385de97a4c1e65181a39e142c062ed8c3640c3c434173f206bba2f37a0"
+        "file": "arte/modelos/fuentes/animal.montura.caballo_estepario.glb",
+        "sha256": "3fe180123d070469299baff92a5af680aa26d0dbd6382e6fbd201ce40178ac57",
+        "tris": 66714
       },
       "params": {
-        "piezas": "volumen",
-        "filas": 1,
-        "fila": 1,
-        "invertir": false,
-        "agarre": "base",
-        "segmentos": 8,
-        "grosor": null,
-        "cresta": false,
-        "miembros": false,
-        "res": 112,
-        "umbral": 20,
-        "ancla": null,
-        "girar": 0,
-        "cruz": 1.58,
-        "cruz_columna": null,
-        "textura": [
-          256,
-          256
-        ]
+        "girar": 90.0,
+        "rotar": [],
+        "escala": 8.087815602220067,
+        "origen": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "colores": 24,
+        "luz": true,
+        "limpiar": 0.01
       },
-      "tris": 900,
-      "updated_at": "2026-11-08T18:35:58+00:00"
+      "tris": 898,
+      "updated_at": "2026-11-12T02:52:33+00:00"
     },
     "animal.montura.caballo_estepario_2": {
       "file": "arte/modelos/para_riggear/animal.montura.caballo_estepario_2.glb",
@@ -143,32 +136,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "c12.jpg",
-        "sha256": "f9de106d922ecd346f43ed08015babc2784cfd0bfe6253abfa670cc2d1fa0a10"
+        "file": "arte/modelos/fuentes/animal.montura.caballo_estepario_2.glb",
+        "sha256": "b260ab1d1447ae61ef1bd85786a74e84d5518fb222715c969bbad43a64be7db8",
+        "tris": 78122
       },
       "params": {
-        "piezas": "volumen",
-        "filas": 1,
-        "fila": 1,
-        "invertir": false,
-        "agarre": "base",
-        "segmentos": 8,
-        "grosor": null,
-        "cresta": false,
-        "miembros": false,
-        "res": 112,
-        "umbral": 20,
-        "ancla": null,
-        "girar": 0,
-        "cruz": 1.58,
-        "cruz_columna": null,
-        "textura": [
-          256,
-          256
-        ]
+        "girar": 90.0,
+        "rotar": [],
+        "escala": 7.1043061011536635,
+        "origen": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "colores": 24,
+        "luz": true,
+        "limpiar": 0.01
       },
       "tris": 900,
-      "updated_at": "2026-11-08T18:45:52+00:00"
+      "updated_at": "2026-11-12T02:52:43+00:00"
     },
     "animal.montura.caballo_estepario_3": {
       "file": "arte/modelos/para_riggear/animal.montura.caballo_estepario_3.glb",
@@ -177,32 +163,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "c14.jpg",
-        "sha256": "ed8737b392635fe13d55ac0c00e07ef28d7b73fd532ac6e872cb7a8148360499"
+        "file": "arte/modelos/fuentes/animal.montura.caballo_estepario_3.glb",
+        "sha256": "a6473e31a21db6786769476a3c779e89956f5a43f46806d05b878dbd075fbf07",
+        "tris": 80228
       },
       "params": {
-        "piezas": "volumen",
-        "filas": 1,
-        "fila": 1,
-        "invertir": false,
-        "agarre": "base",
-        "segmentos": 8,
-        "grosor": null,
-        "cresta": false,
-        "miembros": false,
-        "res": 112,
-        "umbral": 20,
-        "ancla": null,
-        "girar": 0,
-        "cruz": 1.58,
-        "cruz_columna": null,
-        "textura": [
-          256,
-          256
-        ]
+        "girar": 90.0,
+        "rotar": [],
+        "escala": 6.852984424161746,
+        "origen": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "colores": 24,
+        "luz": true,
+        "limpiar": 0.01
       },
       "tris": 900,
-      "updated_at": "2026-11-08T18:45:57+00:00"
+      "updated_at": "2026-11-12T02:52:45+00:00"
     },
     "animal.montura.caballo_guerra": {
       "file": "arte/modelos/para_riggear/animal.montura.caballo_guerra.glb",
@@ -211,32 +190,25 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "c13.jpg",
-        "sha256": "f318924c97187956e7cc5a0a3231c74d6ec184603e4067df3e587caab0f7fa0f"
+        "file": "arte/modelos/fuentes/animal.montura.caballo_guerra.glb",
+        "sha256": "6bf62f7066dedeb3ba48e90a7608b47af1531bb3b09b1087f155d2a70f04bf6f",
+        "tris": 193006
       },
       "params": {
-        "piezas": "volumen",
-        "filas": 1,
-        "fila": 1,
-        "invertir": false,
-        "agarre": "base",
-        "segmentos": 8,
-        "grosor": null,
-        "cresta": false,
-        "miembros": false,
-        "res": 112,
-        "umbral": 20,
-        "ancla": null,
-        "girar": 0,
-        "cruz": 1.75,
-        "cruz_columna": null,
-        "textura": [
-          256,
-          256
-        ]
+        "girar": 90.0,
+        "rotar": [],
+        "escala": 3.1514491059333607,
+        "origen": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "colores": 24,
+        "luz": true,
+        "limpiar": 0.01
       },
       "tris": 1000,
-      "updated_at": "2026-11-08T18:36:04+00:00"
+      "updated_at": "2026-11-12T02:52:48+00:00"
     },
     "animal.montura.dromedario": {
       "file": "arte/modelos/para_riggear/animal.montura.dromedario.glb",
@@ -415,32 +387,52 @@
       "source": {
         "tool": "otro",
         "url": "",
-        "file": "c15.jpg",
-        "sha256": "ececc5e0897b67f57af698ef7ec52313384483b962e97aa5d47e5395d3386460"
+        "file": "arte/modelos/fuentes/animal.salvaje.lobo.glb",
+        "sha256": "efb292257fdc24bf9ea6a58da66667d9d3b90c810b6c8fee18b3c14fea4c35d7",
+        "tris": 204606
       },
       "params": {
-        "piezas": "volumen",
-        "filas": 1,
-        "fila": 1,
-        "invertir": false,
-        "agarre": "base",
-        "segmentos": 8,
-        "grosor": null,
-        "cresta": false,
-        "miembros": false,
-        "res": 112,
-        "umbral": 20,
-        "ancla": null,
-        "girar": 0,
-        "cruz": 0.85,
-        "cruz_columna": null,
-        "textura": [
-          256,
-          256
-        ]
+        "girar": 90.0,
+        "rotar": [],
+        "escala": 1.377681613205237,
+        "origen": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "colores": 24,
+        "luz": true,
+        "limpiar": 0.01
       },
-      "tris": 500,
-      "updated_at": "2026-11-08T18:35:25+00:00"
+      "tris": 498,
+      "updated_at": "2026-11-12T02:52:51+00:00"
+    },
+    "animal.salvaje.lobo_2": {
+      "file": "arte/modelos/para_riggear/animal.salvaje.lobo_2.glb",
+      "category": "animal",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "arte/modelos/fuentes/animal.salvaje.lobo_2.glb",
+        "sha256": "1d804eb6e4228fd8fa23cdd300df6eee89920ae09c198b07c4e2b60edf6b300e",
+        "tris": 216074
+      },
+      "params": {
+        "girar": 90.0,
+        "rotar": [],
+        "escala": 1.1428145262662286,
+        "origen": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "colores": 24,
+        "luz": true,
+        "limpiar": 0.01
+      },
+      "tris": 498,
+      "updated_at": "2026-11-12T02:52:53+00:00"
     },
     "animal.salvaje.oso": {
       "file": "arte/modelos/para_riggear/animal.salvaje.oso.glb",

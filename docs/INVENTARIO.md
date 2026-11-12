@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**453 objetos** · 33 con modelo · 420 pendientes.
+**454 objetos** · 33 con modelo · 421 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -14,7 +14,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Mapa: terreno, vegetación, agua e hitos](#mapa) | 33 | 25 | 0 | 8 | 0 |
 | [Estructuras](#estructura) | 43 | 37 | 1 | 5 | 0 |
 | [Vehículos](#vehiculo) | 11 | 9 | 0 | 2 | 0 |
-| [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
+| [Animales](#animal) | 52 | 52 | 0 | 0 | 0 |
 | [Armas](#arma) | 44 | 39 | 0 | 5 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
 | [Escudos](#escudo) | 6 | 4 | 0 | 2 | 0 |
@@ -175,6 +175,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `animal.ganado.vaca` | Vaca | 0.86x1.77x2.68 | 700 | pendiente | `faccion:nomada` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.62 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. La hoja la dibuja mirando a la derecha (--voltear-lado). |
 | `animal.ganado.perro_pastor` | Perro pastor (mastín) | 0.35x0.94x1.24 | 500 | pendiente | `faccion:nomada` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 0.78 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.salvaje.lobo` | Lobo | 0.35x1.06x1.37 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 0.85 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.salvaje.lobo_2` | Lobo (variante 2) | 0.35x1.06x1.37 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Variante visual del lobo: mismo esqueleto y clips que animal.salvaje.lobo. Modelo en arte/modelos/para_riggear/animal/salvaje/lobo_2.glb; falta el esqueleto y los clips. |
 | `animal.salvaje.tigre` | Tigre | 0.45x1.27x2.09 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.1 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.salvaje.oso` | Oso pardo | 0.97x1.59x2.55 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.5 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.salvaje.oso_polar` | Oso polar | 0.95x1.69x3.02 | 700 | pendiente | `faccion:salvaje` `bioma:glaciar` `bioma:fiordo` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.6 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
