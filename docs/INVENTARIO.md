@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**464 objetos** · 35 con modelo · 429 pendientes.
+**464 objetos** · 39 con modelo · 425 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -11,7 +11,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
-| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 44 | 34 | 0 | 10 | 0 |
+| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 44 | 31 | 0 | 13 | 0 |
 | [Estructuras](#estructura) | 43 | 37 | 1 | 5 | 0 |
 | [Vehículos](#vehiculo) | 11 | 9 | 0 | 2 | 0 |
 | [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
@@ -24,7 +24,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
 | [Utilería y consumibles](#utileria) | 87 | 81 | 0 | 6 | 0 |
-| [Personajes y NPCs](#personaje) | 47 | 47 | 0 | 0 | 0 |
+| [Personajes y NPCs](#personaje) | 47 | 46 | 0 | 1 | 0 |
 
 ## Etiquetas
 
@@ -92,9 +92,9 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.textura.suelo_rocoso` | Suelo rocoso | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | Textura de terreno rocoso de Poly Haven (rocky_terrain). |
 | `mapa.textura.suelo_rocoso_02` | Suelo rocoso 02 | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | Textura de terreno rocoso 02 de Poly Haven (rocky_terrain_02). |
 | `mapa.textura.suelo_hierba` | Suelo con hierba | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | Textura de suelo con hierba de Poly Haven (grass_ground). |
-| `mapa.hdri.pradera_abierta` | HDRI: Pradera abierta | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | HDRI de pradera abierta de Poly Haven (yellow_field). |
-| `mapa.hdri.flores_silvestres` | HDRI: Flores silvestres | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | HDRI de campo de flores silvestres de Poly Haven (wildflower_field). |
-| `mapa.hdri.veld_abierto` | HDRI: Veld abierto | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | HDRI de veld abierto de Poly Haven (veld_fire). |
+| `mapa.hdri.pradera_abierta` | HDRI: Pradera abierta | 4x0x4 | 0 | importado | `bioma:estepa` `formato:textura` | HDRI de pradera abierta de Poly Haven (yellow_field). |
+| `mapa.hdri.flores_silvestres` | HDRI: Flores silvestres | 4x0x4 | 0 | importado | `bioma:estepa` `formato:textura` | HDRI de campo de flores silvestres de Poly Haven (wildflower_field). |
+| `mapa.hdri.veld_abierto` | HDRI: Veld abierto | 4x0x4 | 0 | importado | `bioma:estepa` `formato:textura` | HDRI de veld abierto de Poly Haven (veld_fire). |
 | `mapa.vegetacion.pradera_libre` | Pradera libre (30 modelos) | 4x0x4 | 10000 | pendiente | `bioma:estepa` `rig:ninguno` `formato:modelo` | Pack de 30 modelos low poly de OpenGameArt (FREE Remastered Meadows). |
 
 <a id="estructura"></a>
@@ -561,7 +561,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
 | `personaje.base.cuerpo_nino` | Cuerpo base: niño | 0.35x1.2x0.25 | 800 | pendiente | `rig:humanoide` `talla:pequena` | Malla base modular: ropa y armadura encajan encima. |
-| `personaje.base.cuerpo_comun` | Cuerpo base: adulto común | 0.53x1.7x0.29 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen. |
+| `personaje.base.cuerpo_comun` | Cuerpo base: adulto común | 0.53x1.7x0.29 | 1200 | importado | `rig:ninguno` `talla:comun` | Modelo base low-poly (292 tris) creado con trimesh: cabeza, torso, brazos, piernas y pies como piezas separadas. Base en y=0, medidas según inventario. Sin esqueleto ni clips: se usa con el sistema de cuerpos por zonas (body_draw.c). Listo para variantes (cambiar colores, proporciones, ropa). |
 | `personaje.base.cuerpo_robusto` | Cuerpo base: adulto robusto | 0.57x1.85x0.33 | 1300 | pendiente | `rig:humanoide` `talla:grande` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen. |
 | `personaje.base.cuerpo_comun_2` | Cuerpo base: adulto común (variante 2) | 0.54x1.7x0.3 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (el adulto común); el ancho y el fondo, los de la imagen. |
 | `personaje.base.cuerpo_comun_3` | Cuerpo base: adulto común (variante 3) | 0.51x1.7x0.29 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (el adulto común); el ancho y el fondo, los de la imagen. |
