@@ -186,6 +186,26 @@ Lo que hace Claude con cada PR del Codespace, antes de publicar:
    comprobar que tenga el ZIP de Windows y el APK.
 8. **Informar** al usuario: qué encontró, qué corrigió, los enlaces y lo pendiente.
 
+### El entorno de Claude Code en la nube
+
+El script del entorno (en claude.ai, fuera del repo) prepara cada contenedor nuevo:
+
+- **`.venv`** con `tools/modelos/requirements.txt`, para las pruebas de modelos y de voxeles.
+- **rtk, a prueba** ([rtk-ai/rtk](https://github.com/rtk-ai/rtk) v1.2.0, edición Apache-2.0, sin telemetría). Un hook
+  antes de cada Bash (`.claude/settings.local.json`, fuera de git) reescribe `git`, `grep`, `ls`, `find`, `cat`,
+  `head`, `tail` y `gcc`, entre otros, a su versión compacta (`rtk git status`…). Su configuración, en
+  `~/.config/rtk/config.toml`.
+  - **Lo que cambia:** `git diff` cambia las cabeceras (`diff --git`, `---`, `+++`) por un resumen; `ls`, sin
+    fechas; `grep` con más de 25 aciertos por archivo (o 200 en total) sale recortado, con las líneas largas
+    cortadas en «...» y el aviso `+N more … rtk recall <id>`.
+  - **Lo que no cambia (probado):** los errores de compilación (también uno de 28 KB), las líneas `FALLO` de
+    `sim_tests`, `cat`, `head` y `tail` de código, y los códigos de salida. No pasan por rtk `cmake --build`,
+    `sim_tests`, `wc` ni los comandos que escriben a un archivo (`> x.patch`, `cat > f <<'EOF'`).
+  - **La salida cruda:** `RTK_DISABLED=1 <comando>`; lo oculto, `rtk recall <id>`. **El ahorro:** `rtk gain` (se
+    pierde con el contenedor).
+  - **Se quita** si un error de compilación o un `FALLO` llega recortado: borrar el hook de
+    `.claude/settings.local.json` y la parte de rtk del script del entorno, y avisar al usuario.
+
 ## 5. Reglas que no se rompen
 
 **Respetar lo que ya existe:**
