@@ -29,13 +29,13 @@ static const struct {
     float jag, moss_h, soot;
 } KIND_LOOK[CAVE_KINDS] = {
     { { 92, 104, 116, 255 }, { 112, 122, 132, 255 }, { 70, 76, 82, 255 }, { 52, 64, 78, 255 }, 0.35f, { 0.04f, 0.05f, 0.078f },
-      { 16, 22, 32, 255 }, 10.0f, 40.0f, 0.75f, { TX_LIMESTONE, TX_LIMESTONE, TX_GRAVEL }, { 4.0f, 4.0f, 4.0f }, 1.0f, 1.3f, 0.0f },
+      { 16, 22, 32, 255 }, 10.0f, 40.0f, 0.75f, { TX_LIMESTONE, TX_LIMESTONE, TX_GRAVEL }, { 6.0f, 6.0f, 4.0f }, 1.0f, 1.3f, 0.0f },
     { { 100, 112, 102, 255 }, { 94, 106, 98, 255 }, { 74, 80, 66, 255 }, { 66, 104, 60, 255 }, 0.4f, { 0.034f, 0.054f, 0.05f },
-      { 18, 40, 38, 255 }, 6.0f, 32.0f, 0.75f, { TX_MOSSY, TX_MOSSY, TX_MUD }, { 4.0f, 4.0f, 4.0f }, 0.8f, 1.9f, 0.0f },
+      { 18, 40, 38, 255 }, 6.0f, 32.0f, 0.75f, { TX_MOSSY, TX_MOSSY, TX_MUD }, { 6.0f, 6.0f, 4.0f }, 0.8f, 1.9f, 0.0f },
     { { 146, 118, 90, 255 }, { 116, 94, 74, 255 }, { 122, 96, 70, 255 }, { 84, 66, 50, 255 }, 0.4f, { 0.042f, 0.032f, 0.025f },
-      { 18, 12, 8, 255 }, 10.0f, 42.0f, 0.8f, { TX_HEWN, TX_HEWN, TX_EARTH }, { 4.0f, 4.0f, 4.0f }, 0.6f, 0.9f, 0.75f },
+      { 18, 12, 8, 255 }, 10.0f, 42.0f, 0.8f, { TX_HEWN, TX_HEWN, TX_EARTH }, { 6.0f, 6.0f, 4.0f }, 0.6f, 0.9f, 0.75f },
     { { 184, 140, 110, 255 }, { 168, 124, 96, 255 }, { 134, 88, 64, 255 }, { 168, 104, 72, 255 }, 0.35f, { 0.046f, 0.033f, 0.026f },
-      { 22, 13, 8, 255 }, 10.0f, 42.0f, 0.8f, { TX_SMOOTH, TX_SMOOTH, TX_RED_EARTH }, { 4.0f, 4.0f, 4.0f }, 0.35f, 1.4f, 0.35f },
+      { 22, 13, 8, 255 }, 10.0f, 42.0f, 0.8f, { TX_SMOOTH, TX_SMOOTH, TX_RED_EARTH }, { 6.0f, 6.0f, 4.0f }, 0.35f, 1.4f, 0.35f },
     { { 160, 140, 118, 255 }, { 128, 106, 96, 255 }, { 116, 110, 100, 255 }, { 100, 92, 82, 255 }, 0.15f, { 0.038f, 0.038f, 0.042f },
       { 16, 15, 16, 255 }, 12.0f, 46.0f, 0.75f, { TX_ASHLAR, TX_BRICK, TX_FLAGS }, { 4.0f, 3.0f, 4.0f }, 0.0f, 0.55f, 0.15f },
 };
@@ -125,7 +125,7 @@ static float strokes(float u, float v, int n, uint32_t seed, float len, float *c
 static Color texel(TexKind k, float u, float v, int px, int py, uint32_t seed) {
     switch (k) {
     case TX_LIMESTONE: { // caliza: manchas, las capas (finas, horizontales), las coladas que bajan y alguna grieta suelta
-        float base = 0.62f + 0.3f * fbm(u, v, 4, 4, seed), streak = vnoise(u, v, 24, 2, seed + 5u), f1, f2;
+        float base = 0.66f + 0.24f * fbm(u, v, 6, 4, seed), streak = vnoise(u, v, 24, 2, seed + 5u), f1, f2;
         float bed = 0.95f + 0.05f * sinf((v * 7.0f + 0.25f * vnoise(u, v, 4, 4, seed + 8u)) * 6.2832f);
         int id;
         worley(u, v, 5, seed + 9u, &f1, &f2, &id);
@@ -133,11 +133,11 @@ static Color texel(TexKind k, float u, float v, int px, int py, uint32_t seed) {
         return gray(base * bed * (0.82f + 0.3f * streak) * crack, 0.98f, 1.0f, 1.03f);
     }
     case TX_MOSSY: { // roca con grietas sueltas y manchas de musgo
-        float base = 0.6f + 0.32f * fbm(u, v, 4, 4, seed), f1, f2, moss = smooth(0.52f, 0.66f, fbm(u, v, 3, 3, seed + 11u));
+        float base = 0.66f + 0.26f * fbm(u, v, 6, 4, seed), f1, f2, moss = smooth(0.55f, 0.7f, fbm(u, v, 8, 3, seed + 11u));
         int id;
-        worley(u, v, 5, seed + 3u, &f1, &f2, &id);
-        float k = base * (f2 - f1 < 0.04f && vnoise(u, v, 6, 6, seed + 71u) > 0.5f ? 0.66f : 1.0f);
-        return gray(k * (1.0f - 0.08f * moss), 1.0f - 0.3f * moss, 1.0f - 0.05f * moss, 1.0f - 0.38f * moss);
+        worley(u, v, 7, seed + 3u, &f1, &f2, &id);
+        float k = base * (f2 - f1 < 0.04f && vnoise(u, v, 6, 6, seed + 71u) > 0.5f ? 0.72f : 1.0f);
+        return gray(k * (1.0f - 0.05f * moss), 1.0f - 0.16f * moss, 1.0f - 0.03f * moss, 1.0f - 0.2f * moss);
     }
     case TX_HEWN: { // picada a mano: golpes cortos de pico, con su borde claro
         float base = 0.7f + 0.22f * fbm(u, v, 4, 3, seed), cell = 0.0f, d = strokes(u, v, 7, seed, 0.4f, &cell), cell2 = 0.0f;
