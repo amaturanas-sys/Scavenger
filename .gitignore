@@ -13,6 +13,8 @@ out/
 .idea/
 .DS_Store
 *.swp
+# Claude Code: los ajustes locales de cada sesión (el hook de rtk lo escribe el script del entorno)
+.claude/settings.local.json
 
 # Kiln: estado local del workspace de assets
 tools/assets/.kiln/
