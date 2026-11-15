@@ -40,7 +40,37 @@ paralelos. Los assets que se quieran usar deben pasar por el pipeline oficial:
 - **Relevancia para estepa:** Imágenes de referencia para texturas pintadas a mano, concept art de estepa, música de ambiente, efectos de sonido.
 - **Nota:** No se pudo leer directamente con `fetch_web_content` (HTTP 403); se recomienda explorar manualmente o mediante Agent-Reach cuando el rate limit de Exa lo permita.
 
-## 4. Limitaciones del descubrimiento automatizado
+## 4. Polyfork (polyfork.dev/assets)
+
+- **Qué es:** Librería de 3,330 assets low-poly 3D para three.js (motor web).
+- **Modelo de licencia:** Todos los assets low-poly son **gratuitos** con **licencia comercial**. Las ediciones HD vienen con plan de pago (Pro/Lifetime).
+- **Producción:** Hechos por el equipo de Polyfork (estilo consistente, bajo polímetro).
+- **Formatos:** GLB + ES module.
+- **Categorías relevantes:**
+  - **Characters** (personajes: humanos, elfos, enanos, orcos, dragones, etc.)
+  - **Creatures** (criaturas: monstruos, animales fantásticos, esqueletos, etc.)
+  - **Props** (utilería: armas, escudos, herramientas, muebles, objetos)
+  - **Buildings** (edificios: casas, torres, murallas, tiendas, etc.)
+  - **Animals** (animales: caballos, lobos, zorros, pájaros, dinosaurios, etc.)
+  - **Vehicles** (vehículos: carretas, barcos, etc.)
+  - **Terrain** (terreno: rocas, árboles, plantas, hierba, etc.)
+  - **Nano** (modelos muy pequeños, <500 tris)
+- **Tris:** De ~160 a ~6,300 tris por modelo (adecuados para bajo polímetro / estilo PS2 del juego).
+- **Relevancia para estepa:** Personajes NPCs, animales de la estepa (caballos, lobos, zorros), props de utilería (armas, escudos, herramientas), edificios rurales, vegetación.
+- **Descarga:** Directa desde el sitio, sin cuenta (para assets gratis).
+- **Nota:** Los modelos son de three.js pero se entregan en GLB, compatible con raylib y con el pipeline `tools/modelos/modelos.py`.
+
+## 5. Sketchfab — Game Ready (sketchfab.com/tags/game-ready)
+
+- **Qué es:** Mercado y plataforma de modelos 3D; la sección "Game-ready" reúne modelos optimizados para videojuegos.
+- **Modelo de licencia:** Variable según cada autor y modelo. Muchos son gratuitos (descarga libre), otros son de pago. Hay que verificar la licencia de cada asset individualmente.
+- **Producción:** Hechos por la comunidad de creadores de Sketchfab.
+- **Formatos:** Principalmente GLB, OBJ, FBX (según el modelo).
+- **Relevancia para estepa:** Posible fuente de modelos de personajes, animales y props optimizados para motores de juego.
+- **Descarga:** Requiere cuenta en Sketchfab; algunos modelos gratuitos, otros de pago.
+- **Nota:** Al ser una plataforma de terceros con licencias mixtas, cada asset debe revisarse individualmente antes de incorporarlo al inventario. No es una fuente tan consistente como Polyfork o Poly Haven para este proyecto.
+
+## 6. Limitaciones del descubrimiento automatizado
 
 - El backend de búsqueda web de Agent-Reach usa Exa con rate limit gratuito muy bajo. Tras la primera búsqueda exitosa, las siguientes búsquedas devolvieron `RATE_LIMITED` (espera de 3565 segundos).
 - Para seguir descubriendo assets, se recomienda usar la búsqueda web integrada del agente o esperar a que se restablezca el rate limit, o bien agregar una clave API de Exa (`https://dashboard.exa.ai/api-keys`).
