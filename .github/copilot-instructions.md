@@ -91,6 +91,9 @@ cmake -E copy_directory assets build/assets
 - **Renombrar o quitar algo:** `git grep` todos sus usos y arreglarlos en el mismo commit.
 - **raylib:** nunca un `Material` en `{ 0 }` en `DrawMesh` (`LoadMaterialDefault()` una vez), y
   `LoadShaderFromMemory(vs, fs)` con el de vértices primero.
+- **El mundo** (relieve, agua, regiones, vegetación, lugares y estaciones): antes de tocarlo, lee
+  `.claude/skills/mundo/SKILL.md`. Va por capas, y cada capa lee las de abajo sin cambiarlas: la vegetación
+  no toca el relieve y un pueblo no desvía un río. La estación cambia cómo se ve algo, no dónde está.
 
 ## Los datos
 - **Los textos:** todo lo visible pasa por `T("...")` o `N_("...")` y se traduce en `assets/i18n/en.tsv`
@@ -102,6 +105,17 @@ cmake -E copy_directory assets build/assets
   Los íconos, con `iconos.py generar`.
 
 ## Modelos 3D: TRELLIS.2 + RigNet + GRAIL → el juego (`tools/modelos`)
+**Paso 0, la imagen de referencia: Perchance**, por defecto. Los prompts y las pautas están en
+`.claude/skills/modelos/SKILL.md`, paso 2.
+- **Hay dos clases de imagen:**
+  - la hoja de tres vistas (frente | lado | espalda), para `piezas.py` o los voxeles;
+  - **una sola vista**, para TRELLIS.2. Con la hoja, TRELLIS hace un modelo por cada vista: así salieron los tres
+    lobos en una malla del PR #164.
+- **Para guardarla** en `arte/referencias/<ID>/`, con su procedencia:
+  `python3 tools/fetch_perchance_ref.py <ID> --url "<enlace>" --vista hoja|unica --prompt "<prompt>"` (o
+  `--archivo`).
+- **Sin envoltorios no oficiales de Perchance** (`eeemoon/perchance`, `afrozthalam/perchance-api`).
+
 Cuando el usuario pase la URL de un `.glb`:
 1. **Nunca** le pidas que baje o vuelva a subir archivos desde la tablet.
 2. **El id:** `python3 tools/modelos/modelos.py estado` (lo pendiente) o `inventario.py faltan <categoría>`.

@@ -46,7 +46,7 @@ que ya salió mal y el estado del proyecto.
 | [CAPTURAS.md](CAPTURAS.md) | Las capturas de cada pantalla y cómo se sacan. |
 | [FUENTES_ASSETS.md](FUENTES_ASSETS.md) | Fuentes de assets con licencia abierta, y qué revisar antes de traer uno. |
 | [NARRATIVA.md](NARRATIVA.md), [ESTILO_VISUAL.md](ESTILO_VISUAL.md) | La historia y el estilo. |
-| `.claude/skills/estepa`, `modelos`, `animaciones` | Las convenciones y las tuberías de modelos y animaciones (sirven de guía para todas las IA). |
+| `.claude/skills/estepa`, `modelos`, `animaciones`, `mundo` | Las convenciones, las tuberías de modelos y animaciones, y las capas del mundo (sirven de guía para todas las IA). |
 
 ## 2. Cómo se reparte el trabajo
 

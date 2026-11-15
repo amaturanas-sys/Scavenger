@@ -1,6 +1,6 @@
 ---
 name: modelos
-description: La tubería de modelos 3D de SCAVENGERS THRIVE (imagen → TRELLIS.2 → low-poly → juego; RigNet para el esqueleto). Usar cuando el usuario quiera agregar o reemplazar un modelo, pase una URL de Hugging Face o un GLB, pregunte qué imágenes hacen falta, o al revisar un modelo importado.
+description: La tubería de modelos 3D de SCAVENGERS THRIVE (paso 0, la referencia con Perchance → TRELLIS.2 o piezas.py → low-poly → juego; RigNet para el esqueleto). Usar cuando el usuario quiera agregar o reemplazar un modelo, pase una URL de Hugging Face o un GLB, pregunte qué imágenes hacen falta o cómo pedirlas, o al revisar un modelo importado.
 ---
 
 # La tubería de modelos
@@ -13,13 +13,45 @@ Lo que el juego necesita de un modelo está en `assets/inventario.tsv` (medidas,
 1. **Elegir el id.** `python3 tools/modelos/modelos.py estado` lista lo que falta por prioridad
    (personas, animales, armas y armaduras, estructuras, el resto). `estado <id>` dice sus medidas,
    su presupuesto de triángulos y si necesita esqueleto y clips.
-2. **Las imágenes las pone el usuario** (no se generan acá: no hay GPU y este entorno no llega a
-   huggingface.co). Pautas para la foto o el dibujo:
-   - el objeto entero, aislado, sobre fondo liso, en tres cuartos, de 1024 px o más;
-   - mejor fotos de museo (Ermitage, Pazyryk, Museo Británico) o dibujos de concepto; las de
-     estilo animal (placas, arreos, amuletos) de frente, como se ven.
-3. **Generar el 3D** en el espacio de TRELLIS.2 en Hugging Face (desde la tablet: subir la imagen,
-   generar, exportar el GLB) y copiar el enlace de descarga del GLB.
+2. **Paso 0, la imagen de referencia: Perchance, por defecto.**
+   - **Dónde:** gratis y sin cuenta, en el navegador, por el usuario o por Cline en el Codespace:
+     - [ai-text-to-image-generator](https://perchance.org/ai-text-to-image-generator), para objetos, animales y
+       estructuras;
+     - [ai-character-generator](https://perchance.org/ai-character-generator), para personas.
+
+     Claude, en la nube, no llega a perchance.org.
+   - **Qué pedir:** hay dos clases de imagen, según lo que venga después. Los prompts rinden más en inglés:
+     - **La hoja de tres vistas, para `piezas.py` y los voxeles.** Una sola imagen ancha con el mismo sujeto de
+       frente, de lado y de espalda, a la misma escala. Base:
+       `turnaround reference sheet of a single <sujeto>, three views side by side: front view, side view facing
+       left, back view, same scale, orthographic, full body, neutral pose, plain light gray background, no
+       shadow, no text`. Si el lado mira a la derecha, `piezas.py --voltear-lado`.
+     - **Una sola vista, para TRELLIS.2.** Nunca la hoja: TRELLIS hace un modelo por cada vista, y así el PR #164
+       trajo tres lobos en una malla. Base: `a single <sujeto>, three-quarter front view, full body, isolated,
+       centered, plain light gray background, no other objects, no text`.
+   - **Pautas para las dos:**
+     - el sujeto entero, sin recortes, sobre fondo liso, de 1024 px o más, y el estilo de la época
+       (`docs/ESTILO_VISUAL.md`);
+     - para objetos históricos siguen valiendo las fotos de museo (Ermitage, Pazyryk, Museo Británico); las de
+       estilo animal (placas, arreos, amuletos), de frente;
+     - nada que imite a gente real, marcas ni personajes con dueño.
+   - **Guardarla en el repo, sin pasar por la tablet.** Con el enlace de la imagen o con el archivo subido al
+     Codespace:
+     `python3 tools/fetch_perchance_ref.py <id> --url <enlace> --vista hoja|unica --prompt "<el prompt>"`
+     (o `--archivo`).
+     - Queda en `arte/referencias/<id>/<vista>.<ext>`, en git, y conviene un JPEG de menos de 2 MB.
+     - De dónde salió (el prompt, el enlace y el sha256) queda en `arte/referencias/referencias.json`.
+     - Si el enlace es temporal o necesita la página abierta, el script lo dice: guardar la imagen y usar
+       `--archivo`.
+   - **La licencia:** según los resúmenes de sus términos, Perchance no reclama las imágenes ni limita su uso.
+     Pero cada generador puede usar un modelo con su propia licencia: antes de publicar, leer
+     perchance.org/terms-of-service y la página del generador. La imagen es solo la referencia; el juego lleva la
+     conversión (`piezas.py`, voxeles o la malla de TRELLIS bajada a low-poly).
+   - **Sin envoltorios no oficiales:** ni `eeemoon/perchance` ni `afrozthalam/perchance-api`. Manejan un
+     navegador para pasar la verificación del sitio, y el segundo no tiene licencia.
+3. **Generar el 3D** con la imagen de una sola vista, en el espacio de TRELLIS.2 en Hugging Face (desde la
+   tablet: subir la imagen, generar, exportar el GLB), y copiar el enlace de descarga del GLB. Con una hoja de
+   tres vistas, en cambio, el modelo sale con `piezas.py`, sin GPU.
 4. **Traerlo** (en Codespaces con Cline, o acá con el archivo):
    ```bash
    python3 tools/modelos/modelos.py traer <id> --url <enlace del GLB> --fuente trellis2 --girar 90
