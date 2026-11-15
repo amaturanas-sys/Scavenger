@@ -103,7 +103,10 @@ Ver [MUNDO.md](MUNDO.md). Con `--ir lugar` y `--orbital`:
 | ![Bosque](capturas/mundo_bosque.png) | **Bosque de coníferas** (`--ir bosque`): los pinos y los arces de voxeles (v0.14.1); con la cámara lejana, la copa que tapa al personaje no se dibuja. |
 | ![Altiplano](capturas/mundo_altiplano.png) | **Altiplano glaciar** (`--ir altiplano`). |
 | ![Mar](capturas/mundo_mar.png) | **Costa de fiordos y el mar** (`--ir mar`). |
-| ![Muro](capturas/mundo_muro.png) | **El cañón y el muro del desierto** (`--ir muro`). |
+| ![Muro](capturas/mundo_muro.png) | **El cañón y el muro del desierto** (`--ir muro`): los estratos de los badlands, en franjas que siguen la altura (v0.14.2). |
+| ![Panorama del muro](capturas/mundo_panorama-muro.png) | **El muro del cañón entero** (`--ir panorama-muro`, a 520 m): promontorios, cárcavas en V y agujas en el filo; de lejos, las mismas franjas (la rampa de la malla lejana). |
+| ![Hielo](capturas/mundo_hielo.png) | **El frente del glaciar** (`--ir hielo`): una pared casi a pique en columnas, con grietas azules y bloques de hielo caídos al pie (v0.14.2). |
+| ![Panorama del hielo](capturas/mundo_panorama-hielo.png) | **El muro de hielo entero** (`--ir panorama-hielo`, a 520 m). |
 | ![Canal](capturas/mundo_canal.png) | **El gran canal** (`--ir canal`). |
 | ![Capital](capturas/mundo_capital.png) | **Una capital** (`--ir capital`): la del Principado de los Pinos Negros. |
 | ![Aldea](capturas/mundo_aldea.png) | **Una aldea** del desierto (`--ir aldea`). |
@@ -184,8 +187,11 @@ Ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md). Con `--e
 | ![Puertas](capturas/kit_puerta.png) | **Las puertas acodadas** (`--edificios puerta`): el antemuro, cerrado de un costado. |
 | ![Asedio](capturas/asedio_puerta.png) | **La puerta acodada en el asedio** (`--asedio puerta`): desde el patio del antemuro, mirando la puerta. |
 | ![Salida](capturas/asedio_salida.png) | **La guarnición sale** por la puerta acodada (`--asedio salida`). |
-| ![Fortalezas](capturas/kit_fortaleza.png) | **Las fortalezas derruidas** (`--edificios fortaleza`): la muralla de cada región, comida desde arriba. |
-| ![Enterrada](capturas/kit_enterrada.png) | **La ciudad enterrada** del desierto (`--edificios enterrada`). |
+| ![Fortalezas](capturas/kit_fortaleza.png) | **Las fortalezas derruidas** (`--edificios fortaleza`): la muralla de cada región, comida desde arriba; las grandes, con el torreón de tres pisos y torres en ruinas en las esquinas; las chicas, una torre sola (v0.14.2). |
+| ![Enterrada](capturas/kit_enterrada.png) | **La ciudad enterrada** del desierto (`--edificios enterrada`): las casas de ladrillo de adobe trabado, en dunas. |
+| ![Ladrillo](capturas/kit_enterrada_cerca.png) | **El ladrillo de la ciudad enterrada, de cerca** (`--edificios enterrada --dron 24`): cada hilada corrida media pieza, la junta oscura. |
+| ![Formaciones del desierto](capturas/formaciones_desierto.png) | **Las formaciones del desierto** (`--formaciones desierto`): farallones, hongos y arcos de arenisca y la creta. |
+| ![Formaciones del hielo](capturas/formaciones_hielo.png) | **Las formaciones del hielo** (`--formaciones hielo`): los bloques caídos del glaciar y los témpanos. |
 | ![Refugios](capturas/kit_refugio.png) | **El refugio de ramas y pieles** (`--edificios refugio`), una obra de la tribu. |
 | ![Empalizadas](capturas/kit_empalizada.png) | **La empalizada** (`--edificios empalizada`). |
 | ![Muros](capturas/kit_muro.png) | **El muro de piedra seca** (`--edificios muro`). |

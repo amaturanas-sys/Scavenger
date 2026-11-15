@@ -1032,9 +1032,8 @@ static void pole(Kit *k, int x0, int y0, int z0, int x1, int y1, int z1, uint8_t
 
 // Lo que cae primero es lo de arriba: cada columna pierde lo que pasa de una altura que da el ruido
 // (sin nada en el aire; el cimiento queda). keep: cuanto queda en promedio, de la altura de la rejilla.
-static void decay(Kit *k, uint32_t seed, float keep) {
+static void decay_to(Kit *k, uint32_t seed, float keep, float top) {
     VoxGrid *g = k->g;
-    float top = (float)(g->ny - k->gy);
     for (int z = 0; z < g->nz; z++)
         for (int x = 0; x < g->nx; x++) {
             float n = vox_noise3((float)x * 0.16f, 0.5f, (float)z * 0.16f, seed) * 0.7f + vox_noise3((float)x * 0.55f, 2.5f, (float)z * 0.55f, seed + 7u) * 0.3f;
@@ -1042,6 +1041,8 @@ static void decay(Kit *k, uint32_t seed, float keep) {
             for (int y = cut < k->gy + 1 ? k->gy + 1 : cut; y < g->ny; y++) put(k, x, y, z, M_NONE);
         }
 }
+
+static void decay(Kit *k, uint32_t seed, float keep) { decay_to(k, seed, keep, (float)(k->g->ny - k->gy)); }
 
 // Lo que crece encima: pasto, musgo o arena sobre parte de las celdas al cielo (no en la madera).
 static void overgrow(Kit *k, uint32_t seed, float p) {
@@ -1060,7 +1061,7 @@ static void overgrow(Kit *k, uint32_t seed, float p) {
 // Lo caido: un monton de r m en (x, z) (m), de lo que estaba hecho el muro de la region.
 static void heap(Kit *k, float x, float z, float r) {
     static const uint8_t FALLEN[REGION_COUNT] = { [REGION_STEPPE] = M_EARTH, [REGION_FOREST] = M_STONE, [REGION_HIGHLAND] = M_STONE,
-                                                  [REGION_FJORD] = M_STONE_DARK, [REGION_DESERT] = M_ADOBE };
+                                                  [REGION_FJORD] = M_STONE_DARK, [REGION_DESERT] = M_BRICK };
     float c = k->g->size;
     vox_ellipsoid(k->g, x / c + (float)k->g->nx * 0.5f, (float)k->gy, z / c + (float)k->g->nz * 0.5f, r / c, r * 0.5f / c, r / c, FALLEN[k->r], true);
 }
@@ -1072,38 +1073,139 @@ static void ring_m(Kit *k, float x0, float z0, float x1, float z1, float y1, flo
     fill_m(k, x0, b, z0, x0 + t, y1, z1, m), fill_m(k, x1 - t, b, z0, x1, y1, z1, m);
 }
 
-// La fortaleza derruida: el recinto cuadrado con la muralla de la region (el mismo perfil que la de
-// las capitales), sus cuatro torres, la puerta al frente y los cimientos de la sala y el pozo de
-// adentro; despues el tiempo (lo alto cae primero), lo caido al pie y el pasto, el musgo o la arena.
+// ---------------------------------------------------------------- torres en ruinas
+#define FLOOR_M 3.0f // m de cada piso de las torres y los torreones
+
+// De que esta hecha una torre en ruinas de la region: tierra apisonada en la estepa, piedra en el bosque y el altiplano,
+// piedra oscura en los fiordos, ladrillo de adobe en el desierto.
+static uint8_t tower_mat(const Kit *k) {
+    static const uint8_t M[REGION_COUNT] = { [REGION_STEPPE] = M_EARTH, [REGION_FOREST] = M_STONE, [REGION_HIGHLAND] = M_STONE,
+                                             [REGION_FJORD] = M_STONE_DARK, [REGION_DESERT] = M_BRICK };
+    return M[k->r];
+}
+
+// Una torre en ruinas (o el torreon de una fortaleza), cuadrada o redonda, de lado side m centrada en (x, z) m y de
+// floors pisos de FLOOR_M m, con muros de t m y hueca por dentro. En cada piso de arriba, el entrepiso de vigas y tablas
+// (con un pedazo caido) y una ventana por cara; abajo, la puerta hacia door (0: +x, 1: -x, 2: +z, 3: -z) y saeteras en
+// las otras caras; stair: la escalera de piedra contra el muro de -z, de piso a piso. Lo alto, roto en escalones (cada
+// columna del muro corta donde dice el ruido, en el ultimo piso; una esquina queda entera) y una brecha en V en una cara.
+static void ruined_tower(Kit *k, float x, float z, float side, int floors, bool round, float t, int door, bool stair) {
+    VoxGrid *g = k->g;
+    float a = side * 0.5f, H = (float)floors * FLOOR_M + 1.0f, c = g->size, found = -(float)k->gy * c;
+    uint8_t m = tower_mat(k);
+    float cx = x / c + (float)g->nx * 0.5f, cz = z / c + (float)g->nz * 0.5f, R = a / c; // en celdas
+    if (k->r == REGION_DESERT) fill_m(k, x - a - 0.5f, found, z - a - 0.5f, x + a + 0.5f, 1.0f, z + a + 0.5f, M_STONE); // el zocalo
+    if (round) {
+        vox_cylinder(g, cx, cz, 0, cell_y(k, H - 0.01f), R, R, m);
+        vox_cylinder(g, cx, cz, k->gy, cell_y(k, H - 0.01f), R - t / c, R - t / c, M_NONE);
+    } else {
+        fill_m(k, x - a, 1.0f, z - a, x + a, H, z + a, m);
+        fill_m(k, x - a, found, z - a, x + a, 1.0f, z + a, k->r == REGION_DESERT ? M_STONE : m);
+        hole(k, cell_x(k, x - a + t), k->gy, cell_z(k, z - a + t), cell_x(k, x + a - t - 0.01f), cell_y(k, H - 0.01f), cell_z(k, z + a - t - 0.01f));
+    }
+    float in = a - t; // el medio lado de adentro (m)
+    for (int f = 1; f < floors; f++) { // los entrepisos: vigas a lo largo de x y tablas, con un pedazo caido
+        float y = (float)f * FLOOR_M;
+        for (int zc = cell_z(k, z - in); zc <= cell_z(k, z + in - 0.01f); zc++)
+            for (int xc = cell_x(k, x - in); xc <= cell_x(k, x + in - 0.01f); xc++) {
+                float px = ((float)xc + 0.5f) * c - (float)g->nx * c * 0.5f - x, pz = ((float)zc + 0.5f) * c - (float)g->nz * c * 0.5f - z;
+                if (round && px * px + pz * pz > in * in) continue;
+                put(k, xc, cell_y(k, y), zc, zc % 2 ? M_WOOD : M_WOOD_DARK);
+            }
+        float hx0 = x - in + kr(k) * in, hz0 = z - in + kr(k) * in, hw = in * (0.6f + kr(k) * 0.6f); // lo que se cayo
+        hole(k, cell_x(k, hx0), cell_y(k, y), cell_z(k, hz0), cell_x(k, hx0 + hw), cell_y(k, y), cell_z(k, hz0 + hw));
+    }
+    if (stair) // la escalera: escalones de piedra de medio metro contra el muro de -z, de cada piso al de arriba
+        for (int f = 0; f + 1 < floors; f++)
+            for (int i = 0; i < (int)(FLOOR_M / c); i++) {
+                float sx = x - in + (float)i * c + (f % 2 ? in : 0.0f), sy = (float)f * FLOOR_M + (float)i * c;
+                fill(k, cell_x(k, sx), cell_y(k, sy), cell_z(k, z - in), cell_x(k, sx), cell_y(k, sy), cell_z(k, z - in + 0.99f), M_STONE);
+            }
+    // Las ventanas de cada piso de arriba (una por cara), la puerta y las saeteras de abajo.
+    for (int s = 0; s < 4; s++) {
+        float nx = s == 0 ? 1.0f : s == 1 ? -1.0f : 0.0f, nz = s == 2 ? 1.0f : s == 3 ? -1.0f : 0.0f;
+        for (int f = 0; f < floors; f++) {
+            float w = f == 0 ? (s == door ? 0.75f : 0.25f) : 0.5f, y0 = f == 0 ? 0.0f : (float)f * FLOOR_M + 0.75f;
+            float y1 = f == 0 ? (s == door ? 2.25f : 2.0f) : y0 + 1.5f;
+            if (f == 0 && s != door) y0 = 1.0f;
+            float ox = x + nx * (a - t * 0.5f), oz = z + nz * (a - t * 0.5f); // el medio del muro de esa cara
+            float hx = nx != 0.0f ? t * 0.5f + 0.8f : w, hz = nz != 0.0f ? t * 0.5f + 0.8f : w; // y el zocalo
+            hole(k, cell_x(k, ox - hx), cell_y(k, y0), cell_z(k, oz - hz), cell_x(k, ox + hx - 0.01f), cell_y(k, y1 - 0.01f), cell_z(k, oz + hz - 0.01f));
+        }
+    }
+    // Lo alto, roto: en el ultimo piso cada columna del muro corta donde dice el ruido; la esquina de +x +z, entera.
+    float low = (float)(floors - 1) * FLOOR_M + 0.5f;
+    int breach = ki(k, 0, 3);
+    uint32_t seed = k->s + (uint32_t)(x * 13.0f + z * 7.0f);
+    for (int zc = cell_z(k, z - a - 0.5f); zc <= cell_z(k, z + a + 0.49f); zc++)
+        for (int xc = cell_x(k, x - a - 0.5f); xc <= cell_x(k, x + a + 0.49f); xc++) {
+            if (xc < 0 || zc < 0 || xc >= g->nx || zc >= g->nz) continue;
+            float px = ((float)xc + 0.5f) * c - (float)g->nx * c * 0.5f - x, pz = ((float)zc + 0.5f) * c - (float)g->nz * c * 0.5f - z;
+            float n = vox_noise3((float)xc * 0.3f, 0.5f, (float)zc * 0.3f, seed);
+            float cut = low + (H - low) * n * n * 1.6f;
+            if (px > a - 1.6f && pz > a - 1.6f) cut = H;                          // la esquina entera
+            float along = breach < 2 ? pz : px, across = breach < 2 ? px : pz;    // la brecha en V de una cara
+            if ((breach % 2 ? -across : across) > a - t - 0.6f) cut = fminf(cut, H * 0.45f + fabsf(along) * 1.6f);
+            for (int y = cell_y(k, cut); y < g->ny; y++) {
+                uint8_t v = vox_get(g, xc, y, zc);
+                if (v && v != M_WOOD && v != M_WOOD_DARK) put(k, xc, y, zc, M_NONE);
+            }
+        }
+}
+
+// La fortaleza derruida. Las grandes (variantes 2 y 3): el recinto cuadrado con la muralla de la region (el mismo
+// perfil que la de las capitales), comida por el tiempo (lo alto cae primero); en las esquinas, torres en ruinas de uno
+// a tres pisos; al fondo, el torreon del homenaje de tres pisos, con su escalera; el pozo, lo
+// caido al pie y el pasto, el musgo o la arena. Las chicas (0 y 1): una torre sola, cuadrada o redonda, de dos o tres
+// pisos, con un pedazo de la muralla que salia de ella.
 static bool ruin_fort(Kit *k) {
-    float hs = 9.0f + (float)ki(k, 0, 2), tw = k->r == REGION_STEPPE || k->r == REGION_FOREST ? 3.0f : 3.5f;
-    if (!grid_m(k, hs + 3.5f, hs + 3.5f, CITY_WALL_HEIGHT + 4.0f)) return false;
+    float hs = 9.0f + (float)ki(k, 0, 2), tw = k->r == REGION_STEPPE || k->r == REGION_FOREST ? 4.0f : 4.5f;
+    if (k->small) { // la torre sola
+        if (!grid_m(k, 10.0f, 10.0f, 3.0f * FLOOR_M + 2.0f)) return false;
+        float side = 6.0f + kr(k) * 1.5f;
+        bool round = kc(k, 0.5f);
+        rampart(k, true, -9.5f, -side * 0.5f, 0.0f, 1); // el pedazo de muralla, hacia -z
+        decay_to(k, k->s, 0.6f, CITY_WALL_HEIGHT + 4.0f);
+        ruined_tower(k, 0.0f, 0.0f, side, kc(k, 0.6f) ? 3 : 2, round, 1.0f, 0, true);
+        for (int i = 0; i < 6; i++) { // lo caido alrededor (no delante de la puerta)
+            float a = 1.1f + kr(k) * 4.1f, r = side * 0.5f + 1.0f + kr(k) * 2.5f;
+            heap(k, cosf(a) * r, sinf(a) * r, 0.8f + kr(k) * 1.0f);
+        }
+        if (k->r == REGION_HIGHLAND || k->r == REGION_FOREST) stones(k, 59u + k->s % 7u);
+        overgrow(k, k->s + 11u, 0.3f);
+        return true;
+    }
+    if (!grid_m(k, hs + 3.5f, hs + 3.5f, 3.0f * FLOOR_M + 2.0f)) return false;
     rampart(k, true, -hs, hs, hs, 1), rampart(k, true, -hs, hs, -hs, -1);   // el frente y el fondo
     rampart(k, false, -hs, hs, hs, 1), rampart(k, false, -hs, hs, -hs, -1); // los costados
-    for (int sx = -1; sx <= 1; sx += 2)
-        for (int sz = -1; sz <= 1; sz += 2) wall_tower(k, (float)sx * hs, (float)sz * hs, tw, CITY_WALL_HEIGHT + 2.0f);
-    hole(k, cell_x(k, hs - WALL_HALF - 1.5f), k->gy, cell_z(k, -2.0f), cell_x(k, hs + WALL_HALF + 1.49f), k->g->ny - 1, cell_z(k, 1.99f)); // la puerta
-    float hx0 = -hs + 3.0f, hx1 = hx0 + 5.0f + kr(k) * 2.0f, hz = 3.0f + kr(k) * 2.0f; // la sala del fondo
-    ring_m(k, hx0, -hz, hx1, hz, 2.0f, 0.5f, k->r == REGION_DESERT ? M_ADOBE : M_STONE);
-    hole(k, cell_x(k, hx1 - 0.5f), k->gy, cell_z(k, -0.75f), cell_x(k, hx1 - 0.01f), k->g->ny - 1, cell_z(k, 0.74f));
     float wx = hs * 0.4f, wz = (kr(k) - 0.5f) * hs; // el pozo
     vox_cylinder(k->g, (float)cell_x(k, wx) + 0.5f, (float)cell_z(k, wz) + 0.5f, 0, k->gy + 1, 2.2f, 2.2f, M_STONE);
     vox_cylinder(k->g, (float)cell_x(k, wx) + 0.5f, (float)cell_z(k, wz) + 0.5f, k->gy - 1, k->gy + 1, 1.2f, 1.2f, M_NONE);
     vox_cylinder(k->g, (float)cell_x(k, wx) + 0.5f, (float)cell_z(k, wz) + 0.5f, k->gy - 1, k->gy - 1, 1.2f, 1.2f, M_WATER);
-    decay(k, k->s, 0.62f);
-    for (int i = 0; i < 10; i++) { // lo caido, al pie de los muros (adentro y afuera)
+    decay_to(k, k->s, 0.62f, CITY_WALL_HEIGHT + 4.0f); // la muralla, como antes; las torres, abajo, con su propia rotura
+    int tall = ki(k, 0, 3);
+    for (int i = 0; i < 4; i++) { // las torres de las esquinas: una de dos o tres pisos, las otras de uno a tres
+        int sx = i & 1 ? 1 : -1, sz = i & 2 ? 1 : -1, floors = i == tall ? 2 + (kc(k, 0.5f) ? 1 : 0) : ki(k, 1, 3);
+        ruined_tower(k, (float)sx * hs, (float)sz * hs, tw, floors, kc(k, 0.3f), 1.0f, sx > 0 ? 1 : 0, false);
+    }
+    float side = 7.0f + kr(k) * 1.0f, kz = (kr(k) - 0.5f) * (hs - side) * 0.6f; // el torreon del homenaje, al fondo
+    ruined_tower(k, -hs + WALL_HALF + side * 0.5f + 1.5f, kz, side, 3, false, 1.0f, 0, true);
+    for (int i = 0; i < 10; i++) { // lo caido, al pie de los muros (adentro y afuera), no en la puerta
         float along = (kr(k) * 2.0f - 1.0f) * hs, off = hs + (kc(k, 0.5f) ? 2.5f : -2.5f) * (kr(k) * 0.5f + 0.75f);
-        int side = ki(k, 0, 3);
-        heap(k, side < 2 ? (side ? off : -off) : along, side < 2 ? along : (side == 2 ? off : -off), 1.0f + kr(k) * 1.2f);
+        int side4 = ki(k, 0, 3);
+        if (side4 == 0 && fabsf(along) < 3.5f) along += along < 0.0f ? -3.5f : 3.5f;
+        heap(k, side4 < 2 ? (side4 ? -off : off) : along, side4 < 2 ? along : (side4 == 2 ? off : -off), 1.0f + kr(k) * 1.2f);
     }
     if (k->r == REGION_HIGHLAND || k->r == REGION_FOREST) stones(k, 53u + k->s % 7u);
     overgrow(k, k->s + 11u, 0.42f);
+    if (k->r == REGION_DESERT) recolor(k, 0, 0, 0, k->g->nx - 1, k->g->ny - 1, k->g->nz - 1, M_ADOBE, M_BRICK); // el adobe, en ladrillos
+    hole(k, cell_x(k, hs - WALL_HALF - 1.5f), k->gy, cell_z(k, -2.0f), cell_x(k, hs + WALL_HALF + 1.49f), k->g->ny - 1, cell_z(k, 1.99f)); // la puerta
     return true;
 }
 
-// La ciudad enterrada (el desierto): dos hileras de casas de adobe a los lados de la calle, unas con
-// su cupula y otras con lo que queda del techo de caña, las puertas a la calle y dos columnas del
-// templo; despues el tiempo y la arena en dunas, que las tapa hasta la mitad.
+// La ciudad enterrada (el desierto): dos hileras de casas de ladrillo de adobe (M_BRICK: el mallador las traba, de
+// cerca y de lejos) a los lados de la calle, unas con su cupula revocada y otras con lo que queda del techo de caña,
+// las puertas a la calle y dos columnas del templo; despues el tiempo y la arena en dunas, que las tapa hasta la mitad.
 static bool ruin_city(Kit *k) {
     float hx = 12.0f, hz = 10.0f;
     if (!grid_m(k, hx + 1.0f, hz + 1.0f, 6.0f)) return false;
@@ -1111,7 +1213,7 @@ static bool ruin_city(Kit *k) {
     for (int i = 0; i < 6; i++) {
         float cx = -8.0f + (float)(i % 3) * 8.0f + (kr(k) - 0.5f) * 1.5f, cz = i < 3 ? -5.5f : 5.5f;
         float lx = 2.5f + kr(k), lz = 2.5f + kr(k) * 0.75f, h = 2.5f + kr(k) * 1.5f, street = i < 3 ? cz + lz : cz - lz;
-        ring_m(k, cx - lx, cz - lz, cx + lx, cz + lz, h, 0.5f, M_ADOBE);
+        ring_m(k, cx - lx, cz - lz, cx + lx, cz + lz, h, 0.5f, M_BRICK); // de ladrillo de adobe
         ring_m(k, cx - lx - 0.5f, cz - lz - 0.5f, cx + lx + 0.5f, cz + lz + 0.5f, 0.5f, 1.0f, M_STONE); // el zocalo
         int sz = cell_z(k, i < 3 ? street - 0.5f : street); // la puerta, a la calle, y un ventanuco
         hole(k, cell_x(k, cx - 0.75f), cell_y(k, 0.5f), sz, cell_x(k, cx + 0.74f), cell_y(k, 2.2f), sz);
@@ -1139,10 +1241,10 @@ static bool ruin_city(Kit *k) {
 
 // Los vestigios de un asentamiento antiguo (src/sim/ancient.h): la planta del palacio y las casas, con los
 // muros a la altura que les dejo el tiempo (casi todos a ras del suelo, con brechas): el zocalo de piedra y,
-// arriba, el ladrillo cocido (el del muro en ruinas del inventario) o, donde se cayo, el barro del nucleo;
-// lo caido al pie (ladrillo y barro) y el pasto, el musgo o la arena encima. Los tramos de pie no van aca:
-// son el modelo del muro en ruinas, que src/game/world_game.c pone donde dice la planta. plan: la semilla de
-// la planta (la de la variante: la misma con que se ponen los tramos de pie).
+// arriba, el ladrillo (M_BRICK: cocido; en el desierto, de adobe), como el del muro en ruinas del inventario, o,
+// donde se cayo, el barro del nucleo; lo caido al pie (ladrillo y barro) y el pasto, el musgo o la arena encima. Los
+// tramos de pie no van aca: son el modelo del muro en ruinas, que src/game/world_game.c pone donde dice la planta.
+// plan: la semilla de la planta (la de la variante: la misma con que se ponen los tramos de pie).
 static bool ruin_town(Kit *k, uint32_t plan) {
     AncientPlan p;
     ancient_plan(&p, plan);
@@ -1157,7 +1259,7 @@ static bool ruin_town(Kit *k, uint32_t plan) {
             int top = k->gy + (int)ceilf(h / c) - 1;
             for (int y = 0; y <= top && y < g->ny; y++) {
                 uint8_t m = M_STONE; // el cimiento y el zocalo (la primera celda sobre el suelo)
-                if (y > k->gy) m = vox_noise3((float)x * 0.35f, (float)y * 0.5f, (float)z * 0.35f, k->s) > 0.4f ? M_CLAY : M_ADOBE; // a manchas de un par de metros
+                if (y > k->gy) m = vox_noise3((float)x * 0.35f, (float)y * 0.5f, (float)z * 0.35f, k->s) > 0.4f ? M_BRICK : M_ADOBE; // a manchas de un par de metros
                 put(k, x, y, z, m);
             }
         }
@@ -1167,7 +1269,7 @@ static bool ruin_town(Kit *k, uint32_t plan) {
         float side = kc(k, 0.5f) ? 1.0f : -1.0f, r = 0.6f + kr(k) * 0.6f;
         float x = ax ? w->r.x0 + kr(k) * (w->r.x1 - w->r.x0) : (side > 0.0f ? w->r.x1 + r * 0.6f : w->r.x0 - r * 0.6f);
         float z = ax ? (side > 0.0f ? w->r.z1 + r * 0.6f : w->r.z0 - r * 0.6f) : w->r.z0 + kr(k) * (w->r.z1 - w->r.z0);
-        vox_ellipsoid(g, x / c + (float)g->nx * 0.5f, (float)k->gy, z / c + (float)g->nz * 0.5f, r / c, r * 0.5f / c, r / c, kc(k, 0.6f) ? M_CLAY : M_ADOBE, true);
+        vox_ellipsoid(g, x / c + (float)g->nx * 0.5f, (float)k->gy, z / c + (float)g->nz * 0.5f, r / c, r * 0.5f / c, r / c, kc(k, 0.6f) ? M_BRICK : M_ADOBE, true);
     }
     stones(k, k->s + 3u);
     overgrow(k, k->s + 11u, 0.22f);

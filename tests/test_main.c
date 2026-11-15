@@ -1815,6 +1815,38 @@ static void mesh_sums(const VoxMesh *m, double area[6], double color[3]) {
 // Las caras juntas: la misma figura, el mismo color en cada punto, cerrada y con muchos menos triangulos.
 // La rejilla con menos detalle (los arboles de lejos): la misma figura y el mismo tamaño en metros; lo suelto se va;
 // cada celda gruesa, del material que mas se repite.
+// El ladrillo trabado (VoxGrid.brick): un muro de 6 x 2 celdas y una de espesor, mirado de frente (+z). Cada
+// ladrillo, dos celdas de un mismo tono; la hilada de arriba, corrida media pieza; la junta, oscura abajo y al
+// principio de cada ladrillo.
+static void test_vox_brick(void) {
+    VoxGrid g;
+    CHECK(vox_init(&g, 6, 2, 1, 1.0f));
+    vox_box(&g, 0, 0, 0, 5, 1, 0, 1);
+    g.brick = 1, g.jitter = 22; // el tono de celda a celda no corre en el ladrillo
+    const uint8_t pal[2][4] = { { 0, 0, 0, 0 }, { 200, 200, 200, 255 } };
+    VoxMesh m;
+    CHECK(vox_mesh(&g, pal, &m) && m.tris > 0);
+    int col[6][2][4]; // [celda][hilada][esquina: 0 abajo a la izquierda, 1 arriba a la izquierda, 2 arriba a la derecha, 3 abajo a la derecha]
+    memset(col, 0xFF, sizeof(col));
+    for (int t = 0; t < m.tris; t++) {
+        if (m.nrm[t * 9 + 2] < 0.5f) continue; // solo las caras de +z
+        float cx = (m.pos[t * 9 + 0] + m.pos[t * 9 + 3] + m.pos[t * 9 + 6]) / 3.0f + 3.0f, cy = (m.pos[t * 9 + 1] + m.pos[t * 9 + 4] + m.pos[t * 9 + 7]) / 3.0f;
+        int x = (int)floorf(cx), y = (int)floorf(cy);
+        for (int k = 0; k < 3; k++) {
+            float px = m.pos[t * 9 + k * 3] + 3.0f - (float)x, py = m.pos[t * 9 + k * 3 + 1] - (float)y;
+            col[x][y][px < 0.5f ? (py < 0.5f ? 0 : 1) : (py < 0.5f ? 3 : 2)] = m.col[(t * 3 + k) * 4];
+        }
+    }
+    CHECK(col[0][0][2] >= 0 && col[5][1][0] >= 0);
+    CHECK(col[0][0][2] == col[1][0][2] && col[2][0][2] == col[3][0][2] && col[1][1][2] == col[2][1][2]); // un ladrillo, un tono
+    CHECK(col[1][0][2] != col[2][0][2] || col[3][0][2] != col[4][0][2]);                                  // de uno al otro, cambia
+    CHECK(col[0][0][0] < col[0][0][3] && col[0][0][3] < col[0][0][2] && col[0][0][1] < col[0][0][2]);     // la junta del principio, abajo
+    CHECK(col[1][0][1] == col[1][0][2]);                                                                  // en el medio, sin junta
+    CHECK(col[1][1][1] < col[1][1][2] && col[0][1][1] == col[0][1][2]);                                   // arriba, corrida media pieza
+    vox_mesh_free(&m);
+    vox_free(&g);
+}
+
 static void test_vox_downsample(void) {
     VoxGrid g, d;
     CHECK(vox_init(&g, 10, 9, 8, 0.25f));
@@ -3116,6 +3148,21 @@ static void test_world_regions_borders_and_sites(void) {
         CHECK(world_height(w, x, z) < wall - 120.0f);
         world_edge_point(w, REGION_HIGHLAND, 20.0f, &x, &z);
         CHECK(world_height(w, x, z) > mean[REGION_HIGHLAND] + 80.0f);
+        // Los muros (las fotos del frente de un glaciar y de los badlands): el frente del glaciar, una pared casi a
+        // pique de 46 a 78 m; el muro del cañon, acantilados sobre taludes. En los dos, algun metro sube mas de 3 m.
+        for (int k = 0; k < 2; k++) {
+            Region rg = k ? REGION_DESERT : REGION_HIGHLAND;
+            float steep = 0.0f, ax, az, bx, bz;
+            for (float in = 130.0f; in > 30.0f; in -= 1.0f) {
+                world_edge_point(w, rg, in, &ax, &az);
+                world_edge_point(w, rg, in - 1.0f, &bx, &bz);
+                steep = fmaxf(steep, world_height(w, bx, bz) - world_height(w, ax, az));
+            }
+            CHECK(steep > 3.0f);
+        }
+        float fx, fz;
+        world_edge_point(w, REGION_HIGHLAND, 140.0f, &x, &z), world_edge_point(w, REGION_HIGHLAND, 85.0f, &fx, &fz);
+        CHECK(world_height(w, fx, fz) - world_height(w, x, z) > 40.0f); // el frente, de un salto
         float fa = 225.0f * 0.0174533f - w->warp_phase;
         float cr = world_edge_radius(w, fa) - world_canal_offset(w, fa);
         float lv = world_water(w, cosf(fa) * cr, sinf(fa) * cr, 0.0f, &wk);
@@ -5501,7 +5548,8 @@ static void test_buildkit(void) {
                     bad_door++; // las casas tienen muros y puerta
                 }
                 // Las caras, refinadas como se dibujan de cerca: las chicas, pocas; las ruinas (una por sitio), mas.
-                if (vox_refine(&g) && vox_exposed_faces(&g) > (ruin ? 36000 : small && !big ? 18000 : 28000)) over++;
+                // (la fortaleza, con su torreon de tres pisos y sus torres huecas, hasta 48000)
+                if (vox_refine(&g) && vox_exposed_faces(&g) > (t == BK_RUIN_FORT ? 48000 : ruin ? 36000 : small && !big ? 18000 : 28000)) over++;
                 vox_free(&g);
             }
         }
@@ -5538,15 +5586,33 @@ static void test_buildkit(void) {
     CHECK(bad_door == 0 && leaks == 0 && short_vest == 0 && hollow == 0);
     CHECK(over == 0);
     // Las ruinas: lo alto cayo (las torres, rotas), pero queda; la puerta de la fortaleza, libre; la
-    // ciudad enterrada, en la arena.
+    // ciudad enterrada, en la arena. Las fortalezas grandes, con el torreon del homenaje de tres pisos de 3 m (sus dos
+    // entrepisos de vigas y tablas, a medio caer) y las torres de las esquinas; las chicas, una torre sola de dos o tres
+    // pisos con su puerta al frente.
     for (int r = 0; r < REGION_COUNT; r++) {
         CHECK(bk_build(BK_RUIN_FORT, (Region)r, bk_variant_seed(BK_RUIN_FORT, (Region)r, 2), false, &g, &in));
         float cs = g.size, hx = (float)g.nx * cs * 0.5f, hz = (float)g.nz * cs * 0.5f;
-        int gate = 0;
+        int gate = 0, deck[3] = { 0, 0, 0 };
         for (float x = in.front - 4.0f; x < in.front; x += cs)
             for (float z = -1.5f; z < 1.5f; z += cs) gate += vox_get(&g, (int)floorf((x + hx) / cs), BK_FOUND + 1, (int)floorf((z + hz) / cs)) != 0;
-        CHECK(in.h > 1.5f && in.h < CITY_WALL_HEIGHT + 2.5f && in.l > 18.0f && gate == 0);
+        for (int f = 1; f <= 2; f++) // los entrepisos (a 3 y a 6 m)
+            for (int z = 0; z < g.nz; z++)
+                for (int x = 0; x < g.nx; x++) {
+                    uint8_t m = vox_get(&g, x, BK_FOUND + (int)(3.0f * (float)f / cs), z);
+                    deck[f] += m == M_WOOD || m == M_WOOD_DARK;
+                }
+        CHECK(in.h >= 9.0f && in.h <= 10.5f && in.l > 18.0f && gate == 0);
+        CHECK(deck[1] >= 20 && deck[2] >= 20);
         vox_free(&g);
+        for (int v = 0; v < 2; v++) {
+            CHECK(bk_build(BK_RUIN_FORT, (Region)r, bk_variant_seed(BK_RUIN_FORT, (Region)r, v), true, &g, &in));
+            cs = g.size, hx = (float)g.nx * cs * 0.5f, hz = (float)g.nz * cs * 0.5f;
+            int door = 0;
+            for (float x = 1.0f; x < 4.5f; x += cs) // la puerta de la torre, al frente (+X), libre hasta afuera
+                door += vox_get(&g, (int)floorf((x + hx) / cs), BK_FOUND + 1, (int)floorf((0.1f + hz) / cs)) != 0;
+            CHECK(in.h >= 6.0f && in.h <= 10.5f && in.l < 21.0f && in.w < 21.0f && door == 0);
+            vox_free(&g);
+        }
     }
     CHECK(bk_build(BK_RUIN_CITY, REGION_DESERT, bk_variant_seed(BK_RUIN_CITY, REGION_DESERT, 0), false, &g, &in));
     int sand = 0, ground = 0;
@@ -6032,14 +6098,16 @@ static void test_ancient_towns_in_world(void) {
     for (size_t i = 0; i < sizeof(SEEDS) / sizeof(SEEDS[0]); i++) {
         const World *w = world_for_seed(SEEDS[i]);
         int here = 0;
-        bool seen_town = false;
+        bool seen_town = false, seen_more = false; // despues de los asentamientos, solo las fortalezas de mas (y al final)
         CHECK(w->site_count <= SITES_MAX);
         for (int k = 0; k < w->site_count; k++) {
             const WorldSite *st = &w->sites[k];
             if (st->kind != SITE_ANCIENT_TOWN) {
-                order += seen_town;
+                order += seen_town && st->kind != SITE_RUINED_FORT;
+                seen_more |= seen_town;
                 continue;
             }
+            order += seen_more;
             seen_town = true, here++;
             float lo = world_height(w, st->x, st->z), hi = lo;
             for (int a = 0; a < 16; a++) {
@@ -6058,6 +6126,33 @@ static void test_ancient_towns_in_world(void) {
     }
     CHECK(towns >= 6 * 5 && worlds_without == 0 && order == 0 && steep == 0 && close == 0);
     CHECK(site_is_ruin(SITE_ANCIENT_TOWN) && site_name(SITE_ANCIENT_TOWN)[0] != '?' && WORLD_FOOT_TOWN >= ANC_HALF * 1.41f);
+}
+
+// Las fortalezas derruidas de mas (src/sim/world.c, place_more_forts): al final de la lista, despues de los
+// asentamientos antiguos (lo de antes queda con sus indices, que las partidas guardan como vistos), en todas las
+// regiones y con las mismas distancias que los demas sitios. Unas catorce por mundo (eran cinco).
+static void test_more_forts_in_world(void) {
+    static const uint32_t SEEDS[] = { 1206u, 7u, 42u, 1984u, 2024u, 31337u };
+    int few = 0, close = 0, missing_region = 0;
+    for (size_t i = 0; i < sizeof(SEEDS) / sizeof(SEEDS[0]); i++) {
+        const World *w = world_for_seed(SEEDS[i]);
+        int forts = 0, last_town = -1, per[REGION_COUNT] = { 0 };
+        for (int k = 0; k < w->site_count; k++) {
+            if (w->sites[k].kind == SITE_ANCIENT_TOWN) last_town = k;
+            if (w->sites[k].kind == SITE_RUINED_FORT) forts++, per[w->sites[k].region]++;
+        }
+        for (int k = last_town + 1; k < w->site_count; k++) { // las de mas
+            const WorldSite *st = &w->sites[k];
+            CHECK(st->kind == SITE_RUINED_FORT);
+            for (int o = 0; o < w->site_count; o++) close += o != k && hypotf(w->sites[o].x - st->x, w->sites[o].z - st->z) < 160.0f;
+            for (int o = 0; o < w->settlement_count; o++) close += hypotf(w->settlements[o].x - st->x, w->settlements[o].z - st->z) < 140.0f;
+            for (int o = 0; o < w->tribe_count; o++) close += hypotf(w->tribes[o].x - st->x, w->tribes[o].z - st->z) < 120.0f;
+        }
+        few += forts < 12;
+        for (int r = 0; r < REGION_COUNT; r++) missing_region += per[r] == 0;
+        CHECK(w->site_count <= SITES_MAX);
+    }
+    CHECK(few == 0 && close == 0 && missing_region == 0);
 }
 
 static void test_world_dry(void) {
@@ -6466,6 +6561,7 @@ int main(void) {
     RUN(test_voxels);
     RUN(test_voxels_merge);
     RUN(test_vox_downsample);
+    RUN(test_vox_brick);
     RUN(test_world_river_banks);
     RUN(test_world_water_never_floats);
     RUN(test_caves);
@@ -6538,6 +6634,7 @@ int main(void) {
     RUN(test_ancient);
     RUN(test_buildkit);
     RUN(test_ancient_towns_in_world);
+    RUN(test_more_forts_in_world);
     RUN(test_world_dry);
     RUN(test_hydro_basics);
     RUN(test_water_flows_down);

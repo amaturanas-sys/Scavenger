@@ -38,12 +38,13 @@ typedef enum {
     VF_BASALT,    // roquerio de columnas de basalto en la playa negra y las rompientes (fiordos)
     VF_SEA_STACK, // farallon de basalto en el mar, con un gorro de hierba
     VF_BOULDER,   // canto rodado claro en el cauce y la orilla de los rios
-    VF_HOODOO,    // torre de arenisca en estratos con sombrero mas duro (desierto)
-    VF_MESA,      // farallon estratificado con alero y cueva (cañones del desierto)
+    VF_HOODOO,    // hongo de arenisca: un pie angosto y un sombrero de roca dura (desierto)
+    VF_MESA,      // farallon de arenisca en capas, con aleros, grietas y una cueva al pie (cañones del desierto)
     VF_CHALK,     // formacion de creta blanca erosionada por el viento (desierto)
-    VF_SERAC,     // bloques de hielo del frente del glaciar, con grietas azules
+    VF_SERAC,     // bloques de hielo caidos al pie del frente del glaciar, inclinados, con grietas azules
     VF_ICEBERG,   // tempano en los lagos de deshielo
     VF_FLOE,      // tempano chato del mar en invierno: una placa de hielo de borde quebrado
+    VF_ARCH,      // arco natural de arenisca (desierto), como los de las fotos de AlUla
     VF_KINDS
 } VoxFeature;
 #define VF_VARIANTS 4

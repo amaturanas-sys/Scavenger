@@ -71,6 +71,14 @@ for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desier
          asentamiento lago desborde cascada lengua; do
     shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.12
 done
+# Los muros del borde enteros, de lejos (v0.14.2), y las formaciones del paisaje.
+for p in panorama-hielo panorama-muro; do
+    shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.06
+done
+shot formaciones_desierto 40 --formaciones desierto
+shot formaciones_hielo 40 --formaciones hielo
+montage "$OUT"/{mundo_muro,mundo_panorama-muro,mundo_hielo,formaciones_desierto}.png -tile 2x2 -geometry +0+0 -depth 8 \
+    "$ROOT/docs/mundo/muros.png" 2>/dev/null && echo "  docs/mundo/muros.png"
 mkdir -p "$ROOT/docs/mundo"
 montage "$OUT"/mundo_{lago,desborde,cascada,meandro,trenzado,arroyo}.png -tile 3x2 -geometry +0+0 -depth 8 "$ROOT/docs/mundo/agua.png" 2>/dev/null &&
     echo "  docs/mundo/agua.png"
@@ -121,6 +129,7 @@ for k in casa palacio fundicion cuartel carpinteria granero templo carreta mural
          refugio empalizada muro horno horno_fundicion atalaya corral taller tienda escombros cenizas asentamiento; do
     shot "kit_$k" 60 --edificios "$k"
 done
+shot kit_enterrada_cerca 60 --edificios enterrada --dron 24
 # La puerta acodada en el asedio: desde el patio del antemuro, y la guarnicion que sale.
 shot asedio_puerta 60 --asedio puerta
 shot asedio_salida 200 --asedio salida

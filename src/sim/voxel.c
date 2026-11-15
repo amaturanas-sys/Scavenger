@@ -102,7 +102,7 @@ bool vox_refine(VoxGrid *g) {
         memcpy(r.m, out, (size_t)r.nx * r.ny * r.nz);
         free(out);
     }
-    r.jitter = g->jitter;
+    r.jitter = g->jitter, r.brick = g->brick, r.tone = g->tone;
     vox_free(g);
     *g = r;
     return true;
@@ -127,7 +127,7 @@ bool vox_downsample(const VoxGrid *src, int f, int need, VoxGrid *out) {
                     if (count[v] > count[best]) best = v;
                 out->m[idx(out, x, y, z)] = (uint8_t)best;
             }
-    out->jitter = src->jitter, out->on_ground = src->on_ground, out->merge = src->merge;
+    out->jitter = src->jitter, out->on_ground = src->on_ground, out->merge = src->merge, out->brick = src->brick, out->tone = src->tone;
     return true;
 }
 
@@ -511,7 +511,7 @@ static bool mesh_merged(const VoxGrid *g, const uint8_t (*palette)[4], VoxMesh *
 }
 
 bool vox_mesh(const VoxGrid *g, const uint8_t (*palette)[4], VoxMesh *out) {
-    if (g->merge && !g->jitter && !g->light) return mesh_merged(g, palette, out);
+    if (g->merge && !g->jitter && !g->light && !g->brick && !g->tone) return mesh_merged(g, palette, out);
     int faces = vox_exposed_faces(g);
     memset(out, 0, sizeof(*out));
     out->cap = faces * 2;
@@ -536,20 +536,40 @@ bool vox_mesh(const VoxGrid *g, const uint8_t (*palette)[4], VoxMesh *out) {
                     base[0] = l, base[1] = l, base[2] = (uint8_t)(l + (255 - l) / 12), base[3] = 255;
                 } else {
                     memcpy(base, palette ? palette[m] : (const uint8_t[4]){ 200, 200, 200, 255 }, 4);
-                    if (g->jitter) { // tono de cada celda: piedra a piedra, tabla a tabla
+                    int jit = g->tone ? g->tone[m] : g->jitter;
+                    if (jit && m != g->brick) { // tono de cada celda: piedra a piedra, tabla a tabla (el ladrillo, abajo)
                         uint32_t h = (uint32_t)x * 73856093u ^ (uint32_t)y * 19349663u ^ (uint32_t)z * 83492791u;
                         h ^= h >> 13, h *= 0x5BD1E995u, h ^= h >> 15;
-                        float k = 1.0f + ((float)(h & 0xFF) / 255.0f - 0.5f) * (float)g->jitter / 50.0f;
+                        float k = 1.0f + ((float)(h & 0xFF) / 255.0f - 0.5f) * (float)jit / 50.0f;
                         for (int ch = 0; ch < 3; ch++) base[ch] = (uint8_t)fminf(255.0f, base[ch] * k);
                     }
                 }
+                bool brick = g->brick && m == g->brick && !g->light;
                 for (int f = 0; f < 6; f++) {
                     if (!face_shown(g, x, y, z, f)) continue;
                     float p[4][3], c[4];
+                    uint8_t col[4];
+                    memcpy(col, base, 4);
+                    // El ladrillo de esta cara: a lo largo de x en las caras que miran a z (y arriba), de z en las que
+                    // miran a x. Cada hilada (y) corre media pieza; la pieza, dos celdas.
+                    int along = FACE_N[f][0] != 0 ? z : x, piece = (along + (y & 1)) >> 1;
+                    bool first = ((along + (y & 1)) & 1) == 0; // la primera celda de su ladrillo: la junta a su lado
+                    if (brick) {
+                        uint32_t h = (uint32_t)piece * 2654435761u ^ (uint32_t)y * 0x9E3779B9u ^ (uint32_t)(FACE_N[f][0] != 0 ? x : z) * 0x85EBCA6Bu;
+                        h ^= h >> 15, h *= 0x2C1B3C6Du, h ^= h >> 12;
+                        float k = 0.88f + 0.24f * (float)(h & 0xFF) / 255.0f;
+                        for (int ch = 0; ch < 3; ch++) col[ch] = (uint8_t)fminf(255.0f, base[ch] * k);
+                    }
                     for (int k = 0; k < 4; k++) {
                         const int *cv = FACE_V[f][k];
                         p[k][0] = ox + (x + cv[0]) * s, p[k][1] = (y + cv[1]) * s, p[k][2] = oz + (z + cv[2]) * s;
                         c[k] = FACE_SHADE[f] * corner_ao(g, x, y, z, f, cv);
+                        // La junta: oscuro abajo de cada hilada y al principio de cada ladrillo, claro arriba y al
+                        // final (de una esquina a la otra de la cara: una linea neta donde se juntan dos).
+                        if (brick && FACE_N[f][1] == 0) {
+                            int ca = FACE_N[f][0] != 0 ? cv[2] : cv[0];
+                            c[k] *= (cv[1] ? 1.0f : 0.8f) * (first && !ca ? 0.86f : 1.0f);
+                        }
                     }
                     if (g->light) // las nubes: la cara sombreada mucho menos (la luz ya viene horneada)
                         for (int k = 0; k < 4; k++) c[k] = 0.75f + 0.25f * c[k];
@@ -560,8 +580,8 @@ bool vox_mesh(const VoxGrid *g, const uint8_t (*palette)[4], VoxMesh *out) {
                             int v = TRI[t][k], o = tri * 3 + k;
                             memcpy(&out->pos[o * 3], p[v], sizeof(p[v]));
                             out->nrm[o * 3 + 0] = (float)FACE_N[f][0], out->nrm[o * 3 + 1] = (float)FACE_N[f][1], out->nrm[o * 3 + 2] = (float)FACE_N[f][2];
-                            for (int ch = 0; ch < 3; ch++) out->col[o * 4 + ch] = (uint8_t)fminf(255.0f, base[ch] * c[v]);
-                            out->col[o * 4 + 3] = base[3];
+                            for (int ch = 0; ch < 3; ch++) out->col[o * 4 + ch] = (uint8_t)fminf(255.0f, col[ch] * c[v]);
+                            out->col[o * 4 + 3] = col[3];
                         }
                     }
                 }
