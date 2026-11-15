@@ -44,6 +44,7 @@ que ya salió mal y el estado del proyecto.
 | [INVENTARIO.md](INVENTARIO.md), [ANIMACIONES.md](ANIMACIONES.md) | Generados por sus scripts: no se editan a mano. |
 | [PLAN_HERRAMIENTAS_IA.md](PLAN_HERRAMIENTAS_IA.md), [ROADMAP.md](ROADMAP.md) | El plan, su estado y lo que falta. |
 | [CAPTURAS.md](CAPTURAS.md) | Las capturas de cada pantalla y cómo se sacan. |
+| [FUENTES_ASSETS.md](FUENTES_ASSETS.md) | Fuentes de assets con licencia abierta, y qué revisar antes de traer uno. |
 | [NARRATIVA.md](NARRATIVA.md), [ESTILO_VISUAL.md](ESTILO_VISUAL.md) | La historia y el estilo. |
 | `.claude/skills/estepa`, `modelos`, `animaciones` | Las convenciones y las tuberías de modelos y animaciones (sirven de guía para todas las IA). |
 
