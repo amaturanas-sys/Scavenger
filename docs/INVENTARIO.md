@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**453 objetos** · 33 con modelo · 420 pendientes.
+**464 objetos** · 35 con modelo · 429 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -11,7 +11,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 
 | Categoría | Total | Pendiente | Kiln | Importado | Refinado |
 |---|---|---|---|---|---|
-| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 33 | 25 | 0 | 8 | 0 |
+| [Mapa: terreno, vegetación, agua e hitos](#mapa) | 44 | 34 | 0 | 10 | 0 |
 | [Estructuras](#estructura) | 43 | 37 | 1 | 5 | 0 |
 | [Vehículos](#vehiculo) | 11 | 9 | 0 | 2 | 0 |
 | [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
@@ -85,6 +85,17 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.hito.piedra_ciervo` | Piedra-ciervo | 1.36x3x0.44 | 150 | importado | `bioma:estepa` `material:piedra` `especial:rastro_padre` `formato:voxel` | Estela con ciervos de estilo animal. Voxeles armados a mano (tools/voxeles/estructuras.py piedra_ciervo): una losa de corte recto en celdas de 4 cm, con los tres ciervos y sus astas tallados como surcos en el frente y las grietas de la espalda, sacados de la hoja de tres vistas generada por el usuario con Canva (el ancho y el grueso, los de la hoja, por decision del usuario). |
 | `mapa.hito.balbal` | Balbal (estatua de piedra) | 0.6x1.8x0.5 | 150 | pendiente | `bioma:estepa` `material:piedra` |  |
 | `mapa.agua.coral` | Arrecife de coral | 1.25x0.8x1.3 | 120 | importado | `bioma:cualquiera` `uso:decorado` `uso:recolectable` `formato:voxel` | Bajo el agua de los lagos: coral rojo y perlas. Voxeles armados a mano (tools/voxeles/estructuras.py coral), celdas de 5 cm: una loma de roca clara con ramas de coral rojas y naranjas que se abren hacia arriba. |
+| `mapa.vegetacion.arbusto_sorrel` | Arbusto Sorrel | 0.5x0.5x0.5 | 5000 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | Arbusto bajo poli de Poly Haven (shrub_sorrel_01, 3319 tris fuente). |
+| `mapa.estructura.fogata_piedra` | Fogata de piedra | 1.0x0.5x1.0 | 5000 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | Fogata de piedra baja poli de Poly Haven (stone_fire_pit, 3887 tris fuente). |
+| `mapa.textura.hierba_marchita` | Hierba marchita | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | Textura de hierba seca de Poly Haven (withered_grass). |
+| `mapa.textura.hierba_escasa` | Hierba escasa | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | Textura de hierba escasa de Poly Haven (sparse_grass). |
+| `mapa.textura.suelo_rocoso` | Suelo rocoso | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | Textura de terreno rocoso de Poly Haven (rocky_terrain). |
+| `mapa.textura.suelo_rocoso_02` | Suelo rocoso 02 | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | Textura de terreno rocoso 02 de Poly Haven (rocky_terrain_02). |
+| `mapa.textura.suelo_hierba` | Suelo con hierba | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | Textura de suelo con hierba de Poly Haven (grass_ground). |
+| `mapa.hdri.pradera_abierta` | HDRI: Pradera abierta | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | HDRI de pradera abierta de Poly Haven (yellow_field). |
+| `mapa.hdri.flores_silvestres` | HDRI: Flores silvestres | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | HDRI de campo de flores silvestres de Poly Haven (wildflower_field). |
+| `mapa.hdri.veld_abierto` | HDRI: Veld abierto | 4x0x4 | 0 | pendiente | `bioma:estepa` `formato:textura` | HDRI de veld abierto de Poly Haven (veld_fire). |
+| `mapa.vegetacion.pradera_libre` | Pradera libre (30 modelos) | 4x0x4 | 10000 | pendiente | `bioma:estepa` `rig:ninguno` `formato:modelo` | Pack de 30 modelos low poly de OpenGameArt (FREE Remastered Meadows). |
 
 <a id="estructura"></a>
 

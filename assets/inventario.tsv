@@ -454,3 +454,14 @@ utileria.consumible.agua_hervida	Agua hervida	uso:recolectable,uso:consumible	0.
 utileria.consumible.agua_vino	Agua con vino	uso:recolectable,uso:consumible	0.2x0.15x0.2	40	pendiente	El vino purifica el agua: segura y apenas achispa.
 utileria.consumible.cerveza	Cerveza	uso:recolectable,uso:consumible	0.2x0.25x0.2	40	pendiente	Segura de beber; en exceso, torpe y fatigado.
 utileria.consumible.vino	Vino	uso:recolectable,uso:consumible	0.12x0.3x0.12	40	pendiente	De las caravanas del imperio. Seguro; emborracha pronto.
+mapa.vegetacion.arbusto_sorrel	Arbusto Sorrel	bioma:estepa,rig:ninguno,formato:modelo	0.5x0.5x0.5	5000	importado	Arbusto bajo poli de Poly Haven (shrub_sorrel_01, 3319 tris fuente).
+mapa.estructura.fogata_piedra	Fogata de piedra	bioma:estepa,rig:ninguno,formato:modelo	1.0x0.5x1.0	5000	importado	Fogata de piedra baja poli de Poly Haven (stone_fire_pit, 3887 tris fuente).
+mapa.textura.hierba_marchita	Hierba marchita	bioma:estepa,formato:textura	4x0x4	0	pendiente	Textura de hierba seca de Poly Haven (withered_grass).
+mapa.textura.hierba_escasa	Hierba escasa	bioma:estepa,formato:textura	4x0x4	0	pendiente	Textura de hierba escasa de Poly Haven (sparse_grass).
+mapa.textura.suelo_rocoso	Suelo rocoso	bioma:estepa,formato:textura	4x0x4	0	pendiente	Textura de terreno rocoso de Poly Haven (rocky_terrain).
+mapa.textura.suelo_rocoso_02	Suelo rocoso 02	bioma:estepa,formato:textura	4x0x4	0	pendiente	Textura de terreno rocoso 02 de Poly Haven (rocky_terrain_02).
+mapa.textura.suelo_hierba	Suelo con hierba	bioma:estepa,formato:textura	4x0x4	0	pendiente	Textura de suelo con hierba de Poly Haven (grass_ground).
+mapa.hdri.pradera_abierta	HDRI: Pradera abierta	bioma:estepa,formato:textura	4x0x4	0	pendiente	HDRI de pradera abierta de Poly Haven (yellow_field).
+mapa.hdri.flores_silvestres	HDRI: Flores silvestres	bioma:estepa,formato:textura	4x0x4	0	pendiente	HDRI de campo de flores silvestres de Poly Haven (wildflower_field).
+mapa.hdri.veld_abierto	HDRI: Veld abierto	bioma:estepa,formato:textura	4x0x4	0	pendiente	HDRI de veld abierto de Poly Haven (veld_fire).
+mapa.vegetacion.pradera_libre	Pradera libre (30 modelos)	bioma:estepa,rig:ninguno,formato:modelo	4x0x4	10000	pendiente	Pack de 30 modelos low poly de OpenGameArt (FREE Remastered Meadows).
