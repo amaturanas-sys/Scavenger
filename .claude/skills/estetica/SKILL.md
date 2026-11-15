@@ -23,6 +23,7 @@ son comandos de terminal y archivos del repo. Las reglas de siempre siguen valie
 
    | Qué se pule | Con qué | El detalle |
    |---|---|---|
+   | La imagen de referencia de un modelo (paso 0) | Perchance y `python3 tools/fetch_perchance_ref.py <ID> --url …` | skill `modelos` (paso 2) |
    | Un modelo nuevo o rehecho desde una imagen | `python3 tools/modelos/modelos.py traer <ID> --url … --fuente trellis2` | skill `modelos` |
    | Piezas de superficie dura (ballestas, cañones, maquinaria de asedio, placas) | cadgen (build123d), y `cadgen glb build` para el GLB | skill `cad` |
    | Un modelo low-poly escrito como programa | Kiln (`tools/assets/*.kiln.js`) | `tools/assets/README.md` |

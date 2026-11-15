@@ -182,9 +182,12 @@ Cada clip de `docs/ANIMACIONES.md` (los cuerpos humanoides usan 62 clips) necesi
 
 ### D.1 — La tubería (hecha en la v0.9.3: `tools/modelos`)
 
-1. **Imágenes:** el usuario hace 1 a 4 imágenes por objeto. Pautas:
-   - el objeto entero, aislado, sobre fondo liso, en tres cuartos, de 1024 px o más;
-   - mejor fotos de museo (Ermitage, Pazyryk, Museo Británico) o dibujos de concepto.
+1. **Imágenes (paso 0):** por defecto, con Perchance (D.2).
+   - **Para TRELLIS.2, una sola vista** del objeto, en tres cuartos.
+   - **La hoja de tres vistas** va a `piezas.py` o a los voxeles, nunca a TRELLIS, que haría un modelo por cada
+     vista.
+   - **Pautas:** el objeto entero, aislado, sobre fondo liso, de 1024 px o más. Para objetos históricos, también
+     sirven las fotos de museo (Ermitage, Pazyryk, Museo Británico).
 2. **Generación**, en el espacio de TRELLIS.2 en Hugging Face (desde la tablet) o en una GPU de 24 GB:
    un GLB de alta resolución con textura.
 3. **Traer y bajar a low-res:** `python3 tools/modelos/modelos.py traer <id> --url <GLB> --girar 90`
@@ -211,6 +214,17 @@ Cada clip de `docs/ANIMACIONES.md` (los cuerpos humanoides usan 62 clips) necesi
 
 Hay 398 objetos pendientes. No hace falta hacerlos todos: se empieza por lo que más se ve.
 
+**Con qué: Perchance** (paso 0), gratis y sin cuenta, en el navegador:
+- [ai-text-to-image-generator](https://perchance.org/ai-text-to-image-generator), para objetos, animales y
+  estructuras;
+- [ai-character-generator](https://perchance.org/ai-character-generator), para personas.
+
+Los prompts, para la hoja de tres vistas y para la vista única, están en la skill `modelos`, paso 2.
+`python3 tools/fetch_perchance_ref.py` guarda la imagen en `arte/referencias/<id>/` y anota de dónde salió.
+
+Antes de publicar se revisan los términos de Perchance y la licencia del modelo de cada generador. Según los
+resúmenes, Perchance no reclama las imágenes ni limita su uso.
+
 1. **Personas:** 29 PNJ (`personaje.npc`) y los cuerpos base. Junto con la parte C.
 2. **Animales:** 19 salvajes y 8 monturas. Caballo, lobo, ciervo, liebre, águila y cuervo, primero.
 3. **Armas y armaduras:**
@@ -225,12 +239,46 @@ La skill `.claude/skills/modelos/SKILL.md` documenta cómo pedir las imágenes, 
 
 ---
 
+## Parte E — El mundo: los patrones de WorldClaw
+
+[WorldClaw](https://github.com/Tencent-Hunyuan/Hunyuan3D-WorldClaw) (Tencent Hunyuan, [arXiv 2608.05248](https://arxiv.org/abs/2608.05248)) arma con agentes un mundo 3D abierto a partir de una frase, en tres etapas:
+
+1. **El plan:** del pedido sale una especificación con el tipo de escena, la disposición, el estilo, los objetos principales y las categorías de terreno, con sus materiales y densidades.
+2. **El terreno global:**
+   - un mapa de disposición por regiones da una altura compuesta, en la que cada región tiene su función: el lago llano, el bosque que sube, el camino de un ancho fijo;
+   - después dispersa los assets por región;
+   - al final, un agente corrige mirando renders.
+3. **Los objetos por región:** cada región (una plaza, una aldea, un puerto) se diseña aparte. Sus objetos se apoyan en el terreno y se corrigen región por región: pose, escala y contacto con el suelo.
+
+Su repositorio solo trae el README y el diagrama, sin código ni licencia, así que se toman las ideas. WorldClaw trabaja con Blender, antes de jugar; el juego genera su mundo en tiempo real, en C11 y sin memoria por cuadro. El detalle está en la skill `mundo`.
+
+| Patrón de WorldClaw | En el juego |
+|---|---|
+| El plan como especificación | `docs/MUNDO.md` y las tablas por región de `src/sim/world.c` y `src/sim/flora.c` |
+| La altura compuesta por regiones | `world_height`: el peso de cada región (`world_region_weights`) mezcla su relieve (`region_detail`) |
+| El terreno antes que lo demás | Primero el relieve, después el agua (que talla sus cauces) y recién entonces la vegetación y los lugares |
+| La dispersión por categoría de terreno | `flora_density` y `flora_cell`: la densidad × el peso de la región × la cercanía del agua |
+| Los objetos por región, apoyados en el terreno | `settle_all`, `world_footprint_dry` y `place_check`: en seco, en llano y separados |
+| La corrección mirando renders | Las capturas y los mapas de `docs/MUNDO.md`, antes y después de cada cambio |
+
+Las reglas que salen de ahí:
+- **Cada capa lee las de abajo y no las cambia:** la vegetación y los lugares se ajustan al relieve y al agua, no al revés.
+- **Las transiciones entre las cinco regiones se mezclan por peso:** nada cambia de golpe en una línea. Las cinco regiones son la estepa central, el bosque de coníferas, el altiplano glaciar, el desierto de Ordos y los fiordos.
+- **Las crestas y la erosión van en el relieve** (capas 2 y 3), calculadas una vez y en memoria fija. Hoy hay crestas (`1 − |fbm|`: en agujas en el altiplano, abruptas en los fiordos) y cauces tallados, pero no erosión simulada.
+- **Los lugares van en grupos:** una capital con sus aldeas, separada de las demás y lejos del campamento.
+- **La estación cambia cómo se ve algo, no dónde está.**
+- **Lo que se dibuje con shader** va en GLSL 330 y ES 100, con un respaldo y en coordenadas locales.
+
+**Costo:** nada de código hasta que se toque el mundo. Las reglas están en la skill `mundo` y en `.clinerules`.
+
+---
+
 ## Lo que se necesita del usuario
 
 1. **Una máquina con GPU NVIDIA** (24 GB para TRELLIS.2), o acceso a una nube de GPU, o usar la demo de Hugging Face (lenta, para pocos objetos). Opcional: conectar esa máquina a Claude Code como entorno propio, para que la sesión corra los scripts allí.
 2. **La decisión sobre la licencia del movimiento:** GRAIL y las demás vías por SMPL son de uso no comercial. Para vender: la licencia comercial de SMPL (Meshcapade), una vía sin SMPL o los clips de CMU y Mixamo (C.2). Y, si se usa GRAIL con video generado, la clave de Kling (de pago).
 3. **Los videos de la parte C.1**, empezando por el combate (fases 1 y 2).
-4. **Las imágenes de la parte D.2**, empezando por personas, caballo y armas.
+4. **Las imágenes de la parte D.2**, con Perchance (paso 0), empezando por personas, caballo y armas.
 
 ## Lo que armó Cline y cómo quedó
 
