@@ -47,7 +47,8 @@ usuario; antes de publicar, leer la licencia vigente de cada pieza.
    corresponda (ver «Las licencias»).
 2. **SMPL → el esqueleto del juego** (Blender; los clips de CMU o Mixamo entran acá, desde su propio
    esqueleto): retarget al esqueleto compartido del cuerpo, corregir el pie que patina, recortar y
-   cerrar los ciclos, 30 fps, la raíz en el sitio (el juego mueve al personaje).
+   cerrar los ciclos, 30 fps, la raíz en el sitio (el juego mueve al personaje). Para revisarlo con
+   datos (ejes, pies que patinan o atraviesan el piso), la skill `blender-motion-state-inspection`.
 3. **Exportar** un GLB del cuerpo con todos sus clips, cada uno con el nombre exacto de
    `docs/ANIMACIONES.md`.
 4. **Traerlo:** `python3 tools/modelos/modelos.py traer <id> --archivo cuerpo.glb --fuente grail --riggeado`
