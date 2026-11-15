@@ -131,6 +131,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/world_game.c
     src/game/cave_game.c
     src/game/cave_scene.c
+    src/game/cave_look.c
     src/game/cave_props.c
     src/game/title_menu.c
     src/game/input.c

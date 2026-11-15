@@ -66,6 +66,18 @@ shot cueva_oscura 40 --cueva abandonada:1
 shot cueva_antorcha 40 --cueva abandonada:1 --antorcha
 montage "$OUT"/cueva_{boca_forajidos,habitada,prisionero,oscura}.png -tile 2x2 -geometry +0+0 -depth 8 "$OUT/las_cuevas.png" 2>/dev/null &&
     echo "  las_cuevas.png"
+# Cada tipo por dentro (docs/PLAN_CUEVAS_GRANDES.md, «El plan de cada tipo»): el lago y los hongos de la guarida, la luz
+# del agujero de la abandonada, los jergones de los forajidos, las alfombras de la tribu y las salas labradas del imperio.
+shot cueva_tipo_fieras 40 --cueva animal:poza --antorcha
+shot cueva_tipo_fieras_racimo 40 --cueva animal:estalagmitas --antorcha
+shot cueva_tipo_abandonada 40 --cueva abandonada:claraboya --antorcha
+shot cueva_tipo_forajidos 40 --cueva forajidos:jergon --antorcha
+shot cueva_tipo_tribu 40 --cueva tribu:alfombra --antorcha
+shot cueva_tipo_tribu_pintura 40 --cueva tribu:pintura --antorcha
+shot cueva_tipo_imperio 40 --cueva imperio:0 --antorcha --dron 9 --camara 0.35
+shot cueva_tipo_imperio_tunel 40 --cueva imperio:pasillo2 --antorcha
+montage "$OUT"/cueva_tipo_{fieras,abandonada,forajidos,tribu,imperio,imperio_tunel}.png -tile 2x3 -geometry +0+0 -depth 8 \
+    "$OUT/cuevas_por_tipo.png" 2>/dev/null && echo "  cuevas_por_tipo.png"
 # El mundo (docs/MUNDO.md): a pie en cada sitio (verano, mediodia) y la vista orbital.
 for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida tribu rival kurgan caravasar ovoo ciudad \
          asentamiento lago desborde cascada lengua; do

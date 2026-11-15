@@ -6357,6 +6357,67 @@ static void test_caves_big(const World *a) {
     CHECK(corridors > 0 && tortuous * 10 >= corridors * 9); // casi todos con vueltas
 }
 
+// El plan de cada tipo (docs/PLAN_CUEVAS_GRANDES.md, «El plan de cada tipo»): la forma de la pared y lo que lleva cada
+// sala. Lo que define el tipo esta siempre; lo de los otros tipos, no.
+static void test_cave_style(const Cave *c) {
+    // La pared: entre radius + 0,3 y radius * 1,1 + 0,3 (los pasillos pasan lejos); las labradas, de lados rectos.
+    for (int r = 0; r < c->room_count; r++) {
+        float rad = c->rooms[r].radius;
+        int sides = cave_room_sides(c, r);
+        CHECK((sides > 0) == (c->kind == CAVE_EMPIRE));
+        for (int k = 0; k < 90; k++) {
+            float a = (float)k * 0.0698f, w = cave_wall_radius(c, r, a);
+            if (sides > 0) {
+                float s = 2.0f * 3.14159265f / (float)sides, u = fmodf(a + s * 0.5f, s) - s * 0.5f;
+                CHECK(fabsf(w * cosf(u) - (rad + 0.45f)) < 1e-3f); // sobre una recta: la distancia al lado es la misma
+                CHECK(w <= (rad + 0.45f) / cosf(s * 0.5f) + 1e-3f);
+            } else CHECK(w >= rad + 0.3f - 1e-3f && w <= rad * 1.1f + 0.3f + 1e-3f);
+        }
+    }
+    CaveDecor d[CAVE_DECOR_MAX];
+    int n = cave_decor(c, d, CAVE_DECOR_MAX), has[CDEC_KINDS] = { 0 }, hall[CDEC_KINDS] = { 0 };
+    for (int k = 0; k < n; k++) {
+        has[d[k].kind]++, hall[d[k].kind] += d[k].room == 0;
+        if (cave_decor_on_ceiling(d[k].kind)) CHECK(!d[k].blocks);
+        // Lo que cuelga queda alto (el racimo, a mas de 2,5 m del suelo); lo que tapa, lejos de las celdas.
+        if (d[k].kind == CDEC_STALACTITES) CHECK(cave_rock_above(c, d[k].x, d[k].z, d[k].room, d[k].y) + 0.3f - d[k].size - d[k].y >= 2.5f);
+        for (int o = 0; o < c->object_count && d[k].blocks; o++) {
+            const CaveObject *ob = &c->objects[o];
+            if (ob->kind != COBJ_CELL || ob->room != d[k].room) continue;
+            float ox, oz;
+            cave_object_at(c, o, &ox, NULL, &oz, NULL);
+            CHECK(sqrtf((d[k].x - ox) * (d[k].x - ox) + (d[k].z - oz) * (d[k].z - oz)) >= d[k].radius + 1.7f - 1e-3f);
+        }
+        // Las pilastras, en una esquina de su sala, sin tapar el paso.
+        if (d[k].kind == CDEC_PILASTER) {
+            int sides = cave_room_sides(c, d[k].room);
+            float s = 2.0f * 3.14159265f / (float)sides, u = fmodf(d[k].yaw, s);
+            CHECK(sides > 0 && !d[k].blocks && fabsf(u - s * 0.5f) < 1e-3f);
+        }
+    }
+    // Los jergones de los forajidos, alrededor del fuego de la Cisterna.
+    if (c->kind == CAVE_BANDITS) {
+        float fx = 0.0f, fz = 0.0f;
+        for (int o = 0; o < c->object_count; o++)
+            if (c->objects[o].kind == COBJ_FIRE && c->objects[o].room == 0) fx = c->objects[o].x, fz = c->objects[o].z;
+        for (int k = 0; k < n; k++)
+            if (d[k].kind == CDEC_BEDROLL && d[k].room == 0) CHECK(sqrtf((d[k].x - fx) * (d[k].x - fx) + (d[k].z - fz) * (d[k].z - fz)) < 5.0f);
+    }
+    bool lived = c->kind >= CAVE_BANDITS;
+    switch (c->kind) {
+    case CAVE_ANIMAL: CHECK(hall[CDEC_POOL] == 1 && has[CDEC_STALACTITES] > 0 && has[CDEC_STALAGMITES] > 0 && hall[CDEC_PILLAR] > 0); break;
+    case CAVE_ABANDONED: CHECK(hall[CDEC_SHAFT] == 1 && hall[CDEC_RUBBLE] > 0 && has[CDEC_MOSS] > 0); break;
+    case CAVE_BANDITS: CHECK(hall[CDEC_BEDROLL] >= 2 && has[CDEC_CRATES] > 0); break;
+    case CAVE_TRIBE: CHECK(hall[CDEC_RUG] >= 2 && hall[CDEC_LAMP] >= 2 && has[CDEC_BEDROLL] > 0); break;
+    default: CHECK(hall[CDEC_BRAZIER] >= 4 && hall[CDEC_STELE] > 0 && has[CDEC_PILASTER] > 0 && has[CDEC_CRATES] > 0); break;
+    }
+    // Lo de unos no esta en los otros: en las naturales, nada labrado ni encendido; en las labradas, nada natural.
+    if (!lived) CHECK(!has[CDEC_BRAZIER] && !has[CDEC_LAMP] && !has[CDEC_BEDROLL] && !has[CDEC_RUG] && !has[CDEC_STELE] && !has[CDEC_PILASTER]);
+    if (c->kind == CAVE_EMPIRE) CHECK(!has[CDEC_STALACTITES] && !has[CDEC_STALAGMITES] && !has[CDEC_ROCK] && !has[CDEC_MOSS] && !has[CDEC_RUBBLE]);
+    if (c->kind != CAVE_EMPIRE) CHECK(!has[CDEC_BRAZIER] || c->kind == CAVE_BANDITS);
+    if (c->kind != CAVE_ANIMAL && c->kind != CAVE_ABANDONED) CHECK(!has[CDEC_SHAFT] && !has[CDEC_PILLAR]);
+}
+
 static void test_caves(void) {
     static World a, b; // static: un World pesa cientos de KB (la pila de Windows es de 1 MB)
     Inventory inv;
@@ -6376,6 +6437,7 @@ static void test_caves(void) {
             const Cave *c = &a.caves[i];
             CHECK(memcmp(c, &b.caves[i], sizeof(Cave)) == 0); // determinista
             CHECK(cave_layout_valid(c));
+            test_cave_style(c);
             CHECK(c->x == a.dens[i].x && c->z == a.dens[i].z);
             CHECK(world_water(&a, c->x, c->z, 0.0f, NULL) < world_height(&a, c->x, c->z) - 0.5f); // la boca, en seco
             kinds[c->kind]++;

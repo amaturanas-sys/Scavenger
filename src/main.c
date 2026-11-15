@@ -1723,7 +1723,7 @@ int main(int argc, char **argv) {
             ui_text(T("Flechas: girar e inclinar · F5 o Esc: volver"), 10, VIRTUAL_H - 18, 10, UI_BONE_DIM);
         } else if (in_game) {
         if (cv_inside()) { // adentro de una cueva: su roca, su oscuridad y su luz (src/game/cave_game.c)
-            ClearBackground(BLACK);
+            ClearBackground(cs_loaded() ? cs_fog() : BLACK); // detras de todo, la bruma de la cueva
             rlSetClipPlanes(0.05, 600.0);
             BeginMode3D(cam);
             cv_draw(&g_actions, &g_combat, &g_props, &terrain, world_time, (float)GetTime());

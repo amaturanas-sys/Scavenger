@@ -13,20 +13,36 @@
 #include "raylib.h"
 #include "sim/world.h"
 
-typedef enum { VC_STALACTITE, VC_STALAGMITE, VC_ROCK, VC_KINDS } VoxCaveKind; // crecen al final
+typedef enum {
+    VC_STALACTITE, VC_STALAGMITE, VC_ROCK,
+    VC_STALACTITES, // un racimo colgado de una placa de la boveda
+    VC_STALAGMITES, // un racimo sobre su colada
+    VC_PILLAR,      // una columna natural (vc_draw_scaled: del suelo a la boveda)
+    VC_RUBBLE,      // un derrumbe de bloques y piedras (size: el ancho)
+    VC_CRATES,      // cajas y un tonel
+    VC_SACKS,       // sacos de grano
+    VC_STELE,       // una estela sobre su tortuga
+    VC_KINDS
+} VoxCaveKind; // crecen al final
 #define VC_VARIANTS 4
 
-// La roca de las cuevas de una region: la de las paredes (src/game/cave_scene.c) y la de los modelos.
+// La roca de las cuevas de una region (sin el tipo de la cueva).
 Color vc_rock_color(Region r);
+// La roca de los modelos que se armen desde ahora (la de las paredes de la cueva que se carga: src/game/cave_look.c).
+// Se pone antes de los vc_preload de cada cueva; vc_unload la devuelve a la de la region.
+void vc_set_rock(Color rock);
 // Arma el modelo si falta (en la carga de la cueva, nunca en medio del juego). false si no se pudo.
 bool vc_preload(VoxCaveKind k, Region r, int variant);
 // Lo dibuja con el pie en at (una estalactita: colgada de at), girado yaw (rad), de size m de alto, teñido con la luz
 // de la cueva en ese punto. Si no se armo antes, no dibuja nada.
 void vc_draw(VoxCaveKind k, Region r, int variant, Vector3 at, float yaw, float size, Color tint);
+// Igual, con otra escala de alto: width m de ancho y height m de alto (las columnas, del suelo a la boveda).
+void vc_draw_scaled(VoxCaveKind k, Region r, int variant, Vector3 at, float yaw, float width, float height, Color tint);
 // Los triangulos de un modelo armado (0 si no esta): para los presupuestos de la carga.
 int vc_triangles(VoxCaveKind k, Region r, int variant);
-// Los modelos armados ahora y sus triangulos (tris puede ser NULL).
+// Los modelos armados ahora y sus triangulos (tris puede ser NULL); vc_largest: los del mas grande.
 int vc_loaded(int *tris);
+int vc_largest(void);
 void vc_unload(void);     // al salir de la cueva
 void vc_forget_gpu(void); // ver terrain_forget_gpu
 

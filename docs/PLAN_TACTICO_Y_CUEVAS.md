@@ -217,7 +217,8 @@ Lo tomado, encendido o rescatado queda en `GameActions.cave_done` (un bit por ob
 
 `--cueva tipo[:lugar]` (tipo: `animal`, `abandonada`, `forajidos`, `tribu`, `imperio`; lugar: una sala o `boca`, `celda`,
 `dialogo`, `nido`, `huevos`, `presa`, `botin`, `arma`, `cofre`, `anfora`, `deposito`, `pintura`, `fogata`, `antorcha`,
-`veta`, `columna`), `--cueva-f` (F en el cuadro 20; con el diálogo abierto, romper las cadenas), `--antorcha` (encendida
+`veta`, `columna`, o algo del decorado: `racimo`, `poza`, `claraboya`, `jergon`, `alfombra`, `brasero`, `estela`...; la
+lista, en [PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md#1b-el-plan-de-cada-tipo-v0143-hecho)), `--cueva-f` (F en el cuadro 20; con el diálogo abierto, romper las cadenas), `--antorcha` (encendida
 en la mano), `--caminar adelante|atras` e `--ir boca-<tipo>` (la más cercana; `boca-<tipo>-ladera`, la de ese tipo con
 más desnivel en la boca; con `-lado` al final, desde un costado). Las capturas: [CAPTURAS.md](CAPTURAS.md#las-cuevas).
 

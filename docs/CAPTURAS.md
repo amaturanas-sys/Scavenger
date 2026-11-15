@@ -73,8 +73,9 @@ El resto del sistema táctico ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.
 ## Las cuevas
 
 Una por guarida ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1 a B3, y [PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md)). Con `--ir boca-<tipo>` (afuera), `--explorar` (F en la boca) y
-`--cueva tipo[:lugar]` (adentro; `--antorcha`, encendida; `--cueva-f`, como pulsar F). El montaje:
-[`capturas/las_cuevas.png`](capturas/las_cuevas.png).
+`--cueva tipo[:lugar]` (adentro; `--antorcha`, encendida; `--cueva-f`, como pulsar F). Los montajes:
+[`capturas/las_cuevas.png`](capturas/las_cuevas.png) y, cada tipo por dentro,
+[`capturas/cuevas_por_tipo.png`](capturas/cuevas_por_tipo.png).
 
 | | |
 |---|---|
@@ -84,14 +85,22 @@ Una por guarida ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1 a B3, 
 | ![Boca de una tribu](capturas/cueva_boca_tribu.png) | **La boca de un refugio de una tribu** (`--ir boca-tribu`): la cortina de cuero corrida, el sol pintado sobre el arco y el bastidor con un cuero. |
 | ![Boca abandonada](capturas/cueva_boca_abandonada.png) | **La boca de una cueva abandonada** (`--ir boca-abandonada`): en el desierto, la arenisca en estratos; la fachada de una civilización desaparecida (jambas, dintel, nichos y hornacina), la escalera rota y la reja caída a un costado. |
 | ![Explorar](capturas/cueva_explorar.png) | **Junto a la boca, F explora** (`--ir boca-abandonada --caminar adelante`; con `--explorar`, como si se pulsara): el aviso «F: explorar la cueva». La cueva se carga aparte, con «Explorando la cueva...» en pantalla. |
-| ![Pasillo](capturas/cueva_pasillo.png) | **Un pasillo con sus vueltas** (`--cueva tribu:pasillo3 --antorcha`): de 10 m o más, alumbrado por la antorcha. |
-| ![Guarida](capturas/cueva_fieras.png) | **Adentro de una guarida de fieras** (`--cueva animal:nido --antorcha`): el nido con sus huevos, a la luz de la antorcha. |
-| ![Cisterna](capturas/cueva_habitada.png) | **La Cisterna de los forajidos** (`--cueva forajidos:0 --antorcha`): la fogata, una pintura, los charcos y las rocas de voxeles del decorado; la sala, de unos 15 m de radio, se pierde en lo oscuro más allá de la luz. |
+| ![Pasillo](capturas/cueva_pasillo.png) | **Un pasillo con sus vueltas** (`--cueva tribu:pasillo3 --antorcha`): de 10 m o más, alumbrado por la antorcha, en la roca ocre y lisa de la tribu. |
+| ![Guarida](capturas/cueva_fieras.png) | **Adentro de una guarida de fieras** (`--cueva animal:nido --antorcha`): el nido con sus huevos, un charco y los hongos que brillan, sobre la grava mojada. |
+| ![Cisterna](capturas/cueva_habitada.png) | **La Cisterna de los forajidos** (`--cueva forajidos:0 --antorcha`): a lo lejos, la fogata con sus jergones; la sala, de unos 15 m de radio, se pierde en lo oscuro más allá de la luz. |
 | ![Prisionero](capturas/cueva_prisionero.png) | **Un prisionero** (`--cueva forajidos:dialogo`): lo que dice, si se lo ve sincero, y romper las cadenas o dejarlo. |
 | ![Rescate](capturas/cueva_rescate.png) | **Se une a la tribu** (`--cueva imperio:dialogo --cueva-f`): la tropa pasa de 7 a 8 y la celda queda abierta. |
 | ![Traición](capturas/cueva_traicion.png) | **Te traiciona** (`--cueva forajidos:dialogo --cueva-f`): te golpea, te roba tres virotes y huye. |
 | ![A oscuras](capturas/cueva_oscura.png) | **Una recámara a oscuras** (`--cueva abandonada:1`): sin antorcha se ve apenas alrededor. |
 | ![Con la antorcha](capturas/cueva_antorcha.png) | **La misma, con la antorcha** (`--antorcha`): una estalagmita de voxeles y una roca del decorado. |
+| ![Fieras](capturas/cueva_tipo_fieras.png) | **Una guarida de fieras por dentro** (`--cueva animal:poza --antorcha`): el lago de la Cisterna, huesos y los hongos que brillan; la caliza gris azulada y la bruma azul. |
+| ![Racimos](capturas/cueva_tipo_fieras_racimo.png) | **Los racimos de estalagmitas** (`--cueva animal:estalagmitas --antorcha`): sobre su colada, junto a la pared. |
+| ![Abandonada](capturas/cueva_tipo_abandonada.png) | **Una cueva abandonada** (`--cueva abandonada:claraboya --antorcha`): la luz del día entra por el agujero de la bóveda, con su polvo; el musgo, un charco, el botín y la niebla verde. |
+| ![Forajidos](capturas/cueva_tipo_forajidos.png) | **Un refugio de forajidos** (`--cueva forajidos:jergon --antorcha`): los jergones alrededor de la fogata, la tierra con paja y, en la pared, las rayas de conteo. |
+| ![Tribu](capturas/cueva_tipo_tribu.png) | **El refugio de una tribu** (`--cueva tribu:alfombra --antorcha`): las alfombras de fieltro y un jergón junto al hogar, sobre la tierra roja. |
+| ![Pinturas](capturas/cueva_tipo_tribu_pintura.png) | **Las pinturas de la tribu** (`--cueva tribu:pintura --antorcha`): manos en negativo y cazadores con un ciervo. |
+| ![Imperio](capturas/cueva_tipo_imperio.png) | **El salón de un almacén del imperio** (`--cueva imperio:0 --antorcha --dron 9 --camara 0.35`): los braseros en ronda, las columnas y las losas, entre muros de sillares. |
+| ![Túnel](capturas/cueva_tipo_imperio_tunel.png) | **Un túnel labrado** (`--cueva imperio:pasillo2 --antorcha`): sillares, la bóveda de cañón de ladrillo y el suelo de losas. |
 
 ## El mundo
 

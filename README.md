@@ -264,6 +264,24 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las cuevas por dentro, según quién vive en ellas (v0.14.3), con el plan de [docs/PLAN_CUEVAS_GRANDES.md](docs/PLAN_CUEVAS_GRANDES.md#1b-el-plan-de-cada-tipo-v0143-hecho):
+- **Cada tipo tiene su forma, su roca, su luz y su decorado**, armados con el orden de WorldClaw (el plan, la forma, lo
+  de cada sala y la revisión mirando capturas):
+  - **la guarida de fieras:** caliza gris azulada y mojada, con entrantes; en la Cisterna, un lago oscuro, columnas
+    naturales y racimos de estalactitas y estalagmitas; huesos y hongos que brillan en lo oscuro; una bruma azul;
+  - **la cueva abandonada:** roca con grietas y musgo y una niebla verde; la luz del día entra por un agujero de la
+    bóveda sobre el derrumbe; escombro, cajas rotas y columnas caídas;
+  - **el refugio de forajidos:** roca picada a mano y tiznada arriba; jergones alrededor del fuego, cajas, sacos y
+    puntales; rayas de conteo al carbón en la pared;
+  - **el refugio de una tribu:** roca ocre gastada y tierra roja; alfombras de fieltro alrededor del hogar, lámparas
+    de barro, bastidores con pieles, vasijas y postes pintados; manos en negativo y cazadores en las paredes;
+  - **el almacén del imperio:** salas labradas de lados rectos, de sillares, con cornisa, cúpula de ladrillo y pilastras;
+    suelo de losas; túneles con bóveda de cañón; braseros en ronda, estelas sobre su tortuga, lámparas colgadas,
+    columnas con capitel y la mercancía en filas.
+- **Las texturas se pintan al entrar** (roca, sillares, ladrillo, losas, grava, tierra): no hay archivos nuevos.
+- **Con `--cueva tipo:lugar`** se mira cada pieza: `racimo`, `poza`, `claraboya`, `jergon`, `alfombra`, `brasero`,
+  `estela`, `pilastra`...
+
 Los muros del borde y las ruinas (v0.14.2):
 - **El muro del cañón del desierto:** sus estratos de las fotos de los badlands pintados (rojo óxido, crema, ocre,
   salmón, blanco y malva) en franjas horizontales que siguen la altura, sin estirarse ni correrse; acantilados sobre
