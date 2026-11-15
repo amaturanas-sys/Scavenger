@@ -37,7 +37,7 @@ Pedido:
 | Repositorio | Qué es | Licencia | Requisitos | Lo útil para el juego |
 |---|---|---|---|---|
 | [BuildingGeneratorThreeJS](https://github.com/achrefelouafi/BuildingGeneratorThreeJS) | Generador procedural de edificios de **Hong Kong** para Three.js (TypeScript), portado de un grafo de nodos de Blender. Usa un *kit* de ~190 piezas instanciadas (`kit.glb` + `kit_manifest.json`) y una colocación por rejilla con semilla. | MIT | Node (`npm run dev`); Blender 4.2 para reexportar el kit | **El método, no el contenido:** un kit de piezas más reglas de colocación con semilla. Las piezas y las reglas hay que rehacerlas para la estepa y los reinos agrarios. El juego es C + raylib, así que se porta el algoritmo y no se ejecuta Three.js. |
-| [GRAIL](https://github.com/NVlabs/GRAIL) | Tubería de datos para **robots humanoides**: genera videos con un modelo de video (Kling o MiniMax), reconstruye el movimiento 4D humano-objeto (GEM-SMPL) y lo lleva a un robot Unitree G1. | **NVIDIA License** (uso no comercial, investigación) | Docker con GPU, checkpoints, claves de API de video (Kling: de pago) | **Solo la etapa de video → movimiento humano 4D (SMPL)**, para sacar animaciones de videos de referencia. **Ojo con la licencia:** si el juego se vende, el uso de GRAIL y de lo que produce puede no estar permitido. Hay alternativas abiertas para la misma etapa (abajo). |
+| [GRAIL](https://github.com/NVlabs/GRAIL) | Tubería de datos para **robots humanoides**: genera videos con un modelo de video (Kling o MiniMax), reconstruye el movimiento 4D humano-objeto (GEM-SMPL) y lo lleva a un robot Unitree G1. | **NVIDIA License** (uso no comercial, investigación) | Docker con GPU, checkpoints, claves de API de video (Kling: de pago) | **Solo la etapa de video → movimiento humano 4D (SMPL)**, para sacar animaciones de videos de referencia. **Ojo con la licencia:** si el juego se vende, el uso de GRAIL y de lo que produce puede no estar permitido. Las otras vías de la misma etapa tampoco son comerciales, porque usan SMPL (ver C.2). |
 | [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) | Imagen → modelo 3D texturizado (4B parámetros), con materiales PBR. | MIT | Linux, GPU NVIDIA de **24 GB** o más (A100/H100), CUDA 12.4; también hay **demo en Hugging Face** | Generar los ~400 modelos del inventario que siguen "pendiente" (398 de 400), desde imágenes, y bajarlos a low-res. |
 
 ---
@@ -151,13 +151,14 @@ Cada clip de `docs/ANIMACIONES.md` (los cuerpos humanoides usan 62 clips) necesi
 | Recibir | recibir golpe (frente, espalda y lado), tambalearse, ser derribado, **abatido** (en el suelo, respirando), levantarse, morir |
 | Vida diaria | tomar del suelo, cargar, construir, cavar, encender fuego, cocinar, curar o vendar, ensillar, montar y bajar del caballo, hablar, celebrar, protestar |
 
-> **Consejo:** muchos ya están en bancos de movimiento abiertos (CMU, AMASS, Mixamo). Antes de grabar, conviene ver qué clips se pueden sacar de ahí: menos trabajo y licencias más claras.
+> **Consejo:** muchos ya están en bancos de movimiento. Dos permiten el uso comercial: CMU (se puede incluir en un juego que se vende, sin revender los datos) y Mixamo (sin regalías, sin ofrecer los archivos sueltos). AMASS no: es de uso no comercial. Antes de grabar, conviene ver qué clips se pueden sacar de CMU o Mixamo: menos trabajo.
 
 ### C.2 — La tubería (en una máquina con GPU)
 
 1. **Video → movimiento SMPL**, con una de estas opciones:
    - **GRAIL**, etapa `recon_4dhoi`, con GEM-SMPL. Solo uso no comercial; además exige Docker, GPU y checkpoints.
-   - **Una alternativa abierta** de la misma etapa (GVHMR, WHAM o similar, con su licencia revisada). Se recomienda si el juego puede venderse.
+   - **Otro método de la misma etapa.** GVHMR tampoco sirve para vender: su licencia lo limita a «educational, research and non-profit purposes». WHAM tiene código MIT, pero pide el modelo SMPL.
+   - **Ojo con SMPL:** toda esta etapa lo usa, y su licencia (como la de SMPL-X) excluye usarlo en un producto comercial. Si el juego puede venderse, hace falta la licencia comercial que vende Meshcapade, una vía sin SMPL (MediaPipe Pose: código Apache-2.0, más tosco) o los clips de CMU y Mixamo. El detalle, en la skill `animaciones`.
 2. **SMPL → esqueleto del juego:** retarget con un script de Blender, `tools/anim/retarget.py`. Hace tres cosas:
    - corrige el pie que patina;
    - recorta y deja los ciclos en bucle;
@@ -227,7 +228,7 @@ La skill `.claude/skills/modelos/SKILL.md` documenta cómo pedir las imágenes, 
 ## Lo que se necesita del usuario
 
 1. **Una máquina con GPU NVIDIA** (24 GB para TRELLIS.2), o acceso a una nube de GPU, o usar la demo de Hugging Face (lenta, para pocos objetos). Opcional: conectar esa máquina a Claude Code como entorno propio, para que la sesión corra los scripts allí.
-2. **La decisión sobre la licencia de GRAIL** (no comercial) frente a una alternativa abierta. Y, si se usa GRAIL con video generado, la clave de Kling (de pago).
+2. **La decisión sobre la licencia del movimiento:** GRAIL y las demás vías por SMPL son de uso no comercial. Para vender: la licencia comercial de SMPL (Meshcapade), una vía sin SMPL o los clips de CMU y Mixamo (C.2). Y, si se usa GRAIL con video generado, la clave de Kling (de pago).
 3. **Los videos de la parte C.1**, empezando por el combate (fases 1 y 2).
 4. **Las imágenes de la parte D.2**, empezando por personas, caballo y armas.
 
