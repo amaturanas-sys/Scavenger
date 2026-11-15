@@ -442,6 +442,40 @@
       "tris": 500,
       "updated_at": "2026-11-08T18:35:25+00:00"
     },
+    "animal.salvaje.lobo_2": {
+      "file": "arte/modelos/para_riggear/animal.salvaje.lobo_2.glb",
+      "category": "animal",
+      "has_rig": false,
+      "source": {
+        "tool": "otro",
+        "url": "",
+        "file": "c16.jpg",
+        "sha256": "822e1123ad3ddcd76eb63eb1065129a56c27b5461e84d0004529dc28350ef44b"
+      },
+      "params": {
+        "piezas": "volumen",
+        "filas": 1,
+        "fila": 1,
+        "invertir": false,
+        "agarre": "base",
+        "segmentos": 8,
+        "grosor": null,
+        "cresta": false,
+        "miembros": false,
+        "res": 112,
+        "umbral": 20,
+        "ancla": null,
+        "girar": 0,
+        "cruz": 0.85,
+        "cruz_columna": null,
+        "textura": [
+          256,
+          256
+        ]
+      },
+      "tris": 498,
+      "updated_at": "2026-11-15T15:25:50+00:00"
+    },
     "animal.salvaje.oso": {
       "file": "arte/modelos/para_riggear/animal.salvaje.oso.glb",
       "category": "animal",
