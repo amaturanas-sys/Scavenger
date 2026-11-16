@@ -408,7 +408,12 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.14.4. Las cuevas como sus referencias: las 20 imágenes de Perchance del usuario, puestas junto a
+- **Versión:** 0.14.5. Las bocas de las cuevas como sus referencias: otras 20 imágenes de Perchance del usuario
+  ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1): la roca en montículo de peñascos (ocre la de una tribu),
+  las antorchas con llamas y lo de cada tipo (cráneos; el arco y el musgo de la abandonada; las estacadas de los
+  forajidos; el sol y la tela de la tribu; el pórtico con balcón, la plaza y los estandartes del imperio). Las piezas con
+  sombra por cara, en `src/world/shapes.c`. Antes, la 0.14.4: las cuevas como sus referencias: las 20 imágenes de
+  Perchance del usuario, puestas junto a
   capturas de las mismas salas ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md), sección 1b): la roca en facetas y el
   decorado con sombra por cara; la paleta y la bruma de las imágenes; el fuego más blanco en las cuevas frías; rayos
   de luz de bordes suaves; columnas en ruinas, marcos de madera, antorchas de pared, tapices y postes; el fogón de la
@@ -448,7 +453,8 @@ traba.
   - los muros del borde, las rocas del desierto, las fortalezas y el ladrillo (v0.14.2);
   - las cuevas por dentro según su tipo, con las tareas C1, C2, C9 y C11 del plan y parte de C4, C6, C7, C15 y C16
     (v0.14.3);
-  - las cuevas como sus referencias de Perchance (v0.14.4).
+  - las cuevas como sus referencias de Perchance (v0.14.4);
+  - las bocas de las cuevas como sus referencias (v0.14.5).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
