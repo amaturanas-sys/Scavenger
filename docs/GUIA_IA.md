@@ -409,7 +409,10 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.14.6. Lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (el de raylib,
+- **Versión:** 0.14.7. La estepa más tupida y más ruinas: más pasto, stipa, hierbas y flores (unas 3,4 matas por
+  m²), el pasto hasta 48 m (24 m en Android) con menos matas pero más anchas a lo lejos, los arbustos en manchas y
+  bosquecillos de pinos en la llanura; 26 fortalezas derruidas por mundo (eran 14) y 6 ciudades enterradas (eran 2),
+  al final de los sitios (`SITES_MAX` 128; los vistos de después de 64, en `seen_sites_hi`). Antes, la 0.14.6: lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (el de raylib,
   desde `CMakeLists.txt`, y el del agua); con `mediump`, de 16 bits en muchos móviles, lo que estaba lejos del origen
   se deformaba o no se veía. Antes, la 0.14.5: las bocas de las cuevas como sus referencias: otras 20 imágenes de
   Perchance del usuario
@@ -459,7 +462,8 @@ traba.
     (v0.14.3);
   - las cuevas como sus referencias de Perchance (v0.14.4);
   - las bocas de las cuevas como sus referencias (v0.14.5);
-  - lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (v0.14.6).
+  - lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (v0.14.6);
+  - la estepa más tupida y más ruinas para encontrar (v0.14.7).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
