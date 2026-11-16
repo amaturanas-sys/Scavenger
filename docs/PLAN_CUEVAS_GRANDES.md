@@ -155,12 +155,12 @@ pantalla es la bruma.
 
 **Los lugares para mirar el decorado** (`DECOR_SPOTS`): `roca`, `racimo`, `estalagmitas`, `columna_natural` (o `pilar`),
 `poza` (o `lago`), `osamenta`, `musgo`, `derrumbe` (o `escombro`), `claraboya`, `cajas`, `sacos`, `jergon`, `alfombra`,
-`bastidor`, `lampara`, `vasijas`, `brasero`, `estela` y `pilastra`. Por ejemplo, `--cueva abandonada:claraboya
---antorcha`.
+`bastidor`, `lampara`, `vasijas`, `brasero`, `estela`, `pilastra`, `columna_rota`, `marco`, `antorcha_pared`, `tapiz` y
+`poste`. Por ejemplo, `--cueva abandonada:claraboya --antorcha`.
 
 **Lo que se midió** (la línea `CUEVA`, que ahora dice también el modelo mayor), en las cinco cuevas de la semilla 1206:
 la roca, de 10 500 a 17 900 triángulos (el peor caso de las tres semillas de las pruebas, unos 18 600); el modelo mayor,
-1 352; todos los modelos, hasta 22 400; la carga, de 7 a 15 ms. Con OpenGL ES 2 se ve igual.
+1 352; todos los modelos, hasta 22 400; la carga, de 7 a 19 ms. Con OpenGL ES 2 se ve igual.
 
 ### El paso 0 (Perchance): las referencias de cada tipo
 
@@ -196,6 +196,41 @@ inglés, que es como mejor responde), con un estilo de ilustración y, si el gen
   turtle at the back, rows of tall storage jars, wooden crates and grain sacks, a barrel vaulted brick tunnel leading
   away, hanging bronze lamps on chains, palette (#2D2828 #473C38 #5C5656 #5E584F #9C8873) with warm firelight, eye
   level view, low poly game concept art, matte colors`
+
+### Lo que se tomó de las referencias de Perchance
+
+El usuario generó cuatro imágenes por tipo con esos prompts y las dejó en su Drive (la carpeta «CAVE REFERENCE IMAGES
+PERCHANCE»; no se suben al repo). Se pusieron junto a capturas de las mismas salas, se cambió lo que no se parecía y se
+volvió a mirar:
+
+- **En todas:**
+  - la roca en facetas, como el low poly de las referencias: cada triángulo con su tono (`ClLook.facet`);
+  - las piezas del decorado con sombra por cara (`cs_solid`, `cs_box` y `cs_ellipsoid`, en
+    `src/game/cave_scene.c`), en vez de un solo color;
+  - la paleta y la bruma de cada tipo, tomadas de las imágenes;
+  - en las cuevas frías, las llamas más blancas (`ClLook.warm`), para que la roca siga de su color.
+- **De fieras:** roca azul verdosa, el lago oscuro con el reflejo de la luz que baja, rayos fríos con enredaderas en el
+  borde del agujero, racimos largos y la calcita azulada (`vc_set_growth`).
+- **Abandonada:** el agujero con musgo y enredaderas, rayos verdes de bordes suaves, columnas talladas en pie o rotas
+  (`CDEC_RUIN_COLUMN`, de tambores con la textura de la pared, musgo encima y un tambor caído) y musgo sobre los bloques
+  caídos y los cantos.
+- **Forajidos:**
+  - paredes de piedras grandes (la textura `TX_STONEWALL`);
+  - marcos de madera contra la roca (`CDEC_TIMBER`);
+  - antorchas de pared que alumbran (`CDEC_WALL_TORCH`, con las llamas de los fogones: `hearth_add_flame`);
+  - jergones claros y mullidos sobre un bastidor bajo;
+  - palotes y monigotes al carbón, más grandes y doblados con la pared.
+- **Tribu:**
+  - más luz y una bruma dorada;
+  - el friso grande de ciervos y cazadores con manos rojas, doblado con la pared y sin pasar por la boca de un pasillo;
+  - el fogón con su anillo alto de piedras;
+  - tapices de fieltro con guarda y rombos (`CDEC_TAPESTRY`);
+  - postes pintados de suelo a bóveda (`CDEC_POST`).
+- **Imperio:**
+  - piedra gris fría en vez de parda;
+  - los braseros alumbran cerca;
+  - las columnas, sueltas y adosadas, de sillares con su textura;
+  - el óculo con su anillo de piedra y la luz del día.
 
 ---
 

@@ -11,8 +11,8 @@
 // ancho en el derrumbe (lo que se mide de el es lo que ocupa).
 static const float KIND_HEIGHT[VC_KINDS] = { 2.0f, 1.6f, 1.08f, 2.64f, 2.28f, 6.0f, 0.96f, 1.4f, 0.9f, 3.38f };
 static const float KIND_WIDTH[VC_KINDS] = { 0.9f, 0.9f, 1.44f, 1.68f, 1.68f, 1.8f, 2.16f, 1.6f, 1.6f, 1.17f };
-static Color g_rock;
-static bool g_rock_set;
+static Color g_rock, g_chalk, g_moss;
+static bool g_rock_set, g_chalk_set, g_moss_set;
 
 static struct {
     bool tried, ok;
@@ -38,6 +38,7 @@ static void mix_into(uint8_t out[4], Color a, Color b, float t) {
 }
 
 void vc_set_rock(Color rock) { g_rock = rock, g_rock_set = true; }
+void vc_set_growth(Color chalk, Color moss) { g_chalk = chalk, g_chalk_set = chalk.a > 0, g_moss = moss, g_moss_set = moss.a > 0; }
 
 // La paleta de adentro: la roca de la cueva (y su tono oscuro, humedo) y la calcita de las formaciones (clara).
 static void cave_palette(Region r, uint8_t pal[M_COUNT][4]) {
@@ -45,8 +46,22 @@ static void cave_palette(Region r, uint8_t pal[M_COUNT][4]) {
     Color rock = g_rock_set ? g_rock : vc_rock_color(r);
     mix_into(pal[M_STONE], rock, rock, 0.0f);
     mix_into(pal[M_STONE_DARK], rock, (Color){ 20, 18, 16, 255 }, 0.3f);
-    mix_into(pal[M_CHALK], rock, (Color){ 236, 232, 222, 255 }, 0.55f);
-    mix_into(pal[M_CHALK_D], rock, (Color){ 210, 204, 192, 255 }, 0.3f);
+    Color chalk = g_chalk_set ? g_chalk : (Color){ 236, 232, 222, 255 }, chalk_d = g_chalk_set ? ColorBrightness(g_chalk, -0.1f) : (Color){ 210, 204, 192, 255 };
+    mix_into(pal[M_CHALK], rock, chalk, 0.55f);
+    mix_into(pal[M_CHALK_D], rock, chalk_d, 0.3f);
+    if (g_moss_set) mix_into(pal[M_MOSS], g_moss, g_moss, 0.0f);
+}
+
+// El musgo (las cuevas abandonadas, vc_set_growth): en manchas sobre la cara de arriba de cada columna de la rejilla.
+static void moss_tops(VoxGrid *g, uint32_t seed) {
+    if (!g_moss_set) return;
+    for (int z = 0; z < g->nz; z++)
+        for (int x = 0; x < g->nx; x++)
+            for (int y = g->ny - 1; y >= 0; y--) {
+                if (!vox_get(g, x, y, z)) continue;
+                if (vox_noise3((float)x * 0.45f, 0.0f, (float)z * 0.45f, seed + 77u) > 0.38f) vox_set(g, x, y, z, M_MOSS);
+                break;
+            }
 }
 
 // La calcita, con vetas verticales mas oscuras (por donde corre el agua); la roca de donde nace, abajo (o arriba).
@@ -100,6 +115,7 @@ static bool build_kind(VoxCaveKind k, int v, VoxGrid *g) {
             for (int z = 0; z < g->nz; z++)
                 for (int x = 0; x < g->nx; x++)
                     if (vox_get(g, x, y, z) && vox_noise3((float)x * 0.7f, (float)y * 0.7f, (float)z * 0.7f, seed) > 0.62f) vox_set(g, x, y, z, M_STONE_DARK);
+        moss_tops(g, seed);
         return true;
     }
     case VC_STALACTITES: { // la placa de la boveda y de ella, las estalactitas: una larga y otras mas cortas alrededor
@@ -158,6 +174,7 @@ static bool build_kind(VoxCaveKind k, int v, VoxGrid *g) {
             vox_box(g, x0, y0, z0, x0 + sx - 1, y0 + sy - 1, z0 + sz - 1, m);
         }
         voxs_erode_skin(g, seed, 0.5f, 0.14f);
+        moss_tops(g, seed);
         return true;
     }
     case VC_CRATES: { // dos cajas en el suelo (o una y un tonel) y una arriba; con las tablas y los cantos oscuros
@@ -279,7 +296,7 @@ void vc_unload(void) {
             for (int v = 0; v < VC_VARIANTS; v++)
                 if (g_vc[k][r][v].ok) UnloadModel(g_vc[k][r][v].model);
     memset(g_vc, 0, sizeof(g_vc));
-    g_rock_set = false;
+    g_rock_set = g_chalk_set = g_moss_set = false;
 }
 
-void vc_forget_gpu(void) { memset(g_vc, 0, sizeof(g_vc)), g_rock_set = false; }
+void vc_forget_gpu(void) { memset(g_vc, 0, sizeof(g_vc)), g_rock_set = g_chalk_set = g_moss_set = false; }

@@ -10,14 +10,17 @@
 #define TEX 128 // px de cada textura
 
 // Las texturas que se pintan: la roca de cada tipo, la sillería y el ladrillo del imperio, y los suelos.
-typedef enum { TX_LIMESTONE, TX_MOSSY, TX_HEWN, TX_SMOOTH, TX_ASHLAR, TX_BRICK, TX_GRAVEL, TX_MUD, TX_EARTH, TX_RED_EARTH, TX_FLAGS } TexKind;
+typedef enum {
+    TX_LIMESTONE, TX_MOSSY, TX_HEWN, TX_SMOOTH, TX_ASHLAR, TX_BRICK, TX_GRAVEL, TX_MUD, TX_EARTH, TX_RED_EARTH, TX_FLAGS, TX_STONEWALL
+} TexKind;
 
-// El plan de cada tipo, la superficie y la luz (las paletas, de las referencias de docs/PLAN_CUEVAS_GRANDES.md):
-//  - las de fieras: caliza gris azulada y mojada (la 10, estalactitas y lago), bruma azul oscura;
-//  - las abandonadas: roca verdosa con musgo y la niebla verde del tunel de sillares (la 9);
-//  - los forajidos: roca parda picada a medias, con hollin (el calabozo, la 6; la antorcha, la 3), tierra con paja;
-//  - la tribu: roca ocre gastada (las pinturas, la 4 y la 5), tierra roja apisonada;
-//  - el imperio: sillares y una cupula de ladrillo (la 7 y la 8), losas en el suelo.
+// El plan de cada tipo, la superficie y la luz. Las paletas salen de las referencias de Perchance de cada tipo (cuatro
+// imagenes por tipo, docs/PLAN_CUEVAS_GRANDES.md, sección 1b); todas, roca en facetas (low poly):
+//  - las de fieras: caliza azul verdosa (#355363, #436D7F, #5F909F) y una bruma clara del mismo color al fondo;
+//  - las abandonadas: roca verde (#315542, #407359, #699E74) con musgo, losas rotas y una niebla verde clara;
+//  - los forajidos: piedras grandes pardas con la junta honda (#3C2E29, #6D432E, #875437), tierra con paja, oscura;
+//  - la tribu: roca dorada y ocre (#A56838, #C28342, #E3B25F), losas claras, bien alumbrada;
+//  - el imperio: sillares grises (#746C62, #A29A89) en muros y cupula, losas gris azuladas (#474948).
 static const struct {
     Color wall, vault, floor, moss;
     float region; // cuanto de la roca de la region
@@ -26,18 +29,18 @@ static const struct {
     float fog_near, fog_far, fog_max;
     TexKind tex[CL_SURFACES];
     float tile[CL_SURFACES];
-    float jag, moss_h, soot;
+    float jag, moss_h, soot, facet, warm;
 } KIND_LOOK[CAVE_KINDS] = {
-    { { 92, 104, 116, 255 }, { 112, 122, 132, 255 }, { 70, 76, 82, 255 }, { 52, 64, 78, 255 }, 0.35f, { 0.04f, 0.05f, 0.078f },
-      { 16, 22, 32, 255 }, 10.0f, 40.0f, 0.75f, { TX_LIMESTONE, TX_LIMESTONE, TX_GRAVEL }, { 6.0f, 6.0f, 4.0f }, 1.0f, 1.3f, 0.0f },
-    { { 100, 112, 102, 255 }, { 94, 106, 98, 255 }, { 74, 80, 66, 255 }, { 66, 104, 60, 255 }, 0.4f, { 0.034f, 0.054f, 0.05f },
-      { 18, 40, 38, 255 }, 6.0f, 32.0f, 0.75f, { TX_MOSSY, TX_MOSSY, TX_MUD }, { 6.0f, 6.0f, 4.0f }, 0.8f, 1.9f, 0.0f },
-    { { 146, 118, 90, 255 }, { 116, 94, 74, 255 }, { 122, 96, 70, 255 }, { 84, 66, 50, 255 }, 0.4f, { 0.042f, 0.032f, 0.025f },
-      { 18, 12, 8, 255 }, 10.0f, 42.0f, 0.8f, { TX_HEWN, TX_HEWN, TX_EARTH }, { 6.0f, 6.0f, 4.0f }, 0.6f, 0.9f, 0.75f },
-    { { 184, 140, 110, 255 }, { 168, 124, 96, 255 }, { 134, 88, 64, 255 }, { 168, 104, 72, 255 }, 0.35f, { 0.046f, 0.033f, 0.026f },
-      { 22, 13, 8, 255 }, 10.0f, 42.0f, 0.8f, { TX_SMOOTH, TX_SMOOTH, TX_RED_EARTH }, { 6.0f, 6.0f, 4.0f }, 0.35f, 1.4f, 0.35f },
-    { { 160, 140, 118, 255 }, { 128, 106, 96, 255 }, { 116, 110, 100, 255 }, { 100, 92, 82, 255 }, 0.15f, { 0.038f, 0.038f, 0.042f },
-      { 16, 15, 16, 255 }, 12.0f, 46.0f, 0.75f, { TX_ASHLAR, TX_BRICK, TX_FLAGS }, { 4.0f, 3.0f, 4.0f }, 0.0f, 0.55f, 0.15f },
+    { { 84, 124, 140, 255 }, { 100, 144, 158, 255 }, { 60, 86, 98, 255 }, { 44, 66, 80, 255 }, 0.15f, { 0.08f, 0.11f, 0.14f },
+      { 74, 114, 130, 255 }, 4.0f, 30.0f, 0.85f, { TX_LIMESTONE, TX_LIMESTONE, TX_GRAVEL }, { 6.0f, 6.0f, 4.0f }, 1.0f, 1.2f, 0.0f, 0.9f, 0.4f },
+    { { 70, 112, 92, 255 }, { 64, 104, 86, 255 }, { 64, 88, 70, 255 }, { 84, 140, 84, 255 }, 0.15f, { 0.07f, 0.12f, 0.09f },
+      { 52, 98, 78, 255 }, 4.0f, 28.0f, 0.85f, { TX_MOSSY, TX_MOSSY, TX_FLAGS }, { 6.0f, 6.0f, 4.0f }, 0.9f, 2.2f, 0.0f, 0.9f, 0.45f },
+    { { 128, 100, 82, 255 }, { 104, 80, 64, 255 }, { 112, 84, 60, 255 }, { 64, 48, 38, 255 }, 0.2f, { 0.085f, 0.062f, 0.05f },
+      { 38, 28, 24, 255 }, 10.0f, 44.0f, 0.62f, { TX_STONEWALL, TX_STONEWALL, TX_EARTH }, { 6.0f, 6.0f, 4.0f }, 0.7f, 0.9f, 0.6f, 0.85f, 1.0f },
+    { { 214, 160, 100, 255 }, { 196, 142, 88, 255 }, { 190, 156, 118, 255 }, { 180, 112, 60, 255 }, 0.15f, { 0.2f, 0.15f, 0.1f },
+      { 170, 118, 68, 255 }, 7.0f, 36.0f, 0.7f, { TX_SMOOTH, TX_SMOOTH, TX_FLAGS }, { 6.0f, 6.0f, 4.0f }, 0.4f, 1.4f, 0.25f, 0.8f, 0.85f },
+    { { 150, 150, 150, 255 }, { 140, 140, 142, 255 }, { 108, 116, 126, 255 }, { 96, 94, 90, 255 }, 0.08f, { 0.16f, 0.165f, 0.18f },
+      { 90, 92, 98, 255 }, 8.0f, 42.0f, 0.75f, { TX_ASHLAR, TX_ASHLAR, TX_FLAGS }, { 4.0f, 3.0f, 4.0f }, 0.0f, 0.55f, 0.1f, 0.45f, 0.5f },
 };
 
 static ClLook g_look;
@@ -182,6 +185,14 @@ static Color texel(TexKind k, float u, float v, int px, int py, uint32_t seed) {
         worley(u, v, 10, seed + 17u, &f1, &f2, &id);
         return gray(f1 < 0.12f ? base * 1.1f : base, 1.0f, 0.97f, 0.95f);
     }
+    case TX_STONEWALL: { // piedras grandes y angulosas con la junta honda y oscura (las paredes de los forajidos)
+        float f1, f2;
+        int id;
+        worley(u, v, 6, seed + 23u, &f1, &f2, &id);
+        if (f2 - f1 < 0.08f) return gray(0.42f, 1.0f, 0.98f, 0.95f);
+        float stone = 0.74f + 0.2f * (float)(hash3(id, 5, seed) & 0xFF) / 255.0f, edge = f2 - f1 < 0.16f ? 0.9f : 1.0f;
+        return gray(stone * edge * (0.9f + 0.1f * fbm(u, v, 12, 2, seed + 3u)), 1.0f, 0.98f, 0.96f);
+    }
     default: { // TX_FLAGS: losas de piedra de casi un metro, desparejas, con la junta oscura y el medio gastado
         float f1, f2;
         int id;
@@ -232,7 +243,8 @@ bool cl_load(const Cave *c) {
                        .floor = mixc(KIND_LOOK[k].floor, ColorBrightness(region, -0.2f), w * 0.7f), .moss = KIND_LOOK[k].moss,
                        .ambient = { KIND_LOOK[k].ambient[0], KIND_LOOK[k].ambient[1], KIND_LOOK[k].ambient[2] }, .fog = KIND_LOOK[k].fog,
                        .fog_near = KIND_LOOK[k].fog_near, .fog_far = KIND_LOOK[k].fog_far, .fog_max = KIND_LOOK[k].fog_max,
-                       .jag = KIND_LOOK[k].jag, .moss_h = KIND_LOOK[k].moss_h, .soot = KIND_LOOK[k].soot };
+                       .jag = KIND_LOOK[k].jag, .moss_h = KIND_LOOK[k].moss_h, .soot = KIND_LOOK[k].soot,
+                       .facet = KIND_LOOK[k].facet, .warm = KIND_LOOK[k].warm };
     for (int s = 0; s < CL_SURFACES; s++) g_look.tile[s] = KIND_LOOK[k].tile[s];
     bool ok = true;
     uint32_t seed = 0xCA7Eu + (uint32_t)k * 101u + (uint32_t)c->region * 13u;

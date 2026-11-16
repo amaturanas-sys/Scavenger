@@ -31,6 +31,9 @@ Color vc_rock_color(Region r);
 // La roca de los modelos que se armen desde ahora (la de las paredes de la cueva que se carga: src/game/cave_look.c).
 // Se pone antes de los vc_preload de cada cueva; vc_unload la devuelve a la de la region.
 void vc_set_rock(Color rock);
+// La calcita de las formaciones (hacia que color se aclara la roca) y el musgo sobre lo que quedo arriba de los bloques y
+// los cantos (alfa 0: el de siempre, sin musgo), para los modelos que se armen desde ahora; vc_unload lo devuelve.
+void vc_set_growth(Color chalk, Color moss);
 // Arma el modelo si falta (en la carga de la cueva, nunca en medio del juego). false si no se pudo.
 bool vc_preload(VoxCaveKind k, Region r, int variant);
 // Lo dibuja con el pie en at (una estalactita: colgada de at), girado yaw (rad), de size m de alto, teñido con la luz

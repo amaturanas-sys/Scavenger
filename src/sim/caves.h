@@ -97,6 +97,12 @@ typedef enum {
     CDEC_BRAZIER,     // un brasero de bronce encendido, en su tripode
     CDEC_STELE,       // una estela del imperio sobre su tortuga
     CDEC_PILASTER,    // una pilastra en una esquina de la pared labrada (x, z: a su pie, del lado de la sala; yaw: el angulo)
+    // De las referencias de Perchance (docs/PLAN_CUEVAS_GRANDES.md, sección 1b):
+    CDEC_RUIN_COLUMN, // una columna labrada en pie, rota y con musgo, con un tambor caido al lado (size: el alto)
+    CDEC_TIMBER,      // un marco de madera contra la pared: dos postes y el dintel (size: el alto; yaw: el angulo)
+    CDEC_WALL_TORCH,  // una antorcha encendida en su soporte, en la pared (yaw: el angulo)
+    CDEC_TAPESTRY,    // un tapiz de fieltro colgado de la pared (size: el alto; yaw: el angulo)
+    CDEC_POST,        // un poste tallado con franjas pintadas, del suelo a la boveda (size: el ancho)
     CDEC_KINDS
 } CaveDecorKind;
 
@@ -170,6 +176,9 @@ float cave_wall_radius(const Cave *c, int room, float a);
 int cave_room_sides(const Cave *c, int room);
 // Si el decorado de esa clase cuelga de la boveda (el racimo de estalactitas, la luz del agujero).
 bool cave_decor_on_ceiling(int kind);
+// Si va contra la pared (pilastras, marcos, antorchas, tapices): x, z a su pie, del lado de la sala; yaw, el angulo de la
+// pared desde el centro de la sala. No tapa el paso.
+bool cave_decor_on_wall(int kind);
 // Si en el angulo a de la pared de una sala (o del vestibulo) hay una puerta: un pasillo del otro lado.
 bool cave_door_at(const Cave *c, int room, float a);
 // El perfil de una sala, de abajo arriba (j de 0 a CAVE_PROFILE_PTS - 1): la fraccion del radio de su pared y la altura
