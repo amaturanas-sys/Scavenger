@@ -102,6 +102,26 @@ if(ESTEPA_BUILD_GAME)
     GIT_TAG 5.5
     GIT_SHALLOW TRUE)
   FetchContent_MakeAvailable(raylib)
+  # El shader por defecto de raylib para OpenGL ES 2 declara «precision mediump float» tambien en el vertice. En muchos
+  # moviles (Mali, PowerVR) y en Mesa, mediump es de 16 bits: lo que raylib dibuja en coordenadas del mundo (las
+  # personas, el decorado, las llamas, el terreno) se deforma o desaparece lejos del origen (a 2 000 m, el paso de un
+  # float de 16 bits es de 2 m). En el vertice de GLSL ES 1.00, highp siempre esta (es su precision por defecto): al
+  # configurar se cambia esa linea, y solo esa. Si raylib la cambia, esto falla en vez de dejar el juego roto en Android.
+  set(ESTEPA_RLGL "${raylib_SOURCE_DIR}/src/rlgl.h")
+  file(READ "${ESTEPA_RLGL}" ESTEPA_RLGL_SRC)
+  set(ESTEPA_VS_MEDIUMP "\"precision mediump float;           \\n\"     // Precision required for OpenGL ES2 (WebGL) (on some browsers)")
+  set(ESTEPA_VS_HIGHP "\"precision highp float;             \\n\"     // estepa: highp en el vertice (CMakeLists.txt)")
+  string(FIND "${ESTEPA_RLGL_SRC}" "${ESTEPA_VS_MEDIUMP}" ESTEPA_AT)
+  if(ESTEPA_AT GREATER -1)
+    string(REPLACE "${ESTEPA_VS_MEDIUMP}" "${ESTEPA_VS_HIGHP}" ESTEPA_RLGL_SRC "${ESTEPA_RLGL_SRC}")
+    file(WRITE "${ESTEPA_RLGL}" "${ESTEPA_RLGL_SRC}")
+  else()
+    string(FIND "${ESTEPA_RLGL_SRC}" "${ESTEPA_VS_HIGHP}" ESTEPA_AT)
+    if(ESTEPA_AT EQUAL -1)
+      message(FATAL_ERROR "raylib: no esta la precision del vertice del shader de OpenGL ES 2 en ${ESTEPA_RLGL}. "
+                          "Sin highp, lo lejano se deforma en Android: revisar el bloque de CMakeLists.txt.")
+    endif()
+  endif()
 
   set(ESTEPA_GAME_SOURCES
     src/main.c

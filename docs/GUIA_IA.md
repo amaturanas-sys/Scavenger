@@ -227,8 +227,9 @@ El script del entorno (en claude.ai, fuera del repo) prepara cada contenedor nue
   - sin `unistd.h` ni `dirent.h` en `src/`;
   - sin `M_PI` (usar las constantes `PI` del código).
 - **Cero advertencias nuevas** (`-Wall -Wextra -Wpedantic`, `/W4`).
-- **Los shaders** también en GLSL ES 100, con `precision mediump float;` en el de vértices (como el de raylib:
-  con `highp`, llvmpipe de Mesa no dibuja nada en OpenGL ES) y un respaldo si no compila. El CI los compila y
+- **Los shaders** también en GLSL ES 100, con `precision highp float;` en el de vértices (en muchos móviles, como
+  los de GPU Mali o PowerVR, y en Mesa, `mediump` es de 16 bits: lo que va en coordenadas del mundo se deforma lejos
+  del origen; el de raylib también va en `highp`, lo cambia `CMakeLists.txt`) y un respaldo si no compila. El CI los compila y
   dibuja también con OpenGL ES 2.0 (`-DOPENGL_VERSION="ES 2.0"`; ver el del agua, `src/world/terrain.c`).
 - **La memoria:** arreglos fijos (`*_MAX`) y estructuras planas; nada se reserva por cuadro y no hay ECS
   genérico.
@@ -408,7 +409,10 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.14.5. Las bocas de las cuevas como sus referencias: otras 20 imágenes de Perchance del usuario
+- **Versión:** 0.14.6. Lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (el de raylib,
+  desde `CMakeLists.txt`, y el del agua); con `mediump`, de 16 bits en muchos móviles, lo que estaba lejos del origen
+  se deformaba o no se veía. Antes, la 0.14.5: las bocas de las cuevas como sus referencias: otras 20 imágenes de
+  Perchance del usuario
   ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1): la roca en montículo de peñascos (ocre la de una tribu),
   las antorchas con llamas y lo de cada tipo (cráneos; el arco y el musgo de la abandonada; las estacadas de los
   forajidos; el sol y la tela de la tribu; el pórtico con balcón, la plaza y los estandartes del imperio). Las piezas con
@@ -454,7 +458,8 @@ traba.
   - las cuevas por dentro según su tipo, con las tareas C1, C2, C9 y C11 del plan y parte de C4, C6, C7, C15 y C16
     (v0.14.3);
   - las cuevas como sus referencias de Perchance (v0.14.4);
-  - las bocas de las cuevas como sus referencias (v0.14.5).
+  - las bocas de las cuevas como sus referencias (v0.14.5);
+  - lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (v0.14.6).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

@@ -264,6 +264,12 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Lo lejano en Android (v0.14.6): en muchos teléfonos (con GPU Mali o PowerVR), lo que estaba lejos del campamento se
+deformaba o no se veía: las personas, el decorado de las bocas de las cuevas, las llamas y el terreno; en la orilla del
+mundo, ni el jugador. El shader por defecto de raylib para OpenGL ES 2 hacía las cuentas de cada vértice en `mediump`,
+que en esos teléfonos es de 16 bits; ahora van en `highp` (lo cambia `CMakeLists.txt` al configurar), y también las del
+agua.
+
 Las bocas de las cuevas como sus referencias (v0.14.5), con otras 20 imágenes de Perchance del usuario (cuatro por tipo;
 el detalle, en [docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md#b1--la-boca-y-la-planta)):
 - **La roca:** un montículo de peñascos de distinto tono, con la grieta oscura entre uno y otro, liquen y pasto encima;

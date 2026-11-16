@@ -604,9 +604,9 @@ static bool g_water_tex_tried;
     "}\n"
 static const char WATER_VS_330[] = "#version 330\n#define ATTR in\n#define VARY out\n" WATER_GLSL_VS;
 static const char WATER_FS_330[] = "#version 330\n#define VARY in\n#define TEX texture\n#define FRAG finalColor\nout vec4 finalColor;\n" WATER_GLSL_FS;
-// En GLSL ES el vertice va en mediump, como el shader por defecto de raylib con el que se dibuja todo lo demas en
-// Android (en los moviles es de 32 bits; y con highp, llvmpipe de Mesa no dibuja nada en OpenGL ES).
-static const char WATER_VS_100[] = "#version 100\nprecision mediump float;\n#define ATTR attribute\n#define VARY varying\n" WATER_GLSL_VS;
+// En GLSL ES el vertice va en highp, como el shader por defecto de raylib (CMakeLists.txt): las mallas del agua van en
+// coordenadas del mundo y en muchos moviles (y en Mesa) mediump es de 16 bits, que lejos del origen las deforma.
+static const char WATER_VS_100[] = "#version 100\nprecision highp float;\n#define ATTR attribute\n#define VARY varying\n" WATER_GLSL_VS;
 static const char WATER_FS_100[] = "#version 100\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n"
                                    "#define VARY varying\n#define TEX texture2D\n#define FRAG gl_FragColor\n" WATER_GLSL_FS;
 

@@ -1,6 +1,10 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: las bocas de las cuevas como sus referencias
+## Arreglado: lo lejano en Android
+
+En muchos teléfonos Android (con GPU Mali o PowerVR), lo que estaba lejos del campamento se deformaba o no se veía: las personas, el decorado de las bocas de las cuevas, las llamas y el terreno; en la orilla del mundo, ni el jugador. Las cuentas de cada vértice iban con una precisión de 16 bits; ahora van con la completa, también las del agua.
+
+## De la v0.14.5: las bocas de las cuevas como sus referencias
 
 Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió lo que no se parecía:
 
@@ -13,7 +17,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», el apartado de la v0.14.5).
+Las partidas de antes cargan igual. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.14.6 y la v0.14.5).
 
 ## Android
 
