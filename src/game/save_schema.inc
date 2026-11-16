@@ -544,6 +544,7 @@ static const SfField SF_F_GameActions[] = {
     SF_ONE(GameActions, seen_tribes, "uint32_t", SF_UINT, NULL),
     SF_ONE(GameActions, raided_tribes, "uint32_t", SF_UINT, NULL),
     SF_ONE(GameActions, seen_sites, "uint64_t", SF_UINT, NULL),
+    SF_ONE(GameActions, seen_sites_hi, "uint64_t", SF_UINT, NULL),
     SF_ARR(GameActions, ab_timer, "float", SF_FLOAT, NULL),
     SF_ARR(GameActions, ab_cd, "float", SF_FLOAT, NULL),
     SF_ARR(GameActions, ab_pot, "float", SF_FLOAT, NULL),

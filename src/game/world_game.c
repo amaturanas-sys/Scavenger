@@ -25,6 +25,15 @@
 
 static float dist_xz(float ax, float az, float bx, float bz) { return sqrtf((ax - bx) * (ax - bx) + (az - bz) * (az - bz)); }
 
+// Las estructuras ya vistas: un bit por cada una (las 64 primeras de la lista del mundo, en seen_sites; las demas,
+// en seen_sites_hi).
+_Static_assert(SITES_MAX <= 128, "dos mascaras de 64 sitios vistos");
+static bool site_seen(const GameActions *ga, int i) { return i < 64 ? (ga->seen_sites >> i) & 1ull : (ga->seen_sites_hi >> (i - 64)) & 1ull; }
+static void site_set_seen(GameActions *ga, int i) {
+    if (i < 64) ga->seen_sites |= 1ull << i;
+    else ga->seen_sites_hi |= 1ull << (i - 64);
+}
+
 static const char *ATTITUDE_TEXT[TRIBE_ATTITUDES] = { N_("rival"), N_("neutral"), N_("amiga") };
 
 void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, MemoryMap *mem, char *log, size_t len) {
@@ -88,9 +97,9 @@ void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, M
         if (tc->attitude == TRIBE_FRIENDLY) { // comparten noticias: la estructura mas cercana sin ver, al mapa
             int best = -1;
             float bd = 1e18f;
-            for (int k = 0; k < w->site_count && k < 64; k++) {
+            for (int k = 0; k < w->site_count; k++) {
                 float sd = dist_xz(w->sites[k].x, w->sites[k].z, tc->x, tc->z);
-                if (!((ga->seen_sites >> k) & 1ull) && sd < bd) bd = sd, best = k;
+                if (!site_seen(ga, k) && sd < bd) bd = sd, best = k;
             }
             memmap_toggle_marker(mem, tc->x, tc->z, MARKER_INTEREST, 4.0f);
             if (best >= 0) {
@@ -105,10 +114,10 @@ void wd_update(GameActions *ga, Combat *cb, const Terrain *t, const Player *p, M
         }
     }
     // Las estructuras: al verlas, al mapa.
-    for (int i = 0; i < w->site_count && i < 64; i++) {
+    for (int i = 0; i < w->site_count; i++) {
         const WorldSite *st = &w->sites[i];
-        if ((ga->seen_sites >> i) & 1ull || dist_xz(st->x, st->z, p->pos.x, p->pos.z) > SITE_SEEN) continue;
-        ga->seen_sites |= 1ull << i;
+        if (site_seen(ga, i) || dist_xz(st->x, st->z, p->pos.x, p->pos.z) > SITE_SEEN) continue;
+        site_set_seen(ga, i);
         memmap_toggle_marker(mem, st->x, st->z, MARKER_INTEREST, 4.0f);
         if (st->kind == SITE_WELL || st->kind == SITE_CARAVANSERAI)
             snprintf(log, len, T("Encuentras %s: agua limpia (L: llenar el odre · N: beber). Queda en el mapa."), T(site_name(st->kind)));

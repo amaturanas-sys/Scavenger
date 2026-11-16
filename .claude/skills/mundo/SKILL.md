@@ -49,7 +49,8 @@ De WorldClaw se toman las ideas, no el código: su repositorio solo trae el READ
   - se calcula una vez, en memoria fija;
   - lleva su prueba en `tests/test_main.c`.
 - **La dispersión, por región:** densidad × peso de la región × cercanía del agua (las cifras, en `flora.c`):
-  - **la estepa central:** pasto (1,3 por m²), stipa lejos del agua (0,7), hierbas aromáticas y flores; en la
+  - **la estepa central:** pasto (1,75 por m²), stipa lejos del agua (0,95), hierbas aromáticas y flores; matas en
+    manchas y bosquecillos de pinos sueltos (`steppe_grove`, `steppe_scrub` en `terrain.c`); en la
     orilla, juncos tan juntos que no queda suelo pelado, y sauces;
   - **el bosque de coníferas:** pinos tupidos (un arce de cada seis árboles), pasto (1,15) y helechos;
   - **el altiplano glaciar:** pasto (0,6) y algunas flores; nieve sobre la línea de nieve, y los pinos, nevados;
