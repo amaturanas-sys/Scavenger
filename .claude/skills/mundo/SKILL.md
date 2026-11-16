@@ -64,8 +64,11 @@ De WorldClaw se toman las ideas, no el código: su repositorio solo trae el READ
 - **La estación cambia cómo se ve, no dónde está.** El mismo árbol, en el mismo lugar, está verde, dorado, pelado
   o nevado; el río crece y se congela, pero su cauce no se mueve.
 - **Los shaders:**
-  - todo shader nuevo va en GLSL 330 y en ES 100 (`precision mediump float;`), con un respaldo sin shader;
-  - en ES 2.0, la geometría lejos del origen pierde precisión: usar las coordenadas locales del chunk o del
-    modelo, como los árboles (`src/world/trees.c`).
+  - todo shader nuevo va en GLSL 330 y en ES 100 (el vértice en `precision highp float;`), con un respaldo sin
+    shader;
+  - en ES 2.0, `mediump` puede ser de 16 bits (GPU Mali o PowerVR, y Mesa): lo que va en coordenadas del mundo se
+    deforma lejos del origen. El vértice va en `highp` (el shader por defecto de raylib también, desde
+    `CMakeLists.txt`) y, donde se pueda, en las coordenadas locales del chunk o del modelo, como los árboles
+    (`src/world/trees.c`).
 - **Mirarlo:** cada capa que se toca, con los mapas y las vistas de `docs/MUNDO.md` («Cómo verlo»), en las
   regiones y estaciones que la regla toque, antes y después. Un cambio de reglas en `src/sim/` lleva su prueba.

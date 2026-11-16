@@ -227,8 +227,9 @@ El script del entorno (en claude.ai, fuera del repo) prepara cada contenedor nue
   - sin `unistd.h` ni `dirent.h` en `src/`;
   - sin `M_PI` (usar las constantes `PI` del código).
 - **Cero advertencias nuevas** (`-Wall -Wextra -Wpedantic`, `/W4`).
-- **Los shaders** también en GLSL ES 100, con `precision mediump float;` en el de vértices (como el de raylib:
-  con `highp`, llvmpipe de Mesa no dibuja nada en OpenGL ES) y un respaldo si no compila. El CI los compila y
+- **Los shaders** también en GLSL ES 100, con `precision highp float;` en el de vértices (en muchos móviles, como
+  los de GPU Mali o PowerVR, y en Mesa, `mediump` es de 16 bits: lo que va en coordenadas del mundo se deforma lejos
+  del origen; el de raylib también va en `highp`, lo cambia `CMakeLists.txt`) y un respaldo si no compila. El CI los compila y
   dibuja también con OpenGL ES 2.0 (`-DOPENGL_VERSION="ES 2.0"`; ver el del agua, `src/world/terrain.c`).
 - **La memoria:** arreglos fijos (`*_MAX`) y estructuras planas; nada se reserva por cuadro y no hay ECS
   genérico.

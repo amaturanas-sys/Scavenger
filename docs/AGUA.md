@@ -245,8 +245,9 @@ respiran y la malla de espuma); `--sin-shader` lo muestra.
    - las cuentas van respecto de un origen cerca del jugador (el chunk donde está), así los números entran en
      `mediump`. Las ondas caben justas en 48 m y el tiempo de los vértices vuelve a empezar cada 120 s: al
      cambiar de chunk o de vuelta, nada salta;
-   - el de vértices va en `mediump`, como el shader por defecto de raylib (con `highp`, llvmpipe de Mesa no
-     dibuja nada en OpenGL ES);
+   - el de vértices va en `highp`, como el shader por defecto de raylib (`CMakeLists.txt`): las mallas van en
+     coordenadas del mundo, y en muchos móviles (y en Mesa) `mediump` es de 16 bits, que lejos del origen las
+     deforma;
    - el CI compila el juego para OpenGL ES 2.0 y lo dibuja con Mesa: el shader de Android se prueba en cada PR.
 
 ![Cómo se ve el agua](mundo/como_se_ve_el_agua.png)
