@@ -32,6 +32,12 @@ typedef struct {
     // sombra de rincon quedan solas. Los vertices de un rectangulo que caen en el borde de otro se reparten
     // (sin juntas en T: no se abren rendijas). La figura y el color de cada punto son los mismos.
     bool merge;
+    // El material que se dibuja en ladrillos (0: ninguno): en vez del tono de cada celda, el de cada ladrillo (una
+    // celda de alto y dos de largo, trabados: cada hilada corrida media pieza), con la junta mas oscura abajo y al
+    // principio de cada ladrillo. Sigue el largo de cada cara (x o z), asi se ve en los muros de los dos lados.
+    uint8_t brick;
+    // La variacion de tono de cada material (NULL: jitter para todos): la arena y el hielo, casi parejos.
+    const uint8_t *tone;
 } VoxGrid;
 
 bool vox_init(VoxGrid *g, int nx, int ny, int nz, float size);

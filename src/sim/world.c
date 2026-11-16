@@ -274,18 +274,55 @@ static float land(const World *w, float x, float z) {
                 h = lerpf(h, lerpf(flat, h, smooth(SEA_LEVEL + 3.0f, SEA_LEVEL + 9.0f, h)), beach);
             }
         }
-        if (q[REGION_DESERT] > 0.0f) { // un cañon al pie y un muro de siete estratos
+        // A lo largo del muro (el borde visto desde el centro), sin costura: el ruido de los muros, sobre un circulo.
+        float ax = cosf(th) * WORLD_RADIUS, az = sinf(th) * WORLD_RADIUS;
+        if (q[REGION_DESERT] > 0.0f) { // un cañon al pie y un muro de siete estratos (como el del Gran Cañon)
             float g = (e - GORGE_E) / 45.0f;
             float gorge = g * g < 1.0f ? (1.0f - g * g) * 36.0f : 0.0f;
-            float t = smooth(WALL_E + 8.0f, WALL_E - 60.0f, e) * 7.0f;
-            float step = floorf(t), frac = t - step;
-            float wall = (step + smooth(0.75f, 1.0f, frac)) / 7.0f * 160.0f;
-            h = lerpf(h, h - gorge + wall, q[REGION_DESERT]);
+            // La linea del muro, como en los mapas de WorldClaw (el teaser: los acantilados de otoño y primavera), la
+            // misma en todos los estratos: promontorios y bahias (hasta 22 m, cada ~200 m), carcavas en V que entran
+            // hasta 26 m (cada ~100 m) y contrafuertes de unos 14 m de ancho que salen hasta 4 m. Cada escalon, un
+            // acantilado (la capa dura) sobre un talud (la blanda, que se desmorona) y un rellano corto arriba; los
+            // escalones no tienen todos el mismo alto, y el muro entero sube y baja en macizos (de 132 a 188 m), con
+            // agujas en el borde de arriba.
+            float lobe = 22.0f * noise2d(ax * 0.005f, az * 0.005f, w->seed + 87u);
+            float notch = 1.0f - fabsf(noise2d(ax * 0.01f, az * 0.01f, w->seed + 88u)); // 1 en el eje de la carcava
+            notch *= notch, notch *= notch;
+            float rib = 4.0f * fabsf(noise2d(ax * 0.07f, az * 0.07f, w->seed + 89u));
+            float mass = 1.0f + 0.175f * noise2d(ax * 0.004f, az * 0.004f, w->seed + 86u);
+            float ee = e + lobe + 26.0f * notch - rib; // la distancia al borde, corrida por la linea del muro
+            float t = smooth(WALL_E + 8.0f, WALL_E - 60.0f, ee) * 7.0f;
+            static const float RISE[8] = { 0.0f, 26.0f, 44.0f, 74.0f, 90.0f, 118.0f, 138.0f, 160.0f }; // la base de cada estrato (m)
+            int step = (int)floorf(t);
+            float frac = t - (float)step, wall;
+            if (step >= 7) wall = 160.0f;
+            else {
+                float lo = RISE[step], hi = RISE[step + 1];
+                wall = lo + (hi - lo) * (0.28f * smooth(0.0f, 0.62f, frac) + 0.72f * smooth(0.62f, 0.86f, frac));
+            }
+            float spire = fmaxf(0.0f, noise2d(x * 0.1f, z * 0.1f, w->seed + 85u)); // las agujas sueltas del filo de arriba
+            spire = spire * spire * spire * 26.0f * smooth(30.0f, 34.0f, ee) * smooth(44.0f, 39.0f, ee) * (1.0f - notch);
+            h = lerpf(h, h - gorge + wall * mass + spire, q[REGION_DESERT]);
         }
-        if (q[REGION_HIGHLAND] > 0.0f) { // el muro de hielo del glaciar, con grietas
-            float t = smooth(ICE_E + 10.0f, ICE_E - 70.0f, e);
-            float cracks = (1.0f - fabsf(noise2d(x * 0.05f, z * 0.05f, w->seed + 91u))) * 5.0f;
-            h = lerpf(h, h + t * (135.0f + cracks), q[REGION_HIGHLAND]);
+        if (q[REGION_HIGHLAND] > 0.0f) { // el muro de hielo del glaciar (las fotos del frente de un glaciar)
+            // Como en los mapas de WorldClaw (la etapa del terreno: la pared nevada al fondo): casi a pique, en columnas
+            // (tubos de organo que salen hasta 12 m, con ranuras angostas entre ellas), mas alta en los macizos (cada
+            // ~400 m) y en las cumbres (cada ~170 m): el frente, de 56 a 112 m, coronado de agujas sueltas sobre las
+            // columnas; detras, el hielo sigue subiendo hasta el borde (de 120 a 200 m). Al pie, un talud bajo de bloques
+            // caidos.
+            float mass = 0.5f + 0.5f * noise2d(ax * 0.0025f, az * 0.0025f, w->seed + 96u);
+            float peak = 1.0f - fabsf(noise2d(ax * 0.006f, az * 0.006f, w->seed + 97u));
+            peak = peak * peak * peak;
+            float col = fabsf(noise2d(ax * 0.06f, az * 0.06f, w->seed + 92u)); // 0 en la ranura entre dos columnas
+            float hface = 56.0f + 34.0f * mass + 22.0f * peak;
+            float f = ICE_E - 12.0f + 12.0f * col - e; // cuanto adentro del pie del frente (m)
+            float talus = 3.5f * smooth(-10.0f, 0.0f, f);
+            float front = hface * smooth(-0.5f, 6.0f, f);
+            float sheet = (64.0f + 26.0f * mass - 2.0f * peak) * smooth(8.0f, 85.0f, f); // hasta 120..200 m
+            float spire = fmaxf(0.0f, noise2d(x * 0.12f, z * 0.12f, w->seed + 95u)); // agujas sueltas, sobre las columnas
+            spire = spire * spire * col * (30.0f + 30.0f * peak) * smooth(4.0f, 7.0f, f) * smooth(18.0f, 11.0f, f);
+            float cracks = (1.0f - fabsf(noise2d(x * 0.05f, z * 0.05f, w->seed + 91u))) * 4.0f * smooth(0.0f, 6.0f, f);
+            h = lerpf(h, h + fmaxf(talus, front + sheet + spire + cracks), q[REGION_HIGHLAND]);
         }
         if (q[REGION_FOREST] > 0.0f) { // del otro lado del canal, un muro de roca de estratos levantados (fase 5)
             float t = smooth(WALL_OUTER(w, th), WALL_OUTER(w, th) - 75.0f, e);
@@ -1322,6 +1359,28 @@ static void place_ancient_towns(World *w) {
         }
 }
 
+// Mas fortalezas derruidas (las grandes, con su torreon de tres pisos, y las torres solas: src/sim/buildkit.c), despues
+// de todo lo demas y con su propio azar, como los asentamientos antiguos: lo que ya estaba queda igual (sus lugares y
+// los indices de los sitios, que las partidas guardan como vistos). Las mismas reglas que los demas sitios (place_ok);
+// donde no hay lugar, una menos.
+static void place_more_forts(World *w) {
+    static const struct { Region rg; int n; } RULES[] = {
+        { REGION_STEPPE, 2 }, { REGION_FOREST, 2 }, { REGION_HIGHLAND, 2 }, { REGION_DESERT, 2 }, { REGION_FJORD, 1 },
+    };
+    Rng rng;
+    rng_seed(&rng, w->seed ^ 0x5F0B7A11u);
+    for (size_t r = 0; r < sizeof(RULES) / sizeof(RULES[0]); r++)
+        for (int k = 0, made = 0; k < RULES[r].n * 30 && made < RULES[r].n && w->site_count < SITES_MAX; k++) {
+            float x, z;
+            if (!find_spot(w, &rng, RULES[r].rg, 300.0f, &x, &z)) continue;
+            WorldSite *st = &w->sites[w->site_count];
+            st->x = x, st->z = z, st->region = RULES[r].rg, st->kind = SITE_RUINED_FORT;
+            st->yaw = rng_float(&rng) * 2.0f * PI_F;
+            if (!place_ok(w, PLACE_SITE, w->site_count, x, z)) continue;
+            w->site_count++, made++;
+        }
+}
+
 void world_generate(World *w, uint32_t seed) {
     memset(w, 0, sizeof(*w));
     w->seed = seed;
@@ -1479,6 +1538,7 @@ void world_generate(World *w, uint32_t seed) {
     }
     settle_all(w);
     place_ancient_towns(w);
+    place_more_forts(w);
 }
 
 const char *site_name(SiteKind k) {

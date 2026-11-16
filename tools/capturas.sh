@@ -66,11 +66,31 @@ shot cueva_oscura 40 --cueva abandonada:1
 shot cueva_antorcha 40 --cueva abandonada:1 --antorcha
 montage "$OUT"/cueva_{boca_forajidos,habitada,prisionero,oscura}.png -tile 2x2 -geometry +0+0 -depth 8 "$OUT/las_cuevas.png" 2>/dev/null &&
     echo "  las_cuevas.png"
+# Cada tipo por dentro (docs/PLAN_CUEVAS_GRANDES.md, «El plan de cada tipo»): el lago y los hongos de la guarida, la luz
+# del agujero de la abandonada, los jergones de los forajidos, las alfombras de la tribu y las salas labradas del imperio.
+shot cueva_tipo_fieras 40 --cueva animal:poza --antorcha
+shot cueva_tipo_fieras_racimo 40 --cueva animal:estalagmitas --antorcha
+shot cueva_tipo_abandonada 40 --cueva abandonada:claraboya --antorcha
+shot cueva_tipo_forajidos 40 --cueva forajidos:jergon --antorcha
+shot cueva_tipo_tribu 40 --cueva tribu:alfombra --antorcha
+shot cueva_tipo_tribu_pintura 40 --cueva tribu:pintura --antorcha
+shot cueva_tipo_imperio 40 --cueva imperio:0 --antorcha --dron 9 --camara 0.35
+shot cueva_tipo_imperio_tunel 40 --cueva imperio:pasillo2 --antorcha
+montage "$OUT"/cueva_tipo_{fieras,abandonada,forajidos,tribu,imperio,imperio_tunel}.png -tile 2x3 -geometry +0+0 -depth 8 \
+    "$OUT/cuevas_por_tipo.png" 2>/dev/null && echo "  cuevas_por_tipo.png"
 # El mundo (docs/MUNDO.md): a pie en cada sitio (verano, mediodia) y la vista orbital.
 for p in estepa meandro arroyo bosque altiplano trenzado hielo cumbre mar desierto muro canal capital aldea guarida tribu rival kurgan caravasar ovoo ciudad \
          asentamiento lago desborde cascada lengua; do
     shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.12
 done
+# Los muros del borde enteros, de lejos (v0.14.2), y las formaciones del paisaje.
+for p in panorama-hielo panorama-muro; do
+    shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.06
+done
+shot formaciones_desierto 40 --formaciones desierto
+shot formaciones_hielo 40 --formaciones hielo
+montage "$OUT"/{mundo_muro,mundo_panorama-muro,mundo_hielo,formaciones_desierto}.png -tile 2x2 -geometry +0+0 -depth 8 \
+    "$ROOT/docs/mundo/muros.png" 2>/dev/null && echo "  docs/mundo/muros.png"
 mkdir -p "$ROOT/docs/mundo"
 montage "$OUT"/mundo_{lago,desborde,cascada,meandro,trenzado,arroyo}.png -tile 3x2 -geometry +0+0 -depth 8 "$ROOT/docs/mundo/agua.png" 2>/dev/null &&
     echo "  docs/mundo/agua.png"
@@ -121,6 +141,7 @@ for k in casa palacio fundicion cuartel carpinteria granero templo carreta mural
          refugio empalizada muro horno horno_fundicion atalaya corral taller tienda escombros cenizas asentamiento; do
     shot "kit_$k" 60 --edificios "$k"
 done
+shot kit_enterrada_cerca 60 --edificios enterrada --dron 24
 # La puerta acodada en el asedio: desde el patio del antemuro, y la guarnicion que sale.
 shot asedio_puerta 60 --asedio puerta
 shot asedio_salida 200 --asedio salida

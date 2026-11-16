@@ -226,15 +226,30 @@ choca (`src/sim/army.h`): el adarve a la altura que se trepa, el hueco de la pue
 **Las ruinas** de los sitios del mundo se arman con las mismas piezas y después pasa el tiempo:
 - **Lo alto cae primero:** cada columna pierde lo de arriba hasta una altura que da el ruido, y nada
   queda en el aire.
-- **Lo caído** se amontona al pie de los muros (de tierra, piedra o adobe, según la región).
+- **Lo caído** se amontona al pie de los muros (de tierra, piedra o ladrillo de adobe, según la región).
 - **Encima** crece el pasto, el musgo o la arena.
 
 Hay dos ruinas, cada una con cuatro variantes:
-- **La fortaleza derruida:** un recinto cuadrado de 18 a 22 m con la muralla de su región, sus cuatro
-  torres rotas y la puerta al frente; adentro, los cimientos de la sala del fondo y el pozo.
-- **La ciudad enterrada** (del desierto): dos hileras de casas de adobe a los lados de la calle (unas
-  con su cúpula, otras con lo que queda del techo de caña) y dos columnas del templo. La arena las
+- **La fortaleza derruida** (rehecha en la v0.14.2; catorce por mundo, en todas las regiones):
+  - **las grandes** (variantes 2 y 3): un recinto cuadrado de 18 a 22 m con la muralla de su región, comida por el
+    tiempo, y la puerta al frente; en las esquinas, **torres en ruinas** de uno a tres pisos (una de dos o tres, por
+    lo menos), cuadradas o redondas; al fondo, el **torreón del homenaje** de tres pisos de 3 m, y el pozo;
+  - **las chicas** (variantes 0 y 1): una **torre sola** de dos o tres pisos, cuadrada o redonda, con un pedazo de la
+    muralla que salía de ella y lo caído alrededor;
+  - **cada torre** (`ruined_tower`): hueca, con muros de 1 m; en cada piso de arriba, el entrepiso de vigas y tablas
+    con un pedazo caído y una ventana por cara; abajo, la puerta y saeteras; en el torreón, la escalera de piedra de
+    piso a piso. Lo alto, roto en escalones, con una esquina entera y una brecha en V en una cara;
+  - **los materiales:** tierra apisonada en la estepa, piedra en el bosque y el altiplano, piedra oscura en los
+    fiordos y ladrillo de adobe sobre zócalo de piedra en el desierto.
+- **La ciudad enterrada** (del desierto): dos hileras de casas de ladrillo de adobe a los lados de la calle (unas
+  con su cúpula revocada, otras con lo que queda del techo de caña) y dos columnas del templo. La arena las
   tapa en dunas hasta la mitad.
+
+**El ladrillo** (v0.14.2, `M_BRICK`): el mallador de voxeles lo traba (`VoxGrid.brick`, `src/sim/voxel.c`). Cada ladrillo
+son dos celdas de un mismo tono, cada hilada va corrida media pieza y la junta queda más oscura abajo y al principio de
+cada ladrillo; sigue el largo de cada cara, así se ve en los muros de los dos lados. De cerca, con las celdas de 0,25
+m; de lejos, con las de 0,5. De adobe en el desierto, cocido en las demás regiones. Lo llevan los muros de la ciudad
+enterrada, las fortalezas y torres del desierto y los asentamientos antiguos.
 
 **Las obras de la tribu** (las de `L` → Obras y las viviendas del campamento) se dibujan con el kit
 mientras no tengan un modelo importado, a la medida de su objeto del inventario (`bk_for_item`).

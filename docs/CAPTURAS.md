@@ -73,8 +73,9 @@ El resto del sistema táctico ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.
 ## Las cuevas
 
 Una por guarida ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1 a B3, y [PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md)). Con `--ir boca-<tipo>` (afuera), `--explorar` (F en la boca) y
-`--cueva tipo[:lugar]` (adentro; `--antorcha`, encendida; `--cueva-f`, como pulsar F). El montaje:
-[`capturas/las_cuevas.png`](capturas/las_cuevas.png).
+`--cueva tipo[:lugar]` (adentro; `--antorcha`, encendida; `--cueva-f`, como pulsar F). Los montajes:
+[`capturas/las_cuevas.png`](capturas/las_cuevas.png) y, cada tipo por dentro,
+[`capturas/cuevas_por_tipo.png`](capturas/cuevas_por_tipo.png).
 
 | | |
 |---|---|
@@ -84,14 +85,22 @@ Una por guarida ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1 a B3, 
 | ![Boca de una tribu](capturas/cueva_boca_tribu.png) | **La boca de un refugio de una tribu** (`--ir boca-tribu`): la cortina de cuero corrida, el sol pintado sobre el arco y el bastidor con un cuero. |
 | ![Boca abandonada](capturas/cueva_boca_abandonada.png) | **La boca de una cueva abandonada** (`--ir boca-abandonada`): en el desierto, la arenisca en estratos; la fachada de una civilización desaparecida (jambas, dintel, nichos y hornacina), la escalera rota y la reja caída a un costado. |
 | ![Explorar](capturas/cueva_explorar.png) | **Junto a la boca, F explora** (`--ir boca-abandonada --caminar adelante`; con `--explorar`, como si se pulsara): el aviso «F: explorar la cueva». La cueva se carga aparte, con «Explorando la cueva...» en pantalla. |
-| ![Pasillo](capturas/cueva_pasillo.png) | **Un pasillo con sus vueltas** (`--cueva tribu:pasillo3 --antorcha`): de 10 m o más, alumbrado por la antorcha. |
-| ![Guarida](capturas/cueva_fieras.png) | **Adentro de una guarida de fieras** (`--cueva animal:nido --antorcha`): el nido con sus huevos, a la luz de la antorcha. |
-| ![Cisterna](capturas/cueva_habitada.png) | **La Cisterna de los forajidos** (`--cueva forajidos:0 --antorcha`): la fogata, una pintura, los charcos y las rocas de voxeles del decorado; la sala, de unos 15 m de radio, se pierde en lo oscuro más allá de la luz. |
+| ![Pasillo](capturas/cueva_pasillo.png) | **Un pasillo con sus vueltas** (`--cueva tribu:pasillo3 --antorcha`): de 10 m o más, alumbrado por la antorcha, en la roca ocre y lisa de la tribu. |
+| ![Guarida](capturas/cueva_fieras.png) | **Adentro de una guarida de fieras** (`--cueva animal:nido --antorcha`): el nido con sus huevos, un charco y los hongos que brillan, sobre la grava mojada. |
+| ![Cisterna](capturas/cueva_habitada.png) | **La Cisterna de los forajidos** (`--cueva forajidos:0 --antorcha`): a lo lejos, la fogata con sus jergones; la sala, de unos 15 m de radio, se pierde en lo oscuro más allá de la luz. |
 | ![Prisionero](capturas/cueva_prisionero.png) | **Un prisionero** (`--cueva forajidos:dialogo`): lo que dice, si se lo ve sincero, y romper las cadenas o dejarlo. |
 | ![Rescate](capturas/cueva_rescate.png) | **Se une a la tribu** (`--cueva imperio:dialogo --cueva-f`): la tropa pasa de 7 a 8 y la celda queda abierta. |
 | ![Traición](capturas/cueva_traicion.png) | **Te traiciona** (`--cueva forajidos:dialogo --cueva-f`): te golpea, te roba tres virotes y huye. |
 | ![A oscuras](capturas/cueva_oscura.png) | **Una recámara a oscuras** (`--cueva abandonada:1`): sin antorcha se ve apenas alrededor. |
 | ![Con la antorcha](capturas/cueva_antorcha.png) | **La misma, con la antorcha** (`--antorcha`): una estalagmita de voxeles y una roca del decorado. |
+| ![Fieras](capturas/cueva_tipo_fieras.png) | **Una guarida de fieras por dentro** (`--cueva animal:poza --antorcha`): el lago de la Cisterna, huesos y los hongos que brillan; la caliza gris azulada y la bruma azul. |
+| ![Racimos](capturas/cueva_tipo_fieras_racimo.png) | **Los racimos de estalagmitas** (`--cueva animal:estalagmitas --antorcha`): sobre su colada, junto a la pared. |
+| ![Abandonada](capturas/cueva_tipo_abandonada.png) | **Una cueva abandonada** (`--cueva abandonada:claraboya --antorcha`): la luz del día entra por el agujero de la bóveda, con su polvo; el musgo, un charco, el botín y la niebla verde. |
+| ![Forajidos](capturas/cueva_tipo_forajidos.png) | **Un refugio de forajidos** (`--cueva forajidos:jergon --antorcha`): los jergones alrededor de la fogata, la tierra con paja y, en la pared, las rayas de conteo. |
+| ![Tribu](capturas/cueva_tipo_tribu.png) | **El refugio de una tribu** (`--cueva tribu:alfombra --antorcha`): las alfombras de fieltro y un jergón junto al hogar, sobre la tierra roja. |
+| ![Pinturas](capturas/cueva_tipo_tribu_pintura.png) | **Las pinturas de la tribu** (`--cueva tribu:pintura --antorcha`): manos en negativo y cazadores con un ciervo. |
+| ![Imperio](capturas/cueva_tipo_imperio.png) | **El salón de un almacén del imperio** (`--cueva imperio:0 --antorcha --dron 9 --camara 0.35`): los braseros en ronda, las columnas y las losas, entre muros de sillares. |
+| ![Túnel](capturas/cueva_tipo_imperio_tunel.png) | **Un túnel labrado** (`--cueva imperio:pasillo2 --antorcha`): sillares, la bóveda de cañón de ladrillo y el suelo de losas. |
 
 ## El mundo
 
@@ -103,7 +112,10 @@ Ver [MUNDO.md](MUNDO.md). Con `--ir lugar` y `--orbital`:
 | ![Bosque](capturas/mundo_bosque.png) | **Bosque de coníferas** (`--ir bosque`): los pinos y los arces de voxeles (v0.14.1); con la cámara lejana, la copa que tapa al personaje no se dibuja. |
 | ![Altiplano](capturas/mundo_altiplano.png) | **Altiplano glaciar** (`--ir altiplano`). |
 | ![Mar](capturas/mundo_mar.png) | **Costa de fiordos y el mar** (`--ir mar`). |
-| ![Muro](capturas/mundo_muro.png) | **El cañón y el muro del desierto** (`--ir muro`). |
+| ![Muro](capturas/mundo_muro.png) | **El cañón y el muro del desierto** (`--ir muro`): los estratos de los badlands, en franjas que siguen la altura (v0.14.2). |
+| ![Panorama del muro](capturas/mundo_panorama-muro.png) | **El muro del cañón entero** (`--ir panorama-muro`, a 520 m): promontorios, cárcavas en V y agujas en el filo; de lejos, las mismas franjas (la rampa de la malla lejana). |
+| ![Hielo](capturas/mundo_hielo.png) | **El frente del glaciar** (`--ir hielo`): una pared casi a pique en columnas, con grietas azules y bloques de hielo caídos al pie (v0.14.2). |
+| ![Panorama del hielo](capturas/mundo_panorama-hielo.png) | **El muro de hielo entero** (`--ir panorama-hielo`, a 520 m). |
 | ![Canal](capturas/mundo_canal.png) | **El gran canal** (`--ir canal`). |
 | ![Capital](capturas/mundo_capital.png) | **Una capital** (`--ir capital`): la del Principado de los Pinos Negros. |
 | ![Aldea](capturas/mundo_aldea.png) | **Una aldea** del desierto (`--ir aldea`). |
@@ -184,8 +196,11 @@ Ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md). Con `--e
 | ![Puertas](capturas/kit_puerta.png) | **Las puertas acodadas** (`--edificios puerta`): el antemuro, cerrado de un costado. |
 | ![Asedio](capturas/asedio_puerta.png) | **La puerta acodada en el asedio** (`--asedio puerta`): desde el patio del antemuro, mirando la puerta. |
 | ![Salida](capturas/asedio_salida.png) | **La guarnición sale** por la puerta acodada (`--asedio salida`). |
-| ![Fortalezas](capturas/kit_fortaleza.png) | **Las fortalezas derruidas** (`--edificios fortaleza`): la muralla de cada región, comida desde arriba. |
-| ![Enterrada](capturas/kit_enterrada.png) | **La ciudad enterrada** del desierto (`--edificios enterrada`). |
+| ![Fortalezas](capturas/kit_fortaleza.png) | **Las fortalezas derruidas** (`--edificios fortaleza`): la muralla de cada región, comida desde arriba; las grandes, con el torreón de tres pisos y torres en ruinas en las esquinas; las chicas, una torre sola (v0.14.2). |
+| ![Enterrada](capturas/kit_enterrada.png) | **La ciudad enterrada** del desierto (`--edificios enterrada`): las casas de ladrillo de adobe trabado, en dunas. |
+| ![Ladrillo](capturas/kit_enterrada_cerca.png) | **El ladrillo de la ciudad enterrada, de cerca** (`--edificios enterrada --dron 24`): cada hilada corrida media pieza, la junta oscura. |
+| ![Formaciones del desierto](capturas/formaciones_desierto.png) | **Las formaciones del desierto** (`--formaciones desierto`): farallones, hongos y arcos de arenisca y la creta. |
+| ![Formaciones del hielo](capturas/formaciones_hielo.png) | **Las formaciones del hielo** (`--formaciones hielo`): los bloques caídos del glaciar y los témpanos. |
 | ![Refugios](capturas/kit_refugio.png) | **El refugio de ramas y pieles** (`--edificios refugio`), una obra de la tribu. |
 | ![Empalizadas](capturas/kit_empalizada.png) | **La empalizada** (`--edificios empalizada`). |
 | ![Muros](capturas/kit_muro.png) | **El muro de piedra seca** (`--edificios muro`). |

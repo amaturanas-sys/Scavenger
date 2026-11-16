@@ -301,7 +301,9 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | El arranque | `./estepa --frames 60 --screenshot shot.png` |
 | Un lugar del mundo | `--ir estepa`, `bosque`, `altiplano`, `desierto`, `mar`, `capital`, `aldea`, `fortaleza`, `ciudad`, `plaza-<región>`… (con `--dia 11 --minuto 7` es verano al mediodía; `--camara`, `--dron 40` desde arriba; `--vista cerca\|media\|lejos`) |
 | El agua | `--ir lago`, `desborde`, `cascada`, `meandro`, `trenzado`, `arroyo`, `rapidos` |
-| El kit de edificios | `--edificios casa` (o `palacio`, `muralla`, `puerta`, `fortaleza`, `refugio`… ; `:región` para una sola fila) |
+| El kit de edificios | `--edificios casa` (o `palacio`, `muralla`, `puerta`, `fortaleza`, `refugio`… ; `:región` para una sola fila; `--dron 24` para verlas de cerca) |
+| Las formaciones del paisaje | `--formaciones desierto` (o `hielo`, `costa`): las cuatro variantes de cada una |
+| Los muros del borde, enteros | `--ir panorama-hielo` o `panorama-muro` (a 520 m del borde, con `--camara 0.06 --vista lejos`); de cerca, `--ir hielo`, `muro`, `lengua` |
 | Un objeto de cerca | `--ver <id del inventario>` |
 | El asedio | `--asedio puerta`, `fuego`, `salida`, `quemada`, `tomada`… |
 | Combate | `--enemigos bandidos`, `culto`, `lobos`, `arqueros` |
@@ -406,7 +408,14 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.14.1. El paisaje de voxeles: los árboles del mundo con sus `.vox` (el pino; los sauces junto al
+- **Versión:** 0.14.3. Las cuevas por dentro, según quién vive en ellas ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md),
+  sección 1b): con el orden de WorldClaw, cada tipo tiene su forma (el karst de las fieras, la roca gastada de la
+  tribu, la picada de los forajidos y las salas labradas del imperio, en polígonos con cornisa y cúpula), sus texturas
+  pintadas al entrar, su luz de fondo y su bruma, y su decorado por sala (`PLAN_*` en `src/sim/caves.c`, `KIND_LOOK`
+  en `src/game/cave_look.c`); los prompts de Perchance de cada tipo, para que el usuario genere las referencias. Con
+  ella sale la 0.14.2: los muros del borde (el cañón en estratos y el frente del glaciar en columnas, como los mapas
+  de WorldClaw), las rocas del desierto, las fortalezas con su torreón y el ladrillo trabado. Antes, la 0.14.1: el
+  paisaje de voxeles: los árboles del mundo con sus `.vox` (el pino; los sauces junto al
   agua; los arces del bosque), con su detalle según la distancia y sus estaciones (`src/world/trees.c`); más hierbas
   en la estepa y más pasto en el bosque; sin cajas junto a los campamentos (las matas con las hojas de la vegetación;
   las rocas, el pedernal, las piedras, el barro, la leña, el caldero, el odre y el coral, de voxeles); los carros a la
@@ -431,17 +440,20 @@ traba.
   - las cuevas grandes: la base; los voxeles desde las hojas; los modelos al estilo PS2; los asentamientos
     antiguos; la cámara cerca con `F` y `Enter` (v0.14.0);
   - el paisaje de voxeles: los árboles, la vegetación más tupida, los recolectables con modelo, los carros a escala
-    y la carreta-casa (v0.14.1).
+    y la carreta-casa (v0.14.1);
+  - los muros del borde, las rocas del desierto, las fortalezas y el ladrillo (v0.14.2);
+  - las cuevas por dentro según su tipo, con las tareas C1, C2, C9 y C11 del plan y parte de C4, C6, C7, C15 y C16
+    (v0.14.3).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
   - el campamento nodal: descartado por el usuario (duplicaba el campamento);
   - los cauces por estación: los rehizo la fase 2 del agua (v0.11.1).
 - **Lo que sigue:**
-  - **Las tareas de las cuevas grandes para Copilot** ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md), de C1
-    a C16, en orden): los voxeles de lo de adentro (racimos, columnas, cofres, rocas, fuentes, el lago) y lo
-    demás según las referencias (huesos, antorchas, pinturas, celdas, túneles labrados, la boca vista desde
-    adentro), el rendimiento y las capturas. Hitos: v0.14.1 (C4), v0.14.2 (C10) y v0.14.3 (C16).
+  - **Lo que queda de las cuevas grandes** ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md), la tabla de la
+    sección 5): los cofres, las fuentes, las antorchas, las celdas, la puerta del calabozo, las escaleras talladas
+    y la boca vista desde adentro; el reflejo del lago y su agua honda; las variantes de las rocas; el
+    diagnóstico en pantalla. Y comparar cada tipo con las referencias de Perchance cuando el usuario las genere.
   - **Lo que queda de las hojas** ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)): las bestias
     terribles (el tipo B de cueva), la comida desde la barra (cuando el jugador tenga hambre) y el gancho en
     las torres con la cuerda como tirolesa.

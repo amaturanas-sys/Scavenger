@@ -3,8 +3,9 @@
 //
 // Al cargar (cs_load) se arman las mallas de la roca (el vestibulo, cada sala y cada pasillo, en trozos para no dibujar
 // lo que esta lejos), el decorado (src/sim/caves.h, cave_decor) y los modelos de voxeles que usan (src/world/voxcave.h).
-// Cada cuadro, la luz (cs_gather_lights: las llamas, la boca y la antorcha del jugador) se calcula por vertice en lo
-// que esta a menos de CS_VIEW del ojo. Lo de cada objeto se ve en src/game/cave_props.c; lo que se juega, en
+// Cada cuadro, la luz (cs_gather_lights: las llamas, la boca, la antorcha del jugador y lo que alumbra del decorado) se
+// calcula por vertice en lo que esta a menos de CS_VIEW del ojo, con la luz de fondo y la bruma de su tipo
+// (src/game/cave_look.c, que tambien pinta las texturas de la roca). Lo de cada objeto se ve en src/game/cave_props.c; lo que se juega, en
 // src/game/cave_game.c.
 #ifndef ESTEPA_CAVE_SCENE_H
 #define ESTEPA_CAVE_SCENE_H
@@ -27,20 +28,27 @@ void cs_forget_gpu(void); // ver terrain_forget_gpu
 // La luz de este cuadro: la de la boca (de dia, clara), la que se ve siempre alrededor del jugador, su antorcha y las
 // llamas encendidas de la cueva (done: lo hecho en ella, GameActions.cave_done).
 void cs_gather_lights(const Cave *c, uint64_t done, Vector3 player, float player_yaw, bool torch_lit, float world_time, float time);
-// Un color con la luz de este cuadro en ese punto (WHITE: la luz misma, para teñir un modelo).
+// Un color con la luz de este cuadro en ese punto (WHITE: la luz misma, para teñir un modelo), con la bruma de la cueva.
 Color cs_shade(Color base, Vector3 p);
+// El color de la bruma de la cueva cargada (el fondo, detras de todo).
+Color cs_fog(void);
+// Donde cuelga la lampara de bronce de una «estalactita» del imperio (en las salas labradas, en vez de la piedra).
+float cs_lamp_height(const Cave *c, int obj);
 // Si una antorcha o una fogata de la cueva arde (encendida de siempre o por el jugador).
 bool cs_object_lit(const Cave *c, uint64_t done, int obj);
 
 // La roca (salas, vestibulo y pasillos), la boca vista desde adentro y el decorado, con la luz de este cuadro: solo lo que
 // esta a menos de CS_VIEW de eye. Entre BeginMode3D y EndMode3D.
 void cs_draw(const Cave *c, Vector3 eye, float world_time);
+// Una mancha chata y despareja en el suelo (charcos, musgo, pieles), con la luz en cada punto si lit.
+void cs_blob(Vector3 at, float radius, int seed, Color in, Color edge, bool lit);
 // El decorado de la cueva cargada (lo que tapa el paso: cave_decor_blocked).
 const CaveDecor *cs_decor(int *n);
 
 typedef struct {
     int chunks, vertices, triangles; // la roca
     int decor, models, model_tris;   // el decorado y los modelos de voxeles armados
+    int model_max;                   // los triangulos del modelo mas grande
     int drawn_chunks;                // los trozos del ultimo cuadro
     float load_ms;                   // lo que tardo la carga
 } CsStats;

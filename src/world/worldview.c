@@ -35,7 +35,8 @@ static Color world_color(const World *w, float x, float z, float h, float slope,
     for (int i = 0; i < REGION_COUNT; i++) r += k[i] * REG[i].r, g += k[i] * REG[i].g, b += k[i] * REG[i].b;
     Color c = { (unsigned char)r, (unsigned char)g, (unsigned char)b, 255 };
     if (slope > 0.6f) c = mixc(c, k[REGION_DESERT] > 0.5f ? (Color){ 172, 102, 70, 255 } : (Color){ 116, 112, 104, 255 }, (slope - 0.6f) * 2.0f);
-    if (h > snowline) c = mixc(c, (Color){ 232, 238, 244, 255 }, Clamp((h - snowline) / 8.0f, 0.0f, 1.0f));
+    float line = snowline + 400.0f * k[REGION_DESERT]; // el desierto, sin nieve perpetua (el muro del cañon, en estratos)
+    if (h > line) c = mixc(c, (Color){ 232, 238, 244, 255 }, Clamp((h - line) / 8.0f, 0.0f, 1.0f));
     return c;
 }
 

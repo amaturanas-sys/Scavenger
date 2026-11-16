@@ -59,8 +59,9 @@ una por rama y por PR, en orden. Claude verifica cada PR, lo fusiona y publica u
 
 ### Los voxeles de adentro (`src/world/voxcave.c`)
 
-- **Ya están** las estalactitas, las estalagmitas y las rocas (`VC_STALACTITE`, `VC_STALAGMITE`, `VC_ROCK`), con la
-  roca de cada región y la calcita clara.
+- **Ya están** las estalactitas, las estalagmitas y las rocas (`VC_STALACTITE`, `VC_STALAGMITE`, `VC_ROCK`), y desde la
+  sección 1b los racimos, la columna natural, el derrumbe, las cajas, los sacos y la estela, con la roca de la cueva
+  (`vc_set_rock`) y la calcita clara.
 - **Cada modelo** se arma al cargar la cueva (`vc_preload`, desde `cp_preload` o `cs_load`) y se libera al salir
   (`vc_unload`).
 - **La receta** de cada uno está en `build_kind`: es la plantilla para las tareas.
@@ -84,7 +85,7 @@ Desde `build/`, con `xvfb-run -a ./estepa --screenshot x.png --frames 40` y esto
 | Una sala, con la antorcha | `--cueva forajidos:0 --antorcha` (la Cisterna; `:1`, `:2`..., las recámaras) |
 | Un pasillo con sus vueltas | `--cueva tribu:pasillo3 --antorcha` |
 | Ante un objeto | `--cueva imperio:columna --antorcha` (también `cofre`, `celda`, `pintura`, `fogata`, `antorcha`, `veta`, `huesos`, `estalactita`, `estalagmita`...) |
-| Ante algo del decorado | `--cueva forajidos:roca --antorcha` (cada tarea que agrega un decorado suma su nombre a `DECOR_SPOTS`) |
+| Ante algo del decorado | `--cueva forajidos:roca --antorcha` (los lugares, en la sección 1b; cada tarea que agrega un decorado suma su nombre a `DECOR_SPOTS`) |
 | Desde más lejos y arriba | `--dron 7 --camara 0.15` |
 | Explorar desde la boca | `--ir boca-abandonada --explorar`: «Explorando...» a los 8 cuadros y adentro desde los 10 |
 
@@ -99,6 +100,102 @@ El presupuesto se lee en la consola, en la línea `CUEVA`.
 - **Nada se arma, se carga ni se reserva por cuadro:**
   - los modelos y las texturas, en `cp_preload` o `cs_load`;
   - lo que se libera, en `cs_unload`.
+
+---
+
+## 1b. El plan de cada tipo (v0.14.3, hecho)
+
+Pedido del usuario (15 de noviembre de 2026):
+
+> «Utiliza las capacidades de WorldClaw y Perchance para renderizar y diseñar los espacios interiores de las cavernas;
+> con sus particularidades individuales según el tipo de caverna a dibujar.»
+
+Antes, los cinco tipos se veían casi iguales: la roca dependía solo de la región, el suelo solo de si estaba habitada,
+y el decorado eran rocas. Ahora cada tipo tiene su forma, su superficie, su luz y su decorado, armados con el orden de
+WorldClaw (como en el mundo, skill `mundo`):
+
+1. **El plan:** qué es cada tipo, su paleta (la de las referencias de la sección 2), su luz y qué lleva cada sala. Está
+   escrito como datos: `PLAN_*` en `src/sim/caves.c` (el decorado) y `KIND_LOOK` en `src/game/cave_look.c` (la
+   superficie, la luz y la bruma).
+2. **La forma** (lo que en el mundo es el relieve): la pared de cada tipo (`cave_wall_radius`) y, en las labradas, un
+   polígono de lados rectos (`cave_room_sides`: la Cisterna de 12, las recámaras de 8, el vestíbulo de 6) con su
+   cornisa y su cúpula (`cave_room_profile`). Al dibujarla, la roca natural entra y sale también a lo alto (`jag`).
+3. **La dispersión por región:** las regiones son las salas. La Cisterna lleva lo que define el tipo; las recámaras, lo
+   demás (`cave_decor`, con las reglas de siempre: en el suelo de su sala, lejos de puertas y objetos, y lo que tapa,
+   junto a la pared).
+4. **Los objetos de cada región:** lo que se ordena va antes que lo que se esparce: en ronda (los braseros), alrededor
+   del fuego (jergones y alfombras, del lado de adentro si el fuego está junto a la pared), al fondo frente a la bajada
+   (las estelas), en las esquinas (las pilastras) y de costado a la pared (cajas, sacos y jergones).
+5. **La revisión mirando imágenes:** el antes y el después de cada tipo con las mismas cámaras (las de «Cómo mirar»),
+   y cada pieza de cerca; lo que se veía mal se corrigió y se volvió a mirar (las grietas de la caliza parecían
+   baldosas, el haz de luz era un bloque blanco, las pilastras eran cajas lisas, cuatro modelos pasaban de 1 500
+   triángulos).
+
+| Tipo | La forma | La superficie | La luz | La Cisterna | Las recámaras |
+|---|---|---|---|---|---|
+| **De fieras** | Karst: lóbulos grandes y entrantes chicos | Caliza gris azulada con capas y coladas; grava mojada | Fría y azul; los hongos brillan | El lago, columnas naturales, racimos, huesos | Racimos, estalagmitas, pozas, hongos, huesos |
+| **Abandonada** | Natural, con lo que se cayó | Roca con grietas y musgo; barro con musgo; niebla verde | La del agujero de la bóveda (de día, el sol) | El agujero con el derrumbe debajo, escombro | Escombro, cajas rotas, vasijas, musgo |
+| **Forajidos** | Picada a medias | Roca con golpes de pico y hollín arriba; tierra con paja | Cálida, de antorchas y fuego | Jergones alrededor del fuego, una piel, cajas y sacos | Cajas, sacos, algún jergón y escombro |
+| **Tribu** | Gastada: redonda y lisa | Roca ocre lisa; tierra roja | Cálida, del hogar y las lámparas | Alfombras de fieltro alrededor del hogar, lámparas en ronda, el bastidor con pieles, vasijas | Alfombras, jergones de fieltro, lámparas, vasijas |
+| **Imperio** | Labrada: polígonos, cornisa y cúpula | Sillares, cúpula de ladrillo, losas; los túneles con bóveda de cañón | Neutra, de braseros y lámparas colgadas | Seis braseros en ronda, las estelas al fondo, pilastras, tinajas | Dos braseros, cajas, sacos y tinajas en fila, pilastras |
+
+Los objetos (los que se guardan por su número) no cambian; cambia cómo se ven según el tipo (`src/game/cave_props.c`):
+
+- **las columnas:** de sillares con basa y capitel en el imperio, rotas y con un tambor caído en las abandonadas, un poste
+  pintado en la tribu y un puntal de madera en los forajidos;
+- **las pinturas:** manos en negativo y cazadores con ciervos en la tribu (desvaídas en las abandonadas), rayas de
+  conteo y un monigote al carbón en los forajidos, y una tabla con renglones de caracteres en el imperio;
+- **en el imperio**, las «estalactitas» son lámparas de bronce colgadas (alumbran) y las «estalagmitas», pedestales;
+- **los charcos:** agua en las naturales, una mancha mojada en las habitadas.
+
+Las texturas se pintan por código al cargar la cueva (`cl_load`, 128 × 128, en grises que tiñe el color de cada vértice;
+se repiten sin costura) y se liberan al salir. La roca va en tres mallas por sala y por trozo de pasillo (pared, bóveda y
+suelo), cada una con su textura; la luz sigue por vértice, con la luz de fondo y la bruma de cada tipo, y el fondo de la
+pantalla es la bruma.
+
+**Los lugares para mirar el decorado** (`DECOR_SPOTS`): `roca`, `racimo`, `estalagmitas`, `columna_natural` (o `pilar`),
+`poza` (o `lago`), `osamenta`, `musgo`, `derrumbe` (o `escombro`), `claraboya`, `cajas`, `sacos`, `jergon`, `alfombra`,
+`bastidor`, `lampara`, `vasijas`, `brasero`, `estela` y `pilastra`. Por ejemplo, `--cueva abandonada:claraboya
+--antorcha`.
+
+**Lo que se midió** (la línea `CUEVA`, que ahora dice también el modelo mayor), en las cinco cuevas de la semilla 1206:
+la roca, de 10 500 a 17 900 triángulos (el peor caso de las tres semillas de las pruebas, unos 18 600); el modelo mayor,
+1 352; todos los modelos, hasta 22 400; la carga, de 7 a 15 ms. Con OpenGL ES 2 se ve igual.
+
+### El paso 0 (Perchance): las referencias de cada tipo
+
+Perchance no tiene una API, y su generador pide comprobar en el navegador que no es un robot: las imágenes las genera
+el usuario en https://perchance.org/ai-text-to-image-generator y las adjunta en la conversación (no se suben al repo,
+como las once de la sección 2). Con ellas se compara cada tipo y se ajustan `KIND_LOOK` y los `PLAN_*`. Los prompts (en
+inglés, que es como mejor responde), con un estilo de ilustración y, si el generador lo deja, esto en lo que no se quiere:
+`people, characters, text, watermark, photorealistic, modern objects, blurry`.
+
+- **De fieras:** `Interior of a natural limestone karst cave used as a wild beast den, wide cavern hall with a still dark
+  underground lake, clusters of pale stalactites hanging from a low irregular vault, stalagmite clusters and a natural
+  column where a stalactite meets a stalagmite, scattered animal bones and a skull near a nest of twigs, faint cyan
+  glowing fungi on the wet floor, cold blue grey palette (#1C232C #354352 #476E8E #85939B), the glow of a single torch,
+  blue haze, eye level view, wide angle, low poly game concept art, matte colors`
+- **Abandonada:** `Interior of an abandoned cave with traces of an ancient vanished civilization, a beam of daylight
+  falling through a collapsed hole in the rock vault onto a heap of fallen dressed stone blocks, green moss on the lower
+  walls and on the floor, a broken stone column stump and a fallen column drum, broken crates and cracked clay pots,
+  cobwebs, greenish mist, palette #122B2E #2A5453 #4B8D89 with dusty sunlight, eye level view, low poly game concept
+  art, matte colors`
+- **Forajidos:** `Interior of a rough bandit hideout inside a cave, rock walls roughly hewn with pick marks and blackened
+  by torch soot near the ceiling, a campfire in the middle of the hall with straw bedrolls and grey wool blankets
+  around it, stacked wooden crates, a barrel and grain sacks along the walls, wooden support posts, wall torches,
+  charcoal tally marks and a crude stick figure drawn on the wall, packed earth floor with straw, warm brown and orange
+  palette (#614B39 #8E7257 #A68B6F #D34607), eye level view, low poly game concept art, matte colors`
+- **Tribu:** `Interior of a cave home of a nomadic steppe tribe, smooth ochre rock walls with red Levantine style hunting
+  paintings of archers and running deer and negative hand stencils, a stone ringed hearth in the center with colorful
+  felt rugs (red, blue and ochre with diamond motifs) around it, felt bedding along the walls, a wooden rack with drying
+  hides, small clay oil lamps on stones, clay pots with painted bands, a carved wooden post with painted rings, warm
+  palette (#CB9770 #B4896D #A56749 #754D3B #D38732), eye level view, low poly game concept art, matte colors`
+- **Imperio:** `Interior of an ancient imperial storehouse carved into the rock, octagonal hall with walls of large ashlar
+  stone blocks, a brick dome rising above a carved cornice, pilasters in the corners, stone columns with bases and
+  capitals, flagstone floor, six bronze tripod braziers burning in a ring, a tall inscribed stone stele on a stone
+  turtle at the back, rows of tall storage jars, wooden crates and grain sacks, a barrel vaulted brick tunnel leading
+  away, hanging bronze lamps on chains, palette (#2D2828 #473C38 #5C5656 #5E584F #9C8873) with warm firelight, eye
+  level view, low poly game concept art, matte colors`
 
 ---
 
@@ -343,4 +440,18 @@ Los hitos de versión son tres: v0.14.1 al terminar C4, v0.14.2 al terminar C10 
 | Tarea | Estado | PR |
 |---|---|---|
 | Base (planta, explorar, escena, voxeles) | hecha (v0.14.0) | la de Claude |
-| C1 a C16 | pendientes | |
+| El plan de cada tipo (sección 1b) | hecho | la de Claude |
+| C1 Los racimos | hecha: los racimos del techo y del suelo (las estalactitas sueltas siguen como estaban) | la de Claude |
+| C2 Las columnas | hecha: la natural (`CDEC_PILLAR`) y la del objeto según el tipo, con figuras simples (no voxeles) | la de Claude |
+| C3 Los cofres | pendiente | |
+| C4 Las rocas y el escombro | en parte: el derrumbe (`CDEC_RUBBLE`, tapa el paso junto a la pared); faltan las variantes de las rocas | la de Claude |
+| C5 Las fuentes | pendiente (hay pozas: `CDEC_POOL`) | |
+| C6 El lago | en parte: el lago de la Cisterna de las de fieras, sin reflejo y sin tapar el paso | la de Claude |
+| C7 El osario | en parte: la osamenta de la guarida (`CDEC_BONES`); `COBJ_BONES` sigue como estaba | la de Claude |
+| C8 Las antorchas | pendiente | |
+| C9 Las pinturas | hecha, con figuras sobre la pared en vez de una textura | la de Claude |
+| C10 Las celdas | pendiente | |
+| C11 Los túneles labrados | hecha: sillares, bóveda de cañón de ladrillo y losas en el imperio | la de Claude |
+| C12 a C14 | pendientes | |
+| C15 El rendimiento | en parte: la línea `CUEVA` dice el modelo mayor; falta el diagnóstico en pantalla | la de Claude |
+| C16 Las capturas | en parte: las de cada tipo (`cueva_tipo_*`, `cuevas_por_tipo.png`) | la de Claude |

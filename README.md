@@ -264,6 +264,41 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las cuevas por dentro, según quién vive en ellas (v0.14.3), con el plan de [docs/PLAN_CUEVAS_GRANDES.md](docs/PLAN_CUEVAS_GRANDES.md#1b-el-plan-de-cada-tipo-v0143-hecho):
+- **Cada tipo tiene su forma, su roca, su luz y su decorado**, armados con el orden de WorldClaw (el plan, la forma, lo
+  de cada sala y la revisión mirando capturas):
+  - **la guarida de fieras:** caliza gris azulada y mojada, con entrantes; en la Cisterna, un lago oscuro, columnas
+    naturales y racimos de estalactitas y estalagmitas; huesos y hongos que brillan en lo oscuro; una bruma azul;
+  - **la cueva abandonada:** roca con grietas y musgo y una niebla verde; la luz del día entra por un agujero de la
+    bóveda sobre el derrumbe; escombro, cajas rotas y columnas caídas;
+  - **el refugio de forajidos:** roca picada a mano y tiznada arriba; jergones alrededor del fuego, cajas, sacos y
+    puntales; rayas de conteo al carbón en la pared;
+  - **el refugio de una tribu:** roca ocre gastada y tierra roja; alfombras de fieltro alrededor del hogar, lámparas
+    de barro, bastidores con pieles, vasijas y postes pintados; manos en negativo y cazadores en las paredes;
+  - **el almacén del imperio:** salas labradas de lados rectos, de sillares, con cornisa, cúpula de ladrillo y pilastras;
+    suelo de losas; túneles con bóveda de cañón; braseros en ronda, estelas sobre su tortuga, lámparas colgadas,
+    columnas con capitel y la mercancía en filas.
+- **Las texturas se pintan al entrar** (roca, sillares, ladrillo, losas, grava, tierra): no hay archivos nuevos.
+- **Con `--cueva tipo:lugar`** se mira cada pieza: `racimo`, `poza`, `claraboya`, `jergon`, `alfombra`, `brasero`,
+  `estela`, `pilastra`...
+
+Los muros del borde y las ruinas (v0.14.2):
+- **El muro del cañón del desierto:** sus estratos de las fotos de los badlands pintados (rojo óxido, crema, ocre,
+  salmón, blanco y malva) en franjas horizontales que siguen la altura, sin estirarse ni correrse; acantilados sobre
+  taludes, con promontorios, cárcavas en V que entran en la pared, contrafuertes y agujas en el filo de arriba, más
+  alto en los macizos (de 132 a 188 m), como los acantilados de los mapas de WorldClaw. De lejos, las mismas franjas.
+- **El muro de hielo del altiplano:** un frente casi a pique de 56 a 112 m en columnas (tubos de órgano) coronadas de
+  agujas, con sus grietas de azul hondo y las capas del hielo; detrás, el hielo sube hasta el borde. Al pie, unos
+  bloques de hielo caídos (antes, un caos de cubos con ruido).
+- **Las rocas del desierto:** torres y farallones de arenisca color óxido en capas, con estrías, grietas y una cueva al
+  pie; hongos de roca; arcos naturales; creta blanca lisa; y cantos de arenisca en bloques (antes, discos chatos).
+- **Las fortalezas derruidas:** catorce por mundo (eran cinco); las grandes, con un torreón de tres pisos (entrepisos
+  de vigas a medio caer, ventanas, escalera) y torres en ruinas de uno a tres pisos en las esquinas; las chicas, una
+  torre sola con un pedazo de muralla.
+- **El ladrillo:** los muros de la ciudad enterrada, de las fortalezas del desierto y de los asentamientos antiguos van
+  en ladrillo trabado (cada hilada corrida media pieza, la junta oscura), de cerca y de lejos; la arena de las dunas,
+  sin el ruido de celda a celda.
+
 El paisaje de voxeles (v0.14.1):
 - **Los árboles, de voxeles:** los pinos del paisaje y los del campamento son el pino de voxeles del inventario. Junto a
   los lagos y los ríos crecen sauces llorones, sobre todo en el bosque y la costa, y en el bosque hay arces, menos que

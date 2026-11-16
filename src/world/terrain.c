@@ -33,6 +33,31 @@ typedef enum {
 } TerrainTex;
 #define TEX_COLS 4
 #define TEX_SPAN 8.0f   // m de suelo por celda del atlas
+#define WALL_SLOPE 0.45f // de aca para arriba (1 - la normal en y), una pared: la textura de pie (push_tri)
+// Las franjas de TEX_SPAN m de los muros, por la altura: los estratos del muro del cañon (las fotos de los badlands
+// pintados: rojo oxido, crema, ocre, salmon, blanco, malva...) y las capas del muro de hielo. La secuencia se repite cada
+// BAND_ROWS franjas (256 m: mas que cualquier muro). Las usan el suelo cercano (ground_color, una franja de push_tri
+// cada una) y la rampa de la malla lejana (far_ramp), asi de cerca y de lejos son las mismas.
+#define BAND_ROWS 32
+static const Color STRATA[8] = {
+    { 226, 198, 158, 255 }, // crema
+    { 186, 100, 66, 255 },  // rojo oxido
+    { 206, 156, 104, 255 }, // ocre
+    { 236, 222, 198, 255 }, // blanco
+    { 206, 130, 88, 255 },  // salmon
+    { 160, 118, 100, 255 }, // malva
+    { 166, 86, 58, 255 },   // rojo oscuro
+    { 214, 176, 128, 255 }, // ante
+};
+static const unsigned char STRATA_ORDER[BAND_ROWS] = { 0, 1, 4, 2, 3, 6, 7, 1, 5, 0, 4, 6, 3, 2, 1, 7,
+                                                       5, 4, 0, 6, 2, 3, 1, 7, 4, 0, 5, 2, 6, 3, 1, 4 };
+static const Color ICE_LAYERS[3] = { { 150, 200, 228, 255 }, { 178, 216, 238, 255 }, { 132, 186, 222, 255 } };
+static int band_row(float h) {
+    int b = (int)floorf(h / TEX_SPAN) % BAND_ROWS;
+    return b < 0 ? b + BAND_ROWS : b;
+}
+static Color strata_band(float h) { return STRATA[STRATA_ORDER[band_row(h)]]; }
+static Color ice_band(float h) { return ICE_LAYERS[band_row(h) * 7 % 3]; }
 // El detalle oscurece en promedio: el color del suelo se aclara para compensar, segun lo clara
 // que sea cada celda (la nieve casi nada: si no, se confunde con el cielo).
 static float g_tex_boost[16] = { 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.35f, 1.0f };
@@ -162,10 +187,16 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
     // La playa de los fiordos: arena volcanica negra; en los rios, cantos rodados claros sin pasto.
     if (a[A_FJORD] > 0.5f && h_abs < SEA_LEVEL + 4.0f && slope < 0.6f) c = mixc(c, (Color){ 62, 60, 62, 255 }, Clamp((SEA_LEVEL + 4.0f - h_abs) * 0.6f, 0.0f, 1.0f));
     if (a[A_BANK] > 0.0f && desert < 0.5f) c = mixc(c, (Color){ 168, 164, 154, 255 }, Clamp(a[A_BANK] * 1.6f - 0.3f, 0.0f, 1.0f));
-    // Desierto: arena dorada con vetas; las mesetas y el muro, roca rojiza en estratos.
+    // Desierto: arena dorada con vetas. Las paredes (el muro del cañon, las barrancas), los estratos de las fotos de
+    // los badlands pintados: franjas de TEX_SPAN m de rojo oxido, crema, ocre, salmon, blanco y malva que se
+    // suceden con la altura sin repetirse en todo el muro (push_tri corta cada pared en franjas de esa altura: una
+    // franja, un color); la textura les pone las vetas finas y las carcavas. Al pie de cada escalon, el talud: la
+    // arena con el color del estrato que se le cae encima.
     if (desert > 0.0f) {
-        const Color sand = { 214, 188, 134, 255 }, sand_dark = { 190, 160, 108, 255 }, redrock = { 178, 104, 70, 255 };
-        Color dc = slope > 0.5f ? mixc(redrock, sand_dark, 0.5f + 0.5f * sinf(h_abs * 0.6f)) : mixc(sand, sand_dark, patch * 0.8f);
+        const Color sand = { 214, 188, 134, 255 }, sand_dark = { 190, 160, 108, 255 };
+        Color strat = strata_band(h_abs);
+        Color dc = slope > WALL_SLOPE ? strat : mixc(sand, sand_dark, patch * 0.8f);
+        if (slope > 0.12f && slope <= WALL_SLOPE && a[A_EDGE] < 120.0f) dc = mixc(dc, strat, 0.55f); // el talud
         c = mixc(c, dc, Clamp(desert * 1.4f, 0.0f, 1.0f));
     }
     // El muro del otro lado del canal del bosque (docs/AGUA.md, fase 5): roca en estratos, grises y ocres que se
@@ -176,8 +207,12 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
         Color sc = slope > 0.4f ? mixc(mixc(grey, buff, 0.5f + 0.5f * band), dark, Clamp(-band * 1.5f - 0.6f, 0.0f, 1.0f)) : mixc(grey, lichen, 0.6f);
         c = mixc(c, sc, Clamp(a[A_WALL], 0.0f, 1.0f));
     }
-    // El muro de hielo del altiplano: hielo azulado, mas en lo empinado.
-    if (a[A_HIGH] > 0.5f && a[A_EDGE] < 150.0f) c = mixc(c, (Color){ 176, 206, 232, 255 }, 0.5f + 0.5f * Clamp(slope * 2.0f, 0.0f, 1.0f));
+    // El muro de hielo del altiplano (las fotos del frente de un glaciar): lo empinado, celeste, en capas de TEX_SPAN m
+    // que se alternan (los anillos del hielo, una franja de push_tri cada una); arriba y en lo llano, el blanco de
+    // la nieve vieja.
+    if (a[A_HIGH] > 0.5f && a[A_EDGE] < 150.0f) {
+        c = slope > WALL_SLOPE ? ice_band(h_abs) : mixc(c, (Color){ 222, 234, 244, 255 }, 0.85f);
+    }
     // Los barrancos del altiplano son permafrost: paredes de hielo todo el año, tambien en verano.
     else if (a[A_HIGH] > 0.5f && slope > 0.6f) c = mixc(c, (Color){ 184, 210, 230, 255 }, 0.75f);
     // La lengua del glaciar: avanza en invierno sobre la morrena (el limo y la grava) que deja al retroceder en
@@ -186,11 +221,15 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
         if (!bare) c = mixc(c, moraine, 0.85f);
         c = mixc(c, (Color){ 214, 230, 246, 255 }, (L->glacier - a[A_GLACIER]) / 0.06f + 0.5f);
     }
-    // Nieve: cubre el llano segun la estacion (en manchas a medio cubrir); menos en lo empinado y en la arena.
+    // Nieve: cubre el llano segun la estacion (en manchas a medio cubrir); menos en lo empinado y en la arena. La
+    // cara del muro de hielo es hielo en todas las estaciones (la nieve no se le pega).
+    bool ice_face = a[A_HIGH] > 0.5f && a[A_EDGE] < 150.0f && slope > WALL_SLOPE;
     float cover = L->snow_cover * (slope > 0.75f ? 0.55f : 1.0f) * (1.0f - 0.6f * desert);
-    if (patch < cover * 1.15f - 0.05f) c = snow;
-    // Glaciares y nieve permanente en las cumbres; una franja de manchas por debajo.
-    float above = h_abs - L->snowline;
+    if (patch < cover * 1.15f - 0.05f && !ice_face) c = snow;
+    if (ice_face) return c;
+    // Glaciares y nieve permanente en las cumbres; una franja de manchas por debajo. No en el desierto: lo alto del
+    // muro del cañon son estratos todo el año (la nieve del invierno, arriba, si).
+    float above = h_abs - L->snowline - 400.0f * desert;
     if (above > 0.0f) c = slope < 0.7f ? glacier : mixc(rock, snow, 0.5f);
     else if (above > -6.0f && patch < (above + 6.0f) / 6.0f) c = snow;
     return c;
@@ -199,7 +238,7 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
 // Rocas: gris (rojiza en el desierto), con liquen; nieve encima en invierno y en lo alto.
 static Color rock_color(const TerrainLook *L, const float *a) {
     Color c = mixc((Color){ 118, 114, 106, 255 }, (Color){ 142, 138, 126, 255 }, a[A_PATCH]);
-    c = mixc(c, (Color){ 168, 104, 72, 255 }, a[A_DESERT]);
+    c = mixc(c, mixc((Color){ 196, 114, 66, 255 }, (Color){ 214, 162, 110, 255 }, a[A_PATCH] * a[A_PATCH]), a[A_DESERT]); // la arenisca
     c = mixc(c, (Color){ 104, 116, 92, 255 }, 0.25f * a[A_FJORD]); // liquen de la costa
     float cover = L->snow_cover * (a[A_SLOPE] < 0.5f ? 1.0f : 0.3f);
     if (a[A_H] > L->snowline - 4.0f) cover = fmaxf(cover, 0.8f);
@@ -280,39 +319,88 @@ typedef struct {
     float *v, *n, *attr, *uv;
     int count, cap; // triangulos
     float local[6]; // coordenadas (u, v) dentro de la celda del atlas, de los tres vertices
+    bool wall_z;    // en una pared, lo ancho de la textura sigue z (la pared mira hacia x); si no, x
 } TriBuf;
+
+// Un triangulo ya armado: sus vertices, su normal, sus datos y la (u, v) de cada vertice dentro de su celda del
+// atlas (de 0 a 1).
+static void emit_tri(TriBuf *b, const Vector3 *p, Vector3 n, const float *at, TerrainTex tt, const float *luv) {
+    const float cw = 1.0f / TEX_COLS, eps = 0.5f / (32.0f * TEX_COLS); // un margen para no tomar la celda vecina
+    float u0 = (float)(tt % TEX_COLS) * cw, v0 = (float)(tt / TEX_COLS) * cw;
+    for (int k = 0; k < 3; k++) {
+        int v = b->count * 3 + k;
+        b->v[v * 3 + 0] = p[k].x, b->v[v * 3 + 1] = p[k].y, b->v[v * 3 + 2] = p[k].z;
+        b->n[v * 3 + 0] = n.x, b->n[v * 3 + 1] = n.y, b->n[v * 3 + 2] = n.z;
+        b->uv[v * 2 + 0] = u0 + eps + Clamp(luv[k * 2], 0.0f, 1.0f) * (cw - 2.0f * eps);
+        b->uv[v * 2 + 1] = v0 + eps + Clamp(luv[k * 2 + 1], 0.0f, 1.0f) * (cw - 2.0f * eps);
+    }
+    memcpy(&b->attr[b->count * TRI_ATTRS], at, sizeof(float) * TRI_ATTRS);
+    b->count++;
+}
+
+// Lo que queda de un poligono (convexo) de un lado del plano horizontal y = c (keep_above: arriba).
+static int clip_y(const Vector3 *in, int n, float c, bool keep_above, Vector3 *out) {
+    int m = 0;
+    for (int i = 0; i < n; i++) {
+        Vector3 a = in[i], b = in[(i + 1) % n];
+        bool ia = keep_above ? a.y >= c : a.y <= c, ib = keep_above ? b.y >= c : b.y <= c;
+        if (ia) out[m++] = a;
+        if (ia != ib) out[m++] = Vector3Lerp(a, b, (c - a.y) / (b.y - a.y));
+    }
+    return m;
+}
 
 static void push_tri(TriBuf *b, Vector3 p0, Vector3 p1, Vector3 p2, const float *attrs) {
     if (b->count >= b->cap) return;
     Vector3 n = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(p1, p0), Vector3Subtract(p2, p0)));
-    Vector3 tri[3] = { p0, p1, p2 };
-    for (int k = 0; k < 3; k++) {
-        int v = b->count * 3 + k;
-        b->v[v * 3 + 0] = tri[k].x, b->v[v * 3 + 1] = tri[k].y, b->v[v * 3 + 2] = tri[k].z;
-        b->n[v * 3 + 0] = n.x, b->n[v * 3 + 1] = n.y, b->n[v * 3 + 2] = n.z;
-    }
-    float *at = &b->attr[b->count * TRI_ATTRS];
-    memcpy(at, attrs, sizeof(float) * TRI_ATTRS);
+    float at[TRI_ATTRS];
+    memcpy(at, attrs, sizeof(at));
     const Vector3 sun = Vector3Normalize((Vector3){ -0.45f, 1.0f, -0.3f });
     at[A_SLOPE] = 1.0f - n.y;
     at[A_LIGHT] = 0.55f + 0.45f * fmaxf(0.0f, Vector3DotProduct(n, sun)); // iluminacion horneada: cero costo en GPU
-    // La celda del atlas (los arboles, la blanca) y un margen para no tomar la vecina.
-    TerrainTex tt = at[A_KIND] == KIND_GROUND ? ground_tex(at, at[A_SLOPE]) : TT_WHITE;
-    const float cw = 1.0f / TEX_COLS, eps = 0.5f / (32.0f * TEX_COLS);
-    float u0 = (float)(tt % TEX_COLS) * cw, v0 = (float)(tt / TEX_COLS) * cw;
-    // En lo empinado (paredes, muros) la textura va de pie: v sigue la altura, asi los
-    // estratos quedan horizontales.
-    bool wall = at[A_KIND] == KIND_GROUND && at[A_SLOPE] > 0.45f;
-    float ybase = floorf(fminf(fminf(p0.y, p1.y), p2.y) / TEX_SPAN) * TEX_SPAN;
-    float yspan = fmaxf(TEX_SPAN, fmaxf(fmaxf(p0.y, p1.y), p2.y) - ybase); // los muros altos: la celda entera en el triangulo
-    for (int k = 0; k < 3; k++) {
-        int v = b->count * 3 + k;
-        float lu = at[A_KIND] == KIND_GROUND ? b->local[k * 2] : 0.5f, lv = at[A_KIND] == KIND_GROUND ? b->local[k * 2 + 1] : 0.5f;
-        if (wall) lv = Clamp((tri[k].y - ybase) / yspan, 0.0f, 1.0f);
-        b->uv[v * 2 + 0] = u0 + eps + lu * (cw - 2.0f * eps);
-        b->uv[v * 2 + 1] = v0 + eps + lv * (cw - 2.0f * eps);
+    // La celda del atlas: la del suelo; los arboles, las rocas y las matas, la blanca.
+    bool ground = at[A_KIND] == KIND_GROUND;
+    TerrainTex tt = ground ? ground_tex(at, at[A_SLOPE]) : TT_WHITE;
+    Vector3 tri[3] = { p0, p1, p2 };
+    float ymin = fminf(fminf(p0.y, p1.y), p2.y), ymax = fmaxf(fmaxf(p0.y, p1.y), p2.y);
+    // Las paredes (los muros del borde, los barrancos, las laderas empinadas): la textura va de pie y sin
+    // estirarse. La celda cubre TEX_SPAN m de ancho y de alto: el triangulo se corta en franjas horizontales de
+    // TEX_SPAN m, cada una con su pedazo de la celda y su altura media en A_H (los estratos y las capas del hielo
+    // quedan horizontales, de una franja cada uno); lo ancho sigue el eje de la pared que no mira (x o z, el de la
+    // celda: las dos mitades de una celda iguales). Si no caben las franjas, la celda entera estirada.
+    int k0 = (int)floorf((ymin + 0.02f) / TEX_SPAN), k1 = (int)floorf((ymax - 0.02f) / TEX_SPAN);
+    bool wall = ground && at[A_SLOPE] > WALL_SLOPE;
+    float hmin = b->wall_z ? fminf(fminf(p0.z, p1.z), p2.z) : fminf(fminf(p0.x, p1.x), p2.x);
+    float ubase = floorf((hmin + 0.01f) / TEX_SPAN) * TEX_SPAN; // las celdas de 2 m no cruzan el borde de una de 8
+    if (!wall || b->count + (k1 - k0 + 1) * 3 > b->cap) {
+        float luv[6];
+        float ybase = floorf(ymin / TEX_SPAN) * TEX_SPAN, yspan = fmaxf(TEX_SPAN, ymax - ybase);
+        for (int k = 0; k < 3; k++) {
+            luv[k * 2] = !ground ? 0.5f : wall ? ((b->wall_z ? tri[k].z : tri[k].x) - ubase) / TEX_SPAN : b->local[k * 2];
+            luv[k * 2 + 1] = !ground ? 0.5f : wall ? 1.0f - (tri[k].y - ybase) / yspan : b->local[k * 2 + 1];
+        }
+        emit_tri(b, tri, n, at, tt, luv);
+        return;
     }
-    b->count++;
+    for (int k = k0; k <= k1; k++) {
+        float lo = (float)k * TEX_SPAN, hi = lo + TEX_SPAN;
+        Vector3 mid[5], poly[6];
+        int np = clip_y(tri, 3, lo, true, mid);
+        np = clip_y(mid, np, hi, false, poly);
+        if (np < 3) continue;
+        float ysum = 0.0f;
+        for (int i = 0; i < np; i++) ysum += poly[i].y;
+        at[A_H] = ysum / (float)np; // la franja: su altura (los colores por altura, de una franja cada uno)
+        for (int i = 1; i + 1 < np; i++) {
+            Vector3 f[3] = { poly[0], poly[i], poly[i + 1] };
+            float luv[6];
+            for (int q = 0; q < 3; q++) {
+                luv[q * 2] = ((b->wall_z ? f[q].z : f[q].x) - ubase) / TEX_SPAN;
+                luv[q * 2 + 1] = 1.0f - (f[q].y - lo) / TEX_SPAN; // lo de arriba de la imagen, arriba
+            }
+            emit_tri(b, f, n, at, tt, luv);
+        }
+    }
 }
 
 static uint32_t hash2(int x, int z, uint32_t seed) {
@@ -331,11 +419,14 @@ static void push_rock(TriBuf *b, Vector3 base, float r, uint32_t h, const float 
     at[A_PATCH] = (float)(h & 0xFF) / 255.0f;
     at[A_H] = base.y + r * 0.5f;
     const int sides = 5;
-    Vector3 ring[5], top = { base.x + r * 0.15f, base.y + r * (0.7f + 0.5f * (float)((h >> 8) & 0xFF) / 255.0f), base.z - r * 0.1f };
+    // En el desierto, bloques de arenisca: de costados altos y el tope chato e inclinado (las fotos), no cantos chatos.
+    bool desert = region_at[A_DESERT] > 0.5f;
+    float lift = desert ? 0.4f : 0.15f, step = desert ? 0.6f : 0.2f, crown = desert ? 0.95f : 0.7f, girth = desert ? 0.75f : 1.0f;
+    Vector3 ring[5], top = { base.x + r * 0.15f, base.y + r * (crown + 0.5f * (float)((h >> 8) & 0xFF) / 255.0f), base.z - r * 0.1f };
     for (int i = 0; i < sides; i++) {
         float a = (float)i / sides * 2.0f * PI + (float)((h >> (i * 3)) & 7) * 0.08f;
-        float rr = r * (0.75f + 0.25f * (float)((h >> (i * 5 + 2)) & 3) / 3.0f);
-        ring[i] = (Vector3){ base.x + cosf(a) * rr, base.y + r * (0.15f + 0.2f * (float)((h >> (i * 4 + 1)) & 3) / 3.0f), base.z + sinf(a) * rr };
+        float rr = r * girth * (0.75f + 0.25f * (float)((h >> (i * 5 + 2)) & 3) / 3.0f);
+        ring[i] = (Vector3){ base.x + cosf(a) * rr, base.y + r * (lift + step * (float)((h >> (i * 4 + 1)) & 3) / 3.0f), base.z + sinf(a) * rr };
     }
     for (int i = 0; i < sides; i++) {
         Vector3 p0 = ring[i], p1 = ring[(i + 1) % sides];
@@ -552,7 +643,8 @@ bool terrain_water_shader(void) { return g_water_shader_ok; }
 
 // El radio aproximado de cada formacion, en m (antes de su escala).
 static float feature_radius(int kind) {
-    return kind == VF_BOULDER ? 1.1f : kind == VF_BASALT ? 3.2f : kind == VF_SEA_STACK ? 4.4f : kind == VF_ICEBERG ? 4.0f : kind == VF_FLOE ? 3.0f : 3.5f;
+    return kind == VF_BOULDER ? 1.1f : kind == VF_BASALT ? 3.2f : kind == VF_SEA_STACK ? 4.4f : kind == VF_ICEBERG ? 4.0f : kind == VF_FLOE ? 3.0f
+         : kind == VF_MESA ? 8.0f : kind == VF_ARCH ? 9.0f : kind == VF_HOODOO ? 3.0f : 3.5f;
 }
 
 bool terrain_near_feature(const Terrain *t, float x, float z, float margin) {
@@ -928,12 +1020,14 @@ bool terrain_cover_near(const Terrain *t, float x, float z, float reach, Vector3
 }
 
 static Chunk build_chunk(const Terrain *t, int cx, int cz) {
+    // El suelo, cortado en franjas en las paredes (push_tri: los muros del borde, de 2 a 5 veces mas triangulos que
+    // en el llano), y las rocas y matas.
     enum { GROUND = CHUNK_CELLS * CHUNK_CELLS * 2, TREE_SLOTS = TREE_GRID, PROP_SLOTS = PROP_GRID, PROP_TRIS = 15,
-           CAP = GROUND + PROP_SLOTS * PROP_SLOTS * PROP_TRIS };
+           CAP = GROUND * 5 + PROP_SLOTS * PROP_SLOTS * PROP_TRIS };
     _Static_assert(TREE_SLOTS * TREE_SLOTS == CHUNK_TREES, "un arbol por casilla");
     static float vbuf[CAP * 9], nbuf[CAP * 9];
     static float abuf[CAP * TRI_ATTRS], uvbuf[CAP * 6];
-    TriBuf b = { vbuf, nbuf, abuf, uvbuf, 0, CAP, { 0 } };
+    TriBuf b = { vbuf, nbuf, abuf, uvbuf, 0, CAP, { 0 }, false };
     g_perma_snow = t->plain + 40.0f;
     const float cell = CHUNK_SIZE / CHUNK_CELLS;
     const float ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
@@ -962,6 +1056,8 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             const int per = (int)(TEX_SPAN / cell);
             float u0 = (float)(((cx * CHUNK_CELLS + ix) % per + per) % per) / per, v0 = (float)(((cz * CHUNK_CELLS + iz) % per + per) % per) / per;
             float du = 1.0f / per;
+            // Si es una pared, hacia donde sube: si sube a lo largo de x, mira hacia x y lo ancho sigue z.
+            b.wall_z = fabsf(p10.y + p11.y - p00.y - p01.y) > fabsf(p01.y + p11.y - p00.y - p10.y);
             at[A_H] = (p00.y + p01.y + p10.y) / 3.0f;
             float l1[6] = { u0, v0, u0, v0 + du, u0 + du, v0 };
             memcpy(b.local, l1, sizeof(l1));
@@ -1020,13 +1116,15 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             } else if (k[REGION_DESERT] < 0.5f && wl < -1e8f && r0 < 0.22f && world_river_bank(t->world, x, z, NULL) > 0.6f) {
                 kind = VF_BOULDER; // en la orilla
             } else if (k[REGION_DESERT] > 0.6f && wl < -1e8f) {
-                bool canyon = e > 85.0f && e < 260.0f; // el cañon al pie del muro de estratos
-                if (canyon && r0 < 0.07f) kind = VF_MESA, scale = 0.8f + 0.6f * r1;
-                else if (r0 < 0.012f) kind = VF_HOODOO;
-                else if (r0 < 0.02f) kind = VF_CHALK;
-                else if (r0 < 0.024f) kind = VF_MESA;
+                bool canyon = e > 115.0f && e < 260.0f; // el cañon al pie del muro de estratos (fuera del muro)
+                if (canyon && r0 < 0.035f) kind = VF_MESA, scale = 0.8f + 0.5f * r1;
+                else if (r0 < 0.008f) kind = VF_HOODOO;
+                else if (r0 < 0.012f) kind = VF_CHALK;
+                else if (r0 < 0.015f) kind = VF_MESA;
+                else if (r0 < 0.018f) kind = VF_ARCH, scale = 0.85f + 0.3f * r1;
             } else if (k[REGION_HIGHLAND] > 0.5f) {
-                if (e < 210.0f && wl < -1e8f && r0 < 0.28f) kind = VF_SERAC; // el frente del glaciar
+                // Los bloques caidos del frente del glaciar, a su pie (el frente sale hasta ICE_E + 1 m: src/sim/world.c).
+                if (e > 124.0f && e < 150.0f && wl < -1e8f && r0 < 0.16f) kind = VF_SERAC, scale = 0.7f + 0.6f * r1;
                 else if (wk == WATER_LAKE && wl > y + 2.0f && r0 < 0.05f) kind = VF_ICEBERG, y = wl;
             }
             if (kind < 0) continue;
@@ -1073,7 +1171,40 @@ static struct {
     Model model;
     Color haze;
     TerrainLook look;
+    Texture2D ramp; // las franjas de los muros, por la altura (far_ramp)
+    Color ramp_haze;
 } g_far;
+
+// La rampa de los muros de lejos: con celdas de 48 m, un triangulo del muro del cañon cruza muchos estratos y, de un solo
+// color, el muro se ve como un biombo de triangulos. Con esta textura cada pixel toma la franja de su altura (v sigue la
+// altura, como en push_tri): RAMP_COLS columnas de BAND_ROWS filas; la 0, blanca (lo demas); de la 1 a la 7, los estratos
+// con la bruma de 0 a 0,8 (la de far_fill, que no puede ir en el color del vertice: se multiplicaria por la franja); de
+// la 8 a la 14, las capas del hielo igual (mas suaves). Se rehace cuando cambia el color de la bruma.
+#define RAMP_COLS 16
+#define RAMP_HAZES 7
+static void far_ramp(void) {
+    if (g_far.ramp.id && !memcmp(&g_far.ramp_haze, &g_far.haze, sizeof(Color))) return;
+    static Color px[RAMP_COLS * BAND_ROWS];
+    for (int r = 0; r < BAND_ROWS; r++)
+        for (int c = 0; c < RAMP_COLS; c++) {
+            Color col = WHITE;
+            float y = ((float)r + 0.5f) * TEX_SPAN;
+            if (c >= 1 && c <= 2 * RAMP_HAZES) {
+                int k = (c - 1) % RAMP_HAZES;
+                // El hielo, de lejos, con las capas apenas marcadas (de cerca las cortan las columnas de la textura).
+                Color band = c <= RAMP_HAZES ? strata_band(y) : mixc((Color){ 156, 202, 230, 255 }, ice_band(y), 0.3f);
+                col = mixc(band, g_far.haze, 0.8f * (float)k / (RAMP_HAZES - 1));
+            }
+            px[r * RAMP_COLS + c] = col;
+        }
+    if (!g_far.ramp.id) {
+        Image img = { px, RAMP_COLS, BAND_ROWS, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
+        g_far.ramp = LoadTextureFromImage(img); // 16 x 32: potencia de 2, se repite tambien en OpenGL ES 2.0
+        SetTextureFilter(g_far.ramp, TEXTURE_FILTER_POINT);
+        SetTextureWrap(g_far.ramp, TEXTURE_WRAP_REPEAT);
+    } else UpdateTexture(g_far.ramp, px);
+    g_far.ramp_haze = g_far.haze;
+}
 
 static void far_sample(const Terrain *t, FarVert *f, int gx, int gz) {
     float x = gx * CHUNK_SIZE, z = gz * CHUNK_SIZE;
@@ -1151,6 +1282,9 @@ static void far_fill(const Terrain *t) {
                 at[A_WALL] = (a->wall + b->wall + c->wall) / 3.0f;
                 float water = (wlv[va] + wlv[vb] + wlv[vc]) / 3.0f;
                 Color base;
+                int ramp = 0; // la columna de la rampa: 0, nada; 1, los estratos; 8, el hielo (mas la bruma)
+                if (water <= at[A_H] && at[A_SLOPE] > WALL_SLOPE && at[A_DESERT] > 0.5f) ramp = 1;
+                if (water <= at[A_H] && at[A_SLOPE] > WALL_SLOPE && at[A_HIGH] > 0.5f && at[A_EDGE] < 150.0f) ramp = 1 + RAMP_HAZES;
                 if (water > at[A_H]) { // agua: el mar, los lagos y, en el altiplano, el deshielo turquesa; con su hielo
                     int w = wlv[va] > -1e8f ? va : wlv[vb] > -1e8f ? vb : vc;
                     base = wkind[w] == WATER_SEA ? sea : at[A_HIGH] > 0.5f ? glacial : lake;
@@ -1162,19 +1296,30 @@ static void far_fill(const Terrain *t) {
                     base = mixc(base, tree_color(&t->look, (float[TRI_ATTRS]){ [A_PATCH] = 0.6f, [A_KIND] = KIND_CANOPY, [A_H] = at[A_H] }), trees);
                     base = shade(base, 0.55f + 0.45f * fmaxf(0.0f, Vector3DotProduct(n, sun)));
                 }
-                // La bruma: lo lejano toma el color del cielo.
+                // La bruma: lo lejano toma el color del cielo (en los muros, de la rampa: su columna).
                 float mx = (p0.x + p1.x + p2.x) / 3.0f - ccx, mz = (p0.z + p1.z + p2.z) / 3.0f - ccz;
                 float d = sqrtf(mx * mx + mz * mz), hz = Clamp((d - FAR_HAZE_NEAR) / (FAR_CELLS * 0.5f * CHUNK_SIZE - FAR_HAZE_NEAR), 0.0f, 1.0f);
-                Color fin = mixc(base, g_far.haze, 0.8f * hz * (2.0f - hz));
+                float haze = hz * (2.0f - hz);
+                Color fin = mixc(base, g_far.haze, 0.8f * haze);
+                if (ramp) { // el color, de la franja; el vertice, solo la luz
+                    unsigned char l = (unsigned char)fminf(255.0f, 255.0f * (0.55f + 0.45f * fmaxf(0.0f, Vector3DotProduct(n, sun))) * g_tex_boost[TT_STRATA] * 0.75f);
+                    fin = (Color){ l, l, l, 255 };
+                    ramp += (int)lroundf(haze * (RAMP_HAZES - 1));
+                }
+                float *uv = &m->texcoords[tri * 6];
                 Vector3 pts[3] = { p0, p1, p2 };
                 for (int k = 0; k < 3; k++) {
                     v[k * 3 + 0] = pts[k].x, v[k * 3 + 1] = pts[k].y, v[k * 3 + 2] = pts[k].z;
                     col[k * 4 + 0] = fin.r, col[k * 4 + 1] = fin.g, col[k * 4 + 2] = fin.b, col[k * 4 + 3] = 255;
+                    uv[k * 2 + 0] = ((float)ramp + 0.5f) / RAMP_COLS;
+                    uv[k * 2 + 1] = ramp ? (pts[k].y - 0.4f) / (TEX_SPAN * BAND_ROWS) : 0.5f / BAND_ROWS; // se dibuja 0,4 m mas abajo
                 }
             }
         }
     UpdateMeshBuffer(*m, 0, m->vertices, m->vertexCount * 3 * sizeof(float), 0);
+    UpdateMeshBuffer(*m, 1, m->texcoords, m->vertexCount * 2 * sizeof(float), 0);
     UpdateMeshBuffer(*m, 3, m->colors, m->vertexCount * 4, 0);
+    far_ramp();
     g_far.look = t->look;
 }
 
@@ -1184,11 +1329,14 @@ static void far_update(const Terrain *t) {
         mesh.triangleCount = FAR_CELLS * FAR_CELLS * 2;
         mesh.vertexCount = mesh.triangleCount * 3;
         mesh.vertices = MemAlloc(mesh.vertexCount * 3 * sizeof(float));
+        mesh.texcoords = MemAlloc(mesh.vertexCount * 2 * sizeof(float));
         mesh.colors = MemAlloc(mesh.vertexCount * 4);
         UploadMesh(&mesh, true);
         g_far.model = LoadModelFromMesh(mesh);
         g_far.ready = true;
         if (!g_far.haze.a) g_far.haze = (Color){ 168, 196, 214, 255 };
+        far_ramp();
+        g_far.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = g_far.ramp;
     }
     far_shift(t, t->center_cx - FAR_CELLS / 2, t->center_cz - FAR_CELLS / 2);
     far_fill(t);
@@ -1510,13 +1658,14 @@ void terrain_unload(Terrain *t) {
     for (int i = 0; i < CHUNK_SLOTS; i++) {
         if (t->slots[i].loaded) free_chunk(&t->slots[i]);
     }
-    if (g_far.ready) UnloadModel(g_far.model);
+    if (g_far.ready) UnloadModel(g_far.model); // (no descarga la rampa: la textura es nuestra, como el atlas)
     g_far.ready = g_far.valid = false;
     t->has_center = false;
 }
 
 void terrain_unload_gpu(void) {
     if (g_atlas.id) UnloadTexture(g_atlas);
+    if (g_far.ramp.id) UnloadTexture(g_far.ramp);
     if (g_water_tex.id) UnloadTexture(g_water_tex);
     if (g_ice_tex.id) UnloadTexture(g_ice_tex);
     if (g_foam_tex.id) UnloadTexture(g_foam_tex);
@@ -1531,4 +1680,5 @@ void terrain_forget_gpu(void) {
     g_mist_tex = (Texture2D){ 0 }, g_mist_tried = false;
     g_atlas_tried = g_water_tex_tried = false;
     g_far.ready = g_far.valid = false;
+    g_far.ramp = (Texture2D){ 0 };
 }

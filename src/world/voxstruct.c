@@ -29,6 +29,9 @@ static const uint8_t PAL_BASE[M_COUNT][4] = {
     [M_THATCH] = { 188, 158, 92, 255 },  [M_DAUB] = { 214, 200, 170, 255 },   [M_REED] = { 164, 146, 96, 255 },
     [M_CLAY] = { 160, 88, 60, 255 },     [M_SLAG] = { 52, 47, 46, 255 },      [M_HIDE] = { 148, 106, 70, 255 },
     [M_FELT_DARK] = { 128, 112, 96, 255 }, [M_SHADOW] = { 30, 26, 24, 255 },
+    // La arenisca de las fotos del desierto (oxido, oxido oscuro y ante) y el ladrillo cocido de las ruinas.
+    [M_ROCK_RUST] = { 198, 114, 64, 255 }, [M_ROCK_RUST_D] = { 150, 80, 46, 255 }, [M_ROCK_TAN] = { 218, 166, 112, 255 },
+    [M_BRICK] = { 166, 106, 76, 255 },
 };
 
 // El desierto: piedra arenisca rojiza; la costa: piedra con liquen.
@@ -39,6 +42,7 @@ static void palette_for(Region r, uint8_t out[M_COUNT][4]) {
         memcpy(out[M_STONE_DARK], (uint8_t[4]){ 160, 112, 76, 255 }, 4);
         memcpy(out[M_EARTH], (uint8_t[4]){ 206, 176, 124, 255 }, 4);
         memcpy(out[M_GRASS], (uint8_t[4]){ 196, 170, 118, 255 }, 4);
+        memcpy(out[M_BRICK], (uint8_t[4]){ 202, 160, 112, 255 }, 4); // el ladrillo de adobe, secado al sol
     } else if (r == REGION_FJORD || r == REGION_FOREST) {
         memcpy(out[M_STONE_DARK], PAL_BASE[M_STONE_LICHEN], 4);
         memcpy(out[M_GRASS], (uint8_t[4]){ 92, 122, 82, 255 }, 4);
@@ -187,6 +191,51 @@ static uint8_t stratum(int y, uint32_t seed) {
     return BANDS[((unsigned)(y / 2) + seed) % 6];
 }
 
+// La arenisca (las fotos de las torres y los arcos del desierto): casi toda de un color (oxido; pale: ante), con una
+// capa de otro color de vez en cuando, las vetas oscuras de las capas duras (que ondulan un poco) y el barniz del
+// desierto: chorreaduras oscuras que bajan por las caras.
+static void paint_sandstone(VoxGrid *g, uint32_t seed, bool pale) {
+    uint8_t body = pale ? M_ROCK_TAN : M_ROCK_RUST, other = pale ? M_ROCK_RUST : M_ROCK_TAN;
+    for (int y = 0; y < g->ny; y++)
+        for (int z = 0; z < g->nz; z++)
+            for (int x = 0; x < g->nx; x++) {
+                if (!vox_get(g, x, y, z)) continue;
+                float yy = (float)y + 2.5f * vox_noise3((float)x * 0.07f, 0.5f, (float)z * 0.07f, seed);
+                uint32_t band = (uint32_t)((int)floorf(yy / 4.0f) + 64) * 2654435761u ^ seed;
+                band ^= band >> 13;
+                uint8_t m = band % 5u == 0 ? other : body;
+                if (yy - floorf(yy / 4.0f) * 4.0f < 1.0f && band % 3u == 0) m = M_ROCK_RUST_D;           // la veta dura
+                bool side = !vox_get(g, x + 1, y, z) || !vox_get(g, x - 1, y, z) || !vox_get(g, x, y, z + 1) || !vox_get(g, x, y, z - 1);
+                if (side && vox_get(g, x, y + 1, z) && vox_noise3((float)x * 0.45f, (float)y * 0.05f, (float)z * 0.45f, seed + 9u) < 0.2f)
+                    m = M_ROCK_RUST_D; // el barniz, en las caras (no en lo alto)
+                vox_set(g, x, y, z, m);
+            }
+}
+
+// Una capa redondeada de roca: una superelipse (entre un circulo y un cuadrado) de radios rx y rz celdas en (cx, cz),
+// de y0 a y1, con el borde mordido por el ruido (bite: cuanto entra).
+static void slab(VoxGrid *g, float cx, float cz, int y0, int y1, float rx, float rz, float bite, uint32_t seed, uint8_t m) {
+    for (int y = y0; y <= y1; y++)
+        for (int z = 0; z < g->nz; z++)
+            for (int x = 0; x < g->nx; x++) {
+                float dx = ((float)x + 0.5f - cx) / rx, dz = ((float)z + 0.5f - cz) / rz, a = atan2f(dz, dx);
+                float edge = 1.0f - bite * vox_noise3(cosf(a) * 1.7f + 2.0f, (float)y * 0.08f, sinf(a) * 1.7f + 2.0f, seed);
+                if (powf(fabsf(dx), 2.6f) + powf(fabsf(dz), 2.6f) <= powf(edge, 2.6f)) vox_set(g, x, y, z, m);
+            }
+}
+
+// Una grieta que baja: una ranura de una celda de ancho en el plano vertical que pasa por (cx, cz) con rumbo a, desde
+// y0 hasta arriba y solo afuera (a mas de inner celdas del centro).
+static void crack(VoxGrid *g, float cx, float cz, float a, int y0, float inner) {
+    float ca = cosf(a), sa = sinf(a);
+    for (int y = y0 < 0 ? 0 : y0; y < g->ny; y++)
+        for (int z = 0; z < g->nz; z++)
+            for (int x = 0; x < g->nx; x++) {
+                float dx = (float)x + 0.5f - cx, dz = (float)z + 0.5f - cz;
+                if (fabsf(-dx * sa + dz * ca) < 0.6f && dx * ca + dz * sa > inner) vox_set(g, x, y, z, 0);
+            }
+}
+
 static bool build_feature(VoxFeature f, int v, VoxGrid *g) {
     uint32_t seed = 7000u + (uint32_t)f * 131u + (uint32_t)v * 17u, rs = seed;
     switch (f) {
@@ -224,54 +273,82 @@ static bool build_feature(VoxFeature f, int v, VoxGrid *g) {
             if (g->m[i] == M_GRANITE && vox_noise3((float)(i % 12) * 0.9f, (float)(i / 144) * 0.9f, (float)((i / 12) % 12) * 0.9f, seed) > 0.66f) g->m[i] = M_GRANITE_D;
         return true;
     }
-    case VF_HOODOO: { // torre de estratos: capas blandas angostas, duras anchas, sombrero de roca dura
-        if (!vox_init(g, 16, FOUND + 30, 16, 0.5f)) return false;
-        int top = FOUND + 18 + (int)(hrand(&rs) * 8.0f);
+    case VF_HOODOO: { // hongo de arenisca: un pie angosto que el viento con arena come, y un sombrero de roca dura
+        if (!vox_init(g, 20, FOUND + 28, 20, 0.5f)) return false;
+        int stem = FOUND + 9 + (int)(hrand(&rs) * 6.0f);
+        float lean = (hrand(&rs) - 0.5f) * 0.14f; // celdas que se corre por capa
+        for (int y = 0; y <= stem; y++) {
+            float t = (float)y / (float)stem, r = 3.6f - 1.7f * sinf(t * 2.6f) + (y < FOUND + 2 ? 1.2f : 0.0f); // el cuello, arriba
+            slab(g, 10.0f + lean * (float)y, 10.0f, y, y, r, r * 0.9f, 0.22f, seed + 3u, M_ROCK_RUST);
+        }
+        paint_sandstone(g, seed, false);
+        float crx = 6.0f + hrand(&rs) * 2.0f, crz = 5.0f + hrand(&rs) * 2.0f, cry = 3.2f + hrand(&rs) * 1.5f;
+        float ccx = 10.0f + lean * (float)stem + (hrand(&rs) - 0.5f) * 2.0f;
+        vox_ellipsoid(g, ccx, (float)stem + cry * 0.7f, 10.0f, crx, cry, crz, M_ROCK_RUST_D, false); // el sombrero
+        vox_ellipsoid(g, ccx, (float)stem + cry * 0.9f, 10.0f, crx * 0.85f, cry * 0.85f, crz * 0.85f, M_ROCK_RUST, true);
+        float ka = hrand(&rs) * 6.2832f; // dos grietas en el sombrero
+        crack(g, ccx, 10.0f, ka, stem - 1, crx * 0.45f), crack(g, ccx, 10.0f, ka + 2.4f, stem - 1, crx * 0.45f);
+        erode_skin(g, seed, 0.3f, 0.1f);
+        return true;
+    }
+    case VF_MESA: { // farallones de arenisca (las fotos del Sahara): dos o tres torres juntas, con estrias que bajan, alguna
+        // capa blanda metida, lo alto redondeado, grietas y una cueva al pie
+        if (!vox_init(g, 40, FOUND + 32, 32, 0.5f)) return false;
+        int towers = 2 + (int)(hrand(&rs) * 2.0f);
+        float bx = 20.0f, bz = 16.0f, brx = 6.0f;
+        for (int i = 0; i < towers; i++) {
+            float cx = 12.0f + hrand(&rs) * 16.0f, cz = 10.0f + hrand(&rs) * 12.0f, rx = 5.0f + hrand(&rs) * 4.0f, rz = 4.5f + hrand(&rs) * 3.5f;
+            int top = FOUND + 14 + (int)(hrand(&rs) * 14.0f);
+            if (i == 0) bx = cx, bz = cz, brx = fminf(rx, rz);
+            for (int y = 0; y <= top; y++) {
+                uint32_t layer = (uint32_t)((y + 1) / 4) * 2654435761u ^ seed ^ (uint32_t)i * 977u;
+                float k = ((layer >> 7) % 3u == 0 ? 0.88f : 1.0f) * (1.0f - 0.18f * (float)y / (float)top) * (y < FOUND + 2 ? 0.9f : 1.0f);
+                if (y > top - 3) k *= 0.75f + 0.08f * (float)(top - y); // lo alto, redondeado
+                slab(g, cx, cz, y, y, rx * k, rz * k, 0.3f, seed + (uint32_t)i * 31u, M_ROCK_RUST);
+            }
+        }
+        paint_sandstone(g, seed, false);
+        for (int i = 0; i < 5; i++) crack(g, 12.0f + hrand(&rs) * 16.0f, 10.0f + hrand(&rs) * 12.0f, hrand(&rs) * 6.2832f, FOUND + 3 + (int)(hrand(&rs) * 10.0f), 3.0f);
+        float ca = hrand(&rs) * 6.2832f; // la cueva al pie de la primera
+        vox_ellipsoid(g, bx + cosf(ca) * brx * 0.9f, (float)FOUND, bz + sinf(ca) * brx * 0.9f, 3.0f, 3.5f, 3.0f, M_NONE, true);
+        erode_skin(g, seed, 0.3f, 0.12f);
+        return true;
+    }
+    case VF_CHALK: { // creta blanca: un bloque redondeado por el viento, la base mas angosta, con vetas
+        if (!vox_init(g, 18, FOUND + 20, 16, 0.5f)) return false;
+        int top = FOUND + 11 + (int)(hrand(&rs) * 4.0f);
         for (int y = 0; y <= top; y++) {
-            float r = 3.0f + 1.4f * sinf(y * 0.55f + hrand(&rs) * 0.3f) + (y < FOUND + 4 ? 2.0f : 0.0f);
-            vox_cylinder(g, 8, 8, y, y, r, r, stratum(y, seed));
+            float t = (float)y / (float)top, r = 3.3f + 2.3f * sinf(t * 2.5f);
+            slab(g, 9.0f, 8.0f, y, y, r * 1.1f, r * 0.9f, 0.16f, seed + 5u, (y / 3) % 3 == 2 ? M_CHALK_D : M_CHALK);
         }
-        vox_ellipsoid(g, 8, top + 1, 8, 6.5f, 2.2f, 5.5f, M_SAND3, false); // el sombrero
-        erode_skin(g, seed, 0.6f, 0.22f);
+        vox_ellipsoid(g, 9.0f, (float)top, 8.0f, 4.4f, 2.6f, 3.6f, M_CHALK, true);
+        erode_skin(g, seed, 0.3f, 0.1f);
         return true;
     }
-    case VF_MESA: { // farallon estratificado: alero sobre una capa blanda y una cueva
-        if (!vox_init(g, 30, FOUND + 18, 22, 1.0f)) return false;
-        int top = FOUND + 12 + (int)(hrand(&rs) * 5.0f);
-        for (int y = 0; y <= top; y++) vox_box(g, 2, y, 2, 27, y, 19, stratum(y, seed));
-        vox_carve(g, 0, FOUND + 1, 0, 29, FOUND + 3, 4);             // el alero: la capa blanda se va
-        vox_carve(g, 10 + (int)(hrand(&rs) * 8), FOUND, 2, 15 + (int)(hrand(&rs) * 6), FOUND + 4, 9); // la cueva
-        erode_skin(g, seed, 0.25f, 0.3f);
-        return true;
-    }
-    case VF_CHALK: { // creta blanca: un bloque redondeado por el viento, con base mas angosta
-        if (!vox_init(g, 16, FOUND + 18, 14, 0.5f)) return false;
-        // Pilar angosto abajo que se ensancha arriba (el viento con arena come la base).
-        vox_cylinder(g, 8, 7, 0, FOUND + 5, 3.2f, 4.2f, M_CHALK_D);
-        vox_cylinder(g, 8, 7, FOUND + 6, FOUND + 12, 4.6f, 6.4f, M_CHALK);
-        vox_ellipsoid(g, 8, FOUND + 12, 7, 6.4f, 3.5f, 5.6f, M_CHALK, true);
-        for (int y = FOUND + 4; y < g->ny; y += 4) // vetas
-            for (int z = 0; z < g->nz; z++)
-                for (int x = 0; x < g->nx; x++)
-                    if (vox_get(g, x, y, z) == M_CHALK) vox_set(g, x, y, z, M_CHALK_D);
-        erode_skin(g, seed, 0.45f, 0.3f);
-        return true;
-    }
-    case VF_SERAC: { // bloques de hielo inclinados, de alturas distintas, con grietas azules
-        if (!vox_init(g, 16, FOUND + 16, 16, 0.75f)) return false;
-        for (int i = 0; i < 7; i++) {
-            int x0 = (int)(hrand(&rs) * 11), z0 = (int)(hrand(&rs) * 11), w = 3 + (int)(hrand(&rs) * 3), h = FOUND + 6 + (int)(hrand(&rs) * 9);
-            vox_box(g, x0, 0, z0, x0 + w, h, z0 + w - 1, M_ICE);
+    case VF_SERAC: { // bloques de hielo caidos al pie del frente: inclinados, el tope en bisel, con grietas azules
+        if (!vox_init(g, 18, FOUND + 22, 18, 0.5f)) return false;
+        int n = 2 + (int)(hrand(&rs) * 2.0f);
+        for (int i = 0; i < n; i++) {
+            float cx = 5.5f + hrand(&rs) * 7.0f, cz = 5.5f + hrand(&rs) * 7.0f, w = 2.5f + hrand(&rs) * 2.0f, d = 2.0f + hrand(&rs) * 1.5f;
+            float lx = (hrand(&rs) - 0.5f) * 0.4f, lz = (hrand(&rs) - 0.5f) * 0.3f, slant = (hrand(&rs) - 0.5f) * 1.6f;
+            float rot = hrand(&rs) * 3.1416f, c = cosf(rot), sn = sinf(rot), h = (float)(FOUND + 7) + hrand(&rs) * 11.0f;
+            for (int y = 0; y < g->ny; y++)
+                for (int z = 0; z < g->nz; z++)
+                    for (int x = 0; x < g->nx; x++) {
+                        float dx = (float)x + 0.5f - (cx + lx * (float)y), dz = (float)z + 0.5f - (cz + lz * (float)y);
+                        float u = dx * c + dz * sn, v = -dx * sn + dz * c; // en los ejes del bloque
+                        if (fabsf(u) <= w && fabsf(v) <= d && (float)y <= h + slant * u - 1.5f * fabsf(v) / d) vox_set(g, x, y, z, M_ICE);
+                    }
         }
+        // Las grietas: planos que bajan, de azul hondo; abajo, el hielo mojado; lo demas, blanco celeste.
         for (int y = 0; y < g->ny; y++)
             for (int z = 0; z < g->nz; z++)
                 for (int x = 0; x < g->nx; x++) {
                     if (!vox_get(g, x, y, z)) continue;
-                    float n = vox_noise3(x * 0.6f, y * 0.12f, z * 0.6f, seed); // grietas verticales
-                    if (n < 0.28f) vox_set(g, x, y, z, M_ICE_D);
-                    else if (n < 0.42f) vox_set(g, x, y, z, M_ICE_B);
+                    float k = vox_noise3((float)x * 0.33f, (float)y * 0.04f, (float)z * 0.33f, seed);
+                    vox_set(g, x, y, z, k < 0.2f ? M_ICE_D : (y < FOUND + 2 || k < 0.3f) ? M_ICE_B : M_ICE);
                 }
-        erode_skin(g, seed, 0.4f, 0.25f);
+        erode_skin(g, seed, 0.35f, 0.12f);
         return true;
     }
     case VF_ICEBERG: { // tempano: arriba plano, abajo hundido (se dibuja a ras del agua)
@@ -295,6 +372,26 @@ static bool build_feature(VoxFeature f, int v, VoxGrid *g) {
                 for (int y = 0; y <= top; y++) vox_set(g, x, y, z, y == 0 ? M_ICE_B : M_ICE); // abajo, el azul del agua
             }
         erode_skin(g, seed, 0.3f, 0.15f);
+        return true;
+    }
+    case VF_ARCH: { // arco natural de arenisca (las fotos de AlUla): el cuerpo en capas, el ojo grande y uno chico al lado
+        if (!vox_init(g, 46, FOUND + 28, 18, 0.5f)) return false;
+        int top = FOUND + 19 + (int)(hrand(&rs) * 5.0f);
+        for (int y = 0; y <= top; y++) {
+            uint32_t layer = (uint32_t)((y + 1) / 3) * 2654435761u ^ seed;
+            float t = (float)y / (float)top, k = (layer >> 9) % 3u == 0 ? 0.92f : 1.0f; // las capas que se rodean (el pilar de la foto)
+            slab(g, 23.0f, 9.0f, y, y, 21.0f * k * (1.0f - 0.1f * t), (6.5f - 1.6f * t) * k, 0.2f, seed + 7u, M_ROCK_RUST);
+        }
+        paint_sandstone(g, seed, true);
+        float ax = 23.0f + (hrand(&rs) - 0.5f) * 6.0f, arx = 6.5f + hrand(&rs) * 2.0f, ary = (float)(top - FOUND) * 0.62f;
+        float side = hrand(&rs) < 0.5f ? -1.0f : 1.0f, bx = ax + side * (arx + 4.5f), brx = 2.2f + hrand(&rs), bry = ary * 0.42f;
+        for (int y = FOUND; y < g->ny; y++)
+            for (int x = 0; x < g->nx; x++) {
+                float ex = ((float)x + 0.5f - ax) / arx, ey = (float)(y - FOUND) / ary;
+                float fx = ((float)x + 0.5f - bx) / brx, fy = ((float)(y - FOUND) - bry * 0.7f) / bry;
+                if (ex * ex + ey * ey <= 1.0f || fx * fx + fy * fy <= 1.0f) vox_carve(g, x, y, 0, x, y, g->nz - 1);
+            }
+        erode_skin(g, seed, 0.3f, 0.12f);
         return true;
     }
     default: return false;
@@ -485,11 +582,28 @@ void voxs_palette(Region r, uint8_t out[M_COUNT][4]) { palette_for(r, out); }
 void voxs_erode_skin(VoxGrid *g, uint32_t seed, float freq, float cut) { erode_skin(g, seed, freq, cut); }
 float voxs_rand(uint32_t *s) { return hrand(s); }
 
+// La variacion de tono de cada material (VoxGrid.tone): las piedras, las tablas y el fieltro, de celda a celda; la
+// arena, el hielo, la creta y la arenisca, casi parejos (las capas y las grietas los dibujan; con el tono de cada
+// celda se ven como ruido).
+static const uint8_t *mat_tone(void) {
+    static uint8_t tone[M_COUNT];
+    if (!tone[M_STONE]) {
+        memset(tone, 22, sizeof(tone));
+        tone[M_SAND1] = tone[M_SAND2] = tone[M_SAND3] = 6;
+        tone[M_ICE] = tone[M_ICE_B] = tone[M_ICE_D] = 4;
+        tone[M_CHALK] = tone[M_CHALK_D] = 6;
+        tone[M_ROCK_RUST] = tone[M_ROCK_RUST_D] = tone[M_ROCK_TAN] = 7;
+    }
+    return tone;
+}
+
 static bool to_model(VoxGrid *g, Region r, Model *out, bool refine) {
     // Estructuras y casas: el doble de resolucion (cada celda en 2x2x2, con las esquinas
-    // redondeadas) y tono por celda. Las formaciones del paisaje (muchas a la vez) no se refinan.
+    // redondeadas), tono por celda (segun el material) y el ladrillo trabado. Las formaciones del paisaje (muchas a la
+    // vez) no se refinan.
     uint8_t pal[M_COUNT][4];
     palette_for(r, pal);
+    g->brick = M_BRICK, g->tone = mat_tone();
     return voxs_grid_model(g, (const uint8_t(*)[4])pal, out, refine, 22);
 }
 

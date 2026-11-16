@@ -17,6 +17,11 @@ enum {
     M_HIDE,      // el cuero (fuelles, pieles al sol, toldos)
     M_FELT_DARK, // el fieltro gris de las yurtas pobres y las crines de los estandartes
     M_SHADOW,    // lo de adentro de las casas (no se ve; detras de las puertas y ventanas, oscuro)
+    // Las rocas del desierto (las fotos de las torres y los arcos de arenisca) y el ladrillo de las ruinas:
+    M_ROCK_RUST,   // arenisca color oxido
+    M_ROCK_RUST_D, // la arenisca oscura (las capas duras, las grietas)
+    M_ROCK_TAN,    // la arenisca clara, color ante
+    M_BRICK,       // el ladrillo: de adobe en el desierto, cocido en lo demas; el mallador lo traba (VoxGrid.brick)
     M_COUNT
 };
 
