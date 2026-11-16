@@ -124,9 +124,13 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
 Cada guarida del mundo tiene su cueva (`src/sim/caves.c`, desde la semilla y su índice: sin archivos ni bibliotecas).
 En las coordenadas de la cueva, la boca está en (0, 0) y +z va hacia adentro.
 
-- **Afuera** (v0.13.1), la boca es un risco de voxeles de la piedra de su región (`voxs_draw_cave_mouth`, en
-  `src/world/voxstruct.c`):
-  - arenisca en estratos en el desierto, granito en el altiplano y, en el resto, piedra con liquen y pasto en lo alto;
+- **Afuera** (v0.13.1; desde la v0.14.5, como las 20 imágenes de Perchance del usuario, cuatro por tipo, que están en su
+  Drive y no en el repo), la boca es un montículo de peñascos de voxeles de la piedra de su región
+  (`voxs_draw_cave_mouth`, en `src/world/voxstruct.c`):
+  - la roca partida en bloques de unos 2 m (`mouth_boulders`), cada uno de su tono, con la grieta oscura entre uno y
+    otro, liquen amarillo en lo que mira arriba y pasto en lo alto;
+  - arenisca en estratos en el desierto, granito en el altiplano y piedra con liquen en el resto; la de una tribu, de
+    piedra ocre (`VOXS_MOUTH_OCHRE`);
   - un arco natural de 3,2 m de ancho abajo y 3,2 m de alto (más derecho en las abandonadas) y el túnel hueco detrás,
     que se oscurece hacia el fondo;
   - dos rocas bajas en el umbral, que quien camina rodea;
@@ -137,15 +141,22 @@ En las coordenadas de la cueva, la boca está en (0, 0) y +z va hacia adentro.
   se entra.**
 - **Lo de cada tipo** va delante de la roca, sobre el suelo de la boca y fuera del paso (`src/game/world_game.c`). Se ve
   pero no tiene colisión, y no cambia las reglas de entrada:
-  - **las habitadas:** antorchas a los lados, y una escalera de madera que sube a un saliente a 2 m (el del imperio, de
-    piedra, con pilares y baranda);
-  - **la tribu:** el bastidor con un cuero, la cortina corrida y el sol pintado;
-  - **los forajidos:** una estacada a los dos lados;
-  - **el imperio:** sus estandartes;
-  - **las fieras:** huesos y un cráneo;
+  - **las habitadas:** antorchas a los lados, con las llamas de los fogones (`hearth_add_flame`);
+  - **la tribu y los forajidos:** una escalera de madera que sube a un saliente a 2 m;
+  - **la tribu:** el bastidor con un cuero, la tela colgada de una vara y corrida a un lado, el sol rojo con sus rayos
+    pintado sobre el arco, vasijas y un camino de piedras chatas;
+  - **los forajidos:** estacadas de palos aguzados a los dos lados, cajas, un tonel y un camino de tierra pisada;
+  - **el imperio:** un pórtico sobre la cara lisa de la roca (jambas, arco de dovelas, entablamento y, encima, un
+    balcón con columnas y baranda), la plataforma con dos escalones, una plaza de losas y los estandartes en sus
+    mástiles;
+  - **las fieras:** cráneos con cuernos, huesos y piedras sueltas;
   - **las abandonadas:** una escalera rota apoyada en la roca, piedras caídas y la fachada de una civilización
-    desaparecida. La fachada tiene jambas y dintel de sillares, hiladas encima, dos nichos ciegos, una hornacina y la
-    reja oxidada, caída en el suelo a un costado.
+    desaparecida. La fachada tiene jambas y dintel de sillares, el arco de dovelas con una caída, hiladas encima, dos
+    nichos ciegos, una hornacina, musgo en lo que mira arriba, la reja oxidada caída en el suelo a un costado y las losas
+    rotas del frente.
+
+  Las piezas chicas (huesos, losas, caminos) se dibujan solo a menos de 70 m. Todas llevan sombra por cara, como los
+  voxeles (`src/world/shapes.c`, el mismo módulo del decorado de adentro).
 - **El vestíbulo:** tras la boca, una cámara chica y llana (3 m de radio). De su borde salen, cada uno por su lado, los
   tres pasillos de la boca: las dos salidas (a las recámaras `a` e `i`, los extremos del anillo) y la bajada.
 - **La Cisterna Magna:** la sala más honda (7 a 9 m de radio, el doble de alto). **La bajada** llega a ella desde el
