@@ -11,6 +11,7 @@
 #include "sim/lang.h"
 #include "world/body_draw.h"
 #include "world/hearth.h"
+#include "world/shapes.h"
 #include "world/voxstruct.h"
 
 #define SETTLE_ARRIVE 90.0f
@@ -158,11 +159,17 @@ static void gradient_quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color fron
     rlEnd();
 }
 
-static void mouth_torch(float x, float z, float base, float time, int k) {
-    DrawCylinderEx((Vector3){ x, base, z }, (Vector3){ x, base + 1.7f, z }, 0.05f, 0.06f, 5, (Color){ 92, 66, 42, 255 });
-    float fl = 0.85f + 0.15f * sinf(time * 17.0f + (float)k);
-    DrawSphere((Vector3){ x, base + 1.85f, z }, 0.14f * fl, (Color){ 250, 150, 50, 255 });
-    DrawSphere((Vector3){ x, base + 1.88f, z }, 0.07f * fl, (Color){ 255, 236, 170, 255 });
+// Las piezas de lo de cada boca, con sombra por cara como los voxeles de la roca (src/world/shapes.c).
+static void wbox(Vector3 c, float w, float h, float d, float yaw, Color col) { shape_box(c, w, h, d, yaw, col, SHAPE_VOXEL); }
+static void wcyl(Vector3 a, Vector3 b, float ra, float rb, int sides, Color col, int caps) {
+    shape_solid(a, b, ra, rb, sides, col, SHAPE_VOXEL, 0u, 1.0f, caps);
+}
+
+// El azar de cada boca (siempre el mismo para la misma cueva).
+static float mouth_rand(const Cave *c, int k) {
+    uint32_t h = (uint32_t)(int)(c->x * 8.0f) * 73856093u ^ (uint32_t)(int)(c->z * 8.0f) * 19349663u ^ (uint32_t)k * 83492791u;
+    h ^= h >> 13, h *= 0x5BD1E995u, h ^= h >> 15;
+    return (float)(h & 0xFFFFu) / 65535.0f;
 }
 
 // El suelo en un punto de la boca (x, z en el plano de la cueva), sobre el pie del peñasco.
@@ -172,90 +179,305 @@ static float mouth_ground(const Terrain *t, const Cave *c, float base, float lx,
     return terrain_height(t, wx, wz) - base;
 }
 
+// Una antorcha en su palo de h m, en (x, z) del plano de la cueva, con el cuenco de hierro y la llama de los fogones
+// (hearth_add_flame va en el mundo: base es la altura del plano de la cueva).
+static void mouth_torch(const Terrain *t, const Cave *c, float base, float x, float z, float h, int k) {
+    float g = mouth_ground(t, c, base, x, z), wx, wz;
+    wcyl((Vector3){ x, g - 0.1f, z }, (Vector3){ x, g + h, z }, 0.06f, 0.05f, 5, (Color){ 96, 68, 44, 255 }, 1);
+    wcyl((Vector3){ x, g + h - 0.04f, z }, (Vector3){ x, g + h + 0.16f, z }, 0.06f, 0.12f, 6, (Color){ 58, 54, 50, 255 }, 1);
+    cave_to_world(c, x, z, &wx, &wz);
+    hearth_add_flame((Vector3){ wx, base + g + h + 0.12f, wz }, 0.42f, 1200u + (uint32_t)k + (uint32_t)(int)(fabsf(c->x) * 3.0f));
+}
+
+// Una losa o una piedra chata, sobre el suelo de su punto (un poco hundida: en una ladera no queda en el aire).
+static void ground_slab(const Terrain *t, const Cave *c, float base, float x, float z, float w, float d, float h, float yaw, Color col) {
+    float y = mouth_ground(t, c, base, x, z);
+    wbox((Vector3){ x, y + h * 0.5f - 0.05f, z }, w, h, d, yaw, col);
+}
+
+// Un camino de tierra pisada de la boca hacia afuera (los forajidos), siguiendo el suelo, angosto y de bordes desparejos.
+static void dirt_path(const Terrain *t, const Cave *c, float base, Color col) {
+    rlBegin(RL_TRIANGLES);
+    for (int i = 0; i < 9; i++) {
+        float z0 = -1.0f - 0.7f * (float)i, z1 = z0 - 0.7f, ph = mouth_rand(c, 40) * 6.0f;
+        float w0 = 0.8f + 0.22f * sinf((float)i * 1.7f + ph), w1 = 0.8f + 0.22f * sinf((float)(i + 1) * 1.7f + ph);
+        float s0 = 0.18f * sinf((float)i * 0.9f + ph), s1 = 0.18f * sinf((float)(i + 1) * 0.9f + ph); // serpentea un poco
+        Vector3 a = { s0 - w0, mouth_ground(t, c, base, s0 - w0, z0) + 0.025f, z0 }, b = { s0 + w0, mouth_ground(t, c, base, s0 + w0, z0) + 0.025f, z0 };
+        Vector3 d = { s1 - w1, mouth_ground(t, c, base, s1 - w1, z1) + 0.025f, z1 }, e = { s1 + w1, mouth_ground(t, c, base, s1 + w1, z1) + 0.025f, z1 };
+        Color k = ColorBrightness(col, (float)(i & 1) * 0.04f);
+        rlColor4ub(k.r, k.g, k.b, 255), rlVertex3f(a.x, a.y, a.z);
+        rlColor4ub(k.r, k.g, k.b, 255), rlVertex3f(d.x, d.y, d.z);
+        rlColor4ub(k.r, k.g, k.b, 255), rlVertex3f(e.x, e.y, e.z);
+        rlColor4ub(k.r, k.g, k.b, 255), rlVertex3f(a.x, a.y, a.z);
+        rlColor4ub(k.r, k.g, k.b, 255), rlVertex3f(e.x, e.y, e.z);
+        rlColor4ub(k.r, k.g, k.b, 255), rlVertex3f(b.x, b.y, b.z);
+    }
+    rlEnd();
+}
+
 static Vector3 ladder_point(Vector3 low, Vector3 high, float t, float side) {
     Vector3 p = Vector3Lerp(low, high, t);
     Vector3 across = Vector3Normalize((Vector3){ high.z - low.z, 0.0f, low.x - high.x });
     return Vector3Add(p, Vector3Scale(across, side));
 }
 
-// Lo que dejan los que viven en la cueva (las habitadas y la abandonada; la de fieras, nada): una escalera de mano a un
-// costado de la boca, hasta un saliente de tablas sobre puntales (el del imperio, de sillares y con baranda), y en la
-// de una tribu, un bastidor con un cuero al otro costado. En la abandonada, la escalera rota apoyada en la roca. Todo
-// queda fuera del paso (|x| < 1,4 m) y sobre el suelo de su punto, tambien en una ladera. Es decorado: no tiene colision.
-static void draw_human_entrance(const Terrain *t, const Cave *c, float base, float g) {
-    CaveKind kind = c->kind;
-    bool empire = kind == CAVE_EMPIRE, abandoned = kind == CAVE_ABANDONED;
-    Color wood = empire ? (Color){ 112, 78, 42, 255 } : (Color){ 105, 72, 40, 255 };
-    Color wood_light = kind == CAVE_TRIBE ? (Color){ 156, 108, 56, 255 } : ColorBrightness(wood, 0.18f);
-    Color stone = empire ? (Color){ 142, 128, 104, 255 } : (Color){ 116, 100, 78, 255 };
+// La escalera de mano de los forajidos y la tribu, a un costado de la boca, hasta un saliente de tablas sobre puntales;
+// en la abandonada, la escalera rota apoyada en la roca. Todo queda fuera del paso (|x| < 1,4 m) y sobre el suelo de su
+// punto, tambien en una ladera. Es decorado: no tiene colision.
+static void draw_ladder(const Terrain *t, const Cave *c, float base, float g) {
+    bool abandoned = c->kind == CAVE_ABANDONED;
+    Color wood = { 105, 72, 40, 255 }, wood_light = c->kind == CAVE_TRIBE ? (Color){ 156, 108, 56, 255 } : ColorBrightness(wood, 0.18f);
     // El saliente: 1,5 x 1,12 m, de la cara de la roca (z = VOXS_MOUTH_FACE) hacia afuera, a 2 m del suelo de la boca.
-    // La abandonada no lo tiene: su escalera se apoya en la roca, mas afuera (sus nichos estan junto a las jambas).
     const float px = 2.85f, pz = -0.16f, ph = g + 2.0f, pd = 1.12f;
     float lx = abandoned ? 3.5f : 3.15f, lz = abandoned ? -1.2f : -2.3f;
     Vector3 low = { lx, mouth_ground(t, c, base, lx, lz) - 0.05f, lz };
     Vector3 high = abandoned ? (Vector3){ 3.25f, g + 1.98f, VOXS_MOUTH_FACE - 0.1f } : (Vector3){ px, ph - 0.02f, pz - pd * 0.5f };
-    int rungs = abandoned ? 4 : empire ? 8 : 6;
+    int rungs = abandoned ? 4 : 6;
     for (int side = -1; side <= 1; side += 2) { // los largueros (en la rota, uno partido)
         Vector3 a = ladder_point(low, high, 0.0f, (float)side * 0.42f);
         Vector3 b = ladder_point(low, high, abandoned && side > 0 ? 0.62f : 1.0f, (float)side * 0.42f);
-        DrawCylinderEx(a, b, 0.075f, 0.065f, 5, wood);
+        wcyl(a, b, 0.075f, 0.065f, 5, wood, 1);
     }
     for (int i = 0; i < rungs; i++) {
         float k = (float)(i + 1) / (float)(rungs + 1);
         if (abandoned && k > 0.62f) break; // los peldaños de arriba se perdieron
-        DrawCylinderEx(ladder_point(low, high, k, -0.42f), ladder_point(low, high, k, 0.42f), 0.06f, 0.05f, 5, wood_light);
+        wcyl(ladder_point(low, high, k, -0.42f), ladder_point(low, high, k, 0.42f), 0.06f, 0.05f, 5, wood_light, 0);
     }
     if (abandoned) { // el pedazo de larguero, caido al pie
         float fx = 2.75f, fz = -1.75f, fy = mouth_ground(t, c, base, fx, fz) + 0.05f;
-        DrawCylinderEx((Vector3){ fx, fy, fz }, (Vector3){ fx + 0.72f, fy, fz - 0.32f }, 0.06f, 0.035f, 5, wood);
+        wcyl((Vector3){ fx, fy, fz }, (Vector3){ fx + 0.72f, fy, fz - 0.32f }, 0.06f, 0.035f, 5, wood, 3);
         return;
     }
-    Vector3 p = { px, ph - 0.08f, pz };
-    DrawCube(p, 1.5f, 0.16f, pd, empire ? stone : wood);
-    DrawCubeWires(p, 1.5f, 0.16f, pd, ColorBrightness(empire ? stone : wood, -0.3f));
+    wbox((Vector3){ px, ph - 0.08f, pz }, 1.5f, 0.16f, pd, 0.0f, wood);
     for (int s = -1; s <= 1; s += 2) { // los puntales del frente
         float x = px + 0.62f * (float)s, z = pz - pd * 0.5f + 0.1f, y0 = mouth_ground(t, c, base, x, z) - 0.1f;
-        if (empire) DrawCube((Vector3){ x, (y0 + ph - 0.16f) * 0.5f, z }, 0.22f, ph - 0.16f - y0, 0.22f, stone);
-        else DrawCylinderEx((Vector3){ x, y0, z }, (Vector3){ x, ph - 0.16f, z }, 0.07f, 0.06f, 5, wood);
+        wcyl((Vector3){ x, y0, z }, (Vector3){ x, ph - 0.16f, z }, 0.07f, 0.06f, 5, wood, 0);
     }
-    if (empire) { // la baranda
-        for (int i = -1; i <= 1; i++)
-            DrawCylinderEx((Vector3){ px + 0.7f * (float)i, ph, pz - pd * 0.5f + 0.06f }, (Vector3){ px + 0.7f * (float)i, ph + 0.55f, pz - pd * 0.5f + 0.06f }, 0.035f, 0.035f, 5, wood);
-        DrawCylinderEx((Vector3){ px - 0.72f, ph + 0.55f, pz - pd * 0.5f + 0.06f }, (Vector3){ px + 0.72f, ph + 0.55f, pz - pd * 0.5f + 0.06f }, 0.04f, 0.04f, 5, wood);
-    } else if (kind == CAVE_TRIBE) { // el bastidor con un cuero, del otro lado de la boca
+    if (c->kind == CAVE_TRIBE) { // el bastidor con un cuero, del otro lado de la boca
         float rx = -2.75f, rz = -0.95f, ry = mouth_ground(t, c, base, rx, rz);
-        for (int s = -1; s <= 1; s += 2)
-            DrawCylinderEx((Vector3){ rx + 0.4f * (float)s, ry - 0.1f, rz }, (Vector3){ rx + 0.4f * (float)s, ry + 1.35f, rz }, 0.07f, 0.04f, 5, wood);
-        DrawCube((Vector3){ rx, ry + 1.2f, rz }, 0.95f, 0.06f, 0.05f, wood_light);
-        DrawCube((Vector3){ rx, ry + 0.88f, rz }, 0.62f, 0.55f, 0.03f, (Color){ 132, 82, 42, 255 });
+        for (int s = -1; s <= 1; s += 2) wcyl((Vector3){ rx + 0.4f * (float)s, ry - 0.1f, rz }, (Vector3){ rx + 0.4f * (float)s, ry + 1.35f, rz }, 0.07f, 0.04f, 5, wood, 1);
+        wbox((Vector3){ rx, ry + 1.2f, rz }, 0.95f, 0.06f, 0.06f, 0.0f, wood_light);
+        wbox((Vector3){ rx, ry + 0.88f, rz }, 0.62f, 0.55f, 0.03f, 0.0f, (Color){ 132, 82, 42, 255 });
     }
 }
 
-// La fachada de una civilizacion desaparecida (las abandonadas): jambas y dintel de sillares alrededor de la abertura,
-// hiladas encima, dos nichos ciegos y una hornacina en la roca, y la reja vieja, caida en el suelo a un costado. Todo
-// al ras de la cara de la roca (z = VOXS_MOUTH_FACE, lisa en las abandonadas) y fuera del paso: no tiene colision.
-static void draw_ancient_facade(const Terrain *t, const Cave *c, float base, float g, float top, Color rock) {
+// Un arco de dovelas delante de la abertura (el portico del imperio; en la abandonada, con alguna caida): de centro
+// (0, cy) y radio r, al ras de la cara.
+static void voussoirs(float cy, float r, float z, Color stone, int missing) {
+    enum { N = 9 };
+    for (int k = 0; k < N; k++) {
+        if (k == missing) continue;
+        float a0 = PI * (float)k / (float)N, a1 = PI * (float)(k + 1) / (float)N, gap = 0.035f;
+        Vector3 p0 = { cosf(a0 + gap) * r, cy + sinf(a0 + gap) * r, z }, p1 = { cosf(a1 - gap) * r, cy + sinf(a1 - gap) * r, z };
+        wcyl(p0, p1, 0.2f, 0.2f, 4, ColorBrightness(stone, (k & 1) ? -0.05f : 0.03f), 3);
+    }
+}
+
+// La fachada de una civilizacion desaparecida (las abandonadas): jambas y dintel de sillares, el arco con una dovela
+// caida, hiladas encima, dos nichos ciegos, una hornacina, musgo en lo que mira arriba, la reja caida y las losas rotas
+// del frente. Al ras de la cara de la roca (lisa en las abandonadas) y fuera del paso: no tiene colision.
+static void draw_ancient_facade(const Terrain *t, const Cave *c, float base, float g, float top, Color rock, bool near) {
     Color stone = ColorBrightness(rock, 0.18f), joint = ColorBrightness(rock, -0.18f), recess = ColorBrightness(rock, -0.62f);
-    Color iron = { 92, 58, 40, 255 }; // oxidada
-    for (int s = -1; s <= 1; s += 2) // las jambas, del suelo al dintel
-        DrawCube((Vector3){ 1.78f * (float)s, (g - 0.1f + top + 0.05f) * 0.5f, 0.22f }, 0.48f, top + 0.15f - g, 0.36f, stone);
-    DrawCube((Vector3){ 0.0f, top + 0.26f, 0.22f }, 4.05f, 0.42f, 0.36f, stone);
+    Color moss = { 96, 132, 66, 255 }, iron = { 92, 58, 40, 255 }; // la reja, oxidada
+    for (int s = -1; s <= 1; s += 2) { // las jambas, del suelo al dintel, con musgo al pie
+        wbox((Vector3){ 1.78f * (float)s, (g - 0.1f + top + 0.05f) * 0.5f, 0.22f }, 0.48f, top + 0.15f - g, 0.36f, 0.0f, stone);
+        wbox((Vector3){ 1.78f * (float)s, g + 0.12f, 0.15f }, 0.56f, 0.26f, 0.44f, 0.0f, moss);
+    }
+    wbox((Vector3){ 0.0f, top + 0.26f, 0.22f }, 4.05f, 0.42f, 0.36f, 0.0f, stone);
+    wbox((Vector3){ 0.4f, top + 0.5f, 0.2f }, 2.6f, 0.06f, 0.4f, 0.0f, moss);
+    voussoirs(g + 1.6f, 1.58f, 0.3f, stone, 6);
     // Las hiladas, sobre el dintel y un poco hundidas: ninguna cara en el mismo plano que las suyas (no titilan).
     for (int i = 0; i < 5; i++)
-        DrawCube((Vector3){ -1.6f + (float)i * 0.8f, top + 0.61f + (float)(i & 1) * 0.12f, 0.24f }, 0.68f, 0.28f, 0.32f, joint);
+        wbox((Vector3){ -1.6f + (float)i * 0.8f, top + 0.61f + (float)(i & 1) * 0.12f, 0.24f }, 0.68f, 0.28f, 0.32f, 0.0f, joint);
     for (int s = -1; s <= 1; s += 2) { // los nichos, del otro lado de las jambas, con su umbral y su dintel
         float x = 2.45f * (float)s;
-        DrawCube((Vector3){ x, g + 1.25f, 0.375f }, 0.5f, 0.9f, 0.05f, recess);
-        DrawCube((Vector3){ x, g + 0.76f, 0.32f }, 0.66f, 0.1f, 0.16f, stone);
-        DrawCube((Vector3){ x, g + 1.75f, 0.32f }, 0.66f, 0.12f, 0.16f, stone);
+        wbox((Vector3){ x, g + 1.25f, 0.375f }, 0.5f, 0.9f, 0.05f, 0.0f, recess);
+        wbox((Vector3){ x, g + 0.76f, 0.32f }, 0.66f, 0.1f, 0.16f, 0.0f, stone);
+        wbox((Vector3){ x, g + 1.75f, 0.32f }, 0.66f, 0.12f, 0.16f, 0.0f, stone);
     }
-    DrawCube((Vector3){ 0.0f, top + 1.25f, 0.375f }, 0.7f, 0.62f, 0.05f, recess); // la hornacina
-    DrawCube((Vector3){ 0.0f, top + 1.62f, 0.32f }, 0.86f, 0.12f, 0.16f, stone);
+    wbox((Vector3){ 0.0f, top + 1.25f, 0.375f }, 0.7f, 0.62f, 0.05f, 0.0f, recess); // la hornacina
+    wbox((Vector3){ 0.0f, top + 1.62f, 0.32f }, 0.86f, 0.12f, 0.16f, 0.0f, stone);
     float gy = mouth_ground(t, c, base, -2.7f, -1.65f) + 0.04f; // la reja, en el suelo (delante de la roca baja)
-    for (int i = -2; i <= 2; i++)
-        DrawCylinderEx((Vector3){ -2.7f + (float)i * 0.3f, gy, -0.9f }, (Vector3){ -2.7f + (float)i * 0.3f, gy, -2.4f }, 0.035f, 0.035f, 4, iron);
+    for (int i = -2; i <= 2; i++) wcyl((Vector3){ -2.7f + (float)i * 0.3f, gy, -0.9f }, (Vector3){ -2.7f + (float)i * 0.3f, gy, -2.4f }, 0.035f, 0.035f, 4, iron, 0);
     for (int k = 0; k < 2; k++)
-        DrawCylinderEx((Vector3){ -3.35f, gy + 0.03f, -1.2f - (float)k * 0.9f }, (Vector3){ -2.05f, gy + 0.03f, -1.2f - (float)k * 0.9f }, 0.04f, 0.04f, 4, iron);
+        wcyl((Vector3){ -3.35f, gy + 0.03f, -1.2f - (float)k * 0.9f }, (Vector3){ -2.05f, gy + 0.03f, -1.2f - (float)k * 0.9f }, 0.04f, 0.04f, 4, iron, 0);
+    // Los sillares caidos, con su musgo.
+    static const float FALLEN[3][5] = { { -0.9f, -0.6f, 0.7f, 0.5f, 0.6f }, { 1.1f, -1.3f, 0.5f, 0.36f, 0.5f }, { 2.2f, -2.6f, 0.62f, 0.42f, 0.52f } };
+    for (int k = 0; k < 3; k++) {
+        const float *f = FALLEN[k];
+        float y = mouth_ground(t, c, base, f[0], f[1]), yaw = mouth_rand(c, 50 + k) * 1.2f;
+        wbox((Vector3){ f[0], y + f[3] * 0.5f - 0.04f, f[1] }, f[2], f[3], f[4], yaw, k & 1 ? rock : joint);
+        wbox((Vector3){ f[0], y + f[3] - 0.01f, f[1] }, f[2] * 0.8f, 0.05f, f[4] * 0.8f, yaw, moss);
+    }
+    if (!near) return;
+    for (int i = 0; i < 4; i++) // las losas del frente, rotas: alguna falta, otras se movieron
+        for (int j = -1; j <= 1; j++) {
+            if (mouth_rand(c, 60 + i * 3 + j) < 0.3f) continue;
+            float x = (float)j * 0.95f + (mouth_rand(c, 70 + i) - 0.5f) * 0.1f, z = -0.7f - 0.95f * (float)i;
+            ground_slab(t, c, base, x, z, 0.86f, 0.86f, 0.1f, (mouth_rand(c, 80 + i * 3 + j) - 0.5f) * 0.3f, mouth_rand(c, 90 + i + j) < 0.3f ? moss : joint);
+        }
+}
+
+// El portico del imperio (las referencias): las jambas de sillares, el arco de dovelas, el entablamento con su cornisa y,
+// encima, el balcon con sus columnas y la baranda; la plataforma y los escalones, la plaza de losas y los estandartes en
+// sus mastiles a los lados. Sobre la cara lisa de la roca y fuera del paso: no tiene colision.
+static void draw_imperial_portal(const Terrain *t, const Cave *c, float base, float g, float top, bool near) {
+    Color stone = { 160, 156, 148, 255 }, dark = { 118, 114, 108, 255 }, flag = { 132, 128, 122, 255 };
+    Color red = { 156, 34, 30, 255 }, gold = { 214, 172, 64, 255 }, wood = { 92, 66, 44, 255 };
+    for (int s = -1; s <= 1; s += 2) { // las jambas, con su basa
+        wbox((Vector3){ 1.85f * (float)s, (g + top + 0.4f) * 0.5f, 0.2f }, 0.56f, top + 0.4f - g, 0.5f, 0.0f, stone);
+        wbox((Vector3){ 1.85f * (float)s, g + 0.15f, 0.12f }, 0.74f, 0.3f, 0.66f, 0.0f, dark);
+    }
+    voussoirs(g + 1.6f, 1.58f, 0.28f, stone, -1);
+    wbox((Vector3){ 0.0f, top + 0.62f, 0.16f }, 4.6f, 0.5f, 0.6f, 0.0f, stone); // el entablamento
+    wbox((Vector3){ 0.0f, top + 0.92f, 0.04f }, 5.0f, 0.14f, 0.86f, 0.0f, dark); // la cornisa
+    // El balcon: el piso volado, cuatro columnas y la baranda de balaustres entre ellas.
+    float by = top + 0.99f, fz = -0.3f;
+    wbox((Vector3){ 0.0f, by + 0.08f, -0.05f }, 3.8f, 0.16f, 1.1f, 0.0f, stone);
+    for (int k = 0; k < 4; k++) {
+        float x = -1.65f + 1.1f * (float)k;
+        wcyl((Vector3){ x, by + 0.16f, fz }, (Vector3){ x, by + 1.25f, fz }, 0.11f, 0.1f, 8, stone, 0);
+        wbox((Vector3){ x, by + 1.3f, fz }, 0.3f, 0.1f, 0.3f, 0.0f, dark);
+    }
+    wbox((Vector3){ 0.0f, by + 1.4f, -0.05f }, 3.8f, 0.12f, 1.1f, 0.0f, dark); // el techo del balcon
+    for (int k = 0; k < 15; k++) {
+        float x = -1.65f + 3.3f * (float)k / 14.0f;
+        wcyl((Vector3){ x, by + 0.16f, fz - 0.02f }, (Vector3){ x, by + 0.58f, fz - 0.02f }, 0.045f, 0.035f, 5, stone, 0);
+    }
+    wbox((Vector3){ 0.0f, by + 0.62f, fz - 0.02f }, 3.4f, 0.08f, 0.14f, 0.0f, dark);
+    // La plataforma del umbral, al ras del suelo de la boca, y dos escalones que bajan (se ven si el suelo baja).
+    wbox((Vector3){ 0.0f, g - 0.2f, -0.35f }, 4.4f, 0.44f, 1.5f, 0.0f, dark);
+    for (int k = 1; k <= 2; k++) wbox((Vector3){ 0.0f, g - 0.2f - 0.15f * (float)k, -1.1f - 0.4f * (float)(k - 1) }, 4.4f - 0.3f * (float)k, 0.44f, 0.4f, 0.0f, dark);
+    for (int s = -1; s <= 1; s += 2) { // los estandartes, en sus mastiles con travesaño
+        float x = 3.3f * (float)s, z = -1.5f, y = mouth_ground(t, c, base, x, z);
+        wcyl((Vector3){ x, y - 0.1f, z }, (Vector3){ x, y + 4.9f, z }, 0.07f, 0.06f, 6, wood, 1);
+        wcyl((Vector3){ x - 0.55f, y + 4.5f, z }, (Vector3){ x + 0.55f, y + 4.5f, z }, 0.04f, 0.04f, 5, wood, 3);
+        wbox((Vector3){ x, y + 3.35f, z - 0.03f }, 0.92f, 2.2f, 0.04f, 0.0f, red);
+        wbox((Vector3){ x, y + 3.35f, z - 0.06f }, 0.92f, 0.08f, 0.02f, 0.0f, gold);
+        wbox((Vector3){ x, y + 3.6f, z - 0.06f }, 0.34f, 0.42f, 0.02f, 0.0f, gold); // el emblema
+        wbox((Vector3){ x, y + 4.38f, z - 0.06f }, 0.92f, 0.08f, 0.02f, 0.0f, gold);
+        wcyl((Vector3){ x, y + 4.98f, z }, (Vector3){ x, y + 5.2f, z }, 0.08f, 0.0f, 6, gold, 0); // la punta
+    }
+    if (!near) return;
+    for (int i = 0; i < 5; i++) // la plaza de losas, delante de los escalones
+        for (int j = -3; j <= 3; j++) {
+            float x = (float)j * 0.95f + ((i & 1) ? 0.47f : 0.0f), z = -1.9f - 0.95f * (float)i;
+            if (fabsf(x) > 3.1f) continue;
+            ground_slab(t, c, base, x, z, 0.88f, 0.88f, 0.1f, 0.0f, ColorBrightness(flag, (mouth_rand(c, 100 + i * 7 + j) - 0.5f) * 0.14f));
+        }
+}
+
+// Lo de afuera de una guarida de fieras: craneos con cuernos, huesos y piedras sueltas.
+static void draw_skull(Vector3 p, float yaw, float s) {
+    Color bone = { 226, 218, 196, 255 }, horn = { 150, 128, 98, 255 }, dark = { 70, 62, 54, 255 };
+    float fx = sinf(yaw), fz = cosf(yaw), sx = fz, sz = -fx;
+    wbox((Vector3){ p.x, p.y + 0.11f * s, p.z }, 0.26f * s, 0.2f * s, 0.3f * s, yaw, bone); // el craneo y el hocico
+    wbox((Vector3){ p.x + fx * 0.24f * s, p.y + 0.07f * s, p.z + fz * 0.24f * s }, 0.16f * s, 0.12f * s, 0.24f * s, yaw, bone);
+    for (int k = -1; k <= 1; k += 2) { // las cuencas y los cuernos
+        float kk = (float)k;
+        wbox((Vector3){ p.x + fx * 0.15f * s + sx * 0.08f * kk * s, p.y + 0.15f * s, p.z + fz * 0.15f * s + sz * 0.08f * kk * s }, 0.07f * s, 0.06f * s, 0.03f * s, yaw, dark);
+        Vector3 h0 = { p.x + sx * 0.12f * kk * s, p.y + 0.17f * s, p.z + sz * 0.12f * kk * s };
+        Vector3 h1 = { h0.x + sx * 0.22f * kk * s, h0.y + 0.05f * s, h0.z + sz * 0.22f * kk * s };
+        Vector3 h2 = { h1.x + sx * 0.1f * kk * s - fx * 0.06f * s, h1.y + 0.2f * s, h1.z + sz * 0.1f * kk * s - fz * 0.06f * s };
+        wcyl(h0, h1, 0.05f * s, 0.035f * s, 5, horn, 0);
+        wcyl(h1, h2, 0.035f * s, 0.004f * s, 5, horn, 0);
+    }
+}
+
+static void draw_den_front(const Terrain *t, const Cave *c, float base, bool near) {
+    Color bone = { 222, 214, 192, 255 }, rock = { 118, 114, 108, 255 };
+    static const float SKULL[2][3] = { { 0.9f, -1.1f, -0.6f }, { -1.7f, -2.3f, 0.5f } };
+    for (int k = 0; k < 2; k++) draw_skull((Vector3){ SKULL[k][0], mouth_ground(t, c, base, SKULL[k][0], SKULL[k][1]), SKULL[k][1] }, SKULL[k][2], 1.3f);
+    if (!near) return;
+    for (int k = 0; k < 6; k++) { // los huesos largos, con sus nudos
+        float x = -2.2f + 4.4f * mouth_rand(c, 10 + k), z = -0.8f - 2.8f * mouth_rand(c, 20 + k), a = mouth_rand(c, 30 + k) * PI;
+        float y = mouth_ground(t, c, base, x, z) + 0.04f, l = 0.22f + 0.14f * mouth_rand(c, 35 + k);
+        Vector3 p0 = { x - cosf(a) * l, y, z - sinf(a) * l }, p1 = { x + cosf(a) * l, y, z + sinf(a) * l };
+        wcyl(p0, p1, 0.035f, 0.035f, 5, bone, 0);
+        wbox(p0, 0.09f, 0.08f, 0.09f, a, bone);
+        wbox(p1, 0.09f, 0.08f, 0.09f, a, bone);
+    }
+    for (int k = 0; k < 7; k++) { // las piedras sueltas
+        float x = (mouth_rand(c, 120 + k) - 0.5f) * 8.0f, z = -0.9f - 4.5f * mouth_rand(c, 130 + k), sz = 0.25f + 0.35f * mouth_rand(c, 140 + k);
+        if (fabsf(x) < 1.0f && z > -2.5f) continue; // el paso, libre
+        ground_slab(t, c, base, x, z, sz * 1.3f, sz, sz * 0.8f, mouth_rand(c, 150 + k) * PI, ColorBrightness(rock, (mouth_rand(c, 160 + k) - 0.5f) * 0.3f));
+    }
+}
+
+// Lo de afuera de los forajidos: estacadas de palos aguzados a los dos lados, cajas, un tonel y el camino de tierra.
+static void draw_bandit_front(const Terrain *t, const Cave *c, float base, bool near) {
+    Color stake = { 110, 82, 54, 255 }, tip = { 150, 120, 84, 255 }, wood = { 118, 84, 50, 255 }, band = { 64, 52, 44, 255 };
+    for (int s = -1; s <= 1; s += 2) { // las estacadas: de la roca hacia afuera, con su travesaño atado
+        float x0 = s < 0 ? -2.3f : 4.0f, x1 = s < 0 ? -5.4f : 5.9f;
+        Vector3 prev = { 0 };
+        for (int k = 0; k < 8; k++) {
+            float u = (float)k / 7.0f, x = x0 + (x1 - x0) * u, z = -0.9f + 0.7f * u * u, h = 1.55f + 0.35f * mouth_rand(c, 200 + k + s * 20);
+            float y = mouth_ground(t, c, base, x, z) - 0.15f;
+            Vector3 b = { x, y, z }, top = { x - (float)s * 0.04f, y + h, z - 0.1f };
+            wcyl(b, top, 0.085f, 0.075f, 5, stake, 0);
+            wcyl(top, (Vector3){ top.x, top.y + 0.28f, top.z - 0.03f }, 0.075f, 0.0f, 5, tip, 0);
+            Vector3 rail = { x, y + 0.95f, z - 0.09f };
+            if (k > 0) wcyl(prev, rail, 0.035f, 0.035f, 4, band, 0);
+            prev = rail;
+        }
+    }
+    wbox((Vector3){ -2.0f, mouth_ground(t, c, base, -2.0f, -1.7f) + 0.3f, -1.7f }, 0.62f, 0.6f, 0.62f, 0.3f, wood); // las cajas
+    wbox((Vector3){ -2.05f, mouth_ground(t, c, base, -2.0f, -1.7f) + 0.82f, -1.7f }, 0.46f, 0.44f, 0.46f, 0.6f, ColorBrightness(wood, 0.08f));
+    float bx = 1.95f, bz = -1.5f, by = mouth_ground(t, c, base, bx, bz) - 0.03f; // el tonel, con sus aros
+    wcyl((Vector3){ bx, by, bz }, (Vector3){ bx, by + 0.42f, bz }, 0.28f, 0.33f, 10, wood, 0);
+    wcyl((Vector3){ bx, by + 0.42f, bz }, (Vector3){ bx, by + 0.84f, bz }, 0.33f, 0.28f, 10, wood, 1);
+    for (int k = 0; k < 2; k++) wcyl((Vector3){ bx, by + 0.18f + 0.46f * (float)k, bz }, (Vector3){ bx, by + 0.24f + 0.46f * (float)k, bz }, 0.32f, 0.32f, 10, band, 0);
+    if (near) dirt_path(t, c, base, (Color){ 132, 114, 92, 255 });
+}
+
+// Lo de afuera de la tribu: el sol pintado sobre el arco, la tela colgada de una vara, vasijas y el camino de piedras.
+static void draw_tribe_front(const Terrain *t, const Cave *c, float base, float g, float top, bool near) {
+    Color red = { 176, 52, 34, 255 }, cloth = { 196, 92, 46, 255 }, fringe = { 150, 60, 34, 255 }, clay = { 168, 96, 60, 255 }, wood = { 120, 84, 50, 255 };
+    Vector3 sun = { 0.0f, top + 1.05f, 0.36f }; // el sol: el disco y los rayos, en la roca sobre el arco
+    rlBegin(RL_TRIANGLES);
+    for (int k = 0; k < 12; k++) {
+        float a0 = (float)k * PI / 6.0f, a1 = a0 + PI / 6.0f;
+        rlColor4ub(red.r, red.g, red.b, 255), rlVertex3f(sun.x, sun.y, sun.z);
+        rlColor4ub(red.r, red.g, red.b, 255), rlVertex3f(sun.x + cosf(a1) * 0.42f, sun.y + sinf(a1) * 0.42f, sun.z);
+        rlColor4ub(red.r, red.g, red.b, 255), rlVertex3f(sun.x + cosf(a0) * 0.42f, sun.y + sinf(a0) * 0.42f, sun.z);
+        float am = (a0 + a1) * 0.5f; // un rayo
+        rlColor4ub(red.r, red.g, red.b, 255), rlVertex3f(sun.x + cosf(a0 + 0.1f) * 0.5f, sun.y + sinf(a0 + 0.1f) * 0.5f, sun.z);
+        rlColor4ub(red.r, red.g, red.b, 255), rlVertex3f(sun.x + cosf(am) * 0.82f, sun.y + sinf(am) * 0.82f, sun.z);
+        rlColor4ub(red.r, red.g, red.b, 255), rlVertex3f(sun.x + cosf(a1 - 0.1f) * 0.5f, sun.y + sinf(a1 - 0.1f) * 0.5f, sun.z);
+    }
+    rlEnd();
+    // La tela: colgada de una vara de lado a lado del arco, corrida hacia un costado, con pliegues y el fleco abajo.
+    wcyl((Vector3){ -1.75f, top - 0.1f, 0.2f }, (Vector3){ 1.75f, top - 0.1f, 0.2f }, 0.05f, 0.05f, 5, wood, 3);
+    rlBegin(RL_TRIANGLES);
+    for (int k = 0; k < 6; k++) {
+        float x0 = -1.5f + 0.32f * (float)k, x1 = x0 + 0.32f, z0 = 0.18f + ((k & 1) ? 0.07f : 0.0f), z1 = 0.18f + ((k & 1) ? 0.0f : 0.07f);
+        float y0 = g + 0.3f + 0.1f * (float)k, y1 = top - 0.12f; // corrida: mas corta hacia el medio, donde se recoge
+        Color k0 = ColorBrightness(cloth, (k & 1) ? -0.12f : 0.0f);
+        rlColor4ub(k0.r, k0.g, k0.b, 255), rlVertex3f(x0, y0, z0);
+        rlColor4ub(k0.r, k0.g, k0.b, 255), rlVertex3f(x1, y0 + 0.1f, z1);
+        rlColor4ub(k0.r, k0.g, k0.b, 255), rlVertex3f(x1, y1, z1);
+        rlColor4ub(k0.r, k0.g, k0.b, 255), rlVertex3f(x0, y0, z0);
+        rlColor4ub(k0.r, k0.g, k0.b, 255), rlVertex3f(x1, y1, z1);
+        rlColor4ub(k0.r, k0.g, k0.b, 255), rlVertex3f(x0, y1, z0);
+        rlColor4ub(fringe.r, fringe.g, fringe.b, 255), rlVertex3f(x0, y0 - 0.12f, z0 - 0.01f); // el fleco
+        rlColor4ub(fringe.r, fringe.g, fringe.b, 255), rlVertex3f(x1, y0 - 0.02f, z1 - 0.01f);
+        rlColor4ub(fringe.r, fringe.g, fringe.b, 255), rlVertex3f(x0, y0 + 0.12f, z0 - 0.01f);
+    }
+    rlEnd();
+    static const float POTS[3][3] = { { 1.95f, -1.0f, 1.0f }, { 2.1f, -1.6f, 0.75f }, { -1.85f, -1.65f, 0.9f } };
+    for (int k = 0; k < 3; k++) { // las vasijas: la panza, el cuello y una franja pintada
+        float x = POTS[k][0], z = POTS[k][1], s = POTS[k][2], y = mouth_ground(t, c, base, x, z) - 0.03f;
+        wcyl((Vector3){ x, y, z }, (Vector3){ x, y + 0.28f * s, z }, 0.16f * s, 0.27f * s, 8, clay, 0);
+        wcyl((Vector3){ x, y + 0.28f * s, z }, (Vector3){ x, y + 0.5f * s, z }, 0.27f * s, 0.12f * s, 8, clay, 0);
+        wcyl((Vector3){ x, y + 0.5f * s, z }, (Vector3){ x, y + 0.62f * s, z }, 0.1f * s, 0.12f * s, 8, clay, 1);
+        wcyl((Vector3){ x, y + 0.26f * s, z }, (Vector3){ x, y + 0.32f * s, z }, 0.275f * s, 0.275f * s, 8, red, 0);
+    }
+    if (!near) return;
+    for (int k = 0; k < 9; k++) { // el camino de piedras chatas
+        float z = -0.5f - 0.62f * (float)k, x = ((k & 1) ? 0.35f : -0.3f) + (mouth_rand(c, 300 + k) - 0.5f) * 0.3f;
+        ground_slab(t, c, base, x, z, 0.62f + 0.2f * mouth_rand(c, 310 + k), 0.5f, 0.08f, mouth_rand(c, 320 + k) * PI,
+                    ColorBrightness((Color){ 168, 146, 118, 255 }, (mouth_rand(c, 330 + k) - 0.5f) * 0.2f));
+    }
 }
 
 // El pie del peñasco: lo mas bajo del terreno alrededor de la boca, 0,4 m mas abajo (en una ladera no queda en el
@@ -275,21 +497,22 @@ float wd_cave_drop(const Terrain *t, const Cave *c) {
     return ground - base;
 }
 
-static void draw_cave(const Terrain *t, const Cave *c, float time) {
+// near: lo chico (huesos, losas, caminos), solo de cerca.
+static void draw_cave(const Terrain *t, const Cave *c, float time, bool near) {
     float ground, base = cave_foot(t, c, &ground);
     Color rock = c->region == REGION_DESERT ? (Color){ 170, 120, 84, 255 } : c->region == REGION_HIGHLAND ? (Color){ 124, 126, 132, 255 } : (Color){ 112, 108, 100, 255 };
-    Color dark = ColorBrightness(rock, -0.25f);
-    bool empire = c->kind == CAVE_EMPIRE;
     float t0 = ground - base;  // el suelo de la boca (sobre el pie)
     float top = t0 + 3.0f;     // el techo de la abertura
-    // La roca: un risco de voxeles de la piedra de la region, con su arco y su tunel (src/world/voxstruct.c); la
-    // abandonada, con la cara lisa para la fachada. El tipo de cueva se lee por lo que hay delante.
-    voxs_draw_cave_mouth(c->region, (int)(c - t->world->caves), c->kind == CAVE_ABANDONED, (Vector3){ c->x, ground, c->z }, c->yaw);
+    // La roca: un monticulo de peñascos de voxeles de la piedra de la region, con su arco y su tunel
+    // (src/world/voxstruct.c); la abandonada y el imperio, con la cara lisa para su fachada; la tribu, de piedra ocre. El
+    // tipo de cueva se lee por lo que hay delante.
+    VoxMouthStyle style = c->kind == CAVE_ABANDONED || c->kind == CAVE_EMPIRE ? VOXS_MOUTH_FACADE : c->kind == CAVE_TRIBE ? VOXS_MOUTH_OCHRE : VOXS_MOUTH_NATURAL;
+    voxs_draw_cave_mouth(c->region, (int)(c - t->world->caves), style, (Vector3){ c->x, ground, c->z }, c->yaw);
     rlPushMatrix();
     rlTranslatef(c->x, base, c->z);
     rlRotatef(c->yaw * RAD2DEG, 0, 1, 0); // +z del dibujo: hacia adentro (cave_to_world)
-    if (c->kind != CAVE_ANIMAL) draw_human_entrance(t, c, base, t0);
-    if (c->kind == CAVE_ABANDONED) draw_ancient_facade(t, c, base, t0, top, rock);
+    if (c->kind == CAVE_BANDITS || c->kind == CAVE_TRIBE || c->kind == CAVE_ABANDONED) draw_ladder(t, c, base, t0);
+    if (c->kind == CAVE_ABANDONED) draw_ancient_facade(t, c, base, t0, top, rock, near);
     // El tunel: se oscurece hacia adentro (a los 4 m ya no se ve nada). Sin descartar caras (vaciando el lote antes
     // y despues: raylib dibuja al final).
     rlDrawRenderBatchActive();
@@ -302,41 +525,25 @@ static void draw_cave(const Terrain *t, const Cave *c, float time) {
     gradient_quad((Vector3){ -1.42f, g0, tz }, (Vector3){ -1.42f, tc, tz }, (Vector3){ -1.42f, tc, 4.3f }, (Vector3){ -1.42f, g0, 4.3f }, front, back);
     gradient_quad((Vector3){ 1.42f, g0, tz }, (Vector3){ 1.42f, tc, tz }, (Vector3){ 1.42f, tc, 4.3f }, (Vector3){ 1.42f, g0, 4.3f }, front, back);
     DrawCube((Vector3){ 0.0f, tc * 0.5f, 4.35f }, 2.84f, tc, 0.1f, back);
+    // Lo de cada tipo, como en las referencias de Perchance (docs/PLAN_TACTICO_Y_CUEVAS.md, B1). Las tablas de la tribu y
+    // el sol son de una sola cara: sin descartar caras todavia.
+    switch (c->kind) {
+    case CAVE_ANIMAL: draw_den_front(t, c, base, near); break;
+    case CAVE_BANDITS: draw_bandit_front(t, c, base, near); break;
+    case CAVE_TRIBE: draw_tribe_front(t, c, base, t0, top, near); break;
+    case CAVE_EMPIRE: draw_imperial_portal(t, c, base, t0, top, near); break;
+    default: break;
+    }
     rlDrawRenderBatchActive();
     rlEnableBackfaceCulling();
-    switch (c->kind) {
-    case CAVE_ANIMAL: // huesos y un craneo a la entrada
-        for (int k = 0; k < 4; k++) {
-            float a = (float)k * 1.9f, x = -1.2f + (float)k * 0.8f, z = -1.4f + 0.3f * sinf(a);
-            DrawCylinderEx((Vector3){ x - cosf(a) * 0.3f, t0 + 0.04f, z - sinf(a) * 0.3f }, (Vector3){ x + cosf(a) * 0.3f, t0 + 0.04f, z + sinf(a) * 0.3f },
-                           0.035f, 0.035f, 4, (Color){ 222, 214, 192, 255 });
-        }
-        DrawSphere((Vector3){ 0.6f, t0 + 0.1f, -0.8f }, 0.13f, (Color){ 232, 224, 202, 255 });
-        break;
-    case CAVE_ABANDONED: // piedras caidas
-        DrawCube((Vector3){ -0.9f, t0 + 0.25f, -0.6f }, 0.7f, 0.5f, 0.6f, dark);
-        DrawCube((Vector3){ 1.1f, t0 + 0.18f, -1.3f }, 0.5f, 0.36f, 0.5f, rock);
-        DrawCube((Vector3){ 0.3f, t0 + 0.12f, 0.6f }, 0.4f, 0.24f, 0.35f, dark);
-        break;
-    default: // las habitadas: antorchas a los lados
-        mouth_torch(-1.7f, -0.4f, t0, time, 0);
-        mouth_torch(1.7f, -0.4f, t0, time, 1);
-        if (c->kind == CAVE_TRIBE) { // la cortina de cuero, corrida a un lado, y el sol pintado en el dintel
-            DrawCube((Vector3){ -0.9f, (t0 + top) * 0.5f, 0.5f }, 1.0f, top - t0, 0.05f, (Color){ 120, 84, 52, 255 });
-            DrawCylinderEx((Vector3){ 0.0f, top + 0.7f, 0.38f }, (Vector3){ 0.0f, top + 0.7f, 0.36f }, 0.35f, 0.35f, 10, (Color){ 168, 58, 36, 255 });
-        } else if (empire) { // los estandartes del imperio, colgados de la roca por encima del saliente
-            for (int k = -1; k <= 1; k += 2) {
-                DrawCube((Vector3){ 3.0f * (float)k, t0 + 3.0f, 0.36f }, 0.9f, 1.6f, 0.05f, (Color){ 150, 32, 30, 255 });
-                DrawCube((Vector3){ 3.0f * (float)k, t0 + 3.0f, 0.33f }, 0.3f, 0.3f, 0.05f, (Color){ 220, 180, 70, 255 });
-            }
-        } else { // los forajidos: una estacada (la de la derecha, mas alla de la escalera)
-            for (int k = 0; k < 5; k++) {
-                float x = (k < 2 ? -3.8f : 3.95f) + (float)(k % 3) * 0.55f, y = mouth_ground(t, c, base, x, -1.2f) - 0.1f;
-                DrawCylinderEx((Vector3){ x, y, -1.2f }, (Vector3){ x, y + 1.4f, -1.25f }, 0.07f, 0.03f, 4, (Color){ 104, 78, 52, 255 });
-            }
-        }
-        break;
+    if (c->kind == CAVE_BANDITS || c->kind == CAVE_TRIBE) { // las antorchas a los lados de la boca
+        mouth_torch(t, c, base, -1.7f, -0.45f, 1.75f, 0);
+        mouth_torch(t, c, base, 1.7f, -0.45f, 1.75f, 1);
+    } else if (c->kind == CAVE_EMPIRE) { // en mastiles mas altos, junto a la plataforma
+        mouth_torch(t, c, base, -2.45f, -1.25f, 2.3f, 0);
+        mouth_torch(t, c, base, 2.45f, -1.25f, 2.3f, 1);
     }
+    (void)time;
     rlPopMatrix();
 }
 
@@ -490,8 +697,10 @@ static void draw_site(Props *props, const Terrain *t, const WorldSite *st, int i
 void wd_draw_world(const GameActions *ga, Props *props, const Terrain *t, const Player *p, float time) {
     g_fires_out = ga->fires_out; // la lluvia apaga tambien los fuegos de los demas
     const World *w = t->world;
-    for (int i = 0; i < w->cave_count; i++)
-        if (dist_xz(w->caves[i].x, w->caves[i].z, p->pos.x, p->pos.z) < DEN_DRAW) draw_cave(t, &w->caves[i], time);
+    for (int i = 0; i < w->cave_count; i++) {
+        float d = dist_xz(w->caves[i].x, w->caves[i].z, p->pos.x, p->pos.z);
+        if (d < DEN_DRAW) draw_cave(t, &w->caves[i], time, d < 70.0f);
+    }
     for (int i = 0; i < w->tribe_count; i++)
         if (dist_xz(w->tribes[i].x, w->tribes[i].z, p->pos.x, p->pos.z) < TRIBE_DRAW) draw_tribe(t, &w->tribes[i], i, time);
     for (int i = 0; i < w->site_count; i++)

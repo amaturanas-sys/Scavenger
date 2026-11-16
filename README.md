@@ -264,6 +264,17 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las bocas de las cuevas como sus referencias (v0.14.5), con otras 20 imágenes de Perchance del usuario (cuatro por tipo;
+el detalle, en [docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md#b1--la-boca-y-la-planta)):
+- **La roca:** un montículo de peñascos de distinto tono, con la grieta oscura entre uno y otro, liquen y pasto encima;
+  la de una tribu, de piedra ocre. Las antorchas, con las llamas de los fogones.
+- **La guarida de fieras:** cráneos con cuernos, huesos y piedras sueltas.
+- **La cueva abandonada:** el arco de dovelas de la fachada, con una caída, musgo y las losas rotas del frente.
+- **El refugio de forajidos:** estacadas de palos aguzados a los dos lados, cajas, un tonel y un camino de tierra.
+- **El refugio de una tribu:** el sol rojo con sus rayos, la tela colgada de una vara, vasijas y un camino de piedras.
+- **El almacén del imperio:** un pórtico con su arco y un balcón con columnas y baranda, la plataforma con escalones,
+  una plaza de losas y los estandartes en sus mástiles.
+
 Las cuevas como sus referencias (v0.14.4), con las 20 imágenes de Perchance del usuario (cuatro por tipo; lo que se
 tomó, en [docs/PLAN_CUEVAS_GRANDES.md](docs/PLAN_CUEVAS_GRANDES.md#lo-que-se-tomó-de-las-referencias-de-perchance)):
 - **En todas:** la roca en facetas, como el low poly de las imágenes, y el decorado con sombra en cada cara (antes, de un
