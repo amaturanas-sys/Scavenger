@@ -26,20 +26,20 @@ float flora_density(FloraKind kind, const float k[REGION_COUNT], float near_wate
     float nw = clamp01(near_water);
     switch (kind) {
     case FLORA_GRASS: // en el desierto, solo junto al agua (los oasis); en el bosque, el pasto entre los helechos
-        return k[REGION_STEPPE] * 1.3f + k[REGION_FOREST] * 1.15f + k[REGION_HIGHLAND] * 0.6f + k[REGION_FJORD] * 0.7f +
+        return k[REGION_STEPPE] * 1.75f + k[REGION_FOREST] * 1.15f + k[REGION_HIGHLAND] * 0.6f + k[REGION_FJORD] * 0.7f +
                k[REGION_DESERT] * (0.024f + 0.56f * nw);
     case FLORA_STIPA: // la estepa seca: lejos del agua
-        return (k[REGION_STEPPE] * 0.7f + k[REGION_HIGHLAND] * 0.08f + k[REGION_DESERT] * 0.04f) * (1.0f - 0.7f * nw);
+        return (k[REGION_STEPPE] * 0.95f + k[REGION_HIGHLAND] * 0.08f + k[REGION_DESERT] * 0.04f) * (1.0f - 0.7f * nw);
     case FLORA_FLOWER:
-        return k[REGION_STEPPE] * 0.15f + k[REGION_HIGHLAND] * 0.08f + k[REGION_FOREST] * 0.04f + k[REGION_FJORD] * 0.04f;
+        return k[REGION_STEPPE] * 0.22f + k[REGION_HIGHLAND] * 0.08f + k[REGION_FOREST] * 0.04f + k[REGION_FJORD] * 0.04f;
     case FLORA_FERN:
         return k[REGION_FOREST] * 0.44f + k[REGION_FJORD] * 0.14f;
     case FLORA_REED: // las orillas (en la estepa, tan juntos que no queda suelo pelado)
         return nw * nw *
-               (k[REGION_STEPPE] * 1.3f + k[REGION_FOREST] * 0.7f + k[REGION_HIGHLAND] * 0.24f + k[REGION_FJORD] * 0.4f +
+               (k[REGION_STEPPE] * 1.6f + k[REGION_FOREST] * 0.7f + k[REGION_HIGHLAND] * 0.24f + k[REGION_FJORD] * 0.4f +
                 k[REGION_DESERT] * 0.9f);
     case FLORA_HERB: // el ajenjo, el tomillo y la salvia de la estepa seca (en la orilla, menos)
-        return (k[REGION_STEPPE] * 0.3f + k[REGION_HIGHLAND] * 0.1f + k[REGION_FOREST] * 0.03f + k[REGION_DESERT] * 0.03f) *
+        return (k[REGION_STEPPE] * 0.45f + k[REGION_HIGHLAND] * 0.1f + k[REGION_FOREST] * 0.03f + k[REGION_DESERT] * 0.03f) *
                (1.0f - 0.5f * nw);
     default: return 0.0f;
     }

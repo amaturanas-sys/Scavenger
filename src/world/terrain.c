@@ -462,15 +462,30 @@ static float rock_density(const float *k) {
     return k[REGION_HIGHLAND] * 0.09f + k[REGION_FJORD] * 0.07f + k[REGION_DESERT] * 0.04f + k[REGION_FOREST] * 0.025f + k[REGION_STEPPE] * 0.018f;
 }
 static float bush_density(const float *k, float near_water) {
-    return k[REGION_STEPPE] * (0.07f + 0.18f * near_water) + k[REGION_FOREST] * 0.10f + k[REGION_FJORD] * 0.08f + k[REGION_HIGHLAND] * 0.04f +
+    return k[REGION_STEPPE] * (0.13f + 0.2f * near_water) + k[REGION_FOREST] * 0.10f + k[REGION_FJORD] * 0.08f + k[REGION_HIGHLAND] * 0.04f +
            k[REGION_DESERT] * (0.02f + 0.2f * near_water);
 }
 
 // Densidad de arboles: bosque cerrado; algunos en la costa y en las faldas del altiplano;
-// pocos en la estepa (mas junto al agua); ninguno en el desierto.
+// pocos en la estepa (mas junto al agua; los bosquecillos, en tree_slot); ninguno en el desierto.
 static float tree_density(const float *k, float near_water) {
-    return k[REGION_FOREST] * 0.85f + k[REGION_FJORD] * 0.20f + k[REGION_HIGHLAND] * 0.10f + k[REGION_STEPPE] * (0.01f + 0.35f * near_water) +
+    return k[REGION_FOREST] * 0.85f + k[REGION_FJORD] * 0.20f + k[REGION_HIGHLAND] * 0.10f + k[REGION_STEPPE] * (0.02f + 0.35f * near_water) +
            k[REGION_DESERT] * 0.25f * near_water; // sotos junto a rios y oasis
+}
+
+// De 0 (en a) a 1 (en b), suave.
+static float ramp01(float a, float b, float x) {
+    float u = Clamp((x - a) / (b - a), 0.0f, 1.0f);
+    return u * u * (3.0f - 2.0f * u);
+}
+
+// Las manchas de la estepa, de 0 a 1 (ruido suave de la semilla): los bosquecillos (cada ~90 m, en uno de cada doce
+// lugares) y las matas, tupidas en unas manchas y ralas entre ellas (cada ~30 m).
+static float steppe_grove(const Terrain *t, float x, float z) {
+    return ramp01(0.64f, 0.76f, 0.5f + 0.5f * fbm2d(x * 0.011f, z * 0.011f, t->seed + 0x6A0Fu, 3));
+}
+static float steppe_scrub(const Terrain *t, float x, float z) {
+    return ramp01(0.38f, 0.64f, 0.5f + 0.5f * fbm2d(x * 0.03f, z * 0.03f, t->seed + 0xB05Cu, 2));
 }
 
 // Claro alrededor de las estructuras y de los campamentos de tribus (ni arboles ni rocas encima).
@@ -915,7 +930,7 @@ static bool tree_slot(const Terrain *t, int gx, int gz, ChunkTree *out) {
     WaterKind wk = WATER_NONE;
     float y = terrain_height(t, x, z), wl = world_water(t->world, x, z, 0.0f, &wk);
     bool wet = wl > -1e8f && y - wl < 6.0f;
-    if (r0 > tree_density(k, wet ? 1.0f : 0.0f)) return false;
+    if (r0 > tree_density(k, wet ? 1.0f : 0.0f) + k[REGION_STEPPE] * 0.5f * steppe_grove(t, x, z)) return false;
     if (wl > y - 0.8f || y > t->look.snowline + 8.0f) return false; // en el agua o en el glaciar, no
     if (world_river_bank(t->world, x, z, NULL) > 0.45f) return false; // el lecho que el rio lava
     if (world_glacier_reach(t->world, x, z) <= 1.0f) return false;    // ni en la morrena (el glaciar avanza en invierno)
@@ -952,7 +967,7 @@ static int prop_slot(const Terrain *t, int gx, int gz, PropSlot *o) {
     world_region_weights(t->world, x, z, k);
     float rd = rock_density(k), wl = world_water(t->world, x, z, 0.0f, NULL), y = terrain_height(t, x, z);
     float near_water = wl > -1e8f && y - wl < 5.0f ? 1.0f : 0.0f;
-    float bd = bush_density(k, near_water);
+    float bd = bush_density(k, near_water) * (1.0f + k[REGION_STEPPE] * (1.7f * steppe_scrub(t, x, z) - 0.7f));
     if (r0 > rd + bd) return 0;
     if (wl > y - 0.4f) return 0; // en el agua, no
     if (world_river_bank(t->world, x, z, NULL) > 0.45f || (k[REGION_FJORD] > 0.5f && y < SEA_LEVEL + 4.0f)) return 0; // ni en el lecho ni en la playa

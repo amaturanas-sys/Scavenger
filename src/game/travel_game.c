@@ -41,7 +41,7 @@ static int sites(const GameActions *ga, const MemoryMap *mem, Site *out, int max
         snprintf(out[n].name, sizeof(out[n].name), "%s", ga->camps[k].name);
         n++;
     }
-    for (int i = 0; mem && i < mem->marker_count && i < SITES_MAX - 8 && n < max; i++) {
+    for (int i = 0; mem && i < mem->marker_count && i < KNOWN_SITES_MAX - 8 && n < max; i++) {
         const MapMarker *mk = &mem->markers[i];
         out[n] = (Site){ SITE_MARK(i), mk->x, mk->z, "", false };
         snprintf(out[n].name, sizeof(out[n].name), mk->kind == MARKER_DANGER ? T("Sitio de peligro %d") : T("Sitio marcado %d"), i + 1);

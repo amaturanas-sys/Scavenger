@@ -1381,6 +1381,28 @@ static void place_more_forts(World *w) {
         }
 }
 
+// Mas ruinas para encontrar: fortalezas derruidas en todas las regiones y ciudades enterradas en el desierto (su arena
+// y su adobe: BK_RUIN_CITY). Al final de todo y con su propio azar, como las dos fases de antes: lo que ya estaba queda
+// con sus lugares y sus indices (las partidas guardan los sitios vistos). Mismas reglas (place_ok); sin lugar, una menos.
+static void place_more_ruins(World *w) {
+    static const struct { Region rg; SiteKind kind; int n; } RULES[] = {
+        { REGION_STEPPE, SITE_RUINED_FORT, 3 }, { REGION_FOREST, SITE_RUINED_FORT, 3 }, { REGION_HIGHLAND, SITE_RUINED_FORT, 2 },
+        { REGION_DESERT, SITE_BURIED_CITY, 4 }, { REGION_DESERT, SITE_RUINED_FORT, 2 }, { REGION_FJORD, SITE_RUINED_FORT, 2 },
+    };
+    Rng rng;
+    rng_seed(&rng, w->seed ^ 0xC17ADE15u);
+    for (size_t r = 0; r < sizeof(RULES) / sizeof(RULES[0]); r++)
+        for (int k = 0, made = 0; k < RULES[r].n * 30 && made < RULES[r].n && w->site_count < SITES_MAX; k++) {
+            float x, z;
+            if (!find_spot(w, &rng, RULES[r].rg, 300.0f, &x, &z)) continue;
+            WorldSite *st = &w->sites[w->site_count];
+            st->x = x, st->z = z, st->region = RULES[r].rg, st->kind = RULES[r].kind;
+            st->yaw = rng_float(&rng) * 2.0f * PI_F;
+            if (!place_ok(w, PLACE_SITE, w->site_count, x, z)) continue;
+            w->site_count++, made++;
+        }
+}
+
 void world_generate(World *w, uint32_t seed) {
     memset(w, 0, sizeof(*w));
     w->seed = seed;
@@ -1539,6 +1561,7 @@ void world_generate(World *w, uint32_t seed) {
     settle_all(w);
     place_ancient_towns(w);
     place_more_forts(w);
+    place_more_ruins(w);
 }
 
 const char *site_name(SiteKind k) {

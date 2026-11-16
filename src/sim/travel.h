@@ -48,8 +48,10 @@ int journey_start(Journey *list, int max, JourneyKind kind, const int *people, i
 // Sitios conocidos: un bit por sitio (campamentos 0..7, marcas del mapa 8..63).
 #define SITE_CAMP(k) (k)
 #define SITE_MARK(i) (8 + (i))
-#define SITES_MAX 64
-static inline bool site_known(uint64_t known, int site) { return site >= 0 && site < SITES_MAX && (known >> site) & 1u; }
-static inline uint64_t site_learn(uint64_t known, int site) { return site >= 0 && site < SITES_MAX ? known | ((uint64_t)1 << site) : known; }
+#define KNOWN_SITES_MAX 64 // (no son los sitios del mundo de src/sim/world.h)
+static inline bool site_known(uint64_t known, int site) { return site >= 0 && site < KNOWN_SITES_MAX && (known >> site) & 1u; }
+static inline uint64_t site_learn(uint64_t known, int site) {
+    return site >= 0 && site < KNOWN_SITES_MAX ? known | ((uint64_t)1 << site) : known;
+}
 
 #endif

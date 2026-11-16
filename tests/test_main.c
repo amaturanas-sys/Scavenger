@@ -3262,7 +3262,7 @@ static void test_travel_dispatch_and_messengers(void) {
     known = site_learn(known, SITE_MARK(3));
     known = site_learn(known, SITE_CAMP(0));
     CHECK(site_known(known, SITE_MARK(3)) && site_known(known, 0) && !site_known(known, 1));
-    CHECK(site_learn(known, SITES_MAX) == known && !site_known(known, -1));
+    CHECK(site_learn(known, KNOWN_SITES_MAX) == known && !site_known(known, -1));
 }
 
 // ---------------------------------------------------------------- partidas por bloques
@@ -6098,12 +6098,12 @@ static void test_ancient_towns_in_world(void) {
     for (size_t i = 0; i < sizeof(SEEDS) / sizeof(SEEDS[0]); i++) {
         const World *w = world_for_seed(SEEDS[i]);
         int here = 0;
-        bool seen_town = false, seen_more = false; // despues de los asentamientos, solo las fortalezas de mas (y al final)
+        bool seen_town = false, seen_more = false; // despues de los asentamientos, solo las ruinas de mas (y al final)
         CHECK(w->site_count <= SITES_MAX);
         for (int k = 0; k < w->site_count; k++) {
             const WorldSite *st = &w->sites[k];
             if (st->kind != SITE_ANCIENT_TOWN) {
-                order += seen_town && st->kind != SITE_RUINED_FORT;
+                order += seen_town && st->kind != SITE_RUINED_FORT && st->kind != SITE_BURIED_CITY;
                 seen_more |= seen_town;
                 continue;
             }
@@ -6128,31 +6128,33 @@ static void test_ancient_towns_in_world(void) {
     CHECK(site_is_ruin(SITE_ANCIENT_TOWN) && site_name(SITE_ANCIENT_TOWN)[0] != '?' && WORLD_FOOT_TOWN >= ANC_HALF * 1.41f);
 }
 
-// Las fortalezas derruidas de mas (src/sim/world.c, place_more_forts): al final de la lista, despues de los
-// asentamientos antiguos (lo de antes queda con sus indices, que las partidas guardan como vistos), en todas las
-// regiones y con las mismas distancias que los demas sitios. Unas catorce por mundo (eran cinco).
+// Las ruinas de mas (src/sim/world.c, place_more_forts y place_more_ruins): al final de la lista, despues de los
+// asentamientos antiguos (lo de antes queda con sus indices, que las partidas guardan como vistos), con las mismas
+// distancias que los demas sitios. Las fortalezas derruidas, en todas las regiones: unas veintiseis por mundo (eran
+// cinco, y despues catorce); las ciudades enterradas, solo en el desierto: seis (eran dos).
 static void test_more_forts_in_world(void) {
     static const uint32_t SEEDS[] = { 1206u, 7u, 42u, 1984u, 2024u, 31337u };
-    int few = 0, close = 0, missing_region = 0;
+    int few = 0, close = 0, missing_region = 0, cities_out = 0;
     for (size_t i = 0; i < sizeof(SEEDS) / sizeof(SEEDS[0]); i++) {
         const World *w = world_for_seed(SEEDS[i]);
-        int forts = 0, last_town = -1, per[REGION_COUNT] = { 0 };
+        int forts = 0, cities = 0, last_town = -1, per[REGION_COUNT] = { 0 };
         for (int k = 0; k < w->site_count; k++) {
             if (w->sites[k].kind == SITE_ANCIENT_TOWN) last_town = k;
             if (w->sites[k].kind == SITE_RUINED_FORT) forts++, per[w->sites[k].region]++;
+            if (w->sites[k].kind == SITE_BURIED_CITY) cities++, cities_out += w->sites[k].region != REGION_DESERT;
         }
         for (int k = last_town + 1; k < w->site_count; k++) { // las de mas
             const WorldSite *st = &w->sites[k];
-            CHECK(st->kind == SITE_RUINED_FORT);
+            CHECK(st->kind == SITE_RUINED_FORT || st->kind == SITE_BURIED_CITY);
             for (int o = 0; o < w->site_count; o++) close += o != k && hypotf(w->sites[o].x - st->x, w->sites[o].z - st->z) < 160.0f;
             for (int o = 0; o < w->settlement_count; o++) close += hypotf(w->settlements[o].x - st->x, w->settlements[o].z - st->z) < 140.0f;
             for (int o = 0; o < w->tribe_count; o++) close += hypotf(w->tribes[o].x - st->x, w->tribes[o].z - st->z) < 120.0f;
         }
-        few += forts < 12;
-        for (int r = 0; r < REGION_COUNT; r++) missing_region += per[r] == 0;
-        CHECK(w->site_count <= SITES_MAX);
+        few += forts < 22 || cities < 5;
+        for (int r = 0; r < REGION_COUNT; r++) missing_region += per[r] < 3;
+        CHECK(w->site_count <= SITES_MAX && w->site_count > 64); // pasan de 64: las vistas de despues, en seen_sites_hi
     }
-    CHECK(few == 0 && close == 0 && missing_region == 0);
+    CHECK(few == 0 && close == 0 && missing_region == 0 && cities_out == 0);
 }
 
 static void test_world_dry(void) {
