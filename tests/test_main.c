@@ -6378,7 +6378,7 @@ static void test_cave_style(const Cave *c) {
     int n = cave_decor(c, d, CAVE_DECOR_MAX), has[CDEC_KINDS] = { 0 }, hall[CDEC_KINDS] = { 0 };
     for (int k = 0; k < n; k++) {
         has[d[k].kind]++, hall[d[k].kind] += d[k].room == 0;
-        if (cave_decor_on_ceiling(d[k].kind)) CHECK(!d[k].blocks);
+        if (cave_decor_on_ceiling(d[k].kind) || cave_decor_on_wall(d[k].kind)) CHECK(!d[k].blocks);
         // Lo que cuelga queda alto (el racimo, a mas de 2,5 m del suelo); lo que tapa, lejos de las celdas.
         if (d[k].kind == CDEC_STALACTITES) CHECK(cave_rock_above(c, d[k].x, d[k].z, d[k].room, d[k].y) + 0.3f - d[k].size - d[k].y >= 2.5f);
         for (int o = 0; o < c->object_count && d[k].blocks; o++) {
@@ -6405,17 +6405,34 @@ static void test_cave_style(const Cave *c) {
     }
     bool lived = c->kind >= CAVE_BANDITS;
     switch (c->kind) {
-    case CAVE_ANIMAL: CHECK(hall[CDEC_POOL] == 1 && has[CDEC_STALACTITES] > 0 && has[CDEC_STALAGMITES] > 0 && hall[CDEC_PILLAR] > 0); break;
-    case CAVE_ABANDONED: CHECK(hall[CDEC_SHAFT] == 1 && hall[CDEC_RUBBLE] > 0 && has[CDEC_MOSS] > 0); break;
-    case CAVE_BANDITS: CHECK(hall[CDEC_BEDROLL] >= 2 && has[CDEC_CRATES] > 0); break;
-    case CAVE_TRIBE: CHECK(hall[CDEC_RUG] >= 2 && hall[CDEC_LAMP] >= 2 && has[CDEC_BEDROLL] > 0); break;
-    default: CHECK(hall[CDEC_BRAZIER] >= 4 && hall[CDEC_STELE] > 0 && has[CDEC_PILASTER] > 0 && has[CDEC_CRATES] > 0); break;
+    // Las referencias de Perchance: la luz que baja sobre el lago, las columnas en pie de la abandonada, las antorchas y
+    // los marcos de los forajidos, los tapices de la tribu y el oculo del imperio.
+    case CAVE_ANIMAL:
+        CHECK(hall[CDEC_POOL] == 1 && hall[CDEC_SHAFT] == 1 && hall[CDEC_STALACTITES] >= 6 && has[CDEC_STALAGMITES] > 0 && hall[CDEC_PILLAR] > 0);
+        break;
+    case CAVE_ABANDONED: CHECK(hall[CDEC_SHAFT] == 1 && hall[CDEC_RUBBLE] > 0 && hall[CDEC_RUIN_COLUMN] > 0 && has[CDEC_MOSS] > 0); break;
+    case CAVE_BANDITS: CHECK(hall[CDEC_BEDROLL] >= 2 && has[CDEC_CRATES] > 0 && hall[CDEC_WALL_TORCH] >= 3 && has[CDEC_TIMBER] > 0); break;
+    case CAVE_TRIBE: CHECK(hall[CDEC_RUG] >= 2 && hall[CDEC_LAMP] >= 2 && has[CDEC_BEDROLL] > 0 && hall[CDEC_TAPESTRY] > 0); break;
+    default:
+        CHECK(hall[CDEC_BRAZIER] >= 6 && hall[CDEC_STELE] > 0 && hall[CDEC_SHAFT] == 1 && has[CDEC_PILASTER] > 0 && has[CDEC_CRATES] > 0);
+        break;
+    }
+    // Lo de la pared, en la pared de su sala (a su pie, del lado de la sala) y lejos de lo que ya cuelga de ella.
+    for (int k = 0; k < n; k++) {
+        if (!cave_decor_on_wall(d[k].kind)) continue;
+        const CaveRoom *rm = &c->rooms[d[k].room];
+        float dc = sqrtf((d[k].x - rm->x) * (d[k].x - rm->x) + (d[k].z - rm->z) * (d[k].z - rm->z));
+        CHECK(fabsf(dc - (rm->radius - 0.65f)) < 1e-3f);
+        CHECK(fabsf(atan2f(d[k].x - rm->x, d[k].z - rm->z) - atan2f(sinf(d[k].yaw), cosf(d[k].yaw))) < 1e-3f);
     }
     // Lo de unos no esta en los otros: en las naturales, nada labrado ni encendido; en las labradas, nada natural.
-    if (!lived) CHECK(!has[CDEC_BRAZIER] && !has[CDEC_LAMP] && !has[CDEC_BEDROLL] && !has[CDEC_RUG] && !has[CDEC_STELE] && !has[CDEC_PILASTER]);
+    if (!lived) CHECK(!has[CDEC_BRAZIER] && !has[CDEC_LAMP] && !has[CDEC_BEDROLL] && !has[CDEC_RUG] && !has[CDEC_STELE] && !has[CDEC_PILASTER] &&
+                      !has[CDEC_TIMBER] && !has[CDEC_WALL_TORCH] && !has[CDEC_TAPESTRY] && !has[CDEC_POST]);
+    if (lived) CHECK(!has[CDEC_PILLAR] && !has[CDEC_RUIN_COLUMN]);
     if (c->kind == CAVE_EMPIRE) CHECK(!has[CDEC_STALACTITES] && !has[CDEC_STALAGMITES] && !has[CDEC_ROCK] && !has[CDEC_MOSS] && !has[CDEC_RUBBLE]);
     if (c->kind != CAVE_EMPIRE) CHECK(!has[CDEC_BRAZIER] || c->kind == CAVE_BANDITS);
-    if (c->kind != CAVE_ANIMAL && c->kind != CAVE_ABANDONED) CHECK(!has[CDEC_SHAFT] && !has[CDEC_PILLAR]);
+    if (c->kind == CAVE_BANDITS) CHECK(!has[CDEC_SHAFT]);
+    if (c->kind != CAVE_ABANDONED) CHECK(!has[CDEC_RUIN_COLUMN]);
 }
 
 static void test_caves(void) {

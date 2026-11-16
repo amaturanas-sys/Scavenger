@@ -120,6 +120,10 @@ void hearth_draw_base(Vector3 pos, float s, uint32_t seed, bool lit) {
     if (lit && g_count < FIRE_MAX) g_fires[g_count++] = (Fire){ pos, s, seed };
 }
 
+void hearth_add_flame(Vector3 pos, float s, uint32_t seed) {
+    if (g_count < FIRE_MAX) g_fires[g_count++] = (Fire){ pos, s, seed };
+}
+
 // ---- Humo ----
 
 typedef struct {

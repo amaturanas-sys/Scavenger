@@ -93,7 +93,7 @@ static bool object_blocks(const GameActions *ga, const Cave *c, float x, float z
         case COBJ_STALAGMITE: r = 0.3f * o->size; break;
         case COBJ_CELL: r = 0.85f; break;
         case COBJ_CHEST: r = 0.5f; break;
-        case COBJ_FIRE: r = 0.6f; break;
+        case COBJ_FIRE: r = c->kind == CAVE_TRIBE ? 1.25f : 0.6f; break; // el de la tribu, con su anillo de piedras
         case COBJ_AMPHORA: r = is_done(ga, g_cave, i) ? 0.0f : 0.3f; break;
         case COBJ_ARMS: r = 0.45f; break;
         default: break;
@@ -641,6 +641,8 @@ bool cv_test_enter(GameActions *ga, Player *p, const Terrain *t, const char *spe
         { "alfombra", CDEC_RUG },       { "bastidor", CDEC_RACK },      { "lampara", CDEC_LAMP },             { "vasijas", CDEC_POTS },
         { "brasero", CDEC_BRAZIER },    { "estela", CDEC_STELE },       { "pilastra", CDEC_PILASTER },
         { "pilar", CDEC_PILLAR },       { "lago", CDEC_POOL },          { "escombro", CDEC_RUBBLE }, // los nombres del plan
+        { "columna_rota", CDEC_RUIN_COLUMN }, { "marco", CDEC_TIMBER }, { "antorcha_pared", CDEC_WALL_TORCH }, { "tapiz", CDEC_TAPESTRY },
+        { "poste", CDEC_POST },
     };
     char kind[24];
     snprintf(kind, sizeof(kind), "%s", spec);

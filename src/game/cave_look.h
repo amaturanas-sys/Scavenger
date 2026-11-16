@@ -24,6 +24,8 @@ typedef struct {
     float jag;               // 0..1: lo desparejo de la roca (0: labrada)
     float moss_h;            // m: hasta donde sube el musgo (o lo mojado) por la pared
     float soot;              // 0..1: el hollin de las antorchas en la boveda
+    float facet;             // 0..1: lo marcadas que se ven las facetas de la roca (las referencias, low poly)
+    float warm;              // 0..1: lo naranja de las llamas (en las frias, mas blancas: la cueva sigue de su color)
 } ClLook;
 
 // Pinta las texturas y elige los colores de esta cueva (su tipo y su region). false si no hubo memoria: se ve sin textura.

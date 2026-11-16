@@ -25,6 +25,8 @@ void hearth_forget_gpu(void); // ver terrain_forget_gpu
 void hearth_frame_begin(void);
 // Piedras, leños y ceniza en pos (el suelo). seed: variacion de cada fuego. lit: arde.
 void hearth_draw_base(Vector3 pos, float scale, uint32_t seed, bool lit);
+// Solo la llama, sin piedras ni lenos (la de una antorcha), con su base en pos. Por cuadro, como hearth_draw_base.
+void hearth_add_flame(Vector3 pos, float scale, uint32_t seed);
 // Humo de los fuegos encendidos de este cuadro. wind: fuerza del viento (0..1); light: luz del
 // dia (0 noche, 1 mediodia), que oscurece el humo contra el cielo nocturno.
 void hearth_draw_smoke(Camera3D cam, float time, float wind, float light);

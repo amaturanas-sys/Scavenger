@@ -264,6 +264,22 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las cuevas como sus referencias (v0.14.4), con las 20 imágenes de Perchance del usuario (cuatro por tipo; lo que se
+tomó, en [docs/PLAN_CUEVAS_GRANDES.md](docs/PLAN_CUEVAS_GRANDES.md#lo-que-se-tomó-de-las-referencias-de-perchance)):
+- **En todas:** la roca en facetas, como el low poly de las imágenes, y el decorado con sombra en cada cara (antes, de un
+  solo color). En las cuevas frías, el fuego alumbra más blanco y la roca sigue de su color.
+- **La guarida de fieras:** el lago oscuro con el reflejo de la luz que baja, rayos fríos y enredaderas en el agujero,
+  y las columnas y los racimos de calcita azulada.
+- **La cueva abandonada:** rayos verdes de bordes suaves, columnas talladas en pie o rotas, con musgo y un tambor caído,
+  y musgo sobre los bloques del derrumbe.
+- **El refugio de forajidos:** marcos de madera contra la roca, antorchas de pared que la alumbran, jergones claros
+  sobre bastidores bajos y palotes y monigotes al carbón más grandes.
+- **El refugio de una tribu:** más luz y una bruma dorada, el friso grande de ciervos y cazadores con manos rojas, el
+  fogón con su anillo alto de piedras, tapices de fieltro y postes pintados del suelo a la bóveda.
+- **El almacén del imperio:** piedra gris en vez de parda, columnas sueltas y adosadas de sillares, braseros que
+  alumbran cerca y el óculo con su anillo de piedra.
+- **Con `--cueva tipo:lugar`**, también `columna_rota`, `marco`, `antorcha_pared`, `tapiz` y `poste`.
+
 Las cuevas por dentro, según quién vive en ellas (v0.14.3), con el plan de [docs/PLAN_CUEVAS_GRANDES.md](docs/PLAN_CUEVAS_GRANDES.md#1b-el-plan-de-cada-tipo-v0143-hecho):
 - **Cada tipo tiene su forma, su roca, su luz y su decorado**, armados con el orden de WorldClaw (el plan, la forma, lo
   de cada sala y la revisión mirando capturas):

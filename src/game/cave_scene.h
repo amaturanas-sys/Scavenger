@@ -42,6 +42,13 @@ bool cs_object_lit(const Cave *c, uint64_t done, int obj);
 void cs_draw(const Cave *c, Vector3 eye, float world_time);
 // Una mancha chata y despareja en el suelo (charcos, musgo, pieles), con la luz en cada punto si lit.
 void cs_blob(Vector3 at, float radius, int seed, Color in, Color edge, bool lit);
+// Piezas con sombra por cara (como la roca de las referencias, low poly), con la luz de este cuadro en su medio:
+// un cilindro (o un cono truncado) de a a b, de radio ra en a y rb en b, con la textura de la pared si textured y sus
+// tapas (caps: 1, la de b; 2, la de a); una caja de w de ancho, h de alto y d de largo (hacia yaw) con su centro en c;
+// un elipsoide de radios rl (hacia yaw), rh (arriba) y rw (de costado).
+void cs_solid(Vector3 a, Vector3 b, float ra, float rb, int sides, Color col, bool textured, int caps);
+void cs_box(Vector3 c, float w, float h, float d, float yaw, Color col);
+void cs_ellipsoid(Vector3 c, float rl, float rh, float rw, float yaw, Color col);
 // El decorado de la cueva cargada (lo que tapa el paso: cave_decor_blocked).
 const CaveDecor *cs_decor(int *n);
 

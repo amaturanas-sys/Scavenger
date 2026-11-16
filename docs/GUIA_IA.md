@@ -408,8 +408,12 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.14.3. Las cuevas por dentro, según quién vive en ellas ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md),
-  sección 1b): con el orden de WorldClaw, cada tipo tiene su forma (el karst de las fieras, la roca gastada de la
+- **Versión:** 0.14.4. Las cuevas como sus referencias: las 20 imágenes de Perchance del usuario, puestas junto a
+  capturas de las mismas salas ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md), sección 1b): la roca en facetas y el
+  decorado con sombra por cara; la paleta y la bruma de las imágenes; el fuego más blanco en las cuevas frías; rayos
+  de luz de bordes suaves; columnas en ruinas, marcos de madera, antorchas de pared, tapices y postes; el fogón de la
+  tribu con su anillo de piedras y las pinturas grandes. Antes, la 0.14.3: las cuevas por dentro, según quién vive en
+  ellas (sección 1b): con el orden de WorldClaw, cada tipo tiene su forma (el karst de las fieras, la roca gastada de la
   tribu, la picada de los forajidos y las salas labradas del imperio, en polígonos con cornisa y cúpula), sus texturas
   pintadas al entrar, su luz de fondo y su bruma, y su decorado por sala (`PLAN_*` en `src/sim/caves.c`, `KIND_LOOK`
   en `src/game/cave_look.c`); los prompts de Perchance de cada tipo, para que el usuario genere las referencias. Con
@@ -443,7 +447,8 @@ traba.
     y la carreta-casa (v0.14.1);
   - los muros del borde, las rocas del desierto, las fortalezas y el ladrillo (v0.14.2);
   - las cuevas por dentro según su tipo, con las tareas C1, C2, C9 y C11 del plan y parte de C4, C6, C7, C15 y C16
-    (v0.14.3).
+    (v0.14.3);
+  - las cuevas como sus referencias de Perchance (v0.14.4).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

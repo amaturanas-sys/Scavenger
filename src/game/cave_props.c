@@ -52,9 +52,35 @@ static Color mixc(Color a, Color b, float t) {
                     (unsigned char)((float)a.b + ((float)b.b - (float)a.b) * t), 255 };
 }
 
+// Las pinturas grandes (la tribu y los forajidos, como en las referencias) se doblan con la pared: un plano recto se
+// meteria en la roca a los costados. Mientras on, on_wall pone (u, v) sobre la pared de la sala, agrandado scale veces.
+typedef struct {
+    bool on;
+    const Cave *c;
+    int room;
+    float a0, r0, inset, scale;
+} Bend;
+static Bend g_bend;
+
 // Sobre la pared de un objeto: (u, v) a lo largo de la pared (ux, uz) y hacia arriba, off hacia la sala (fx, fz).
 static Vector3 on_wall(Vector3 at, float ux, float uz, float fx, float fz, float u, float v, float off) {
+    if (g_bend.on) {
+        const CaveRoom *r = &g_bend.c->rooms[g_bend.room];
+        float a = g_bend.a0 - u * g_bend.scale / g_bend.r0, d = cave_wall_radius(g_bend.c, g_bend.room, a) - g_bend.inset - off;
+        return (Vector3){ r->x + sinf(a) * d, at.y + v * g_bend.scale, r->z + cosf(a) * d };
+    }
     return (Vector3){ at.x + ux * u + fx * off, at.y + v, at.z + uz * u + fz * off };
+}
+
+// Lo mas grande (hasta want veces) que entra una pintura (de 1,9 m de punta a punta, con la cornamenta del ultimo
+// ciervo) sin pasar por la boca de un pasillo.
+static float painting_scale(const Cave *c, int room, float a0, float r0, float want) {
+    for (float s = want; s > 1.0f; s -= 0.3f) {
+        bool ok = true;
+        for (int k = -4; k <= 4 && ok; k++) ok = !cave_door_at(c, room, a0 + (float)k / 4.0f * 0.95f * s / r0);
+        if (ok) return s;
+    }
+    return 1.0f;
 }
 
 static void wall_rect(Vector3 at, float ux, float uz, float fx, float fz, float u0, float v0, float u1, float v1, float off, Color col) {
@@ -257,52 +283,48 @@ static void draw_object(const Cave *c, uint64_t done_bits, int i, float time) {
     case COBJ_TORCH: {
         Vector3 base = { at.x, at.y - 0.35f, at.z }, top = { at.x + fx * 0.2f, at.y + 0.22f, at.z + fz * 0.2f };
         DrawCylinderEx(base, top, 0.035f, 0.045f, 5, cs_shade((Color){ 92, 66, 42, 255 }, top));
-        if (cs_object_lit(c, done_bits, i)) {
-            float fl = 0.85f + 0.15f * sinf(time * 17.0f + (float)i);
-            DrawSphere((Vector3){ top.x, top.y + 0.1f, top.z }, 0.12f * fl, (Color){ 250, 150, 50, 255 });
-            DrawSphere((Vector3){ top.x, top.y + 0.13f, top.z }, 0.06f * fl, (Color){ 255, 236, 170, 255 });
-        }
+        if (cs_object_lit(c, done_bits, i)) hearth_add_flame((Vector3){ top.x, top.y + 0.02f, top.z }, 0.34f, 950u + (uint32_t)i);
         break;
     }
     case COBJ_COLUMN: { // del suelo a la boveda (la de verdad, mas baja junto a la pared), segun quien la puso
         const CaveRoom *r = &c->rooms[o->room];
         float h = cave_rock_above(c, at.x, at.z, o->room, r->floor_y) - r->floor_y + 0.2f;
-        if (carved) { // el imperio: plinto, basa, fuste en tambores, capitel y abaco
-            Color st = (Color){ 168, 150, 126, 255 }, dk = (Color){ 134, 120, 100, 255 };
-            DrawCube((Vector3){ at.x, at.y + 0.15f, at.z }, 1.1f, 0.3f, 1.1f, cs_shade(dk, (Vector3){ at.x, at.y + 0.2f, at.z }));
-            DrawCylinder((Vector3){ at.x, at.y + 0.3f, at.z }, 0.5f, 0.56f, 0.16f, 10, cs_shade(st, (Vector3){ at.x, at.y + 0.4f, at.z }));
+        Vector3 up = { at.x, at.y + h, at.z };
+        if (carved) { // el imperio: plinto, basa, fuste en tambores de sillares (los de la pared), capitel y abaco
+            Color st = ColorBrightness(cl_look()->wall, -0.03f), dk = ColorBrightness(cl_look()->wall, -0.18f);
+            cs_box((Vector3){ at.x, at.y + 0.15f, at.z }, 1.1f, 0.3f, 1.1f, 0.0f, dk);
+            cs_solid((Vector3){ at.x, at.y + 0.3f, at.z }, (Vector3){ at.x, at.y + 0.46f, at.z }, 0.56f, 0.5f, 12, st, true, 1);
             for (float y = 0.46f; y < h - 0.6f; y += 1.0f) {
-                Vector3 b = { at.x, at.y + y, at.z };
                 float top = fminf(1.0f, h - 0.6f - y);
-                DrawCylinder(b, 0.42f - 0.02f * y / h, 0.42f - 0.02f * (y + top) / h, top - 0.02f, 10,
-                             cs_shade(((int)y & 1) ? st : ColorBrightness(st, -0.06f), (Vector3){ b.x, b.y + 0.5f, b.z }));
+                Vector3 b = { at.x, at.y + y, at.z }, e = { at.x, at.y + y + top - 0.03f, at.z };
+                cs_solid(b, e, 0.42f - 0.02f * y / h, 0.42f - 0.02f * (y + top) / h, 12, ((int)y & 1) ? st : ColorBrightness(st, -0.06f), true, 0);
+                cs_solid(e, (Vector3){ e.x, e.y + 0.03f, e.z }, 0.39f, 0.39f, 12, dk, false, 0); // la junta
             }
             Vector3 cap = { at.x, at.y + h - 0.6f, at.z };
-            DrawCylinderEx(cap, (Vector3){ cap.x, cap.y + 0.34f, cap.z }, 0.4f, 0.6f, 10, cs_shade(st, cap));
-            DrawCube((Vector3){ at.x, at.y + h - 0.16f, at.z }, 1.2f, 0.22f, 1.2f, cs_shade(dk, cap));
-        } else if (c->kind == CAVE_ABANDONED) { // rota: el fuste hasta donde quedo y un tambor caido al lado
+            cs_solid(cap, (Vector3){ cap.x, cap.y + 0.34f, cap.z }, 0.4f, 0.6f, 12, st, true, 0);
+            cs_box((Vector3){ at.x, at.y + h - 0.16f, at.z }, 1.2f, 0.22f, 1.2f, 0.0f, dk);
+        } else if (c->kind == CAVE_ABANDONED) { // rota: el fuste hasta donde quedo, con musgo arriba, y un tambor caido al lado
             float hb = 1.2f + 2.2f * hash01(i, 21), a = hash01(i, 22) * 2.0f * PI;
-            Color st = (Color){ 128, 132, 120, 255 };
-            DrawCube((Vector3){ at.x, at.y + 0.15f, at.z }, 1.0f, 0.3f, 1.0f, cs_shade(ColorBrightness(st, -0.1f), at));
-            DrawCylinder((Vector3){ at.x, at.y + 0.3f, at.z }, 0.42f, 0.42f, hb, 9, cs_shade(st, (Vector3){ at.x, at.y + 1.0f, at.z }));
-            DrawCylinder((Vector3){ at.x + 0.1f, at.y + 0.3f + hb, at.z }, 0.3f, 0.18f, 0.25f, 7, cs_shade(st, (Vector3){ at.x, at.y + hb, at.z }));
+            Color st = (Color){ 150, 166, 150, 255 }, moss = (Color){ 88, 150, 72, 255 };
+            Vector3 tp = { at.x, at.y + 0.3f + hb, at.z };
+            cs_box((Vector3){ at.x, at.y + 0.15f, at.z }, 1.0f, 0.3f, 1.0f, a, ColorBrightness(st, -0.2f));
+            cs_solid((Vector3){ at.x, at.y + 0.3f, at.z }, tp, 0.42f, 0.42f, 10, st, true, 0);
+            cs_solid(tp, (Vector3){ tp.x + 0.1f, tp.y + 0.25f, tp.z }, 0.34f, 0.14f, 7, st, true, 1);
+            cs_solid((Vector3){ tp.x, tp.y - 0.04f, tp.z }, (Vector3){ tp.x, tp.y + 0.08f, tp.z }, 0.46f, 0.3f, 9, moss, false, 1);
             Vector3 dr = { at.x + sinf(a) * 1.2f, at.y + 0.4f, at.z + cosf(a) * 1.2f };
-            DrawCylinderEx((Vector3){ dr.x - cosf(a) * 0.45f, dr.y, dr.z + sinf(a) * 0.45f }, (Vector3){ dr.x + cosf(a) * 0.45f, dr.y, dr.z - sinf(a) * 0.45f }, 0.4f, 0.4f, 9,
-                           cs_shade(st, dr));
+            cs_solid((Vector3){ dr.x - cosf(a) * 0.45f, dr.y, dr.z + sinf(a) * 0.45f }, (Vector3){ dr.x + cosf(a) * 0.45f, dr.y, dr.z - sinf(a) * 0.45f }, 0.4f,
+                     0.4f, 10, st, true, 3);
         } else if (c->kind == CAVE_TRIBE) { // un poste tallado con franjas pintadas
             static const Color BAND[3] = { { 150, 48, 34, 255 }, { 196, 140, 64, 255 }, { 40, 34, 30, 255 } };
-            Color wood = (Color){ 112, 82, 54, 255 };
-            DrawCylinder(at, 0.22f, 0.2f, h, 7, cs_shade(wood, (Vector3){ at.x, at.y + 1.2f, at.z }));
+            cs_solid(at, up, 0.22f, 0.2f, 7, (Color){ 112, 82, 54, 255 }, false, 0);
             for (int k = 0; k < 4; k++) {
                 Vector3 b = { at.x, at.y + 0.9f + 0.55f * (float)k, at.z };
-                DrawCylinder(b, 0.235f, 0.235f, 0.16f, 7, cs_shade(BAND[k % 3], b));
+                cs_solid(b, (Vector3){ b.x, b.y + 0.16f, b.z }, 0.235f, 0.235f, 7, BAND[k % 3], false, 0);
             }
         } else { // los forajidos: un puntal de madera con su sombrero contra la roca
             Color wood = (Color){ 96, 70, 46, 255 };
-            DrawCylinder(at, 0.2f, 0.17f, h, 6, cs_shade(wood, (Vector3){ at.x, at.y + 1.2f, at.z }));
-            float a = hash01(i, 23) * PI;
-            DrawCube((Vector3){ at.x, at.y + h - 0.25f, at.z }, 1.4f * fabsf(cosf(a)) + 0.3f, 0.2f, 1.4f * fabsf(sinf(a)) + 0.3f,
-                     cs_shade(wood, (Vector3){ at.x, at.y + h - 0.5f, at.z }));
+            cs_solid(at, up, 0.2f, 0.17f, 6, wood, false, 0);
+            cs_box((Vector3){ at.x, at.y + h - 0.25f, at.z }, 0.3f, 0.2f, 1.7f, hash01(i, 23) * PI, wood);
         }
         break;
     }
@@ -357,6 +379,11 @@ static void draw_object(const Cave *c, uint64_t done_bits, int i, float time) {
     case COBJ_PAINTING: { // sobre la roca, segun quien pinto (docs/PLAN_CUEVAS_GRANDES.md, C9)
         float ux = fz, uz = -fx;
         Color rock = cs_shade(cl_look()->wall, at);
+        if (c->kind == CAVE_TRIBE || c->kind == CAVE_BANDITS) { // el friso grande de la tribu, los palotes grandes de los forajidos
+            const CaveRoom *rm = &c->rooms[o->room];
+            float a0 = atan2f(at.x - rm->x, at.z - rm->z), r0 = fmaxf(hypotf(at.x - rm->x, at.z - rm->z), 1.0f);
+            g_bend = (Bend){ true, c, o->room, a0, r0, 0.08f + 0.1f, painting_scale(c, o->room, a0, r0, c->kind == CAVE_TRIBE ? 2.2f : 1.6f) };
+        }
         if (carved) { // el imperio: una tabla labrada con su marco y renglones de caracteres
             Color slab = cs_shade((Color){ 196, 182, 156, 255 }, at), glyph = cs_shade((Color){ 74, 64, 54, 255 }, at);
             wall_rect(at, ux, uz, fx, fz, -0.75f, -0.55f, 0.75f, 0.6f, 0.03f, cs_shade((Color){ 150, 136, 114, 255 }, at));
@@ -385,19 +412,23 @@ static void draw_object(const Cave *c, uint64_t done_bits, int i, float time) {
             float faded = c->kind == CAVE_ABANDONED ? 0.6f : 0.0f;
             static const Color PIGMENT[3] = { { 168, 52, 30, 255 }, { 196, 120, 52, 255 }, { 40, 30, 28, 255 } };
             int hands = 3 + (int)(hash01(i, 41) * 4.0f);
-            for (int k = 0; k < hands; k++) { // el soplido de pigmento y la mano, del color de la roca
+            for (int k = 0; k < hands; k++) { // en la tribu, la mano pintada en rojo; en las abandonadas, el soplido y la mano del color de la roca
                 float u = -0.65f + 1.3f * hash01(i, 42 + k), v = 0.05f + 0.45f * hash01(42 + k, i);
-                Color pig = cs_shade(mixc(PIGMENT[k % 3], cl_look()->wall, faded), at);
-                wall_disc(at, ux, uz, fx, fz, u, v, 0.15f, 0.03f + 0.002f * (float)k, pig);
-                float off = 0.035f + 0.002f * (float)k;
-                wall_rect(at, ux, uz, fx, fz, u - 0.045f, v - 0.08f, u + 0.045f, v + 0.02f, off, rock);
-                for (int f = 0; f < 4; f++) wall_seg(at, ux, uz, fx, fz, u - 0.04f + 0.027f * (float)f, v + 0.02f, u - 0.05f + 0.035f * (float)f, v + 0.1f, 0.016f, rock);
-                wall_seg(at, ux, uz, fx, fz, u + 0.045f, v - 0.03f, u + 0.09f, v + 0.03f, 0.016f, rock);
+                Color pig = cs_shade(mixc(PIGMENT[k % 3], cl_look()->wall, faded), at), hand = rock;
+                if (faded > 0.0f) wall_disc(at, ux, uz, fx, fz, u, v, 0.15f, 0.03f + 0.002f * (float)k, pig);
+                else hand = cs_shade(k % 3 == 1 ? (Color){ 150, 44, 28, 255 } : (Color){ 132, 36, 24, 255 }, at);
+                float off = 0.035f + 0.002f * (float)k, h = faded > 0.0f ? 1.0f : 0.6f; // las del friso grande, del tamano de una mano
+                wall_rect(at, ux, uz, fx, fz, u - 0.045f * h, v - 0.08f * h, u + 0.045f * h, v + 0.02f * h, off, hand);
+                for (int f = 0; f < 4; f++)
+                    wall_seg(at, ux, uz, fx, fz, u + (-0.04f + 0.027f * (float)f) * h, v + 0.02f * h, u + (-0.05f + 0.035f * (float)f) * h, v + 0.1f * h, 0.016f * h, hand);
+                wall_seg(at, ux, uz, fx, fz, u + 0.045f * h, v - 0.03f * h, u + 0.09f * h, v + 0.03f * h, 0.016f * h, hand);
             }
             Color red = cs_shade(mixc((Color){ 140, 40, 26, 255 }, cl_look()->wall, faded), at);
-            for (int k = 0; k < 3; k++) { // cazadores (palotes con arco) y un ciervo
-                float u = -0.6f + 0.42f * (float)k, v = -0.45f;
-                if (k == 2) {
+            for (int k = 0; k < 5; k++) { // el friso: cazadores (palotes con arco) y ciervos con su cornamenta
+                float u = -0.62f + 0.31f * (float)k, v = -0.45f;
+                if (k == 1 || k == 2 || k == 4) {
+                    wall_seg(at, ux, uz, fx, fz, u + 0.22f, v + 0.33f, u + 0.29f, v + 0.42f, 0.01f, red); // la cornamenta, de dos puntas
+                    wall_seg(at, ux, uz, fx, fz, u + 0.17f, v + 0.34f, u + 0.12f, v + 0.42f, 0.01f, red);
                     wall_rect(at, ux, uz, fx, fz, u - 0.14f, v + 0.1f, u + 0.14f, v + 0.18f, 0.03f, red);
                     for (int l = 0; l < 4; l++) wall_seg(at, ux, uz, fx, fz, u - 0.12f + 0.08f * (float)l, v + 0.1f, u - 0.13f + 0.08f * (float)l, v - 0.02f, 0.014f, red);
                     wall_seg(at, ux, uz, fx, fz, u + 0.14f, v + 0.18f, u + 0.2f, v + 0.26f, 0.016f, red);
@@ -414,9 +445,18 @@ static void draw_object(const Cave *c, uint64_t done_bits, int i, float time) {
             }
         }
         (void)rock;
+        g_bend.on = false;
         break;
     }
-    case COBJ_FIRE: hearth_draw_base(at, 0.9f, 300u + (uint32_t)i, cs_object_lit(c, done_bits, i)); break;
+    case COBJ_FIRE:
+        if (c->kind == CAVE_TRIBE) // el fogon de la tribu (las referencias): un anillo alto de piedras alrededor
+            for (int k = 0; k < 14; k++) {
+                float a = (float)k * 2.0f * PI / 14.0f + hash01(i, 60), g = 0.88f + 0.24f * hash01(i, 61 + k);
+                Color st = { (unsigned char)(168.0f * g), (unsigned char)(150.0f * g), (unsigned char)(128.0f * g), 255 };
+                cs_box((Vector3){ at.x + sinf(a) * 1.05f, at.y + 0.17f, at.z + cosf(a) * 1.05f }, 0.5f, 0.34f, 0.32f, a, st);
+            }
+        hearth_draw_base(at, 0.9f, 300u + (uint32_t)i, cs_object_lit(c, done_bits, i));
+        break;
     default: break;
     }
 }
