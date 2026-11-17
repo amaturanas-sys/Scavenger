@@ -88,4 +88,31 @@ void decor_ring(DecorPlace place, float r_place, float *ring0, float *ring1);
 // Lo que va alrededor de un lugar, siempre lo mismo para la misma semilla. Devuelve cuantas cosas (<= max).
 int decor_layout(DecorPlace place, uint32_t seed, float r_place, DecorSpot *out, int max);
 
+// Un puente sobre un arroyo (no los trenzados, de hasta 4 m de agua) a menos de 220 m de (px, pz), de orilla alta a
+// orilla alta: las dos orillas suben a DECOR_BRIDGE_CLEAR m o mas sobre el agua, y el tablero, en arco, apoya sus
+// puntas 40 cm adentro de cada una (la mas baja, justo en el suelo; la otra, hasta 35 cm hundida), sin tocar el suelo
+// en el medio, y de cada punta se sale a una orilla pareja. El modelo se escala (scale, 1 a 1,2) y se estira a lo
+// largo (stretch, su X: de 0,9 a DECOR_BRIDGE_STRETCH) para cubrir la luz. Fuera de los pueblos, sus campos y los
+// demas lugares. El cruce mas corto; siempre el mismo.
+#define DECOR_BRIDGE_CLEAR 1.2f
+#define DECOR_BRIDGE_STRETCH 2.2f
+typedef struct {
+    float x, z, y, yaw;   // el centro, la base del modelo y su giro (su X, de orilla a orilla)
+    float scale, stretch; // la escala del modelo y lo que se estira a lo largo
+    float water;          // el agua debajo
+} DecorBridge;
+bool decor_bridge(const World *w, float px, float pz, DecorBridge *out);
+// El tablero de lo que se camina (el puente, los muelles, la tarima) en (lx, lz): su alto sobre la base del modelo, en
+// sus ejes (lx a lo largo, su X; lz a lo ancho) y en metros del mundo. Negativo si (lx, lz) cae fuera del tablero.
+float decor_deck(DecorKind kind, float scale, float stretch, float lx, float lz);
+// Lo que choca de cada cosa del decorado, lo mas sencillo posible (las colisiones: src/world/terrain.c): nada (lo que
+// se pisa: lo de menos de 45 cm de alto, lo del pie de los arboles, las tablas y la cerca caida; y lo que se camina:
+// el puente, los muelles y la tarima), un circulo (el tronco de los arboles), dos postes (el portal y el marco, en las
+// puntas de su X) o una capsula a lo largo de su X (lo demas: del 90 % de su ancho y su largo). En metros, a escala 1:
+// el radio y el medio largo del eje.
+typedef enum { DECOR_HIT_NONE, DECOR_HIT_CIRCLE, DECOR_HIT_POSTS, DECOR_HIT_CAPSULE } DecorHit;
+DecorHit decor_collider(DecorKind kind, float *radius, float *half);
+// Medio largo del tablero del puente (a escala 1, sin estirar): sus puntas, a 0,55 m de la base; el medio, a 0,95.
+#define DECOR_BRIDGE_HALF 2.35f
+
 #endif

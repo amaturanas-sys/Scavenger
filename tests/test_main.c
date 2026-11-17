@@ -5100,6 +5100,59 @@ static void test_decor(void) {
                 if (p == DECOR_PLACE_RUIN) CHECK(a[i].kind != DECOR_BANCO && (!fence || a[i].kind == DECOR_CERCA_ROTA || a[i].kind == DECOR_CERCA_QUEBRADA));
             }
         }
+    // Lo que se camina: el tablero del puente, en arco (mas alto en el medio), y nada fuera de los tableros.
+    CHECK(fabsf(decor_deck(DECOR_PUENTE, 1.0f, 1.0f, 0.0f, 0.0f) - 0.95f) < 1e-3f && fabsf(decor_deck(DECOR_PUENTE, 1.0f, 1.0f, DECOR_BRIDGE_HALF, 0.0f) - 0.55f) < 1e-3f);
+    CHECK(decor_deck(DECOR_PUENTE, 1.0f, 1.5f, 3.4f, 0.0f) > 0.55f && decor_deck(DECOR_PUENTE, 1.0f, 1.0f, 3.4f, 0.0f) < 0.0f && decor_deck(DECOR_PUENTE, 1.0f, 1.0f, 0.0f, 2.0f) < 0.0f);
+    CHECK(decor_deck(DECOR_MUELLE, 1.0f, 1.0f, 0.0f, 0.0f) > 0.6f && decor_deck(DECOR_TARIMA, 1.0f, 1.0f, 0.0f, 0.0f) > 0.4f && decor_deck(DECOR_BARRIL, 1.0f, 1.0f, 0.0f, 0.0f) < 0.0f);
+    // Lo que choca (las colisiones): lo que se camina y lo que se pisa, nada; los arboles, el tronco; el portal, sus
+    // postes; lo demas, una capsula dentro de su planta.
+    for (int k = 0; k < DECOR_KINDS; k++) {
+        const DecorNorm *n = decor_norm((DecorKind)k);
+        float r, half;
+        DecorHit hit = decor_collider((DecorKind)k, &r, &half);
+        bool walk = k == DECOR_PUENTE || k == DECOR_TARIMA || k == DECOR_MUELLE || k == DECOR_MUELLE_FIN;
+        if (walk || n->cls == DECOR_CLASS_FOOT || n->height < 0.45f || k == DECOR_TABLAS || k == DECOR_CERCA_CAIDA) CHECK(hit == DECOR_HIT_NONE);
+        else CHECK(hit != DECOR_HIT_NONE && r > 0.1f);
+        if (hit == DECOR_HIT_CAPSULE) CHECK(r + half <= 0.5f * n->length + 1e-4f && r <= 0.5f * fmaxf(n->width, 0.3f) + 1e-4f);
+    }
+    float hr, hh;
+    CHECK(decor_collider(DECOR_ACACIA, &hr, &hh) == DECOR_HIT_CIRCLE && decor_collider(DECOR_PORTAL, &hr, &hh) == DECOR_HIT_POSTS && hh > 0.5f);
+    CHECK(decor_collider(DECOR_CERCA_A, &hr, &hh) == DECOR_HIT_CAPSULE && hh > 0.5f);
+    // Los puentes (docs/MUNDO.md): de orilla alta a orilla alta. Las dos puntas del tablero en el suelo (ni colgando ni
+    // muy hundidas), el agua debajo y a 1,4 m o mas del tablero en el medio, y la mayoria de los pueblos con el suyo.
+    static World bw;
+    const unsigned bseeds[] = { 1206u, 42u, 7u };
+    for (int si = 0; si < 3; si++) {
+        world_generate(&bw, bseeds[si]);
+        int bridges = 0;
+        for (int i = 0; i < bw.settlement_count; i++) {
+            DecorBridge b, b2;
+            if (!decor_bridge(&bw, bw.settlements[i].x, bw.settlements[i].z, &b)) continue;
+            bridges++;
+            CHECK(decor_bridge(&bw, bw.settlements[i].x, bw.settlements[i].z, &b2) && memcmp(&b, &b2, sizeof b) == 0);
+            CHECK(b.scale >= 1.0f && b.scale <= 1.2f && b.stretch >= 0.9f && b.stretch <= DECOR_BRIDGE_STRETCH + 1e-4f);
+            float ux = cosf(b.yaw), uz = -sinf(b.yaw), half = DECOR_BRIDGE_HALF * b.scale * b.stretch * 0.999f, sunk = 0.0f;
+            for (int e = -1; e <= 1; e += 2) {
+                float x = b.x + ux * half * (float)e, z = b.z + uz * half * (float)e, deck = b.y + decor_deck(DECOR_PUENTE, b.scale, b.stretch, half * (float)e, 0.0f);
+                float g = world_height(&bw, x, z);
+                CHECK(deck >= g - 0.36f && deck <= g + 0.03f); // apoya: a lo sumo 35 cm hundido, nunca colgando
+                CHECK(g >= b.water + DECOR_BRIDGE_CLEAR - 0.11f && world_water(&bw, x, z, 0.0f, NULL) < g); // en seco y alto
+                float beyond = world_height(&bw, b.x + ux * (half / 0.999f + 1.5f) * (float)e, b.z + uz * (half / 0.999f + 1.5f) * (float)e);
+                CHECK(fabsf(beyond - g) < 1.05f); // y se sale a una orilla pareja
+                sunk += g - deck;
+            }
+            CHECK(sunk < 0.36f);
+            CHECK(b.y + decor_deck(DECOR_PUENTE, b.scale, b.stretch, 0.0f, 0.0f) >= b.water + 1.4f);
+            bool over_water = false;
+            for (float t = -half; t <= half; t += 0.25f) over_water = over_water || world_water(&bw, b.x + ux * t, b.z + uz * t, 0.0f, NULL) > world_height(&bw, b.x + ux * t, b.z + uz * t);
+            CHECK(over_water);
+            for (int j = 0; j < bw.settlement_count; j++) {
+                float dx = b.x - bw.settlements[j].x, dz = b.z - bw.settlements[j].z;
+                CHECK(sqrtf(dx * dx + dz * dz) > (bw.settlements[j].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 : VILLAGE_FIELDS_R1));
+            }
+        }
+        CHECK(bridges >= 4);
+    }
 }
 
 static void test_flora(void) {

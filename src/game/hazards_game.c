@@ -488,8 +488,8 @@ void hz_update(Hazards *hz, const Climate *c, const Terrain *t, Player *p, GameA
         if (hz->trap == TRAP_ICE) hz->warmth.wet = 1.0f;
     }
 
-    // Terreno bajo los pies: hielo, vadeo, nado, barro.
-    float ground = terrain_height(t, p->pos.x, p->pos.z);
+    // Terreno bajo los pies: hielo, vadeo, nado, barro (sobre un puente o un muelle, en seco).
+    float ground = terrain_ground(t, p->pos.x, p->pos.z, p->pos.y);
     float water = terrain_water(t, p->pos.x, p->pos.z), ice = terrain_ice(t, p->pos.x, p->pos.z);
     bool over_water = water > ground + 0.25f;
     hz->on_ice = hz->wading = hz->swimming = false;

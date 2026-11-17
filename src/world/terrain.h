@@ -53,8 +53,15 @@ typedef struct {
 #define CHUNK_DECOR 64
 typedef struct {
     float x, y, z, yaw, scale; // la base, el giro y la escala
+    float stretch;             // lo que se estira a lo largo (su X) sobre la escala: el puente, de orilla a orilla
     unsigned char kind;        // DecorKind (src/sim/decor.h)
 } ChunkDecor;
+
+// Las rocas de cada chunk que se alzan (de 60 cm o mas, de prop_slot): para las colisiones (terrain_collide).
+#define CHUNK_ROCKS 96
+typedef struct {
+    float x, z, r, top; // el centro, el radio que choca y el alto de la punta
+} ChunkRock;
 
 #define TERRAIN_WATER_MESHES 3 // el agua, el hielo y la espuma de cada chunk
 typedef struct {
@@ -66,6 +73,8 @@ typedef struct {
     int tree_count;
     ChunkDecor decor[CHUNK_DECOR];
     int decor_count;
+    ChunkRock rocks[CHUNK_ROCKS];
+    int rock_count;
     Model model;
     float *tri;             // por triangulo: lo que hace falta para recolorear con la estacion
     Model water[TERRAIN_WATER_MESHES];
@@ -88,6 +97,9 @@ typedef struct {
     WaterSeason meshed; // la estacion de las mallas del agua (cambia de a saltos: la consulta, en cada cuadro)
     float plain;        // altura del llano del campamento
     const World *world; // la forma del mundo (de la semilla)
+    // El puente de cada pueblo sobre un arroyo cercano (src/sim/decor.h, decor_bridge), si tiene: se buscan una vez.
+    DecorBridge bridge[SETTLEMENTS_MAX];
+    bool has_bridge[SETTLEMENTS_MAX];
 } Terrain;
 
 float terrain_height(const Terrain *t, float x, float z);
@@ -140,6 +152,14 @@ void terrain_decor_census(const Terrain *t, int per_kind[DECOR_KINDS], int why[D
 // El primer puente (pier: muelle) del decorado, de pueblo en pueblo: su lugar y su direccion (--ir puente, muelle).
 bool terrain_find_water_decor(const Terrain *t, bool pier, float *x, float *z, float *dx, float *dz);
 bool terrain_near_feature(const Terrain *t, float x, float z, float margin);
+// Las colisiones, lo mas sencillo posible: circulos y capsulas en el suelo, sin fisica. Saca a (x, z) (un cuerpo de
+// radius m con los pies a y) de los troncos de los arboles, las rocas que se alzan y el decorado que choca
+// (decor_collider, src/sim/decor.h) de los trozos cargados de alrededor. Lo que no pasa de las rodillas (45 cm sobre
+// los pies) se pisa. Las obras de voxeles (edificios, ruinas, formaciones) frenan aparte: voxs_solid_at (src/main.c).
+void terrain_collide(const Terrain *t, float *x, float *z, float y, float radius);
+// El suelo que se pisa en (x, z): el terreno o, si alli hay un tablero (el puente, un muelle, la tarima) y quien
+// camina venia a su altura (y_hint, sus pies: a lo sumo 60 cm por debajo), el tablero.
+float terrain_ground(const Terrain *t, float x, float z, float y_hint);
 // Lo que cubre en el mundo a menos de reach m del borde: el tronco de un arbol, una roca de un metro o mas,
 // una mata alta o una formacion de voxeles (los mismos que se dibujan). true con el mas cercano: su centro
 // (en el suelo) y su radio. La cobertura del jugador (C, A4) lo usa.

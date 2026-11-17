@@ -203,6 +203,47 @@ static bool structure_at(const Blockers *b, Vector3 q) {
     return b->vox && voxs_solid_at(q, b->who);
 }
 
+// Las colisiones del jugador (y su montura), lo mas sencillo posible: lo que esta en el suelo (los troncos, las rocas,
+// el decorado: terrain_collide) lo empuja afuera; las obras (los edificios, las ruinas y las formaciones de voxeles
+// dibujadas cerca, y las estructuras del campamento) lo frenan a la altura de las rodillas y del pecho, un radio por
+// delante: se desliza a lo largo de ellas (el paso, girado) o se queda donde estaba. Las yurtas del campamento se entran.
+static bool obra_ahead(const Blockers *b, Vector3 from, Vector3 to, float ux, float uz, float radius) {
+    Vector3 q = { to.x + ux * radius, to.y, to.z + uz * radius };
+    for (int i = 0; i < b->np; i++)
+        if (in_prop(b->prop[i], q, true) && !in_prop(b->prop[i], from, true)) return true;
+    for (int k = 0; b->vox && k < 2; k++) {
+        float lift = k ? 1.3f : 0.5f;
+        if (voxs_solid_at((Vector3){ q.x, q.y + lift, q.z }, (Vector3){ from.x, from.y + lift, from.z })) return true;
+    }
+    return false;
+}
+
+static void collide_player(const Terrain *t, const Camp *camp, Vector3 from, Player *p, bool mounted) {
+    float radius = mounted ? 0.55f : 0.35f;
+    terrain_collide(t, &p->pos.x, &p->pos.z, p->pos.y, radius);
+    float dx = p->pos.x - from.x, dz = p->pos.z - from.z, len = sqrtf(dx * dx + dz * dz);
+    if (len > 1e-4f) {
+        Blockers b;
+        blockers_near(&b, camp, &g_props, from);
+        Vector3 to = p->pos;
+        if ((b.np || b.vox) && obra_ahead(&b, from, to, dx / len, dz / len, radius)) {
+            // Se desliza: el paso, girado a uno y otro lado (cada vez mas) y mas corto, lo que avanzaria a lo largo de
+            // la pared; si nada pasa, se queda.
+            static const float TURN[] = { 0.5f, -0.5f, 1.0f, -1.0f, 1.4f, -1.4f };
+            p->pos.x = from.x, p->pos.z = from.z;
+            for (int k = 0; k < 6; k++) {
+                float c = cosf(TURN[k]), sn = sinf(TURN[k]), ux = (dx * c - dz * sn) / len, uz = (dx * sn + dz * c) / len, step = len * c;
+                Vector3 q = { from.x + ux * step, to.y, from.z + uz * step };
+                if (!obra_ahead(&b, from, q, ux, uz, radius)) {
+                    p->pos.x = q.x, p->pos.z = q.z;
+                    break;
+                }
+            }
+        }
+    }
+    if (p->grounded) p->pos.y = terrain_ground(t, p->pos.x, p->pos.z, p->pos.y);
+}
+
 // ¿El brazo de la camara (del jugador a ella) cruza una obra?
 static bool arm_blocked(const Blockers *b, Vector3 target, Vector3 cam) {
     if (!b->ny && !b->np && !b->vox) return false;
@@ -1509,7 +1550,9 @@ int main(int argc, char **argv) {
             // Adentro de una cueva se mueve alli (src/game/cave_game.c) y el mundo de afuera espera: el combate, la
             // fauna, los peligros y los desastres; el reloj, la sed, el inventario, la barra rapida y la antorcha siguen.
             bool cave = cv_inside();
+            Vector3 before_move = player.pos;
             if (!g_actions.climbing && !cave) player_update(&player, &terrain, in, rig.yaw, dt);
+            if (!g_actions.climbing && !cave) collide_player(&terrain, &camp, before_move, &player, g_actions.mounted >= 0); // troncos, rocas, decorado y obras
             if (!cave) wd_keep_out_of_rock(&terrain, &player.pos); // el peñasco de la boca de una cueva no se atraviesa
             if (in.toggle_sneak && !cave) ga_toggle_cover(&g_actions, &g_props, &terrain, &player); // C: junto a un obstaculo, cobertura
             cv_update(&g_actions, &g_combat, &troop, &g_props, &player, &terrain, in, &rig.yaw, world_time,
@@ -1966,6 +2009,8 @@ int main(int argc, char **argv) {
             printf("Decorado: %d en los trozos cargados (%d crestas, %d grandes, %d medianos, %d al pie de los arboles, %d hechos por el hombre)%s\n",
                    decor, dc[DECOR_CLASS_RIDGE], dc[DECOR_CLASS_BIG], dc[DECOR_CLASS_MEDIUM], dc[DECOR_CLASS_FOOT], dc[DECOR_CLASS_HUMAN],
                    g_no_decor ? ", sin dibujar (--sin-decorado)" : "");
+            printf("Jugador: (%.2f, %.2f, %.2f)%s\n", player.pos.x, player.pos.y, player.pos.z,
+                   g_hazards.swimming ? ", nadando" : g_hazards.wading ? ", vadeando" : ""); // (las colisiones, al caminar)
             break;
         }
     }

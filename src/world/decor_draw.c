@@ -29,7 +29,7 @@ void decor_draw(const Terrain *t, Props *p, const Inventory *inv, Camera3D cam) 
             const InvItem *item = items[d->kind];
             float dx = d->x - cam.position.x, dz = d->z - cam.position.z, r = reach((DecorKind)d->kind);
             if (!item || dx * dx + dz * dz > r * r) continue;
-            Matrix m = MatrixMultiply(MatrixMultiply(MatrixScale(d->scale, d->scale, d->scale), MatrixRotateY(d->yaw)),
+            Matrix m = MatrixMultiply(MatrixMultiply(MatrixScale(d->scale * d->stretch, d->scale, d->scale), MatrixRotateY(d->yaw)),
                                       MatrixTranslate(d->x, d->y, d->z));
             props_draw_item_matrix(p, item, m);
         }

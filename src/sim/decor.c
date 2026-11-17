@@ -187,3 +187,126 @@ int decor_layout(DecorPlace place, uint32_t seed, float r_place, DecorSpot *out,
 #undef RAD
     return n;
 }
+
+// ---------------------------------------------------------------- lo que se camina
+// Las medidas de los modelos, a escala 1 (rayos sobre sus GLB): el tablero del puente va de x -2,35 a 2,35 en arco,
+// de 0,55 m en las puntas a 0,95 en el medio, entre las barandas (|z| < 1,6); el de los muelles, a 0,7 m; el de la
+// tarima, a 0,44.
+#define BRIDGE_END 0.55f
+#define BRIDGE_RISE 0.40f
+
+float decor_deck(DecorKind kind, float scale, float stretch, float lx, float lz) {
+    float hl, hw;
+    switch (kind) {
+    case DECOR_PUENTE: hl = DECOR_BRIDGE_HALF * stretch, hw = 1.6f; break;
+    case DECOR_MUELLE:
+    case DECOR_MUELLE_FIN: hl = 1.78f, hw = 1.55f; break;
+    case DECOR_TARIMA: hl = 1.1f, hw = 1.0f; break;
+    default: return -1.0f;
+    }
+    lx /= scale, lz /= scale;
+    if (fabsf(lx) > hl || fabsf(lz) > hw) return -1.0f;
+    float u = lx / hl;
+    return scale * (kind == DECOR_PUENTE ? BRIDGE_END + BRIDGE_RISE * (1.0f - u * u) : kind == DECOR_TARIMA ? 0.44f : 0.70f);
+}
+
+DecorHit decor_collider(DecorKind kind, float *radius, float *half) {
+    const DecorNorm *n = decor_norm(kind);
+    *radius = *half = 0.0f;
+    if (!n || n->cls == DECOR_CLASS_FOOT || n->height < 0.45f) return DECOR_HIT_NONE;
+    switch (kind) {
+    case DECOR_PUENTE:
+    case DECOR_TARIMA:
+    case DECOR_MUELLE:
+    case DECOR_MUELLE_FIN:
+    case DECOR_TABLAS:
+    case DECOR_CERCA_CAIDA: return DECOR_HIT_NONE;
+    case DECOR_ACACIA:
+    case DECOR_SAUCE_MUERTO: *radius = 0.45f; return DECOR_HIT_CIRCLE;
+    case DECOR_PORTAL:
+    case DECOR_MARCO: *radius = 0.2f, *half = 0.5f * n->length - 0.2f; return DECOR_HIT_POSTS;
+    default: break;
+    }
+    *radius = fmaxf(0.45f * fminf(n->width, n->length), 0.15f);
+    *half = fmaxf(0.45f * n->length - *radius, 0.0f);
+    return DECOR_HIT_CAPSULE;
+}
+
+// El giro que pone el largo del modelo (su X) a lo largo de (dx, dz).
+static float yaw_along(float dx, float dz) { return atan2f(-dz, dx); }
+
+// La distancia desde el centro del cauce, en la direccion (ux, uz), al hombro de la orilla: donde el suelo ya esta a
+// DECOR_BRIDGE_CLEAR m o mas sobre el agua y deja de subir (en los 2 m siguientes sube menos de BRIDGE_SHOULDER, y no
+// baja de la orilla). -1 si no hay antes de BRIDGE_REACH m.
+#define BRIDGE_REACH 6.5f
+#define BRIDGE_SHOULDER 1.0f
+static float bank_top(const World *w, float x, float z, float ux, float uz, float wl) {
+    for (float d = 0.5f; d <= BRIDGE_REACH; d += 0.25f) {
+        float h = world_height(w, x + ux * d, z + uz * d);
+        if (h < wl + DECOR_BRIDGE_CLEAR) continue;
+        float far = world_height(w, x + ux * (d + 2.0f), z + uz * (d + 2.0f)), mid = world_height(w, x + ux * (d + 1.0f), z + uz * (d + 1.0f));
+        if (far - h < BRIDGE_SHOULDER && fminf(far, mid) >= wl + DECOR_BRIDGE_CLEAR - 0.1f) return d;
+    }
+    return -1.0f;
+}
+
+// Lejos de los pueblos (y sus campos), las estructuras, los campamentos y las bocas de las cuevas.
+static bool bridge_spot_free(const World *w, float x, float z) {
+    for (int i = 0; i < w->settlement_count; i++) {
+        float dx = x - w->settlements[i].x, dz = z - w->settlements[i].z;
+        float r = (w->settlements[i].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 : VILLAGE_FIELDS_R1) + 8.0f;
+        if (dx * dx + dz * dz < r * r) return false;
+    }
+    for (int i = 0; i < w->site_count; i++) {
+        float dx = x - w->sites[i].x, dz = z - w->sites[i].z, r = w->sites[i].kind == SITE_ANCIENT_TOWN ? 40.0f : 34.0f;
+        if (dx * dx + dz * dz < r * r) return false;
+    }
+    for (int i = 0; i < w->tribe_count; i++) {
+        float dx = x - w->tribes[i].x, dz = z - w->tribes[i].z;
+        if (dx * dx + dz * dz < 30.0f * 30.0f) return false;
+    }
+    for (int i = 0; i < w->cave_count; i++) {
+        float dx = x - w->caves[i].x, dz = z - w->caves[i].z;
+        if (dx * dx + dz * dz < 16.0f * 16.0f) return false;
+    }
+    return true;
+}
+
+bool decor_bridge(const World *w, float px, float pz, DecorBridge *out) {
+    float best = 1e9f;
+    for (int i = 0; i < w->river_count; i++) {
+        const River *rv = &w->rivers[i];
+        if (rv->kind == RIVER_BRAIDED || rv->width > 4.0f || rv->n < 3) continue;
+        for (int k = 1; k + 1 < rv->n; k++) {
+            float x = rv->x[k], z = rv->z[k], dx = x - px, dz = z - pz;
+            if (dx * dx + dz * dz > 220.0f * 220.0f || !bridge_spot_free(w, x, z)) continue;
+            WaterKind wk;
+            float wl = world_water(w, x, z, 0.0f, &wk);
+            if (wl < -1e8f || wk != WATER_RIVER) continue;
+            float fx = rv->x[k + 1] - rv->x[k - 1], fz = rv->z[k + 1] - rv->z[k - 1], l = sqrtf(fx * fx + fz * fz) + 1e-6f;
+            float ux = -fz / l, uz = fx / l; // de orilla a orilla
+            float d1 = bank_top(w, x, z, ux, uz, wl), d2 = d1 < 0.0f ? -1.0f : bank_top(w, x, z, -ux, -uz, wl);
+            if (d2 < 0.0f || d1 + d2 >= best) continue;
+            float half = 0.5f * (d1 + d2) + 0.4f, sk = half / DECOR_BRIDGE_HALF; // las puntas, 40 cm adentro de cada orilla
+            float sc = fminf(fmaxf(sk / 1.4f, 1.0f), 1.2f), st = sk / sc;
+            if (st > DECOR_BRIDGE_STRETCH) continue;
+            if (st < 0.9f) st = 0.9f, half = DECOR_BRIDGE_HALF * sc * st;
+            float cx = x + ux * 0.5f * (d1 - d2), cz = z + uz * 0.5f * (d1 - d2); // entre las dos orillas
+            float g1 = world_height(w, cx + ux * half, cz + uz * half), g2 = world_height(w, cx - ux * half, cz - uz * half);
+            if (fabsf(g1 - g2) > 0.35f) continue;
+            // Y se sale a una orilla pareja: 1,5 m mas alla de cada punta, el suelo no sube ni baja mas de 0,8 m.
+            float a1 = world_height(w, cx + ux * (half + 1.5f), cz + uz * (half + 1.5f)), a2 = world_height(w, cx - ux * (half + 1.5f), cz - uz * (half + 1.5f));
+            if (fabsf(a1 - g1) > 1.0f || fabsf(a2 - g2) > 1.0f) continue;
+            float base = fminf(g1, g2) - BRIDGE_END * sc;
+            bool clear = true; // y en el medio, nada del suelo toca el tablero
+            for (float t = -half + 0.6f; t <= half - 0.6f && clear; t += 0.5f) {
+                float u = t / half;
+                clear = world_height(w, cx + ux * t, cz + uz * t) < base + sc * (BRIDGE_END + BRIDGE_RISE * (1.0f - u * u)) - 0.05f;
+            }
+            if (!clear) continue;
+            best = d1 + d2;
+            *out = (DecorBridge){ cx, cz, base, yaw_along(ux, uz), sc, st, wl };
+        }
+    }
+    return best < 1e8f;
+}

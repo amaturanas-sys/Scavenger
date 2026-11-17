@@ -110,7 +110,7 @@ void player_update(Player *p, const Terrain *t, PlayerInput in, float cam_yaw, f
 
     player_stamina_tick(!mounted && p->stance == STANCE_RUN, p->moving, dt);
 
-    float ground = terrain_height(t, p->pos.x, p->pos.z);
+    float ground = terrain_ground(t, p->pos.x, p->pos.z, p->pos.y); // el terreno, o el tablero de un puente o un muelle
     if (p->grounded && in.jump && p->crouching) { // agachado, Espacio lo levanta
         p->crouching = false;
         in.jump = false;

@@ -195,12 +195,44 @@ mirar si los vecinos están cargados.
     barriles y tablas;
   - junto a los campamentos de las tribus: un corral, un carro y barriles;
   - alrededor de las ruinas: restos (tablas, una cerca caída, barriles, a veces un carro o un cofre);
-  - un puente sobre el primer arroyo angosto que pasa a 60-160 m de cada pueblo, de orilla a orilla;
+  - un puente sobre un arroyo (`decor_bridge`, v0.15.0):
+    - el cruce más corto a menos de 220 m de cada pueblo, fuera de sus campos y de los demás lugares;
+    - de orilla alta a orilla alta: las dos orillas suben a 1,2 m o más sobre el agua, y el puente se apoya en el
+      hombro de cada una, donde el suelo deja de subir;
+    - las dos puntas, en tierra, y de cada una se sale a una orilla pareja;
+    - el tablero, en arco, de 1,8 a 8 m sobre el agua en el medio;
+    - el modelo se escala hasta 1,2 y se estira a lo largo hasta 2,2 para cubrir la luz;
+    - árboles, rocas, formaciones y el resto del decorado lo esquivan (`near_bridge`);
   - un muelle en la orilla baja de un lago o del mar a menos de 400 m de un pueblo o campamento: la tarima en tierra
     y dos tramos sobre el agua.
 
 El censo del mundo entero (`--censo-decorado`) dice cuántos hay de cada modelo y por qué se descarta cada candidato.
 Para mirarlo: `--ir puente`, `--ir muelle` y `--sin-decorado`, para comparar antes y después.
+
+## Las colisiones
+
+Lo más sencillo posible (v0.15.0): sin física, círculos y cápsulas en el suelo, y solo para el jugador (y su
+montura). Cada cuadro mira los nueve trozos de alrededor.
+
+- **Lo que está en el suelo lo empuja afuera** (`terrain_collide`, `src/world/terrain.c`):
+  - el tronco de los árboles;
+  - las rocas de 60 cm o más (cada trozo anota las suyas al armarse);
+  - el decorado que choca (`decor_collider`, `src/sim/decor.h`): un círculo para el tronco de los árboles, dos postes
+    para el portal y el marco, y una cápsula a lo largo para lo demás (rocas, colinas, cercas, carros, bancos,
+    barriles, cofres).
+
+  Lo que no pasa de las rodillas (45 cm) se pisa: los hongos, las ramas, las raíces, las tablas y la cerca caída.
+- **Las obras lo frenan** (`collide_player`, `src/main.c`): los edificios, las ruinas y las formaciones de vóxeles
+  dibujados cerca (su ocupación, `voxs_solid_at`) y las estructuras del campamento.
+  - Se miran a la altura de las rodillas y del pecho, un radio por delante.
+  - Si el paso choca, prueba girado a uno y otro lado (y más corto), así se desliza a lo largo de la pared o rodea
+    lo redondo; si nada pasa, se queda.
+  - Las yurtas del campamento se entran.
+- **Lo que se camina** (`terrain_ground`): el puente, los muelles y la tarima son suelo para quien viene a su altura
+  (hasta 60 cm por debajo). Sobre ellos no se nada, y por debajo se puede pasar a nado.
+
+En las capturas, la línea `Jugador: (x, y, z)` dice dónde terminó. Con `--caminar adelante` sirve para probar un
+choque.
 
 ## Parámetros para afinar
 

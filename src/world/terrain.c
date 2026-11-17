@@ -506,6 +506,18 @@ static bool near_site(const World *w, float x, float z) {
     return false;
 }
 
+// ¿(x, z) a menos de r del puente de algun pueblo (su tablero y sus apoyos)? Ni arboles, ni rocas, ni decorado encima.
+static bool near_bridge(const Terrain *t, float x, float z, float r) {
+    for (int i = 0; i < t->world->settlement_count; i++) {
+        if (!t->has_bridge[i]) continue;
+        const DecorBridge *b = &t->bridge[i];
+        float ux = cosf(b->yaw), uz = -sinf(b->yaw), dx = x - b->x, dz = z - b->z;
+        float along = dx * ux + dz * uz, across = -dx * uz + dz * ux;
+        if (fabsf(along) < (DECOR_BRIDGE_HALF * b->stretch + 0.6f) * b->scale + r && fabsf(across) < 2.2f * b->scale + r) return true;
+    }
+    return false;
+}
+
 static Model make_model(TriBuf *b) {
     Mesh mesh = { 0 };
     mesh.triangleCount = b->count;
@@ -674,6 +686,8 @@ int terrain_decor_count(const Terrain *t, int per_class[DECOR_CLASSES]) {
     return n;
 }
 
+static float chunk_decor_radius(const ChunkDecor *d);
+
 bool terrain_near_feature(const Terrain *t, float x, float z, float margin) {
     for (int i = 0; i < CHUNK_SLOTS; i++) {
         const Chunk *ch = &t->slots[i];
@@ -686,12 +700,76 @@ bool terrain_near_feature(const Terrain *t, float x, float z, float margin) {
         for (int k = 0; k < ch->decor_count; k++) { // las rocas, colinas y arboles del decorado (no lo chico)
             const ChunkDecor *d = &ch->decor[k];
             if (decor_norm((DecorKind)d->kind)->cls == DECOR_CLASS_FOOT) continue;
-            float r = decor_radius((DecorKind)d->kind, d->scale) * 0.8f + margin;
+            float r = chunk_decor_radius(d) * 0.8f + margin;
             if ((x - d->x) * (x - d->x) + (z - d->z) * (z - d->z) < r * r) return true;
         }
     }
     return false;
 }
+// Saca a (*x, *z) de un circulo de radio r alrededor de (cx, cz).
+static void push_out(float *x, float *z, float cx, float cz, float r) {
+    float dx = *x - cx, dz = *z - cz, d2 = dx * dx + dz * dz;
+    if (d2 >= r * r) return;
+    float d = sqrtf(d2);
+    if (d < 1e-4f) dx = 1.0f, dz = 0.0f, d = 1.0f; // justo en el centro: hacia +x
+    *x = cx + dx / d * r, *z = cz + dz / d * r;
+}
+
+void terrain_collide(const Terrain *t, float *x, float *z, float y, float radius) {
+    int ccx = (int)floorf(*x / CHUNK_SIZE), ccz = (int)floorf(*z / CHUNK_SIZE);
+    for (int pass = 0; pass < 2; pass++) // dos vueltas: salir de una cosa puede meter en otra
+        for (int i = 0; i < CHUNK_SLOTS; i++) {
+            const Chunk *ch = &t->slots[i];
+            if (!ch->loaded || abs(ch->cx - ccx) > 1 || abs(ch->cz - ccz) > 1) continue;
+            for (int k = 0; k < ch->tree_count; k++) { // el tronco
+                const ChunkTree *tr = &ch->trees[k];
+                if (fabsf(tr->x - *x) < 2.0f && fabsf(tr->z - *z) < 2.0f) push_out(x, z, tr->x, tr->z, 0.3f + 0.15f * tr->scale + radius);
+            }
+            for (int k = 0; k < ch->rock_count; k++) {
+                const ChunkRock *rk = &ch->rocks[k];
+                if (rk->top > y + 0.45f && fabsf(rk->x - *x) < rk->r + radius && fabsf(rk->z - *z) < rk->r + radius)
+                    push_out(x, z, rk->x, rk->z, rk->r + radius);
+            }
+            for (int k = 0; k < ch->decor_count; k++) {
+                const ChunkDecor *d = &ch->decor[k];
+                float r, half;
+                DecorHit hit = decor_collider((DecorKind)d->kind, &r, &half);
+                if (hit == DECOR_HIT_NONE || d->y + decor_norm((DecorKind)d->kind)->height * d->scale < y + 0.45f) continue;
+                r *= d->scale, half *= d->scale * d->stretch;
+                float reach = half + r + radius;
+                if (fabsf(d->x - *x) > reach || fabsf(d->z - *z) > reach) continue;
+                float ux = cosf(d->yaw), uz = -sinf(d->yaw); // su X en el mundo
+                if (hit == DECOR_HIT_POSTS) {
+                    push_out(x, z, d->x + ux * half, d->z + uz * half, r + radius);
+                    push_out(x, z, d->x - ux * half, d->z - uz * half, r + radius);
+                    continue;
+                }
+                float along = (*x - d->x) * ux + (*z - d->z) * uz;
+                along = hit == DECOR_HIT_CIRCLE ? 0.0f : fminf(fmaxf(along, -half), half);
+                push_out(x, z, d->x + ux * along, d->z + uz * along, r + radius);
+            }
+        }
+}
+
+float terrain_ground(const Terrain *t, float x, float z, float y_hint) {
+    float ground = terrain_height(t, x, z);
+    int ccx = (int)floorf(x / CHUNK_SIZE), ccz = (int)floorf(z / CHUNK_SIZE);
+    for (int i = 0; i < CHUNK_SLOTS; i++) {
+        const Chunk *ch = &t->slots[i];
+        if (!ch->loaded || abs(ch->cx - ccx) > 1 || abs(ch->cz - ccz) > 1) continue;
+        for (int k = 0; k < ch->decor_count; k++) {
+            const ChunkDecor *d = &ch->decor[k];
+            if (d->kind != DECOR_PUENTE && d->kind != DECOR_MUELLE && d->kind != DECOR_MUELLE_FIN && d->kind != DECOR_TARIMA) continue;
+            float ux = cosf(d->yaw), uz = -sinf(d->yaw), dx = x - d->x, dz = z - d->z;
+            float deck = decor_deck((DecorKind)d->kind, d->scale, d->stretch, dx * ux + dz * uz, -dx * uz + dz * ux);
+            if (deck < 0.0f) continue;
+            deck += d->y;
+            if (deck > ground && y_hint >= deck - 0.6f) ground = deck;
+        }
+    }
+    return ground;
+}
+
 void terrain_water_shader_off(void) { g_water_shader_off = true; }
 
 void terrain_set_ripples(const Vector4 *bodies, int count) {
@@ -957,7 +1035,7 @@ static bool tree_slot(const Terrain *t, int gx, int gz, ChunkTree *out) {
     float dist;
     int si = world_nearest_settlement(t->world, x, z, &dist);
     if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 + 8.0f : VILLAGE_FIELDS_R1 + 6.0f)) return false; // claros de los pueblos (y sus campos)
-    if (near_site(t->world, x, z)) return false;
+    if (near_site(t->world, x, z) || near_bridge(t, x, z, 1.0f)) return false;
     TreeKind kind = flora_tree_kind(k, wet && wk != WATER_SEA ? 1.0f : 0.0f, (float)(h2 & 0xFFFF) / 65536.0f);
     if (kind != TREE_PINE && ((gx + gz) & 1)) return false;
     *out = (ChunkTree){ x, y, z, 0.6f + 0.4f * r1 * (0.6f + 0.4f * k[REGION_FOREST]), (float)(h2 >> 16) / 65536.0f * 2.0f * PI,
@@ -992,7 +1070,7 @@ static int prop_slot(const Terrain *t, int gx, int gz, PropSlot *o) {
     float dist;
     int si = world_nearest_settlement(t->world, x, z, &dist);
     if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 + 4.0f : VILLAGE_FIELDS_R1 + 4.0f)) return 0;
-    if (near_site(t->world, x, z)) return 0;
+    if (near_site(t->world, x, z) || near_bridge(t, x, z, 0.8f)) return 0;
     float sx = terrain_height(t, x + 1.5f, z) - y, sz = terrain_height(t, x, z + 1.5f) - y;
     o->slope = sqrtf(sx * sx + sz * sz) / 1.5f;
     o->base = (Vector3){ x, y, z };
@@ -1118,7 +1196,7 @@ static bool decor_zone_ok(const Terrain *t, const float *k, float x, float z, fl
     if (e < 110.0f + r) return false;
     if (k[REGION_DESERT] > 0.5f && e < 270.0f + r) return false;
     if (k[REGION_HIGHLAND] > 0.5f && e < 160.0f + r) return false;
-    if (world_forest_wall(w, x, z) > 0.1f || world_canal_near(w, x, z, 14.0f + r)) return false;
+    if (world_forest_wall(w, x, z) > 0.1f || world_canal_near(w, x, z, 14.0f + r) || near_bridge(t, x, z, r)) return false;
     return decor_clear_of_places(w, x, z, r);
 }
 
@@ -1187,6 +1265,12 @@ static bool decor_hits_tree(const Terrain *t, float x, float z, float r) {
     return false;
 }
 
+// El radio de algo del decorado ya sembrado (lo que se estira, a su largo).
+static float chunk_decor_radius(const ChunkDecor *d) {
+    const DecorNorm *n = decor_norm((DecorKind)d->kind);
+    return 0.5f * fmaxf(n->length * d->stretch, n->width) * d->scale;
+}
+
 // Una formacion de voxeles del chunk, o algo del decorado ya sembrado, a menos de r.
 static bool decor_hits_chunk(const Chunk *ch, float x, float z, float r) {
     for (int i = 0; i < ch->feat_count; i++) {
@@ -1196,7 +1280,7 @@ static bool decor_hits_chunk(const Chunk *ch, float x, float z, float r) {
     }
     for (int i = 0; i < ch->decor_count; i++) {
         const ChunkDecor *d = &ch->decor[i];
-        float rr = decor_radius((DecorKind)d->kind, d->scale) * 0.8f + r;
+        float rr = chunk_decor_radius(d) * 0.8f + r;
         if ((x - d->x) * (x - d->x) + (z - d->z) * (z - d->z) < rr * rr) return true;
     }
     return false;
@@ -1207,9 +1291,11 @@ static bool in_chunk(const Chunk *ch, float x, float z) {
     return x >= x0 && x < x0 + CHUNK_SIZE && z >= z0 && z < z0 + CHUNK_SIZE;
 }
 
-static void add_decor(Chunk *ch, int kind, float x, float y, float z, float yaw, float scale) {
-    if (ch->decor_count < CHUNK_DECOR) ch->decor[ch->decor_count++] = (ChunkDecor){ x, y, z, yaw, scale, (unsigned char)kind };
+static void add_decor_long(Chunk *ch, int kind, float x, float y, float z, float yaw, float scale, float stretch) {
+    if (ch->decor_count < CHUNK_DECOR)
+        ch->decor[ch->decor_count++] = (ChunkDecor){ .x = x, .y = y, .z = z, .yaw = yaw, .scale = scale, .stretch = stretch, .kind = (unsigned char)kind };
 }
+static void add_decor(Chunk *ch, int kind, float x, float y, float z, float yaw, float scale) { add_decor_long(ch, kind, x, y, z, yaw, scale, 1.0f); }
 
 // El giro que pone el largo del modelo (su X) a lo largo de (dx, dz).
 static float yaw_along(float dx, float dz) { return atan2f(-dz, dx); }
@@ -1296,33 +1382,11 @@ static void seed_place(const Terrain *t, Chunk *ch, DecorPlace place, float px, 
             hmin = fminf(hmin, h), hmax = fmaxf(hmax, h);
         }
         if (wet || (hmax - hmin) / fmaxf(2.0f * r, 1.0f) > nm->slope_max || world_river_bank(w, x, z, NULL) > 0.3f) continue;
-        if (decor_hits_tree(t, x, z, r * 0.8f) || decor_hits_chunk(ch, x, z, r * 0.8f)) continue;
+        if (decor_hits_tree(t, x, z, r * 0.8f) || decor_hits_chunk(ch, x, z, r * 0.8f) || near_bridge(t, x, z, r * 0.8f)) continue;
         float yaw = spots[i].along ? yaw_along(-sinf(spots[i].angle), cosf(spots[i].angle))
                                    : (float)(hash2((int)floorf(x * 8.0f), (int)floorf(z * 8.0f), seed) & 0xFFFF) / 65536.0f * 2.0f * PI;
         add_decor(ch, kind, x, hmin - nm->sink * nm->height, z, yaw, 1.0f);
     }
-}
-
-// Un puente sobre un arroyo angosto cerca del pueblo: el primer punto de los cauces (de hasta 3 m de ancho, no los
-// trenzados) a 60-160 m del pueblo con las dos orillas secas y parejas a 2,95 m, atravesado al curso. Siempre el mismo.
-static bool find_bridge(const Terrain *t, const Settlement *s, float *ox, float *oz, float *oy, float *oyaw) {
-    const World *w = t->world;
-    for (int i = 0; i < w->river_count; i++) {
-        const River *rv = &w->rivers[i];
-        if (rv->kind == RIVER_BRAIDED || rv->width > 3.0f || rv->n < 3) continue;
-        for (int k = 1; k + 1 < rv->n; k++) {
-            float x = rv->x[k], z = rv->z[k], dx = x - s->x, dz = z - s->z, d2 = dx * dx + dz * dz;
-            if (d2 < 60.0f * 60.0f || d2 > 160.0f * 160.0f) continue;
-            float fx = rv->x[k + 1] - rv->x[k - 1], fz = rv->z[k + 1] - rv->z[k - 1], l = sqrtf(fx * fx + fz * fz) + 1e-6f;
-            float ux = -fz / l, uz = fx / l; // de orilla a orilla
-            float h1 = terrain_height(t, x + 2.95f * ux, z + 2.95f * uz), h2 = terrain_height(t, x - 2.95f * ux, z - 2.95f * uz);
-            float w1 = world_water(w, x + 2.95f * ux, z + 2.95f * uz, 0.0f, NULL), w2 = world_water(w, x - 2.95f * ux, z - 2.95f * uz, 0.0f, NULL);
-            if (w1 > h1 - 0.15f || w2 > h2 - 0.15f || fabsf(h1 - h2) > 0.9f || near_site(w, x, z)) continue;
-            *ox = x, *oz = z, *oy = fminf(h1, h2) - 0.1f, *oyaw = yaw_along(ux, uz);
-            return true;
-        }
-    }
-    return false;
 }
 
 // Un muelle en la orilla baja de un lago o del mar a menos de 400 m del lugar: la tarima en tierra y dos tramos sobre
@@ -1398,10 +1462,10 @@ bool terrain_find_water_decor(const Terrain *t, bool pier, float *x, float *z, f
     const World *w = t->world;
     for (int i = 0; i < w->settlement_count; i++) {
         uint32_t seed = t->seed ^ ((uint32_t)i * 0x9E3779B1u);
-        float y, yaw, ground, water;
+        float ground, water;
         if (pier && find_pier(t, w->settlements[i].x, w->settlements[i].z, seed, x, z, dx, dz, &ground, &water)) return true;
-        if (!pier && find_bridge(t, &w->settlements[i], x, z, &y, &yaw)) {
-            *dx = cosf(yaw), *dz = -sinf(yaw);
+        if (!pier && t->has_bridge[i]) {
+            *x = t->bridge[i].x, *z = t->bridge[i].z, *dx = cosf(t->bridge[i].yaw), *dz = -sinf(t->bridge[i].yaw);
             return true;
         }
     }
@@ -1413,6 +1477,12 @@ bool terrain_find_water_decor(const Terrain *t, bool pier, float *x, float *z, f
 }
 
 static void seed_decor(const Terrain *t, Chunk *ch) {
+    // Los puentes de los pueblos, primero: lo natural los esquiva (near_bridge). Solo los tapa una formacion de voxeles.
+    for (int i = 0; i < t->world->settlement_count; i++) {
+        const DecorBridge *b = &t->bridge[i];
+        if (!t->has_bridge[i] || !in_chunk(ch, b->x, b->z) || decor_hits_chunk(ch, b->x, b->z, 1.0f)) continue;
+        add_decor_long(ch, DECOR_PUENTE, b->x, b->y, b->z, b->yaw, b->scale, b->stretch); // (dos pueblos pueden dar con el mismo)
+    }
     // Lo natural, de lo mayor a lo menor (cada casilla cede ante las mayores).
     seed_natural(t, ch, DECOR_CLASS_RIDGE);
     seed_natural(t, ch, DECOR_CLASS_BIG);
@@ -1424,10 +1494,7 @@ static void seed_decor(const Terrain *t, Chunk *ch) {
         const Settlement *s = &w->settlements[i];
         uint32_t seed = t->seed ^ ((uint32_t)i * 0x9E3779B1u);
         seed_place(t, ch, s->kind == SETTLE_CAPITAL ? DECOR_PLACE_CAPITAL : DECOR_PLACE_VILLAGE, s->x, s->z, 0.0f, seed, -1);
-        float d2 = chunk_dist2(ch, s->x, s->z), x, z, y, yaw;
-        if (d2 < 160.0f * 160.0f && find_bridge(t, s, &x, &z, &y, &yaw) && in_chunk(ch, x, z) && !decor_hits_chunk(ch, x, z, 1.0f))
-            add_decor(ch, DECOR_PUENTE, x, y, z, yaw, 1.0f); // (dos pueblos pueden dar con el mismo)
-        if (d2 < 420.0f * 420.0f) seed_pier(t, ch, s->x, s->z, seed);
+        if (chunk_dist2(ch, s->x, s->z) < 420.0f * 420.0f) seed_pier(t, ch, s->x, s->z, seed);
     }
     for (int i = 0; i < w->tribe_count; i++) {
         uint32_t seed = t->seed ^ ((uint32_t)i * 0x85EBCA6Bu);
@@ -1471,7 +1538,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             float hm = (p00.y + p10.y + p01.y + p11.y) * 0.25f, wl = world_water(t->world, mx, mz, 0.0f, NULL);
             at[A_SHORE] = wl > -1e8f ? hm - wl : 99.0f;
             at[A_EDGE] = world_edge_distance(t->world, mx, mz);
-            at[A_BANK] = world_river_bank(t->world, mx, mz, NULL);
+            at[A_BANK] = fmaxf(world_river_bank(t->world, mx, mz, NULL), world_lake_bed(t->world, mx, mz)); // el lecho de rios y lagos
             at[A_KIND] = KIND_GROUND;
             at[A_GLACIER] = world_glacier_reach(t->world, mx, mz);
             at[A_WALL] = world_forest_wall(t->world, mx, mz);
@@ -1492,6 +1559,9 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
         }
     }
     // Rocas y matas (deterministas por posicion, prop_slot): ni en el agua, ni en el campamento, ni en los pueblos.
+    // Las rocas que se alzan quedan anotadas para las colisiones.
+    ChunkRock rocks[CHUNK_ROCKS];
+    int rock_count = 0;
     for (int iz = 0; iz < PROP_SLOTS; iz++)
         for (int ix = 0; ix < PROP_SLOTS; ix++) {
             PropSlot ps;
@@ -1502,8 +1572,12 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             at[A_SLOPE] = ps.slope;
             if (kind == 1) push_rock(&b, ps.base, ps.size, ps.hash, at);
             else push_bush(&b, ps.base, ps.size, ps.size2, ps.patch, at);
+            if (kind == 1 && ps.size >= 0.6f && rock_count < CHUNK_ROCKS)
+                rocks[rock_count++] = (ChunkRock){ ps.base.x, ps.base.z, ps.size * 0.65f, ps.base.y + ps.size * 0.9f };
         }
     Chunk ch = { .loaded = true, .cx = cx, .cz = cz };
+    memcpy(ch.rocks, rocks, sizeof(ChunkRock) * (size_t)rock_count);
+    ch.rock_count = rock_count;
     // Arboles (deterministas por posicion, tree_slot): segun la region, nunca en el agua, el campamento ni lo empinado.
     for (int iz = 0; iz < TREE_SLOTS; iz++)
         for (int ix = 0; ix < TREE_SLOTS; ix++)
@@ -1550,7 +1624,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
                 if (e > 124.0f && e < 150.0f && wl < -1e8f && r0 < 0.16f) kind = VF_SERAC, scale = 0.7f + 0.6f * r1;
                 else if (wk == WATER_LAKE && wl > y + 2.0f && r0 < 0.05f) kind = VF_ICEBERG, y = wl;
             }
-            if (kind < 0) continue;
+            if (kind < 0 || near_bridge(t, x, z, feature_radius(kind) * scale + 0.5f)) continue; // ni sobre un puente
             ch.feat[ch.feat_count++] = (ChunkFeature){ x, y, z, r2 * 2.0f * PI, scale, (unsigned char)kind, (unsigned char)(h >> 8) };
         }
     seed_decor(t, &ch); // el decorado de OpenGameArt, con sus normas (src/sim/decor.h)
@@ -1802,6 +1876,8 @@ void terrain_init(Terrain *t, unsigned seed) {
     t->seed = seed;
     t->world = world_for_seed(seed);
     t->plain = terrain_plain_height(t);
+    for (int i = 0; i < t->world->settlement_count; i++)
+        t->has_bridge[i] = decor_bridge(t->world, t->world->settlements[i].x, t->world->settlements[i].z, &t->bridge[i]);
     // Aspecto inicial: verano seco, sin nieve, el glaciar atras y los cauces llenos.
     t->look = (TerrainLook){ .greenness = 0.4f, .snowline = t->plain + 40.0f, .temp = 20.0f, .temp_late = 20.0f, .melt = 1.0f };
     t->meshed = look_season(&t->look);
