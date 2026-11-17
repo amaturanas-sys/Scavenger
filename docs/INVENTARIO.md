@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**733 objetos** · 307 con modelo · 426 pendientes.
+**733 objetos** · 306 con modelo · 427 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -24,7 +24,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
 | [Utilería y consumibles](#utileria) | 175 | 81 | 0 | 94 | 0 |
-| [Personajes y NPCs](#personaje) | 47 | 46 | 0 | 1 | 0 |
+| [Personajes y NPCs](#personaje) | 47 | 47 | 0 | 0 | 0 |
 
 ## Etiquetas
 
@@ -830,7 +830,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
 | `personaje.base.cuerpo_nino` | Cuerpo base: niño | 0.35x1.2x0.25 | 800 | pendiente | `rig:humanoide` `talla:pequena` | Malla base modular: ropa y armadura encajan encima. |
-| `personaje.base.cuerpo_comun` | Cuerpo base: adulto común | 0.53x1.7x0.29 | 1200 | importado | `rig:ninguno` `talla:comun` | Modelo base low-poly (292 tris) creado con trimesh: cabeza, torso, brazos, piernas y pies como piezas separadas. Base en y=0, medidas según inventario. Sin esqueleto ni clips: se usa con el sistema de cuerpos por zonas (body_draw.c). Listo para variantes (cambiar colores, proporciones, ropa). |
+| `personaje.base.cuerpo_comun` | Cuerpo base: adulto común | 0.53x1.7x0.29 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen. |
 | `personaje.base.cuerpo_robusto` | Cuerpo base: adulto robusto | 0.57x1.85x0.33 | 1300 | pendiente | `rig:humanoide` `talla:grande` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario; el ancho y el fondo, los de la imagen. |
 | `personaje.base.cuerpo_comun_2` | Cuerpo base: adulto común (variante 2) | 0.54x1.7x0.3 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (el adulto común); el ancho y el fondo, los de la imagen. |
 | `personaje.base.cuerpo_comun_3` | Cuerpo base: adulto común (variante 3) | 0.51x1.7x0.29 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (el adulto común); el ancho y el fondo, los de la imagen. |
