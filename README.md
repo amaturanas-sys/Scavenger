@@ -264,6 +264,23 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+El decorado, las cuencas, los puentes y las colisiones (v0.15.0):
+- **El decorado de OpenGameArt:** 41 modelos del paquete *FREE Remastered Meadows* (EmacEArt, CC0), con el color y la
+  escala del juego, sembrados con normas: crestas de roca en el altiplano y los fiordos, rocas, colinas, acantilados,
+  árboles y arbustos por región, hongos, ramas y raíces al pie de los árboles del bosque, cercas, carros, bancos y
+  barriles en las afueras de los pueblos, un corral junto a los campamentos, restos alrededor de las ruinas y muelles
+  en la orilla de lagos y del mar.
+- **Los lagos:** la cuenca contiene su agua, con una orilla que sale del agua y el fondo de grava de los ríos; el agua
+  ya no cuelga sobre el suelo de afuera ni deja huecos en el borde.
+- **Los puentes:** cruzan el arroyo de orilla alta a orilla alta, con las dos puntas en tierra y el tablero de 1,8 a
+  8 m sobre el agua. Se caminan: sobre el puente y los muelles no se nada.
+- **Las colisiones:** los troncos, las rocas, el decorado, los edificios, las ruinas y las formaciones de voxeles ya
+  no se atraviesan; contra una pared, el jugador se desliza.
+- **El cuerpo de la tropa:** vuelve a ser el cuerpo animado (un cuerpo base sin esqueleto la mostraba quieta).
+- **El niño,** a la medida de su cuerpo base.
+
+Las partidas de antes cargan igual: los lugares siguen donde estaban.
+
 La estepa más tupida y más ruinas (v0.14.7):
 - **La estepa:** más pasto, stipa, hierbas y flores (unas 3,4 matas por m², eran 2,5); el pasto se ve hasta 48 m (24 m
   en Android; eran 39 y 18), y a lo lejos van menos matas pero más anchas. Los arbustos crecen en manchas, tupidas en
