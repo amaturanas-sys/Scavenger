@@ -4,6 +4,7 @@
 # --- assets/inventario.tsv
 Abedul	Birch
 Abeja (enjambre)	Bee (swarm)
+Acantilado	Cliff
 Acantilado modular	Modular cliff
 Acero wootz (torta)	Wootz steel (cake)
 Agua con vino	Watered wine
@@ -24,6 +25,9 @@ Anillo de bronce	Bronze ring
 Anillo de oro	Gold ring
 Anillo de plata	Silver ring
 Antorcha	Torch
+Arbol	Tree
+Arbusto	Bush
+Arbusto Sorrel	Sorrel bush
 Arbusto estepario	Steppe shrub
 Arce	Maple
 Arco compuesto de cuerno	Horn composite bow
@@ -103,6 +107,7 @@ Cierva	Red deer hind
 Cinturón con placa de estilo animal	Animal-style plaque belt
 Cofre de botín	Loot chest
 Cola de hueso	Bone glue
+Colina	Hill
 Collar de bronce	Bronze necklace
 Collar de oro	Gold necklace
 Collar de plata	Silver necklace
@@ -137,13 +142,152 @@ Daga	Dagger
 Daga de anillo frágil (mal templada)	Brittle ring-pommel dagger (badly tempered)
 Daga de anillo templada	Tempered ring-pommel dagger
 Deel (caftán cruzado)	Deel (wrap caftan)
+Downroad 2X2 Seam 01A	Downroad 2X2 Seam 01A
+Downroad 2X2 Seam 01B	Downroad 2X2 Seam 01B
+Downroad 2X2 Seam 01C	Downroad 2X2 Seam 01C
+Downroad 2X2 Seam 01D	Downroad 2X2 Seam 01D
+Downroad 4X4 Bend 01A	Downroad 4X4 Bend 01A
+Downroad 4X4 Bend 01B	Downroad 4X4 Bend 01B
+Downroad 4X4 Bend 01C	Downroad 4X4 Bend 01C
+Downroad 4X4 Bend 01D	Downroad 4X4 Bend 01D
+Downroad 4X4 Bend 01E	Downroad 4X4 Bend 01E
 Dromedario	Dromedary
 Duna	Dune
+Ea01 Env Branch 01	Ea01 Env Branch 01
+Ea01 Env Branch 02	Ea01 Env Branch 02
+Ea01 Env Branch 03	Ea01 Env Branch 03
+Ea01 Env Branch 04	Ea01 Env Branch 04
+Ea01 Env Road Bend 01A	Ea01 Env Road Bend 01A
+Ea01 Env Road Bend 01B	Ea01 Env Road Bend 01B
+Ea01 Env Road Bend 01C	Ea01 Env Road Bend 01C
+Ea01 Env Road Bend 01D	Ea01 Env Road Bend 01D
+Ea01 Env Road Cobble 02	Ea01 Env Road Cobble 02
+Ea01 Env Road Cobble 02B	Ea01 Env Road Cobble 02B
+Ea01 Env Road Cobble 04	Ea01 Env Road Cobble 04
+Ea01 Env Road Cobble 04B	Ea01 Env Road Cobble 04B
+Ea01 Env Road Cobble Stair 01B	Ea01 Env Road Cobble Stair 01B
+Ea01 Env Road Cobble Stair 01C	Ea01 Env Road Cobble Stair 01C
+Ea01 Env Road Seam 01	Ea01 Env Road Seam 01
+Ea01 Env Road Winding 01A	Ea01 Env Road Winding 01A
+Ea01 Env Road Winding 01B	Ea01 Env Road Winding 01B
+Ea01 Env Road Winding 01C	Ea01 Env Road Winding 01C
+Ea01 Env Road Winding 02A	Ea01 Env Road Winding 02A
+Ea01 Env Road Winding 02C	Ea01 Env Road Winding 02C
+Ea01 Env Road Wooden Beam 01A	Ea01 Env Road Wooden Beam 01A
+Ea01 Env Road Wooden Beam 01B	Ea01 Env Road Wooden Beam 01B
+Ea01 Env Road Wooden Beam 02A	Ea01 Env Road Wooden Beam 02A
+Ea01 Env Road Wooden Beam 02B	Ea01 Env Road Wooden Beam 02B
+Ea01 Env Road Wooden Beam 03A	Ea01 Env Road Wooden Beam 03A
+Ea01 Env Road Wooden Beam 03B	Ea01 Env Road Wooden Beam 03B
+Ea01 Env Road Wooden Planks 01A	Ea01 Env Road Wooden Planks 01A
+Ea01 Env Road Wooden Planks 01B	Ea01 Env Road Wooden Planks 01B
+Ea01 Env Road Wooden Planks 02A	Ea01 Env Road Wooden Planks 02A
+Ea01 Env Road Wooden Planks 02B	Ea01 Env Road Wooden Planks 02B
+Ea01 Env Road Wooden Planks 03A	Ea01 Env Road Wooden Planks 03A
+Ea01 Env Road Wooden Planks 03B	Ea01 Env Road Wooden Planks 03B
+Ea01 Env Treecrown 01	Ea01 Env Treecrown 01
+Ea01 Env Treecrown 01 1	Ea01 Env Treecrown 01 1
+Ea01 Env Treecrown 02	Ea01 Env Treecrown 02
+Ea01 Env Treecrown 02 1	Ea01 Env Treecrown 02 1
+Ea01 Env Treecrown 03	Ea01 Env Treecrown 03
+Ea01 Env Treecrown 03 1	Ea01 Env Treecrown 03 1
+Ea01 Env Treecrown 04	Ea01 Env Treecrown 04
+Ea01 Env Treecrown 04 1	Ea01 Env Treecrown 04 1
+Ea01 Env Treecrown 05	Ea01 Env Treecrown 05
+Ea01 Env Treecrown 05 1	Ea01 Env Treecrown 05 1
+Ea01 Env Treecrown 06	Ea01 Env Treecrown 06
+Ea01 Env Treecrown 06 1	Ea01 Env Treecrown 06 1
+Ea01 Env Treecrown 07	Ea01 Env Treecrown 07
+Ea01 Env Treecrown 07 1	Ea01 Env Treecrown 07 1
+Ea01 Env Treecrown 08	Ea01 Env Treecrown 08
+Ea01 Env Treecrown 08 1	Ea01 Env Treecrown 08 1
+Ea01 Env Treecrown 09	Ea01 Env Treecrown 09
+Ea01 Env Treecrown 09 1	Ea01 Env Treecrown 09 1
+Ea01 Env Treecrown 10	Ea01 Env Treecrown 10
+Ea01 Env Treecrown 10 1	Ea01 Env Treecrown 10 1
+Ea01 Env Treecrown 11	Ea01 Env Treecrown 11
+Ea01 Env Treecrown 11 1	Ea01 Env Treecrown 11 1
+Ea01 Env Treecrown 12	Ea01 Env Treecrown 12
+Ea01 Env Treecrown 12 1	Ea01 Env Treecrown 12 1
+Ea01 Env Treecrown 13	Ea01 Env Treecrown 13
+Ea01 Env Treecrown 13 1	Ea01 Env Treecrown 13 1
+Ea01 Env Treeroot 01A	Ea01 Env Treeroot 01A
+Ea01 Env Treeroot 01B	Ea01 Env Treeroot 01B
+Ea01 Env Treeroot 01C	Ea01 Env Treeroot 01C
+Ea01 Env Treeroot 01D	Ea01 Env Treeroot 01D
+Ea01 Env Treeroot 01E	Ea01 Env Treeroot 01E
+Ea01 Env Treeroot 01F	Ea01 Env Treeroot 01F
+Ea01 Env Treeroot 01G	Ea01 Env Treeroot 01G
+Ea01 Env Treeroot 01H	Ea01 Env Treeroot 01H
+Ea01 Env Treeroot 01I	Ea01 Env Treeroot 01I
+Ea01 Env Treeroot 01J	Ea01 Env Treeroot 01J
 El medio-hermano	The half-brother
 El padre (jefe de la confederación)	The father (confederation chief)
 El rey (anciano)	The king (elder)
 Elefante de guerra	War elephant
 Empalizada modular	Modular palisade
+Env Bridge 01	Env Bridge 01
+Env Bridge 02	Env Bridge 02
+Env Bridge 02 1	Env Bridge 02 1
+Env Bridge 03	Env Bridge 03
+Env Bridge 05	Env Bridge 05
+Env Bridge 06	Env Bridge 06
+Env Bridge Hanging 01	Env Bridge Hanging 01
+Env Bridge Hanging 02	Env Bridge Hanging 02
+Env Bridge Hanging 03	Env Bridge Hanging 03
+Env Bridge Hanging 04	Env Bridge Hanging 04
+Env Bridge Pier 04A	Env Bridge Pier 04A
+Env Bridge Pier 04B	Env Bridge Pier 04B
+Env Bridge Pier 04C	Env Bridge Pier 04C
+Env Bridge Pier Element 04A	Env Bridge Pier Element 04A
+Env Bridge Pier Element 04B	Env Bridge Pier Element 04B
+Env Bridge Pier Element 04C	Env Bridge Pier Element 04C
+Env Bridge Pier Element 04D	Env Bridge Pier Element 04D
+Env Bridge Pier End 04A	Env Bridge Pier End 04A
+Env Fence Pin 01A	Env Fence Pin 01A
+Env Fence Pin 01B	Env Fence Pin 01B
+Env Fence Pin 01C	Env Fence Pin 01C
+Env Fence Pin 02A	Env Fence Pin 02A
+Env Fence Pin 03A	Env Fence Pin 03A
+Env Fence Rock 01A	Env Fence Rock 01A
+Env Fence Rock 01B	Env Fence Rock 01B
+Env Fence Rock 01C	Env Fence Rock 01C
+Env Fence Rock 01D	Env Fence Rock 01D
+Env Fence Rock 01E	Env Fence Rock 01E
+Env Fence Rock 01F	Env Fence Rock 01F
+Env Fence Wood 01A	Env Fence Wood 01A
+Env Fence Wood 01B	Env Fence Wood 01B
+Env Fence Wood 01C	Env Fence Wood 01C
+Env Fence Wood 02A	Env Fence Wood 02A
+Env Fence Wood 02B	Env Fence Wood 02B
+Env Fence Wood 02C	Env Fence Wood 02C
+Env Fence Wood 02D	Env Fence Wood 02D
+Env Fence Wood 02E	Env Fence Wood 02E
+Env Fence Wood 03A	Env Fence Wood 03A
+Env Fence Wood 03B	Env Fence Wood 03B
+Env Fence Wood 03B 1	Env Fence Wood 03B 1
+Env Fence Wood 03C	Env Fence Wood 03C
+Env Fence Wood 04A	Env Fence Wood 04A
+Env Fence Wood 04B	Env Fence Wood 04B
+Env Fence Wood 04C	Env Fence Wood 04C
+Env Fence Wood Wine 01A	Env Fence Wood Wine 01A
+Env Fence Wood Wine 01B	Env Fence Wood Wine 01B
+Env Fence Wood Wine 02D	Env Fence Wood Wine 02D
+Env Fence Wood Wine 04A	Env Fence Wood Wine 04A
+Env Rock 01A	Env Rock 01A
+Env Rock 01B	Env Rock 01B
+Env Rock 01C	Env Rock 01C
+Env Rock 01D	Env Rock 01D
+Env Rock Flat 01A	Env Rock Flat 01A
+Env Rock Flat 01B	Env Rock Flat 01B
+Env Rock Flat 01C	Env Rock Flat 01C
+Env Rock Flat 01D	Env Rock Flat 01D
+Env Rock Sand 01A	Env Rock Sand 01A
+Env Rock Sand 01C	Env Rock Sand 01C
+Env Rock Sand 01E	Env Rock Sand 01E
+Env Rock Sand 01E 1	Env Rock Sand 01E 1
+Env Rock Sand 01G	Env Rock Sand 01G
+Env Rock Sand 01I	Env Rock Sand 01I
 Escombros	Rubble
 Escudo ceremonial del culto	Cult ceremonial shield
 Escudo de cuero endurecido	Hardened leather shield
@@ -162,8 +306,10 @@ Faldar laminar de cuero	Leather lamellar tassets
 Faldar ritual del culto	Cult ritual tassets
 Flecha silbadora (señales)	Whistling arrow (signals)
 Fogata	Campfire
+Fogata de piedra	Stone campfire
 Forja portátil	Portable forge
 Forraje	Fodder
+Frostp Portal	Frostp Portal
 Fundición / taller industrial	Foundry / workshop
 Gorjal / cofia de escamas de hierro	Iron scale gorget
 Gorjal / cofia de fieltro acolchado	Padded felt gorget
@@ -186,6 +332,9 @@ Guanteletes (par) ritual del culto	Cult ritual gauntlets (pair)
 Guerrero nómada	Nomad warrior
 Guja	Glaive
 Guja de hoja ancha	Broad-bladed glaive
+HDRI: Flores silvestres	HDRI: Wildflowers
+HDRI: Pradera abierta	HDRI: Open meadow
+HDRI: Veld abierto	HDRI: Open veld
 Hacha ceremonial	Ceremonial axe
 Hacha de mano	Hand axe
 Halcón (cetrería)	Falcon (falconry)
@@ -195,7 +344,10 @@ Hebilla de cinturón de bronce	Bronze belt buckle
 Hebilla de cinturón de oro	Gold belt buckle
 Hebilla de cinturón de plata	Silver belt buckle
 Herrero	Smith
+Hierba	Grass
 Hierba alta (escondite)	Tall grass (hiding)
+Hierba escasa	Sparse grass
+Hierba marchita	Withered grass
 Hierbas curativas	Healing herbs
 Hoguera grande	Large bonfire
 Hoja de sable de acero	Steel sabre blade
@@ -250,6 +402,7 @@ Máscara ritual del culto	Cult ritual mask
 Niño	Child
 Nómada del desierto	Desert nomad
 Oasis	Oasis
+Objeto generico	Generic object
 Obrero de la fundición	Foundry worker
 Odre de airag (leche de yegua)	Airag skin (mare's milk)
 Odre de cuero	Leather waterskin
@@ -288,10 +441,12 @@ Pieles curtidas	Tanned hides
 Pila de cráneos del culto	Cult skull pile
 Pino	Pine
 Placa de arreo de estilo animal del padre	Father's animal-style harness plaque
+Planta	Plant
 Plata	Silver
 Plumas	Feathers
 Poste de castigo	Punishment post
 Poste tótem del clan	Clan totem pole
+Pradera libre (30 modelos)	Free meadow (30 models)
 Prisionero	Prisoner
 Protagonista ({NOMBRE})	Protagonist ({NOMBRE})
 Puerta de la ciudad	City gate
@@ -301,6 +456,16 @@ Refugiado	Refugee
 Refugio de ramas y pieles	Branch and hide shelter
 Refugio excavado en la nieve	Snow dugout shelter
 Reno de tiro	Draft reindeer
+Road 2X2 Bend 01A	Road 2X2 Bend 01A
+Road 2X2 Bend 01B	Road 2X2 Bend 01B
+Road 2X2 End 01A	Road 2X2 End 01A
+Road 2X2 End 01B	Road 2X2 End 01B
+Road 2X2 Seam 01A	Road 2X2 Seam 01A
+Road 2X2 Seam 01B	Road 2X2 Seam 01B
+Road 2X2 Seam 01C	Road 2X2 Seam 01C
+Road 2X4 Seam 01A	Road 2X4 Seam 01A
+Road 4X4 Bend 01A	Road 4X4 Bend 01A
+Road 4X4 Bend 01B	Road 4X4 Bend 01B
 Roble	Oak
 Roca mediana	Medium rock
 Roca pequeña	Small rock
@@ -317,14 +482,24 @@ Sauce llorón	Weeping willow
 Saxaúl (arbusto del desierto)	Saxaul (desert shrub)
 Secadero de carne	Meat drying rack
 Seda	Silk
+Seta	Mushroom
 Soldado ballestero	Crossbow soldier
 Soldado lancero	Spear soldier
+Suelo con hierba	Grassy ground
+Suelo rocoso	Rocky ground
+Suelo rocoso 02	Rocky ground 02
 Suelo: Altiplano glaciar	Ground: glacial plateau
 Suelo: Bosque de coníferas	Ground: conifer forest
 Suelo: Costa de fiordos	Ground: fjord coast
 Suelo: Desierto	Ground: desert
 Suelo: Estepa	Ground: steppe
 Sulde (estandarte de crines)	Sulde (horsehair banner)
+Swamp Rockbig 01A	Swamp Rockbig 01A
+Swamp Rockbig 01B	Swamp Rockbig 01B
+Swamp Rockbig 01C	Swamp Rockbig 01C
+Swamp Rockbig 02A	Swamp Rockbig 02A
+Swamp Rockbig 02B	Swamp Rockbig 02B
+Swamp Rockbig 02C	Swamp Rockbig 02C
 Tablilla de madera cifrada	Coded wooden tablet
 Tambor chamánico	Shaman drum
 Tatuaje de la tamga	Tamga tattoo
@@ -339,9 +514,11 @@ Tienda ligera de viaje	Light travel tent
 Torre de asedio	Siege tower
 Tramo de río modular	Modular river section
 Trebuchet	Trebuchet
+Tree2A	Tree2A
 Trepa (gancho con cuerda)	Grapple (hook and rope)
 Trinchera	Trench
 Trineo	Sled
+Tronco	Log
 Troncos	Logs
 Tumba helada del padre	Father's frozen tomb
 Turquesa	Turquoise
@@ -359,6 +536,9 @@ Velero	Sailboat
 Verdugo	Executioner
 Vino	Wine
 Virote de ballesta	Crossbow bolt
+Wood Fence3	Wood Fence3
+Wood Fence3B	Wood Fence3B
+Wood Fence3C	Wood Fence3C
 Yak	Yak
 Yunque	Anvil
 Yunta de bueyes con carreta	Ox team with wagon

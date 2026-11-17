@@ -245,8 +245,114 @@ def test_suave(tmp):
     assert red.any() and pos[red][:, 0].mean() > 0
 
 
+def test_refs_anigen(tmp):
+    """Las referencias de AniGen (preparar_refs_anigen.py), sin rembg: separar las tres vistas de una hoja, limpiar el
+    recorte, elegir el fondo y componer el cuadrado con el fondo exacto."""
+    import preparar_refs_anigen as pra
+
+    # Una hoja de tres vistas en columnas, sobre un gris con viñeta: las cajas, en orden y cada una con su sujeto.
+    h, w = 300, 900
+    yy, xx = np.mgrid[0:h, 0:w]
+    hoja = np.stack([170 + 20 * xx / w] * 3, axis=2).astype(np.float32)
+    for k, cx in enumerate((150, 450, 750)):
+        hoja[60:260, cx - 40 - 20 * k:cx + 40 + 20 * k] = (120, 70, 30)
+    cajas = pra.recortes(hoja, "columnas")
+    assert len(cajas) == 3
+    for (x0, y0, x1, y1), cx in zip(cajas, (150, 450, 750)):
+        assert x0 < cx - 60 and cx + 60 < x1 and y0 == 0 and y1 == h
+    assert cajas[0][2] <= cajas[1][0] and cajas[1][2] <= cajas[2][0]  # no se pisan
+    # En filas (las aves) y en paneles con líneas blancas (las personas).
+    filas = np.transpose(hoja, (1, 0, 2)).copy()
+    assert [c[1] < c[3] for c in pra.recortes(filas, "filas")] == [True] * 3
+    paneles = hoja.copy()
+    paneles[:, 299:302] = 250
+    paneles[:, 599:602] = 250
+    assert [(c[0], c[2]) for c in pra.recortes(paneles, "paneles")] == [(3, 296), (304, 596), (604, 897)]
+
+    # Limpiar: se van las motas (un texto) y se rellena un hueco chico dentro del sujeto; los grandes quedan.
+    alfa = np.zeros((200, 200), np.float32)
+    alfa[40:180, 40:160] = 1.0
+    alfa[5:9, 5:30] = 1.0          # un texto arriba
+    alfa[100:103, 100:103] = 0.0   # una mancha blanca del pelaje
+    alfa[60:160, 70:90] = 0.0      # el hueco entre las patas: abierto abajo, no se rellena
+    alfa[160:180, 70:90] = 0.0
+    limpio, toca, piezas = pra.limpiar(alfa)
+    assert limpio[5:9, 5:30].max() == 0 and limpio[100:103, 100:103].min() == 1.0
+    assert limpio[100:150, 75:85].max() == 0 and not toca and piezas == 1
+    _, toca, _ = pra.limpiar(np.pad(np.ones((50, 50), np.float32), ((0, 0), (0, 20))))
+    assert toca  # el sujeto toca el borde de su vista: avisa
+
+    # El fondo: blanco a lo pardo, negro a lo blanco, verde a lo de dos tonos; los de la tabla, el suyo.
+    def sujeto(*colores):
+        c = np.zeros((10, 10 * len(colores), 3), np.float32)
+        for i, col in enumerate(colores):
+            c[:, i * 10:(i + 1) * 10] = col
+        return c, np.ones(c.shape[:2], np.float32)
+
+    assert pra.elegir_fondo(*sujeto((120, 80, 40)), "animal.salvaje.oso")[0] == pra.BLANCO
+    assert pra.elegir_fondo(*sujeto((235, 232, 220)), "animal.ganado.oveja")[0] == pra.NEGRO
+    assert pra.elegir_fondo(*sujeto((120, 120, 120), (40, 40, 40), (240, 240, 240)), "animal.salvaje.lobo")[0] == pra.VERDE
+    assert pra.elegir_fondo(*sujeto((120, 80, 40)), "animal.salvaje.tigre")[0] == pra.VERDE
+
+    # Componer: un cuadrado de 256 con el fondo exacto alrededor, el sujeto centrado y con margen; el chequeo lo pasa.
+    color, a = sujeto((120, 80, 40), (60, 40, 20))
+    a = np.pad(a, 5)
+    color = np.pad(color, ((5, 5), (5, 5), (0, 0)), mode="edge")
+    img = pra.componer(color, a, pra.VERDE, tam=256)
+    assert img.shape == (256, 256, 3) and (img[0] == pra.VERDE).all() and (img[:, -1] == pra.VERDE).all()
+    ruta = os.path.join(tmp, "unica_01.png")
+    Image.fromarray(img).save(ruta)
+    assert pra.revisar(ruta, pra.VERDE) == []
+    assert pra.revisar(ruta, pra.BLANCO)  # con otro fondo, el chequeo falla
+
+
+def test_refs_anigen_registro(tmp):
+    """Las referencias de AniGen que están en el repo siguen bien: el archivo con su sha256, el fondo exacto, los
+    márgenes y una sola pieza (lo mismo que preparar_refs_anigen.py --check)."""
+    import preparar_refs_anigen as pra
+
+    assert pra.chequear(pra.cargar_registro()) == 0
+
+
+def colores_glb(data):
+    """El COLOR_0 (RGB) de un GLB facetado de lowres.py, un color por vértice."""
+    largo = struct.unpack_from("<I", data, 12)[0]
+    doc = json.loads(data[20:20 + largo])
+    acc = doc["accessors"][doc["meshes"][0]["primitives"][0]["attributes"]["COLOR_0"]]
+    vista = doc["bufferViews"][acc["bufferView"]]
+    return np.frombuffer(data[20 + largo + 8:], np.uint8, acc["count"] * 4, vista.get("byteOffset", 0)).reshape(-1, 4)[:, :3]
+
+
+def test_adaptar_oga(tmp):
+    """adaptar_oga: color por partes (la pieza chica, de hierro), luz horneada, la altura pedida con el origen
+    en el centro de la base, y repetirlo da lo mismo."""
+    import adaptar_oga
+    cuerpo = trimesh.creation.icosphere(subdivisions=1, radius=1.0)
+    aro = trimesh.creation.box(extents=(0.3, 0.3, 0.3))
+    aro.apply_translation((3.0, 0.5, 0.0))
+    pos = np.concatenate([cuerpo.vertices[cuerpo.faces], aro.vertices[aro.faces]]).reshape(-1, 3)
+    normales = np.concatenate([cuerpo.face_normals, aro.face_normals])
+    gris = np.full((len(pos), 3), 60)
+    data = lowres._glb_bytes(pos, np.repeat(normales, 3, axis=0), gris, "prueba")
+    salida, informe = adaptar_oga.adaptar(data, "madera_herrajes", alto=0.5)
+    assert informe["partes"] == 2, informe
+    nuevo, _ = adaptar_oga.leer_glb(salida)
+    lo, hi = nuevo.min(axis=0), nuevo.max(axis=0)
+    assert abs(hi[1] - lo[1] - 0.5) < 1e-5 and abs(lo[1]) < 1e-6, (lo, hi)
+    assert abs(lo[0] + hi[0]) < 1e-5 and abs(lo[2] + hi[2]) < 1e-5, (lo, hi)
+    col = colores_glb(salida).reshape(-1, 3, 3)[:, 0].astype(int)
+    n = len(cuerpo.faces)
+    madera, hierro = col[:n], col[n:]
+    assert (madera[:, 0] - madera[:, 2]).min() > 30, madera[:3]  # parda, no gris
+    assert np.abs(hierro[:, 0] - hierro[:, 2]).max() < 12 and hierro.max() < 90, hierro[:3]  # hierro
+    arriba, abajo = normales[n:, 1].argmax(), normales[n:, 1].argmin()
+    assert hierro[arriba].sum() > hierro[abajo].sum()  # la luz del sol, horneada
+    assert adaptar_oga.adaptar(salida, "madera_herrajes", alto=0.5)[0] == salida
+
+
 def main():
-    tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave]
+    tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave, test_refs_anigen,
+             test_refs_anigen_registro, test_adaptar_oga]
     failed = 0
     tmp = tempfile.mkdtemp(prefix="modelos-")
     try:

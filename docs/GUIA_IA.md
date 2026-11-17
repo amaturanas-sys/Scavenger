@@ -302,6 +302,8 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | El arranque | `./estepa --frames 60 --screenshot shot.png` |
 | Un lugar del mundo | `--ir estepa`, `bosque`, `altiplano`, `desierto`, `mar`, `capital`, `aldea`, `fortaleza`, `ciudad`, `plaza-<región>`… (con `--dia 11 --minuto 7` es verano al mediodía; `--camara`, `--dron 40` desde arriba; `--vista cerca\|media\|lejos`) |
 | El agua | `--ir lago`, `desborde`, `cascada`, `meandro`, `trenzado`, `arroyo`, `rapidos` |
+| El decorado de OpenGameArt | `--ir puente` y `--ir muelle` (el primero, de pueblo en pueblo); `--sin-decorado`, para comparar antes y después; `--censo-decorado`: cuántos hay de cada modelo en el mundo entero y por qué se descarta cada candidato (`docs/MUNDO.md`) |
+| Las colisiones | `--pos x z --rumbo g --caminar adelante --frames N`: la captura dice dónde terminó el jugador (`Jugador: (x, y, z)`, y si nada o vadea); con el binario de antes, el mismo camino lo atraviesa (`docs/MUNDO.md`, «Las colisiones») |
 | El kit de edificios | `--edificios casa` (o `palacio`, `muralla`, `puerta`, `fortaleza`, `refugio`… ; `:región` para una sola fila; `--dron 24` para verlas de cerca) |
 | Las formaciones del paisaje | `--formaciones desierto` (o `hielo`, `costa`): las cuatro variantes de cada una |
 | Los muros del borde, enteros | `--ir panorama-hielo` o `panorama-muro` (a 520 m del borde, con `--camara 0.06 --vista lejos`); de cerca, `--ir hielo`, `muro`, `lengua` |
@@ -409,7 +411,11 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.14.7. La estepa más tupida y más ruinas: más pasto, stipa, hierbas y flores (unas 3,4 matas por
+- **Versión:** 0.15.0. El decorado, las cuencas, los puentes y las colisiones: los 41 modelos de OpenGameArt
+  elegidos, adaptados (`tools/modelos/adaptar_oga.py`) y sembrados con normas (`src/sim/decor.c`); las cuencas de los
+  lagos con su cresta y el lecho de los ríos (los lugares se ponen con la orilla de antes: `World.shore_v14`); los
+  puentes de orilla alta a orilla alta (`decor_bridge`), que se caminan; las colisiones del jugador, sin física
+  (`docs/MUNDO.md`, «Las colisiones»). Antes, la 0.14.7: la estepa más tupida y más ruinas: más pasto, stipa, hierbas y flores (unas 3,4 matas por
   m²), el pasto hasta 48 m (24 m en Android) con menos matas pero más anchas a lo lejos, los arbustos en manchas y
   bosquecillos de pinos en la llanura; 26 fortalezas derruidas por mundo (eran 14) y 6 ciudades enterradas (eran 2),
   al final de los sitios (`SITES_MAX` 128; los vistos de después de 64, en `seen_sites_hi`). Antes, la 0.14.6: lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (el de raylib,
@@ -463,7 +469,8 @@ traba.
   - las cuevas como sus referencias de Perchance (v0.14.4);
   - las bocas de las cuevas como sus referencias (v0.14.5);
   - lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (v0.14.6);
-  - la estepa más tupida y más ruinas para encontrar (v0.14.7).
+  - la estepa más tupida y más ruinas para encontrar (v0.14.7);
+  - el decorado de OpenGameArt, las cuencas de los lagos, los puentes y las colisiones (v0.15.0).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

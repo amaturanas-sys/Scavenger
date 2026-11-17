@@ -1,6 +1,14 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: la estepa más tupida y más ruinas
+## Novedades: el decorado, las cuencas, los puentes y las colisiones
+
+- **El decorado:** 41 modelos de OpenGameArt (*FREE Remastered Meadows*, CC0) con el color y la escala del juego, puestos con normas: crestas de roca en el altiplano y los fiordos; rocas, colinas, acantilados, árboles y arbustos según la región; hongos, ramas y raíces al pie de los árboles del bosque; cercas, carros, bancos y barriles en las afueras de los pueblos; un corral junto a los campamentos; restos alrededor de las ruinas, y muelles en la orilla de lagos y del mar.
+- **Los lagos:** cada cuenca contiene su agua, con una orilla que sale del agua y un fondo de grava como el de los ríos. El agua ya no cuelga sobre el suelo ni deja huecos en el borde.
+- **Los puentes:** cruzan el arroyo de orilla alta a orilla alta, con las dos puntas en tierra y el tablero de 1,8 a 8 m sobre el agua. Se caminan: sobre el puente y los muelles no se nada.
+- **Las colisiones:** los troncos, las rocas, el decorado, los edificios, las ruinas y las formaciones ya no se atraviesan; contra una pared, el jugador se desliza.
+- **La tropa** vuelve a verse con su cuerpo animado, y el niño tiene la medida de su cuerpo.
+
+## De la v0.14.7: la estepa más tupida y más ruinas
 
 - **La estepa:** más pasto, stipa, hierbas y flores (casi un 40 % más), y el pasto se ve más lejos: hasta 48 m en el PC y 24 m en Android (eran 39 y 18). Los arbustos crecen en manchas, tupidas en unas zonas y ralas entre ellas, y en la llanura hay bosquecillos de pinos.
 - **Las ruinas:** en cada mundo hay 26 fortalezas derruidas, repartidas en todas las regiones (eran 14), y 6 ciudades enterradas en el desierto (eran 2).
@@ -22,7 +30,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar, y las ruinas nuevas aparecen para descubrir. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.14.7, la v0.14.6 y la v0.14.5).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.0, la v0.14.7 y la v0.14.6).
 
 ## Android
 

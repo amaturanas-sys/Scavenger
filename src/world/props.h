@@ -10,7 +10,7 @@
 #include "sim/inventory.h"
 
 #define PROPS_MAX 128
-#define MODEL_CACHE_MAX 128
+#define MODEL_CACHE_MAX 256 // con el decorado de OpenGameArt (41 modelos, y sus variantes de estacion)
 
 typedef struct {
     const InvItem *item;
