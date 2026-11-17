@@ -394,7 +394,7 @@ personaje.npc.cazador_bosque	Cazador del bosque	rig:humanoide,faccion:neutral,bi
 personaje.npc.pescador_fiordo	Pescador de los fiordos	rig:humanoide,faccion:neutral,bioma:fiordo,motivo:civil	0.5x1.7x0.3	1500	pendiente	
 personaje.npc.bandido	Bandido	rig:humanoide,faccion:salvaje,motivo:combate	0.5x1.7x0.3	1500	pendiente	
 personaje.npc.mercenario	Mercenario	rig:humanoide,faccion:neutral,motivo:combate	0.5x1.7x0.3	1500	pendiente	
-personaje.npc.nino	Niño	rig:humanoide,faccion:cualquiera,talla:pequena,motivo:civil	0.5x1.7x0.3	1500	pendiente	
+personaje.npc.nino	Niño	rig:humanoide,faccion:cualquiera,talla:pequena,motivo:civil	0.35x1.2x0.25	1500	pendiente	
 personaje.npc.anciano	Anciano	rig:humanoide,faccion:cualquiera,motivo:civil	0.5x1.7x0.3	1500	pendiente	
 accesorio.anillo.bronce	Anillo de bronce	uso:equipable,material:bronce,estilo:animal	0.025x0.025x0.008	40	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).
 accesorio.anillo.plata	Anillo de plata	uso:equipable,material:plata,estilo:animal	0.025x0.025x0.008	40	pendiente	Joya: la hace un orfebre con metal y piedra; un druida la encanta (src/sim/jewelry.c).

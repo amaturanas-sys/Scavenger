@@ -595,6 +595,6 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `personaje.npc.pescador_fiordo` | Pescador de los fiordos | 0.5x1.7x0.3 | 1500 | pendiente | `rig:humanoide` `faccion:neutral` `bioma:fiordo` `motivo:civil` |  |
 | `personaje.npc.bandido` | Bandido | 0.5x1.7x0.3 | 1500 | pendiente | `rig:humanoide` `faccion:salvaje` `motivo:combate` |  |
 | `personaje.npc.mercenario` | Mercenario | 0.5x1.7x0.3 | 1500 | pendiente | `rig:humanoide` `faccion:neutral` `motivo:combate` |  |
-| `personaje.npc.nino` | Niño | 0.5x1.7x0.3 | 1500 | pendiente | `rig:humanoide` `faccion:cualquiera` `talla:pequena` `motivo:civil` |  |
+| `personaje.npc.nino` | Niño | 0.35x1.2x0.25 | 1500 | pendiente | `rig:humanoide` `faccion:cualquiera` `talla:pequena` `motivo:civil` |  |
 | `personaje.npc.anciano` | Anciano | 0.5x1.7x0.3 | 1500 | pendiente | `rig:humanoide` `faccion:cualquiera` `motivo:civil` |  |
 
