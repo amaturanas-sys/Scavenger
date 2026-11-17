@@ -18,6 +18,9 @@ desde la forma, y la escala va a una altura, no por un factor.
 Uso:
   python3 tools/modelos/adaptar_oga.py            # todos los de RECETAS
   python3 tools/modelos/adaptar_oga.py <id> ...   # solo esos
+  python3 tools/modelos/adaptar_oga.py --girar <id> <x|y|z> <grados>
+      un arreglo de una vez (no se repite solo): gira el modelo antes de adaptarlo, con la base otra vez en el
+      origen. Lo ya girado queda anotado en GIRADOS.
 """
 import json
 import os
@@ -84,10 +87,11 @@ RECETAS = {
     "mapa.terreno_colina.hill_half_01a": ("colina", None),
     "mapa.terreno_colina.hill_half_01c": ("colina", None),
     "mapa.terreno_colina.hill_low_01c": ("colina", None),
-    "mapa.vegetacion_arbol.tree_05d_1": ("arbol", None),
-    "mapa.vegetacion_arbol.tree_06d_2": ("arbol_musgo", None),
-    "mapa.vegetacion_arbol.tree_old_06_1": ("tronco_muerto", None),
-    "mapa.vegetacion_arbusto.bush_dried_02": ("arbusto_seco", None),
+    # Los árboles, a la escala de los del mundo (el pino mide 10 m, el sauce 9 y el arce 11: assets/inventario.tsv).
+    "mapa.vegetacion_arbol.tree_05d_1": ("arbol", 9.0),
+    "mapa.vegetacion_arbol.tree_06d_2": ("arbol_musgo", 8.0),
+    "mapa.vegetacion_arbol.tree_old_06_1": ("tronco_muerto", 7.0),
+    "mapa.vegetacion_arbusto.bush_dried_02": ("arbusto_seco", 1.6),
     "mapa.vegetacion_seta.mushroom_09": ("seta", 0.35),
     "utileria.generico.prop_wehicule_cart_01": ("madera_tibia", 1.9),
     "utileria.generico.props_bench_02": ("madera", 0.95),
@@ -97,6 +101,15 @@ RECETAS = {
     "utileria.objeto_generico.ea01_env_branch_04": ("corteza", None),
     "utileria.objeto_generico.ea01_env_road_wooden_planks_03b": ("madera", None),
     "utileria.objeto_generico.ea01_env_treeroot_01c": ("corteza", None),
+}
+
+
+# Los que ya se giraron con --girar (2026-11-18): la tarima de los pilares del puente estaba parada como una pared,
+# y el cofre abierto, acostado de espaldas.
+GIRADOS = {
+    "estructura.puente.bridge_pier_04c": ("x", -90),
+    "estructura.puente.bridge_pier_end_04a": ("x", -90),
+    "utileria.generico.props_container_chest_01b": ("x", 90),
 }
 
 
@@ -208,9 +221,13 @@ def colores_base(material, normal, centro, parte, cuenta, alto01):
     raise ValueError(f"material desconocido: {material}")
 
 
-def adaptar(data, material, alto=None):
-    """Devuelve (bytes del GLB adaptado, informe)."""
+def adaptar(data, material, alto=None, girar=None):
+    """Devuelve (bytes del GLB adaptado, informe). girar: (eje, grados), antes de todo lo demás."""
     pos, nombre = leer_glb(data)
+    if girar is not None:  # con la base otra vez en el origen
+        pos = pos @ lowres._rotation(girar[0], girar[1]).T
+        lo, hi = pos.min(axis=0), pos.max(axis=0)
+        pos = (pos - np.array([(lo[0] + hi[0]) * 0.5, lo[1], (lo[2] + hi[2]) * 0.5])).astype(np.float32).astype(np.float64)
     escala = 1.0
     if alto is not None:  # primero la escala, así el color sale de la forma final y repetirlo da lo mismo
         lo, hi = pos.min(axis=0), pos.max(axis=0)
@@ -247,18 +264,20 @@ def ruta_glb(mid):
 
 
 def actualizar_inventario(cambios):
-    """cambios: {id: (medidas, a escala)}. Reescribe las medidas y agrega la nota (una vez) en su fila del TSV."""
+    """cambios: {id: (medidas, a escala, girado)}. Reescribe las medidas y agrega la nota (una vez) en su fila."""
     with open(INVENTARIO, encoding="utf-8") as fh:
         lineas = fh.read().split("\n")
     vistos = set()
     for i, linea in enumerate(lineas):
         col = linea.split("\t")
         if len(col) >= 7 and col[0] in cambios:
-            medidas, escalado = cambios[col[0]]
+            medidas, escalado, girado = cambios[col[0]]
             col[3] = medidas
             if "adaptar_oga.py" not in col[6]:
-                nota = NOTA + (", a escala real" if escalado else "")
-                col[6] = (col[6].rstrip(". ") + ". " + nota + ".").lstrip(". ")
+                col[6] = (col[6].rstrip(". ") + ". " + NOTA + ".").lstrip(". ")
+            for hecho, texto in ((escalado, "a escala real"), (girado, "reorientado")):
+                if hecho and texto not in col[6]:
+                    col[6] = col[6][:-1] + ", " + texto + "." if col[6].endswith(".") else col[6] + ", " + texto
             lineas[i] = "\t".join(col)
             vistos.add(col[0])
     faltan = set(cambios) - vistos
@@ -269,7 +288,14 @@ def actualizar_inventario(cambios):
 
 
 def main(argv=None):
-    ids = (argv if argv is not None else sys.argv[1:]) or list(RECETAS)
+    args = list(argv if argv is not None else sys.argv[1:])
+    girar = None
+    if args[:1] == ["--girar"]:
+        if len(args) != 4 or args[2] not in ("x", "y", "z"):
+            raise SystemExit("uso: --girar <id> <x|y|z> <grados>")
+        girar = (args[2], float(args[3]))
+        args = [args[1]]
+    ids = args or list(RECETAS)
     desconocidos = [m for m in ids if m not in RECETAS]
     if desconocidos:
         raise SystemExit(f"sin receta: {', '.join(desconocidos)}")
@@ -278,10 +304,10 @@ def main(argv=None):
         material, alto = RECETAS[mid]
         ruta = ruta_glb(mid)
         with open(ruta, "rb") as fh:
-            data, informe = adaptar(fh.read(), material, alto)
+            data, informe = adaptar(fh.read(), material, alto, girar)
         with open(ruta, "wb") as fh:
             fh.write(data)
-        cambios[mid] = (informe["medidas"], alto is not None)
+        cambios[mid] = (informe["medidas"], alto is not None, mid in GIRADOS)
         print(f"{mid}: {material}, {informe['partes']} partes, escala {informe['escala']:.3f}, {informe['medidas']} m")
     actualizar_inventario(cambios)
     print(f"{len(ids)} modelos adaptados. Sigue: python3 tools/assets/inventario.py doc")

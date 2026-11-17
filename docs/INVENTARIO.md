@@ -101,7 +101,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.vegetacion_arbusto.bush_02d` | Arbusto | 2.97x4.47x3.77 | 262 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbusto.bush_02f` | Arbusto | 4.30x5.79x6.69 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbusto.bush_dried_01` | Arbusto | 4.30x5.81x6.69 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbusto.bush_dried_02` | Arbusto | 4.38x3.66x6.28 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). |
+| `mapa.vegetacion_arbusto.bush_dried_02` | Arbusto | 1.91x1.60x2.75 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real. |
 | `mapa.vegetacion_arbusto.bush_dried_03` | Arbusto | 5.19x3.39x4.33 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbusto.bush_dried_04` | Arbusto | 4.42x3.78x6.08 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbusto.bush_dried_07` | Arbusto | 2.05x1.66x2.00 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
@@ -172,10 +172,10 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.vegetacion_arbol.tree_04a` | Arbol | 6.40x9.24x7.76 | 668 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbol.tree_04a_1` | Arbol | 6.30x9.87x5.90 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbol.tree_05d` | Arbol | 71.69x21.76x17.22 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_05d_1` | Arbol | 12.48x15.21x10.25 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). |
+| `mapa.vegetacion_arbol.tree_05d_1` | Arbol | 7.38x9.00x6.06 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real. |
 | `mapa.vegetacion_arbol.tree_06d` | Arbol | 18.70x11.86x9.83 | 602 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbol.tree_06d_1` | Arbol | 21.03x11.91x9.93 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_06d_2` | Arbol | 6.42x11.05x5.90 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). |
+| `mapa.vegetacion_arbol.tree_06d_2` | Arbol | 4.65x8.00x4.27 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real. |
 | `mapa.vegetacion_arbol.tree_08c` | Arbol | 29.61x13.67x13.24 | 746 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbol.tree_08c_1` | Arbol | 34.28x18.63x14.63 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbol.tree_09d` | Arbol | 5.62x7.42x4.10 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
@@ -191,7 +191,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.vegetacion_arbol.tree_old_04` | Arbol | 6.19x7.20x6.96 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbol.tree_old_04_1` | Arbol | 7.73x8.48x7.83 | 798 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbol.tree_old_06` | Arbol | 6.80x7.72x7.01 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_old_06_1` | Arbol | 11.83x11.75x9.91 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). |
+| `mapa.vegetacion_arbol.tree_old_06_1` | Arbol | 7.04x7.00x5.90 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real. |
 | `mapa.vegetacion_arbol.tree_old_06_2` | Arbol | 11.83x11.75x9.91 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_tronco.trunk_01d` | Tronco | 6.58x5.95x21.15 | 135 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_tronco.trunk_01e` | Tronco | 8.81x17.99x37.91 | 264 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
@@ -285,8 +285,8 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.puente.bridge_hanging_04` | Env Bridge Hanging 04 | 6.00x5.39x20.41 | 1499 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
 | `estructura.puente.bridge_pier_04a` | Env Bridge Pier 04A | 2.10x8.96x9.91 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
 | `estructura.puente.bridge_pier_04b` | Env Bridge Pier 04B | 2.06x0.48x2.24 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). |
-| `estructura.puente.bridge_pier_04c` | Env Bridge Pier 04C | 2.06x3.35x3.58 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). |
-| `estructura.puente.bridge_pier_end_04a` | Env Bridge Pier End 04A | 2.05x3.35x3.54 | 799 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). |
+| `estructura.puente.bridge_pier_04c` | Env Bridge Pier 04C | 3.35x2.06x3.58 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), reorientado. |
+| `estructura.puente.bridge_pier_end_04a` | Env Bridge Pier End 04A | 3.35x2.05x3.54 | 799 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), reorientado. |
 | `estructura.puente.bridge_pier_element_04a` | Env Bridge Pier Element 04A | 2.10x31.66x42.13 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
 | `estructura.puente.bridge_pier_element_04b` | Env Bridge Pier Element 04B | 0.36x1.79x0.21 | 110 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
 | `estructura.puente.bridge_pier_element_04c` | Env Bridge Pier Element 04C | 0.36x1.73x0.19 | 104 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
@@ -815,7 +815,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.generico.props_campfire_02` | Objeto generico | 3.14x2.51x2.90 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `utileria.generico.props_container_barell_01a` | Objeto generico | 0.77x1.03x0.81 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). |
 | `utileria.generico.props_container_chest_01a` | Objeto generico | 0.66x0.75x1.02 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real. |
-| `utileria.generico.props_container_chest_01b` | Objeto generico | 0.90x0.90x0.97 | 1232 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real. |
+| `utileria.generico.props_container_chest_01b` | Objeto generico | 0.90x0.90x0.97 | 1232 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real, reorientado. |
 | `utileria.generico.props_cross_02` | Objeto generico | 2.48x1.12x1.58 | 564 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `utileria.generico.props_tent_01a` | Objeto generico | 2.28x4.34x3.67 | 720 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `utileria.generico.props_tent_01b` | Objeto generico | 2.28x4.34x3.67 | 720 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
