@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**732 objetos** · 307 con modelo · 425 pendientes.
+**733 objetos** · 307 con modelo · 426 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -14,7 +14,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Mapa: terreno, vegetación, agua e hitos](#mapa) | 171 | 31 | 0 | 140 | 0 |
 | [Estructuras](#estructura) | 96 | 37 | 1 | 58 | 0 |
 | [Vehículos](#vehiculo) | 11 | 9 | 0 | 2 | 0 |
-| [Animales](#animal) | 51 | 51 | 0 | 0 | 0 |
+| [Animales](#animal) | 52 | 52 | 0 | 0 | 0 |
 | [Armas](#arma) | 44 | 39 | 0 | 5 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
 | [Escudos](#escudo) | 6 | 4 | 0 | 2 | 0 |
@@ -96,133 +96,133 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.hdri.flores_silvestres` | HDRI: Flores silvestres | 4x0x4 | 0 | importado | `bioma:estepa` `formato:textura` | HDRI de campo de flores silvestres de Poly Haven (wildflower_field). |
 | `mapa.hdri.veld_abierto` | HDRI: Veld abierto | 4x0x4 | 0 | importado | `bioma:estepa` `formato:textura` | HDRI de veld abierto de Poly Haven (veld_fire). |
 | `mapa.vegetacion.pradera_libre` | Pradera libre (30 modelos) | 4x0x4 | 10000 | pendiente | `bioma:estepa` `rig:ninguno` `formato:modelo` | Pack de 30 modelos low poly de OpenGameArt (FREE Remastered Meadows). |
-| `mapa.vegetacion_arbusto.bush_02b` | Arbusto | 3.95x3.57x3.28 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbusto.bush_02c` | Arbusto | 3.97x3.73x3.30 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbusto.bush_02d` | Arbusto | 3.77x4.47x2.97 | 262 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbusto.bush_02f` | Arbusto | 4.30x3.73x2.77 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbusto.bush_dried_01` | Arbusto | 4.30x3.74x2.77 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbusto.bush_dried_02` | Arbusto | 4.38x2.56x3.05 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbusto.bush_dried_03` | Arbusto | 3.62x2.81x4.33 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbusto.bush_dried_04` | Arbusto | 4.42x2.76x3.23 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbusto.bush_dried_07` | Arbusto | 1.97x1.64x2.00 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca_acantilado.clif_01a` | Acantilado | 26.23x13.30x15.11 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca_acantilado.clif_01b` | Acantilado | 19.81x13.34x13.40 | 294 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca_acantilado.clif_01c` | Acantilado | 18.31x13.17x23.33 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca_acantilado.clif_01d` | Acantilado | 48.44x14.37x30.54 | 291 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca_acantilado.clif_01e` | Acantilado | 46.02x14.25x18.84 | 299 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_hierba.grass_01` | Hierba | 0.40x1.04x0.31 | 84 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_hierba.grass_06` | Hierba | 0.79x0.69x0.76 | 230 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_hierba.grass_07` | Hierba | 0.40x0.70x0.25 | 138 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_01a` | Colina | 11.29x2.96x7.71 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_01b` | Colina | 15.82x3.84x11.43 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_01c` | Colina | 3.46x1.98x5.84 | 201 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_01c_1` | Colina | 3.31x2.41x5.24 | 281 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_01c_2` | Colina | 3.31x2.38x5.86 | 281 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_01c_3` | Colina | 13.50x9.04x13.53 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_01d` | Colina | 6.01x3.56x6.26 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_half_01a` | Colina | 8.73x4.63x3.15 | 479 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_half_01b` | Colina | 9.33x2.74x5.94 | 342 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_half_01c` | Colina | 9.42x3.62x6.30 | 204 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_half_01d` | Colina | 5.98x3.93x3.11 | 250 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_low_01a` | Colina | 6.32x1.60x4.01 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_low_01b` | Colina | 8.73x2.04x5.19 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_low_01c` | Colina | 5.86x1.57x5.68 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_low_01d` | Colina | 4.43x1.55x4.07 | 622 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_low_01e` | Colina | 5.04x4.40x3.86 | 249 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.terreno_colina.hill_low_01f` | Colina | 1.25x0.96x2.26 | 218 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_seta.mushroom_01` | Seta | 0.68x0.88x0.44 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_seta.mushroom_03` | Seta | 0.41x0.77x0.43 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_seta.mushroom_06` | Seta | 0.49x0.66x0.60 | 226 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_seta.mushroom_09` | Seta | 0.42x0.89x0.69 | 787 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_seta.mushroom_10` | Seta | 0.63x0.91x0.69 | 204 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_planta.plant_01` | Planta | 0.79x0.67x0.97 | 210 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_planta.plant_02` | Planta | 1.67x0.49x1.85 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_planta.plant_03` | Planta | 0.53x0.50x0.75 | 238 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_planta.plant_04` | Planta | 0.79x0.60x0.90 | 299 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_01a` | Env Rock 01A | 10.87x7.62x5.13 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_01b` | Env Rock 01B | 10.23x5.18x8.90 | 299 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_01c` | Env Rock 01C | 13.70x6.67x11.02 | 246 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_01d` | Env Rock 01D | 6.06x4.49x3.12 | 98 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_flat_01a` | Env Rock Flat 01A | 8.08x1.99x7.77 | 34 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_flat_01b` | Env Rock Flat 01B | 6.43x1.33x6.05 | 28 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_flat_01c` | Env Rock Flat 01C | 6.88x1.64x6.01 | 26 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_flat_01d` | Env Rock Flat 01D | 5.99x1.64x5.83 | 36 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_sand_01a` | Env Rock Sand 01A | 7.92x3.54x10.28 | 110 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_sand_01c` | Env Rock Sand 01C | 7.09x4.56x3.26 | 118 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_sand_01e` | Env Rock Sand 01E | 4.49x3.21x6.48 | 278 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_sand_01e_1` | Env Rock Sand 01E 1 | 8.49x5.00x4.37 | 278 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_sand_01g` | Env Rock Sand 01G | 12.47x8.92x7.26 | 238 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.rock_sand_01i` | Env Rock Sand 01I | 6.45x2.52x3.11 | 50 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca_piedra.stone_cobble_06` | Piedra | 1.53x0.26x1.62 | 233 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca_piedra.stone_cobble_06b` | Piedra | 0.63x0.16x0.62 | 59 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca_piedra.stone_cobble_06c` | Piedra | 0.33x0.14x0.31 | 20 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_01c` | Arbol | 10.42x6.42x13.40 | 490 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_01c_1` | Arbol | 8.48x9.39x19.78 | 568 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_01c_2` | Arbol | 10.42x13.40x10.08 | 2999 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_02a` | Arbol | 3.21x9.45x4.40 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_02a_1` | Arbol | 6.87x11.24x7.42 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_03a` | Arbol | 7.57x8.03x6.59 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_03a_1` | Arbol | 2.82x2.05x2.37 | 280 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_03a_2` | Arbol | 1.56x1.81x2.92 | 272 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_03a_3` | Arbol | 2.51x1.70x2.03 | 272 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_03a_4` | Arbol | 3.90x1.69x1.83 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_03a_5` | Arbol | 2.79x1.99x1.76 | 272 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_03a_6` | Arbol | 7.87x8.57x9.44 | 2999 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_03av2` | Arbol | 7.87x8.04x6.03 | 2999 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_04a` | Arbol | 7.76x9.24x6.40 | 668 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_04a_1` | Arbol | 5.90x9.87x6.30 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_05d` | Arbol | 4.48x5.23x17.22 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_05d_1` | Arbol | 10.26x15.21x12.44 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_06d` | Arbol | 5.17x6.24x9.83 | 602 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_06d_1` | Arbol | 4.69x6.04x9.93 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_06d_2` | Arbol | 5.89x11.05x6.40 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_08c` | Arbol | 5.92x6.11x13.24 | 746 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_08c_1` | Arbol | 6.23x7.95x14.63 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_09d` | Arbol | 4.14x7.42x5.61 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_09d_1` | Arbol | 3.73x5.74x4.40 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_11a` | Arbol | 6.55x7.94x5.57 | 78 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_11a_1` | Arbol | 7.41x10.42x5.60 | 80 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_11a_2` | Arbol | 9.88x7.07x5.38 | 80 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_11a_3` | Arbol | 2.30x1.59x2.04 | 80 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_11a_4` | Arbol | 6.54x7.65x5.40 | 80 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_11a_5` | Arbol | 6.54x7.65x5.40 | 80 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_11a_6` | Arbol | 9.28x10.29x7.94 | 675 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_11a_7` | Arbol | 7.95x6.31x10.44 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_old_04` | Arbol | 6.96x7.20x6.24 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_old_04_1` | Arbol | 7.81x8.48x7.71 | 798 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_old_06` | Arbol | 7.01x7.72x6.80 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_old_06_1` | Arbol | 8.32x9.86x9.91 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_old_06_2` | Arbol | 8.32x9.86x9.91 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_tronco.trunk_01d` | Tronco | 6.58x1.85x2.05 | 135 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_tronco.trunk_01e` | Tronco | 8.81x4.22x2.03 | 264 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_tronco.trunk_02c` | Tronco | 3.19x3.78x4.05 | 282 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_tronco.trunk_02d` | Tronco | 3.23x3.20x3.21 | 86 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_tronco.trunk_02f` | Tronco | 5.92x3.69x2.57 | 170 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.downroad_2x2_seam_01a` | Downroad 2X2 Seam 01A | 8.00x1.01x4.00 | 302 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.downroad_2x2_seam_01b` | Downroad 2X2 Seam 01B | 8.00x1.84x4.00 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.downroad_2x2_seam_01c` | Downroad 2X2 Seam 01C | 8.00x0.56x7.30 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.downroad_2x2_seam_01d` | Downroad 2X2 Seam 01D | 8.00x0.56x7.30 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbusto.bush_02b` | Arbusto | 3.95x4.31x4.76 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbusto.bush_02c` | Arbusto | 3.97x4.50x4.76 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbusto.bush_02d` | Arbusto | 2.97x4.47x3.77 | 262 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbusto.bush_02f` | Arbusto | 4.30x5.79x6.69 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbusto.bush_dried_01` | Arbusto | 4.30x5.81x6.69 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbusto.bush_dried_02` | Arbusto | 4.38x3.66x6.28 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbusto.bush_dried_03` | Arbusto | 5.19x3.39x4.33 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbusto.bush_dried_04` | Arbusto | 4.42x3.78x6.08 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbusto.bush_dried_07` | Arbusto | 2.05x1.66x2.00 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca_acantilado.clif_01a` | Acantilado | 26.23x23.16x45.65 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca_acantilado.clif_01b` | Acantilado | 19.81x19.72x29.28 | 294 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca_acantilado.clif_01c` | Acantilado | 29.73x16.70x23.33 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca_acantilado.clif_01d` | Acantilado | 48.44x22.79x76.82 | 291 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca_acantilado.clif_01e` | Acantilado | 46.02x34.39x112.41 | 299 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_hierba.grass_01` | Hierba | 0.31x1.04x0.40 | 84 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_hierba.grass_06` | Hierba | 0.79x0.73x0.83 | 230 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_hierba.grass_07` | Hierba | 0.25x0.70x0.40 | 138 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_01a` | Colina | 11.29x4.34x16.52 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_01b` | Colina | 15.82x4.88x20.19 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_01c` | Colina | 9.84x3.34x5.84 | 201 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_01c_1` | Colina | 8.28x3.81x5.24 | 281 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_01c_2` | Colina | 10.37x4.22x5.86 | 281 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_01c_3` | Colina | 10.49x0.91x13.53 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_01d` | Colina | 6.47x3.71x6.26 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_half_01a` | Colina | 8.73x5.43x22.32 | 479 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_half_01b` | Colina | 9.33x8.74x33.82 | 342 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_half_01c` | Colina | 9.42x4.52x19.06 | 204 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_half_01d` | Colina | 5.98x3.53x13.40 | 250 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_low_01a` | Colina | 6.32x2.52x9.99 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_low_01b` | Colina | 8.73x3.44x14.71 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_low_01c` | Colina | 5.86x1.62x6.04 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_low_01d` | Colina | 4.43x1.69x4.81 | 622 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_low_01e` | Colina | 5.04x5.75x6.59 | 249 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.terreno_colina.hill_low_01f` | Colina | 4.09x1.74x2.26 | 218 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_seta.mushroom_01` | Seta | 0.44x0.88x0.68 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_seta.mushroom_03` | Seta | 0.43x0.77x0.41 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_seta.mushroom_06` | Seta | 0.60x0.66x0.49 | 226 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_seta.mushroom_09` | Seta | 0.69x0.89x0.42 | 787 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_seta.mushroom_10` | Seta | 0.69x0.91x0.63 | 204 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_planta.plant_01` | Planta | 1.18x0.82x0.97 | 210 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_planta.plant_02` | Planta | 2.05x0.54x1.85 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_planta.plant_03` | Planta | 1.08x0.71x0.75 | 238 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_planta.plant_04` | Planta | 1.02x0.68x0.90 | 299 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_01a` | Env Rock 01A | 10.87x16.16x23.10 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_01b` | Env Rock 01B | 10.23x5.96x11.76 | 299 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_01c` | Env Rock 01C | 13.70x8.29x17.03 | 246 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_01d` | Env Rock 01D | 6.06x8.73x11.78 | 98 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_flat_01a` | Env Rock Flat 01A | 8.08x2.07x8.41 | 34 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_flat_01b` | Env Rock Flat 01B | 6.43x1.41x6.83 | 28 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_flat_01c` | Env Rock Flat 01C | 6.88x1.88x7.88 | 26 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_flat_01d` | Env Rock Flat 01D | 5.99x1.68x6.14 | 36 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_sand_01a` | Env Rock Sand 01A | 13.33x4.59x10.28 | 110 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_sand_01c` | Env Rock Sand 01C | 7.09x9.92x15.43 | 118 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_sand_01e` | Env Rock Sand 01E | 9.35x4.63x6.48 | 278 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_sand_01e_1` | Env Rock Sand 01E 1 | 8.49x9.71x16.50 | 278 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_sand_01g` | Env Rock Sand 01G | 12.47x15.32x21.41 | 238 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.rock_sand_01i` | Env Rock Sand 01I | 6.45x5.22x13.34 | 50 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca_piedra.stone_cobble_06` | Piedra | 1.71x0.28x1.62 | 233 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca_piedra.stone_cobble_06b` | Piedra | 0.63x0.17x0.63 | 59 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca_piedra.stone_cobble_06c` | Piedra | 0.33x0.15x0.35 | 20 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_01c` | Arbol | 17.23x8.26x13.40 | 490 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_01c_1` | Arbol | 46.15x21.91x19.78 | 568 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_01c_2` | Arbol | 10.07x13.40x10.42 | 2999 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_02a` | Arbol | 4.40x9.45x3.21 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_02a_1` | Arbol | 7.42x11.24x6.81 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_03a` | Arbol | 6.59x8.03x7.58 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_03a_1` | Arbol | 2.82x2.45x3.36 | 280 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_03a_2` | Arbol | 5.47x3.38x2.92 | 272 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_03a_3` | Arbol | 2.51x2.09x3.09 | 272 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_03a_4` | Arbol | 3.90x3.63x8.32 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_03a_5` | Arbol | 2.79x3.16x4.43 | 272 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_03a_6` | Arbol | 11.31x10.27x9.44 | 2999 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_03av2` | Arbol | 6.03x8.04x7.87 | 2999 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_04a` | Arbol | 6.40x9.24x7.76 | 668 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_04a_1` | Arbol | 6.30x9.87x5.90 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_05d` | Arbol | 71.69x21.76x17.22 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_05d_1` | Arbol | 12.48x15.21x10.25 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_06d` | Arbol | 18.70x11.86x9.83 | 602 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_06d_1` | Arbol | 21.03x11.91x9.93 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_06d_2` | Arbol | 6.42x11.05x5.90 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_08c` | Arbol | 29.61x13.67x13.24 | 746 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_08c_1` | Arbol | 34.28x18.63x14.63 | 3000 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_09d` | Arbol | 5.62x7.42x4.10 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_09d_1` | Arbol | 4.41x5.74x3.72 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_11a` | Arbol | 5.57x7.94x6.55 | 78 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_11a_1` | Arbol | 5.60x10.42x7.41 | 80 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_11a_2` | Arbol | 9.88x12.99x18.15 | 80 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_11a_3` | Arbol | 2.30x1.79x2.59 | 80 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_11a_4` | Arbol | 5.40x7.65x6.54 | 80 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_11a_5` | Arbol | 5.40x7.65x6.54 | 80 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_11a_6` | Arbol | 7.94x10.29x9.28 | 675 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_11a_7` | Arbol | 13.87x8.38x10.44 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_old_04` | Arbol | 6.19x7.20x6.96 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_old_04_1` | Arbol | 7.73x8.48x7.83 | 798 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_old_06` | Arbol | 6.80x7.72x7.01 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_old_06_1` | Arbol | 11.83x11.75x9.91 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_arbol.tree_old_06_2` | Arbol | 11.83x11.75x9.91 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_tronco.trunk_01d` | Tronco | 6.58x5.95x21.15 | 135 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_tronco.trunk_01e` | Tronco | 8.81x17.99x37.91 | 264 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_tronco.trunk_02c` | Tronco | 5.15x4.80x4.05 | 282 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_tronco.trunk_02d` | Tronco | 3.23x3.22x3.25 | 86 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.vegetacion_tronco.trunk_02f` | Tronco | 5.92x8.49x13.62 | 170 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.downroad_2x2_seam_01a` | Downroad 2X2 Seam 01A | 8.00x2.02x16.00 | 302 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.downroad_2x2_seam_01b` | Downroad 2X2 Seam 01B | 8.00x3.66x16.00 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.downroad_2x2_seam_01c` | Downroad 2X2 Seam 01C | 8.00x0.61x8.77 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.downroad_2x2_seam_01d` | Downroad 2X2 Seam 01D | 8.00x0.61x8.77 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.camino.downroad_4x4_bend_01a` | Downroad 4X4 Bend 01A | 8.00x2.24x8.00 | 418 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.camino.downroad_4x4_bend_01b` | Downroad 4X4 Bend 01B | 8.00x2.24x8.00 | 418 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.camino.downroad_4x4_bend_01c` | Downroad 4X4 Bend 01C | 8.00x2.24x8.00 | 418 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.camino.downroad_4x4_bend_01d` | Downroad 4X4 Bend 01D | 8.00x2.24x8.00 | 482 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.camino.downroad_4x4_bend_01e` | Downroad 4X4 Bend 01E | 8.00x2.24x8.00 | 546 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.road_2x2_bend_01a` | Road 2X2 Bend 01A | 4.00x0.45x4.00 | 269 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.road_2x2_bend_01b` | Road 2X2 Bend 01B | 4.00x0.45x4.00 | 253 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.road_2x2_bend_01a` | Road 2X2 Bend 01A | 4.00x0.41x4.00 | 269 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.road_2x2_bend_01b` | Road 2X2 Bend 01B | 4.00x0.44x4.00 | 253 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.camino.road_2x2_end_01a` | Road 2X2 End 01A | 4.00x0.41x4.00 | 74 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.road_2x2_end_01b` | Road 2X2 End 01B | 4.00x0.52x4.00 | 71 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.road_2x2_seam_01a` | Road 2X2 Seam 01A | 4.00x0.49x4.00 | 150 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.road_2x2_end_01b` | Road 2X2 End 01B | 4.00x0.47x4.00 | 71 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.road_2x2_seam_01a` | Road 2X2 Seam 01A | 4.00x0.41x4.00 | 150 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.camino.road_2x2_seam_01b` | Road 2X2 Seam 01B | 4.00x0.52x4.00 | 180 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.road_2x2_seam_01c` | Road 2X2 Seam 01C | 4.00x0.47x4.00 | 154 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.road_2x4_seam_01a` | Road 2X4 Seam 01A | 8.00x0.53x4.00 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.road_2x2_seam_01c` | Road 2X2 Seam 01C | 4.00x0.41x4.00 | 154 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.road_2x4_seam_01a` | Road 2X4 Seam 01A | 8.00x0.84x16.00 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.camino.road_4x4_bend_01a` | Road 4X4 Bend 01A | 8.00x0.53x8.00 | 455 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.camino.road_4x4_bend_01b` | Road 4X4 Bend 01B | 8.00x0.55x8.00 | 454 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.swamp_rockbig_01a` | Swamp Rockbig 01A | 4.51x2.01x5.63 | 258 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.swamp_rockbig_01b` | Swamp Rockbig 01B | 3.91x1.84x5.76 | 80 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.swamp_rockbig_01c` | Swamp Rockbig 01C | 3.80x0.86x6.48 | 54 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.swamp_rockbig_02a` | Swamp Rockbig 02A | 4.49x3.21x6.48 | 198 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.swamp_rockbig_02b` | Swamp Rockbig 02B | 9.99x4.36x5.68 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.roca.swamp_rockbig_02c` | Swamp Rockbig 02C | 12.83x5.22x8.54 | 608 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.camino.road_4x4_bend_01b` | Road 4X4 Bend 01B | 8.00x0.49x8.00 | 454 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.swamp_rockbig_01a` | Swamp Rockbig 01A | 7.03x2.51x5.63 | 258 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.swamp_rockbig_01b` | Swamp Rockbig 01B | 8.48x2.71x5.76 | 80 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.swamp_rockbig_01c` | Swamp Rockbig 01C | 11.05x1.47x6.48 | 54 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.swamp_rockbig_02a` | Swamp Rockbig 02A | 9.35x4.63x6.48 | 198 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.swamp_rockbig_02b` | Swamp Rockbig 02B | 9.99x7.67x17.57 | 300 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `mapa.roca.swamp_rockbig_02c` | Swamp Rockbig 02C | 12.83x7.84x19.27 | 608 | importado | `bioma:estepa` `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 
 <a id="estructura"></a>
 
@@ -273,59 +273,59 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `estructura.campamento.taller_herrero` | Taller del herrero | 4x3x4 | 400 | pendiente | `uso:interactuable` `uso:construible` `material:piedra` | Obra de campamento grande: el temple, el acero wootz y las puntas de lanza de acero. Requiere un herrero. |
 | `estructura.defensa.trinchera` | Trinchera | 1.2x0.8x4 | 80 | pendiente | `faccion:cualquiera` `uso:cobertura` | Se cava con pala (acción individual). |
 | `estructura.defensa.muro_piedra` | Muro de piedra seca | 4x2x0.6 | 120 | pendiente | `faccion:nomada` `uso:destructible` `uso:construible` `material:piedra` | Construcción en grupo. |
-| `estructura.puente.bridge_01` | Env Bridge 01 | 4.67x2.07x2.96 | 798 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_02` | Env Bridge 02 | 4.35x1.82x3.03 | 748 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_02_1` | Env Bridge 02 1 | 4.30x1.66x3.12 | 1499 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_03` | Env Bridge 03 | 4.27x1.14x3.31 | 547 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_05` | Env Bridge 05 | 6.63x2.83x3.93 | 2999 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_06` | Env Bridge 06 | 6.00x1.58x1.69 | 1500 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_hanging_01` | Env Bridge Hanging 01 | 6.00x1.56x0.69 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_hanging_02` | Env Bridge Hanging 02 | 6.00x1.58x1.69 | 1500 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_hanging_03` | Env Bridge Hanging 03 | 6.00x1.58x1.77 | 1500 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_hanging_04` | Env Bridge Hanging 04 | 6.00x1.58x1.77 | 1499 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_pier_04a` | Env Bridge Pier 04A | 2.10x1.90x0.44 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_pier_04b` | Env Bridge Pier 04B | 2.06x0.44x1.90 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_pier_04c` | Env Bridge Pier 04C | 2.06x1.93x1.19 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_pier_end_04a` | Env Bridge Pier End 04A | 2.05x1.94x1.19 | 799 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_pier_element_04a` | Env Bridge Pier Element 04A | 2.10x1.57x0.10 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_pier_element_04b` | Env Bridge Pier Element 04B | 0.21x1.79x0.36 | 110 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_pier_element_04c` | Env Bridge Pier Element 04C | 0.19x1.73x0.36 | 104 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.puente.bridge_pier_element_04d` | Env Bridge Pier Element 04D | 0.32x1.90x0.36 | 142 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_pin_01a` | Env Fence Pin 01A | 0.29x1.57x0.25 | 50 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_pin_01b` | Env Fence Pin 01B | 0.22x2.18x0.26 | 48 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_pin_01c` | Env Fence Pin 01C | 0.32x1.90x0.13 | 102 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_pin_02a` | Env Fence Pin 02A | 0.37x1.28x0.33 | 148 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_pin_03a` | Env Fence Pin 03A | 0.31x1.51x0.47 | 134 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_rock_01a` | Env Fence Rock 01A | 5.81x0.91x1.57 | 607 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_rock_01b` | Env Fence Rock 01B | 3.52x0.89x1.03 | 299 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_rock_01c` | Env Fence Rock 01C | 2.56x1.10x0.76 | 268 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_rock_01d` | Env Fence Rock 01D | 2.09x0.72x0.89 | 128 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_rock_01e` | Env Fence Rock 01E | 4.95x1.08x1.41 | 299 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_rock_01f` | Env Fence Rock 01F | 5.15x0.66x1.58 | 299 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_01a` | Env Fence Wood 01A | 2.74x1.58x0.63 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_01b` | Env Fence Wood 01B | 2.96x1.57x0.59 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_01c` | Env Fence Wood 01C | 2.90x1.57x0.67 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_02a` | Env Fence Wood 02A | 1.67x1.29x0.28 | 286 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_02b` | Env Fence Wood 02B | 3.01x1.22x0.31 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_02c` | Env Fence Wood 02C | 2.67x1.16x0.34 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_02d` | Env Fence Wood 02D | 1.56x1.29x0.65 | 286 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_02e` | Env Fence Wood 02E | 3.25x1.30x0.26 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_03a` | Env Fence Wood 03A | 2.03x1.10x0.26 | 232 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_03b` | Env Fence Wood 03B | 1.69x1.11x0.26 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_03b_1` | Env Fence Wood 03B 1 | 0.80x0.27x1.09 | 124 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_03c` | Env Fence Wood 03C | 1.78x1.08x0.22 | 288 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_04a` | Env Fence Wood 04A | 3.58x1.62x1.26 | 680 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_04b` | Env Fence Wood 04B | 2.79x1.53x2.43 | 630 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_04c` | Env Fence Wood 04C | 2.79x2.43x0.55 | 630 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_wine_01a` | Env Fence Wood Wine 01A | 2.87x1.60x0.71 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_wine_01b` | Env Fence Wood Wine 01B | 2.96x1.57x0.64 | 798 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_wine_02d` | Env Fence Wood Wine 02D | 1.61x1.29x0.63 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.fence_wood_wine_04a` | Env Fence Wood Wine 04A | 3.58x1.62x1.26 | 1500 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.portal.frostp_portal` | Frostp Portal | 2.01x0.75x1.88 | 1500 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.tree2a` | Tree2A | 2.35x2.50x5.13 | 798 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.wood_fence3` | Wood Fence3 | 2.67x1.15x0.26 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.wood_fence3b` | Wood Fence3B | 2.67x1.15x0.27 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
-| `estructura.cerca.wood_fence3c` | Wood Fence3C | 2.66x1.31x0.40 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_01` | Env Bridge 01 | 4.67x3.23x7.33 | 798 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_02` | Env Bridge 02 | 4.35x2.60x6.23 | 748 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_02_1` | Env Bridge 02 1 | 4.30x2.28x5.91 | 1499 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_03` | Env Bridge 03 | 4.27x1.24x5.58 | 547 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_05` | Env Bridge 05 | 6.63x4.77x11.18 | 2999 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_06` | Env Bridge 06 | 6.00x5.63x21.36 | 1500 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_hanging_01` | Env Bridge Hanging 01 | 6.00x13.75x52.59 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_hanging_02` | Env Bridge Hanging 02 | 6.00x5.63x21.36 | 1500 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_hanging_03` | Env Bridge Hanging 03 | 6.00x5.37x20.39 | 1500 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_hanging_04` | Env Bridge Hanging 04 | 6.00x5.39x20.41 | 1499 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_pier_04a` | Env Bridge Pier 04A | 2.10x8.96x9.91 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_pier_04b` | Env Bridge Pier 04B | 2.06x0.48x2.24 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_pier_04c` | Env Bridge Pier 04C | 2.06x3.35x3.58 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_pier_end_04a` | Env Bridge Pier End 04A | 2.05x3.35x3.54 | 799 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_pier_element_04a` | Env Bridge Pier Element 04A | 2.10x31.66x42.13 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_pier_element_04b` | Env Bridge Pier Element 04B | 0.36x1.79x0.21 | 110 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_pier_element_04c` | Env Bridge Pier Element 04C | 0.36x1.73x0.19 | 104 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.puente.bridge_pier_element_04d` | Env Bridge Pier Element 04D | 0.36x1.90x0.32 | 142 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_pin_01a` | Env Fence Pin 01A | 0.25x1.57x0.29 | 50 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_pin_01b` | Env Fence Pin 01B | 0.26x2.18x0.22 | 48 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_pin_01c` | Env Fence Pin 01C | 0.13x1.90x0.32 | 102 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_pin_02a` | Env Fence Pin 02A | 0.33x1.28x0.37 | 148 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_pin_03a` | Env Fence Pin 03A | 0.47x1.51x0.31 | 134 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_rock_01a` | Env Fence Rock 01A | 5.81x3.36x21.52 | 607 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_rock_01b` | Env Fence Rock 01B | 3.52x3.05x12.03 | 299 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_rock_01c` | Env Fence Rock 01C | 2.56x3.68x8.55 | 268 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_rock_01d` | Env Fence Rock 01D | 2.09x1.68x4.89 | 128 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_rock_01e` | Env Fence Rock 01E | 4.95x3.75x17.38 | 299 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_rock_01f` | Env Fence Rock 01F | 5.15x1.89x16.73 | 299 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_01a` | Env Fence Wood 01A | 2.74x7.72x13.38 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_01b` | Env Fence Wood 01B | 2.96x10.36x19.59 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_01c` | Env Fence Wood 01C | 2.90x6.80x12.58 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_02a` | Env Fence Wood 02A | 1.67x7.73x10.02 | 286 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_02b` | Env Fence Wood 02B | 3.01x12.63x31.10 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_02c` | Env Fence Wood 02C | 2.67x9.02x20.79 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_02d` | Env Fence Wood 02D | 1.56x3.08x3.73 | 286 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_02e` | Env Fence Wood 02E | 3.25x16.43x41.26 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_03a` | Env Fence Wood 03A | 2.03x8.68x16.08 | 232 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_03b` | Env Fence Wood 03B | 1.69x7.31x11.15 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_03b_1` | Env Fence Wood 03B 1 | 1.48x0.36x1.09 | 124 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_03c` | Env Fence Wood 03C | 1.78x8.91x14.60 | 288 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_04a` | Env Fence Wood 04A | 3.58x4.59x10.15 | 680 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_04b` | Env Fence Wood 04B | 2.79x1.76x3.20 | 630 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_04c` | Env Fence Wood 04C | 2.79x12.23x14.03 | 630 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_wine_01a` | Env Fence Wood Wine 01A | 2.87x6.53x11.71 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_wine_01b` | Env Fence Wood Wine 01B | 2.96x7.24x13.82 | 798 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_wine_02d` | Env Fence Wood Wine 02D | 1.61x3.31x4.14 | 800 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.fence_wood_wine_04a` | Env Fence Wood Wine 04A | 3.58x4.59x10.15 | 1500 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.portal.frostp_portal` | Frostp Portal | 2.01x0.81x2.21 | 1500 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.tree2a` | Tree2A | 11.20x5.45x5.13 | 798 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.wood_fence3` | Wood Fence3 | 2.67x11.77x27.27 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.wood_fence3b` | Wood Fence3B | 2.67x11.35x26.28 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
+| `estructura.cerca.wood_fence3c` | Wood Fence3C | 2.66x8.65x17.64 | 300 | importado | `rig:ninguno` `formato:modelo` `uso:decorado` | OpenGameArt FREE Remastered Meadows |
 
 <a id="vehiculo"></a>
 
@@ -366,6 +366,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `animal.ganado.vaca` | Vaca | 0.86x1.77x2.68 | 700 | pendiente | `faccion:nomada` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.62 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. La hoja la dibuja mirando a la derecha (--voltear-lado). |
 | `animal.ganado.perro_pastor` | Perro pastor (mastín) | 0.35x0.94x1.24 | 500 | pendiente | `faccion:nomada` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 0.78 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.salvaje.lobo` | Lobo | 0.35x1.06x1.37 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 0.85 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
+| `animal.salvaje.lobo_2` | Lobo (variante 2) | 0.35x1.04x1.37 | 500 | pendiente | `faccion:salvaje` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 0.85 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.salvaje.tigre` | Tigre | 0.45x1.27x2.09 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.1 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.salvaje.oso` | Oso pardo | 0.97x1.59x2.55 | 700 | pendiente | `faccion:salvaje` `bioma:bosque` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.5 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
 | `animal.salvaje.oso_polar` | Oso polar | 0.95x1.69x3.02 | 700 | pendiente | `faccion:salvaje` `bioma:glaciar` `bioma:fiordo` `rig:cuadrupedo` | Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen); falta el esqueleto y los clips. Medidas: 1.6 m a la cruz, la de los ejemplares más grandes de la especie (docs/TAMANOS.md); lo demás, de la imagen. |
@@ -733,94 +734,94 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.consumible.agua_vino` | Agua con vino | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | El vino purifica el agua: segura y apenas achispa. |
 | `utileria.consumible.cerveza` | Cerveza | 0.2x0.25x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` | Segura de beber; en exceso, torpe y fatigado. |
 | `utileria.consumible.vino` | Vino | 0.12x0.3x0.12 | 40 | pendiente | `uso:recolectable` `uso:consumible` | De las caravanas del imperio. Seguro; emborracha pronto. |
-| `utileria.objeto_generico.ea01_env_branch_01` | Ea01 Env Branch 01 | 2.41x0.49x1.22 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_branch_02` | Ea01 Env Branch 02 | 2.17x0.83x1.15 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_branch_03` | Ea01 Env Branch 03 | 2.06x0.89x0.97 | 798 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_branch_04` | Ea01 Env Branch 04 | 1.38x0.56x1.54 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_bend_01a` | Ea01 Env Road Bend 01A | 12.00x1.03x11.91 | 229 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_bend_01b` | Ea01 Env Road Bend 01B | 12.00x1.03x11.91 | 229 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_bend_01c` | Ea01 Env Road Bend 01C | 11.91x0.79x12.00 | 231 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_bend_01d` | Ea01 Env Road Bend 01D | 11.91x0.72x12.00 | 231 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_cobble_02` | Ea01 Env Road Cobble 02 | 1.40x1.47x0.55 | 87 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_cobble_02b` | Ea01 Env Road Cobble 02B | 1.63x1.81x0.55 | 105 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_cobble_04` | Ea01 Env Road Cobble 04 | 4.13x4.07x0.58 | 299 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_cobble_04b` | Ea01 Env Road Cobble 04B | 4.08x0.64x4.08 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_cobble_stair_01b` | Ea01 Env Road Cobble Stair 01B | 4.41x1.89x1.54 | 283 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_cobble_stair_01c` | Ea01 Env Road Cobble Stair 01C | 3.90x1.56x1.54 | 299 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_seam_01` | Ea01 Env Road Seam 01 | 8.00x0.82x7.75 | 136 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_winding_01a` | Ea01 Env Road Winding 01A | 16.00x1.26x12.91 | 296 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_winding_01b` | Ea01 Env Road Winding 01B | 32.00x0.99x11.30 | 562 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_winding_01c` | Ea01 Env Road Winding 01C | 16.00x0.99x12.91 | 296 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_winding_02a` | Ea01 Env Road Winding 02A | 16.00x0.72x12.91 | 268 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_winding_02c` | Ea01 Env Road Winding 02C | 16.00x0.72x12.91 | 268 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_beam_01a` | Ea01 Env Road Wooden Beam 01A | 6.00x0.23x1.50 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_beam_01b` | Ea01 Env Road Wooden Beam 01B | 3.00x0.23x1.48 | 790 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_beam_02a` | Ea01 Env Road Wooden Beam 02A | 6.00x0.23x1.48 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_beam_02b` | Ea01 Env Road Wooden Beam 02B | 3.00x0.23x1.55 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_beam_03a` | Ea01 Env Road Wooden Beam 03A | 6.00x0.23x2.04 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_beam_03b` | Ea01 Env Road Wooden Beam 03B | 3.00x0.23x1.75 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_planks_01a` | Ea01 Env Road Wooden Planks 01A | 6.00x0.14x1.60 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_planks_01b` | Ea01 Env Road Wooden Planks 01B | 3.00x0.14x1.57 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_planks_02a` | Ea01 Env Road Wooden Planks 02A | 6.00x0.14x1.60 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_planks_02b` | Ea01 Env Road Wooden Planks 02B | 3.00x0.14x1.56 | 634 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_planks_03a` | Ea01 Env Road Wooden Planks 03A | 6.00x0.14x1.76 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_road_wooden_planks_03b` | Ea01 Env Road Wooden Planks 03B | 3.07x0.14x1.76 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_01` | Ea01 Env Treecrown 01 | 1.83x0.48x0.74 | 114 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_01_1` | Ea01 Env Treecrown 01 1 | 1.83x0.48x0.74 | 114 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_02` | Ea01 Env Treecrown 02 | 1.91x0.55x0.79 | 134 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_02_1` | Ea01 Env Treecrown 02 1 | 1.91x0.55x0.79 | 134 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_03` | Ea01 Env Treecrown 03 | 1.93x0.57x0.68 | 120 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_03_1` | Ea01 Env Treecrown 03 1 | 1.93x0.57x0.68 | 120 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_04` | Ea01 Env Treecrown 04 | 1.96x0.79x0.89 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_04_1` | Ea01 Env Treecrown 04 1 | 1.96x0.79x0.89 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_05` | Ea01 Env Treecrown 05 | 1.50x0.45x0.76 | 124 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_05_1` | Ea01 Env Treecrown 05 1 | 1.50x0.45x0.76 | 124 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_06` | Ea01 Env Treecrown 06 | 0.87x0.35x0.71 | 70 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_06_1` | Ea01 Env Treecrown 06 1 | 0.87x0.35x0.71 | 70 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_07` | Ea01 Env Treecrown 07 | 1.90x0.52x1.73 | 64 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_07_1` | Ea01 Env Treecrown 07 1 | 1.83x0.47x1.66 | 64 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_08` | Ea01 Env Treecrown 08 | 1.91x1.12x0.79 | 134 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_08_1` | Ea01 Env Treecrown 08 1 | 1.91x1.12x0.79 | 134 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_09` | Ea01 Env Treecrown 09 | 2.30x0.91x0.71 | 120 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_09_1` | Ea01 Env Treecrown 09 1 | 2.30x0.91x0.71 | 120 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_10` | Ea01 Env Treecrown 10 | 1.98x0.91x0.89 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_10_1` | Ea01 Env Treecrown 10 1 | 1.98x0.91x0.89 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_11` | Ea01 Env Treecrown 11 | 1.44x1.03x0.77 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_11_1` | Ea01 Env Treecrown 11 1 | 1.44x1.03x0.77 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_12` | Ea01 Env Treecrown 12 | 1.07x0.66x0.84 | 70 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_12_1` | Ea01 Env Treecrown 12 1 | 1.07x0.66x0.84 | 70 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_13` | Ea01 Env Treecrown 13 | 1.80x1.50x1.66 | 118 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treecrown_13_1` | Ea01 Env Treecrown 13 1 | 1.80x1.50x1.66 | 118 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treeroot_01a` | Ea01 Env Treeroot 01A | 2.45x1.38x1.70 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treeroot_01b` | Ea01 Env Treeroot 01B | 3.62x1.12x3.36 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treeroot_01c` | Ea01 Env Treeroot 01C | 2.43x2.03x2.20 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treeroot_01d` | Ea01 Env Treeroot 01D | 3.05x1.25x0.90 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treeroot_01e` | Ea01 Env Treeroot 01E | 1.98x1.72x1.00 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treeroot_01f` | Ea01 Env Treeroot 01F | 3.25x1.18x2.11 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treeroot_01g` | Ea01 Env Treeroot 01G | 1.79x0.75x1.90 | 798 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treeroot_01h` | Ea01 Env Treeroot 01H | 3.70x1.17x2.53 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treeroot_01i` | Ea01 Env Treeroot 01I | 3.29x1.48x1.07 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.objeto_generico.ea01_env_treeroot_01j` | Ea01 Env Treeroot 01J | 2.64x1.00x1.36 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.prop_forester_watchtower_01` | Objeto generico | 2.61x6.21x3.69 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.prop_pin_01a` | Objeto generico | 0.15x0.28x0.17 | 42 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.prop_plank_01a` | Objeto generico | 2.03x0.31x0.09 | 132 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.prop_plank_2a` | Objeto generico | 2.92x0.25x0.29 | 84 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.prop_plank_3a` | Objeto generico | 3.24x0.15x0.12 | 84 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.prop_tool_stump_01a` | Objeto generico | 1.70x0.96x1.34 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.prop_wehicule_cart_01` | Objeto generico | 3.40x1.57x1.40 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.prop_wehicule_cart_broken_01a` | Objeto generico | 3.40x1.72x1.57 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.prop_wehicule_cart_broken_01b` | Objeto generico | 3.73x1.80x1.77 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.prop_wehicule_cart_whell_01a` | Objeto generico | 0.99x0.18x0.99 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.props_campfire_02` | Objeto generico | 2.68x2.32x2.90 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.props_container_barell_01a` | Objeto generico | 0.81x1.03x0.77 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.props_container_chest_01a` | Objeto generico | 1.30x0.95x0.84 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.props_container_chest_01b` | Objeto generico | 1.30x1.20x0.48 | 1232 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.props_cross_02` | Objeto generico | 1.00x0.71x1.58 | 564 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.props_tent_01a` | Objeto generico | 3.81x4.34x2.28 | 720 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.props_tent_01b` | Objeto generico | 3.81x4.34x2.28 | 720 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.props_bench_01` | Objeto generico | 1.70x0.51x0.66 | 248 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.props_bench_02` | Objeto generico | 1.97x0.70x0.59 | 212 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `utileria.generico.props_roadsign_03` | Objeto generico | 2.12x3.24x0.49 | 62 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_branch_01` | Ea01 Env Branch 01 | 2.41x0.97x4.77 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_branch_02` | Ea01 Env Branch 02 | 2.17x1.57x4.10 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_branch_03` | Ea01 Env Branch 03 | 2.06x1.90x4.40 | 798 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_branch_04` | Ea01 Env Branch 04 | 1.71x0.62x1.54 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_bend_01a` | Ea01 Env Road Bend 01A | 12.00x1.04x12.09 | 229 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_bend_01b` | Ea01 Env Road Bend 01B | 12.00x1.04x12.09 | 229 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_bend_01c` | Ea01 Env Road Bend 01C | 12.09x0.73x12.00 | 231 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_bend_01d` | Ea01 Env Road Bend 01D | 12.09x0.73x12.00 | 231 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_cobble_02` | Ea01 Env Road Cobble 02 | 0.55x1.47x1.40 | 87 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_cobble_02b` | Ea01 Env Road Cobble 02B | 0.55x1.81x1.63 | 105 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_cobble_04` | Ea01 Env Road Cobble 04 | 4.13x28.76x29.14 | 299 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_cobble_04b` | Ea01 Env Road Cobble 04B | 4.09x0.64x4.08 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_cobble_stair_01b` | Ea01 Env Road Cobble Stair 01B | 4.41x5.42x12.66 | 283 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_cobble_stair_01c` | Ea01 Env Road Cobble Stair 01C | 3.90x3.95x9.91 | 299 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_seam_01` | Ea01 Env Road Seam 01 | 8.00x0.84x8.26 | 136 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_winding_01a` | Ea01 Env Road Winding 01A | 16.00x1.78x22.65 | 296 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_winding_01b` | Ea01 Env Road Winding 01B | 32.00x2.13x90.59 | 562 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_winding_01c` | Ea01 Env Road Winding 01C | 16.00x1.40x22.65 | 296 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_winding_02a` | Ea01 Env Road Winding 02A | 16.00x1.02x22.65 | 268 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_winding_02c` | Ea01 Env Road Winding 02C | 16.00x1.02x22.65 | 268 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_beam_01a` | Ea01 Env Road Wooden Beam 01A | 6.00x0.94x24.04 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_beam_01b` | Ea01 Env Road Wooden Beam 01B | 3.00x0.47x6.07 | 790 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_beam_02a` | Ea01 Env Road Wooden Beam 02A | 6.00x0.95x24.29 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_beam_02b` | Ea01 Env Road Wooden Beam 02B | 3.00x0.45x5.79 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_beam_03a` | Ea01 Env Road Wooden Beam 03A | 6.00x0.69x17.64 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_beam_03b` | Ea01 Env Road Wooden Beam 03B | 3.00x0.40x5.13 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_planks_01a` | Ea01 Env Road Wooden Planks 01A | 6.00x0.53x22.35 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_planks_01b` | Ea01 Env Road Wooden Planks 01B | 3.00x0.28x5.73 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_planks_02a` | Ea01 Env Road Wooden Planks 02A | 6.00x0.54x22.51 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_planks_02b` | Ea01 Env Road Wooden Planks 02B | 3.00x0.27x5.75 | 634 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_planks_03a` | Ea01 Env Road Wooden Planks 03A | 6.00x0.49x20.39 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_road_wooden_planks_03b` | Ea01 Env Road Wooden Planks 03B | 3.07x0.25x5.34 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_01` | Ea01 Env Treecrown 01 | 1.83x1.18x4.51 | 114 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_01_1` | Ea01 Env Treecrown 01 1 | 1.83x1.18x4.51 | 114 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_02` | Ea01 Env Treecrown 02 | 1.91x1.33x4.58 | 134 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_02_1` | Ea01 Env Treecrown 02 1 | 1.91x1.33x4.58 | 134 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_03` | Ea01 Env Treecrown 03 | 1.93x1.62x5.45 | 120 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_03_1` | Ea01 Env Treecrown 03 1 | 1.93x1.62x5.45 | 120 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_04` | Ea01 Env Treecrown 04 | 1.96x1.74x4.31 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_04_1` | Ea01 Env Treecrown 04 1 | 1.96x1.74x4.31 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_05` | Ea01 Env Treecrown 05 | 1.50x0.89x2.96 | 124 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_05_1` | Ea01 Env Treecrown 05 1 | 1.50x0.89x2.96 | 124 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_06` | Ea01 Env Treecrown 06 | 0.87x0.43x1.06 | 70 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_06_1` | Ea01 Env Treecrown 06 1 | 0.87x0.43x1.06 | 70 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_07` | Ea01 Env Treecrown 07 | 1.90x0.57x2.10 | 64 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_07_1` | Ea01 Env Treecrown 07 1 | 1.83x0.52x2.01 | 64 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_08` | Ea01 Env Treecrown 08 | 1.91x2.70x4.60 | 134 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_08_1` | Ea01 Env Treecrown 08 1 | 1.91x2.70x4.60 | 134 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_09` | Ea01 Env Treecrown 09 | 2.30x2.93x7.47 | 120 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_09_1` | Ea01 Env Treecrown 09 1 | 2.30x2.93x7.47 | 120 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_10` | Ea01 Env Treecrown 10 | 1.98x2.03x4.40 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_10_1` | Ea01 Env Treecrown 10 1 | 1.98x2.03x4.40 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_11` | Ea01 Env Treecrown 11 | 1.44x1.92x2.68 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_11_1` | Ea01 Env Treecrown 11 1 | 1.44x1.92x2.68 | 130 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_12` | Ea01 Env Treecrown 12 | 1.07x0.85x1.37 | 70 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_12_1` | Ea01 Env Treecrown 12 1 | 1.07x0.85x1.37 | 70 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_13` | Ea01 Env Treecrown 13 | 1.80x1.63x1.96 | 118 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treecrown_13_1` | Ea01 Env Treecrown 13 1 | 1.80x1.63x1.96 | 118 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treeroot_01a` | Ea01 Env Treeroot 01A | 2.45x2.00x3.55 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treeroot_01b` | Ea01 Env Treeroot 01B | 3.62x1.20x3.89 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treeroot_01c` | Ea01 Env Treeroot 01C | 2.43x2.24x2.69 | 1500 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treeroot_01d` | Ea01 Env Treeroot 01D | 3.05x4.30x10.42 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treeroot_01e` | Ea01 Env Treeroot 01E | 1.98x3.39x3.90 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treeroot_01f` | Ea01 Env Treeroot 01F | 3.25x1.83x5.02 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treeroot_01g` | Ea01 Env Treeroot 01G | 2.01x0.79x1.90 | 798 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treeroot_01h` | Ea01 Env Treeroot 01H | 3.70x1.73x5.43 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treeroot_01i` | Ea01 Env Treeroot 01I | 3.29x4.53x10.07 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.objeto_generico.ea01_env_treeroot_01j` | Ea01 Env Treeroot 01J | 2.64x1.95x5.14 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.prop_forester_watchtower_01` | Objeto generico | 3.69x6.21x2.61 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.prop_pin_01a` | Objeto generico | 0.17x0.28x0.15 | 42 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.prop_plank_01a` | Objeto generico | 2.03x7.49x48.46 | 132 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.prop_plank_2a` | Objeto generico | 2.92x2.54x29.53 | 84 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.prop_plank_3a` | Objeto generico | 3.24x3.86x85.10 | 84 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.prop_tool_stump_01a` | Objeto generico | 1.70x1.22x2.16 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.prop_wehicule_cart_01` | Objeto generico | 3.40x3.82x8.29 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.prop_wehicule_cart_broken_01a` | Objeto generico | 3.40x3.62x7.39 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.prop_wehicule_cart_broken_01b` | Objeto generico | 3.73x3.80x7.87 | 1499 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.prop_wehicule_cart_whell_01a` | Objeto generico | 0.99x0.16x0.99 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.props_campfire_02` | Objeto generico | 3.14x2.51x2.90 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.props_container_barell_01a` | Objeto generico | 0.77x1.03x0.81 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.props_container_chest_01a` | Objeto generico | 1.30x1.46x2.00 | 800 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.props_container_chest_01b` | Objeto generico | 1.30x1.30x1.40 | 1232 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.props_cross_02` | Objeto generico | 2.48x1.12x1.58 | 564 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.props_tent_01a` | Objeto generico | 2.28x4.34x3.67 | 720 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.props_tent_01b` | Objeto generico | 2.28x4.34x3.67 | 720 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.props_bench_01` | Objeto generico | 1.70x1.31x4.35 | 248 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.props_bench_02` | Objeto generico | 1.97x2.35x6.58 | 212 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
+| `utileria.generico.props_roadsign_03` | Objeto generico | 0.49x3.24x2.12 | 62 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 
 <a id="personaje"></a>
 
