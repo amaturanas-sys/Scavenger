@@ -302,6 +302,7 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | El arranque | `./estepa --frames 60 --screenshot shot.png` |
 | Un lugar del mundo | `--ir estepa`, `bosque`, `altiplano`, `desierto`, `mar`, `capital`, `aldea`, `fortaleza`, `ciudad`, `plaza-<región>`… (con `--dia 11 --minuto 7` es verano al mediodía; `--camara`, `--dron 40` desde arriba; `--vista cerca\|media\|lejos`) |
 | El agua | `--ir lago`, `desborde`, `cascada`, `meandro`, `trenzado`, `arroyo`, `rapidos` |
+| El decorado de OpenGameArt | `--ir puente` y `--ir muelle` (el primero, de pueblo en pueblo); `--sin-decorado`, para comparar antes y después; `--censo-decorado`: cuántos hay de cada modelo en el mundo entero y por qué se descarta cada candidato (`docs/MUNDO.md`) |
 | El kit de edificios | `--edificios casa` (o `palacio`, `muralla`, `puerta`, `fortaleza`, `refugio`… ; `:región` para una sola fila; `--dron 24` para verlas de cerca) |
 | Las formaciones del paisaje | `--formaciones desierto` (o `hielo`, `costa`): las cuatro variantes de cada una |
 | Los muros del borde, enteros | `--ir panorama-hielo` o `panorama-muro` (a 520 m del borde, con `--camara 0.06 --vista lejos`); de cerca, `--ir hielo`, `muro`, `lengua` |

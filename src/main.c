@@ -80,6 +80,8 @@
 #include "game/input.h"
 #include "rlgl.h"
 #include "world/weather.h"
+#include "sim/decor.h"
+#include "world/decor_draw.h"
 #include "world/terrain.h"
 #include "world/trees.h"
 #include "world/vegetation.h"
@@ -121,6 +123,8 @@ typedef struct {
 
 #define RIDE_LIFT 1.1f // m: lo que sube el jinete (player.draw_lift a caballo)
 
+static bool g_decor_census; // --censo-decorado
+static bool g_no_decor; // --sin-decorado: sin el decorado de OpenGameArt (para comparar antes y despues)
 static float g_drone; // --dron: la camara a tantos metros (pruebas y capturas de una ciudad entera)
 
 // La vista v: la camara va hacia sus medidas (snap: llega ya, al empezar).
@@ -561,6 +565,14 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     for (int r = 1; r < REGION_COUNT; r++)
         if (!strcmp(what, REG[r])) world_region_point(w, (Region)r, 0.62f * WORLD_RADIUS, &x, &z), lx = x * 1.1f, lz = z * 1.1f, ok = true;
     if (!strcmp(what, "estepa")) x = 260.0f, z = -180.0f, lx = 600.0f, lz = -400.0f, ok = true;
+    if (!strcmp(what, "puente") || !strcmp(what, "muelle")) { // el decorado del agua cerca de un pueblo (src/world/terrain.c)
+        float bx, bz, ux, uz;
+        if (terrain_find_water_decor(t, !strcmp(what, "muelle"), &bx, &bz, &ux, &uz)) {
+            bool pier = !strcmp(what, "muelle");
+            x = bx + (pier ? -ux * 9.0f : 0.0f) - uz * 11.0f, z = bz + (pier ? -uz * 9.0f : 0.0f) + ux * 11.0f; // de costado
+            lx = bx + (pier ? ux * 4.0f : 0.0f), lz = bz + (pier ? uz * 4.0f : 0.0f), ok = true;
+        }
+    }
     if (!strcmp(what, "canal") || !strcmp(what, "muro-canal")) { // muro-canal: en la orilla, mirando el muro de enfrente
         float x0, z0;
         world_edge_point(w, REGION_FOREST, 0.0f, &x0, &z0);
@@ -981,6 +993,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--diagnostico")) start_diag = true;
         else if (!strcmp(argv[i], "--tactil")) g_force_touch = true;
         else if (!strcmp(argv[i], "--sin-shader")) terrain_water_shader_off(); // el agua de antes (prueba del respaldo)
+        else if (!strcmp(argv[i], "--sin-decorado")) g_no_decor = true; // sin el decorado de OpenGameArt (src/sim/decor.h)
+        else if (!strcmp(argv[i], "--censo-decorado")) g_decor_census = true; // cuantos de cada modelo en el mundo entero, y sale
         else if (!strcmp(argv[i], "--selector") && i + 1 < argc) start_picker = atoi(argv[++i]) - 1; // prueba: el selector de una casilla
         else if (!strcmp(argv[i], "--rumbo") && i + 1 < argc) start_heading = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--camara") && i + 1 < argc) start_pitch = (float)atof(argv[++i]);
@@ -1063,6 +1077,17 @@ int main(int argc, char **argv) {
 
     Terrain terrain;
     terrain_init(&terrain, start_seed);
+    if (g_decor_census) { // el decorado natural en todo el mundo (src/sim/decor.h), sin abrir la ventana del juego
+        int per_kind[DECOR_KINDS], why[DECOR_CLASSES][5];
+        terrain_decor_census(&terrain, per_kind, why);
+        static const char *CLS[3] = { "crestas", "grandes", "medianos" };
+        for (int c = 0; c < 3; c++)
+            printf("Censo %s: %d van; descartadas por la zona %d, ceden %d, sin suelo %d, pisan un arbol %d\n", CLS[c], why[c][4], why[c][0], why[c][1],
+                   why[c][2], why[c][3]);
+        for (int k = 0; k < DECOR_KINDS; k++)
+            if (decor_norm((DecorKind)k)->cls <= DECOR_CLASS_MEDIUM) printf("  %-58s %d\n", decor_norm((DecorKind)k)->id, per_kind[k]);
+        return 0;
+    }
     if (map_path) { // el mapa general del mundo (con la nieve de verano) y nada mas
         bool ok = worldmap_export(terrain.world, map_path, map_size > 64 ? map_size : 1024, terrain.plain + 40.0f);
         printf("%s %s\n", ok ? "Mapa escrito:" : "No se pudo escribir", map_path);
@@ -1738,6 +1763,7 @@ int main(int argc, char **argv) {
         BeginMode3D(cam);
         terrain_draw(&terrain);
         terrain_draw_trees(&terrain, cam); // el pino, el sauce y el arce de voxeles (src/world/trees.h)
+        if (!gallery_mode && !g_no_decor) decor_draw(&terrain, &g_props, &g_inventory, cam); // el decorado de OpenGameArt (src/sim/decor.h)
         camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used && !g_actions.camps[0].moved,
                   g_dz.tree_burn); // migrado, su fogata queda apagada
         if (!gallery_mode) { // el pasto, la stipa, las flores, los helechos y los juncos cercanos
@@ -1935,6 +1961,11 @@ int main(int argc, char **argv) {
             int lods[3];
             int trees = trees_drawn(lods);
             printf("Arboles: %d dibujados (%d de cerca, %d a media distancia, %d de lejos)\n", trees, lods[0], lods[1], lods[2]);
+            int dc[DECOR_CLASSES];
+            int decor = terrain_decor_count(&terrain, dc);
+            printf("Decorado: %d en los trozos cargados (%d crestas, %d grandes, %d medianos, %d al pie de los arboles, %d hechos por el hombre)%s\n",
+                   decor, dc[DECOR_CLASS_RIDGE], dc[DECOR_CLASS_BIG], dc[DECOR_CLASS_MEDIUM], dc[DECOR_CLASS_FOOT], dc[DECOR_CLASS_HUMAN],
+                   g_no_decor ? ", sin dibujar (--sin-decorado)" : "");
             break;
         }
     }

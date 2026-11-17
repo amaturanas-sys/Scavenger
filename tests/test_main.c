@@ -41,6 +41,7 @@
 #include "../src/sim/swarms.h"
 #include "../src/sim/fire.h"
 #include "../src/sim/flora.h"
+#include "../src/sim/decor.h"
 #include "../src/sim/forge.h"
 #include "../src/sim/city.h"
 #include "../src/sim/army.h"
@@ -5023,6 +5024,84 @@ static int flora_count(const World *w, float x, float z, int n, int count[FLORA_
     return total;
 }
 
+// El decorado de OpenGameArt (src/sim/decor.h): cada norma con su modelo importado y sus medidas; lo natural
+// sale solo en su region y con su agua; lo chico, al pie de los arboles del bosque; lo hecho por el hombre, en el
+// anillo de su lugar y siempre igual para la misma semilla.
+static void test_decor(void) {
+    Inventory inv;
+    char *text = read_file(ESTEPA_SOURCE_DIR "/assets/inventario.tsv");
+    CHECK(text != NULL);
+    if (!text) return;
+    inventory_parse(&inv, text);
+    for (int k = 0; k < DECOR_KINDS; k++) {
+        const DecorNorm *n = decor_norm((DecorKind)k);
+        const InvItem *it = inventory_find(&inv, n->id);
+        CHECK(it != NULL);
+        if (!it) continue;
+        CHECK(it->state == INV_IMPORTADO);
+        CHECK(fabsf(it->l - n->length) < 0.02f && fabsf(it->h - n->height) < 0.02f && fabsf(it->w - n->width) < 0.02f);
+        CHECK(decor_radius((DecorKind)k, 1.0f) > 0.0f && n->scale_min <= n->scale_max && n->slope_min <= n->slope_max);
+    }
+    inventory_free(&inv);
+    free(text);
+    // Lo natural: solo su clase, con su agua, y casi siempre nada (la suma de las chances, chica).
+    for (int g = 0; g < REGION_COUNT; g++) {
+        float k[REGION_COUNT] = { 0 };
+        k[g] = 1.0f;
+        for (int c = DECOR_CLASS_RIDGE; c <= DECOR_CLASS_MEDIUM; c++)
+            for (int wet = 0; wet < 2; wet++) {
+                int any = 0;
+                for (int i = 0; i < 1000; i++) {
+                    int kind = decor_pick((DecorClass)c, k, wet, (float)i / 1000.0f);
+                    if (kind == DECOR_NONE) continue;
+                    any++;
+                    const DecorNorm *n = decor_norm((DecorKind)kind);
+                    CHECK(n->cls == (DecorClass)c && n->wet == (bool)wet && n->chance[g] > 0.0f);
+                }
+                CHECK(any < (c == DECOR_CLASS_RIDGE ? 750 : 350)); // una casilla de cada tres, como mucho (las crestas, de 96 m, mas)
+            }
+    }
+    float steppe[REGION_COUNT] = { 1, 0, 0, 0, 0 }, desert[REGION_COUNT] = { 0, 0, 0, 0, 1 }, high[REGION_COUNT] = { 0, 0, 1, 0, 0 };
+    bool sand_in_steppe_big = false, ridge = false;
+    for (int i = 0; i < 1000; i++) {
+        float r = (float)i / 1000.0f;
+        int a = decor_pick(DECOR_CLASS_RIDGE, steppe, false, r), b = decor_pick(DECOR_CLASS_RIDGE, desert, false, r);
+        CHECK(a == DECOR_NONE && b == DECOR_NONE); // las crestas, solo en el altiplano y los fiordos
+        ridge = ridge || decor_pick(DECOR_CLASS_RIDGE, high, false, r) != DECOR_NONE;
+        int c = decor_pick(DECOR_CLASS_MEDIUM, high, false, r);
+        CHECK(c != DECOR_ACACIA && c != DECOR_PENASCO_ARENISCA); // ni acacias ni arenisca en el altiplano
+        sand_in_steppe_big = sand_in_steppe_big || decor_pick(DECOR_CLASS_BIG, steppe, false, r) == DECOR_ARENISCA_PARTIDA;
+    }
+    CHECK(ridge && sand_in_steppe_big);
+    // Al pie de los arboles: solo bosque adentro, y solo hongos, ramas o raices.
+    for (int i = 0; i < 1000; i++) {
+        float r = (float)i / 1000.0f;
+        CHECK(decor_pick_foot(0.4f, r) == DECOR_NONE);
+        int f = decor_pick_foot(1.0f, r);
+        CHECK(f == DECOR_NONE || decor_norm((DecorKind)f)->cls == DECOR_CLASS_FOOT);
+        CHECK(r < 0.2f || f == DECOR_NONE);
+    }
+    // Lo hecho por el hombre: en el anillo de su lugar, siempre igual; las cercas de las afueras, a lo largo del
+    // anillo; alrededor de las ruinas, solo restos (ni cercas sanas ni bancos).
+    for (int p = 0; p < DECOR_PLACES; p++)
+        for (uint32_t seed = 1; seed < 40; seed++) {
+            DecorSpot a[DECOR_SPOTS_MAX], b[DECOR_SPOTS_MAX];
+            float r0, r1;
+            decor_ring((DecorPlace)p, 32.0f, &r0, &r1);
+            int n = decor_layout((DecorPlace)p, seed, 32.0f, a, DECOR_SPOTS_MAX), m = decor_layout((DecorPlace)p, seed, 32.0f, b, DECOR_SPOTS_MAX);
+            CHECK(n == m && n <= DECOR_SPOTS_MAX && (n > 0 || p == DECOR_PLACE_RUIN)); // una ruina puede quedar sin nada
+            for (int i = 0; i < n && i < m; i++)
+                CHECK(a[i].angle == b[i].angle && a[i].radius == b[i].radius && a[i].kind == b[i].kind && a[i].along == b[i].along);
+            for (int i = 0; i < n; i++) {
+                const DecorNorm *nm = decor_norm(a[i].kind);
+                CHECK(nm->cls == DECOR_CLASS_HUMAN && a[i].radius >= r0 - 0.01f && a[i].radius <= r1 + 0.01f);
+                bool fence = a[i].kind >= DECOR_CERCA_A && a[i].kind <= DECOR_CERCA_ALTA && a[i].kind != DECOR_CERCA_CAIDA;
+                if (p == DECOR_PLACE_VILLAGE && fence) CHECK(a[i].along);
+                if (p == DECOR_PLACE_RUIN) CHECK(a[i].kind != DECOR_BANCO && (!fence || a[i].kind == DECOR_CERCA_ROTA || a[i].kind == DECOR_CERCA_QUEBRADA));
+            }
+        }
+}
+
 static void test_flora(void) {
     // La densidad: mas pasto en la estepa que en el bosque; la stipa, en lo seco; el desierto, casi
     // nada lejos del agua y algo en los oasis; los juncos, solo en la orilla; los helechos, en el bosque.
@@ -6712,6 +6791,7 @@ int main(void) {
     RUN(test_cities);
     RUN(test_army);
     RUN(test_flora);
+    RUN(test_decor);
     RUN(test_ancient);
     RUN(test_buildkit);
     RUN(test_ancient_towns_in_world);

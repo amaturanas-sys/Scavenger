@@ -9,6 +9,7 @@
 
 #include "raylib.h"
 #include "sim/hazards.h"
+#include "sim/decor.h"
 #include "sim/world.h"
 
 #define CHUNK_SIZE 48.0f   // metros por lado
@@ -47,6 +48,14 @@ typedef struct {
     unsigned char kind;        // TreeKind (src/sim/flora.h)
 } ChunkTree;
 
+// El decorado de cada chunk: los modelos de OpenGameArt, sembrados con sus normas (src/sim/decor.h). Cada cosa
+// la guarda el chunk donde cae su centro (o la punta de tierra de un muelle).
+#define CHUNK_DECOR 64
+typedef struct {
+    float x, y, z, yaw, scale; // la base, el giro y la escala
+    unsigned char kind;        // DecorKind (src/sim/decor.h)
+} ChunkDecor;
+
 #define TERRAIN_WATER_MESHES 3 // el agua, el hielo y la espuma de cada chunk
 typedef struct {
     bool loaded;
@@ -55,6 +64,8 @@ typedef struct {
     int feat_count;
     ChunkTree trees[CHUNK_TREES];
     int tree_count;
+    ChunkDecor decor[CHUNK_DECOR];
+    int decor_count;
     Model model;
     float *tri;             // por triangulo: lo que hace falta para recolorear con la estacion
     Model water[TERRAIN_WATER_MESHES];
@@ -121,6 +132,13 @@ void terrain_draw_water(const Terrain *t, float time);
 void terrain_set_ripples(const Vector4 *bodies, int count);
 // ¿Hay una formacion de roca o hielo (cantos, basalto, farallones, tempanos, mesas...) a menos de margin m de (x, z)?
 // Solo en los chunks cargados (no tienen colision: para no dejar a nadie adentro de una).
+// Cuantas cosas del decorado hay en los trozos cargados, y cuantas de cada clase (DecorClass, src/sim/decor.h).
+int terrain_decor_count(const Terrain *t, int per_class[DECOR_CLASSES]);
+// El censo del decorado natural en todo el mundo: cuantos de cada DecorKind y, por clase, cuantas intenciones caen
+// por zona, ceden, no tienen suelo, pisan un arbol, o van (--censo-decorado).
+void terrain_decor_census(const Terrain *t, int per_kind[DECOR_KINDS], int why[DECOR_CLASSES][5]);
+// El primer puente (pier: muelle) del decorado, de pueblo en pueblo: su lugar y su direccion (--ir puente, muelle).
+bool terrain_find_water_decor(const Terrain *t, bool pier, float *x, float *z, float *dx, float *dz);
 bool terrain_near_feature(const Terrain *t, float x, float z, float margin);
 // Lo que cubre en el mundo a menos de reach m del borde: el tronco de un arbol, una roca de un metro o mas,
 // una mata alta o una formacion de voxeles (los mismos que se dibujan). true con el mas cercano: su centro

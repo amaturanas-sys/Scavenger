@@ -163,6 +163,45 @@ El norte es −Z y el este +X.
 
 *El ocaso al oeste y la luna creciente al este, de noche.*
 
+## El decorado de OpenGameArt
+
+Los 41 modelos del paquete *FREE Remastered Meadows* (EmacEArt, CC0), adaptados a la estética del juego con
+`tools/modelos/adaptar_oga.py`, se siembran en la capa 4, la dispersión. Las normas están en `src/sim/decor.c`:
+región, agua, pendiente, nieve, tamaño y cuánto se entierra cada uno. La siembra está en `src/world/terrain.c`:
+`seed_decor`, al armar cada trozo. Todo sale de la semilla y de la casilla, y cada trozo siembra lo suyo sin
+mirar si los vecinos están cargados.
+
+- **Lo natural, por casillas:**
+  - crestas de roca de 77 y 112 m, en casillas de 96 m: altiplano y fiordos;
+  - rocas, colinas y acantilados, en casillas de 24 m;
+  - rocas bajas, árboles y arbustos, en casillas de 12 m.
+
+  Cada casilla da una cosa o nada, con la chance de su modelo por región. Una casilla cede su lugar ante otra de
+  una clase mayor que la pisaría y que también puede ir ahí.
+- **El suelo bajo toda la huella:**
+  - nada en el agua; lo seco, a más de 2 m sobre el agua;
+  - los peñascos del pantano y el sauce muerto, solo junto al agua dulce, con un borde en el agua baja;
+  - ni en el lecho de un río ni donde llega el glaciar;
+  - la pendiente de su norma, y que no flote de un lado. Se entierra un poco.
+- **Lo que siempre respeta:**
+  - el campamento inicial (150 m) y el borde del mundo;
+  - el cañón del desierto y el frente del glaciar (sus formaciones de voxeles);
+  - el muro tras el canal;
+  - los pueblos con sus campos y sus afueras, las estructuras, los campamentos y las cuevas;
+  - los árboles: no pisa ninguno en el núcleo de su huella.
+- **Al pie de los árboles del bosque:** hongos, ramas caídas y raíces, cinco por trozo como mucho.
+- **Lo hecho por el hombre, solo donde tiene sentido (`decor_layout`):**
+  - en las afueras de los pueblos: tramos de cerca a lo largo del borde de los campos, un carro, un banco,
+    barriles y tablas;
+  - junto a los campamentos de las tribus: un corral, un carro y barriles;
+  - alrededor de las ruinas: restos (tablas, una cerca caída, barriles, a veces un carro o un cofre);
+  - un puente sobre el primer arroyo angosto que pasa a 60-160 m de cada pueblo, de orilla a orilla;
+  - un muelle en la orilla baja de un lago o del mar a menos de 400 m de un pueblo o campamento: la tarima en tierra
+    y dos tramos sobre el agua.
+
+El censo del mundo entero (`--censo-decorado`) dice cuántos hay de cada modelo y por qué se descarta cada candidato.
+Para mirarlo: `--ir puente`, `--ir muelle` y `--sin-decorado`, para comparar antes y después.
+
 ## Parámetros para afinar
 
 Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
