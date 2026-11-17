@@ -104,11 +104,12 @@ RECETAS = {
 }
 
 
-# Los que ya se giraron con --girar (2026-11-18): la tarima de los pilares del puente estaba parada como una pared,
+# Los que ya se giraron con --girar (2026-11-18), con el giro neto desde como entraron: los muelles (los pilares
+# del puente) tenían la plataforma parada como una pared (quedan con la plataforma abajo y los pilotes arriba),
 # y el cofre abierto, acostado de espaldas.
 GIRADOS = {
-    "estructura.puente.bridge_pier_04c": ("x", -90),
-    "estructura.puente.bridge_pier_end_04a": ("x", -90),
+    "estructura.puente.bridge_pier_04c": ("x", 90),
+    "estructura.puente.bridge_pier_end_04a": ("x", 90),
     "utileria.generico.props_container_chest_01b": ("x", 90),
 }
 
