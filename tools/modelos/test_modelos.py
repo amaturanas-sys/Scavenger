@@ -314,9 +314,45 @@ def test_refs_anigen_registro(tmp):
     assert pra.chequear(pra.cargar_registro()) == 0
 
 
+def colores_glb(data):
+    """El COLOR_0 (RGB) de un GLB facetado de lowres.py, un color por vértice."""
+    largo = struct.unpack_from("<I", data, 12)[0]
+    doc = json.loads(data[20:20 + largo])
+    acc = doc["accessors"][doc["meshes"][0]["primitives"][0]["attributes"]["COLOR_0"]]
+    vista = doc["bufferViews"][acc["bufferView"]]
+    return np.frombuffer(data[20 + largo + 8:], np.uint8, acc["count"] * 4, vista.get("byteOffset", 0)).reshape(-1, 4)[:, :3]
+
+
+def test_adaptar_oga(tmp):
+    """adaptar_oga: color por partes (la pieza chica, de hierro), luz horneada, la altura pedida con el origen
+    en el centro de la base, y repetirlo da lo mismo."""
+    import adaptar_oga
+    cuerpo = trimesh.creation.icosphere(subdivisions=1, radius=1.0)
+    aro = trimesh.creation.box(extents=(0.3, 0.3, 0.3))
+    aro.apply_translation((3.0, 0.5, 0.0))
+    pos = np.concatenate([cuerpo.vertices[cuerpo.faces], aro.vertices[aro.faces]]).reshape(-1, 3)
+    normales = np.concatenate([cuerpo.face_normals, aro.face_normals])
+    gris = np.full((len(pos), 3), 60)
+    data = lowres._glb_bytes(pos, np.repeat(normales, 3, axis=0), gris, "prueba")
+    salida, informe = adaptar_oga.adaptar(data, "madera_herrajes", alto=0.5)
+    assert informe["partes"] == 2, informe
+    nuevo, _ = adaptar_oga.leer_glb(salida)
+    lo, hi = nuevo.min(axis=0), nuevo.max(axis=0)
+    assert abs(hi[1] - lo[1] - 0.5) < 1e-5 and abs(lo[1]) < 1e-6, (lo, hi)
+    assert abs(lo[0] + hi[0]) < 1e-5 and abs(lo[2] + hi[2]) < 1e-5, (lo, hi)
+    col = colores_glb(salida).reshape(-1, 3, 3)[:, 0].astype(int)
+    n = len(cuerpo.faces)
+    madera, hierro = col[:n], col[n:]
+    assert (madera[:, 0] - madera[:, 2]).min() > 30, madera[:3]  # parda, no gris
+    assert np.abs(hierro[:, 0] - hierro[:, 2]).max() < 12 and hierro.max() < 90, hierro[:3]  # hierro
+    arriba, abajo = normales[n:, 1].argmax(), normales[n:, 1].argmin()
+    assert hierro[arriba].sum() > hierro[abajo].sum()  # la luz del sol, horneada
+    assert adaptar_oga.adaptar(salida, "madera_herrajes", alto=0.5)[0] == salida
+
+
 def main():
     tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave, test_refs_anigen,
-             test_refs_anigen_registro]
+             test_refs_anigen_registro, test_adaptar_oga]
     failed = 0
     tmp = tempfile.mkdtemp(prefix="modelos-")
     try:

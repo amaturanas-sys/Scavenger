@@ -607,7 +607,7 @@ static Vector3 g_lod_eye;
 static float g_lod_near = 1e9f; // sin voxs_set_lod, todo de cerca
 
 // Los modelos dibujados cerca del ojo en el cuadro anterior (voxs_set_lod empieza la lista de cada cuadro).
-#define NEAR_MAX 48
+#define NEAR_MAX 96 // (las casas de una capital, para la camara y las colisiones)
 static struct {
     const VoxOcc *occ;
     Vector3 base;          // el fondo de la rejilla en el mundo (donde se dibuja, menos el cimiento)

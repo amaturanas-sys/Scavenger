@@ -808,8 +808,10 @@ int cave_decor(const Cave *c, CaveDecor *out, int max) {
             float phase = unit(&s) * 2.0f * CAVE_PI, fx = r->x, fz = r->z;
             if (ru->flags & DF_FIRE) room_fire(c, rm, &fx, &fz);
             for (int i = 0; i < want && n < max; i++)
-                for (int tryn = 0; tryn < 24; tryn++) {
+                // Lo que la sala tiene que llevar (los lo primeros) prueba el doble y, si no cabe, cada vez mas chico.
+                for (int tryn = 0, tries = i < ru->lo ? 48 : 24; tryn < tries; tryn++) {
                     float size = ru->size_lo + unit(&s) * (ru->size_hi - ru->size_lo), f_lo = ru->f_lo, f_hi = ru->f_hi;
+                    if (tryn >= 24) size *= 1.0f - 0.015f * (float)(tryn - 23);
                     bool blocks = (ru->flags & DF_BLOCKS) != 0, ceiling = (ru->flags & DF_CEILING) != 0;
                     if (ru->kind == CDEC_ROCK) { // las rocas: las grandes, junto a la pared (tapan); las chicas, sueltas
                         blocks = size > 0.8f;
@@ -823,7 +825,7 @@ int cave_decor(const Cave *c, CaveDecor *out, int max) {
                             a = atan2f(r->x - fx, r->z - fz) + ((float)i - (float)(want - 1) * 0.5f) * fminf(0.95f, 3.8f / (float)(want > 1 ? want - 1 : 1)) + jit;
                         else a = phase + (float)i * 2.0f * CAVE_PI / (float)want + jit;
                         if (tryn >= 12) a = unit(&s) * 2.0f * CAVE_PI; // si no cabe en su lugar, en cualquier otro alrededor
-                        d = f_lo + unit(&s) * (f_hi - f_lo) + 0.08f * (float)tryn; // y un poco mas alla
+                        d = f_lo + unit(&s) * (f_hi - f_lo) + 0.08f * fminf((float)tryn, 23.0f); // y un poco mas alla (hasta 1,8 m)
                         x = fx + sinf(a) * d, z = fz + cosf(a) * d, yaw = a;
                     } else if (ru->flags & DF_WALL) { // contra la pared: el pie, del lado de la sala
                         a = (ru->flags & DF_ROUND) ? phase + (float)i * 2.0f * CAVE_PI / (float)want + jit * 2.0f : unit(&s) * 2.0f * CAVE_PI;

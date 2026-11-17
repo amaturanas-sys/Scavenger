@@ -163,6 +163,77 @@ El norte es −Z y el este +X.
 
 *El ocaso al oeste y la luna creciente al este, de noche.*
 
+## El decorado de OpenGameArt
+
+Los 41 modelos del paquete *FREE Remastered Meadows* (EmacEArt, CC0), adaptados a la estética del juego con
+`tools/modelos/adaptar_oga.py`, se siembran en la capa 4, la dispersión. Las normas están en `src/sim/decor.c`:
+región, agua, pendiente, nieve, tamaño y cuánto se entierra cada uno. La siembra está en `src/world/terrain.c`:
+`seed_decor`, al armar cada trozo. Todo sale de la semilla y de la casilla, y cada trozo siembra lo suyo sin
+mirar si los vecinos están cargados.
+
+- **Lo natural, por casillas:**
+  - crestas de roca de 77 y 112 m, en casillas de 96 m: altiplano y fiordos;
+  - rocas, colinas y acantilados, en casillas de 24 m;
+  - rocas bajas, árboles y arbustos, en casillas de 12 m.
+
+  Cada casilla da una cosa o nada, con la chance de su modelo por región. Una casilla cede su lugar ante otra de
+  una clase mayor que la pisaría y que también puede ir ahí.
+- **El suelo bajo toda la huella:**
+  - nada en el agua; lo seco, a más de 2 m sobre el agua;
+  - los peñascos del pantano y el sauce muerto, solo junto al agua dulce, con un borde en el agua baja;
+  - ni en el lecho de un río ni donde llega el glaciar;
+  - la pendiente de su norma, y que no flote de un lado. Se entierra un poco.
+- **Lo que siempre respeta:**
+  - el campamento inicial (150 m) y el borde del mundo;
+  - el cañón del desierto y el frente del glaciar (sus formaciones de voxeles);
+  - el muro tras el canal;
+  - los pueblos con sus campos y sus afueras, las estructuras, los campamentos y las cuevas;
+  - los árboles: no pisa ninguno en el núcleo de su huella.
+- **Al pie de los árboles del bosque:** hongos, ramas caídas y raíces, cinco por trozo como mucho.
+- **Lo hecho por el hombre, solo donde tiene sentido (`decor_layout`):**
+  - en las afueras de los pueblos: tramos de cerca a lo largo del borde de los campos, un carro, un banco,
+    barriles y tablas;
+  - junto a los campamentos de las tribus: un corral, un carro y barriles;
+  - alrededor de las ruinas: restos (tablas, una cerca caída, barriles, a veces un carro o un cofre);
+  - un puente sobre un arroyo (`decor_bridge`, v0.15.0):
+    - el cruce más corto a menos de 220 m de cada pueblo, fuera de sus campos y de los demás lugares;
+    - de orilla alta a orilla alta: las dos orillas suben a 1,2 m o más sobre el agua, y el puente se apoya en el
+      hombro de cada una, donde el suelo deja de subir;
+    - las dos puntas, en tierra, y de cada una se sale a una orilla pareja;
+    - el tablero, en arco, de 1,8 a 8 m sobre el agua en el medio;
+    - el modelo se escala hasta 1,2 y se estira a lo largo hasta 2,2 para cubrir la luz;
+    - árboles, rocas, formaciones y el resto del decorado lo esquivan (`near_bridge`);
+  - un muelle en la orilla baja de un lago o del mar a menos de 400 m de un pueblo o campamento: la tarima en tierra
+    y dos tramos sobre el agua.
+
+El censo del mundo entero (`--censo-decorado`) dice cuántos hay de cada modelo y por qué se descarta cada candidato.
+Para mirarlo: `--ir puente`, `--ir muelle` y `--sin-decorado`, para comparar antes y después.
+
+## Las colisiones
+
+Lo más sencillo posible (v0.15.0): sin física, círculos y cápsulas en el suelo, y solo para el jugador (y su
+montura). Cada cuadro mira los nueve trozos de alrededor.
+
+- **Lo que está en el suelo lo empuja afuera** (`terrain_collide`, `src/world/terrain.c`):
+  - el tronco de los árboles;
+  - las rocas de 60 cm o más (cada trozo anota las suyas al armarse);
+  - el decorado que choca (`decor_collider`, `src/sim/decor.h`): un círculo para el tronco de los árboles, dos postes
+    para el portal y el marco, y una cápsula a lo largo para lo demás (rocas, colinas, cercas, carros, bancos,
+    barriles, cofres).
+
+  Lo que no pasa de las rodillas (45 cm) se pisa: los hongos, las ramas, las raíces, las tablas y la cerca caída.
+- **Las obras lo frenan** (`collide_player`, `src/main.c`): los edificios, las ruinas y las formaciones de vóxeles
+  dibujados cerca (su ocupación, `voxs_solid_at`) y las estructuras del campamento.
+  - Se miran a la altura de las rodillas y del pecho, un radio por delante.
+  - Si el paso choca, prueba girado a uno y otro lado (y más corto), así se desliza a lo largo de la pared o rodea
+    lo redondo; si nada pasa, se queda.
+  - Las yurtas del campamento se entran.
+- **Lo que se camina** (`terrain_ground`): el puente, los muelles y la tarima son suelo para quien viene a su altura
+  (hasta 60 cm por debajo). Sobre ellos no se nada, y por debajo se puede pasar a nado.
+
+En las capturas, la línea `Jugador: (x, y, z)` dice dónde terminó. Con `--caminar adelante` sirve para probar un
+choque.
+
 ## Parámetros para afinar
 
 Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.

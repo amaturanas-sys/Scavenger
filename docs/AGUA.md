@@ -56,6 +56,19 @@ mundo). Se calcula una vez por semilla, al generar el mundo: unos 110 a 150 ms e
    - El lago es un círculo de orilla irregular: crece hasta tapar la depresión.
    - Su nivel queda 40 cm debajo de lo más bajo de su orilla, porque la grilla es gruesa y un bajo entre dos
      celdas no tiene que desbordarlo. El río de salida corta hasta el desborde.
+   - **La cuenca contiene su agua** (v0.15.0, `world_height`):
+     - el fondo baja bajo el nivel;
+     - la orilla sube de ahí a una cresta 50 cm sobre el agua;
+     - la cresta sigue 4 m más allá de donde llega su agua (`LAKE_CREST_M`) y después baja al terreno.
+
+     Donde el terreno de afuera queda más bajo que el agua, se levanta. Así el agua no se sale de la cuenca, no
+     cuelga sobre el suelo de afuera ni deja huecos en el borde.
+   - **Ríos más bajos que el lago:** un río que pasa por la orilla con su agua más baja que la del lago no corta la
+     cresta, y su cauce baja de ella en 10 m. El que sale al nivel del lago sí la corta.
+   - **El fondo:** lleva el lecho de los ríos (la grava; en el desierto, arena), con `world_lake_bed`.
+   - **La forma vieja, para poner los lugares:** mientras `world_generate` pone pueblos, tribus, sitios y cuevas,
+     usa la orilla de la v0.14 (`World.shore_v14`). La cresta solo sube el suelo: todo cae donde caía y sigue en
+     seco, y las partidas de antes no cambian.
 5. **Los ríos.** Nacen donde se juntan al menos 450 celdas de lluvia.
    - El orden: primero el de más agua. Aguas arriba se sigue el brazo con más agua; los otros brazos son
      afluentes que terminan en el punto exacto de su río.
