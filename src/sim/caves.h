@@ -44,7 +44,7 @@
 #define CAVE_VEST_Z 2.6f        // m: el centro del vestibulo, tras la boca
 #define CAVE_VEST_R 3.0f        // m: su radio (de su borde salen la bajada y las dos salidas, sin pisarse)
 #define CAVE_VEST_HEIGHT 3.6f   // m: su techo
-#define CAVE_DECOR_MAX 96       // el decorado de una cueva (cave_decor)
+#define CAVE_DECOR_MAX 256      // el decorado de una cueva (cave_decor)
 
 typedef enum { CAVE_ANIMAL, CAVE_ABANDONED, CAVE_BANDITS, CAVE_TRIBE, CAVE_EMPIRE, CAVE_KINDS } CaveKind;
 
@@ -74,9 +74,37 @@ typedef enum {
 
 typedef enum { PRISONER_SHEPHERD, PRISONER_HUNTER, PRISONER_SMITH, PRISONER_OUTLAW, PRISONER_KINDS } PrisonerKind;
 
-// El decorado: la roca misma (rocas, y lo que agreguen las tareas de docs/PLAN_CUEVAS_GRANDES.md). No se toma ni se
-// guarda: sale de la cueva cada vez que se carga (cave_decor). Los tipos crecen al final.
-typedef enum { CDEC_ROCK, CDEC_KINDS } CaveDecorKind;
+// El decorado: la roca misma y lo de quien vive (o vivio) alli, segun el tipo de la cueva (el plan de cada tipo, en
+// src/sim/caves.c y docs/PLAN_CUEVAS_GRANDES.md). No se toma ni se guarda: sale de la cueva cada vez que se carga
+// (cave_decor). Los tipos crecen al final.
+typedef enum {
+    CDEC_ROCK,        // un canto caido
+    CDEC_STALACTITES, // un racimo de estalactitas colgado de la boveda (x, z: debajo, en el suelo)
+    CDEC_STALAGMITES, // un racimo de estalagmitas sobre su colada
+    CDEC_PILLAR,      // una columna natural, del suelo a la boveda (size: el ancho)
+    CDEC_POOL,        // una poza de agua quieta (size: el ancho; en la Cisterna de las de fieras, el lago)
+    CDEC_BONES,       // huesos y craneos sueltos (la guarida)
+    CDEC_MOSS,        // musgo (en las de fieras, hongos que brillan)
+    CDEC_RUBBLE,      // un derrumbe: bloques y piedras caidos (size: el ancho)
+    CDEC_SHAFT,       // la luz de un agujero de la boveda (de dia, clara; de noche, la luna)
+    CDEC_CRATES,      // cajas y toneles apilados
+    CDEC_SACKS,       // sacos de grano
+    CDEC_BEDROLL,     // un jergon de paja o de fieltro (size: el largo)
+    CDEC_RUG,         // una alfombra de fieltro o una piel en el suelo (size: el largo)
+    CDEC_RACK,        // un bastidor con pieles al aire
+    CDEC_LAMP,        // una lampara de barro encendida sobre una piedra
+    CDEC_POTS,        // vasijas de barro (size: el ancho del grupo)
+    CDEC_BRAZIER,     // un brasero de bronce encendido, en su tripode
+    CDEC_STELE,       // una estela del imperio sobre su tortuga
+    CDEC_PILASTER,    // una pilastra en una esquina de la pared labrada (x, z: a su pie, del lado de la sala; yaw: el angulo)
+    // De las referencias de Perchance (docs/PLAN_CUEVAS_GRANDES.md, sección 1b):
+    CDEC_RUIN_COLUMN, // una columna labrada en pie, rota y con musgo, con un tambor caido al lado (size: el alto)
+    CDEC_TIMBER,      // un marco de madera contra la pared: dos postes y el dintel (size: el alto; yaw: el angulo)
+    CDEC_WALL_TORCH,  // una antorcha encendida en su soporte, en la pared (yaw: el angulo)
+    CDEC_TAPESTRY,    // un tapiz de fieltro colgado de la pared (size: el alto; yaw: el angulo)
+    CDEC_POST,        // un poste tallado con franjas pintadas, del suelo a la boveda (size: el ancho)
+    CDEC_KINDS
+} CaveDecorKind;
 
 typedef struct {
     uint8_t kind;    // CaveDecorKind
@@ -140,13 +168,23 @@ void cave_from_world(const Cave *c, float wx, float wz, float *lx, float *lz);
 // El techo sobre un punto del suelo (where y floor_y, de cave_floor): la clave de la boveda (en un pasillo, su techo).
 float cave_ceiling(const Cave *c, int where, float floor_y);
 // La pared de una sala (room; CAVE_VESTIBULE: el vestibulo) en el angulo a (atan2 de x y z desde su centro): siempre mas
-// alla de donde se camina, despareja.
+// alla de donde se camina. Segun el tipo: en las de fieras, la roca del karst, con entrantes; en la de una tribu, lisa y
+// redondeada; en las del imperio, labrada (un poligono de lados rectos, cave_room_sides).
 float cave_wall_radius(const Cave *c, int room, float a);
+// Los lados de una sala labrada (las del imperio: el vestibulo 6, la Cisterna 12, las recamaras 8); 0 si es natural. Las
+// esquinas caen en los angulos (k + 1/2) * 2 pi / lados, y el medio de cada lado en k * 2 pi / lados.
+int cave_room_sides(const Cave *c, int room);
+// Si el decorado de esa clase cuelga de la boveda (el racimo de estalactitas, la luz del agujero).
+bool cave_decor_on_ceiling(int kind);
+// Si va contra la pared (pilastras, marcos, antorchas, tapices): x, z a su pie, del lado de la sala; yaw, el angulo de la
+// pared desde el centro de la sala. No tapa el paso.
+bool cave_decor_on_wall(int kind);
 // Si en el angulo a de la pared de una sala (o del vestibulo) hay una puerta: un pasillo del otro lado.
 bool cave_door_at(const Cave *c, int room, float a);
 // El perfil de una sala, de abajo arriba (j de 0 a CAVE_PROFILE_PTS - 1): la fraccion del radio de su pared y la altura
 // sobre su suelo. La pared recta hasta el techo de los pasillos (las puertas) y hasta CAVE_WALL_HEIGHT; despues, la
-// boveda hasta la clave (cave_ceiling). Lo que se dibuja y lo que se choca salen de aqui.
+// boveda hasta la clave (cave_ceiling). En las labradas, la boveda nace tras una cornisa (la imposta) y es una cupula.
+// Lo que se dibuja y lo que se choca salen de aqui.
 void cave_room_profile(const Cave *c, int room, int j, float *frac, float *height);
 // La roca de verdad sobre (x, z) (where y floor_y, de cave_floor): en una sala, la boveda tal como es (mas baja junto
 // a la pared que en el centro); en un pasillo, su techo. La camara no pasa de aqui.
@@ -156,9 +194,10 @@ float cave_rock_above(const Cave *c, float x, float z, int where, float floor_y)
 void cave_object_at(const Cave *c, int obj, float *x, float *y, float *z, float *yaw);
 bool cave_object_on_wall(int kind);
 
-// El decorado de la cueva (determinista, desde su lugar en el mundo): out tiene lugar para max. Cada cosa en el suelo
-// de su sala, lejos de las puertas y de los objetos; lo que tapa el paso, solo junto a la pared (del centro de cada sala
-// se llega a todas sus puertas). Devuelve cuantas.
+// El decorado de la cueva (determinista, desde su lugar en el mundo), segun el plan de su tipo: out tiene lugar para
+// max. Cada cosa en el suelo de su sala (lo que cuelga, sobre su lugar del suelo), lejos de las puertas y de los
+// objetos; lo que tapa el paso, solo junto a la pared (del centro de cada sala se llega a todas sus puertas). Devuelve
+// cuantas.
 int cave_decor(const Cave *c, CaveDecor *out, int max);
 // Si (x, z) da contra algo del decorado que tapa el paso.
 bool cave_decor_blocked(const CaveDecor *d, int n, float x, float z);

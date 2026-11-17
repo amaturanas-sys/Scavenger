@@ -3,7 +3,7 @@
 > Generado por `tools/assets/animaciones.py doc` a partir de [`assets/animaciones.tsv`](../assets/animaciones.tsv)
 > y del [inventario](INVENTARIO.md). No editar a mano.
 
-**110 clips** en 4 tipos de esqueleto · **105 modelos animados**.
+**110 clips** en 4 tipos de esqueleto · **106 modelos animados**.
 
 ## Cómo se nombran y se usan
 
@@ -211,6 +211,7 @@
 | `animal.ganado.vaca` (Vaca) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
 | `animal.ganado.perro_pastor` (Perro pastor (mastín)) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
 | `animal.salvaje.lobo` (Lobo) | cuadrupedo | 11 | 3 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, aullar, echarse, comer_presa, recibir_golpe, morir |
+| `animal.salvaje.lobo_2` (Lobo (variante 2)) | cuadrupedo | 11 | 3 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, aullar, echarse, comer_presa, recibir_golpe, morir |
 | `animal.salvaje.tigre` (Tigre) | cuadrupedo | 11 | 2 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, echarse, comer_presa, recibir_golpe, morir |
 | `animal.salvaje.oso` (Oso pardo) | cuadrupedo | 11 | 2 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, echarse, comer_presa, recibir_golpe, morir |
 | `animal.salvaje.oso_polar` (Oso polar) | cuadrupedo | 11 | 2 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, echarse, comer_presa, recibir_golpe, morir |

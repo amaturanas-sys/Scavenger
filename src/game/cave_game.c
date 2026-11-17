@@ -93,7 +93,7 @@ static bool object_blocks(const GameActions *ga, const Cave *c, float x, float z
         case COBJ_STALAGMITE: r = 0.3f * o->size; break;
         case COBJ_CELL: r = 0.85f; break;
         case COBJ_CHEST: r = 0.5f; break;
-        case COBJ_FIRE: r = 0.6f; break;
+        case COBJ_FIRE: r = c->kind == CAVE_TRIBE ? 1.25f : 0.6f; break; // el de la tribu, con su anillo de piedras
         case COBJ_AMPHORA: r = is_done(ga, g_cave, i) ? 0.0f : 0.3f; break;
         case COBJ_ARMS: r = 0.45f; break;
         default: break;
@@ -347,8 +347,8 @@ static bool enter(GameActions *ga, Player *p, const Terrain *t, int idx, float *
     }
     cp_preload(c);
     CsStats st = cs_stats();
-    TraceLog(LOG_INFO, "CUEVA %d: %d trozos de roca (%d vertices, %d triangulos), %d del decorado, %d modelos de voxeles (%d triangulos), %.0f ms", idx,
-             st.chunks, st.vertices, st.triangles, st.decor, st.models, st.model_tris, (double)st.load_ms);
+    TraceLog(LOG_INFO, "CUEVA %d: %d trozos de roca (%d vertices, %d triangulos), %d del decorado, %d modelos de voxeles (%d triangulos, el mayor %d), %.0f ms",
+             idx, st.chunks, st.vertices, st.triangles, st.decor, st.models, st.model_tris, st.model_max, (double)st.load_ms);
     g_cave = idx;
     g_in = *p;
     float x = 0.0f, z = 0.0f, yaw = 0.0f, y = 0.0f;
@@ -634,7 +634,16 @@ bool cv_test_enter(GameActions *ga, Player *p, const Terrain *t, const char *spe
         { "estalactita", COBJ_STALACTITE }, { "estalagmita", COBJ_STALAGMITE }, { "huesos", COBJ_BONES },
     };
     // Ante algo del decorado (src/sim/caves.h, cave_decor): las tareas de docs/PLAN_CUEVAS_GRANDES.md agregan aqui el suyo.
-    static const struct { const char *name; CaveDecorKind kind; } DECOR_SPOTS[] = { { "roca", CDEC_ROCK } };
+    static const struct { const char *name; CaveDecorKind kind; } DECOR_SPOTS[] = {
+        { "roca", CDEC_ROCK },          { "racimo", CDEC_STALACTITES }, { "estalagmitas", CDEC_STALAGMITES }, { "columna_natural", CDEC_PILLAR },
+        { "poza", CDEC_POOL },          { "osamenta", CDEC_BONES },     { "musgo", CDEC_MOSS },               { "derrumbe", CDEC_RUBBLE },
+        { "claraboya", CDEC_SHAFT },    { "cajas", CDEC_CRATES },       { "sacos", CDEC_SACKS },              { "jergon", CDEC_BEDROLL },
+        { "alfombra", CDEC_RUG },       { "bastidor", CDEC_RACK },      { "lampara", CDEC_LAMP },             { "vasijas", CDEC_POTS },
+        { "brasero", CDEC_BRAZIER },    { "estela", CDEC_STELE },       { "pilastra", CDEC_PILASTER },
+        { "pilar", CDEC_PILLAR },       { "lago", CDEC_POOL },          { "escombro", CDEC_RUBBLE }, // los nombres del plan
+        { "columna_rota", CDEC_RUIN_COLUMN }, { "marco", CDEC_TIMBER }, { "antorcha_pared", CDEC_WALL_TORCH }, { "tapiz", CDEC_TAPESTRY },
+        { "poste", CDEC_POST },
+    };
     char kind[24];
     snprintf(kind, sizeof(kind), "%s", spec);
     char *colon = strchr(kind, ':');

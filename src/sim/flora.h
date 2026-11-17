@@ -30,8 +30,8 @@ typedef enum {
 } FloraKind;
 
 #define FLORA_CELL 2.0f    // m: las celdas del suelo (src/world/terrain.h: CHUNK_SIZE / CHUNK_CELLS)
-#define FLORA_PER_CELL 12  // matas como mucho por celda (tres por m2)
-#define FLORA_CANDIDATE_M2 (FLORA_CELL * FLORA_CELL / (float)FLORA_PER_CELL) // lo que ocupa cada candidato: un tercio de m2
+#define FLORA_PER_CELL 16  // matas como mucho por celda (cuatro por m2)
+#define FLORA_CANDIDATE_M2 (FLORA_CELL * FLORA_CELL / (float)FLORA_PER_CELL) // lo que ocupa cada candidato: un cuarto de m2
 #define FLORA_CAMP_R 18.0f // el campamento inicial, en el origen: el pasto pisoteado
 #define FLORA_TRAMPLE_R 1.1f
 

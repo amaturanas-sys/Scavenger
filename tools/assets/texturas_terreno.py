@@ -155,12 +155,25 @@ def sand():
 
 
 def strata():
+    # Las capas de los muros del desierto (las fotos de los badlands pintados): vetas de distinto grosor y tono que
+    # ondulan un poco, una linea oscura entre veta y veta, y las carcavas que bajan (rayas oscuras de arriba abajo).
+    # En el juego va de pie (v sigue la altura) y cada franja de 8 m lleva el color de su estrato: esto es el detalle.
     n = wrap_noise(6, 4)
+    r = wrap_noise(16, 4)
+    widths = [3, 5, 2, 4, 6, 3, 4, 5]  # suman 32: se repite sin costura
+    tones = [1.08, 0.92, 1.16, 0.86, 1.02, 0.95, 1.12, 0.9]
+    tops = [sum(widths[:i]) for i in range(len(widths))]
 
     def f(x, y, rnd):
-        band = math.sin((y + 3 * n(x, y)) * 2 * math.pi / 6.4)
-        v = 170 + 45 * band + rnd.uniform(-10, 10)
-        return gray(v, (1.05, 0.95, 0.88))
+        yy = (y + 2.5 * (n(x, y) - 0.5)) % CELL
+        band = max(i for i in range(len(tops)) if tops[i] <= yy)
+        v = 180 * tones[band] + rnd.uniform(-6, 6)
+        if yy - tops[band] < 0.8:
+            v *= 0.84  # la junta entre dos vetas
+        rill = abs(math.sin((x + 1.5 * r(x, y)) * 2 * math.pi / 16.0))
+        if rill < 0.1:
+            v *= 0.9  # una carcava, de arriba abajo
+        return gray(v, (1.04, 0.97, 0.9))
 
     return f
 
@@ -261,15 +274,18 @@ def cobbles():
 
 
 def ice_serac():
-    # El frente del glaciar: columnas de hielo con grietas verticales azules.
+    # El frente del glaciar (las fotos): columnas de hielo de distinto ancho, con su lado en sombra, grietas de azul
+    # hondo que bajan y las capas del hielo apenas marcadas (dos por celda). En el juego va de pie.
     n = wrap_noise(14, 4)
 
     def f(x, y, rnd):
-        col = math.sin((x + 3.0 * n(x, y)) * 2 * math.pi / 6.4)
-        v = 214 + 30 * col + rnd.uniform(-6, 6)
-        if col < -0.75:
-            v = 140  # grieta
-        return gray(v, (0.86, 0.97, 1.12))
+        col = math.sin((x + 3.0 * n(x, y)) * 2 * math.pi / (32 / 3))
+        if col < -0.82:
+            return (108, 164, 214)  # la grieta: azul hondo
+        v = 212 + 28 * col + rnd.uniform(-4, 4)
+        if y % 16 == 5:
+            v -= 12  # una capa del hielo
+        return gray(v, (0.9, 0.98, 1.08))
 
     return f
 

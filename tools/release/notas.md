@@ -1,16 +1,28 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: el paisaje
+## Novedades: la estepa más tupida y más ruinas
 
-- **Los árboles, de voxeles:** los pinos del paisaje y del campamento son el pino de voxeles. Junto a los lagos y los ríos crecen sauces llorones, sobre todo en el bosque y la costa, y en el bosque hay arces, menos que pinos. En otoño el arce se pone rojo y naranja y el sauce amarillo; al caer la hoja quedan pelados; en invierno, los pinos nevados.
-- **Más hierbas en la estepa y más pasto en el bosque:** entre el pasto y la stipa de la estepa, el ajenjo, el tomillo y la salvia, con sus espigas moradas.
-- **Sin cajas junto a los campamentos:** la hierba alta del escondite, las hierbas curativas y el arbusto se mecen con el viento; las rocas, el pedernal, las piedras, el barro, la leña, el caldero, el odre y el arrecife de coral tienen modelo.
-- **Los carros, a la escala de la gente:** el carro de la yunta, con ruedas de 1,3 m y el piso de la caja a la altura de la cintura; la carreta de mercancías, con ruedas de 1 m.
-- **La carreta-casa de las tribus, rehecha:** la casilla de fieltro sobre la plataforma, la plataforma sobre los ejes y las ruedas de rayos por fuera, sin tocarse; adelante, la lanza con el yugo.
+- **La estepa:** más pasto, stipa, hierbas y flores (casi un 40 % más), y el pasto se ve más lejos: hasta 48 m en el PC y 24 m en Android (eran 39 y 18). Los arbustos crecen en manchas, tupidas en unas zonas y ralas entre ellas, y en la llanura hay bosquecillos de pinos.
+- **Las ruinas:** en cada mundo hay 26 fortalezas derruidas, repartidas en todas las regiones (eran 14), y 6 ciudades enterradas en el desierto (eran 2).
 
-Sigue lo de la v0.14.0: la cámara cerca (`N` cambia la vista), `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate.
+## De la v0.14.6: lo lejano en Android
 
-Las partidas de antes cargan igual. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.14.1 y la v0.14.0).
+En muchos teléfonos Android (con GPU Mali o PowerVR), lo que estaba lejos del campamento se deformaba o no se veía: las personas, el decorado de las bocas de las cuevas, las llamas y el terreno; en la orilla del mundo, ni el jugador. Las cuentas de cada vértice iban con una precisión de 16 bits; ahora van con la completa, también las del agua.
+
+## De la v0.14.5: las bocas de las cuevas como sus referencias
+
+Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió lo que no se parecía:
+
+- **En todas:** la roca es un montículo de peñascos de distinto tono, con grietas oscuras entre uno y otro, liquen y pasto encima. Las antorchas arden con llamas como las de los fogones.
+- **La guarida de fieras:** cráneos con cuernos, huesos y piedras sueltas.
+- **La cueva abandonada:** el arco de dovelas de la fachada (con una caída), musgo y las losas rotas del frente.
+- **El refugio de forajidos:** estacadas de palos aguzados a los dos lados, cajas, un tonel y un camino de tierra.
+- **El refugio de una tribu:** la roca ocre, el sol rojo con sus rayos, la tela colgada en el arco, vasijas y un camino de piedras.
+- **El almacén del imperio:** un pórtico con su arco y un balcón con columnas y baranda, escalones, una plaza de losas y los estandartes en sus mástiles.
+
+Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
+
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar, y las ruinas nuevas aparecen para descubrir. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.14.7, la v0.14.6 y la v0.14.5).
 
 ## Android
 

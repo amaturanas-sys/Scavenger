@@ -149,7 +149,7 @@ typedef enum {
                        // del suelo; van al final del mundo, con su propio azar (lo de antes queda igual)
     SITE_KINDS
 } SiteKind;
-#define SITES_MAX 64
+#define SITES_MAX 128 // las partidas guardan las vistas en dos mascaras de 64 (seen_sites y seen_sites_hi)
 typedef struct {
     float x, z, yaw;
     Region region;

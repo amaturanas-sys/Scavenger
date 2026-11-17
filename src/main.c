@@ -13,6 +13,9 @@
 // palacio, fundicion, cuartel, carpinteria, granero, templo, carreta, muralla, torre, puerta, las
 // ruinas (fortaleza, enterrada) o las obras de la tribu (refugio, empalizada, muro, horno,
 // horno_fundicion, atalaya, corral, taller, tienda, escombros, cenizas); de cada region o de una.
+// --formaciones desierto|hielo|costa muestra las cuatro variantes de las formaciones de voxeles del paisaje
+// (src/world/voxstruct.c): farallones, hongos y arcos de arenisca y la creta; los bloques de hielo del glaciar y los
+// tempanos; los basaltos, los farallones del mar y los cantos rodados.
 // --dia y --minuto ponen el reloj (minutos desde el amanecer), p. ej. para ver la noche.
 // --pos lleva al jugador a otro lugar del mundo (p. ej. a la cordillera).
 // --trampa arranca en un peligro con su minijuego (prueba).
@@ -575,6 +578,23 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     if (!strcmp(what, "fogata")) x = 1.8f, z = 0.0f, lx = 1.8f, lz = 10.0f, ok = true; // la del campamento, de cerca
     if (!strcmp(what, "hoguera")) x = 6.5f, z = -2.0f, lx = 6.5f, lz = 10.0f, ok = true; // una hoguera junto a la fogata
     if (!strcmp(what, "hielo")) world_edge_point(w, REGION_HIGHLAND, 230.0f, &x, &z), lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    // Los muros enteros, de lejos (la silueta: macizos, cumbres, agujas y carcavas; src/sim/world.c): a 520 m del borde,
+    // donde lo que hay hasta el pie del muro tapa menos (en el altiplano, las crestas tapan casi todo).
+    if (!strcmp(what, "panorama-hielo") || !strcmp(what, "panorama-muro")) {
+        Region rg = what[9] == 'h' ? REGION_HIGHLAND : REGION_DESERT;
+        float x0, z0, best = 1e9f;
+        world_edge_point(w, rg, 0.0f, &x0, &z0);
+        for (float da = -0.3f; da <= 0.3f; da += 0.01f) {
+            float a = atan2f(z0, x0) + da, r = world_edge_radius(w, a), px = cosf(a) * (r - 520.0f), pz = sinf(a) * (r - 520.0f);
+            if (world_region(w, px, pz) != rg) continue;
+            float eye = world_height(w, px, pz) + 6.0f, block = -1e9f; // lo que sobresale de la linea hasta el pie del muro
+            for (float in = 500.0f; in > 150.0f; in -= 10.0f) {
+                float k = (520.0f - in) / 370.0f;
+                block = fmaxf(block, world_height(w, cosf(a) * (r - in), sinf(a) * (r - in)) - eye - k * 20.0f);
+            }
+            if (block < best) best = block, x = px, z = pz, lx = px * 1.2f, lz = pz * 1.2f, ok = true;
+        }
+    }
     if (!strcmp(what, "lengua")) { // lo mas bajo junto al muro de hielo, mirandolo: ahi se ve avanzar y retroceder el glaciar
         float best = 1e9f, x0, z0;
         world_edge_point(w, REGION_HIGHLAND, 0.0f, &x0, &z0);
@@ -838,6 +858,24 @@ static Vector3 kit_spot(const Terrain *t, int type, int row, int variant) {
     return (Vector3){ x, terrain_height(t, x, z), z };
 }
 
+// La vista de las formaciones del paisaje (--formaciones desierto|hielo|costa): las cuatro variantes de cada una, en
+// filas, como el kit de edificios.
+static const struct {
+    const char *arg;
+    int n;
+    VoxFeature kind[4];
+    const char *name[4];
+} FEAT_GROUPS[] = {
+    { "desierto", 4, { VF_MESA, VF_HOODOO, VF_ARCH, VF_CHALK }, { N_("los farallones de arenisca"), N_("los hongos de arenisca"), N_("los arcos de arenisca"), N_("la creta blanca") } },
+    { "hielo", 3, { VF_SERAC, VF_ICEBERG, VF_FLOE }, { N_("los bloques de hielo del glaciar"), N_("los témpanos de los lagos"), N_("los témpanos del mar") } },
+    { "costa", 3, { VF_BASALT, VF_SEA_STACK, VF_BOULDER }, { N_("los basaltos"), N_("los farallones del mar"), N_("los cantos rodados") } },
+};
+
+static Vector3 feat_spot(const Terrain *t, int row, int variant) {
+    float x = 34.0f + (float)variant * 26.0f, z = 30.0f + (float)row * 26.0f;
+    return (Vector3){ x, terrain_height(t, x, z), z };
+}
+
 int main(int argc, char **argv) {
     const char *shot_path = NULL;
     int shot_frames = 90;
@@ -845,6 +883,7 @@ int main(int argc, char **argv) {
     bool gallery_mode = false;
     const char *view_id = NULL; // --ver: el id a mirar de cerca
     int kit_type = -1, kit_region = -1; // --edificios: el tipo del kit y la region (-1: todas)
+    int feat_group = -1;                // --formaciones: el grupo (FEAT_GROUPS)
     int start_day = 1;
     float start_minute = 4.0f; // la partida empieza a media manana
     bool start_pos = false;
@@ -903,6 +942,12 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--edificios") && i + 1 < argc) {
             gallery_mode = true;
             kit_parse(argv[++i], &kit_type, &kit_region);
+        }
+        else if (!strcmp(argv[i], "--formaciones") && i + 1 < argc) {
+            gallery_mode = true, i++;
+            for (int k = 0; k < (int)(sizeof(FEAT_GROUPS) / sizeof(FEAT_GROUPS[0])); k++)
+                if (!strcmp(argv[i], FEAT_GROUPS[k].arg)) feat_group = k;
+            if (feat_group < 0) printf("--formaciones: desierto, hielo o costa\n");
         }
         else if (!strcmp(argv[i], "--dia") && i + 1 < argc) start_day = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--minuto") && i + 1 < argc) start_minute = (float)atof(argv[++i]);
@@ -1111,7 +1156,7 @@ int main(int argc, char **argv) {
         player.yaw = PI; // mirando a -Z, hacia las filas
         snprintf(log, sizeof(log), T("Galeria: %d objetos (%d con modelo)."), gallery.count, gallery.loaded);
         seen = view_id ? gallery_find(&gallery, view_id) : NULL;
-        if (kit_type >= 0) { // fuera de cuadro, y el suelo de verano
+        if (kit_type >= 0 || feat_group >= 0) { // fuera de cuadro, y el suelo de verano
             player.pos = (Vector3){ 10.0f, terrain_height(&terrain, 10.0f, 12.0f), 12.0f };
             Climate summer = climate_at(10.0f * GAME_SECONDS_PER_DAY + 400.0f, terrain.seed);
             apply_climate_look(&terrain, &summer);
@@ -1638,7 +1683,13 @@ int main(int argc, char **argv) {
                 float span = fmaxf(b.x - a.x, b.z - a.z) + fminf(12.0f, kit_spot(&terrain, kit_type, 0, 1).x - a.x); // las obras chicas, mas cerca
                 cam.target = c;
                 Vector3 dir = rows > 1 ? (Vector3){ 1.0f, 0.75f, 0.55f } : (Vector3){ 0.5f, 0.62f, 1.0f }; // una sola fila: de costado
-                cam.position = Vector3Add(c, Vector3Scale(Vector3Normalize(dir), span * (rows > 1 ? 0.95f : 0.8f)));
+                cam.position = Vector3Add(c, Vector3Scale(Vector3Normalize(dir), g_drone > 0.0f ? g_drone : span * (rows > 1 ? 0.95f : 0.8f))); // --dron: mas cerca
+            }
+            if (feat_group >= 0) { // --formaciones: las filas, de tres cuartos
+                Vector3 a = feat_spot(&terrain, 0, 0), b = feat_spot(&terrain, FEAT_GROUPS[feat_group].n - 1, VF_VARIANTS - 1);
+                Vector3 c = { (a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f + 4.0f, (a.z + b.z) * 0.5f };
+                cam.target = c;
+                cam.position = Vector3Add(c, Vector3Scale(Vector3Normalize((Vector3){ 1.0f, 0.42f, 0.5f }), fmaxf(b.x - a.x, b.z - a.z) * 0.72f + 10.0f));
             }
             if (seen) { // --ver: la camara de tres cuartos, desde el frente (+X), arriba y a la derecha
                 const InvItem *it = seen->item;
@@ -1672,7 +1723,7 @@ int main(int argc, char **argv) {
             ui_text(T("Flechas: girar e inclinar · F5 o Esc: volver"), 10, VIRTUAL_H - 18, 10, UI_BONE_DIM);
         } else if (in_game) {
         if (cv_inside()) { // adentro de una cueva: su roca, su oscuridad y su luz (src/game/cave_game.c)
-            ClearBackground(BLACK);
+            ClearBackground(cs_loaded() ? cs_fog() : BLACK); // detras de todo, la bruma de la cueva
             rlSetClipPlanes(0.05, 600.0);
             BeginMode3D(cam);
             cv_draw(&g_actions, &g_combat, &g_props, &terrain, world_time, (float)GetTime());
@@ -1699,7 +1750,15 @@ int main(int argc, char **argv) {
         } else {
             vegetation_look(cam, &climate, (float)GetTime()); // las matas del inventario en la galeria (props)
         }
-        if (gallery_mode && kit_type < 0) gallery_draw(&gallery);
+        if (gallery_mode && kit_type < 0 && feat_group < 0) gallery_draw(&gallery);
+        if (feat_group >= 0)
+            for (int row = 0; row < FEAT_GROUPS[feat_group].n; row++)
+                for (int v = 0; v < VF_VARIANTS; v++) {
+                    VoxFeature f = FEAT_GROUPS[feat_group].kind[row];
+                    Vector3 at = feat_spot(&terrain, row, v);
+                    if (f == VF_ICEBERG || f == VF_FLOE) at.y += 1.0f; // a flote (aca, sobre el suelo)
+                    voxs_draw_feature(f, v, at, 0.0f, 1.0f, WHITE);
+                }
         if (kit_type >= 0)
             for (int row = 0; row < (kit_region >= 0 ? 1 : REGION_COUNT); row++)
                 for (int v = 0; v < BK_VARIANTS; v++)
@@ -1773,6 +1832,15 @@ int main(int argc, char **argv) {
                 const char *name = bk_available((BkType)kit_type, rg) ? TextFormat("%s: %s", T(region_name(rg)), T(bk_name((BkType)kit_type, rg)))
                                                                     : TextFormat(T("%s: no tiene"), T(region_name(rg)));
                 ui_text(name, (int)sc.x, (int)sc.y, 10, UI_BONE);
+            }
+        } else if (feat_group >= 0) { // el nombre de cada fila
+            ui_strip((Rectangle){ 0, 0, (float)VIRTUAL_W, 30 }, UI_METAL_GOLD);
+            ui_text(T("Formaciones del paisaje · cuatro variantes de cada una"), 6, 7, 10, UI_GOLD_LIGHT);
+            for (int row = 0; row < FEAT_GROUPS[feat_group].n; row++) {
+                Vector3 p = feat_spot(&terrain, row, 0);
+                p.x -= 12.0f, p.y += 1.0f;
+                Vector2 sc = GetWorldToScreenEx(p, cam, VIRTUAL_W, VIRTUAL_H);
+                ui_text(T(FEAT_GROUPS[feat_group].name[row]), (int)sc.x, (int)sc.y, 10, UI_BONE);
             }
         } else if (gallery_mode) {
             gallery_draw_labels(&gallery, cam, player.pos, VIRTUAL_W, VIRTUAL_H);

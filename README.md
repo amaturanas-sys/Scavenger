@@ -264,6 +264,82 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+La estepa más tupida y más ruinas (v0.14.7):
+- **La estepa:** más pasto, stipa, hierbas y flores (unas 3,4 matas por m², eran 2,5); el pasto se ve hasta 48 m (24 m
+  en Android; eran 39 y 18), y a lo lejos van menos matas pero más anchas. Los arbustos crecen en manchas, tupidas en
+  unas y ralas entre ellas, y en la llanura hay bosquecillos de pinos.
+- **Las ruinas:** en cada mundo hay 26 fortalezas derruidas, en todas las regiones (eran 14), y 6 ciudades enterradas
+  en el desierto (eran 2). Van al final de la lista de sitios, con su propio azar: en las partidas viejas, lo que ya
+  estaba queda igual, y las nuevas aparecen para descubrir.
+
+Lo lejano en Android (v0.14.6): en muchos teléfonos (con GPU Mali o PowerVR), lo que estaba lejos del campamento se
+deformaba o no se veía: las personas, el decorado de las bocas de las cuevas, las llamas y el terreno; en la orilla del
+mundo, ni el jugador. El shader por defecto de raylib para OpenGL ES 2 hacía las cuentas de cada vértice en `mediump`,
+que en esos teléfonos es de 16 bits; ahora van en `highp` (lo cambia `CMakeLists.txt` al configurar), y también las del
+agua.
+
+Las bocas de las cuevas como sus referencias (v0.14.5), con otras 20 imágenes de Perchance del usuario (cuatro por tipo;
+el detalle, en [docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md#b1--la-boca-y-la-planta)):
+- **La roca:** un montículo de peñascos de distinto tono, con la grieta oscura entre uno y otro, liquen y pasto encima;
+  la de una tribu, de piedra ocre. Las antorchas, con las llamas de los fogones.
+- **La guarida de fieras:** cráneos con cuernos, huesos y piedras sueltas.
+- **La cueva abandonada:** el arco de dovelas de la fachada, con una caída, musgo y las losas rotas del frente.
+- **El refugio de forajidos:** estacadas de palos aguzados a los dos lados, cajas, un tonel y un camino de tierra.
+- **El refugio de una tribu:** el sol rojo con sus rayos, la tela colgada de una vara, vasijas y un camino de piedras.
+- **El almacén del imperio:** un pórtico con su arco y un balcón con columnas y baranda, la plataforma con escalones,
+  una plaza de losas y los estandartes en sus mástiles.
+
+Las cuevas como sus referencias (v0.14.4), con las 20 imágenes de Perchance del usuario (cuatro por tipo; lo que se
+tomó, en [docs/PLAN_CUEVAS_GRANDES.md](docs/PLAN_CUEVAS_GRANDES.md#lo-que-se-tomó-de-las-referencias-de-perchance)):
+- **En todas:** la roca en facetas, como el low poly de las imágenes, y el decorado con sombra en cada cara (antes, de un
+  solo color). En las cuevas frías, el fuego alumbra más blanco y la roca sigue de su color.
+- **La guarida de fieras:** el lago oscuro con el reflejo de la luz que baja, rayos fríos y enredaderas en el agujero,
+  y las columnas y los racimos de calcita azulada.
+- **La cueva abandonada:** rayos verdes de bordes suaves, columnas talladas en pie o rotas, con musgo y un tambor caído,
+  y musgo sobre los bloques del derrumbe.
+- **El refugio de forajidos:** marcos de madera contra la roca, antorchas de pared que la alumbran, jergones claros
+  sobre bastidores bajos y palotes y monigotes al carbón más grandes.
+- **El refugio de una tribu:** más luz y una bruma dorada, el friso grande de ciervos y cazadores con manos rojas, el
+  fogón con su anillo alto de piedras, tapices de fieltro y postes pintados del suelo a la bóveda.
+- **El almacén del imperio:** piedra gris en vez de parda, columnas sueltas y adosadas de sillares, braseros que
+  alumbran cerca y el óculo con su anillo de piedra.
+- **Con `--cueva tipo:lugar`**, también `columna_rota`, `marco`, `antorcha_pared`, `tapiz` y `poste`.
+
+Las cuevas por dentro, según quién vive en ellas (v0.14.3), con el plan de [docs/PLAN_CUEVAS_GRANDES.md](docs/PLAN_CUEVAS_GRANDES.md#1b-el-plan-de-cada-tipo-v0143-hecho):
+- **Cada tipo tiene su forma, su roca, su luz y su decorado**, armados con el orden de WorldClaw (el plan, la forma, lo
+  de cada sala y la revisión mirando capturas):
+  - **la guarida de fieras:** caliza gris azulada y mojada, con entrantes; en la Cisterna, un lago oscuro, columnas
+    naturales y racimos de estalactitas y estalagmitas; huesos y hongos que brillan en lo oscuro; una bruma azul;
+  - **la cueva abandonada:** roca con grietas y musgo y una niebla verde; la luz del día entra por un agujero de la
+    bóveda sobre el derrumbe; escombro, cajas rotas y columnas caídas;
+  - **el refugio de forajidos:** roca picada a mano y tiznada arriba; jergones alrededor del fuego, cajas, sacos y
+    puntales; rayas de conteo al carbón en la pared;
+  - **el refugio de una tribu:** roca ocre gastada y tierra roja; alfombras de fieltro alrededor del hogar, lámparas
+    de barro, bastidores con pieles, vasijas y postes pintados; manos en negativo y cazadores en las paredes;
+  - **el almacén del imperio:** salas labradas de lados rectos, de sillares, con cornisa, cúpula de ladrillo y pilastras;
+    suelo de losas; túneles con bóveda de cañón; braseros en ronda, estelas sobre su tortuga, lámparas colgadas,
+    columnas con capitel y la mercancía en filas.
+- **Las texturas se pintan al entrar** (roca, sillares, ladrillo, losas, grava, tierra): no hay archivos nuevos.
+- **Con `--cueva tipo:lugar`** se mira cada pieza: `racimo`, `poza`, `claraboya`, `jergon`, `alfombra`, `brasero`,
+  `estela`, `pilastra`...
+
+Los muros del borde y las ruinas (v0.14.2):
+- **El muro del cañón del desierto:** sus estratos de las fotos de los badlands pintados (rojo óxido, crema, ocre,
+  salmón, blanco y malva) en franjas horizontales que siguen la altura, sin estirarse ni correrse; acantilados sobre
+  taludes, con promontorios, cárcavas en V que entran en la pared, contrafuertes y agujas en el filo de arriba, más
+  alto en los macizos (de 132 a 188 m), como los acantilados de los mapas de WorldClaw. De lejos, las mismas franjas.
+- **El muro de hielo del altiplano:** un frente casi a pique de 56 a 112 m en columnas (tubos de órgano) coronadas de
+  agujas, con sus grietas de azul hondo y las capas del hielo; detrás, el hielo sube hasta el borde. Al pie, unos
+  bloques de hielo caídos (antes, un caos de cubos con ruido).
+- **Las rocas del desierto:** torres y farallones de arenisca color óxido en capas, con estrías, grietas y una cueva al
+  pie; hongos de roca; arcos naturales; creta blanca lisa; y cantos de arenisca en bloques (antes, discos chatos).
+- **Las fortalezas derruidas:** catorce por mundo (eran cinco); las grandes, con un torreón de tres pisos (entrepisos
+  de vigas a medio caer, ventanas, escalera) y torres en ruinas de uno a tres pisos en las esquinas; las chicas, una
+  torre sola con un pedazo de muralla.
+- **El ladrillo:** los muros de la ciudad enterrada, de las fortalezas del desierto y de los asentamientos antiguos van
+  en ladrillo trabado (cada hilada corrida media pieza, la junta oscura), de cerca y de lejos; la arena de las dunas,
+  sin el ruido de celda a celda.
+
 El paisaje de voxeles (v0.14.1):
 - **Los árboles, de voxeles:** los pinos del paisaje y los del campamento son el pino de voxeles del inventario. Junto a
   los lagos y los ríos crecen sauces llorones, sobre todo en el bosque y la costa, y en el bosque hay arces, menos que

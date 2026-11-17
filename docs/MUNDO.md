@@ -16,14 +16,14 @@ El norte es −Z y el este +X.
 | **Cuatro regiones alrededor** | **Noroeste:** bosque de coníferas muy tupido, con alerces que se doran en otoño. **Noreste:** desierto. **Sureste:** altiplano glaciar. **Suroeste:** costa de fiordos. |
 | **Altitud media por región** | De mayor a menor (v0.11.0, [AGUA.md](AGUA.md)): altiplano 70 m · desierto 55 m · estepa 40 m · bosque 33 m · costa 12 m (con su relieve, las medias son ~82, 61, 40, 33 y 26 m). Encima va el relieve propio de cada una: matas y colinas suaves en la estepa, lomas en el bosque, crestas afiladas y cumbres nevadas en el altiplano, costa abrupta en los fiordos, dunas y mesetas en el desierto. |
 | **El borde de los fiordos** | La tierra baja al **mar** (nivel 0). Los fiordos entran tierra adentro. |
-| **El borde del desierto** | Un **gran cañón** y, detrás, un **muro de siete estratos** de 160 m. |
-| **El borde del altiplano** | Un **muro de hielo glaciar** de 135 m, con grietas. Su deshielo da los ríos más grandes, que bajan **trenzados** por anchos lechos de grava; sus lagos son turquesa. Lo flanquean dos **cordilleras**: hacia el desierto (al este) y hacia la costa (al sur). |
+| **El borde del desierto** | Un **gran cañón** y, detrás, un **muro de siete estratos** de 132 a 188 m (más alto en los macizos): cada estrato, un acantilado sobre un talud; la línea del muro sale y entra en promontorios y bahías, la cortan cárcavas en V y lleva contrafuertes y agujas en el filo (v0.14.2, como los acantilados de los mapas de WorldClaw). |
+| **El borde del altiplano** | Un **muro de hielo glaciar**: el frente, casi a pique, de 56 a 112 m, en columnas (tubos de órgano) coronadas de agujas y más alto en los macizos y las cumbres; detrás, el hielo sube hasta 120-200 m en el borde (v0.14.2, como la pared nevada de los mapas de WorldClaw). Al pie, bloques de hielo caídos. Su deshielo da los ríos más grandes, que bajan **trenzados** por anchos lechos de grava; sus lagos son turquesa. Lo flanquean dos **cordilleras**: hacia el desierto (al este) y hacia la costa (al sur). |
 | **El borde del bosque** | Un **canal sigmoideo** (serpentea) de 60 m de ancho, donde desembocan los **ríos tributarios** del bosque. Del otro lado (v0.11.4, [AGUA.md](AGUA.md) fase 5), un **muro de roca** de estratos levantados de unos 120 m, sin árboles: se ve desde la orilla despejada y no se alcanza. |
 | **La frontera invisible** | Sigue el borde fractal, antes del mar abierto, del muro, del hielo o del canal. Un aviso explica por qué no se pasa. En la costa, antes está la **línea del tiburón** (v0.11.4): mar adentro de ella, el tiburón muerde y el jugador despierta en la playa con secuelas. |
 | **El agua baja** | Ver [AGUA.md](AGUA.md). Los ríos nacen donde se junta el agua (el deshielo del glaciar y las lluvias), bajan por la cota más baja, se ramifican como raíces y terminan en el canal del bosque, en el mar o en el cañón del desierto. Cada lago llena una depresión hasta su punto de desborde, y de ahí sale su río. Donde el agua cae sin pendiente, una cascada. Hay un lago siempre cerca del campamento; en el desierto no nace ningún río y solo tiene oasis. |
 | **Cada región, su gente y sus fieras** | **Gente:** un reino vecino por región, con su capital amurallada y tres aldeas al estilo de la región. **Fieras:** guaridas de las especies de la región. La fauna que aparece es la del hábitat de la región. |
 | **Tribus nómadas** | Tres o cuatro por región (16 por mundo), con las tres actitudes en cada una: **rivales**, que salen al paso con jinetes o bandidos (de nuevo si te alejas 600 m y vuelves); **neutrales**, que observan; y **amigables**, que marcan en el mapa una estructura cercana que no viste. Sus campamentos de yurtas llevan un estandarte del color de su actitud: rojo, crudo o azul. |
-| **Estructuras** | Unas 45 por mundo, según la región. Al verlas quedan en el mapa. Las ruinas son kurganes, balbales, piedras de ciervos, fortalezas derruidas, ciudades enterradas, asentamientos antiguos y petroglifos. En uso están los caravasares, torres de vigía, ovoos, pozos y embarcaderos. Reparto por región: estepa (kurganes, balbales, piedras de ciervos, ovoos, pozos, caravasar); bosque (fortalezas, torres, petroglifos); altiplano (ovoos, piedras de ciervos, petroglifos); costa (embarcaderos, túmulos); desierto (ciudades enterradas, caravasares, pozos). |
+| **Estructuras** | Unas 78 por mundo, según la región (de ellas, veintiséis fortalezas derruidas, en todas las regiones, y seis ciudades enterradas, en el desierto; v0.14.7: eran catorce y dos). Al verlas quedan en el mapa. Las ruinas son kurganes, balbales, piedras de ciervos, fortalezas derruidas, ciudades enterradas, asentamientos antiguos y petroglifos. En uso están los caravasares, torres de vigía, ovoos, pozos y embarcaderos. Reparto por región: estepa (kurganes, balbales, piedras de ciervos, ovoos, pozos, caravasar); bosque (fortalezas, torres, petroglifos); altiplano (ovoos, piedras de ciervos, petroglifos); costa (embarcaderos, túmulos); desierto (ciudades enterradas, caravasares, pozos); fortalezas derruidas en todas (de cuatro a siete por región). |
 | **Reinos** | Estepa: **Kanato de Hierro** (al que la tribu rinde tributo). Bosque: **Principado de los Pinos Negros**. Altiplano: **Señorío del Glaciar**. Costa: **Jarlazgo de la Costa Helada**. Desierto: **Reino de los Oasis**. |
 
 ## Lo que cambia con cada semilla
@@ -57,11 +57,12 @@ El norte es −Z y el este +X.
   - suelo del bosque, tundra del altiplano y musgo de la costa;
   - arena con ondas, estratos, grava de los ríos trenzados, nieve de glaciar, roca, barro cuarteado de las orillas y muro de hielo.
 
-  La celda lleva luces y sombras en grises; la región y la estación ponen el color. En las paredes la textura va de pie, para que los estratos queden horizontales. El atlas se rehace con `python3 tools/assets/texturas_terreno.py generar --forzar`; `guia` dibuja la guía con los nombres.
+  La celda lleva luces y sombras en grises; la región y la estación ponen el color. En las paredes la textura va de pie y sin estirarse (v0.14.2, `push_tri`): cada triángulo empinado se corta en franjas horizontales de 8 m, cada una con su pedazo de la celda y su color por la altura (los estratos del muro del cañón y las capas del muro de hielo, `strata_band` e `ice_band`); lo ancho sigue el eje de la pared que no mira (antes, una celda de 8 m se estiraba sobre todo el muro y se corría de costado: se veía en bloques y rayas). El atlas se rehace con `python3 tools/assets/texturas_terreno.py generar --forzar`; `guia` dibuja la guía con los nombres.
 - **Rocas y matas:** se generan por chunk, siempre iguales en cada sitio.
   - **Lo que se recoge junto a los campamentos** (v0.14.1): las rocas que se rompen, el pedernal, el montón de piedras, el barro, la leña, el caldero, el odre y el arrecife de coral de los lagos tienen su modelo de voxeles (`tools/voxeles/estructuras.py`, de las fotos de referencia del usuario); el cofre espera un modelo animado (se abre y se cierra).
   - **Rocas facetadas:** pedreros en el altiplano y la costa, cantos rojizos en el desierto, con nieve encima en invierno.
-  - **Matas y arbustos:** en la estepa (más junto al agua), sotobosque y saxaul; nunca en el glaciar.
+  - **Matas y arbustos:** en la estepa (más junto al agua, y en manchas: tupidas en unas, ralas entre ellas; v0.14.7), sotobosque y saxaul; nunca en el glaciar.
+  - **Bosquecillos de la estepa** (v0.14.7, `steppe_grove` en `src/world/terrain.c`): manchas de pinos cada unos 90 m, en uno de cada doce lugares de la llanura; además, algún árbol suelto.
   - **Flores** de la estepa en primavera.
   - **Bosque** más tupido y sotos junto a ríos y oasis.
 - **Paisajes de las fotos de referencia**: cada región tiene sus rasgos, sembrados por chunk y siempre iguales en el mismo sitio.
@@ -72,20 +73,26 @@ El norte es −Z y el este +X.
   - **Ríos** (meandros, tributarios, arroyos):
     - el cauce y la orilla baja son un **lecho de cantos rodados** claros que el agua lava; allí no crecen pasto, matas ni árboles;
     - **cantos** grandes en el agua y en la orilla, y **rápidos blancos** donde el agua es baja.
-  - **Desierto:**
-    - **farallones en estratos** con alero y cueva en el cañón al pie del muro;
-    - **torres de arenisca** con capas blandas angostas y sombrero de roca dura;
-    - formaciones de **creta blanca** comidas por el viento.
+  - **Desierto** (v0.14.2, de las fotos de referencia del usuario: los badlands, el arco de AlUla y las torres del Sahara):
+    - **farallones de arenisca** en el cañón al pie del muro: dos o tres torres juntas, color óxido, con estrías que bajan, alguna capa blanda metida, grietas, el barniz del desierto en las caras y una cueva al pie;
+    - **hongos de arenisca:** un pie angosto que el viento come y un sombrero de roca dura;
+    - **arcos naturales** de arenisca, con un ojo grande y uno chico;
+    - formaciones de **creta blanca** redondeadas por el viento, con vetas;
+    - **cantos de arenisca** en bloques (antes, discos chatos).
   - **Altiplano:**
-    - el frente del glaciar es un caos de **seracs**, bloques de hielo con grietas azules;
-    - el muro lleva textura de seracs;
+    - al pie del frente del glaciar, **bloques de hielo caídos**: inclinados, el tope en bisel, blancos y celestes, con grietas de azul hondo;
+    - el muro lleva textura de seracs: columnas, grietas azules y las capas del hielo;
     - hay **témpanos** en los lagos de deshielo.
 
-  Las formaciones son modelos de voxeles (`voxs_draw_feature`, 4 variantes de cada una); el suelo usa tres celdas nuevas del atlas: arena volcánica, cantos rodados y seracs.
+  Las formaciones son modelos de voxeles (`voxs_draw_feature`, 4 variantes de cada una; `--formaciones desierto|hielo|costa` las muestra). La arena, el hielo, la creta y la arenisca van casi sin tono de celda a celda (`VoxGrid.tone`): las capas y las grietas los dibujan. El suelo usa tres celdas del atlas: arena volcánica, cantos rodados y seracs.
 
   ![Paisajes](mundo/paisajes.png)
 
-  *Farallones y basalto en los fiordos, roquerío con espuma, arroyo con cantos y rápidos · cañón con farallones en estratos, torre de arenisca y creta, frente de seracs.*
+  *Farallones y basalto en los fiordos, roquerío con espuma, arroyo con cantos y rápidos · cañón con farallones en estratos, torre de arenisca y creta, frente de seracs (hasta la v0.14.1).*
+
+  ![Los muros y las formaciones](mundo/muros.png)
+
+  *v0.14.2: el muro del cañón de cerca (`--ir muro`) y entero (`--ir panorama-muro`), con sus estratos; el frente del glaciar, en columnas, con los bloques caídos al pie (`--ir hielo`); las formaciones de arenisca y la creta (`--formaciones desierto`).*
 - **Agua:**
   - es una malla continua sobre la rejilla del suelo (2 m) con el nivel en cada vértice: los ríos bajan en pendiente como un torrente, sin escalones;
   - un vértice seco toma el nivel de sus vecinos con agua, así el borde se mete bajo la orilla y no quedan huecos;
@@ -96,8 +103,8 @@ El norte es −Z y el este +X.
   - pasto, stipa (con sus plumas plateadas en verano), flores de primavera, helechos y juncos alrededor del jugador, por celdas de 2 m como el suelo y sobre su facetado;
   - del color del suelo de su región y su estación; crecen, se secan de pie, el invierno las aplasta y la nieve las tapa donde cubre el suelo (asoman la stipa y los juncos secos);
   - el viento las mece en olas que cruzan el pasto; al pasar se apartan;
-  - una ventana de 84 m que sigue al jugador; se dibujan hasta 39 m (18 m en Android), con menos hojas a lo lejos;
-  - hasta tres matas por m² (v0.14.1; en la v0.10.3, dos): en la estepa, unas 2,5 por m² (el pasto, la stipa, las flores y las hierbas aromáticas); en el bosque, el pasto entre los helechos, tres veces más tupido que antes;
+  - una ventana de 100 m que sigue al jugador; se dibujan hasta 48 m (24 m en Android), con menos hojas a lo lejos y, desde 24 m (8 m en Android), menos matas pero más anchas (v0.14.7);
+  - hasta cuatro matas por m² (v0.14.7; en la v0.14.1, tres): en la estepa, unas 3,4 por m² (el pasto, la stipa, las flores y las hierbas aromáticas; eran 2,5); en el bosque, el pasto entre los helechos, tres veces más tupido que antes;
   - las **hierbas aromáticas** de la estepa (v0.14.1, `FLORA_HERB`): el ajenjo, el tomillo y la salvia, de hojas grises; con las plumas de la stipa echan sus espigas moradas (y algún ajenjo amarillo); se secan, pero el invierno no las tumba del todo;
   - **las matas sueltas del inventario** (v0.14.1, `vegetation_draw_prop`): la hierba alta del escondite (stipa con sus plumas y pasto, de 1 m), las hierbas curativas (salvia, menta y tomillo, en flor mientras están verdes) y el arbusto, con las mismas hojas: se mecen con el viento y toman el color de la estación.
 - **Árboles** (v0.10.3, más que antes): densidad 0,85 en el bosque, 0,20 en los fiordos, 0,10 en las faldas del altiplano y hasta 0,36 junto al agua en la estepa; 160 alrededor del campamento inicial (fuera de sus 30 m).
@@ -110,7 +117,7 @@ El norte es −Z y el este +X.
 
   *Al galope por la estepa en verano · la estepa en otoño · el cañón de un río en verano · tallos secos en la nieve.*
 - **Estructuras de voxeles, resolución:** cada modelo se refina al doble (`vox_refine`: cada celda en 2×2×2, esquinas salientes gastadas y rincones rellenos) y lleva tono por celda, piedra a piedra y tabla a tabla. Las murallas de las capitales son tramos de voxeles: piedra con almenas o empalizada.
-- **Horizonte lejano:** una malla gruesa, de una celda por chunk, que llega a ~2,4 km bajo los chunks cargados. Deja un hueco donde están los chunks. Así se ven a lo lejos las montañas, los muros, el hielo y el mar. Lo lejano se pierde en una bruma del color del horizonte.
+- **Horizonte lejano:** una malla gruesa, de una celda por chunk, que llega a ~2,4 km bajo los chunks cargados. Deja un hueco donde están los chunks. Así se ven a lo lejos las montañas, los muros, el hielo y el mar. Lo lejano se pierde en una bruma del color del horizonte. Los muros del cañón y del hielo llevan una textura de rampa (v0.14.2, `far_ramp`): cada píxel toma la franja de su altura, así de lejos se ven los mismos estratos que de cerca y no un biombo de triángulos de un color.
 - **Cielo** (`src/world/sky.c`):
   - un degradado del cenit al horizonte;
   - el **sol** sale por el este, pasa por el sur a mediodía y se pone por el oeste, con un resplandor cálido cuando está bajo;
@@ -128,9 +135,10 @@ El norte es −Z y el este +X.
   - con la cámara dentro de una nube (según la densidad de sus voxeles), la vista se cubre de niebla.
 - **Estructuras de voxeles** (`src/world/voxstruct.c`): cada estructura del mundo y cada casa son un modelo de voxeles de 0,25 a 0,5 m.
   - **Malla:** solo las caras expuestas, como en la representación por voxeles de nubes de puntos, con oclusión ambiental por vértice y sombreado por cara.
-  - **Ruinas** (v0.10.2): la fortaleza derruida y la ciudad enterrada salen del kit de edificios, con la muralla de su región o las casas de adobe del desierto. Después pasa el tiempo: cada columna pierde lo de arriba hasta una altura que da el ruido (lo alto cae primero y nada queda en el aire), lo caído se amontona al pie y crece el pasto, el musgo o la arena. Cada ruina es una de cuatro variantes, según donde esté.
+  - **Ruinas** (v0.10.2): la fortaleza derruida y la ciudad enterrada salen del kit de edificios, con la muralla de su región o las casas de ladrillo de adobe del desierto. Las fortalezas (v0.14.2): las grandes, con el torreón del homenaje de tres pisos y torres en ruinas de uno a tres pisos en las esquinas; las chicas, una torre sola con un pedazo de muralla (ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md)). Las nueve de más se agregan al final de los sitios, con su propio azar, y después otras doce fortalezas y cuatro ciudades enterradas (v0.14.7, `place_more_ruins`): las partidas viejas valen (los sitios vistos pasan de 64: los de después, en `seen_sites_hi`). Después pasa el tiempo: cada columna pierde lo de arriba hasta una altura que da el ruido (lo alto cae primero y nada queda en el aire), lo caído se amontona al pie y crece el pasto, el musgo o la arena. Cada ruina es una de cuatro variantes, según donde esté.
   - **Asentamientos antiguos** (v0.14.0): los vestigios de un pueblo de otros tiempos, como en las excavaciones (Ras Ibn Hani, Elefantina). La planta (`src/sim/ancient.c`, de una semilla) es un palacio de cuartos alrededor de su patio y de tres a seis casas de dos a cinco cuartos, separadas por calles, en un cuadrado de 44 m. Los muros son de ladrillo sobre zócalo de piedra, y el tiempo dejó poco: casi todos a ras del suelo, con brechas y puertas, y de dos a cuatro tramos de pie (el muro en ruinas del inventario). De uno a tres por región (tres en la estepa, dos en el desierto y el altiplano, uno en el bosque y los fiordos), en un llano; se agregan después de los demás sitios, así que las partidas viejas valen. `--ir asentamiento`.
   - **Color por región:** arenisca en el desierto, liquen en el bosque y la costa.
+  - **El ladrillo** (v0.14.2, `M_BRICK`): el mallador lo traba (`VoxGrid.brick`): cada ladrillo, dos celdas de un tono; cada hilada, corrida media pieza; la junta, más oscura abajo y al principio de cada ladrillo. De adobe en el desierto, cocido en lo demás. Lo llevan la ciudad enterrada, las fortalezas del desierto y los asentamientos antiguos.
   - **Los edificios de las ciudades, las aldeas y las tribus** salen del kit de la edad del hierro (`src/sim/buildkit.c`, v0.10.0): la yurta y la carreta-casa en la estepa (rehecha en la v0.14.1: la casilla de fieltro sobre la plataforma, la plataforma sobre los ejes y cuatro o seis ruedas de rayos de 1,25 m por fuera, sin tocarse), la casa de postes y paja en el bosque, la de piedra y adobe en el altiplano, la casa larga de turba en los fiordos y la de adobe con patio en el desierto; cada tipo y región con cuatro variantes (dos chicas, dos grandes), el palacio, los talleres, los graneros y el templo del fuego. De cerca (menos de 32 m), refinados; de lejos, simples. Ver [ARQUITECTURA_EDAD_DEL_HIERRO.md](ARQUITECTURA_EDAD_DEL_HIERRO.md). La muralla de las capitales (v0.10.2), también del kit: el muro y las torres de su región, y la puerta acodada con su antemuro.
   - **Claro:** alrededor de las estructuras y los campamentos no crecen árboles ni rocas.
 - **Barrancos del altiplano:** son permafrost; sus paredes son hielo (seracs) todo el año. Un lago o un río no flota sobre un cañón: donde el suelo cae muy por debajo de su nivel, manda el agua de abajo.
@@ -170,8 +178,8 @@ Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
 | `PEAK_RULES[]` | `world_generate` | Montañas por región: cuántas, alturas y radios. |
 | `CANAL_E`, `CANAL_SWING`, `CANAL_HALF`, `CANAL_DEPTH` | arriba | El canal sigmoideo del bosque. |
 | `SHORE_E`, `fjord_inlet()` | arriba | La costa y lo que entran los fiordos. |
-| `WALL_E`, `GORGE_E` | arriba | El cañón y el muro de estratos del desierto. |
-| `ICE_E` | arriba | El muro de hielo del altiplano. |
+| `WALL_E`, `GORGE_E` | arriba | El cañón y el muro de estratos del desierto; en `world_height`, sus promontorios, cárcavas, contrafuertes, macizos y agujas. |
+| `ICE_E` | arriba | El muro de hielo del altiplano; en `world_height`, sus columnas, macizos, cumbres y agujas. |
 | Las cordilleras de frontera | `world_generate` | Los cerros entre el altiplano y el desierto, y entre el altiplano y la costa. |
 | `REGION_RAIN[]`, `GLACIER_MELT` | `make_water()` | Cuánto llueve en cada región y cuánto da el deshielo. |
 | `FLOW_CREEK`, `FLOW_RIVER`, `FLOW_BRAID` | `make_water()` | Desde cuánta agua nace un arroyo, un río y un río trenzado. |
@@ -182,6 +190,9 @@ Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
 | `tree_density()` | `src/world/terrain.c` | Árboles por región (bosque tupido: 0,62). |
 | `ground_color()`, `ground_tex()` | `src/world/terrain.c` | Color y textura del suelo. |
 | `FAR_CELLS`, `FAR_HAZE_NEAR` | `src/world/terrain.c` | Alcance del horizonte lejano y su bruma. |
+| `STRATA[]`, `STRATA_ORDER[]`, `ICE_LAYERS[]`, `BAND_ROWS` | `src/world/terrain.c` | Los colores de los estratos y de las capas del hielo, por altura (de cerca y de lejos). |
+| `place_more_forts()` | `world_generate` | Las fortalezas derruidas de más, por región. |
+| `place_more_ruins()` | `world_generate` | Más fortalezas, en todas las regiones, y más ciudades enterradas, en el desierto (al final de todo). |
 | `SKY_LUNAR_DAYS`, `arc_dir()` | `src/world/sky.*` | Fases de la luna y arco del sol. |
 | `CLOUD_ABOVE_PLAIN`, `CLOUD_VIEW`, `CELL`, `VT_DIM`, `VOX_NEAR` | `src/world/clouds.*` | Altura de las nubes, alcance, celda de cada nube, tamaño de las rejillas y distancia de los voxeles. |
 | `vox_cloud_shape()`, `vox_cloud_light()` | `src/sim/voxel.c` | Perfil y erosión de las nubes; extinción y ambiente de la luz. |
@@ -199,14 +210,14 @@ Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
 ```
 
 Sitios de `--ir`:
-- **Regiones y paisaje:** estepa, meandro, arroyo, rapidos, bosque, canal, altiplano, trenzado, hielo, cumbre, fiordos, mar, desierto y muro.
+- **Regiones y paisaje:** estepa, meandro, arroyo, rapidos, bosque, canal, altiplano, trenzado, hielo, cumbre, fiordos, mar, desierto y muro; panorama-hielo y panorama-muro (los muros enteros, a 520 m del borde).
 - **El agua:** lago (el más grande fuera del bosque), desborde (por donde sale su río) y cascada (la más grande tierra adentro).
 - **Pueblos y fieras:** capital, aldea y guarida; `capital-<región>`, `aldea-<región>` y `plaza-<región>` (en la plaza, frente al palacio) para las de cada región (estepa, bosque, altiplano, fiordos o desierto); kanato (la plaza de la capital de la estepa) y campos.
 - **Tribus:** tribu (amiga), rival y neutral.
 - **Estructuras:** kurgan, balbales, piedra, fortaleza, ciudad, petroglifos, caravasar, torre, ovoo, pozo y embarcadero.
 - **Fuegos:** fogata (la del campamento, de cerca) y hoguera (pone una junto a ella).
 
-`--camara` fija la inclinación: 0,05 es casi de canto, con el cielo a la vista; 1,25 es desde arriba. `--rumbo` fija los grados: 0 sur, 90 este, 180 norte, 270 oeste. `--dron <m>` aleja la cámara (para ver una ciudad entera) y `--edificios tipo[:región]` muestra las variantes del kit de edificios.
+`--camara` fija la inclinación: 0,05 es casi de canto, con el cielo a la vista; 1,25 es desde arriba. `--rumbo` fija los grados: 0 sur, 90 este, 180 norte, 270 oeste. `--dron <m>` aleja la cámara (para ver una ciudad entera; con `--edificios`, la acerca o la aleja de las variantes), `--edificios tipo[:región]` muestra las variantes del kit de edificios y `--formaciones desierto|hielo|costa`, las de las formaciones del paisaje.
 
 En el juego, **F5** abre la vista orbital (flechas: girar e inclinar).
 

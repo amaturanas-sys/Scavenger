@@ -10,11 +10,19 @@
 #include "rlgl.h"
 #include "sim/flora.h"
 
-#define VEG_GRID 42            // celdas por lado de la ventana (84 m)
+#define VEG_GRID 50            // celdas por lado de la ventana (100 m)
 #define VEG_SLOTS (VEG_GRID * VEG_GRID)
-#define VEG_RADIUS 39.0f       // hasta donde se dibuja
-#define VEG_RADIUS_TOUCH 18.0f // en Android
+#define VEG_RADIUS 48.0f       // hasta donde se dibuja
+#define VEG_RADIUS_TOUCH 24.0f // en Android
 #define VEG_FADE 5.0f          // los ultimos metros crecen de a poco: no aparecen de golpe
+// Lejos se dibujan menos matas, pero mas anchas: cubren lo mismo y cuestan menos. Desde VEG_THIN m (en Android,
+// VEG_THIN_TOUCH) quedan cada vez menos, hasta VEG_KEEP (VEG_KEEP_TOUCH) de ellas en el borde; las que se van, se
+// encogen en VEG_THIN_FADE (de su turno, cut) antes de irse.
+#define VEG_THIN 24.0f
+#define VEG_THIN_FADE 0.08f
+#define VEG_KEEP 0.5f
+#define VEG_THIN_TOUCH 8.0f
+#define VEG_KEEP_TOUCH 0.3f
 #define VEG_BUDGET 48          // celdas que se siembran por cuadro (en Android, la mitad)
 #define VEG_BURNT 48           // focos y tierra calcinada cerca que se miran por cuadro
 
@@ -155,10 +163,11 @@ static void blossom(Vector3 c, float r, Color col) {
 
 // Una mata. h: su alto; lod: 3 de cerca, 2 a media distancia, 1 lejos; (bx, bz): cuanto la doblan
 // el viento y quien pasa (m por m de alto); (fx, fz): de costado a la camara (las de una sola hoja
-// la miran de frente).
-static void draw_tuft(const FloraTuft *t, const Climate *c, const VegLook *L, float h, int lod, float bx, float bz, float fx, float fz) {
+// la miran de frente); wide: cuanto mas anchas las hojas (lejos, donde se dibujan menos matas).
+static void draw_tuft(const FloraTuft *t, const Climate *c, const VegLook *L, float h, int lod, float bx, float bz, float fx, float fz,
+                      float wide) {
     Vector3 b = { t->x, t->y - 0.03f, t->z };
-    float a0 = t->rnd * 6.2832f, v = 0.88f + 0.24f * t->rnd, s = t->size;
+    float a0 = t->rnd * 6.2832f, v = 0.88f + 0.24f * t->rnd, s = t->size * wide;
     Color snow = { 232, 236, 242, 255 };
     switch ((FloraKind)t->kind) {
     case FLORA_GRASS: {
@@ -344,7 +353,7 @@ bool vegetation_draw_prop(const char *id, float w, float l, Vector3 pos, float y
         Vector3 to = { t.x - g_cam.position.x, t.y + h0 * 0.5f - g_cam.position.y, t.z - g_cam.position.z };
         float cd = Vector3Length(to), hd = sqrtf(to.x * to.x + to.z * to.z);
         float fx = hd > 0.01f ? -to.z / hd : 1.0f, fz = hd > 0.01f ? to.x / hd : 0.0f;
-        draw_tuft(&t, &g_clim, &L, h0, cd < 12.0f ? 3 : cd < 24.0f ? 2 : 1, bx, bz, fx, fz);
+        draw_tuft(&t, &g_clim, &L, h0, cd < 12.0f ? 3 : cd < 24.0f ? 2 : 1, bx, bz, fx, fz, 1.0f);
     }
     rlEnd();
     rlDrawRenderBatchActive();
@@ -356,7 +365,8 @@ void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float tim
                      int nclear, const Vector3 *walkers, int nwalkers) {
     g_drawn = 0;
     if (!g_world || g_world != t->world) return;
-    float radius = platform_touch_ui() ? VEG_RADIUS_TOUCH : VEG_RADIUS;
+    bool touch = platform_touch_ui();
+    float radius = touch ? VEG_RADIUS_TOUCH : VEG_RADIUS, thin = touch ? VEG_THIN_TOUCH : VEG_THIN, kmin = touch ? VEG_KEEP_TOUCH : VEG_KEEP;
     float ccx = ((float)g_cx + 0.5f) * FLORA_CELL, ccz = ((float)g_cz + 0.5f) * FLORA_CELL;
     // La estacion.
     float hk[FLORA_KINDS];
@@ -395,7 +405,12 @@ void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float tim
             const FloraTuft *tf = &sl->tuft[q];
             float dx = tf->x - ccx, dz = tf->z - ccz, d = sqrtf(dx * dx + dz * dz);
             if (d > radius) continue;
-            float h = hk[tf->kind] * tf->size * smooth(radius, radius - VEG_FADE, d);
+            // Lejos, menos: cada mata tiene su turno (cut, otro azar que el de su color) y se encoge antes de irse. Hasta
+            // thin, keep pasa de 1 en VEG_THIN_FADE: ninguna se encoge, y despues empiezan a irse de a poco.
+            const float top = 1.0f + VEG_THIN_FADE;
+            float keep = d < thin ? top : top - (top - kmin) * (d - thin) / (radius - thin), cut = fmodf(tf->rnd * 113.0f, 1.0f);
+            if (cut > keep) continue;
+            float h = hk[tf->kind] * tf->size * smooth(radius, radius - VEG_FADE, d) * smooth(keep, keep - VEG_THIN_FADE, cut);
             if (h < 0.04f) continue;
             Vector3 to = { tf->x - cam.position.x, tf->y + h * 0.5f - cam.position.y, tf->z - cam.position.z };
             float cd = Vector3Length(to);
@@ -435,7 +450,7 @@ void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float tim
             }
             float hd = sqrtf(to.x * to.x + to.z * to.z), fx = hd > 0.01f ? -to.z / hd : 1.0f, fz = hd > 0.01f ? to.x / hd : 0.0f;
             int lod = cd < 10.0f ? 3 : cd < 18.0f ? 2 : 1;
-            draw_tuft(tf, c, &L, h, lod, bx, bz, fx, fz);
+            draw_tuft(tf, c, &L, h, lod, bx, bz, fx, fz, 1.0f / sqrtf(fminf(keep, 1.0f)));
             g_drawn++;
         }
     }

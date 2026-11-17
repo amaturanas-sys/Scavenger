@@ -478,23 +478,54 @@ float cave_ceiling(const Cave *c, int where, float floor_y) {
 }
 
 // ---------------------------------------------------------------- la roca de cada sala
+int cave_room_sides(const Cave *c, int room) {
+    if (c->kind != CAVE_EMPIRE) return 0;
+    bool vest = room == CAVE_VESTIBULE || room < 0 || room >= c->room_count;
+    return vest ? 6 : room == 0 ? 12 : 8;
+}
+
+// La forma de cada tipo (el paso 2 del plan): cuanto entra y sale la pared con el angulo. Todas quedan entre radius + 0,3
+// y radius * 1,1 + 0,3 (las labradas, apenas mas en las esquinas): ahi termina el suelo de la sala y por eso los pasillos
+// pasan lejos (CLEAR_ROOM). El suelo llega hasta WALK_GAP de la pared, y siempre hasta radius - 0,15.
 float cave_wall_radius(const Cave *c, int room, float a) {
     bool vest = room == CAVE_VESTIBULE || room < 0 || room >= c->room_count;
     float r = vest ? CAVE_VEST_R : c->rooms[room].radius, ph = vest ? -1.0f : (float)room;
-    // Mas despareja cuanto mas grande; el suelo llega hasta WALK_GAP de ella, y siempre hasta radius - 0,15.
-    return r + 0.3f + 0.05f * r * (1.0f + 0.65f * sinf(3.0f * a + ph * 1.7f) + 0.35f * sinf(7.0f * a + ph * 0.9f));
+    int sides = cave_room_sides(c, room);
+    if (sides > 0) { // labrada: lados rectos, el medio de cada uno a radius + 0,45 del centro
+        float s = 2.0f * CAVE_PI / (float)sides, u = fmodf(a + s * 0.5f, s);
+        if (u < 0.0f) u += s;
+        return (r + 0.45f) / cosf(u - s * 0.5f);
+    }
+    float n; // de -1 a 1
+    switch (c->kind) {
+    case CAVE_ANIMAL: // el karst: lobulos grandes y entrantes chicos
+        n = 0.45f * sinf(2.0f * a + ph * 1.3f) + 0.33f * sinf(5.0f * a + ph * 0.7f) + 0.22f * sinf(11.0f * a + ph * 2.1f);
+        break;
+    case CAVE_ABANDONED: // natural, con los bordes de lo que se cayo
+        n = 0.55f * sinf(3.0f * a + ph * 1.7f) + 0.3f * sinf(7.0f * a + ph * 0.9f) + 0.15f * sinf(13.0f * a + ph);
+        break;
+    case CAVE_TRIBE: // gastada por generaciones: redonda y lisa
+        return r + 0.3f + 0.035f * r * (1.0f + 0.7f * sinf(2.0f * a + ph * 1.1f) + 0.3f * sinf(4.0f * a + ph * 0.6f));
+    default: // la de los forajidos: picada a medias
+        n = 0.65f * sinf(3.0f * a + ph * 1.7f) + 0.35f * sinf(7.0f * a + ph * 0.9f);
+        break;
+    }
+    return r + 0.3f + 0.05f * r * (1.0f + n);
 }
 
 void cave_room_profile(const Cave *c, int room, int j, float *frac, float *height) {
     static const float F[CAVE_PROFILE_PTS] = { 1.0f, 1.0f, 1.0f, 0.93f, 0.8f, 0.6f, 0.33f, 0.0f };
     static const float V[CAVE_PROFILE_PTS] = { 0.0f, 0.0f, 0.0f, 0.42f, 0.7f, 0.88f, 0.97f, 1.0f }; // de la pared a la clave
-    bool vest = room == CAVE_VESTIBULE || room < 0 || room >= c->room_count;
+    // Las labradas: la cornisa (entra sin subir) y una cupula.
+    static const float FC[CAVE_PROFILE_PTS] = { 1.0f, 1.0f, 1.0f, 0.95f, 0.84f, 0.64f, 0.36f, 0.0f };
+    static const float VC[CAVE_PROFILE_PTS] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.45f, 0.78f, 0.95f, 1.0f };
+    bool vest = room == CAVE_VESTIBULE || room < 0 || room >= c->room_count, carved = cave_room_sides(c, room) > 0;
     float wall = vest ? CAVE_CORRIDOR_HEIGHT : (room == 0 ? 2.0f : 1.0f) * CAVE_WALL_HEIGHT;
     float top = vest ? CAVE_VEST_HEIGHT : (room == 0 ? 2.0f : 1.0f) * CAVE_ROOM_HEIGHT;
     if (j < 0) j = 0;
     if (j >= CAVE_PROFILE_PTS) j = CAVE_PROFILE_PTS - 1;
-    *frac = F[j];
-    *height = j == 0 ? -0.25f : j == 1 ? CAVE_CORRIDOR_HEIGHT : wall + (top - wall) * V[j];
+    *frac = carved ? FC[j] : F[j];
+    *height = j == 0 ? -0.25f : j == 1 ? CAVE_CORRIDOR_HEIGHT : wall + (top - wall) * (carved ? VC[j] : V[j]);
 }
 
 // La altura de la boveda a frac del radio de la pared (1: la pared recta).
@@ -555,44 +586,273 @@ static float object_room(int kind) {
     }
 }
 
-static bool decor_spot_ok(const Cave *c, const CaveDecor *out, int n, int room, float x, float z, float rad, bool blocks) {
+bool cave_decor_on_ceiling(int kind) { return kind == CDEC_STALACTITES || kind == CDEC_SHAFT; }
+bool cave_decor_on_wall(int kind) { return kind == CDEC_PILASTER || kind == CDEC_TIMBER || kind == CDEC_WALL_TORCH || kind == CDEC_TAPESTRY; }
+
+// El plan de cada tipo (como en WorldClaw: el plan, la forma, la dispersion por region y los objetos de cada region; aqui
+// las regiones son las salas): que lleva cada una, cuantos, de que tamaño y donde. La Cisterna es la sala que define el
+// tipo (la guarida con su lago, el derrumbe bajo el agujero de la boveda, el campamento alrededor del fuego, el hogar de
+// la tribu, el salon de las estelas y los braseros); las recamaras llevan lo demas. Lo que se ordena (en ronda, alrededor
+// del fuego, al fondo, en las esquinas) va antes que lo que se esparce.
+enum { DW_HALL = 1, DW_RING = 2, DW_ALL = 3 };
+enum {
+    DF_BLOCKS = 1,  // tapa el paso (solo junto a la pared: el centro de la sala queda libre)
+    DF_CEILING = 2, // cuelga de la boveda
+    DF_ROUND = 4,   // en ronda: a la misma distancia del centro, repartidos parejo
+    DF_FIRE = 8,    // alrededor de la fogata de la sala, apuntandola (f: los metros desde ella)
+    DF_BACK = 16,   // al fondo (frente a la bajada), mirando al centro
+    DF_CORNER = 32, // en las esquinas de la pared labrada
+    DF_ALONG = 64,  // de costado a la pared, como se arriman las cosas
+    DF_WALL = 128,  // contra la pared, en un tramo sin puertas ni nada colgado (marcos, antorchas, tapices)
+};
+
+// Lo que va tendido en el suelo (alfombras, musgo): puede quedar debajo de otras cosas, no de otra alfombra.
+static bool decor_flat(int kind) { return kind == CDEC_RUG || kind == CDEC_MOSS; }
+
+typedef struct {
+    uint8_t kind, where, lo, hi; // CaveDecorKind; DW_*; cuantos en cada sala que toca
+    float size_lo, size_hi;      // m
+    float f_lo, f_hi;            // donde: la fraccion del radio de la sala
+    float foot;                  // lo que ocupa en el suelo: radius = size * foot
+    uint8_t flags;               // DF_*
+} DecorRule;
+
+// Las de fieras: el karst natural, humedo y frio; la guarida.
+static const DecorRule PLAN_ANIMAL[] = {
+    { CDEC_SHAFT, DW_HALL, 1, 1, 3.6f, 4.6f, 0.3f, 0.6f, 0.5f, DF_CEILING }, // la luz fria que baja sobre el lago
+    { CDEC_POOL, DW_HALL, 1, 1, 4.4f, 6.4f, 0.2f, 0.5f, 0.5f, 0 },          // el lago de la Cisterna
+    { CDEC_PILLAR, DW_HALL, 1, 3, 1.1f, 1.8f, 0.66f, 0.84f, 0.55f, DF_BLOCKS },
+    { CDEC_PILLAR, DW_RING, 0, 1, 0.9f, 1.4f, 0.64f, 0.8f, 0.55f, DF_BLOCKS },
+    { CDEC_STALAGMITES, DW_HALL, 3, 5, 1.4f, 2.6f, 0.62f, 0.9f, 0.42f, DF_BLOCKS },
+    { CDEC_STALAGMITES, DW_RING, 1, 3, 1.1f, 2.2f, 0.62f, 0.9f, 0.42f, DF_BLOCKS },
+    { CDEC_STALACTITES, DW_HALL, 8, 12, 2.2f, 3.6f, 0.3f, 0.88f, 0.45f, DF_CEILING },
+    { CDEC_STALACTITES, DW_RING, 3, 5, 1.6f, 2.8f, 0.25f, 0.88f, 0.45f, DF_CEILING },
+    { CDEC_POOL, DW_RING, 0, 1, 1.4f, 2.6f, 0.2f, 0.6f, 0.5f, 0 },
+    { CDEC_BONES, DW_ALL, 1, 3, 0.9f, 1.4f, 0.15f, 0.75f, 0.5f, 0 },
+    { CDEC_MOSS, DW_ALL, 1, 3, 1.0f, 2.0f, 0.3f, 0.88f, 0.5f, 0 },
+    { CDEC_ROCK, DW_HALL, 4, 7, 0.45f, 1.8f, 0.25f, 0.92f, 0.6f, 0 },
+    { CDEC_ROCK, DW_RING, 2, 4, 0.45f, 1.8f, 0.25f, 0.92f, 0.6f, 0 },
+};
+
+// Las abandonadas: la roca natural con lo que se cayo; el agujero de la boveda, el musgo, lo que dejaron.
+static const DecorRule PLAN_RUIN[] = {
+    { CDEC_SHAFT, DW_HALL, 1, 1, 4.2f, 5.4f, 0.64f, 0.7f, 0.5f, DF_CEILING }, // y debajo, el derrumbe
+    { CDEC_RUIN_COLUMN, DW_HALL, 2, 3, 2.6f, 4.8f, 0.6f, 0.86f, 0.18f, DF_BLOCKS },
+    { CDEC_RUIN_COLUMN, DW_RING, 0, 1, 2.4f, 4.0f, 0.6f, 0.86f, 0.18f, DF_BLOCKS },
+    { CDEC_RUBBLE, DW_HALL, 2, 4, 1.4f, 2.4f, 0.64f, 0.88f, 0.5f, DF_BLOCKS },
+    { CDEC_RUBBLE, DW_RING, 1, 2, 1.2f, 2.0f, 0.64f, 0.88f, 0.5f, DF_BLOCKS },
+    { CDEC_CRATES, DW_RING, 0, 1, 0.9f, 1.3f, 0.68f, 0.86f, 0.6f, DF_BLOCKS | DF_ALONG },
+    { CDEC_POTS, DW_ALL, 0, 1, 0.8f, 1.1f, 0.3f, 0.8f, 0.5f, 0 },
+    { CDEC_STALAGMITES, DW_RING, 0, 2, 1.0f, 1.8f, 0.62f, 0.9f, 0.42f, DF_BLOCKS },
+    { CDEC_STALACTITES, DW_ALL, 1, 3, 1.1f, 2.2f, 0.3f, 0.85f, 0.5f, DF_CEILING },
+    { CDEC_POOL, DW_ALL, 0, 1, 1.2f, 2.2f, 0.2f, 0.6f, 0.5f, 0 },
+    { CDEC_MOSS, DW_ALL, 2, 5, 1.0f, 2.6f, 0.15f, 0.88f, 0.5f, 0 },
+    { CDEC_ROCK, DW_ALL, 2, 4, 0.45f, 1.8f, 0.25f, 0.92f, 0.6f, 0 },
+};
+
+// Los forajidos: un campamento tosco alrededor del fuego, el botin apilado.
+static const DecorRule PLAN_BANDITS[] = {
+    { CDEC_WALL_TORCH, DW_HALL, 4, 6, 1.0f, 1.0f, 0.0f, 0.0f, 0.6f, DF_WALL | DF_ROUND },
+    { CDEC_WALL_TORCH, DW_RING, 1, 2, 1.0f, 1.0f, 0.0f, 0.0f, 0.6f, DF_WALL | DF_ROUND },
+    { CDEC_TIMBER, DW_HALL, 2, 4, 2.8f, 3.2f, 0.0f, 0.0f, 0.4f, DF_WALL },
+    { CDEC_TIMBER, DW_RING, 1, 2, 2.6f, 3.0f, 0.0f, 0.0f, 0.4f, DF_WALL },
+    { CDEC_BEDROLL, DW_HALL, 4, 6, 1.8f, 2.0f, 2.6f, 3.0f, 0.4f, DF_FIRE },
+    { CDEC_CRATES, DW_HALL, 1, 2, 1.0f, 1.5f, 0.68f, 0.86f, 0.6f, DF_BLOCKS | DF_ALONG },
+    { CDEC_SACKS, DW_HALL, 1, 2, 0.7f, 1.0f, 0.68f, 0.86f, 0.8f, DF_BLOCKS | DF_ALONG },
+    { CDEC_RUG, DW_HALL, 1, 1, 2.0f, 2.4f, 0.35f, 0.65f, 0.5f, 0 },
+    { CDEC_POTS, DW_HALL, 0, 2, 0.8f, 1.1f, 0.3f, 0.75f, 0.5f, 0 },
+    { CDEC_CRATES, DW_RING, 1, 2, 1.0f, 1.5f, 0.68f, 0.86f, 0.6f, DF_BLOCKS | DF_ALONG },
+    { CDEC_SACKS, DW_RING, 0, 2, 0.7f, 1.0f, 0.68f, 0.86f, 0.8f, DF_BLOCKS | DF_ALONG },
+    { CDEC_BEDROLL, DW_RING, 0, 2, 1.8f, 2.0f, 0.55f, 0.8f, 0.5f, DF_ALONG },
+    { CDEC_RUBBLE, DW_RING, 0, 1, 1.2f, 1.8f, 0.64f, 0.88f, 0.5f, DF_BLOCKS },
+    { CDEC_STALACTITES, DW_ALL, 0, 2, 1.0f, 2.0f, 0.3f, 0.85f, 0.5f, DF_CEILING },
+    { CDEC_STALAGMITES, DW_RING, 0, 1, 1.0f, 1.6f, 0.62f, 0.9f, 0.42f, DF_BLOCKS },
+    { CDEC_ROCK, DW_ALL, 1, 3, 0.45f, 1.8f, 0.25f, 0.92f, 0.6f, 0 },
+};
+
+// La tribu: fieltro y pieles alrededor del hogar, lamparas, vasijas.
+static const DecorRule PLAN_TRIBE[] = {
+    { CDEC_SHAFT, DW_HALL, 0, 1, 2.4f, 3.2f, 0.3f, 0.6f, 0.5f, DF_CEILING }, // a veces, el humero de la boveda
+    { CDEC_TAPESTRY, DW_HALL, 2, 3, 1.5f, 1.8f, 0.0f, 0.0f, 0.6f, DF_WALL },
+    { CDEC_TAPESTRY, DW_RING, 0, 1, 1.4f, 1.7f, 0.0f, 0.0f, 0.6f, DF_WALL },
+    { CDEC_WALL_TORCH, DW_HALL, 2, 2, 1.0f, 1.0f, 0.0f, 0.0f, 0.6f, DF_WALL | DF_ROUND },
+    { CDEC_POST, DW_HALL, 1, 2, 0.42f, 0.42f, 0.66f, 0.86f, 0.75f, DF_BLOCKS },
+    { CDEC_RUG, DW_HALL, 3, 4, 2.2f, 3.0f, 2.4f, 2.9f, 0.45f, DF_FIRE },
+    { CDEC_LAMP, DW_HALL, 3, 4, 0.32f, 0.4f, 0.6f, 0.6f, 1.0f, DF_ROUND },
+    { CDEC_BEDROLL, DW_HALL, 2, 4, 1.8f, 2.0f, 0.55f, 0.82f, 0.5f, DF_ALONG },
+    { CDEC_RACK, DW_HALL, 1, 2, 1.6f, 2.0f, 0.68f, 0.86f, 0.5f, DF_BLOCKS | DF_ALONG },
+    { CDEC_POTS, DW_HALL, 1, 3, 0.8f, 1.2f, 0.4f, 0.85f, 0.5f, 0 },
+    { CDEC_RUG, DW_RING, 1, 2, 2.0f, 2.8f, 0.0f, 0.5f, 0.5f, 0 },
+    { CDEC_BEDROLL, DW_RING, 1, 3, 1.8f, 2.0f, 0.55f, 0.82f, 0.5f, DF_ALONG },
+    { CDEC_LAMP, DW_RING, 1, 2, 0.32f, 0.4f, 0.5f, 0.85f, 1.0f, 0 },
+    { CDEC_RACK, DW_RING, 0, 1, 1.6f, 2.0f, 0.68f, 0.86f, 0.5f, DF_BLOCKS | DF_ALONG },
+    { CDEC_POTS, DW_RING, 0, 2, 0.8f, 1.2f, 0.4f, 0.85f, 0.5f, 0 },
+    { CDEC_STALACTITES, DW_ALL, 0, 2, 1.0f, 2.0f, 0.3f, 0.85f, 0.5f, DF_CEILING },
+    { CDEC_ROCK, DW_ALL, 1, 2, 0.45f, 1.8f, 0.25f, 0.92f, 0.6f, 0 },
+};
+
+// El almacen del imperio: salas labradas, pilastras, braseros en ronda, estelas al fondo y la mercancia en filas.
+static const DecorRule PLAN_EMPIRE[] = {
+    { CDEC_PILASTER, DW_ALL, 0, 0, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, DF_CORNER },
+    { CDEC_SHAFT, DW_HALL, 1, 1, 4.0f, 5.0f, 0.0f, 0.12f, 0.5f, DF_CEILING }, // el oculo de la cupula
+    { CDEC_STELE, DW_HALL, 1, 2, 2.6f, 3.4f, 0.72f, 0.8f, 0.35f, DF_BLOCKS | DF_BACK },
+    { CDEC_BRAZIER, DW_HALL, 8, 8, 1.0f, 1.2f, 0.6f, 0.6f, 0.35f, DF_BLOCKS | DF_ROUND },
+    { CDEC_BRAZIER, DW_RING, 2, 2, 1.0f, 1.2f, 0.64f, 0.64f, 0.35f, DF_BLOCKS | DF_ROUND },
+    { CDEC_CRATES, DW_RING, 2, 4, 1.0f, 1.5f, 0.7f, 0.86f, 0.6f, DF_BLOCKS | DF_ALONG },
+    { CDEC_SACKS, DW_RING, 2, 4, 0.7f, 1.0f, 0.7f, 0.86f, 0.8f, DF_BLOCKS | DF_ALONG },
+    { CDEC_POTS, DW_RING, 1, 3, 0.9f, 1.2f, 0.62f, 0.86f, 0.5f, DF_ALONG },
+    { CDEC_POTS, DW_HALL, 1, 2, 0.9f, 1.2f, 0.62f, 0.86f, 0.5f, DF_ALONG },
+};
+
+#define PLAN_OF(t) { t, (int)(sizeof(t) / sizeof(t[0])) }
+static const struct {
+    const DecorRule *rules;
+    int n;
+} DECOR_PLAN[CAVE_KINDS] = { PLAN_OF(PLAN_ANIMAL), PLAN_OF(PLAN_RUIN), PLAN_OF(PLAN_BANDITS), PLAN_OF(PLAN_TRIBE), PLAN_OF(PLAN_EMPIRE) };
+
+// Si (x, z) sirve para una cosa del decorado de radio rad: en el suelo de la sala; lo que tapa, junto a la pared; lejos
+// de las puertas, de los objetos y del resto del decorado (lo que cuelga, solo de lo que cuelga).
+static bool decor_spot_ok(const Cave *c, const CaveDecor *out, int n, int room, float x, float z, float rad, bool blocks, bool ceiling, bool flat) {
     const CaveRoom *r = &c->rooms[room];
     float d = dist_xz(x, z, r->x, r->z);
-    if (d + rad > r->radius - 0.3f) return false;              // en el suelo de la sala
-    if (blocks && d - rad < r->radius * 0.5f) return false;     // lo que tapa, junto a la pared: el centro queda libre
-    float a = atan2f(x - r->x, z - r->z), span = (rad + 2.5f) / r->radius; // lejos de las puertas
-    for (int k = -2; k <= 2; k++)
-        if (cave_door_at(c, room, a + span * 0.5f * (float)k)) return false;
-    for (int i = 0; i < c->object_count; i++) { // ni encima de los objetos
+    if (d + rad > r->radius - 0.3f) return false;          // en el suelo de la sala
+    if (blocks && d - rad < r->radius * 0.5f) return false; // lo que tapa, junto a la pared: el centro queda libre
+    if (!ceiling) {
+        float a = atan2f(x - r->x, z - r->z), span = (rad + 2.5f) / r->radius; // lejos de las puertas
+        for (int k = -2; k <= 2; k++)
+            if (cave_door_at(c, room, a + span * 0.5f * (float)k)) return false;
+    }
+    for (int i = 0; i < c->object_count; i++) { // ni encima de los objetos (lo que cuelga, de las estalactitas)
         const CaveObject *o = &c->objects[i];
+        if (o->room != room) continue;
         float ox, oz;
-        if (o->room != room || cave_object_on_wall(o->kind) || o->kind == COBJ_STALACTITE) continue;
+        if (cave_object_on_wall(o->kind)) { // ni delante de lo de la pared: a las celdas y las vetas se llega
+            if (ceiling) continue;
+            cave_object_at(c, i, &ox, NULL, &oz, NULL);
+            if (dist_xz(x, z, ox, oz) < rad + (o->kind == COBJ_CELL ? 1.7f : 0.8f)) return false;
+            continue;
+        }
+        if ((o->kind == COBJ_STALACTITE) != ceiling) continue;
         cave_object_at(c, i, &ox, NULL, &oz, NULL);
-        if (dist_xz(x, z, ox, oz) < rad + object_room(o->kind) + 0.4f) return false;
+        float need = ceiling ? rad + 1.0f : flat ? rad * 0.5f + object_room(o->kind) + 0.2f : rad + object_room(o->kind) + 0.4f;
+        if (dist_xz(x, z, ox, oz) < need) return false;
+    }
+    for (int i = 0; i < n; i++) {
+        if (cave_decor_on_ceiling(out[i].kind) != ceiling || (flat && !decor_flat(out[i].kind)) || (!flat && decor_flat(out[i].kind))) continue;
+        if (dist_xz(x, z, out[i].x, out[i].z) < rad + out[i].radius + 0.3f) return false;
+    }
+    return true;
+}
+
+static float wrap_angle(float a) {
+    while (a > CAVE_PI) a -= 2.0f * CAVE_PI;
+    while (a < -CAVE_PI) a += 2.0f * CAVE_PI;
+    return a;
+}
+
+// Si el tramo de pared en el angulo a de una sala esta libre: sin nada colgado (objetos o decorado de la pared) a menos de
+// gap metros a lo largo de ella.
+static bool wall_free_for(const Cave *c, const CaveDecor *out, int n, int rm, float a, float gap) {
+    const CaveRoom *r = &c->rooms[rm];
+    for (int i = 0; i < c->object_count; i++) {
+        const CaveObject *o = &c->objects[i];
+        if (o->room == rm && cave_object_on_wall(o->kind) && fabsf(wrap_angle(atan2f(o->x - r->x, o->z - r->z) - a)) * r->radius < gap) return false;
     }
     for (int i = 0; i < n; i++)
-        if (dist_xz(x, z, out[i].x, out[i].z) < rad + out[i].radius + 0.3f) return false;
+        if (out[i].room == rm && cave_decor_on_wall(out[i].kind) && fabsf(wrap_angle(out[i].yaw - a)) * r->radius < gap) return false;
     return true;
+}
+
+// Las pilastras: una en cada esquina de la pared labrada, salvo donde hay una puerta o algo colgado de la pared.
+static int place_pilasters(const Cave *c, CaveDecor *out, int n, int max, int rm) {
+    const CaveRoom *r = &c->rooms[rm];
+    int sides = cave_room_sides(c, rm);
+    float s = 2.0f * CAVE_PI / (float)(sides > 0 ? sides : 1), h = (rm == 0 ? 2.0f : 1.0f) * CAVE_WALL_HEIGHT;
+    for (int k = 0; k < sides && n < max; k++) {
+        float a = ((float)k + 0.5f) * s, d = r->radius - 0.65f, x = r->x + sinf(a) * d, z = r->z + cosf(a) * d;
+        bool clear = true;
+        for (int i = 0; i < c->object_count && clear; i++) {
+            const CaveObject *o = &c->objects[i];
+            if (o->room == rm && cave_object_on_wall(o->kind)) clear = fabsf(wrap_angle(atan2f(o->x - r->x, o->z - r->z) - a)) * r->radius > 1.2f;
+        }
+        if (!clear || !decor_spot_ok(c, out, n, rm, x, z, 0.3f, false, false, false)) continue;
+        out[n++] = (CaveDecor){ .kind = CDEC_PILASTER, .room = (uint8_t)rm, .x = x, .z = z, .y = r->floor_y, .size = h, .yaw = a, .radius = 0.3f };
+    }
+    return n;
+}
+
+// La fogata de una sala (los forajidos y la tribu duermen alrededor): su lugar, o el centro de la sala si no hay.
+static void room_fire(const Cave *c, int rm, float *x, float *z) {
+    *x = c->rooms[rm].x, *z = c->rooms[rm].z;
+    for (int i = 0; i < c->object_count; i++)
+        if (c->objects[i].kind == COBJ_FIRE && c->objects[i].room == rm) {
+            *x = c->objects[i].x, *z = c->objects[i].z;
+            return;
+        }
 }
 
 int cave_decor(const Cave *c, CaveDecor *out, int max) {
     uint32_t s = mix((uint32_t)(int)(c->x * 8.0f) * 0x9E3779B9u ^ (uint32_t)(int)(c->z * 8.0f) * 0x85EBCA6Bu ^ 0xDEC0u);
-    int n = 0;
+    int n = 0, kind = (int)c->kind < 0 || c->kind >= CAVE_KINDS ? CAVE_ANIMAL : (int)c->kind;
+    const DecorRule *plan = DECOR_PLAN[kind].rules;
     for (int rm = 0; rm < c->room_count && n < max; rm++) {
         const CaveRoom *r = &c->rooms[rm];
-        // Rocas: unas grandes junto a la pared (tapan el paso) y otras chicas sueltas. En la Cisterna, mas.
-        int want = (rm == 0 ? 6 : 3) + (int)(unit(&s) * 4.0f);
-        for (int i = 0; i < want && n < max; i++)
-            for (int tryn = 0; tryn < 12; tryn++) {
-                float size = 0.45f + unit(&s) * 1.35f, rad = size * 0.6f, a = unit(&s) * 2.0f * CAVE_PI;
-                bool blocks = size > 0.8f;
-                float f = (blocks ? 0.62f : 0.25f) + unit(&s) * (blocks ? 0.3f : 0.6f), d = r->radius * f;
-                float x = r->x + sinf(a) * d, z = r->z + cosf(a) * d;
-                if (!decor_spot_ok(c, out, n, rm, x, z, rad, blocks)) continue;
-                out[n++] = (CaveDecor){ .kind = CDEC_ROCK, .room = (uint8_t)rm, .variant = (uint8_t)(unit(&s) * 4.0f) & 3, .blocks = blocks,
-                                        .x = x, .z = z, .y = r->floor_y, .size = size, .yaw = unit(&s) * 2.0f * CAVE_PI, .radius = rad };
-                break;
+        for (int p = 0; p < DECOR_PLAN[kind].n && n < max; p++) {
+            const DecorRule *ru = &plan[p];
+            if (!(ru->where & (rm == 0 ? DW_HALL : DW_RING))) continue;
+            if (ru->flags & DF_CORNER) {
+                n = place_pilasters(c, out, n, max, rm);
+                continue;
             }
+            int want = ru->lo + (int)(unit(&s) * (float)(ru->hi - ru->lo + 1)) % (ru->hi - ru->lo + 1);
+            float phase = unit(&s) * 2.0f * CAVE_PI, fx = r->x, fz = r->z;
+            if (ru->flags & DF_FIRE) room_fire(c, rm, &fx, &fz);
+            for (int i = 0; i < want && n < max; i++)
+                for (int tryn = 0; tryn < 24; tryn++) {
+                    float size = ru->size_lo + unit(&s) * (ru->size_hi - ru->size_lo), f_lo = ru->f_lo, f_hi = ru->f_hi;
+                    bool blocks = (ru->flags & DF_BLOCKS) != 0, ceiling = (ru->flags & DF_CEILING) != 0;
+                    if (ru->kind == CDEC_ROCK) { // las rocas: las grandes, junto a la pared (tapan); las chicas, sueltas
+                        blocks = size > 0.8f;
+                        f_lo = blocks ? 0.62f : 0.25f, f_hi = blocks ? 0.92f : 0.85f;
+                    }
+                    float rad = size * ru->foot, jit = tryn ? (unit(&s) - 0.5f) * (0.35f + 0.08f * (float)tryn) : 0.0f, a, d, x, z;
+                    float yaw = unit(&s) * 2.0f * CAVE_PI;
+                    if (ru->flags & DF_FIRE) { // alrededor del fuego, cada uno con la cabecera hacia afuera
+                        // Si el fuego esta cerca de la pared, del lado de adentro de la sala.
+                        if (dist_xz(fx, fz, r->x, r->z) > r->radius * 0.4f)
+                            a = atan2f(r->x - fx, r->z - fz) + ((float)i - (float)(want - 1) * 0.5f) * fminf(0.95f, 3.8f / (float)(want > 1 ? want - 1 : 1)) + jit;
+                        else a = phase + (float)i * 2.0f * CAVE_PI / (float)want + jit;
+                        if (tryn >= 12) a = unit(&s) * 2.0f * CAVE_PI; // si no cabe en su lugar, en cualquier otro alrededor
+                        d = f_lo + unit(&s) * (f_hi - f_lo) + 0.08f * (float)tryn; // y un poco mas alla
+                        x = fx + sinf(a) * d, z = fz + cosf(a) * d, yaw = a;
+                    } else if (ru->flags & DF_WALL) { // contra la pared: el pie, del lado de la sala
+                        a = (ru->flags & DF_ROUND) ? phase + (float)i * 2.0f * CAVE_PI / (float)want + jit * 2.0f : unit(&s) * 2.0f * CAVE_PI;
+                        d = r->radius - 0.65f, rad = 0.3f;
+                        x = r->x + sinf(a) * d, z = r->z + cosf(a) * d, yaw = a;
+                        if (!wall_free_for(c, out, n, rm, a, size * ru->foot + 0.9f)) continue;
+                    } else {
+                        if (ru->flags & DF_ROUND) a = phase + (float)i * 2.0f * CAVE_PI / (float)want + jit;
+                        else if (ru->flags & DF_BACK) a = (i & 1 ? -1.0f : 1.0f) * (0.6f + 0.35f * (float)(i / 2)) + jit; // a los lados de la subida
+                        else a = unit(&s) * 2.0f * CAVE_PI;
+                        d = r->radius * (f_lo + unit(&s) * (f_hi - f_lo));
+                        x = r->x + sinf(a) * d, z = r->z + cosf(a) * d;
+                        if (ru->flags & DF_BACK) yaw = a + CAVE_PI;
+                        else if (ru->flags & DF_ALONG) yaw = a + CAVE_PI * 0.5f;
+                    }
+                    if (!decor_spot_ok(c, out, n, rm, x, z, rad, blocks, ceiling, decor_flat(ru->kind))) continue;
+                    uint8_t var = (uint8_t)(unit(&s) * 4.0f) & 3;
+                    if (ru->kind == CDEC_SACKS) var = c->kind == CAVE_BANDITS ? (uint8_t)(var | 2) : (uint8_t)(var & 1); // gris o de arpillera
+                    out[n++] = (CaveDecor){ .kind = ru->kind, .room = (uint8_t)rm, .variant = var, .blocks = blocks,
+                                            .x = x, .z = z, .y = r->floor_y, .size = size, .yaw = yaw, .radius = rad };
+                    if (ru->kind == CDEC_SHAFT && c->kind == CAVE_ABANDONED && n < max) { // bajo el agujero, lo que se cayo
+                        float hs = 2.2f + unit(&s) * 0.6f;
+                        if (decor_spot_ok(c, out, n, rm, x, z, hs * 0.5f, true, false, false))
+                            out[n++] = (CaveDecor){ .kind = CDEC_RUBBLE, .room = (uint8_t)rm, .variant = 3, .blocks = true, .x = x, .z = z, .y = r->floor_y,
+                                                    .size = hs, .yaw = unit(&s) * 2.0f * CAVE_PI, .radius = hs * 0.5f };
+                    }
+                    break;
+                }
+        }
     }
     return n;
 }

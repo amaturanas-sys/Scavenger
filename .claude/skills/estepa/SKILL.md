@@ -44,4 +44,5 @@ cmake -E copy_directory assets build/assets && (cd build && xvfb-run -a ./estepa
 - Documentación: `code-documenter` (los documentos del proyecto van en español, en `docs/`).
 - Lo que se ve (modelos, texturas, íconos, interfaz): `estetica`, con `cad` (text-to-CAD), `modelos` y
   `animaciones`.
+- El mundo (relieve, agua, regiones, vegetación, lugares y estaciones): `mundo`.
 - Equipo de agentes: `/gamedev <tarea>` (agentes `gamedev-*`; solo en Claude Code).

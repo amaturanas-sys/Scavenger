@@ -38,12 +38,13 @@ typedef enum {
     VF_BASALT,    // roquerio de columnas de basalto en la playa negra y las rompientes (fiordos)
     VF_SEA_STACK, // farallon de basalto en el mar, con un gorro de hierba
     VF_BOULDER,   // canto rodado claro en el cauce y la orilla de los rios
-    VF_HOODOO,    // torre de arenisca en estratos con sombrero mas duro (desierto)
-    VF_MESA,      // farallon estratificado con alero y cueva (cañones del desierto)
+    VF_HOODOO,    // hongo de arenisca: un pie angosto y un sombrero de roca dura (desierto)
+    VF_MESA,      // farallon de arenisca en capas, con aleros, grietas y una cueva al pie (cañones del desierto)
     VF_CHALK,     // formacion de creta blanca erosionada por el viento (desierto)
-    VF_SERAC,     // bloques de hielo del frente del glaciar, con grietas azules
+    VF_SERAC,     // bloques de hielo caidos al pie del frente del glaciar, inclinados, con grietas azules
     VF_ICEBERG,   // tempano en los lagos de deshielo
     VF_FLOE,      // tempano chato del mar en invierno: una placa de hielo de borde quebrado
+    VF_ARCH,      // arco natural de arenisca (desierto), como los de las fotos de AlUla
     VF_KINDS
 } VoxFeature;
 #define VF_VARIANTS 4
@@ -52,11 +53,15 @@ void voxs_draw_feature(VoxFeature f, int variant, Vector3 at, float yaw, float s
 // region con un arco natural al frente y el tunel hueco detras. En el plano de la cueva (x de costado, z hacia adentro,
 // y desde el suelo de la boca): la cara en z = VOXS_MOUTH_FACE; el arco, de 3,2 m de ancho abajo y 3,2 de alto en el
 // medio; la roca dentro de |x| < 4,7 y 0,4 < z < 6,8, menos dos rocas bajas que asoman delante (VOXS_MOUTH_BOULDERS:
-// x, z y radio); 2,8 m de cimiento bajo el suelo, para las laderas. facade: la cara lisa alrededor del arco (la fachada
-// de las abandonadas). at: el suelo en la boca; yaw: el de la cueva. 4 variantes; de cerca (voxs_set_lod), refinada.
+// x, z y radio); 2,8 m de cimiento bajo el suelo, para las laderas. Como en las referencias de Perchance, la roca es
+// un monticulo de peñascos: bloques de distinto tono con la grieta oscura entre uno y otro, liquen en lo que mira
+// arriba y pasto en lo alto. style: la piedra de la region; FACADE, con la cara lisa alrededor del arco (la fachada de
+// las abandonadas y el portico del imperio); OCHRE, de piedra ocre (la de una tribu, como en sus referencias). at: el
+// suelo en la boca; yaw: el de la cueva. 4 variantes; de cerca (voxs_set_lod), refinada.
 #define VOXS_MOUTH_FACE 0.4f
 extern const float VOXS_MOUTH_BOULDERS[2][3];
-void voxs_draw_cave_mouth(Region region, int variant, bool facade, Vector3 at, float yaw);
+typedef enum { VOXS_MOUTH_NATURAL, VOXS_MOUTH_FACADE, VOXS_MOUTH_OCHRE, VOXS_MOUTH_STYLES } VoxMouthStyle;
+void voxs_draw_cave_mouth(Region region, int variant, VoxMouthStyle style, Vector3 at, float yaw);
 void voxs_unload(void);
 void voxs_forget_gpu(void); // ver terrain_forget_gpu
 // ¿Hay una celda llena de un edificio, una ruina o una formacion dibujados cerca del ojo en el cuadro anterior

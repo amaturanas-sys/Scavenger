@@ -44,8 +44,9 @@ que ya salió mal y el estado del proyecto.
 | [INVENTARIO.md](INVENTARIO.md), [ANIMACIONES.md](ANIMACIONES.md) | Generados por sus scripts: no se editan a mano. |
 | [PLAN_HERRAMIENTAS_IA.md](PLAN_HERRAMIENTAS_IA.md), [ROADMAP.md](ROADMAP.md) | El plan, su estado y lo que falta. |
 | [CAPTURAS.md](CAPTURAS.md) | Las capturas de cada pantalla y cómo se sacan. |
+| [FUENTES_ASSETS.md](FUENTES_ASSETS.md) | Fuentes de assets con licencia abierta, y qué revisar antes de traer uno. |
 | [NARRATIVA.md](NARRATIVA.md), [ESTILO_VISUAL.md](ESTILO_VISUAL.md) | La historia y el estilo. |
-| `.claude/skills/estepa`, `modelos`, `animaciones` | Las convenciones y las tuberías de modelos y animaciones (sirven de guía para todas las IA). |
+| `.claude/skills/estepa`, `modelos`, `animaciones`, `mundo` | Las convenciones, las tuberías de modelos y animaciones, y las capas del mundo (sirven de guía para todas las IA). |
 
 ## 2. Cómo se reparte el trabajo
 
@@ -186,6 +187,26 @@ Lo que hace Claude con cada PR del Codespace, antes de publicar:
    comprobar que tenga el ZIP de Windows y el APK.
 8. **Informar** al usuario: qué encontró, qué corrigió, los enlaces y lo pendiente.
 
+### El entorno de Claude Code en la nube
+
+El script del entorno (en claude.ai, fuera del repo) prepara cada contenedor nuevo:
+
+- **`.venv`** con `tools/modelos/requirements.txt`, para las pruebas de modelos y de voxeles.
+- **rtk, a prueba** ([rtk-ai/rtk](https://github.com/rtk-ai/rtk) v1.2.0, edición Apache-2.0, sin telemetría). Un hook
+  antes de cada Bash (`.claude/settings.local.json`, fuera de git) reescribe `git`, `grep`, `ls`, `find`, `cat`,
+  `head`, `tail` y `gcc`, entre otros, a su versión compacta (`rtk git status`…). Su configuración, en
+  `~/.config/rtk/config.toml`.
+  - **Lo que cambia:** `git diff` cambia las cabeceras (`diff --git`, `---`, `+++`) por un resumen; `ls`, sin
+    fechas; `grep` con más de 25 aciertos por archivo (o 200 en total) sale recortado, con las líneas largas
+    cortadas en «...» y el aviso `+N more … rtk recall <id>`.
+  - **Lo que no cambia (probado):** los errores de compilación (también uno de 28 KB), las líneas `FALLO` de
+    `sim_tests`, `cat`, `head` y `tail` de código, y los códigos de salida. No pasan por rtk `cmake --build`,
+    `sim_tests`, `wc` ni los comandos que escriben a un archivo (`> x.patch`, `cat > f <<'EOF'`).
+  - **La salida cruda:** `RTK_DISABLED=1 <comando>`; lo oculto, `rtk recall <id>`. **El ahorro:** `rtk gain` (se
+    pierde con el contenedor).
+  - **Se quita** si un error de compilación o un `FALLO` llega recortado: borrar el hook de
+    `.claude/settings.local.json` y la parte de rtk del script del entorno, y avisar al usuario.
+
 ## 5. Reglas que no se rompen
 
 **Respetar lo que ya existe:**
@@ -206,8 +227,9 @@ Lo que hace Claude con cada PR del Codespace, antes de publicar:
   - sin `unistd.h` ni `dirent.h` en `src/`;
   - sin `M_PI` (usar las constantes `PI` del código).
 - **Cero advertencias nuevas** (`-Wall -Wextra -Wpedantic`, `/W4`).
-- **Los shaders** también en GLSL ES 100, con `precision mediump float;` en el de vértices (como el de raylib:
-  con `highp`, llvmpipe de Mesa no dibuja nada en OpenGL ES) y un respaldo si no compila. El CI los compila y
+- **Los shaders** también en GLSL ES 100, con `precision highp float;` en el de vértices (en muchos móviles, como
+  los de GPU Mali o PowerVR, y en Mesa, `mediump` es de 16 bits: lo que va en coordenadas del mundo se deforma lejos
+  del origen; el de raylib también va en `highp`, lo cambia `CMakeLists.txt`) y un respaldo si no compila. El CI los compila y
   dibuja también con OpenGL ES 2.0 (`-DOPENGL_VERSION="ES 2.0"`; ver el del agua, `src/world/terrain.c`).
 - **La memoria:** arreglos fijos (`*_MAX`) y estructuras planas; nada se reserva por cuadro y no hay ECS
   genérico.
@@ -280,7 +302,9 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | El arranque | `./estepa --frames 60 --screenshot shot.png` |
 | Un lugar del mundo | `--ir estepa`, `bosque`, `altiplano`, `desierto`, `mar`, `capital`, `aldea`, `fortaleza`, `ciudad`, `plaza-<región>`… (con `--dia 11 --minuto 7` es verano al mediodía; `--camara`, `--dron 40` desde arriba; `--vista cerca\|media\|lejos`) |
 | El agua | `--ir lago`, `desborde`, `cascada`, `meandro`, `trenzado`, `arroyo`, `rapidos` |
-| El kit de edificios | `--edificios casa` (o `palacio`, `muralla`, `puerta`, `fortaleza`, `refugio`… ; `:región` para una sola fila) |
+| El kit de edificios | `--edificios casa` (o `palacio`, `muralla`, `puerta`, `fortaleza`, `refugio`… ; `:región` para una sola fila; `--dron 24` para verlas de cerca) |
+| Las formaciones del paisaje | `--formaciones desierto` (o `hielo`, `costa`): las cuatro variantes de cada una |
+| Los muros del borde, enteros | `--ir panorama-hielo` o `panorama-muro` (a 520 m del borde, con `--camara 0.06 --vista lejos`); de cerca, `--ir hielo`, `muro`, `lengua` |
 | Un objeto de cerca | `--ver <id del inventario>` |
 | El asedio | `--asedio puerta`, `fuego`, `salida`, `quemada`, `tomada`… |
 | Combate | `--enemigos bandidos`, `culto`, `lobos`, `arqueros` |
@@ -385,7 +409,29 @@ traba.
 
 *(Lo actualiza Claude al publicar cada versión: la versión, lo último y lo que sigue.)*
 
-- **Versión:** 0.14.1. El paisaje de voxeles: los árboles del mundo con sus `.vox` (el pino; los sauces junto al
+- **Versión:** 0.14.7. La estepa más tupida y más ruinas: más pasto, stipa, hierbas y flores (unas 3,4 matas por
+  m²), el pasto hasta 48 m (24 m en Android) con menos matas pero más anchas a lo lejos, los arbustos en manchas y
+  bosquecillos de pinos en la llanura; 26 fortalezas derruidas por mundo (eran 14) y 6 ciudades enterradas (eran 2),
+  al final de los sitios (`SITES_MAX` 128; los vistos de después de 64, en `seen_sites_hi`). Antes, la 0.14.6: lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (el de raylib,
+  desde `CMakeLists.txt`, y el del agua); con `mediump`, de 16 bits en muchos móviles, lo que estaba lejos del origen
+  se deformaba o no se veía. Antes, la 0.14.5: las bocas de las cuevas como sus referencias: otras 20 imágenes de
+  Perchance del usuario
+  ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), B1): la roca en montículo de peñascos (ocre la de una tribu),
+  las antorchas con llamas y lo de cada tipo (cráneos; el arco y el musgo de la abandonada; las estacadas de los
+  forajidos; el sol y la tela de la tribu; el pórtico con balcón, la plaza y los estandartes del imperio). Las piezas con
+  sombra por cara, en `src/world/shapes.c`. Antes, la 0.14.4: las cuevas como sus referencias: las 20 imágenes de
+  Perchance del usuario, puestas junto a
+  capturas de las mismas salas ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md), sección 1b): la roca en facetas y el
+  decorado con sombra por cara; la paleta y la bruma de las imágenes; el fuego más blanco en las cuevas frías; rayos
+  de luz de bordes suaves; columnas en ruinas, marcos de madera, antorchas de pared, tapices y postes; el fogón de la
+  tribu con su anillo de piedras y las pinturas grandes. Antes, la 0.14.3: las cuevas por dentro, según quién vive en
+  ellas (sección 1b): con el orden de WorldClaw, cada tipo tiene su forma (el karst de las fieras, la roca gastada de la
+  tribu, la picada de los forajidos y las salas labradas del imperio, en polígonos con cornisa y cúpula), sus texturas
+  pintadas al entrar, su luz de fondo y su bruma, y su decorado por sala (`PLAN_*` en `src/sim/caves.c`, `KIND_LOOK`
+  en `src/game/cave_look.c`); los prompts de Perchance de cada tipo, para que el usuario genere las referencias. Con
+  ella sale la 0.14.2: los muros del borde (el cañón en estratos y el frente del glaciar en columnas, como los mapas
+  de WorldClaw), las rocas del desierto, las fortalezas con su torreón y el ladrillo trabado. Antes, la 0.14.1: el
+  paisaje de voxeles: los árboles del mundo con sus `.vox` (el pino; los sauces junto al
   agua; los arces del bosque), con su detalle según la distancia y sus estaciones (`src/world/trees.c`); más hierbas
   en la estepa y más pasto en el bosque; sin cajas junto a los campamentos (las matas con las hojas de la vegetación;
   las rocas, el pedernal, las piedras, el barro, la leña, el caldero, el odre y el coral, de voxeles); los carros a la
@@ -410,17 +456,24 @@ traba.
   - las cuevas grandes: la base; los voxeles desde las hojas; los modelos al estilo PS2; los asentamientos
     antiguos; la cámara cerca con `F` y `Enter` (v0.14.0);
   - el paisaje de voxeles: los árboles, la vegetación más tupida, los recolectables con modelo, los carros a escala
-    y la carreta-casa (v0.14.1).
+    y la carreta-casa (v0.14.1);
+  - los muros del borde, las rocas del desierto, las fortalezas y el ladrillo (v0.14.2);
+  - las cuevas por dentro según su tipo, con las tareas C1, C2, C9 y C11 del plan y parte de C4, C6, C7, C15 y C16
+    (v0.14.3);
+  - las cuevas como sus referencias de Perchance (v0.14.4);
+  - las bocas de las cuevas como sus referencias (v0.14.5);
+  - lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (v0.14.6);
+  - la estepa más tupida y más ruinas para encontrar (v0.14.7).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
   - el campamento nodal: descartado por el usuario (duplicaba el campamento);
   - los cauces por estación: los rehizo la fase 2 del agua (v0.11.1).
 - **Lo que sigue:**
-  - **Las tareas de las cuevas grandes para Copilot** ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md), de C1
-    a C16, en orden): los voxeles de lo de adentro (racimos, columnas, cofres, rocas, fuentes, el lago) y lo
-    demás según las referencias (huesos, antorchas, pinturas, celdas, túneles labrados, la boca vista desde
-    adentro), el rendimiento y las capturas. Hitos: v0.14.1 (C4), v0.14.2 (C10) y v0.14.3 (C16).
+  - **Lo que queda de las cuevas grandes** ([PLAN_CUEVAS_GRANDES.md](PLAN_CUEVAS_GRANDES.md), la tabla de la
+    sección 5): los cofres, las fuentes, las antorchas, las celdas, la puerta del calabozo, las escaleras talladas
+    y la boca vista desde adentro; el reflejo del lago y su agua honda; las variantes de las rocas; el
+    diagnóstico en pantalla. Y comparar cada tipo con las referencias de Perchance cuando el usuario las genere.
   - **Lo que queda de las hojas** ([PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md)): las bestias
     terribles (el tipo B de cueva), la comida desde la barra (cuando el jugador tenga hambre) y el gancho en
     las torres con la cuerda como tirolesa.
