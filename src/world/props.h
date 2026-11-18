@@ -58,6 +58,7 @@ bool props_takeable(const InvItem *item);
 void props_draw_item(Props *p, const InvItem *item, Vector3 pos, float yaw, float grow);
 // La luz con que se tiñen los modelos (WHITE: como siempre). En una cueva (src/game/cave_game.c), la del lugar.
 void props_set_tint(Color tint);
+Color props_get_tint(void);
 // El fantasma de una obra por ubicar (src/game/place_game.c): el modelo (o la caja de sus
 // medidas) tenido con tint, translucido.
 void props_draw_ghost(Props *p, const InvItem *item, Vector3 pos, float yaw, Color tint);

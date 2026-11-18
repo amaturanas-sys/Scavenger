@@ -311,6 +311,9 @@ float world_river_bank(const World *w, float x, float z, float *width);
 #define LAKE_KEEP_M 10.0f
 // El fondo de un lago en (x, z): 1 en la cuenca, 0 desde su borde (LAKE_BANK). Lleva el lecho de los rios.
 float world_lake_bed(const World *w, float x, float z);
+// El suelo de arcilla del desierto (takyr) en (x, z): manchas [0, 1]; lo demas es arena. Ahi crecen, escasos, los
+// arboles y arbustos secos y algo de hierba seca.
+float world_desert_clay(const World *w, float x, float z);
 // El borde fractal: su radio en un angulo, y la distancia de (x, z) a el (positiva dentro).
 float world_edge_radius(const World *w, float angle);
 float world_edge_distance(const World *w, float x, float z);

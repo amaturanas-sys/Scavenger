@@ -5044,6 +5044,18 @@ static void test_decor(void) {
     }
     inventory_free(&inv);
     free(text);
+    // Se trepan las rocas (de la cresta a la roca baja), no lo demás (v0.15.1).
+    CHECK(decor_climbable(DECOR_CRESTA) && decor_climbable(DECOR_ROCA_BAJA) && !decor_climbable(DECOR_ACACIA));
+    {   // La arcilla del desierto: de 0 a 1, con zonas de arcilla y de arena.
+        const World *w = world_for_seed(1206u);
+        int clay = 0;
+        for (int i = 0; i < 400; i++) {
+            float c = world_desert_clay(w, (float)(i * 97 % 4000) - 2000.0f, (float)(i * 53 % 4000) - 2000.0f);
+            CHECK(c >= 0.0f && c <= 1.0f && c == world_desert_clay(w, (float)(i * 97 % 4000) - 2000.0f, (float)(i * 53 % 4000) - 2000.0f));
+            clay += c > 0.5f;
+        }
+        CHECK(clay > 0 && clay < 400);
+    }
     // Lo natural: solo su clase, con su agua, y casi siempre nada (la suma de las chances, chica).
     for (int g = 0; g < REGION_COUNT; g++) {
         float k[REGION_COUNT] = { 0 };

@@ -144,6 +144,7 @@ static Color category_color(const char *cat) {
 static Color g_tint = { 255, 255, 255, 255 }; // la luz de alrededor (props_set_tint)
 
 void props_set_tint(Color tint) { g_tint = tint; }
+Color props_get_tint(void) { return g_tint; }
 
 bool props_draw_item_matrix(Props *p, const InvItem *item, Matrix transform) {
     Model *m = cached_model(p, item);

@@ -18,7 +18,7 @@
 // costa, distancia sobre el agua (para la orilla), que es (suelo, copa o tronco) y cuanto tiene que
 // avanzar el glaciar para cubrirlo (world_glacier_reach).
 // A_WALL: cuanto es el muro de roca del otro lado del canal del bosque (world_forest_wall, docs/AGUA.md fase 5).
-enum { A_H, A_SLOPE, A_LIGHT, A_PATCH, A_DESERT, A_FOREST, A_HIGH, A_FJORD, A_SHORE, A_EDGE, A_BANK, A_KIND, A_GLACIER, A_WALL, TRI_ATTRS };
+enum { A_H, A_SLOPE, A_LIGHT, A_PATCH, A_DESERT, A_FOREST, A_HIGH, A_FJORD, A_SHORE, A_EDGE, A_BANK, A_KIND, A_GLACIER, A_WALL, A_CLAY, TRI_ATTRS };
 enum { KIND_GROUND, KIND_CANOPY, KIND_TRUNK, KIND_ROCK, KIND_BUSH };
 // Las mallas de agua de cada chunk: el agua (cada vertice con el color de su agua y su hielo), el hielo que
 // aguanta (sin el brillo de las ondas) y la espuma (rompientes y rapidos).
@@ -288,7 +288,7 @@ static TerrainTex ground_tex(const float *a, float slope) {
     if (a[A_BANK] > 0.45f && de < 0.5f && slope < 0.6f) return TT_COBBLES;       // el lecho de cantos que el rio lava
     if (a[A_H] > g_perma_snow && slope < 0.7f) return TT_SNOW;
     if (a[A_SHORE] > 0.0f && a[A_SHORE] < 0.5f) return hi + fj > 0.5f ? TT_GRAVEL : TT_MUD;
-    if (de > 0.5f) return slope > 0.45f ? TT_STRATA : TT_SAND;
+    if (de > 0.5f) return slope > 0.45f ? TT_STRATA : a[A_CLAY] > 0.5f ? TT_MUD : TT_SAND; // la arcilla agrietada (takyr), en manchas
     if (slope > 0.6f) return TT_ROCK;
     if (hi > 0.5f) return TT_TUNDRA;
     if (fo > 0.5f) return TT_FOREST;
@@ -715,8 +715,43 @@ static void push_out(float *x, float *z, float cx, float cz, float r) {
     *x = cx + dx / d * r, *z = cz + dz / d * r;
 }
 
-void terrain_collide(const Terrain *t, float *x, float *z, float y, float radius) {
+// Las rocas de un trozo como cupulas sobre su planta: las de prop_slot (circulos) y las del decorado que se trepan
+// (capsulas a lo largo de su X), de su base a su punta.
+typedef struct {
+    float cx, cz, ux, uz, half, r, base, top;
+} RockShape;
+#define ROCK_SHAPES_MAX (CHUNK_ROCKS + CHUNK_DECOR)
+static int rock_shapes(const Chunk *ch, RockShape *out) {
+    int n = 0;
+    for (int k = 0; k < ch->rock_count; k++) {
+        const ChunkRock *rk = &ch->rocks[k];
+        out[n++] = (RockShape){ rk->x, rk->z, 1.0f, 0.0f, 0.0f, rk->r, rk->y, rk->top };
+    }
+    for (int k = 0; k < ch->decor_count; k++) {
+        const ChunkDecor *d = &ch->decor[k];
+        float r, half;
+        if (!decor_climbable((DecorKind)d->kind) || decor_collider((DecorKind)d->kind, &r, &half) == DECOR_HIT_NONE) continue;
+        out[n++] = (RockShape){ d->x, d->z, cosf(d->yaw), -sinf(d->yaw), half * d->scale * d->stretch, r * d->scale, d->y,
+                                d->y + decor_norm((DecorKind)d->kind)->height * d->scale };
+    }
+    return n;
+}
+// La superficie de una roca a dist del eje de su planta (o -1e9 fuera).
+static float rock_height(const RockShape *s, float dist) {
+    float q2 = dist * dist / (s->r * s->r);
+    return q2 >= 1.0f ? -1e9f : s->base + (s->top - s->base) * sqrtf(1.0f - q2);
+}
+// Lo mas cerca del eje de la planta de una roca: el punto del eje y la distancia.
+static float rock_axis(const RockShape *s, float x, float z, float *ax, float *az) {
+    float dx = x - s->cx, dz = z - s->cz, a = fminf(fmaxf(dx * s->ux + dz * s->uz, -s->half), s->half);
+    *ax = s->cx + s->ux * a, *az = s->cz + s->uz * a;
+    return sqrtf((x - *ax) * (x - *ax) + (z - *az) * (z - *az));
+}
+
+
+void terrain_collide(const Terrain *t, float *x, float *z, float y, float radius, float reach) {
     int ccx = (int)floorf(*x / CHUNK_SIZE), ccz = (int)floorf(*z / CHUNK_SIZE);
+    RockShape rs[ROCK_SHAPES_MAX];
     for (int pass = 0; pass < 2; pass++) // dos vueltas: salir de una cosa puede meter en otra
         for (int i = 0; i < CHUNK_SLOTS; i++) {
             const Chunk *ch = &t->slots[i];
@@ -725,19 +760,24 @@ void terrain_collide(const Terrain *t, float *x, float *z, float y, float radius
                 const ChunkTree *tr = &ch->trees[k];
                 if (fabsf(tr->x - *x) < 2.0f && fabsf(tr->z - *z) < 2.0f) push_out(x, z, tr->x, tr->z, 0.3f + 0.15f * tr->scale + radius);
             }
-            for (int k = 0; k < ch->rock_count; k++) {
-                const ChunkRock *rk = &ch->rocks[k];
-                if (rk->top > y + 0.45f && fabsf(rk->x - *x) < rk->r + radius && fabsf(rk->z - *z) < rk->r + radius)
-                    push_out(x, z, rk->x, rk->z, rk->r + radius);
+            // Las rocas: si lo que el cuerpo tiene delante sube mas de lo que alcanza, lo frena; si no, se trepa.
+            int n = rock_shapes(ch, rs);
+            for (int k = 0; k < n; k++) {
+                const RockShape *s = &rs[k];
+                float span = s->half + s->r + radius, ax, az;
+                if (fabsf(s->cx - *x) > span || fabsf(s->cz - *z) > span) continue;
+                float d = rock_axis(s, *x, *z, &ax, &az);
+                if (d < s->r + radius && rock_height(s, fmaxf(d - radius, 0.0f)) - y > reach) push_out(x, z, ax, az, s->r + radius);
             }
             for (int k = 0; k < ch->decor_count; k++) {
                 const ChunkDecor *d = &ch->decor[k];
                 float r, half;
+                if (decor_climbable((DecorKind)d->kind)) continue; // (las rocas, arriba)
                 DecorHit hit = decor_collider((DecorKind)d->kind, &r, &half);
                 if (hit == DECOR_HIT_NONE || d->y + decor_norm((DecorKind)d->kind)->height * d->scale < y + 0.45f) continue;
                 r *= d->scale, half *= d->scale * d->stretch;
-                float reach = half + r + radius;
-                if (fabsf(d->x - *x) > reach || fabsf(d->z - *z) > reach) continue;
+                float span = half + r + radius;
+                if (fabsf(d->x - *x) > span || fabsf(d->z - *z) > span) continue;
                 float ux = cosf(d->yaw), uz = -sinf(d->yaw); // su X en el mundo
                 if (hit == DECOR_HIT_POSTS) {
                     push_out(x, z, d->x + ux * half, d->z + uz * half, r + radius);
@@ -751,9 +791,10 @@ void terrain_collide(const Terrain *t, float *x, float *z, float y, float radius
         }
 }
 
-float terrain_ground(const Terrain *t, float x, float z, float y_hint) {
+float terrain_ground(const Terrain *t, float x, float z, float y_hint, float reach) {
     float ground = terrain_height(t, x, z);
     int ccx = (int)floorf(x / CHUNK_SIZE), ccz = (int)floorf(z / CHUNK_SIZE);
+    RockShape rs[ROCK_SHAPES_MAX];
     for (int i = 0; i < CHUNK_SLOTS; i++) {
         const Chunk *ch = &t->slots[i];
         if (!ch->loaded || abs(ch->cx - ccx) > 1 || abs(ch->cz - ccz) > 1) continue;
@@ -765,6 +806,11 @@ float terrain_ground(const Terrain *t, float x, float z, float y_hint) {
             if (deck < 0.0f) continue;
             deck += d->y;
             if (deck > ground && y_hint >= deck - 0.6f) ground = deck;
+        }
+        int n = rock_shapes(ch, rs);
+        for (int k = 0; k < n; k++) {
+            float ax, az, top = rock_height(&rs[k], rock_axis(&rs[k], x, z, &ax, &az));
+            if (top > ground && y_hint >= top - reach) ground = top;
         }
     }
     return ground;
@@ -1026,7 +1072,12 @@ static bool tree_slot(const Terrain *t, int gx, int gz, ChunkTree *out) {
     WaterKind wk = WATER_NONE;
     float y = terrain_height(t, x, z), wl = world_water(t->world, x, z, 0.0f, &wk);
     bool wet = wl > -1e8f && y - wl < 6.0f;
-    if (r0 > tree_density(k, wet ? 1.0f : 0.0f) + k[REGION_STEPPE] * 0.5f * steppe_grove(t, x, z)) return false;
+    // La estepa es de hierbas, pastos y matas: los arboles crecen exponencialmente hacia afuera en las direcciones que
+    // llevan al bosque y a las colinas de los fiordos (v0.15.1), en bosquecillos; en el desierto, solo junto al agua.
+    float rr = sqrtf(x * x + z * z) + 1.0f, kd[REGION_COUNT];
+    world_region_weights(t->world, x / rr * 2600.0f, z / rr * 2600.0f, kd);
+    float woods = fminf((kd[REGION_FOREST] + kd[REGION_FJORD]) * expf(4.0f * (rr / 1800.0f - 1.0f)), 1.0f);
+    if (r0 > tree_density(k, wet ? 1.0f : 0.0f) + k[REGION_STEPPE] * woods * (0.15f + 0.5f * steppe_grove(t, x, z))) return false;
     if (wl > y - 0.8f || y > t->look.snowline + 8.0f) return false; // en el agua o en el glaciar, no
     if (world_river_bank(t->world, x, z, NULL) > 0.45f) return false; // el lecho que el rio lava
     if (world_glacier_reach(t->world, x, z) <= 1.0f) return false;    // ni en la morrena (el glaciar avanza en invierno)
@@ -1064,6 +1115,7 @@ static int prop_slot(const Terrain *t, int gx, int gz, PropSlot *o) {
     float rd = rock_density(k), wl = world_water(t->world, x, z, 0.0f, NULL), y = terrain_height(t, x, z);
     float near_water = wl > -1e8f && y - wl < 5.0f ? 1.0f : 0.0f;
     float bd = bush_density(k, near_water) * (1.0f + k[REGION_STEPPE] * (1.7f * steppe_scrub(t, x, z) - 0.7f));
+    if (k[REGION_DESERT] > 0.5f && near_water == 0.0f) bd *= world_desert_clay(t->world, x, z) > 0.5f ? 2.5f : 0.15f; // secos, en la arcilla
     if (r0 > rd + bd) return 0;
     if (wl > y - 0.4f) return 0; // en el agua, no
     if (world_river_bank(t->world, x, z, NULL) > 0.45f || (k[REGION_FJORD] > 0.5f && y < SEA_LEVEL + 4.0f)) return 0; // ni en el lecho ni en la playa
@@ -1206,6 +1258,9 @@ static bool decor_zone_ok(const Terrain *t, const float *k, float x, float z, fl
 static bool decor_ground(const Terrain *t, int kind, float x, float z, float r, float scale, float slope_max, float *base) {
     const DecorNorm *n = decor_norm((DecorKind)kind);
     const World *w = t->world;
+    if ((kind == DECOR_ACACIA || kind == DECOR_ARBUSTO_SECO || kind == DECOR_ARBOL_CAIDO) && world_region(w, x, z) == REGION_DESERT &&
+        world_desert_clay(w, x, z) < 0.5f && (hash2((int)floorf(x), (int)floorf(z), t->seed ^ 0xA7E9u) & 7u) != 0u)
+        return false; // en el desierto, los secos en la arcilla; en la arena, muy pocos
     float hmin = 1e9f, hmax = -1e9f;
     bool fresh = false;
     for (int i = 0; i < 17; i++) {
@@ -1507,6 +1562,21 @@ static void seed_decor(const Terrain *t, Chunk *ch) {
         seed_place(t, ch, DECOR_PLACE_RUIN, w->sites[i].x, w->sites[i].z, k == SITE_ANCIENT_TOWN ? 38.0f : 32.0f,
                    t->seed ^ ((uint32_t)i * 0xC2B2AE35u), i);
     }
+    // El color de cada roca, el de su region: la arena ocre del desierto, el musgo del bosque, el gris frio del
+    // altiplano, la piedra mojada de los fiordos; lo demas, como su modelo.
+    static const float TINT[REGION_COUNT][3] = { { 1.0f, 0.95f, 0.86f }, { 0.78f, 0.9f, 0.74f }, { 0.86f, 0.9f, 1.0f },
+                                                 { 0.76f, 0.8f, 0.85f }, { 1.0f, 0.84f, 0.62f } };
+    for (int i = 0; i < ch->decor_count; i++) {
+        ChunkDecor *d = &ch->decor[i];
+        float k[REGION_COUNT], c[3] = { 1.0f, 1.0f, 1.0f };
+        if (decor_climbable((DecorKind)d->kind)) {
+            world_region_weights(t->world, d->x, d->z, k);
+            c[0] = c[1] = c[2] = 0.0f;
+            for (int r = 0; r < REGION_COUNT; r++)
+                for (int j = 0; j < 3; j++) c[j] += k[r] * TINT[r][j];
+        }
+        for (int j = 0; j < 3; j++) d->tint[j] = (unsigned char)fminf(255.0f, c[j] * 255.0f + 0.5f);
+    }
 }
 
 static Chunk build_chunk(const Terrain *t, int cx, int cz) {
@@ -1535,6 +1605,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             float at[TRI_ATTRS] = { 0 };
             at[A_PATCH] = 0.5f + 0.5f * fbm2d(mx * 0.08f, mz * 0.08f, t->seed + 303u, 2); // manchas
             at[A_DESERT] = k[REGION_DESERT], at[A_FOREST] = k[REGION_FOREST], at[A_HIGH] = k[REGION_HIGHLAND], at[A_FJORD] = k[REGION_FJORD];
+            at[A_CLAY] = k[REGION_DESERT] > 0.3f ? world_desert_clay(t->world, mx, mz) : 0.0f;
             float hm = (p00.y + p10.y + p01.y + p11.y) * 0.25f, wl = world_water(t->world, mx, mz, 0.0f, NULL);
             at[A_SHORE] = wl > -1e8f ? hm - wl : 99.0f;
             at[A_EDGE] = world_edge_distance(t->world, mx, mz);
@@ -1573,7 +1644,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             if (kind == 1) push_rock(&b, ps.base, ps.size, ps.hash, at);
             else push_bush(&b, ps.base, ps.size, ps.size2, ps.patch, at);
             if (kind == 1 && ps.size >= 0.6f && rock_count < CHUNK_ROCKS)
-                rocks[rock_count++] = (ChunkRock){ ps.base.x, ps.base.z, ps.size * 0.65f, ps.base.y + ps.size * 0.9f };
+                rocks[rock_count++] = (ChunkRock){ .x = ps.base.x, .y = ps.base.y, .z = ps.base.z, .r = ps.size * 0.65f, .top = ps.base.y + ps.size * 0.9f };
         }
     Chunk ch = { .loaded = true, .cx = cx, .cz = cz };
     memcpy(ch.rocks, rocks, sizeof(ChunkRock) * (size_t)rock_count);

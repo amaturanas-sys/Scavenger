@@ -1,6 +1,14 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: el decorado, las cuencas, los puentes y las colisiones
+## Novedades: las rocas que se trepan y la vegetación por suelo
+
+- **Las rocas** de OpenGameArt ya no muestran su lado hueco: están cerradas, llevan bloques de vóxeles y toman el tono de la región donde están.
+- **Trepar:** un escalón de hasta 50 cm se sube andando; una roca más alta, solo saltando, si al saltar alcanzas el borde.
+- **La estepa:** predominan el pasto, las hierbas y los arbustos chicos; los árboles aumentan hacia el bosque y las colinas de los fiordos.
+- **El desierto:** en el suelo de arcilla hay algunos árboles y arbustos secos y pasto seco; en la arena, muy pocos.
+- **Los árboles:** el gran árbol seco está de pie, los sauces conservan la hoja en invierno, y los pinos y los demás árboles chocan.
+
+## De la v0.15.0: el decorado, las cuencas, los puentes y las colisiones
 
 - **El decorado:** 41 modelos de OpenGameArt (*FREE Remastered Meadows*, CC0) con el color y la escala del juego, puestos con normas: crestas de roca en el altiplano y los fiordos; rocas, colinas, acantilados, árboles y arbustos según la región; hongos, ramas y raíces al pie de los árboles del bosque; cercas, carros, bancos y barriles en las afueras de los pueblos; un corral junto a los campamentos; restos alrededor de las ruinas, y muelles en la orilla de lagos y del mar.
 - **Los lagos:** cada cuenca contiene su agua, con una orilla que sale del agua y un fondo de grava como el de los ríos. El agua ya no cuelga sobre el suelo ni deja huecos en el borde.
@@ -30,7 +38,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.0, la v0.14.7 y la v0.14.6).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.1, la v0.15.0 y la v0.14.7).
 
 ## Android
 

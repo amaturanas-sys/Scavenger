@@ -109,7 +109,7 @@ El norte es −Z y el este +X.
   - **las matas sueltas del inventario** (v0.14.1, `vegetation_draw_prop`): la hierba alta del escondite (stipa con sus plumas y pasto, de 1 m), las hierbas curativas (salvia, menta y tomillo, en flor mientras están verdes) y el arbusto, con las mismas hojas: se mecen con el viento y toman el color de la estación.
 - **Árboles** (v0.10.3, más que antes): densidad 0,85 en el bosque, 0,20 en los fiordos, 0,10 en las faldas del altiplano y hasta 0,36 junto al agua en la estepa; 160 alrededor del campamento inicial (fuera de sus 30 m).
   - **De voxeles** (v0.14.1, `src/world/trees.c`): el pino, el sauce y el arce del inventario (`mapa.vegetacion.*`), del 60 al 100 % de su alto y girados al azar. Junto a los lagos y los ríos (no el mar), sauces: sobre todo en el bosque y la costa, menos en la estepa y el desierto, pocos en el altiplano. En el bosque, uno de cada seis es un arce (de cada diez casillas, tres le tocan al arce y la mitad de esas queda vacía, en damero). Los demás, pinos; los del campamento inicial, también. Los de copa ancha (el sauce y el arce), en una casilla de cada dos (`flora_tree_kind`).
-  - **Las estaciones** (`flora_tree_season`): en otoño el arce se pone rojo y naranja y el sauce amarillo; al caer la hoja (y hasta que reverdece) los dos quedan pelados, con el tronco y las ramas; con nieve, el pino lleva nieve sobre cada piso de ramas. Al pie del glaciar, nevados todo el año.
+  - **Las estaciones** (`flora_tree_season`): en otoño el arce se pone rojo y naranja; al caer la hoja (y hasta que reverdece) queda pelado, con el tronco y las ramas; con nieve, el pino lleva nieve sobre cada piso de ramas. El sauce es perenne (v0.15.1): como el pino, conserva la hoja todo el año y se nieva. Al pie del glaciar, nevados todo el año.
   - **El detalle:** de cerca (34 m; en Android, 16), el modelo tal cual; a media distancia (72 m; en Android, 40), con celdas del doble; más lejos, del cuádruple (`vox_downsample`). Solo los que caen delante de la cámara; en Android, hasta 85 m. La copa que tapa al personaje, entre él y la cámara lejana, no se dibuja.
   - **Quemados:** los del campamento inicial, en un incendio, se oscurecen; calcinados, queda el tronco negro.
 
@@ -230,6 +230,12 @@ montura). Cada cuadro mira los nueve trozos de alrededor.
   - Las yurtas del campamento se entran.
 - **Lo que se camina** (`terrain_ground`): el puente, los muelles y la tarima son suelo para quien viene a su altura
   (hasta 60 cm por debajo). Sobre ellos no se nada, y por debajo se puede pasar a nado.
+- **Las rocas se trepan** (v0.15.1): cada roca (las del trozo y el decorado de `decor_climbable`, de la cresta a la
+  roca baja) es una cúpula sobre su huella, un círculo o una cápsula a lo largo del modelo. Empuja afuera solo si su
+  superficie, junto al jugador, pasa de su alcance: 50 cm en el suelo (un paso) y 1,9 m en el aire (toma el borde al
+  saltar). Si no, es suelo (`terrain_ground`).
+- **Los árboles chocan:** el tronco de los pinos y los demás árboles del trozo empuja afuera con un radio de
+  0,3 m + 0,15 m por su escala.
 
 En las capturas, la línea `Jugador: (x, y, z)` dice dónde terminó. Con `--caminar adelante` sirve para probar un
 choque.

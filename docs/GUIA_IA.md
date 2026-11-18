@@ -470,7 +470,8 @@ traba.
   - las bocas de las cuevas como sus referencias (v0.14.5);
   - lo lejano en Android: el vértice de los shaders de OpenGL ES 2 en `highp` (v0.14.6);
   - la estepa más tupida y más ruinas para encontrar (v0.14.7);
-  - el decorado de OpenGameArt, las cuencas de los lagos, los puentes y las colisiones (v0.15.0).
+  - el decorado de OpenGameArt, las cuencas de los lagos, los puentes y las colisiones (v0.15.0);
+  - las rocas que se trepan, el desierto de arcilla, los árboles de la estepa y los sauces perennes (v0.15.1).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

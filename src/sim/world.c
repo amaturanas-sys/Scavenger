@@ -402,6 +402,11 @@ static float lake_rim(const World *w, const Lake *l) {
 
 float world_land(const World *w, float x, float z) { return land(w, x, z); }
 
+float world_desert_clay(const World *w, float x, float z) {
+    float n = 0.5f + 0.5f * noise2d(x * 0.0045f, z * 0.0045f, w->seed + 0xC1A7u) + 0.15f * noise2d(x * 0.02f, z * 0.02f, w->seed + 0xC1A8u);
+    return smooth(0.58f, 0.72f, n);
+}
+
 float world_lake_bed(const World *w, float x, float z) {
     float bed = 0.0f;
     for (int i = 0; i < w->lake_count; i++) {
