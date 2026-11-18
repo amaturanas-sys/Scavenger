@@ -191,7 +191,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `mapa.vegetacion_arbol.tree_old_04` | Arbol | 6.19x7.20x6.96 | 300 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbol.tree_old_04_1` | Arbol | 7.73x8.48x7.83 | 798 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_arbol.tree_old_06` | Arbol | 6.80x7.72x7.01 | 799 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
-| `mapa.vegetacion_arbol.tree_old_06_1` | Arbol | 6.79x7.00x6.57 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real. |
+| `mapa.vegetacion_arbol.tree_old_06_1` | Arbol | 6.79x7.00x6.57 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real, reorientado. |
 | `mapa.vegetacion_arbol.tree_old_06_2` | Arbol | 11.83x11.75x9.91 | 2998 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_tronco.trunk_01d` | Tronco | 6.58x5.95x21.15 | 135 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |
 | `mapa.vegetacion_tronco.trunk_01e` | Tronco | 8.81x17.99x37.91 | 264 | importado | `rig:ninguno` `formato:modelo` | OpenGameArt FREE Remastered Meadows |

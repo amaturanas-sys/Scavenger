@@ -111,7 +111,7 @@ GIRADOS = {
     "estructura.puente.bridge_pier_04c": ("x", 90),
     "estructura.puente.bridge_pier_end_04a": ("x", 90),
     "utileria.generico.props_container_chest_01b": ("x", 90),
-    "mapa.vegetacion_arbol.tree_old_06_1": ("z", 90),  # tras y 56: estaba tumbado, con la copa hacia +X (v0.15.1)
+    "mapa.vegetacion_arbol.tree_old_06_1": ("x", 180),  # tras y 56 y z 90 (v0.15.1): quedaba invertido, con las raices arriba (v0.15.2)
 }
 
 

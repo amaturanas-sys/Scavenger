@@ -21,7 +21,6 @@ void decor_draw(const Terrain *t, Props *p, const Inventory *inv, Camera3D cam) 
         for (int k = 0; k < DECOR_KINDS; k++) items[k] = inventory_find(inv, decor_norm((DecorKind)k)->id);
         loaded = inv;
     }
-    Color hour = props_get_tint(); // la luz de la hora, por el color de cada roca
     for (int i = 0; i < CHUNK_SLOTS; i++) {
         const Chunk *ch = &t->slots[i];
         if (!ch->loaded) continue;
@@ -32,10 +31,8 @@ void decor_draw(const Terrain *t, Props *p, const Inventory *inv, Camera3D cam) 
             if (!item || dx * dx + dz * dz > r * r) continue;
             Matrix m = MatrixMultiply(MatrixMultiply(MatrixScale(d->scale * d->stretch, d->scale, d->scale), MatrixRotateY(d->yaw)),
                                       MatrixTranslate(d->x, d->y, d->z));
-            bool tinted = d->tint[0] != 255 || d->tint[1] != 255 || d->tint[2] != 255;
-            if (tinted) props_set_tint((Color){ (unsigned char)(hour.r * d->tint[0] / 255), (unsigned char)(hour.g * d->tint[1] / 255), (unsigned char)(hour.b * d->tint[2] / 255), hour.a });
-            props_draw_item_matrix(p, item, m);
-            if (tinted) props_set_tint(hour);
+            if (decor_climbable((DecorKind)d->kind)) props_draw_item_biome(p, item, m, d->biome);
+            else props_draw_item_matrix(p, item, m);
         }
     }
 }

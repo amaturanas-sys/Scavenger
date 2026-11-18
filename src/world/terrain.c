@@ -1077,7 +1077,9 @@ static bool tree_slot(const Terrain *t, int gx, int gz, ChunkTree *out) {
     float rr = sqrtf(x * x + z * z) + 1.0f, kd[REGION_COUNT];
     world_region_weights(t->world, x / rr * 2600.0f, z / rr * 2600.0f, kd);
     float woods = fminf((kd[REGION_FOREST] + kd[REGION_FJORD]) * expf(4.0f * (rr / 1800.0f - 1.0f)), 1.0f);
-    if (r0 > tree_density(k, wet ? 1.0f : 0.0f) + k[REGION_STEPPE] * woods * (0.15f + 0.5f * steppe_grove(t, x, z))) return false;
+    // v0.15.2: en la estepa prevalecen las hierbas y los pastos: un tercio de los arboles de antes.
+    float dens = tree_density(k, wet ? 1.0f : 0.0f) * (1.0f - 0.65f * k[REGION_STEPPE]);
+    if (r0 > dens + k[REGION_STEPPE] * woods * (0.06f + 0.3f * steppe_grove(t, x, z))) return false;
     if (wl > y - 0.8f || y > t->look.snowline + 8.0f) return false; // en el agua o en el glaciar, no
     if (world_river_bank(t->world, x, z, NULL) > 0.45f) return false; // el lecho que el rio lava
     if (world_glacier_reach(t->world, x, z) <= 1.0f) return false;    // ni en la morrena (el glaciar avanza en invierno)
@@ -1114,6 +1116,7 @@ static int prop_slot(const Terrain *t, int gx, int gz, PropSlot *o) {
     world_region_weights(t->world, x, z, k);
     float rd = rock_density(k), wl = world_water(t->world, x, z, 0.0f, NULL), y = terrain_height(t, x, z);
     float near_water = wl > -1e8f && y - wl < 5.0f ? 1.0f : 0.0f;
+    rd *= 1.0f - 0.75f * k[REGION_STEPPE] * (1.0f - near_water); // en la estepa, pocas rocas salvo junto a rios y lagos
     float bd = bush_density(k, near_water) * (1.0f + k[REGION_STEPPE] * (1.7f * steppe_scrub(t, x, z) - 0.7f));
     if (k[REGION_DESERT] > 0.5f && near_water == 0.0f) bd *= world_desert_clay(t->world, x, z) > 0.5f ? 2.5f : 0.15f; // secos, en la arcilla
     if (r0 > rd + bd) return 0;
@@ -1261,6 +1264,11 @@ static bool decor_ground(const Terrain *t, int kind, float x, float z, float r, 
     if ((kind == DECOR_ACACIA || kind == DECOR_ARBUSTO_SECO || kind == DECOR_ARBOL_CAIDO) && world_region(w, x, z) == REGION_DESERT &&
         world_desert_clay(w, x, z) < 0.5f && (hash2((int)floorf(x), (int)floorf(z), t->seed ^ 0xA7E9u) & 7u) != 0u)
         return false; // en el desierto, los secos en la arcilla; en la arena, muy pocos
+    if ((decor_climbable((DecorKind)kind) || kind == DECOR_ACACIA || kind == DECOR_ARBOL_CAIDO) && world_region(w, x, z) == REGION_STEPPE) {
+        float wl = world_water(w, x, z, 0.0f, NULL); // en la estepa (v0.15.2), las rocas junto a rios y lagos; los arboles, pocos
+        bool rock_by_water = decor_climbable((DecorKind)kind) && wl > -1e8f && terrain_height(t, x, z) - wl < 5.0f;
+        if (!rock_by_water && (hash2((int)floorf(x), (int)floorf(z), t->seed ^ 0x5E7Bu) & 3u) != 0u) return false;
+    }
     float hmin = 1e9f, hmax = -1e9f;
     bool fresh = false;
     for (int i = 0; i < 17; i++) {
@@ -1562,20 +1570,14 @@ static void seed_decor(const Terrain *t, Chunk *ch) {
         seed_place(t, ch, DECOR_PLACE_RUIN, w->sites[i].x, w->sites[i].z, k == SITE_ANCIENT_TOWN ? 38.0f : 32.0f,
                    t->seed ^ ((uint32_t)i * 0xC2B2AE35u), i);
     }
-    // El color de cada roca, el de su region: la arena ocre del desierto, el musgo del bosque, el gris frio del
-    // altiplano, la piedra mojada de los fiordos; lo demas, como su modelo.
-    static const float TINT[REGION_COUNT][3] = { { 1.0f, 0.95f, 0.86f }, { 0.78f, 0.9f, 0.74f }, { 0.86f, 0.9f, 1.0f },
-                                                 { 0.76f, 0.8f, 0.85f }, { 1.0f, 0.84f, 0.62f } };
+    // Cada roca, con la variante de su region (la de mas peso): props_draw_item_biome.
     for (int i = 0; i < ch->decor_count; i++) {
         ChunkDecor *d = &ch->decor[i];
-        float k[REGION_COUNT], c[3] = { 1.0f, 1.0f, 1.0f };
-        if (decor_climbable((DecorKind)d->kind)) {
-            world_region_weights(t->world, d->x, d->z, k);
-            c[0] = c[1] = c[2] = 0.0f;
-            for (int r = 0; r < REGION_COUNT; r++)
-                for (int j = 0; j < 3; j++) c[j] += k[r] * TINT[r][j];
-        }
-        for (int j = 0; j < 3; j++) d->tint[j] = (unsigned char)fminf(255.0f, c[j] * 255.0f + 0.5f);
+        float k[REGION_COUNT];
+        world_region_weights(t->world, d->x, d->z, k);
+        d->biome = 0;
+        for (int r = 1; r < REGION_COUNT; r++)
+            if (k[r] > k[d->biome]) d->biome = (unsigned char)r;
     }
 }
 

@@ -227,7 +227,6 @@ montura). Cada cuadro mira los nueve trozos de alrededor.
   - Se miran a la altura de las rodillas y del pecho, un radio por delante.
   - Si el paso choca, prueba girado a uno y otro lado (y más corto), así se desliza a lo largo de la pared o rodea
     lo redondo; si nada pasa, se queda.
-  - Las yurtas del campamento se entran.
 - **Lo que se camina** (`terrain_ground`): el puente, los muelles y la tarima son suelo para quien viene a su altura
   (hasta 60 cm por debajo). Sobre ellos no se nada, y por debajo se puede pasar a nado.
 - **Las rocas se trepan** (v0.15.1): cada roca (las del trozo y el decorado de `decor_climbable`, de la cresta a la
@@ -236,6 +235,12 @@ montura). Cada cuadro mira los nueve trozos de alrededor.
   saltar). Si no, es suelo (`terrain_ground`).
 - **Los árboles chocan:** el tronco de los pinos y los demás árboles del trozo empuja afuera con un radio de
   0,3 m + 0,15 m por su escala.
+- **El campamento inicial choca** (v0.15.2, `collide_player`): el tronco de sus pinos, sus yurtas (a una yurta no se
+  entra desde afuera), el fogón y sus cosas de 50 cm o más (la caja de sus medidas, con su giro) lo empujan afuera.
+- **Las rocas de cada región** (v0.15.2, `props_draw_item_biome`): cada roca del decorado se dibuja con la variante de
+  la región de más peso donde está. La variante es la misma roca con la piedra de esa región y, en lo que mira arriba,
+  lo que la cubre: liquen seco en la estepa, musgo en el bosque, nieve en el altiplano, liquen mojado en los fiordos y
+  polvo de arena en el desierto (con vetas). Se arma al cargar la roca la primera vez, sin archivos nuevos.
 
 En las capturas, la línea `Jugador: (x, y, z)` dice dónde terminó. Con `--caminar adelante` sirve para probar un
 choque.

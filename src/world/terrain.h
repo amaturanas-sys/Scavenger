@@ -55,7 +55,7 @@ typedef struct {
     float x, y, z, yaw, scale; // la base, el giro y la escala
     float stretch;             // lo que se estira a lo largo (su X) sobre la escala: el puente, de orilla a orilla
     unsigned char kind;        // DecorKind (src/sim/decor.h)
-    unsigned char tint[3];     // el color de su region (las rocas; lo demas, blanco)
+    unsigned char biome;       // la region de mas peso: la variante de las rocas (props_draw_item_biome)
 } ChunkDecor;
 
 // Las rocas de cada chunk que se alzan (de 60 cm o mas, de prop_slot): para las colisiones (terrain_collide).

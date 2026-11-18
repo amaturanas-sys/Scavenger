@@ -168,6 +168,27 @@ static bool in_prop(const Prop *pr, Vector3 q, bool flat) {
     return fabsf(lx) < it->l * 0.5f && fabsf(lz) < it->w * 0.5f && (flat || (q.y > pr->pos.y - 0.5f && q.y < pr->pos.y + it->h));
 }
 
+// Empuja q afuera del circulo (cx, cz, r), en la planta.
+static void push_circle(Vector3 *q, float cx, float cz, float r) {
+    float dx = q->x - cx, dz = q->z - cz, d2 = dx * dx + dz * dz;
+    if (d2 >= r * r) return;
+    float d = sqrtf(d2);
+    if (d < 1e-4f) dx = 1.0f, dz = 0.0f, d = 1.0f;
+    q->x = cx + dx / d * r, q->z = cz + dz / d * r;
+}
+// Empuja q afuera de la caja de pr (sus medidas, con su giro) mas radius, por el lado mas cercano.
+static void push_box(Vector3 *q, const Prop *pr, float radius) {
+    float dx = q->x - pr->pos.x, dz = q->z - pr->pos.z;
+    if (fabsf(dx) > 8.0f || fabsf(dz) > 8.0f) return;
+    float c = cosf(pr->yaw), s = sinf(pr->yaw);
+    float lx = dx * c - dz * s, lz = dx * s + dz * c; // como in_prop
+    float px = pr->item->l * 0.5f + radius - fabsf(lx), pz = pr->item->w * 0.5f + radius - fabsf(lz);
+    if (px <= 0.0f || pz <= 0.0f) return;
+    if (px < pz) lx += copysignf(px, lx);
+    else lz += copysignf(pz, lz);
+    q->x = pr->pos.x + lx * c + lz * s, q->z = pr->pos.z - lx * s + lz * c;
+}
+
 // Lo que puede tapar la camara en este cuadro: las yurtas del campamento inicial, las estructuras del inventario
 // puestas en el mundo a menos de 25 m del jugador (salvo la que lo tiene adentro: se puede entrar en una yurta, y la
 // camara no la puede esquivar; lo bajo, de menos de 1 m, no tapa) y los edificios, las ruinas y las formaciones de
@@ -206,7 +227,8 @@ static bool structure_at(const Blockers *b, Vector3 q) {
 // Las colisiones del jugador (y su montura), lo mas sencillo posible: lo que esta en el suelo (los troncos, las rocas,
 // el decorado: terrain_collide) lo empuja afuera; las obras (los edificios, las ruinas y las formaciones de voxeles
 // dibujadas cerca, y las estructuras del campamento) lo frenan a la altura de las rodillas y del pecho, un radio por
-// delante: se desliza a lo largo de ellas (el paso, girado) o se queda donde estaba. Las yurtas del campamento se entran.
+// delante: se desliza a lo largo de ellas (el paso, girado) o se queda donde estaba. El campamento inicial (sus pinos,
+// sus yurtas, el fogon y sus cosas) lo empuja afuera: a una yurta no se entra desde afuera (v0.15.2).
 static bool obra_ahead(const Blockers *b, Vector3 from, Vector3 to, float ux, float uz, float radius) {
     Vector3 q = { to.x + ux * radius, to.y, to.z + uz * radius };
     for (int i = 0; i < b->np; i++)
@@ -221,6 +243,16 @@ static bool obra_ahead(const Blockers *b, Vector3 from, Vector3 to, float ux, fl
 static void collide_player(const Terrain *t, const Camp *camp, Vector3 from, Player *p, bool mounted) {
     float radius = mounted ? 0.55f : 0.35f;
     terrain_collide(t, &p->pos.x, &p->pos.z, p->pos.y, radius, p->grounded ? 0.5f : 1.9f); // saltando, se trepa una roca
+    // El campamento inicial (v0.15.2): el tronco de sus pinos, sus yurtas (de afuera no se entra), el fogon y sus cosas
+    // de 50 cm o mas (cajas, carros, bancos: la caja de sus medidas, con su giro) lo empujan afuera.
+    for (int i = 0; i < camp->tree_count; i++) push_circle(&p->pos, camp->trees[i].x, camp->trees[i].z, 0.3f + 0.05f * camp->tree_h[i] + radius);
+    for (int i = 0; i < camp->yurt_count; i++)
+        if (!in_yurt(camp->yurts[i], from, true)) push_circle(&p->pos, camp->yurts[i].x, camp->yurts[i].z, 2.25f + radius);
+    push_circle(&p->pos, camp->fire.x, camp->fire.z, 0.5f + radius);
+    for (int i = 0; i < g_props.count; i++) {
+        const Prop *pr = &g_props.items[i];
+        if (!pr->flying && pr->item->h >= 0.5f && strncmp(pr->item->id, "estructura.", 11) != 0) push_box(&p->pos, pr, radius);
+    }
     float dx = p->pos.x - from.x, dz = p->pos.z - from.z, len = sqrtf(dx * dx + dz * dz);
     if (len > 1e-4f) {
         Blockers b;

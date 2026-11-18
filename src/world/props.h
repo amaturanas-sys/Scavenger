@@ -10,7 +10,7 @@
 #include "sim/inventory.h"
 
 #define PROPS_MAX 128
-#define MODEL_CACHE_MAX 256 // con el decorado de OpenGameArt (41 modelos, y sus variantes de estacion)
+#define MODEL_CACHE_MAX 320 // con el decorado de OpenGameArt (41 modelos, y sus variantes de estacion)
 
 typedef struct {
     const InvItem *item;
@@ -72,6 +72,9 @@ bool props_has_model(Props *p, const InvItem *item);
 void props_draw_item_anim(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time);
 // El modelo del id con una transformacion cualquiera (un arma en la mano: src/game/actions_game.c). false si no
 // tiene modelo (el que llama dibuja su marcador).
+// El modelo con la piedra de la region biome (RegionKind: estepa, bosque, altiplano, fiordos, desierto) y lo que la
+// cubre arriba: las rocas del decorado (v0.15.2), una variante por region, cargada la primera vez que se dibuja.
+bool props_draw_item_biome(Props *p, const InvItem *item, Matrix transform, int biome);
 bool props_draw_item_matrix(Props *p, const InvItem *item, Matrix transform);
 
 #endif
