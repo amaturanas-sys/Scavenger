@@ -264,6 +264,16 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las rocas que se trepan y la vegetación por suelo (v0.15.1):
+- **Las rocas:** las 15 rocas, crestas, acantilados y colinas de OpenGameArt están cerradas por todos lados y llevan
+  bloques de vóxeles (`tools/modelos/rocas_oga.py`), con el tono de la región donde están. Se caminan: un paso de
+  hasta 50 cm se sube andando; más alto, solo saltando, si al saltar se alcanza el borde (hasta 1,9 m sobre los pies).
+- **La vegetación:** en la estepa predominan el pasto, las hierbas y los arbustos chicos, y los árboles aumentan de
+  forma exponencial hacia el bosque y las colinas de los fiordos. En el desierto, el suelo de arcilla (agrietado)
+  tiene algunos árboles y arbustos secos y pasto seco; en la arena son muy raros.
+- **Los árboles:** el gran árbol seco está de pie (estaba tumbado), los sauces no pierden la hoja en invierno, y los
+  pinos y los demás árboles chocan.
+
 El decorado, las cuencas, los puentes y las colisiones (v0.15.0):
 - **El decorado de OpenGameArt:** 41 modelos del paquete *FREE Remastered Meadows* (EmacEArt, CC0), con el color y la
   escala del juego, sembrados con normas: crestas de roca en el altiplano y los fiordos, rocas, colinas, acantilados,

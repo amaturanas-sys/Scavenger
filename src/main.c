@@ -220,7 +220,7 @@ static bool obra_ahead(const Blockers *b, Vector3 from, Vector3 to, float ux, fl
 
 static void collide_player(const Terrain *t, const Camp *camp, Vector3 from, Player *p, bool mounted) {
     float radius = mounted ? 0.55f : 0.35f;
-    terrain_collide(t, &p->pos.x, &p->pos.z, p->pos.y, radius);
+    terrain_collide(t, &p->pos.x, &p->pos.z, p->pos.y, radius, p->grounded ? 0.5f : 1.9f); // saltando, se trepa una roca
     float dx = p->pos.x - from.x, dz = p->pos.z - from.z, len = sqrtf(dx * dx + dz * dz);
     if (len > 1e-4f) {
         Blockers b;
@@ -241,7 +241,7 @@ static void collide_player(const Terrain *t, const Camp *camp, Vector3 from, Pla
             }
         }
     }
-    if (p->grounded) p->pos.y = terrain_ground(t, p->pos.x, p->pos.z, p->pos.y);
+    if (p->grounded) p->pos.y = terrain_ground(t, p->pos.x, p->pos.z, p->pos.y, 0.5f);
 }
 
 // ¿El brazo de la camara (del jugador a ella) cruza una obra?

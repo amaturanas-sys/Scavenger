@@ -498,9 +498,9 @@ mapa.vegetacion_arbusto.bush_dried_04	Arbusto	rig:ninguno,formato:modelo	4.42x3.
 mapa.vegetacion_arbusto.bush_dried_07	Arbusto	rig:ninguno,formato:modelo	2.05x1.66x2.00	300	importado	OpenGameArt FREE Remastered Meadows
 mapa.roca_acantilado.clif_01a	Acantilado	bioma:estepa,rig:ninguno,formato:modelo	26.23x23.16x45.65	300	importado	OpenGameArt FREE Remastered Meadows
 mapa.roca_acantilado.clif_01b	Acantilado	bioma:estepa,rig:ninguno,formato:modelo	19.81x19.72x29.28	294	importado	OpenGameArt FREE Remastered Meadows
-mapa.roca_acantilado.clif_01c	Acantilado	bioma:estepa,rig:ninguno,formato:modelo	29.73x16.70x23.33	300	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
-mapa.roca_acantilado.clif_01d	Acantilado	bioma:estepa,rig:ninguno,formato:modelo	48.44x22.79x76.82	291	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
-mapa.roca_acantilado.clif_01e	Acantilado	bioma:estepa,rig:ninguno,formato:modelo	46.02x34.39x112.41	299	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
+mapa.roca_acantilado.clif_01c	Acantilado	bioma:estepa,rig:ninguno,formato:modelo	29.73x16.70x23.33	384	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
+mapa.roca_acantilado.clif_01d	Acantilado	bioma:estepa,rig:ninguno,formato:modelo	48.44x22.79x76.82	400	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
+mapa.roca_acantilado.clif_01e	Acantilado	bioma:estepa,rig:ninguno,formato:modelo	46.02x34.39x112.41	446	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
 estructura.cerca.fence_pin_01a	Env Fence Pin 01A	rig:ninguno,formato:modelo,uso:decorado	0.25x1.57x0.29	50	importado	OpenGameArt FREE Remastered Meadows
 estructura.cerca.fence_pin_01b	Env Fence Pin 01B	rig:ninguno,formato:modelo,uso:decorado	0.26x2.18x0.22	48	importado	OpenGameArt FREE Remastered Meadows
 estructura.cerca.fence_pin_01c	Env Fence Pin 01C	rig:ninguno,formato:modelo,uso:decorado	0.13x1.90x0.32	102	importado	OpenGameArt FREE Remastered Meadows
@@ -534,20 +534,20 @@ estructura.cerca.fence_wood_wine_04a	Env Fence Wood Wine 04A	rig:ninguno,formato
 mapa.vegetacion_hierba.grass_01	Hierba	rig:ninguno,formato:modelo	0.31x1.04x0.40	84	importado	OpenGameArt FREE Remastered Meadows
 mapa.vegetacion_hierba.grass_06	Hierba	rig:ninguno,formato:modelo	0.79x0.73x0.83	230	importado	OpenGameArt FREE Remastered Meadows
 mapa.vegetacion_hierba.grass_07	Hierba	rig:ninguno,formato:modelo	0.25x0.70x0.40	138	importado	OpenGameArt FREE Remastered Meadows
-mapa.terreno_colina.hill_01a	Colina	rig:ninguno,formato:modelo	11.29x4.34x16.52	1499	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
-mapa.terreno_colina.hill_01b	Colina	rig:ninguno,formato:modelo	15.82x4.88x20.19	1499	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
+mapa.terreno_colina.hill_01a	Colina	rig:ninguno,formato:modelo	11.29x4.34x16.52	1740	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
+mapa.terreno_colina.hill_01b	Colina	rig:ninguno,formato:modelo	15.82x4.88x20.19	1728	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
 mapa.terreno_colina.hill_01c	Colina	rig:ninguno,formato:modelo	9.84x3.34x5.84	201	importado	OpenGameArt FREE Remastered Meadows
 mapa.terreno_colina.hill_01c_1	Colina	rig:ninguno,formato:modelo	8.28x3.81x5.24	281	importado	OpenGameArt FREE Remastered Meadows
 mapa.terreno_colina.hill_01c_2	Colina	rig:ninguno,formato:modelo	10.37x4.22x5.86	281	importado	OpenGameArt FREE Remastered Meadows
 mapa.terreno_colina.hill_01c_3	Colina	rig:ninguno,formato:modelo	10.49x0.91x13.53	3000	importado	OpenGameArt FREE Remastered Meadows
-mapa.terreno_colina.hill_01d	Colina	rig:ninguno,formato:modelo	6.47x3.71x6.26	799	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
-mapa.terreno_colina.hill_half_01a	Colina	rig:ninguno,formato:modelo	8.73x5.43x22.32	479	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
+mapa.terreno_colina.hill_01d	Colina	rig:ninguno,formato:modelo	6.47x3.71x6.26	1000	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
+mapa.terreno_colina.hill_half_01a	Colina	rig:ninguno,formato:modelo	8.73x5.43x22.32	706	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
 mapa.terreno_colina.hill_half_01b	Colina	rig:ninguno,formato:modelo	9.33x8.74x33.82	342	importado	OpenGameArt FREE Remastered Meadows
-mapa.terreno_colina.hill_half_01c	Colina	rig:ninguno,formato:modelo	9.42x4.52x19.06	204	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
+mapa.terreno_colina.hill_half_01c	Colina	rig:ninguno,formato:modelo	9.42x4.52x19.06	362	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
 mapa.terreno_colina.hill_half_01d	Colina	rig:ninguno,formato:modelo	5.98x3.53x13.40	250	importado	OpenGameArt FREE Remastered Meadows
 mapa.terreno_colina.hill_low_01a	Colina	rig:ninguno,formato:modelo	6.32x2.52x9.99	799	importado	OpenGameArt FREE Remastered Meadows
 mapa.terreno_colina.hill_low_01b	Colina	rig:ninguno,formato:modelo	8.73x3.44x14.71	300	importado	OpenGameArt FREE Remastered Meadows
-mapa.terreno_colina.hill_low_01c	Colina	rig:ninguno,formato:modelo	5.86x1.62x6.04	300	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
+mapa.terreno_colina.hill_low_01c	Colina	rig:ninguno,formato:modelo	5.86x1.62x6.04	452	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
 mapa.terreno_colina.hill_low_01d	Colina	rig:ninguno,formato:modelo	4.43x1.69x4.81	622	importado	OpenGameArt FREE Remastered Meadows
 mapa.terreno_colina.hill_low_01e	Colina	rig:ninguno,formato:modelo	5.04x5.75x6.59	249	importado	OpenGameArt FREE Remastered Meadows
 mapa.terreno_colina.hill_low_01f	Colina	rig:ninguno,formato:modelo	4.09x1.74x2.26	218	importado	OpenGameArt FREE Remastered Meadows
@@ -590,15 +590,15 @@ utileria.objeto_generico.ea01_env_road_wooden_planks_03a	Ea01 Env Road Wooden Pl
 utileria.objeto_generico.ea01_env_road_wooden_planks_03b	Ea01 Env Road Wooden Planks 03B	rig:ninguno,formato:modelo	3.07x0.25x5.34	300	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
 mapa.roca.rock_01a	Env Rock 01A	bioma:estepa,rig:ninguno,formato:modelo	10.87x16.16x23.10	300	importado	OpenGameArt FREE Remastered Meadows
 mapa.roca.rock_01b	Env Rock 01B	bioma:estepa,rig:ninguno,formato:modelo	10.23x5.96x11.76	299	importado	OpenGameArt FREE Remastered Meadows
-mapa.roca.rock_01c	Env Rock 01C	bioma:estepa,rig:ninguno,formato:modelo	13.70x8.29x17.03	246	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
+mapa.roca.rock_01c	Env Rock 01C	bioma:estepa,rig:ninguno,formato:modelo	13.70x8.29x17.03	376	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
 mapa.roca.rock_01d	Env Rock 01D	bioma:estepa,rig:ninguno,formato:modelo	6.06x8.73x11.78	98	importado	OpenGameArt FREE Remastered Meadows
 mapa.roca.rock_flat_01a	Env Rock Flat 01A	bioma:estepa,rig:ninguno,formato:modelo	8.08x2.07x8.41	34	importado	OpenGameArt FREE Remastered Meadows
 mapa.roca.rock_flat_01b	Env Rock Flat 01B	bioma:estepa,rig:ninguno,formato:modelo	6.43x1.41x6.83	28	importado	OpenGameArt FREE Remastered Meadows
-mapa.roca.rock_flat_01c	Env Rock Flat 01C	bioma:estepa,rig:ninguno,formato:modelo	6.88x1.88x7.88	26	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
+mapa.roca.rock_flat_01c	Env Rock Flat 01C	bioma:estepa,rig:ninguno,formato:modelo	6.88x1.88x7.88	156	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
 mapa.roca.rock_flat_01d	Env Rock Flat 01D	bioma:estepa,rig:ninguno,formato:modelo	5.99x1.68x6.14	36	importado	OpenGameArt FREE Remastered Meadows
 mapa.roca.rock_sand_01a	Env Rock Sand 01A	bioma:estepa,rig:ninguno,formato:modelo	13.33x4.59x10.28	110	importado	OpenGameArt FREE Remastered Meadows
-mapa.roca.rock_sand_01c	Env Rock Sand 01C	bioma:estepa,rig:ninguno,formato:modelo	7.09x9.92x15.43	118	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
-mapa.roca.rock_sand_01e	Env Rock Sand 01E	bioma:estepa,rig:ninguno,formato:modelo	9.35x4.63x6.48	278	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
+mapa.roca.rock_sand_01c	Env Rock Sand 01C	bioma:estepa,rig:ninguno,formato:modelo	7.09x9.92x15.43	202	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
+mapa.roca.rock_sand_01e	Env Rock Sand 01E	bioma:estepa,rig:ninguno,formato:modelo	9.35x4.63x6.48	350	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
 mapa.roca.rock_sand_01e_1	Env Rock Sand 01E 1	bioma:estepa,rig:ninguno,formato:modelo	8.49x9.71x16.50	278	importado	OpenGameArt FREE Remastered Meadows
 mapa.roca.rock_sand_01g	Env Rock Sand 01G	bioma:estepa,rig:ninguno,formato:modelo	12.47x15.32x21.41	238	importado	OpenGameArt FREE Remastered Meadows
 mapa.roca.rock_sand_01i	Env Rock Sand 01I	bioma:estepa,rig:ninguno,formato:modelo	6.45x5.22x13.34	50	importado	OpenGameArt FREE Remastered Meadows
@@ -676,7 +676,7 @@ mapa.vegetacion_arbol.tree_11a_7	Arbol	rig:ninguno,formato:modelo	13.87x8.38x10.
 mapa.vegetacion_arbol.tree_old_04	Arbol	rig:ninguno,formato:modelo	6.19x7.20x6.96	300	importado	OpenGameArt FREE Remastered Meadows
 mapa.vegetacion_arbol.tree_old_04_1	Arbol	rig:ninguno,formato:modelo	7.73x8.48x7.83	798	importado	OpenGameArt FREE Remastered Meadows
 mapa.vegetacion_arbol.tree_old_06	Arbol	rig:ninguno,formato:modelo	6.80x7.72x7.01	799	importado	OpenGameArt FREE Remastered Meadows
-mapa.vegetacion_arbol.tree_old_06_1	Arbol	rig:ninguno,formato:modelo	7.04x7.00x5.90	2998	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real.
+mapa.vegetacion_arbol.tree_old_06_1	Arbol	rig:ninguno,formato:modelo	6.79x7.00x6.57	2998	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real.
 mapa.vegetacion_arbol.tree_old_06_2	Arbol	rig:ninguno,formato:modelo	11.83x11.75x9.91	2998	importado	OpenGameArt FREE Remastered Meadows
 mapa.vegetacion_tronco.trunk_01d	Tronco	rig:ninguno,formato:modelo	6.58x5.95x21.15	135	importado	OpenGameArt FREE Remastered Meadows
 mapa.vegetacion_tronco.trunk_01e	Tronco	rig:ninguno,formato:modelo	8.81x17.99x37.91	264	importado	OpenGameArt FREE Remastered Meadows
@@ -726,9 +726,9 @@ utileria.generico.props_roadsign_03	Objeto generico	rig:ninguno,formato:modelo	0
 mapa.roca.swamp_rockbig_01a	Swamp Rockbig 01A	bioma:estepa,rig:ninguno,formato:modelo	7.03x2.51x5.63	258	importado	OpenGameArt FREE Remastered Meadows
 mapa.roca.swamp_rockbig_01b	Swamp Rockbig 01B	bioma:estepa,rig:ninguno,formato:modelo	8.48x2.71x5.76	80	importado	OpenGameArt FREE Remastered Meadows
 mapa.roca.swamp_rockbig_01c	Swamp Rockbig 01C	bioma:estepa,rig:ninguno,formato:modelo	11.05x1.47x6.48	54	importado	OpenGameArt FREE Remastered Meadows
-mapa.roca.swamp_rockbig_02a	Swamp Rockbig 02A	bioma:estepa,rig:ninguno,formato:modelo	9.35x4.63x6.48	198	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
+mapa.roca.swamp_rockbig_02a	Swamp Rockbig 02A	bioma:estepa,rig:ninguno,formato:modelo	9.35x4.63x6.48	328	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
 mapa.roca.swamp_rockbig_02b	Swamp Rockbig 02B	bioma:estepa,rig:ninguno,formato:modelo	9.99x7.67x17.57	300	importado	OpenGameArt FREE Remastered Meadows
-mapa.roca.swamp_rockbig_02c	Swamp Rockbig 02C	bioma:estepa,rig:ninguno,formato:modelo	12.83x7.84x19.27	608	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py).
+mapa.roca.swamp_rockbig_02c	Swamp Rockbig 02C	bioma:estepa,rig:ninguno,formato:modelo	12.83x7.84x19.27	692	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py). Cerrada (sin lados vacíos) y con bloques de vóxeles (tools/modelos/rocas_oga.py).
 estructura.cerca.tree2a	Tree2A	rig:ninguno,formato:modelo,uso:decorado	11.20x5.45x5.13	798	importado	OpenGameArt FREE Remastered Meadows
 estructura.cerca.wood_fence3	Wood Fence3	rig:ninguno,formato:modelo,uso:decorado	0.36x1.60x3.71	300	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real.
 estructura.cerca.wood_fence3b	Wood Fence3B	rig:ninguno,formato:modelo,uso:decorado	2.67x11.35x26.28	300	importado	OpenGameArt FREE Remastered Meadows

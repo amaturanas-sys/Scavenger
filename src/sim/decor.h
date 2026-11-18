@@ -110,6 +110,8 @@ float decor_deck(DecorKind kind, float scale, float stretch, float lx, float lz)
 // el puente, los muelles y la tarima), un circulo (el tronco de los arboles), dos postes (el portal y el marco, en las
 // puntas de su X) o una capsula a lo largo de su X (lo demas: del 90 % de su ancho y su largo). En metros, a escala 1:
 // el radio y el medio largo del eje.
+// Las rocas (de la cresta a la roca baja): se caminan y se trepan (src/world/terrain.c) y toman el color de su region.
+static inline bool decor_climbable(DecorKind kind) { return kind <= DECOR_ROCA_BAJA; }
 typedef enum { DECOR_HIT_NONE, DECOR_HIT_CIRCLE, DECOR_HIT_POSTS, DECOR_HIT_CAPSULE } DecorHit;
 DecorHit decor_collider(DecorKind kind, float *radius, float *half);
 // Medio largo del tablero del puente (a escala 1, sin estirar): sus puntas, a 0,55 m de la base; el medio, a 0,95.

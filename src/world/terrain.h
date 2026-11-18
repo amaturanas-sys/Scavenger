@@ -55,12 +55,13 @@ typedef struct {
     float x, y, z, yaw, scale; // la base, el giro y la escala
     float stretch;             // lo que se estira a lo largo (su X) sobre la escala: el puente, de orilla a orilla
     unsigned char kind;        // DecorKind (src/sim/decor.h)
+    unsigned char tint[3];     // el color de su region (las rocas; lo demas, blanco)
 } ChunkDecor;
 
 // Las rocas de cada chunk que se alzan (de 60 cm o mas, de prop_slot): para las colisiones (terrain_collide).
 #define CHUNK_ROCKS 96
 typedef struct {
-    float x, z, r, top; // el centro, el radio que choca y el alto de la punta
+    float x, y, z, r, top; // el centro (y: su base), el radio que choca y el alto de la punta
 } ChunkRock;
 
 #define TERRAIN_WATER_MESHES 3 // el agua, el hielo y la espuma de cada chunk
@@ -156,10 +157,14 @@ bool terrain_near_feature(const Terrain *t, float x, float z, float margin);
 // radius m con los pies a y) de los troncos de los arboles, las rocas que se alzan y el decorado que choca
 // (decor_collider, src/sim/decor.h) de los trozos cargados de alrededor. Lo que no pasa de las rodillas (45 cm sobre
 // los pies) se pisa. Las obras de voxeles (edificios, ruinas, formaciones) frenan aparte: voxs_solid_at (src/main.c).
-void terrain_collide(const Terrain *t, float *x, float *z, float y, float radius);
+// reach: lo que sube de un paso (caminando) o, saltando, el borde que alcanza a agarrar: las rocas mas bajas que eso se
+// trepan (terrain_ground lo sube encima); las mas altas lo frenan.
+void terrain_collide(const Terrain *t, float *x, float *z, float y, float radius, float reach);
 // El suelo que se pisa en (x, z): el terreno o, si alli hay un tablero (el puente, un muelle, la tarima) y quien
 // camina venia a su altura (y_hint, sus pies: a lo sumo 60 cm por debajo), el tablero.
-float terrain_ground(const Terrain *t, float x, float z, float y_hint);
+// Tambien las rocas (las de prop_slot y las del decorado que se trepan): una cupula sobre su planta, para quien llega a
+// menos de reach de su superficie.
+float terrain_ground(const Terrain *t, float x, float z, float y_hint, float reach);
 // Lo que cubre en el mundo a menos de reach m del borde: el tronco de un arbol, una roca de un metro o mas,
 // una mata alta o una formacion de voxeles (los mismos que se dibujan). true con el mas cercano: su centro
 // (en el suelo) y su radio. La cobertura del jugador (C, A4) lo usa.

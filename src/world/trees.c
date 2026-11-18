@@ -90,16 +90,17 @@ static bool build_mesh(const Species *s, TreeKind k, TreeSeason season, int lod,
     bool leaf[256] = { false };
     for (int i = 1; i < 256; i++) leaf[i] = leafy(pal[i]);
     size_t n = (size_t)g.nx * (size_t)g.ny * (size_t)g.nz;
-    if (k != TREE_PINE && (season == TREES_BARE || season == TREES_SNOW)) { // pelado: el tronco y las ramas
+    bool ever = k == TREE_PINE || k == TREE_WILLOW; // el pino y el sauce no pierden la hoja
+    if (!ever && (season == TREES_BARE || season == TREES_SNOW)) { // pelado: el tronco y las ramas
         for (size_t i = 0; i < n; i++)
             if (leaf[g.m[i]]) g.m[i] = 0;
-    } else if (k != TREE_PINE && season == TREES_AUTUMN) { // el arce rojo y naranja; el sauce amarillo
+    } else if (!ever && season == TREES_AUTUMN) { // el arce rojo y naranja
         static const uint8_t MAPLE[3][3] = { { 138, 34, 22 }, { 196, 70, 26 }, { 236, 144, 42 } };
         static const uint8_t WILLOW[3][3] = { { 146, 128, 38 }, { 194, 172, 58 }, { 230, 208, 98 } };
         const uint8_t(*r)[3] = k == TREE_MAPLE ? MAPLE : WILLOW;
         for (int i = 1; i < 256; i++)
             if (leaf[i]) ramp(pal[i], r[0], r[1], r[2], brightness(pal[i]));
-    } else if (k == TREE_PINE && season == TREES_SNOW) { // la nieve sobre cada piso de ramas
+    } else if (ever && season == TREES_SNOW) { // la nieve sobre cada piso de ramas (y sobre el sauce)
         bool used[256] = { false };
         for (size_t i = 0; i < n; i++) used[g.m[i]] = true;
         int snow = 255;
@@ -126,9 +127,10 @@ static bool build_mesh(const Species *s, TreeKind k, TreeSeason season, int lod,
 
 static Model *mesh_for(TreeKind k, TreeSeason season, int lod) {
     Species *s = &g_sp[k];
-    // El pino no cambia en otoño ni al caer las hojas; el arce y el sauce, con nieve, estan pelados.
-    if (k == TREE_PINE && (season == TREES_AUTUMN || season == TREES_BARE)) season = TREES_SUMMER;
-    if (k != TREE_PINE && season == TREES_SNOW) season = TREES_BARE;
+    // El pino y el sauce (perennes) no cambian en otoño ni al caer las hojas; el arce, con nieve, esta pelado.
+    bool ever = k == TREE_PINE || k == TREE_WILLOW;
+    if (ever && (season == TREES_AUTUMN || season == TREES_BARE)) season = TREES_SUMMER;
+    if (!ever && season == TREES_SNOW) season = TREES_BARE;
     TreeMesh *m = &s->mesh[season][lod];
     if (!m->tried) {
         m->tried = true;
