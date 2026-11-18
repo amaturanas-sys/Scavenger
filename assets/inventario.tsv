@@ -676,7 +676,7 @@ mapa.vegetacion_arbol.tree_11a_7	Arbol	rig:ninguno,formato:modelo	13.87x8.38x10.
 mapa.vegetacion_arbol.tree_old_04	Arbol	rig:ninguno,formato:modelo	6.19x7.20x6.96	300	importado	OpenGameArt FREE Remastered Meadows
 mapa.vegetacion_arbol.tree_old_04_1	Arbol	rig:ninguno,formato:modelo	7.73x8.48x7.83	798	importado	OpenGameArt FREE Remastered Meadows
 mapa.vegetacion_arbol.tree_old_06	Arbol	rig:ninguno,formato:modelo	6.80x7.72x7.01	799	importado	OpenGameArt FREE Remastered Meadows
-mapa.vegetacion_arbol.tree_old_06_1	Arbol	rig:ninguno,formato:modelo	6.79x7.00x6.57	2998	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real.
+mapa.vegetacion_arbol.tree_old_06_1	Arbol	rig:ninguno,formato:modelo	6.79x7.00x6.57	2998	importado	OpenGameArt FREE Remastered Meadows. Color por partes con la paleta del juego y luz horneada (tools/modelos/adaptar_oga.py), a escala real, reorientado.
 mapa.vegetacion_arbol.tree_old_06_2	Arbol	rig:ninguno,formato:modelo	11.83x11.75x9.91	2998	importado	OpenGameArt FREE Remastered Meadows
 mapa.vegetacion_tronco.trunk_01d	Tronco	rig:ninguno,formato:modelo	6.58x5.95x21.15	135	importado	OpenGameArt FREE Remastered Meadows
 mapa.vegetacion_tronco.trunk_01e	Tronco	rig:ninguno,formato:modelo	8.81x17.99x37.91	264	importado	OpenGameArt FREE Remastered Meadows

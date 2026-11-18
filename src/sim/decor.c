@@ -49,7 +49,7 @@ static const DecorNorm NORMS[DECOR_KINDS] = {
     [DECOR_SAUCE_MUERTO] = { "mapa.vegetacion_arbol.tree_06d_2", DECOR_CLASS_MEDIUM, 4.27f, 8.00f, 4.65f, { 0.04f, 0.03f, 0, 0.02f, 0 },
                              true, 0.0f, 0.4f, false, 0.85f, 1.15f, 0.02f },
     [DECOR_ARBOL_CAIDO] = { "mapa.vegetacion_arbol.tree_old_06_1", DECOR_CLASS_MEDIUM, 6.57f, 7.00f, 6.79f, { 0.005f, 0.04f, 0.01f, 0.01f, 0.02f },
-                            false, 0.0f, 0.35f, false, 0.85f, 1.1f, 0.03f },
+                            false, 0.0f, 0.35f, false, 0.85f, 1.1f, 0.10f }, // las raices gruesas, 70 cm enterradas
     [DECOR_ARBUSTO_SECO] = { "mapa.vegetacion_arbusto.bush_dried_02", DECOR_CLASS_MEDIUM, 2.75f, 1.60f, 1.91f, { 0.05f, 0.005f, 0.01f, 0, 0.07f },
                              false, 0.0f, 0.6f, false, 0.8f, 1.25f, 0.03f },
     // Al pie de los arboles del bosque.

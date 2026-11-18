@@ -264,6 +264,15 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las rocas de cada región, la estepa de pasto y el campamento que choca (v0.15.2):
+- **Las rocas:** cinco variantes, una por región. En la estepa, piedra gris con liquen seco; en el bosque, gris oscura
+  con musgo; en el altiplano, gris fría con nieve; en los fiordos, pizarra oscura con liquen; en el desierto, arenisca
+  ocre con vetas y polvo de arena.
+- **El árbol viejo:** estaba invertido; ahora tiene las raíces gruesas abajo, 70 cm metidas en el suelo.
+- **La estepa:** un tercio de los árboles de antes, con predominio de las hierbas y los pastos. Las rocas, pocas, salvo
+  cerca de los ríos y los lagos.
+- **El campamento:** sus pinos, sus yurtas, el fogón y sus cosas ya no se atraviesan.
+
 Las rocas que se trepan y la vegetación por suelo (v0.15.1):
 - **Las rocas:** las 15 rocas, crestas, acantilados y colinas de OpenGameArt están cerradas por todos lados y llevan
   bloques de vóxeles (`tools/modelos/rocas_oga.py`), con el tono de la región donde están. Se caminan: un paso de
