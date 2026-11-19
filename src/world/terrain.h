@@ -9,6 +9,7 @@
 
 #include "raylib.h"
 #include "sim/hazards.h"
+#include "sim/decor.h"
 #include "sim/world.h"
 
 #define CHUNK_SIZE 48.0f   // metros por lado
@@ -47,6 +48,22 @@ typedef struct {
     unsigned char kind;        // TreeKind (src/sim/flora.h)
 } ChunkTree;
 
+// El decorado de cada chunk: los modelos de OpenGameArt, sembrados con sus normas (src/sim/decor.h). Cada cosa
+// la guarda el chunk donde cae su centro (o la punta de tierra de un muelle).
+#define CHUNK_DECOR 64
+typedef struct {
+    float x, y, z, yaw, scale; // la base, el giro y la escala
+    float stretch;             // lo que se estira a lo largo (su X) sobre la escala: el puente, de orilla a orilla
+    unsigned char kind;        // DecorKind (src/sim/decor.h)
+    unsigned char biome;       // la region de mas peso: la variante de las rocas (props_draw_item_biome)
+} ChunkDecor;
+
+// Las rocas de cada chunk que se alzan (de 60 cm o mas, de prop_slot): para las colisiones (terrain_collide).
+#define CHUNK_ROCKS 96
+typedef struct {
+    float x, y, z, r, top; // el centro (y: su base), el radio que choca y el alto de la punta
+} ChunkRock;
+
 #define TERRAIN_WATER_MESHES 3 // el agua, el hielo y la espuma de cada chunk
 typedef struct {
     bool loaded;
@@ -55,6 +72,10 @@ typedef struct {
     int feat_count;
     ChunkTree trees[CHUNK_TREES];
     int tree_count;
+    ChunkDecor decor[CHUNK_DECOR];
+    int decor_count;
+    ChunkRock rocks[CHUNK_ROCKS];
+    int rock_count;
     Model model;
     float *tri;             // por triangulo: lo que hace falta para recolorear con la estacion
     Model water[TERRAIN_WATER_MESHES];
@@ -77,6 +98,9 @@ typedef struct {
     WaterSeason meshed; // la estacion de las mallas del agua (cambia de a saltos: la consulta, en cada cuadro)
     float plain;        // altura del llano del campamento
     const World *world; // la forma del mundo (de la semilla)
+    // El puente de cada pueblo sobre un arroyo cercano (src/sim/decor.h, decor_bridge), si tiene: se buscan una vez.
+    DecorBridge bridge[SETTLEMENTS_MAX];
+    bool has_bridge[SETTLEMENTS_MAX];
 } Terrain;
 
 float terrain_height(const Terrain *t, float x, float z);
@@ -121,7 +145,26 @@ void terrain_draw_water(const Terrain *t, float time);
 void terrain_set_ripples(const Vector4 *bodies, int count);
 // ¿Hay una formacion de roca o hielo (cantos, basalto, farallones, tempanos, mesas...) a menos de margin m de (x, z)?
 // Solo en los chunks cargados (no tienen colision: para no dejar a nadie adentro de una).
+// Cuantas cosas del decorado hay en los trozos cargados, y cuantas de cada clase (DecorClass, src/sim/decor.h).
+int terrain_decor_count(const Terrain *t, int per_class[DECOR_CLASSES]);
+// El censo del decorado natural en todo el mundo: cuantos de cada DecorKind y, por clase, cuantas intenciones caen
+// por zona, ceden, no tienen suelo, pisan un arbol, o van (--censo-decorado).
+void terrain_decor_census(const Terrain *t, int per_kind[DECOR_KINDS], int why[DECOR_CLASSES][5]);
+// El primer puente (pier: muelle) del decorado, de pueblo en pueblo: su lugar y su direccion (--ir puente, muelle).
+bool terrain_find_water_decor(const Terrain *t, bool pier, float *x, float *z, float *dx, float *dz);
 bool terrain_near_feature(const Terrain *t, float x, float z, float margin);
+// Las colisiones, lo mas sencillo posible: circulos y capsulas en el suelo, sin fisica. Saca a (x, z) (un cuerpo de
+// radius m con los pies a y) de los troncos de los arboles, las rocas que se alzan y el decorado que choca
+// (decor_collider, src/sim/decor.h) de los trozos cargados de alrededor. Lo que no pasa de las rodillas (45 cm sobre
+// los pies) se pisa. Las obras de voxeles (edificios, ruinas, formaciones) frenan aparte: voxs_solid_at (src/main.c).
+// reach: lo que sube de un paso (caminando) o, saltando, el borde que alcanza a agarrar: las rocas mas bajas que eso se
+// trepan (terrain_ground lo sube encima); las mas altas lo frenan.
+void terrain_collide(const Terrain *t, float *x, float *z, float y, float radius, float reach);
+// El suelo que se pisa en (x, z): el terreno o, si alli hay un tablero (el puente, un muelle, la tarima) y quien
+// camina venia a su altura (y_hint, sus pies: a lo sumo 60 cm por debajo), el tablero.
+// Tambien las rocas (las de prop_slot y las del decorado que se trepan): una cupula sobre su planta, para quien llega a
+// menos de reach de su superficie.
+float terrain_ground(const Terrain *t, float x, float z, float y_hint, float reach);
 // Lo que cubre en el mundo a menos de reach m del borde: el tronco de un arbol, una roca de un metro o mas,
 // una mata alta o una formacion de voxeles (los mismos que se dibujan). true con el mas cercano: su centro
 // (en el suelo) y su radio. La cobertura del jugador (C, A4) lo usa.

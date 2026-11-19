@@ -109,7 +109,7 @@ El norte es −Z y el este +X.
   - **las matas sueltas del inventario** (v0.14.1, `vegetation_draw_prop`): la hierba alta del escondite (stipa con sus plumas y pasto, de 1 m), las hierbas curativas (salvia, menta y tomillo, en flor mientras están verdes) y el arbusto, con las mismas hojas: se mecen con el viento y toman el color de la estación.
 - **Árboles** (v0.10.3, más que antes): densidad 0,85 en el bosque, 0,20 en los fiordos, 0,10 en las faldas del altiplano y hasta 0,36 junto al agua en la estepa; 160 alrededor del campamento inicial (fuera de sus 30 m).
   - **De voxeles** (v0.14.1, `src/world/trees.c`): el pino, el sauce y el arce del inventario (`mapa.vegetacion.*`), del 60 al 100 % de su alto y girados al azar. Junto a los lagos y los ríos (no el mar), sauces: sobre todo en el bosque y la costa, menos en la estepa y el desierto, pocos en el altiplano. En el bosque, uno de cada seis es un arce (de cada diez casillas, tres le tocan al arce y la mitad de esas queda vacía, en damero). Los demás, pinos; los del campamento inicial, también. Los de copa ancha (el sauce y el arce), en una casilla de cada dos (`flora_tree_kind`).
-  - **Las estaciones** (`flora_tree_season`): en otoño el arce se pone rojo y naranja y el sauce amarillo; al caer la hoja (y hasta que reverdece) los dos quedan pelados, con el tronco y las ramas; con nieve, el pino lleva nieve sobre cada piso de ramas. Al pie del glaciar, nevados todo el año.
+  - **Las estaciones** (`flora_tree_season`): en otoño el arce se pone rojo y naranja; al caer la hoja (y hasta que reverdece) queda pelado, con el tronco y las ramas; con nieve, el pino lleva nieve sobre cada piso de ramas. El sauce es perenne (v0.15.1): como el pino, conserva la hoja todo el año y se nieva. Al pie del glaciar, nevados todo el año.
   - **El detalle:** de cerca (34 m; en Android, 16), el modelo tal cual; a media distancia (72 m; en Android, 40), con celdas del doble; más lejos, del cuádruple (`vox_downsample`). Solo los que caen delante de la cámara; en Android, hasta 85 m. La copa que tapa al personaje, entre él y la cámara lejana, no se dibuja.
   - **Quemados:** los del campamento inicial, en un incendio, se oscurecen; calcinados, queda el tronco negro.
 
@@ -162,6 +162,88 @@ El norte es −Z y el este +X.
 ![Cielo](mundo/cielo.png)
 
 *El ocaso al oeste y la luna creciente al este, de noche.*
+
+## El decorado de OpenGameArt
+
+Los 41 modelos del paquete *FREE Remastered Meadows* (EmacEArt, CC0), adaptados a la estética del juego con
+`tools/modelos/adaptar_oga.py`, se siembran en la capa 4, la dispersión. Las normas están en `src/sim/decor.c`:
+región, agua, pendiente, nieve, tamaño y cuánto se entierra cada uno. La siembra está en `src/world/terrain.c`:
+`seed_decor`, al armar cada trozo. Todo sale de la semilla y de la casilla, y cada trozo siembra lo suyo sin
+mirar si los vecinos están cargados.
+
+- **Lo natural, por casillas:**
+  - crestas de roca de 77 y 112 m, en casillas de 96 m: altiplano y fiordos;
+  - rocas, colinas y acantilados, en casillas de 24 m;
+  - rocas bajas, árboles y arbustos, en casillas de 12 m.
+
+  Cada casilla da una cosa o nada, con la chance de su modelo por región. Una casilla cede su lugar ante otra de
+  una clase mayor que la pisaría y que también puede ir ahí.
+- **El suelo bajo toda la huella:**
+  - nada en el agua; lo seco, a más de 2 m sobre el agua;
+  - los peñascos del pantano y el sauce muerto, solo junto al agua dulce, con un borde en el agua baja;
+  - ni en el lecho de un río ni donde llega el glaciar;
+  - la pendiente de su norma, y que no flote de un lado. Se entierra un poco.
+- **Lo que siempre respeta:**
+  - el campamento inicial (150 m) y el borde del mundo;
+  - el cañón del desierto y el frente del glaciar (sus formaciones de voxeles);
+  - el muro tras el canal;
+  - los pueblos con sus campos y sus afueras, las estructuras, los campamentos y las cuevas;
+  - los árboles: no pisa ninguno en el núcleo de su huella.
+- **Al pie de los árboles del bosque:** hongos, ramas caídas y raíces, cinco por trozo como mucho.
+- **Lo hecho por el hombre, solo donde tiene sentido (`decor_layout`):**
+  - en las afueras de los pueblos: tramos de cerca a lo largo del borde de los campos, un carro, un banco,
+    barriles y tablas;
+  - junto a los campamentos de las tribus: un corral, un carro y barriles;
+  - alrededor de las ruinas: restos (tablas, una cerca caída, barriles, a veces un carro o un cofre);
+  - un puente sobre un arroyo (`decor_bridge`, v0.15.0):
+    - el cruce más corto a menos de 220 m de cada pueblo, fuera de sus campos y de los demás lugares;
+    - de orilla alta a orilla alta: las dos orillas suben a 1,2 m o más sobre el agua, y el puente se apoya en el
+      hombro de cada una, donde el suelo deja de subir;
+    - las dos puntas, en tierra, y de cada una se sale a una orilla pareja;
+    - el tablero, en arco, de 1,8 a 8 m sobre el agua en el medio;
+    - el modelo se escala hasta 1,2 y se estira a lo largo hasta 2,2 para cubrir la luz;
+    - árboles, rocas, formaciones y el resto del decorado lo esquivan (`near_bridge`);
+  - un muelle en la orilla baja de un lago o del mar a menos de 400 m de un pueblo o campamento: la tarima en tierra
+    y dos tramos sobre el agua.
+
+El censo del mundo entero (`--censo-decorado`) dice cuántos hay de cada modelo y por qué se descarta cada candidato.
+Para mirarlo: `--ir puente`, `--ir muelle` y `--sin-decorado`, para comparar antes y después.
+
+## Las colisiones
+
+Lo más sencillo posible (v0.15.0): sin física, círculos y cápsulas en el suelo, y solo para el jugador (y su
+montura). Cada cuadro mira los nueve trozos de alrededor.
+
+- **Lo que está en el suelo lo empuja afuera** (`terrain_collide`, `src/world/terrain.c`):
+  - el tronco de los árboles;
+  - las rocas de 60 cm o más (cada trozo anota las suyas al armarse);
+  - el decorado que choca (`decor_collider`, `src/sim/decor.h`): un círculo para el tronco de los árboles, dos postes
+    para el portal y el marco, y una cápsula a lo largo para lo demás (rocas, colinas, cercas, carros, bancos,
+    barriles, cofres).
+
+  Lo que no pasa de las rodillas (45 cm) se pisa: los hongos, las ramas, las raíces, las tablas y la cerca caída.
+- **Las obras lo frenan** (`collide_player`, `src/main.c`): los edificios, las ruinas y las formaciones de vóxeles
+  dibujados cerca (su ocupación, `voxs_solid_at`) y las estructuras del campamento.
+  - Se miran a la altura de las rodillas y del pecho, un radio por delante.
+  - Si el paso choca, prueba girado a uno y otro lado (y más corto), así se desliza a lo largo de la pared o rodea
+    lo redondo; si nada pasa, se queda.
+- **Lo que se camina** (`terrain_ground`): el puente, los muelles y la tarima son suelo para quien viene a su altura
+  (hasta 60 cm por debajo). Sobre ellos no se nada, y por debajo se puede pasar a nado.
+- **Las rocas se trepan** (v0.15.1): cada roca (las del trozo y el decorado de `decor_climbable`, de la cresta a la
+  roca baja) es una cúpula sobre su huella, un círculo o una cápsula a lo largo del modelo. Empuja afuera solo si su
+  superficie, junto al jugador, pasa de su alcance: 50 cm en el suelo (un paso) y 1,9 m en el aire (toma el borde al
+  saltar). Si no, es suelo (`terrain_ground`).
+- **Los árboles chocan:** el tronco de los pinos y los demás árboles del trozo empuja afuera con un radio de
+  0,3 m + 0,15 m por su escala.
+- **El campamento inicial choca** (v0.15.2, `collide_player`): el tronco de sus pinos, sus yurtas (a una yurta no se
+  entra desde afuera), el fogón y sus cosas de 50 cm o más (la caja de sus medidas, con su giro) lo empujan afuera.
+- **Las rocas de cada región** (v0.15.2, `props_draw_item_biome`): cada roca del decorado se dibuja con la variante de
+  la región de más peso donde está. La variante es la misma roca con la piedra de esa región y, en lo que mira arriba,
+  lo que la cubre: liquen seco en la estepa, musgo en el bosque, nieve en el altiplano, liquen mojado en los fiordos y
+  polvo de arena en el desierto (con vetas). Se arma al cargar la roca la primera vez, sin archivos nuevos.
+
+En las capturas, la línea `Jugador: (x, y, z)` dice dónde terminó. Con `--caminar adelante` sirve para probar un
+choque.
 
 ## Parámetros para afinar
 

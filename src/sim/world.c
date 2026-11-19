@@ -377,6 +377,10 @@ static bool braid_channel(const World *w, const River *r, float along, float sid
     return fabsf(n) < 0.12f + 0.06f * (1.0f - fabsf(v));
 }
 
+// Hasta donde llega la orilla de un lago en world_height (m desde su centro): el fin de su cresta y de la bajada al
+// terreno, con la orilla irregular lo mas lejos (r * 1,28).
+static float lake_reach(const Lake *l) { return (1.3f + LAKE_FADE) * 1.28f * l->r + LAKE_CREST_M * 1.8f; }
+
 static float lake_dist(const World *w, const Lake *l, float x, float z) {
     float dx = x - l->x, dz = z - l->z;
     float wob = 1.0f + 0.28f * noise2d(atan2f(dz, dx) * 1.7f, l->r * 0.01f, w->seed + 91u); // orilla irregular
@@ -397,6 +401,22 @@ static float lake_rim(const World *w, const Lake *l) {
 }
 
 float world_land(const World *w, float x, float z) { return land(w, x, z); }
+
+float world_desert_clay(const World *w, float x, float z) {
+    float n = 0.5f + 0.5f * noise2d(x * 0.0045f, z * 0.0045f, w->seed + 0xC1A7u) + 0.15f * noise2d(x * 0.02f, z * 0.02f, w->seed + 0xC1A8u);
+    return smooth(0.58f, 0.72f, n);
+}
+
+float world_lake_bed(const World *w, float x, float z) {
+    float bed = 0.0f;
+    for (int i = 0; i < w->lake_count; i++) {
+        const Lake *l = &w->lakes[i];
+        float dx = x - l->x, dz = z - l->z;
+        if (dx * dx + dz * dz > l->r * l->r * 2.4f) continue;
+        bed = fmaxf(bed, 1.0f - smooth(1.0f, LAKE_BANK, lake_dist(w, l, x, z)));
+    }
+    return bed;
+}
 
 float world_lake_shore(const World *w, int i) { return i >= 0 && i < w->lake_count ? lake_rim(w, &w->lakes[i]) : 0.0f; }
 
@@ -420,14 +440,35 @@ float world_height(const World *w, float x, float z) {
             h = lerpf(h, fminf(h, bed), cw);
         }
     }
-    for (int i = 0; i < w->lake_count; i++) { // lagos: cuencas con la orilla suave
+    // Lagos: la cuenca contiene su agua. El fondo (lake_dist < 1) baja bajo el nivel; la orilla sube de ahi a una
+    // cresta LAKE_LIP sobre el agua (desde LAKE_BANK hasta LAKE_CREST_M metros mas alla de donde llega su agua,
+    // lake_dist 1,3) y de la cresta vuelve al terreno (en LAKE_FADE de lake_dist): donde el terreno de afuera queda
+    // mas bajo que el agua, se levanta, asi el agua no se sale ni deja huecos en la orilla.
+    float rim = -1e9f, crest = -1e9f, keep = 0.0f; // la cresta de un lago aca, el nivel de su agua y cuanto la guarda
+    bool basin = false;
+    for (int i = 0; i < w->lake_count; i++) {
         const Lake *l = &w->lakes[i];
-        float dx = x - l->x, dz = z - l->z;
-        if (dx * dx + dz * dz > l->r * l->r * 3.2f) continue;
+        float dx = x - l->x, dz = z - l->z, reach = lake_reach(l);
+        if (w->shore_v14) { // la orilla de la v0.14, para poner los lugares (World.shore_v14)
+            if (dx * dx + dz * dz > l->r * l->r * 3.2f) continue;
+            float d = lake_dist(w, l, x, z), depth = l->oasis ? 2.0f : 5.0f;
+            if (d < 1.0f) h = fminf(h, l->level - 0.6f - depth * (1.0f - d * d));
+            else if (d < 1.5f) h = fminf(h, lerpf(l->level - 0.6f, h, smooth(1.0f, 1.5f, d)));
+            continue;
+        }
+        if (dx * dx + dz * dz > reach * reach) continue;
         float d = lake_dist(w, l, x, z), depth = l->oasis ? 2.0f : 5.0f;
-        if (d < 1.0f) h = fminf(h, l->level - 0.6f - depth * (1.0f - d * d));
-        else if (d < 1.5f) h = fminf(h, lerpf(l->level - 0.6f, h, smooth(1.0f, 1.5f, d)));
+        float m = d / fmaxf(sqrtf(dx * dx + dz * dz), 1e-3f), cr = 1.3f + LAKE_CREST_M * m; // m: un metro en lake_dist
+        if (d < 1.0f) h = fminf(h, l->level - 0.6f - depth * (1.0f - d * d)), basin = true;
+        else if (d < LAKE_BANK) h = lerpf(l->level - 0.6f, fmaxf(h, l->level + LAKE_LIP), smooth(1.0f, LAKE_BANK, d)), basin = true, crest = fmaxf(crest, l->level), keep = 1.0f;
+        else if (d < cr) rim = fmaxf(rim, l->level + LAKE_LIP), crest = fmaxf(crest, l->level), keep = 1.0f;
+        else if (d < cr + LAKE_FADE) {
+            rim = fmaxf(rim, lerpf(l->level + LAKE_LIP, h, smooth(cr, cr + LAKE_FADE, d)));
+            if (d < cr + LAKE_KEEP_M * m) crest = fmaxf(crest, l->level), keep = fmaxf(keep, 1.0f - smooth(cr, cr + LAKE_KEEP_M * m, d));
+        }
     }
+    if (!basin && rim > h) h = rim; // (no adentro de otra cuenca)
+    float shore = h, carve = 1e9f;  // la orilla antes de los rios, y el agua mas baja de los que la tallan
     for (int i = 0; i < w->river_count; i++) { // rios: meandros, tributarios y trenzados
         const River *r = &w->rivers[i];
         if (!river_box(r, x, z, r->width * 2.5f)) continue;
@@ -435,12 +476,18 @@ float world_height(const World *w, float x, float z) {
         if (r->kind == RIVER_BRAIDED) {
             if (d < r->width) h = fminf(h, braid_channel(w, r, along, side) ? lv - 0.6f : lv + 0.12f); // grava y canales
             else if (d < r->width * 1.6f) h = fminf(h, lerpf(lv + 0.12f, fmaxf(h, lv + 0.12f), smooth(r->width, r->width * 1.6f, d)));
+            if (d < r->width * 1.6f) carve = fminf(carve, lv);
         } else {
             float deep = 2.2f * fminf(1.0f, r->width / 5.0f); // los arroyos, menos hondos
             if (d < r->width) h = fminf(h, lv - 0.4f - deep * (1.0f - (d / r->width) * (d / r->width)));
             else if (d < r->width * 2.4f) h = fminf(h, lerpf(lv + 0.2f, fmaxf(h, lv + 0.2f), smooth(r->width, r->width * 2.4f, d)));
+            if (d < r->width * 2.4f) carve = fminf(carve, lv);
         }
     }
+    // Un rio que pasa por la orilla de un lago con su agua mas baja que la del lago no corta la cresta: el agua del lago
+    // queda en su cuenca (sin colgar sobre el cauce) y el cauce baja de la cresta en LAKE_KEEP_M metros. El que sale al
+    // nivel del lago si la corta.
+    if (crest > -1e8f && carve < crest - 0.3f && h < shore) h = lerpf(h, shore, keep);
     // El llano del campamento.
     float d = sqrtf(x * x + z * z);
     if (d < CAMP_FLAT_OUTER) h = lerpf(w->camp_height, h, smooth(CAMP_FLAT_INNER, CAMP_FLAT_OUTER, d));
@@ -1406,6 +1453,7 @@ static void place_more_ruins(World *w) {
 void world_generate(World *w, uint32_t seed) {
     memset(w, 0, sizeof(*w));
     w->seed = seed;
+    w->shore_v14 = true; // los lugares, con la orilla de antes (World.shore_v14)
     Rng rng;
     rng_seed(&rng, seed ^ 0x5EEDu);
     w->warp_phase = (rng_float(&rng) - 0.5f) * 10.0f * DEG; // las fronteras giran un poco
@@ -1562,6 +1610,7 @@ void world_generate(World *w, uint32_t seed) {
     place_ancient_towns(w);
     place_more_forts(w);
     place_more_ruins(w);
+    w->shore_v14 = false; // y desde aca, la orilla con su cresta
 }
 
 const char *site_name(SiteKind k) {

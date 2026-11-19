@@ -52,6 +52,16 @@ Lo que el juego necesita de un modelo está en `assets/inventario.tsv` (medidas,
 3. **Generar el 3D** con la imagen de una sola vista, en el espacio de TRELLIS.2 en Hugging Face (desde la
    tablet: subir la imagen, generar, exportar el GLB), y copiar el enlace de descarga del GLB. Con una hoja de
    tres vistas, en cambio, el modelo sale con `piezas.py`, sin GPU.
+   - **Con esqueleto, en AniGen** ([VAST-AI/AniGen](https://huggingface.co/spaces/VAST-AI/AniGen)): también pide
+     una sola vista. `python3 tools/modelos/preparar_refs_anigen.py` las saca de las hojas de tres vistas de
+     `arte/referencias/_raw_multiview/` y deja dos por id en `arte/referencias/<id>/`:
+     - `unica_01`: la que pide el esqueleto (de frente las personas, de perfil a la izquierda los cuadrúpedos, de
+       espaldas con las alas abiertas las aves);
+     - `unica_02`: la que la complementa.
+
+     Quedan sin fondo ni sombras, sobre blanco, negro o verde según el pelaje, y anotadas en
+     `referencias.json` con su estado («lista» o «con reparos»). Necesita `pip install "rembg[cpu]"`;
+     `--check` revisa lo hecho sin rembg.
 4. **Traerlo** (en Codespaces con Cline, o acá con el archivo):
    ```bash
    python3 tools/modelos/modelos.py traer <id> --url <enlace del GLB> --fuente trellis2 --girar 90

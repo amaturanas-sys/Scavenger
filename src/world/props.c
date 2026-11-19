@@ -63,13 +63,48 @@ int props_nearest(const Props *p, Vector3 from, float radius, bool takeable_only
 }
 
 // Indice en la cache del id y la variante (cargando el modelo y sus clips una sola vez), o -1.
+// Las rocas de cada region (v0.15.2): la misma roca con la piedra de su region y, en lo que mira arriba, lo que la
+// cubre: liquen seco en la estepa, musgo en el bosque, nieve en el altiplano, liquen mojado en los fiordos y polvo de
+// arena en el desierto, con vetas. La luz horneada y los bloques de voxeles siguen: el brillo de cada cara, sobre el medio.
+#define BIOME_VARIANT 100
+static void recolor_biome(Model *m, int biome) {
+    static const float STONE[5][3] = { { 132, 128, 118 }, { 100, 106, 98 }, { 150, 156, 168 }, { 84, 90, 100 }, { 198, 136, 88 } };
+    static const float COVER[5][3] = { { 156, 150, 96 }, { 70, 104, 54 }, { 238, 242, 248 }, { 104, 124, 92 }, { 218, 182, 128 } };
+    static const float AMOUNT[5] = { 0.5f, 0.85f, 0.95f, 0.6f, 0.6f };
+    if (biome < 0 || biome > 4) return;
+    for (int i = 0; i < m->meshCount; i++) {
+        Mesh *me = &m->meshes[i];
+        if (!me->colors || !me->normals || me->vertexCount <= 0) continue;
+        float lum = 0.0f, ymin = 1e9f, ymax = -1e9f;
+        for (int v = 0; v < me->vertexCount; v++) {
+            const unsigned char *c = &me->colors[v * 4];
+            lum += 0.3f * c[0] + 0.59f * c[1] + 0.11f * c[2];
+            ymin = fminf(ymin, me->vertices[v * 3 + 1]), ymax = fmaxf(ymax, me->vertices[v * 3 + 1]);
+        }
+        lum = fmaxf(lum / (float)me->vertexCount, 1.0f);
+        int group = me->indices || me->vertexCount % 3 ? 1 : 3; // facetada (sin indices): cara por cara
+        for (int v = 0; v < me->vertexCount; v += group) {
+            float y = 0.0f;
+            for (int g = 0; g < group; g++) y += me->vertices[(v + g) * 3 + 1] / (float)group;
+            float up = me->normals[v * 3 + 1], cover = AMOUNT[biome] * fminf(fmaxf((up - 0.5f) / 0.3f, 0.0f), 1.0f);
+            float band = biome == 4 && ((int)((y - ymin) / fmaxf(ymax - ymin, 0.01f) * 9.0f) & 1) ? 0.88f : 1.0f; // las vetas
+            for (int g = 0; g < group; g++) {
+                unsigned char *c = &me->colors[(v + g) * 4];
+                float shade = fminf(fmaxf((0.3f * c[0] + 0.59f * c[1] + 0.11f * c[2]) / lum, 0.45f), 1.5f) * band;
+                for (int j = 0; j < 3; j++) c[j] = (unsigned char)fminf(255.0f, (STONE[biome][j] * (1.0f - cover) + COVER[biome][j] * cover) * shade);
+            }
+        }
+        UpdateMeshBuffer(*me, 3, me->colors, me->vertexCount * 4, 0);
+    }
+}
+
 static int load_slot(Props *p, const InvItem *item, int variant) {
     for (int i = 0; i < p->cached; i++)
         if (p->cache[i].item == item && p->cache[i].variant == variant) return i;
     if (p->cached >= MODEL_CACHE_MAX) return -1;
     char path[160];
     inventory_path(item, path, sizeof(path));
-    if (variant >= 0) { // "dir/nombre.glb" -> "dir/nombre@invierno.glb"
+    if (variant >= 0 && variant < BIOME_VARIANT) { // "dir/nombre.glb" -> "dir/nombre@invierno.glb"
         char *dot = strrchr(path, '.');
         if (!dot) return -1;
         char ext[8];
@@ -93,6 +128,7 @@ static int load_slot(Props *p, const InvItem *item, int variant) {
     p->cache[slot].model = LoadModel(full);
     p->cache[slot].loaded = p->cache[slot].model.meshCount > 0;
     platform_note_asset(full, p->cache[slot].loaded);
+    if (p->cache[slot].loaded && variant >= BIOME_VARIANT) recolor_biome(&p->cache[slot].model, variant - BIOME_VARIANT);
     if (p->cache[slot].loaded) p->cache[slot].anims = LoadModelAnimations(full, &p->cache[slot].anim_count);
     return slot;
 }
@@ -144,6 +180,18 @@ static Color category_color(const char *cat) {
 static Color g_tint = { 255, 255, 255, 255 }; // la luz de alrededor (props_set_tint)
 
 void props_set_tint(Color tint) { g_tint = tint; }
+Color props_get_tint(void) { return g_tint; }
+
+bool props_draw_item_biome(Props *p, const InvItem *item, Matrix transform, int biome) {
+    int slot = load_slot(p, item, BIOME_VARIANT + biome);
+    if (slot < 0 || !p->cache[slot].loaded) return props_draw_item_matrix(p, item, transform);
+    Model *m = &p->cache[slot].model;
+    Matrix saved = m->transform;
+    m->transform = MatrixMultiply(saved, transform);
+    DrawModel(*m, (Vector3){ 0, 0, 0 }, 1.0f, g_tint);
+    m->transform = saved;
+    return true;
+}
 
 bool props_draw_item_matrix(Props *p, const InvItem *item, Matrix transform) {
     Model *m = cached_model(p, item);

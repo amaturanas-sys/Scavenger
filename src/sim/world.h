@@ -158,6 +158,9 @@ typedef struct {
 
 typedef struct {
     uint32_t seed;
+    // Mientras world_generate pone los lugares, world_height usa la orilla de los lagos de la v0.14 (sin la cresta):
+    // asi caen donde caian y las partidas de antes siguen igual. La cresta solo sube el suelo, asi que siguen en seco.
+    bool shore_v14;
     float warp_phase;    // giro de las fronteras entre regiones
     Lake lakes[LAKES_MAX];
     int lake_count;
@@ -297,6 +300,20 @@ bool world_river_flow(const World *w, int river, float along, float *dx, float *
 // orilla baja, 0 lejos), para rios de meandro, tributarios y arroyos; width (si no es NULL): el
 // ancho de ese rio. Los trenzados ya son de grava.
 float world_river_bank(const World *w, float x, float z, float *width);
+// La orilla de los lagos (world_height), en lake_dist (1: donde empieza el fondo): sube del fondo a una cresta LAKE_LIP m
+// sobre el agua (de 1 a LAKE_BANK), la cresta sigue hasta LAKE_CREST_M metros mas alla de donde llega su agua (lake_dist
+// 1,3) y despues baja al terreno en LAKE_FADE (de lake_dist).
+#define LAKE_BANK 1.15f
+#define LAKE_CREST_M 4.0f
+#define LAKE_FADE 0.28f
+#define LAKE_LIP 0.5f
+// Donde un rio mas bajo que el lago pasa por su orilla, la cresta se guarda y el cauce baja de ella en estos metros.
+#define LAKE_KEEP_M 10.0f
+// El fondo de un lago en (x, z): 1 en la cuenca, 0 desde su borde (LAKE_BANK). Lleva el lecho de los rios.
+float world_lake_bed(const World *w, float x, float z);
+// El suelo de arcilla del desierto (takyr) en (x, z): manchas [0, 1]; lo demas es arena. Ahi crecen, escasos, los
+// arboles y arbustos secos y algo de hierba seca.
+float world_desert_clay(const World *w, float x, float z);
 // El borde fractal: su radio en un angulo, y la distancia de (x, z) a el (positiva dentro).
 float world_edge_radius(const World *w, float angle);
 float world_edge_distance(const World *w, float x, float z);

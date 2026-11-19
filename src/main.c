@@ -80,6 +80,8 @@
 #include "game/input.h"
 #include "rlgl.h"
 #include "world/weather.h"
+#include "sim/decor.h"
+#include "world/decor_draw.h"
 #include "world/terrain.h"
 #include "world/trees.h"
 #include "world/vegetation.h"
@@ -121,6 +123,8 @@ typedef struct {
 
 #define RIDE_LIFT 1.1f // m: lo que sube el jinete (player.draw_lift a caballo)
 
+static bool g_decor_census; // --censo-decorado
+static bool g_no_decor; // --sin-decorado: sin el decorado de OpenGameArt (para comparar antes y despues)
 static float g_drone; // --dron: la camara a tantos metros (pruebas y capturas de una ciudad entera)
 
 // La vista v: la camara va hacia sus medidas (snap: llega ya, al empezar).
@@ -164,6 +168,27 @@ static bool in_prop(const Prop *pr, Vector3 q, bool flat) {
     return fabsf(lx) < it->l * 0.5f && fabsf(lz) < it->w * 0.5f && (flat || (q.y > pr->pos.y - 0.5f && q.y < pr->pos.y + it->h));
 }
 
+// Empuja q afuera del circulo (cx, cz, r), en la planta.
+static void push_circle(Vector3 *q, float cx, float cz, float r) {
+    float dx = q->x - cx, dz = q->z - cz, d2 = dx * dx + dz * dz;
+    if (d2 >= r * r) return;
+    float d = sqrtf(d2);
+    if (d < 1e-4f) dx = 1.0f, dz = 0.0f, d = 1.0f;
+    q->x = cx + dx / d * r, q->z = cz + dz / d * r;
+}
+// Empuja q afuera de la caja de pr (sus medidas, con su giro) mas radius, por el lado mas cercano.
+static void push_box(Vector3 *q, const Prop *pr, float radius) {
+    float dx = q->x - pr->pos.x, dz = q->z - pr->pos.z;
+    if (fabsf(dx) > 8.0f || fabsf(dz) > 8.0f) return;
+    float c = cosf(pr->yaw), s = sinf(pr->yaw);
+    float lx = dx * c - dz * s, lz = dx * s + dz * c; // como in_prop
+    float px = pr->item->l * 0.5f + radius - fabsf(lx), pz = pr->item->w * 0.5f + radius - fabsf(lz);
+    if (px <= 0.0f || pz <= 0.0f) return;
+    if (px < pz) lx += copysignf(px, lx);
+    else lz += copysignf(pz, lz);
+    q->x = pr->pos.x + lx * c + lz * s, q->z = pr->pos.z - lx * s + lz * c;
+}
+
 // Lo que puede tapar la camara en este cuadro: las yurtas del campamento inicial, las estructuras del inventario
 // puestas en el mundo a menos de 25 m del jugador (salvo la que lo tiene adentro: se puede entrar en una yurta, y la
 // camara no la puede esquivar; lo bajo, de menos de 1 m, no tapa) y los edificios, las ruinas y las formaciones de
@@ -197,6 +222,58 @@ static bool structure_at(const Blockers *b, Vector3 q) {
     for (int i = 0; i < b->np; i++)
         if (in_prop(b->prop[i], q, false)) return true;
     return b->vox && voxs_solid_at(q, b->who);
+}
+
+// Las colisiones del jugador (y su montura), lo mas sencillo posible: lo que esta en el suelo (los troncos, las rocas,
+// el decorado: terrain_collide) lo empuja afuera; las obras (los edificios, las ruinas y las formaciones de voxeles
+// dibujadas cerca, y las estructuras del campamento) lo frenan a la altura de las rodillas y del pecho, un radio por
+// delante: se desliza a lo largo de ellas (el paso, girado) o se queda donde estaba. El campamento inicial (sus pinos,
+// sus yurtas, el fogon y sus cosas) lo empuja afuera: a una yurta no se entra desde afuera (v0.15.2).
+static bool obra_ahead(const Blockers *b, Vector3 from, Vector3 to, float ux, float uz, float radius) {
+    Vector3 q = { to.x + ux * radius, to.y, to.z + uz * radius };
+    for (int i = 0; i < b->np; i++)
+        if (in_prop(b->prop[i], q, true) && !in_prop(b->prop[i], from, true)) return true;
+    for (int k = 0; b->vox && k < 2; k++) {
+        float lift = k ? 1.3f : 0.5f;
+        if (voxs_solid_at((Vector3){ q.x, q.y + lift, q.z }, (Vector3){ from.x, from.y + lift, from.z })) return true;
+    }
+    return false;
+}
+
+static void collide_player(const Terrain *t, const Camp *camp, Vector3 from, Player *p, bool mounted) {
+    float radius = mounted ? 0.55f : 0.35f;
+    terrain_collide(t, &p->pos.x, &p->pos.z, p->pos.y, radius, p->grounded ? 0.5f : 1.9f); // saltando, se trepa una roca
+    // El campamento inicial (v0.15.2): el tronco de sus pinos, sus yurtas (de afuera no se entra), el fogon y sus cosas
+    // de 50 cm o mas (cajas, carros, bancos: la caja de sus medidas, con su giro) lo empujan afuera.
+    for (int i = 0; i < camp->tree_count; i++) push_circle(&p->pos, camp->trees[i].x, camp->trees[i].z, 0.3f + 0.05f * camp->tree_h[i] + radius);
+    for (int i = 0; i < camp->yurt_count; i++)
+        if (!in_yurt(camp->yurts[i], from, true)) push_circle(&p->pos, camp->yurts[i].x, camp->yurts[i].z, 2.25f + radius);
+    push_circle(&p->pos, camp->fire.x, camp->fire.z, 0.5f + radius);
+    for (int i = 0; i < g_props.count; i++) {
+        const Prop *pr = &g_props.items[i];
+        if (!pr->flying && pr->item->h >= 0.5f && strncmp(pr->item->id, "estructura.", 11) != 0) push_box(&p->pos, pr, radius);
+    }
+    float dx = p->pos.x - from.x, dz = p->pos.z - from.z, len = sqrtf(dx * dx + dz * dz);
+    if (len > 1e-4f) {
+        Blockers b;
+        blockers_near(&b, camp, &g_props, from);
+        Vector3 to = p->pos;
+        if ((b.np || b.vox) && obra_ahead(&b, from, to, dx / len, dz / len, radius)) {
+            // Se desliza: el paso, girado a uno y otro lado (cada vez mas) y mas corto, lo que avanzaria a lo largo de
+            // la pared; si nada pasa, se queda.
+            static const float TURN[] = { 0.5f, -0.5f, 1.0f, -1.0f, 1.4f, -1.4f };
+            p->pos.x = from.x, p->pos.z = from.z;
+            for (int k = 0; k < 6; k++) {
+                float c = cosf(TURN[k]), sn = sinf(TURN[k]), ux = (dx * c - dz * sn) / len, uz = (dx * sn + dz * c) / len, step = len * c;
+                Vector3 q = { from.x + ux * step, to.y, from.z + uz * step };
+                if (!obra_ahead(&b, from, q, ux, uz, radius)) {
+                    p->pos.x = q.x, p->pos.z = q.z;
+                    break;
+                }
+            }
+        }
+    }
+    if (p->grounded) p->pos.y = terrain_ground(t, p->pos.x, p->pos.z, p->pos.y, 0.5f);
 }
 
 // ¿El brazo de la camara (del jugador a ella) cruza una obra?
@@ -561,6 +638,14 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
     for (int r = 1; r < REGION_COUNT; r++)
         if (!strcmp(what, REG[r])) world_region_point(w, (Region)r, 0.62f * WORLD_RADIUS, &x, &z), lx = x * 1.1f, lz = z * 1.1f, ok = true;
     if (!strcmp(what, "estepa")) x = 260.0f, z = -180.0f, lx = 600.0f, lz = -400.0f, ok = true;
+    if (!strcmp(what, "puente") || !strcmp(what, "muelle")) { // el decorado del agua cerca de un pueblo (src/world/terrain.c)
+        float bx, bz, ux, uz;
+        if (terrain_find_water_decor(t, !strcmp(what, "muelle"), &bx, &bz, &ux, &uz)) {
+            bool pier = !strcmp(what, "muelle");
+            x = bx + (pier ? -ux * 9.0f : 0.0f) - uz * 11.0f, z = bz + (pier ? -uz * 9.0f : 0.0f) + ux * 11.0f; // de costado
+            lx = bx + (pier ? ux * 4.0f : 0.0f), lz = bz + (pier ? uz * 4.0f : 0.0f), ok = true;
+        }
+    }
     if (!strcmp(what, "canal") || !strcmp(what, "muro-canal")) { // muro-canal: en la orilla, mirando el muro de enfrente
         float x0, z0;
         world_edge_point(w, REGION_FOREST, 0.0f, &x0, &z0);
@@ -981,6 +1066,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--diagnostico")) start_diag = true;
         else if (!strcmp(argv[i], "--tactil")) g_force_touch = true;
         else if (!strcmp(argv[i], "--sin-shader")) terrain_water_shader_off(); // el agua de antes (prueba del respaldo)
+        else if (!strcmp(argv[i], "--sin-decorado")) g_no_decor = true; // sin el decorado de OpenGameArt (src/sim/decor.h)
+        else if (!strcmp(argv[i], "--censo-decorado")) g_decor_census = true; // cuantos de cada modelo en el mundo entero, y sale
         else if (!strcmp(argv[i], "--selector") && i + 1 < argc) start_picker = atoi(argv[++i]) - 1; // prueba: el selector de una casilla
         else if (!strcmp(argv[i], "--rumbo") && i + 1 < argc) start_heading = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--camara") && i + 1 < argc) start_pitch = (float)atof(argv[++i]);
@@ -1063,6 +1150,17 @@ int main(int argc, char **argv) {
 
     Terrain terrain;
     terrain_init(&terrain, start_seed);
+    if (g_decor_census) { // el decorado natural en todo el mundo (src/sim/decor.h), sin abrir la ventana del juego
+        int per_kind[DECOR_KINDS], why[DECOR_CLASSES][5];
+        terrain_decor_census(&terrain, per_kind, why);
+        static const char *CLS[3] = { "crestas", "grandes", "medianos" };
+        for (int c = 0; c < 3; c++)
+            printf("Censo %s: %d van; descartadas por la zona %d, ceden %d, sin suelo %d, pisan un arbol %d\n", CLS[c], why[c][4], why[c][0], why[c][1],
+                   why[c][2], why[c][3]);
+        for (int k = 0; k < DECOR_KINDS; k++)
+            if (decor_norm((DecorKind)k)->cls <= DECOR_CLASS_MEDIUM) printf("  %-58s %d\n", decor_norm((DecorKind)k)->id, per_kind[k]);
+        return 0;
+    }
     if (map_path) { // el mapa general del mundo (con la nieve de verano) y nada mas
         bool ok = worldmap_export(terrain.world, map_path, map_size > 64 ? map_size : 1024, terrain.plain + 40.0f);
         printf("%s %s\n", ok ? "Mapa escrito:" : "No se pudo escribir", map_path);
@@ -1484,7 +1582,9 @@ int main(int argc, char **argv) {
             // Adentro de una cueva se mueve alli (src/game/cave_game.c) y el mundo de afuera espera: el combate, la
             // fauna, los peligros y los desastres; el reloj, la sed, el inventario, la barra rapida y la antorcha siguen.
             bool cave = cv_inside();
+            Vector3 before_move = player.pos;
             if (!g_actions.climbing && !cave) player_update(&player, &terrain, in, rig.yaw, dt);
+            if (!g_actions.climbing && !cave) collide_player(&terrain, &camp, before_move, &player, g_actions.mounted >= 0); // troncos, rocas, decorado y obras
             if (!cave) wd_keep_out_of_rock(&terrain, &player.pos); // el peñasco de la boca de una cueva no se atraviesa
             if (in.toggle_sneak && !cave) ga_toggle_cover(&g_actions, &g_props, &terrain, &player); // C: junto a un obstaculo, cobertura
             cv_update(&g_actions, &g_combat, &troop, &g_props, &player, &terrain, in, &rig.yaw, world_time,
@@ -1738,6 +1838,7 @@ int main(int argc, char **argv) {
         BeginMode3D(cam);
         terrain_draw(&terrain);
         terrain_draw_trees(&terrain, cam); // el pino, el sauce y el arce de voxeles (src/world/trees.h)
+        if (!gallery_mode && !g_no_decor) decor_draw(&terrain, &g_props, &g_inventory, cam); // el decorado de OpenGameArt (src/sim/decor.h)
         camp_draw(&camp, (float)GetTime(), climate.snow_cover, !g_actions.fires_out && g_actions.camps[0].used && !g_actions.camps[0].moved,
                   g_dz.tree_burn); // migrado, su fogata queda apagada
         if (!gallery_mode) { // el pasto, la stipa, las flores, los helechos y los juncos cercanos
@@ -1935,6 +2036,13 @@ int main(int argc, char **argv) {
             int lods[3];
             int trees = trees_drawn(lods);
             printf("Arboles: %d dibujados (%d de cerca, %d a media distancia, %d de lejos)\n", trees, lods[0], lods[1], lods[2]);
+            int dc[DECOR_CLASSES];
+            int decor = terrain_decor_count(&terrain, dc);
+            printf("Decorado: %d en los trozos cargados (%d crestas, %d grandes, %d medianos, %d al pie de los arboles, %d hechos por el hombre)%s\n",
+                   decor, dc[DECOR_CLASS_RIDGE], dc[DECOR_CLASS_BIG], dc[DECOR_CLASS_MEDIUM], dc[DECOR_CLASS_FOOT], dc[DECOR_CLASS_HUMAN],
+                   g_no_decor ? ", sin dibujar (--sin-decorado)" : "");
+            printf("Jugador: (%.2f, %.2f, %.2f)%s\n", player.pos.x, player.pos.y, player.pos.z,
+                   g_hazards.swimming ? ", nadando" : g_hazards.wading ? ", vadeando" : ""); // (las colisiones, al caminar)
             break;
         }
     }

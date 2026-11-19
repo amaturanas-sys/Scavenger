@@ -89,6 +89,7 @@ int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out) {
     float h01 = world_height(w, x0, z0 + c), h11 = world_height(w, x0 + c, z0 + c);
     if (k[REGION_FJORD] > 0.5f && (h00 + h10 + h01 + h11) * 0.25f < SEA_LEVEL + 4.0f) return 0; // la playa negra
     WaterKind wk;
+    float clay = k[REGION_DESERT] > 0.3f ? 0.4f * k[REGION_DESERT] * world_desert_clay(w, mx, mz) : 0.0f;
     float wl = world_water(w, mx, mz, 0.0f, &wk);
     bool lake = wl > -1e8f && wk != WATER_SEA;
     if (wk == WATER_SEA && wl > -1e8f && (h00 + h10 + h01 + h11) * 0.25f < wl + 1.0f) return 0;
@@ -111,7 +112,7 @@ int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out) {
         float above = lake ? y - wl : 99.0f;
         if (above < -0.5f) continue; // el agua honda
         if (trodden < 1.0f) r /= fmaxf(trodden, 0.001f);
-        int kind = flora_pick(k, lake ? clamp01(1.0f - above / 2.5f) : 0.0f, r);
+        int kind = flora_pick(k, fmaxf(lake ? clamp01(1.0f - above / 2.5f) : 0.0f, clay), r); // la arcilla del desierto: algo de hierba seca
         if (kind < 0 || (above < 0.0f && kind != FLORA_REED)) continue; // en el agua baja, solo juncos
         uint32_t h2 = hash3(gz, gx * FLORA_PER_CELL + i, seed ^ 0x5EED5u);
         FloraTuft *t = &out[n++];

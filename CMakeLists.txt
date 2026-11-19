@@ -72,6 +72,7 @@ add_library(estepa_sim STATIC
   src/sim/city.c
   src/sim/army.c
   src/sim/flora.c
+  src/sim/decor.c
   src/sim/ancient.c
   src/sim/buildkit.c)
 target_include_directories(estepa_sim PUBLIC src)
@@ -161,6 +162,7 @@ if(ESTEPA_BUILD_GAME)
     src/ui/minimap.c
     src/ui/icons.c
     src/world/terrain.c
+    src/world/decor_draw.c
     src/world/worldview.c
     src/world/camp.c
     src/world/hearth.c
