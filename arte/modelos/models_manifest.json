@@ -985,14 +985,14 @@
       "updated_at": "2026-10-18T00:00:00+00:00"
     },
     "personaje.base.cuerpo_comun": {
-      "file": "arte/modelos/para_riggear/personaje.base.cuerpo_comun.glb",
+      "file": "assets/models/personajes/cuerpo_comun.glb",
       "category": "personaje",
-      "has_rig": false,
+      "has_rig": true,
       "source": {
-        "tool": "otro",
-        "url": "",
-        "file": "c03.jpg",
-        "sha256": "3a248cf1f50c2531e014cc65f3fc2e7c1e47f20562946aef1c05ee85af9c9874"
+        "tool": "google_drive",
+        "url": "https://drive.google.com/drive/folders/1zpuM4RNNnduKJL9hn4PuiFOv-3dCAZvc?usp=drive_link",
+        "file": "exported-model(1).glb",
+        "sha256": "pending"
       },
       "params": {
         "piezas": "volumen",
@@ -1007,7 +1007,7 @@
         "res": 128,
         "umbral": 20,
         "ancla": null,
-        "girar": 0,
+        "girar": 90,
         "cruz": null,
         "cruz_columna": null,
         "textura": [
@@ -1016,7 +1016,7 @@
         ]
       },
       "tris": 1200,
-      "updated_at": "2026-11-08T18:37:29+00:00"
+      "updated_at": "2026-11-19T22:00:00+00:00"
     },
     "personaje.base.cuerpo_comun_2": {
       "file": "arte/modelos/para_riggear/personaje.base.cuerpo_comun_2.glb",
