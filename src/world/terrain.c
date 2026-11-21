@@ -1068,7 +1068,7 @@ static bool tree_slot(const Terrain *t, int gx, int gz, ChunkTree *out) {
     if (world_forest_wall(t->world, x, z) > 0.2f) return false; // el muro tras el canal: roca desnuda
     if (world_canal_near(t->world, x, z, 14.0f)) return false;   // la orilla del canal, despejada: se ve el muro
     float k[REGION_COUNT];
-    world_region_weights(t->world, x, z, k);
+    world_region_weights_soft(t->world, x, z, k);
     WaterKind wk = WATER_NONE;
     float y = terrain_height(t, x, z), wl = world_water(t->world, x, z, 0.0f, &wk);
     bool wet = wl > -1e8f && y - wl < 6.0f;
@@ -1113,7 +1113,7 @@ static int prop_slot(const Terrain *t, int gx, int gz, PropSlot *o) {
     float x = ox + (ix + 0.1f + 0.8f * r1) * pslot, z = oz + (iz + 0.1f + 0.8f * r2) * pslot;
     if (x * x + z * z < 60.0f * 60.0f || world_edge_distance(t->world, x, z) < 90.0f) return 0;
     float *k = o->k;
-    world_region_weights(t->world, x, z, k);
+    world_region_weights_soft(t->world, x, z, k);
     float rd = rock_density(k), wl = world_water(t->world, x, z, 0.0f, NULL), y = terrain_height(t, x, z);
     float near_water = wl > -1e8f && y - wl < 5.0f ? 1.0f : 0.0f;
     rd *= 1.0f - 0.75f * k[REGION_STEPPE] * (1.0f - near_water); // en la estepa, pocas rocas salvo junto a rios y lagos
@@ -1206,7 +1206,7 @@ static bool decor_intent(const Terrain *t, DecorClass c, int gx, int gz, DecorIn
     float r0 = (float)(h & 0xFFFF) / 65536.0f, r1 = (float)((h >> 16) & 0xFF) / 255.0f, r2 = (float)(h >> 24) / 255.0f;
     float x = ((float)gx + 0.15f + 0.7f * r1) * s, z = ((float)gz + 0.15f + 0.7f * r2) * s;
     float k[REGION_COUNT];
-    world_region_weights(t->world, x, z, k);
+    world_region_weights_soft(t->world, x, z, k);
     WaterKind wk = WATER_NONE;
     float y = terrain_height(t, x, z), wl = world_water(t->world, x, z, 0.0f, &wk);
     bool wet = wl > -1e8f && wk != WATER_SEA && y - wl < 4.0f;
@@ -1305,7 +1305,7 @@ static bool decor_yields(const Terrain *t, const DecorIntent *me, DecorClass c) 
                 float ex = o.x - me->x, ez = o.z - me->z, rr = o.r + me->r + 2.0f;
                 if (ex * ex + ez * ez >= rr * rr) continue;
                 float k[REGION_COUNT], base; // solo ante una que puede ir ahi (si no, las dos quedarian vacias)
-                world_region_weights(t->world, o.x, o.z, k);
+                world_region_weights_soft(t->world, o.x, o.z, k);
                 if (decor_zone_ok(t, k, o.x, o.z, o.r) && (cc != DECOR_CLASS_RIDGE || decor_ground(t, o.kind, o.x, o.z, o.r, o.scale, 9.0f, &base)))
                     return true; // (de las crestas, que tambien tenga suelo: son pocas y grandes)
             }
@@ -1379,7 +1379,7 @@ static void seed_natural(const Terrain *t, Chunk *ch, DecorClass c) {
             DecorIntent d;
             if (!decor_intent(t, c, gx0 + ix, gz0 + iz, &d) || !in_chunk(ch, d.x, d.z)) continue;
             float k[REGION_COUNT];
-            world_region_weights(t->world, d.x, d.z, k);
+            world_region_weights_soft(t->world, d.x, d.z, k);
             CensoMotivo why = CENSO_VA;
             float base = 0.0f, core = c == DECOR_CLASS_RIDGE ? 0.5f : 0.6f; // los arboles, solo fuera del nucleo de la huella
             if (!decor_zone_ok(t, k, d.x, d.z, d.r)) why = CENSO_ZONA;
@@ -1393,13 +1393,14 @@ static void seed_natural(const Terrain *t, Chunk *ch, DecorClass c) {
         }
 }
 
-// Hongos, una rama caida o una raiz al pie de los arboles del bosque (como mucho 5 por chunk).
+// Hongos, una rama caida o una raiz al pie de los arboles del bosque (como mucho 16 por chunk; eran 5 hasta la v0.15.2).
+// Los hongos, en corros de dos o tres.
 static void seed_foot(const Terrain *t, Chunk *ch) {
     int placed = 0;
-    for (int i = 0; i < ch->tree_count && placed < 5; i++) {
+    for (int i = 0; i < ch->tree_count && placed < 16; i++) {
         const ChunkTree *tr = &ch->trees[i];
         float k[REGION_COUNT];
-        world_region_weights(t->world, tr->x, tr->z, k);
+        world_region_weights_soft(t->world, tr->x, tr->z, k);
         uint32_t h = hash2((int)floorf(tr->x * 4.0f), (int)floorf(tr->z * 4.0f), t->seed ^ 0xF007u);
         int kind = decor_pick_foot(k[REGION_FOREST], (float)(h & 0xFFFF) / 65536.0f);
         if (kind == DECOR_NONE) continue;
@@ -1410,6 +1411,12 @@ static void seed_foot(const Terrain *t, Chunk *ch) {
         if (wl > y - 0.5f || decor_hits_chunk(ch, x, z, decor_radius((DecorKind)kind, scale))) continue;
         add_decor(ch, kind, x, y - n->sink * n->height * scale, z, a * 1.7f, scale);
         placed++;
+        for (int j = 0; kind == DECOR_HONGOS && j < (int)(h >> 30) && placed < 16; j++) { // el corro
+            float b = a + 2.1f * (float)(j + 1), xj = x + cosf(b) * 0.6f, zj = z + sinf(b) * 0.6f;
+            if (decor_hits_chunk(ch, xj, zj, decor_radius((DecorKind)kind, scale * 0.8f))) continue;
+            add_decor(ch, kind, xj, terrain_height(t, xj, zj), zj, b, scale * (0.7f + 0.1f * (float)j));
+            placed++;
+        }
     }
 }
 
@@ -1574,7 +1581,7 @@ static void seed_decor(const Terrain *t, Chunk *ch) {
     for (int i = 0; i < ch->decor_count; i++) {
         ChunkDecor *d = &ch->decor[i];
         float k[REGION_COUNT];
-        world_region_weights(t->world, d->x, d->z, k);
+        world_region_weights_soft(t->world, d->x, d->z, k);
         d->biome = 0;
         for (int r = 1; r < REGION_COUNT; r++)
             if (k[r] > k[d->biome]) d->biome = (unsigned char)r;
@@ -1603,7 +1610,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             Vector3 p00 = { x0, hgrid[iz][ix], z0 }, p10 = { x1, hgrid[iz][ix + 1], z0 };
             Vector3 p01 = { x0, hgrid[iz + 1][ix], z1 }, p11 = { x1, hgrid[iz + 1][ix + 1], z1 };
             float mx = x0 + cell * 0.5f, mz = z0 + cell * 0.5f, k[REGION_COUNT];
-            world_region_weights(t->world, mx, mz, k);
+            world_region_weights_soft(t->world, mx, mz, k);
             float at[TRI_ATTRS] = { 0 };
             at[A_PATCH] = 0.5f + 0.5f * fbm2d(mx * 0.08f, mz * 0.08f, t->seed + 303u, 2); // manchas
             at[A_DESERT] = k[REGION_DESERT], at[A_FOREST] = k[REGION_FOREST], at[A_HIGH] = k[REGION_HIGHLAND], at[A_FJORD] = k[REGION_FJORD];
@@ -1670,7 +1677,7 @@ static Chunk build_chunk(const Terrain *t, int cx, int cz) {
             float x = ox + (ix + 0.15f + 0.7f * r1) * fslot, z = oz + (iz + 0.15f + 0.7f * r2) * fslot;
             if (x * x + z * z < 90.0f * 90.0f || near_site(t->world, x, z)) continue;
             float k[REGION_COUNT];
-            world_region_weights(t->world, x, z, k);
+            world_region_weights_soft(t->world, x, z, k);
             float y = terrain_height(t, x, z), e = world_edge_distance(t->world, x, z);
             WaterKind wk;
             float wl = world_water(t->world, x, z, 0.0f, &wk);
@@ -1781,7 +1788,7 @@ static void far_sample(const Terrain *t, FarVert *f, int gx, int gz) {
     float x = gx * CHUNK_SIZE, z = gz * CHUNK_SIZE;
     world_water_bodies(t->world, x, z, &f->wb);
     f->h = f->wb.ground > -1e8f ? f->wb.ground : world_height(t->world, x, z);
-    world_region_weights(t->world, x, z, f->k);
+    world_region_weights_soft(t->world, x, z, f->k);
     f->edge = world_edge_distance(t->world, x, z);
     f->glacier = world_glacier_reach(t->world, x, z);
     f->wall = world_forest_wall(t->world, x, z);

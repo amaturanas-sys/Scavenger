@@ -312,7 +312,7 @@ bool vegetation_draw_prop(const char *id, float w, float l, Vector3 pos, float y
     if (!g_have_look) vegetation_look((Camera3D){ .position = { pos.x + 6.0f, pos.y + 3.0f, pos.z }, .target = pos, .fovy = 55.0f }, &(Climate){ 0 }, 0.0f);
     float k[REGION_COUNT] = { 0 };
     k[REGION_STEPPE] = 1.0f;
-    if (g_world) world_region_weights(g_world, pos.x, pos.z, k);
+    if (g_world) world_region_weights_soft(g_world, pos.x, pos.z, k);
     VegLook L = g_look;
     if (kind == 1) { // las curativas: mas verdes que el ajenjo, y en flor mientras estan verdes
         L.herb = mixc(L.herb, (Color){ 92, 138, 80, 255 }, 0.55f * g_clim.greenness);

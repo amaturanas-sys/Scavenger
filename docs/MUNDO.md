@@ -235,8 +235,14 @@ montura). Cada cuadro mira los nueve trozos de alrededor.
   saltar). Si no, es suelo (`terrain_ground`).
 - **Los árboles chocan:** el tronco de los pinos y los demás árboles del trozo empuja afuera con un radio de
   0,3 m + 0,15 m por su escala.
+- **Lo que crece se atraviesa** (v0.15.3): las hierbas, los pastos, las matas, la hierba alta del campamento
+  (`mapa.vegetacion.*`) y el arbusto seco del decorado no chocan.
 - **El campamento inicial choca** (v0.15.2, `collide_player`): el tronco de sus pinos, sus yurtas (a una yurta no se
   entra desde afuera), el fogón y sus cosas de 50 cm o más (la caja de sus medidas, con su giro) lo empujan afuera.
+- **Las transiciones de lo que se ve** (v0.15.3, `world_region_weights_soft`): el suelo, la vegetación, las rocas, el
+  decorado y la vista orbital usan pesos con el paso de la estepa de 520 m (festoneado con ruido) y 11° entre las
+  regiones de afuera. El relieve, el agua y los lugares siguen con `world_region_weights` (140 m y 7°): suavizar el
+  relieve movería el nivel de algunos lagos (el agua quedaría sobre la orilla) y los lugares de las partidas viejas.
 - **Las rocas de cada región** (v0.15.2, `props_draw_item_biome`): cada roca del decorado se dibuja con la variante de
   la región de más peso donde está. La variante es la misma roca con la piedra de esa región y, en lo que mira arriba,
   lo que la cubre: liquen seco en la estepa, musgo en el bosque, nieve en el altiplano, liquen mojado en los fiordos y

@@ -1,6 +1,13 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: las rocas de cada región, la estepa de pasto y el campamento que choca
+## Novedades: las transiciones entre regiones, el suelo del bosque y el árbol viejo derecho
+
+- **Las hierbas, los pastos y las matas** se atraviesan caminando, también la hierba alta del campamento y el arbusto seco.
+- **Las transiciones entre regiones:** el suelo, la vegetación y las rocas pasan de la estepa al bosque, al desierto, al altiplano o a los fiordos poco a poco, en unos 500 m, con lenguas de una región que entran en la otra.
+- **El suelo del bosque:** más hongos (en corros), ramas caídas y raíces al pie de los árboles.
+- **El árbol viejo:** su tronco tortuoso sube derecho, perpendicular al suelo.
+
+## De la v0.15.2: las rocas de cada región, la estepa de pasto y el campamento que choca
 
 - **Las rocas:** cada región tiene las suyas. En la estepa, piedra gris con liquen seco; en el bosque, gris oscura con musgo; en el altiplano, gris fría con nieve; en los fiordos, pizarra oscura con liquen; en el desierto, arenisca ocre con vetas.
 - **El árbol viejo:** ya no está invertido; ahora tiene las raíces gruesas abajo, metidas en el suelo.
@@ -45,7 +52,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.2, la v0.15.1 y la v0.15.0).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.3, la v0.15.2 y la v0.15.1).
 
 ## Android
 

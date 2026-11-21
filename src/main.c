@@ -244,14 +244,17 @@ static void collide_player(const Terrain *t, const Camp *camp, Vector3 from, Pla
     float radius = mounted ? 0.55f : 0.35f;
     terrain_collide(t, &p->pos.x, &p->pos.z, p->pos.y, radius, p->grounded ? 0.5f : 1.9f); // saltando, se trepa una roca
     // El campamento inicial (v0.15.2): el tronco de sus pinos, sus yurtas (de afuera no se entra), el fogon y sus cosas
-    // de 50 cm o mas (cajas, carros, bancos: la caja de sus medidas, con su giro) lo empujan afuera.
+    // de 50 cm o mas (cajas, carros, bancos: la caja de sus medidas, con su giro) lo empujan afuera; las hierbas, los
+    // pastos y las matas no (v0.15.3).
     for (int i = 0; i < camp->tree_count; i++) push_circle(&p->pos, camp->trees[i].x, camp->trees[i].z, 0.3f + 0.05f * camp->tree_h[i] + radius);
     for (int i = 0; i < camp->yurt_count; i++)
         if (!in_yurt(camp->yurts[i], from, true)) push_circle(&p->pos, camp->yurts[i].x, camp->yurts[i].z, 2.25f + radius);
     push_circle(&p->pos, camp->fire.x, camp->fire.z, 0.5f + radius);
     for (int i = 0; i < g_props.count; i++) {
         const Prop *pr = &g_props.items[i];
-        if (!pr->flying && pr->item->h >= 0.5f && strncmp(pr->item->id, "estructura.", 11) != 0) push_box(&p->pos, pr, radius);
+        if (!pr->flying && pr->item->h >= 0.5f && strncmp(pr->item->id, "estructura.", 11) != 0 &&
+            strncmp(pr->item->id, "mapa.vegetacion.", 16) != 0) // la hierba alta y las matas se atraviesan (v0.15.3)
+            push_box(&p->pos, pr, radius);
     }
     float dx = p->pos.x - from.x, dz = p->pos.z - from.z, len = sqrtf(dx * dx + dz * dz);
     if (len > 1e-4f) {
