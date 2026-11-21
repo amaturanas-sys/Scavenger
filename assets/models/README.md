@@ -25,7 +25,9 @@ Baja la fuente (queda en `arte/modelos/fuentes/`, fuera de git), la lleva al est
 (`tris_max`, colores planos por cara desde la textura con una paleta corta, la luz del sol horneada,
 las medidas del inventario, frente +X, origen en el centro de la base), la deja en la ruta de su id
 como `importado` y anota de dónde salió en `arte/modelos/models_manifest.json`. Las personas, los
-animales y los mecanismos esperan en `arte/modelos/para_riggear/` hasta tener esqueleto y clips.
+animales y los mecanismos esperan en `arte/modelos/para_riggear/` hasta tener esqueleto y clips; el cuerpo
+humano (`tools/modelos/humanoide.py`) y los animales de `IMPORTED/Animals/Models` (`tools/modelos/animales.py`) ya
+los tienen.
 `python3 tools/modelos/modelos.py check` (también en el CI) revisa triángulos, medidas, base y texturas.
 
 ## Cómo importar un modelo

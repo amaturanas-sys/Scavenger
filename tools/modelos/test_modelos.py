@@ -350,9 +350,59 @@ def test_adaptar_oga(tmp):
     assert adaptar_oga.adaptar(salida, "madera_herrajes", alto=0.5)[0] == salida
 
 
+def test_animales(tmp):
+    """animales.py: sin las piezas sueltas, el color desde una imagen con fondo de color, y el esqueleto de un
+    cuadrupedo de cajas (cuatro patas, la cabeza adelante, la cola atras) con sus clips."""
+    import animales
+    import mcubes
+    partes = [((0.0, 1.0, 0.0), (1.2, 0.5, 0.4)),    # el cuerpo
+              ((0.85, 1.35, 0.0), (0.5, 0.25, 0.22)),  # el cuello y la cabeza, adelante (+X)
+              ((-0.8, 1.05, 0.0), (0.45, 0.08, 0.08))]  # la cola
+    for x in (0.45, -0.45):
+        for z in (0.13, -0.13):
+            partes.append(((x, 0.4, z), (0.12, 0.8, 0.12)))  # las patas
+    # Una sola malla, cerrada y soldada (como las de Hunyuan3D): las cajas en una grilla, con marching cubes.
+    paso = 0.04
+    xs, ys, zs = (np.arange(a, b, paso) for a, b in ((-1.2, 1.3), (-0.1, 2.8), (-0.4, 0.4)))
+    X, Y, Z = np.meshgrid(xs, ys, zs, indexing="ij")
+    lleno = np.zeros(X.shape, bool)
+    for (cx, cy, cz), (lx, ly, lz) in partes + [((0.0, 2.5, 0.0), (0.12, 0.12, 0.12))]:  # y una pieza suelta, arriba
+        lleno |= (np.abs(X - cx) <= lx / 2) & (np.abs(Y - cy) <= ly / 2) & (np.abs(Z - cz) <= lz / 2)
+    vv, ff = mcubes.marching_cubes(lleno.astype(float), 0.5)
+    m = trimesh.Trimesh(vv * paso + [xs[0], ys[0], zs[0]], ff)
+    v, f = np.asarray(m.vertices, float), np.asarray(m.faces, np.int64)
+    v2, f2, _, quitadas = animales.limpiar(v, f, None)
+    assert quitadas == 1 and v2[:, 1].max() < 2.0, (quitadas, v2[:, 1].max())
+    # El color: un rectangulo rojo sobre fondo verde, que cubre la silueta de lado; nada del verde en el animal.
+    img = np.zeros((200, 300, 3), np.uint8)
+    img[:] = (90, 220, 120)
+    img[40:180, 30:270] = RED
+    ruta = os.path.join(tmp, "ref.png")
+    Image.fromarray(img).save(ruta)
+    col = animales.color_de_imagen(v2, ruta)
+    assert np.abs(col - np.array(RED)).max() < 2, col[:3]
+    # El esqueleto y los clips (las patas, unidas al cuerpo; las cajas, con el frente a +X, como despues de orientar).
+    it = {"id": "animal.salvaje.puma", "tags": ["faccion:salvaje", "rig:cuadrupedo"], "medidas_m": "0.5x1.5x2.1",
+          "tris_max": "400", "categoria": "animal"}
+    datos, tris = animales.armar((v2, f2, np.full((len(v2), 3), 150.0)), it, log=lambda *a: None)
+    assert tris <= 400, tris
+    u = animales.armar.ultimo
+    e, med = u["e"], u["m"]
+    pie = {n: e.pos[e.i(n + "_punta")] for n in animales.PATAS}
+    assert pie["di"][0] > 0 and pie["ti"][0] < 0 and pie["di"][2] < 0 and pie["dd"][2] > 0, pie
+    assert e.pos[e.i("hocico")][0] > e.pos[e.i("pecho")][0] > e.pos[e.i("cadera")][0] > e.pos[e.i("cola_punta")][0]
+    assert 0.6 < med["vientre"] < 1.0, med["vientre"]  # las patas, de 0.8 m en la caja (escaladas)
+    n = struct.unpack_from("<I", datos, 12)[0]
+    doc = json.loads(datos[20:20 + n])
+    clips = {a["name"] for a in doc["animations"]}  # los del puma en assets/animaciones.tsv: caza, no pasta
+    assert {"idle", "caminar", "trotar", "galopar", "atacar", "morir", "acechar", "comer_presa"} <= clips, clips
+    assert "pastar" not in clips and "montado_idle" not in clips, clips
+    assert len(doc["skins"][0]["joints"]) == len(e.nombres), len(doc["skins"][0]["joints"])
+
+
 def main():
     tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave, test_refs_anigen,
-             test_refs_anigen_registro, test_adaptar_oga]
+             test_refs_anigen_registro, test_adaptar_oga, test_animales]
     failed = 0
     tmp = tempfile.mkdtemp(prefix="modelos-")
     try:
