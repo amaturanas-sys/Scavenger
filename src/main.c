@@ -1823,6 +1823,7 @@ int main(int argc, char **argv) {
             char rg[48];
             snprintf(rg, sizeof(rg), "%s", region_name(terrain_region(&terrain, player.pos.x, player.pos.z)));
             ui_text(TextFormat(T("Vista orbital · mundo %u · estás en: %s"), terrain.seed, rg), 10, 10, 10, UI_GOLD_LIGHT);
+            ui_text(T("Rojo: guaridas y cuevas · pardo: ruinas · gris: estructuras · torres: pueblos"), 10, VIRTUAL_H - 30, 10, UI_BONE_DIM);
             ui_text(T("Flechas: girar e inclinar · F5 o Esc: volver"), 10, VIRTUAL_H - 18, 10, UI_BONE_DIM);
         } else if (in_game) {
         if (cv_inside()) { // adentro de una cueva: su roca, su oscuridad y su luz (src/game/cave_game.c)

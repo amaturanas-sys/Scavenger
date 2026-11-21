@@ -1,7 +1,8 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: el cuerpo gigante
+## Novedades: el cuerpo gigante y las cuevas y ruinas en el mapa
 
+- **El mapa (F5 o Ctrl+M):** ahora muestra las cuevas y guaridas (en rojo), las ruinas (en pardo) y las estructuras en uso (en gris), con una leyenda. Antes las ruinas no aparecían y las cuevas casi no se veían.
 - **Los grandes guerreros** de la tropa (los de más de 2 m) llevan el mismo cuerpo animado que los demás, a su medida: caminan, pelean y se mueven con las mismas animaciones.
 
 ## De la v0.15.4: el cuerpo humano estándar
