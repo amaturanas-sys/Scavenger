@@ -269,8 +269,9 @@ El cuerpo humano riggeado (v0.15.8):
   cuerpo común, el del protagonista y el del gigante.
 - **Sus pesos**, los del rig y no los automáticos: cada vértice de la malla reducida toma los del más cercano de la
   original, llevados a los huesos del maniquí (`MIXAMO` en `tools/modelos/humanoide.py`).
-- **Las animaciones**, las mismas 72 del juego: la malla trae 6 (Idle, Walk, Sprint y tres de salto), y el juego pide
-  los ataques, el escudo, la patada, la monta, el nado y el resto.
+- **Sus animaciones** de reposo, caminar y correr (Idle, Walk y Sprint), llevadas a los huesos del maniquí: cada
+  hueso gira en el mundo lo mismo que su par de Mixamo desde la pose T, y la pelvis sube y baja sin avanzar
+  (`de_la_malla`). Las otras 69 (los ataques, el escudo, la patada, la monta, el nado...), las de la biblioteca.
 
 Los animales, con su cuerpo y sus animaciones (v0.15.7):
 - **Veinte modelos** de `IMPORTED/Animals/Models`, revisados en una ficha numerada y puestos en su lugar: el leopardo

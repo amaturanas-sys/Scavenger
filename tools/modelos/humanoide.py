@@ -7,8 +7,9 @@
   (pelvis, spine_01, upperarm_l...) y 50 clips con los nombres de la Universal Animation Library de Quaternius.
 - La malla, en pose T: un cuerpo con textura de unos 300 000 triangulos. Desde la v0.15.8, IMPORTED/Humanoid/
   rigged-model.glb, ya riggeada (un esqueleto de 22 huesos de Mixamo, con sus pesos y 6 clips propios): se toma en la
-  pose de su piel y con sus pesos, llevados a los huesos del maniqui (MIXAMO); sus clips no (el juego pide 72). Antes,
-  sample_*.glb, sin esqueleto: los pesos, automaticos (paso 3).
+  pose de su piel y con sus pesos, llevados a los huesos del maniqui (MIXAMO), y sus clips Idle, Walk y Sprint son
+  idle, caminar y correr (de_la_malla; los otros 69, de la biblioteca). Antes, sample_*.glb, sin esqueleto: los
+  pesos, automaticos (paso 3).
 
 Lo que hace, para cada id del inventario (personaje.base.cuerpo_comun, personaje.narrativo.protagonista...):
 1. Pone el esqueleto en pose T (desde el primer cuadro de Idle_A, girando cada hueso de los brazos y las piernas lo
@@ -71,6 +72,8 @@ PARTS = {
     "pierna_r": ["pelvis", "thigh_r", "calf_r", "foot_r", "ball_r"],
 }
 # El hueso, hasta su hijo (el segmento al que se mide la distancia).
+# Los clips del juego que salen de los de la malla riggeada (de_la_malla), si los trae: los demas, de la biblioteca.
+DE_LA_MALLA = {"idle": "Idle", "caminar": "Walk", "correr": "Sprint"}
 # Los huesos de Mixamo (los de una malla ya riggeada, como rigged-model.glb) y los del maniqui que llevan sus pesos.
 MIXAMO = {"Hips": "pelvis", "Spine": "spine_01", "Spine1": "spine_02", "Spine2": "spine_03", "Neck": "neck_01",
           "Head": "head", "LeftShoulder": "clavicle_l", "LeftArm": "upperarm_l", "LeftForeArm": "lowerarm_l",
@@ -247,23 +250,118 @@ def sintetizar(esq):
 
 
 # ------------------------------------------------------------------ la malla
-def mundo_nodos(doc):
-    """La matriz de mundo de cada nodo del GLB (traslacion, giro y escala, o su matriz)."""
-    nodos = doc["nodes"]
+def mundo_nodos(doc, cambios=None):
+    """La matriz de mundo de cada nodo del GLB (traslacion, giro y escala, o su matriz); con cambios ({nodo: {path:
+    valor}}, los de un cuadro de un clip: muestrear), en esa pose."""
+    nodos, cambios = doc["nodes"], cambios or {}
     padre = {c: i for i, n in enumerate(nodos) for c in n.get("children", [])}
     W = {}
     def mundo(i):
         if i not in W:
-            n = nodos[i]
-            if "matrix" in n:
+            n, c = nodos[i], cambios.get(i, {})
+            if "matrix" in n and not c:
                 M = np.array(n["matrix"], float).reshape(4, 4).T
             else:
+                q = np.array(c.get("rotation", n.get("rotation", [0, 0, 0, 1])), float)
                 M = np.eye(4)
-                M[:3, :3] = qmat(np.array(n.get("rotation", [0, 0, 0, 1]), float)) * np.array(n.get("scale", [1, 1, 1]), float)
-                M[:3, 3] = n.get("translation", [0, 0, 0])
+                M[:3, :3] = qmat(q / np.linalg.norm(q)) * np.array(c.get("scale", n.get("scale", [1, 1, 1])), float)
+                M[:3, 3] = c.get("translation", n.get("translation", [0, 0, 0]))
             W[i] = mundo(padre[i]) @ M if i in padre else M
         return W[i]
     return [mundo(i) for i in range(len(nodos))]
+
+
+def mat_q(M):
+    """El cuaternion (x, y, z, w) del giro de una matriz (con escala uniforme)."""
+    m = M[:3, :3] / np.linalg.norm(M[:3, :3], axis=0)
+    t = np.trace(m)
+    if t > 0:
+        r = 2.0 * np.sqrt(t + 1.0)
+        q = [(m[2, 1] - m[1, 2]) / r, (m[0, 2] - m[2, 0]) / r, (m[1, 0] - m[0, 1]) / r, 0.25 * r]
+    elif m[0, 0] > m[1, 1] and m[0, 0] > m[2, 2]:
+        r = 2.0 * np.sqrt(1.0 + m[0, 0] - m[1, 1] - m[2, 2])
+        q = [0.25 * r, (m[0, 1] + m[1, 0]) / r, (m[0, 2] + m[2, 0]) / r, (m[2, 1] - m[1, 2]) / r]
+    elif m[1, 1] > m[2, 2]:
+        r = 2.0 * np.sqrt(1.0 + m[1, 1] - m[0, 0] - m[2, 2])
+        q = [(m[0, 1] + m[1, 0]) / r, 0.25 * r, (m[1, 2] + m[2, 1]) / r, (m[0, 2] - m[2, 0]) / r]
+    else:
+        r = 2.0 * np.sqrt(1.0 + m[2, 2] - m[0, 0] - m[1, 1])
+        q = [(m[0, 2] + m[2, 0]) / r, (m[1, 2] + m[2, 1]) / r, 0.25 * r, (m[1, 0] - m[0, 1]) / r]
+    q = np.array(q)
+    return q / np.linalg.norm(q)
+
+
+def canales(doc, binario, anim):
+    """Los canales de un clip de un GLB: (nodo, path, tiempos, valores)."""
+    out = []
+    for ch in anim["channels"]:
+        smp = anim["samplers"][ch["sampler"]]
+        ts = acc(doc, binario, smp["input"])[:, 0].astype(float)
+        vs = acc(doc, binario, smp["output"]).astype(float)
+        if smp.get("interpolation") == "CUBICSPLINE":  # tangente, valor, tangente: el valor
+            vs = vs.reshape(len(ts), 3, -1)[:, 1]
+        out.append((ch["target"]["node"], ch["target"]["path"], ts, vs))
+    return out
+
+
+def muestrear(chans, t):
+    """Los cambios de cada nodo animado a los t segundos (lineal; el giro, por el camino corto)."""
+    out = {}
+    for nodo, path, ts, vs in chans:
+        k = int(np.clip(np.searchsorted(ts, t, side="right") - 1, 0, len(ts) - 1))
+        v = vs[k]
+        if k + 1 < len(ts):
+            f = float(np.clip((t - ts[k]) / max(ts[k + 1] - ts[k], 1e-9), 0.0, 1.0))
+            b = vs[k + 1]
+            if path == "rotation" and v @ b < 0:
+                b = -b
+            v = v * (1 - f) + b * f
+        out.setdefault(nodo, {})[path] = v
+    return out
+
+
+def de_la_malla(esq, fuente, clip, T, R, k, fps=24.0):
+    """Un clip del esqueleto de Mixamo de la malla riggeada (Idle, Walk, Sprint) en el del maniqui:
+    - cada hueso con su par (MIXAMO) gira en el mundo lo mismo que el, desde la pose T de los dos (la de la malla: la
+      del maniqui se ajusto a ella en armar);
+    - los demas (los dedos, los de giro), quietos respecto de su padre;
+    - la pelvis sube, baja y se mece como la cadera, sin avanzar (el juego mueve al personaje).
+    T, R: la pose T del maniqui; k: de las medidas de la malla a las del esqueleto."""
+    doc, binario, nodos_piel, nombres = fuente
+    chans = canales(doc, binario, next(a for a in doc["animations"] if a["name"] == clip))
+    dur = max(ts[-1] for _, _, ts, _ in chans)
+    W0 = mundo_nodos(doc)
+    par = {esq.idx[MIXAMO[n]]: nodo for n, nodo in zip(nombres, nodos_piel)}
+    q0 = {i: mat_q(W0[nodo]) for i, nodo in par.items()}
+    _, Q0 = esq.mundo(T, R)
+    pel = esq.idx["pelvis"]
+    cadera = par[pel]
+    tiempos = np.linspace(0.0, dur, max(2, int(round(dur * fps)) + 1))
+    giros, mov = [], []
+    for t in tiempos:
+        W = mundo_nodos(doc, muestrear(chans, t))
+        Q, Rl = np.zeros_like(Q0), R.copy()
+        for i in esq.order:
+            p = esq.parent[i]
+            if i in par:
+                Q[i] = qmul(qmul(mat_q(W[par[i]]), qconj(q0[i])), Q0[i])
+            else:
+                Q[i] = qmul(Q[p], R[i]) if p >= 0 else R[i]
+            Rl[i] = qmul(qconj(Q[p]), Q[i]) if p >= 0 else Q[i]
+        giros.append(Rl)
+        mov.append((W[cadera][:3, 3] - W0[cadera][:3, 3]) * k)
+    mov = np.array(mov)
+    for eje in (0, 2):  # sin avanzar: lo de lado y lo de adelante, sin su tendencia ni su media
+        mov[:, eje] -= np.linspace(mov[0, eje], mov[-1, eje], len(mov))
+        mov[:, eje] -= mov[:, eje].mean()
+    padre = esq.parent[pel]
+    poses = []
+    for Rl, d in zip(giros, mov):
+        Tk = T.copy()
+        Tk[pel] = T[pel] + (qrot(qconj(Q0[padre]), d) if padre >= 0 else d)
+        poses.append((Tk, Rl))
+    # Solo los huesos con par (y la pelvis): los demas no se mueven respecto de su padre, como en el reposo del GLB.
+    return [c for c in clip_de_poses(esq, poses, tiempos) if c[0] in par or c[1] == "translation"]
 
 
 def malla(path):
@@ -300,7 +398,7 @@ def malla(path):
         vh = np.column_stack([pos, np.ones(len(pos))])
         pos = sum(we[:, q:q + 1] * np.einsum("nij,nj->ni", piel[jo[:, q]], vh)[:, :3] for q in range(4))
         nombres = [doc["nodes"][k].get("name", "").split(":")[-1].replace("mixamorig", "") for k in skin["joints"]]
-        pesos = (jo, we, nombres)
+        pesos = (jo, we, nombres, (doc, binario, skin["joints"], nombres))
     return pos, idx, color, pesos
 
 
@@ -369,6 +467,16 @@ def armar(esq, malla_t, it, log=print):
         bola = P[esq.idx["ball_" + lado]]
         apuntar(esq, T, R, "ball_" + lado, "ball_leaf_" + lado, bola + np.array([0.0, 0.0, 1.0]))
     PT, QT = esq.mundo(T, R)
+    # Idle, Walk y Sprint de la malla riggeada, si los trae: idle, caminar y correr (los demas, de la biblioteca).
+    del_juego = dict(CLIPS)
+    if pesos is not None:
+        fuente = pesos[3]
+        tiene = {a["name"] for a in fuente[0].get("animations", [])}
+        for juego, clip in DE_LA_MALLA.items():
+            if clip in tiene:
+                esq.clips["_malla_" + clip] = de_la_malla(esq, fuente, clip, T, R, k)
+                del_juego[juego] = "_malla_" + clip
+        log(f"  de la malla: {', '.join(j for j, c in DE_LA_MALLA.items() if del_juego[j] == '_malla_' + c) or 'ninguno'}")
     # La malla reducida, cara por cara, y los pesos (en la pose T).
     v, f, col, cerca = reducir(m, idx, color, tmax - 20)
     def seg(b):
@@ -387,7 +495,7 @@ def armar(esq, malla_t, it, log=print):
     joints = np.zeros((len(v), 4), np.uint8)
     weights = np.zeros((len(v), 4), np.float32)
     if pesos is not None:  # la malla riggeada: los pesos de su vertice mas cercano, en los huesos del maniqui
-        jo, we, huesos = pesos
+        jo, we, huesos, _ = pesos
         faltan = [h for h in huesos if h not in MIXAMO]
         if faltan:
             raise SystemExit(f"huesos de la malla sin su par en el maniqui (MIXAMO): {', '.join(faltan)}")
@@ -453,7 +561,7 @@ def armar(esq, malla_t, it, log=print):
     luz = 0.72 + 0.38 * np.clip(n @ sol, 0.0, 1.0)  # mas suave que la de lo quieto: el cuerpo se mueve
     caras = np.clip(col[f].mean(axis=1) * luz[:, None], 0, 255)
     datos = escribir(esq, TI, RI, root, yaw, s, vi[f].reshape(-1, 3), np.repeat(n, 3, axis=0), np.repeat(caras, 3, axis=0),
-                     joints[f].reshape(-1, 4), weights[f].reshape(-1, 4), ibm, it["id"])
+                     joints[f].reshape(-1, 4), weights[f].reshape(-1, 4), ibm, it["id"], del_juego)
     armar.ultimo = dict(v=v, joints=joints, weights=weights, skin=skin, PT=PT, PI=PI, parte=parte)
     caja = vi.max(0) - vi.min(0)
     log(f"{it['id']}: {len(f)} triangulos, {caja[0]:.2f} x {caja[1]:.2f} x {caja[2]:.2f} m (largo x alto x ancho), "
@@ -461,7 +569,7 @@ def armar(esq, malla_t, it, log=print):
     return datos, len(f)
 
 
-def escribir(esq, T, R, root, yaw, s, pos, nor, col, joints, weights, ibm, nombre):
+def escribir(esq, T, R, root, yaw, s, pos, nor, col, joints, weights, ibm, nombre, del_juego=None):
     buf = bytearray()
     views, accs = [], []
     def vista(b, target=None):
@@ -495,7 +603,7 @@ def escribir(esq, T, R, root, yaw, s, pos, nor, col, joints, weights, ibm, nombr
     ibm_acc = accesor(np.stack([m.T.reshape(-1) for m in ibm]).astype(np.float32), 5126, "MAT4")
     # Los clips: los tiempos y los valores de la biblioteca, una vez por clip usado; los del juego, nombres.
     usados, anims = {}, []
-    for juego, fuente in CLIPS.items():
+    for juego, fuente in (del_juego or CLIPS).items():
         if fuente not in esq.clips:
             raise SystemExit(f"falta el clip {fuente} en el esqueleto")
         if fuente not in usados:
@@ -543,9 +651,11 @@ def main():
                 "de su textura y sus pesos (los de su esqueleto de Mixamo, en los huesos del maniqui)" if malla_t[3] is not None
                 else "la malla en pose T de IMPORTED/Humanoid (sample_*.glb), reducida y con el color de su textura, con "
                 "pesos automaticos")
+    de_malla = (" (salvo idle, caminar y correr: Idle, Walk y Sprint de la malla, llevados al maniqui)"
+                if malla_t[3] is not None else "")
     nota = (f" Cuerpo humano estandar (tools/modelos/humanoide.py): {malla_de}; el esqueleto y los clips, de "
-            "exported-model.glb (los nombres de la Universal Animation Library de Quaternius); los clips, con los nombres "
-            "del juego.")
+            f"exported-model.glb (los nombres de la Universal Animation Library de Quaternius){de_malla}; los clips, con "
+            "los nombres del juego.")
     vieja = re.compile(r" ?Cuerpo humano estandar \(tools/modelos/humanoide\.py\):.*?con los nombres del juego\.")
     for mid in sys.argv[3:]:
         it = por_id[mid]

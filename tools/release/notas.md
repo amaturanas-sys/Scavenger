@@ -3,7 +3,7 @@ Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la t
 ## Novedades: el cuerpo humano riggeado
 
 - **Un cuerpo nuevo** para el jugador, la tropa, la gente sin modelo propio y los grandes guerreros, con los pesos de su propio esqueleto (antes se calculaban solos): la piel sigue a los huesos como se modeló.
-- **Las mismas animaciones** de siempre: caminar, correr, pelear, montar, nadar y todo lo demás.
+- **Un paso, una carrera y un reposo nuevos**, los que trae el modelo; pelear, montar, nadar y lo demás, como siempre.
 
 ## De la v0.15.7: los animales, con su cuerpo y sus animaciones
 
