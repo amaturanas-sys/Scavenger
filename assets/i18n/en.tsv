@@ -80,6 +80,7 @@ Caballo estepario (variante 2)	Steppe horse (variant 2)
 Caballo estepario (variante 3)	Steppe horse (variant 3)
 Cadalso de ejecución pública	Public execution scaffold
 Caldero	Cauldron
+Camello bactriano (variante 2)	
 Campamento abandonado del padre	Father's abandoned camp
 Campesino	Peasant
 Canoa de pieles	Hide canoe
@@ -549,6 +550,7 @@ Yurta quemada	Burnt yurt
 Zorro	Fox
 Águila (cetrería)	Eagle (falconry)
 Ámbar	Amber
+Íbice (variante 2)	
 Ídolo del culto	Cult idol
 # --- src/game/actions_game.c
  (%d no caben)	 (%d don't fit)
@@ -2025,6 +2027,7 @@ Burro	Donkey
 Caballo estepario	Steppe horse
 Cabra	Goat
 Camello bactriano	Bactrian camel
+Camello bactriano (variante 2)	Bactrian camel (variant 2)
 Ciervo	Deer
 Cocodrilo	Crocodile
 Coyote	Coyote
@@ -2047,6 +2050,7 @@ Tortuga marina	Sea turtle
 Víbora	Viper
 Águila real	Golden eagle
 Íbice	Ibex
+Íbice (variante 2)	Ibex (variant 2)
 # --- src/sim/apparel.c
 a gusto	comfortable
 acalorado	warm

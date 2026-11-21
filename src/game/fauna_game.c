@@ -930,6 +930,28 @@ static Color animal_color(const Animal *a) {
 
 static void draw_swarm(const Swarm *s, Props *props, const InvItem *nest, const Terrain *t, float time);
 
+// El clip de cada animal y desde cuando (props_draw_item_track): el ataque, entero; muerto, desde que murio.
+static AnimTrack g_animal_track[GA_MAX_ANIMALS];
+
+// El modelo de un animal: el de su especie o, si la especie tiene variante con modelo (id_2: el ibice, el camello
+// bactriano), la variante para la mitad de ellos (siempre los mismos: por su hueco en ga->animals).
+static const InvItem *animal_item(const GameActions *ga, Props *props, const Animal *a, int i) {
+    static const InvItem *alt[SPECIES_COUNT];
+    static bool looked[SPECIES_COUNT];
+    const SpeciesDef *d = species_def(a->species);
+    const InvItem *it = inventory_find(ga->inv, d->model);
+    if ((unsigned)a->species >= SPECIES_COUNT) return it;
+    if (!looked[a->species]) {
+        char id[96];
+        snprintf(id, sizeof id, "%s_2", d->model);
+        alt[a->species] = inventory_find(ga->inv, id);
+        looked[a->species] = true;
+    }
+    const InvItem *v2 = alt[a->species];
+    if (v2 && (((unsigned)i * 2654435761u) >> 7 & 1u) && props_has_model(props, v2)) return v2;
+    return it;
+}
+
 void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float time) {
     for (int i = 0; i < GA_MAX_SWARMS; i++) {
         const Swarm *s = &ga->swarms[i];
@@ -941,7 +963,7 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
         const Animal *a = &ga->animals[i];
         if (!a->used) continue;
         const SpeciesDef *d = species_def(a->species);
-        const InvItem *it = inventory_find(ga->inv, d->model);
+        const InvItem *it = animal_item(ga, props, a, i);
         Vector3 pos = { a->x, terrain_height(t, a->x, a->z), a->z };
         float top = it ? it->h : d->size * 0.6f;
         // En el agua, los anfibios flotan: solo asoma el lomo (el cocodrilo, los ojos). Los de tierra que nadan, el
@@ -954,10 +976,14 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
         else if (!d->aquatic && !d->flier && depth > species_wade(d) && a->state != ANIMAL_DEAD)
             pos.y = terrain_water(t, a->x, a->z) - top * 0.62f;
         if (it && props_has_model(props, it)) {
-            // El modelo mira a +X (Kiln); el animal avanza segun yaw (0 = +Z).
-            float tt = a->state == ANIMAL_DEAD ? fminf(a->corpse, 1.2f) : time + (float)i * 0.37f;
+            // El modelo mira a +X; el animal avanza segun yaw (0 = +Z). El ataque, entero en lo que dura (attack_anim);
+            // muerto, el clip desde que murio (corpse): cae una vez y queda en el suelo.
+            const char *clip = anim_animal(a);
+            float tt = time + (float)i * 0.37f;
+            AnimTrack *tr = &g_animal_track[i];
+            if (a->state == ANIMAL_DEAD) *tr = (AnimTrack){ clip, tt - a->corpse, 1.0f, 0.0f };
             Vector3 at = { pos.x, pos.y + a->alt, pos.z };
-            props_draw_item_anim(props, it, at, a->yaw - PI / 2.0f, anim_animal(a), tt);
+            props_draw_item_track(props, it, at, a->yaw - PI / 2.0f, clip, tt, !strcmp(clip, "atacar") ? a->attack_anim : 0.0f, tr);
         } else {
             // Sin modelo: el mismo cuerpo de capsulas que reciben los impactos.
             BodyPose b;

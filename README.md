@@ -264,6 +264,21 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Los animales, con su cuerpo y sus animaciones (v0.15.7):
+- **Veinte modelos** de `IMPORTED/Animals/Models`, revisados en una ficha numerada y puestos en su lugar: el leopardo
+  de las nieves, el íbice (y una variante), la hiena, el puma, el ciervo y la cierva, el camello bactriano (y una
+  variante), el dromedario, el yak, la cabra, el buey, la gacela, la mula, el zorro, el reno (salvaje y de tiro), el
+  elefante de guerra, el oso y el perro pastor. Antes, los animales eran cápsulas.
+- **La malla:** sin las piezas sueltas de la reconstrucción, alisada y reducida a su tope de triángulos, de frente a +X
+  y a la medida del inventario. **El color**, el de la imagen de referencia de la que salió cada uno, proyectada de
+  costado (el leopardo trae su textura; el oso y el perro, sin imagen, uno liso).
+- **El esqueleto**, donde está cada parte en la malla (las cuatro patas bajo el vientre, la columna, el cuello, la
+  cabeza con sus cuernos o astas y la cola), con pesos automáticos, y **los clips** del rig cuadrupedo que le tocan
+  (caminar, trotar, galopar, pastar, acechar, comer_presa, atacar, morir...), armados con poses:
+  `tools/modelos/animales.py`.
+- **En el juego:** cada animal empieza su clip desde el principio (el ataque, entero; muerto, cae una vez y queda), y
+  la mitad de los íbices y de los camellos bactrianos lleva la variante (`animal_item` en `fauna_game.c`).
+
 Las animaciones de las personas, revisadas (v0.15.6):
 - **El frente:** el cuerpo estándar miraba a su derecha al caminar; ahora mira hacia donde va (los modelos animados,
   como todos, miran a +X: el juego los dibuja girados `yaw - PI/2`).

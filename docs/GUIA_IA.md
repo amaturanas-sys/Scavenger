@@ -477,7 +477,8 @@ traba.
     (v0.15.3);
   - el cuerpo humano estándar, con esqueleto y animaciones (v0.15.4);
   - el cuerpo gigante, con el mismo modelo, y las cuevas y ruinas en el mapa (v0.15.5);
-  - las animaciones de las personas, revisadas: el frente, el ritmo, los golpes completos y la patada (v0.15.6).
+  - las animaciones de las personas, revisadas: el frente, el ritmo, los golpes completos y la patada (v0.15.6);
+  - los animales, con su cuerpo, su esqueleto y sus clips: `tools/modelos/animales.py` (v0.15.7).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
