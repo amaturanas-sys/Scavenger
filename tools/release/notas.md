@@ -1,6 +1,11 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: los animales, con su cuerpo y sus animaciones
+## Novedades: el cuerpo humano riggeado
+
+- **Un cuerpo nuevo** para el jugador, la tropa, la gente sin modelo propio y los grandes guerreros, con los pesos de su propio esqueleto (antes se calculaban solos): la piel sigue a los huesos como se modeló.
+- **Un paso, una carrera y un reposo nuevos**, los que trae el modelo; pelear, montar, nadar y lo demás, como siempre.
+
+## De la v0.15.7: los animales, con su cuerpo y sus animaciones
 
 - **Veinte animales con su modelo:** el leopardo de las nieves, el íbice, la hiena, el puma, el ciervo y la cierva, el camello bactriano, el dromedario, el yak, la cabra, el buey, la gacela, la mula, el zorro, el reno, el elefante de guerra, el oso y el perro pastor. Antes eran cápsulas.
 - **Con su color y sus animaciones:** caminan, trotan, galopan, pastan, acechan, atacan y mueren con su propio cuerpo; el ataque se ve entero y el que muere cae y queda en el suelo.
@@ -76,7 +81,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.7, la v0.15.6 y la v0.15.5).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.8, la v0.15.7 y la v0.15.6).
 
 ## Android
 

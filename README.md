@@ -264,6 +264,15 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+El cuerpo humano riggeado (v0.15.8):
+- **La malla nueva** (`IMPORTED/Humanoid/rigged-model.glb`, ya riggeada con un esqueleto de 22 huesos de Mixamo) es el
+  cuerpo común, el del protagonista y el del gigante.
+- **Sus pesos**, los del rig y no los automáticos: cada vértice de la malla reducida toma los del más cercano de la
+  original, llevados a los huesos del maniquí (`MIXAMO` en `tools/modelos/humanoide.py`).
+- **Sus animaciones** de reposo, caminar y correr (Idle, Walk y Sprint), llevadas a los huesos del maniquí: cada
+  hueso gira en el mundo lo mismo que su par de Mixamo desde la pose T, y la pelvis sube y baja sin avanzar
+  (`de_la_malla`). Las otras 69 (los ataques, el escudo, la patada, la monta, el nado...), las de la biblioteca.
+
 Los animales, con su cuerpo y sus animaciones (v0.15.7):
 - **Veinte modelos** de `IMPORTED/Animals/Models`, revisados en una ficha numerada y puestos en su lugar: el leopardo
   de las nieves, el íbice (y una variante), la hiena, el puma, el ciervo y la cierva, el camello bactriano (y una
