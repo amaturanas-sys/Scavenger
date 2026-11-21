@@ -5,13 +5,17 @@
 
 - El esqueleto y los clips (IMPORTED/Humanoid/exported-model.glb): 56 huesos con los nombres del maniqui de Unreal
   (pelvis, spine_01, upperarm_l...) y 50 clips con los nombres de la Universal Animation Library de Quaternius.
-- La malla (IMPORTED/Humanoid/sample_*.glb, la de pose T): un cuerpo con textura de unos 300 000 triangulos.
+- La malla, en pose T: un cuerpo con textura de unos 300 000 triangulos. Desde la v0.15.8, IMPORTED/Humanoid/
+  rigged-model.glb, ya riggeada (un esqueleto de 22 huesos de Mixamo, con sus pesos y 6 clips propios): se toma en la
+  pose de su piel y con sus pesos, llevados a los huesos del maniqui (MIXAMO); sus clips no (el juego pide 72). Antes,
+  sample_*.glb, sin esqueleto: los pesos, automaticos (paso 3).
 
 Lo que hace, para cada id del inventario (personaje.base.cuerpo_comun, personaje.narrativo.protagonista...):
 1. Pone el esqueleto en pose T (desde el primer cuadro de Idle_A, girando cada hueso de los brazos y las piernas lo
    minimo) con los brazos y las piernas del largo de los de la malla.
 2. Reduce la malla a su tris_max, con el color de la textura en cada cara (y la luz del sol horneada, lowres.SUN).
-3. Pesos automaticos: cada vertice, a los dos huesos mas cercanos de su parte del cuerpo (brazo, pierna, torso,
+3. Los pesos: los de la malla riggeada (cada vertice de la reducida, los del vertice mas cercano de la original); si
+   no trae, automaticos: cada vertice, a los dos huesos mas cercanos de su parte del cuerpo (brazo, pierna, torso,
    cabeza), por la distancia a cada hueso.
 4. La pose de reposo es la T con los brazos abajo: las medidas del inventario.
 5. El frente a +X (el del juego, tambien para los animados) y el alto del inventario.
@@ -21,6 +25,7 @@ Lo que hace, para cada id del inventario (personaje.base.cuerpo_comun, personaje
 """
 import json
 import os
+import re
 import struct
 import sys
 
@@ -66,6 +71,13 @@ PARTS = {
     "pierna_r": ["pelvis", "thigh_r", "calf_r", "foot_r", "ball_r"],
 }
 # El hueso, hasta su hijo (el segmento al que se mide la distancia).
+# Los huesos de Mixamo (los de una malla ya riggeada, como rigged-model.glb) y los del maniqui que llevan sus pesos.
+MIXAMO = {"Hips": "pelvis", "Spine": "spine_01", "Spine1": "spine_02", "Spine2": "spine_03", "Neck": "neck_01",
+          "Head": "head", "LeftShoulder": "clavicle_l", "LeftArm": "upperarm_l", "LeftForeArm": "lowerarm_l",
+          "LeftHand": "hand_l", "RightShoulder": "clavicle_r", "RightArm": "upperarm_r", "RightForeArm": "lowerarm_r",
+          "RightHand": "hand_r", "LeftUpLeg": "thigh_l", "LeftLeg": "calf_l", "LeftFoot": "foot_l",
+          "LeftToeBase": "ball_l", "RightUpLeg": "thigh_r", "RightLeg": "calf_r", "RightFoot": "foot_r",
+          "RightToeBase": "ball_r"}
 TIP = {"pelvis": "spine_01", "spine_01": "spine_02", "spine_02": "spine_03", "spine_03": "neck_01", "neck_01": "head",
        "head": "head_leaf", "clavicle_l": "upperarm_l", "upperarm_l": "lowerarm_l", "lowerarm_l": "hand_l",
        "hand_l": "middle_02_l", "clavicle_r": "upperarm_r", "upperarm_r": "lowerarm_r", "lowerarm_r": "hand_r",
@@ -235,7 +247,29 @@ def sintetizar(esq):
 
 
 # ------------------------------------------------------------------ la malla
+def mundo_nodos(doc):
+    """La matriz de mundo de cada nodo del GLB (traslacion, giro y escala, o su matriz)."""
+    nodos = doc["nodes"]
+    padre = {c: i for i, n in enumerate(nodos) for c in n.get("children", [])}
+    W = {}
+    def mundo(i):
+        if i not in W:
+            n = nodos[i]
+            if "matrix" in n:
+                M = np.array(n["matrix"], float).reshape(4, 4).T
+            else:
+                M = np.eye(4)
+                M[:3, :3] = qmat(np.array(n.get("rotation", [0, 0, 0, 1]), float)) * np.array(n.get("scale", [1, 1, 1]), float)
+                M[:3, 3] = n.get("translation", [0, 0, 0])
+            W[i] = mundo(padre[i]) @ M if i in padre else M
+        return W[i]
+    return [mundo(i) for i in range(len(nodos))]
+
+
 def malla(path):
+    """La malla en pose T: posiciones, triangulos, el color de su textura en cada vertice y, si ya viene riggeada, sus
+    pesos (los huesos de cada vertice, sus pesos y los nombres de los huesos, sin el prefijo de Mixamo); si no, None.
+    La riggeada, en la pose de su piel (la de reposo de su esqueleto)."""
     doc, binario = leer(path)
     prim = doc["meshes"][0]["primitives"][0]
     pos = acc(doc, binario, prim["attributes"]["POSITION"]).astype(float)
@@ -255,7 +289,19 @@ def malla(path):
         px = np.clip((uv[:, 0] % 1.0) * (w - 1), 0, w - 1).astype(int)
         py = np.clip((uv[:, 1] % 1.0) * (h - 1), 0, h - 1).astype(int)
         color = img[py, px]
-    return pos, idx, color
+    pesos = None
+    if "JOINTS_0" in prim["attributes"] and doc.get("skins"):
+        skin = doc["skins"][0]
+        W = mundo_nodos(doc)
+        ibm = acc(doc, binario, skin["inverseBindMatrices"]).astype(float).reshape(-1, 4, 4).transpose(0, 2, 1)
+        piel = np.stack([W[k] @ ibm[x] for x, k in enumerate(skin["joints"])])
+        jo = acc(doc, binario, prim["attributes"]["JOINTS_0"]).astype(np.int64)
+        we = acc(doc, binario, prim["attributes"]["WEIGHTS_0"]).astype(float)
+        vh = np.column_stack([pos, np.ones(len(pos))])
+        pos = sum(we[:, q:q + 1] * np.einsum("nij,nj->ni", piel[jo[:, q]], vh)[:, :3] for q in range(4))
+        nombres = [doc["nodes"][k].get("name", "").split(":")[-1].replace("mixamorig", "") for k in skin["joints"]]
+        pesos = (jo, we, nombres)
+    return pos, idx, color, pesos
 
 
 def reducir(pos, idx, color, tris):
@@ -275,7 +321,7 @@ def reducir(pos, idx, color, tris):
     lado = np.max(np.linalg.norm(t - np.roll(t, 1, axis=1), axis=2), axis=1)
     f2 = f2[lado < 0.12 * (pos[:, 1].max() - pos[:, 1].min())]
     _, near = cKDTree(pos).query(p2)
-    return p2.astype(float), f2.astype(np.int64), color[near]
+    return p2.astype(float), f2.astype(np.int64), color[near], near
 
 
 # ------------------------------------------------------------------ armar un id
@@ -287,7 +333,7 @@ def armar(esq, malla_t, it, log=print):
     alto_esq = P[esq.idx["head_leaf"]][1]  # del suelo (la raiz) a la punta de la cabeza
     log(f"  Idle_A: raiz {P[esq.idx['root']].round(3)}, pies {P[esq.idx['ball_leaf_l']][1]:.3f}/{P[esq.idx['ball_leaf_r']][1]:.3f}, cabeza {alto_esq:.3f}")
     # La malla a la escala del esqueleto: los pies en el suelo, la coronilla en la punta de la cabeza.
-    pos, idx, color = malla_t
+    pos, idx, color, pesos = malla_t
     lo, hi = pos.min(0), pos.max(0)
     k = alto_esq / (hi[1] - lo[1])
     torso = pos[(pos[:, 1] > lo[1] + 0.45 * (hi[1] - lo[1])) & (pos[:, 1] < lo[1] + 0.7 * (hi[1] - lo[1])) &
@@ -324,7 +370,7 @@ def armar(esq, malla_t, it, log=print):
         apuntar(esq, T, R, "ball_" + lado, "ball_leaf_" + lado, bola + np.array([0.0, 0.0, 1.0]))
     PT, QT = esq.mundo(T, R)
     # La malla reducida, cara por cara, y los pesos (en la pose T).
-    v, f, col = reducir(m, idx, color, tmax - 20)
+    v, f, col, cerca = reducir(m, idx, color, tmax - 20)
     def seg(b):
         return PT[esq.idx[b]], PT[esq.idx[TIP[b]]]
     def dist(p, a, b):
@@ -340,6 +386,16 @@ def armar(esq, malla_t, it, log=print):
     nombres = list(PARTS)
     joints = np.zeros((len(v), 4), np.uint8)
     weights = np.zeros((len(v), 4), np.float32)
+    if pesos is not None:  # la malla riggeada: los pesos de su vertice mas cercano, en los huesos del maniqui
+        jo, we, huesos = pesos
+        faltan = [h for h in huesos if h not in MIXAMO]
+        if faltan:
+            raise SystemExit(f"huesos de la malla sin su par en el maniqui (MIXAMO): {', '.join(faltan)}")
+        mapa = np.array([esq.idx[MIXAMO[h]] for h in huesos])
+        joints[:] = mapa[jo[cerca]]
+        weights[:] = we[cerca] / np.maximum(we[cerca].sum(axis=1, keepdims=True), 1e-9)
+        nombres = []  # sin los automaticos
+        log(f"  pesos de la malla riggeada: {len(huesos)} huesos de Mixamo en los del maniqui")
     for pi, pn in enumerate(nombres):
         sel = np.where(parte == pi)[0]
         if not len(sel):
@@ -378,7 +434,7 @@ def armar(esq, malla_t, it, log=print):
     skin = [MI[i] @ np.linalg.inv(MT[i]) for i in range(len(MT))]
     vh = np.column_stack([v, np.ones(len(v))])
     vi = np.zeros_like(v)
-    for kk in range(2):
+    for kk in range(4):
         mats = np.stack([skin[j] for j in joints[:, kk]])
         vi += weights[:, kk:kk + 1] * np.einsum("nij,nj->ni", mats, vh)[:, :3]
     # Todo al alto del inventario.
@@ -483,9 +539,14 @@ def main():
         raise SystemExit("\n".join(errores))
     por_id = {it["id"]: it for it in items}
     filas = open(inventario.TSV, encoding="utf-8").read().split("\n")
-    nota = (" Cuerpo humano estandar (tools/modelos/humanoide.py): la malla en pose T de IMPORTED/Humanoid (sample_*.glb), "
-            "reducida y con el color de su textura, y el esqueleto y los clips de exported-model.glb (los nombres de la "
-            "Universal Animation Library de Quaternius), con pesos automaticos; los clips, con los nombres del juego.")
+    malla_de = ("la malla riggeada de IMPORTED/Humanoid (rigged-model.glb), en la pose de su piel, reducida, con el color "
+                "de su textura y sus pesos (los de su esqueleto de Mixamo, en los huesos del maniqui)" if malla_t[3] is not None
+                else "la malla en pose T de IMPORTED/Humanoid (sample_*.glb), reducida y con el color de su textura, con "
+                "pesos automaticos")
+    nota = (f" Cuerpo humano estandar (tools/modelos/humanoide.py): {malla_de}; el esqueleto y los clips, de "
+            "exported-model.glb (los nombres de la Universal Animation Library de Quaternius); los clips, con los nombres "
+            "del juego.")
+    vieja = re.compile(r" ?Cuerpo humano estandar \(tools/modelos/humanoide\.py\):.*?con los nombres del juego\.")
     for mid in sys.argv[3:]:
         it = por_id[mid]
         datos, tris = armar(esq, malla_t, it)
@@ -496,8 +557,7 @@ def main():
             c = fila.split("\t")
             if c[0] == mid:
                 c[5] = "importado"
-                if "humanoide.py" not in c[6]:
-                    c[6] = c[6] + nota
+                c[6] = vieja.sub("", c[6]) + nota
                 filas[i] = "\t".join(c)
     open(inventario.TSV, "w", encoding="utf-8").write("\n".join(filas))
     print("Sigue: python3 tools/assets/inventario.py doc && python3 tools/assets/animaciones.py doc")
