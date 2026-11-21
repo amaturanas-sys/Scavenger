@@ -398,7 +398,8 @@ def malla(path):
         vh = np.column_stack([pos, np.ones(len(pos))])
         pos = sum(we[:, q:q + 1] * np.einsum("nij,nj->ni", piel[jo[:, q]], vh)[:, :3] for q in range(4))
         nombres = [doc["nodes"][k].get("name", "").split(":")[-1].replace("mixamorig", "") for k in skin["joints"]]
-        pesos = (jo, we, nombres, (doc, binario, skin["joints"], nombres))
+        articulaciones = np.array([W[k][:3, 3] for k in skin["joints"]])  # en el espacio de la piel, como pos
+        pesos = (jo, we, nombres, (doc, binario, skin["joints"], nombres), articulaciones)
     return pos, idx, color, pesos
 
 
@@ -414,10 +415,18 @@ def reducir(pos, idx, color, tris):
         if len(f2) <= tris:
             break
         p2, f2 = fast_simplification.simplify(p2, f2, min(0.9, 1.0 - tris / len(f2)))
-    # Sin las astillas que deja la reduccion de una punta del cuerpo a otra (un pie con una mano).
+    # Sin las astillas que deja la reduccion de una punta del cuerpo a otra (un pie con una mano, a mas de un tercio del
+    # alto). Los lados largos de un cuerpo de 1200 triangulos (un muslo, el antebrazo: hasta un quinto del alto) se
+    # quedan: sin ellos la malla quedaba con agujeros y el brazo, en tiras sueltas que en los golpes eran astillas.
     t = p2[f2]
     lado = np.max(np.linalg.norm(t - np.roll(t, 1, axis=1), axis=2), axis=1)
-    f2 = f2[lado < 0.12 * (pos[:, 1].max() - pos[:, 1].min())]
+    f2 = f2[lado < 0.3 * (pos[:, 1].max() - pos[:, 1].min())]
+    # Ni los restos sueltos de la reduccion: dos triangulos espalda con espalda, de milimetros, junto a los dedos.
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    e = np.concatenate([f2[:, [0, 1]], f2[:, [1, 2]]])
+    _, pieza = connected_components(coo_matrix((np.ones(len(e)), (e[:, 0], e[:, 1])), shape=(len(p2), len(p2))), directed=False)
+    f2 = f2[np.bincount(pieza)[pieza[f2[:, 0]]] >= 8]
     _, near = cKDTree(pos).query(p2)
     return p2.astype(float), f2.astype(np.int64), color[near], near
 
@@ -437,8 +446,10 @@ def armar(esq, malla_t, it, log=print):
     torso = pos[(pos[:, 1] > lo[1] + 0.45 * (hi[1] - lo[1])) & (pos[:, 1] < lo[1] + 0.7 * (hi[1] - lo[1])) &
                 (np.abs(pos[:, 0] - 0.5 * (lo[0] + hi[0])) < 0.08 * (hi[1] - lo[1]))]
     pel = P[esq.idx["pelvis"]]
-    m = np.column_stack([(pos[:, 0] - torso[:, 0].mean()) * k + pel[0], (pos[:, 1] - lo[1]) * k,
-                         (pos[:, 2] - torso[:, 2].mean()) * k + pel[2]])
+    def a_esqueleto(p):  # de las medidas de la malla a las del esqueleto
+        return np.column_stack([(p[:, 0] - torso[:, 0].mean()) * k + pel[0], (p[:, 1] - lo[1]) * k,
+                                (p[:, 2] - torso[:, 2].mean()) * k + pel[2]])
+    m = a_esqueleto(pos)
     H = alto_esq
     # La pose T: los brazos hasta las munecas de la malla, las piernas hasta sus tobillos (con el largo de cada uno).
     for lado, sg in (("l", 1.0), ("r", -1.0)):
@@ -466,6 +477,22 @@ def armar(esq, malla_t, it, log=print):
         P, _ = esq.mundo(T, R)
         bola = P[esq.idx["ball_" + lado]]
         apuntar(esq, T, R, "ball_" + lado, "ball_leaf_" + lado, bola + np.array([0.0, 0.0, 1.0]))
+    if pesos is not None:
+        # Cada hueso del maniqui con par, donde esta su articulacion en el esqueleto de la malla: los pesos se pintaron
+        # alrededor de esas (si no, la piel gira alrededor de otro punto y se estira: el hombro estaba a 12 cm de la suya
+        # y la rodilla, a 15). Solo cambia el largo y la direccion de cada hueso en el
+        # reposo (la traslacion desde su padre), no sus giros; la pelvis queda en la del esqueleto (la de los clips).
+        donde = a_esqueleto(pesos[4])
+        for i in esq.order:
+            n = esq.names[i]
+            if n == "pelvis" or n not in MIXAMO.values():
+                continue
+            P, Q = esq.mundo(T, R)
+            j = [MIXAMO[h] for h in pesos[2]].index(n)
+            T[i] = qrot(qconj(Q[esq.parent[i]]), donde[j] - P[esq.parent[i]])
+        P, _ = esq.mundo(T, R)
+        lejos = max(np.linalg.norm(P[esq.idx[MIXAMO[h]]] - d) for h, d in zip(pesos[2], donde) if h != "Hips")
+        log(f"  articulaciones en las de la malla (a {lejos * 1000:.1f} mm como mucho)")
     PT, QT = esq.mundo(T, R)
     # Idle, Walk y Sprint de la malla riggeada, si los trae: idle, caminar y correr (los demas, de la biblioteca).
     del_juego = dict(CLIPS)
@@ -495,7 +522,7 @@ def armar(esq, malla_t, it, log=print):
     joints = np.zeros((len(v), 4), np.uint8)
     weights = np.zeros((len(v), 4), np.float32)
     if pesos is not None:  # la malla riggeada: los pesos de su vertice mas cercano, en los huesos del maniqui
-        jo, we, huesos, _ = pesos
+        jo, we, huesos = pesos[:3]
         faltan = [h for h in huesos if h not in MIXAMO]
         if faltan:
             raise SystemExit(f"huesos de la malla sin su par en el maniqui (MIXAMO): {', '.join(faltan)}")

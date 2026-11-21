@@ -264,6 +264,14 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Los golpes sin astillas (v0.15.9):
+- **El cuerpo, cerrado:** la reducción a su tope de triángulos ya no quita los lados largos (los de un muslo o un
+  antebrazo, hasta un quinto del alto), solo los puentes de una punta del cuerpo a otra (más de un tercio), ni deja
+  restos sueltos. Antes, el cuerpo riggeado quedaba con agujeros y el antebrazo, en tiras que en los golpes se veían
+  como astillas en la mano (y en las pantorrillas). Los tres cuerpos, sin bordes abiertos y en una sola pieza.
+- **Las articulaciones del maniquí,** en las del esqueleto de la malla (estaban a 11–15 cm): la piel gira alrededor
+  de donde se pintaron sus pesos (`reducir` y `armar` en `tools/modelos/humanoide.py`).
+
 El cuerpo humano riggeado (v0.15.8):
 - **La malla nueva** (`IMPORTED/Humanoid/rigged-model.glb`, ya riggeada con un esqueleto de 22 huesos de Mixamo) es el
   cuerpo común, el del protagonista y el del gigante.
