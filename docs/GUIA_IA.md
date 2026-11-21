@@ -480,7 +480,8 @@ traba.
   - las animaciones de las personas, revisadas: el frente, el ritmo, los golpes completos y la patada (v0.15.6);
   - los animales, con su cuerpo, su esqueleto y sus clips: `tools/modelos/animales.py` (v0.15.7);
   - el cuerpo humano riggeado: la malla de `rigged-model.glb` con los pesos de su rig de Mixamo, y su reposo, su paso y
-    su carrera (v0.15.8).
+    su carrera (v0.15.8);
+  - los golpes sin astillas: los cuerpos cerrados y en una pieza tras la reducción (v0.15.9).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
