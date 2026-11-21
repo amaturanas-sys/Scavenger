@@ -181,10 +181,7 @@ def check_model(it, path):
     lo, hi = box
     ancho, alto, largo = dims(it)
     got = (hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2])
-    ejes = ((0, largo, "largo (X)"), (1, alto, "alto (Y)"), (2, ancho, "ancho (Z)"))
-    if g.pieles():  # los animados miran a +Z (glTF): el juego los gira (yaw - PI/2)
-        ejes = ((2, largo, "largo (Z)"), (1, alto, "alto (Y)"), (0, ancho, "ancho (X)"))
-    for axis, want, name in ejes:
+    for axis, want, name in ((0, largo, "largo (X)"), (1, alto, "alto (Y)"), (2, ancho, "ancho (Z)")):
         if want >= 0.05 and not 0.5 <= got[axis] / want <= 2.0:
             warnings.append(f"{rel}: {name} de {got[axis]:.2f} m (inventario {want:g} m): revisa la escala o el giro")
     equip = "uso:equipable" in it["tags"]

@@ -599,6 +599,7 @@ static const SfField SF_F_GameActions[] = {
     SF_ONE(GameActions, pl_attacking, "int", SF_INT, NULL),
     SF_ONE(GameActions, pl_ranged, "int", SF_INT, NULL),
     SF_ONE(GameActions, pl_move, "int", SF_INT, NULL),
+    SF_ONE(GameActions, pl_stroke, "float", SF_FLOAT, NULL),
     SF_ONE(GameActions, swap_anim, "float", SF_FLOAT, NULL),
     SF_ARR(GameActions, people_pick, "int", SF_INT, NULL),
     SF_ONE(GameActions, people_page, "int", SF_INT, NULL),

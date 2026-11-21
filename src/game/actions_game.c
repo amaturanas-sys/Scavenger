@@ -1440,6 +1440,8 @@ void ga_new_day(GameActions *ga, Props *props, const Terrain *t, Troop *troop, M
 }
 
 // ---------------------------------------------------------------- dibujo
+static AnimTrack g_troop_track[TROOP_MAX]; // el clip de cada uno de la tropa y desde cuando (props_draw_item_track)
+
 static Color role_color(Role r) {
     switch (r) {
     case ROLE_HUNTER: return (Color){ 110, 140, 70, 255 };
@@ -1492,7 +1494,9 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
             Color light = props_get_tint(), role = role_color(m->role); // el maniqui, con el color de su oficio
             props_set_tint(ColorTint(light, (Color){ (unsigned char)(96 + role.r * 5 / 8), (unsigned char)(96 + role.g * 5 / 8),
                                                      (unsigned char)(96 + role.b * 5 / 8), 255 }));
-            props_draw_item_anim(props, body, n->pos, n->yaw - PI / 2.0f, anim_humanoid(&hs), time + (float)i);
+            const char *clip = anim_humanoid(&hs);
+            props_draw_item_track(props, body, n->pos, n->yaw - PI / 2.0f, clip, time + (float)i,
+                                  anim_is_stroke(clip) ? (hs.move > 1 ? n->move_anim : n->fight_anim) : 0.0f, &g_troop_track[i]);
             props_set_tint(light);
             continue;
         }
@@ -1606,8 +1610,8 @@ static Vector3 held_in_hand(Props *props, const InvItem *it, const BodySeg *seg,
     return held_between(props, it, body_point(seg->a, pos, yaw), body_point(seg->b, pos, yaw), yaw, light);
 }
 
-// El clip y el tiempo con que se dibujo el modelo del protagonista (ga_draw_player): para sus manos.
-static const char *g_player_clip;
+// El clip del protagonista y desde cuando (ga_draw_player): para su cuerpo y sus manos.
+static AnimTrack g_player_track;
 static float g_player_time;
 
 // Lo que lleva el jugador con el modelo del protagonista: en la mano, en los huesos de sus manos (props_bone_point);
@@ -1620,10 +1624,10 @@ static void draw_held_model(const GameActions *ga, Props *props, const Player *p
     bool r_out = hands_out(h, HAND_RIGHT), l_out = hands_out(h, HAND_LEFT);
     Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z }, er, hr, el, hl;
     float yaw = p->yaw, my = p->yaw - PI / 2.0f;
-    bool rb = props_bone_point(props, body, pos, my, g_player_clip, g_player_time, "lowerarm_r", &er) &&
-              props_bone_point(props, body, pos, my, g_player_clip, g_player_time, "hand_r", &hr);
-    bool lb = props_bone_point(props, body, pos, my, g_player_clip, g_player_time, "lowerarm_l", &el) &&
-              props_bone_point(props, body, pos, my, g_player_clip, g_player_time, "hand_l", &hl);
+    bool rb = props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "lowerarm_r", &er) &&
+              props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "hand_r", &hr);
+    bool lb = props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "lowerarm_l", &el) &&
+              props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "hand_l", &hl);
     Vector3 up = body_dir((V3){ 0, 1, 0 }, yaw), left = body_dir((V3){ 1, 0, 0 }, yaw), back = body_dir((V3){ 0, 0, -1 }, yaw);
     if (r && r_out && rb) held_between(props, r, er, hr, yaw, light);
     else if (r && !r_out && r->hands == INV_HANDS_TWO) // a la espalda
@@ -1707,8 +1711,10 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) 
     };
     if (hs.mounted) hs.mount_speed = p->moving ? (p->stance == STANCE_RUN ? 8.5f : 4.0f) * ga_speed_scale(ga) : 0.0f;
     Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
-    g_player_clip = anim_humanoid(&hs), g_player_time = time;
-    props_draw_item_anim(props, body, pos, p->yaw - PI / 2.0f, g_player_clip, time);
+    const char *clip = anim_humanoid(&hs);
+    g_player_time = time;
+    props_draw_item_track(props, body, pos, p->yaw - PI / 2.0f, clip, time, anim_is_stroke(clip) ? ga->pl_stroke : 0.0f,
+                          &g_player_track);
     return true;
 }
 

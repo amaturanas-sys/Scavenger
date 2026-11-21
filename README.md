@@ -264,6 +264,18 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las animaciones de las personas, revisadas (v0.15.6):
+- **El frente:** el cuerpo estándar miraba a su derecha al caminar; ahora mira hacia donde va (los modelos animados,
+  como todos, miran a +X: el juego los dibuja girados `yaw - PI/2`).
+- **El ritmo:** los clips iban a la mitad de su velocidad (raylib muestrea los GLB cada 17 ms y el juego los leía a
+  30 cuadros por segundo).
+- **Los golpes completos:** cada personaje lleva el arranque de su clip (`AnimTrack`): un ataque, una patada o una carga
+  empiezan en su primer cuadro y, si no se repiten (`anim_loops`, la columna bucle de `assets/animaciones.tsv`), quedan
+  en el último (morir ya no se repite). Un golpe (`anim_is_stroke`) se acelera o se frena para caber entero en lo que
+  el juego le da: 0,4 s el tajo del jugador, la guardia y el tajo de un enemigo; los clips duran de 0,5 a 2 s.
+- **Las animaciones que faltaban:** la patada (de la guardia, la rodilla arriba y la pierna extendida al frente), el
+  jinete a horcajadas y la caída, armadas con poses en `tools/modelos/humanoide.py`.
+
 El cuerpo gigante y las cuevas y ruinas en el mapa (v0.15.5):
 - **El cuerpo gigante:** los grandes guerreros de la tropa (`personaje.base.cuerpo_gigante`, de 2,3 m) llevan el mismo
   cuerpo, con su esqueleto y sus animaciones (1430 triángulos, `tools/modelos/humanoide.py`).

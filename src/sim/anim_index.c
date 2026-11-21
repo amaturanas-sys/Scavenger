@@ -2,6 +2,36 @@
 
 #include "sim/melee.h"
 
+#include <string.h>
+
+bool anim_loops(const char *clip) {
+    static const char *ONCE[] = { // los de una vez, de todos los esqueletos (bucle = no en assets/animaciones.tsv)
+        "saltar", "aterrizar", "trepar_cima", "montar_subir", "montar_bajar", "jinete_arco", "tomar", "lanzar",
+        "cambiar_empunadura", "enfundar", "desenfundar", "lanzar_trepa", "lanzar_lazo", "encender", "ensillar",
+        "ataque_una_1", "ataque_una_2", "ataque_una_3", "ataque_dos_1", "ataque_dos_2", "ataque_dos_3", "estocada_lanza",
+        "agarre", "derribo", "proyeccion", "ataque_pesado", "patada", "patada_carrera", "golpe_escudo", "carga_escudo",
+        "enganchar_escudo", "parry", "desvio", "apunalar_espalda", "rematar", "derribado", "cambiar_mano", "disparar_arco",
+        "disparar_ballesta", "recargar_ballesta", "disparar_mosquete", "recargar_mosquete", "recibir_golpe", "morir",
+        "vendar", "celebrar", "encabritarse", "atacar", "aullar", "despegar", "atacar_picado", "disparar", "golpear",
+        "abrir", "cerrar",
+    };
+    if (!clip) return true;
+    for (size_t i = 0; i < sizeof(ONCE) / sizeof(ONCE[0]); i++)
+        if (!strcmp(clip, ONCE[i])) return false;
+    return true;
+}
+
+bool anim_is_stroke(const char *clip) {
+    static const char *HITS[] = { "ataque_una_1", "ataque_una_2", "ataque_una_3", "ataque_dos_1", "ataque_dos_2", "ataque_dos_3",
+                                  "estocada_lanza" };
+    if (!clip) return false;
+    for (size_t i = 0; i < sizeof(HITS) / sizeof(HITS[0]); i++)
+        if (!strcmp(clip, HITS[i])) return true;
+    for (int m = 0; m < MOVE_COUNT; m++)
+        if (move_def((MeleeMove)m)->clip && !strcmp(move_def((MeleeMove)m)->clip, clip)) return true;
+    return false;
+}
+
 const char *anim_for_action(ActionId a) {
     switch (a) {
     case ACTION_TAKE: return "tomar";
