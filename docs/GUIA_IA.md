@@ -475,7 +475,8 @@ traba.
   - las rocas de cada región, la estepa de pasto y el campamento que choca (v0.15.2);
   - las transiciones entre regiones, el suelo del bosque, las hierbas que se atraviesan y el árbol viejo derecho
     (v0.15.3);
-  - el cuerpo humano estándar, con esqueleto y animaciones (v0.15.4).
+  - el cuerpo humano estándar, con esqueleto y animaciones (v0.15.4);
+  - el cuerpo gigante, con el mismo modelo, y las cuevas y ruinas en el mapa (v0.15.5).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

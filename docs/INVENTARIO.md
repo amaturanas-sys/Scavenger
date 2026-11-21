@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**733 objetos** · 308 con modelo · 425 pendientes.
+**733 objetos** · 309 con modelo · 424 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -24,7 +24,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
 | [Utilería y consumibles](#utileria) | 175 | 81 | 0 | 94 | 0 |
-| [Personajes y NPCs](#personaje) | 47 | 45 | 0 | 2 | 0 |
+| [Personajes y NPCs](#personaje) | 47 | 44 | 0 | 3 | 0 |
 
 ## Etiquetas
 
@@ -840,7 +840,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `personaje.base.cuerpo_mujer_3` | Cuerpo base: mujer adulta (variante 3) | 0.48x1.6x0.27 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (la mujer estándar); el ancho y el fondo, los de la imagen. |
 | `personaje.base.cuerpo_mujer_4` | Cuerpo base: mujer adulta (variante 4) | 0.45x1.6x0.26 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (la mujer estándar); el ancho y el fondo, los de la imagen. |
 | `personaje.base.cuerpo_mujer_5` | Cuerpo base: mujer adulta (variante 5) | 0.46x1.6x0.28 | 1200 | pendiente | `rig:humanoide` `talla:comun` | Malla base modular: ropa y armadura encajan encima. Malla low-poly con textura (estilo PS2) en arte/modelos/para_riggear/, desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma volumen --miembros); falta el esqueleto y los clips. Medidas: el alto del inventario (la mujer estándar); el ancho y el fondo, los de la imagen. |
-| `personaje.base.cuerpo_gigante` | Cuerpo base: gigante (gran guerrero) | 0.75x2.3x0.45 | 1500 | pendiente | `rig:humanoide` `talla:gigante` `especial:gran_guerrero` | Talla x1.2–1.45 del común. |
+| `personaje.base.cuerpo_gigante` | Cuerpo base: gigante (gran guerrero) | 0.75x2.3x0.45 | 1500 | importado | `rig:humanoide` `talla:gigante` `especial:gran_guerrero` | Talla x1.2–1.45 del común. Cuerpo humano estandar (tools/modelos/humanoide.py): la malla en pose T de IMPORTED/Humanoid (sample_*.glb), reducida y con el color de su textura, y el esqueleto y los clips de exported-model.glb (los nombres de la Universal Animation Library de Quaternius), con pesos automaticos; los clips, con los nombres del juego. |
 | `personaje.base.cuerpo_anciano` | Cuerpo base: anciano | 0.5x1.6x0.3 | 1200 | pendiente | `rig:humanoide` `talla:comun` |  |
 | `personaje.narrativo.protagonista` | Protagonista ({NOMBRE}) | 0.5x1.75x0.3 | 2000 | importado | `rig:humanoide` `acto:2` `especial:narrativo` `uso:personalizable` | Personalizable: nombre, aspecto, ropa. Cuerpo humano estandar (tools/modelos/humanoide.py): la malla en pose T de IMPORTED/Humanoid (sample_*.glb), reducida y con el color de su textura, y el esqueleto y los clips de exported-model.glb (los nombres de la Universal Animation Library de Quaternius), con pesos automaticos; los clips, con los nombres del juego. |
 | `personaje.narrativo.padre` | El padre (jefe de la confederación) | 0.5x1.75x0.3 | 2000 | pendiente | `rig:humanoide` `acto:1` `especial:narrativo` `faccion:nomada` | Jugable en el prólogo, a caballo. |

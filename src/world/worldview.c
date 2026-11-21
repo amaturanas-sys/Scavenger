@@ -129,7 +129,8 @@ void worldview_draw(WorldView *v, const World *w, float angle, float tilt, Vecto
     rlSetClipPlanes(10.0, 30000.0);
     BeginMode3D(cam);
     DrawModel(v->model, (Vector3){ 0 }, 1.0f, WHITE);
-    // Asentamientos: torres doradas las capitales, blancas las aldeas; guaridas en rojo.
+    // Asentamientos: torres doradas las capitales, blancas las aldeas; guaridas (las bocas de las cuevas) en rojo y
+    // las estructuras en pardo (ruinas) o gris (en uso), como en el mapa general (v0.15.5: antes no se veian).
     for (int i = 0; i < w->settlement_count; i++) {
         const Settlement *s = &w->settlements[i];
         Vector3 p = at_world(w, s->x, s->z, 0.0f);
@@ -139,7 +140,14 @@ void worldview_draw(WorldView *v, const World *w, float angle, float tilt, Vecto
     }
     for (int i = 0; i < w->den_count; i++) {
         Vector3 p = at_world(w, w->dens[i].x, w->dens[i].z, 0.0f);
-        DrawCylinder(p, 0.0f, 16.0f, 70.0f, 4, (Color){ 196, 50, 40, 255 });
+        DrawCylinder(p, 0.0f, 30.0f, 160.0f, 4, (Color){ 210, 52, 40, 255 });
+    }
+    for (int i = 0; i < w->site_count; i++) {
+        const WorldSite *st = &w->sites[i];
+        Vector3 p = at_world(w, st->x, st->z, 0.0f);
+        bool ruin = site_is_ruin(st->kind);
+        DrawCylinder(p, 14.0f, 22.0f, 120.0f, 4, ruin ? (Color){ 176, 124, 72, 255 } : (Color){ 214, 214, 206, 255 });
+        DrawCylinder((Vector3){ p.x, p.y + 120.0f, p.z }, 0.0f, 20.0f, 30.0f, 4, ruin ? (Color){ 120, 82, 48, 255 } : (Color){ 150, 150, 146, 255 });
     }
     Vector3 camp = at_world(w, 0.0f, 0.0f, 0.0f);
     DrawCylinder(camp, 22.0f, 22.0f, 90.0f, 8, (Color){ 240, 140, 40, 255 });
