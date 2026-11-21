@@ -264,6 +264,14 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+El cuerpo humano estándar (v0.15.4):
+- **Un cuerpo con esqueleto y animaciones** para el jugador (`personaje.narrativo.protagonista`), la tropa y los NPC
+  sin modelo propio (`personaje.base.cuerpo_comun`). Sale de `IMPORTED/Humanoid` (la rama `cline/procesar-imagenes-animales`):
+  la malla en pose T (`sample_*.glb`) y el esqueleto con sus 50 clips (`exported-model.glb`), unidos con
+  `tools/modelos/humanoide.py` (pesos automáticos, 1112 y 1968 triángulos, los clips con los nombres del juego).
+- **Lo que se lleva** va en los huesos de las manos: el arma en la derecha, el escudo en el antebrazo izquierdo.
+- **La tropa y los enemigos**, el mismo maniquí teñido del color de su oficio o de su bando.
+
 Las transiciones entre regiones, el suelo del bosque y el árbol viejo derecho (v0.15.3):
 - **Las hierbas, los pastos y las matas se atraviesan:** la hierba alta, las matas del campamento y el arbusto seco ya
   no chocan; chocan los troncos, las rocas y las obras.

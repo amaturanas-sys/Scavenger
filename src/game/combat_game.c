@@ -2996,7 +2996,9 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
             cb_draw_horse(e->pos, e->ride_yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
             at.y += RIDER_LIFT;
         }
-        if (props_has_model(props, it)) {
+        const InvItem *base = inventory_find(ga->inv, "personaje.base.cuerpo_comun"); // el cuerpo humano estandar
+        bool own = props_has_model(props, it);
+        if (own || (base && props_has_model(props, base))) {
             HumanoidState hs = { .moving = e->speed > 0.2f, .running = e->speed > 3.5f, .grounded = true, .doing = -1,
                                  .mounted = e->mounted && !dead,
                                  .building = -1, .dead = dead, .down = downed, .hit = e->hit_anim > 0.0f || struggling,
@@ -3009,7 +3011,11 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
             const char *clip = anim_humanoid(&hs);
             // Muerto: el clip se queda en su ultimo tramo en vez de repetirse.
             float tt = dead ? fminf(CORPSE_SECONDS - e->corpse, 1.2f) : time + (float)i * 0.31f;
-            props_draw_item_anim(props, it, at, e->yaw - PI / 2.0f, clip, tt);
+            Color light = props_get_tint(), cloth = enemy_colors(e->kind, e->hit_anim > 0.0f).cloth;
+            if (!own) props_set_tint(ColorTint(light, (Color){ (unsigned char)(96 + cloth.r * 5 / 8), (unsigned char)(96 + cloth.g * 5 / 8),
+                                                              (unsigned char)(96 + cloth.b * 5 / 8), 255 }));
+            props_draw_item_anim(props, own ? it : base, at, e->yaw - PI / 2.0f, clip, tt);
+            props_set_tint(light);
             continue;
         }
         // Sin modelo: cuerpo articulado con su armadura (y su escudo).
