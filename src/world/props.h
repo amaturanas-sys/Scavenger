@@ -75,6 +75,10 @@ void props_draw_item_anim(Props *p, const InvItem *item, Vector3 pos, float yaw,
 // El modelo con la piedra de la region biome (RegionKind: estepa, bosque, altiplano, fiordos, desierto) y lo que la
 // cubre arriba: las rocas del decorado (v0.15.2), una variante por region, cargada la primera vez que se dibuja.
 bool props_draw_item_biome(Props *p, const InvItem *item, Matrix transform, int biome);
+// Donde esta un hueso (bone, por su nombre) del modelo animado, con el mismo clip, tiempo y giro que
+// props_draw_item_anim: para poner en la mano lo que se lleva. false si no esta animado o no tiene ese hueso.
+bool props_bone_point(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time, const char *bone,
+                      Vector3 *out);
 bool props_draw_item_matrix(Props *p, const InvItem *item, Matrix transform);
 
 #endif

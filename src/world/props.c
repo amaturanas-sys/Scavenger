@@ -168,6 +168,28 @@ void props_draw_item_anim(Props *p, const InvItem *item, Vector3 pos, float yaw,
     props_draw_item(p, item, pos, yaw, 1.0f);
 }
 
+bool props_bone_point(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time, const char *bone,
+                      Vector3 *out) {
+    Model *m = cached_model(p, item);
+    int slot = cache_slot(p, item);
+    if (!m || slot < 0 || p->cache[slot].anim_count <= 0 || !clip) return false;
+    ModelAnimation *anims = p->cache[slot].anims, *chosen = NULL, *idle = NULL;
+    for (int i = 0; i < p->cache[slot].anim_count; i++) {
+        if (!strcmp(anims[i].name, clip)) chosen = &anims[i];
+        if (!strcmp(anims[i].name, "idle")) idle = &anims[i];
+    }
+    if (!chosen) chosen = idle ? idle : &anims[0];
+    if (chosen->frameCount <= 0) return false;
+    for (int b = 0; b < m->boneCount && b < chosen->boneCount; b++) {
+        if (strcmp(m->bones[b].name, bone) != 0) continue;
+        Transform t = chosen->framePoses[(int)(time * 30.0f) % chosen->frameCount][b];
+        Vector3 q = Vector3RotateByAxisAngle(Vector3Transform(t.translation, m->transform), (Vector3){ 0, 1, 0 }, yaw);
+        *out = Vector3Add(q, pos);
+        return true;
+    }
+    return false;
+}
+
 // Color del marcador segun la categoria del inventario (igual que en la galeria).
 static Color category_color(const char *cat) {
     if (!strcmp(cat, "mapa")) return (Color){ 120, 140, 80, 255 };
