@@ -5044,6 +5044,19 @@ static void test_decor(void) {
     }
     inventory_free(&inv);
     free(text);
+    {   // Los pesos de lo que se ve (v0.15.3): suman 1; en el centro, estepa pura como siempre.
+        const World *w = world_for_seed(1206u);
+        float a[REGION_COUNT], b[REGION_COUNT];
+        for (int i = 0; i < 300; i++) {
+            float x = (float)(i * 131 % 7000) - 3500.0f, z = (float)(i * 71 % 7000) - 3500.0f, sum = 0.0f;
+            world_region_weights_soft(w, x, z, a);
+            for (int r = 0; r < REGION_COUNT; r++) sum += a[r];
+            CHECK(fabsf(sum - 1.0f) < 1e-3f);
+        }
+        world_region_weights(w, 0.0f, 0.0f, a);
+        world_region_weights_soft(w, 0.0f, 0.0f, b);
+        CHECK(a[REGION_STEPPE] == 1.0f && b[REGION_STEPPE] == 1.0f);
+    }
     // Se trepan las rocas (de la cresta a la roca baja), no lo demás (v0.15.1).
     CHECK(decor_climbable(DECOR_CRESTA) && decor_climbable(DECOR_ROCA_BAJA) && !decor_climbable(DECOR_ACACIA));
     {   // La arcilla del desierto: de 0 a 1, con zonas de arcilla y de arena.
@@ -5091,7 +5104,7 @@ static void test_decor(void) {
         CHECK(decor_pick_foot(0.4f, r) == DECOR_NONE);
         int f = decor_pick_foot(1.0f, r);
         CHECK(f == DECOR_NONE || decor_norm((DecorKind)f)->cls == DECOR_CLASS_FOOT);
-        CHECK(r < 0.2f || f == DECOR_NONE);
+        CHECK(r < 0.36f || f == DECOR_NONE);
     }
     // Lo hecho por el hombre: en el anillo de su lugar, siempre igual; las cercas de las afueras, a lo largo del
     // anillo; alrededor de las ruinas, solo restos (ni cercas sanas ni bancos).
@@ -5123,7 +5136,7 @@ static void test_decor(void) {
         float r, half;
         DecorHit hit = decor_collider((DecorKind)k, &r, &half);
         bool walk = k == DECOR_PUENTE || k == DECOR_TARIMA || k == DECOR_MUELLE || k == DECOR_MUELLE_FIN;
-        if (walk || n->cls == DECOR_CLASS_FOOT || n->height < 0.45f || k == DECOR_TABLAS || k == DECOR_CERCA_CAIDA) CHECK(hit == DECOR_HIT_NONE);
+        if (walk || n->cls == DECOR_CLASS_FOOT || n->height < 0.45f || k == DECOR_TABLAS || k == DECOR_CERCA_CAIDA || k == DECOR_ARBUSTO_SECO) CHECK(hit == DECOR_HIT_NONE);
         else CHECK(hit != DECOR_HIT_NONE && r > 0.1f);
         if (hit == DECOR_HIT_CAPSULE) CHECK(r + half <= 0.5f * n->length + 1e-4f && r <= 0.5f * fmaxf(n->width, 0.3f) + 1e-4f);
     }

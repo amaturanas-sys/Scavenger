@@ -203,6 +203,9 @@ const World *world_for_seed(uint32_t seed);
 
 // Regiones: peso de cada una en (x, z) (suman 1) y la dominante.
 Region world_region_weights(const World *w, float x, float z, float out[REGION_COUNT]);
+// Los mismos pesos con las transiciones anchas y festoneadas de lo que se ve (el suelo, la vegetacion, las rocas, el
+// decorado); el relieve, el agua y los lugares usan world_region_weights (v0.15.3).
+Region world_region_weights_soft(const World *w, float x, float z, float out[REGION_COUNT]);
 Region world_region(const World *w, float x, float z);
 float world_region_weight(const World *w, Region r, float x, float z);
 const char *region_name(Region r);      // UTF-8 ("estepa", ...)

@@ -79,7 +79,7 @@ int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out) {
     float edge = world_edge_distance(w, mx, mz);
     if (edge < 20.0f || cleared(w, mx, mz)) return 0;
     float k[REGION_COUNT];
-    world_region_weights(w, mx, mz, k);
+    world_region_weights_soft(w, mx, mz, k); // las transiciones de lo que se ve
     if (k[REGION_HIGHLAND] > 0.5f && edge < 150.0f) return 0;     // el muro de hielo del altiplano
     if (world_glacier_reach(w, mx, mz) <= 1.0f) return 0;         // la morrena: el glaciar la cubre en invierno
     if (world_river_bank(w, mx, mz, NULL) > 0.45f) return 0;      // el lecho de cantos que el rio lava

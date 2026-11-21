@@ -113,28 +113,43 @@ static float warped_angle(const World *w, float x, float z) {
     return atan2f(z, x) + w->warp_phase + 0.18f * fbm2d(x * 0.00045f, z * 0.00045f, w->seed + 11u, 3);
 }
 
-// Pesos de los cuatro cuadrantes de afuera (sin la estepa del centro).
-static void quadrant_weights(float th, float out[REGION_COUNT]) {
+// Pesos de los cuatro cuadrantes de afuera (sin la estepa del centro), con un paso de blend radianes a cada lado.
+static void quadrant_blend(float th, float blend, float out[REGION_COUNT]) {
     float sum = 0.0f;
     out[REGION_STEPPE] = 0.0f;
     for (int i = 1; i < REGION_COUNT; i++) {
-        out[i] = clamp01((SECTOR_HALF + SECTOR_BLEND - angdiff(th, SECTOR_ANGLE[i])) / (2.0f * SECTOR_BLEND));
+        out[i] = clamp01((SECTOR_HALF + blend - angdiff(th, SECTOR_ANGLE[i])) / (2.0f * blend));
         sum += out[i];
     }
     for (int i = 1; i < REGION_COUNT; i++) out[i] = sum > 0.0f ? out[i] / sum : 0.0f;
 }
+static void quadrant_weights(float th, float out[REGION_COUNT]) { quadrant_blend(th, SECTOR_BLEND, out); }
 
-Region world_region_weights(const World *w, float x, float z, float out[REGION_COUNT]) {
-    float r = sqrtf(x * x + z * z), rs = steppe_radius(w, atan2f(z, x));
-    float center = 1.0f - smooth(rs - 70.0f, rs + 70.0f, r); // la estepa del centro
-    float q[REGION_COUNT];
-    quadrant_weights(warped_angle(w, x, z), q);
+// La mezcla: la estepa del centro con su peso (center) y los cuadrantes de afuera en lo que queda.
+static Region region_mix(float center, const float q[REGION_COUNT], float out[REGION_COUNT]) {
     Region best = REGION_STEPPE;
     for (int i = 0; i < REGION_COUNT; i++) {
         out[i] = (1.0f - center) * q[i] + (i == REGION_STEPPE ? center : 0.0f);
         if (out[i] > out[best]) best = (Region)i;
     }
     return best;
+}
+
+Region world_region_weights(const World *w, float x, float z, float out[REGION_COUNT]) {
+    float r = sqrtf(x * x + z * z), rs = steppe_radius(w, atan2f(z, x)), q[REGION_COUNT];
+    quadrant_weights(warped_angle(w, x, z), q);
+    return region_mix(1.0f - smooth(rs - 70.0f, rs + 70.0f, r), q, out); // la estepa del centro
+}
+
+// Los pesos para lo que se ve (v0.15.3): el suelo, la vegetacion, las rocas y el decorado. La estepa pasa a las
+// regiones de afuera en 520 m (no 140), festoneada: lenguas de estepa que entran en el bosque o el desierto, y al
+// reves; y entre las de afuera, 11 grados a cada lado (no 7). El relieve, el agua y los lugares siguen con
+// world_region_weights: los lagos no se mueven y las partidas viejas no cambian.
+Region world_region_weights_soft(const World *w, float x, float z, float out[REGION_COUNT]) {
+    float r = sqrtf(x * x + z * z), rs = steppe_radius(w, atan2f(z, x)), q[REGION_COUNT];
+    float jag = 150.0f * fbm2d(x * 0.0022f, z * 0.0022f, w->seed + 613u, 3);
+    quadrant_blend(warped_angle(w, x, z), 11.0f * DEG, q);
+    return region_mix(1.0f - smooth(rs - 260.0f + jag, rs + 260.0f + jag, r), q, out);
 }
 
 Region world_region(const World *w, float x, float z) {

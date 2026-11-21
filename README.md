@@ -264,6 +264,16 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las transiciones entre regiones, el suelo del bosque y el árbol viejo derecho (v0.15.3):
+- **Las hierbas, los pastos y las matas se atraviesan:** la hierba alta, las matas del campamento y el arbusto seco ya
+  no chocan; chocan los troncos, las rocas y las obras.
+- **Las transiciones entre regiones:** el suelo, la vegetación, las rocas y el decorado pasan de la estepa a las
+  regiones de afuera en unos 520 m (eran 140), con lenguas de una región que entran en la otra; entre las de afuera,
+  11° a cada lado (eran 7°). El relieve, el agua y los lugares siguen igual (`world_region_weights_soft`).
+- **El suelo del bosque:** hasta 16 hongos, ramas y raíces por trozo (eran 5), con el triple de chance al pie de cada
+  árbol; los hongos, en corros de dos a cuatro.
+- **El árbol viejo:** el eje de su tronco tortuoso, vertical (estaba inclinado unos 33°).
+
 Las rocas de cada región, la estepa de pasto y el campamento que choca (v0.15.2):
 - **Las rocas:** cinco variantes, una por región. En la estepa, piedra gris con liquen seco; en el bosque, gris oscura
   con musgo; en el altiplano, gris fría con nieve; en los fiordos, pizarra oscura con liquen; en el desierto, arenisca

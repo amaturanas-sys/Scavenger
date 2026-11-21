@@ -30,7 +30,7 @@ static Color world_color(const World *w, float x, float z, float h, float slope,
         return mixc(shallow, deep, depth);
     }
     float k[REGION_COUNT];
-    world_region_weights(w, x, z, k);
+    world_region_weights_soft(w, x, z, k); // las transiciones de lo que se ve (v0.15.3)
     float r = 0, g = 0, b = 0;
     for (int i = 0; i < REGION_COUNT; i++) r += k[i] * REG[i].r, g += k[i] * REG[i].g, b += k[i] * REG[i].b;
     Color c = { (unsigned char)r, (unsigned char)g, (unsigned char)b, 255 };
