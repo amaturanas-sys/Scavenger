@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "sim/anim_index.h"
 #include "raymath.h"
 #include "rlgl.h"
 #include "vegetation.h"
@@ -150,39 +151,59 @@ static Model *cached_model(Props *p, const InvItem *item) {
 
 bool props_has_model(Props *p, const InvItem *item) { return item && cached_model(p, item) != NULL; }
 
-void props_draw_item_anim(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time) {
-    Model *m = cached_model(p, item);
-    int slot = cache_slot(p, item);
-    if (m && slot >= 0 && p->cache[slot].anim_count > 0) {
-        ModelAnimation *anims = p->cache[slot].anims, *chosen = NULL, *idle = NULL;
-        for (int i = 0; i < p->cache[slot].anim_count; i++) {
-            if (!strcmp(anims[i].name, clip)) chosen = &anims[i];
-            if (!strcmp(anims[i].name, "idle")) idle = &anims[i];
-        }
-        if (!chosen) chosen = idle ? idle : &anims[0];
-        if (chosen->frameCount > 0) {
-            int frame = (int)(time * 30.0f) % chosen->frameCount; // los GLB se exportan a 30 fps
-            UpdateModelAnimation(*m, *chosen, frame);
-        }
-    }
-    props_draw_item(p, item, pos, yaw, 1.0f);
-}
+// raylib muestrea los clips de un GLB cada 17 ms (GLTF_ANIMDELAY en rmodels.c): unos 59 cuadros por segundo.
+#define ANIM_FPS (1000.0f / 17.0f)
 
-bool props_bone_point(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time, const char *bone,
-                      Vector3 *out) {
-    Model *m = cached_model(p, item);
+// El clip del modelo con ese nombre (si no lo trae, idle; si tampoco, el primero), o NULL si no esta animado.
+static ModelAnimation *anim_clip(Props *p, const InvItem *item, const char *clip, Model **model) {
+    *model = cached_model(p, item);
     int slot = cache_slot(p, item);
-    if (!m || slot < 0 || p->cache[slot].anim_count <= 0 || !clip) return false;
+    if (!*model || slot < 0 || p->cache[slot].anim_count <= 0) return NULL;
     ModelAnimation *anims = p->cache[slot].anims, *chosen = NULL, *idle = NULL;
     for (int i = 0; i < p->cache[slot].anim_count; i++) {
-        if (!strcmp(anims[i].name, clip)) chosen = &anims[i];
+        if (clip && !strcmp(anims[i].name, clip)) chosen = &anims[i];
         if (!strcmp(anims[i].name, "idle")) idle = &anims[i];
     }
     if (!chosen) chosen = idle ? idle : &anims[0];
-    if (chosen->frameCount <= 0) return false;
-    for (int b = 0; b < m->boneCount && b < chosen->boneCount; b++) {
+    return chosen->frameCount > 0 ? chosen : NULL;
+}
+
+// El cuadro a los t segundos del clip: los que se repiten, en vuelta; los de una vez, quietos en el ultimo.
+static int anim_frame(const ModelAnimation *a, float t) {
+    int f = (int)(fmaxf(t, 0.0f) * ANIM_FPS);
+    return anim_loops(a->name) ? f % a->frameCount : (f < a->frameCount ? f : a->frameCount - 1);
+}
+
+void props_draw_item_anim(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time) {
+    Model *m;
+    ModelAnimation *a = anim_clip(p, item, clip, &m);
+    if (a) UpdateModelAnimation(*m, *a, (int)(time * ANIM_FPS) % a->frameCount);
+    props_draw_item(p, item, pos, yaw, 1.0f);
+}
+
+void props_draw_item_track(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time, float fit,
+                           AnimTrack *track) {
+    Model *m;
+    ModelAnimation *a = anim_clip(p, item, clip, &m);
+    bool again = fit > track->left + 0.05f; // otro golpe con el mismo clip (la lanza, el mismo golpe de la serie)
+    track->left = fit;
+    if (again || !track->clip || !clip || strcmp(track->clip, clip) != 0) {
+        track->clip = clip, track->start = time, track->rate = 1.0f;
+        // Un golpe entero en lo que el juego le da (0,4 s el del jugador; los clips duran de 0,5 a 2 s).
+        if (a && fit > 0.0f && !anim_loops(a->name)) track->rate = Clamp((float)a->frameCount / ANIM_FPS / fit, 0.5f, 5.0f);
+    }
+    if (a) UpdateModelAnimation(*m, *a, anim_frame(a, (time - track->start) * track->rate));
+    props_draw_item(p, item, pos, yaw, 1.0f);
+}
+
+bool props_bone_point(Props *p, const InvItem *item, Vector3 pos, float yaw, const AnimTrack *track, float time, const char *bone,
+                      Vector3 *out) {
+    Model *m;
+    ModelAnimation *a = track && track->clip ? anim_clip(p, item, track->clip, &m) : NULL;
+    if (!a) return false;
+    for (int b = 0; b < m->boneCount && b < a->boneCount; b++) {
         if (strcmp(m->bones[b].name, bone) != 0) continue;
-        Transform t = chosen->framePoses[(int)(time * 30.0f) % chosen->frameCount][b];
+        Transform t = a->framePoses[anim_frame(a, (time - track->start) * track->rate)][b];
         Vector3 q = Vector3RotateByAxisAngle(Vector3Transform(t.translation, m->transform), (Vector3){ 0, 1, 0 }, yaw);
         *out = Vector3Add(q, pos);
         return true;

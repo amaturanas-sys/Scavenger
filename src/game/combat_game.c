@@ -2824,6 +2824,7 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     ga->pl_blocking = cb->blocking || cb->charge_timer > 0.0f;
     ga->pl_knocked = cb->knock > 0.0f;
     ga->pl_move = cb->move_anim > 0.0f ? cb->move : 0;
+    ga->pl_stroke = ga->pl_move > 1 ? cb->move_anim : cb->attack_anim; // un movimiento (patada, escudo...) o un golpe
     ga->pl_limping = health_speed_scale(&cb->player) < 0.85f;
     ga->pl_ranged = cb->aiming ? ranged_anim(rd) : 0;
     ga->pl_holding = cb->hostage != 0;
@@ -3009,12 +3010,14 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
                                  .blocking = e->blocking, .move = e->move_anim > 0.0f ? e->move : 0, .knocked = e->knock > 0.0f,
                                  .held = e->state == EN_HOSTAGE };
             const char *clip = anim_humanoid(&hs);
-            // Muerto: el clip se queda en su ultimo tramo en vez de repetirse.
-            float tt = dead ? fminf(CORPSE_SECONDS - e->corpse, 1.2f) : time + (float)i * 0.31f;
+            static AnimTrack tracks[CB_MAX_ENEMIES]; // el arranque del clip de cada uno (morir queda en su ultimo cuadro)
+            float tt = time + (float)i * 0.31f;
             Color light = props_get_tint(), cloth = enemy_colors(e->kind, e->hit_anim > 0.0f).cloth;
             if (!own) props_set_tint(ColorTint(light, (Color){ (unsigned char)(96 + cloth.r * 5 / 8), (unsigned char)(96 + cloth.g * 5 / 8),
                                                               (unsigned char)(96 + cloth.b * 5 / 8), 255 }));
-            props_draw_item_anim(props, own ? it : base, at, e->yaw - PI / 2.0f, clip, tt);
+            // El golpe de un enemigo empieza al levantar el arma (windup) y termina con el tajo (0,45 s).
+            float fit = !anim_is_stroke(clip) ? 0.0f : hs.move > 1 ? e->move_anim : e->windup > 0.0f ? e->windup + 0.45f : e->attack_anim;
+            props_draw_item_track(props, own ? it : base, at, e->yaw - PI / 2.0f, clip, tt, fit, &tracks[i % CB_MAX_ENEMIES]);
             props_set_tint(light);
             continue;
         }

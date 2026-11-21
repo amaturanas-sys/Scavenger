@@ -70,14 +70,25 @@ bool props_has_model(Props *p, const InvItem *item);
 // Dibuja con el clip de animacion pedido (por nombre); si el modelo no lo trae,
 // usa "idle"; si no hay modelo, el marcador. time: segundos (el clip se repite).
 void props_draw_item_anim(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time);
+// El clip que esta jugando un personaje y desde cuando: un golpe empieza en su primer cuadro y, si no se repite
+// (anim_loops), queda en el ultimo. Uno por personaje (el jugador, cada uno de la tropa, cada enemigo).
+typedef struct {
+    const char *clip;
+    float start, rate; // desde cuando y a que velocidad (1, o la que hace caber el golpe en su ventana)
+    float left;        // la ventana que quedaba en el cuadro anterior: si crece, es otro golpe con el mismo clip
+} AnimTrack;
+// Como props_draw_item_anim, con el arranque del clip en track (si cambia de clip, empieza de cero). fit: los
+// segundos que le quedan al golpe en curso (anim_is_stroke), para que el clip quepa entero; 0, a su ritmo.
+void props_draw_item_track(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time, float fit,
+                           AnimTrack *track);
 // El modelo del id con una transformacion cualquiera (un arma en la mano: src/game/actions_game.c). false si no
 // tiene modelo (el que llama dibuja su marcador).
 // El modelo con la piedra de la region biome (RegionKind: estepa, bosque, altiplano, fiordos, desierto) y lo que la
 // cubre arriba: las rocas del decorado (v0.15.2), una variante por region, cargada la primera vez que se dibuja.
 bool props_draw_item_biome(Props *p, const InvItem *item, Matrix transform, int biome);
-// Donde esta un hueso (bone, por su nombre) del modelo animado, con el mismo clip, tiempo y giro que
-// props_draw_item_anim: para poner en la mano lo que se lleva. false si no esta animado o no tiene ese hueso.
-bool props_bone_point(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time, const char *bone,
+// Donde esta un hueso (bone, por su nombre) del modelo animado, con el mismo clip, arranque y giro que
+// props_draw_item_track: para poner en la mano lo que se lleva. false si no esta animado o no tiene ese hueso.
+bool props_bone_point(Props *p, const InvItem *item, Vector3 pos, float yaw, const AnimTrack *track, float time, const char *bone,
                       Vector3 *out);
 bool props_draw_item_matrix(Props *p, const InvItem *item, Matrix transform);
 

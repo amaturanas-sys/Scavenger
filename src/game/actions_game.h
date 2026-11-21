@@ -188,6 +188,7 @@ typedef struct {
     bool pl_holding; // sujeta a un rehen (src/game/combat_game.c)
     int escort_order; // SquadOrder (src/sim/squad.h): la escolta ataca, defiende o sigue sin pelear (Y+1..3)
     int pl_attacking, pl_ranged, pl_move;
+    float pl_stroke; // lo que le queda al golpe o movimiento en curso (s): su clip cabe entero (props_draw_item_track)
     float swap_anim;    // pasando el arma de mano
     // La tribu (src/game/camp_game.c): la ventana de pobladores y los informes de quienes vuelven.
     int people_pick[2]; // los elegidos (id; 0: nadie)

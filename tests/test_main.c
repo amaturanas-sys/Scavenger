@@ -2571,6 +2571,24 @@ static bool clip_indexed(const char *text, const char *rig, const char *clip) {
 }
 
 static void test_anim_index_states(void) {
+    {   // Los clips que se repiten y los de una vez (anim_loops): la columna bucle de assets/animaciones.tsv.
+        char *text = read_file(ESTEPA_SOURCE_DIR "/assets/animaciones.tsv");
+        CHECK(text != NULL);
+        int rows = 0;
+        for (char *line = text ? strtok(text, "\n") : NULL; line; line = strtok(NULL, "\n")) {
+            char rig[32], clip[48], desc[512], loop[8];
+            if (line[0] == '#' || sscanf(line, "%31[^\t]\t%47[^\t]\t%511[^\t]\t%7[^\t]", rig, clip, desc, loop) != 4 || !strcmp(rig, "rig")) continue;
+            CHECK(anim_loops(clip) == !strcmp(loop, "si"));
+            rows++;
+        }
+        CHECK(rows > 100);
+        free(text);
+    }
+    // Los golpes (se juegan enteros en la ventana del juego): todos los movimientos y los ataques; ninguno se repite.
+    CHECK(anim_is_stroke("patada") && anim_is_stroke("carga_escudo") && anim_is_stroke("ataque_una_3"));
+    CHECK(anim_is_stroke("estocada_lanza") && anim_is_stroke("ataque_pesado") && anim_is_stroke("golpe_escudo"));
+    CHECK(!anim_is_stroke("caminar") && !anim_is_stroke("morir") && !anim_is_stroke("recibir_golpe") && !anim_is_stroke(NULL));
+    for (int m = 0; m < MOVE_COUNT; m++) CHECK(anim_is_stroke(move_def((MeleeMove)m)->clip) && !anim_loops(move_def((MeleeMove)m)->clip));
     HumanoidState s;
     memset(&s, 0, sizeof(s));
     s.doing = s.building = -1;

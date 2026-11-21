@@ -14,9 +14,10 @@ Lo que hace, para cada id del inventario (personaje.base.cuerpo_comun, personaje
 3. Pesos automaticos: cada vertice, a los dos huesos mas cercanos de su parte del cuerpo (brazo, pierna, torso,
    cabeza), por la distancia a cada hueso.
 4. La pose de reposo es la T con los brazos abajo: las medidas del inventario.
-5. El frente a +Z (el de los modelos animados: el juego los gira yaw - PI/2) y el alto del inventario.
+5. El frente a +X (el del juego, tambien para los animados) y el alto del inventario.
 6. Los clips, con los nombres del juego (assets/animaciones.tsv); los que la biblioteca no tiene, con el mas
-   parecido (CLIPS). Sin el desplazamiento de la raiz: el juego mueve al personaje.
+   parecido (CLIPS) o armados con poses (sintetizar: la patada, la caida y el jinete a horcajadas). Sin el
+   desplazamiento de la raiz: el juego mueve al personaje.
 """
 import json
 import os
@@ -35,9 +36,9 @@ import lowres  # noqa: E402
 # Los clips del juego (assets/animaciones.tsv, rig humanoide) y el de la biblioteca que se usa para cada uno.
 CLIPS = {
     "idle": "Idle_A", "caminar": "Walk", "correr": "Jog", "acechar": "Crouch_Walk", "acechar_idle": "Crouch_Idle",
-    "saltar": "Jump_Land", "caer": "Jump_Land", "aterrizar": "Jump_Land", "trepar_cuerda": "Ledge_Hang",
+    "saltar": "Jump_Land", "caer": "_caer", "aterrizar": "Jump_Land", "trepar_cuerda": "Ledge_Hang",
     "trepar_cima": "ClimbUp_1m_RM", "nadar": "Swim_Fwd", "montar_subir": "ClimbUp_1m_RM", "montar_bajar": "Jump_Land",
-    "jinete_idle": "Crouch_Idle", "jinete_paso": "Crouch_Idle", "jinete_galope": "Crouch_Idle", "jinete_arco": "Bow_Pull_Hold",
+    "jinete_idle": "_montar", "jinete_paso": "_montar", "jinete_galope": "_montar", "jinete_arco": "Bow_Pull_Hold",
     "tomar": "Farm_Harvest", "llevar": "Walk_Formal", "lanzar": "Throw_Object", "empunar_una": "Idle_Sword",
     "empunar_doble": "Idle_Sword", "empunar_dos_manos": "Fighting_Idle", "empunar_escudo": "Idle_Shield",
     "empunar_arco": "Bow_Pull_Hold", "cambiar_empunadura": "Sword_Regular_A_Rec", "enfundar": "Sword_Regular_A_Rec",
@@ -47,8 +48,8 @@ CLIPS = {
     "cocinar": "Farm_Harvest", "curar": "Farm_Harvest", "ataque_una_1": "Sword_Regular_A", "ataque_una_2": "Sword_Regular_B",
     "ataque_una_3": "Sword_Attack", "ataque_dos_1": "Sword_Attack", "ataque_dos_2": "Sword_Regular_B",
     "ataque_dos_3": "Sword_Regular_A", "estocada_lanza": "Punch_Jab", "bloquear": "Sword_Block", "agarre": "Punch_Cross",
-    "derribo": "Shield_Dash_RM", "proyeccion": "Throw_Object", "ataque_pesado": "Sword_Attack_RM", "patada": "Punch_Cross",
-    "patada_carrera": "Shield_Dash_RM", "golpe_escudo": "Shield_OneShot", "carga_escudo": "Shield_Dash_RM",
+    "derribo": "Shield_Dash_RM", "proyeccion": "Throw_Object", "ataque_pesado": "Sword_Attack_RM", "patada": "_patada",
+    "patada_carrera": "_patada", "golpe_escudo": "Shield_OneShot", "carga_escudo": "Shield_Dash_RM",
     "enganchar_escudo": "Defend", "parry": "Sword_Block", "desvio": "Defend", "apunalar_espalda": "Punch_Jab",
     "sujetar_rehen": "Idle_FoldArms", "rehen": "Kneeling_Tired", "rematar": "Sword_Attack", "derribado": "Kneeling_Tired",
     "cambiar_mano": "Sword_Regular_A_Rec", "disparar_arco": "Bow_Release", "disparar_ballesta": "Bow_Release",
@@ -190,6 +191,49 @@ def apuntar(esq, T, R, hueso, hijo, destino):
     R[i] /= np.linalg.norm(R[i])
 
 
+def clip_de_poses(esq, poses, tiempos, interp="LINEAR"):
+    """Un clip con una pose (T, R locales) en cada tiempo: la rotacion de cada hueso y la traslacion de la pelvis."""
+    chans = []
+    t = np.array(tiempos, float)
+    for i in range(len(esq.nodes)):
+        vals = [poses[0][1][i] / np.linalg.norm(poses[0][1][i])]
+        for _, R in poses[1:]:
+            q = R[i] / np.linalg.norm(R[i])
+            vals.append(-q if q @ vals[-1] < 0 else q)  # el camino corto entre una pose y la siguiente
+        chans.append((i, "rotation", t, np.array(vals), interp))
+    pel = esq.idx["pelvis"]
+    chans.append((pel, "translation", t, np.array([T[pel] for T, _ in poses]), interp))
+    return chans
+
+
+def sintetizar(esq):
+    """Los clips que la biblioteca no tiene, armados con poses (en el espacio del esqueleto: el frente a +Z, la
+    derecha a -X):
+    - _patada: de la guardia (Fighting_Idle), la rodilla derecha arriba, la pierna extendida al frente y de vuelta;
+    - _caer: el primer cuadro de Jump_Land (en el aire), quieto;
+    - _montar: a horcajadas, los muslos adelante y abiertos y las piernas colgando (desde Idle_A)."""
+    def pierna(T, R, lado, muslo, pantorrilla):
+        P, _ = esq.mundo(T, R)
+        cadera = P[esq.idx["thigh_" + lado]]
+        apuntar(esq, T, R, "thigh_" + lado, "calf_" + lado, cadera + np.array(muslo, float))
+        P, _ = esq.mundo(T, R)
+        rodilla = P[esq.idx["calf_" + lado]]
+        apuntar(esq, T, R, "calf_" + lado, "foot_" + lado, rodilla + np.array(pantorrilla, float))
+    T0, R0 = esq.pose_inicial("Fighting_Idle")
+    T1, R1 = T0.copy(), R0.copy()
+    pierna(T1, R1, "r", (0.0, -0.1, 1.0), (0.0, -1.0, 0.2))   # la rodilla arriba, el pie colgando
+    T2, R2 = T0.copy(), R0.copy()
+    pierna(T2, R2, "r", (0.0, 0.12, 1.0), (0.0, 0.15, 1.0))   # la pierna extendida al frente
+    esq.clips["_patada"] = clip_de_poses(esq, [(T0, R0), (T1, R1), (T2, R2), (T2, R2), (T0, R0)], [0.0, 0.16, 0.3, 0.38, 0.62])
+    Tc, Rc = esq.pose_inicial("Jump_Land")
+    esq.clips["_caer"] = clip_de_poses(esq, [(Tc, Rc), (Tc, Rc)], [0.0, 0.5])
+    Tm, Rm = esq.pose_inicial("Idle_A")
+    for lado, sg in (("l", 1.0), ("r", -1.0)):
+        pierna(Tm, Rm, lado, (sg * 0.45, -0.25, 1.0), (sg * 0.12, -1.0, -0.15))
+    Tm[esq.idx["pelvis"]] = Tm[esq.idx["pelvis"]] - np.array([0.0, 0.0, 0.0])
+    esq.clips["_montar"] = clip_de_poses(esq, [(Tm, Rm), (Tm, Rm)], [0.0, 0.5])
+
+
 # ------------------------------------------------------------------ la malla
 def malla(path):
     doc, binario = leer(path)
@@ -309,8 +353,9 @@ def armar(esq, malla_t, it, log=print):
         for kk in range(2):
             joints[sel, kk] = [esq.idx[huesos[o]] for o in orden[:, kk]]
             weights[sel, kk] = w[:, kk]
-    # El frente, a +Z como los demas modelos animados (glTF): el juego los dibuja girados (yaw - PI/2).
-    yaw = np.array([0.0, 0.0, 0.0, 1.0])
+    # El frente a +X, el de todos los modelos del juego: los animados se dibujan girados yaw - PI/2 y miran a +X
+    # (con +Z, como en la v0.15.4, caminaban mirando a su derecha). Un cuarto de vuelta sobre Y a la raiz.
+    yaw = np.array([0.0, np.sin(np.pi / 4), 0.0, np.cos(np.pi / 4)])
     root = esq.idx["root"]
     # La pose de reposo: la T con los brazos abajo (un poco abiertos), parejos.
     TI, RI = T.copy(), R.copy()
@@ -431,6 +476,7 @@ def main():
     if len(sys.argv) < 4:
         raise SystemExit(__doc__)
     esq = Esqueleto(sys.argv[1])
+    sintetizar(esq)
     malla_t = malla(sys.argv[2])
     items, errores = inventario.load()
     if errores:

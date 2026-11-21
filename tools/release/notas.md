@@ -1,6 +1,13 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: el cuerpo gigante y las cuevas y ruinas en el mapa
+## Novedades: las animaciones de las personas, revisadas
+
+- **Hacia donde va:** el jugador, la tropa y la gente caminaban mirando a su costado derecho; ahora miran hacia donde avanzan.
+- **A su ritmo:** las animaciones iban a la mitad de su velocidad.
+- **Los golpes completos:** un ataque, una patada, un golpe o una carga con escudo se ven de principio a fin, y quien muere queda en el suelo.
+- **La patada**, por fin una patada (antes era un puñetazo); el jinete va sentado a horcajadas y la caída tiene su pose.
+
+## De la v0.15.5: el cuerpo gigante y las cuevas y ruinas en el mapa
 
 - **El mapa (F5 o Ctrl+M):** ahora muestra las cuevas y guaridas (en rojo), las ruinas (en pardo) y las estructuras en uso (en gris), con una leyenda. Antes las ruinas no aparecían y las cuevas casi no se veían.
 - **Los grandes guerreros** de la tropa (los de más de 2 m) llevan el mismo cuerpo animado que los demás, a su medida: caminan, pelean y se mueven con las mismas animaciones.
@@ -63,7 +70,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.5, la v0.15.4 y la v0.15.3).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.6, la v0.15.5 y la v0.15.4).
 
 ## Android
 

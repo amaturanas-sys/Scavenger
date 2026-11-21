@@ -44,6 +44,11 @@ typedef struct {
 
 // Clip para un humano (jugador o NPC) segun lo que esta haciendo.
 const char *anim_humanoid(const HumanoidState *s);
+// ¿El clip se repite (caminar, idle) o se juega una vez y queda en su ultimo cuadro (un golpe, morir)? La columna
+// bucle de assets/animaciones.tsv (una prueba lo compara).
+bool anim_loops(const char *clip);
+// ¿Es un golpe (ataque o movimiento cuerpo a cuerpo)? Se juega entero en la ventana que le da el juego.
+bool anim_is_stroke(const char *clip);
 // Clip de una accion individual en curso.
 const char *anim_for_action(ActionId a);
 // Clip de un cuadrupedo segun su estado.
