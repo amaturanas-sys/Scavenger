@@ -1,6 +1,10 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: el cuerpo humano estándar
+## Novedades: el cuerpo gigante
+
+- **Los grandes guerreros** de la tropa (los de más de 2 m) llevan el mismo cuerpo animado que los demás, a su medida: caminan, pelean y se mueven con las mismas animaciones.
+
+## De la v0.15.4: el cuerpo humano estándar
 
 - **Un cuerpo con esqueleto y animaciones** para el jugador, la tropa y la gente sin modelo propio: camina, corre, se agacha, nada, trepa, pelea, bloquea, cae y se levanta con sus propias animaciones.
 - **El arma y el escudo**, en sus manos: el arma en la derecha y el escudo en el antebrazo izquierdo.
@@ -58,7 +62,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.4, la v0.15.3 y la v0.15.2).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.5, la v0.15.4 y la v0.15.3).
 
 ## Android
 

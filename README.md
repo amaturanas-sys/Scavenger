@@ -264,6 +264,9 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+El cuerpo gigante (v0.15.5): los grandes guerreros de la tropa (`personaje.base.cuerpo_gigante`, de 2,3 m) llevan el
+mismo cuerpo, con su esqueleto y sus animaciones (1430 triángulos, `tools/modelos/humanoide.py`).
+
 El cuerpo humano estándar (v0.15.4):
 - **Un cuerpo con esqueleto y animaciones** para el jugador (`personaje.narrativo.protagonista`), la tropa y los NPC
   sin modelo propio (`personaje.base.cuerpo_comun`). Sale de `IMPORTED/Humanoid` (la rama `cline/procesar-imagenes-animales`):
