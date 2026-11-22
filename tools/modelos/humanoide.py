@@ -3,16 +3,22 @@
 
   python3 tools/modelos/humanoide.py <esqueleto.glb> <malla.glb> <id> [<id> ...] [--ual <UAL1.glb> <UAL2.glb>]
 
-- El esqueleto y los clips (IMPORTED/Humanoid/exported-model.glb): 56 huesos con los nombres del maniqui de Unreal
+(Las fuentes, en arte/fuentes: arte/fuentes/README.md. Los tres cuerpos con el de mujer, por ejemplo:
+  python3 tools/modelos/humanoide.py arte/fuentes/humanoide/exported-model.glb arte/fuentes/humanoide/rigged-model.glb \
+      personaje.base.cuerpo_comun ... --ual arte/fuentes/animaciones/UAL1/UAL1_Standard.glb \
+      arte/fuentes/animaciones/UAL2/UAL2_Standard.glb
+  y el maniqui femenino, arte/fuentes/animaciones/UAL2/Mannequin_F.glb.)
+
+- El esqueleto y los clips (arte/fuentes/humanoide/exported-model.glb): 56 huesos con los nombres del maniqui de Unreal
   (pelvis, spine_01, upperarm_l...) y 50 clips con los nombres de la Universal Animation Library de Quaternius.
-- La malla, en pose T: un cuerpo con textura de unos 300 000 triangulos. Desde la v0.15.8, IMPORTED/Humanoid/
+- La malla, en pose T: un cuerpo con textura de unos 300 000 triangulos. Desde la v0.15.8, arte/fuentes/humanoide/
   rigged-model.glb, ya riggeada (un esqueleto de 22 huesos de Mixamo, con sus pesos y 6 clips propios): se toma en la
   pose de su piel y con sus pesos, llevados a los huesos del maniqui (MIXAMO), y sus clips Idle, Walk y Sprint son
   idle, caminar y correr (de_la_malla; los otros 69, de la biblioteca). Antes, sample_*.glb, sin esqueleto: los
   pesos, automaticos (paso 3).
 - El cuerpo de mujer (personaje.base.cuerpo_mujer): el maniqui femenino de la Universal Animation Library 2
   (Mannequin_F.glb, CC0), con el rig de la biblioteca (PAR_UAL: los huesos del maniqui; los dedos, a la mano).
-- --ual: UAL1_Standard.glb y UAL2_Standard.glb (IMPORTED/Humanoid/Animaciones, CC0, el mismo rig): los clips de DE_UAL
+- --ual: UAL1_Standard.glb y UAL2_Standard.glb (arte/fuentes/animaciones, CC0, el mismo rig): los clips de DE_UAL
   (llevar, hablar, lanzar, forjar, la estocada, el remate, construir, curar, encender, ensillar, cocinar), llevados al
   maniqui como los de la malla; a una malla sin clips (el maniqui femenino), tambien idle, caminar y correr.
 
@@ -758,7 +764,7 @@ def main():
         raise SystemExit("\n".join(errores))
     por_id = {it["id"]: it for it in items}
     filas = open(inventario.TSV, encoding="utf-8").read().split("\n")
-    malla_de = (f"la malla riggeada de IMPORTED/Humanoid ({os.path.basename(args[1])}), en la pose de su piel, reducida, con el "
+    malla_de = (f"la malla riggeada de arte/fuentes/humanoide ({os.path.basename(args[1])}), en la pose de su piel, reducida, con el "
                 "color de su textura y sus pesos (los de su esqueleto, en los huesos del maniqui)" if malla_t[3] is not None
                 else "la malla en pose T de IMPORTED/Humanoid (sample_*.glb), reducida y con el color de su textura, con "
                 "pesos automaticos")
