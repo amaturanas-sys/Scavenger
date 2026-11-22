@@ -1,6 +1,12 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: los golpes sin astillas
+## Novedades: los caballos, los lobos y los animales que faltaban
+
+- **Doce animales más con su cuerpo y sus animaciones:** el caballo estepario (y dos variantes), el caballo de guerra, el lobo (y una variante), la vaca, el coyote, el jabalí, el oso polar, el perro salvaje y el tigre. Antes eran cápsulas.
+- **Sus patas:** cuatro, que se doblan al caminar, trotar y galopar. En algunos modelos, las de atrás salían duplicadas o las de un lado pegadas a las del otro.
+- **Al pastar,** todos los animales bajan la cabeza casi vertical; la del caballo y la de la mula ya no se doblan hacia el pecho, la giba del camello no se estira y el lomo de la cabra tampoco.
+
+## De la v0.15.9: los golpes sin astillas
 
 - **Brazos y manos enteros en los golpes:** al atacar, al dar una estocada o al patear, el antebrazo y la mano se deshacían en astillas sueltas, y las pantorrillas también. El cuerpo vuelve a estar cerrado, sin agujeros, en el jugador, la tropa, la gente y los grandes guerreros.
 
@@ -85,7 +91,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.9, la v0.15.8 y la v0.15.7).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.15.10, la v0.15.9 y la v0.15.8).
 
 ## Android
 

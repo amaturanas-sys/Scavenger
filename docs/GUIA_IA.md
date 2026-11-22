@@ -481,7 +481,9 @@ traba.
   - los animales, con su cuerpo, su esqueleto y sus clips: `tools/modelos/animales.py` (v0.15.7);
   - el cuerpo humano riggeado: la malla de `rigged-model.glb` con los pesos de su rig de Mixamo, y su reposo, su paso y
     su carrera (v0.15.8);
-  - los golpes sin astillas: los cuerpos cerrados y en una pieza tras la reducción (v0.15.9).
+  - los golpes sin astillas: los cuerpos cerrados y en una pieza tras la reducción (v0.15.9);
+  - los animales que faltaban: los caballos, los lobos y los demás cuadrúpedos de `para_riggear`, rehechos en vóxeles,
+    y el cuello al pastar (v0.15.10).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

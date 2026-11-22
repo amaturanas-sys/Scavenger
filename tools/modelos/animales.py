@@ -3,9 +3,16 @@
 textura), con su esqueleto de cuadrupedo y sus clips armados aqui.
 
   python3 tools/modelos/animales.py <carpeta de los GLB> <carpeta de las imagenes> [<n> ...]
+  python3 tools/modelos/animales.py --para-riggear [<id> ...]
 
 (IMPORTED/Animals/Models e IMPORTED/Animals/Imagenes/Clean, en la rama cline/procesar-imagenes-animales; n, los numeros
-de la FICHA que se arman: todos si no se dice.)
+de la FICHA que se arman: todos si no se dice. Con --para-riggear, las mallas de PARA_RIGGEAR: todas si no se dice.)
+
+PARA_RIGGEAR: las mallas low-poly de arte/modelos/para_riggear (piezas.py, desde una hoja de tres vistas), ya de frente
+a +X, a la medida del inventario y pintadas cara por cara en su textura. Con tan pocos vertices las patas no se doblan
+(al galopar salen aletas), y en algunas la hoja traia las patas de atras escalonadas de lado y el volumen de las dos
+vistas las cruzo en cuatro (dos fantasma), o las de un lado y el otro pegadas: se rehacen en voxeles (en_voxeles) y
+siguen como las de Hunyuan3D, con el color de su textura (preparar_pintada).
 
 FICHA: el numero de cada modelo en la ficha numerada que se reviso con el usuario, su archivo, los ids del inventario
 que lleva y de donde sale su color (la imagen de referencia de la que salio la malla, su textura o uno liso).
@@ -77,9 +84,15 @@ FICHA = {
 # Las variantes (id_2) que no estaban en el inventario: una fila como la de su especie.
 VARIANTES = {"animal.salvaje.ibice_2": "animal.salvaje.ibice",
              "animal.montura.camello_bactriano_2": "animal.montura.camello_bactriano"}
+PARA_RIGGEAR = ["animal.ganado.vaca", "animal.montura.caballo_estepario", "animal.montura.caballo_estepario_2",
+                "animal.montura.caballo_estepario_3", "animal.montura.caballo_guerra", "animal.salvaje.coyote",
+                "animal.salvaje.jabali", "animal.salvaje.lobo", "animal.salvaje.lobo_2", "animal.salvaje.oso_polar",
+                "animal.salvaje.perro_salvaje", "animal.salvaje.tigre"]
 PATAS = ("di", "dd", "ti", "td")  # delantera / trasera, izquierda (-Z) / derecha (+Z)
 NOTA = ("Malla de IMPORTED/Animals/Models (n.º {n} de la ficha), con su esqueleto de cuadrúpedo y sus clips "
         "(tools/modelos/animales.py).")
+NOTA_PINTADA = ("Malla low-poly con textura (estilo PS2) de arte/modelos/para_riggear/, desde una hoja de tres vistas, "
+                "con su esqueleto de cuadrúpedo y sus clips (tools/modelos/animales.py --para-riggear).")
 VIEJA = re.compile(r"Malla low-poly con textura \(estilo PS2\) en arte/modelos/para_riggear/[^;]*; falta el esqueleto y los clips\. ?")
 
 
@@ -442,6 +455,12 @@ def pesos(v, f, e, m):
     cuerpo = [k for k, c in enumerate(claves) if not e.nombres[c][:2] in PATAS]
     cabeza = [k for k, c in enumerate(claves) if e.nombres[c] in ("cuello", "cabeza")]
     de_cabeza = cerca_de_la_cabeza(v, f, e, m)
+    # Detras de donde arranca el cuello (el plano por su articulacion, de frente a la nuca), el lomo, la cruz y las
+    # gibas: sin el cuello ni la cabeza (si no, al pastar se los llevaba: la giba del camello en punta, el lomo de la
+    # cabra estirado).
+    c0, nuca = e.pos[e.i("cuello")], e.pos[e.i("cabeza")]
+    detras = (v - c0) @ ((nuca - c0) / max(np.linalg.norm(nuca - c0), 1e-9)) < 0.0
+    tronco = [k for k in cuerpo if k not in cabeza]
     joints = np.zeros((len(v), 4), int)
     weights = np.zeros((len(v), 4))
     for i in range(len(v)):
@@ -453,7 +472,7 @@ def pesos(v, f, e, m):
         elif de_cabeza[i]:
             permitidos = cabeza  # la cabeza con sus cuernos, astas y orejas (aunque pasen sobre el lomo)
         else:
-            permitidos = cuerpo
+            permitidos = tronco if detras[i] else cuerpo
         dd = d[i, permitidos]
         dos = np.argsort(dd)[:2]
         w = 1.0 / (dd[dos] + 0.01 * m["L"]) ** 2
@@ -481,15 +500,20 @@ def clips(e, m):
     L, W = m["L"], m["W"]
     pata = e.pos[e.i("ti_1")][1]  # el largo de las patas: el ritmo de los pasos
     ritmo = float(np.clip(np.sqrt(pata / 0.9), 0.6, 1.8))
-    # pastar: cuanto baja el cuello para que el hocico llegue al suelo (con la cabeza inclinada 25 grados)
+    # pastar: cuanto baja el cuello para que el hocico llegue al suelo, con la cabeza casi vertical (-95 grados en el
+    # mundo: si girara 25 mas que el cuello, la de un caballo, que la lleva hacia abajo, quedaria mirando al pecho)
     p0, c0, nuca, hoc = (e.pos[e.i(h)] for h in ("pecho", "cuello", "cabeza", "hocico"))
-    def altura_hocico(gr):  # el pecho baja una quinta parte; el cuello, el resto; la cabeza, 25 grados mas
+    cabeza_reposo = np.degrees(np.arctan2(hoc[1] - nuca[1], hoc[0] - nuca[0]))
+    def giro_cabeza(gr):
+        return float(np.clip(-95.0 - cabeza_reposo - gr, -40.0, 40.0))
+    def altura_hocico(gr):  # el pecho baja una quinta parte; el cuello, el resto; la cabeza, hasta casi vertical
         q1 = q_eje(GIRO_Z, 0.2 * gr)
         q2 = qmul(q1, q_eje(GIRO_Z, 0.8 * gr))
         c1 = p0 + qrot(q1, c0 - p0)
         n1 = c1 + qrot(q2, nuca - c0)
-        return (n1 + qrot(qmul(q2, q_eje(GIRO_Z, -25)), hoc - nuca))[1]
+        return (n1 + qrot(qmul(q2, q_eje(GIRO_Z, giro_cabeza(gr))), hoc - nuca))[1]
     bajar = next((g for g in range(0, -86, -2) if altura_hocico(g) < 0.06 * m["A"]), -85)  # los de cuello corto, hasta ahi
+    cabeza = giro_cabeza(bajar)
 
     def pasos(t, T, orden, apoyo, A, K, extra=None, agachado=0.0):
         g = {}
@@ -529,11 +553,11 @@ def clips(e, m):
     ciclo("montado_idle", 3.2, 8, lambda t: ({"cabeza": [(GIRO_Z, 2 * np.sin(2 * np.pi * t / 3.2))],
                                                "cola": [(GIRO_Y, 10 * np.sin(4 * np.pi * t / 3.2))]}, (0, 0, 0)))
     ciclo("pastar", 2.4, 12, lambda t: ({"pecho": [(GIRO_Z, 0.2 * bajar)], "cuello": [(GIRO_Z, 0.8 * bajar)],
-                                          "cabeza": [(GIRO_Z, -25 + 4 * np.sin(8 * np.pi * t / 2.4))],
+                                          "cabeza": [(GIRO_Z, cabeza + 4 * np.sin(8 * np.pi * t / 2.4))],
                                           "cola": [(GIRO_Y, 12 * np.sin(2 * np.pi * t / 2.4))]}, (0, 0, 0)))
     ciclo("comer_presa", 1.2, 12, lambda t: ({"pecho": [(GIRO_Z, 0.18 * bajar)],
                                                "cuello": [(GIRO_Z, 0.72 * bajar + 10 * max(0.0, np.sin(2 * np.pi * t / 1.2)))],
-                                               "cabeza": [(GIRO_Z, -25), (GIRO_Y, 15 * np.sin(4 * np.pi * t / 1.2))],
+                                               "cabeza": [(GIRO_Z, cabeza), (GIRO_Y, 15 * np.sin(4 * np.pi * t / 1.2))],
                                                "di_1": [(GIRO_Z, 8)], "dd_1": [(GIRO_Z, 8)]}, (0, -0.04 * pata, 0)))
     ciclo("forcejear_lazo", 1.0, 12, lambda t: ({"cadera": [(GIRO_Z, -6)], "ti_1": [(GIRO_Z, -6)], "td_1": [(GIRO_Z, -6)],
                                                   "di_1": [(GIRO_Z, 26)], "dd_1": [(GIRO_Z, 26)],
@@ -680,6 +704,121 @@ def preparar(ruta, color, imagenes, log=print):
     return v, f, col
 
 
+def en_voxeles(v, f, cara_col, celdas=160):
+    """Una malla cerrada, rehecha en voxeles (celdas a lo largo de su lado mayor) y vuelta a malla con marching cubes:
+    densa, para que la reduccion reparta los vertices y las patas se doblen. Abajo del vientre:
+    - sin las patas fantasma: si de un lado hay dos columnas de patas atras (o adelante), quedan las de mas volumen (la
+      pata de cerca en la hoja, con el muslo; la de lejos se ve a medias), seguidas capa por capa;
+    - las patas de un lado, separadas de las del otro (un hueco de tres celdas en el medio, hasta 0,85 del vientre).
+    El color de cada vertice, el de la cara de la original mas cercana. Devuelve v, f, col, fantasmas y separadas."""
+    import mcubes
+    from scipy import ndimage
+    from scipy.spatial import cKDTree
+    lo = v.min(0)
+    paso = float((v.max(0) - lo).max()) / celdas
+    t = v[f]
+    area = 0.5 * np.linalg.norm(np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]), axis=1)
+    rng = np.random.default_rng(5)
+    n = int(30 * area.sum() / paso ** 2)  # 30 puntos por celda: la cascara, sin agujeros por donde se vacie
+    k = np.concatenate([np.arange(len(f)), rng.choice(len(f), n, p=area / area.sum())])
+    r1, r2 = np.sqrt(rng.random(len(k))), rng.random(len(k))
+    pts = t[k, 0] * (1 - r1)[:, None] + t[k, 1] * (r1 * (1 - r2))[:, None] + t[k, 2] * (r1 * r2)[:, None]
+    ijk = np.floor((pts - lo) / paso).astype(int) + 1
+    cascara = np.zeros(ijk.max(0) + 2, bool)
+    cascara[tuple(ijk.T)] = True
+    g = ndimage.binary_fill_holes(cascara)
+    if g.sum() < 1.5 * cascara.sum():
+        raise SystemExit("en_voxeles: la malla no esta cerrada (no se llena por dentro)")
+    ocupa = np.nonzero(g)
+    largo, ancho = np.ptp(ocupa[0]) + 1, np.ptp(ocupa[2]) + 1
+    zc = 0.5 * (ocupa[2].min() + ocupa[2].max())
+    ocho = np.ones((3, 3))
+    vientre = next(y for y in range(g.shape[1]) for sl in ndimage.find_objects(ndimage.label(g[:, y], ocho)[0])
+                   if sl[0].stop - sl[0].start > 0.4 * largo and sl[1].stop - sl[1].start > 0.3 * ancho)
+
+    def piezas(y):  # las de la capa y que no son la cola (angosta y en el medio): (x, z, ancho en x, de lado a lado, celdas)
+        lab, _ = ndimage.label(g[:, y], ocho)
+        out = []
+        for c, sl in enumerate(ndimage.find_objects(lab), 1):
+            xs, zs = np.nonzero(lab[sl] == c)
+            xs, zs = xs + sl[0].start, zs + sl[1].start
+            if np.ptp(zs) + 1 < 0.25 * ancho and abs(zs.mean() - zc) < 0.15 * ancho:
+                continue
+            out.append((xs.mean(), zs.mean(), np.ptp(xs) + 1, zs.min() < zc - 1.5 and zs.max() > zc + 1.5, len(xs)))
+        return out
+    banda = range(max(1, int(0.15 * vientre)), max(2, int(0.4 * vientre)))
+    capas = [piezas(y) for y in banda]
+    xs = np.sort([p[0] for c in capas for p in c])
+    corte = xs[np.argmax(np.diff(xs))] + 0.5 * np.max(np.diff(xs))  # entre las de atras y las de adelante
+    w = np.median([p[2] for c in capas for p in c])
+    x_lo, x_hi = xs[0] - 0.5 * w, xs[-1] + 0.5 * w  # donde estan las patas (no el pecho, la papada ni la cola)
+    fantasmas = separadas = 0
+    for atras in (True, False):
+        grupo = [[p for p in c if (p[0] < corte) == atras and not p[3]] for c in capas]
+        if sum(any(sum((p[1] > zc) == lado for p in c) >= 2 for lado in (0, 1)) for c in grupo) < 0.5 * len(grupo):
+            continue
+        # Dos columnas de cada lado (la de atras y la de adelante): queda la de mas celdas en la banda. Cada capa, de la
+        # banda hacia abajo y hacia arriba hasta el vientre, sus celdas van con la columna mas cercana (su centro sigue a
+        # las suyas), y las de la otra se quitan.
+        x_ = np.array([p[0] for c in grupo for p in c])
+        medio = np.median(x_)
+        centro0 = np.array([x_[x_ <= medio].mean(), x_[x_ > medio].mean()])
+        celdas_ = [sum(p[4] for c in grupo for p in c if (p[0] > medio) == j) for j in (0, 1)]
+        fuera = 1 - int(np.argmax(celdas_))
+        for capas_ in (range(banda.start, -1, -1), range(banda.start, vientre)):
+            centro = centro0.copy()
+            for y in capas_:
+                ocup = np.nonzero(g[:, y].any(axis=1))[0]
+                ocup = ocup[(ocup > centro.min() - 1.5 * w) & (ocup < centro.max() + 1.5 * w)]
+                if not len(ocup):
+                    continue
+                cual = np.abs(ocup[:, None] - centro[None]).argmin(axis=1)
+                for j in (0, 1):
+                    if (cual == j).any():
+                        centro[j] = ocup[cual == j].mean()
+                g[ocup[cual == fuera], y] = False
+        fantasmas += 2
+    for y in range(1, int(0.85 * vientre)):
+        lab, _ = ndimage.label(g[:, y], ocho)
+        for c, sl in enumerate(ndimage.find_objects(lab), 1):
+            pieza = lab[sl] == c
+            xs_, zs = np.nonzero(pieza)
+            xs_, zs = xs_ + sl[0].start, zs + sl[1].start
+            if (x_lo <= xs_.mean() <= x_hi and np.ptp(xs_) + 1 < 3 * w and np.ptp(zs) + 1 >= 0.25 * ancho
+                    and zs.min() < zc - 1.5 and zs.max() > zc + 1.5):
+                hueco = np.abs(np.arange(sl[1].start, sl[1].stop) - zc) < 1.5
+                g[sl[0], y, sl[1]] &= ~(pieza & hueco[None, :])
+                separadas += 1
+    vv, ff = mcubes.marching_cubes(np.pad(g, 1).astype(float), 0.5)
+    vv = (vv - 1.5) * paso + lo
+    ff = np.asarray(ff, np.int64)
+    tt = vv[ff]
+    if np.einsum("ij,ij->i", tt[:, 0], np.cross(tt[:, 1], tt[:, 2])).sum() < 0:  # las caras, hacia afuera
+        ff = ff[:, ::-1]
+    _, cerca = cKDTree(pts).query(vv)
+    return vv, ff, cara_col[k[cerca]], fantasmas, separadas
+
+
+def preparar_pintada(ruta, log=print):
+    """Una malla de para_riggear: el color de cada cara, el medio de su textura (en el centro y hacia sus tres
+    vertices), y rehecha en voxeles (en_voxeles), sin las piezas sueltas y alisada como las de Hunyuan3D."""
+    import trimesh
+    sc = trimesh.load(ruta, force="scene")
+    g = sc.to_geometry() if hasattr(sc, "to_geometry") else sc.dump(concatenate=True)
+    v0, f0, uv = np.asarray(g.vertices, float), np.asarray(g.faces, np.int64), np.asarray(g.visual.uv, float)
+    img = np.asarray(g.visual.material.baseColorTexture.convert("RGB"), float)
+    h, w = img.shape[:2]
+    c = uv[f0].mean(axis=1)
+    pts = np.concatenate([c[:, None], (2.0 * c[:, None] + uv[f0]) / 3.0], axis=1)
+    px = np.clip(np.round((pts[..., 0] % 1.0) * (w - 1)), 0, w - 1).astype(int)
+    py = np.clip(np.round((1.0 - pts[..., 1] % 1.0) * (h - 1)), 0, h - 1).astype(int)
+    v, f, col, fantasmas, separadas = en_voxeles(v0, f0, img[py, px].mean(axis=1))
+    v, f, col, sueltas = limpiar(v, f, col)
+    log(f"  {os.path.basename(ruta)}: {len(f0)} triangulos; en voxeles, {len(f)}; {fantasmas} patas fantasma fuera, "
+        f"{separadas} cortes entre patas, {sueltas} piezas sueltas fuera")
+    return suavizar(v, f), f, col
+
+
 def armar(malla_t, it, log=print):
     _, alto, largo = (float(x) for x in it["medidas_m"].split("x"))  # el ancho sale de la escala
     tmax = int(it["tris_max"]) or 800
@@ -720,10 +859,15 @@ def armar(malla_t, it, log=print):
 
 
 def main():
-    if len(sys.argv) < 3:
+    pintadas = len(sys.argv) > 1 and sys.argv[1] == "--para-riggear"
+    if len(sys.argv) < 3 and not pintadas:
         raise SystemExit(__doc__)
-    carpeta, imagenes = sys.argv[1], sys.argv[2]
-    numeros = [int(x) for x in sys.argv[3:]] or sorted(FICHA)
+    if pintadas:
+        trabajo = [(os.path.join(ROOT, "arte", "modelos", "para_riggear", mid + ".glb"), [mid], None)
+                   for mid in (sys.argv[2:] or PARA_RIGGEAR)]
+    else:
+        carpeta, imagenes = sys.argv[1], sys.argv[2]
+        trabajo = [(os.path.join(carpeta, FICHA[n][0]), FICHA[n][1], n) for n in ([int(x) for x in sys.argv[3:]] or sorted(FICHA))]
     items, errores = inventario.load()
     if errores:
         raise SystemExit("\n".join(errores))
@@ -738,9 +882,8 @@ def main():
     open(inventario.TSV, "w", encoding="utf-8").write("\n".join(filas))
     items, _ = inventario.load()
     por_id = {it["id"]: it for it in items}
-    for n in numeros:
-        archivo, mids, color = FICHA[n]
-        malla_t = preparar(os.path.join(carpeta, archivo), color, imagenes)
+    for ruta_malla, mids, n in trabajo:
+        malla_t = preparar_pintada(ruta_malla) if n is None else preparar(ruta_malla, FICHA[n][2], imagenes)
         for mid in mids:
             datos, _ = armar(malla_t, por_id[mid])
             ruta = os.path.join(ROOT, inventario.path_of(por_id[mid]))
@@ -748,7 +891,7 @@ def main():
             open(ruta, "wb").write(datos)
             c = filas[ids[mid]].split("\t")
             c[5] = "importado"
-            nota = NOTA.format(n=n)
+            nota = NOTA_PINTADA if n is None else NOTA.format(n=n)
             c[6] = (VIEJA.sub("", c[6]).strip() + " " + nota).strip() if nota not in c[6] else c[6]
             filas[ids[mid]] = "\t".join(c)
     open(inventario.TSV, "w", encoding="utf-8").write("\n".join(filas))

@@ -264,6 +264,17 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Los animales que faltaban (v0.15.10):
+- **Doce cuadrúpedos más,** los de `arte/modelos/para_riggear` (`tools/modelos/animales.py --para-riggear`): el caballo
+  estepario y sus dos variantes, el caballo de guerra, el lobo y su variante, la vaca, el coyote, el jabalí, el oso
+  polar, el perro salvaje y el tigre, con su esqueleto y los clips que les tocan (`assets/animaciones.tsv`).
+- **Rehechos en vóxeles** (`en_voxeles`): con tan pocas caras las patas no se doblaban (al galopar salían aletas). En
+  la vaca, los caballos estepario y de guerra, el jabalí y el lobo, la hoja de tres vistas traía las patas de atrás
+  escalonadas y el volumen de las dos vistas las cruzó en cuatro: quedan las de más volumen. Las patas de un lado,
+  separadas de las del otro (el tigre las traía pegadas). El color, el de su textura.
+- **Pastar, en todos:** la cabeza baja casi vertical (no 25° más que el cuello: la del caballo quedaba mirando al
+  pecho), y el lomo, la cruz y las gibas, detrás de donde arranca el cuello, no se mueven con él (`clips` y `pesos`).
+
 Los golpes sin astillas (v0.15.9):
 - **El cuerpo, cerrado:** la reducción a su tope de triángulos ya no quita los lados largos (los de un muslo o un
   antebrazo, hasta un quinto del alto), solo los puentes de una punta del cuerpo a otra (más de un tercio), ni deja
