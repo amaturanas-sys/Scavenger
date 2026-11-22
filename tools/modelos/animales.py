@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Los animales de IMPORTED/Animals/Models: mallas sin esqueleto (de Hunyuan3D, blancas salvo la del leopardo, que trae
+"""Los animales de arte/fuentes/animales/modelos (los que subio el usuario a IMPORTED/Animals/Models): mallas sin esqueleto (de Hunyuan3D, blancas salvo la del leopardo, que trae
 textura), con su esqueleto de cuadrupedo y sus clips armados aqui.
 
-  python3 tools/modelos/animales.py <carpeta de los GLB> <carpeta de las imagenes> [<n> ...]
+  python3 tools/modelos/animales.py arte/fuentes/animales/modelos arte/fuentes/animales/imagenes [<n> ...]
   python3 tools/modelos/animales.py --para-riggear [<id> ...]
 
-(IMPORTED/Animals/Models e IMPORTED/Animals/Imagenes/Clean, en la rama cline/procesar-imagenes-animales; n, los numeros
-de la FICHA que se arman: todos si no se dice. Con --para-riggear, las mallas de PARA_RIGGEAR: todas si no se dice.)
+(Las mallas y los renders que subio el usuario, en arte/fuentes/animales: arte/fuentes/README.md. n, los numeros de la
+FICHA que se arman: todos si no se dice. Con --para-riggear, las mallas de PARA_RIGGEAR: todas si no se dice.)
 
 PARA_RIGGEAR: las mallas low-poly de arte/modelos/para_riggear (piezas.py, desde una hoja de tres vistas), ya de frente
 a +X, a la medida del inventario y pintadas cara por cara en su textura. Con tan pocos vertices las patas no se doblan
@@ -163,8 +163,8 @@ def limpiar(v, f, col):
 
 def imagen_de(carpeta, clave, sufijo):
     for nombre in sorted(os.listdir(carpeta)):
-        if clave in nombre and nombre.endswith(".png"):
-            fin = re.search(r"-(\d)\.png$", nombre)
+        if clave in nombre and nombre.endswith((".png", ".jpg")):  # los renders, en JPEG en arte/fuentes
+            fin = re.search(r"-(\d)\.(?:png|jpg)$", nombre)
             if (fin and sufijo == "-" + fin.group(1)) or (not fin and not sufijo):
                 return os.path.join(carpeta, nombre)
     raise SystemExit(f"no esta la imagen de referencia «{clave}{sufijo}» en {carpeta}")

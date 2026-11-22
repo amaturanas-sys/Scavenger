@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Los sonidos del juego: los que sirven de los paquetes subidos a IMPORTED/Sound/SFX, convertidos para el juego.
 
-  python3 tools/sonido/sonidos.py <carpeta IMPORTED/Sound/SFX>
+  python3 tools/sonido/sonidos.py [<carpeta de los paquetes>] [--salida <carpeta>]
 
-(La carpeta, en la rama cline/procesar-imagenes-animales. Hace falta ffmpeg con libvorbis.)
+(Los paquetes, en arte/fuentes/sonidos: solo los archivos que se usan, arte/fuentes/README.md. La salida, de serie,
+assets/sonidos. Hace falta ffmpeg con libvorbis.)
 
 El juego no lleva musica: el ambiente natural (el viento, el bosque de dia y de noche, la lluvia, la tormenta, el rio,
 la cascada, el mar, la cueva y el fuego, en bucle) y los sonidos de lo que pasa (los pasos segun el suelo, las aves, el
@@ -117,9 +118,15 @@ def convertir(origen, destino, bucle):
 
 
 def main():
-    if len(sys.argv) != 2:
+    global SALIDA
+    args = sys.argv[1:]
+    if "--salida" in args:  # otra carpeta (para comprobar sin tocar assets/sonidos)
+        k = args.index("--salida")
+        SALIDA = os.path.abspath(args[k + 1])
+        del args[k:k + 2]
+    if len(args) > 1 or (args and args[0].startswith("-")):
         raise SystemExit(__doc__)
-    base = sys.argv[1]
+    base = args[0] if args else os.path.join(ROOT, "arte", "fuentes", "sonidos")
     os.makedirs(SALIDA, exist_ok=True)
     usados = {}
     for sid, (paquete, archivo, bucle) in SONIDOS.items():
@@ -141,7 +148,7 @@ def main():
         lineas += [f"- `{sid}.ogg`: {archivo}" for sid, archivo in lista] + [""]
     open(os.path.join(SALIDA, "CREDITOS.md"), "w", encoding="utf-8").write("\n".join(lineas))
     total = sum(os.path.getsize(os.path.join(SALIDA, f)) for f in os.listdir(SALIDA))
-    print(f"{len(SONIDOS)} sonidos, {total / 1048576:.1f} MB en assets/sonidos")
+    print(f"{len(SONIDOS)} sonidos, {total / 1048576:.1f} MB en {os.path.relpath(SALIDA, ROOT)}")
 
 
 if __name__ == "__main__":

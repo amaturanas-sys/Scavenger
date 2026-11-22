@@ -6,7 +6,7 @@ sys.path.insert(0, 'tools/assets')
 import lowres
 import inventario
 
-REF_DIR = "assets/referencia"
+REF_DIR = "arte/fuentes/opengameart"  # el paquete FREE Remastered Meadows (CC0): arte/fuentes/README.md
 ZIP_PATH = os.path.join(REF_DIR, "gltf.zip")
 
 CATEGORY_MAP = [

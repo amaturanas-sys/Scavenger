@@ -28,6 +28,8 @@ que ya salió mal y el estado del proyecto.
   - `assets/`: el inventario (`inventario.tsv`), las traducciones (`i18n/en.tsv`), los modelos, los íconos.
   - `tools/`: los scripts de assets, partidas, modelos, Android, Windows, capturas y las guardas del CI
     (`tools/ci/guardas.py`).
+  - `arte/`: lo que no va en el juego. Las fuentes que subió el usuario están en `arte/fuentes`, con la herramienta que
+    lee cada una (`arte/fuentes/README.md`). Antes estaban en `IMPORTED/`, en una rama que ya no existe.
   - `tests/`: las pruebas del núcleo y las partidas de referencia (`tests/partidas/`).
   - `docs/`: la documentación, siempre en español.
 - **Los documentos:**

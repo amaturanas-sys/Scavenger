@@ -278,7 +278,7 @@ El sonido (v0.16.0): sin música, el ambiente natural y lo que suena en cada lug
   lado en que pasan (`src/game/audio_game.c`).
 - **El volumen,** en el menú del título y en el de pausa (el ícono del altavoz): 0, 25, 50, 75 o 100 %, guardado en
   `ajustes.txt`. Sin dispositivo de audio, el juego sigue en silencio.
-- **Los sonidos,** elegidos de los paquetes subidos a `IMPORTED/Sound/SFX` y convertidos por `tools/sonido/sonidos.py`
+- **Los sonidos,** elegidos de los paquetes subidos a `IMPORTED/Sound/SFX` (los de origen, en `arte/fuentes/sonidos`) y convertidos por `tools/sonido/sonidos.py`
   (mono, 22 050 Hz, Vorbis, nivelados, y los bucles sin costura): 55 archivos, 2,2 MB en `assets/sonidos`, con sus
   créditos en `assets/sonidos/CREDITOS.md`.
 
@@ -358,7 +358,7 @@ El cuerpo gigante y las cuevas y ruinas en el mapa (v0.15.5):
 
 El cuerpo humano estándar (v0.15.4):
 - **Un cuerpo con esqueleto y animaciones** para el jugador (`personaje.narrativo.protagonista`), la tropa y los NPC
-  sin modelo propio (`personaje.base.cuerpo_comun`). Sale de `IMPORTED/Humanoid` (la rama `cline/procesar-imagenes-animales`):
+  sin modelo propio (`personaje.base.cuerpo_comun`). Sale de `IMPORTED/Humanoid` (hoy, `arte/fuentes/humanoide`):
   la malla en pose T (`sample_*.glb`) y el esqueleto con sus 50 clips (`exported-model.glb`), unidos con
   `tools/modelos/humanoide.py` (pesos automáticos, 1112 y 1968 triángulos, los clips con los nombres del juego).
 - **Lo que se lleva** va en los huesos de las manos: el arma en la derecha, el escudo en el antebrazo izquierdo.
