@@ -816,6 +816,30 @@ float terrain_ground(const Terrain *t, float x, float z, float y_hint, float rea
     return ground;
 }
 
+int terrain_ground_kind(const Terrain *t, float x, float z, float y) {
+    float h = terrain_height(t, x, z);
+    if (y < h + 0.12f) return 0; // en el suelo
+    int ccx = (int)floorf(x / CHUNK_SIZE), ccz = (int)floorf(z / CHUNK_SIZE);
+    RockShape rs[ROCK_SHAPES_MAX];
+    for (int i = 0; i < CHUNK_SLOTS; i++) {
+        const Chunk *ch = &t->slots[i];
+        if (!ch->loaded || abs(ch->cx - ccx) > 1 || abs(ch->cz - ccz) > 1) continue;
+        for (int k = 0; k < ch->decor_count; k++) {
+            const ChunkDecor *d = &ch->decor[k];
+            if (d->kind != DECOR_PUENTE && d->kind != DECOR_MUELLE && d->kind != DECOR_MUELLE_FIN && d->kind != DECOR_TARIMA) continue;
+            float ux = cosf(d->yaw), uz = -sinf(d->yaw), dx = x - d->x, dz = z - d->z;
+            float deck = decor_deck((DecorKind)d->kind, d->scale, d->stretch, dx * ux + dz * uz, -dx * uz + dz * ux);
+            if (deck >= 0.0f && fabsf(deck + d->y - y) < 0.3f) return 1;
+        }
+        int n = rock_shapes(ch, rs);
+        for (int k = 0; k < n; k++) {
+            float ax, az, top = rock_height(&rs[k], rock_axis(&rs[k], x, z, &ax, &az));
+            if (top > h + 0.12f && fabsf(top - y) < 0.35f) return 2;
+        }
+    }
+    return 0;
+}
+
 void terrain_water_shader_off(void) { g_water_shader_off = true; }
 
 void terrain_set_ripples(const Vector4 *bodies, int count) {

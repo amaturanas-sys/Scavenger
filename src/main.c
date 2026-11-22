@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include "game/actions_game.h"
+#include "game/audio_game.h"
 #include "game/combat_game.h"
 #include "game/cave_game.h"
 #include "game/cave_props.h"
@@ -1203,6 +1204,8 @@ int main(int argc, char **argv) {
     trees_init(&g_inventory); // los arboles del mundo: su .vox y su alto, del inventario
     CameraRig rig = { .yaw = PI, .eye = 1.6f };
     settings_init(); // idioma (y sus traducciones), antes del primer texto de la partida
+    au_init(); // el sonido: el ambiente natural y lo que pasa (src/game/audio_game.c)
+    au_set_volume(settings_volume());
     camera_set_view(&rig, (CamView)(start_view >= 0 ? start_view : settings_camera()), true); // --vista, o la guardada
     GameState gs = { &world_time, &day, &last_champion, &rig.yaw, &rng, &player, &overlord, &troop, &g_actions,
                      &g_props, &g_combat, &g_hazards, &g_dz, &g_memory, &g_inventory };
@@ -1385,6 +1388,7 @@ int main(int argc, char **argv) {
                 break;
             case MENU_QUIT: quit = true; break;
             case MENU_LANG: settings_next_lang(); break;
+            case MENU_SOUND: settings_next_volume(), au_set_volume(settings_volume()); break;
             default: break;
             }
         }
@@ -1813,6 +1817,15 @@ int main(int argc, char **argv) {
         }
         g_climate = climate;
         terrain_set_haze(&terrain, sky_clear_color(climate.clouds)); // la bruma del horizonte, del color del cielo
+        { // lo que se oye: el ambiente de donde esta (o el de la cueva) y sus pasos
+            const Player *ear = cv_inside() ? cv_player() : &player;
+            AuFrame af = { .terrain = &terrain, .climate = &climate, .world_time = world_time, .pos = ear->pos, .cam = cam,
+                           .playing = in_game && !orbital && !gallery_mode, .paused = in_game && (menu_visible(&menu) || !has_keyboard),
+                           .cave = cv_inside(), .moving = ear->moving && ear->grounded, .running = ear->stance == STANCE_RUN,
+                           .noise = ear->noise, .mounted = g_actions.mounted >= 0, .wading = g_hazards.wading && !cv_inside(),
+                           .swimming = g_hazards.swimming && !cv_inside() };
+            au_update(&af, dt);
+        }
 
         BeginTextureMode(lowres);
         ClearBackground(sky_clear_color(climate.clouds));
@@ -2045,6 +2058,21 @@ int main(int argc, char **argv) {
             printf("Decorado: %d en los trozos cargados (%d crestas, %d grandes, %d medianos, %d al pie de los arboles, %d hechos por el hombre)%s\n",
                    decor, dc[DECOR_CLASS_RIDGE], dc[DECOR_CLASS_BIG], dc[DECOR_CLASS_MEDIUM], dc[DECOR_CLASS_FOOT], dc[DECOR_CLASS_HUMAN],
                    g_no_decor ? ", sin dibujar (--sin-decorado)" : "");
+            {
+                float lv[AMB_COUNT];
+                au_levels(lv);
+                char sl[256] = "";
+                for (int i = 0, n = 0; i < AMB_COUNT; i++)
+                    if (lv[i] >= 0.01f) n += snprintf(sl + n, sizeof(sl) - (size_t)n, "%s%s %.2f", n ? ", " : "", au_layer_name(i), lv[i]);
+                float dr, dc, dm;
+                au_near(&dr, &dc, &dm);
+                printf("Sonido: %s (el rio a %.0f m, la cascada a %.0f, el mar a %.0f)\n", sl[0] ? sl : "nada", fminf(dr, 9999.0f),
+                       fminf(dc, 9999.0f), fminf(dm, 9999.0f));
+                sl[0] = 0;
+                for (int i = 0, n = 0; i < SND_COUNT; i++)
+                    if (au_played(i) && n < (int)sizeof(sl) - 40) n += snprintf(sl + n, sizeof(sl) - (size_t)n, "%s%s x%d", n ? ", " : "", au_sound_name(i), au_played(i));
+                printf("Sonidos sueltos: %s\n", sl[0] ? sl : "ninguno");
+            }
             printf("Jugador: (%.2f, %.2f, %.2f)%s\n", player.pos.x, player.pos.y, player.pos.z,
                    g_hazards.swimming ? ", nadando" : g_hazards.wading ? ", vadeando" : ""); // (las colisiones, al caminar)
             break;
@@ -2068,6 +2096,7 @@ int main(int argc, char **argv) {
     cp_unload(), cs_unload();
     voxs_unload();
     trees_unload();
+    au_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();
     return 0;

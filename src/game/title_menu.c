@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "game/input.h"
+#include "game/settings.h"
 #include "platform.h"
 #include "sim/lang.h"
 #include "ui/icons.h"
@@ -16,20 +17,22 @@ static const char *PLATE_FILES[MENU_PLATES] = {
     "assets/ui/lamina_tigre_dragon.png",
 };
 
-static const char *TITLE_ITEMS[] = { N_("Nueva partida"), N_("Cargar partida"), N_("Instructivo"), N_("Idioma"), N_("Salir") };
-static const IconId TITLE_ICONS[] = { ICON_NUEVA, ICON_CARGAR, ICON_INSTRUCTIVO, ICON_IDIOMA, ICON_SALIR };
+static const char *TITLE_ITEMS[] = { N_("Nueva partida"), N_("Cargar partida"), N_("Instructivo"), N_("Idioma"), N_("Sonido"), N_("Salir") };
+static const IconId TITLE_ICONS[] = { ICON_NUEVA, ICON_CARGAR, ICON_INSTRUCTIVO, ICON_IDIOMA, ICON_SONIDO, ICON_SALIR };
 static const char *TITLE_HINTS[] = { N_("Una tribu nueva en la estepa"), N_("Las partidas guardadas, con su foto y su fecha"),
-                                     N_("Controles y reglas del juego"), NULL, N_("Cerrar el juego") };
-static const IconId PAUSE_ICONS[] = { ICON_CONTINUAR, ICON_GUARDAR, ICON_CARGAR, ICON_INSTRUCTIVO, ICON_TITULO, ICON_IDIOMA, ICON_SALIR };
+                                     N_("Controles y reglas del juego"), NULL, NULL, N_("Cerrar el juego") };
+static const IconId PAUSE_ICONS[] = { ICON_CONTINUAR, ICON_GUARDAR, ICON_CARGAR, ICON_INSTRUCTIVO, ICON_TITULO, ICON_IDIOMA, ICON_SONIDO, ICON_SALIR };
 static const char *PAUSE_HINTS[] = { N_("Volver al juego (Esc)"), N_("En uno de los tres huecos, con una foto de este momento"),
                                      N_("Volver a una partida guardada"), N_("Controles y reglas del juego"),
-                                     N_("Dejar la partida (lo no guardado se pierde)"), NULL, N_("Cerrar el juego") };
+                                     N_("Dejar la partida (lo no guardado se pierde)"), NULL, NULL, N_("Cerrar el juego") };
 static const char *PAUSE_ITEMS[] = { N_("Continuar"), N_("Guardar partida"), N_("Cargar partida"), N_("Instructivo"), N_("Salir al título"),
-                                     N_("Idioma"), N_("Salir del juego") };
-#define TITLE_COUNT 5
-#define PAUSE_COUNT 7
+                                     N_("Idioma"), N_("Sonido"), N_("Salir del juego") };
+#define TITLE_COUNT 6
+#define PAUSE_COUNT 8
 #define TITLE_LANG 3 // el boton del idioma (sin pista: dice el idioma actual)
 #define PAUSE_LANG 5
+#define TITLE_SOUND 4 // el del volumen (sin pista: dice el volumen actual)
+#define PAUSE_SOUND 6
 
 // Laminas del instructivo: un titulo, la lamina que la ilustra y sus lineas.
 typedef struct {
@@ -336,6 +339,7 @@ MenuAction menu_update(TitleMenu *m, float dt) {
         if (!enter) return MENU_NONE;
         if (m->cursor == 0) return MENU_NEW_GAME;
         if (m->cursor == TITLE_LANG) return MENU_LANG;
+        if (m->cursor == TITLE_SOUND) return MENU_SOUND;
         if (m->cursor == 1) menu_open(m, MENU_LOAD);
         else if (m->cursor == 2) menu_open(m, MENU_HELP);
         else return MENU_QUIT;
@@ -350,6 +354,7 @@ MenuAction menu_update(TitleMenu *m, float dt) {
         case 3: menu_open(m, MENU_HELP); return MENU_NONE;
         case 4: return MENU_TO_TITLE;
         case PAUSE_LANG: return MENU_LANG;
+        case PAUSE_SOUND: return MENU_SOUND;
         default: return MENU_QUIT;
         }
     case MENU_LOAD:
@@ -454,6 +459,9 @@ static void draw_plate_fill(Texture2D t, Rectangle r) {
     DrawTexturePro(t, src, r, (Vector2){ 0, 0 }, 0.0f, WHITE);
 }
 
+// El volumen general, dicho: «75 %» o «en silencio».
+static const char *volume_text(int v) { return v ? TextFormat("%d %%", v) : T("en silencio"); }
+
 // Fila de botones de icono; el elegido (teclado o raton) dice su nombre en la leyenda.
 static void draw_items(const TitleMenu *m, const char **items, const IconId *icons, const char **hints, int n) {
     for (int i = 0; i < n; i++) {
@@ -467,6 +475,10 @@ static void draw_items(const TitleMenu *m, const char **items, const IconId *ico
         if (icons[i] == ICON_IDIOMA) { // el codigo del idioma, en la esquina
             ui_tile_badge(r, lang_code(lang_get()), UI_TURQ_LIGHT);
             if (sel) ui_legend_default(T("Idioma"), TextFormat("%s -> %s", lang_name(lang_get()), lang_name((Lang)((lang_get() + 1) % LANG_COUNT))));
+        } else if (icons[i] == ICON_SONIDO) { // el volumen, en una barra al pie
+            int v = settings_volume_percent();
+            ui_tile_bar(r, (float)v / 100.0f, UI_TURQ_LIGHT);
+            if (sel) ui_legend_default(T("Sonido"), TextFormat("%s -> %s", volume_text(v), volume_text(v >= 100 ? 0 : v + 25)));
         } else if (sel) {
             ui_legend_default(T(items[i]), T(hints[i]));
         }

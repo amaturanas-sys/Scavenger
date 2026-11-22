@@ -74,7 +74,8 @@ add_library(estepa_sim STATIC
   src/sim/flora.c
   src/sim/decor.c
   src/sim/ancient.c
-  src/sim/buildkit.c)
+  src/sim/buildkit.c
+  src/sim/sonido.c)
 target_include_directories(estepa_sim PUBLIC src)
 target_compile_options(estepa_sim PRIVATE ${ESTEPA_WARNINGS})
 if(NOT MSVC)
@@ -131,6 +132,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/actions_game.c
     src/game/hazards_game.c
     src/game/combat_game.c
+    src/game/audio_game.c
     src/game/fauna_game.c
     src/game/disasters_game.c
     src/game/save_game.c

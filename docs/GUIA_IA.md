@@ -312,6 +312,7 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | Combate | `--enemigos bandidos`, `culto`, `lobos`, `arqueros` |
 | El sistema táctico | `--manos escudo` (`espada`, `nada`), `--rehen`, `--objetivo`, `--cubierto`, `--inventario` (la fila de la barra) |
 | Las cuevas | `--ir boca-forajidos` (`animal`, `abandonada`, `tribu`, `imperio`): la boca, afuera (`boca-<tipo>-ladera`: la de ese tipo con más desnivel; con `-lado` al final, desde un costado); `--cueva forajidos:0 --antorcha`: adentro (lugar: una sala o `boca`, `pasilloN`, `celda`, `dialogo`, `nido`, `cofre`, `fogata`, `estalagmita`, `huesos`, `roca`…); `--cueva-f` pulsa F; `--explorar`: F en la boca más cercana (carga la cueva); `--caminar adelante` (o `atras`). La línea `CUEVA` de la consola dice lo que pesa cada cueva cargada |
+| El sonido | Cualquier captura (`--screenshot`) dice en la consola lo que suena (`Sonido: viento 0.36, rio 0.35 (el rio a 29 m...)`) y cuántas veces se pidió cada sonido suelto (`Sonidos sueltos: paso_tierra_1 x9...`), aun sin tarjeta de sonido. Con `--ir cascada`, `meandro`, `bosque`, `mar` o `--cueva forajidos:fogata`; la noche, la lluvia o la tormenta, con `--dia` y `--minuto`; los pasos, con `--caminar adelante`. Los sonidos se rehacen con `python3 tools/sonido/sonidos.py <IMPORTED/Sound/SFX>` |
 | La galería de assets | `--galeria` |
 | El mapa del mundo | `--semilla 42 --mapa-mundo mapa.png` |
 | Las partidas de referencia | `--probar-partidas ../tests/partidas` |
@@ -484,7 +485,8 @@ traba.
   - los golpes sin astillas: los cuerpos cerrados y en una pieza tras la reducción (v0.15.9);
   - los animales que faltaban: los caballos, los lobos y los demás cuadrúpedos de `para_riggear`, rehechos en vóxeles,
     y el cuello al pastar (v0.15.10);
-  - las animaciones de la Universal Animation Library y el cuerpo de mujer, para las mujeres de la tribu (v0.15.11).
+  - las animaciones de la Universal Animation Library y el cuerpo de mujer, para las mujeres de la tribu (v0.15.11);
+  - el sonido: el ambiente natural y los sonidos del mapa, sin música (v0.16.0).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

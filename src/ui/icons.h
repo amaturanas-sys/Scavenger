@@ -167,6 +167,7 @@ typedef enum {
     ICON_CAMELLO,          // una caravana
     ICON_PICAHIELO,        // abrir un agujero en el hielo
     ICON_PESCAR,           // pescar en el hielo
+    ICON_SONIDO,           // el volumen (menus del titulo y de pausa)
     ICON_COUNT
 } IconId;
 

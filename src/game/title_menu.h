@@ -1,9 +1,9 @@
 // Menu de entrada y de pausa, con los motivos del arte de la estepa (estelas,
 // placas de oro con ciervos de astas de ave, grifos, lobos enroscados):
-//  - titulo: nueva partida, cargar partida, instructivo, salir;
+//  - titulo: nueva partida, cargar partida, instructivo, idioma, sonido, salir;
 //  - cargar / guardar: tres huecos con minifoto, fecha, dia de juego y tribu;
 //  - instructivo: laminas con los controles y las reglas del juego;
-//  - pausa (Esc en el juego): continuar, guardar, cargar, instructivo, al titulo.
+//  - pausa (Esc en el juego): continuar, guardar, cargar, instructivo, al titulo, idioma, sonido, salir.
 #ifndef ESTEPA_TITLE_MENU_H
 #define ESTEPA_TITLE_MENU_H
 
@@ -22,7 +22,8 @@ typedef enum {
     MENU_SAVE_SLOT, // guardar en el hueco slot
     MENU_TO_TITLE,
     MENU_QUIT,
-    MENU_LANG, // cambiar el idioma de la interfaz
+    MENU_LANG,  // cambiar el idioma de la interfaz
+    MENU_SOUND, // pasar al volumen siguiente
 } MenuAction;
 
 #define MENU_PLATES 7

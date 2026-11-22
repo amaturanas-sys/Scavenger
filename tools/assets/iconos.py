@@ -1361,6 +1361,14 @@ def _(p):
     p.line([(104, 8), (98, 30)], 4)  # el sedal
 
 
+
+@icon("sonido", "Sonido: un altavoz con sus ondas")
+def _(p):
+    p.rect(14, 48, 38, 80, r=3)  # la caja
+    p.poly([(36, 50), (70, 20), (76, 20), (76, 108), (70, 108), (36, 78)])  # el cono
+    p.arc(76, 64, 22, -48, 48, 9)  # las ondas
+    p.arc(76, 64, 42, -46, 46, 9)
+
 # ------------------------------------------------------------------ atlas
 def render(fn):
     pen = Pen()

@@ -1714,6 +1714,7 @@ Se fabrican a mano (Tab, Fabricar) con las pieles del despiece, la lana de las c
 Serpientes, escorpiones, arañas y avispas envenenan: véndate (B).	Snakes, scorpions, spiders and wasps are venomous: bandage yourself (B).
 Sin soldados, sin grano o en revuelta, exígele la rendición (F en la puerta o en el palacio): te paga tributo y su fundición es tu taller.	Without soldiers, without grain or in revolt, demand its surrender (F at the gate or the palace): it pays you tribute and its foundry is your workshop.
 Socavones de nieve y arena movediza aparecen cada día en otro lugar.	Snow sinkholes and quicksand appear somewhere new every day.
+Sonido	Sound
 Su mercado (F): con el granero vacío, la comida vale más; con la armería llena, las armas, menos. Su tesoro paga lo que vendes. «La ciudad» dice cómo está.	Its market (F): with an empty granary, food costs more; with a full armory, weapons cost less. Its treasury pays for what you sell. 'The city' tells how it fares.
 Subes de nivel peleando, cazando, fabricando, construyendo y domando.	You level up by fighting, hunting, crafting, building and taming.
 Tab acciones/fabricar	Tab actions/crafting
@@ -1738,6 +1739,7 @@ WASD mover · Shift correr	WASD move · Shift run
 WASD mover · Shift correr · C sigilo o cobertura · X agacharse (tras rocas, matas o hierba alta te ocultas)	WASD move · Shift run · C sneak or cover · X crouch (you hide behind rocks, bushes or tall grass)
 Y llama a dos integrantes de escolta (Y otra vez: vuelven al campamento). Pelean a tu lado con las mismas reglas que tú.	Y calls two members as an escort (Y again: back to camp). They fight by your side by the same rules as you.
 Y: dos integrantes te escoltan · Mayús+Y: despachar o mandar un mensajero · U: ficha del gran guerrero	Y: two members escort you · Shift+Y: dispatch or send a messenger · U: great warrior card
+en silencio	muted
 Órdenes (Y+1, Y+2, Y+3, o las casillas sobre la barra rápida): atacar, defender o seguir.	Orders (Y+1, Y+2, Y+3, or the tiles above the quick bar): attack, defend or follow.
 # --- src/game/trade_game.c
  · aquí abunda	 · plentiful here

@@ -29,6 +29,8 @@
 
 bool cv_inside(void);
 int cv_cave(void); // la cueva en la que esta (indice de World.caves), o -1
+// El jugador adentro (su pos, en coordenadas de la cueva: las de su camara y sus fuegos), o NULL afuera.
+const Player *cv_player(void);
 // Explorar: entre que se pulso F en la boca y que la escena quedo armada (un cuadro con «Explorando...»).
 bool cv_loading(void);
 // La pantalla de la carga (en lugar del mundo, mientras cv_loading).
