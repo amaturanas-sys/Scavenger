@@ -264,6 +264,19 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Las animaciones de la Universal Animation Library y el cuerpo de mujer (v0.15.11):
+- **UAL1 y UAL2 de Quaternius** (CC0, `IMPORTED/Humanoid/Animaciones`), llevadas al esqueleto del juego como el paso
+  y la carrera de la v0.15.8 (`--ual` y `DE_UAL` en `tools/modelos/humanoide.py`), para los clips que tenían uno
+  prestado: llevar (Walk_Carry), hablar (Idle_Talking), lanzar, el lazo y la trepa (OverhandThrow), forjar
+  (TreeChopping), la estocada de lanza (Sword_Dash, antes un puñetazo), el remate del combo (Sword_Regular_C),
+  construir, agacharse a trabajar y curar (Fixing_Kneeling, solo la parte de rodillas), encender, ensillar y cocinar
+  (Interact).
+- **El cuerpo de mujer** (`personaje.base.cuerpo_mujer`, 1,60 m): el maniquí femenino de UAL2, con los pesos de su rig
+  y su reposo, su paso y su carrera de la misma biblioteca. Las mujeres de la tribu lo llevan: las que tienen nombre
+  de mujer (`troop_name_is_woman` en `src/sim/troop.c`, con su prueba: Borte, Temulun, Altani, Khulan...); los
+  grandes guerreros, el gigante.
+- **Los GLB, un cuarto más livianos:** los canales de un clip comparten sus tiempos (el protagonista, de 2,0 a 1,6 MB).
+
 Los animales que faltaban (v0.15.10):
 - **Doce cuadrúpedos más,** los de `arte/modelos/para_riggear` (`tools/modelos/animales.py --para-riggear`): el caballo
   estepario y sus dos variantes, el caballo de guerra, el lobo y su variante, la vaca, el coyote, el jabalí, el oso

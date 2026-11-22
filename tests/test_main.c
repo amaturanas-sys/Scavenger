@@ -617,6 +617,14 @@ static void test_health_wounds_bleeding_healing(void) {
     CHECK(trunk > 140 && trunk < 240);
 }
 
+static void test_troop_name_is_woman(void) {
+    // Las de la tribu inicial (main.c) y las de las listas de reclutas, rescatados y grandes guerreros.
+    CHECK(troop_name_is_woman("Borte") && troop_name_is_woman("Altani") && troop_name_is_woman("Temulun"));
+    CHECK(troop_name_is_woman("Khulan") && troop_name_is_woman("Tsetseg") && troop_name_is_woman("Khutulun"));
+    CHECK(!troop_name_is_woman("Subotai") && !troop_name_is_woman("Jebe") && !troop_name_is_woman("Batu"));
+    CHECK(!troop_name_is_woman("Bandido 12") && !troop_name_is_woman("") && !troop_name_is_woman(NULL));
+}
+
 static void test_troop_health_daily(void) {
     Kingdom k;
     kingdom_init_iron_khanate(&k);
@@ -6839,6 +6847,7 @@ int main(void) {
     RUN(test_hazards_qte);
     RUN(test_health_wounds_bleeding_healing);
     RUN(test_troop_health_daily);
+    RUN(test_troop_name_is_woman);
     RUN(test_combat_weapons_and_enemies);
     RUN(test_body_zones_raycast);
     RUN(test_armor_pieces_materials);

@@ -26,7 +26,8 @@ Baja la fuente (queda en `arte/modelos/fuentes/`, fuera de git), la lleva al est
 las medidas del inventario, frente +X, origen en el centro de la base), la deja en la ruta de su id
 como `importado` y anota de dónde salió en `arte/modelos/models_manifest.json`. Las personas, los
 animales y los mecanismos esperan en `arte/modelos/para_riggear/` hasta tener esqueleto y clips; el cuerpo
-humano (`tools/modelos/humanoide.py`), los animales de `IMPORTED/Animals/Models` (`tools/modelos/animales.py`) y los
+humano (`tools/modelos/humanoide.py`, con clips de la Universal Animation Library de Quaternius con `--ual`, y el cuerpo
+de mujer desde su maniquí femenino), los animales de `IMPORTED/Animals/Models` (`tools/modelos/animales.py`) y los
 cuadrúpedos de `para_riggear` (`animales.py --para-riggear`: los caballos, los lobos, la vaca, el coyote, el jabalí, el
 oso polar, el perro salvaje y el tigre, rehechos en vóxeles) ya los tienen; su malla de pocas caras queda ahí, como
 fuente.

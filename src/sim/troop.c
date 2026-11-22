@@ -311,6 +311,17 @@ const char *role_name(Role r) {
     return (r >= 0 && r < ROLE_COUNT) ? N[r] : "?";
 }
 
+bool troop_name_is_woman(const char *name) {
+    static const char *const MUJERES[] = { "Borte",   "Temulun", "Altani",      "Khulan",   "Naran",       "Oyun",
+                                           "Sarnai",  "Yesui",   "Zaya",        "Bolor",    "Odval",       "Saran",
+                                           "Tsetseg", "Uyanga",  "Jargal",      "Toregene", "Sorghaghtani", "Khutulun",
+                                           "Alaqai",  "Checheyigen" };
+    if (!name) return false;
+    for (size_t i = 0; i < sizeof(MUJERES) / sizeof(MUJERES[0]); i++)
+        if (!strcmp(name, MUJERES[i])) return true;
+    return false;
+}
+
 const char *status_name(MemberStatus s) {
     switch (s) {
     case STATUS_ACTIVE: return "activo";
