@@ -196,11 +196,11 @@ def test_traer(tmp):
         except SystemExit:
             pass
         # Un animal necesita esqueleto y clips: la version low-poly queda para riggear, sin entrar al juego.
-        assert modelos.traer("animal.salvaje.lobo", archivo=src, log=quiet) == 0
-        assert os.path.isfile(os.path.join(root, "arte", "modelos", "para_riggear", "animal.salvaje.lobo.glb"))
+        assert modelos.traer("animal.salvaje.liebre", archivo=src, log=quiet) == 0
+        assert os.path.isfile(os.path.join(root, "arte", "modelos", "para_riggear", "animal.salvaje.liebre.glb"))
         items, _ = inventario.load()
-        assert modelos.find_item(items, "animal.salvaje.lobo")["estado"] == "pendiente"
-        assert not os.path.isfile(os.path.join(root, "assets", "models", "animal", "salvaje", "lobo.glb"))
+        assert modelos.find_item(items, "animal.salvaje.liebre")["estado"] == "pendiente"
+        assert not os.path.isfile(os.path.join(root, "assets", "models", "animal", "salvaje", "liebre.glb"))
         errors, _ = inventario.validate(items)
         clips, _ = animaciones.load_clips()
         aerrors, _ = animaciones.validate(items, clips)
@@ -400,9 +400,36 @@ def test_animales(tmp):
     assert len(doc["skins"][0]["joints"]) == len(e.nombres), len(doc["skins"][0]["joints"])
 
 
+def test_animales_fantasma(tmp):
+    """animales.en_voxeles: el volumen de una hoja de tres vistas con las patas de atras escalonadas trae dos columnas de
+    cada lado (dos fantasma): quedan las de mas volumen; las de adelante, pegadas de un lado al otro, se separan."""
+    import animales
+    import mcubes
+    partes = [((0.0, 1.0, 0.0), (1.2, 0.5, 0.4)), ((0.85, 1.35, 0.0), (0.5, 0.25, 0.22)),
+              ((0.45, 0.4, 0.0), (0.12, 0.8, 0.38))]  # el cuerpo, la cabeza y las patas de adelante, pegadas
+    for z in (0.13, -0.13):
+        partes += [((-0.45, 0.4, z), (0.12, 0.8, 0.12)), ((-0.15, 0.4, z), (0.08, 0.8, 0.08))]  # la pata y la fantasma
+    paso = 0.02
+    xs, ys, zs = (np.arange(a, b, paso) for a, b in ((-0.8, 1.2), (-0.05, 1.6), (-0.3, 0.3)))
+    X, Y, Z = np.meshgrid(xs, ys, zs, indexing="ij")
+    lleno = np.zeros(X.shape, bool)
+    for (cx, cy, cz), (lx, ly, lz) in partes:
+        lleno |= (np.abs(X - cx) <= lx / 2) & (np.abs(Y - cy) <= ly / 2) & (np.abs(Z - cz) <= lz / 2)
+    vv, ff = mcubes.marching_cubes(lleno.astype(float), 0.5)
+    m = trimesh.Trimesh(vv * paso + [xs[0], ys[0], zs[0]], ff)
+    v, f = np.asarray(m.vertices, float), np.asarray(m.faces, np.int64)
+    v2, f2, col, fantasmas, separadas = animales.en_voxeles(v, f, np.full((len(f), 3), 150.0))
+    assert fantasmas == 2 and separadas > 0 and len(col) == len(v2), (fantasmas, separadas)
+    P = animales.muestras(v2, f2)
+    sl = P[np.abs(P[:, 1] - 0.2) < 0.02]
+    patas = sorted(round(float(sl[:, 0].min() + gx.mean() * 0.02), 1) for gx, _ in animales._componentes(sl, sl.min(0), 0.02))
+    assert patas == [-0.5, -0.5, 0.4, 0.4] or patas == [-0.4, -0.4, 0.5, 0.5] or len(patas) == 4 and \
+        all(abs(abs(x) - 0.45) < 0.08 for x in patas), patas
+
+
 def main():
     tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave, test_refs_anigen,
-             test_refs_anigen_registro, test_adaptar_oga, test_animales]
+             test_refs_anigen_registro, test_adaptar_oga, test_animales, test_animales_fantasma]
     failed = 0
     tmp = tempfile.mkdtemp(prefix="modelos-")
     try:
