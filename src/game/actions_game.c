@@ -1481,6 +1481,8 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
                        dist2d(n->pos, (Vector3){ ga->projects[n->project].x, 0, ga->projects[n->project].z }) < AT_SITE;
         float bob = working || (n->job >= 0 && n->job_timer > 0.0f) ? fabsf(sinf(time * 6.0f + (float)i)) * 0.15f : 0.0f;
         const InvItem *body = inventory_find(ga->inv, s >= 1.2f ? "personaje.base.cuerpo_gigante" : "personaje.base.cuerpo_comun");
+        const InvItem *mujer = s < 1.2f && troop_name_is_woman(m->name) ? inventory_find(ga->inv, "personaje.base.cuerpo_mujer") : NULL;
+        if (mujer && props_has_model(props, mujer)) body = mujer; // las mujeres de la tribu, con su cuerpo
         if (body && props_has_model(props, body)) { // modelo importado: con su animacion (assets/animaciones.tsv)
             HumanoidState hs = { .moving = n->moving, .grounded = true, .doing = -1, .building = -1 };
             hs.down = m->health.down;

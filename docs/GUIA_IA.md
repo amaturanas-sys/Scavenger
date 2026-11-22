@@ -483,7 +483,8 @@ traba.
     su carrera (v0.15.8);
   - los golpes sin astillas: los cuerpos cerrados y en una pieza tras la reducción (v0.15.9);
   - los animales que faltaban: los caballos, los lobos y los demás cuadrúpedos de `para_riggear`, rehechos en vóxeles,
-    y el cuello al pastar (v0.15.10).
+    y el cuello al pastar (v0.15.10);
+  - las animaciones de la Universal Animation Library y el cuerpo de mujer, para las mujeres de la tribu (v0.15.11).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

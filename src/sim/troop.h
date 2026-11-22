@@ -167,4 +167,8 @@ void kingdom_init_jade_dynasty(Kingdom *k);  // piadoso y ordenado
 const char *role_name(Role r);
 const char *status_name(MemberStatus s);
 
+// ¿Es nombre de mujer? Los de la tribu no guardan su sexo: lo dice el nombre (los de las listas del juego, las mongolas
+// y las de la historia: Borte, Khulan, Toregene...). Para el cuerpo con que se dibuja (personaje.base.cuerpo_mujer).
+bool troop_name_is_woman(const char *name);
+
 #endif
