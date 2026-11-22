@@ -62,6 +62,14 @@ void hearth_unload(void) {
 
 void hearth_frame_begin(void) { g_count = 0; }
 int hearth_lit_count(void) { return g_count; }
+float hearth_nearest(Vector3 from) {
+    float best = 1.0e9f;
+    for (int f = 0; f < g_count; f++) {
+        float dx = g_fires[f].pos.x - from.x, dy = g_fires[f].pos.y - from.y, dz = g_fires[f].pos.z - from.z;
+        best = fminf(best, sqrtf(dx * dx + dy * dy + dz * dz));
+    }
+    return best;
+}
 
 // Una piedra: esfera de pocas caras, achatada y girada (como un canto).
 static void stone(Vector3 p, Vector3 size, float yaw, float tilt, Color c) {

@@ -33,6 +33,7 @@
 #include "../src/sim/placement.h"
 #include "../src/sim/rng.h"
 #include "../src/sim/save_format.h"
+#include "../src/sim/sonido.h"
 #include "../src/sim/keymap.h"
 #include "../src/sim/camview.h"
 #include "../src/sim/targeting.h"
@@ -623,6 +624,111 @@ static void test_troop_name_is_woman(void) {
     CHECK(troop_name_is_woman("Khulan") && troop_name_is_woman("Tsetseg") && troop_name_is_woman("Khutulun"));
     CHECK(!troop_name_is_woman("Subotai") && !troop_name_is_woman("Jebe") && !troop_name_is_woman("Batu"));
     CHECK(!troop_name_is_woman("Bandido 12") && !troop_name_is_woman("") && !troop_name_is_woman(NULL));
+}
+
+static AmbIn amb_base(void) {
+    AmbIn in = {0};
+    in.rio = in.cascada = in.mar = in.fuego = AMB_LEJOS;
+    in.luz = 1.0f;
+    return in;
+}
+
+static void test_sonido_ambiente(void) {
+    float o[AMB_COUNT];
+    // La estepa a mediodia, despejada: solo el viento, y mas con viento fuerte.
+    AmbIn in = amb_base();
+    in.abierto = 1.0f;
+    in.viento = 0.2f;
+    amb_mix(&in, o);
+    float calmo = o[AMB_VIENTO];
+    CHECK(calmo > 0.3f && o[AMB_BOSQUE_DIA] == 0.0f && o[AMB_RIO] == 0.0f && o[AMB_CUEVA] == 0.0f);
+    CHECK(o[AMB_FUEGO] == 0.0f && o[AMB_LLUVIA] == 0.0f && o[AMB_TORMENTA] == 0.0f && o[AMB_MAR] == 0.0f);
+    in.viento = 1.0f;
+    amb_mix(&in, o);
+    CHECK(o[AMB_VIENTO] > calmo && o[AMB_VIENTO] <= 1.0f);
+    // El bosque: de dia los pajaros, de noche los grillos; frena el viento.
+    in = amb_base();
+    in.bosque = 1.0f;
+    in.viento = 0.2f;
+    amb_mix(&in, o);
+    CHECK(o[AMB_BOSQUE_DIA] > 0.99f && o[AMB_BOSQUE_NOCHE] == 0.0f && o[AMB_VIENTO] < calmo * 0.5f);
+    in.luz = 0.0f;
+    amb_mix(&in, o);
+    CHECK(o[AMB_BOSQUE_NOCHE] > 0.99f && o[AMB_BOSQUE_DIA] == 0.0f);
+    // Con lluvia, el bosque calla a medias; la tormenta reemplaza a la lluvia.
+    in.luz = 1.0f;
+    in.lluvia = 1.0f;
+    amb_mix(&in, o);
+    CHECK(o[AMB_LLUVIA] > 0.99f && o[AMB_BOSQUE_DIA] < 0.35f && o[AMB_BOSQUE_DIA] > 0.0f);
+    in.tormenta = 1.0f;
+    amb_mix(&in, o);
+    CHECK(o[AMB_TORMENTA] > 0.99f && o[AMB_LLUVIA] == 0.0f);
+    // La ventisca: el viento entero en lo abierto; en el bosque, menos, pero mas que cualquier viento de bosque.
+    in = amb_base();
+    in.abierto = 1.0f;
+    in.ventisca = 1.0f;
+    amb_mix(&in, o);
+    CHECK(o[AMB_VIENTO] > 0.99f);
+    in = amb_base();
+    in.bosque = 1.0f;
+    in.viento = 1.0f;
+    amb_mix(&in, o);
+    float bosque_ventoso = o[AMB_VIENTO];
+    in.ventisca = 1.0f;
+    amb_mix(&in, o);
+    CHECK(o[AMB_VIENTO] > 0.55f && o[AMB_VIENTO] < 0.65f && o[AMB_VIENTO] > 3.0f * bosque_ventoso);
+    // El rio: entero de cerca, nada de lejos, y baja sin saltos al alejarse.
+    in = amb_base();
+    float antes = 2.0f;
+    bool baja = true;
+    for (float d = 0.0f; d <= 60.0f; d += 0.5f) {
+        in.rio = d;
+        amb_mix(&in, o);
+        baja &= o[AMB_RIO] <= antes && antes - o[AMB_RIO] < 0.06f + (d == 0.0f);
+        antes = o[AMB_RIO];
+        if (d == 3.0f) CHECK(o[AMB_RIO] == 1.0f);
+        if (d == 25.0f) CHECK(o[AMB_RIO] > 0.2f && o[AMB_RIO] < 0.8f);
+    }
+    CHECK(baja && antes == 0.0f);
+    // La cascada se oye de mas lejos que el rio, y el mar de mas lejos que la cascada.
+    in = amb_base();
+    in.rio = in.cascada = in.mar = 40.0f;
+    amb_mix(&in, o);
+    CHECK(o[AMB_RIO] < o[AMB_CASCADA] && o[AMB_CASCADA] < o[AMB_MAR]);
+    // En la cueva, solo la cueva y la fogata: ni el viento, ni la lluvia, ni el rio de afuera.
+    in = amb_base();
+    in.cueva = true;
+    in.abierto = in.viento = in.lluvia = in.bosque = 1.0f;
+    in.rio = 1.0f;
+    in.fuego = 5.0f;
+    amb_mix(&in, o);
+    CHECK(o[AMB_CUEVA] == 1.0f && o[AMB_FUEGO] > 0.5f);
+    CHECK(o[AMB_VIENTO] == 0.0f && o[AMB_LLUVIA] == 0.0f && o[AMB_RIO] == 0.0f && o[AMB_BOSQUE_DIA] == 0.0f);
+    // Cualquier entrada da volumenes en [0, 1] (aun fuera de rango).
+    Rng rng;
+    rng_seed(&rng, 77u);
+    bool rango = true;
+    for (int i = 0; i < 2000; i++) {
+        AmbIn r;
+        float *campo[] = {&r.bosque, &r.abierto, &r.luz, &r.viento, &r.lluvia, &r.tormenta, &r.ventisca};
+        for (int k = 0; k < 7; k++) *campo[k] = -1.0f + 3.0f * rng_float(&rng);
+        float *dist[] = {&r.rio, &r.cascada, &r.mar, &r.fuego};
+        for (int k = 0; k < 4; k++) *dist[k] = -5.0f + 205.0f * rng_float(&rng);
+        r.cueva = rng_next(&rng) & 1u;
+        amb_mix(&r, o);
+        for (int k = 0; k < AMB_COUNT; k++) rango &= o[k] >= 0.0f && o[k] <= 1.0f;
+    }
+    CHECK(rango);
+    // El volumen sigue al objetivo sin pasarse; tau 0 salta, dt 0 se queda.
+    float v = 0.0f;
+    for (int i = 0; i < 120; i++) v = amb_follow(v, 1.0f, 1.0f / 60.0f, 0.5f);
+    CHECK(v > 0.85f && v < 1.0f);
+    CHECK(fabsf(amb_follow(0.0f, 1.0f, 0.5f, 0.5f) - (1.0f - expf(-1.0f))) < 1e-5f);
+    CHECK(amb_follow(0.3f, 1.0f, 0.1f, 0.0f) == 1.0f && amb_follow(0.3f, 1.0f, 0.0f, 0.5f) == 0.3f);
+    // Los pasos: el agua manda sobre la madera, la madera sobre la roca.
+    CHECK(amb_suelo(true, true, true) == SUELO_AGUA && amb_suelo(false, true, true) == SUELO_MADERA);
+    CHECK(amb_suelo(false, false, true) == SUELO_PIEDRA && amb_suelo(false, false, false) == SUELO_TIERRA);
+    CHECK(amb_paso_cada(true) < amb_paso_cada(false) && fabsf(amb_paso_cada(false) - 0.6665f) < 0.01f);
 }
 
 static void test_troop_health_daily(void) {
@@ -6848,6 +6954,7 @@ int main(void) {
     RUN(test_health_wounds_bleeding_healing);
     RUN(test_troop_health_daily);
     RUN(test_troop_name_is_woman);
+    RUN(test_sonido_ambiente);
     RUN(test_combat_weapons_and_enemies);
     RUN(test_body_zones_raycast);
     RUN(test_armor_pieces_materials);

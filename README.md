@@ -264,6 +264,24 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+El sonido (v0.16.0): sin música, el ambiente natural y lo que suena en cada lugar del mapa.
+- **El ambiente, en bucle:** el viento (más en lo abierto y con viento fuerte; el bosque lo frena), el bosque de día y
+  de noche, la lluvia, la tormenta, el río, la cascada, el mar, la cueva y el fuego. Cuánto suena cada uno lo decide
+  `amb_mix` (`src/sim/sonido.c`, con sus pruebas) según dónde está el jugador y qué tiempo hace: el río que corre (ni
+  seco ni helado; el de poca agua, más bajo), el pie de la cascada, el mar sin helar, la fogata, la hoguera o la
+  antorcha más cercanas, el bosque o el campo abierto, la hora y el clima. Adentro de una cueva, solo la cueva y sus
+  fuegos. El río, la cascada y el mar suenan del lado en que están.
+- **Lo que pasa:** los pasos al ritmo de la animación, según lo que se pisa (tierra, piedra, agua o madera de un
+  puente) y más bajos en sigilo; las brazadas al nadar; aves de día y sin lluvia (pájaros y grajillas en el bosque,
+  cuervos en lo abierto); los golpes (el arma que corta el aire, la que da, la que paran, el escudo, el puño, la
+  patada, el parry), el arco y la flecha que se clava, y el quejido del jugador. Con la distancia bajan y suenan del
+  lado en que pasan (`src/game/audio_game.c`).
+- **El volumen,** en el menú del título y en el de pausa (el ícono del altavoz): 0, 25, 50, 75 o 100 %, guardado en
+  `ajustes.txt`. Sin dispositivo de audio, el juego sigue en silencio.
+- **Los sonidos,** elegidos de los paquetes subidos a `IMPORTED/Sound/SFX` y convertidos por `tools/sonido/sonidos.py`
+  (mono, 22 050 Hz, Vorbis, nivelados, y los bucles sin costura): 55 archivos, 2,2 MB en `assets/sonidos`, con sus
+  créditos en `assets/sonidos/CREDITOS.md`.
+
 Las animaciones de la Universal Animation Library y el cuerpo de mujer (v0.15.11):
 - **UAL1 y UAL2 de Quaternius** (CC0, `IMPORTED/Humanoid/Animaciones`), llevadas al esqueleto del juego como el paso
   y la carrera de la v0.15.8 (`--ual` y `DE_UAL` en `tools/modelos/humanoide.py`), para los clips que tenían uno

@@ -434,6 +434,7 @@ static void outside(GameActions *ga, Combat *cb, const Props *props, Player *p, 
 }
 
 // ---------------------------------------------------------------- lo publico
+const Player *cv_player(void) { return g_cave >= 0 ? &g_in : NULL; }
 bool cv_inside(void) { return g_cave >= 0; }
 int cv_cave(void) { return g_cave; }
 

@@ -33,5 +33,8 @@ void hearth_draw_smoke(Camera3D cam, float time, float wind, float light);
 // Llamas, brasas y chispas de los fuegos encendidos de este cuadro.
 void hearth_draw_flames(float time, float wind);
 int hearth_lit_count(void);
+// La distancia (m) al fuego encendido mas cercano de los que se dibujaron en el ultimo cuadro (las fogatas, las
+// hogueras y las antorchas), o 1e9 si no hubo ninguno: el crepitar (src/game/audio_game.c).
+float hearth_nearest(Vector3 from);
 
 #endif

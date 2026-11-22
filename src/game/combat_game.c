@@ -4,6 +4,7 @@
 #include "game/input.h"
 #include "game/hud_game.h"
 #include "game/apparel_game.h"
+#include "game/audio_game.h"
 #include "game/water_game.h"
 #include "game/fauna_game.h"
 #include "game/inventory_game.h"
@@ -615,6 +616,28 @@ static Fighter fighter_player(const Combat *cb, const Player *p, const GameActio
 
 static const char *enemy_weapon(const Enemy *e) { return e->armed ? enemy_def(e->kind)->weapon : ""; }
 
+// El sonido de un golpe cuerpo a cuerpo en at (src/game/audio_game.c): el arma que corta el aire, la que da, la que
+// paran; el escudo que choca; el puño y la patada.
+static void melee_sound(const MeleeResult *r, MeleeMove mv, const char *weapon, Vector3 at) {
+    bool armed = weapon && weapon[0];
+    bool strike = mv == MOVE_LIGHT || mv == MOVE_HEAVY || mv == MOVE_BACKSTAB || mv == MOVE_FINISH;
+    SoundId snd;
+    if (mv == MOVE_SHIELD_BASH || mv == MOVE_SHIELD_CHARGE) {
+        if (!r->landed) return;
+        snd = SND_BLOQUEO;
+    } else if (!r->landed) {
+        if (!armed || !strike) return;
+        snd = SND_TAJO;
+    } else if (r->blocked) {
+        snd = armed ? SND_BLOQUEO : SND_PUNO;
+    } else if (mv == MOVE_KICK || mv == MOVE_RUN_KICK) {
+        snd = SND_PATADA;
+    } else {
+        snd = armed && strike ? SND_IMPACTO : SND_PUNO;
+    }
+    au_play(snd, &at, mv == MOVE_HEAVY ? 1.0f : 0.85f);
+}
+
 static Fighter fighter_enemy(const Enemy *e, Vector3 from) {
     const EnemyDef *def = enemy_def(e->kind);
     Fighter f = { 0 };
@@ -1001,6 +1024,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     if (m == MOVE_GRAPPLE) me.strength *= 1.0f + ig_stat(ga, STAT_GRAPPLE_POWER); // amuletos del tigre y del oso
     me.strength *= momentum * (1.0f + ig_stat(ga, STAT_MELEE)) * (1.0f - 0.35f * wg_clumsy(ga)); // tatuajes, joyas, el aullido; borracho, menos
     MeleeResult r = melee_resolve(m, &me, &foe, weapon, step, &cb->rng);
+    melee_sound(&r, m, weapon, e->pos);
     // La lanza al galope: el que la recibe (sin pararla) suele caer.
     if (riding && w.spear && cb->pl_speed > GALLOP_SPEED && r.landed && !r.blocked && rng_float(&cb->rng) < 0.6f)
         r.knocked_down = true;
@@ -1084,6 +1108,8 @@ static void enemy_strike(Combat *cb, Enemy *e, Player *p, GameActions *ga, Troop
     if (mv == MOVE_LIGHT) e->combo = e->combo % 3 + 1;
     me.strength *= health_attack_scale(&e->h) * (e->mounted ? weapon_mounted_scale(weapon, e->speed) : 1.0f);
     MeleeResult r = melee_resolve(mv, &me, &foe, weapon, mv == MOVE_LIGHT ? e->combo : 1, &cb->rng);
+    melee_sound(&r, mv, weapon, at);
+    if (!m && r.landed && !r.blocked && r.damage >= 8.0f) au_play(SND_QUEJIDO, NULL, 1.0f);
     // Montado: a veces el golpe se lo lleva el caballo.
     if (!m && ga->mounted >= 0 && r.damage > 0.5f && !r.blocked && rng_float(&cb->rng) < 0.35f) {
         fg_hurt(ga, ga->mounted, r.damage, r.wound, PART_RANDOM, -1, NULL, 0);
@@ -1144,6 +1170,7 @@ static void player_parry(Combat *cb, Player *p, GameActions *ga, Props *props, c
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
     me.strength *= health_attack_scale(&cb->player) * (1.0f + ig_stat(ga, STAT_GRAPPLE_POWER));
     MeleeResult r = melee_parry(k, &me, &foe, &cb->rng);
+    au_play(k == PARRY_GRAPPLE ? SND_PUNO : SND_PARRY, &e->pos, 1.0f);
     // El golpe del rival no llega a caer.
     e->windup = 0.0f, e->windup_move = 0;
     e->cooldown = enemy_def(e->kind)->cooldown;
@@ -1231,6 +1258,7 @@ static Shot *fire(Combat *cb, const RangedDef *rd, Vector3 from, float yaw, floa
     pitch += (rng_float(&cb->rng) - 0.5f) * 2.0f * spread;
     memset(s, 0, sizeof(*s));
     projectile_launch(&s->p, rd->projectile, to_v3(from), yaw, pitch, ranged_muzzle_speed(rd, charge));
+    au_play(rd->projectile == PROJ_ARROW || rd->projectile == PROJ_BOLT ? SND_ARCO : SND_TAJO, &from, 0.9f);
     s->owner = owner;
     s->burning = burning;
     return s;
@@ -1393,6 +1421,8 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
         if (kind >= 0) {
             // Retrocede hasta el punto del impacto para el daño (la energia de ese instante).
             s->p.alive = false;
+            Vector3 hit_at = to_vec(s->p.pos);
+            au_play(SND_FLECHA, &hit_at, 1.0f); // se clava en un cuerpo (o en el pavés)
             const ProjectileDef *pd = projectile_def(s->p.kind);
             if (kind == 2 && pavise_blocks(cb, &cb->enemies[idx], d)) { // se clava en el pavés
                 Enemy *e = &cb->enemies[idx];
@@ -1461,6 +1491,7 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             float l = sqrtf(d.x * d.x + d.y * d.y + d.z * d.z);
             s->dir = l > 1e-4f ? (V3){ d.x / l, d.y / l, d.z / l } : (V3){ 0, -1, 0 };
             s->p.pos = to_v3(wall_at);
+            au_play(SND_FLECHA, &wall_at, 0.7f);
             s->stuck = true;
             s->life = 0.0f;
             continue;
@@ -1474,7 +1505,10 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             s->stuck = true;
             s->life = 0.0f;
             if (s->burning && ga->ignite_n < 8) ga->ignite_at[ga->ignite_n++] = to_vec(s->p.pos); // prende donde cae
-            if (terrain_deep_water(t, s->p.pos.x, s->p.pos.z, 0.25f)) {
+            Vector3 fell = to_vec(s->p.pos);
+            bool wet = terrain_deep_water(t, s->p.pos.x, s->p.pos.z, 0.25f);
+            au_play(wet ? SND_CHAPOTEO : SND_FLECHA, &fell, wet ? 0.6f : 0.45f);
+            if (wet) {
                 s->p.alive = false; // al agua (quiza atraviese un pez)
                 if (s->owner == 0) fg_shot_water(ga, t, to_vec(s->p.pos), log, len);
             }
@@ -2051,6 +2085,7 @@ static void member_fight(Combat *cb, GameActions *ga, Troop *troop, Props *props
         if (mv == MOVE_SHIELD_BASH || (mv == MOVE_HOOK && !weapon_can_hook(weapon))) mv = MOVE_HEAVY;
         if (mv == MOVE_LIGHT) n->combo = n->combo % 3 + 1;
         MeleeResult r = melee_resolve(mv, &me, &foe, weapon, mv == MOVE_LIGHT ? n->combo : 1, &cb->rng);
+        melee_sound(&r, mv, weapon, best->pos);
         if (r.attacker_staggered) n->stagger = STAGGER_SECONDS;
         hit_enemy(cb, best, mv, &r, props, m->id, NULL, 0);
         cb->comp_cd[k] = mv == MOVE_LIGHT ? melee_combo_cooldown(weapon, COMPANION_COOLDOWN, n->combo) : move_def(mv)->recovery + 0.5f;
@@ -2500,6 +2535,7 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, Troop *tr
         if (e) {
             Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
             MeleeResult r = melee_resolve(MOVE_SHIELD_CHARGE, &me, &foe, "", 1, &cb->rng);
+            melee_sound(&r, MOVE_SHIELD_CHARGE, "", e->pos);
             hit_enemy(cb, e, MOVE_SHIELD_CHARGE, &r, props, 0, log, len);
             cb->charge_hit = true;
         }
@@ -2582,6 +2618,7 @@ static void lance_charge(Combat *cb, Player *p, GameActions *ga, const Terrain *
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
     me.strength *= lance_charge_damage(1.0f, speed) * health_attack_scale(&cb->player) * (1.0f + ig_stat(ga, STAT_MELEE));
     MeleeResult r = melee_resolve(MOVE_HEAVY, &me, &foe, weapon, 1, &cb->rng);
+    melee_sound(&r, MOVE_HEAVY, weapon, e->pos);
     bool heavy = w.mounted_only; // la lanza pesada
     if (r.landed) r.knocked_down = rng_float(&cb->rng) < (heavy ? heavy_lance_knock(speed, r.blocked) : lance_charge_knock(speed, r.blocked));
     char who[48];
@@ -2597,6 +2634,7 @@ static void lance_charge(Combat *cb, Player *p, GameActions *ga, const Terrain *
         Fighter me2 = me, foe2 = fighter_enemy(n, p->pos);
         me2.strength *= 1.0f / (float)(2 << j); // la mitad, la cuarta parte
         MeleeResult r2 = melee_resolve(MOVE_HEAVY, &me2, &foe2, weapon, 1, &cb->rng);
+        melee_sound(&r2, MOVE_HEAVY, weapon, n->pos);
         if (r2.landed) r2.knocked_down = rng_float(&cb->rng) < heavy_lance_knock(speed, r2.blocked) * (0.8f - 0.2f * (float)j);
         hit_enemy(cb, n, MOVE_HEAVY, &r2, props, 0, NULL, 0);
         if (n->target < 0) n->target = 0;

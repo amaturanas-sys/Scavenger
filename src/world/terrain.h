@@ -165,6 +165,9 @@ void terrain_collide(const Terrain *t, float *x, float *z, float y, float radius
 // Tambien las rocas (las de prop_slot y las del decorado que se trepan): una cupula sobre su planta, para quien llega a
 // menos de reach de su superficie.
 float terrain_ground(const Terrain *t, float x, float z, float y_hint, float reach);
+// Que pisa quien tiene los pies a la altura y en (x, z): 1 un tablero (el puente, los muelles, la tarima), 2 una roca
+// (de las que se trepan), 0 el suelo. Para el sonido de los pasos (src/game/audio_game.c).
+int terrain_ground_kind(const Terrain *t, float x, float z, float y);
 // Lo que cubre en el mundo a menos de reach m del borde: el tronco de un arbol, una roca de un metro o mas,
 // una mata alta o una formacion de voxeles (los mismos que se dibujan). true con el mas cercano: su centro
 // (en el suelo) y su radio. La cobertura del jugador (C, A4) lo usa.

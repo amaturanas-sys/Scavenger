@@ -1,6 +1,13 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: animaciones nuevas y las mujeres de la tribu
+## Novedades: el sonido de la estepa
+
+- **El ambiente natural, sin música:** el viento corre por la estepa y el altiplano y se calma en el bosque; el bosque suena de día y de noche; la lluvia, la tormenta y la ventisca se oyen cuando llegan.
+- **Los lugares suenan:** el río que corre (y no el seco ni el helado), la cascada desde lejos, el mar en la costa, la fogata y las antorchas de cerca, y adentro de una cueva, solo la cueva. El río, la cascada y el mar suenan del lado en que están.
+- **Lo que pasa:** los pasos según lo que pisas (tierra, piedra, agua o la madera de un puente), más suaves en sigilo; las brazadas al nadar; pájaros, grajillas y cuervos de día; los golpes, el parry, el arco y la flecha que se clava, más bajos cuanto más lejos.
+- **El volumen,** con el ícono del altavoz en el menú del título y en el de pausa: 0, 25, 50, 75 o 100 %.
+
+## De la v0.15.11: animaciones nuevas y las mujeres de la tribu
 
 - **Las mujeres de la tribu** tienen su propio cuerpo: Borte, Temulun, Altani y las que se sumen (Khulan, Yesui, Tsetseg...) ya no llevan el de los hombres.
 - **Animaciones nuevas** para lo que antes se hacía con otra: llevar una carga con los brazos delante, lanzar por encima del hombro (también el lazo y el gancho de la trepa), la estocada de lanza (antes era un puñetazo), el remate del combo, martillar en la forja, construir, encender y curar de rodillas, ensillar, cocinar y gesticular al hablar.
