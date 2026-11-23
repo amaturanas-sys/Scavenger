@@ -46,6 +46,7 @@ typedef struct {
 typedef struct {
     float x, y, z, scale, yaw; // la base, la escala del modelo (1: el alto del inventario) y el giro
     unsigned char kind;        // TreeKind (src/sim/flora.h)
+    unsigned char state;       // TREES_SUMMER (de la estacion), TREES_DRY o TREES_DEAD: la transicion al desierto (flora_tree_state)
 } ChunkTree;
 
 // El decorado de cada chunk: los modelos de OpenGameArt, sembrados con sus normas (src/sim/decor.h). Cada cosa

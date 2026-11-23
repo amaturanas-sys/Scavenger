@@ -1,6 +1,15 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: el sonido de la estepa
+## Novedades: el mar y las transiciones
+
+- **El mar llega a donde tiene que llegar:** todo lo que queda bajo el nivel del mar y se alcanza desde mar abierto es mar; una hondonada que el relieve cierra queda seca. Donde el canal del bosque entra a la costa de los fiordos ya no queda una zanja seca con pinos bajo el nivel del mar: el canal llega al mar sin escalón.
+- **El arrecife:** junto a las playas de los fiordos el agua es clara y deja ver praderas de pasto marino y bosques de algas que se mecen con la resaca.
+- **El mar hondo:** más allá del arrecife, el mar se oscurece como una niebla y no deja ver el fondo.
+- **Bajo el nivel del mar, nada de tierra:** ni árboles, ni rocas, ni animales que no naden.
+- **Hacia el desierto, todo seco:** pasto y hierbas pajizos, sin flores, y árboles secos o muertos; los oasis siguen verdes.
+- **Hacia el bosque, en manchas:** bosquecillos y claros, en vez de árboles sueltos parejos.
+
+## De la v0.16.0: el sonido de la estepa
 
 - **El ambiente natural, sin música:** el viento corre por la estepa y el altiplano y se calma en el bosque; el bosque suena de día y de noche; la lluvia, la tormenta y la ventisca se oyen cuando llegan.
 - **Los lugares suenan:** el río que corre (y no el seco ni el helado), la cascada desde lejos, el mar en la costa, la fogata y las antorchas de cerca, y adentro de una cueva, solo la cueva. El río, la cascada y el mar suenan del lado en que están.
@@ -104,7 +113,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.16.0, la v0.15.11 y la v0.15.10).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.17.0, la v0.16.0 y la v0.15.11).
 
 ## Android
 

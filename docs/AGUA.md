@@ -312,3 +312,40 @@ nada mar adentro · despierta en la playa, herido y con secuelas (`--ir muro-can
   hay muro, y la frontera deja al jugador ahí;
 - las secuelas suman hasta todas, frenan y cansan, no se van con los días (ni con curandero), el curandero las cura
   de a poco y el druida de una vez.
+
+## La v0.17.0: el nivel del mar
+
+El nivel del mar (0 m) es el mismo en todo el mundo y es el límite de lo de tierra:
+
+1. **El mar es lo que se alcanza desde mar abierto** (`World.ocean`, `make_ocean` en `src/sim/world.c`): al final de
+   la generación, una grilla polar de la costa (celdas de 8 m: 3776 alrededor y 168 hacia adentro, 1344 m) marca las
+   celdas bajas (alguna esquina bajo el nivel del mar, con la altura que se dibuja, `world_height`) y el mar entra
+   desde el borde por ellas, también de esquina a esquina. Solo se mide lo que toca al mar: unos 40 000 puntos, de 60 a
+   80 ms. Hay mar donde el suelo queda bajo +1 m y alguna celda vecina es mar.
+   - **Una cuenca bajo el nivel del mar que el relieve aísla queda seca:** el nivel del mar es transversal, pero un
+     área sin entrada no se inunda.
+   - Antes, el mar era todo lo que quedaba bajo +1 m en la costa de los fiordos, con el relieve de antes del cauce:
+     quedaban zanjas secas bajo el nivel del mar abiertas al mar (el fondo, poblado como tierra: pinos a −1 m) y mar en
+     pozos sin entrada. En seis semillas, ahora no queda fondo seco abierto al mar.
+2. **El canal del bosque llega al mar:** hacia los fiordos lleva agua en todo su cauce (antes, solo donde el bosque
+   pesaba más de la mitad, y el resto del cauce era una zanja seca bajo el nivel del mar) y, donde entra a la costa,
+   baja al nivel del mar y se vuelve mar (`WaterBodies.canal_sea`): no crece aparte con la primavera ni se hiela
+   aparte, y no queda escalón entre su agua y la del mar. Hacia el desierto, su cauce se va secando como antes (lo de
+   más allá es el cañón).
+3. **Los lugares no se mueven** (`World.water_v16`): mientras `world_generate` los pone, el agua es la de antes; las
+   partidas viejas los encuentran donde estaban.
+4. **Una sola regla para lo de tierra** (`world_submerged`, `src/sim/world.h`): donde el suelo queda bajo el nivel del
+   mar, o el agua llega cerca, no nacen árboles, rocas, matas, el decorado seco, la flora de tierra ni los animales que
+   no nadan. Bajo el nivel del mar, aunque esté seco, solo juncos.
+5. **El arrecife y el mar hondo** (`sea_tint` en `src/world/terrain.c`): el agua del mar toma el color y la opacidad
+   de su hondura, en la malla cercana y en la lejana, con el shader y sin él: hasta 0,5 m, clara y turquesa (se ven el
+   pasto marino y las algas del arrecife, `FLORA_SEAGRASS` y `FLORA_KELP`); a 6 m, el azul de antes; desde 14 m, un
+   azul casi negro y opaco, como una niebla: el fondo del mar hondo no se ve. Frente a la playa, el fondo baja a −7 m
+   en 20 a 40 m y después hasta −22 m: el arrecife es esa franja.
+
+**Las pruebas** (`tests/test_main.c`, `test_sea_level`): la junta del canal con la costa de los fiordos de la semilla
+31337 sin fondo seco abierto al mar ni mar en pozos (con el agua de la v0.16, 5504 y 8080 m²); el canal entra al mar a
+su nivel, también crecido; la máscara sale igual de la semilla; a lo largo de la costa, lo marino solo en el mar y en
+la franja del arrecife. `test_world_dry` sigue mirando que nada quede en el agua con las reglas nuevas.
+
+**Pendiente:** los botes y la gente que navega ([ROADMAP.md](ROADMAP.md)).

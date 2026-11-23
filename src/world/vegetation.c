@@ -102,6 +102,9 @@ typedef struct {
     Color stipa_tip, fern, reed, herb;
 } VegLook;
 
+// Lo seco de la transicion al desierto (v0.17.0, flora_arid): paja todo el año.
+static Color dry_of(Color c, const FloraTuft *t, float v) { return mixc(c, shade((Color){ 178, 156, 102, 255 }, v), t->arid / 255.0f); }
+
 // El pasto: el color del suelo de su region y su estacion (src/world/terrain.c: ground_color).
 static Color grass_color(const Climate *c, const FloraTuft *t) {
     const Color green = { 112, 150, 70, 255 }, dry = { 188, 168, 106, 255 }, ochre = { 172, 124, 68, 255 };
@@ -113,7 +116,7 @@ static Color grass_color(const Climate *c, const FloraTuft *t) {
     g = mixc(g, mixc(needles, ochre, c->autumn * 0.3f), t->forest / 255.0f);
     g = mixc(g, tundra, t->high / 255.0f);
     g = mixc(g, moss, t->fjord / 255.0f);
-    return mixc(g, desert, t->desert / 255.0f * 0.6f);
+    return dry_of(mixc(g, desert, t->desert / 255.0f * 0.6f), t, 1.0f);
 }
 
 static void tri(Vector3 a, Color ca, Vector3 b, Color cb, Vector3 c, Color cc) {
@@ -173,7 +176,7 @@ static void draw_tuft(const FloraTuft *t, const Climate *c, const VegLook *L, fl
     case FLORA_GRASS: {
         // La base, a la sombra; las puntas, al sol (en primavera y verano, de un verde mas claro).
         Color g = grass_color(c, t), cb = shade(g, 0.7f * v);
-        Color ct = mixc(mixc(shade(g, 1.18f * v), (Color){ 200, 208, 120, 255 }, 0.22f * c->greenness), snow, L->snow * 0.5f);
+        Color ct = mixc(mixc(shade(g, 1.18f * v), (Color){ 200, 208, 120, 255 }, 0.22f * c->greenness * (1.0f - t->arid / 255.0f)), snow, L->snow * 0.5f);
         int n = lod == 3 ? 4 : lod;
         for (int j = 0; j < n; j++) {
             float a = a0 + (float)j * 6.2832f / (float)n, ox = cosf(a), oz = sinf(a);
@@ -222,14 +225,14 @@ static void draw_tuft(const FloraTuft *t, const Climate *c, const VegLook *L, fl
         break;
     }
     case FLORA_HERB: { // hojas anchas grises que se abren desde el pie; en flor, una o dos espigas moradas
-        Color cb = shade(L->herb, 0.62f * v), ct = mixc(shade(L->herb, 1.15f * v), snow, L->snow * 0.5f);
+        Color herb = dry_of(L->herb, t, 0.85f), cb = shade(herb, 0.62f * v), ct = mixc(shade(herb, 1.15f * v), snow, L->snow * 0.5f);
         int n = lod == 3 ? 6 : lod == 2 ? 4 : 2;
         for (int j = 0; j < n; j++) {
             float a = a0 + (float)j * 6.2832f / (float)n, ox = cosf(a), oz = sinf(a);
             float hj = h * (0.5f + 0.15f * fmodf(t->rnd * 4.3f + (float)j * 0.53f, 1.0f));
             blade(b, hj, ox, oz, 0.55f, bx * 0.5f, bz * 0.5f, 0.07f * s, -oz, ox, cb, ct, 0.0f, 1.0f, cb);
         }
-        if (L->plume > 0.05f && lod > 1) { // las espigas: el tomillo y la salvia moradas, algun ajenjo amarillo
+        if (L->plume > 0.05f && lod > 1 && t->arid < 128) { // las espigas: el tomillo y la salvia moradas, algun ajenjo amarillo
             static const Color BLOOM[3] = { { 150, 108, 196, 255 }, { 116, 104, 200, 255 }, { 206, 186, 92, 255 } };
             Color petal = mixc(cb, shade(BLOOM[(int)(t->rnd * 613.0f) % 3], v), L->plume);
             int spikes = lod == 3 ? 2 : 1;
@@ -264,6 +267,27 @@ static void draw_tuft(const FloraTuft *t, const Climate *c, const VegLook *L, fl
                 tri((Vector3){ e.x - sx * r, e.y, e.z - sz * r }, brown, (Vector3){ e.x, e.y - len * 0.5f, e.z }, brown,
                     (Vector3){ e.x + sx * r, e.y, e.z + sz * r }, brown);
             }
+        }
+        break;
+    }
+    case FLORA_SEAGRASS: { // cintas finas y largas, verdes, que el mar mece
+        Color cb = shade((Color){ 38, 82, 50, 255 }, v), ct = shade((Color){ 96, 152, 82, 255 }, v), cm = mixc(cb, ct, 0.5f);
+        int n = lod == 3 ? 5 : lod == 2 ? 3 : 2;
+        for (int j = 0; j < n; j++) {
+            float a = a0 + (float)j * 6.2832f / (float)n, ox = cosf(a), oz = sinf(a);
+            float hj = h * (0.7f + 0.3f * fmodf(t->rnd * 6.1f + (float)j * 0.41f, 1.0f));
+            blade(b, hj, ox, oz, 0.12f, bx, bz, 0.035f * s, -oz, ox, cb, ct, lod == 3 ? 0.5f : 0.0f, 1.0f, cm);
+        }
+        break;
+    }
+    case FLORA_KELP: { // las algas: cintas anchas con un quiebre, pardas abajo y oliva arriba
+        Color cb = shade((Color){ 62, 54, 28, 255 }, v), cm = shade((Color){ 100, 92, 40, 255 }, v), ct = shade((Color){ 132, 122, 54, 255 }, v);
+        int n = lod == 3 ? 3 : lod == 2 ? 2 : 1;
+        for (int j = 0; j < n; j++) {
+            float a = a0 + (float)j * 2.094f, ox = cosf(a), oz = sinf(a), lag = 1.0f + 0.3f * (float)j; // cada cinta, a su ritmo
+            float hj = h * (0.8f + 0.2f * fmodf(t->rnd * 3.3f + (float)j * 0.57f, 1.0f));
+            float w = (n == 1 ? 0.12f : 0.09f) * s, sx = n == 1 ? fx : -oz, sz = n == 1 ? fz : ox;
+            blade(b, hj, ox, oz, 0.08f, bx * lag, bz * lag, w, sx, sz, cb, ct, lod > 1 ? 0.45f : 0.0f, 1.4f, cm);
         }
         break;
     }
@@ -411,6 +435,8 @@ void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float tim
             float keep = d < thin ? top : top - (top - kmin) * (d - thin) / (radius - thin), cut = fmodf(tf->rnd * 113.0f, 1.0f);
             if (cut > keep) continue;
             float h = hk[tf->kind] * tf->size * smooth(radius, radius - VEG_FADE, d) * smooth(keep, keep - VEG_THIN_FADE, cut);
+            bool marine = FLORA_MARINE(tf->kind);
+            if (marine) h = fminf(h, SEA_LEVEL - 0.15f - tf->y); // bajo el agua: no asoma
             if (h < 0.04f) continue;
             Vector3 to = { tf->x - cam.position.x, tf->y + h * 0.5f - cam.position.y, tf->z - cam.position.z };
             float cd = Vector3Length(to);
@@ -418,7 +444,7 @@ void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float tim
             // La nieve: la del suelo de su celda (src/world/terrain.c); la stipa y los juncos secos asoman.
             float cover = L.snow * (1.0f - 0.6f * tf->desert / 255.0f), above = tf->y - t->look.snowline;
             if (above > 0.0f) continue; // el glaciar
-            bool snowy = tf->patch < cover * 1.15f - 0.05f || (above > -6.0f && tf->patch < (above + 6.0f) / 6.0f);
+            bool snowy = !marine && (tf->patch < cover * 1.15f - 0.05f || (above > -6.0f && tf->patch < (above + 6.0f) / 6.0f));
             if (snowy) {
                 if (tf->kind != FLORA_STIPA && tf->kind != FLORA_REED) continue;
                 h -= 0.25f;
@@ -441,6 +467,11 @@ void vegetation_draw(const Terrain *t, Camera3D cam, const Climate *c, float tim
             float phase = -(tf->x * WIND_DIR.x + tf->z * WIND_DIR.y) * 0.45f + tf->rnd * 1.5f;
             float s = lean + flora_sway(time, c->wind, phase), side = 0.35f * flora_sway(time * 1.3f, c->wind, phase + 1.7f);
             float bx = WIND_DIR.x * s - WIND_DIR.y * side, bz = WIND_DIR.y * s + WIND_DIR.x * side;
+            if (marine) { // el mar: la resaca las lleva hacia la costa y de vuelta (hacia el centro del mundo), despacio
+                float r = sqrtf(tf->x * tf->x + tf->z * tf->z) + 1.0f, ph = tf->rnd * 6.2832f + (tf->x + tf->z) * 0.15f;
+                float surge = 0.28f * sinf(time * 0.85f + ph) + 0.08f * sinf(time * 2.1f + ph * 1.7f);
+                bx = -tf->x / r * surge + 0.05f * sinf(time * 0.6f + ph), bz = -tf->z / r * surge + 0.05f * cosf(time * 0.7f + ph);
+            }
             for (int k = 0; k < nwalkers; k++) {
                 float ex = tf->x - walkers[k].x, ez = tf->z - walkers[k].z, e = sqrtf(ex * ex + ez * ez);
                 float push = flora_trample(e);

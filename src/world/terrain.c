@@ -154,6 +154,20 @@ static Color mixc(Color a, Color b, float k) {
                     255 };
 }
 
+// El mar segun su hondura (v0.17.0, docs/AGUA.md): sobre el arrecife, claro y transparente (se ven las algas y el
+// pasto marino); mas alla, cada vez mas oscuro y opaco, como una niebla: el fondo del mar hondo no se ve.
+#define SEA_CLEAR 0.5f  // hasta aca, el agua clara del arrecife
+#define SEA_OPEN 6.0f   // el azul del mar (el de antes)
+#define SEA_ABYSS 14.0f // desde aca, la niebla del mar hondo, opaca
+static Color sea_tint(float depth) {
+    const Color reef = { 54, 116, 126, 150 }, open = { 36, 72, 104, 228 }, abyss = { 14, 32, 54, 255 };
+    float a = Clamp((depth - SEA_CLEAR) / (SEA_OPEN - SEA_CLEAR), 0.0f, 1.0f), b = Clamp((depth - SEA_OPEN) / (SEA_ABYSS - SEA_OPEN), 0.0f, 1.0f);
+    Color from = b > 0.0f ? open : reef, to = b > 0.0f ? abyss : open;
+    float k = b > 0.0f ? b * b * (3.0f - 2.0f * b) : a * a * (3.0f - 2.0f * a);
+    return (Color){ (unsigned char)Lerp(from.r, to.r, k), (unsigned char)Lerp(from.g, to.g, k), (unsigned char)Lerp(from.b, to.b, k),
+                    (unsigned char)Lerp(from.a, to.a, k) };
+}
+
 // Paleta segun la region y la estacion: pasto de estepa (verde, seco, ocre o dormido),
 // sotobosque de coniferas, tundra del altiplano, musgo de la costa y arena del desierto;
 // tierra y roca en las pendientes; barro con lluvia; orillas; nieve, hielo y glaciares.
@@ -172,6 +186,7 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
     grass = mixc(grass, mixc(needles, ochre, L->autumn * 0.3f), a[A_FOREST]); // el suelo del bosque
     grass = mixc(grass, tundra, a[A_HIGH]);                                    // la tundra del altiplano
     grass = mixc(grass, moss, a[A_FJORD]);                                     // el musgo de la costa
+    grass = mixc(grass, dry, flora_dry(desert));                               // la transicion al desierto: seco todo el año
     Color c = grass;
     bool bare = false;
     float steep = 0.45f + 0.15f * a[A_HIGH];
@@ -247,14 +262,14 @@ static Color rock_color(const TerrainLook *L, const float *a) {
 }
 
 // Matas y arbustos: verdes en primavera, secos en verano, ocres en otoño; flores de la
-// estepa en primavera (las matas de mancha alta); nieve encima.
+// estepa en primavera (las matas de mancha alta); nieve encima. En la transicion al desierto, secas todo el año.
 static Color bush_color(const TerrainLook *L, const float *a) {
     Color green = { 86, 120, 58, 255 }, dry = { 150, 134, 84, 255 }, ochre = { 168, 112, 56, 255 };
     Color c = mixc(dry, green, L->greenness);
     c = mixc(c, ochre, L->autumn * 0.8f);
     c = mixc(c, (Color){ 60, 84, 52, 255 }, a[A_FOREST] * 0.6f);  // sotobosque
-    c = mixc(c, (Color){ 132, 118, 80, 255 }, a[A_DESERT] * 0.8f); // saxaul
-    if (a[A_PATCH] > 0.86f && a[A_FOREST] < 0.5f && a[A_DESERT] < 0.5f && a[A_HIGH] < 0.5f && L->greenness > 0.5f) {
+    c = mixc(c, (Color){ 132, 118, 80, 255 }, fmaxf(a[A_DESERT] * 0.8f, flora_dry(a[A_DESERT]))); // saxaul; en la transicion, secas
+    if (a[A_PATCH] > 0.86f && a[A_FOREST] < 0.5f && a[A_DESERT] < 0.03f && a[A_HIGH] < 0.5f && L->greenness > 0.5f) {
         static const Color FLOWERS[3] = { { 214, 92, 120, 255 }, { 226, 200, 84, 255 }, { 156, 120, 200, 255 } };
         c = mixc(c, FLOWERS[(int)(a[A_PATCH] * 997.0f) % 3], (L->greenness - 0.5f) * 1.6f);
     }
@@ -960,7 +975,7 @@ static void mesh_water(const Terrain *t, Chunk *ch) {
             flow[j][i][0] = dx * v, flow[j][i][1] = dz * v;
         }
     // Los colores del agua (con el brillo de las ondas a la mitad: ver terrain_draw_water) y del hielo.
-    const Color lake = { 52, 96, 128, 200 }, river = { 62, 112, 140, 200 }, sea = { 36, 72, 104, 220 }, glacial = { 84, 168, 178, 210 };
+    const Color lake = { 52, 96, 128, 200 }, river = { 62, 112, 140, 200 }, sea = { 36, 72, 104, 228 }, glacial = { 84, 168, 178, 210 };
     const Color icec = { 184, 210, 232, 240 };
     for (int j = 0; j < N; j++)
         for (int i = 0; i < N; i++) {
@@ -1000,10 +1015,11 @@ static void mesh_water(const Terrain *t, Chunk *ch) {
             for (int v = 0; v < 6; v++) {
                 int o = count[m] * 3 + v, c = tri[v];
                 memcpy(&verts[m][o * 3], q[c], sizeof(q[0]));
-                Color k = mixc(base, icec, qi[c]);
+                Color vb = kind == WATER_SEA ? sea_tint(q[c][1] - ch->wground[ci[c][1] * V + ci[c][0]]) : base; // el mar, por su hondura
+                Color k = mixc(vb, icec, qi[c]);
                 float boost = m == W_WATER ? 1.0f / 0.94f : 1.0f;
                 cols[m][o * 4 + 0] = (unsigned char)fminf(255.0f, k.r * boost), cols[m][o * 4 + 1] = (unsigned char)fminf(255.0f, k.g * boost);
-                cols[m][o * 4 + 2] = (unsigned char)fminf(255.0f, k.b * boost), cols[m][o * 4 + 3] = (unsigned char)Lerp(base.a, icec.a, Clamp(qi[c], 0.0f, 1.0f));
+                cols[m][o * 4 + 2] = (unsigned char)fminf(255.0f, k.b * boost), cols[m][o * 4 + 3] = (unsigned char)Lerp(vb.a, icec.a, Clamp(qi[c], 0.0f, 1.0f));
                 if (shaded && m == W_WATER) { // hondura, espuma, corriente, que agua y su hielo (ver el shader)
                     int x = ci[c][0], z = ci[c][1];
                     float depth = q[c][1] - ch->wground[z * V + x], rocks = (float)ch->wfoam[z * V + x] / 255.0f;
@@ -1104,7 +1120,7 @@ static bool tree_slot(const Terrain *t, int gx, int gz, ChunkTree *out) {
     // v0.15.2: en la estepa prevalecen las hierbas y los pastos: un tercio de los arboles de antes.
     float dens = tree_density(k, wet ? 1.0f : 0.0f) * (1.0f - 0.65f * k[REGION_STEPPE]);
     if (r0 > dens + k[REGION_STEPPE] * woods * (0.06f + 0.3f * steppe_grove(t, x, z))) return false;
-    if (wl > y - 0.8f || y > t->look.snowline + 8.0f) return false; // en el agua o en el glaciar, no
+    if (world_submerged(y, wl, 0.8f) || y > t->look.snowline + 8.0f) return false; // en el agua, bajo el nivel del mar o en el glaciar, no
     if (world_river_bank(t->world, x, z, NULL) > 0.45f) return false; // el lecho que el rio lava
     if (world_glacier_reach(t->world, x, z) <= 1.0f) return false;    // ni en la morrena (el glaciar avanza en invierno)
     float sx = terrain_height(t, x + 2.0f, z) - y, sz = terrain_height(t, x, z + 2.0f) - y;
@@ -1113,10 +1129,12 @@ static bool tree_slot(const Terrain *t, int gx, int gz, ChunkTree *out) {
     int si = world_nearest_settlement(t->world, x, z, &dist);
     if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 + 8.0f : VILLAGE_FIELDS_R1 + 6.0f)) return false; // claros de los pueblos (y sus campos)
     if (near_site(t->world, x, z) || near_bridge(t, x, z, 1.0f)) return false;
-    TreeKind kind = flora_tree_kind(k, wet && wk != WATER_SEA ? 1.0f : 0.0f, (float)(h2 & 0xFFFF) / 65536.0f);
+    float nw = wet && wk != WATER_SEA ? 1.0f : 0.0f;
+    TreeKind kind = flora_tree_kind(k, nw, (float)(h2 & 0xFFFF) / 65536.0f);
     if (kind != TREE_PINE && ((gx + gz) & 1)) return false;
+    TreeSeason state = flora_tree_state(flora_arid(k, nw), (float)(hash2(gx, gz, t->seed ^ 0xD5EADu) & 0xFFFF) / 65536.0f);
     *out = (ChunkTree){ x, y, z, 0.6f + 0.4f * r1 * (0.6f + 0.4f * k[REGION_FOREST]), (float)(h2 >> 16) / 65536.0f * 2.0f * PI,
-                        (unsigned char)kind };
+                        (unsigned char)kind, (unsigned char)state };
     return true;
 }
 
@@ -1144,7 +1162,7 @@ static int prop_slot(const Terrain *t, int gx, int gz, PropSlot *o) {
     float bd = bush_density(k, near_water) * (1.0f + k[REGION_STEPPE] * (1.7f * steppe_scrub(t, x, z) - 0.7f));
     if (k[REGION_DESERT] > 0.5f && near_water == 0.0f) bd *= world_desert_clay(t->world, x, z) > 0.5f ? 2.5f : 0.15f; // secos, en la arcilla
     if (r0 > rd + bd) return 0;
-    if (wl > y - 0.4f) return 0; // en el agua, no
+    if (world_submerged(y, wl, 0.4f)) return 0; // en el agua o bajo el nivel del mar, no
     if (world_river_bank(t->world, x, z, NULL) > 0.45f || (k[REGION_FJORD] > 0.5f && y < SEA_LEVEL + 4.0f)) return 0; // ni en el lecho ni en la playa
     float dist;
     int si = world_nearest_settlement(t->world, x, z, &dist);
@@ -1300,7 +1318,7 @@ static bool decor_ground(const Terrain *t, int kind, float x, float z, float r, 
         float sx = x + cosf(a) * rr, sz = z + sinf(a) * rr;
         WaterKind wk = WATER_NONE;
         float h = terrain_height(t, sx, sz), wl = world_water(w, sx, sz, 0.0f, &wk);
-        if (wl > h - 0.3f && (!n->wet || i == 16 || wl - h > 1.5f || wk == WATER_SEA)) return false; // lo del pantano: un borde en el agua baja
+        if (world_submerged(h, wl, 0.3f) && (!n->wet || i == 16 || wl - h > 1.5f || wk == WATER_SEA)) return false; // lo del pantano: un borde en el agua baja
         if (wl > -1e8f && h - wl < 2.0f && (!n->wet || wk == WATER_SEA)) return false;
         if (wl > -1e8f && wk != WATER_SEA && h - wl < 4.0f) fresh = true;
         if (world_glacier_reach(w, sx, sz) <= 1.05f) return false; // ni donde llega el glaciar (su morrena)
@@ -1432,7 +1450,7 @@ static void seed_foot(const Terrain *t, Chunk *ch) {
         float a = (float)((h >> 16) & 0xFF) / 255.0f * 2.0f * PI, d = 1.4f + 1.2f * (float)(h >> 24) / 255.0f;
         float x = tr->x + cosf(a) * d, z = tr->z + sinf(a) * d, scale = n->scale_min + (n->scale_max - n->scale_min) * (float)(h >> 24) / 255.0f;
         float y = terrain_height(t, x, z), wl = world_water(t->world, x, z, 0.0f, NULL);
-        if (wl > y - 0.5f || decor_hits_chunk(ch, x, z, decor_radius((DecorKind)kind, scale))) continue;
+        if (world_submerged(y, wl, 0.5f) || decor_hits_chunk(ch, x, z, decor_radius((DecorKind)kind, scale))) continue;
         add_decor(ch, kind, x, y - n->sink * n->height * scale, z, a * 1.7f, scale);
         placed++;
         for (int j = 0; kind == DECOR_HONGOS && j < (int)(h >> 30) && placed < 16; j++) { // el corro
@@ -1472,7 +1490,7 @@ static void seed_place(const Terrain *t, Chunk *ch, DecorPlace place, float px, 
         for (int j = 0; j < 5; j++) {
             float a = (float)j * (PI / 2.0f), rr = j == 4 ? 0.0f : r;
             float sx = x + cosf(a) * rr, sz = z + sinf(a) * rr, h = terrain_height(t, sx, sz), wl = world_water(w, sx, sz, 0.0f, NULL);
-            wet = wet || (wl > -1e8f && h - wl < 0.6f);
+            wet = wet || world_submerged(h, wl, 0.6f);
             hmin = fminf(hmin, h), hmax = fmaxf(hmax, h);
         }
         if (wet || (hmax - hmin) / fmaxf(2.0f * r, 1.0f) > nm->slope_max || world_river_bank(w, x, z, NULL) > 0.3f) continue;
@@ -1834,7 +1852,7 @@ static void far_shift(const Terrain *t, int gx0, int gz0) {
 static void far_fill(const Terrain *t) {
     Mesh *m = &g_far.model.meshes[0];
     const Vector3 sun = Vector3Normalize((Vector3){ -0.45f, 1.0f, -0.3f });
-    const Color sea = { 36, 72, 104, 255 }, lake = { 52, 96, 128, 255 }, glacial = { 84, 168, 178, 255 };
+    const Color lake = { 52, 96, 128, 255 }, glacial = { 84, 168, 178, 255 };
     const Color ice = { 198, 220, 236, 255 };
     float ccx = (t->center_cx + 0.5f) * CHUNK_SIZE, ccz = (t->center_cz + 0.5f) * CHUNK_SIZE;
     g_perma_snow = t->plain + 40.0f;
@@ -1889,12 +1907,14 @@ static void far_fill(const Terrain *t) {
                 if (water <= at[A_H] && at[A_SLOPE] > WALL_SLOPE && at[A_HIGH] > 0.5f && at[A_EDGE] < 150.0f) ramp = 1 + RAMP_HAZES;
                 if (water > at[A_H]) { // agua: el mar, los lagos y, en el altiplano, el deshielo turquesa; con su hielo
                     int w = wlv[va] > -1e8f ? va : wlv[vb] > -1e8f ? vb : vc;
-                    base = wkind[w] == WATER_SEA ? sea : at[A_HIGH] > 0.5f ? glacial : lake;
+                    base = wkind[w] == WATER_SEA ? sea_tint(water - at[A_H]) : at[A_HIGH] > 0.5f ? glacial : lake; // el mar, por su hondura
+                    base.a = 255;
                     base = mixc(base, ice, wice[w]);
                 } else {
                     base = ground_color(&t->look, at, at[A_H] - t->plain);
                     float trees = Clamp(tree_density(a->k, 0.0f) / 0.62f, 0.0f, 1.0f) * (at[A_H] < t->look.snowline ? 0.85f : 0.0f) *
-                                  (1.0f - Clamp(at[A_WALL] * 2.0f, 0.0f, 1.0f)); // el muro tras el canal: roca, sin bosque
+                                  (1.0f - Clamp(at[A_WALL] * 2.0f, 0.0f, 1.0f)) * // el muro tras el canal: roca, sin bosque
+                                  (1.0f - 0.8f * flora_dry(at[A_DESERT]));          // la transicion al desierto: secos, sin copa verde
                     base = mixc(base, tree_color(&t->look, (float[TRI_ATTRS]){ [A_PATCH] = 0.6f, [A_KIND] = KIND_CANOPY, [A_H] = at[A_H] }), trees);
                     base = shade(base, 0.55f + 0.45f * fmaxf(0.0f, Vector3DotProduct(n, sun)));
                 }
@@ -2253,6 +2273,7 @@ void terrain_draw_trees(const Terrain *t, Camera3D cam) {
         for (int k = 0; k < ch->tree_count; k++) {
             const ChunkTree *tr = &ch->trees[k];
             TreeSeason se = tr->y > t->look.snowline - 4.0f ? TREES_SNOW : season; // al pie del glaciar, nevados todo el año
+            if (tr->state != TREES_SUMMER) se = (TreeSeason)tr->state; // la transicion al desierto: secos o muertos todo el año
             trees_draw((TreeKind)tr->kind, se, (Vector3){ tr->x, tr->y, tr->z }, tr->scale, tr->yaw, WHITE);
         }
     }

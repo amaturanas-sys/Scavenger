@@ -87,6 +87,14 @@ done
 for p in panorama-hielo panorama-muro; do
     shot "mundo_$p" 90 --dia 11 --minuto 7 --ir "$p" --camara 0.06
 done
+# La v0.17.0 (docs/MUNDO.md): el arrecife con su pasto marino y sus algas y el mar hondo, las transiciones de la estepa al
+# bosque (en manchas) y al desierto (seca), y la frontera del bosque con el desierto (los arboles secos y muertos).
+shot mundo_arrecife 90 --dia 11 --minuto 7 --ir arrecife --dron 10 --camara 0.65
+shot mundo_linde-bosque 90 --dia 11 --minuto 7 --ir linde-bosque --dron 60 --camara 0.6
+shot mundo_linde-desierto 90 --dia 11 --minuto 7 --ir linde-desierto --dron 24 --camara 0.4
+shot mundo_bosque-seco 90 --dia 11 --minuto 7 --ir bosque-seco --dron 18 --camara 0.4
+montage "$OUT"/mundo_{arrecife,linde-bosque,linde-desierto,bosque-seco}.png -tile 2x2 -geometry +0+0 -depth 8 \
+    "$ROOT/docs/mundo/v0.17.png" 2>/dev/null && echo "  docs/mundo/v0.17.png"
 shot formaciones_desierto 40 --formaciones desierto
 shot formaciones_hielo 40 --formaciones hielo
 montage "$OUT"/{mundo_muro,mundo_panorama-muro,mundo_hielo,formaciones_desierto}.png -tile 2x2 -geometry +0+0 -depth 8 \

@@ -6446,6 +6446,166 @@ static void test_more_forts_in_world(void) {
     CHECK(few == 0 && close == 0 && missing_region == 0 && cities_out == 0);
 }
 
+// El nivel del mar en una ventana de la costa, cada 4 m: el mar de verdad es lo que queda bajo el nivel del mar y se
+// alcanza desde afuera del borde por celdas bajo el nivel del mar (tambien de esquina a esquina). dry: los m2 de fondo
+// que se alcanzan, bajo el nivel del mar y sin agua; isolated: los m2 de mar en un pozo que no se alcanza.
+#define SEA_WX 175
+#define SEA_WZ 225
+static void sea_window(const World *w, float x0, float z0, float *dry, float *isolated) {
+    static float h[SEA_WX * SEA_WZ];
+    static uint8_t reach[SEA_WX * SEA_WZ], sea[SEA_WX * SEA_WZ], wet[SEA_WX * SEA_WZ];
+    static int queue[SEA_WX * SEA_WZ];
+    int head = 0, tail = 0;
+    for (int j = 0; j < SEA_WZ; j++)
+        for (int i = 0; i < SEA_WX; i++) {
+            float x = x0 + ((float)i + 0.5f) * 4.0f, z = z0 + ((float)j + 0.5f) * 4.0f;
+            int k = j * SEA_WX + i;
+            WaterBodies b;
+            world_water_bodies(w, x, z, &b);
+            h[k] = world_height(w, x, z), sea[k] = b.sea_floor > -1e8f;
+            wet[k] = world_water(w, x, z, 0.0f, NULL) > h[k] + 0.05f;
+            reach[k] = h[k] < SEA_LEVEL && world_edge_distance(w, x, z) < 0.0f;
+            if (reach[k]) queue[tail++] = k;
+        }
+    while (head < tail) {
+        int k = queue[head++], i = k % SEA_WX, j = k / SEA_WX;
+        for (int dj = -1; dj <= 1; dj++)
+            for (int di = -1; di <= 1; di++) {
+                int a = i + di, b = j + dj, m = b * SEA_WX + a;
+                if (a >= 0 && b >= 0 && a < SEA_WX && b < SEA_WZ && !reach[m] && h[m] < SEA_LEVEL) reach[m] = 1, queue[tail++] = m;
+            }
+    }
+    *dry = *isolated = 0.0f;
+    for (int k = 0; k < SEA_WX * SEA_WZ; k++) {
+        if (reach[k] && !wet[k] && h[k] < SEA_LEVEL - 0.3f) *dry += 16.0f;
+        if (sea[k] && h[k] < SEA_LEVEL && !reach[k]) *isolated += 16.0f;
+    }
+}
+
+// El nivel del mar (v0.17.0, docs/MUNDO.md): el mar es lo que se alcanza desde mar abierto por debajo del nivel del mar
+// (World.ocean), y lo de tierra no nace bajo el nivel del mar (world_submerged).
+static void test_sea_level(void) {
+    // La regla: bajo el nivel del mar, aunque este seco, no es tierra; sobre el, segun el agua y su margen.
+    CHECK(world_submerged(SEA_LEVEL - 0.1f, -1e9f, 0.5f) && !world_submerged(SEA_LEVEL + 0.1f, -1e9f, 0.5f));
+    CHECK(world_submerged(3.0f, 2.7f, 0.5f) && !world_submerged(3.0f, 2.3f, 0.5f));
+    // La junta del canal del bosque con la costa de los fiordos de la semilla 31337 (700 x 900 m): con el agua de la v0.16
+    // (World.water_v16) habia una zanja seca bajo el nivel del mar abierta al mar (el fondo poblado como tierra) y mar en
+    // pozos sin entrada; ahora, ni una cosa ni la otra.
+    static World w;
+    world_generate(&w, 31337u);
+    CHECK(!w.water_v16 && !w.shore_v14);
+    float dry, isolated;
+    sea_window(&w, -4900.0f, -100.0f, &dry, &isolated);
+    CHECK(dry < 50.0f && isolated < 50.0f);
+    w.water_v16 = true;
+    float dry16, isolated16;
+    sea_window(&w, -4900.0f, -100.0f, &dry16, &isolated16);
+    CHECK(dry16 > 2000.0f && isolated16 > 2000.0f);
+    w.water_v16 = false;
+    // El canal entra al mar sin escalon: a lo largo de su eje, donde ya es mar (canal_sea), su agua queda al nivel del
+    // mar, tambien con la crecida de la primavera.
+    int joined = 0;
+    for (float th = -PI_T; th < PI_T; th += 0.0005f) {
+        float e = world_canal_offset(&w, th), r = world_edge_radius(&w, th) - e, x = cosf(th) * r, z = sinf(th) * r;
+        WaterBodies b;
+        world_water_bodies(&w, x, z, &b);
+        if (b.canal < -1e8f || b.sea_floor < -1e8f || b.canal_sea < 0.999f) continue;
+        joined++;
+        CHECK(b.canal <= SEA_LEVEL + 0.001f && fabsf(world_water(&w, x, z, 3.0f, NULL) - SEA_LEVEL) < 0.001f);
+    }
+    CHECK(joined > 0);
+    // La mascara sale de la semilla: igual cada vez.
+    CHECK(memcmp(w.ocean, world_for_seed(31337u)->ocean, sizeof(w.ocean)) == 0);
+    // El fondo del mar (src/sim/flora.c): sobre el arrecife, pasto marino en lo bajo y algas mas hondo; mas alla, nada; y
+    // en el mar, nada de tierra. A lo largo de la costa de los fiordos de la semilla 1206, de la playa al mar hondo.
+    const World *v = world_for_seed(1206u);
+    int grass = 0, kelp = 0, bad = 0;
+    float grass_depth = 0.0f, kelp_depth = 0.0f;
+    for (float th = -PI_T; th < PI_T; th += 0.004f) {
+        float r0 = world_edge_radius(v, th), k[REGION_COUNT];
+        world_region_weights(v, cosf(th) * (r0 - 200.0f), sinf(th) * (r0 - 200.0f), k);
+        if (k[REGION_FJORD] < 0.9f) continue;
+        for (float e = 140.0f; e < 260.0f; e += FLORA_CELL) {
+            float x = cosf(th) * (r0 - e), z = sinf(th) * (r0 - e);
+            FloraTuft t[FLORA_PER_CELL];
+            int n = flora_cell(v, v->seed, (int)floorf(x / FLORA_CELL), (int)floorf(z / FLORA_CELL), t);
+            for (int i = 0; i < n; i++) {
+                WaterKind wk;
+                float wl = world_water(v, t[i].x, t[i].z, 0.0f, &wk), depth = SEA_LEVEL - t[i].y;
+                bool marine = FLORA_MARINE(t[i].kind), sea = wk == WATER_SEA && wl > t[i].y;
+                if (marine != sea || (marine && (depth < 0.39f || depth > FLORA_REEF_DEPTH))) bad++;
+                if (t[i].kind == FLORA_SEAGRASS) grass++, grass_depth += depth;
+                if (t[i].kind == FLORA_KELP) kelp++, kelp_depth += depth;
+            }
+        }
+    }
+    CHECK(bad == 0 && grass > 200 && kelp > 200 && grass_depth / (float)grass < kelp_depth / (float)kelp);
+    // Fuera del mar, nunca: ninguna region las elige en tierra. Bajo el agua, el año se les nota poco.
+    float any[REGION_COUNT] = { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f };
+    for (int i = 0; i < 1000; i++) {
+        int kind = flora_pick(any, (float)(i % 3) * 0.5f, ((float)i + 0.5f) / 1000.0f);
+        CHECK(kind < 0 || !FLORA_MARINE(kind));
+    }
+    CHECK(flora_height(FLORA_KELP, 0.85f, 0.0f, 0.0f) >= 0.65f * flora_height(FLORA_KELP, 0.3f, 1.0f, 0.0f));
+    CHECK(flora_height(FLORA_SEAGRASS, 0.3f, 1.0f, 0.0f) > 0.4f && flora_height(FLORA_KELP, 0.3f, 1.0f, 0.0f) > 2.0f);
+}
+
+// Las transiciones (v0.17.0, docs/MUNDO.md): hacia el desierto, nada fresco lejos del agua; hacia el bosque, en manchas.
+static void test_transitions(void) {
+    // Lo seco: nada en la estepa o el bosque puros; entero desde que el desierto pesa 0,15; junto al agua, nada.
+    float k[REGION_COUNT] = { 0.8f, 0.2f, 0.0f, 0.0f, 0.0f };
+    CHECK(flora_arid(k, 0.0f) == 0.0f);
+    k[REGION_FOREST] = 0.0f, k[REGION_DESERT] = 0.2f;
+    CHECK(flora_arid(k, 0.0f) == 1.0f && flora_arid(k, 1.0f) == 0.0f);
+    CHECK(flora_density(FLORA_FLOWER, k, 0.0f) == 0.0f && flora_density(FLORA_FERN, k, 0.0f) == 0.0f && flora_density(FLORA_GRASS, k, 0.0f) > 0.0f);
+    CHECK(flora_density(FLORA_FLOWER, k, 1.0f) > 0.0f); // junto al agua, las flores vuelven
+    // Los arboles: donde todo es seco, ninguno verde, y hay secos y muertos; donde no, todos de la estacion.
+    int dry = 0, dead = 0, green = 0;
+    for (int i = 0; i < 1000; i++) {
+        float r = ((float)i + 0.5f) / 1000.0f;
+        TreeSeason s = flora_tree_state(1.0f, r);
+        dry += s == TREES_DRY, dead += s == TREES_DEAD, green += s == TREES_SUMMER;
+        CHECK(flora_tree_state(0.0f, r) == TREES_SUMMER);
+    }
+    CHECK(green == 0 && dry > 300 && dead > 300);
+    // En el mundo: la frontera del bosque con el desierto de la semilla 1206 (r 2800 m), donde el desierto pesa algo: sus
+    // matas, secas, sin flores ni helechos (salvo junto al agua, con lo seco en 0).
+    const World *w = world_for_seed(1206u);
+    int tufts = 0, fresh = 0, arid = 0;
+    for (float th = -2.2f; th < -1.0f; th += 0.002f) {
+        float x = cosf(th) * 2800.0f, z = sinf(th) * 2800.0f, kk[REGION_COUNT];
+        world_region_weights_soft(w, x, z, kk);
+        if (kk[REGION_DESERT] < 0.2f || kk[REGION_DESERT] > 0.6f) continue;
+        FloraTuft t[FLORA_PER_CELL];
+        int n = flora_cell(w, w->seed, (int)floorf(x / FLORA_CELL), (int)floorf(z / FLORA_CELL), t);
+        for (int i = 0; i < n; i++, tufts++) {
+            arid += t[i].arid == 255;
+            fresh += (t[i].kind == FLORA_FLOWER || t[i].kind == FLORA_FERN) && t[i].arid > 0;
+        }
+    }
+    CHECK(tufts > 20 && fresh == 0 && arid > tufts / 2);
+    // Hacia el bosque, en manchas: en el medio de la franja, la estepa pesa casi todo en unas partes y casi nada en
+    // otras (antes, la mitad en todas); adentro de la estepa, nada cambia.
+    float ex, ez;
+    world_edge_point(w, REGION_FOREST, 600.0f, &ex, &ez);
+    float th0 = atan2f(ez, ex), mid = 0.0f;
+    for (float r = 800.0f; r < 4000.0f && mid == 0.0f; r += 10.0f) {
+        float kk[REGION_COUNT];
+        world_region_weights_soft(w, cosf(th0) * r, sinf(th0) * r, kk);
+        if (kk[REGION_STEPPE] < 0.5f) mid = r;
+    }
+    int steppe = 0, forest = 0, between = 0;
+    for (float a = -0.25f; a <= 0.25f; a += 0.001f) {
+        float kk[REGION_COUNT];
+        world_region_weights_soft(w, cosf(th0 + a) * mid, sinf(th0 + a) * mid, kk);
+        steppe += kk[REGION_STEPPE] > 0.85f, forest += kk[REGION_STEPPE] < 0.15f, between += kk[REGION_STEPPE] >= 0.15f && kk[REGION_STEPPE] <= 0.85f;
+    }
+    CHECK(mid > 0.0f && steppe > 40 && forest > 40);
+    float kc[REGION_COUNT];
+    world_region_weights_soft(w, cosf(th0) * 600.0f, sinf(th0) * 600.0f, kc);
+    CHECK(kc[REGION_STEPPE] > 0.999f);
+}
+
 static void test_world_dry(void) {
     // La linea de nieve del verano de world.h es la de src/sim/climate.c (la mas alta del año).
     float top = -1e9f;
@@ -7014,6 +7174,8 @@ int main(void) {
     RUN(test_water_seasons);
     RUN(test_river_flow);
     RUN(test_borders_and_sequelae);
+    RUN(test_sea_level);
+    RUN(test_transitions);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

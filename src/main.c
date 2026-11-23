@@ -63,6 +63,7 @@
 #include "sim/climate.h"
 #include "sim/camview.h"
 #include "sim/clock.h"
+#include "sim/flora.h"
 #include "sim/inventory.h"
 #include "sim/loadout.h"
 #include "sim/memory_map.h"
@@ -633,7 +634,9 @@ static void game_new(GameState *g, Terrain *terrain, Camp *camp, unsigned seed, 
 // borde); muro-canal (en la orilla del canal, mirando el muro de roca de enfrente); lengua (el pie del glaciar, donde avanza y retrocede); meandro, trenzado, arroyo, rapidos (los rios);
 // cascada (la mas alta), cascada-helada (la de un rio que en invierno se hiela), cascada-pie (la mas alta, de
 // cerca: la cortina, la espuma y la bruma); lago, desborde (el lago mas
-// grande y su punto de desborde); capital, aldea, guarida.
+// grande y su punto de desborde); capital, aldea, guarida. De la v0.17.0: arrecife (en la playa, mirando el arrecife y el
+// mar hondo), linde-bosque y linde-desierto (la mitad de la transicion de la estepa, mirando afuera) y bosque-seco (adentro
+// de lo seco de la frontera del bosque con el desierto, mirando a lo largo).
 static void go_to(const Terrain *t, Player *p, const char *what) {
     const World *w = t->world;
     static const char *REG[REGION_COUNT] = { "estepa", "bosque", "altiplano", "fiordos", "desierto" };
@@ -663,6 +666,55 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
             if (world_height(w, x, z) > SEA_LEVEL + 1.5f && world_water(w, x, z, 0.0f, NULL) < -1e8f) break;
         }
         lx = x * 1.2f, lz = z * 1.2f, ok = true;
+    }
+    if (!strcmp(what, "arrecife")) { // en el agua, sobre la pradera de pasto marino mas tupida frente a la playa
+        float x0, z0, best = 0.0f;
+        world_edge_point(w, REGION_FJORD, 0.0f, &x0, &z0);
+        for (float da = -0.4f; da <= 0.4f; da += 0.02f) {
+            float a = atan2f(z0, x0) + da, r0 = world_edge_radius(w, a), beach = -1.0f;
+            for (float in = 120.0f; in < 600.0f && beach < 0.0f; in += 2.0f) // la playa: lo primero seco desde el mar
+                if (world_height(w, cosf(a) * (r0 - in), sinf(a) * (r0 - in)) > SEA_LEVEL + 1.0f) beach = in;
+            for (float in = beach - 40.0f; beach > 0.0f && in < beach; in += 4.0f) {
+                float px = cosf(a) * (r0 - in), pz = sinf(a) * (r0 - in), d = SEA_LEVEL - world_height(w, px, pz), reef = 0.0f;
+                if (d < 0.8f || d > 1.5f) continue;
+                for (int j = -2; j <= 2; j++) // lo que crece alrededor (10 x 10 m)
+                    for (int i = -2; i <= 2; i++) {
+                        FloraTuft tf[FLORA_PER_CELL];
+                        reef += (float)flora_cell(w, w->seed, (int)floorf(px / FLORA_CELL) + i, (int)floorf(pz / FLORA_CELL) + j, tf);
+                    }
+                bool shoal = true; // alrededor (12 m), sin hondo de mas de 1,5 m: ahi no salen farallones que tapen
+                for (float oz = -12.0f; oz <= 12.0f && shoal; oz += 3.0f)
+                    for (float ox = -12.0f; ox <= 12.0f && shoal; ox += 3.0f)
+                        shoal = world_height(w, px + ox, pz + oz) > SEA_LEVEL - 1.5f;
+                if (shoal) reef *= 4.0f; // si no hay ninguno asi, el de mas pasto igual
+                if (reef > best) best = reef, x = px, z = pz, lx = cosf(a) * r0, lz = sinf(a) * r0, ok = true;
+            }
+        }
+    }
+    if (!strcmp(what, "linde-bosque") || !strcmp(what, "linde-desierto")) {
+        float x0, z0;
+        world_edge_point(w, what[6] == 'b' ? REGION_FOREST : REGION_DESERT, 0.0f, &x0, &z0);
+        float a = atan2f(z0, x0);
+        for (float r = 600.0f; r < WORLD_RADIUS && !ok; r += 10.0f) {
+            float k[REGION_COUNT];
+            world_region_weights_soft(w, cosf(a) * r, sinf(a) * r, k);
+            if (k[REGION_STEPPE] < 0.5f) x = cosf(a) * (r - 60.0f), z = sinf(a) * (r - 60.0f), lx = cosf(a) * (r + 200.0f), lz = sinf(a) * (r + 200.0f), ok = true;
+        }
+    }
+    if (!strcmp(what, "bosque-seco")) { // del bosque hacia el desierto, a 0,58 radios: donde ya nada es fresco
+        float fx, fz, dx, dz;
+        world_edge_point(w, REGION_FOREST, 0.0f, &fx, &fz);
+        world_edge_point(w, REGION_DESERT, 0.0f, &dx, &dz);
+        float a0 = atan2f(fz, fx), a1 = atan2f(dz, dx), r = 0.58f * WORLD_RADIUS;
+        if (a1 - a0 > PI) a1 -= 2.0f * PI;
+        if (a0 - a1 > PI) a1 += 2.0f * PI;
+        float s = a1 > a0 ? 1.0f : -1.0f;
+        for (int i = 0; i <= 400 && !ok; i++) {
+            float a = a0 + (a1 - a0) * (float)i / 400.0f, k[REGION_COUNT];
+            world_region_weights_soft(w, cosf(a) * r, sinf(a) * r, k);
+            if (flora_arid(k, 0.0f) > 0.99f) // adentro de lo seco, mirando a lo largo de la frontera
+                x = cosf(a + s * 0.015f) * r, z = sinf(a + s * 0.015f) * r, lx = cosf(a + s * 0.08f) * r, lz = sinf(a + s * 0.08f) * r, ok = true;
+        }
     }
     if (!strcmp(what, "fogata")) x = 1.8f, z = 0.0f, lx = 1.8f, lz = 10.0f, ok = true; // la del campamento, de cerca
     if (!strcmp(what, "hoguera")) x = 6.5f, z = -2.0f, lx = 6.5f, lz = 10.0f, ok = true; // una hoguera junto a la fogata
@@ -824,8 +876,9 @@ static void go_to(const Terrain *t, Player *p, const char *what) {
         if (!strcmp(what, "guarida") && w->dens[i].region == REGION_FOREST)
             x = w->dens[i].x + 16.0f, z = w->dens[i].z + 6.0f, lx = w->dens[i].x, lz = w->dens[i].z, ok = true;
     if (!ok) return;
-    // En seco: si cayo en el agua, el punto seco mas cercano (en espiral).
-    for (float r = 0.0f; r < 400.0f && terrain_water(t, x, z) > terrain_height(t, x, z) - 0.2f; r += 6.0f) {
+    // En seco: si cayo en el agua, el punto seco mas cercano (en espiral). Sobre el arrecife, no: ahi se nada.
+    bool swim = !strcmp(what, "arrecife");
+    for (float r = 0.0f; !swim && r < 400.0f && terrain_water(t, x, z) > terrain_height(t, x, z) - 0.2f; r += 6.0f) {
         bool found = false;
         for (int k = 0; k < 12 && !found; k++) {
             float a = (float)k / 12.0f * 2.0f * PI, nx = x + cosf(a) * r, nz = z + sinf(a) * r;

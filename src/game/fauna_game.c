@@ -138,6 +138,7 @@ void fg_init(GameActions *ga, const Terrain *t) {
 
 static int habitat_at(const Terrain *t, float x, float z) {
     if (deep_water(t, x, z)) return HAB_WATER;
+    if (terrain_height(t, x, z) < SEA_LEVEL) return 0; // bajo el nivel del mar, nada de tierra (world_submerged)
     if (terrain_height(t, x, z) > t->look.snowline - 30.0f) return HAB_COLD; // cumbres nevadas
     return region_habitat(terrain_region(t, x, z));
 }

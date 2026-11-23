@@ -488,7 +488,9 @@ traba.
   - los animales que faltaban: los caballos, los lobos y los demás cuadrúpedos de `para_riggear`, rehechos en vóxeles,
     y el cuello al pastar (v0.15.10);
   - las animaciones de la Universal Animation Library y el cuerpo de mujer, para las mujeres de la tribu (v0.15.11);
-  - el sonido: el ambiente natural y los sonidos del mapa, sin música (v0.16.0).
+  - el sonido: el ambiente natural y los sonidos del mapa, sin música (v0.16.0);
+  - el mar por conexión, el arrecife con pasto marino y algas, el mar hondo como niebla, la transición al desierto seca
+    y la del bosque en manchas (v0.17.0).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

@@ -264,6 +264,20 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+El mar y las transiciones (v0.17.0):
+- **El nivel del mar, en todo el mundo:** el mar llega a todo lo que queda bajo el nivel del mar y se alcanza desde mar
+  abierto; una cuenca bajo el nivel del mar que el relieve aísla queda seca. El canal del bosque entra al mar a su
+  nivel, sin escalón ni zanja seca. Bajo el nivel del mar no nace nada de tierra (ni árboles, ni rocas, ni el decorado,
+  ni los animales que no nadan): bajo el agua, lo del fondo; en una cuenca seca, juncos.
+- **El arrecife y el mar hondo:** junto a la playa de los fiordos, el agua es clara y deja ver el pasto marino (hasta
+  4,5 m de hondo) y las algas (hasta 7 m), que se mecen con la resaca; más allá, el mar se oscurece como una niebla y
+  no deja ver el fondo.
+- **Hacia el desierto, todo seco:** donde el desierto ya pesa, el pasto, las hierbas, las matas y el suelo están secos
+  todo el año, sin flores ni helechos, y los árboles, secos o muertos (junto al agua no: los oasis siguen verdes).
+- **Hacia el bosque, en manchas:** bosquecillos que entran en la estepa y claros que entran en el bosque, en una franja
+  más ancha.
+- Para verlo: `--ir arrecife`, `--ir linde-bosque`, `--ir linde-desierto` y `--ir bosque-seco` (`docs/MUNDO.md`).
+
 El sonido (v0.16.0): sin música, el ambiente natural y lo que suena en cada lugar del mapa.
 - **El ambiente, en bucle:** el viento (más en lo abierto y con viento fuerte; el bosque lo frena), el bosque de día y
   de noche, la lluvia, la tormenta, el río, la cascada, el mar, la cueva y el fuego. Cuánto suena cada uno lo decide

@@ -32,6 +32,17 @@
 
 #define WORLD_RADIUS 4800.0f // m: radio medio de la tierra (el borde varia, fractal)
 #define SEA_LEVEL 0.0f
+// La mascara del mar (v0.17.0, World.ocean): una grilla polar de la costa, el angulo alrededor del mundo y la distancia al
+// borde hacia adentro, en celdas de WORLD_OCEAN_CELL.
+#define WORLD_OCEAN_CELL 8.0f
+#define WORLD_OCEAN_COLS 3776 // alrededor: 2 pi WORLD_RADIUS / 8 m
+#define WORLD_OCEAN_ROWS 168  // hacia adentro: 1344 m (la costa y los fiordos que entran)
+#define WORLD_OCEAN_BYTES (WORLD_OCEAN_COLS * WORLD_OCEAN_ROWS / 8)
+// Lo de tierra y el nivel del mar (v0.17.0, docs/MUNDO.md): donde el suelo (ground) queda bajo el nivel del mar, o el
+// agua (water, la de world_water) llega a margin metros de el, no nace nada de tierra: ni arboles, ni rocas ni matas,
+// ni el decorado seco, ni la flora de tierra, ni los animales que no nadan. Bajo el nivel del mar, aunque el relieve lo
+// deje seco (una cuenca sin entrada), solo lo del pantano; bajo el mar, lo del fondo (las algas y el pasto marino).
+static inline bool world_submerged(float ground, float water, float margin) { return ground < SEA_LEVEL || water > ground - margin; }
 
 typedef enum { REGION_STEPPE, REGION_FOREST, REGION_HIGHLAND, REGION_FJORD, REGION_DESERT, REGION_COUNT } Region;
 
@@ -161,6 +172,13 @@ typedef struct {
     // Mientras world_generate pone los lugares, world_height usa la orilla de los lagos de la v0.14 (sin la cresta):
     // asi caen donde caian y las partidas de antes siguen igual. La cresta solo sube el suelo, asi que siguen en seco.
     bool shore_v14;
+    // Lo mismo con el agua de la v0.16: mientras world_generate arma el mundo, el mar es el de antes (en la costa de los
+    // fiordos, todo lo que queda bajo +1 m, se alcance o no desde mar abierto) y el canal del bosque lleva agua solo donde
+    // el bosque pesa mas de la mitad. Despues (v0.17.0), el mar es lo que se alcanza desde mar abierto por debajo del nivel
+    // del mar (ocean) y, hacia los fiordos, el canal lleva agua en todo su cauce y entra al mar a su nivel (hacia el
+    // desierto, su cauce se va secando como antes).
+    bool water_v16;
+    uint8_t ocean[WORLD_OCEAN_BYTES]; // las celdas de la costa que el mar alcanza desde mar abierto (un bit cada una)
     float warp_phase;    // giro de las fronteras entre regiones
     Lake lakes[LAKES_MAX];
     int lake_count;
@@ -286,9 +304,10 @@ float world_water_now(const World *w, float x, float z, const WaterSeason *s, Wa
 // que llegan a (x, z), que no cambian con la estacion, y como estan en una estacion.
 #define WATER_RIVERS_HERE 2
 typedef struct {
-    float ground;    // world_height (si hay un lago o un rio cerca; si no, -1e9)
+    float ground;    // world_height (si hay un lago, un rio o el mar cerca; si no, -1e9)
     float sea_floor; // el relieve bajo el mar, o -1e9 si no hay mar
     float canal;     // el nivel base del canal, o -1e9
+    float canal_sea; // cuanto del canal es ya mar [0, 1]: donde entra a la costa de los fiordos no crece ni se hiela aparte
     int lake;        // el lago que llega (el mas alto), o -1
     int river[WATER_RIVERS_HERE];  // los tramos que llegan (los mas altos primero), o -1
     float river_level[WATER_RIVERS_HERE], river_along[WATER_RIVERS_HERE];
