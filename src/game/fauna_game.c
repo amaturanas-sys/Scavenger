@@ -985,6 +985,14 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
             if (a->state == ANIMAL_DEAD) *tr = (AnimTrack){ clip, tt - a->corpse, 1.0f, 0.0f };
             Vector3 at = { pos.x, pos.y + a->alt, pos.z };
             props_draw_item_track(props, it, at, a->yaw - PI / 2.0f, clip, tt, !strcmp(clip, "atacar") ? a->attack_anim : 0.0f, tr);
+            // La silla de montar de los ensillados (caballos, mulas y renos): sobre el lomo, que sube y baja con el paso.
+            Vector3 lomo;
+            const InvItem *silla = a->state == ANIMAL_SADDLED ? inventory_find(ga->inv, "accesorio.arreo.silla_montar") : NULL;
+            if (silla && (strstr(it->id, "caballo") || strstr(it->id, "mula") || strstr(it->id, "reno")) &&
+                props_bone_point(props, it, at, a->yaw - PI / 2.0f, tr, tt, "lomo", &lomo)) {
+                lomo.y += (lomo.y - at.y) * 0.22f; // del hueso al cuero del lomo (los modelos de tools/modelos/animales.py)
+                props_draw_item(props, silla, lomo, a->yaw - PI / 2.0f, 1.0f);
+            }
         } else {
             // Sin modelo: el mismo cuerpo de capsulas que reciben los impactos.
             BodyPose b;

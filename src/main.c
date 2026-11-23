@@ -1855,6 +1855,11 @@ int main(int argc, char **argv) {
                 const InvItem *it = seen->item;
                 float size = fmaxf(fmaxf(it->w, it->h), it->l), hgt = fmaxf(it->h, 0.05f);
                 cam.target = (Vector3){ seen->pos.x, seen->pos.y + hgt * 0.5f, seen->pos.z };
+                if (seen->loaded && seen->model.boneCount > 0 && !strncmp(it->id, "armadura.", 9)) { // puesta en el maniqui
+                    BoundingBox bb = GetModelBoundingBox(seen->model);
+                    cam.target = Vector3Add(seen->pos, Vector3Scale(Vector3Add(bb.min, bb.max), 0.5f));
+                    size = fmaxf(Vector3Length(Vector3Subtract(bb.max, bb.min)) * 0.9f, 0.5f);
+                }
                 cam.position = Vector3Add(cam.target, Vector3Scale(Vector3Normalize((Vector3){ 1.0f, 0.55f, 0.75f }), fmaxf(0.45f, size * 2.2f)));
             }
         }
@@ -1934,7 +1939,7 @@ int main(int argc, char **argv) {
             for (int row = 0; row < (kit_region >= 0 ? 1 : REGION_COUNT); row++)
                 for (int v = 0; v < BK_VARIANTS; v++)
                     voxs_draw_kit((BkType)kit_type, (Region)(kit_region >= 0 ? kit_region : row), v, kit_spot(&terrain, kit_type, row, v), 0.0f, 1.0f, WHITE);
-        bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
+        bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, &g_combat.armor, (float)GetTime());
         if (gallery_mode) player_draw(&player);
         else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) forge_draw_world(&terrain, player.pos); // las vetas de hierro cercanas

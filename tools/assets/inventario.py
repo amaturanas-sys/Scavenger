@@ -86,6 +86,9 @@ def load():
 
 # Variantes estacionales de un modelo (sufijo del archivo; ver src/world/props.c).
 SEASONS = ("primavera", "verano", "otono", "invierno")
+# Las prendas (cascos, corazas, botas: tools/modelos/equipo.py) traen una variante por cuerpo base junto a la del
+# cuerpo comun: nombre@mujer.glb, nombre@gigante.glb y nombre@protagonista.glb (src/world/props.c, props_draw_worn).
+BODIES = ("mujer", "gigante", "protagonista")
 
 
 def path_of(it):
@@ -138,10 +141,11 @@ def validate(items):
                     rel = os.path.normpath(os.path.relpath(os.path.join(dirpath, name), ROOT))
                     stem, dot, extension = rel.rpartition(".")
                     if "@" in os.path.basename(stem):
-                        # Variante estacional: nombre@estacion.glb junto al modelo base.
+                        # Variante estacional (nombre@estacion.glb) o de cuerpo (una prenda: nombre@mujer.glb), junto
+                        # al modelo base.
                         base, _, season = stem.rpartition("@")
-                        if season not in SEASONS:
-                            errors.append(f"{rel}: estacion '{season}' (validas: {', '.join(SEASONS)})")
+                        if season not in SEASONS + BODIES:
+                            errors.append(f"{rel}: estacion o cuerpo '{season}' (validos: {', '.join(SEASONS + BODIES)})")
                         elif base + dot + extension not in known:
                             errors.append(f"{rel}: variante de un id que no esta en el inventario")
                         continue

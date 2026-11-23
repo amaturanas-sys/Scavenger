@@ -181,8 +181,11 @@ def check_model(it, path):
     lo, hi = box
     ancho, alto, largo = dims(it)
     got = (hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2])
+    # Una prenda (con la piel del cuerpo: tools/modelos/equipo.py) esta puesta, en la pose del cuerpo: la mide el cuerpo
+    # (las botas, el par con las piernas abiertas), no el inventario.
+    prenda = it["categoria"] in ("armadura", "vestimenta") and g.pieles() > 0
     for axis, want, name in ((0, largo, "largo (X)"), (1, alto, "alto (Y)"), (2, ancho, "ancho (Z)")):
-        if want >= 0.05 and not 0.5 <= got[axis] / want <= 2.0:
+        if not prenda and want >= 0.05 and not 0.5 <= got[axis] / want <= 2.0:
             warnings.append(f"{rel}: {name} de {got[axis]:.2f} m (inventario {want:g} m): revisa la escala o el giro")
     equip = "uso:equipable" in it["tags"]
     if not equip and abs(lo[1]) > 0.05 + 0.02 * max(got[1], 0.01):
@@ -376,6 +379,14 @@ def check(quiet=False):
         e, w = check_vox(it, path) if path.endswith(".vox") else check_model(it, path)
         errors += e
         warnings += w
+        # Las prendas: su variante de cada cuerpo (tools/modelos/equipo.py), con las mismas reglas.
+        for body in inventario.BODIES:
+            variant = path[:-4] + "@" + body + ".glb"
+            if path.endswith(".glb") and os.path.isfile(variant):
+                count += 1
+                e, w = check_model(it, variant)
+                errors += e
+                warnings += w
     known = {it["id"] for it in items}
     for mid in load_manifest()["models"]:
         if mid not in known:
