@@ -22,8 +22,11 @@ static uint32_t hash3(int x, int z, uint32_t s) {
 }
 
 // ---------------------------------------------------------------- donde crecen
+float flora_dry(float desert) { return smooth(0.03f, 0.15f, desert); }
+float flora_arid(const float k[REGION_COUNT], float near_water) { return flora_dry(k[REGION_DESERT]) * (1.0f - clamp01(near_water)); }
+
 float flora_density(FloraKind kind, const float k[REGION_COUNT], float near_water) {
-    float nw = clamp01(near_water);
+    float nw = clamp01(near_water), fresh = 1.0f - flora_arid(k, nw); // lo fresco no crece en la transicion al desierto
     switch (kind) {
     case FLORA_GRASS: // en el desierto, solo junto al agua (los oasis); en el bosque, el pasto entre los helechos
         return k[REGION_STEPPE] * 1.75f + k[REGION_FOREST] * 1.15f + k[REGION_HIGHLAND] * 0.6f + k[REGION_FJORD] * 0.7f +
@@ -31,9 +34,9 @@ float flora_density(FloraKind kind, const float k[REGION_COUNT], float near_wate
     case FLORA_STIPA: // la estepa seca: lejos del agua
         return (k[REGION_STEPPE] * 0.95f + k[REGION_HIGHLAND] * 0.08f + k[REGION_DESERT] * 0.04f) * (1.0f - 0.7f * nw);
     case FLORA_FLOWER:
-        return k[REGION_STEPPE] * 0.22f + k[REGION_HIGHLAND] * 0.08f + k[REGION_FOREST] * 0.04f + k[REGION_FJORD] * 0.04f;
+        return (k[REGION_STEPPE] * 0.22f + k[REGION_HIGHLAND] * 0.08f + k[REGION_FOREST] * 0.04f + k[REGION_FJORD] * 0.04f) * fresh;
     case FLORA_FERN:
-        return k[REGION_FOREST] * 0.44f + k[REGION_FJORD] * 0.14f;
+        return (k[REGION_FOREST] * 0.44f + k[REGION_FJORD] * 0.14f) * fresh;
     case FLORA_REED: // las orillas (en la estepa, tan juntos que no queda suelo pelado)
         return nw * nw *
                (k[REGION_STEPPE] * 1.6f + k[REGION_FOREST] * 0.7f + k[REGION_HIGHLAND] * 0.24f + k[REGION_FJORD] * 0.4f +
@@ -151,8 +154,11 @@ int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out) {
         if (above < -0.5f) continue; // el agua honda
         if (trodden < 1.0f) r /= fmaxf(trodden, 0.001f);
         bool marsh = y < SEA_LEVEL; // bajo el nivel del mar, aunque el relieve lo deje seco: pantano (v0.17.0)
-        int kind = flora_pick(k, fmaxf(marsh ? 1.0f : lake ? clamp01(1.0f - above / 2.5f) : 0.0f, clay), r); // la arcilla del desierto: algo de hierba seca
+        float nw = marsh ? 1.0f : lake ? clamp01(1.0f - above / 2.5f) : 0.0f, arid = flora_arid(k, nw);
+        int kind = flora_pick(k, fmaxf(nw, clay), r); // la arcilla del desierto: algo de hierba seca
         if (kind < 0 || ((above < 0.0f || marsh) && kind != FLORA_REED)) continue; // en el agua baja y bajo el nivel del mar, solo juncos
+        // Lo fresco, no en lo seco (la arcilla, que cuenta como agua para la hierba seca, no lo trae de vuelta).
+        if ((kind == FLORA_FLOWER || kind == FLORA_FERN) && (float)(hash3(gz, gx * FLORA_PER_CELL + i, seed ^ 0xA21Du) & 0xFFFFu) / 65536.0f < arid) continue;
         uint32_t h2 = hash3(gz, gx * FLORA_PER_CELL + i, seed ^ 0x5EED5u);
         FloraTuft *t = &out[n++];
         memset(t, 0, sizeof(*t)); // tambien el relleno: dos siembras de la misma celda son identicas byte a byte
@@ -163,6 +169,7 @@ int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out) {
         t->kind = (unsigned char)kind;
         t->forest = (unsigned char)(k[REGION_FOREST] * 255.0f + 0.5f), t->high = (unsigned char)(k[REGION_HIGHLAND] * 255.0f + 0.5f);
         t->fjord = (unsigned char)(k[REGION_FJORD] * 255.0f + 0.5f), t->desert = (unsigned char)(k[REGION_DESERT] * 255.0f + 0.5f);
+        t->arid = (unsigned char)(arid * 255.0f + 0.5f);
     }
     return n;
 }
@@ -177,6 +184,11 @@ TreeKind flora_tree_kind(const float k[REGION_COUNT], float near_water, float r)
     if (r < willow) return TREE_WILLOW;
     if (r < willow + maple) return TREE_MAPLE;
     return TREE_PINE;
+}
+
+TreeSeason flora_tree_state(float arid, float r) {
+    if (r >= arid) return TREES_SUMMER;
+    return r < 0.45f * arid ? TREES_DEAD : TREES_DRY; // casi la mitad, muertos
 }
 
 TreeSeason flora_tree_season(float greenness, float autumn, float snow_cover) {

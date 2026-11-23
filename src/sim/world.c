@@ -145,11 +145,19 @@ Region world_region_weights(const World *w, float x, float z, float out[REGION_C
 // regiones de afuera en 520 m (no 140), festoneada: lenguas de estepa que entran en el bosque o el desierto, y al
 // reves; y entre las de afuera, 11 grados a cada lado (no 7). El relieve, el agua y los lugares siguen con
 // world_region_weights: los lagos no se mueven y las partidas viejas no cambian.
+// Hacia el bosque (v0.17.0), la transicion es en manchas, en una franja de 840 m: bosquecillos que entran en la estepa
+// y claros de estepa que entran en el bosque (de unos 60 m), cada vez mas bosque hacia afuera.
 Region world_region_weights_soft(const World *w, float x, float z, float out[REGION_COUNT]) {
     float r = sqrtf(x * x + z * z), rs = steppe_radius(w, atan2f(z, x)), q[REGION_COUNT];
     float jag = 150.0f * fbm2d(x * 0.0022f, z * 0.0022f, w->seed + 613u, 3);
     quadrant_blend(warped_angle(w, x, z), 11.0f * DEG, q);
-    return region_mix(1.0f - smooth(rs - 260.0f + jag, rs + 260.0f + jag, r), q, out);
+    float center = 1.0f - smooth(rs - 260.0f + jag, rs + 260.0f + jag, r);
+    if (q[REGION_FOREST] > 0.0f) {
+        float wide = 1.0f - smooth(rs - 420.0f + jag, rs + 420.0f + jag, r);
+        float patch = fbm2d(x * 0.016f, z * 0.016f, w->seed + 7177u, 3);
+        center = lerpf(center, smooth(-0.25f, 0.25f, 2.0f * wide - 1.0f + 0.8f * patch), q[REGION_FOREST]);
+    }
+    return region_mix(center, q, out);
 }
 
 Region world_region(const World *w, float x, float z) {

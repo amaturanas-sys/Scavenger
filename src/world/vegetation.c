@@ -102,6 +102,9 @@ typedef struct {
     Color stipa_tip, fern, reed, herb;
 } VegLook;
 
+// Lo seco de la transicion al desierto (v0.17.0, flora_arid): paja todo el año.
+static Color dry_of(Color c, const FloraTuft *t, float v) { return mixc(c, shade((Color){ 178, 156, 102, 255 }, v), t->arid / 255.0f); }
+
 // El pasto: el color del suelo de su region y su estacion (src/world/terrain.c: ground_color).
 static Color grass_color(const Climate *c, const FloraTuft *t) {
     const Color green = { 112, 150, 70, 255 }, dry = { 188, 168, 106, 255 }, ochre = { 172, 124, 68, 255 };
@@ -113,7 +116,7 @@ static Color grass_color(const Climate *c, const FloraTuft *t) {
     g = mixc(g, mixc(needles, ochre, c->autumn * 0.3f), t->forest / 255.0f);
     g = mixc(g, tundra, t->high / 255.0f);
     g = mixc(g, moss, t->fjord / 255.0f);
-    return mixc(g, desert, t->desert / 255.0f * 0.6f);
+    return dry_of(mixc(g, desert, t->desert / 255.0f * 0.6f), t, 1.0f);
 }
 
 static void tri(Vector3 a, Color ca, Vector3 b, Color cb, Vector3 c, Color cc) {
@@ -173,7 +176,7 @@ static void draw_tuft(const FloraTuft *t, const Climate *c, const VegLook *L, fl
     case FLORA_GRASS: {
         // La base, a la sombra; las puntas, al sol (en primavera y verano, de un verde mas claro).
         Color g = grass_color(c, t), cb = shade(g, 0.7f * v);
-        Color ct = mixc(mixc(shade(g, 1.18f * v), (Color){ 200, 208, 120, 255 }, 0.22f * c->greenness), snow, L->snow * 0.5f);
+        Color ct = mixc(mixc(shade(g, 1.18f * v), (Color){ 200, 208, 120, 255 }, 0.22f * c->greenness * (1.0f - t->arid / 255.0f)), snow, L->snow * 0.5f);
         int n = lod == 3 ? 4 : lod;
         for (int j = 0; j < n; j++) {
             float a = a0 + (float)j * 6.2832f / (float)n, ox = cosf(a), oz = sinf(a);
@@ -222,14 +225,14 @@ static void draw_tuft(const FloraTuft *t, const Climate *c, const VegLook *L, fl
         break;
     }
     case FLORA_HERB: { // hojas anchas grises que se abren desde el pie; en flor, una o dos espigas moradas
-        Color cb = shade(L->herb, 0.62f * v), ct = mixc(shade(L->herb, 1.15f * v), snow, L->snow * 0.5f);
+        Color herb = dry_of(L->herb, t, 0.85f), cb = shade(herb, 0.62f * v), ct = mixc(shade(herb, 1.15f * v), snow, L->snow * 0.5f);
         int n = lod == 3 ? 6 : lod == 2 ? 4 : 2;
         for (int j = 0; j < n; j++) {
             float a = a0 + (float)j * 6.2832f / (float)n, ox = cosf(a), oz = sinf(a);
             float hj = h * (0.5f + 0.15f * fmodf(t->rnd * 4.3f + (float)j * 0.53f, 1.0f));
             blade(b, hj, ox, oz, 0.55f, bx * 0.5f, bz * 0.5f, 0.07f * s, -oz, ox, cb, ct, 0.0f, 1.0f, cb);
         }
-        if (L->plume > 0.05f && lod > 1) { // las espigas: el tomillo y la salvia moradas, algun ajenjo amarillo
+        if (L->plume > 0.05f && lod > 1 && t->arid < 128) { // las espigas: el tomillo y la salvia moradas, algun ajenjo amarillo
             static const Color BLOOM[3] = { { 150, 108, 196, 255 }, { 116, 104, 200, 255 }, { 206, 186, 92, 255 } };
             Color petal = mixc(cb, shade(BLOOM[(int)(t->rnd * 613.0f) % 3], v), L->plume);
             int spikes = lod == 3 ? 2 : 1;

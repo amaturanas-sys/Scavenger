@@ -186,6 +186,7 @@ static Color ground_color(const TerrainLook *L, const float *a, float h) {
     grass = mixc(grass, mixc(needles, ochre, L->autumn * 0.3f), a[A_FOREST]); // el suelo del bosque
     grass = mixc(grass, tundra, a[A_HIGH]);                                    // la tundra del altiplano
     grass = mixc(grass, moss, a[A_FJORD]);                                     // el musgo de la costa
+    grass = mixc(grass, dry, flora_dry(desert));                               // la transicion al desierto: seco todo el año
     Color c = grass;
     bool bare = false;
     float steep = 0.45f + 0.15f * a[A_HIGH];
@@ -261,14 +262,14 @@ static Color rock_color(const TerrainLook *L, const float *a) {
 }
 
 // Matas y arbustos: verdes en primavera, secos en verano, ocres en otoño; flores de la
-// estepa en primavera (las matas de mancha alta); nieve encima.
+// estepa en primavera (las matas de mancha alta); nieve encima. En la transicion al desierto, secas todo el año.
 static Color bush_color(const TerrainLook *L, const float *a) {
     Color green = { 86, 120, 58, 255 }, dry = { 150, 134, 84, 255 }, ochre = { 168, 112, 56, 255 };
     Color c = mixc(dry, green, L->greenness);
     c = mixc(c, ochre, L->autumn * 0.8f);
     c = mixc(c, (Color){ 60, 84, 52, 255 }, a[A_FOREST] * 0.6f);  // sotobosque
-    c = mixc(c, (Color){ 132, 118, 80, 255 }, a[A_DESERT] * 0.8f); // saxaul
-    if (a[A_PATCH] > 0.86f && a[A_FOREST] < 0.5f && a[A_DESERT] < 0.5f && a[A_HIGH] < 0.5f && L->greenness > 0.5f) {
+    c = mixc(c, (Color){ 132, 118, 80, 255 }, fmaxf(a[A_DESERT] * 0.8f, flora_dry(a[A_DESERT]))); // saxaul; en la transicion, secas
+    if (a[A_PATCH] > 0.86f && a[A_FOREST] < 0.5f && a[A_DESERT] < 0.03f && a[A_HIGH] < 0.5f && L->greenness > 0.5f) {
         static const Color FLOWERS[3] = { { 214, 92, 120, 255 }, { 226, 200, 84, 255 }, { 156, 120, 200, 255 } };
         c = mixc(c, FLOWERS[(int)(a[A_PATCH] * 997.0f) % 3], (L->greenness - 0.5f) * 1.6f);
     }
@@ -1128,10 +1129,12 @@ static bool tree_slot(const Terrain *t, int gx, int gz, ChunkTree *out) {
     int si = world_nearest_settlement(t->world, x, z, &dist);
     if (si >= 0 && dist < (t->world->settlements[si].kind == SETTLE_CAPITAL ? CITY_FIELDS_R1 + 8.0f : VILLAGE_FIELDS_R1 + 6.0f)) return false; // claros de los pueblos (y sus campos)
     if (near_site(t->world, x, z) || near_bridge(t, x, z, 1.0f)) return false;
-    TreeKind kind = flora_tree_kind(k, wet && wk != WATER_SEA ? 1.0f : 0.0f, (float)(h2 & 0xFFFF) / 65536.0f);
+    float nw = wet && wk != WATER_SEA ? 1.0f : 0.0f;
+    TreeKind kind = flora_tree_kind(k, nw, (float)(h2 & 0xFFFF) / 65536.0f);
     if (kind != TREE_PINE && ((gx + gz) & 1)) return false;
+    TreeSeason state = flora_tree_state(flora_arid(k, nw), (float)(hash2(gx, gz, t->seed ^ 0xD5EADu) & 0xFFFF) / 65536.0f);
     *out = (ChunkTree){ x, y, z, 0.6f + 0.4f * r1 * (0.6f + 0.4f * k[REGION_FOREST]), (float)(h2 >> 16) / 65536.0f * 2.0f * PI,
-                        (unsigned char)kind };
+                        (unsigned char)kind, (unsigned char)state };
     return true;
 }
 
@@ -1910,7 +1913,8 @@ static void far_fill(const Terrain *t) {
                 } else {
                     base = ground_color(&t->look, at, at[A_H] - t->plain);
                     float trees = Clamp(tree_density(a->k, 0.0f) / 0.62f, 0.0f, 1.0f) * (at[A_H] < t->look.snowline ? 0.85f : 0.0f) *
-                                  (1.0f - Clamp(at[A_WALL] * 2.0f, 0.0f, 1.0f)); // el muro tras el canal: roca, sin bosque
+                                  (1.0f - Clamp(at[A_WALL] * 2.0f, 0.0f, 1.0f)) * // el muro tras el canal: roca, sin bosque
+                                  (1.0f - 0.8f * flora_dry(at[A_DESERT]));          // la transicion al desierto: secos, sin copa verde
                     base = mixc(base, tree_color(&t->look, (float[TRI_ATTRS]){ [A_PATCH] = 0.6f, [A_KIND] = KIND_CANOPY, [A_H] = at[A_H] }), trees);
                     base = shade(base, 0.55f + 0.45f * fmaxf(0.0f, Vector3DotProduct(n, sun)));
                 }
@@ -2269,6 +2273,7 @@ void terrain_draw_trees(const Terrain *t, Camera3D cam) {
         for (int k = 0; k < ch->tree_count; k++) {
             const ChunkTree *tr = &ch->trees[k];
             TreeSeason se = tr->y > t->look.snowline - 4.0f ? TREES_SNOW : season; // al pie del glaciar, nevados todo el año
+            if (tr->state != TREES_SUMMER) se = (TreeSeason)tr->state; // la transicion al desierto: secos o muertos todo el año
             trees_draw((TreeKind)tr->kind, se, (Vector3){ tr->x, tr->y, tr->z }, tr->scale, tr->yaw, WHITE);
         }
     }

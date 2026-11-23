@@ -6550,6 +6550,62 @@ static void test_sea_level(void) {
     CHECK(flora_height(FLORA_SEAGRASS, 0.3f, 1.0f, 0.0f) > 0.4f && flora_height(FLORA_KELP, 0.3f, 1.0f, 0.0f) > 2.0f);
 }
 
+// Las transiciones (v0.17.0, docs/MUNDO.md): hacia el desierto, nada fresco lejos del agua; hacia el bosque, en manchas.
+static void test_transitions(void) {
+    // Lo seco: nada en la estepa o el bosque puros; entero desde que el desierto pesa 0,15; junto al agua, nada.
+    float k[REGION_COUNT] = { 0.8f, 0.2f, 0.0f, 0.0f, 0.0f };
+    CHECK(flora_arid(k, 0.0f) == 0.0f);
+    k[REGION_FOREST] = 0.0f, k[REGION_DESERT] = 0.2f;
+    CHECK(flora_arid(k, 0.0f) == 1.0f && flora_arid(k, 1.0f) == 0.0f);
+    CHECK(flora_density(FLORA_FLOWER, k, 0.0f) == 0.0f && flora_density(FLORA_FERN, k, 0.0f) == 0.0f && flora_density(FLORA_GRASS, k, 0.0f) > 0.0f);
+    CHECK(flora_density(FLORA_FLOWER, k, 1.0f) > 0.0f); // junto al agua, las flores vuelven
+    // Los arboles: donde todo es seco, ninguno verde, y hay secos y muertos; donde no, todos de la estacion.
+    int dry = 0, dead = 0, green = 0;
+    for (int i = 0; i < 1000; i++) {
+        float r = ((float)i + 0.5f) / 1000.0f;
+        TreeSeason s = flora_tree_state(1.0f, r);
+        dry += s == TREES_DRY, dead += s == TREES_DEAD, green += s == TREES_SUMMER;
+        CHECK(flora_tree_state(0.0f, r) == TREES_SUMMER);
+    }
+    CHECK(green == 0 && dry > 300 && dead > 300);
+    // En el mundo: la frontera del bosque con el desierto de la semilla 1206 (r 2800 m), donde el desierto pesa algo: sus
+    // matas, secas, sin flores ni helechos (salvo junto al agua, con lo seco en 0).
+    const World *w = world_for_seed(1206u);
+    int tufts = 0, fresh = 0, arid = 0;
+    for (float th = -2.2f; th < -1.0f; th += 0.002f) {
+        float x = cosf(th) * 2800.0f, z = sinf(th) * 2800.0f, kk[REGION_COUNT];
+        world_region_weights_soft(w, x, z, kk);
+        if (kk[REGION_DESERT] < 0.2f || kk[REGION_DESERT] > 0.6f) continue;
+        FloraTuft t[FLORA_PER_CELL];
+        int n = flora_cell(w, w->seed, (int)floorf(x / FLORA_CELL), (int)floorf(z / FLORA_CELL), t);
+        for (int i = 0; i < n; i++, tufts++) {
+            arid += t[i].arid == 255;
+            fresh += (t[i].kind == FLORA_FLOWER || t[i].kind == FLORA_FERN) && t[i].arid > 0;
+        }
+    }
+    CHECK(tufts > 20 && fresh == 0 && arid > tufts / 2);
+    // Hacia el bosque, en manchas: en el medio de la franja, la estepa pesa casi todo en unas partes y casi nada en
+    // otras (antes, la mitad en todas); adentro de la estepa, nada cambia.
+    float ex, ez;
+    world_edge_point(w, REGION_FOREST, 600.0f, &ex, &ez);
+    float th0 = atan2f(ez, ex), mid = 0.0f;
+    for (float r = 800.0f; r < 4000.0f && mid == 0.0f; r += 10.0f) {
+        float kk[REGION_COUNT];
+        world_region_weights_soft(w, cosf(th0) * r, sinf(th0) * r, kk);
+        if (kk[REGION_STEPPE] < 0.5f) mid = r;
+    }
+    int steppe = 0, forest = 0, between = 0;
+    for (float a = -0.25f; a <= 0.25f; a += 0.001f) {
+        float kk[REGION_COUNT];
+        world_region_weights_soft(w, cosf(th0 + a) * mid, sinf(th0 + a) * mid, kk);
+        steppe += kk[REGION_STEPPE] > 0.85f, forest += kk[REGION_STEPPE] < 0.15f, between += kk[REGION_STEPPE] >= 0.15f && kk[REGION_STEPPE] <= 0.85f;
+    }
+    CHECK(mid > 0.0f && steppe > 40 && forest > 40);
+    float kc[REGION_COUNT];
+    world_region_weights_soft(w, cosf(th0) * 600.0f, sinf(th0) * 600.0f, kc);
+    CHECK(kc[REGION_STEPPE] > 0.999f);
+}
+
 static void test_world_dry(void) {
     // La linea de nieve del verano de world.h es la de src/sim/climate.c (la mas alta del año).
     float top = -1e9f;
@@ -7119,6 +7175,7 @@ int main(void) {
     RUN(test_river_flow);
     RUN(test_borders_and_sequelae);
     RUN(test_sea_level);
+    RUN(test_transitions);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }

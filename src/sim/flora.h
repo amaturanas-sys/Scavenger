@@ -46,6 +46,12 @@ typedef enum {
 // Matas por m2 de esa clase con los pesos de las regiones k y el agua cerca (near_water [0, 1]: 1
 // en la orilla de un lago o un rio, 0 a 2,5 m sobre el agua o lejos; el mar no cuenta).
 float flora_density(FloraKind kind, const float k[REGION_COUNT], float near_water);
+// Lo seco de la transicion al desierto (v0.17.0) [0, 1]: desde que el desierto pesa 0,03 hasta que pesa 0,15 (flora_dry),
+// lejos del agua (junto a ella, near_water 1, los oasis y los sotos siguen verdes). Ahi no crece nada fresco: el pasto,
+// la stipa, las hierbas, las matas y el suelo, secos todo el año; ni flores ni helechos; los arboles, secos o muertos
+// (flora_tree_state).
+float flora_dry(float desert);
+float flora_arid(const float k[REGION_COUNT], float near_water);
 // La clase de una mata candidata con su azar r en [0, 1), o -1 si ahi no crece nada (cada
 // candidato ocupa FLORA_CANDIDATE_M2: su probabilidad es la densidad por esa superficie; todas
 // juntas, como mucho 1).
@@ -59,6 +65,7 @@ typedef struct {
     float patch;                 // las manchas de nieve del suelo de su celda (como src/world/terrain.c)
     unsigned char kind;          // FloraKind
     unsigned char forest, high, fjord, desert; // los pesos de region (0..255), para el color
+    unsigned char arid;          // lo seco de la transicion al desierto (flora_arid, 0..255): secas todo el año
 } FloraTuft;
 
 // Las matas de la celda (gx, gz): de (gx, gz) * FLORA_CELL a la siguiente; seed: la del terreno.
@@ -87,8 +94,12 @@ TreeKind flora_tree_kind(const float k[REGION_COUNT], float near_water, float r)
 // Como estan los arboles con el aspecto del paisaje (greenness, autumn y snow_cover del clima, src/sim/climate.h):
 // en verano (y desde que brota la primavera), como en su modelo; en otoño, el arce rojo y el sauce amarillo; pelados el
 // arce y el sauce cuando caen las hojas y hasta que reverdece; con nieve, el pino nevado (el arce y el sauce, pelados).
-typedef enum { TREES_SUMMER, TREES_AUTUMN, TREES_BARE, TREES_SNOW, TREES_SEASONS } TreeSeason;
+// TREES_DRY y TREES_DEAD (v0.17.0): los de la transicion al desierto, todo el año (flora_tree_state).
+typedef enum { TREES_SUMMER, TREES_AUTUMN, TREES_BARE, TREES_SNOW, TREES_DRY, TREES_DEAD, TREES_SEASONS } TreeSeason;
 TreeSeason flora_tree_season(float greenness, float autumn, float snow_cover);
+// Como esta un arbol con lo seco de su lugar (flora_arid) y su azar r en [0, 1): verde (TREES_SUMMER: el de la estacion),
+// seco (TREES_DRY: la hoja parda y rala) o muerto (TREES_DEAD: el tronco y las ramas). Donde todo es seco, ninguno verde.
+TreeSeason flora_tree_state(float arid, float r);
 
 // El viento (wind [0, 1] del clima): cuanto se inclina la punta a favor (m por m de alto) y cuanto
 // se mece alrededor en el instante t (phase: la de la mata; las olas cruzan el pasto si la fase
