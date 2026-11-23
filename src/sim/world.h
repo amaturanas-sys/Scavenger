@@ -175,7 +175,8 @@ typedef struct {
     // Lo mismo con el agua de la v0.16: mientras world_generate arma el mundo, el mar es el de antes (en la costa de los
     // fiordos, todo lo que queda bajo +1 m, se alcance o no desde mar abierto) y el canal del bosque lleva agua solo donde
     // el bosque pesa mas de la mitad. Despues (v0.17.0), el mar es lo que se alcanza desde mar abierto por debajo del nivel
-    // del mar (ocean) y el canal lleva agua en todo su cauce, con el nivel del mar donde se junta con los fiordos.
+    // del mar (ocean) y, hacia los fiordos, el canal lleva agua en todo su cauce y entra al mar a su nivel (hacia el
+    // desierto, su cauce se va secando como antes).
     bool water_v16;
     uint8_t ocean[WORLD_OCEAN_BYTES]; // las celdas de la costa que el mar alcanza desde mar abierto (un bit cada una)
     float warp_phase;    // giro de las fronteras entre regiones
@@ -303,7 +304,7 @@ float world_water_now(const World *w, float x, float z, const WaterSeason *s, Wa
 // que llegan a (x, z), que no cambian con la estacion, y como estan en una estacion.
 #define WATER_RIVERS_HERE 2
 typedef struct {
-    float ground;    // world_height (si hay un lago o un rio cerca; si no, -1e9)
+    float ground;    // world_height (si hay un lago, un rio o el mar cerca; si no, -1e9)
     float sea_floor; // el relieve bajo el mar, o -1e9 si no hay mar
     float canal;     // el nivel base del canal, o -1e9
     float canal_sea; // cuanto del canal es ya mar [0, 1]: donde entra a la costa de los fiordos no crece ni se hiela aparte

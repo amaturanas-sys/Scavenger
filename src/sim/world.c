@@ -557,8 +557,11 @@ void world_water_bodies(const World *w, float x, float z, WaterBodies *b) {
                 if (b->ground < SEA_LEVEL + 1.0f) b->sea_floor = b->ground;
             }
         }
+        // El canal: donde el bosque pesa mas de la mitad y, hacia los fiordos (v0.17.0), en todo su cauce, hasta el mar.
+        // Hacia el desierto no: su cauce se va secando (lo de mas alla es el cañon).
         float ce = world_canal_offset(w, th);
-        if (q[REGION_FOREST] > (w->water_v16 ? 0.5f : 0.0f) && fabsf(e - ce) < CANAL_HALF + 4.0f) canal_water(w, th, q, b);
+        bool canal = q[REGION_FOREST] > 0.5f || (!w->water_v16 && q[REGION_FOREST] > 0.0f && q[REGION_FJORD] > 0.05f);
+        if (canal && fabsf(e - ce) < CANAL_HALF + 4.0f) canal_water(w, th, q, b);
     }
     // Un lago o un rio no flota: donde el suelo cae muy por debajo de su nivel (un cañon que
     // pasa junto a la cuenca) no hay agua suya, y manda la de abajo. Sin esto, el agua quedaba
