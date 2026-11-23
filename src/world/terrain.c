@@ -154,6 +154,20 @@ static Color mixc(Color a, Color b, float k) {
                     255 };
 }
 
+// El mar segun su hondura (v0.17.0, docs/AGUA.md): sobre el arrecife, claro y transparente (se ven las algas y el
+// pasto marino); mas alla, cada vez mas oscuro y opaco, como una niebla: el fondo del mar hondo no se ve.
+#define SEA_CLEAR 0.5f  // hasta aca, el agua clara del arrecife
+#define SEA_OPEN 6.0f   // el azul del mar (el de antes)
+#define SEA_ABYSS 14.0f // desde aca, la niebla del mar hondo, opaca
+static Color sea_tint(float depth) {
+    const Color reef = { 54, 116, 126, 150 }, open = { 36, 72, 104, 228 }, abyss = { 14, 32, 54, 255 };
+    float a = Clamp((depth - SEA_CLEAR) / (SEA_OPEN - SEA_CLEAR), 0.0f, 1.0f), b = Clamp((depth - SEA_OPEN) / (SEA_ABYSS - SEA_OPEN), 0.0f, 1.0f);
+    Color from = b > 0.0f ? open : reef, to = b > 0.0f ? abyss : open;
+    float k = b > 0.0f ? b * b * (3.0f - 2.0f * b) : a * a * (3.0f - 2.0f * a);
+    return (Color){ (unsigned char)Lerp(from.r, to.r, k), (unsigned char)Lerp(from.g, to.g, k), (unsigned char)Lerp(from.b, to.b, k),
+                    (unsigned char)Lerp(from.a, to.a, k) };
+}
+
 // Paleta segun la region y la estacion: pasto de estepa (verde, seco, ocre o dormido),
 // sotobosque de coniferas, tundra del altiplano, musgo de la costa y arena del desierto;
 // tierra y roca en las pendientes; barro con lluvia; orillas; nieve, hielo y glaciares.
@@ -960,7 +974,7 @@ static void mesh_water(const Terrain *t, Chunk *ch) {
             flow[j][i][0] = dx * v, flow[j][i][1] = dz * v;
         }
     // Los colores del agua (con el brillo de las ondas a la mitad: ver terrain_draw_water) y del hielo.
-    const Color lake = { 52, 96, 128, 200 }, river = { 62, 112, 140, 200 }, sea = { 36, 72, 104, 220 }, glacial = { 84, 168, 178, 210 };
+    const Color lake = { 52, 96, 128, 200 }, river = { 62, 112, 140, 200 }, sea = { 36, 72, 104, 228 }, glacial = { 84, 168, 178, 210 };
     const Color icec = { 184, 210, 232, 240 };
     for (int j = 0; j < N; j++)
         for (int i = 0; i < N; i++) {
@@ -1000,10 +1014,11 @@ static void mesh_water(const Terrain *t, Chunk *ch) {
             for (int v = 0; v < 6; v++) {
                 int o = count[m] * 3 + v, c = tri[v];
                 memcpy(&verts[m][o * 3], q[c], sizeof(q[0]));
-                Color k = mixc(base, icec, qi[c]);
+                Color vb = kind == WATER_SEA ? sea_tint(q[c][1] - ch->wground[ci[c][1] * V + ci[c][0]]) : base; // el mar, por su hondura
+                Color k = mixc(vb, icec, qi[c]);
                 float boost = m == W_WATER ? 1.0f / 0.94f : 1.0f;
                 cols[m][o * 4 + 0] = (unsigned char)fminf(255.0f, k.r * boost), cols[m][o * 4 + 1] = (unsigned char)fminf(255.0f, k.g * boost);
-                cols[m][o * 4 + 2] = (unsigned char)fminf(255.0f, k.b * boost), cols[m][o * 4 + 3] = (unsigned char)Lerp(base.a, icec.a, Clamp(qi[c], 0.0f, 1.0f));
+                cols[m][o * 4 + 2] = (unsigned char)fminf(255.0f, k.b * boost), cols[m][o * 4 + 3] = (unsigned char)Lerp(vb.a, icec.a, Clamp(qi[c], 0.0f, 1.0f));
                 if (shaded && m == W_WATER) { // hondura, espuma, corriente, que agua y su hielo (ver el shader)
                     int x = ci[c][0], z = ci[c][1];
                     float depth = q[c][1] - ch->wground[z * V + x], rocks = (float)ch->wfoam[z * V + x] / 255.0f;
@@ -1834,7 +1849,7 @@ static void far_shift(const Terrain *t, int gx0, int gz0) {
 static void far_fill(const Terrain *t) {
     Mesh *m = &g_far.model.meshes[0];
     const Vector3 sun = Vector3Normalize((Vector3){ -0.45f, 1.0f, -0.3f });
-    const Color sea = { 36, 72, 104, 255 }, lake = { 52, 96, 128, 255 }, glacial = { 84, 168, 178, 255 };
+    const Color lake = { 52, 96, 128, 255 }, glacial = { 84, 168, 178, 255 };
     const Color ice = { 198, 220, 236, 255 };
     float ccx = (t->center_cx + 0.5f) * CHUNK_SIZE, ccz = (t->center_cz + 0.5f) * CHUNK_SIZE;
     g_perma_snow = t->plain + 40.0f;
@@ -1889,7 +1904,8 @@ static void far_fill(const Terrain *t) {
                 if (water <= at[A_H] && at[A_SLOPE] > WALL_SLOPE && at[A_HIGH] > 0.5f && at[A_EDGE] < 150.0f) ramp = 1 + RAMP_HAZES;
                 if (water > at[A_H]) { // agua: el mar, los lagos y, en el altiplano, el deshielo turquesa; con su hielo
                     int w = wlv[va] > -1e8f ? va : wlv[vb] > -1e8f ? vb : vc;
-                    base = wkind[w] == WATER_SEA ? sea : at[A_HIGH] > 0.5f ? glacial : lake;
+                    base = wkind[w] == WATER_SEA ? sea_tint(water - at[A_H]) : at[A_HIGH] > 0.5f ? glacial : lake; // el mar, por su hondura
+                    base.a = 255;
                     base = mixc(base, ice, wice[w]);
                 } else {
                     base = ground_color(&t->look, at, at[A_H] - t->plain);

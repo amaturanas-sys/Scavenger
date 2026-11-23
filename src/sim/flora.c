@@ -72,6 +72,44 @@ static bool cleared(const World *w, float x, float z) {
     return false;
 }
 
+// La base de una mata sobre el facetado del suelo (src/world/terrain.c: de (x1, z0) a (x0, z1)), en (u, v) de su celda.
+static float facet_y(const float h[4], float u, float v) {
+    return u + v > 1.0f ? h[3] + (1.0f - u) * (h[2] - h[3]) + (1.0f - v) * (h[1] - h[3]) : h[0] + u * (h[1] - h[0]) + v * (h[2] - h[0]);
+}
+
+// El fondo del mar sobre el arrecife (v0.17.0): praderas de pasto marino en lo bajo y bosques de algas mas hondo, en
+// manchas de decenas de metros; el pasto, en la arena (no en la roca de las cuestas); mas alla del arrecife, nada.
+static int reef_cell(uint32_t seed, int gx, int gz, const float h[4], const float k[REGION_COUNT], FloraTuft *out) {
+    const float c = FLORA_CELL, x0 = (float)gx * c, z0 = (float)gz * c, mx = x0 + c * 0.5f, mz = z0 + c * 0.5f;
+    float meadow = smooth(0.42f, 0.6f, 0.5f + 0.5f * fbm2d(mx * 0.035f, mz * 0.035f, seed + 917u, 2));
+    float forest = smooth(0.45f, 0.62f, 0.5f + 0.5f * fbm2d(mx * 0.05f + 31.0f, mz * 0.05f, seed + 4211u, 2));
+    if (meadow <= 0.0f && forest <= 0.0f) return 0;
+    float ya = c / sqrtf(c * c + (h[1] - h[0]) * (h[1] - h[0]) + (h[2] - h[0]) * (h[2] - h[0]));
+    float yb = c / sqrtf(c * c + (h[3] - h[2]) * (h[3] - h[2]) + (h[3] - h[1]) * (h[3] - h[1]));
+    int n = 0;
+    for (int i = 0; i < FLORA_PER_CELL; i++) {
+        uint32_t hs = hash3(gx * FLORA_PER_CELL + i, gz, seed ^ 0x5EA6A55u);
+        float u = 0.04f + 0.92f * (float)(hs & 0xFFu) / 255.0f, v = 0.04f + 0.92f * (float)((hs >> 8) & 0xFFu) / 255.0f;
+        float r = (float)(hs >> 16) / 65536.0f, y = facet_y(h, u, v), depth = SEA_LEVEL - y;
+        float sand = 1.0f - (u + v > 1.0f ? yb : ya) > 0.45f ? 0.15f : 1.0f; // en la roca, poco pasto
+        float pg = 2.4f * FLORA_CANDIDATE_M2 * meadow * sand * smooth(0.4f, 0.8f, depth) * (1.0f - smooth(3.5f, 4.5f, depth));
+        float pk = 0.6f * FLORA_CANDIDATE_M2 * forest * smooth(1.2f, 2.0f, depth) * (1.0f - smooth(FLORA_REEF_DEPTH - 1.5f, FLORA_REEF_DEPTH, depth));
+        int kind = r < pg ? FLORA_SEAGRASS : r < pg + pk ? FLORA_KELP : -1;
+        if (kind < 0) continue;
+        uint32_t h2 = hash3(gz, gx * FLORA_PER_CELL + i, seed ^ 0x5EED5u);
+        FloraTuft *t = &out[n++];
+        memset(t, 0, sizeof(*t)); // tambien el relleno: dos siembras de la misma celda son identicas byte a byte
+        t->x = x0 + u * c, t->y = y, t->z = z0 + v * c;
+        t->size = 0.7f + 0.6f * (float)(h2 & 0xFFu) / 255.0f;
+        t->rnd = (float)(h2 >> 16) / 65536.0f;
+        t->patch = 0.5f;
+        t->kind = (unsigned char)kind;
+        t->forest = (unsigned char)(k[REGION_FOREST] * 255.0f + 0.5f), t->high = (unsigned char)(k[REGION_HIGHLAND] * 255.0f + 0.5f);
+        t->fjord = (unsigned char)(k[REGION_FJORD] * 255.0f + 0.5f), t->desert = (unsigned char)(k[REGION_DESERT] * 255.0f + 0.5f);
+    }
+    return n;
+}
+
 int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out) {
     const float c = FLORA_CELL, x0 = (float)gx * c, z0 = (float)gz * c, mx = x0 + c * 0.5f, mz = z0 + c * 0.5f;
     float r_camp = sqrtf(mx * mx + mz * mz);
@@ -87,12 +125,12 @@ int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out) {
     // (x0, z1)): la base de cada mata, sobre el triangulo que la tiene.
     float h00 = world_height(w, x0, z0), h10 = world_height(w, x0 + c, z0);
     float h01 = world_height(w, x0, z0 + c), h11 = world_height(w, x0 + c, z0 + c);
-    if (k[REGION_FJORD] > 0.5f && (h00 + h10 + h01 + h11) * 0.25f < SEA_LEVEL + 4.0f) return 0; // la playa negra
     WaterKind wk;
+    float wl = world_water(w, mx, mz, 0.0f, &wk), avg = (h00 + h10 + h01 + h11) * 0.25f;
+    if (wk == WATER_SEA && avg < wl + 1.0f) return reef_cell(seed, gx, gz, (const float[4]){ h00, h10, h01, h11 }, k, out); // el fondo del mar
+    if (k[REGION_FJORD] > 0.5f && avg < SEA_LEVEL + 4.0f) return 0; // la playa negra
     float clay = k[REGION_DESERT] > 0.3f ? 0.4f * k[REGION_DESERT] * world_desert_clay(w, mx, mz) : 0.0f;
-    float wl = world_water(w, mx, mz, 0.0f, &wk);
     bool lake = wl > -1e8f && wk != WATER_SEA;
-    if (wk == WATER_SEA && wl > -1e8f && (h00 + h10 + h01 + h11) * 0.25f < wl + 1.0f) return 0;
     // La tierra pelada y la roca de las cuestas (como el suelo: 1 - la normal hacia arriba).
     float steep = 0.45f + 0.15f * k[REGION_HIGHLAND];
     float ya = c / sqrtf(c * c + (h10 - h00) * (h10 - h00) + (h01 - h00) * (h01 - h00));
@@ -149,7 +187,7 @@ TreeSeason flora_tree_season(float greenness, float autumn, float snow_cover) {
 }
 
 // ---------------------------------------------------------------- la estacion
-static const float FULL_HEIGHT[FLORA_KINDS] = { 0.5f, 0.85f, 0.32f, 0.65f, 1.6f, 0.4f };
+static const float FULL_HEIGHT[FLORA_KINDS] = { 0.5f, 0.85f, 0.32f, 0.65f, 1.6f, 0.4f, 0.55f, 2.6f };
 
 float flora_height(FloraKind kind, float year, float greenness, float autumn) {
     if ((unsigned)kind >= FLORA_KINDS) return 0.0f;
@@ -166,6 +204,10 @@ float flora_height(FloraKind kind, float year, float greenness, float autumn) {
         break;
     case FLORA_HERB: // matas lenosas: se secan pero el invierno no las tumba del todo
         grow = 0.45f + 0.55f * clamp01(g * 1.5f + a * 0.8f);
+        break;
+    case FLORA_SEAGRASS: // bajo el agua, el año se nota poco: crecen con la luz del verano
+    case FLORA_KELP:
+        grow = 0.7f + 0.3f * clamp01(g * 1.5f + a * 0.5f);
         break;
     default: // el pasto y la stipa: crecen en primavera, se secan de pie y el invierno los aplasta
         grow = 0.3f + 0.7f * clamp01(g * 1.6f + a * 0.9f);

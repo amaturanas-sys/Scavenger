@@ -1,6 +1,7 @@
 // La vegetacion baja (C puro): las matas de pasto, la stipa (el pasto pluma de la estepa), las
 // flores, los helechos del bosque, los juncos de las orillas y las hierbas aromaticas de la estepa
-// (ajenjo, tomillo y salvia), que src/world/vegetation.c dibuja alrededor del jugador. Las reglas:
+// (ajenjo, tomillo y salvia), y en el fondo del mar, sobre el arrecife, el pasto marino y las algas (v0.17.0), que
+// src/world/vegetation.c dibuja alrededor del jugador. Las reglas:
 //  - donde crecen (flora_cell): por celdas del suelo de 2 m, siempre las mismas para el mismo
 //    mundo; cuantas y de que clase segun la region y el agua cerca (flora_density); ni en el agua
 //    honda, ni en la tierra pelada y la roca de las cuestas, ni en el lecho de los rios, la playa
@@ -26,6 +27,8 @@ typedef enum {
     FLORA_FERN,   // helechos del sotobosque
     FLORA_REED,   // juncos de las orillas de lagos y rios (tambien en el agua baja)
     FLORA_HERB,   // hierbas aromaticas de la estepa (ajenjo, tomillo, salvia): hojas grises y espigas moradas
+    FLORA_SEAGRASS, // pasto marino: praderas de cintas verdes en lo bajo del arrecife (v0.17.0)
+    FLORA_KELP,     // algas: cintas largas, pardas y oliva, mas hondo en el arrecife (v0.17.0)
     FLORA_KINDS
 } FloraKind;
 
@@ -34,6 +37,11 @@ typedef enum {
 #define FLORA_CANDIDATE_M2 (FLORA_CELL * FLORA_CELL / (float)FLORA_PER_CELL) // lo que ocupa cada candidato: un cuarto de m2
 #define FLORA_CAMP_R 18.0f // el campamento inicial, en el origen: el pasto pisoteado
 #define FLORA_TRAMPLE_R 1.1f
+// El arrecife (v0.17.0): el fondo del mar junto a la costa, hasta FLORA_REEF_DEPTH m bajo el nivel del mar. El pasto
+// marino, de 0,4 a 4,5 m; las algas, de 1,2 m a FLORA_REEF_DEPTH. Mas hondo, nada: el mar hondo no deja ver el fondo.
+#define FLORA_REEF_DEPTH 7.0f
+// ¿Es del fondo del mar? (el pasto marino y las algas: bajo el agua, no las tapa la nieve y las mece el mar)
+#define FLORA_MARINE(kind) ((kind) == FLORA_SEAGRASS || (kind) == FLORA_KELP)
 
 // Matas por m2 de esa clase con los pesos de las regiones k y el agua cerca (near_water [0, 1]: 1
 // en la orilla de un lago o un rio, 0 a 2,5 m sobre el agua o lejos; el mar no cuenta).

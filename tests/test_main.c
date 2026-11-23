@@ -6516,6 +6516,38 @@ static void test_sea_level(void) {
     CHECK(joined > 0);
     // La mascara sale de la semilla: igual cada vez.
     CHECK(memcmp(w.ocean, world_for_seed(31337u)->ocean, sizeof(w.ocean)) == 0);
+    // El fondo del mar (src/sim/flora.c): sobre el arrecife, pasto marino en lo bajo y algas mas hondo; mas alla, nada; y
+    // en el mar, nada de tierra. A lo largo de la costa de los fiordos de la semilla 1206, de la playa al mar hondo.
+    const World *v = world_for_seed(1206u);
+    int grass = 0, kelp = 0, bad = 0;
+    float grass_depth = 0.0f, kelp_depth = 0.0f;
+    for (float th = -PI_T; th < PI_T; th += 0.004f) {
+        float r0 = world_edge_radius(v, th), k[REGION_COUNT];
+        world_region_weights(v, cosf(th) * (r0 - 200.0f), sinf(th) * (r0 - 200.0f), k);
+        if (k[REGION_FJORD] < 0.9f) continue;
+        for (float e = 140.0f; e < 260.0f; e += FLORA_CELL) {
+            float x = cosf(th) * (r0 - e), z = sinf(th) * (r0 - e);
+            FloraTuft t[FLORA_PER_CELL];
+            int n = flora_cell(v, v->seed, (int)floorf(x / FLORA_CELL), (int)floorf(z / FLORA_CELL), t);
+            for (int i = 0; i < n; i++) {
+                WaterKind wk;
+                float wl = world_water(v, t[i].x, t[i].z, 0.0f, &wk), depth = SEA_LEVEL - t[i].y;
+                bool marine = FLORA_MARINE(t[i].kind), sea = wk == WATER_SEA && wl > t[i].y;
+                if (marine != sea || (marine && (depth < 0.39f || depth > FLORA_REEF_DEPTH))) bad++;
+                if (t[i].kind == FLORA_SEAGRASS) grass++, grass_depth += depth;
+                if (t[i].kind == FLORA_KELP) kelp++, kelp_depth += depth;
+            }
+        }
+    }
+    CHECK(bad == 0 && grass > 200 && kelp > 200 && grass_depth / (float)grass < kelp_depth / (float)kelp);
+    // Fuera del mar, nunca: ninguna region las elige en tierra. Bajo el agua, el año se les nota poco.
+    float any[REGION_COUNT] = { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f };
+    for (int i = 0; i < 1000; i++) {
+        int kind = flora_pick(any, (float)(i % 3) * 0.5f, ((float)i + 0.5f) / 1000.0f);
+        CHECK(kind < 0 || !FLORA_MARINE(kind));
+    }
+    CHECK(flora_height(FLORA_KELP, 0.85f, 0.0f, 0.0f) >= 0.65f * flora_height(FLORA_KELP, 0.3f, 1.0f, 0.0f));
+    CHECK(flora_height(FLORA_SEAGRASS, 0.3f, 1.0f, 0.0f) > 0.4f && flora_height(FLORA_KELP, 0.3f, 1.0f, 0.0f) > 2.0f);
 }
 
 static void test_world_dry(void) {
