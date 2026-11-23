@@ -19,7 +19,7 @@ De WorldClaw se toman las ideas, no el código: su repositorio solo trae el READ
 |---|---|---|
 | 1. El plan | Las cinco regiones, sus alturas medias, sus bordes y lo que lleva cada una | `docs/MUNDO.md`, `region_altitude`, las tablas de `src/sim/world.c` |
 | 2. El relieve | La altura: el borde fractal, las regiones mezcladas por peso, macizos, crestas y lomas | `world_height`, `world_region_weights`, `region_detail` (`src/sim/world.c`) |
-| 3. El agua | Ríos, lagos, cascadas y el canal: bajan por la cota más baja y tallan su cauce en la altura | `src/sim/hydro.c`, `world_water*`, `world_river_*` (`docs/AGUA.md`) |
+| 3. El agua | Ríos, lagos, cascadas y el canal: bajan por la cota más baja y tallan su cauce en la altura; el mar, lo que se alcanza desde mar abierto bajo el nivel del mar | `src/sim/hydro.c`, `world_water*`, `world_river_*`, `World.ocean` (`docs/AGUA.md`) |
 | 4. La dispersión | Pasto, stipa, flores, helechos, juncos, hierbas y árboles, por celda, según el peso de cada región y la cercanía del agua | `flora_cell`, `flora_density`, `flora_tree_kind` (`src/sim/flora.c`); el dibujo, en `src/world/vegetation.c`, `trees.c` y `terrain.c` |
 | 5. Los lugares | Pueblos, tribus, guaridas, estructuras, ruinas y cuevas (en seco, en llano y separados), y su decorado | `settle_all` y `world_footprint_dry` (`world.c`), `place_check` (`placement.c`), `ancient.c`, `caves.c`, `camps.c`; el campamento inicial y sus objetos, en `src/world/camp.c` y `props.c` |
 | 6. La estación | Cómo se ve todo lo anterior a lo largo del año: nieve, hielo, hojas, caudal | `climate.c`, `flora_tree_season`, `WaterSeason` |
@@ -37,7 +37,13 @@ De WorldClaw se toman las ideas, no el código: su repositorio solo trae el READ
   - los lugares se arman una sola vez, en `world_generate` (`settle_all`).
 - **Las transiciones:** las regiones se mezclan por peso (`world_region_weights`) en la altura, la vegetación y
   los colores, así que nada cambia de golpe en una línea. Las fronteras se tuercen con ruido, pero ninguna región
-  sale de su cuadrante.
+  sale de su cuadrante. Lo que se ve usa `world_region_weights_soft`: hacia el bosque, en manchas (bosquecillos y
+  claros); hacia el desierto, todo lo que crece se seca (`flora_arid`: sin flores ni helechos, árboles secos o
+  muertos), salvo junto al agua.
+- **El nivel del mar es el límite de lo de tierra (`world_submerged`):** bajo él no nacen árboles, rocas, matas, el
+  decorado seco, la flora de tierra ni los animales que no nadan; bajo el mar, lo del fondo (el pasto marino y las
+  algas del arrecife); en una cuenca seca que el relieve aísla, juncos. El mar es lo que se alcanza desde mar abierto
+  (`World.ocean`): una cuenca sin entrada no se inunda.
 - **El relieve, por región (`region_detail`):**
   - el altiplano, una meseta con cordilleras de agujas: la cresta, `1 − |fbm|`, al cubo y hasta 55 m;
   - los fiordos, una costa abrupta: la cresta al cuadrado, hasta 24 m;
@@ -56,7 +62,8 @@ De WorldClaw se toman las ideas, no el código: su repositorio solo trae el READ
   - **el altiplano glaciar:** pasto (0,6) y algunas flores; nieve sobre la línea de nieve, y los pinos, nevados;
     ríos trenzados en lechos de grava;
   - **el desierto de Ordos:** casi nada, salvo junto al agua (los oasis);
-  - **los fiordos:** pasto (0,7) y helechos; sauces junto a lagos y ríos, no junto al mar.
+  - **los fiordos:** pasto (0,7) y helechos; sauces junto a lagos y ríos, no junto al mar; en el arrecife (el fondo
+    del mar hasta 7 m), pasto marino (2,4 por m² en sus praderas) y algas (0,6), en manchas.
 - **Los lugares, en grupos:**
   - un reino es una capital amurallada con sus aldeas, al estilo de su región;
   - los pueblos quedan separados entre sí y lejos del campamento, y las guaridas, lejos de los pueblos;

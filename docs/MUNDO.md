@@ -16,6 +16,7 @@ El norte es −Z y el este +X.
 | **Cuatro regiones alrededor** | **Noroeste:** bosque de coníferas muy tupido, con alerces que se doran en otoño. **Noreste:** desierto. **Sureste:** altiplano glaciar. **Suroeste:** costa de fiordos. |
 | **Altitud media por región** | De mayor a menor (v0.11.0, [AGUA.md](AGUA.md)): altiplano 70 m · desierto 55 m · estepa 40 m · bosque 33 m · costa 12 m (con su relieve, las medias son ~82, 61, 40, 33 y 26 m). Encima va el relieve propio de cada una: matas y colinas suaves en la estepa, lomas en el bosque, crestas afiladas y cumbres nevadas en el altiplano, costa abrupta en los fiordos, dunas y mesetas en el desierto. |
 | **El borde de los fiordos** | La tierra baja al **mar** (nivel 0). Los fiordos entran tierra adentro. |
+| **El nivel del mar** (v0.17.0) | Es el mismo en todo el mundo (0 m) y es el límite de lo de tierra. El mar llega a todo lo que queda debajo y se alcanza desde mar abierto (`World.ocean`); una cuenca bajo el nivel del mar sin entrada queda seca. Bajo el nivel del mar no nace nada de tierra (`world_submerged`): bajo el mar, el pasto marino y las algas del arrecife; en una cuenca seca, juncos. Más allá del arrecife, el mar hondo es opaco, como una niebla: no se ve el fondo. Ver [AGUA.md](AGUA.md). |
 | **El borde del desierto** | Un **gran cañón** y, detrás, un **muro de siete estratos** de 132 a 188 m (más alto en los macizos): cada estrato, un acantilado sobre un talud; la línea del muro sale y entra en promontorios y bahías, la cortan cárcavas en V y lleva contrafuertes y agujas en el filo (v0.14.2, como los acantilados de los mapas de WorldClaw). |
 | **El borde del altiplano** | Un **muro de hielo glaciar**: el frente, casi a pique, de 56 a 112 m, en columnas (tubos de órgano) coronadas de agujas y más alto en los macizos y las cumbres; detrás, el hielo sube hasta 120-200 m en el borde (v0.14.2, como la pared nevada de los mapas de WorldClaw). Al pie, bloques de hielo caídos. Su deshielo da los ríos más grandes, que bajan **trenzados** por anchos lechos de grava; sus lagos son turquesa. Lo flanquean dos **cordilleras**: hacia el desierto (al este) y hacia la costa (al sur). |
 | **El borde del bosque** | Un **canal sigmoideo** (serpentea) de 60 m de ancho, donde desembocan los **ríos tributarios** del bosque. Del otro lado (v0.11.4, [AGUA.md](AGUA.md) fase 5), un **muro de roca** de estratos levantados de unos 120 m, sin árboles: se ve desde la orilla despejada y no se alcanza. |
@@ -25,6 +26,12 @@ El norte es −Z y el este +X.
 | **Tribus nómadas** | Tres o cuatro por región (16 por mundo), con las tres actitudes en cada una: **rivales**, que salen al paso con jinetes o bandidos (de nuevo si te alejas 600 m y vuelves); **neutrales**, que observan; y **amigables**, que marcan en el mapa una estructura cercana que no viste. Sus campamentos de yurtas llevan un estandarte del color de su actitud: rojo, crudo o azul. |
 | **Estructuras** | Unas 78 por mundo, según la región (de ellas, veintiséis fortalezas derruidas, en todas las regiones, y seis ciudades enterradas, en el desierto; v0.14.7: eran catorce y dos). Al verlas quedan en el mapa. Las ruinas son kurganes, balbales, piedras de ciervos, fortalezas derruidas, ciudades enterradas, asentamientos antiguos y petroglifos. En uso están los caravasares, torres de vigía, ovoos, pozos y embarcaderos. Reparto por región: estepa (kurganes, balbales, piedras de ciervos, ovoos, pozos, caravasar); bosque (fortalezas, torres, petroglifos); altiplano (ovoos, piedras de ciervos, petroglifos); costa (embarcaderos, túmulos); desierto (ciudades enterradas, caravasares, pozos); fortalezas derruidas en todas (de cuatro a siete por región). |
 | **Reinos** | Estepa: **Kanato de Hierro** (al que la tribu rinde tributo). Bosque: **Principado de los Pinos Negros**. Altiplano: **Señorío del Glaciar**. Costa: **Jarlazgo de la Costa Helada**. Desierto: **Reino de los Oasis**. |
+
+![La v0.17.0](mundo/v0.17.png)
+
+*La v0.17.0: el arrecife con su pasto marino y sus algas, y el mar hondo · la transición de la estepa al bosque, en
+manchas · la de la estepa al desierto, seca · la frontera del bosque con el desierto, con los árboles secos y muertos
+(`--ir arrecife`, `linde-bosque`, `linde-desierto` y `bosque-seco`).*
 
 ## Lo que cambia con cada semilla
 
@@ -106,10 +113,17 @@ El norte es −Z y el este +X.
   - una ventana de 100 m que sigue al jugador; se dibujan hasta 48 m (24 m en Android), con menos hojas a lo lejos y, desde 24 m (8 m en Android), menos matas pero más anchas (v0.14.7);
   - hasta cuatro matas por m² (v0.14.7; en la v0.14.1, tres): en la estepa, unas 3,4 por m² (el pasto, la stipa, las flores y las hierbas aromáticas; eran 2,5); en el bosque, el pasto entre los helechos, tres veces más tupido que antes;
   - las **hierbas aromáticas** de la estepa (v0.14.1, `FLORA_HERB`): el ajenjo, el tomillo y la salvia, de hojas grises; con las plumas de la stipa echan sus espigas moradas (y algún ajenjo amarillo); se secan, pero el invierno no las tumba del todo;
+  - **el fondo del mar** (v0.17.0, `FLORA_SEAGRASS` y `FLORA_KELP`): sobre el arrecife, el pasto marino en praderas
+    (de 0,4 a 4,5 m de hondo, en la arena) y las algas en bosques (de 1,2 a 7 m), en manchas; nunca asoman del agua,
+    las mece la resaca (no el viento) y no las tapa la nieve;
+  - **la transición al desierto, seca** (v0.17.0, `flora_arid`): desde que el desierto pesa 0,03 hasta que pesa 0,15,
+    lejos del agua, el pasto, la stipa, las hierbas, las matas y el suelo quedan pajizos todo el año, sin flores ni
+    helechos (junto al agua, los oasis y los sotos siguen verdes);
   - **las matas sueltas del inventario** (v0.14.1, `vegetation_draw_prop`): la hierba alta del escondite (stipa con sus plumas y pasto, de 1 m), las hierbas curativas (salvia, menta y tomillo, en flor mientras están verdes) y el arbusto, con las mismas hojas: se mecen con el viento y toman el color de la estación.
 - **Árboles** (v0.10.3, más que antes): densidad 0,85 en el bosque, 0,20 en los fiordos, 0,10 en las faldas del altiplano y hasta 0,36 junto al agua en la estepa; 160 alrededor del campamento inicial (fuera de sus 30 m).
   - **De voxeles** (v0.14.1, `src/world/trees.c`): el pino, el sauce y el arce del inventario (`mapa.vegetacion.*`), del 60 al 100 % de su alto y girados al azar. Junto a los lagos y los ríos (no el mar), sauces: sobre todo en el bosque y la costa, menos en la estepa y el desierto, pocos en el altiplano. En el bosque, uno de cada seis es un arce (de cada diez casillas, tres le tocan al arce y la mitad de esas queda vacía, en damero). Los demás, pinos; los del campamento inicial, también. Los de copa ancha (el sauce y el arce), en una casilla de cada dos (`flora_tree_kind`).
   - **Las estaciones** (`flora_tree_season`): en otoño el arce se pone rojo y naranja; al caer la hoja (y hasta que reverdece) queda pelado, con el tronco y las ramas; con nieve, el pino lleva nieve sobre cada piso de ramas. El sauce es perenne (v0.15.1): como el pino, conserva la hoja todo el año y se nieva. Al pie del glaciar, nevados todo el año.
+  - **En la transición al desierto** (v0.17.0, `flora_tree_state`): secos (la copa parda y rala) o muertos (el tronco y las ramas), todo el año; casi la mitad, muertos. Junto al agua, verdes.
   - **El detalle:** de cerca (34 m; en Android, 16), el modelo tal cual; a media distancia (72 m; en Android, 40), con celdas del doble; más lejos, del cuádruple (`vox_downsample`). Solo los que caen delante de la cámara; en Android, hasta 85 m. La copa que tapa al personaje, entre él y la cámara lejana, no se dibuja.
   - **Quemados:** los del campamento inicial, en un incendio, se oscurecen; calcinados, queda el tronco negro.
 
@@ -243,6 +257,9 @@ montura). Cada cuadro mira los nueve trozos de alrededor.
   decorado y la vista orbital usan pesos con el paso de la estepa de 520 m (festoneado con ruido) y 11° entre las
   regiones de afuera. El relieve, el agua y los lugares siguen con `world_region_weights` (140 m y 7°): suavizar el
   relieve movería el nivel de algunos lagos (el agua quedaría sobre la orilla) y los lugares de las partidas viejas.
+  Hacia el bosque (v0.17.0), la transición es en manchas, en una franja de 840 m: bosquecillos que entran en la estepa
+  y claros de estepa que entran en el bosque (de unos 60 m), cada vez más bosque hacia afuera. Hacia el desierto, lo
+  que crece se seca (`flora_arid`).
 - **Las rocas de cada región** (v0.15.2, `props_draw_item_biome`): cada roca del decorado se dibuja con la variante de
   la región de más peso donde está. La variante es la misma roca con la piedra de esa región y, en lo que mira arriba,
   lo que la cubre: liquen seco en la estepa, musgo en el bosque, nieve en el altiplano, liquen mojado en los fiordos y
@@ -298,7 +315,7 @@ Están todos en `src/sim/world.c`, salvo donde se indica otro archivo.
 ```
 
 Sitios de `--ir`:
-- **Regiones y paisaje:** estepa, meandro, arroyo, rapidos, bosque, canal, altiplano, trenzado, hielo, cumbre, fiordos, mar, desierto y muro; panorama-hielo y panorama-muro (los muros enteros, a 520 m del borde).
+- **Regiones y paisaje:** estepa, meandro, arroyo, rapidos, bosque, canal, altiplano, trenzado, hielo, cumbre, fiordos, mar, desierto y muro; panorama-hielo y panorama-muro (los muros enteros, a 520 m del borde); arrecife, linde-bosque, linde-desierto y bosque-seco (v0.17.0: el arrecife y el mar hondo, la mitad de la transición de la estepa al bosque y al desierto, y la frontera seca del bosque con el desierto).
 - **El agua:** lago (el más grande fuera del bosque), desborde (por donde sale su río) y cascada (la más grande tierra adentro).
 - **Pueblos y fieras:** capital, aldea y guarida; `capital-<región>`, `aldea-<región>` y `plaza-<región>` (en la plaza, frente al palacio) para las de cada región (estepa, bosque, altiplano, fiordos o desierto); kanato (la plaza de la capital de la estepa) y campos.
 - **Tribus:** tribu (amiga), rival y neutral.
