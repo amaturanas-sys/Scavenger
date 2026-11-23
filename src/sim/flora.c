@@ -112,8 +112,9 @@ int flora_cell(const World *w, uint32_t seed, int gx, int gz, FloraTuft *out) {
         float above = lake ? y - wl : 99.0f;
         if (above < -0.5f) continue; // el agua honda
         if (trodden < 1.0f) r /= fmaxf(trodden, 0.001f);
-        int kind = flora_pick(k, fmaxf(lake ? clamp01(1.0f - above / 2.5f) : 0.0f, clay), r); // la arcilla del desierto: algo de hierba seca
-        if (kind < 0 || (above < 0.0f && kind != FLORA_REED)) continue; // en el agua baja, solo juncos
+        bool marsh = y < SEA_LEVEL; // bajo el nivel del mar, aunque el relieve lo deje seco: pantano (v0.17.0)
+        int kind = flora_pick(k, fmaxf(marsh ? 1.0f : lake ? clamp01(1.0f - above / 2.5f) : 0.0f, clay), r); // la arcilla del desierto: algo de hierba seca
+        if (kind < 0 || ((above < 0.0f || marsh) && kind != FLORA_REED)) continue; // en el agua baja y bajo el nivel del mar, solo juncos
         uint32_t h2 = hash3(gz, gx * FLORA_PER_CELL + i, seed ^ 0x5EED5u);
         FloraTuft *t = &out[n++];
         memset(t, 0, sizeof(*t)); // tambien el relleno: dos siembras de la misma celda son identicas byte a byte

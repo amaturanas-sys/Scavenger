@@ -509,8 +509,31 @@ float world_height(const World *w, float x, float z) {
     return h;
 }
 
+// ¿Llega el mar a la celda de (th, e) o a una vecina? Lo de afuera del borde es mar abierto.
+static bool ocean_near(const World *w, float th, float e) {
+    enum { C = WORLD_OCEAN_COLS, R = WORLD_OCEAN_ROWS };
+    int ei = (int)floorf(e / WORLD_OCEAN_CELL), ai = (int)floorf((th + PI_F) / (2.0f * PI_F) * C);
+    if (ei < 1) return true;
+    if (ei > R) return false;
+    for (int dr = -1; dr <= 1; dr++)
+        for (int da = -1; da <= 1; da++) {
+            int r = ei + dr, a = ((ai + da) % C + C) % C;
+            if (r < R && (w->ocean[(r * C + a) >> 3] >> ((r * C + a) & 7) & 1)) return true;
+        }
+    return false;
+}
+
+// El canal del bosque en (th) con los pesos q: su nivel, y donde se junta con la costa de los fiordos baja al nivel del
+// mar y se vuelve mar (b->canal_sea): su agua entra al mar sin escalon ni zanja seca (v0.17.0).
+static void canal_water(const World *w, float th, const float q[REGION_COUNT], WaterBodies *b) {
+    float lv = canal_level(w, th);
+    b->canal_sea = w->water_v16 ? 0.0f : smooth(0.05f, 0.5f, q[REGION_FJORD]);
+    b->canal = lerpf(lv, fminf(lv, SEA_LEVEL), b->canal_sea);
+}
+
 void world_water_bodies(const World *w, float x, float z, WaterBodies *b) {
     b->ground = b->sea_floor = b->canal = -1e9f;
+    b->canal_sea = 0.0f;
     b->lake = -1;
     for (int k = 0; k < WATER_RIVERS_HERE; k++) b->river[k] = -1, b->river_level[k] = -1e9f, b->river_along[k] = 0.0f;
     float th = atan2f(z, x), e = world_edge_distance(w, x, z);
@@ -518,11 +541,16 @@ void world_water_bodies(const World *w, float x, float z, WaterBodies *b) {
         float q[REGION_COUNT];
         quadrant_weights(warped_angle(w, x, z), q);
         if (q[REGION_FJORD] > 0.05f) {
-            float h = land(w, x, z);
-            if (h < SEA_LEVEL + 1.0f) b->sea_floor = h;
+            if (w->water_v16) { // el de la v0.16: mientras se ponen los lugares (World.water_v16)
+                float h = land(w, x, z);
+                if (h < SEA_LEVEL + 1.0f) b->sea_floor = h;
+            } else if (ocean_near(w, th, e)) { // el que se alcanza desde mar abierto, sobre el suelo que se dibuja
+                b->ground = world_height(w, x, z);
+                if (b->ground < SEA_LEVEL + 1.0f) b->sea_floor = b->ground;
+            }
         }
         float ce = world_canal_offset(w, th);
-        if (q[REGION_FOREST] > 0.5f && fabsf(e - ce) < CANAL_HALF + 4.0f) b->canal = canal_level(w, th);
+        if (q[REGION_FOREST] > (w->water_v16 ? 0.5f : 0.0f) && fabsf(e - ce) < CANAL_HALF + 4.0f) canal_water(w, th, q, b);
     }
     // Un lago o un rio no flota: donde el suelo cae muy por debajo de su nivel (un cañon que
     // pasa junto a la cuenca) no hay agua suya, y manda la de abajo. Sin esto, el agua quedaba
@@ -556,7 +584,8 @@ float world_water(const World *w, float x, float z, float flood, WaterKind *kind
     float best = -1e9f;
     WaterKind k = WATER_NONE;
     if (b.sea_floor > -1e8f) best = SEA_LEVEL, k = WATER_SEA;
-    if (b.canal > -1e8f && b.canal + 0.5f * flood > best) best = b.canal + 0.5f * flood, k = WATER_CANAL;
+    float canal = b.canal + 0.5f * (1.0f - b.canal_sea) * flood;
+    if (b.canal > -1e8f && canal > best) best = canal, k = WATER_CANAL;
     if (b.lake >= 0 && w->lakes[b.lake].level + flood > best) best = w->lakes[b.lake].level + flood, k = WATER_LAKE;
     if (b.river[0] >= 0 && b.river_level[0] + 0.5f * flood > best) best = b.river_level[0] + 0.5f * flood, k = WATER_RIVER;
     if (kind) *kind = k;
@@ -686,9 +715,11 @@ float world_river_level(const World *w, int i, int k, const WaterSeason *s, floa
 float world_water_resolve(const World *w, const WaterBodies *b, float x, float z, const WaterSeason *s, WaterNow *out) {
     WaterNow n = { -1e9f, WATER_NONE, 0.0f, -1, -1 };
     if (b->sea_floor > -1e8f) n.level = SEA_LEVEL, n.kind = WATER_SEA, n.ice = world_sea_ice(w, x, z, b->sea_floor, s);
-    if (b->canal > -1e8f && b->canal + 0.5f * s->flood > n.level) {
-        n.level = b->canal + 0.5f * s->flood, n.kind = WATER_CANAL;
-        n.ice = ice_of(s->temp_late - ICE_LAPSE * (b->canal - w->camp_height) + ICE_CANAL);
+    float canal = b->canal + 0.5f * (1.0f - b->canal_sea) * s->flood;
+    if (b->canal > -1e8f && canal > n.level) {
+        float ice = ice_of(s->temp_late - ICE_LAPSE * (b->canal - w->camp_height) + ICE_CANAL);
+        n.ice = n.kind == WATER_SEA ? lerpf(ice, n.ice, b->canal_sea) : ice; // hacia el mar, se hiela como el mar
+        n.level = canal, n.kind = WATER_CANAL;
     }
     if (b->lake >= 0 && w->lakes[b->lake].level + s->flood > n.level) {
         n.level = w->lakes[b->lake].level + s->flood, n.kind = WATER_LAKE;
@@ -1465,10 +1496,82 @@ static void place_more_ruins(World *w) {
         }
 }
 
+// El mar que se alcanza desde mar abierto (v0.17.0, docs/MUNDO.md): en la grilla polar de la costa (World.ocean), una
+// celda es baja si alguna de sus esquinas queda bajo el nivel del mar; el mar entra desde el borde por las celdas bajas,
+// tambien de esquina a esquina. Una cuenca bajo el nivel del mar que el relieve aisla queda seca: el nivel del mar es
+// transversal, pero un area aislada de verdad no se inunda. Solo en la costa de los fiordos (el unico mar).
+// Lo que ya se sabe de la grilla mientras el mar avanza: de cada esquina, si se midio y si queda bajo el nivel del mar;
+// de cada celda, si se miro y si es baja. Solo se mide lo que toca al mar (la altura es lo caro).
+#define OCEAN_CORNERS ((WORLD_OCEAN_ROWS + 1) * (WORLD_OCEAN_COLS + 1))
+static uint8_t g_corner_done[OCEAN_CORNERS / 8 + 1], g_corner_low[OCEAN_CORNERS / 8 + 1];
+static uint8_t g_cell_done[WORLD_OCEAN_BYTES], g_cell_low[WORLD_OCEAN_BYTES];
+static float g_edge_r[WORLD_OCEAN_COLS + 1];
+#define BIT(m, k) ((m)[(k) >> 3] >> ((k) & 7) & 1)
+#define SET(m, k) ((m)[(k) >> 3] |= (uint8_t)(1u << ((k) & 7)))
+
+static bool ocean_corner_low(const World *w, int r, int a) {
+    int k = r * (WORLD_OCEAN_COLS + 1) + a;
+    if (!BIT(g_corner_done, k)) {
+        SET(g_corner_done, k);
+        float th = -PI_F + (float)a * (2.0f * PI_F / (float)WORLD_OCEAN_COLS), rad = g_edge_r[a] - (float)r * WORLD_OCEAN_CELL;
+        float x = cosf(th) * rad, z = sinf(th) * rad, q[REGION_COUNT];
+        quadrant_weights(warped_angle(w, x, z), q);
+        if (q[REGION_FJORD] > 0.05f && world_height(w, x, z) < SEA_LEVEL) SET(g_corner_low, k); // solo donde puede haber mar
+    }
+    return BIT(g_corner_low, k);
+}
+
+static bool ocean_cell_low(const World *w, int r, int a) { // baja: alguna de sus esquinas queda bajo el nivel del mar
+    int k = r * WORLD_OCEAN_COLS + a;
+    if (!BIT(g_cell_done, k)) {
+        SET(g_cell_done, k);
+        if (ocean_corner_low(w, r, a) || ocean_corner_low(w, r, a + 1) || ocean_corner_low(w, r + 1, a) || ocean_corner_low(w, r + 1, a + 1))
+            SET(g_cell_low, k);
+    }
+    return BIT(g_cell_low, k);
+}
+
+static void make_ocean(World *w) {
+    enum { C = WORLD_OCEAN_COLS, R = WORLD_OCEAN_ROWS };
+    memset(w->ocean, 0, sizeof(w->ocean));
+    memset(g_corner_done, 0, sizeof(g_corner_done)), memset(g_corner_low, 0, sizeof(g_corner_low));
+    memset(g_cell_done, 0, sizeof(g_cell_done)), memset(g_cell_low, 0, sizeof(g_cell_low));
+    for (int a = 0; a <= C; a++) g_edge_r[a] = world_edge_radius(w, -PI_F + (float)a * (2.0f * PI_F / (float)C));
+    // El mar entra por la fila del borde y se corre por las celdas bajas, tambien de esquina a esquina (barridos de ida y
+    // vuelta hasta que no cambia; solo hasta una fila mas alla de lo que ya alcanzo).
+    int reach = 0;
+    for (int a = 0; a < C; a++)
+        if (ocean_cell_low(w, 0, a)) SET(w->ocean, a);
+    for (int pass = 0, changed = 1; changed && pass < 400; pass++) {
+        changed = 0;
+        bool back = pass & 1;
+        for (int i = 0; i <= reach + 1 && i < R; i++) { // de ida, la fila de mas alla de lo alcanzado crece con el mar
+            int r = back ? (reach + 1 < R ? reach + 1 : R - 1) - i : i;
+            for (int j = 0; j < C; j++) {
+                int a = back ? C - 1 - j : j, k = r * C + a;
+                if (BIT(w->ocean, k) || (BIT(g_cell_done, k) && !BIT(g_cell_low, k))) continue;
+                bool wet = false;
+                for (int dr = -1; dr <= 1 && !wet; dr++)
+                    for (int da = -1; da <= 1 && !wet; da++) {
+                        int rr = r + dr, m = rr * C + (a + da + C) % C;
+                        wet = rr >= 0 && rr < R && BIT(w->ocean, m);
+                    }
+                if (wet && ocean_cell_low(w, r, a)) {
+                    SET(w->ocean, k), changed = 1;
+                    if (r > reach) reach = r;
+                }
+            }
+        }
+    }
+}
+#undef BIT
+#undef SET
+
 void world_generate(World *w, uint32_t seed) {
     memset(w, 0, sizeof(*w));
     w->seed = seed;
     w->shore_v14 = true; // los lugares, con la orilla de antes (World.shore_v14)
+    w->water_v16 = true; // y con el agua de antes (World.water_v16)
     Rng rng;
     rng_seed(&rng, seed ^ 0x5EEDu);
     w->warp_phase = (rng_float(&rng) - 0.5f) * 10.0f * DEG; // las fronteras giran un poco
@@ -1626,6 +1729,8 @@ void world_generate(World *w, uint32_t seed) {
     place_more_forts(w);
     place_more_ruins(w);
     w->shore_v14 = false; // y desde aca, la orilla con su cresta
+    make_ocean(w);
+    w->water_v16 = false; // y el agua de la v0.17.0
 }
 
 const char *site_name(SiteKind k) {

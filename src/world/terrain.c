@@ -1104,7 +1104,7 @@ static bool tree_slot(const Terrain *t, int gx, int gz, ChunkTree *out) {
     // v0.15.2: en la estepa prevalecen las hierbas y los pastos: un tercio de los arboles de antes.
     float dens = tree_density(k, wet ? 1.0f : 0.0f) * (1.0f - 0.65f * k[REGION_STEPPE]);
     if (r0 > dens + k[REGION_STEPPE] * woods * (0.06f + 0.3f * steppe_grove(t, x, z))) return false;
-    if (wl > y - 0.8f || y > t->look.snowline + 8.0f) return false; // en el agua o en el glaciar, no
+    if (world_submerged(y, wl, 0.8f) || y > t->look.snowline + 8.0f) return false; // en el agua, bajo el nivel del mar o en el glaciar, no
     if (world_river_bank(t->world, x, z, NULL) > 0.45f) return false; // el lecho que el rio lava
     if (world_glacier_reach(t->world, x, z) <= 1.0f) return false;    // ni en la morrena (el glaciar avanza en invierno)
     float sx = terrain_height(t, x + 2.0f, z) - y, sz = terrain_height(t, x, z + 2.0f) - y;
@@ -1144,7 +1144,7 @@ static int prop_slot(const Terrain *t, int gx, int gz, PropSlot *o) {
     float bd = bush_density(k, near_water) * (1.0f + k[REGION_STEPPE] * (1.7f * steppe_scrub(t, x, z) - 0.7f));
     if (k[REGION_DESERT] > 0.5f && near_water == 0.0f) bd *= world_desert_clay(t->world, x, z) > 0.5f ? 2.5f : 0.15f; // secos, en la arcilla
     if (r0 > rd + bd) return 0;
-    if (wl > y - 0.4f) return 0; // en el agua, no
+    if (world_submerged(y, wl, 0.4f)) return 0; // en el agua o bajo el nivel del mar, no
     if (world_river_bank(t->world, x, z, NULL) > 0.45f || (k[REGION_FJORD] > 0.5f && y < SEA_LEVEL + 4.0f)) return 0; // ni en el lecho ni en la playa
     float dist;
     int si = world_nearest_settlement(t->world, x, z, &dist);
@@ -1300,7 +1300,7 @@ static bool decor_ground(const Terrain *t, int kind, float x, float z, float r, 
         float sx = x + cosf(a) * rr, sz = z + sinf(a) * rr;
         WaterKind wk = WATER_NONE;
         float h = terrain_height(t, sx, sz), wl = world_water(w, sx, sz, 0.0f, &wk);
-        if (wl > h - 0.3f && (!n->wet || i == 16 || wl - h > 1.5f || wk == WATER_SEA)) return false; // lo del pantano: un borde en el agua baja
+        if (world_submerged(h, wl, 0.3f) && (!n->wet || i == 16 || wl - h > 1.5f || wk == WATER_SEA)) return false; // lo del pantano: un borde en el agua baja
         if (wl > -1e8f && h - wl < 2.0f && (!n->wet || wk == WATER_SEA)) return false;
         if (wl > -1e8f && wk != WATER_SEA && h - wl < 4.0f) fresh = true;
         if (world_glacier_reach(w, sx, sz) <= 1.05f) return false; // ni donde llega el glaciar (su morrena)
@@ -1432,7 +1432,7 @@ static void seed_foot(const Terrain *t, Chunk *ch) {
         float a = (float)((h >> 16) & 0xFF) / 255.0f * 2.0f * PI, d = 1.4f + 1.2f * (float)(h >> 24) / 255.0f;
         float x = tr->x + cosf(a) * d, z = tr->z + sinf(a) * d, scale = n->scale_min + (n->scale_max - n->scale_min) * (float)(h >> 24) / 255.0f;
         float y = terrain_height(t, x, z), wl = world_water(t->world, x, z, 0.0f, NULL);
-        if (wl > y - 0.5f || decor_hits_chunk(ch, x, z, decor_radius((DecorKind)kind, scale))) continue;
+        if (world_submerged(y, wl, 0.5f) || decor_hits_chunk(ch, x, z, decor_radius((DecorKind)kind, scale))) continue;
         add_decor(ch, kind, x, y - n->sink * n->height * scale, z, a * 1.7f, scale);
         placed++;
         for (int j = 0; kind == DECOR_HONGOS && j < (int)(h >> 30) && placed < 16; j++) { // el corro
@@ -1472,7 +1472,7 @@ static void seed_place(const Terrain *t, Chunk *ch, DecorPlace place, float px, 
         for (int j = 0; j < 5; j++) {
             float a = (float)j * (PI / 2.0f), rr = j == 4 ? 0.0f : r;
             float sx = x + cosf(a) * rr, sz = z + sinf(a) * rr, h = terrain_height(t, sx, sz), wl = world_water(w, sx, sz, 0.0f, NULL);
-            wet = wet || (wl > -1e8f && h - wl < 0.6f);
+            wet = wet || world_submerged(h, wl, 0.6f);
             hmin = fminf(hmin, h), hmax = fmaxf(hmax, h);
         }
         if (wet || (hmax - hmin) / fmaxf(2.0f * r, 1.0f) > nm->slope_max || world_river_bank(w, x, z, NULL) > 0.3f) continue;

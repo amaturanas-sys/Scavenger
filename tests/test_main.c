@@ -6446,6 +6446,78 @@ static void test_more_forts_in_world(void) {
     CHECK(few == 0 && close == 0 && missing_region == 0 && cities_out == 0);
 }
 
+// El nivel del mar en una ventana de la costa, cada 4 m: el mar de verdad es lo que queda bajo el nivel del mar y se
+// alcanza desde afuera del borde por celdas bajo el nivel del mar (tambien de esquina a esquina). dry: los m2 de fondo
+// que se alcanzan, bajo el nivel del mar y sin agua; isolated: los m2 de mar en un pozo que no se alcanza.
+#define SEA_WX 175
+#define SEA_WZ 225
+static void sea_window(const World *w, float x0, float z0, float *dry, float *isolated) {
+    static float h[SEA_WX * SEA_WZ];
+    static uint8_t reach[SEA_WX * SEA_WZ], sea[SEA_WX * SEA_WZ], wet[SEA_WX * SEA_WZ];
+    static int queue[SEA_WX * SEA_WZ];
+    int head = 0, tail = 0;
+    for (int j = 0; j < SEA_WZ; j++)
+        for (int i = 0; i < SEA_WX; i++) {
+            float x = x0 + ((float)i + 0.5f) * 4.0f, z = z0 + ((float)j + 0.5f) * 4.0f;
+            int k = j * SEA_WX + i;
+            WaterBodies b;
+            world_water_bodies(w, x, z, &b);
+            h[k] = world_height(w, x, z), sea[k] = b.sea_floor > -1e8f;
+            wet[k] = world_water(w, x, z, 0.0f, NULL) > h[k] + 0.05f;
+            reach[k] = h[k] < SEA_LEVEL && world_edge_distance(w, x, z) < 0.0f;
+            if (reach[k]) queue[tail++] = k;
+        }
+    while (head < tail) {
+        int k = queue[head++], i = k % SEA_WX, j = k / SEA_WX;
+        for (int dj = -1; dj <= 1; dj++)
+            for (int di = -1; di <= 1; di++) {
+                int a = i + di, b = j + dj, m = b * SEA_WX + a;
+                if (a >= 0 && b >= 0 && a < SEA_WX && b < SEA_WZ && !reach[m] && h[m] < SEA_LEVEL) reach[m] = 1, queue[tail++] = m;
+            }
+    }
+    *dry = *isolated = 0.0f;
+    for (int k = 0; k < SEA_WX * SEA_WZ; k++) {
+        if (reach[k] && !wet[k] && h[k] < SEA_LEVEL - 0.3f) *dry += 16.0f;
+        if (sea[k] && h[k] < SEA_LEVEL && !reach[k]) *isolated += 16.0f;
+    }
+}
+
+// El nivel del mar (v0.17.0, docs/MUNDO.md): el mar es lo que se alcanza desde mar abierto por debajo del nivel del mar
+// (World.ocean), y lo de tierra no nace bajo el nivel del mar (world_submerged).
+static void test_sea_level(void) {
+    // La regla: bajo el nivel del mar, aunque este seco, no es tierra; sobre el, segun el agua y su margen.
+    CHECK(world_submerged(SEA_LEVEL - 0.1f, -1e9f, 0.5f) && !world_submerged(SEA_LEVEL + 0.1f, -1e9f, 0.5f));
+    CHECK(world_submerged(3.0f, 2.7f, 0.5f) && !world_submerged(3.0f, 2.3f, 0.5f));
+    // La junta del canal del bosque con la costa de los fiordos de la semilla 31337 (700 x 900 m): con el agua de la v0.16
+    // (World.water_v16) habia una zanja seca bajo el nivel del mar abierta al mar (el fondo poblado como tierra) y mar en
+    // pozos sin entrada; ahora, ni una cosa ni la otra.
+    static World w;
+    world_generate(&w, 31337u);
+    CHECK(!w.water_v16 && !w.shore_v14);
+    float dry, isolated;
+    sea_window(&w, -4900.0f, -100.0f, &dry, &isolated);
+    CHECK(dry < 50.0f && isolated < 50.0f);
+    w.water_v16 = true;
+    float dry16, isolated16;
+    sea_window(&w, -4900.0f, -100.0f, &dry16, &isolated16);
+    CHECK(dry16 > 2000.0f && isolated16 > 2000.0f);
+    w.water_v16 = false;
+    // El canal entra al mar sin escalon: a lo largo de su eje, donde ya es mar (canal_sea), su agua queda al nivel del
+    // mar, tambien con la crecida de la primavera.
+    int joined = 0;
+    for (float th = -PI_T; th < PI_T; th += 0.0005f) {
+        float e = world_canal_offset(&w, th), r = world_edge_radius(&w, th) - e, x = cosf(th) * r, z = sinf(th) * r;
+        WaterBodies b;
+        world_water_bodies(&w, x, z, &b);
+        if (b.canal < -1e8f || b.sea_floor < -1e8f || b.canal_sea < 0.999f) continue;
+        joined++;
+        CHECK(b.canal <= SEA_LEVEL + 0.001f && fabsf(world_water(&w, x, z, 3.0f, NULL) - SEA_LEVEL) < 0.001f);
+    }
+    CHECK(joined > 0);
+    // La mascara sale de la semilla: igual cada vez.
+    CHECK(memcmp(w.ocean, world_for_seed(31337u)->ocean, sizeof(w.ocean)) == 0);
+}
+
 static void test_world_dry(void) {
     // La linea de nieve del verano de world.h es la de src/sim/climate.c (la mas alta del año).
     float top = -1e9f;
@@ -7014,6 +7086,7 @@ int main(void) {
     RUN(test_water_seasons);
     RUN(test_river_flow);
     RUN(test_borders_and_sequelae);
+    RUN(test_sea_level);
     printf("\n%d comprobaciones, %d fallos\n", g_checks, g_failed);
     return g_failed ? 1 : 0;
 }
