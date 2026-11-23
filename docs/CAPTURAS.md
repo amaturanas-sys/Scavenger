@@ -112,6 +112,10 @@ Ver [MUNDO.md](MUNDO.md). Con `--ir lugar` y `--orbital`:
 | ![Bosque](capturas/mundo_bosque.png) | **Bosque de coníferas** (`--ir bosque`): los pinos y los arces de voxeles (v0.14.1); con la cámara lejana, la copa que tapa al personaje no se dibuja. |
 | ![Altiplano](capturas/mundo_altiplano.png) | **Altiplano glaciar** (`--ir altiplano`). |
 | ![Mar](capturas/mundo_mar.png) | **Costa de fiordos y el mar** (`--ir mar`). |
+| ![Arrecife](capturas/mundo_arrecife.png) | **El arrecife** (`--ir arrecife`, v0.17.0): junto a la playa, el agua clara deja ver el pasto marino y las algas; más allá, el mar hondo se oscurece como una niebla. |
+| ![Linde del bosque](capturas/mundo_linde-bosque.png) | **De la estepa al bosque** (`--ir linde-bosque`, v0.17.0): en manchas, bosquecillos y claros. |
+| ![Linde del desierto](capturas/mundo_linde-desierto.png) | **De la estepa al desierto** (`--ir linde-desierto`, v0.17.0): el pasto y las matas, secos, sin flores. |
+| ![Bosque seco](capturas/mundo_bosque-seco.png) | **La frontera del bosque con el desierto** (`--ir bosque-seco`, v0.17.0): los árboles secos y muertos, sobre el suelo pajizo. |
 | ![Muro](capturas/mundo_muro.png) | **El cañón y el muro del desierto** (`--ir muro`): los estratos de los badlands, en franjas que siguen la altura (v0.14.2). |
 | ![Panorama del muro](capturas/mundo_panorama-muro.png) | **El muro del cañón entero** (`--ir panorama-muro`, a 520 m): promontorios, cárcavas en V y agujas en el filo; de lejos, las mismas franjas (la rampa de la malla lejana). |
 | ![Hielo](capturas/mundo_hielo.png) | **El frente del glaciar** (`--ir hielo`): una pared casi a pique en columnas, con grietas azules y bloques de hielo caídos al pie (v0.14.2). |
