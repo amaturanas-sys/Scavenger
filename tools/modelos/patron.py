@@ -793,16 +793,16 @@ class Textura:
         u0, u1, v0, v1 = q[:, 0].min(), q[:, 0].max(), q[:, 1].min(), q[:, 1].max()
         uv = np.column_stack([(q[:, 0] - u0) / max(u1 - u0, 1e-9), (v1 - q[:, 1]) / max(v1 - v0, 1e-9)])
         uv = np.clip(uv, 0.002, 0.998)
-        fn, _ = normales_caras(p, f)
+        fn, area = normales_caras(p, f)
         atras = fn @ frente < 0
         out = uv[f].copy()
         # Las caras que la proyeccion ve de canto (los costados) estiraban el borde del render (el brillo del canto de
-        # un casco, el pelo de la oreja del gorro) en un barrido claro: un solo color, el mas comun de la pieza
-        # alrededor de donde cae la cara en el render (a su altura). Se busca en dos caminos hacia el medio del render,
-        # desde la cara y desde la cara que si se ve de frente mas cercana en la malla (la orejera, su cuero; no la
-        # sombra de la abertura de al lado), el punto sobre la pieza cuyo color mas se repite ahi. Lo fino no gana
-        # nunca: ni el brillo del canto ni las puntas claras del pelo, ni el borde oscuro de la silueta (que dejaba
-        # triangulos negros), ni la correa del tobillo de una bota (que la vecina en la malla llevaba a media cana).
+        # un casco, el pelo de la oreja del gorro) en un barrido claro: un solo color, el de sus vecinas en la malla.
+        # De las caras que si se ven de frente y tocan un vertice suyo (si no hay, la mas cercana en la malla), el
+        # color que cubre mas superficie entre ellas (las que se le parecen, sumadas por area), tomado del centro de
+        # la que lo tiene. Lo fino no gana nunca: ni el brillo del canto ni las puntas claras del pelo, ni el borde
+        # oscuro de la silueta (que dejaba triangulos negros), ni la correa del tobillo junto a la cana de fieltro. Y
+        # no depende de la imagen alrededor de la cara (el medio del render puede ser el hueco entre las dos botas).
         canto = np.abs(fn @ frente) < 0.3
         if canto.any() and (~canto).any():
             from collections import deque
@@ -821,27 +821,15 @@ class Textura:
                             de[j] = de[i]
                             cola.append(j)
             centro = out.mean(1)
-            ok = canto & (de >= 0)
-            c = centro[de[ok]]
             h, w = self.lleno.shape
-
-            def pixel(x):
-                return np.clip((x[:, 1] * h).astype(int), 0, h - 1), np.clip((x[:, 0] * w).astype(int), 0, w - 1)
-            mio = out[ok].mean(1)
-            pasos = np.arange(0.0, 0.61, 0.1)
-            cand = np.concatenate([b[:, None, :] + (0.5 - b[:, None, :]) * pasos[None, :, None] for b in (mio, c)], axis=1)
-            cy, cx = pixel(cand.reshape(-1, 2))
-            cy, cx = cy.reshape(cand.shape[:2]), cx.reshape(cand.shape[:2])
-            col = self.suave[cy, cx]
-            votos = np.where(self.lleno[cy, cx], 0, -1)
-            r = max(3, int(0.06 * max(h, w)))
-            my, mx = pixel(mio)
-            for i in range(len(mio)):  # cuantos pixeles de la pieza alrededor de la cara tienen el color de cada punto
-                y0, x0 = max(0, my[i] - r), max(0, mx[i] - r)
-                zona = self.suave[y0:my[i] + r + 1, x0:mx[i] + r + 1][self.lleno[y0:my[i] + r + 1, x0:mx[i] + r + 1]]
-                if len(zona):
-                    votos[i] += np.where(votos[i] >= 0, (np.abs(zona[None] - col[i][:, None]).sum(axis=2) < 75).sum(axis=1), 0)
-            out[ok] = cand[np.arange(len(mio)), votos.argmax(axis=1)][:, None, :]
+            py = np.clip((centro[:, 1] * h).astype(int), 0, h - 1)
+            px = np.clip((centro[:, 0] * w).astype(int), 0, w - 1)
+            color, sobre = self.suave[py, px], self.lleno[py, px]  # el color del centro de cada cara, si cae en la pieza
+            for i in np.flatnonzero(canto & (de >= 0)):
+                vecinas = sorted({j for x in f[i] for j in caras_de[x] if not canto[j] and sobre[j]})
+                vs = np.array(vecinas if vecinas else [de[i]])
+                parecidas = np.abs(color[vs][:, None] - color[vs][None]).sum(axis=2) < 75
+                out[i] = centro[vs[np.argmax((parecidas * area[vs][None]).sum(axis=1))]]
         k = 0 if self.alto_img else 1
         out[..., k] = out[..., k] * 0.5 + np.where(atras, 0.5, 0.0)[:, None]
         return out, espejo
@@ -1249,15 +1237,45 @@ def piel_juego(cuerpo):
     return cuerpo._piel_juego
 
 
-def reducir_prenda(vT, fT, piel, cerca, tris):
+def sanear(v, f):
+    """Una prenda reducida sin aletas ni caras dadas vuelta. Las cuadricas funden las dos paredes del cuero: quedan
+    aristas de tres o cuatro caras (aletas) y caras al reves de sus vecinas, y el juego no dibuja las de espaldas (por
+    ahi se ve el suelo). En cada arista de mas de dos caras quedan las dos mas grandes; despues, todas con el sentido
+    de sus vecinas (lowres.orientar)."""
+    import lowres
+    f = np.asarray(f, np.int64)
+    _, unica = np.unique(np.sort(f, axis=1), axis=0, return_index=True)
+    f = f[np.sort(unica)]
+    _, area = normales_caras(v, f)
+    for _ in range(6):
+        e = np.sort(np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]]), axis=1)
+        cara = np.tile(np.arange(len(f)), 3)
+        _, inv, cuantas = np.unique(e, axis=0, return_inverse=True, return_counts=True)
+        inv = inv.reshape(-1)
+        malas = np.unique(inv[cuantas[inv] > 2])
+        if not len(malas):
+            break
+        fuera = set()
+        for k in malas:
+            caras = cara[inv == k]
+            fuera.update(caras[np.argsort(-area[caras])][2:].tolist())
+        quedan = np.setdiff1d(np.arange(len(f)), np.fromiter(fuera, np.int64))
+        f, area = f[quedan], area[quedan]
+    return v, lowres.orientar(v, f)
+
+
+def reducir_prenda(vT, fT, piel, cerca, tris, rendija, raja, raja_pocos):
     """Una prenda a tris triangulos, sin lo que mira al cuerpo (sin_caras_de_adentro), de las dos maneras:
     - abierta: sin lo de adentro primero y reducida despues (todo el presupuesto, para lo que se ve);
     - cerrada: reducida entera (con su cara de adentro) y sin lo de adentro despues, con el objetivo que haga entrar lo
       que queda en tris. La superficie abierta, sin nada que la sostenga de fondo, a veces se pliega al reducirla (el
       frente del chaleco quedaba con rendijas por donde se veia el cuerpo); la cerrada, a veces pierde un lado entero
-      (la cana de una bota).
-    Queda la que mas se parece a la prenda de Props: la menor distancia (p95, en los dos sentidos) entre sus
-    superficies."""
+      (la cana de una bota) o se raja (la costura de atras de la otra bota, con 360 triangulos).
+    Cada una, saneada (sanear) y con sus agujeros (de contorno menor que rendija, o rajas: de ancho medio menor que
+    raja, o que raja_pocos si tienen hasta POCOS vertices) tapados (tapar_rendijas). Queda la que menos se aparta de la
+    prenda de Props sumando, cada uno sobre el menor de los dos: la distancia entre sus superficies (p95, en los dos
+    sentidos: tambien ve lo que le falta) y lo mas que se aparta (desvio: las puas de la abierta, o una boca que la
+    reduccion dejo en un triangulo y quedo tapada)."""
     fA = sin_caras_de_adentro(vT, fT, piel, cerca)
     candidatas = [reducir(vT, fA, tris)]
     objetivo = 2 * tris
@@ -1268,16 +1286,76 @@ def reducir_prenda(vT, fT, piel, cerca, tris):
             break
         objetivo = max(int(objetivo * tris / len(fR) * 0.97), 8)
     candidatas.append(compactar(vR, fR) if len(fR) <= tris else reducir(vR, fR, tris))
+    candidatas = [tapar_rendijas(*sanear(*c), rendija, raja, POCOS, raja_pocos) for c in candidatas]
+    fuente = Superficie(vT, fT, n=200000)
     ref = Superficie(vT, fA, n=20000).p
     arbol_ref = cKDTree(ref)
 
     def distancia(c):
         p = Superficie(c[0], c[1], n=20000).p
         return max(np.percentile(cKDTree(p).query(ref)[0], 95), np.percentile(arbol_ref.query(p)[0], 95))
-    d = [distancia(c) for c in candidatas]
-    k = int(np.argmin(d))
-    log(f"[patron]   reducida {('abierta', 'cerrada')[k]} (p95 a la de Props: {d[0] / d[k]:.2f} y {d[1] / d[k]:.2f} de la elegida)")
+    d = np.array([distancia(c) for c in candidatas])
+    m = np.array([desvio(*c, fuente) for c in candidatas])
+    nota = d / d.min() + m / m.min()
+    k = int(np.argmin(nota))
+    log(f"[patron]   reducida {('abierta', 'cerrada')[k]} (sobre la menor: p95 a la de Props {d[0] / d.min():.2f} y "
+        f"{d[1] / d.min():.2f}; desvio {m[0] / m.min():.2f} y {m[1] / m.min():.2f})")
     return candidatas[k]
+
+
+def tapar_rendijas(v, f, maximo, angosto=0.0, pocos=0, angosto_pocos=0.0):
+    """Los agujeros que deja la reduccion de una prenda al sacarle lo de adentro (las dos paredes del cuero, fundidas en
+    la reducida, se van con lo de adentro), tapados en abanico desde su centro y con el sentido de sus vecinas: sin
+    ellos, en el juego se veia el suelo por la rendija (el talon y la costura de atras de una bota). Los lazos de borde
+    de contorno menor que maximo y las rajas, aunque sean largas: de ancho medio menor que angosto, o menor que
+    angosto_pocos si tienen pocos vertices o menos (la grieta de la costura de una bota, en dos triangulos largos de
+    2 y 3 cm de ancho). La boca de la bota (un pentagono de 6 cm de ancho medio, como poco), el cuello, las sisas y la
+    cintura quedan abiertos."""
+    e = np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]])
+    dirigidas = set(map(tuple, e.tolist()))
+    sig = {}
+    for a, b in e.tolist():
+        if (b, a) not in dirigidas:  # arista de borde: el agujero la recorre al reves
+            sig.setdefault(b, []).append(a)
+    nuevas, centros = [], []
+    for s in list(sig):
+        while sig[s]:  # cada lazo que sale de s (dos, si el borde es un ocho con un vertice comun)
+            lazo, x = [s], sig[s].pop()
+            while x != s and len(lazo) <= 64 and sig.get(x):
+                lazo.append(x)
+                x = s if s in sig[x] else sig[x][0]  # en un vertice con dos salidas, la que cierra el lazo
+                sig[lazo[-1]].remove(x)
+            if x != s or len(lazo) < 3:
+                continue
+            p = v[lazo]
+            contorno = np.linalg.norm(p - np.roll(p, -1, axis=0), axis=1).sum()
+            area = 0.5 * np.linalg.norm(np.cross(p - p.mean(0), np.roll(p, -1, axis=0) - p.mean(0)), axis=1).sum()
+            ancho = 2 * area / contorno
+            if contorno >= maximo and ancho >= angosto and (len(lazo) > pocos or ancho >= angosto_pocos):
+                continue
+            if len(lazo) == 3:
+                nuevas.append(lazo)
+            else:
+                c = len(v) + len(centros)
+                centros.append(p.mean(0))
+                nuevas += [[lazo[i], lazo[(i + 1) % len(lazo)], c] for i in range(len(lazo))]
+    if not nuevas:
+        return v, f
+    return np.concatenate([v, np.array(centros).reshape(-1, 3)]), np.concatenate([f, np.array(nuevas, dtype=f.dtype)])
+
+
+RENDIJA = {"torso": 0.45, "botas": 0.35}  # m: el contorno de agujero mas largo que se tapa (tapar_rendijas)
+RAJA = 0.015  # m: el ancho medio de un lazo de borde por debajo del cual es una raja y se tapa, aunque sea largo
+POCOS, RAJA_POCOS = 5, 0.04  # m: un lazo de hasta 5 vertices es una raja si su ancho medio no llega a 4 cm
+
+
+def desvio(v, f, fuente):
+    """Lo mas que se aparta la reducida de la prenda de Props (fuente: su Superficie): en cada cara, sus esquinas, los
+    medios de sus lados y su centro. Una pua (la grieta de la costura de una bota, estirada hacia afuera) pasa de los
+    3 cm; lo demas, de 1 cm."""
+    t = v[f]
+    p = np.concatenate([t, (t + np.roll(t, 1, axis=1)) / 2, t.mean(1, keepdims=True)], axis=1)
+    return float(fuente.arbol.query(p.reshape(-1, 3))[0].max())
 
 
 def prenda(rec, it, P, cuerpos, refs):
@@ -1308,7 +1386,13 @@ def prenda(rec, it, P, cuerpos, refs):
     tris = int(it["tris_max"]) - 2
     vR, fR, n = [], [], 0
     for ob, fb, M in partes:  # cada pieza (cada bota) con su parte del presupuesto: juntas, una se quedaba sin cana
-        a, b = reducir_prenda(aplicar(M, ob), fb, piel, cerca, tris // len(partes))
+        parte = meta = tris // len(partes)
+        for _ in range(3):  # con los agujeros tapados, dentro del presupuesto
+            a, b = reducir_prenda(aplicar(M, ob), fb, piel, cerca, meta, RENDIJA[rec["forma"]] / s_com, RAJA / s_com,
+                                  RAJA_POCOS / s_com)
+            if len(b) <= parte:
+                break
+            meta -= len(b) - parte
         vR.append(a)
         fR.append(b + n)
         n += len(a)

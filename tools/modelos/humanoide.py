@@ -489,8 +489,9 @@ def reducir(pos, idx, color, tris):
             break
         p2, f2 = fast_simplification.simplify(p2, f2, min(0.9, 1.0 - tris / len(f2)))
     # Sin las astillas que deja la reduccion de una punta del cuerpo a otra (un pie con una mano, a mas de un tercio del
-    # alto). Los lados largos de un cuerpo de 1200 triangulos (un muslo, el antebrazo: hasta un quinto del alto) se
-    # quedan: sin ellos la malla quedaba con agujeros y el brazo, en tiras sueltas que en los golpes eran astillas.
+    # alto). Los lados largos de un cuerpo reducido (un muslo, el antebrazo: con 1200 triangulos, hasta un quinto del
+    # alto) se quedan: sin ellos la malla quedaba con agujeros y el brazo, en tiras sueltas que en los golpes eran
+    # astillas.
     t = p2[f2]
     lado = np.max(np.linalg.norm(t - np.roll(t, 1, axis=1), axis=2), axis=1)
     f2 = f2[lado < 0.3 * (pos[:, 1].max() - pos[:, 1].min())]
@@ -806,7 +807,7 @@ def main():
         raise SystemExit("\n".join(errores))
     por_id = {it["id"]: it for it in items}
     filas = open(inventario.TSV, encoding="utf-8").read().split("\n")
-    malla_de = (f"la malla riggeada de arte/fuentes/humanoide ({os.path.basename(args[1])}), en la pose de su piel, reducida, con el "
+    malla_de = (f"la malla riggeada de {os.path.relpath(os.path.dirname(os.path.abspath(args[1])), ROOT)} ({os.path.basename(args[1])}), en la pose de su piel, reducida, con el "
                 "color de su textura y sus pesos (los de su esqueleto, en los huesos del maniqui)" if malla_t[3] is not None
                 else "la malla en pose T de IMPORTED/Humanoid (sample_*.glb), reducida y con el color de su textura, con "
                 "pesos automaticos")

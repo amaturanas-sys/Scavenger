@@ -446,9 +446,67 @@ def test_capa_de_afuera(tmp):
     assert len(f2) == n and all((b, a) in dirigidas for a, b in e.tolist()), len(f2)
 
 
+def test_tapar_rendijas(tmp):
+    """Un tubo abierto (la cana de una bota) con un agujero chico en el costado: el agujero se tapa con el sentido de
+    sus vecinas y las dos bocas, de contorno mas largo que el maximo, quedan abiertas."""
+    import patron
+    # 9 anillos de 16 vertices, de z = -0,2 a 0,2 m, sin tapas: dos bocas de 0,38 m de contorno
+    a = np.linspace(0, 2 * np.pi, 16, endpoint=False)
+    v = np.array([(0.06 * np.cos(t), 0.06 * np.sin(t), z) for z in np.linspace(-0.2, 0.2, 9) for t in a])
+    f = []
+    for r in range(8):
+        for s in range(16):
+            p, q, w, x = r * 16 + s, r * 16 + (s + 1) % 16, (r + 1) * 16 + (s + 1) % 16, (r + 1) * 16 + s
+            f += [(p, q, w), (p, w, x)]
+    f = np.array(f, np.int64)
+    f = np.delete(f, [4 * 32 + 6, 4 * 32 + 7], axis=0)  # un agujero en el costado (un cuadrado: 0,15 m de contorno)
+    v2, f2 = patron.tapar_rendijas(v, f, 0.3)
+    e = np.concatenate([f2[:, [0, 1]], f2[:, [1, 2]], f2[:, [2, 0]]])
+    dirigidas = set(map(tuple, e.tolist()))
+    borde = [(p, q) for p, q in e.tolist() if (q, p) not in dirigidas]
+    assert len(f2) == len(f) + 4 and len(v2) == len(v) + 1, (len(f2), len(f), len(v2))  # el abanico desde su centro
+    assert len(borde) == 32 and all(abs(abs(v2[p, 2]) - 0.2) < 1e-9 for p, _ in borde), len(borde)  # solo las bocas
+    repetidas = len(e) - len(dirigidas)  # una arista dos veces en el mismo sentido: una cara al reves
+    assert repetidas == 0, repetidas
+    # Una raja: una columna de cuatro cuadrados del costado del tubo entero (0,45 m de contorno, 2 cm de ancho medio).
+    # Mas larga que el maximo: abierta, salvo que sea mas angosta que angosto (y entonces, un abanico de 10 caras).
+    entero = []
+    for r in range(8):
+        for s in range(16):
+            p, q, w, x = r * 16 + s, r * 16 + (s + 1) % 16, (r + 1) * 16 + (s + 1) % 16, (r + 1) * 16 + s
+            entero += [(p, q, w), (p, w, x)]
+    raja = np.delete(np.array(entero, np.int64), [r * 32 + 2 * 10 + k for r in range(1, 5) for k in (0, 1)], axis=0)
+    assert len(patron.tapar_rendijas(v, raja, 0.3)[1]) == len(raja)
+    assert len(patron.tapar_rendijas(v, raja, 0.3, angosto=0.03)[1]) == len(raja) + 10
+
+
+def test_sanear(tmp):
+    """Un tubo con una aleta (una cara chica de mas sobre una arista: tres caras en ella) y una cara dada vuelta:
+    saneado, ninguna arista con mas de dos caras y todas las caras con el sentido de sus vecinas."""
+    import patron
+    a = np.linspace(0, 2 * np.pi, 12, endpoint=False)
+    v = np.array([(0.06 * np.cos(t), 0.06 * np.sin(t), z) for z in np.linspace(0, 0.3, 4) for t in a])
+    f = []
+    for r in range(3):
+        for s in range(12):
+            p, q, w, x = r * 12 + s, r * 12 + (s + 1) % 12, (r + 1) * 12 + (s + 1) % 12, (r + 1) * 12 + s
+            f += [(p, q, w), (p, w, x)]
+    f = np.array(f, np.int64)
+    n = len(f)
+    v = np.concatenate([v, [[0.0, 0.0, 0.1]]])  # la aleta: hacia adentro, sobre la arista (0, 13)
+    f = np.concatenate([f, [[0, 13, len(v) - 1]]])
+    f[5] = f[5][[0, 2, 1]]  # una cara al reves
+    v2, f2 = patron.sanear(v, f)
+    e = np.concatenate([f2[:, [0, 1]], f2[:, [1, 2]], f2[:, [2, 0]]])
+    _, cuantas = np.unique(np.sort(e, axis=1), axis=0, return_counts=True)
+    assert len(f2) == n and cuantas.max() <= 2, (len(f2), cuantas.max())
+    assert len(set(map(tuple, e.tolist()))) == len(e), "quedo una cara al reves"
+
+
 def main():
     tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave, test_refs_anigen,
-             test_refs_anigen_registro, test_adaptar_oga, test_animales, test_animales_fantasma, test_capa_de_afuera]
+             test_refs_anigen_registro, test_adaptar_oga, test_animales, test_animales_fantasma, test_capa_de_afuera,
+             test_tapar_rendijas, test_sanear]
     failed = 0
     tmp = tempfile.mkdtemp(prefix="modelos-")
     try:
