@@ -19,7 +19,6 @@
 #include "sim/actions.h"
 #include "sim/animals.h"
 #include "sim/apparel.h"
-#include "sim/armor.h"
 #include "sim/army.h"
 #include "sim/body.h"
 #include "sim/water.h"
@@ -268,19 +267,6 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
 // Lo que el jugador tiene en las manos (las armas, el escudo, la antorcha encendida, lo que carga); ga_draw_world
 // lo dibuja, y adentro de una cueva src/game/cave_game.c, tenido con la luz del lugar (light; la llama, no).
 void ga_draw_held(const GameActions *ga, Props *props, const Player *p, float time, Color light);
-// El equipo de un humanoide con el cuerpo riggeado (body, dibujado con track en pos y yaw: props_draw_item_track con
-// yaw - PI/2): la armadura puesta (con la animacion del cuerpo: props_draw_worn), lo que tiene en las manos (en los
-// huesos de sus manos) y lo guardado (al cinto, a la espalda; la aljaba, al costado). Jugador, tribu y enemigos.
-typedef struct {
-    const Armor *armor;          // la armadura (o NULL)
-    const InvItem *right, *left; // lo de cada mano: afuera, en la mano; si no, guardado (o NULL)
-    bool right_out, left_out;
-    const InvItem *back;         // ademas, cruzado a la espalda (el arco del que pelea con el sable) (o NULL)
-    const InvItem *quiver;       // la aljaba (o NULL)
-    bool torch_lit;              // la antorcha de la izquierda, encendida
-} Gear;
-void ga_draw_gear(Props *props, const Inventory *inv, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
-                  float time, const Gear *g, Color light);
 // Lo empuñado y lo guardado sobre el cuerpo articulado del jugador (sin modelo del protagonista:
 // cb_draw_player_body): el arma en la mano, siguiendo el antebrazo al andar y al golpear; guardada, al
 // cinto; el escudo guardado, a la espalda (en el brazo lo pone combat_game.c). Con modelo, el modelo; si
@@ -288,7 +274,7 @@ void ga_draw_gear(Props *props, const Inventory *inv, const InvItem *body, Vecto
 void ga_draw_held_body(const GameActions *ga, Props *props, const BodyPose *b, Vector3 pos, float yaw, float time, Color light);
 // Dibuja al jugador con el modelo del protagonista y su animacion, si ya fue
 // importado. Devuelve false si no (el juego dibuja el marcador de siempre).
-bool ga_draw_player(GameActions *ga, Props *props, const Player *p, const Armor *armor, float time);
+bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time);
 const char *ga_hands_text(const GameActions *ga);
 void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, const Player *p, int width, int height);
 

@@ -1455,35 +1455,6 @@ static Color role_color(Role r) {
     }
 }
 
-// Lo que lleva a la vista cada integrante de la tribu, por su oficio: los que pelean (soldados, guardias, el
-// lugarteniente y los grandes guerreros), sable y escudo (o la lanza, uno de cada tres); los cazadores, el arco y la
-// aljaba; el herrero, el pico; los exploradores, la daga. Afuera, en la mano, si pelea (o si es el arco del cazador
-// que va de caza); de noche, el guardia lleva la antorcha encendida en la izquierda.
-static Gear member_gear(const Inventory *inv, const Member *m, const Npc *n, bool night) {
-    Gear g = { .armor = &m->armor };
-    bool fighter = m->role == ROLE_SOLDIER || m->role == ROLE_GUARD || m->role == ROLE_LIEUTENANT || m->champion >= 0;
-    if (fighter) {
-        bool spear = m->id % 3 == 0 && m->champion < 0;
-        g.right = inventory_find(inv, spear ? "arma.larga.lanza" : "arma.corta.sable");
-        if (!spear) g.left = inventory_find(inv, m->id % 2 ? "escudo.mano.cuero" : "escudo.mano.umbo");
-        g.right_out = g.left_out = n->fighting;
-    } else if (m->role == ROLE_HUNTER) {
-        g.left = inventory_find(inv, "arma.distancia.arco_simple");
-        g.left_out = n->fighting;
-        g.quiver = inventory_find(inv, "utileria.objeto.aljaba");
-        g.right = inventory_find(inv, "arma.corta.daga");
-    } else if (m->role == ROLE_SMITH) {
-        g.right = inventory_find(inv, "utileria.herramienta.pico");
-    } else if (m->role == ROLE_SCOUT) {
-        g.right = inventory_find(inv, "arma.corta.daga");
-    }
-    if (night && n->guarding && !n->fighting) { // la ronda de noche: la antorcha en la izquierda, encendida
-        g.left = inventory_find(inv, "utileria.objeto.antorcha");
-        g.left_out = g.torch_lit = true;
-    }
-    return g;
-}
-
 void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop *troop, const Player *p, float time, bool night) {
     props_draw(props);
     for (int i = 0; i < props->count; i++) { // fogatas y hogueras: piedras, leños, llamas y humo
@@ -1529,13 +1500,6 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
             props_draw_item_track(props, body, n->pos, n->yaw - PI / 2.0f, clip, time + (float)i,
                                   anim_is_stroke(clip) ? (hs.move > 1 ? n->move_anim : n->fight_anim) : 0.0f, &g_troop_track[i]);
             props_set_tint(light);
-            if (!m->health.down) { // su armadura y lo que lleva segun su oficio (las armas, afuera si pelea; de noche, la antorcha)
-                Gear g = member_gear(ga->inv, m, n, night);
-                ga_draw_gear(props, ga->inv, body, n->pos, n->yaw, &g_troop_track[i], time + (float)i, &g, light);
-            } else {
-                Gear g = { .armor = &m->armor };
-                ga_draw_gear(props, ga->inv, body, n->pos, n->yaw, &g_troop_track[i], time + (float)i, &g, light);
-            }
             continue;
         }
         // Sin modelo: cuerpo articulado (src/sim/body.h), del color de su funcion y con su armadura.
@@ -1657,45 +1621,30 @@ static float g_player_time;
 static void draw_held_model(const GameActions *ga, Props *props, const Player *p, float time, Color light) {
     const InvItem *body = inventory_find(ga->inv, "personaje.narrativo.protagonista");
     const Hands *h = &ga->hands;
-    Gear g = { .right = h->right.id[0] ? inventory_find(ga->inv, h->right.id) : NULL,
-               .left = h->left.id[0] ? inventory_find(ga->inv, h->left.id) : NULL,
-               .right_out = hands_out(h, HAND_RIGHT), .left_out = hands_out(h, HAND_LEFT), .torch_lit = ga->torch_lit };
-    Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
-    (void)time; // el de su clip: g_player_time
-    ga_draw_gear(props, ga->inv, body, pos, p->yaw, &g_player_track, g_player_time, &g, light);
-}
-
-void ga_draw_gear(Props *props, const Inventory *inv, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
-                  float time, const Gear *g, Color light) {
-    float my = yaw - PI / 2.0f; // el giro del modelo (+X adelante) con el que se dibujo el cuerpo
-    if (g->armor) // la armadura, con la pose del cuerpo (cada pieza, la de su cuerpo: tools/modelos/equipo.py)
-        for (int s = 0; s < SLOT_COUNT; s++)
-            if (g->armor->slot[s].id[0]) props_draw_worn(props, inventory_find(inv, g->armor->slot[s].id), body, pos, my, track, time);
-    Vector3 er, hr, el, hl;
-    bool rb = props_bone_point(props, body, pos, my, track, time, "lowerarm_r", &er) &&
-              props_bone_point(props, body, pos, my, track, time, "hand_r", &hr);
-    bool lb = props_bone_point(props, body, pos, my, track, time, "lowerarm_l", &el) &&
-              props_bone_point(props, body, pos, my, track, time, "hand_l", &hl);
+    const InvItem *r = h->right.id[0] ? inventory_find(ga->inv, h->right.id) : NULL;
+    const InvItem *l = h->left.id[0] ? inventory_find(ga->inv, h->left.id) : NULL;
+    bool r_out = hands_out(h, HAND_RIGHT), l_out = hands_out(h, HAND_LEFT);
+    Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z }, er, hr, el, hl;
+    float yaw = p->yaw, my = p->yaw - PI / 2.0f;
+    bool rb = props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "lowerarm_r", &er) &&
+              props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "hand_r", &hr);
+    bool lb = props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "lowerarm_l", &el) &&
+              props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "hand_l", &hl);
     Vector3 up = body_dir((V3){ 0, 1, 0 }, yaw), left = body_dir((V3){ 1, 0, 0 }, yaw), back = body_dir((V3){ 0, 0, -1 }, yaw);
-    const InvItem *r = g->right, *l = g->left;
-    if (r && g->right_out && rb) held_between(props, r, er, hr, yaw, light);
-    else if (r && !g->right_out && r->hands == INV_HANDS_TWO) // a la espalda
+    if (r && r_out && rb) held_between(props, r, er, hr, yaw, light);
+    else if (r && !r_out && r->hands == INV_HANDS_TWO) // a la espalda
         held_item(props, r, held_frame(body_point((V3){ -0.15f, 0.75f, -0.2f }, pos, yaw), back, body_dir((V3){ 0.45f, 1.0f, 0 }, yaw)), light);
-    else if (r && !g->right_out) // al cinto
+    else if (r && !r_out) // al cinto
         held_item(props, r, held_frame(body_point((V3){ 0.2f, 0.95f, 0.12f }, pos, yaw), left, body_dir((V3){ 0, -0.55f, -1.0f }, yaw)), light);
-    if (l && g->left_out && lb && l->hands == INV_HANDS_SHIELD) // el escudo en el antebrazo, mirando afuera
+    if (l && l_out && lb && l->hands == INV_HANDS_SHIELD) // el escudo en el antebrazo, mirando afuera
         held_item(props, l, held_frame(Vector3Lerp(el, hl, 0.5f), left, Vector3Subtract(hl, el)), light);
-    else if (l && g->left_out && lb) { // la antorcha, un arco o un arma corta
+    else if (l && l_out && lb) { // la antorcha o un arma corta
         Vector3 tip = held_between(props, l, el, hl, yaw, light);
-        if (g->torch_lit) DrawSphere(tip, 0.11f * (0.8f + 0.2f * sinf(time * 17.0f)), (Color){ 250, 160, 50, 255 });
-    } else if (l && !g->left_out && l->hands == INV_HANDS_SHIELD) // a la espalda, mirando atras
+        if (ga->torch_lit) DrawSphere(tip, 0.11f * (0.8f + 0.2f * sinf(time * 17.0f)), (Color){ 250, 160, 50, 255 });
+    } else if (l && !l_out && l->hands == INV_HANDS_SHIELD) // a la espalda, mirando atras
         held_item(props, l, held_frame(body_point((V3){ 0, 1.15f, -0.2f }, pos, yaw), back, up), light);
-    else if (l && !g->left_out)
+    else if (l && !l_out)
         held_item(props, l, held_frame(body_point((V3){ -0.2f, 0.95f, 0.1f }, pos, yaw), left, body_dir((V3){ 0, -0.55f, -1.0f }, yaw)), light);
-    if (g->back) // cruzado a la espalda, al reves que lo de la derecha
-        held_item(props, g->back, held_frame(body_point((V3){ 0.12f, 0.8f, -0.22f }, pos, yaw), back, body_dir((V3){ -0.5f, 1.0f, 0 }, yaw)), light);
-    if (g->quiver) // la aljaba, colgada atras a la izquierda, la boca arriba
-        held_item(props, g->quiver, held_frame(body_point((V3){ 0.18f, 0.72f, -0.16f }, pos, yaw), back, body_dir((V3){ 0.25f, 1.0f, 0 }, yaw)), light);
 }
 
 void ga_draw_held_body(const GameActions *ga, Props *props, const BodyPose *b, Vector3 pos, float yaw, float time, Color light) {
@@ -1749,7 +1698,7 @@ int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, con
     return n;
 }
 
-bool ga_draw_player(GameActions *ga, Props *props, const Player *p, const Armor *armor, float time) {
+bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) {
     const InvItem *body = inventory_find(ga->inv, "personaje.narrativo.protagonista");
     if (!body || !props_has_model(props, body)) return false;
     Hands drawn = hands_drawn(&ga->hands); // la animacion, segun lo que esta fuera (el escudo solo, la espada sola)
@@ -1768,10 +1717,6 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, const Armor 
     g_player_time = time;
     props_draw_item_track(props, body, pos, p->yaw - PI / 2.0f, clip, time, anim_is_stroke(clip) ? ga->pl_stroke : 0.0f,
                           &g_player_track);
-    if (armor) { // su armadura, con su pose (lo de las manos: ga_draw_held)
-        Gear g = { .armor = armor };
-        ga_draw_gear(props, ga->inv, body, pos, p->yaw, &g_player_track, time, &g, props_get_tint());
-    }
     return true;
 }
 

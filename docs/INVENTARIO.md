@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**736 objetos** · 363 con modelo · 373 pendientes.
+**735 objetos** · 343 con modelo · 392 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -15,15 +15,15 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Estructuras](#estructura) | 96 | 37 | 1 | 58 | 0 |
 | [Vehículos](#vehiculo) | 11 | 9 | 0 | 2 | 0 |
 | [Animales](#animal) | 54 | 21 | 0 | 33 | 0 |
-| [Armas](#arma) | 44 | 36 | 0 | 8 | 0 |
+| [Armas](#arma) | 44 | 39 | 0 | 5 | 0 |
 | [Proyectiles](#proyectil) | 6 | 6 | 0 | 0 | 0 |
-| [Escudos](#escudo) | 6 | 2 | 0 | 4 | 0 |
+| [Escudos](#escudo) | 6 | 4 | 0 | 2 | 0 |
 | [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
-| [Armaduras (por piezas)](#armadura) | 48 | 34 | 0 | 14 | 0 |
+| [Armaduras (por piezas)](#armadura) | 48 | 44 | 0 | 4 | 0 |
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
-| [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 32 | 0 | 1 | 0 |
+| [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
-| [Utilería y consumibles](#utileria) | 176 | 78 | 0 | 98 | 0 |
+| [Utilería y consumibles](#utileria) | 175 | 81 | 0 | 94 | 0 |
 | [Personajes y NPCs](#personaje) | 47 | 43 | 0 | 4 | 0 |
 
 ## Etiquetas
@@ -417,10 +417,10 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `arma.corta.sable` | Sable de la estepa | 0.52x0.9x0.03 | 120 | importado | `uso:equipable` `faccion:nomada` `manos:una` | Curvo y de un filo: a caballo corta limpio, no se traba y suma la carrera. Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma plana --girar 90); las medidas, las de la imagen. |
 | `arma.corta.hacha_mano` | Hacha de mano | 0.24x0.6x0.04 | 100 | importado | `uso:equipable` `manos:una` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma plana); las medidas, las de la imagen. |
 | `arma.corta.maza` | Maza | 0.27x0.7x0.27 | 100 | importado | `uso:equipable` `manos:una` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma revolucion); las medidas, las de la imagen. |
-| `arma.larga.lanza` | Lanza ligera | 0.1x2.4x0.1 | 80 | importado | `uso:equipable` `manos:una` | A pie y a caballo; en ristre (L), la carga. |
+| `arma.larga.lanza` | Lanza ligera | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` | A pie y a caballo; en ristre (L), la carga. |
 | `arma.larga.guja` | Guja | 0.2x2.2x0.05 | 120 | pendiente | `uso:equipable` `manos:dos` |  |
 | `arma.larga.pica` | Pica imperial | 0.1x4.5x0.1 | 80 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
-| `arma.larga.alabarda` | Alabarda | 0.3x2.2x0.05 | 140 | importado | `uso:equipable` `faccion:imperio` `manos:dos` |  |
+| `arma.larga.alabarda` | Alabarda | 0.3x2.2x0.05 | 140 | pendiente | `uso:equipable` `faccion:imperio` `manos:dos` |  |
 | `arma.larga.espada_larga` | Espada larga | 0.23x1.2x0.03 | 120 | importado | `uso:equipable` `manos:una` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma plana); las medidas, las de la imagen. |
 | `arma.distancia.arco_compuesto` | Arco compuesto reflejo | 0.1x1.2x0.05 | 150 | pendiente | `uso:equipable` `requiere:proyectil` `faccion:nomada` `manos:dos` | Asta, madera y tendón: corto y potente, a caballo tira como a pie. Se hace en tres etapas. |
 | `arma.distancia.arco_largo` | Arco largo | 0.08x1.8x0.05 | 120 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` |  |
@@ -442,7 +442,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `arma.corta.sable_bronce` | Sable de bronce | 0.08x0.9x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:bronce` | Se forja en el horno de bronce. |
 | `arma.corta.sable_acero` | Sable de acero | 0.08x0.95x0.03 | 120 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se forja en el horno de acero. |
 | `arma.larga.lanza_bronce` | Lanza de punta de bronce | 0.1x2.4x0.1 | 80 | pendiente | `uso:equipable` `manos:una` `material:bronce` | Se forja en el horno de bronce. |
-| `arma.distancia.arco_simple` | Arco simple | 0.08x1.4x0.04 | 120 | importado | `uso:equipable` `requiere:proyectil` `manos:dos` | De una pieza de madera: a caballo se abre el tiro. |
+| `arma.distancia.arco_simple` | Arco simple | 0.08x1.4x0.04 | 120 | pendiente | `uso:equipable` `requiere:proyectil` `manos:dos` | De una pieza de madera: a caballo se abre el tiro. |
 | `arma.corta.akinakes` | Akinakes | 0.07x0.6x0.03 | 100 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` `material:bronce` | La espada corta recta de los escitas: rápida en los combos. |
 | `arma.corta.sagaris` | Sagaris de pico | 0.2x0.7x0.04 | 110 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` | Hacha de pico: perfora la armadura y engancha escudos. |
 | `arma.corta.sagaris_martillo` | Sagaris de martillo | 0.2x0.7x0.06 | 110 | pendiente | `uso:equipable` `faccion:nomada` `manos:una` | Hacha de martillo: aturde y engancha escudos. |
@@ -477,11 +477,11 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | Id | Nombre | Medidas (m) | Tris | Estado | Etiquetas | Notas |
 |---|---|---|---|---|---|---|
 | `escudo.mano.mimbre` | Escudo redondo de mimbre | 0.6x0.6x0.08 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:madera` `manos:escudo` |  |
-| `escudo.mano.cuero` | Escudo de cuero endurecido | 0.55x0.55x0.06 | 80 | importado | `uso:equipable` `faccion:nomada` `material:cuero` `manos:escudo` |  |
+| `escudo.mano.cuero` | Escudo de cuero endurecido | 0.55x0.55x0.06 | 80 | pendiente | `uso:equipable` `faccion:nomada` `material:cuero` `manos:escudo` |  |
 | `escudo.mano.umbo` | Escudo de madera con umbo | 0.8x0.8x0.18 | 100 | importado | `uso:equipable` `faccion:neutral` `material:madera` `manos:escudo` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma disco); las medidas, las de la imagen. |
 | `escudo.grande.paves` | Pavés imperial | 0.7x1.5x0.15 | 120 | pendiente | `uso:equipable` `faccion:imperio` `material:madera` `manos:escudo` |  |
 | `escudo.mano.lamina` | Escudo de láminas de hierro | 0.51x0.8x0.21 | 120 | importado | `uso:equipable` `faccion:imperio` `material:hierro` `manos:escudo` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma disco); las medidas, las de la imagen. La hoja lo dibuja de tablas, con borde y umbo de hierro. |
-| `escudo.mano.culto` | Escudo ceremonial del culto | 0.7x0.9x0.08 | 200 | importado | `uso:equipable` `faccion:culto` `material:bronce` `manos:escudo` |  |
+| `escudo.mano.culto` | Escudo ceremonial del culto | 0.7x0.9x0.08 | 200 | pendiente | `uso:equipable` `faccion:culto` `material:bronce` `manos:escudo` |  |
 
 <a id="totem"></a>
 
@@ -508,23 +508,23 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 |---|---|---|---|---|---|---|
 | `armadura.casco.laminar_cuero` | Casco laminar de cuero | 0.25x0.35x0.27 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma secciones); las medidas, las de la imagen. |
 | `armadura.cuello.laminar_cuero` | Gorjal / cofia laminar de cuero | 0.35x0.2x0.35 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
-| `armadura.torso.laminar_cuero` | Coraza / peto laminar de cuero | 0.5x0.6x0.35 | 250 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
+| `armadura.torso.laminar_cuero` | Coraza / peto laminar de cuero | 0.5x0.6x0.35 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.hombreras.laminar_cuero` | Hombreras (par) laminar de cuero | 0.6x0.2x0.3 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.brazales.laminar_cuero` | Brazales (par) laminar de cuero | 0.15x0.3x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.guantes.laminar_cuero` | Guanteletes (par) laminar de cuero | 0.12x0.2x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.faldar.laminar_cuero` | Faldar laminar de cuero | 0.5x0.4x0.4 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
 | `armadura.grebas.laminar_cuero` | Grebas (par) laminar de cuero | 0.15x0.45x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
-| `armadura.botas.laminar_cuero` | Botas (par) laminar de cuero | 0.15x0.35x0.3 | 80 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
-| `armadura.casco.fieltro` | Casco de fieltro acolchado | 0.3x0.35x0.3 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
+| `armadura.botas.laminar_cuero` | Botas (par) laminar de cuero | 0.15x0.35x0.3 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:cuero` |  |
+| `armadura.casco.fieltro` | Casco de fieltro acolchado | 0.3x0.35x0.3 | 150 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
 | `armadura.cuello.fieltro` | Gorjal / cofia de fieltro acolchado | 0.35x0.2x0.35 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
-| `armadura.torso.fieltro` | Coraza / peto de fieltro acolchado | 0.5x0.6x0.35 | 250 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
+| `armadura.torso.fieltro` | Coraza / peto de fieltro acolchado | 0.5x0.6x0.35 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
 | `armadura.hombreras.fieltro` | Hombreras (par) de fieltro acolchado | 0.6x0.2x0.3 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
 | `armadura.brazales.fieltro` | Brazales (par) de fieltro acolchado | 0.15x0.3x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
 | `armadura.faldar.fieltro` | Faldar de fieltro acolchado | 0.5x0.4x0.4 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
-| `armadura.botas.fieltro` | Botas (par) de fieltro acolchado | 0.15x0.35x0.3 | 80 | importado | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
+| `armadura.botas.fieltro` | Botas (par) de fieltro acolchado | 0.15x0.35x0.3 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:nomada` `material:fieltro` |  |
 | `armadura.casco.escamas_hierro` | Casco de escamas de hierro | 0.18x0.35x0.18 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` | Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma secciones); las medidas, las de la imagen. La hoja lo dibuja cónico, con nasal y carrilleras. |
 | `armadura.cuello.escamas_hierro` | Gorjal / cofia de escamas de hierro | 0.35x0.2x0.35 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
-| `armadura.torso.escamas_hierro` | Coraza / peto de escamas de hierro | 0.5x0.6x0.35 | 250 | importado | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
+| `armadura.torso.escamas_hierro` | Coraza / peto de escamas de hierro | 0.5x0.6x0.35 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
 | `armadura.hombreras.escamas_hierro` | Hombreras (par) de escamas de hierro | 0.6x0.2x0.3 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
 | `armadura.brazales.escamas_hierro` | Brazales (par) de escamas de hierro | 0.15x0.3x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
 | `armadura.guantes.escamas_hierro` | Guanteletes (par) de escamas de hierro | 0.12x0.2x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:imperio` `material:hierro` |  |
@@ -540,17 +540,17 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `armadura.faldar.malla` | Faldar de malla | 0.5x0.4x0.4 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:neutral` `material:hierro` |  |
 | `armadura.grebas.malla` | Grebas (par) de malla | 0.15x0.45x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:neutral` `material:hierro` |  |
 | `armadura.botas.malla` | Botas (par) de malla | 0.15x0.35x0.3 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:neutral` `material:hierro` |  |
-| `armadura.casco.culto` | Casco ritual del culto | 0.3x0.35x0.3 | 150 | importado | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
+| `armadura.casco.culto` | Casco ritual del culto | 0.3x0.35x0.3 | 150 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
 | `armadura.cuello.culto` | Gorjal / cofia ritual del culto | 0.35x0.2x0.35 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
-| `armadura.torso.culto` | Coraza / peto ritual del culto | 0.5x0.6x0.35 | 250 | importado | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
+| `armadura.torso.culto` | Coraza / peto ritual del culto | 0.5x0.6x0.35 | 250 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
 | `armadura.hombreras.culto` | Hombreras (par) ritual del culto | 0.6x0.2x0.3 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
 | `armadura.brazales.culto` | Brazales (par) ritual del culto | 0.15x0.3x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
 | `armadura.guantes.culto` | Guanteletes (par) ritual del culto | 0.12x0.2x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
 | `armadura.faldar.culto` | Faldar ritual del culto | 0.5x0.4x0.4 | 120 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
 | `armadura.grebas.culto` | Grebas (par) ritual del culto | 0.15x0.45x0.15 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
 | `armadura.botas.culto` | Botas (par) ritual del culto | 0.15x0.35x0.3 | 80 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
-| `armadura.casco.mascara_culto` | Máscara ritual del culto | 0.25x0.3x0.2 | 200 | importado | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
-| `armadura.casco.oro_padre` | Casco de oro del padre | 0.3x0.4x0.3 | 300 | importado | `uso:equipable` `rig:humanoide` `especial:legado` `material:oro` `acto:1` | Lo lleva el padre en el prólogo. |
+| `armadura.casco.mascara_culto` | Máscara ritual del culto | 0.25x0.3x0.2 | 200 | pendiente | `uso:equipable` `rig:humanoide` `faccion:culto` `material:bronce` |  |
+| `armadura.casco.oro_padre` | Casco de oro del padre | 0.3x0.4x0.3 | 300 | pendiente | `uso:equipable` `rig:humanoide` `especial:legado` `material:oro` `acto:1` | Lo lleva el padre en el prólogo. |
 | `armadura.montura.barda_cuero` | Barda de cuero para caballo | 0.8x1.2x2 | 400 | pendiente | `uso:equipable` `rig:cuadrupedo` `faccion:nomada` `material:cuero` |  |
 | `armadura.montura.barda_hierro` | Barda de hierro para caballo | 0.8x1.2x2 | 500 | pendiente | `uso:equipable` `rig:cuadrupedo` `faccion:imperio` `material:hierro` |  |
 | `armadura.casco.bronce` | Casco de bronce | 0.17x0.35x0.26 | 150 | importado | `uso:equipable` `rig:humanoide` `material:bronce` | Se forja en el horno de bronce. Low-poly con textura (estilo PS2) desde una hoja de tres vistas generada por el usuario con Canva (tools/modelos/piezas.py --forma secciones --cresta); las medidas, las de la imagen. |
@@ -608,7 +608,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `accesorio.tatuaje.grifo` | Tatuaje del grifo | 0.25x0.25x0 | 0 | pendiente | `uso:equipable` `formato:textura` `estilo:animal` | Calcomanía (PNG con alfa), no modelo. Permanente. |
 | `accesorio.tatuaje.tamga` | Tatuaje de la tamga | 0.25x0.25x0 | 0 | pendiente | `uso:equipable` `formato:textura` `estilo:animal` | Calcomanía (PNG con alfa), no modelo. Permanente. |
 | `accesorio.tatuaje.olas` | Tatuaje de olas | 0.25x0.25x0 | 0 | pendiente | `uso:equipable` `formato:textura` `estilo:animal` | Calcomanía (PNG con alfa), no modelo. Permanente. |
-| `accesorio.arreo.silla_montar` | Silla de montar | 0.5x0.3x0.6 | 200 | importado | `uso:equipable` `faccion:nomada` `material:cuero` |  |
+| `accesorio.arreo.silla_montar` | Silla de montar | 0.5x0.3x0.6 | 200 | pendiente | `uso:equipable` `faccion:nomada` `material:cuero` |  |
 | `accesorio.arreo.brida` | Brida y riendas | 0.3x0.4x0.6 | 100 | pendiente | `uso:equipable` `material:cuero` |  |
 | `accesorio.arreo.estribos` | Estribos (par) | 0.15x0.2x0.1 | 60 | pendiente | `uso:equipable` `material:hierro` |  |
 | `accesorio.arreo.alforjas` | Alforjas | 0.6x0.4x0.3 | 120 | pendiente | `uso:equipable` `material:cuero` |  |
@@ -654,14 +654,14 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.objeto.cofre` | Cofre de botín | 0.8x0.5x0.5 | 100 | pendiente | `uso:interactuable` `material:madera` | Se abre y se cierra (assets/animaciones.tsv: abrir y cerrar), asi que va con un GLB animado. La forma ya esta en tools/voxeles/estructuras.py cofre (la tapa abombada, dos flejes de hierro y la cerradura de bronce al frente). |
 | `utileria.objeto.barril_polvora` | Barril de pólvora | 0.6x0.8x0.6 | 80 | pendiente | `faccion:imperio` `uso:destructible` |  |
 | `utileria.objeto.saco_grano` | Saco de grano | 0.5x0.6x0.4 | 60 | pendiente | `uso:recolectable` |  |
-| `utileria.objeto.antorcha` | Antorcha | 0.1x0.7x0.1 | 40 | importado | `uso:equipable` `manos:una` |  |
+| `utileria.objeto.antorcha` | Antorcha | 0.1x0.7x0.1 | 40 | pendiente | `uso:equipable` `manos:una` |  |
 | `utileria.objeto.cadenas` | Grilletes y cadenas | 0.4x0.1x0.4 | 80 | pendiente | `material:hierro` |  |
 | `utileria.objeto.yunque` | Yunque | 0.6x0.5x0.3 | 80 | pendiente | `material:hierro` |  |
 | `utileria.objeto.telar` | Telar de fieltro | 1.5x1.2x1 | 150 | pendiente | `faccion:nomada` `material:madera` |  |
 | `utileria.objeto.tamboril_chaman` | Tambor chamánico | 0.5x0.1x0.5 | 100 | pendiente | `faccion:nomada` `material:cuero` |  |
 | `utileria.objeto.vela` | Velas de sebo | 0.05x0.15x0.05 | 20 | pendiente | `uso:recolectable` | De la grasa animal: luz para las noches largas y bien de trueque. |
 | `utileria.objeto.peine` | Peine de hueso | 0.1x0.02x0.08 | 20 | pendiente | `uso:recolectable` `material:hueso` | Labrado en hueso: bien de trueque. |
-| `utileria.objeto.aljaba` | Aljaba de cuero | 0.15x0.7x0.15 | 60 | importado | `uso:recolectable` `material:cuero` | Para las flechas; se paga bien en la estepa. |
+| `utileria.objeto.aljaba` | Aljaba de cuero | 0.15x0.7x0.15 | 60 | pendiente | `uso:recolectable` `material:cuero` | Para las flechas; se paga bien en la estepa. |
 | `utileria.consumible.carne_seca` | Carne seca | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.airag` | Odre de airag (leche de yegua) | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
 | `utileria.consumible.queso_seco` | Queso seco | 0.2x0.15x0.2 | 40 | pendiente | `uso:recolectable` `uso:consumible` |  |
@@ -674,9 +674,8 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `utileria.consumible.unguento` | Ungüento de hierbas y miel | 0.1x0.1x0.1 | 30 | pendiente | `uso:recolectable` `uso:consumible` | Cura más que las hierbas: corta el veneno y cierra las heridas. |
 | `utileria.consumible.especias` | Especias | 0.15x0.1x0.15 | 20 | pendiente | `uso:recolectable` `uso:consumible` | De las caravanas del desierto: valen su peso en plata. |
 | `utileria.herramienta.pala` | Pala | 0.25x1.2x0.05 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Para cavar trincheras. |
-| `utileria.herramienta.pico` | Pico | 0.5x0.9x0.05 | 80 | importado | `uso:equipable` `manos:dos` `material:hierro` | Para la piedra y el mineral; en los campamentos y las forjas. |
 | `utileria.herramienta.picahielo` | Picahielo | 0.12x1.5x0.06 | 60 | pendiente | `uso:equipable` `manos:dos` `material:hierro` | Un asta con una punta de hierro en cincel: abre un agujero en el hielo para pescar (L → Acciones). |
-| `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | importado | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
+| `utileria.herramienta.gancho_trepa` | Trepa (gancho con cuerda) | 0.3x0.4x0.3 | 80 | pendiente | `uso:equipable` `manos:una` `material:hierro` | Se lanza para escalar muros en los asedios. |
 | `utileria.herramienta.escala_asedio` | Escala de asedio | 0.5x2.9x0.15 | 120 | pendiente | `uso:herramienta` `material:madera` | En dos tramos que se atan al pie de la muralla (12 kg). F junto a la muralla de una ciudad en guerra: se apoya y se sube por ella, de ida y de vuelta. |
 | `utileria.herramienta.forja_movil` | Forja móvil (fuelle y hogar) | 0.6x0.5x0.6 | 120 | pendiente | `uso:herramienta` `material:hierro` | Fuelle de cuero y hogar de carbón (10 kg): en la mochila, las alforjas, la carreta o el acopio, repara y hace puntas, cuchillos y sables en cualquier sitio. |
 | `utileria.objeto.lena` | Haz de leña | 0.46x0.22x0.82 | 40 | importado | `uso:recolectable` `material:madera` `formato:voxel` | Material de fogatas, hogueras y hornos. Voxeles armados a mano (tools/voxeles/estructuras.py lena), celdas de 2 cm: los restos de madera lavada de las fotos de referencia del usuario, dos ramas gruesas grises y pardas con su veta, nudos y los cortes claros, cruzadas sobre una mas fina. |

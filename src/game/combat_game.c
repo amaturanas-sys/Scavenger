@@ -3057,19 +3057,6 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
             float fit = !anim_is_stroke(clip) ? 0.0f : hs.move > 1 ? e->move_anim : e->windup > 0.0f ? e->windup + 0.45f : e->attack_anim;
             props_draw_item_track(props, own ? it : base, at, e->yaw - PI / 2.0f, clip, tt, fit, &tracks[i % CB_MAX_ENEMIES]);
             props_set_tint(light);
-            // Su equipo: la armadura puesta y, si sigue en pie, el arma y el escudo en las manos (lo que no perdio); el
-            // arco, en la izquierda al tirar y si no a la espalda, con la aljaba. El paves, delante (sin modelo).
-            bool up = !dead && !downed;
-            const InvItem *bow = def->ranged && strstr(def->ranged, "arco") ? inventory_find(ga->inv, def->ranged) : NULL;
-            bool paves = def->shield && strstr(def->shield, "paves");
-            Gear g = { .armor = &e->armor, .right_out = up, .left_out = up,
-                       .right = up && e->armed && def->weapon ? inventory_find(ga->inv, def->weapon) : NULL,
-                       .left = up && e->shield && def->shield && !paves ? inventory_find(ga->inv, def->shield) : NULL,
-                       .quiver = bow ? inventory_find(ga->inv, "utileria.objeto.aljaba") : NULL };
-            if (bow && up && hs.ranged) g.left = bow, g.right = NULL;
-            else if (bow && up) g.back = bow;
-            ga_draw_gear(props, ga->inv, own ? it : base, at, e->yaw, &tracks[i % CB_MAX_ENEMIES], tt, &g, light);
-            if (paves && e->shield && up) draw_pavise_on(at, e->yaw, e->blocking);
             continue;
         }
         // Sin modelo: cuerpo articulado con su armadura (y su escudo).

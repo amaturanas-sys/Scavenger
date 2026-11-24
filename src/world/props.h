@@ -31,8 +31,7 @@ typedef struct {
         bool loaded;
         ModelAnimation *anims; // clips del GLB (indice: assets/animaciones.tsv)
         int anim_count;
-        int variant; // -1: modelo base; si no, la estacion de "<nombre>@<estacion>.glb" (o el cuerpo: props_draw_worn)
-        bool posed;  // una prenda: su malla quedo con la pose del ultimo que la llevo (props_draw_worn)
+        int variant; // -1: modelo base; si no, la estacion de "<nombre>@<estacion>.glb"
     } cache[MODEL_CACHE_MAX];
     int cached;
     int season; // estacion actual (Season): elige la variante estacional si existe
@@ -91,13 +90,6 @@ bool props_draw_item_biome(Props *p, const InvItem *item, Matrix transform, int 
 // props_draw_item_track: para poner en la mano lo que se lleva. false si no esta animado o no tiene ese hueso.
 bool props_bone_point(Props *p, const InvItem *item, Vector3 pos, float yaw, const AnimTrack *track, float time, const char *bone,
                       Vector3 *out);
-// Una prenda (casco, coraza, botas: un GLB con la piel del cuerpo, sus mismos huesos y sin clips propios) puesta en
-// body, con la pose de su animacion en este cuadro (la de track, como props_draw_item_track). Usa la variante del
-// cuerpo (nombre@mujer.glb, @gigante, @protagonista: tools/modelos/equipo.py) o, si no esta, la del comun.
-void props_draw_worn(Props *p, const InvItem *wear, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
-                     float time);
-// true si el modelo del id es una prenda (con piel y sin clips): en el suelo se dibuja apoyado, en su pose de piel.
-bool props_is_worn(Props *p, const InvItem *item);
 bool props_draw_item_matrix(Props *p, const InvItem *item, Matrix transform);
 
 #endif

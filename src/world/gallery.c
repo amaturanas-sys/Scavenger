@@ -81,20 +81,6 @@ void gallery_draw(const Gallery *g) {
         const InvItem *it = e->item;
         if (g->solo && e != g->solo) continue;
         if (e->loaded) {
-            // Una prenda (armadura con la piel del cuerpo: tools/modelos/equipo.py) esta en la pose del cuerpo comun:
-            // con --ver, puesta en el (los dos en el mismo lugar); en la galeria, apoyada en el suelo.
-            if (e->model.boneCount > 0 && !strncmp(it->id, "armadura.", 9)) {
-                const GalleryEntry *body = gallery_find(g, "personaje.base.cuerpo_comun");
-                if (g->solo == e && body && body->loaded) {
-                    DrawModel(body->model, e->pos, 1.0f, WHITE);
-                    DrawModel(e->model, e->pos, 1.0f, WHITE);
-                } else {
-                    BoundingBox bb = GetModelBoundingBox(e->model);
-                    Vector3 at = { e->pos.x - (bb.min.x + bb.max.x) * 0.5f, e->pos.y - bb.min.y, e->pos.z - (bb.min.z + bb.max.z) * 0.5f };
-                    DrawModel(e->model, at, 1.0f, WHITE);
-                }
-                continue;
-            }
             DrawModel(e->model, e->pos, 1.0f, WHITE);
             continue;
         }

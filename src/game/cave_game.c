@@ -540,7 +540,7 @@ void cv_draw(GameActions *ga, const Combat *cb, Props *props, const Terrain *t, 
     // El jugador, con la luz de donde esta (la llama de su antorcha, no).
     Color here = cs_shade(WHITE, (Vector3){ g_in.pos.x, g_in.pos.y + 1.0f, g_in.pos.z });
     props_set_tint(here);
-    if (!ga_draw_player(ga, props, &g_in, &cb->armor, time)) cb_draw_player_body(cb, ga, props, &g_in, time, here);
+    if (!ga_draw_player(ga, props, &g_in, time)) cb_draw_player_body(cb, ga, props, &g_in, time, here);
     props_set_tint(WHITE);
     ga_draw_held(ga, props, &g_in, time, here);
     rlDrawRenderBatchActive();
