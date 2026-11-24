@@ -539,6 +539,47 @@ def empujar(v, f, piel, holgura, veces=4):
     return v
 
 
+def empujar_desde_piel(v, f, piel, holgura, veces=6, lejos=0.015):
+    """Al reves que empujar: la piel que pasa una cara grande de la prenda reducida, o se le acerca a menos de holgura
+    (la punta del pie por la puntera de la bota cae entre las muestras de empujar), la empuja por su normal lo que
+    falta. Solo la piel debajo de la cara (su proyeccion cae dentro de ella y las dos miran al mismo lado) y que la
+    pasa no mas de lejos: lo que asoma; la rodilla, por encima del borde de la cana, no la abre en embudo."""
+    v = v.copy()
+    lo, hi = v.min(0) - lejos, v.max(0) + lejos
+    sel = np.all((piel.p > lo) & (piel.p < hi), axis=1)
+    pp, pn = piel.p[sel], piel.n[sel]
+    if not len(pp):
+        return v
+    for _ in range(veces):
+        fn, _ = normales_caras(v, f)
+        a, b, c = v[f[:, 0]], v[f[:, 1]], v[f[:, 2]]
+        _, cand = cKDTree((a + b + c) / 3).query(pp, k=min(8, len(f)))
+        cand = cand.reshape(len(pp), -1)
+        falta = np.zeros(len(f))
+        for k in range(cand.shape[1]):
+            F = cand[:, k]
+            n = fn[F]
+            h = ((pp - a[F]) * n).sum(1)  # la altura de la piel sobre el plano de la cara (+, afuera)
+            q = pp - h[:, None] * n
+            e0, e1, e2 = b[F] - a[F], c[F] - a[F], q - a[F]
+            d00, d01, d11 = (e0 * e0).sum(1), (e0 * e1).sum(1), (e1 * e1).sum(1)
+            d20, d21 = (e2 * e0).sum(1), (e2 * e1).sum(1)
+            den = np.where(np.abs(d00 * d11 - d01 * d01) < 1e-18, 1e-18, d00 * d11 - d01 * d01)
+            bb, bc = (d11 * d20 - d01 * d21) / den, (d00 * d21 - d01 * d20) / den
+            ok = (bb >= 0) & (bc >= 0) & (bb + bc <= 1) & ((n * pn).sum(1) > 0.5) & (h > -holgura) & (h < lejos)
+            np.maximum.at(falta, F[ok], h[ok] + holgura)
+        if not (falta > 1e-5).any():
+            break
+        mover = np.zeros_like(v)
+        cuenta = np.zeros(len(v))
+        mal = falta > 1e-5
+        for k in range(3):
+            np.add.at(mover, f[mal, k], fn[mal] * falta[mal, None])
+            np.add.at(cuenta, f[mal, k], 1)
+        v += mover / np.maximum(cuenta, 1)[:, None]
+    return v
+
+
 # ---------------------------------------------------------------- vistas (sin dependencias: un z-buffer en numpy)
 VISTA = {"frente": np.array([-1.0, 0, 0]), "lado": np.array([0, 0, 1.0]), "atras": np.array([1.0, 0, 0]),
          "tres_cuartos": np.array([-0.75, -0.25, 0.6]), "izquierda": np.array([0, 0, -1.0])}
@@ -677,6 +718,27 @@ def tonar(rgb, tono):
     return np.where(t < 0.5, a + (b - a) * (t / 0.5), b + (c - b) * ((t - 0.5) / 0.5))
 
 
+def _extender(img, nucleo):
+    """Lo que no es nucleo, con el color de lo que si (cerca, el de al lado; lejos, el medio de una zona mas grande):
+    una media gaussiana normalizada a escalas crecientes. Sin las rayas que deja copiar el pixel mas cercano, que las
+    caras de costado (las que la proyeccion de frente ve de canto) estiran en barridos."""
+    out = img.astype(float).copy()
+    peso = nucleo.astype(float)
+    falta = ~nucleo
+    for sigma in (2.0, 6.0, 16.0, 40.0, 100.0):
+        if not falta.any():
+            break
+        den = ndimage.gaussian_filter(peso, sigma)
+        ok = falta & (den > 0.05)
+        for c in range(3):
+            num = ndimage.gaussian_filter(img[..., c].astype(float) * peso, sigma)
+            out[..., c][ok] = (num / np.maximum(den, 1e-6))[ok]
+        falta &= ~ok
+    if falta.any():
+        out[falta] = img[nucleo].mean(0)
+    return out
+
+
 class Textura:
     """El render recortado a su silueta en dos mitades de una textura de TEX px: el frente y, para las caras que
     miran atras (el render no muestra la espalda), lo mismo sin los huecos. Las mitades van una al lado de la otra si
@@ -691,10 +753,26 @@ class Textura:
         crop, cm = self.rgb[y0:y1, x0:x1], self.mask[y0:y1, x0:x1]
         frente = _rellenar(crop, cm, umbral=40, borde=2)
         hueco = np.all(np.abs(frente - np.array([34.0, 28.0, 22.0])) < 0.5, axis=2)
-        lleno = cm & ~hueco
+        # Lo claro como el fondo en la franja del borde (el pelo de la piel sobre el fondo blanco del render, el brillo
+        # del canto) no es color de la pieza: con lo de afuera, toma el de lo de adentro (las manchas claras de los
+        # costados de los cascos).
+        a = self.rgb.astype(float)
+        fondo = np.median(np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]]), axis=0)
+        franja = cm & ~ndimage.binary_erosion(cm, iterations=max(2, int(0.02 * max(cm.shape))))
+        claro = franja & (np.abs(crop.astype(float) - fondo).sum(axis=2) < 150)
+        color = cm & ~claro
+        frente = _extender(frente, color if color.sum() > 50 else cm)
+        lleno = color & ~hueco
+        self.lleno = lleno  # el color de la pieza en el recorte de la silueta (sin huecos ni lo claro del borde)
+        # Para el color de las caras de canto: el de cada pixel y el medio de la pieza a su alrededor (una media
+        # gaussiana sobre lo lleno, que no ve ni el borde oscuro de la silueta ni el brillo del canto).
+        s = 0.08 * max(cm.shape)
+        den = ndimage.gaussian_filter(lleno.astype(float), s)
+        self.color = frente
+        self.cerca = np.stack([ndimage.gaussian_filter(frente[..., k] * lleno, s) for k in range(3)], axis=-1) / \
+            np.maximum(den, 1e-6)[..., None]
         nucleo = ndimage.binary_erosion(lleno, iterations=2) if lleno.sum() > 50 else lleno
-        _, (iy, ix) = ndimage.distance_transform_edt(~nucleo, return_indices=True)
-        espalda = frente[iy, ix]
+        espalda = _extender(frente, nucleo if nucleo.any() else cm)
         self.alto_img = (y1 - y0) >= (x1 - x0)
         tam = (TEX // 2, TEX) if self.alto_img else (TEX, TEX // 2)
         mitades = []
@@ -723,6 +801,48 @@ class Textura:
         fn, _ = normales_caras(p, f)
         atras = fn @ frente < 0
         out = uv[f].copy()
+        # Las caras que la proyeccion ve de canto (los costados) estiraban el borde del render (el brillo del canto de
+        # un casco, el pelo de la oreja del gorro) en un barrido claro: un solo color, el del medio de la pieza
+        # alrededor de donde cae la cara en el render (a su altura). Se busca en dos caminos hacia el medio del render,
+        # desde la cara y desde la cara que si se ve de frente mas cercana en la malla (la orejera, su cuero; no la
+        # sombra de la abertura de al lado), el punto sobre la pieza que mas se le parece: pasa el brillo del canto,
+        # el borde oscuro de la silueta (que dejaba triangulos negros) y la correa del tobillo de una bota (que la
+        # vecina en la malla llevaba hasta media cana).
+        canto = np.abs(fn @ frente) < 0.3
+        if canto.any() and (~canto).any():
+            from collections import deque
+            caras_de = [[] for _ in range(len(p))]
+            for i, t in enumerate(f.tolist()):
+                for x in t:
+                    caras_de[x].append(i)
+            de = np.full(len(f), -1)
+            de[~canto] = np.flatnonzero(~canto)
+            cola = deque(np.flatnonzero(~canto).tolist())
+            while cola:
+                i = cola.popleft()
+                for x in f[i]:
+                    for j in caras_de[x]:
+                        if de[j] < 0:
+                            de[j] = de[i]
+                            cola.append(j)
+            centro = out.mean(1)
+            ok = canto & (de >= 0)
+            c = centro[de[ok]]
+            h, w = self.lleno.shape
+
+            def pixel(x):
+                return np.clip((x[:, 1] * h).astype(int), 0, h - 1), np.clip((x[:, 0] * w).astype(int), 0, w - 1)
+            mio = out[ok].mean(1)
+            ref = self.cerca[pixel(mio)]
+            mejor, dist = c.copy(), np.full(len(c), np.inf)
+            for base in (mio, c):
+                for t in (0.0, 0.15, 0.3, 0.45, 0.6):
+                    x = base + (0.5 - base) * t
+                    fy, fx = pixel(x)
+                    d = np.where(self.lleno[fy, fx], np.abs(self.color[fy, fx] - ref).sum(axis=1), np.inf)
+                    m = d < dist
+                    mejor[m], dist[m] = x[m], d[m]
+            out[ok] = mejor[:, None, :]
         k = 0 if self.alto_img else 1
         out[..., k] = out[..., k] * 0.5 + np.where(atras, 0.5, 0.0)[:, None]
         return out, espejo
@@ -1208,6 +1328,8 @@ def prenda(rec, it, P, cuerpos, refs):
             pesos_de(vS, cuerpo.u["m"], cuerpo.u["jf"], cuerpo.u["wf"], fR)
         v = cuerpo.a_reposo(vS, j.astype(int), w)
         v = empujar(v, fR, piel_juego(cuerpo), HOLGURA)
+        if rec["forma"] == "botas":  # el pie asomaba por una cara grande; en la coraza, el brazo en la sisa le sacaba aletas
+            v = empujar_desde_piel(v, fR, piel_juego(cuerpo), HOLGURA)
         nor = normales_40(v, fR)
         out[sufijo] = glb_pieza(v, fR, nor, uv, tex.png, it["id"], GENERADOR, piel=(j[fR], w[fR], cuerpo))
         if sufijo == "":
@@ -1294,6 +1416,9 @@ def rigido(rec, it, P, cuerpos, refs, anclaje_casco):
         vR, fR = extruida(v, f, int(it["tris_max"]) - 2, rec.get("minimo", 0.012), cuerda=rec["forma"] == "arco")
     else:
         vR, fR = reducir(v, f, int(it["tris_max"]) - 2)
+        # Las cuadricas ponen algun vertice de una punta (la presilla de la aljaba) un poco afuera de la pieza: dentro
+        # de su caja, que es la medida del inventario.
+        vR = np.clip(vR, v.min(0), v.max(0))
     render = aplicar(np.linalg.inv(C), vR) @ R.T
     uv, _ = tex.uv(render, fR, np.array([0, 0, 1.0]), np.array([0, 1.0, 0]))
     nor = normales_40(vR, fR)
