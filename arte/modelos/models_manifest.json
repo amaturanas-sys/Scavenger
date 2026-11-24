@@ -663,7 +663,7 @@
         "punta": "abajo",
         "agarre": 0.12
       },
-      "updated_at": "2026-11-24T18:12:57+00:00"
+      "updated_at": "2026-11-24T18:24:11+00:00"
     },
     "arma.corta.hacha_mano": {
       "file": "assets/models/arma/corta/hacha_mano.glb",
@@ -709,7 +709,7 @@
         "punta": "arriba",
         "agarre": 0.12
       },
-      "updated_at": "2026-11-24T18:13:01+00:00"
+      "updated_at": "2026-11-24T18:24:15+00:00"
     },
     "arma.corta.sable": {
       "file": "arte/fuentes/props/modelos/sable.glb",
@@ -730,7 +730,7 @@
         "filo": "convexo",
         "patron": "Curved sword"
       },
-      "updated_at": "2026-11-24T18:12:54+00:00"
+      "updated_at": "2026-11-24T18:24:09+00:00"
     },
     "arma.larga.espada_larga": {
       "file": "arte/fuentes/props/modelos/espada.glb",
@@ -750,7 +750,7 @@
         "agarre": 0.08,
         "patron": "white_mesh(25)"
       },
-      "updated_at": "2026-11-24T18:12:58+00:00"
+      "updated_at": "2026-11-24T18:24:13+00:00"
     },
     "armadura.casco.bronce": {
       "file": "arte/fuentes/props/modelos/casco_carrilleras.glb",
@@ -768,7 +768,7 @@
         "img": "casco_bronce-2",
         "az": 30
       },
-      "updated_at": "2026-11-24T18:12:36+00:00"
+      "updated_at": "2026-11-24T18:23:53+00:00"
     },
     "armadura.casco.escamas_hierro": {
       "file": "arte/fuentes/props/modelos/casco_nasal.glb",
@@ -786,7 +786,7 @@
         "img": "casco_hierro-4",
         "az": 0
       },
-      "updated_at": "2026-11-24T18:12:44+00:00"
+      "updated_at": "2026-11-24T18:24:00+00:00"
     },
     "armadura.casco.laminar_cuero": {
       "file": "arte/fuentes/props/modelos/casco_costillas.glb",
@@ -806,7 +806,7 @@
         "tono": "cuero",
         "mezcla": 0.85
       },
-      "updated_at": "2026-11-24T18:12:30+00:00"
+      "updated_at": "2026-11-24T18:23:47+00:00"
     },
     "armadura.casco.malla": {
       "file": "arte/fuentes/props/modelos/casco_ala.glb",
@@ -824,7 +824,7 @@
         "img": "casco_hierro-1",
         "az": 0
       },
-      "updated_at": "2026-11-24T18:12:52+00:00"
+      "updated_at": "2026-11-24T18:24:07+00:00"
     },
     "escudo.mano.lamina": {
       "file": "assets/models/escudo/mano/lamina.glb",
@@ -875,7 +875,7 @@
         "forma": "escudo",
         "img": "escudo_bronce-4"
       },
-      "updated_at": "2026-11-24T18:13:24+00:00"
+      "updated_at": "2026-11-24T18:24:35+00:00"
     },
     "estructura.vivienda.yurta_comun": {
       "file": "assets/models/estructura/vivienda/yurta_comun.glb",
@@ -1246,7 +1246,7 @@
         "img": "chaleco_cuero-1",
         "patron": "white_mesh(3)"
       },
-      "updated_at": "2026-11-24T18:10:24+00:00"
+      "updated_at": "2026-11-24T18:21:48+00:00"
     },
     "armadura.botas.laminar_cuero": {
       "file": "arte/fuentes/props/modelos/botas_montar.glb",
@@ -1267,7 +1267,7 @@
           "white_mesh(18) 2"
         ]
       },
-      "updated_at": "2026-11-24T18:11:46+00:00"
+      "updated_at": "2026-11-24T18:23:07+00:00"
     },
     "armadura.casco.oro_padre": {
       "file": "arte/fuentes/props/modelos/casco_aguila.glb",
@@ -1288,7 +1288,7 @@
         "mezcla": 0.6,
         "patron": "model"
       },
-      "updated_at": "2026-11-24T18:12:00+00:00"
+      "updated_at": "2026-11-24T18:23:21+00:00"
     },
     "arma.distancia.arco_simple": {
       "file": "arte/fuentes/props/modelos/arco.glb",
@@ -1308,7 +1308,7 @@
         "patron": "white_mesh(27)",
         "plana": true
       },
-      "updated_at": "2026-11-24T18:13:05+00:00"
+      "updated_at": "2026-11-24T18:24:18+00:00"
     },
     "utileria.objeto.aljaba": {
       "file": "arte/fuentes/props/modelos/aljaba.glb",
@@ -1326,7 +1326,7 @@
         "img": "aljaba-2",
         "patron": "white_mesh(28)"
       },
-      "updated_at": "2026-11-24T18:13:10+00:00"
+      "updated_at": "2026-11-24T18:24:23+00:00"
     },
     "escudo.mano.cuero": {
       "file": "arte/fuentes/props/modelos/escudo_redondo_3.glb",
@@ -1344,7 +1344,7 @@
         "img": "escudo_madera-1",
         "patron": "hy3d-model(3)"
       },
-      "updated_at": "2026-11-24T18:13:18+00:00"
+      "updated_at": "2026-11-24T18:24:29+00:00"
     },
     "armadura.torso.fieltro": {
       "file": "arte/fuentes/props/modelos/coraza_faldar.glb",
@@ -1363,7 +1363,7 @@
         "tono": "fieltro",
         "mezcla": 0.85
       },
-      "updated_at": "2026-11-24T18:10:49+00:00"
+      "updated_at": "2026-11-24T18:22:13+00:00"
     },
     "armadura.torso.escamas_hierro": {
       "file": "arte/fuentes/props/modelos/laminar_hombreras.glb",
@@ -1382,7 +1382,7 @@
         "tono": "hierro",
         "mezcla": 0.8
       },
-      "updated_at": "2026-11-24T18:11:14+00:00"
+      "updated_at": "2026-11-24T18:22:34+00:00"
     },
     "armadura.torso.culto": {
       "file": "arte/fuentes/props/modelos/coraza_lisa.glb",
@@ -1399,7 +1399,7 @@
         "forma": "torso",
         "img": "pectoral_oro-1"
       },
-      "updated_at": "2026-11-24T18:11:38+00:00"
+      "updated_at": "2026-11-24T18:22:58+00:00"
     },
     "armadura.botas.fieltro": {
       "file": "arte/fuentes/props/modelos/botas_montar.glb",
@@ -1420,7 +1420,7 @@
           "white_mesh(18) 2"
         ]
       },
-      "updated_at": "2026-11-24T18:11:54+00:00"
+      "updated_at": "2026-11-24T18:23:14+00:00"
     },
     "armadura.casco.fieltro": {
       "file": "arte/fuentes/props/modelos/gorro_piel.glb",
@@ -1438,7 +1438,7 @@
         "img": "gorro_piel-1",
         "az": 0
       },
-      "updated_at": "2026-11-24T18:12:08+00:00"
+      "updated_at": "2026-11-24T18:23:28+00:00"
     },
     "armadura.casco.culto": {
       "file": "arte/fuentes/props/modelos/casco_calado.glb",
@@ -1456,7 +1456,7 @@
         "img": "casco_bronce-1",
         "az": 30
       },
-      "updated_at": "2026-11-24T18:12:15+00:00"
+      "updated_at": "2026-11-24T18:23:34+00:00"
     },
     "armadura.casco.mascara_culto": {
       "file": "arte/fuentes/props/modelos/casco_visera.glb",
@@ -1474,7 +1474,7 @@
         "img": "casco_escamas-3",
         "az": 330
       },
-      "updated_at": "2026-11-24T18:12:22+00:00"
+      "updated_at": "2026-11-24T18:23:40+00:00"
     },
     "arma.larga.lanza": {
       "file": "arte/fuentes/props/modelos/lanza.glb",
@@ -1495,7 +1495,7 @@
         "patron": "white_mesh(24)",
         "plana": true
       },
-      "updated_at": "2026-11-24T18:13:02+00:00"
+      "updated_at": "2026-11-24T18:24:16+00:00"
     },
     "arma.larga.alabarda": {
       "file": "arte/fuentes/props/modelos/alabarda.glb",
@@ -1516,7 +1516,7 @@
         "patron": "white_mesh(26)",
         "plana": true
       },
-      "updated_at": "2026-11-24T18:13:03+00:00"
+      "updated_at": "2026-11-24T18:24:17+00:00"
     },
     "utileria.objeto.antorcha": {
       "file": "arte/fuentes/props/modelos/antorcha.glb",
@@ -1536,7 +1536,7 @@
         "agarre": 0.25,
         "patron": "white_mesh(20)"
       },
-      "updated_at": "2026-11-24T18:13:06+00:00"
+      "updated_at": "2026-11-24T18:24:19+00:00"
     },
     "escudo.mano.culto": {
       "file": "arte/fuentes/props/modelos/escudo_redondo_2.glb",
@@ -1553,7 +1553,7 @@
         "forma": "escudo",
         "img": "escudo_bronce-3"
       },
-      "updated_at": "2026-11-24T18:13:32+00:00"
+      "updated_at": "2026-11-24T18:24:41+00:00"
     }
   }
 }

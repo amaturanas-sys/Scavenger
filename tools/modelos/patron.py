@@ -764,13 +764,8 @@ class Textura:
         frente = _extender(frente, color if color.sum() > 50 else cm)
         lleno = color & ~hueco
         self.lleno = lleno  # el color de la pieza en el recorte de la silueta (sin huecos ni lo claro del borde)
-        # Para el color de las caras de canto: el de cada pixel y el medio de la pieza a su alrededor (una media
-        # gaussiana sobre lo lleno, que no ve ni el borde oscuro de la silueta ni el brillo del canto).
-        s = 0.08 * max(cm.shape)
-        den = ndimage.gaussian_filter(lleno.astype(float), s)
-        self.color = frente
-        self.cerca = np.stack([ndimage.gaussian_filter(frente[..., k] * lleno, s) for k in range(3)], axis=-1) / \
-            np.maximum(den, 1e-6)[..., None]
+        # Para el color de las caras de canto: cada pixel, apenas alisado (sin el grano del cuero o del pelo).
+        self.suave = np.stack([ndimage.gaussian_filter(frente[..., k], 1.5) for k in range(3)], axis=-1)
         nucleo = ndimage.binary_erosion(lleno, iterations=2) if lleno.sum() > 50 else lleno
         espalda = _extender(frente, nucleo if nucleo.any() else cm)
         self.alto_img = (y1 - y0) >= (x1 - x0)
@@ -802,12 +797,12 @@ class Textura:
         atras = fn @ frente < 0
         out = uv[f].copy()
         # Las caras que la proyeccion ve de canto (los costados) estiraban el borde del render (el brillo del canto de
-        # un casco, el pelo de la oreja del gorro) en un barrido claro: un solo color, el del medio de la pieza
+        # un casco, el pelo de la oreja del gorro) en un barrido claro: un solo color, el mas comun de la pieza
         # alrededor de donde cae la cara en el render (a su altura). Se busca en dos caminos hacia el medio del render,
         # desde la cara y desde la cara que si se ve de frente mas cercana en la malla (la orejera, su cuero; no la
-        # sombra de la abertura de al lado), el punto sobre la pieza que mas se le parece: pasa el brillo del canto,
-        # el borde oscuro de la silueta (que dejaba triangulos negros) y la correa del tobillo de una bota (que la
-        # vecina en la malla llevaba hasta media cana).
+        # sombra de la abertura de al lado), el punto sobre la pieza cuyo color mas se repite ahi. Lo fino no gana
+        # nunca: ni el brillo del canto ni las puntas claras del pelo, ni el borde oscuro de la silueta (que dejaba
+        # triangulos negros), ni la correa del tobillo de una bota (que la vecina en la malla llevaba a media cana).
         canto = np.abs(fn @ frente) < 0.3
         if canto.any() and (~canto).any():
             from collections import deque
@@ -833,16 +828,20 @@ class Textura:
             def pixel(x):
                 return np.clip((x[:, 1] * h).astype(int), 0, h - 1), np.clip((x[:, 0] * w).astype(int), 0, w - 1)
             mio = out[ok].mean(1)
-            ref = self.cerca[pixel(mio)]
-            mejor, dist = c.copy(), np.full(len(c), np.inf)
-            for base in (mio, c):
-                for t in (0.0, 0.15, 0.3, 0.45, 0.6):
-                    x = base + (0.5 - base) * t
-                    fy, fx = pixel(x)
-                    d = np.where(self.lleno[fy, fx], np.abs(self.color[fy, fx] - ref).sum(axis=1), np.inf)
-                    m = d < dist
-                    mejor[m], dist[m] = x[m], d[m]
-            out[ok] = mejor[:, None, :]
+            pasos = np.arange(0.0, 0.61, 0.1)
+            cand = np.concatenate([b[:, None, :] + (0.5 - b[:, None, :]) * pasos[None, :, None] for b in (mio, c)], axis=1)
+            cy, cx = pixel(cand.reshape(-1, 2))
+            cy, cx = cy.reshape(cand.shape[:2]), cx.reshape(cand.shape[:2])
+            col = self.suave[cy, cx]
+            votos = np.where(self.lleno[cy, cx], 0, -1)
+            r = max(3, int(0.06 * max(h, w)))
+            my, mx = pixel(mio)
+            for i in range(len(mio)):  # cuantos pixeles de la pieza alrededor de la cara tienen el color de cada punto
+                y0, x0 = max(0, my[i] - r), max(0, mx[i] - r)
+                zona = self.suave[y0:my[i] + r + 1, x0:mx[i] + r + 1][self.lleno[y0:my[i] + r + 1, x0:mx[i] + r + 1]]
+                if len(zona):
+                    votos[i] += np.where(votos[i] >= 0, (np.abs(zona[None] - col[i][:, None]).sum(axis=2) < 75).sum(axis=1), 0)
+            out[ok] = cand[np.arange(len(mio)), votos.argmax(axis=1)][:, None, :]
         k = 0 if self.alto_img else 1
         out[..., k] = out[..., k] * 0.5 + np.where(atras, 0.5, 0.0)[:, None]
         return out, espejo
