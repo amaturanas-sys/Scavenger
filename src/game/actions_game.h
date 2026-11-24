@@ -19,6 +19,7 @@
 #include "sim/actions.h"
 #include "sim/animals.h"
 #include "sim/apparel.h"
+#include "sim/armor.h"
 #include "sim/army.h"
 #include "sim/body.h"
 #include "sim/water.h"
@@ -267,6 +268,19 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
 // Lo que el jugador tiene en las manos (las armas, el escudo, la antorcha encendida, lo que carga); ga_draw_world
 // lo dibuja, y adentro de una cueva src/game/cave_game.c, tenido con la luz del lugar (light; la llama, no).
 void ga_draw_held(const GameActions *ga, Props *props, const Player *p, float time, Color light);
+// Lo que lleva un humanoide con modelo (el jugador, la tropa, los enemigos), despues de dibujar su cuerpo con track
+// (props_draw_item_track, con los mismos pos, yaw y time): las prendas con piel (coraza, botas) con su pose, el casco
+// en la cabeza y lo de cada mano en su anclaje (src/world/anclajes.inc): empunado (out) o guardado (lo de la derecha
+// enfundado al costado izquierdo, lo de la izquierda al derecho, el escudo y lo largo a la espalda; con el arco, la
+// aljaba). Lo que no tiene modelo, con su marcador.
+void ga_draw_gear(Props *props, const Inventory *inv, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
+                  float time, const Armor *armor, const InvItem *right, bool right_out, const InvItem *left, bool left_out,
+                  Color light);
+// La armadura del jugador (la de Combat), para dibujarla sobre el modelo del protagonista.
+void ga_set_player_armor(const Armor *armor);
+// --patron (prueba, con --ver <cuerpo>): el equipo del patron (arte/fuentes/patron) sobre ese cuerpo, a cada lado del
+// de la galeria: guardado (idle) y empunado (con arma y escudo).
+void ga_draw_patron_demo(Props *props, const Inventory *inv, const char *body_id, Vector3 pos, float time);
 // Lo empuñado y lo guardado sobre el cuerpo articulado del jugador (sin modelo del protagonista:
 // cb_draw_player_body): el arma en la mano, siguiendo el antebrazo al andar y al golpear; guardada, al
 // cinto; el escudo guardado, a la espalda (en el brazo lo pone combat_game.c). Con modelo, el modelo; si

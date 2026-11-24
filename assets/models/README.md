@@ -63,6 +63,36 @@ El CI valida el inventario y falla si un archivo no corresponde a ningún id o s
 | Personajes y animales | Deben estar riggeados (`rig:humanoide`, `rig:cuadrupedo` o `rig:ave`). La ropa y la armadura se ajustan a los cuerpos base (`personaje.base.*`). |
 | Nombres | Solo minúsculas, dígitos y `_`. El nombre del archivo es la última parte del id. |
 
+## El equipo de los humanoides: el patrón
+
+El equipo de Props (cascos, corazas, botas, armas, escudos, la aljaba y la antorcha) sale de
+`tools/modelos/patron.py`, guiado por el patrón que armó el usuario a mano
+(`arte/fuentes/patron/model_equipped_01.glb`: el cuerpo de `rigged-model.glb` en su pose T con las piezas
+puestas). Cada pieza del patrón es una malla de `arte/fuentes/props/modelos` con una transformación afín exacta
+(0 mm): de ahí salen la escala, el lugar y la holgura a la piel (de 4 a 7 mm como mínimo; menos del 1 % de sus
+vértices adentro). Las que no están en el patrón se ponen con su mismo criterio: los cascos, con el ancho de su
+borde en la proporción del de águila y apoyados en la cabeza; las corazas, con el borde de arriba donde el del
+chaleco y lo más justas que no se metan en el torso.
+
+| Qué | Cómo va |
+|---|---|
+| Corazas y botas | Con piel: los 56 huesos del cuerpo (su pose de reposo) y los pesos de la piel de abajo, sin clips. Un archivo por cuerpo: `nombre.glb` (el común), `nombre@mujer.glb`, `nombre@gigante.glb` y `nombre@protagonista.glb`. El juego las mueve con el clip y el cuadro del cuerpo (`props_draw_worn`). |
+| Cascos, armas, escudos, aljaba, antorcha | Rígidos, en su marco: las armas con la empuñadura en el origen, la hoja hacia +Y y el filo hacia +Z; los escudos mirando a +X; los cascos desde el borde del casco del patrón. Van en los anclajes de `src/world/anclajes.inc` (generado: el hueso y la matriz de cada anclaje en cada cuerpo), que siguen a su hueso (`props_draw_socket`). |
+| Guardado | El casco en la cabeza; el escudo, la aljaba y lo largo (el arco, la lanza) a la espalda; lo de la mano derecha enfundado al costado izquierdo (el sable del patrón) y lo de la izquierda (la daga) al derecho. |
+| Empuñado | En la mano derecha (la izquierda: el arco, la antorcha) y el escudo embrazado en el antebrazo izquierdo; lo guardado deja de dibujarse. |
+| Medidas | Las armas y los objetos, las del inventario (del patrón, el anclaje, el eje y el calce); lo que se viste, la de su caja puesta en el cuerpo común (el inventario se actualiza solo). |
+| Polígonos y normales | `tris_max` del inventario, reducido con cuádricas sin centrar ni escalar a ciegas. Las corazas y las botas se reducen de dos maneras, abiertas (sin lo que mira al cuerpo) y cerradas (con su cara de adentro, que se quita después), y queda la que más se parece a la de Props: abierta, a veces se plegaba y dejaba rendijas por donde se veía la piel; cerrada, a veces pierde un lado. Lo plano y fino (la lanza, la alabarda, el arco con su cuerda), con la silueta de su malla extruida a su grosor, porque las cuádricas lo aplastaban. Normales suaves entre caras de menos de 40° y cortadas en las aristas más duras (también las de los cuerpos y los animales: `patron.py normales`). |
+| Los cuerpos | `rigged-model.glb` es una cáscara de unos 4 mm, con la capa de adentro mirando al hueco del cuerpo. `humanoide.py` se queda con la de afuera antes de reducir (`lowres.capa_de_afuera`) y tapa los agujeritos que deja la reducción: todo el `tris_max` va a la piel que se ve (antes, la mitad era la capa de adentro) y la holgura de las prendas se mide contra esa piel. |
+| Textura | El render de Props (`arte/fuentes/props/imagenes`) proyectado de frente (≤ 256 px, filtro de punto), sin la luz grande del render: la luz la pone el juego. |
+
+`python3 tools/modelos/patron.py ver` dibuja cada cuerpo con el equipo del patrón, guardado y empuñado
+(`build/patron/`); en el juego, `./estepa --ver personaje.base.cuerpo_comun --patron guardado|empunado
+[--patron-atras]`.
+
+La luz de los cuerpos, los animales y el equipo la pone un shader (`src/world/model_light.c`, GLSL 330 y ES 100):
+la del cielo y la del suelo (hemisférica) y la del sol (direccional), con la pose de cada cuadro. Sin el shader
+(OpenGL 1.1 o 2.1), se ven como antes, con la luz horneada en el color.
+
 ## Variantes por estación
 
 Un modelo puede traer variantes estacionales junto al base, con el sufijo `@estacion`:

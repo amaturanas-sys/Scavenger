@@ -310,6 +310,7 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | Las formaciones del paisaje | `--formaciones desierto` (o `hielo`, `costa`): las cuatro variantes de cada una |
 | Los muros del borde, enteros | `--ir panorama-hielo` o `panorama-muro` (a 520 m del borde, con `--camara 0.06 --vista lejos`); de cerca, `--ir hielo`, `muro`, `lengua` |
 | Un objeto de cerca | `--ver <id del inventario>` |
+| El equipo del patrón puesto | `--ver personaje.base.cuerpo_comun --patron guardado` (o `empunado`; `--patron-atras`, de espaldas): el cuerpo con el equipo de `arte/fuentes/patron`, junto al de la galería. Con un animal (`--ver animal.salvaje.lobo --patron guardado`), una copia animada, con la luz del shader, al lado de la de la galería (`assets/models/README.md`, «El equipo de los humanoides») |
 | El asedio | `--asedio puerta`, `fuego`, `salida`, `quemada`, `tomada`… |
 | Combate | `--enemigos bandidos`, `culto`, `lobos`, `arqueros` |
 | El sistema táctico | `--manos escudo` (`espada`, `nada`), `--rehen`, `--objetivo`, `--cubierto`, `--inventario` (la fila de la barra) |

@@ -160,6 +160,7 @@ if(ESTEPA_BUILD_GAME)
     src/game/input.c
     src/game/inventory_game.c
     src/world/props.c
+    src/world/model_light.c
     src/ui/theme.c
     src/ui/minimap.c
     src/ui/icons.c

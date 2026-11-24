@@ -849,7 +849,9 @@ def armar(malla_t, it, log=print):
     sol /= np.linalg.norm(sol)
     luz = 0.72 + 0.38 * np.clip(n @ sol, 0.0, 1.0)
     caras = np.clip(cr[fr].mean(axis=1) * luz[:, None], 0, 255)
-    datos = escribir(e, tri.reshape(-1, 3), np.repeat(n, 3, axis=0), np.repeat(caras, 3, axis=0),
+    # Las normales, suaves entre caras de menos de 40 grados y cortadas en las aristas mas duras (el criterio del patron:
+    # tools/modelos/patron.py); el color, cara por cara, con la luz de su cara.
+    datos = escribir(e, tri.reshape(-1, 3), lowres.normales_aristas(vr, fr).reshape(-1, 3), np.repeat(caras, 3, axis=0),
                      joints[fr].reshape(-1, 4), weights[fr].reshape(-1, 4), animaciones, it["id"])
     armar.ultimo = dict(e=e, m=m, v=vr, f=fr, joints=joints, weights=weights)
     c = vr.max(0) - vr.min(0)

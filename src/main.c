@@ -73,6 +73,7 @@
 #include "ui/theme.h"
 #include "world/camp.h"
 #include "world/hearth.h"
+#include "world/model_light.h"
 #include "game/death_game.h"
 #include "game/hud_game.h"
 #include "world/gallery.h"
@@ -1024,6 +1025,8 @@ int main(int argc, char **argv) {
     bool simulate_no_keyboard = false;
     bool gallery_mode = false;
     const char *view_id = NULL; // --ver: el id a mirar de cerca
+    int patron_demo = 0;        // --patron guardado|empunado (con --ver <cuerpo>): el equipo del patron puesto, de cerca
+    bool patron_back = false;   // --patron-atras: de espaldas
     int kit_type = -1, kit_region = -1; // --edificios: el tipo del kit y la region (-1: todas)
     int feat_group = -1;                // --formaciones: el grupo (FEAT_GROUPS)
     int start_day = 1;
@@ -1081,6 +1084,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--sin-teclado")) simulate_no_keyboard = true;
         else if (!strcmp(argv[i], "--galeria")) gallery_mode = true;
         else if (!strcmp(argv[i], "--ver") && i + 1 < argc) gallery_mode = true, view_id = argv[++i];
+        else if (!strcmp(argv[i], "--patron") && i + 1 < argc) patron_demo = !strcmp(argv[++i], "empunado") ? 2 : 1;
+        else if (!strcmp(argv[i], "--patron-atras")) patron_back = true;
         else if (!strcmp(argv[i], "--edificios") && i + 1 < argc) {
             gallery_mode = true;
             kit_parse(argv[++i], &kit_type, &kit_region);
@@ -1198,6 +1203,7 @@ int main(int argc, char **argv) {
     terrain_forget_gpu();
     trees_forget_gpu();
     clouds_forget_gpu();
+    model_light_init(); // la luz de los cuerpos, los animales y el equipo: antes de cargar sus modelos
     voxs_forget_gpu();
     cs_forget_gpu(); // la escena de una cueva (y sus modelos de voxeles)
     cp_forget_gpu();
@@ -1254,6 +1260,7 @@ int main(int argc, char **argv) {
         UnloadFileText(inv_text);
     }
     props_init(&g_props, &g_inventory);
+    ga_set_player_armor(&g_combat.armor); // lo que lleva puesto el protagonista (sobre su modelo)
     trees_init(&g_inventory); // los arboles del mundo: su .vox y su alto, del inventario
     CameraRig rig = { .yaw = PI, .eye = 1.6f };
     settings_init(); // idioma (y sus traducciones), antes del primer texto de la partida
@@ -1856,6 +1863,15 @@ int main(int argc, char **argv) {
                 float size = fmaxf(fmaxf(it->w, it->h), it->l), hgt = fmaxf(it->h, 0.05f);
                 cam.target = (Vector3){ seen->pos.x, seen->pos.y + hgt * 0.5f, seen->pos.z };
                 cam.position = Vector3Add(cam.target, Vector3Scale(Vector3Normalize((Vector3){ 1.0f, 0.55f, 0.75f }), fmaxf(0.45f, size * 2.2f)));
+                if (patron_demo && strcmp(it->category, "personaje") != 0) { // un animal: los dos en fila, de costado
+                    float span = 2.0f * fmaxf(it->l, 0.3f) + 0.6f;
+                    cam.target.x += (span - fmaxf(it->l, 0.3f)) * 0.5f;
+                    cam.position = Vector3Add(cam.target, Vector3Scale(Vector3Normalize((Vector3){ 0.25f, 0.3f, 1.0f }), span * 1.05f));
+                } else if (patron_demo) { // --patron: de cerca, el guardado o el empunado (ga_draw_patron_demo), de frente o de espaldas
+                    cam.target.z += patron_demo == 2 ? 0.95f : -0.95f;
+                    Vector3 dir = patron_back ? (Vector3){ -1.0f, 0.3f, -0.55f } : (Vector3){ 1.0f, 0.3f, 0.55f };
+                    cam.position = Vector3Add(cam.target, Vector3Scale(Vector3Normalize(dir), hgt * 1.25f));
+                }
             }
         }
         terrain_update(&terrain, player.pos);
@@ -1922,6 +1938,7 @@ int main(int argc, char **argv) {
             vegetation_look(cam, &climate, (float)GetTime()); // las matas del inventario en la galeria (props)
         }
         if (gallery_mode && kit_type < 0 && feat_group < 0) gallery_draw(&gallery);
+        if (patron_demo && seen) ga_draw_patron_demo(&g_props, &g_inventory, seen->item->id, seen->pos, 1.0f);
         if (feat_group >= 0)
             for (int row = 0; row < FEAT_GROUPS[feat_group].n; row++)
                 for (int v = 0; v < VF_VARIANTS; v++) {
@@ -1935,8 +1952,8 @@ int main(int argc, char **argv) {
                 for (int v = 0; v < BK_VARIANTS; v++)
                     voxs_draw_kit((BkType)kit_type, (Region)(kit_region >= 0 ? kit_region : row), v, kit_spot(&terrain, kit_type, row, v), 0.0f, 1.0f, WHITE);
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
-        if (gallery_mode) player_draw(&player);
-        else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
+        if (gallery_mode && !patron_demo) player_draw(&player); // con --patron, sin el jugador (tapaba a los de la prueba)
+        else if (!gallery_mode) cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) forge_draw_world(&terrain, player.pos); // las vetas de hierro cercanas
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime(), clock_is_night(world_time));
         if (!gallery_mode) wd_draw_world(&g_actions, &g_props, &terrain, &player, (float)GetTime());
@@ -2150,6 +2167,7 @@ int main(int argc, char **argv) {
     voxs_unload();
     trees_unload();
     au_unload();
+    model_light_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();
     return 0;

@@ -3057,6 +3057,15 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
             float fit = !anim_is_stroke(clip) ? 0.0f : hs.move > 1 ? e->move_anim : e->windup > 0.0f ? e->windup + 0.45f : e->attack_anim;
             props_draw_item_track(props, own ? it : base, at, e->yaw - PI / 2.0f, clip, tt, fit, &tracks[i % CB_MAX_ENEMIES]);
             props_set_tint(light);
+            // Lo que lleva (src/sim/combat.c: su armadura, su arma, su escudo, su arco): en pelea, en la mano y el escudo
+            // embrazado; si no, guardado. Muerto o abatido, solo lo puesto (lo de las manos lo solto: su botin).
+            bool fighting = e->state == EN_CHASE || e->attack_anim > 0.0f || e->windup > 0.0f || e->blocking;
+            bool hands = !dead && !downed && e->state != EN_HOSTAGE;
+            const InvItem *weapon = hands && e->armed && def->weapon ? inventory_find(ga->inv, def->weapon) : NULL;
+            const InvItem *shield = hands && e->shield && def->shield ? inventory_find(ga->inv, def->shield) : NULL;
+            const InvItem *bow = hands && !shield && def->ranged ? inventory_find(ga->inv, def->ranged) : NULL;
+            ga_draw_gear(props, ga->inv, own ? it : base, at, e->yaw - PI / 2.0f, &tracks[i % CB_MAX_ENEMIES], tt, &e->armor, weapon,
+                         fighting && !hs.ranged, shield ? shield : bow, shield ? fighting : hs.ranged != 0, light);
             continue;
         }
         // Sin modelo: cuerpo articulado con su armadura (y su escudo).

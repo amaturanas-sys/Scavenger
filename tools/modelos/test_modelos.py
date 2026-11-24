@@ -427,9 +427,28 @@ def test_animales_fantasma(tmp):
         all(abs(abs(x) - 0.45) < 0.08 for x in patas), patas
 
 
+def test_capa_de_afuera(tmp):
+    """Una cascara con grosor (como rigged-model.glb): una esfera hacia afuera y otra, 4 cm adentro, mirando al hueco.
+    Quedan solo las caras de la de afuera; una esfera sola queda entera. Y un agujero chico, tapado con el sentido de
+    sus vecinas."""
+    import humanoide
+    afuera = trimesh.creation.icosphere(subdivisions=3, radius=1.0)
+    adentro = trimesh.creation.icosphere(subdivisions=3, radius=0.96)
+    v = np.concatenate([afuera.vertices, adentro.vertices])
+    f = np.concatenate([afuera.faces, adentro.faces[:, ::-1] + len(afuera.vertices)])
+    m = lowres.capa_de_afuera(v, f)
+    n = len(afuera.faces)
+    assert m[:n].all() and not m[n:].any(), (m[:n].mean(), m[n:].mean())
+    assert lowres.capa_de_afuera(afuera.vertices, afuera.faces).all()
+    f2 = humanoide.tapar_agujeros(np.asarray(afuera.faces[1:], dtype=np.int64))
+    e = np.concatenate([f2[:, [0, 1]], f2[:, [1, 2]], f2[:, [2, 0]]])
+    dirigidas = set(map(tuple, e.tolist()))
+    assert len(f2) == n and all((b, a) in dirigidas for a, b in e.tolist()), len(f2)
+
+
 def main():
     tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave, test_refs_anigen,
-             test_refs_anigen_registro, test_adaptar_oga, test_animales, test_animales_fantasma]
+             test_refs_anigen_registro, test_adaptar_oga, test_animales, test_animales_fantasma, test_capa_de_afuera]
     failed = 0
     tmp = tempfile.mkdtemp(prefix="modelos-")
     try:
