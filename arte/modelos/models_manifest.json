@@ -647,31 +647,23 @@
       "updated_at": "2026-11-08T18:35:53+00:00"
     },
     "arma.corta.daga": {
-      "file": "assets/models/arma/corta/daga.glb",
+      "file": "arte/fuentes/props/modelos/daga.glb",
       "category": "arma",
       "has_rig": false,
       "source": {
-        "tool": "otro",
+        "tool": "patron",
         "url": "",
-        "file": "t46.png",
-        "sha256": "dcf39a01aea154483e2c3935ae973eae50b9ed1df9390071128b639fbefb2b29"
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "cbcae23ab49b016048f72f8474652807e65369386c2e9b095c4551c042b1ed2a"
       },
       "params": {
-        "piezas": "plana",
-        "filas": 4,
-        "fila": 3,
-        "invertir": true,
-        "agarre": "auto",
-        "segmentos": 8,
-        "grosor": 0.03,
-        "cresta": false,
-        "textura": [
-          256,
-          256
-        ]
+        "malla": "daga",
+        "forma": "arma",
+        "img": "daga-1",
+        "punta": "abajo",
+        "agarre": 0.12
       },
-      "tris": 76,
-      "updated_at": "2026-11-08T13:57:10+00:00"
+      "updated_at": "2026-11-24T19:59:23+00:00"
     },
     "arma.corta.hacha_mano": {
       "file": "assets/models/arma/corta/hacha_mano.glb",
@@ -701,214 +693,138 @@
       "updated_at": "2026-11-08T13:57:09+00:00"
     },
     "arma.corta.maza": {
-      "file": "assets/models/arma/corta/maza.glb",
+      "file": "arte/fuentes/props/modelos/maza_pinchos.glb",
       "category": "arma",
       "has_rig": false,
       "source": {
-        "tool": "otro",
+        "tool": "patron",
         "url": "",
-        "file": "t47.png",
-        "sha256": "8ce4a7a3d6f209e3d28ab581002314f282fed617b1b4144c3c57e9437e6caba7"
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "ba41f7eb120b21a92b307009e35bfca5a784e029f5c974247800c21e2fc3cac4"
       },
       "params": {
-        "piezas": "revolucion",
-        "filas": 4,
-        "fila": 2,
-        "invertir": false,
-        "agarre": "auto",
-        "segmentos": 8,
-        "grosor": null,
-        "cresta": false,
-        "textura": [
-          256,
-          256
-        ]
+        "malla": "maza_pinchos",
+        "forma": "arma",
+        "img": "maza_pinchos-1",
+        "punta": "arriba",
+        "agarre": 0.12
       },
-      "tris": 80,
-      "updated_at": "2026-11-08T13:57:12+00:00"
+      "updated_at": "2026-11-24T19:59:26+00:00"
     },
     "arma.corta.sable": {
-      "file": "assets/models/arma/corta/sable.glb",
+      "file": "arte/fuentes/props/modelos/sable.glb",
       "category": "arma",
       "has_rig": false,
       "source": {
-        "tool": "otro",
+        "tool": "patron",
         "url": "",
-        "file": "t47.png",
-        "sha256": "8ce4a7a3d6f209e3d28ab581002314f282fed617b1b4144c3c57e9437e6caba7"
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "603c55269b7825dab3e519578380757848f8efa9e7412631c5491c12e9413829"
       },
       "params": {
-        "piezas": "plana",
-        "filas": 4,
-        "fila": 1,
-        "invertir": false,
-        "agarre": "auto",
-        "segmentos": 8,
-        "grosor": 0.03,
-        "cresta": false,
-        "miembros": false,
-        "res": 96,
-        "umbral": 40,
-        "ancla": null,
-        "girar": 90,
-        "cruz": null,
-        "cruz_columna": null,
-        "textura": [
-          256,
-          256
-        ]
+        "malla": "sable",
+        "forma": "arma",
+        "img": "sable-3",
+        "punta": "abajo",
+        "agarre": 0.07,
+        "filo": "convexo",
+        "patron": "Curved sword"
       },
-      "tris": 116,
-      "updated_at": "2026-11-08T18:33:39+00:00"
+      "updated_at": "2026-11-24T19:59:21+00:00"
     },
     "arma.larga.espada_larga": {
-      "file": "assets/models/arma/larga/espada_larga.glb",
+      "file": "arte/fuentes/props/modelos/espada.glb",
       "category": "arma",
       "has_rig": false,
       "source": {
-        "tool": "otro",
+        "tool": "patron",
         "url": "",
-        "file": "t46.png",
-        "sha256": "dcf39a01aea154483e2c3935ae973eae50b9ed1df9390071128b639fbefb2b29"
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "8cc89ca1e24e3051002c5179167ee49de0071e0b04fdfcd3bcfbba5d989eb9f6"
       },
       "params": {
-        "piezas": "plana",
-        "filas": 4,
-        "fila": 1,
-        "invertir": true,
-        "agarre": "auto",
-        "segmentos": 8,
-        "grosor": 0.03,
-        "cresta": false,
-        "textura": [
-          256,
-          256
-        ]
+        "malla": "espada",
+        "forma": "arma",
+        "img": "espada-3",
+        "punta": "abajo",
+        "agarre": 0.08,
+        "patron": "white_mesh(25)"
       },
-      "tris": 116,
-      "updated_at": "2026-11-08T13:57:08+00:00"
+      "updated_at": "2026-11-24T19:59:24+00:00"
     },
     "armadura.casco.bronce": {
-      "file": "assets/models/armadura/casco/bronce.glb",
+      "file": "arte/fuentes/props/modelos/casco_carrilleras.glb",
       "category": "armadura",
       "has_rig": false,
       "source": {
-        "tool": "otro",
+        "tool": "patron",
         "url": "",
-        "file": "t48.png",
-        "sha256": "57e7b9d6052d1266349ff387449b048188bc09c94b6d25c040fb553c76c28df8"
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "2b1439c25817273f817b1d7f5dc75b85a53c44d57f7a90781620eb0a2a224599"
       },
       "params": {
-        "piezas": "secciones",
-        "filas": 4,
-        "fila": 3,
-        "invertir": false,
-        "agarre": "base",
-        "segmentos": 8,
-        "grosor": null,
-        "cresta": true,
-        "textura": [
-          256,
-          256
-        ]
+        "malla": "casco_carrilleras",
+        "forma": "casco",
+        "img": "casco_bronce-2",
+        "az": 30
       },
-      "tris": 144,
-      "updated_at": "2026-11-08T13:57:15+00:00"
+      "updated_at": "2026-11-25T05:36:00+00:00"
     },
     "armadura.casco.escamas_hierro": {
-      "file": "assets/models/armadura/casco/escamas_hierro.glb",
+      "file": "arte/fuentes/props/modelos/casco_nasal.glb",
       "category": "armadura",
       "has_rig": false,
       "source": {
-        "tool": "otro",
+        "tool": "patron",
         "url": "",
-        "file": "t48.png",
-        "sha256": "57e7b9d6052d1266349ff387449b048188bc09c94b6d25c040fb553c76c28df8"
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "6b2c21be2bd5cdf89c6f3215bc05ba40f57c71f8d4aa087abb93149af335d53b"
       },
       "params": {
-        "piezas": "secciones",
-        "filas": 4,
-        "fila": 4,
-        "invertir": false,
-        "agarre": "base",
-        "segmentos": 8,
-        "grosor": null,
-        "cresta": false,
-        "miembros": false,
-        "res": 96,
-        "umbral": 40,
-        "ancla": null,
-        "girar": 0,
-        "cruz": null,
-        "cruz_columna": null,
-        "textura": [
-          256,
-          256
-        ]
+        "malla": "casco_nasal",
+        "forma": "casco",
+        "img": "casco_hierro-4",
+        "az": 0
       },
-      "tris": 144,
-      "updated_at": "2026-11-08T18:33:42+00:00"
+      "updated_at": "2026-11-25T05:36:15+00:00"
     },
     "armadura.casco.laminar_cuero": {
-      "file": "assets/models/armadura/casco/laminar_cuero.glb",
+      "file": "arte/fuentes/props/modelos/casco_costillas.glb",
       "category": "armadura",
       "has_rig": false,
       "source": {
-        "tool": "otro",
+        "tool": "patron",
         "url": "",
-        "file": "t48.png",
-        "sha256": "57e7b9d6052d1266349ff387449b048188bc09c94b6d25c040fb553c76c28df8"
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "4dbc4175fab96b9ad9115d1d6843431d6b1048998c99036cdedbb0c1165fca06"
       },
       "params": {
-        "piezas": "secciones",
-        "filas": 4,
-        "fila": 1,
-        "invertir": false,
-        "agarre": "base",
-        "segmentos": 8,
-        "grosor": null,
-        "cresta": false,
-        "textura": [
-          256,
-          256
-        ]
+        "malla": "casco_costillas",
+        "forma": "casco",
+        "img": "casco_hierro-3",
+        "az": 0,
+        "tono": "cuero",
+        "mezcla": 0.85
       },
-      "tris": 144,
-      "updated_at": "2026-11-08T13:57:14+00:00"
+      "updated_at": "2026-11-25T05:35:45+00:00"
     },
     "armadura.casco.malla": {
-      "file": "assets/models/armadura/casco/malla.glb",
+      "file": "arte/fuentes/props/modelos/casco_ala.glb",
       "category": "armadura",
       "has_rig": false,
       "source": {
-        "tool": "otro",
+        "tool": "patron",
         "url": "",
-        "file": "t48.png",
-        "sha256": "57e7b9d6052d1266349ff387449b048188bc09c94b6d25c040fb553c76c28df8"
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "433b7c4a029a4e4a67b4d16fdd2e057708ff975dc333e4ccfcc9a966e3709687"
       },
       "params": {
-        "piezas": "secciones",
-        "filas": 4,
-        "fila": 2,
-        "invertir": false,
-        "agarre": "base",
-        "segmentos": 8,
-        "grosor": null,
-        "cresta": false,
-        "miembros": false,
-        "res": 96,
-        "umbral": 40,
-        "ancla": null,
-        "girar": 0,
-        "cruz": null,
-        "cruz_columna": null,
-        "textura": [
-          256,
-          256
-        ]
+        "malla": "casco_ala",
+        "forma": "casco",
+        "img": "casco_hierro-1",
+        "az": 0
       },
-      "tris": 144,
-      "updated_at": "2026-11-08T18:33:41+00:00"
+      "updated_at": "2026-11-25T05:47:40+00:00"
     },
     "escudo.mano.lamina": {
       "file": "assets/models/escudo/mano/lamina.glb",
@@ -945,31 +861,21 @@
       "updated_at": "2026-11-08T18:33:40+00:00"
     },
     "escudo.mano.umbo": {
-      "file": "assets/models/escudo/mano/umbo.glb",
+      "file": "arte/fuentes/props/modelos/escudo_redondo_1.glb",
       "category": "escudo",
       "has_rig": false,
       "source": {
-        "tool": "otro",
+        "tool": "patron",
         "url": "",
-        "file": "t46.png",
-        "sha256": "dcf39a01aea154483e2c3935ae973eae50b9ed1df9390071128b639fbefb2b29"
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "ae9ba2fa612332e825b6db0ff385899fca1ab7775f12317a8c7e8e6dd7ef6735"
       },
       "params": {
-        "piezas": "disco",
-        "filas": 4,
-        "fila": 4,
-        "invertir": false,
-        "agarre": "escudo",
-        "segmentos": 12,
-        "grosor": null,
-        "cresta": false,
-        "textura": [
-          256,
-          256
-        ]
+        "malla": "escudo_redondo_1",
+        "forma": "escudo",
+        "img": "escudo_bronce-4"
       },
-      "tris": 96,
-      "updated_at": "2026-11-08T13:57:13+00:00"
+      "updated_at": "2026-11-24T19:59:46+00:00"
     },
     "estructura.vivienda.yurta_comun": {
       "file": "assets/models/estructura/vivienda/yurta_comun.glb",
@@ -1323,6 +1229,331 @@
       },
       "tris": 1298,
       "updated_at": "2026-11-08T18:37:33+00:00"
+    },
+    "armadura.torso.laminar_cuero": {
+      "file": "arte/fuentes/props/modelos/chaleco_largo.glb",
+      "category": "armadura",
+      "has_rig": true,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "078ed6aee1838d10d6a41f0fb61685952a1e99274ccfa8f1977c8a1e084e6934"
+      },
+      "params": {
+        "malla": "chaleco_largo",
+        "forma": "torso",
+        "img": "chaleco_cuero-1",
+        "patron": "white_mesh(3)"
+      },
+      "updated_at": "2026-11-24T19:57:03+00:00"
+    },
+    "armadura.botas.laminar_cuero": {
+      "file": "arte/fuentes/props/modelos/botas_montar.glb",
+      "category": "armadura",
+      "has_rig": true,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "47b9e1497616a174d4bb2b66d44df50c23a54f8b85d9feefffc7e3bac5b445c4"
+      },
+      "params": {
+        "malla": "botas_montar",
+        "forma": "botas",
+        "img": "botas_montar-4",
+        "patron": [
+          "white_mesh(18) 1",
+          "white_mesh(18) 2"
+        ]
+      },
+      "updated_at": "2026-11-24T19:58:20+00:00"
+    },
+    "armadura.casco.oro_padre": {
+      "file": "arte/fuentes/props/modelos/casco_aguila.glb",
+      "category": "armadura",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "92bd6f19cf6622975825699a02082136b7468836742dd5ab76f87dd43b537f81"
+      },
+      "params": {
+        "malla": "casco_aguila",
+        "forma": "casco",
+        "img": "casco_aguila-1",
+        "az": 270,
+        "tono": "oro",
+        "mezcla": 0.6,
+        "patron": "model"
+      },
+      "updated_at": "2026-11-25T05:34:40+00:00"
+    },
+    "arma.distancia.arco_simple": {
+      "file": "arte/fuentes/props/modelos/arco.glb",
+      "category": "arma",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "7323bb6edd6261c9799ae227323277d0a4b4d6d448c1cb1868d1616478ec73e4"
+      },
+      "params": {
+        "malla": "arco",
+        "forma": "arco",
+        "img": "arco_simple-2",
+        "agarre": 0.5,
+        "patron": "white_mesh(27)",
+        "plana": true
+      },
+      "updated_at": "2026-11-24T19:59:30+00:00"
+    },
+    "utileria.objeto.aljaba": {
+      "file": "arte/fuentes/props/modelos/aljaba.glb",
+      "category": "utileria",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "cfa31f024d4a1043a34a0289640f5310b36345c8c05ef58fc1cbeded9758f082"
+      },
+      "params": {
+        "malla": "aljaba",
+        "forma": "objeto",
+        "img": "aljaba-2",
+        "patron": "white_mesh(28)"
+      },
+      "updated_at": "2026-11-24T19:59:34+00:00"
+    },
+    "escudo.mano.cuero": {
+      "file": "arte/fuentes/props/modelos/escudo_redondo_3.glb",
+      "category": "escudo",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "1ef9cff7557b8bc947df6ed880de27450dc7b95d95bb14604c09fdf702a243be"
+      },
+      "params": {
+        "malla": "escudo_redondo_3",
+        "forma": "escudo",
+        "img": "escudo_madera-1",
+        "patron": "hy3d-model(3)"
+      },
+      "updated_at": "2026-11-24T19:59:41+00:00"
+    },
+    "armadura.torso.fieltro": {
+      "file": "arte/fuentes/props/modelos/coraza_faldar.glb",
+      "category": "armadura",
+      "has_rig": true,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "d9a97338caf20731202ce7ca7b8fa3e959cd196e41bb695f1b044cf78ce896a1"
+      },
+      "params": {
+        "malla": "coraza_faldar",
+        "forma": "torso",
+        "img": "coraza_cuero-4",
+        "tono": "fieltro",
+        "mezcla": 0.85
+      },
+      "updated_at": "2026-11-24T19:57:28+00:00"
+    },
+    "armadura.torso.escamas_hierro": {
+      "file": "arte/fuentes/props/modelos/laminar_hombreras.glb",
+      "category": "armadura",
+      "has_rig": true,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "43e77148e8475ad58de54893be6e26f109debcee263126e60e1de660cb007866"
+      },
+      "params": {
+        "malla": "laminar_hombreras",
+        "forma": "torso",
+        "img": "laminar_hombreras-1",
+        "tono": "hierro",
+        "mezcla": 0.8
+      },
+      "updated_at": "2026-11-24T19:57:50+00:00"
+    },
+    "armadura.torso.culto": {
+      "file": "arte/fuentes/props/modelos/coraza_lisa.glb",
+      "category": "armadura",
+      "has_rig": true,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "7f38f758c4a0ce7134b98a0581ae18291bcf117cabb7ecc40c58e81511b6622f"
+      },
+      "params": {
+        "malla": "coraza_lisa",
+        "forma": "torso",
+        "img": "pectoral_oro-1"
+      },
+      "updated_at": "2026-11-24T19:58:13+00:00"
+    },
+    "armadura.botas.fieltro": {
+      "file": "arte/fuentes/props/modelos/botas_montar.glb",
+      "category": "armadura",
+      "has_rig": true,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "47b9e1497616a174d4bb2b66d44df50c23a54f8b85d9feefffc7e3bac5b445c4"
+      },
+      "params": {
+        "malla": "botas_montar",
+        "forma": "botas",
+        "img": "botas_fieltro-2",
+        "patron": [
+          "white_mesh(18) 1",
+          "white_mesh(18) 2"
+        ]
+      },
+      "updated_at": "2026-11-24T19:58:28+00:00"
+    },
+    "armadura.casco.fieltro": {
+      "file": "arte/fuentes/props/modelos/gorro_piel.glb",
+      "category": "armadura",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "51bb35a7e53195ebab76c72cce5b2b21ff9e04206bc20a063670a49b8d2fb09e"
+      },
+      "params": {
+        "malla": "gorro_piel",
+        "forma": "casco",
+        "img": "gorro_piel-1",
+        "az": 0
+      },
+      "updated_at": "2026-11-25T05:35:01+00:00"
+    },
+    "armadura.casco.culto": {
+      "file": "arte/fuentes/props/modelos/casco_calado.glb",
+      "category": "armadura",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "3eeb02dc1cca4a9503c9e7348be99cd7d8a76c37999b3bc02a5fbf6a1f0ceede"
+      },
+      "params": {
+        "malla": "casco_calado",
+        "forma": "casco",
+        "img": "casco_bronce-1",
+        "az": 30
+      },
+      "updated_at": "2026-11-25T05:35:15+00:00"
+    },
+    "armadura.casco.mascara_culto": {
+      "file": "arte/fuentes/props/modelos/casco_visera.glb",
+      "category": "armadura",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "4c988799543d6832ee24ed7b693e18ab61d819ac8fb53a9ba34d22b9a8a52ff9"
+      },
+      "params": {
+        "malla": "casco_visera",
+        "forma": "casco",
+        "img": "casco_escamas-3",
+        "az": 330
+      },
+      "updated_at": "2026-11-25T05:35:30+00:00"
+    },
+    "arma.larga.lanza": {
+      "file": "arte/fuentes/props/modelos/lanza.glb",
+      "category": "arma",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "37e6ba129ca030ed3effe4dc15523bb13604e581801d45d85a4bb6218ae8f79b"
+      },
+      "params": {
+        "malla": "lanza",
+        "forma": "arma",
+        "img": "lanza-1",
+        "punta": "arriba",
+        "agarre": 0.38,
+        "patron": "white_mesh(24)",
+        "plana": true
+      },
+      "updated_at": "2026-11-24T19:59:27+00:00"
+    },
+    "arma.larga.alabarda": {
+      "file": "arte/fuentes/props/modelos/alabarda.glb",
+      "category": "arma",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "f786f05573d3459500201e2ffc42246f1013bbf3d49c16cce828ff1b97625560"
+      },
+      "params": {
+        "malla": "alabarda",
+        "forma": "arma",
+        "img": "hacha_asta-2",
+        "punta": "arriba",
+        "agarre": 0.35,
+        "patron": "white_mesh(26)",
+        "plana": true
+      },
+      "updated_at": "2026-11-24T19:59:29+00:00"
+    },
+    "utileria.objeto.antorcha": {
+      "file": "arte/fuentes/props/modelos/antorcha.glb",
+      "category": "utileria",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "0f629e6a9d8bf0dce1441420ea83e80b28f72f4c7a9b7855244ae8769043c4ee"
+      },
+      "params": {
+        "malla": "antorcha",
+        "forma": "arma",
+        "img": "antorcha-2",
+        "punta": "arriba",
+        "agarre": 0.25,
+        "patron": "white_mesh(20)"
+      },
+      "updated_at": "2026-11-24T19:59:31+00:00"
+    },
+    "escudo.mano.culto": {
+      "file": "arte/fuentes/props/modelos/escudo_redondo_2.glb",
+      "category": "escudo",
+      "has_rig": false,
+      "source": {
+        "tool": "patron",
+        "url": "",
+        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "sha256": "c4354d40e04ec4d54da9dd3a0e7317ad1b57281b86adba99d56778d318b12dcf"
+      },
+      "params": {
+        "malla": "escudo_redondo_2",
+        "forma": "escudo",
+        "img": "escudo_bronce-3"
+      },
+      "updated_at": "2026-11-24T19:59:52+00:00"
     }
   }
 }

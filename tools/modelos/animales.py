@@ -89,6 +89,9 @@ PARA_RIGGEAR = ["animal.ganado.vaca", "animal.montura.caballo_estepario", "anima
                 "animal.salvaje.jabali", "animal.salvaje.lobo", "animal.salvaje.lobo_2", "animal.salvaje.oso_polar",
                 "animal.salvaje.perro_salvaje", "animal.salvaje.tigre"]
 PATAS = ("di", "dd", "ti", "td")  # delantera / trasera, izquierda (-Z) / derecha (+Z)
+# Los que van centrados por sus huellas (el medio de las patas en el suelo) y no por los hombros y la cadera: el oso
+# polar estira las patas de atras (las huellas, 19 cm detras de la cadera) y su base quedaba corrida hacia atras.
+CENTRO_HUELLAS = {"animal.salvaje.oso_polar"}
 NOTA = ("Malla de IMPORTED/Animals/Models (n.º {n} de la ficha), con su esqueleto de cuadrúpedo y sus clips "
         "(tools/modelos/animales.py).")
 NOTA_PINTADA = ("Malla low-poly con textura (estilo PS2) de arte/modelos/para_riggear/, desde una hoja de tres vistas, "
@@ -829,8 +832,12 @@ def armar(malla_t, it, log=print):
     v = v - [0.0, v[:, 1].min(), 0.5 * (v[:, 2].min() + v[:, 2].max())]
     P = muestras(v, f)
     m = medir(P)
-    # El medio, entre las patas delanteras y las traseras (no el de la caja: la cola larga del leopardo lo corre).
-    dx = 0.5 * (m["xd"] + m["xt"])
+    # El medio, entre las patas delanteras y las traseras (no el de la caja: la cola larga del leopardo lo corre): arriba,
+    # en los hombros y la cadera; en CENTRO_HUELLAS, abajo, en las huellas.
+    if it["id"] in CENTRO_HUELLAS:
+        dx = 0.25 * sum(m["ejes"][n][0, 0] for n in PATAS)
+    else:
+        dx = 0.5 * (m["xd"] + m["xt"])
     v, P = v - [dx, 0, 0], P - [dx, 0, 0]
     m = medir(P)
     e = armar_esqueleto(P, m)
@@ -849,7 +856,9 @@ def armar(malla_t, it, log=print):
     sol /= np.linalg.norm(sol)
     luz = 0.72 + 0.38 * np.clip(n @ sol, 0.0, 1.0)
     caras = np.clip(cr[fr].mean(axis=1) * luz[:, None], 0, 255)
-    datos = escribir(e, tri.reshape(-1, 3), np.repeat(n, 3, axis=0), np.repeat(caras, 3, axis=0),
+    # Las normales, suaves entre caras de menos de 40 grados y cortadas en las aristas mas duras (el criterio del patron:
+    # tools/modelos/patron.py); el color, cara por cara, con la luz de su cara.
+    datos = escribir(e, tri.reshape(-1, 3), lowres.normales_aristas(vr, fr).reshape(-1, 3), np.repeat(caras, 3, axis=0),
                      joints[fr].reshape(-1, 4), weights[fr].reshape(-1, 4), animaciones, it["id"])
     armar.ultimo = dict(e=e, m=m, v=vr, f=fr, joints=joints, weights=weights)
     c = vr.max(0) - vr.min(0)

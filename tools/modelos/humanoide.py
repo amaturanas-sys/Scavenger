@@ -462,6 +462,17 @@ def malla(path):
         nombres = [doc["nodes"][k].get("name", "").split(":")[-1].replace("mixamorig", "") for k in skin["joints"]]
         articulaciones = np.array([W[k][:3, 3] for k in skin["joints"]])  # en el espacio de la piel, como pos
         pesos = (jo, we, nombres, (doc, binario, skin["joints"], nombres), articulaciones)
+    # Una malla con grosor (rigged-model.glb es una cascara de unos 4 mm, con la capa de adentro mirando al hueco) gasta
+    # la mitad de los triangulos en esa capa, que no se ve, y en la reducida las dos capas se cruzan: solo la de afuera
+    # (lowres.capa_de_afuera). El maniqui femenino (una sola capa) queda entero.
+    afuera = lowres.capa_de_afuera(pos, idx)
+    if afuera.mean() < 0.6:
+        usados = np.unique(idx[afuera])
+        nuevo = np.full(len(pos), -1, np.int64)
+        nuevo[usados] = np.arange(len(usados))
+        idx, pos, color = nuevo[idx[afuera]], pos[usados], color[usados]
+        if pesos is not None:
+            pesos = (pesos[0][usados], pesos[1][usados]) + pesos[2:]
     return pos, idx, color, pesos
 
 
@@ -478,8 +489,9 @@ def reducir(pos, idx, color, tris):
             break
         p2, f2 = fast_simplification.simplify(p2, f2, min(0.9, 1.0 - tris / len(f2)))
     # Sin las astillas que deja la reduccion de una punta del cuerpo a otra (un pie con una mano, a mas de un tercio del
-    # alto). Los lados largos de un cuerpo de 1200 triangulos (un muslo, el antebrazo: hasta un quinto del alto) se
-    # quedan: sin ellos la malla quedaba con agujeros y el brazo, en tiras sueltas que en los golpes eran astillas.
+    # alto). Los lados largos de un cuerpo reducido (un muslo, el antebrazo: con 1200 triangulos, hasta un quinto del
+    # alto) se quedan: sin ellos la malla quedaba con agujeros y el brazo, en tiras sueltas que en los golpes eran
+    # astillas.
     t = p2[f2]
     lado = np.max(np.linalg.norm(t - np.roll(t, 1, axis=1), axis=2), axis=1)
     f2 = f2[lado < 0.3 * (pos[:, 1].max() - pos[:, 1].min())]
@@ -489,8 +501,31 @@ def reducir(pos, idx, color, tris):
     e = np.concatenate([f2[:, [0, 1]], f2[:, [1, 2]]])
     _, pieza = connected_components(coo_matrix((np.ones(len(e)), (e[:, 0], e[:, 1])), shape=(len(p2), len(p2))), directed=False)
     f2 = f2[np.bincount(pieza)[pieza[f2[:, 0]]] >= 8]
+    f2 = tapar_agujeros(f2)
     _, near = cKDTree(pos).query(p2)
     return p2.astype(float), f2.astype(np.int64), color[near], near
+
+
+def tapar_agujeros(f, maximo=16):
+    """Los agujeros chicos que deja la reduccion (junto al pulgar, la punta de un pie: bordes de hasta maximo
+    vertices), tapados en abanico con el sentido de sus vecinas: sin ellos, de cerca se ve a traves del cuerpo."""
+    e = np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]])
+    dirigidas = set(map(tuple, e.tolist()))
+    sig = {}
+    for a, b in e.tolist():
+        if (b, a) not in dirigidas:  # arista de borde: el agujero la recorre al reves
+            sig.setdefault(b, []).append(a)
+    nuevas = []
+    for s in list(sig):
+        while sig[s]:  # cada lazo que sale de s (dos, si el agujero es un ocho con un vertice comun)
+            lazo, x = [s], sig[s].pop()
+            while x != s and len(lazo) <= maximo and sig.get(x):
+                lazo.append(x)
+                x = s if s in sig[x] else sig[x][0]  # en un vertice con dos salidas, la que cierra el lazo
+                sig[lazo[-1]].remove(x)
+            if x == s and 3 <= len(lazo) <= maximo:
+                nuevas += [(lazo[0], lazo[i], lazo[i + 1]) for i in range(1, len(lazo) - 1)]
+    return np.concatenate([f, np.array(nuevas, dtype=f.dtype).reshape(-1, 3)]) if nuevas else f
 
 
 # ------------------------------------------------------------------ armar un id
@@ -602,6 +637,7 @@ def armar(esq, malla_t, it, log=print, ual=()):
     nombres = list(PARTS)
     joints = np.zeros((len(v), 4), np.uint8)
     weights = np.zeros((len(v), 4), np.float32)
+    jf = wf = None  # los de cada vertice de la malla entera (para las prendas: tools/modelos/patron.py)
     if pesos is not None:  # la malla riggeada: los pesos de su vertice mas cercano, en los huesos del maniqui
         jo, we, huesos = pesos[:3]
         faltan = [huesos[u] for u in np.unique(jo[we > 1e-6]) if par_de(huesos[u]) is None]  # los que llevan peso
@@ -610,6 +646,7 @@ def armar(esq, malla_t, it, log=print, ual=()):
         mapa = np.array([esq.idx[par_de(h)] if par_de(h) else 0 for h in huesos])
         joints[:] = mapa[jo[cerca]]
         weights[:] = we[cerca] / np.maximum(we[cerca].sum(axis=1, keepdims=True), 1e-9)
+        jf, wf = mapa[jo], we / np.maximum(we.sum(axis=1, keepdims=True), 1e-9)
         nombres = []  # sin los automaticos
         log(f"  pesos de la malla riggeada: {len(huesos)} huesos en los del maniqui")
     for pi, pn in enumerate(nombres):
@@ -668,9 +705,15 @@ def armar(esq, malla_t, it, log=print, ual=()):
     sol /= np.linalg.norm(sol)
     luz = 0.72 + 0.38 * np.clip(n @ sol, 0.0, 1.0)  # mas suave que la de lo quieto: el cuerpo se mueve
     caras = np.clip(col[f].mean(axis=1) * luz[:, None], 0, 255)
-    datos = escribir(esq, TI, RI, root, yaw, s, vi[f].reshape(-1, 3), np.repeat(n, 3, axis=0), np.repeat(caras, 3, axis=0),
+    # Las normales, suaves entre caras de menos de 40 grados y cortadas en las aristas mas duras (el criterio del patron:
+    # tools/modelos/patron.py); el color, cara por cara, con la luz de su cara.
+    datos = escribir(esq, TI, RI, root, yaw, s, vi[f].reshape(-1, 3), lowres.normales_aristas(vi, f).reshape(-1, 3),
+                     np.repeat(caras, 3, axis=0),
                      joints[f].reshape(-1, 4), weights[f].reshape(-1, 4), ibm, it["id"], del_juego)
-    armar.ultimo = dict(v=v, joints=joints, weights=weights, skin=skin, PT=PT, PI=PI, parte=parte)
+    # Lo que necesita tools/modelos/patron.py para vestir este cuerpo: la malla entera en la pose T (en las medidas del
+    # esqueleto) con sus pesos, como se pasa a ella (a_esqueleto), el paso de la T al reposo (skin, s) y el esqueleto.
+    armar.ultimo = dict(v=v, joints=joints, weights=weights, skin=skin, PT=PT, QT=QT, PI=PI, QI=QI, parte=parte, m=m, idx=idx,
+                        jf=jf, wf=wf, a_esqueleto=a_esqueleto, s=s, TI=TI, RI=RI, root=root, yaw=yaw, ibm=ibm, MT=MT)
     caja = vi.max(0) - vi.min(0)
     log(f"{it['id']}: {len(f)} triangulos, {caja[0]:.2f} x {caja[1]:.2f} x {caja[2]:.2f} m (largo x alto x ancho), "
         f"{len(CLIPS)} clips")
@@ -764,7 +807,7 @@ def main():
         raise SystemExit("\n".join(errores))
     por_id = {it["id"]: it for it in items}
     filas = open(inventario.TSV, encoding="utf-8").read().split("\n")
-    malla_de = (f"la malla riggeada de arte/fuentes/humanoide ({os.path.basename(args[1])}), en la pose de su piel, reducida, con el "
+    malla_de = (f"la malla riggeada de {os.path.relpath(os.path.dirname(os.path.abspath(args[1])), ROOT)} ({os.path.basename(args[1])}), en la pose de su piel, reducida, con el "
                 "color de su textura y sus pesos (los de su esqueleto, en los huesos del maniqui)" if malla_t[3] is not None
                 else "la malla en pose T de IMPORTED/Humanoid (sample_*.glb), reducida y con el color de su textura, con "
                 "pesos automaticos")

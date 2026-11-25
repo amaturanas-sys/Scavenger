@@ -207,21 +207,11 @@ void character_draw(const CharacterPose *pose, int equip_idx) {
 
     if (eq->model.meshCount == 0) return;
 
-    Vector3 world_pos = pose->pos;
-    world_pos.y += 1.7f * pose->scale;
-
-    rlPushMatrix();
-    rlRotatef(-pose->yaw * RAD2DEG, 0, 1, 0);
-    rlRotatef(-pose->yaw * RAD2DEG, 1, 0, 0);
-
-    DrawModel(eq->model, (Vector3){ 0, 0, 0 }, pose->scale, WHITE);
-
-    // Nota: Bone attachments requieren GetBoneTransform de raymath,
-    // pero raylib 5.5 no lo expone directamente.
-    // Se puede implementar manualmente si el modelo GLB tiene
-    // transformaciones de huesos exportadas.
-
-    rlPopMatrix();
+    // El cuerpo en su lugar y con su giro (alrededor de +Y, como props_draw_item), sin corrimientos a ojo. Lo rigido que
+    // se lleva (el casco) no se cuelga aca: el juego lo dibuja con props_draw_socket (src/world/props.c), que sigue al
+    // hueso head con la matriz de su anclaje (src/world/anclajes.inc, de tools/modelos/patron.py).
+    float s = pose->scale;
+    DrawModelEx(eq->model, pose->pos, (Vector3){ 0, 1, 0 }, pose->yaw * RAD2DEG, (Vector3){ s, s, s }, WHITE);
 }
 
 void character_draw_dead(const CharacterPose *pose, int equip_idx) {
@@ -230,15 +220,13 @@ void character_draw_dead(const CharacterPose *pose, int equip_idx) {
 
     if (eq->model.meshCount == 0) return;
 
-    Vector3 world_pos = pose->pos;
-    world_pos.y += 0.7f * pose->scale;
-
+    // Tendido de espaldas en su lugar: el giro del cuerpo y despues 90 grados alrededor de su eje de oreja a oreja (+Z):
+    // la cabeza hacia atras (-X) y la cara (+X) hacia arriba. Sin corrimientos a ojo.
     rlPushMatrix();
-    rlRotatef(180, 0, 0, 1);
-    rlRotatef(-pose->yaw * RAD2DEG, 1, 0, 0);
-
+    rlTranslatef(pose->pos.x, pose->pos.y, pose->pos.z);
+    rlRotatef(pose->yaw * RAD2DEG, 0, 1, 0);
+    rlRotatef(90.0f, 0, 0, 1);
     DrawModel(eq->model, (Vector3){ 0, 0, 0 }, pose->scale, WHITE);
-
     rlPopMatrix();
 }
 

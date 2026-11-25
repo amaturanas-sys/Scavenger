@@ -6,6 +6,7 @@
 
 #include "platform.h"
 #include "sim/anim_index.h"
+#include "model_light.h"
 #include "raymath.h"
 #include "rlgl.h"
 #include "vegetation.h"
@@ -99,18 +100,42 @@ static void recolor_biome(Model *m, int biome) {
     }
 }
 
+// Las prendas, una variante por cuerpo (tools/modelos/patron.py): "dir/nombre@mujer.glb"... El comun usa la base.
+#define BODY_VARIANT 200
+static const char *const GEAR_BODY_IDS[GEAR_BODY_COUNT] = { "personaje.base.cuerpo_comun", "personaje.base.cuerpo_mujer",
+                                                            "personaje.base.cuerpo_gigante", "personaje.narrativo.protagonista" };
+static const char *const GEAR_BODY_SUFFIX[GEAR_BODY_COUNT] = { NULL, "mujer", "gigante", "protagonista" };
+
+static int gear_body(const InvItem *body) {
+    for (int i = 1; i < GEAR_BODY_COUNT; i++)
+        if (body && !strcmp(body->id, GEAR_BODY_IDS[i])) return i;
+    return 0;
+}
+
+// Lo que se mueve o se lleva puesto: con la luz del shader (src/world/model_light.h). Lo demas sigue con la suya
+// horneada.
+static bool lit_item(const InvItem *it) {
+    static const char *const CATS[] = { "personaje", "animal", "armadura", "arma", "escudo", "accesorio", "vestimenta" };
+    for (size_t i = 0; i < sizeof(CATS) / sizeof(CATS[0]); i++)
+        if (!strcmp(it->category, CATS[i])) return true;
+    return !strcmp(it->id, "utileria.objeto.aljaba") || !strcmp(it->id, "utileria.objeto.antorcha");
+}
+
 static int load_slot(Props *p, const InvItem *item, int variant) {
     for (int i = 0; i < p->cached; i++)
         if (p->cache[i].item == item && p->cache[i].variant == variant) return i;
     if (p->cached >= MODEL_CACHE_MAX) return -1;
     char path[160];
     inventory_path(item, path, sizeof(path));
-    if (variant >= 0 && variant < BIOME_VARIANT) { // "dir/nombre.glb" -> "dir/nombre@invierno.glb"
+    const char *suffix = variant >= 0 && variant < BIOME_VARIANT ? props_season_suffix(variant)
+                         : variant > BODY_VARIANT && variant < BODY_VARIANT + GEAR_BODY_COUNT ? GEAR_BODY_SUFFIX[variant - BODY_VARIANT]
+                                                                                             : NULL;
+    if (suffix) { // "dir/nombre.glb" -> "dir/nombre@invierno.glb" (o @mujer: una prenda)
         char *dot = strrchr(path, '.');
         if (!dot) return -1;
         char ext[8];
         snprintf(ext, sizeof(ext), "%s", dot);
-        snprintf(dot, sizeof(path) - (size_t)(dot - path), "@%s%s", props_season_suffix(variant), ext);
+        snprintf(dot, sizeof(path) - (size_t)(dot - path), "@%s%s", suffix, ext);
     }
     const char *full = platform_asset_path(path);
     int slot = p->cached++;
@@ -129,7 +154,9 @@ static int load_slot(Props *p, const InvItem *item, int variant) {
     p->cache[slot].model = LoadModel(full);
     p->cache[slot].loaded = p->cache[slot].model.meshCount > 0;
     platform_note_asset(full, p->cache[slot].loaded);
-    if (p->cache[slot].loaded && variant >= BIOME_VARIANT) recolor_biome(&p->cache[slot].model, variant - BIOME_VARIANT);
+    if (p->cache[slot].loaded && lit_item(item)) model_light_apply(&p->cache[slot].model);
+    if (p->cache[slot].loaded && variant >= BIOME_VARIANT && variant < BODY_VARIANT)
+        recolor_biome(&p->cache[slot].model, variant - BIOME_VARIANT);
     if (p->cache[slot].loaded) p->cache[slot].anims = LoadModelAnimations(full, &p->cache[slot].anim_count);
     return slot;
 }
@@ -174,10 +201,42 @@ static int anim_frame(const ModelAnimation *a, float t) {
     return anim_loops(a->name) ? f % a->frameCount : (f < a->frameCount ? f : a->frameCount - 1);
 }
 
+// raylib 5.5 mueve la normal de la piel con la matriz entera del hueso, con su traslacion (UpdateModelAnimation): la
+// luz del shader (model_light.h) saldria torcida al moverse. Con el shader, la normal de la pose solo girada por los
+// huesos, normalizada. Sin el, no hace falta (la luz va horneada).
+static void skin_normals(Model *m) {
+    if (!model_light_ready()) return;
+    for (int i = 0; i < m->meshCount; i++) {
+        Mesh *me = &m->meshes[i];
+        if (!me->boneMatrices || !me->normals || !me->animNormals || !me->boneIds || !me->boneWeights) continue;
+        for (int v = 0; v < me->vertexCount; v++) {
+            const float *n = &me->normals[v * 3];
+            float x = 0.0f, y = 0.0f, z = 0.0f;
+            for (int k = 0; k < 4; k++) {
+                float w = me->boneWeights[v * 4 + k];
+                if (w == 0.0f) continue;
+                const Matrix *b = &me->boneMatrices[me->boneIds[v * 4 + k]];
+                x += w * (b->m0 * n[0] + b->m4 * n[1] + b->m8 * n[2]);
+                y += w * (b->m1 * n[0] + b->m5 * n[1] + b->m9 * n[2]);
+                z += w * (b->m2 * n[0] + b->m6 * n[1] + b->m10 * n[2]);
+            }
+            float l = sqrtf(x * x + y * y + z * z);
+            if (l < 1e-8f) l = 1.0f;
+            me->animNormals[v * 3] = x / l, me->animNormals[v * 3 + 1] = y / l, me->animNormals[v * 3 + 2] = z / l;
+        }
+        rlUpdateVertexBuffer(me->vboId[2], me->animNormals, me->vertexCount * 3 * (int)sizeof(float), 0);
+    }
+}
+
+static void animate(Model *m, const ModelAnimation *a, int frame) {
+    UpdateModelAnimation(*m, *a, frame);
+    skin_normals(m);
+}
+
 void props_draw_item_anim(Props *p, const InvItem *item, Vector3 pos, float yaw, const char *clip, float time) {
     Model *m;
     ModelAnimation *a = anim_clip(p, item, clip, &m);
-    if (a) UpdateModelAnimation(*m, *a, (int)(time * ANIM_FPS) % a->frameCount);
+    if (a) animate(m, a, (int)(time * ANIM_FPS) % a->frameCount);
     props_draw_item(p, item, pos, yaw, 1.0f);
 }
 
@@ -192,7 +251,7 @@ void props_draw_item_track(Props *p, const InvItem *item, Vector3 pos, float yaw
         // Un golpe entero en lo que el juego le da (0,4 s el del jugador; los clips duran de 0,5 a 2 s).
         if (a && fit > 0.0f && !anim_loops(a->name)) track->rate = Clamp((float)a->frameCount / ANIM_FPS / fit, 0.5f, 5.0f);
     }
-    if (a) UpdateModelAnimation(*m, *a, anim_frame(a, (time - track->start) * track->rate));
+    if (a) animate(m, a, anim_frame(a, (time - track->start) * track->rate));
     props_draw_item(p, item, pos, yaw, 1.0f);
 }
 
@@ -243,6 +302,112 @@ bool props_draw_item_matrix(Props *p, const InvItem *item, Matrix transform) {
     m->transform = MatrixMultiply(saved, transform);
     DrawModel(*m, (Vector3){ 0, 0, 0 }, 1.0f, g_tint);
     m->transform = saved;
+    return true;
+}
+
+// ---------------------------------------------------------------- el equipo puesto
+// Los anclajes de cada cuerpo (src/world/anclajes.inc, de tools/modelos/patron.py): el hueso y la matriz que lleva el
+// objeto, en su marco, a la pose de reposo del cuerpo.
+typedef struct {
+    const char *bone;
+    Matrix m;
+} GearSocketDef;
+// Cada casco en GEAR_HEAD: su escala en cada cuerpo, relativa a la del anclaje (la del casco que mas pide).
+typedef struct {
+    const char *id;
+    float k[GEAR_BODY_COUNT];
+} GearHelmetFit;
+#include "anclajes.inc"
+
+// La escala de item en GEAR_HEAD del cuerpo body (GEAR_HELMET_FIT): 1 si no esta en la tabla (la del anclaje, con la
+// que ningun casco se mete en esa cabeza).
+static float helmet_fit(const InvItem *item, int body) {
+    for (size_t i = 0; i < sizeof(GEAR_HELMET_FIT) / sizeof(GEAR_HELMET_FIT[0]); i++)
+        if (!strcmp(item->id, GEAR_HELMET_FIT[i].id)) return GEAR_HELMET_FIT[i].k[body];
+    return 1.0f;
+}
+
+// El clip de body y su cuadro ahora (los de props_draw_item_track con ese track), o NULL si no esta animado.
+static ModelAnimation *track_frame(Props *p, const InvItem *body, const AnimTrack *track, float time, Model **bm, int *frame) {
+    *bm = body ? cached_model(p, body) : NULL;
+    *frame = 0;
+    ModelAnimation *a = *bm && track && track->clip ? anim_clip(p, body, track->clip, bm) : NULL;
+    if (a) *frame = anim_frame(a, (time - track->start) * track->rate);
+    return a;
+}
+
+// La matriz de la piel del hueso b de m en el cuadro frame: la misma cuenta que UpdateModelAnimationBones (raylib
+// 5.5), para que lo rigido siga al hueso igual que la piel.
+static Matrix bone_matrix(const Model *m, const ModelAnimation *a, int frame, int b) {
+    Transform in = m->bindPose[b], out = a->framePoses[frame][b];
+    Quaternion inv_r = QuaternionInvert(in.rotation);
+    Vector3 inv_t = Vector3RotateByQuaternion(Vector3Negate(in.translation), inv_r);
+    Vector3 inv_s = Vector3Divide((Vector3){ 1.0f, 1.0f, 1.0f }, in.scale);
+    Vector3 t = Vector3Add(Vector3RotateByQuaternion(Vector3Multiply(out.scale, inv_t), out.rotation), out.translation);
+    Quaternion r = QuaternionMultiply(out.rotation, inv_r);
+    Vector3 s = Vector3Multiply(out.scale, inv_s);
+    return MatrixMultiply(MatrixMultiply(QuaternionToMatrix(r), MatrixTranslate(t.x, t.y, t.z)), MatrixScale(s.x, s.y, s.z));
+}
+
+// Una prenda sin animar (su cuerpo no lo esta): de vuelta a su reposo, que la malla guarda la pose del ultimo que la
+// llevo (la misma prenda la llevan muchos, un cuadro cada uno).
+static void rest_pose(Model *m) {
+    for (int i = 0; i < m->meshCount; i++) {
+        Mesh *me = &m->meshes[i];
+        if (!me->boneMatrices || !me->animVertices) continue;
+        rlUpdateVertexBuffer(me->vboId[0], me->vertices, me->vertexCount * 3 * (int)sizeof(float), 0);
+        if (me->normals) rlUpdateVertexBuffer(me->vboId[2], me->normals, me->vertexCount * 3 * (int)sizeof(float), 0);
+    }
+}
+
+bool props_draw_worn(Props *p, const InvItem *wear, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
+                     float time) {
+    if (!wear) return false;
+    int bi = gear_body(body);
+    int slot = bi ? load_slot(p, wear, BODY_VARIANT + bi) : -1;
+    if (slot < 0 || !p->cache[slot].loaded) slot = load_slot(p, wear, -1); // sin su variante: la del comun
+    if (slot < 0 || !p->cache[slot].loaded) return false;
+    Model *wm = &p->cache[slot].model;
+    Model *bm;
+    int frame;
+    ModelAnimation *a = track_frame(p, body, track, time, &bm, &frame);
+    // El mismo esqueleto que el cuerpo (si no, UpdateModelAnimation no puede: los 56 huesos de humanoide.py).
+    bool same = a && wm->meshCount > 0 && wm->meshes[0].boneMatrices && wm->meshes[0].boneCount == a->boneCount;
+    if (same) animate(wm, a, frame);
+    else rest_pose(wm);
+    DrawModelEx(*wm, pos, (Vector3){ 0, 1, 0 }, yaw * RAD2DEG, (Vector3){ 1, 1, 1 }, g_tint);
+    return true;
+}
+
+Matrix props_socket_matrix(Props *p, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track, float time,
+                           GearSocket socket) {
+    const GearSocketDef *d = &GEAR_SOCKETS[gear_body(body)][socket];
+    Model *bm;
+    int frame;
+    ModelAnimation *a = track_frame(p, body, track, time, &bm, &frame);
+    Matrix bone = MatrixIdentity(), body_t = bm ? bm->transform : MatrixIdentity();
+    for (int b = 0; a && b < bm->boneCount && b < a->boneCount; b++) {
+        if (strcmp(bm->bones[b].name, d->bone) != 0) continue;
+        bone = bone_matrix(bm, a, frame, b);
+        break;
+    }
+    Matrix world = MatrixMultiply(MatrixRotate((Vector3){ 0, 1, 0 }, yaw), MatrixTranslate(pos.x, pos.y, pos.z));
+    return MatrixMultiply(MatrixMultiply(MatrixMultiply(d->m, bone), body_t), world);
+}
+
+bool props_draw_socket(Props *p, const InvItem *item, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
+                       float time, GearSocket socket) {
+    Model *im = item ? cached_model(p, item) : NULL;
+    if (!im) return false;
+    Matrix m = props_socket_matrix(p, body, pos, yaw, track, time, socket);
+    if (socket == GEAR_HEAD) { // el casco, a su escala en esa cabeza (alrededor de su origen: el centro del craneo)
+        float k = helmet_fit(item, gear_body(body));
+        m = MatrixMultiply(MatrixScale(k, k, k), m);
+    }
+    Matrix saved = im->transform;
+    im->transform = MatrixMultiply(saved, m);
+    DrawModel(*im, (Vector3){ 0, 0, 0 }, 1.0f, g_tint);
+    im->transform = saved;
     return true;
 }
 

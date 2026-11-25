@@ -376,6 +376,14 @@ def check(quiet=False):
         e, w = check_vox(it, path) if path.endswith(".vox") else check_model(it, path)
         errors += e
         warnings += w
+        # Las prendas con piel: su variante de cada cuerpo (tools/modelos/patron.py), con las mismas reglas.
+        for body in inventario.BODIES:
+            variant = path[:-4] + "@" + body + ".glb"
+            if path.endswith(".glb") and os.path.isfile(variant):
+                count += 1
+                e, w = check_model(it, variant)
+                errors += e
+                warnings += w
     known = {it["id"] for it in items}
     for mid in load_manifest()["models"]:
         if mid not in known:

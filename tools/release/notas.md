@@ -1,6 +1,13 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: el mar y las transiciones
+## Novedades: el equipo de los humanoides
+
+- **Cada uno con su equipo:** el jugador, la tropa y los enemigos llevan puesto lo suyo: la coraza y las botas, que se mueven con el cuerpo; el casco en la cabeza, y las armas, el escudo, la aljaba y la antorcha guardados (el escudo, la aljaba y el arco a la espalda; el sable y la daga al costado) o en la mano.
+- **Los cascos, bien puestos:** apoyados en la cabeza (ya no flotan ni se inclinan hacia atrás), con el borde justo sobre las cejas, sin que la cabeza los atraviese y a la medida de cada uno: hombres, mujeres, gigantes y el protagonista. Y con más detalle: la banda de la frente, los remaches, el águila del casco del padre y el rollo de piel del gorro de fieltro.
+- **La luz:** las personas, los animales y su equipo toman la luz del cielo, del suelo y del sol de cada momento.
+- **Más detalle:** los cuerpos tienen el doble de triángulos y el equipo los suyos, sin agujeros ni manchas claras.
+
+## De la v0.17.0: el mar y las transiciones
 
 - **El mar llega a donde tiene que llegar:** todo lo que queda bajo el nivel del mar y se alcanza desde mar abierto es mar; una hondonada que el relieve cierra queda seca. Donde el canal del bosque entra a la costa de los fiordos ya no queda una zanja seca con pinos bajo el nivel del mar: el canal llega al mar sin escalón.
 - **El arrecife:** junto a las playas de los fiordos el agua es clara y deja ver praderas de pasto marino y bosques de algas que se mecen con la resaca.
@@ -113,7 +120,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.17.0, la v0.16.0 y la v0.15.11).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.17.1, la v0.17.0 y la v0.16.0).
 
 ## Android
 

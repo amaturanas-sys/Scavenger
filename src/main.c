@@ -8,7 +8,9 @@
 //                     [--dia N] [--minuto M] [--pos X Z] [--trampa hielo|nieve|arena|rescate|hundido|nado|agujero|tiburon|mordida]
 // --galeria muestra todos los objetos del inventario de assets (modelos o marcadores).
 // --ver <id> muestra de cerca un objeto del inventario, en la galeria, con el jugador al lado (la
-// tuberia de modelos, tools/modelos: revisar uno recien importado).
+// tuberia de modelos, tools/modelos: revisar uno recien importado). Un casco (armadura.casco.*), puesto en la
+// cabeza del maniqui (el cuerpo comun, u otro con --cuerpo <id>), en su anclaje GEAR_HEAD y con la pose idle.
+// --desde frente|tres_cuartos|lado|atras: de donde mira la camara de --ver (el modelo mira a +X).
 // --edificios tipo[:region] muestra las variantes del kit de edificios (src/sim/buildkit.h): casa,
 // palacio, fundicion, cuartel, carpinteria, granero, templo, carreta, muralla, torre, puerta, las
 // ruinas (fortaleza, enterrada) o las obras de la tribu (refugio, empalizada, muro, horno,
@@ -73,6 +75,7 @@
 #include "ui/theme.h"
 #include "world/camp.h"
 #include "world/hearth.h"
+#include "world/model_light.h"
 #include "game/death_game.h"
 #include "game/hud_game.h"
 #include "world/gallery.h"
@@ -1018,12 +1021,27 @@ static Vector3 feat_spot(const Terrain *t, int row, int variant) {
     return (Vector3){ x, terrain_height(t, x, z), z };
 }
 
+// --desde: hacia donde queda la camara de --ver (el modelo mira a +X): de frente, de tres cuartos (adelante, a un
+// costado y un poco arriba), de lado (de canto, a la altura del objeto) o de atras; sin --desde, la de siempre.
+static Vector3 view_from_dir(const char *from, Vector3 fallback) {
+    if (!from) return fallback;
+    if (!strcmp(from, "frente")) return (Vector3){ 1.0f, 0.0f, 0.0f };
+    if (!strcmp(from, "tres_cuartos")) return (Vector3){ 1.0f, 0.25f, 0.8f };
+    if (!strcmp(from, "lado")) return (Vector3){ 0.0f, 0.0f, 1.0f };
+    if (!strcmp(from, "atras")) return (Vector3){ -1.0f, 0.0f, 0.0f };
+    return fallback;
+}
+
 int main(int argc, char **argv) {
     const char *shot_path = NULL;
     int shot_frames = 90;
     bool simulate_no_keyboard = false;
     bool gallery_mode = false;
     const char *view_id = NULL; // --ver: el id a mirar de cerca
+    int patron_demo = 0;        // --patron guardado|empunado (con --ver <cuerpo>): el equipo del patron puesto, de cerca
+    bool patron_back = false;   // --patron-atras: de espaldas
+    const char *view_from = NULL; // --desde: la camara de --ver de frente, de tres cuartos, de lado o de atras
+    const char *view_body = "personaje.base.cuerpo_comun"; // --cuerpo: el maniqui que lleva el casco de --ver
     int kit_type = -1, kit_region = -1; // --edificios: el tipo del kit y la region (-1: todas)
     int feat_group = -1;                // --formaciones: el grupo (FEAT_GROUPS)
     int start_day = 1;
@@ -1081,6 +1099,16 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--sin-teclado")) simulate_no_keyboard = true;
         else if (!strcmp(argv[i], "--galeria")) gallery_mode = true;
         else if (!strcmp(argv[i], "--ver") && i + 1 < argc) gallery_mode = true, view_id = argv[++i];
+        else if (!strcmp(argv[i], "--patron") && i + 1 < argc) patron_demo = !strcmp(argv[++i], "empunado") ? 2 : 1;
+        else if (!strcmp(argv[i], "--patron-atras")) patron_back = true;
+        else if (!strcmp(argv[i], "--desde") && i + 1 < argc) {
+            view_from = argv[++i];
+            if (strcmp(view_from, "frente") && strcmp(view_from, "tres_cuartos") && strcmp(view_from, "lado") && strcmp(view_from, "atras")) {
+                printf("--desde: frente, tres_cuartos, lado o atras\n");
+                view_from = NULL;
+            }
+        }
+        else if (!strcmp(argv[i], "--cuerpo") && i + 1 < argc) view_body = argv[++i];
         else if (!strcmp(argv[i], "--edificios") && i + 1 < argc) {
             gallery_mode = true;
             kit_parse(argv[++i], &kit_type, &kit_region);
@@ -1198,6 +1226,7 @@ int main(int argc, char **argv) {
     terrain_forget_gpu();
     trees_forget_gpu();
     clouds_forget_gpu();
+    model_light_init(); // la luz de los cuerpos, los animales y el equipo: antes de cargar sus modelos
     voxs_forget_gpu();
     cs_forget_gpu(); // la escena de una cueva (y sus modelos de voxeles)
     cp_forget_gpu();
@@ -1254,6 +1283,7 @@ int main(int argc, char **argv) {
         UnloadFileText(inv_text);
     }
     props_init(&g_props, &g_inventory);
+    ga_set_player_armor(&g_combat.armor); // lo que lleva puesto el protagonista (sobre su modelo)
     trees_init(&g_inventory); // los arboles del mundo: su .vox y su alto, del inventario
     CameraRig rig = { .yaw = PI, .eye = 1.6f };
     settings_init(); // idioma (y sus traducciones), antes del primer texto de la partida
@@ -1307,6 +1337,8 @@ int main(int argc, char **argv) {
 
     Gallery gallery = { 0 };
     const GalleryEntry *seen = NULL; // --ver
+    const InvItem *helmet_body = NULL; // --ver <casco>: el maniqui que lo lleva puesto
+    const float helmet_time = 1.0f;    // el instante de su pose idle (el dibujo y la camara, el mismo)
     if (gallery_mode && gallery_init(&gallery, &terrain, (Vector3){ 100.0f, 0.0f, 60.0f })) {
         player.pos = gallery.start;
         player.pos.y = terrain_height(&terrain, player.pos.x, player.pos.z);
@@ -1324,6 +1356,13 @@ int main(int argc, char **argv) {
             player.pos = (Vector3){ seen->pos.x, seen->pos.y, seen->pos.z - fmaxf(it->w, 0.4f) * 0.5f - 1.2f };
             player.yaw = PI * 0.5f; // mirando a +X, como el modelo
             printf("Ver: %s (%s)\n", it->id, seen->loaded ? "modelo" : "marcador: sin modelo");
+            if (!strncmp(it->id, "armadura.casco.", 15)) { // un casco: en la cabeza del maniqui, no en el suelo
+                helmet_body = inventory_find(&g_inventory, view_body);
+                if (!helmet_body || !props_has_model(&g_props, helmet_body)) {
+                    printf("Ver: el cuerpo %s no tiene modelo; el casco va solo\n", view_body);
+                    helmet_body = NULL;
+                }
+            }
         } else if (view_id) {
             printf("Ver: %s no esta en el inventario\n", view_id);
         }
@@ -1851,11 +1890,26 @@ int main(int argc, char **argv) {
                 cam.target = c;
                 cam.position = Vector3Add(c, Vector3Scale(Vector3Normalize((Vector3){ 1.0f, 0.42f, 0.5f }), fmaxf(b.x - a.x, b.z - a.z) * 0.72f + 10.0f));
             }
-            if (seen) { // --ver: la camara de tres cuartos, desde el frente (+X), arriba y a la derecha
+            if (seen) { // --ver: la camara de tres cuartos, desde el frente (+X), arriba y a la derecha (o la de --desde)
                 const InvItem *it = seen->item;
                 float size = fmaxf(fmaxf(it->w, it->h), it->l), hgt = fmaxf(it->h, 0.05f);
+                Vector3 from_dir = Vector3Normalize(view_from_dir(view_from, (Vector3){ 1.0f, 0.55f, 0.75f }));
                 cam.target = (Vector3){ seen->pos.x, seen->pos.y + hgt * 0.5f, seen->pos.z };
-                cam.position = Vector3Add(cam.target, Vector3Scale(Vector3Normalize((Vector3){ 1.0f, 0.55f, 0.75f }), fmaxf(0.45f, size * 2.2f)));
+                cam.position = Vector3Add(cam.target, Vector3Scale(from_dir, fmaxf(0.45f, size * 2.2f)));
+                if (helmet_body) { // un casco puesto: la cabeza de cerca, con su pose (el origen del casco es el centro del craneo)
+                    Matrix hm = ga_helmet_demo_matrix(&g_props, helmet_body, seen->pos, helmet_time);
+                    float head = sqrtf(hm.m0 * hm.m0 + hm.m1 * hm.m1 + hm.m2 * hm.m2); // la escala de la cabeza (1: el comun)
+                    cam.target = (Vector3){ hm.m12, hm.m13, hm.m14 };
+                    cam.position = Vector3Add(cam.target, Vector3Scale(from_dir, 0.62f * head));
+                } else if (patron_demo && strcmp(it->category, "personaje") != 0) { // un animal: los dos en fila, de costado
+                    float span = 2.0f * fmaxf(it->l, 0.3f) + 0.6f;
+                    cam.target.x += (span - fmaxf(it->l, 0.3f)) * 0.5f;
+                    cam.position = Vector3Add(cam.target, Vector3Scale(Vector3Normalize((Vector3){ 0.25f, 0.3f, 1.0f }), span * 1.05f));
+                } else if (patron_demo) { // --patron: de cerca, el guardado o el empunado (ga_draw_patron_demo), de frente o de espaldas
+                    cam.target.z += patron_demo == 2 ? 0.95f : -0.95f;
+                    Vector3 dir = patron_back ? (Vector3){ -1.0f, 0.3f, -0.55f } : (Vector3){ 1.0f, 0.3f, 0.55f };
+                    cam.position = Vector3Add(cam.target, Vector3Scale(Vector3Normalize(dir), hgt * 1.25f));
+                }
             }
         }
         terrain_update(&terrain, player.pos);
@@ -1921,7 +1975,9 @@ int main(int argc, char **argv) {
         } else {
             vegetation_look(cam, &climate, (float)GetTime()); // las matas del inventario en la galeria (props)
         }
-        if (gallery_mode && kit_type < 0 && feat_group < 0) gallery_draw(&gallery);
+        if (gallery_mode && kit_type < 0 && feat_group < 0 && !helmet_body) gallery_draw(&gallery);
+        if (patron_demo && seen) ga_draw_patron_demo(&g_props, &g_inventory, seen->item->id, seen->pos, 1.0f);
+        if (helmet_body) ga_draw_helmet_demo(&g_props, helmet_body, seen->item, seen->pos, helmet_time); // --ver <casco>: puesto
         if (feat_group >= 0)
             for (int row = 0; row < FEAT_GROUPS[feat_group].n; row++)
                 for (int v = 0; v < VF_VARIANTS; v++) {
@@ -1935,8 +1991,8 @@ int main(int argc, char **argv) {
                 for (int v = 0; v < BK_VARIANTS; v++)
                     voxs_draw_kit((BkType)kit_type, (Region)(kit_region >= 0 ? kit_region : row), v, kit_spot(&terrain, kit_type, row, v), 0.0f, 1.0f, WHITE);
         bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
-        if (gallery_mode) player_draw(&player);
-        else cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
+        if (gallery_mode && !patron_demo && !helmet_body) player_draw(&player); // con --patron o un casco puesto, sin el jugador (tapaba la prueba)
+        else if (!gallery_mode) cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) forge_draw_world(&terrain, player.pos); // las vetas de hierro cercanas
         if (!gallery_mode) ga_draw_world(&g_actions, &g_props, &terrain, &troop, &player, (float)GetTime(), clock_is_night(world_time));
         if (!gallery_mode) wd_draw_world(&g_actions, &g_props, &terrain, &player, (float)GetTime());
@@ -2150,6 +2206,7 @@ int main(int argc, char **argv) {
     voxs_unload();
     trees_unload();
     au_unload();
+    model_light_unload();
     UnloadRenderTexture(lowres);
     CloseWindow();
     return 0;

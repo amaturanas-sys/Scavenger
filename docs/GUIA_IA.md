@@ -309,7 +309,9 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | El kit de edificios | `--edificios casa` (o `palacio`, `muralla`, `puerta`, `fortaleza`, `refugio`… ; `:región` para una sola fila; `--dron 24` para verlas de cerca) |
 | Las formaciones del paisaje | `--formaciones desierto` (o `hielo`, `costa`): las cuatro variantes de cada una |
 | Los muros del borde, enteros | `--ir panorama-hielo` o `panorama-muro` (a 520 m del borde, con `--camara 0.06 --vista lejos`); de cerca, `--ir hielo`, `muro`, `lengua` |
-| Un objeto de cerca | `--ver <id del inventario>` |
+| Un objeto de cerca | `--ver <id del inventario>` (`--desde frente\|tres_cuartos\|lado\|atras` cambia la cámara) |
+| Un casco puesto | `--ver armadura.casco.<nombre> --desde frente` (o `tres_cuartos`, `lado`, `atras`): en la cabeza del maniquí (el cuerpo común, con la pose idle), en su anclaje `GEAR_HEAD`; `--cuerpo personaje.base.cuerpo_mujer` (o `_gigante`, `personaje.narrativo.protagonista`) para otro cuerpo. Que no flote, que no esté inclinado y que la piel gris no asome por el casco |
+| El equipo del patrón puesto | `--ver personaje.base.cuerpo_comun --patron guardado` (o `empunado`; `--patron-atras`, de espaldas): el cuerpo con el equipo de `arte/fuentes/patron`, junto al de la galería. Con un animal (`--ver animal.salvaje.lobo --patron guardado`), una copia animada, con la luz del shader, al lado de la de la galería (`assets/models/README.md`, «El equipo de los humanoides») |
 | El asedio | `--asedio puerta`, `fuego`, `salida`, `quemada`, `tomada`… |
 | Combate | `--enemigos bandidos`, `culto`, `lobos`, `arqueros` |
 | El sistema táctico | `--manos escudo` (`espada`, `nada`), `--rehen`, `--objetivo`, `--cubierto`, `--inventario` (la fila de la barra) |
@@ -490,7 +492,9 @@ traba.
   - las animaciones de la Universal Animation Library y el cuerpo de mujer, para las mujeres de la tribu (v0.15.11);
   - el sonido: el ambiente natural y los sonidos del mapa, sin música (v0.16.0);
   - el mar por conexión, el arrecife con pasto marino y algas, el mar hondo como niebla, la transición al desierto seca
-    y la del bosque en manchas (v0.17.0).
+    y la del bosque en manchas (v0.17.0);
+  - el equipo de los humanoides: el del patrón del usuario, con los cascos calzados sobre el cráneo y el shader de
+    modelos (v0.17.1).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

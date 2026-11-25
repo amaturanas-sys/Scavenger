@@ -248,6 +248,143 @@ def _glb_bytes_suave(positions, normals, colors, faces, name):
     return out.getvalue()
 
 
+def normales_aristas(v, f, angulo=40.0):
+    """La normal de cada esquina (caras x 3 x 3) de una malla de vertices compartidos (v, f): el promedio (por area) de
+    las caras de su vertice que no doblan mas de angulo grados respecto de la suya. Suave en lo curvo y cortada en las
+    aristas duras: el criterio del patron (tools/modelos/patron.py) para personas, animales y equipo. Para una malla
+    cara por cara (sin vertices compartidos), soldarla antes por posicion (normales_soldando)."""
+    tri = v[f]
+    fn = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+    area = np.linalg.norm(fn, axis=1)
+    fn = fn / np.maximum(area[:, None], 1e-12)
+    lim = np.cos(np.radians(angulo))
+    orden = np.argsort(f.ravel(), kind="stable")  # las esquinas de cada vertice, juntas
+    vert = f.ravel()[orden]
+    cara = orden // 3
+    inicio = np.searchsorted(vert, np.arange(len(v)))
+    fin = np.searchsorted(vert, np.arange(len(v)), side="right")
+    out = np.zeros((len(f), 3, 3))
+    for i in range(len(f)):
+        for k in range(3):
+            vec = cara[inicio[f[i, k]]:fin[f[i, k]]]
+            nn = fn[vec]
+            ok = nn @ fn[i] >= lim
+            s = (nn[ok] * area[vec][ok][:, None]).sum(0)
+            out[i, k] = s / max(np.linalg.norm(s), 1e-12)
+    return out
+
+
+def normales_soldando(pos, angulo=40.0):
+    """normales_aristas de una malla cara por cara (pos: tres vertices por cara, sin indices), soldada por posicion para
+    saber que caras comparten cada vertice. Devuelve una normal por vertice de pos (en su orden)."""
+    escala = max(float(np.ptp(pos, axis=0).max()), 1e-9) * 1e-6
+    _, inv = np.unique(np.round(pos / escala).astype(np.int64), axis=0, return_inverse=True)
+    inv = inv.reshape(-1)
+    v = np.zeros((inv.max() + 1, 3))
+    v[inv] = pos
+    return normales_aristas(v, inv.reshape(-1, 3), angulo).reshape(-1, 3)
+
+
+def orientar(v, f):
+    """Las caras de una malla de vertices compartidos con el sentido de sus vecinas. La reduccion por cuadricas da
+    vuelta algunos triangulos (pliega uno sobre otro), y el juego no dibuja las caras de espaldas: por ahi se ve lo
+    de atras. Por cada pieza (caras unidas por aristas de dos caras), un recorrido a lo ancho le da a cada cara el
+    sentido de la que la alcanzo; despues, toda la pieza toma el sentido que tenia la mayoria de su area."""
+    from collections import deque
+    f = np.array(f, dtype=np.int64, copy=True)
+    tri = v[f]
+    area = np.linalg.norm(np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]), axis=1)
+    aristas = {}
+    for i, (a, b, c) in enumerate(f.tolist()):
+        for x, y in ((a, b), (b, c), (c, a)):
+            aristas.setdefault((min(x, y), max(x, y)), []).append(i)
+    vuelta = np.zeros(len(f), bool)  # dada vuelta respecto de como vino
+    hecho = np.zeros(len(f), bool)
+    for s in range(len(f)):
+        if hecho[s]:
+            continue
+        pieza, cola = [s], deque([s])
+        hecho[s] = True
+        while cola:
+            i = cola.popleft()
+            a, b, c = f[i].tolist()
+            for x, y in ((a, b), (b, c), (c, a)):
+                vec = aristas[(min(x, y), max(x, y))]
+                if len(vec) != 2:  # borde, o arista de mas de dos caras: por ahi no se sigue
+                    continue
+                j = vec[0] if vec[1] == i else vec[1]
+                if hecho[j]:
+                    continue
+                p, q, r = f[j].tolist()
+                if (x, y) in ((p, q), (q, r), (r, p)):  # la recorre en el mismo sentido: al reves de su vecina
+                    f[j] = f[j][[0, 2, 1]]
+                    vuelta[j] = True
+                hecho[j] = True
+                cola.append(j)
+                pieza.append(j)
+        pieza = np.array(pieza)
+        if area[pieza][vuelta[pieza]].sum() > area[pieza].sum() / 2:  # la mayoria estaba al reves de como quedo
+            f[pieza] = f[pieza][:, [0, 2, 1]]
+    return f
+
+
+def capa_de_afuera(v, f, celdas=280, lejos=(1.0, 1.5, 2.0, 3.0), crecer=6, suelta=0.02):
+    """Las caras (mascara booleana) que dan al aire de afuera. Una malla con grosor (rigged-model.glb: el cuerpo es una
+    cascara de unos 4 mm, con la capa de adentro mirando al hueco) gasta la mitad de sus triangulos en una capa que no
+    se ve, y la de adentro confunde la distancia con signo a la piel.
+    1. Las caras, en voxeles (celdas a lo largo del lado mas largo), con una celda mas de pared (asi se cierran las
+       grietas de la malla); el aire de afuera es lo que se llena desde una esquina.
+    2. Ese aire vuelve a entrar, hasta crecer celdas, por lo libre sin la celda de mas: la entrepierna y entre los
+       dedos, que la pared gruesa cerraba.
+    3. Una cara es de afuera si, delante de ella (lejos: en celdas, por su normal), algun punto cae en ese aire; las de
+       adentro miran al hueco.
+    4. Lo que quedo adentro en manchas sueltas (menos de suelta de las caras) es de afuera: la capa de adentro es una
+       sola pieza grande. Una malla de una sola capa sale entera."""
+    from scipy import ndimage
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    f = np.asarray(f, dtype=np.int64)
+    lo = v.min(0)
+    h = float(np.ptp(v, axis=0).max()) / celdas
+    pad = 4
+    dims = np.ceil(np.ptp(v, axis=0) / h).astype(int) + 2 * pad + 1
+    tri = v[f]
+    largo = np.linalg.norm(tri - np.roll(tri, 1, axis=1), axis=2).max(1)
+    n = np.maximum(np.ceil(largo / (h * 0.5)).astype(int), 1)
+    puntos = []
+    for k in np.unique(n):  # cada triangulo, con muestras a menos de media celda
+        sel = tri[n == k]
+        g = np.array([(i, j, k - i - j) for i in range(k + 1) for j in range(k + 1 - i)], float) / k
+        puntos.append(np.einsum("bk,fkd->fbd", g, sel).reshape(-1, 3))
+    q = np.floor((np.concatenate(puntos) - lo) / h).astype(int) + pad
+    pared0 = np.zeros(dims, bool)
+    pared0[q[:, 0], q[:, 1], q[:, 2]] = True
+    lab, _ = ndimage.label(~ndimage.binary_dilation(pared0))
+    aire = ndimage.binary_dilation(lab == lab[0, 0, 0], iterations=crecer, mask=~pared0)
+    fn = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+    fn /= np.maximum(np.linalg.norm(fn, axis=1, keepdims=True), 1e-12)
+    c = tri.mean(1)
+    afuera = np.zeros(len(f), bool)
+    for d in lejos:
+        p = np.floor((c + fn * d * h - lo) / h).astype(int) + pad
+        p = np.clip(p, 0, np.array(dims) - 1)
+        afuera |= aire[p[:, 0], p[:, 1], p[:, 2]]
+    resto = np.flatnonzero(~afuera)
+    if len(resto):  # las piezas de lo de adentro, por aristas (soldada por posicion: sin las costuras de la textura)
+        escala = max(float(np.ptp(v, axis=0).max()), 1e-9) * 1e-6
+        _, w = np.unique(np.round(v / escala).astype(np.int64), axis=0, return_inverse=True)
+        fw = w.reshape(-1)[f[resto]]
+        e = np.sort(np.concatenate([fw[:, [0, 1]], fw[:, [1, 2]], fw[:, [2, 0]]]), axis=1)
+        clave = e[:, 0] * (int(w.max()) + 1) + e[:, 1]
+        cara = np.tile(np.arange(len(resto)), 3)
+        orden = np.argsort(clave, kind="stable")
+        igual = clave[orden][1:] == clave[orden][:-1]
+        a, b = cara[orden][:-1][igual], cara[orden][1:][igual]
+        _, pieza = connected_components(coo_matrix((np.ones(len(a)), (a, b)), shape=(len(resto), len(resto))), directed=False)
+        afuera[resto[np.bincount(pieza)[pieza] < suelta * len(f)]] = True
+    return afuera
+
+
 def _suave(v, f, cloud_p, cloud_c, colores, luz):
     """Vertices compartidos con normal suave (el promedio de sus caras, por area) y color por vertice: el
     promedio de la superficie original alrededor de cada uno (sin paleta, salvo colores > 0)."""

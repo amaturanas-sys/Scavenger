@@ -31,7 +31,7 @@ typedef struct {
         bool loaded;
         ModelAnimation *anims; // clips del GLB (indice: assets/animaciones.tsv)
         int anim_count;
-        int variant; // -1: modelo base; si no, la estacion de "<nombre>@<estacion>.glb"
+        int variant; // -1: modelo base; si no, la estacion de "<nombre>@<estacion>.glb" (o el cuerpo de una prenda)
     } cache[MODEL_CACHE_MAX];
     int cached;
     int season; // estacion actual (Season): elige la variante estacional si existe
@@ -91,5 +91,38 @@ bool props_draw_item_biome(Props *p, const InvItem *item, Matrix transform, int 
 bool props_bone_point(Props *p, const InvItem *item, Vector3 pos, float yaw, const AnimTrack *track, float time, const char *bone,
                       Vector3 *out);
 bool props_draw_item_matrix(Props *p, const InvItem *item, Matrix transform);
+
+// ---- El equipo puesto (tools/modelos/patron.py, desde el patron armado a mano: arte/fuentes/patron)
+// Los cuerpos que tienen su variante de cada prenda y su fila de anclajes: el comun (el modelo base de la prenda), la
+// mujer, el gigante y el protagonista (nombre@mujer.glb, @gigante, @protagonista). Otro cuerpo usa los del comun.
+#define GEAR_BODY_COUNT 4
+// Donde va lo rigido en un cuerpo: el hueso y la matriz del patron (src/world/anclajes.inc, generado). Lo guardado:
+// el casco en la cabeza, el escudo, la aljaba y lo largo (el arco, la lanza) a la espalda, el arma de la derecha al
+// costado izquierdo (enfundada) y la daga de la izquierda al derecho; lo empunado: en cada mano y el escudo embrazado.
+typedef enum {
+    GEAR_HEAD,
+    GEAR_BACK_SHIELD,
+    GEAR_BACK_QUIVER,
+    GEAR_BACK_LONG,
+    GEAR_HIP_LEFT,
+    GEAR_HIP_RIGHT,
+    GEAR_HAND_RIGHT,
+    GEAR_HAND_LEFT,
+    GEAR_FOREARM_LEFT,
+    GEAR_SOCKET_COUNT
+} GearSocket;
+// Una prenda con piel (coraza, botas: los huesos del cuerpo y sin clips propios) puesta en body, con la pose de su
+// animacion en este cuadro: el mismo clip, arranque y ritmo que props_draw_item_track con ese track (llamarla despues,
+// con los mismos pos, yaw, track y time). Usa la variante del cuerpo. false si no tiene modelo o no es de ese esqueleto.
+bool props_draw_worn(Props *p, const InvItem *wear, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
+                     float time);
+// Un objeto rigido (casco, arma, escudo, aljaba, antorcha) en un anclaje de body, que sigue a su hueso en este cuadro
+// (como props_draw_worn); un casco, ademas, a su escala en esa cabeza (GEAR_HELMET_FIT de anclajes.inc). false si no
+// tiene modelo: el que llama dibuja su marcador.
+bool props_draw_socket(Props *p, const InvItem *item, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
+                       float time, GearSocket socket);
+// La matriz de un anclaje de body en este cuadro (del marco del objeto al mundo), para lo que se dibuja sin modelo.
+Matrix props_socket_matrix(Props *p, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track, float time,
+                           GearSocket socket);
 
 #endif

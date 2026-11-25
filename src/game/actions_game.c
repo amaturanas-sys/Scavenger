@@ -1500,6 +1500,9 @@ void ga_draw_world(GameActions *ga, Props *props, const Terrain *t, const Troop 
             props_draw_item_track(props, body, n->pos, n->yaw - PI / 2.0f, clip, time + (float)i,
                                   anim_is_stroke(clip) ? (hs.move > 1 ? n->move_anim : n->fight_anim) : 0.0f, &g_troop_track[i]);
             props_set_tint(light);
+            // Su armadura, con su pose (el maniqui, del color de su oficio; lo que lleva puesto, del suyo).
+            ga_draw_gear(props, ga->inv, body, n->pos, n->yaw - PI / 2.0f, &g_troop_track[i], time + (float)i, &m->armor,
+                         NULL, false, NULL, false, light);
             continue;
         }
         // Sin modelo: cuerpo articulado (src/sim/body.h), del color de su funcion y con su armadura.
@@ -1586,6 +1589,91 @@ static void held_item(Props *props, const InvItem *it, Matrix m, Color light) {
     rlPopMatrix();
 }
 
+// El equipo en los anclajes del cuerpo con modelo (src/world/anclajes.inc, del patron: tools/modelos/patron.py).
+static bool is_bow(const InvItem *it) { return it && !strncmp(it->id, "arma.distancia.arco", 19); }
+
+// Guardado: el escudo a la espalda; lo largo (mas de 1,3 m) y el arco, cruzados a la espalda; lo de la derecha,
+// enfundado al costado izquierdo (el sable del patron); lo de la izquierda (la daga, la antorcha), al derecho.
+static GearSocket stowed_socket(const InvItem *it, bool left_hand) {
+    if (it->hands == INV_HANDS_SHIELD) return GEAR_BACK_SHIELD;
+    if (fmaxf(it->h, it->l) > 1.3f || is_bow(it)) return GEAR_BACK_LONG;
+    return left_hand ? GEAR_HIP_RIGHT : GEAR_HIP_LEFT;
+}
+
+// Empunado: el escudo embrazado en el antebrazo izquierdo; el arco, en la izquierda (la derecha tira de la cuerda); lo
+// demas, en su mano.
+static GearSocket wielded_socket(const InvItem *it, bool left_hand) {
+    if (it->hands == INV_HANDS_SHIELD) return GEAR_FOREARM_LEFT;
+    if (is_bow(it)) return GEAR_HAND_LEFT;
+    return left_hand ? GEAR_HAND_LEFT : GEAR_HAND_RIGHT;
+}
+
+void ga_draw_gear(Props *props, const Inventory *inv, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
+                  float time, const Armor *armor, const InvItem *right, bool right_out, const InvItem *left, bool left_out,
+                  Color light) {
+    for (int s = 0; armor && s < SLOT_COUNT; s++) { // la armadura: el casco, rigido en la cabeza; lo demas, con su piel
+        if (!armor->slot[s].id[0]) continue;
+        const InvItem *it = inventory_find(inv, armor->slot[s].id);
+        if (!it) continue;
+        if (s == SLOT_HELMET) props_draw_socket(props, it, body, pos, yaw, track, time, GEAR_HEAD);
+        else props_draw_worn(props, it, body, pos, yaw, track, time);
+    }
+    const InvItem *hand[2] = { right, left };
+    bool out[2] = { right_out, left_out };
+    for (int k = 0; k < 2; k++) {
+        if (!hand[k]) continue;
+        GearSocket s = out[k] ? wielded_socket(hand[k], k == 1) : stowed_socket(hand[k], k == 1);
+        held_item(props, hand[k], props_socket_matrix(props, body, pos, yaw, track, time, s), light);
+    }
+    if (is_bow(right) || is_bow(left)) { // con el arco, la aljaba (el gorytos del patron)
+        const InvItem *q = inventory_find(inv, "utileria.objeto.aljaba");
+        if (q) props_draw_socket(props, q, body, pos, yaw, track, time, GEAR_BACK_QUIVER);
+    }
+}
+
+static const Armor *g_player_armor;
+void ga_set_player_armor(const Armor *armor) { g_player_armor = armor; }
+
+void ga_draw_patron_demo(Props *props, const Inventory *inv, const char *body_id, Vector3 pos, float time) {
+    const InvItem *body = inventory_find(inv, body_id);
+    if (!body || !props_has_model(props, body)) return;
+    static Armor armor;
+    static AnimTrack tracks[2];
+    if (strcmp(body->category, "personaje") != 0) { // un animal: delante del de la galeria, con la luz del shader y su clip
+        props_draw_item_track(props, body, (Vector3){ pos.x + fmaxf(body->l, 0.3f) + 0.6f, pos.y, pos.z }, 0.0f, "idle", time,
+                              0.0f, &tracks[0]);
+        return;
+    }
+    if (!armor.slot[SLOT_HELMET].id[0]) {
+        armor_equip(&armor, "armadura.casco.oro_padre");
+        armor_equip(&armor, "armadura.torso.laminar_cuero");
+        armor_equip(&armor, "armadura.botas.laminar_cuero");
+    }
+    const InvItem *sable = inventory_find(inv, "arma.corta.sable"), *escudo = inventory_find(inv, "escudo.mano.cuero");
+    const InvItem *arco = inventory_find(inv, "arma.distancia.arco_simple"), *daga = inventory_find(inv, "arma.corta.daga");
+    for (int k = 0; k < 2; k++) { // a la izquierda de la camara, guardado; a la derecha, empunado
+        bool out = k == 1;
+        Vector3 p = { pos.x, pos.y, pos.z + (out ? 0.95f : -0.95f) };
+        props_draw_item_track(props, body, p, 0.0f, out ? "empunar_escudo" : "idle", time, 0.0f, &tracks[k]);
+        ga_draw_gear(props, inv, body, p, 0.0f, &tracks[k], time, &armor, sable, out, escudo, out, WHITE);
+        props_draw_socket(props, arco, body, p, 0.0f, &tracks[k], time, GEAR_BACK_LONG); // el arco, la aljaba y la daga
+        props_draw_socket(props, inventory_find(inv, "utileria.objeto.aljaba"), body, p, 0.0f, &tracks[k], time, GEAR_BACK_QUIVER);
+        props_draw_socket(props, daga, body, p, 0.0f, &tracks[k], time, GEAR_HIP_RIGHT);
+    }
+}
+
+static AnimTrack helmet_demo_track; // el clip del maniqui de ga_draw_helmet_demo (ga_helmet_demo_matrix lo sigue)
+
+void ga_draw_helmet_demo(Props *props, const InvItem *body, const InvItem *helmet, Vector3 pos, float time) {
+    if (!body || !helmet) return;
+    props_draw_item_track(props, body, pos, 0.0f, "idle", time, 0.0f, &helmet_demo_track);
+    props_draw_socket(props, helmet, body, pos, 0.0f, &helmet_demo_track, time, GEAR_HEAD);
+}
+
+Matrix ga_helmet_demo_matrix(Props *props, const InvItem *body, Vector3 pos, float time) {
+    return props_socket_matrix(props, body, pos, 0.0f, &helmet_demo_track, time, GEAR_HEAD);
+}
+
 // Un punto y una direccion del cuerpo (espacio local: +X a su izquierda, +Y arriba, +Z adelante) en el mundo.
 static Vector3 body_point(V3 l, Vector3 pos, float yaw) {
     V3 w = body_to_world(l, (V3){ pos.x, pos.y, pos.z }, yaw);
@@ -1616,35 +1704,22 @@ static Vector3 held_in_hand(Props *props, const InvItem *it, const BodySeg *seg,
 static AnimTrack g_player_track;
 static float g_player_time;
 
-// Lo que lleva el jugador con el modelo del protagonista: en la mano, en los huesos de sus manos (props_bone_point);
-// lo guardado, al cinto y a la espalda, como con el cuerpo articulado (ga_draw_held_body).
+// Lo que lleva el jugador con el modelo del protagonista: su armadura y lo de sus manos, en los anclajes del patron,
+// con la pose de su animacion (ga_draw_gear); con la antorcha encendida, la llama en su punta.
 static void draw_held_model(const GameActions *ga, Props *props, const Player *p, float time, Color light) {
     const InvItem *body = inventory_find(ga->inv, "personaje.narrativo.protagonista");
     const Hands *h = &ga->hands;
     const InvItem *r = h->right.id[0] ? inventory_find(ga->inv, h->right.id) : NULL;
     const InvItem *l = h->left.id[0] ? inventory_find(ga->inv, h->left.id) : NULL;
     bool r_out = hands_out(h, HAND_RIGHT), l_out = hands_out(h, HAND_LEFT);
-    Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z }, er, hr, el, hl;
-    float yaw = p->yaw, my = p->yaw - PI / 2.0f;
-    bool rb = props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "lowerarm_r", &er) &&
-              props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "hand_r", &hr);
-    bool lb = props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "lowerarm_l", &el) &&
-              props_bone_point(props, body, pos, my, &g_player_track, g_player_time, "hand_l", &hl);
-    Vector3 up = body_dir((V3){ 0, 1, 0 }, yaw), left = body_dir((V3){ 1, 0, 0 }, yaw), back = body_dir((V3){ 0, 0, -1 }, yaw);
-    if (r && r_out && rb) held_between(props, r, er, hr, yaw, light);
-    else if (r && !r_out && r->hands == INV_HANDS_TWO) // a la espalda
-        held_item(props, r, held_frame(body_point((V3){ -0.15f, 0.75f, -0.2f }, pos, yaw), back, body_dir((V3){ 0.45f, 1.0f, 0 }, yaw)), light);
-    else if (r && !r_out) // al cinto
-        held_item(props, r, held_frame(body_point((V3){ 0.2f, 0.95f, 0.12f }, pos, yaw), left, body_dir((V3){ 0, -0.55f, -1.0f }, yaw)), light);
-    if (l && l_out && lb && l->hands == INV_HANDS_SHIELD) // el escudo en el antebrazo, mirando afuera
-        held_item(props, l, held_frame(Vector3Lerp(el, hl, 0.5f), left, Vector3Subtract(hl, el)), light);
-    else if (l && l_out && lb) { // la antorcha o un arma corta
-        Vector3 tip = held_between(props, l, el, hl, yaw, light);
-        if (ga->torch_lit) DrawSphere(tip, 0.11f * (0.8f + 0.2f * sinf(time * 17.0f)), (Color){ 250, 160, 50, 255 });
-    } else if (l && !l_out && l->hands == INV_HANDS_SHIELD) // a la espalda, mirando atras
-        held_item(props, l, held_frame(body_point((V3){ 0, 1.15f, -0.2f }, pos, yaw), back, up), light);
-    else if (l && !l_out)
-        held_item(props, l, held_frame(body_point((V3){ -0.2f, 0.95f, 0.1f }, pos, yaw), left, body_dir((V3){ 0, -0.55f, -1.0f }, yaw)), light);
+    Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
+    float my = p->yaw - PI / 2.0f;
+    ga_draw_gear(props, ga->inv, body, pos, my, &g_player_track, g_player_time, g_player_armor, r, r_out, l, l_out, light);
+    if (l && l_out && l->hands != INV_HANDS_SHIELD && ga->torch_lit) { // la llama, en la punta de lo que lleva
+        Matrix m = props_socket_matrix(props, body, pos, my, &g_player_track, g_player_time, GEAR_HAND_LEFT);
+        Vector3 tip = Vector3Transform((Vector3){ 0, fmaxf(l->h, 0.3f) * 0.75f, 0 }, m);
+        DrawSphere(tip, 0.11f * (0.8f + 0.2f * sinf(time * 17.0f)), (Color){ 250, 160, 50, 255 });
+    }
 }
 
 void ga_draw_held_body(const GameActions *ga, Props *props, const BodyPose *b, Vector3 pos, float yaw, float time, Color light) {
