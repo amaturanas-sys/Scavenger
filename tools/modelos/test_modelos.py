@@ -591,10 +591,82 @@ def test_penetran(tmp):
     assert patron.penetran(*_casquete(0.105, adentro=True, sub=4), cr) == 0
 
 
+def _cabeza(radios=(0.1, 0.1, 0.1), sub=3):
+    """Una cabeza de prueba (un elipsoide en 1,6 m) con las medidas que usa el calce de los cascos (patron.craneo)."""
+    import patron
+    s = trimesh.creation.icosphere(subdivisions=sub, radius=1.0)
+    c = np.array([0.0, 1.6, 0.0])
+    v, f = np.asarray(s.vertices, float) * radios + c, np.asarray(s.faces, np.int64)
+    return dict(id="prueba", centro=c, v=v, f=f, piel=patron.Cabeza(v, f, c), barbilla=c[1] - 0.6 * radios[1],
+                cejas=c[1], alto=c[1] + radios[1], borde=c[1] + patron.BORDE_CEJAS, fondo=2 * radios[0], ancho=2 * radios[2])
+
+
+def _cascara(r_afuera, r_adentro, sub=4):
+    """Un casco de prueba: la mitad de arriba de una esfera hueca (la cara de afuera y la de adentro)."""
+    return _juntar(_casquete(r_afuera, sub=sub), _casquete(r_adentro, adentro=True, sub=sub))
+
+
+def test_asoman(tmp):
+    """La piel de una cabeza esferica de 10 cm contra un casco hueco de 7 mm de grosor: dentro del hueco, no asoma; metida
+    en el grosor (entre la cara de adentro y la de afuera), tampoco: no se ve; pasando la cara de afuera, si."""
+    import patron
+    cr = _cabeza()
+    for (afuera, adentro), asoma in (((0.112, 0.105), False), ((0.102, 0.095), False), ((0.097, 0.09), True)):
+        v, f = _cascara(afuera, adentro)
+        n = patron.asoman(v + cr["centro"], f, cr)
+        assert (n > 0) == asoma, (afuera, adentro, n)
+
+
+def test_contacto(tmp):
+    """Lo que la piel entra en el casco: con la cara de adentro a 9,5 cm de una cabeza de 10, 5 mm; afuera, nada."""
+    import patron
+    cr = _cabeza(sub=4)
+    v, f = _cascara(0.102, 0.095)
+    assert abs(patron.contacto(v + cr["centro"], f, cr) + 0.005) < 0.0012, patron.contacto(v + cr["centro"], f, cr)
+    v, f = _cascara(0.112, 0.105)
+    assert patron.contacto(v + cr["centro"], f, cr) > 0.003
+
+
+def test_regla_casco(tmp):
+    """La regla de los cascos colocados por el usuario con un casco redondo (una esfera hueca de 7 % de grosor, abierta
+    abajo, con la ventana de la cara adelante, a +Z como en Props) en una cabeza ovalada (19 cm de fondo, 15 de ancho):
+    el fondo se estira (la cabeza es mas honda que ancha), queda apoyado (la piel entra lo que deja CONTACTO_CASCO), la
+    cabeza no asoma y el borde de la ventana va BORDE_CEJAS sobre las cejas."""
+    import patron
+    cr = _cabeza((0.095, 0.09, 0.075), sub=4)
+    s = trimesh.creation.icosphere(subdivisions=4, radius=1.0)
+    v1, f1 = np.asarray(s.vertices, float), np.asarray(s.faces, np.int64)
+    v, f = _juntar((v1 * 0.5, f1), (v1 * 0.465, f1[:, ::-1]))  # en otras unidades, como sale de la reconstruccion
+    cen = v[f].mean(1) / 0.5
+    ventana = (cen[:, 2] > 0) & (cen[:, 1] < 0.1) & (np.abs(cen[:, 0]) < 0.45)
+    o, f = v, f[(cen[:, 1] > -0.45) & ~ventana]
+    M, info = patron.calzar_casco(o, f, {"id": "prueba", "az": 0}, cr)
+    w = patron.aplicar(M, o)
+    assert info["estirado"] > 1.1, info["estirado"]
+    d = patron.contacto(w, f, cr)
+    assert -patron.CONTACTO_CASCO - 0.0005 <= d <= -patron.CONTACTO_CASCO + 0.0025, d
+    assert patron.asoman(w, f, cr) == 0
+    b = patron.abertura(w, f, cr["centro"][0], cr["centro"][2], patron.OJOS)
+    assert b is not None and abs(b - cr["borde"]) < 0.004, (b, cr["borde"])
+
+
+def test_glb_mallas(tmp):
+    """Los cascos colocados se guardan como mallas sueltas con su nombre y se leen igual."""
+    import patron
+    a, b = _casquete(0.1), _casquete(0.2, sub=2)
+    ruta = os.path.join(tmp, "colocados.glb")
+    open(ruta, "wb").write(patron.glb_mallas([("ref_02:casco", *a), ("ref_03:otro", *b)], "prueba"))
+    leidas = patron.mallas(ruta)
+    assert [n for n, _, _ in leidas] == ["ref_02:casco", "ref_03:otro"]
+    for (_, v, f), (va, fa) in zip(leidas, (a, b)):
+        assert np.allclose(v, va, atol=1e-6) and np.array_equal(f, fa)
+
+
 def main():
     tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave, test_refs_anigen,
              test_refs_anigen_registro, test_adaptar_oga, test_animales, test_animales_fantasma, test_capa_de_afuera,
-             test_tapar_rendijas, test_sanear, test_girar_casco, test_cabeza_signo, test_abertura, test_forro, test_penetran]
+             test_tapar_rendijas, test_sanear, test_girar_casco, test_cabeza_signo, test_abertura, test_forro, test_penetran,
+             test_asoman, test_contacto, test_regla_casco, test_glb_mallas]
     failed = 0
     tmp = tempfile.mkdtemp(prefix="modelos-")
     try:

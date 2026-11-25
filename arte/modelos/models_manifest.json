@@ -759,16 +759,17 @@
       "source": {
         "tool": "patron",
         "url": "",
-        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "file": "arte/fuentes/patron/cascos_colocados.glb",
         "sha256": "2b1439c25817273f817b1d7f5dc75b85a53c44d57f7a90781620eb0a2a224599"
       },
       "params": {
         "malla": "casco_carrilleras",
         "forma": "casco",
         "img": "casco_bronce-2",
-        "az": 30
+        "az": 30,
+        "patron": "model_equipped_03:white_mesh(1)"
       },
-      "updated_at": "2026-11-25T05:36:00+00:00"
+      "updated_at": "2026-11-25T20:56:09+00:00"
     },
     "armadura.casco.escamas_hierro": {
       "file": "arte/fuentes/props/modelos/casco_nasal.glb",
@@ -777,16 +778,17 @@
       "source": {
         "tool": "patron",
         "url": "",
-        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "file": "arte/fuentes/patron/cascos_colocados.glb",
         "sha256": "6b2c21be2bd5cdf89c6f3215bc05ba40f57c71f8d4aa087abb93149af335d53b"
       },
       "params": {
         "malla": "casco_nasal",
         "forma": "casco",
         "img": "casco_hierro-4",
-        "az": 0
+        "az": 0,
+        "patron": "model_equipped_02:white_mesh"
       },
-      "updated_at": "2026-11-25T05:36:15+00:00"
+      "updated_at": "2026-11-25T20:56:17+00:00"
     },
     "armadura.casco.laminar_cuero": {
       "file": "arte/fuentes/props/modelos/casco_costillas.glb",
@@ -795,7 +797,7 @@
       "source": {
         "tool": "patron",
         "url": "",
-        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "file": "arte/fuentes/patron/cascos_colocados.glb",
         "sha256": "4dbc4175fab96b9ad9115d1d6843431d6b1048998c99036cdedbb0c1165fca06"
       },
       "params": {
@@ -804,9 +806,10 @@
         "img": "casco_hierro-3",
         "az": 0,
         "tono": "cuero",
-        "mezcla": 0.85
+        "mezcla": 0.85,
+        "patron": "model_equipped_05:white_mesh_5"
       },
-      "updated_at": "2026-11-25T05:35:45+00:00"
+      "updated_at": "2026-11-25T20:56:01+00:00"
     },
     "armadura.casco.malla": {
       "file": "arte/fuentes/props/modelos/casco_ala.glb",
@@ -815,16 +818,17 @@
       "source": {
         "tool": "patron",
         "url": "",
-        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "file": "arte/fuentes/patron/cascos_colocados.glb",
         "sha256": "433b7c4a029a4e4a67b4d16fdd2e057708ff975dc333e4ccfcc9a966e3709687"
       },
       "params": {
         "malla": "casco_ala",
         "forma": "casco",
         "img": "casco_hierro-1",
-        "az": 0
+        "az": 0,
+        "patron": "model_equipped_04:white_mesh_4"
       },
-      "updated_at": "2026-11-25T05:47:40+00:00"
+      "updated_at": "2026-11-25T20:56:27+00:00"
     },
     "escudo.mano.lamina": {
       "file": "assets/models/escudo/mano/lamina.glb",
@@ -1288,7 +1292,7 @@
         "mezcla": 0.6,
         "patron": "model"
       },
-      "updated_at": "2026-11-25T05:34:40+00:00"
+      "updated_at": "2026-11-25T20:54:55+00:00"
     },
     "arma.distancia.arco_simple": {
       "file": "arte/fuentes/props/modelos/arco.glb",
@@ -1429,16 +1433,17 @@
       "source": {
         "tool": "patron",
         "url": "",
-        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "file": "arte/fuentes/patron/cascos_colocados.glb",
         "sha256": "51bb35a7e53195ebab76c72cce5b2b21ff9e04206bc20a063670a49b8d2fb09e"
       },
       "params": {
         "malla": "gorro_piel",
         "forma": "casco",
         "img": "gorro_piel-1",
-        "az": 0
+        "az": 0,
+        "patron": "model_equipped_07:white_mesh(1)"
       },
-      "updated_at": "2026-11-25T05:35:01+00:00"
+      "updated_at": "2026-11-25T20:55:07+00:00"
     },
     "armadura.casco.culto": {
       "file": "arte/fuentes/props/modelos/casco_calado.glb",
@@ -1456,7 +1461,7 @@
         "img": "casco_bronce-1",
         "az": 30
       },
-      "updated_at": "2026-11-25T05:35:15+00:00"
+      "updated_at": "2026-11-25T20:55:43+00:00"
     },
     "armadura.casco.mascara_culto": {
       "file": "arte/fuentes/props/modelos/casco_visera.glb",
@@ -1465,16 +1470,17 @@
       "source": {
         "tool": "patron",
         "url": "",
-        "file": "arte/fuentes/patron/model_equipped_01.glb",
+        "file": "arte/fuentes/patron/cascos_colocados.glb",
         "sha256": "4c988799543d6832ee24ed7b693e18ab61d819ac8fb53a9ba34d22b9a8a52ff9"
       },
       "params": {
         "malla": "casco_visera",
         "forma": "casco",
         "img": "casco_escamas-3",
-        "az": 330
+        "az": 330,
+        "patron": "model_equipped_06:white_mesh(22)"
       },
-      "updated_at": "2026-11-25T05:35:30+00:00"
+      "updated_at": "2026-11-25T20:55:51+00:00"
     },
     "arma.larga.lanza": {
       "file": "arte/fuentes/props/modelos/lanza.glb",
