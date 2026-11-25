@@ -494,7 +494,8 @@ traba.
   - el mar por conexión, el arrecife con pasto marino y algas, el mar hondo como niebla, la transición al desierto seca
     y la del bosque en manchas (v0.17.0);
   - el equipo de los humanoides: el del patrón del usuario, con los cascos calzados sobre el cráneo y el shader de
-    modelos (v0.17.1).
+    modelos (v0.17.1);
+  - los cascos donde los colocó el usuario en sus referencias, y la regla para los que no tienen (v0.17.2).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;

@@ -7,14 +7,19 @@
                                                      inventario
   python3 tools/modelos/patron.py ver [id ...]       vistas de control: el cuerpo en reposo con lo hecho puesto
                                                      (build/patron/*.png)
-  python3 tools/modelos/patron.py cascos             cada casco en cada cuerpo, en reposo: la holgura a la piel, los
-                                                     vertices del craneo a menos de 2 mm (tienen que ser 0), el techo
-                                                     sobre la coronilla y el borde sobre las cejas
+  python3 tools/modelos/patron.py cascos             cada casco en cada cuerpo, en reposo: cuanto entra la piel en su
+                                                     grosor, los puntos de la piel del craneo que asoman por afuera
+                                                     (tienen que ser 0), el techo sobre la coronilla y el borde sobre
+                                                     las cejas
+  python3 tools/modelos/patron.py referencias DIR    arte/fuentes/patron/cascos_colocados.glb desde las referencias
+                                                     del usuario (DIR: Model equipped 02.glb a 07.glb)
 
 El patron es el cuerpo de arte/fuentes/humanoide/rigged-model.glb sin tocar, en su pose de piel (la T), con el casco,
 el chaleco, las botas, el escudo, la aljaba, el arco, el sable y la daga puestos, y la antorcha, la lanza y la
 alabarda de pie al lado. Cada pieza es una malla de arte/fuentes/props/modelos con una transformacion afin exacta
-(error 0 mm): solo se escalo (a veces distinto en cada eje), se giro y se coloco. De ahi sale todo:
+(error 0 mm): solo se escalo (a veces distinto en cada eje), se giro y se coloco. Los otros cascos que el usuario
+coloco a mano sobre el mismo cuerpo (Model equipped 02 a 07) estan en cascos_colocados.glb, en el marco del patron. De
+ahi sale todo:
 
 - Las prendas con piel (corazas y botas): la malla de Props puesta donde la puso el patron (las que no estan en el,
   con el mismo criterio: la holgura del chaleco), sin las caras de adentro (las que miran al cuerpo: no se ven),
@@ -25,11 +30,13 @@ alabarda de pie al lado. Cada pieza es una malla de arte/fuentes/props/modelos c
   origen, la hoja hacia +Y y el filo hacia +Z; los escudos mirando a +X, el origen en el centro de atras; lo demas,
   en el centro de la base) y, en src/world/anclajes.inc, donde va en cada cuerpo: el hueso y la matriz del patron
   (la espalda, la cadera) o de la mano (empunado).
-- Los cascos, por su cupula sobre el craneo (calzar_casco): de frente a +X por su simetria, derechos, el borde de
-  adelante sobre las cejas, el centro de la cupula sobre el del craneo y la escala menor con 2 mm de la piel en todo
-  el casco; el del patron, donde lo puso el usuario, agrandado lo justo. Su marco: el origen en el centro del craneo
-  del cuerpo comun (a la altura de las cejas), +X adelante; GEAR_HEAD lleva ese punto al de cada cuerpo, con la
-  escala con la que ningun casco toca su cabeza.
+- Los cascos (calzar_casco): los que coloco el usuario, ahi mismo (su escala por eje y su giro); los demas, con el
+  patron de esas colocaciones: de frente a +X por su simetria y derechos, el fondo estirado hasta que el hueco de la
+  banda de la frente sea parejo (la cabeza es mas honda que ancha), el borde de adelante 6 mm sobre las cejas y la
+  escala menor con la que se apoya en la cabeza (la piel entra hasta 3 mm en su grosor) sin que la cabeza asome por
+  afuera. Su marco: el origen en el centro del craneo del cuerpo comun (a la altura de las cejas), +X adelante;
+  GEAR_HEAD lleva ese punto al de cada cuerpo con su cabeza por eje (fondo, alto, ancho) y GEAR_HELMET_FIT, la escala
+  de cada casco en esa cabeza: el mismo apoyo, sin que asome.
 - La reduccion: cuadricas (fast_simplification) hasta el tris_max, sin centrar ni escalar a ciegas: la escala y el
   lugar son los del patron. Las normales, suaves entre caras de menos de 40 grados y cortadas en las aristas mas
   duras. La textura: el render de Props proyectado de frente (<= 256 px, filtro de punto), con su UV.
@@ -53,6 +60,9 @@ import inventario  # noqa: E402
 
 ROOT = inventario.ROOT
 PATRON = os.path.join(ROOT, "arte", "fuentes", "patron", "model_equipped_01.glb")
+# Los cascos que el usuario coloco a mano sobre el mismo cuerpo (Model equipped 02 a 07), llevados al marco del patron
+# (colocar_referencias): Patron los lee como las demas piezas.
+CASCOS_COLOCADOS = os.path.join(ROOT, "arte", "fuentes", "patron", "cascos_colocados.glb")
 PROPS = os.path.join(ROOT, "arte", "fuentes", "props")
 ESQUELETO = os.path.join(ROOT, "arte", "fuentes", "humanoide", "exported-model.glb")
 RIGGED = os.path.join(ROOT, "arte", "fuentes", "humanoide", "rigged-model.glb")
@@ -68,6 +78,11 @@ PIEZAS = {"model": "casco_aguila", "white_mesh(3)": "chaleco_largo", "white_mesh
           "white_mesh(18) 2": "botas_montar", "white_mesh(28)": "aljaba", "white_mesh(27)": "arco",
           "hy3d-model(3)": "escudo_redondo_3", "Curved sword": "sable", "white_mesh(25)": "espada",
           "white_mesh(20)": "antorcha", "white_mesh(24)": "lanza", "white_mesh(26)": "alabarda"}
+# Los cascos de cascos_colocados.glb: "<referencia>:<malla en ella>" y su malla de Props (la referencia, Model equipped
+# NN.glb de IMPORTED/References 3d en la rama cline/modelos-animales).
+PIEZAS_CASCOS = {"model_equipped_02:white_mesh": "casco_nasal", "model_equipped_03:white_mesh(1)": "casco_carrilleras",
+                 "model_equipped_04:white_mesh_4": "casco_ala", "model_equipped_05:white_mesh_5": "casco_costillas",
+                 "model_equipped_06:white_mesh(22)": "casco_visera", "model_equipped_07:white_mesh(1)": "gorro_piel"}
 CUERPO_PATRON = "rigged-model"
 
 
@@ -278,9 +293,10 @@ class Patron:
 
     def __init__(self):
         self.mallas = {nombre: (v, f) for nombre, v, f in mallas(PATRON)}
+        self.mallas.update({nombre: (v, f) for nombre, v, f in mallas(CASCOS_COLOCADOS)})
         self.M = {}
         self.error = {}
-        for nombre, fuente in PIEZAS.items():
+        for nombre, fuente in {**PIEZAS, **PIEZAS_CASCOS}.items():
             g = self.mallas[nombre][0]
             o, _ = malla_props(fuente)
             if fuente == "botas_montar":  # dos piezas sueltas: la de este pie
@@ -921,6 +937,65 @@ def glb_pieza(v, f, nor, uv, tex, nombre, generador, piel=None):
     return _glb(doc, blob)
 
 
+def glb_mallas(nodos, generador):
+    """Un GLB con una malla por nodo, solo posiciones e indices: nodos, [(nombre, vertices, caras)]."""
+    blob, views, accs, meshes = b"", [], [], []
+    for nombre, v, f in nodos:
+        prim = {}
+        for clave, datos, tipo, comp, target in (("POSITION", np.asarray(v, "<f4"), "VEC3", 5126, 34962),
+                                                 ("indices", np.asarray(f, "<u4").reshape(-1), "SCALAR", 5125, 34963)):
+            blob += b"\x00" * (-len(blob) % 4)
+            views.append({"buffer": 0, "byteOffset": len(blob), "byteLength": datos.nbytes, "target": target})
+            a = {"bufferView": len(views) - 1, "componentType": comp, "count": len(datos), "type": tipo}
+            if clave == "POSITION":
+                a["min"], a["max"] = datos.min(0).tolist(), datos.max(0).tolist()
+            accs.append(a)
+            blob += datos.tobytes()
+            prim[clave] = len(accs) - 1
+        meshes.append({"name": nombre, "primitives": [{"attributes": {"POSITION": prim["POSITION"]}, "indices": prim["indices"]}]})
+    doc = {"asset": {"version": "2.0", "generator": generador}, "scene": 0, "scenes": [{"nodes": list(range(len(nodos)))}],
+           "nodes": [{"name": n, "mesh": i} for i, (n, _, _) in enumerate(nodos)], "meshes": meshes, "accessors": accs,
+           "bufferViews": views, "buffers": [{"byteLength": len(blob) + (-len(blob) % 4)}]}
+    return _glb(doc, blob)
+
+
+def colocar_referencias(carpeta, log=log):
+    """arte/fuentes/patron/cascos_colocados.glb desde las referencias que armo el usuario: en carpeta, Model equipped
+    02.glb a 07.glb (IMPORTED/References 3d, en la rama cline/modelos-animales). Cada una es el patron entero fundido en
+    una sola malla (el cuerpo primero, con sus vertices en el mismo orden, y despues el equipo, sin el casco), agrandado
+    y corrido, con un casco puesto a mano. La afin de esos vertices del cuerpo a los del patron (exacta: una semejanza)
+    lleva el casco al marco del patron sin tocar su lugar sobre la cabeza; de los 11 MB de cada referencia queda el casco."""
+    cuerpo = next(v for n, v, _ in mallas(PATRON) if n == CUERPO_PATRON)
+    tam = float(np.ptp(cuerpo, axis=0).max())
+    nodos = []
+    for clave in PIEZAS_CASCOS:
+        archivo, malla = clave.split(":", 1)
+        ruta = os.path.join(carpeta, "Model equipped " + archivo.rsplit("_", 1)[1] + ".glb")
+        partes = {}
+        for n, v, f in mallas(ruta):  # las primitivas de una misma malla, juntas
+            v0, f0 = partes.get(n, (np.zeros((0, 3)), np.zeros((0, 3), np.int64)))
+            partes[n] = (np.concatenate([v0, v]), np.concatenate([f0, f + len(v0)]))
+        fundido, ff = max(partes.values(), key=lambda p: len(p[0]))
+        S = afin(fundido[:len(cuerpo)], cuerpo)
+        err = float(np.abs(aplicar(S, fundido[:len(cuerpo)]) - cuerpo).max())
+        if err > 1e-5 * tam:  # al fundir, los vertices cambiaron de orden: la semejanza por cercania, con la pieza mayor
+            lab = piezas_conexas(fundido, ff)
+            grande = fundido[lab == np.bincount(lab).argmax()]
+            arbol = cKDTree(cuerpo)
+            S = icp_semejanza(grande, cuerpo)
+            for _ in range(3):
+                S = umeyama(grande, cuerpo[arbol.query(aplicar(S, grande))[1]])
+            err = float(arbol.query(aplicar(S, grande))[0].max())
+        if err > 1e-5 * tam:
+            raise SystemExit(f"{ruta}: el cuerpo no es el del patron ({err / tam:.1e} del alto)")
+        v, f = partes[malla]
+        nodos.append((clave, aplicar(S, v), f))
+        log(f"[patron] {os.path.basename(ruta)}: el cuerpo es el del patron x{1 / np.cbrt(np.linalg.det(S[:3, :3])):.4f} "
+            f"(error {err / tam:.1e}); el casco {malla!r} ({len(v)} vertices), a su marco")
+    open(CASCOS_COLOCADOS, "wb").write(glb_mallas(nodos, GENERADOR))
+    log(f"[patron] {os.path.relpath(CASCOS_COLOCADOS, ROOT)}: {len(nodos)} cascos colocados a mano")
+
+
 # ---------------------------------------------------------------- las recetas
 # id, malla de Props, forma, imagen (el render de Props que da la textura) y lo propio de cada una:
 #   patron: la malla del patron de la que sale (su lugar exacto); sin ella, con el criterio de las de su forma
@@ -940,17 +1015,23 @@ RECETAS = [
          patron=("white_mesh(18) 1", "white_mesh(18) 2")),
     dict(id="armadura.botas.fieltro", malla="botas_montar", forma="botas", img="botas_fieltro-2",
          patron=("white_mesh(18) 1", "white_mesh(18) 2")),
-    # Cascos: rigidos, en la cabeza
+    # Cascos: rigidos, en la cabeza. Con patron, donde los coloco el usuario (el del padre en el patron; los demas en
+    # cascos_colocados.glb); sin el, con el patron de esas colocaciones (calzar_casco).
     dict(id="armadura.casco.oro_padre", malla="casco_aguila", forma="casco", img="casco_aguila-1", az=270, tono="oro", mezcla=0.6,
          patron="model"),
-    dict(id="armadura.casco.fieltro", malla="gorro_piel", forma="casco", img="gorro_piel-1", az=0),
+    dict(id="armadura.casco.fieltro", malla="gorro_piel", forma="casco", img="gorro_piel-1", az=0,
+         patron="model_equipped_07:white_mesh(1)"),
     dict(id="armadura.casco.culto", malla="casco_calado", forma="casco", img="casco_bronce-1", az=30),
-    dict(id="armadura.casco.mascara_culto", malla="casco_visera", forma="casco", img="casco_escamas-3", az=330),
+    dict(id="armadura.casco.mascara_culto", malla="casco_visera", forma="casco", img="casco_escamas-3", az=330,
+         patron="model_equipped_06:white_mesh(22)"),
     dict(id="armadura.casco.laminar_cuero", malla="casco_costillas", forma="casco", img="casco_hierro-3", az=0, tono="cuero",
-         mezcla=0.85),
-    dict(id="armadura.casco.bronce", malla="casco_carrilleras", forma="casco", img="casco_bronce-2", az=30),
-    dict(id="armadura.casco.escamas_hierro", malla="casco_nasal", forma="casco", img="casco_hierro-4", az=0),
-    dict(id="armadura.casco.malla", malla="casco_ala", forma="casco", img="casco_hierro-1", az=0),
+         mezcla=0.85, patron="model_equipped_05:white_mesh_5"),
+    dict(id="armadura.casco.bronce", malla="casco_carrilleras", forma="casco", img="casco_bronce-2", az=30,
+         patron="model_equipped_03:white_mesh(1)"),
+    dict(id="armadura.casco.escamas_hierro", malla="casco_nasal", forma="casco", img="casco_hierro-4", az=0,
+         patron="model_equipped_02:white_mesh"),
+    dict(id="armadura.casco.malla", malla="casco_ala", forma="casco", img="casco_hierro-1", az=0,
+         patron="model_equipped_04:white_mesh_4"),
     # Armas, escudos y objetos: rigidos
     dict(id="arma.corta.sable", malla="sable", forma="arma", img="sable-3", punta="abajo", agarre=0.07, filo="convexo",
          patron="Curved sword"),
@@ -1081,11 +1162,17 @@ def marco(o, f, rec, it, R):
     return M
 
 
-# ---------------------------------------------------------------- los cascos: la cupula sobre el craneo
-HOLGURA_CASCO = 0.002  # m: lo minimo entre el casco y la piel de la cabeza, en todo el casco y en cada cuerpo
-CEJAS = 0.6            # las cejas, de la barbilla (0) a la coronilla (1): la altura del centro del craneo
-BORDE_CASCO = 0.678    # el borde de adelante del casco (frente a los ojos), en la misma medida: el del aguila del patron
-OJOS = 0.032           # m (en el comun): de la linea media a cada ojo, donde se mide el borde de adelante
+# ---------------------------------------------------------------- los cascos: como los coloco el usuario
+# Lo medido en los siete cascos que el usuario coloco a mano sobre el cuerpo comun (el del patron y los de
+# cascos_colocados.glb; assets/models/README.md, «Cascos»): apoyados en la cabeza (la piel entra de 1 a 4,5 mm en su
+# grosor y no asoma por afuera), el borde de adelante de 4 a 8 mm sobre las cejas, el fondo estirado de 0 a 25 % para
+# seguir el ovalo de la cabeza (el alto y el ancho, con la misma escala) y de frente, derechos, como salieron.
+CONTACTO_CASCO = 0.003  # m: lo que la piel puede entrar en el grosor del casco (sin asomar por afuera)
+BORDE_CEJAS = 0.006     # m: el borde de adelante del casco sobre las cejas
+HONDO_CASCO = 0.006     # m: las caras del casco mas adentro de la cabeza que esto (lo que quedo del forro) no se ven: fuera
+HOLGURA_CASCO = 0.002   # m: la holgura de penetran y escala_minima (las pruebas)
+CEJAS = 0.6             # las cejas, de la barbilla (0) a la coronilla (1): la altura del centro del craneo
+OJOS = 0.032            # m (en el comun): de la linea media a cada ojo, donde se mide el borde de adelante
 
 
 BARI = 1e-9  # la tolerancia de las coordenadas baricentricas: el rayo que pasa justo por una arista o un vertice golpea
@@ -1192,8 +1279,7 @@ def craneo(cuerpo):
     centro = np.array([(frente + nuca) / 2, cejas, (izq + der) / 2])
     cuello = fc[(v[fc][:, :, 1] > barbilla - 0.03 * k).all(1)]  # la cabeza y el cuello, sin los hombros
     return dict(id=cuerpo.id, piel=Cabeza(v, cuello, centro), v=v, f=cuello, alto=alto, barbilla=barbilla, cejas=cejas, k=k,
-                centro=centro, fondo=frente - nuca, ancho=izq - der, borde=barbilla + BORDE_CASCO * (alto - barbilla),
-                cabeza=cab)
+                centro=centro, fondo=frente - nuca, ancho=izq - der, borde=cejas + BORDE_CEJAS, cabeza=cab)
 
 
 def girar_casco(o, f, az, rango=60.0):
@@ -1342,92 +1428,168 @@ def escala_minima(q, piel, lo, hi, holgura=HOLGURA_CASCO):
     return b
 
 
-def calzar_casco(o, f, rec, cr, M_patron=None):
-    """El casco (malla de Props) sobre la cabeza del comun en reposo (cr: su craneo). Devuelve la semejanza (4x4) de la
-    malla al reposo y lo medido. El del patron (M_patron: de su malla al reposo, donde lo puso el usuario): ahi mismo,
-    agrandado lo justo alrededor del centro del craneo para quedar a HOLGURA_CASCO. Los demas, con los pasos de la
-    cupula:
-    1. de frente a +X por su simetria (girar_casco) y derecho: el pitch de la reconstruccion, como el aguila del
-       patron, que el usuario puso sin girar; si la reconstruccion cerro la boca con un forro, la boca nivelada (el
-       plano del forro, pendiente_forro: el gorro de piel salio echado atras, con el frente alto y la nuca colgando);
-    2. su borde de adelante (el tope de la abertura frente a los ojos) en el de la cabeza (cr["borde"]: sobre las
-       cejas, donde quedo el del aguila);
-    3. el centro de su cupula (el corte de su cara de adentro un cuarto del alto de la cupula arriba del borde) sobre
-       el centro del craneo en X y Z;
-    4. la escala menor, alrededor de ese punto, con HOLGURA_CASCO de la piel de la cabeza y el cuello en todo el
-       casco (sin su forro, si la reconstruccion cerro la boca: queda adentro de la cabeza).
-    Al final, si todos los rayos desde el centro del craneo hacia arriba de las cejas golpean el casco (que lo cubre)."""
+def menor_escala(entra, lo, hi):
+    """La escala menor s en [lo, hi] con entra(s): subiendo de a 3 % desde lo y despues fina entre la ultima que no
+    entra y la primera que si. None si ninguna entra."""
+    s = lo
+    while s <= hi and not entra(s):
+        s *= 1.03
+    if s > hi:
+        return None
+    a, b = s / 1.03, s
+    for _ in range(14):
+        m = (a + b) / 2
+        a, b = (a, m) if entra(m) else (m, b)
+    return b
+
+
+def contacto(w, f, cr):
+    """Lo mas que la piel de la cabeza entra en el casco puesto (w: sus vertices en reposo): la distancia con signo
+    menor de sus puntos (puntos_casco) a la piel, negativa si se mete en la cabeza."""
+    return float(cr["piel"].distancia(puntos_casco(w, f))[0].min())
+
+
+def piel_craneo(cr):
+    """Los puntos de la piel del craneo (la cabeza del juego, arriba de la barbilla) que no pueden asomar por un casco:
+    sus vertices, el medio de sus aristas y el centro de sus caras (la cabeza es low poly: entre dos vertices tapados,
+    la cara puede asomar)."""
+    if "_puntos" not in cr:
+        tri = cr["v"][cr["f"]]
+        p = np.concatenate([tri.reshape(-1, 3), tri.mean(1), (tri + np.roll(tri, -1, axis=1)).reshape(-1, 3) / 2])
+        p = np.unique(np.round(p, 7), axis=0)
+        cr["_puntos"] = p[p[:, 1] > cr["barbilla"]]
+    return cr["_puntos"]
+
+
+def asoman(w, f, cr, margen=0.0005):
+    """Cuantos puntos de la piel del craneo (piel_craneo) asoman por el casco puesto (w: sus vertices en reposo): el
+    rayo desde el centro del craneo hacia el punto toca el casco y el punto queda mas afuera que la cara de afuera (la
+    que mira hacia afuera) mas lejana. La piel que entra en el grosor del casco, entre su cara de adentro y la de afuera,
+    no se ve y no cuenta; la de la abertura de la cara (el rayo no toca el casco), tampoco."""
     c = cr["centro"]
-    piel = cr["piel"]
+    fn, _ = normales_caras(w, f)
+    n = 0
+    for q in piel_craneo(cr):
+        d = q - c
+        r = float(np.linalg.norm(d))
+        d = d / r
+        i, t = golpes(c, d, w, f)
+        afuera = t[fn[i] @ d > 0] if len(i) else t[:0]
+        n += bool(len(afuera)) and r > float(afuera.max()) + margen
+    return int(n)
+
+
+def banda_cabeza(cr, y):
+    """El fondo y el ancho de la cabeza del juego a la altura y (por el centro del craneo) y el medio de adelante-atras."""
+    c = cr["centro"]
+    o = np.array([[c[0] + 1, y, c[2]], [c[0] - 1, y, c[2]], [c[0], y, c[2] + 1], [c[0], y, c[2] - 1]])
+    t = rayos(o, np.array([[-1.0, 0, 0], [1, 0, 0], [0, 0, -1], [0, 0, 1]]), cr["v"], cr["f"])
+    frente, nuca = o[0, 0] - t[0], o[1, 0] + t[1]
+    return frente - nuca, (o[2, 2] - t[2]) - (o[3, 2] + t[3]), (frente + nuca) / 2
+
+
+def banda_casco(v, f, y, cx, cz):
+    """La cara de adentro del casco (derecho, de frente a +X) a la altura y, desde el eje (cx, cz): la distancia
+    adelante, atras y a cada costado (+Z, -Z) a la primera cara que mira al eje."""
+    fn, _ = normales_caras(v, f)
+    out = []
+    for d in np.array([[1.0, 0, 0], [-1.0, 0, 0], [0, 0, 1.0], [0, 0, -1.0]]):
+        i, t = golpes(np.array([cx, y, cz]), d, v, f)
+        adentro = t[fn[i] @ d < 0] if len(i) else t[:0]
+        out.append(float(adentro[0]) if len(adentro) else (float(t[0]) if len(t) else np.nan))
+    return out
+
+
+def calzar_casco(o, f, rec, cr, M_patron=None):
+    """El casco (malla de Props) sobre la cabeza del comun en reposo (cr: su craneo). Devuelve la afin (4x4) de la
+    malla al reposo y lo medido.
+
+    El que coloco el usuario (M_patron: el del patron y los de cascos_colocados.glb, de su malla al reposo): ahi mismo,
+    con su escala por eje y su giro. Solo si la cabeza del juego (de menos resolucion que la de las referencias) asoma
+    por el, agrandado lo justo alrededor del centro del craneo.
+
+    Los demas, con el patron de esas colocaciones:
+    1. de frente a +X por su simetria (girar_casco) y derecho, como salio de la reconstruccion (el usuario no inclino
+       ninguno mas de 5 grados);
+    2. el fondo estirado hasta que el hueco de la banda de la frente sea parejo: adelante mas atras, lo mismo que los
+       dos costados (la cabeza es un 28 % mas honda que ancha y los cascos reconstruidos, redondos: el usuario los
+       estiro de 0 a 25 % y nunca los achico); el alto y el ancho, con la misma escala;
+    3. su borde de adelante (el tope de la abertura frente a los ojos) a BORDE_CEJAS sobre las cejas y el centro de
+       la banda de adentro sobre el medio de la cabeza;
+    4. la escala menor con la que la piel no entra en el casco mas de CONTACTO_CASCO y no asoma por afuera: apoyado en
+       la cabeza (sin el forro, si la reconstruccion cerro la boca: queda adentro de la cabeza).
+    Al final, si todos los rayos desde el centro del craneo hacia arriba de las cejas golpean el casco (que lo cubre) y
+    el forro, si lo tiene (en_forro: que puntos del reposo caen en el)."""
+    c = cr["centro"]
     if M_patron is not None:
-        q = aplicar(M_patron, muestras(o, f, 6000))
-        k = escala_minima(lambda s: (q - c) * s + c, piel, 1.0, 1.5)
-        M = m4(t=c) @ m4(np.eye(3), s=k) @ m4(t=-c) @ M_patron
-        info = dict(giro=0.0, pitch=0.0, forro=False, escala=float(np.cbrt(np.linalg.det(M[:3, :3]))), agrandado=k)
+        M, k = M_patron, 1.0
+        while asoman(aplicar(M, o), f, cr) and k < 1.2:
+            k *= 1.004
+            M = m4(t=c) @ m4(np.eye(3), s=k) @ m4(t=-c) @ M_patron
+        U, sv, _ = np.linalg.svd(M[:3, :3])
+        V = U @ np.diag(sv) @ U.T  # la escala en los ejes de la cabeza (M = V R)
+        info = dict(referencia=True, giro=0.0, estirado=float(V[0, 0] / V[2, 2]), alto=float(V[1, 1] / V[2, 2]), agrandado=k)
     else:
         R, giro = girar_casco(o, f, rec.get("az", 0))
-        boca = pendiente_forro(o @ R.T, f)
-        pitch = 0.0 if boca is None else -boca  # el pitch 0 es el de la boca, no el de la malla
-        R = rot_z(pitch) @ R
         base = o @ R.T
-        vr, fr = reducir(base, f, 3000)
+        vr, fr = reducir(base, f, 3000)  # para medir: la forma, sin los 5000 triangulos
+        forro_b = forro_de(base, f)
+        if forro_b is not None:
+            fr = fr[~forro_b(vr[fr].mean(1))]
         lo, hi = vr.min(0), vr.max(0)
         arriba = vr[vr[:, 1] > lo[1] + 0.5 * (hi[1] - lo[1])]
         cx, cz = (arriba[:, 0].min() + arriba[:, 0].max()) / 2, (arriba[:, 2].min() + arriba[:, 2].max()) / 2
-        s0 = 0.17 / np.ptp(arriba[:, 2])  # la cupula, de oreja a oreja, a unos 17 cm: el tamano para empezar
-        b = abertura(vr, fr, cx, cz, OJOS / s0)
-        if b is None:
-            raise SystemExit(f"{rec['id']}: no encuentro la abertura de la cara del casco")
-        cx, cz = centro_cupula(vr, fr, b + 0.25 * (hi[1] - b), cx, cz)
-        b = abertura(vr, fr, cx, cz, OJOS / s0)
-        piv = np.array([cx, b, cz])
-        en_forro = forro_de(base, f)
-        q = muestras(base, f, 6000)
-        if en_forro is not None:
-            q = q[~en_forro(q)]
-        destino = np.array([c[0], cr["borde"], c[2]])
-        s = escala_minima(lambda s: (q - piv) * s + destino, piel, 0.6 * s0, 2.5 * s0)
-        if s is None:
-            raise SystemExit(f"{rec['id']}: ninguna escala lo deja a {HOLGURA_CASCO * 1000:.0f} mm de la cabeza")
-        M = m4(t=destino) @ m4(np.eye(3), s=s) @ m4(t=-piv) @ m4(R)
-        info = dict(giro=giro, pitch=pitch, forro=en_forro is not None, escala=s, en_forro=en_forro, R=R)
+        s = 0.17 / np.ptp(arriba[:, 2])  # la cupula, de oreja a oreja, a unos 17 cm: la escala para empezar
+        for _ in range(3):  # el borde y la banda, con los ojos a la escala que va quedando
+            b = abertura(vr, fr, cx, cz, OJOS / s)
+            if b is None:
+                raise SystemExit(f"{rec['id']}: no encuentro la abertura de la cara del casco")
+            yb = b + 0.25 * (hi[1] - b)  # la banda de la frente: un cuarto del alto de la cupula sobre el borde
+            cx, cz = centro_cupula(vr, fr, yb, cx, cz)
+            ad, at, iz, de = banda_casco(vr, fr, yb, cx, cz)
+            piv = np.array([cx + (ad - at) / 2, b, cz + (iz - de) / 2])  # el medio de la banda de adentro, en el borde
+
+            def armar(s):  # del casco ya de frente (vr) al reposo
+                D, W, xm = banda_cabeza(cr, cr["borde"] + (yb - b) * s)
+                if not np.isfinite(D + W + xm):  # la banda, sobre la coronilla: la de las cejas
+                    D, W, xm = cr["fondo"], cr["ancho"], c[0]
+                # el hueco de adelante mas el de atras, igual al de los dos costados: (ad + at) sx - D = (iz + de) s - W
+                sx = max(s, ((iz + de) * s - W + D) / (ad + at))
+                return m4(t=[xm, cr["borde"], c[2]]) @ m4(np.diag([sx, s, s])) @ m4(t=-piv), sx / s
+
+            def entra(s):
+                w = aplicar(armar(s)[0], vr)
+                return contacto(w, fr, cr) >= -CONTACTO_CASCO and not asoman(w, fr, cr)
+            s = menor_escala(entra, 0.5 * s, 3.0 * s)
+            if s is None:
+                raise SystemExit(f"{rec['id']}: ninguna escala lo apoya en la cabeza sin que asome")
+        M, estirado = armar(s)
+        M = M @ m4(R)  # de la malla de Props: primero de frente
+        info = dict(referencia=False, giro=giro, estirado=float(estirado), alto=1.0, agrandado=1.0)
     w = aplicar(M, o)
     d = np.array([[0, 1.0, 0]] + [[np.cos(e) * np.cos(a), np.sin(e), np.cos(e) * np.sin(a)]
                                   for e in np.radians((25, 45, 65)) for a in np.radians(np.arange(0, 360, 20))])
     info["cubre"] = bool(np.isfinite(rayos(np.tile(c, (len(d), 1)), d, w, f)).all())
+    info["en_forro"] = forro_de(w, f)
+    info["forro"] = info["en_forro"] is not None
     return M, info
 
 
-def afinar_casco(v, f, cr, holgura=HOLGURA_CASCO, forro=False):
+def afinar_casco(v, f, cr, hondo=HONDO_CASCO):
     """El casco ya reducido (v: en su marco, el origen en el centro del craneo del comun) contra la cabeza del comun:
-    sin las caras que quedan enteras adentro de la cabeza (no se ven: el forro que cerraba la boca) y agrandado lo
-    justo alrededor del origen hasta que ningun vertice del craneo (la cabeza arriba de la barbilla) quede a menos de
-    holgura del casco, mirando desde el centro, y ningun punto del casco a menos de holgura de la piel. Devuelve
-    cuales caras quedan y el factor."""
+    sin las caras mas de hondo adentro de la cabeza (lo que quedo del forro: no se ve) y, si la reduccion hizo asomar
+    la cabeza por el, agrandado lo justo alrededor del origen. Devuelve cuales caras quedan y el factor."""
     c = cr["centro"]
-    piel = cr["piel"]
-    p = v + c
     rel = v[f].mean(1)  # el centro de cada cara, desde el centro del craneo
     n = np.linalg.norm(rel, axis=1)
-    quedan = n >= piel.radio(rel / np.maximum(n, 1e-12)[:, None]) - 0.002
-    if forro:  # lo que quedo del forro cruza la cabeza: fuera toda cara con un vertice adentro
-        nv = np.linalg.norm(v, axis=1)
-        hondo = nv < piel.radio(v / np.maximum(nv, 1e-12)[:, None]) - 0.002
-        quedan &= ~hondo[f].any(1)
+    quedan = n >= cr["piel"].radio(rel / np.maximum(n, 1e-12)[:, None]) - hondo
     fq = f[quedan]
-    q = puntos_casco(v, fq)
-    k = escala_minima(lambda s: q * s + c, piel, 1.0, 1.3, holgura)
-    if k is None:
-        d, _ = piel.distancia(q + c)
-        i = int(np.argmin(d))
-        raise SystemExit(f"el casco reducido no queda a la holgura de la cabeza ni agrandado un 30 %: {d[i] * 1000:.1f} mm "
-                         f"en {np.round(q[i] + c, 3).tolist()} (del centro del craneo {np.round(q[i], 3).tolist()})")
-    k = max(1.0, k)
-    for _ in range(40):
-        if not penetran(v * k, fq, cr, holgura):
+    k = 1.0
+    for _ in range(50):
+        if not asoman(v * k + c, fq, cr):
             return quedan, k
-        k *= 1.005
-    raise SystemExit("el casco reducido sigue tocando el craneo agrandado un 20 %")
+        k *= 1.004
+    raise SystemExit("la cabeza sigue asomando por el casco reducido agrandado un 20 %")
 
 
 def puntos_casco(v, f):
@@ -1809,19 +1971,24 @@ def rigido(rec, it, P, cuerpos, craneos):
     render = aplicar(np.linalg.inv(C), vR) @ R.T
     uv, _ = tex.uv(render, fR, np.array([0, 0, 1.0]), np.array([0, 1.0, 0]))
     nor = normales_40(vR, fR)
-    if rec["forma"] == "casco":  # sin el forro, sin lo que queda adentro de la cabeza y agrandado lo justo
+    if rec["forma"] == "casco":  # sin el forro ni lo que queda hondo adentro de la cabeza, y sin que la cabeza asome
+        quitadas = 0
         if info.get("en_forro") is not None:  # el forro que cerraba la boca, fuera: el casco queda hueco
-            cen = aplicar(np.linalg.inv(C), vR[fR].mean(1)) @ info["R"].T
-            hueco = ~info["en_forro"](cen)
+            hueco = ~info["en_forro"](vR[fR].mean(1) + cr["centro"])
             fR, uv, nor = fR[hueco], uv[hueco], nor[hueco]
-        quedan, k = afinar_casco(vR, fR, cr, forro=info.get("forro", False))
+            quitadas = int((~hueco).sum())
+        quedan, k = afinar_casco(vR, fR, cr)
         fR, uv, nor, vR = fR[quedan], uv[quedan], nor[quedan], vR * k
-        info.update(afinado=k, quitadas=int((~quedan).sum()))
-        log(f"[patron] {rec['id']}: giro {info['giro']:+.2f} grados, "
-            f"{'pitch ' + format(info['pitch'], '+.1f') + ' (la boca del forro, nivelada), ' if info['pitch'] else ''}"
-            f"escala {info['escala'] * k:.4f}, "
-            f"{'con forro (quitadas ' + str(info['quitadas']) + ' caras), ' if info['forro'] else ''}"
-            f"afinado x{k:.3f}{', cubre el craneo' if info['cubre'] else ', NO CUBRE EL CRANEO'}")
+        info.update(afinado=k, quitadas=quitadas + int((~quedan).sum()))
+        w = vR + cr["centro"]
+        info.update(contacto=contacto(w, fR, cr), asoman=asoman(w, fR, cr))
+        log(f"[patron] {rec['id']}: {'donde lo coloco el usuario' if info['referencia'] else 'con la regla de los colocados'}"
+            f"{' (giro ' + format(info['giro'], '+.2f') + ' grados)' if not info['referencia'] else ''}, el fondo x"
+            f"{info['estirado']:.3f} y el alto x{info['alto']:.3f} del ancho"
+            f"{', agrandado x' + format(info['agrandado'], '.3f') + ' (la cabeza del juego asomaba)' if info['agrandado'] > 1 else ''}"
+            f"{', con forro' if info['forro'] else ''}, {info['quitadas']} caras quitadas (forro u hondas en la cabeza), "
+            f"afinado x{k:.3f}; la piel entra {-info['contacto'] * 1000:.1f} mm, asoman {info['asoman']}"
+            f"{', cubre el craneo' if info['cubre'] else ', NO CUBRE EL CRANEO'}")
     return glb_pieza(vR, fR, nor, uv, tex.png, it["id"], GENERADOR), (vR.min(0), vR.max(0)), (vR, fR, uv), tex
 
 
@@ -1890,42 +2057,52 @@ def anclajes(P, cuerpos, refs):
     return tabla
 
 
+def cabeza_por_eje(cr_com, cr):
+    """La cabeza de un cuerpo contra la del comun, por eje (X el fondo, Y el alto de las cejas a la coronilla, Z el
+    ancho): la de la mujer es un 6 % mas angosta y un 6 % mas alta; la del gigante, la misma forma un 35 % mas grande."""
+    return np.array([cr["fondo"] / cr_com["fondo"], (cr["alto"] - cr["cejas"]) / (cr_com["alto"] - cr_com["cejas"]),
+                     cr["ancho"] / cr_com["ancho"]])
+
+
 def anclaje_cabeza(cr_com, cr, cascos):
     """GEAR_HEAD de un cuerpo: la matriz (4x4) del marco de los cascos (el origen en el centro del craneo del comun, a
-    la altura de las cejas) al reposo del cuerpo: al centro de su craneo (tambien a la altura de sus cejas, asi el
-    borde de adelante queda sobre ellas) y con la escala de cada casco (cascos: [(id, vertices, caras)] en su marco):
-    la menor con la que queda a HOLGURA_CASCO de su piel, sin vertices de su craneo a menos de eso. El anclaje lleva
-    la mayor (la del casco que mas pide: ninguno se mete en esa cabeza) y cada casco, la suya (GEAR_HELMET_FIT): con una
-    sola, los demas le quedaban holgados. Las cabezas tienen el mismo giro en el reposo de todos los cuerpos: sin giro.
-    El comun: su centro, escala 1. Devuelve la matriz, la escala del anclaje y {id: la escala de ese casco}."""
+    la altura de las cejas) al reposo del cuerpo: al centro de su craneo (tambien a la altura de sus cejas: el borde de
+    adelante queda sobre ellas), con su cabeza por eje (cabeza_por_eje) y la escala de cada casco (cascos: [(id,
+    vertices, caras)] en su marco): la menor con la que la cabeza no asoma por el y la piel no entra mas que en el comun
+    (el mismo apoyo que le dio el usuario). El anclaje lleva la mayor y cada casco, la suya relativa (GEAR_HELMET_FIT).
+    Las cabezas tienen el mismo giro en el reposo de todos los cuerpos: sin giro. El comun: su centro, escala 1.
+    Devuelve la matriz, la escala del anclaje y {id: la escala de ese casco}."""
     if cr is cr_com:
         return m4(t=cr["centro"]), 1.0, {mid: 1.0 for mid, _, _ in cascos}
-    c = cr["centro"]
-    s0 = np.mean([(cr["alto"] - cr["cejas"]) / (cr_com["alto"] - cr_com["cejas"]), cr["ancho"] / cr_com["ancho"],
-                  cr["fondo"] / cr_com["fondo"]])
+    c, c0 = cr["centro"], cr_com["centro"]
+    D = cabeza_por_eje(cr_com, cr)
     por_casco = {}
     for mid, v, f in cascos:
-        q = puntos_casco(v, f)
-        sc = escala_minima(lambda k: q * k + c, cr["piel"], 0.85 * s0, 1.5 * s0)
-        if sc is None:
-            raise SystemExit(f"{mid}: no queda a {HOLGURA_CASCO * 1000:.0f} mm de la cabeza de {cr['id']}")
-        for _ in range(40):
-            if not penetran(v * sc, f, cr):
-                break
-            sc *= 1.005
-        por_casco[mid] = float(sc)
+        apoyo = contacto(v + c0, f, cr_com)
+
+        def entra(k):
+            w = v * D * k + c
+            return contacto(w, f, cr) >= apoyo - 0.0005 and not asoman(w, f, cr)
+        k = menor_escala(entra, 0.85, 1.5)
+        if k is None:
+            raise SystemExit(f"{mid}: la cabeza de {cr['id']} asoma por el casco aun agrandado un 50 %")
+        # La busqueda se queda justo en el borde: un 0,2 % mas (menos de medio mm), que anclajes.inc se escribe con 5
+        # decimales y el redondeo volvia a sacar algun punto de la piel.
+        por_casco[mid] = float(k) * 1.002
     s = max(por_casco.values())
-    return m4(np.eye(3), c, s), float(s), por_casco
+    return m4(np.diag(D), c, s), float(s), por_casco
 
 
 def escribir_anclajes(tabla, ajustes):
     """src/world/anclajes.inc: los anclajes de cada cuerpo (tabla) y la escala de cada casco en GEAR_HEAD de cada
     cuerpo, relativa a la del anclaje (ajustes: {sufijo del cuerpo: {id del casco: factor}})."""
-    lineas = ["// Generado por tools/modelos/patron.py desde arte/fuentes/patron/model_equipped_01.glb: no editar a mano.",
+    lineas = ["// Generado por tools/modelos/patron.py desde arte/fuentes/patron (model_equipped_01.glb y cascos_colocados.glb):",
+              "// no editar a mano.",
               "// Para cada cuerpo (GEAR_BODIES) y cada anclaje (GearSocket): el hueso y la matriz que lleva el objeto, en su",
               "// marco (las armas: la empunadura en el origen, la hoja hacia +Y y el filo hacia +Z; los escudos: mirando a +X;",
               "// los cascos: el origen en el centro del craneo del cuerpo comun, a la altura de las cejas), a la pose de reposo",
-              "// del cuerpo (la de su GLB), en metros. GEAR_HEAD: el centro del craneo de cada cuerpo y su escala (calzar_casco).",
+              "// del cuerpo (la de su GLB), en metros. GEAR_HEAD: el centro del craneo de cada cuerpo, su cabeza por eje",
+              "// (fondo, alto, ancho contra el comun) y la escala del casco que mas pide (anclaje_cabeza).",
               "static const GearSocketDef GEAR_SOCKETS[GEAR_BODY_COUNT][GEAR_SOCKET_COUNT] = {"]
     for sufijo, mid in CUERPOS:
         lineas.append(f"    {{ // {mid}")
@@ -1935,7 +2112,8 @@ def escribir_anclajes(tabla, ajustes):
         lineas.append("    },")
     lineas.append("};")
     lineas += ["// GEAR_HEAD, casco por casco: su escala en cada cuerpo (GEAR_BODIES), relativa a la del anclaje (la del casco que",
-               "// mas pide): la menor con la que queda a 2 mm de esa cabeza (anclaje_cabeza). Un casco que no esta, la del anclaje.",
+               "// mas pide): la menor con la que esa cabeza no asoma por el y se apoya como en el comun (anclaje_cabeza). Un",
+               "// casco que no esta, la del anclaje.",
                "static const GearHelmetFit GEAR_HELMET_FIT[] = {"]
     for mid in sorted(ajustes[""]):
         k = ", ".join(f"{ajustes[sufijo][mid]:.5f}f" for sufijo, _ in CUERPOS)
@@ -1969,7 +2147,9 @@ def nota(rec):
         return (f"Del patron (tools/modelos/patron.py): {de}, {lugar}, con la piel del cuerpo (una variante por cuerpo) "
                 f"y la textura de su render ({rec['img']}).")
     if rec["forma"] == "casco":
-        lugar = "donde la puso el patron" if rec.get("patron") else "apoyada en la cabeza con el criterio del casco del patron"
+        donde = rec.get("patron", "")
+        lugar = (f"donde la coloco el usuario ({'model_equipped_01' if ':' not in donde else donde.split(':')[0]})" if donde
+                 else "calzada con el patron de los cascos que coloco el usuario")
         return f"Del patron (tools/modelos/patron.py): {de}, {lugar}; en la cabeza (GEAR_HEAD) y con la textura de su render ({rec['img']})."
     return (f"Del patron (tools/modelos/patron.py): {de}, a la medida del inventario, con la textura de su render "
             f"({rec['img']}); se lleva en los anclajes de src/world/anclajes.inc.")
@@ -1983,7 +2163,8 @@ def manifiesto(rec):
     src = os.path.join(PROPS, "modelos", rec["malla"] + ".glb")
     data["models"][rec["id"]] = {
         "file": os.path.relpath(src, ROOT), "category": rec["id"].split(".")[0], "has_rig": rec["forma"] in PRENDAS,
-        "source": {"tool": "patron", "url": "", "file": os.path.relpath(PATRON, ROOT),
+        "source": {"tool": "patron", "url": "",
+                   "file": os.path.relpath(CASCOS_COLOCADOS if ":" in str(rec.get("patron", "")) else PATRON, ROOT),
                    "sha256": hashlib.sha256(open(src, "rb").read()).hexdigest()},
         "params": {k: v for k, v in rec.items() if k not in ("id",)},
         "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
@@ -2044,7 +2225,8 @@ def hacer(ids=None):
         M, s, por_casco = anclaje_cabeza(craneos[""], craneos[sufijo], cascos)
         tabla[sufijo][0] = ("head", M)
         ajustes[sufijo] = {mid: k / s for mid, k in por_casco.items()}
-        log(f"[patron] GEAR_HEAD de {craneos[sufijo]['id']}: el centro del craneo, escala {s:.4f} (cada casco, de "
+        log(f"[patron] GEAR_HEAD de {craneos[sufijo]['id']}: el centro del craneo, la cabeza por eje (fondo, alto, ancho) "
+            f"{np.round(cabeza_por_eje(craneos[''], craneos[sufijo]), 3).tolist()} y la escala {s:.4f} (cada casco, de "
             f"{min(por_casco.values()):.4f} a {s:.4f})")
     escribir_anclajes(tabla, ajustes)
     log(f"[patron] {os.path.relpath(ANCLAJES, ROOT)}: {len(ANCLAJES_DEF)} anclajes x {len(cuerpos)} cuerpos")
@@ -2159,7 +2341,7 @@ def medir():
     s = com.u["s"]
     log(f"el cuerpo del patron es rigged-model.glb en su pose de piel (la T): a {P.error_cuerpo.max() * s * 1000:.2f} mm como mucho")
     piel = Superficie(com.u["m"], com.u["idx"], n=120000)
-    for nombre, fuente in PIEZAS.items():
+    for nombre, fuente in {**PIEZAS, **PIEZAS_CASCOS}.items():
         M = P.en_t(nombre, com)
         L = M[:3, :3] * s
         o, f = malla_props(fuente)
@@ -2174,34 +2356,32 @@ def medir():
 
 def verificar_cascos():
     """Cada casco (su GLB) puesto en cada cuerpo en reposo como lo pone el juego (src/world/anclajes.inc: GEAR_HEAD y
-    la escala de ese casco, GEAR_HELMET_FIT): la holgura menor a la piel de la cabeza y el cuello, los vertices del
-    craneo a menos de HOLGURA_CASCO del casco (mirando desde el centro del craneo), el techo de adentro sobre la
-    coronilla y el borde de adelante sobre las cejas. Devuelve cuantos fallan (holgura menor que HOLGURA_CASCO o algun
-    vertice del craneo adentro)."""
+    la escala de ese casco, GEAR_HELMET_FIT): cuanto entra la piel en su grosor (contacto), cuantos puntos de la piel
+    del craneo asoman por afuera (asoman: se ven), el techo de adentro sobre la coronilla y el borde de adelante sobre
+    las cejas. Devuelve cuantos fallan: los que dejan asomar la cabeza o no la cubren."""
     items, _ = inventario.load()
     por_id = {it["id"]: it for it in items}
     cuerpos = armar_cuerpos(log=lambda *_: None)
     tabla = leer_anclajes()
     ajustes = leer_ajustes_casco()
     fallan = 0
-    log(f"{'casco':32s} {'cuerpo':32s} holgura  craneo  techo  borde   (mm; craneo: vertices a menos de "
-        f"{HOLGURA_CASCO * 1000:.0f} mm; techo: sobre la coronilla; borde: sobre las cejas)")
+    log(f"{'casco':32s} {'cuerpo':32s} contacto asoman  techo  borde   (mm; contacto: lo que la piel entra en el grosor "
+        f"del casco; asoman: puntos de la piel del craneo por afuera; techo: sobre la coronilla; borde: sobre las cejas)")
     for sufijo, mid in CUERPOS:
         cr = craneo(cuerpos[sufijo])
         c = cr["centro"]
         for rec in [r for r in RECETAS if r["forma"] == "casco"]:
             k = ajustes.get(rec["id"], {}).get(sufijo, 1.0)
             M = tabla[sufijo]["GEAR_HEAD"] @ m4(np.eye(3), s=k)
-            s = float(np.cbrt(np.linalg.det(M[:3, :3])))
             v, f, _, _, _ = leer_pieza(os.path.join(ROOT, inventario.path_of(por_id[rec["id"]])))
             w = aplicar(M, v)
-            d = cr["piel"].distancia(puntos_casco(w, f))[0].min()
-            n = penetran(w - c, f, cr)
-            techo = c[1] + rayos(c[None], np.array([[0, 1.0, 0]]), w, f)[0]
-            borde = abertura(w, f, c[0], c[2], OJOS * s)
-            malo = d < HOLGURA_CASCO - 1e-4 or n > 0
+            d = contacto(w, f, cr)
+            n = asoman(w, f, cr)
+            arriba = rayos(c[None], np.array([[0, 1.0, 0]]), w, f)[0]
+            borde = abertura(w, f, c[0], c[2], OJOS * M[2, 2])
+            malo = n > 0 or not np.isfinite(arriba)
             fallan += malo
-            log(f"{rec['id']:32s} {mid:32s} {d * 1000:7.1f} {n:7d} {(techo - cr['alto']) * 1000:6.0f} "
+            log(f"{rec['id']:32s} {mid:32s} {-d * 1000:8.1f} {n:6d} {(c[1] + arriba - cr['alto']) * 1000:6.0f} "
                 f"{(borde - cr['cejas']) * 1000 if borde is not None else float('nan'):6.0f}{'  FALLA' if malo else ''}")
     return fallan
 
@@ -2211,7 +2391,9 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("medir")
-    sub.add_parser("cascos", help="cada casco en cada cuerpo: holgura, vertices del craneo adentro, techo y borde")
+    sub.add_parser("cascos", help="cada casco en cada cuerpo: contacto, piel que asoma, techo y borde")
+    r = sub.add_parser("referencias", help="arte/fuentes/patron/cascos_colocados.glb desde las referencias del usuario")
+    r.add_argument("carpeta", help="la carpeta con Model equipped 02.glb a 07.glb (IMPORTED/References 3d)")
     h = sub.add_parser("hacer")
     h.add_argument("ids", nargs="*")
     v = sub.add_parser("ver")
@@ -2229,6 +2411,8 @@ def main(argv=None):
     if a.cmd == "cascos":
         if verificar_cascos():
             raise SystemExit(1)
+    elif a.cmd == "referencias":
+        colocar_referencias(a.carpeta)
     elif a.cmd == "medir":
         medir()
     elif a.cmd == "hacer":

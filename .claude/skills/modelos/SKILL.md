@@ -102,6 +102,48 @@ versión low-poly en `arte/modelos/para_riggear/<id>.glb`:
 3. traer el GLB riggeado: `traer <id> --archivo riggeado.glb --fuente rignet --riggeado` (no se
    convierte: se valida y se copia; tiene que venir ya en metros, +Y arriba, frente +X, origen en los pies).
 
+## Cascos
+
+Los cascos son rígidos y van en la cabeza (`GEAR_HEAD`). Los calza `tools/modelos/patron.py` con el patrón
+de los que el usuario colocó a mano sobre el cuerpo: el del padre en `arte/fuentes/patron/model_equipped_01.glb`
+y seis en `cascos_colocados.glb`. En los siete, el usuario:
+- **No los giró** más que para que miren adelante. Quedan derechos, como salieron de la reconstrucción;
+  solo inclinó dos, 5°.
+- **Los escaló distinto en cada eje.** Puso el alto y el ancho con la misma escala y estiró el fondo de 0 a
+  25 %. La cabeza es un 28 % más honda que ancha y los cascos reconstruidos salen redondos, así que el hueco
+  de la banda de la frente queda parejo: adelante más atrás suma lo mismo que los dos costados. Nunca achicó
+  el fondo. Solo la máscara (más baja) y el gorro de piel (más alto) tienen un alto propio.
+- **Los apoyó en la cabeza, sin que floten.** La piel entra de 1 a 4,5 mm en el grosor del casco, donde no se
+  ve, y nunca asoma por afuera. El hueco de la banda queda de 2 a 18 mm por lado, y el techo, de 40 a 85 mm
+  sobre la coronilla.
+- **Puso el borde de adelante de 4 a 8 mm sobre las cejas** (el del padre, a 16).
+
+Para un casco nuevo:
+1. Su malla va en `arte/fuentes/props/modelos` y su render en `arte/fuentes/props/imagenes`. Su receta va
+   en `RECETAS` (`forma="casco"`, `az`: el giro de la malla a su render).
+2. **Si el usuario lo coloca a mano** sobre el cuerpo (un `Model equipped NN.glb`, como los de
+   `IMPORTED/References 3d`):
+   1. agregarlo a `PIEZAS_CASCOS`;
+   2. correr `python3 tools/modelos/patron.py referencias <carpeta>`;
+   3. poner su clave en el `patron` de la receta.
+
+   Queda donde lo puso. Solo se agranda lo justo si la cabeza del juego, de menos resolución, asoma por él.
+3. **Si no**, `calzar_casco` aplica la regla de los colocados:
+   - de frente por su simetría;
+   - el fondo estirado hasta que el hueco de la banda quede parejo;
+   - el borde 6 mm sobre las cejas (`BORDE_CEJAS`);
+   - la escala menor con la que se apoya, con la piel entrando hasta 3 mm (`CONTACTO_CASCO`), sin que la cabeza
+     asome.
+4. Correr `python3 tools/modelos/patron.py hacer <id>`. Escribe:
+   - el GLB, con el `tris_max` del inventario: el mínimo que no deforma la forma ni los detalles (la fila
+     «Cascos» de `assets/models/README.md`);
+   - `src/world/anclajes.inc`: `GEAR_HEAD` lleva la cabeza de cada cuerpo por eje (fondo, alto, ancho) y
+     `GEAR_HELMET_FIT`, la escala de cada casco en cada cabeza, con el mismo apoyo y sin que asome.
+5. Verificar:
+   - `python3 tools/modelos/patron.py cascos`: asoman 0 en los cuatro cuerpos;
+   - mirarlo en el juego, de frente, de tres cuartos y de lado, en los cuatro cuerpos:
+     `--ver armadura.casco.<nombre> --desde frente|tres_cuartos|lado --cuerpo <id>`.
+
 ## Dependencias
 
 `pip install -r tools/modelos/requirements.txt` (numpy, scipy, trimesh, fast-simplification,

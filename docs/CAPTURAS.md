@@ -43,7 +43,7 @@ Los menús usan **iconos** (siluetas del atlas [`assets/ui/iconos.png`](../asset
 
 ### El equipo puesto (v0.17.1)
 
-El del patrón del usuario, en el cuerpo común (`assets/models/README.md`, «El equipo de los humanoides: el patrón»). Los cascos, cada uno en la cabeza del maniquí y de tres cuartos (`--ver armadura.casco.<nombre> --desde tres_cuartos`): el montaje, [`capturas/los_cascos.png`](capturas/los_cascos.png).
+El del patrón del usuario, en el cuerpo común (`assets/models/README.md`, «El equipo de los humanoides: el patrón»). Los cascos, cada uno en la cabeza del maniquí y de tres cuartos (`--ver armadura.casco.<nombre> --desde tres_cuartos`): el montaje, [`capturas/los_cascos.png`](capturas/los_cascos.png). Siete van donde los colocó el usuario en sus referencias (`arte/fuentes/patron/cascos_colocados.glb`); el culto, que no tiene referencia, con la regla que sale de ellas (`assets/models/README.md`, «Cascos»).
 
 | | |
 |---|---|
