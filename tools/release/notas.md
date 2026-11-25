@@ -1,6 +1,13 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: el equipo de los humanoides
+## Novedades: los cascos, donde los puso el usuario
+
+- **Cada casco en su lugar:** siete de los ocho cascos van exactamente donde el usuario los colocó a mano sobre el cuerpo: derechos, apoyados en la cabeza y con el borde unos milímetros sobre las cejas. El gorro de fieltro ya no flota: queda ceñido, con las orejeras sobre las orejas.
+- **El casco del culto,** que no tenía referencia, se calza con la regla que sale de los otros siete.
+- **En todos los cuerpos:** hombres, mujeres, gigantes y el protagonista llevan cada casco con el mismo apoyo, sin que la cabeza lo atraviese.
+- **El detalle justo:** cada casco tiene los triángulos que necesita para no perder su forma ni sus detalles (de 1.400 a 3.400).
+
+## De la v0.17.1: el equipo de los humanoides
 
 - **Cada uno con su equipo:** el jugador, la tropa y los enemigos llevan puesto lo suyo: la coraza y las botas, que se mueven con el cuerpo; el casco en la cabeza, y las armas, el escudo, la aljaba y la antorcha guardados (el escudo, la aljaba y el arco a la espalda; el sable y la daga al costado) o en la mano.
 - **Los cascos, bien puestos:** apoyados en la cabeza (ya no flotan ni se inclinan hacia atrás), con el borde justo sobre las cejas, sin que la cabeza los atraviese y a la medida de cada uno: hombres, mujeres, gigantes y el protagonista. Y con más detalle: la banda de la frente, los remaches, el águila del casco del padre y el rollo de piel del gorro de fieltro.
@@ -120,7 +127,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.17.1, la v0.17.0 y la v0.16.0).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.17.2, la v0.17.1 y la v0.17.0).
 
 ## Android
 

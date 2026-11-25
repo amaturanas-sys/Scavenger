@@ -264,6 +264,25 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Los cascos donde los colocó el usuario (v0.17.2): siete cascos, colocados a mano sobre el cuerpo
+(`IMPORTED/References 3d`, pasados a `arte/fuentes/patron/cascos_colocados.glb`), van en el juego en el lugar exacto
+(`tools/modelos/patron.py`; el patrón y los pasos para un casco nuevo, en `assets/models/README.md`, «Cascos»).
+- **El patrón de los colocados:**
+  - derechos (solo dos, inclinados 5°);
+  - el alto y el ancho a la misma escala, y el fondo estirado de 0 a 25 % para que el hueco de la banda quede parejo;
+  - apoyados en la cabeza: la piel entra de 1 a 4,5 mm en el grosor del casco y nunca asoma;
+  - el borde de adelante, de 4 a 8 mm sobre las cejas.
+- **Sin referencia, la regla:** el casco del culto se calza con ese patrón:
+  - de frente por su simetría;
+  - el fondo estirado hasta que la banda quede pareja;
+  - el borde 6 mm sobre las cejas;
+  - la escala menor con la que se apoya.
+- **En cada cuerpo:** la mujer, el gigante y el protagonista llevan el casco escalado según los ejes de su cabeza
+  (fondo, alto y ancho), con el mismo apoyo que en el cuerpo común (`GEAR_HEAD` y `GEAR_HELMET_FIT`). Lo verifica
+  `patron.py cascos`.
+- **Los triángulos justos:** de 1.400 (el bronce) a 3.400 (el culto), el mínimo con el que el casco no pierde su forma
+  ni sus detalles.
+
 El equipo de los humanoides (v0.17.1): el del patrón que armó el usuario (`arte/fuentes/patron`), puesto en el
 jugador, la tropa y los enemigos por `tools/modelos/patron.py` (el detalle, en `assets/models/README.md`).
 - **Lo que se lleva puesto:** las corazas y las botas se mueven con el cuerpo (sus huesos y sus pesos, una versión
