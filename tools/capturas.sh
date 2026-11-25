@@ -95,6 +95,15 @@ shot mundo_linde-desierto 90 --dia 11 --minuto 7 --ir linde-desierto --dron 24 -
 shot mundo_bosque-seco 90 --dia 11 --minuto 7 --ir bosque-seco --dron 18 --camara 0.4
 montage "$OUT"/mundo_{arrecife,linde-bosque,linde-desierto,bosque-seco}.png -tile 2x2 -geometry +0+0 -depth 8 \
     "$ROOT/docs/mundo/v0.17.png" 2>/dev/null && echo "  docs/mundo/v0.17.png"
+# La v0.17.1 (assets/models/README.md, «El equipo de los humanoides: el patron»): el equipo del patron puesto en el cuerpo
+# comun, guardado y empunado, y cada casco en la cabeza del maniqui, de tres cuartos.
+shot equipo_guardado 40 --ver personaje.base.cuerpo_comun --patron guardado
+shot equipo_empunado 40 --ver personaje.base.cuerpo_comun --patron empunado
+for c in oro_padre fieltro culto mascara_culto laminar_cuero bronce escamas_hierro malla; do
+    shot "casco_$c" 40 --ver "armadura.casco.$c" --desde tres_cuartos
+done
+montage "$OUT"/casco_{oro_padre,fieltro,culto,mascara_culto,laminar_cuero,bronce,escamas_hierro,malla}.png -tile 4x2 -geometry +0+0 \
+    -depth 8 "$OUT/los_cascos.png" 2>/dev/null && echo "  los_cascos.png"
 shot formaciones_desierto 40 --formaciones desierto
 shot formaciones_hielo 40 --formaciones hielo
 montage "$OUT"/{mundo_muro,mundo_panorama-muro,mundo_hielo,formaciones_desierto}.png -tile 2x2 -geometry +0+0 -depth 8 \

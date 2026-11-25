@@ -41,6 +41,16 @@ Los menús usan **iconos** (siluetas del atlas [`assets/ui/iconos.png`](../asset
 | ![Inventario](capturas/12_inventario.png) | **Inventario** (Tab, `--inventario`): dos columnas; arriba, los contenedores a mano (bolsillos, mochila, alforjas, carreta, campamento). |
 | ![Equipo](capturas/13_equipo.png) | **Equipo** (P, `--equipo`): los nueve huecos de armadura alrededor de la figura y los tres amuletos; a la derecha, sus cifras y la salud. |
 
+### El equipo puesto (v0.17.1)
+
+El del patrón del usuario, en el cuerpo común (`assets/models/README.md`, «El equipo de los humanoides: el patrón»). Los cascos, cada uno en la cabeza del maniquí y de tres cuartos (`--ver armadura.casco.<nombre> --desde tres_cuartos`): el montaje, [`capturas/los_cascos.png`](capturas/los_cascos.png).
+
+| | |
+|---|---|
+| ![Equipo guardado](capturas/equipo_guardado.png) | **Guardado** (`--ver personaje.base.cuerpo_comun --patron guardado`): la coraza y las botas con el cuerpo, el casco en la cabeza, el escudo, la aljaba y el arco a la espalda, y el sable y la daga al costado. |
+| ![Equipo empuñado](capturas/equipo_empunado.png) | **Empuñado** (`--patron empunado`): el sable en la mano derecha y el escudo en el antebrazo. |
+| ![Los cascos](capturas/los_cascos.png) | **Los ocho cascos**, puestos: el oro del padre, el fieltro, el culto y la máscara del culto (arriba); el laminar de cuero, el bronce, las escamas de hierro y la malla (abajo). |
+
 ## Combate y mundo
 
 | | |

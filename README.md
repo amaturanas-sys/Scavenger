@@ -264,6 +264,24 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+El equipo de los humanoides (v0.17.1): el del patrón que armó el usuario (`arte/fuentes/patron`), puesto en el
+jugador, la tropa y los enemigos por `tools/modelos/patron.py` (el detalle, en `assets/models/README.md`).
+- **Lo que se lleva puesto:** las corazas y las botas se mueven con el cuerpo (sus huesos y sus pesos, una versión
+  para cada cuerpo: el común, la mujer, el gigante y el protagonista), a 5 mm de la piel como mínimo. El casco, las
+  armas, los escudos, la aljaba y la antorcha siguen a su hueso: guardados (el escudo, la aljaba y el arco a la
+  espalda; el sable y la daga al costado) o en la mano (el escudo, en el antebrazo).
+- **Los cascos, en la cabeza:** apoyados en el cráneo y no en el aire, derechos, con el borde de adelante justo
+  arriba de las cejas y a 2 a 5 mm de la cabeza, sin que el cráneo asome, en los cuatro cuerpos (cada casco, a su
+  escala en cada cabeza). Con 1.800 triángulos (el del padre, 2.400): la banda de la frente, los nervios con
+  remaches, el águila, las carrilleras caladas y el rollo de piel del gorro de fieltro, que ahora va derecho.
+- **La luz de los modelos:** un shader (GLSL 330 y ES 100, con respaldo sin shader) ilumina a las personas, los
+  animales y su equipo con el cielo, el suelo y el sol de cada momento, con las normales siguiendo a la piel.
+- **Más triángulos y sin manchas:** los cuerpos, de 2.400 a 4.000 triángulos (el común y la mujer 2.400, el gigante
+  3.000, el protagonista 4.000), y el equipo con los suyos, sin agujeros ni púas; las texturas, sin manchas claras ni
+  triángulos negros; el oso polar, centrado.
+- Para verlo: `--ver armadura.casco.<nombre> --desde frente` (o `tres_cuartos`, `lado`, `atras`; `--cuerpo <id>`
+  para otro cuerpo) y `--ver personaje.base.cuerpo_comun --patron guardado` (o `empunado`).
+
 El mar y las transiciones (v0.17.0):
 - **El nivel del mar, en todo el mundo:** el mar llega a todo lo que queda bajo el nivel del mar y se alcanza desde mar
   abierto; una cuenca bajo el nivel del mar que el relieve aísla queda seca. El canal del bosque entra al mar a su
