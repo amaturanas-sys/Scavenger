@@ -503,10 +503,98 @@ def test_sanear(tmp):
     assert len(set(map(tuple, e.tolist()))) == len(e), "quedo una cara al reves"
 
 
+def _casquete(radio, adentro=False, sub=3):
+    """La mitad de arriba (y > 0) de una esfera: las normales afuera, o adentro (la cara de adentro de un casco)."""
+    s = trimesh.creation.icosphere(subdivisions=sub, radius=radio)
+    v, f = np.asarray(s.vertices, float), np.asarray(s.faces, np.int64)
+    f = f[v[f][:, :, 1].mean(1) > 0]
+    return v, (f[:, ::-1] if adentro else f)
+
+
+def _juntar(*mallas):
+    vs, fs, n = [], [], 0
+    for v, f in mallas:
+        vs.append(v)
+        fs.append(f + n)
+        n += len(v)
+    return np.concatenate(vs), np.concatenate(fs)
+
+
+def test_girar_casco(tmp):
+    """Un casco simetrico de oreja a oreja (una caja con una visera adelante) girado 12 grados de mas: girar_casco
+    encuentra la correccion y lo deja de frente a +X."""
+    import patron
+    caja = trimesh.creation.box(extents=(0.22, 0.2, 0.16))
+    visera = trimesh.creation.box(extents=(0.04, 0.05, 0.04))
+    visera.apply_translation((0.13, 0.0, 0.0))
+    B, f = _juntar((np.asarray(caja.vertices, float), np.asarray(caja.faces)), (np.asarray(visera.vertices, float), np.asarray(visera.faces)))
+    o = B @ patron.rot_y(90 + 12)  # lo que hace falta para que rot_y(90 + az + g) lo traiga, con az = 0 y g = 12
+    R, g = patron.girar_casco(o, f, 0)
+    assert abs(g - 12) < 0.6, g
+    assert (o @ R.T)[len(caja.vertices):, 0].mean() > 0.1  # la visera, adelante (+X)
+
+
+def test_cabeza_signo(tmp):
+    """La distancia con signo a la piel de la cabeza (una esfera): negativa adentro y positiva afuera, con su modulo, y
+    el mismo signo con caras dadas vuelta (los pliegues de las orejas miran adentro: el signo no sale de las normales)."""
+    import patron
+    s = trimesh.creation.icosphere(subdivisions=3, radius=0.1)
+    c = np.array([0.0, 1.6, 0.0])
+    v, f = np.asarray(s.vertices, float) + c, np.asarray(s.faces, np.int64)
+    q = c + np.array([[0.05, 0, 0], [0.15, 0, 0], [0, 0.07, 0], [0, -0.13, 0.0]])
+    for caras in (f, np.concatenate([f[:100, ::-1], f[100:]])):
+        d, _ = patron.Cabeza(v, caras, c).distancia(q)
+        assert np.allclose(d, [-0.05, 0.05, -0.03, 0.03], atol=0.004), d
+
+
+def test_abertura(tmp):
+    """El tope de la abertura de la cara: una cupula con una ventana adelante hasta 5 cm de alto (la nasal y las
+    carrilleras no cuentan: abajo de la ventana no hay casco)."""
+    import patron
+    v, f = _casquete(0.12, sub=4)
+    cen = v[f].mean(1)
+    f = f[~((cen[:, 0] > 0) & (cen[:, 1] < 0.05) & (np.abs(cen[:, 2]) < 0.07))]
+    b = patron.abertura(v, f, 0.0, 0.0, 0.03)
+    assert b is not None and abs(b - 0.05) < 0.012, b
+    cerrada = patron.abertura(*_casquete(0.12), 0.0, 0.0, 0.03)  # sin ventana: a lo sumo, el borde de abajo
+    assert cerrada is None or cerrada < 0.01, cerrada
+
+
+def test_forro(tmp):
+    """Un casco hueco con la boca cerrada por un forro (una capa de 3 mm) echado 20 grados atras: forro_de lo encuentra
+    y pendiente_forro mide cuanto sube la boca hacia adelante; sin el forro, ninguno de los dos."""
+    import patron
+    t = np.linspace(0, 2 * np.pi, 24, endpoint=False)
+    anillo = np.column_stack([0.075 * np.cos(t), np.zeros(24), 0.075 * np.sin(t)])
+
+    def disco(y, arriba):
+        p = np.concatenate([[[0.0, 0, 0]], anillo]) @ patron.rot_z(20).T + [0, y, 0]
+        fan = np.array([(0, 1 + (i + 1) % 24, 1 + i) if arriba else (0, 1 + i, 1 + (i + 1) % 24) for i in range(24)])
+        return p, fan
+    hueco = _juntar(_casquete(0.12), _casquete(0.1, adentro=True))
+    v, f = _juntar(hueco, disco(0.02, False), disco(0.023, True))
+    assert abs(patron.pendiente_forro(v, f) - 20) < 1.0, patron.pendiente_forro(v, f)
+    en_forro = patron.forro_de(v, f)
+    assert en_forro is not None and en_forro(np.array([[0.0, 0.03, 0.0]]))[0] and not en_forro(np.array([[0.0, 0.11, 0.0]]))[0]
+    assert patron.pendiente_forro(*hueco) is None and patron.forro_de(*hueco) is None
+
+
+def test_penetran(tmp):
+    """Los vertices del craneo (arriba de la barbilla) a menos de la holgura de un casco (una cupula alrededor de una
+    cabeza esferica de 10 cm): a 1 mm, todos los de arriba; a 5 mm, ninguno."""
+    import patron
+    s = trimesh.creation.icosphere(subdivisions=3, radius=0.1)
+    c = np.array([0.0, 1.6, 0.0])
+    cr = dict(centro=c, v=np.asarray(s.vertices, float) + c, f=np.asarray(s.faces, np.int64), barbilla=c[1] + 0.01)
+    arriba = int((cr["v"][:, 1] > cr["barbilla"]).sum())
+    assert patron.penetran(*_casquete(0.101, adentro=True, sub=4), cr) == arriba
+    assert patron.penetran(*_casquete(0.105, adentro=True, sub=4), cr) == 0
+
+
 def main():
     tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave, test_refs_anigen,
              test_refs_anigen_registro, test_adaptar_oga, test_animales, test_animales_fantasma, test_capa_de_afuera,
-             test_tapar_rendijas, test_sanear]
+             test_tapar_rendijas, test_sanear, test_girar_casco, test_cabeza_signo, test_abertura, test_forro, test_penetran]
     failed = 0
     tmp = tempfile.mkdtemp(prefix="modelos-")
     try:

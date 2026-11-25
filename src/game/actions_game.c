@@ -1662,6 +1662,18 @@ void ga_draw_patron_demo(Props *props, const Inventory *inv, const char *body_id
     }
 }
 
+static AnimTrack helmet_demo_track; // el clip del maniqui de ga_draw_helmet_demo (ga_helmet_demo_matrix lo sigue)
+
+void ga_draw_helmet_demo(Props *props, const InvItem *body, const InvItem *helmet, Vector3 pos, float time) {
+    if (!body || !helmet) return;
+    props_draw_item_track(props, body, pos, 0.0f, "idle", time, 0.0f, &helmet_demo_track);
+    props_draw_socket(props, helmet, body, pos, 0.0f, &helmet_demo_track, time, GEAR_HEAD);
+}
+
+Matrix ga_helmet_demo_matrix(Props *props, const InvItem *body, Vector3 pos, float time) {
+    return props_socket_matrix(props, body, pos, 0.0f, &helmet_demo_track, time, GEAR_HEAD);
+}
+
 // Un punto y una direccion del cuerpo (espacio local: +X a su izquierda, +Y arriba, +Z adelante) en el mundo.
 static Vector3 body_point(V3 l, Vector3 pos, float yaw) {
     V3 w = body_to_world(l, (V3){ pos.x, pos.y, pos.z }, yaw);

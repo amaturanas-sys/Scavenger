@@ -1,10 +1,11 @@
 // Generado por tools/modelos/patron.py desde arte/fuentes/patron/model_equipped_01.glb: no editar a mano.
 // Para cada cuerpo (GEAR_BODIES) y cada anclaje (GearSocket): el hueso y la matriz que lleva el objeto, en su
 // marco (las armas: la empunadura en el origen, la hoja hacia +Y y el filo hacia +Z; los escudos: mirando a +X;
-// los cascos: desde el borde del casco del patron), a la pose de reposo del cuerpo (la de su GLB), en metros.
+// los cascos: el origen en el centro del craneo del cuerpo comun, a la altura de las cejas), a la pose de reposo
+// del cuerpo (la de su GLB), en metros. GEAR_HEAD: el centro del craneo de cada cuerpo y su escala (calzar_casco).
 static const GearSocketDef GEAR_SOCKETS[GEAR_BODY_COUNT][GEAR_SOCKET_COUNT] = {
     { // personaje.base.cuerpo_comun
-        [GEAR_HEAD] = { "head", { 1.00000f, -0.00000f, -0.00000f, -0.08665f, -0.00000f, 1.00000f, -0.00000f, 1.51241f, -0.00000f, -0.00000f, 1.00000f, -0.00832f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
+        [GEAR_HEAD] = { "head", { 1.00000f, 0.00000f, 0.00000f, -0.07555f, 0.00000f, 1.00000f, 0.00000f, 1.61952f, 0.00000f, 0.00000f, 1.00000f, -0.00409f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_SHIELD] = { "spine_03", { -0.94962f, -0.22129f, 0.22194f, -0.24845f, -0.20985f, 0.97492f, 0.07417f, 1.15790f, -0.23279f, 0.02385f, -0.97224f, -0.03854f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_QUIVER] = { "spine_03", { -0.99931f, -0.00722f, 0.03631f, -0.23792f, 0.00317f, 0.96051f, 0.27821f, 1.00784f, -0.03689f, 0.27814f, -0.95983f, -0.03985f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_LONG] = { "spine_03", { -0.33163f, 0.08452f, -0.93962f, -0.22583f, 0.27390f, -0.94445f, -0.18163f, 1.27833f, -0.90277f, -0.31759f, 0.29006f, -0.07091f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
@@ -15,7 +16,7 @@ static const GearSocketDef GEAR_SOCKETS[GEAR_BODY_COUNT][GEAR_SOCKET_COUNT] = {
         [GEAR_FOREARM_LEFT] = { "lowerarm_l", { 0.00000f, 0.00000f, 1.00000f, -0.12735f, 0.00000f, 1.00000f, 0.00000f, 1.03183f, -1.00000f, 0.00000f, 0.00000f, -0.30875f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
     },
     { // personaje.base.cuerpo_mujer
-        [GEAR_HEAD] = { "head", { 0.89327f, -0.00081f, 0.02596f, -0.08836f, 0.00000f, 0.89321f, 0.02775f, 1.49717f, -0.02598f, -0.02774f, 0.89283f, -0.01001f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
+        [GEAR_HEAD] = { "head", { 1.08940f, 0.00000f, 0.00000f, -0.07988f, 0.00000f, 1.08940f, 0.00000f, 1.51668f, 0.00000f, 0.00000f, 1.08940f, -0.00582f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_SHIELD] = { "spine_03", { -0.94962f, -0.22129f, 0.22194f, -0.22629f, -0.20985f, 0.97492f, 0.07417f, 1.03752f, -0.23279f, 0.02385f, -0.97224f, -0.04231f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_QUIVER] = { "spine_03", { -0.99931f, -0.00722f, 0.03631f, -0.21639f, 0.00317f, 0.96051f, 0.27821f, 0.89647f, -0.03689f, 0.27814f, -0.95983f, -0.04354f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_LONG] = { "spine_03", { -0.33163f, 0.08452f, -0.93962f, -0.20503f, 0.27390f, -0.94445f, -0.18163f, 1.15071f, -0.90277f, -0.31759f, 0.29006f, -0.07273f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
@@ -26,7 +27,7 @@ static const GearSocketDef GEAR_SOCKETS[GEAR_BODY_COUNT][GEAR_SOCKET_COUNT] = {
         [GEAR_FOREARM_LEFT] = { "lowerarm_l", { 0.00000f, 0.00000f, 1.00000f, -0.15632f, 0.00000f, 1.00000f, 0.00000f, 0.96286f, -1.00000f, 0.00000f, 0.00000f, -0.24911f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
     },
     { // personaje.base.cuerpo_gigante
-        [GEAR_HEAD] = { "head", { 1.35237f, -0.00122f, 0.03931f, -0.11723f, 0.00000f, 1.35229f, 0.04202f, 2.04375f, -0.03933f, -0.04200f, 1.35172f, -0.01125f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
+        [GEAR_HEAD] = { "head", { 1.34762f, 0.00000f, 0.00000f, -0.10221f, 0.00000f, 1.34762f, 0.00000f, 2.19112f, 0.00000f, 0.00000f, 1.34762f, -0.00554f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_SHIELD] = { "spine_03", { -0.94962f, -0.22129f, 0.22194f, -0.33614f, -0.20985f, 0.97492f, 0.07417f, 1.56657f, -0.23279f, 0.02385f, -0.97224f, -0.05214f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_QUIVER] = { "spine_03", { -0.99931f, -0.00722f, 0.03631f, -0.32189f, 0.00317f, 0.96051f, 0.27821f, 1.36355f, -0.03689f, 0.27814f, -0.95983f, -0.05391f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_LONG] = { "spine_03", { -0.33163f, 0.08452f, -0.93962f, -0.30553f, 0.27390f, -0.94445f, -0.18163f, 1.72951f, -0.90277f, -0.31759f, 0.29006f, -0.09593f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
@@ -37,7 +38,7 @@ static const GearSocketDef GEAR_SOCKETS[GEAR_BODY_COUNT][GEAR_SOCKET_COUNT] = {
         [GEAR_FOREARM_LEFT] = { "lowerarm_l", { 0.00000f, 0.00000f, 1.00000f, -0.17230f, 0.00000f, 1.00000f, 0.00000f, 1.39601f, -1.00000f, 0.00000f, 0.00000f, -0.41349f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
     },
     { // personaje.narrativo.protagonista
-        [GEAR_HEAD] = { "head", { 1.02672f, -0.00093f, 0.02984f, -0.08900f, 0.00000f, 1.02665f, 0.03190f, 1.55161f, -0.02986f, -0.03189f, 1.02622f, -0.00854f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
+        [GEAR_HEAD] = { "head", { 1.04245f, 0.00000f, 0.00000f, -0.07715f, 0.00000f, 1.04245f, 0.00000f, 1.66498f, 0.00000f, 0.00000f, 1.04245f, -0.00607f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_SHIELD] = { "spine_03", { -0.94962f, -0.22129f, 0.22194f, -0.25520f, -0.20985f, 0.97492f, 0.07417f, 1.18934f, -0.23279f, 0.02385f, -0.97224f, -0.03959f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_QUIVER] = { "spine_03", { -0.99931f, -0.00722f, 0.03631f, -0.24438f, 0.00317f, 0.96051f, 0.27821f, 1.03521f, -0.03689f, 0.27814f, -0.95983f, -0.04093f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_BACK_LONG] = { "spine_03", { -0.33163f, 0.08452f, -0.93962f, -0.23196f, 0.27390f, -0.94445f, -0.18163f, 1.31304f, -0.90277f, -0.31759f, 0.29006f, -0.07283f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
@@ -47,4 +48,16 @@ static const GearSocketDef GEAR_SOCKETS[GEAR_BODY_COUNT][GEAR_SOCKET_COUNT] = {
         [GEAR_HAND_LEFT] = { "hand_l", { 0.00000f, 1.00000f, 0.00000f, -0.11593f, 0.00000f, 0.00000f, -1.00000f, 0.83003f, -1.00000f, 0.00000f, 0.00000f, -0.31801f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
         [GEAR_FOREARM_LEFT] = { "lowerarm_l", { 0.00000f, 0.00000f, 1.00000f, -0.13081f, 0.00000f, 1.00000f, 0.00000f, 1.05985f, -1.00000f, 0.00000f, 0.00000f, -0.31681f, 0.00000f, 0.00000f, 0.00000f, 1.00000f } },
     },
+};
+// GEAR_HEAD, casco por casco: su escala en cada cuerpo (GEAR_BODIES), relativa a la del anclaje (la del casco que
+// mas pide): la menor con la que queda a 2 mm de esa cabeza (anclaje_cabeza). Un casco que no esta, la del anclaje.
+static const GearHelmetFit GEAR_HELMET_FIT[] = {
+    { "armadura.casco.bronce", { 1.00000f, 0.88139f, 0.97635f, 0.96814f } },
+    { "armadura.casco.culto", { 1.00000f, 0.90630f, 0.99685f, 0.97624f } },
+    { "armadura.casco.escamas_hierro", { 1.00000f, 0.85883f, 1.00000f, 0.94543f } },
+    { "armadura.casco.fieltro", { 1.00000f, 1.00000f, 0.99673f, 1.00000f } },
+    { "armadura.casco.laminar_cuero", { 1.00000f, 0.81279f, 0.99952f, 0.99659f } },
+    { "armadura.casco.malla", { 1.00000f, 0.88133f, 0.99474f, 0.99287f } },
+    { "armadura.casco.mascara_culto", { 1.00000f, 0.88354f, 0.99728f, 0.96485f } },
+    { "armadura.casco.oro_padre", { 1.00000f, 0.89356f, 0.99858f, 0.98165f } },
 };

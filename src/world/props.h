@@ -117,7 +117,8 @@ typedef enum {
 bool props_draw_worn(Props *p, const InvItem *wear, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
                      float time);
 // Un objeto rigido (casco, arma, escudo, aljaba, antorcha) en un anclaje de body, que sigue a su hueso en este cuadro
-// (como props_draw_worn). false si no tiene modelo: el que llama dibuja su marcador.
+// (como props_draw_worn); un casco, ademas, a su escala en esa cabeza (GEAR_HELMET_FIT de anclajes.inc). false si no
+// tiene modelo: el que llama dibuja su marcador.
 bool props_draw_socket(Props *p, const InvItem *item, const InvItem *body, Vector3 pos, float yaw, const AnimTrack *track,
                        float time, GearSocket socket);
 // La matriz de un anclaje de body en este cuadro (del marco del objeto al mundo), para lo que se dibuja sin modelo.

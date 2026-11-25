@@ -281,6 +281,12 @@ void ga_set_player_armor(const Armor *armor);
 // --patron (prueba, con --ver <cuerpo>): el equipo del patron (arte/fuentes/patron) sobre ese cuerpo, a cada lado del
 // de la galeria: guardado (idle) y empunado (con arma y escudo).
 void ga_draw_patron_demo(Props *props, const Inventory *inv, const char *body_id, Vector3 pos, float time);
+// --ver <casco> (prueba): el cuerpo body con la pose idle en time y el casco en su anclaje GEAR_HEAD, como lo dibuja
+// ga_draw_gear (props_draw_socket: el hueso head y la matriz de src/world/anclajes.inc, sin corrimientos sueltos).
+void ga_draw_helmet_demo(Props *props, const InvItem *body, const InvItem *helmet, Vector3 pos, float time);
+// El anclaje GEAR_HEAD de ese maniqui con la pose del ultimo ga_draw_helmet_demo (la de reposo, antes del primero):
+// la camara de --ver centra la cabeza como se dibuja, no como esta en reposo.
+Matrix ga_helmet_demo_matrix(Props *props, const InvItem *body, Vector3 pos, float time);
 // Lo empuñado y lo guardado sobre el cuerpo articulado del jugador (sin modelo del protagonista:
 // cb_draw_player_body): el arma en la mano, siguiendo el antebrazo al andar y al golpear; guardada, al
 // cinto; el escudo guardado, a la espalda (en el brazo lo pone combat_game.c). Con modelo, el modelo; si

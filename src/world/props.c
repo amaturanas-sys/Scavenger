@@ -312,7 +312,20 @@ typedef struct {
     const char *bone;
     Matrix m;
 } GearSocketDef;
+// Cada casco en GEAR_HEAD: su escala en cada cuerpo, relativa a la del anclaje (la del casco que mas pide).
+typedef struct {
+    const char *id;
+    float k[GEAR_BODY_COUNT];
+} GearHelmetFit;
 #include "anclajes.inc"
+
+// La escala de item en GEAR_HEAD del cuerpo body (GEAR_HELMET_FIT): 1 si no esta en la tabla (la del anclaje, con la
+// que ningun casco se mete en esa cabeza).
+static float helmet_fit(const InvItem *item, int body) {
+    for (size_t i = 0; i < sizeof(GEAR_HELMET_FIT) / sizeof(GEAR_HELMET_FIT[0]); i++)
+        if (!strcmp(item->id, GEAR_HELMET_FIT[i].id)) return GEAR_HELMET_FIT[i].k[body];
+    return 1.0f;
+}
 
 // El clip de body y su cuadro ahora (los de props_draw_item_track con ese track), o NULL si no esta animado.
 static ModelAnimation *track_frame(Props *p, const InvItem *body, const AnimTrack *track, float time, Model **bm, int *frame) {
@@ -386,8 +399,13 @@ bool props_draw_socket(Props *p, const InvItem *item, const InvItem *body, Vecto
                        float time, GearSocket socket) {
     Model *im = item ? cached_model(p, item) : NULL;
     if (!im) return false;
+    Matrix m = props_socket_matrix(p, body, pos, yaw, track, time, socket);
+    if (socket == GEAR_HEAD) { // el casco, a su escala en esa cabeza (alrededor de su origen: el centro del craneo)
+        float k = helmet_fit(item, gear_body(body));
+        m = MatrixMultiply(MatrixScale(k, k, k), m);
+    }
     Matrix saved = im->transform;
-    im->transform = MatrixMultiply(saved, props_socket_matrix(p, body, pos, yaw, track, time, socket));
+    im->transform = MatrixMultiply(saved, m);
     DrawModel(*im, (Vector3){ 0, 0, 0 }, 1.0f, g_tint);
     im->transform = saved;
     return true;
