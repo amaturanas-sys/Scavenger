@@ -264,6 +264,25 @@ El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo 
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
 
+Los animales de *Better animals* y el jinete en la silla (v0.17.3): las mallas y los rigs que subió el usuario a
+`IMPORTED/Better animals/Modelos`, y su referencia del jinete (`IMPORTED/References 3d`).
+- **17 modelos nuevos:** los cuatro caballos, los dos burros, el camello bactriano, el dromedario, el elefante, el buey,
+  la vaca, el perro pastor, el lobo, el oso, la hiena, el zorro y la gacela (`arte/fuentes/animales/mejores`). Cada uno
+  lleva el esqueleto y los clips del caballo o de la hiena de referencia (`arte/fuentes/animales/rigs`), llevados a su
+  cuerpo (`tools/modelos/rigs.py`).
+- **Pastar:** el cuello baja hasta que la boca toca el suelo, sin abrir las patas de adelante.
+- **La silla de montar:** la de la referencia, con sus estribos. Va donde la referencia la pone: a un 64 % del camino
+  de las patas de atrás a las de adelante (`tools/modelos/jinete.py`). Cada montura lleva su hueso `asiento`; en el
+  camello bactriano, entre las gibas.
+- **El jinete, sentado en ella:**
+  - la pelvis en el asiento, que sube y baja con el lomo en cada clip;
+  - los pies en los estribos y las manos adelante, en las riendas;
+  - la cámara sigue la altura del asiento (en el elefante, más arriba).
+- **Los jinetes bandidos, también:** montan el caballo estepario con su silla (antes, uno de cápsulas), al paso, al
+  trote o al galope según su velocidad, y van sentados como el jugador.
+
+Pruebas: `--montado quieto --giro-camara 90` (quieto y de lado) y `--enemigos jinetes`.
+
 Los cascos donde los colocó el usuario (v0.17.2): siete cascos, colocados a mano sobre el cuerpo
 (`IMPORTED/References 3d`, pasados a `arte/fuentes/patron/cascos_colocados.glb`), van en el juego en el lugar exacto
 (`tools/modelos/patron.py`; el patrón y los pasos para un casco nuevo, en `assets/models/README.md`, «Cascos»).

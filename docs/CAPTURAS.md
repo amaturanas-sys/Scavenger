@@ -55,7 +55,8 @@ El del patrón del usuario, en el cuerpo común (`assets/models/README.md`, «El
 
 | | |
 |---|---|
-| ![Jinetes](capturas/14_jinetes.png) | **Jinetes bandidos** (`--enemigos jinetes`). |
+| ![Jinetes](capturas/14_jinetes.png) | **Jinetes bandidos** (`--enemigos jinetes`): sentados en la silla de su caballo estepario (v0.17.3). |
+| ![Jinete](capturas/jinete.png) | **A caballo** (`--montado quieto --giro-camara 90`): el jugador sentado en la silla, con los pies en los estribos y las manos en las riendas (v0.17.3). |
 | ![Botín](capturas/15_botin.png) | **Bolsas de botín** (`--botin`). |
 | ![Galería](capturas/16_galeria.png) | **Galería de modelos** (`--galeria`): todos los objetos del inventario a escala. |
 
