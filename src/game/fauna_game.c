@@ -1049,7 +1049,8 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
         }
         if (a->state == ANIMAL_DEAD) continue;
         float y = pos.y + a->alt + top;
-        if (a->state != ANIMAL_WILD) DrawCube((Vector3){ pos.x, y + 0.1f, pos.z }, 0.12f, 0.12f, 0.12f, UI_TURQUOISE);
+        // La marca de los de la tribu, encima; en la que monta el jugador no (asomaba por la cadera del jinete).
+        if (a->state != ANIMAL_WILD && i != ga->mounted) DrawCube((Vector3){ pos.x, y + 0.1f, pos.z }, 0.12f, 0.12f, 0.12f, UI_TURQUOISE);
         if (a->state == ANIMAL_SADDLED && !saddled)
             DrawCube((Vector3){ pos.x, pos.y + top * 0.75f, pos.z }, 0.5f, 0.15f, 0.6f, (Color){ 120, 70, 40, 255 });
         if (a->state == ANIMAL_BOUND) { // la cuerda del lazo, a una estaca
