@@ -999,6 +999,10 @@ static bool draw_saddle(Props *props, const InvItem *saddle, Vector3 seat, float
     return true;
 }
 
+bool fg_draw_saddle(const GameActions *ga, Props *props, Vector3 seat, float yaw) {
+    return draw_saddle(props, inventory_find(ga->inv, SADDLE_ID), seat, yaw);
+}
+
 void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float time) {
     for (int i = 0; i < GA_MAX_SWARMS; i++) {
         const Swarm *s = &ga->swarms[i];

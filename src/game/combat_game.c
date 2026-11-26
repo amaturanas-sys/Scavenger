@@ -53,6 +53,7 @@
 #define MOUNT_WEIGHT 80.0f    // kg que suma la montura contra derribos
 #define GALLOP_SPEED 6.0f     // m/s: por encima, la lanza derriba y se arrolla
 #define RIDER_LIFT 1.1f       // altura del jinete sobre el suelo
+#define ENEMY_HORSE_ID "animal.montura.caballo_estepario" // el caballo de los jinetes enemigos (con silla y asiento)
 #define LOOT_MAX 16
 #define CHARIOT_TURN 1.3f     // rad/s: el carro gira abierto
 #define CHARIOT_LIFT 0.8f     // la plataforma del carro: alli van el conductor y el arquero
@@ -2923,6 +2924,23 @@ void cb_draw_horse(Vector3 pos, float yaw, float speed, float time, bool hit) {
     }
 }
 
+// El caballo de un jinete enemigo con su modelo (al paso, al trote o al galope, segun su velocidad) y la silla en su
+// hueso asiento (tools/modelos/rigs.py), como la montura del jugador. seat: donde va la pelvis del jinete. false si el
+// caballo no tiene modelo o asiento (el que llama dibuja el de capsulas).
+static bool draw_enemy_mount(Props *props, const GameActions *ga, const Enemy *e, int i, float time, Vector3 *seat) {
+    static AnimTrack tracks[CB_MAX_ENEMIES]; // el arranque del paso de cada caballo
+    const InvItem *horse = inventory_find(ga->inv, ENEMY_HORSE_ID);
+    if (!horse || !props_has_model(props, horse)) return false;
+    const char *gait = e->speed > 0.2f ? anim_quadruped_fight(e->speed, false, false, false) : "montado_idle";
+    float yaw = e->ride_yaw - PI / 2.0f, tt = time + (float)i * 0.53f; // el modelo mira a +X
+    AnimTrack *tr = &tracks[i % CB_MAX_ENEMIES], now = *tr;
+    if (!now.clip || strcmp(now.clip, gait) != 0) now = (AnimTrack){ gait, tt, 1.0f, 0.0f }; // como props_draw_item_track
+    if (!props_bone_point(props, horse, e->pos, yaw, &now, tt, "asiento", seat)) return false;
+    props_draw_item_track(props, horse, e->pos, yaw, gait, tt, 0.0f, tr);
+    fg_draw_saddle(ga, props, *seat, yaw);
+    return true;
+}
+
 static void draw_shot(const Shot *s) {
     V3 d = s->stuck ? s->dir : s->p.vel;
     float l = sqrtf(d.x * d.x + d.y * d.y + d.z * d.z);
@@ -3031,13 +3049,16 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         Vector3 at = e->pos;
         bool struggling = e->state == EN_ICE; // en el agua helada: se agita
         if (struggling) at.y += 0.07f * sinf(time * 5.0f + (float)i);
-        if (e->mounted && !dead) { // a caballo: el jinete va encima
-            cb_draw_horse(e->pos, e->ride_yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
-            at.y += RIDER_LIFT;
-        }
         const InvItem *base = inventory_find(ga->inv, "personaje.base.cuerpo_comun"); // el cuerpo humano estandar
-        bool own = props_has_model(props, it);
-        if (own || (base && props_has_model(props, base))) {
+        bool own = props_has_model(props, it), modeled = own || (base && props_has_model(props, base));
+        Vector3 seat; // a caballo, con modelo: donde va su pelvis, en la silla de su caballo
+        bool seated = false;
+        if (e->mounted && !dead) { // a caballo: el jinete va encima
+            seated = modeled && draw_enemy_mount(props, ga, e, i, time, &seat);
+            if (!seated) cb_draw_horse(e->pos, e->ride_yaw, e->speed, time + (float)i, e->hit_anim > 0.0f);
+            at.y += RIDER_LIFT; // en la silla, lo cambia la pelvis en el asiento (abajo)
+        }
+        if (modeled) {
             HumanoidState hs = { .moving = e->speed > 0.2f, .running = e->speed > 3.5f, .grounded = true, .doing = -1,
                                  .mounted = e->mounted && !dead,
                                  .building = -1, .dead = dead, .down = downed, .hit = e->hit_anim > 0.0f || struggling,
@@ -3050,6 +3071,13 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
             const char *clip = anim_humanoid(&hs);
             static AnimTrack tracks[CB_MAX_ENEMIES]; // el arranque del clip de cada uno (morir queda en su ultimo cuadro)
             float tt = time + (float)i * 0.31f;
+            if (seated) { // la pelvis en el asiento, como el jugador (ga_draw_player): sube y baja con el lomo
+                AnimTrack tr = tracks[i % CB_MAX_ENEMIES];
+                if (!tr.clip || strcmp(tr.clip, clip) != 0) tr = (AnimTrack){ clip, tt, 1.0f, 0.0f };
+                Vector3 pelvis;
+                if (props_bone_point(props, own ? it : base, (Vector3){ 0.0f, 0.0f, 0.0f }, e->yaw - PI / 2.0f, &tr, tt, "pelvis", &pelvis))
+                    at = Vector3Subtract(seat, pelvis);
+            }
             Color light = props_get_tint(), cloth = enemy_colors(e->kind, e->hit_anim > 0.0f).cloth;
             if (!own) props_set_tint(ColorTint(light, (Color){ (unsigned char)(96 + cloth.r * 5 / 8), (unsigned char)(96 + cloth.g * 5 / 8),
                                                               (unsigned char)(96 + cloth.b * 5 / 8), 255 }));

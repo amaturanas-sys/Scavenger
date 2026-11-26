@@ -39,6 +39,9 @@ bool fg_mount_winded(void);
 // Donde va la pelvis del jinete en este cuadro: el hueso asiento de la montura (tools/modelos/rigs.py), con su clip,
 // sobre la silla. false si no va montado o su modelo no tiene asiento.
 bool fg_mount_seat(const GameActions *ga, Props *props, const Terrain *t, float time, Vector3 *seat);
+// La silla de montar en un asiento (seat: donde va la pelvis del jinete; yaw: el del modelo de la montura, que mira a +X).
+// false si la silla no tiene modelo.
+bool fg_draw_saddle(const GameActions *ga, Props *props, Vector3 seat, float yaw);
 // Sexo y lo heredado de un animal, para leer: «hembra · velocidad +12 % · aguante −3 %».
 const char *fg_traits_text(const Animal *a);
 
