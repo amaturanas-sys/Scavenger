@@ -35,6 +35,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import animales  # noqa: E402
+import jinete  # noqa: E402
 import patron  # noqa: E402
 
 ROOT = patron.ROOT
@@ -597,11 +598,28 @@ def cruz_de(v, f):
     return float(s[:, 1].max())
 
 
-def armar(malla_t, it, rig, nombre_rig, cruz=None, cuernos=False, mapa=None, log=print):
+def con_asiento(B, nombres, padres, clips, asiento):
+    """El hueso asiento de una montura: donde va la pelvis del jinete (jinete.asiento_de), hijo del hueso del tronco
+    mas cercano a lo largo (asi sube y baja con el lomo al galope), sin pesos y quieto en su padre en cada clip. El
+    juego pone ahi la silla y al jinete (props_bone_point)."""
+    tronco = [k for k, n in enumerate(nombres) if n in ("hips", "spine_1", "spine_2", "spine_3", "Hips", "Spine", "Spine1",
+                                                        "Spine2", "Spine3")]
+    if not tronco:
+        return B, nombres, padres, clips
+    padre = min(tronco, key=lambda k: abs(B[k, 0, 3] - asiento[0]))
+    M = B[padre].copy()
+    M[:3, 3] = asiento
+    quieto = np.array([0.0, 0.0, 0.0, 1.0])
+    clips = {n: (t, np.concatenate([R, np.tile(quieto, (len(R), 1, 1))], axis=1), T) for n, (t, R, T) in clips.items()}
+    return np.concatenate([B, M[None]]), nombres + ["asiento"], np.append(padres, padre), clips
+
+
+def armar(malla_t, it, rig, nombre_rig, cruz=None, cuernos=False, mapa=None, valle=False, log=print):
     """Como animales.armar (su tris_max, el color con la luz horneada), con el esqueleto, los pesos y los clips del rig
     de referencia. La medida: la altura a la cruz (cruz, docs/TAMANOS.md) o, sin ella, el alto del inventario; lo demas
     sale de la malla (armar.ultimo["medidas"]: la caja que resulta, para el inventario). mapa: lo que cambia de MAPAS
-    para este animal (el elefante pasta con la trompa: idle)."""
+    para este animal (el elefante pasta con la trompa: idle). Las monturas (uso:montable) llevan el hueso asiento
+    (con_asiento; valle: entre las gibas del camello bactriano)."""
     import lowres
     _, alto, _ = (float(x) for x in it["medidas_m"].split("x"))
     tmax = int(it["tris_max"]) or 800
@@ -615,8 +633,10 @@ def armar(malla_t, it, rig, nombre_rig, cruz=None, cuernos=False, mapa=None, log
     B, juntas, pesos, h_ref, h_nueva = llevar(rig, v, f, vr, fr, cuernos)
     filas, _ = animales.indice.load_clips()
     suyos = {c["clip"] for c in filas if c["rig"] == "cuadrupedo" and any(animales.indice.matches(it, x) for x in c["filtros"])}
-    padres = rig.padres
+    padres, nombres = rig.padres, list(rig.nombres)
     clips = clips_de(rig, {**MAPAS[nombre_rig], **(mapa or {})}, suyos, h_ref, h_nueva, B)
+    if "uso:montable" in it["tags"]:
+        B, nombres, padres, clips = con_asiento(B, nombres, padres, clips, jinete.asiento_de(v, f, valle=valle))
     tri = vr[fr]
     n = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
     n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
@@ -624,10 +644,10 @@ def armar(malla_t, it, rig, nombre_rig, cruz=None, cuernos=False, mapa=None, log
     sol /= np.linalg.norm(sol)
     luz = 0.72 + 0.38 * np.clip(n @ sol, 0.0, 1.0)
     caras = np.clip(cr[fr].mean(axis=1) * luz[:, None], 0, 255)
-    datos = escribir(rig.nombres, padres, B, rig.cadera, tri.reshape(-1, 3), lowres.normales_aristas(vr, fr).reshape(-1, 3),
+    datos = escribir(nombres, padres, B, rig.cadera, tri.reshape(-1, 3), lowres.normales_aristas(vr, fr).reshape(-1, 3),
                      np.repeat(caras, 3, axis=0), juntas[fr].reshape(-1, 4), pesos[fr].reshape(-1, 4), clips, it["id"])
     c = vr.max(0) - vr.min(0)
-    armar.ultimo = dict(B=B, nombres=rig.nombres, padres=padres, v=vr, f=fr, m=m, juntas=juntas, pesos=pesos,
+    armar.ultimo = dict(B=B, nombres=nombres, padres=padres, v=vr, f=fr, m=m, juntas=juntas, pesos=pesos,
                         medidas=f"{c[2]:.2f}x{c[1]:.2f}x{c[0]:.2f}")
     faltan = sorted(suyos - set(clips))
     cuellos = ", ".join(f"{n} con el cuello a {g:.0f} grados" for n, g in sorted(clips_de.cuellos.items()))
@@ -654,7 +674,7 @@ MEJORES = {
     "animal.montura.caballo_guerra": ("25_11/white_mesh(1)", "caballo", 1.75, "pintada", {}),
     "animal.montura.burro": ("24_11/white_mesh", "caballo", 1.55, ("steppe donkey", ""), {}),
     "animal.montura.burro_2": ("25_11/hy3d-model(3)", "caballo", 1.55, ("steppe donkey", "-1"), {}),
-    "animal.montura.camello_bactriano": ("24_11/hy3d-model(1)", "caballo", None, ("Bactrian camel", ""), {}),
+    "animal.montura.camello_bactriano": ("24_11/hy3d-model(1)", "caballo", None, ("Bactrian camel", ""), {"valle": True}),
     "animal.montura.dromedario": ("24_11/hy3d-model(2)", "caballo", 2.00, ("dromedary camel", "-1"), {}),
     "animal.montura.elefante_guerra": ("25_11/hy3d-model(5)", "caballo", 3.20, ("war elephant", "-1"),
                                        {"mapa": {"pastar": "Idle", "atacar": "Rear"}}),
@@ -749,7 +769,7 @@ def main():
         if nombre_rig not in rigs_:
             rigs_[nombre_rig] = cargar(nombre_rig)
         datos, _ = armar(preparar(mid), por_id[mid], rigs_[nombre_rig], nombre_rig, cruz, op.get("cuernos", False),
-                         op.get("mapa"))
+                         op.get("mapa"), op.get("valle", False))
         ruta = os.path.join(ROOT, inventario.path_of(por_id[mid]))
         os.makedirs(os.path.dirname(ruta), exist_ok=True)
         open(ruta, "wb").write(datos)

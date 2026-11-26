@@ -6,7 +6,8 @@ el récord de un ejemplar suelto. La naturaleza salvaje de la estepa es feroz y 
 
 Dos medidas salen de aquí:
 
-- **La altura a la cruz** escala los modelos (`tools/modelos/piezas.py --cruz M`). La cruz se busca en la vista de
+- **La altura a la cruz** escala los modelos (`tools/modelos/piezas.py --cruz M`; los de *Better animals*, con la de
+  `MEJORES` en `tools/modelos/rigs.py`). La cruz se busca en la vista de
   lado de la hoja, sobre la parte de atrás de las patas de adelante. El resto de las medidas del modelo sale de
   la imagen, y el inventario (`assets/inventario.tsv`) guarda la caja que resulta.
 - **El largo de cabeza y cuerpo**, sin la cola, es la talla de la especie en la simulación (`size` en
@@ -37,6 +38,11 @@ importante.
 | Coyote | 0.62 m | 1.07 m | coyote del noreste | 23–25 kg |
 | Perro pastor (mastín) | 0.78 m (est.) | — | pastor de Asia central (estándar FCI: los machos, desde 0.70 m) | 50 kg o más |
 | Perro asilvestrado | 0.65 m (est.) | 1.00 m (est.) | perros asilvestrados grandes, de tipo guardián | 30–40 kg |
+| Burro | 1.55 m (est.) | 2.00 m | mamut americano y Poitou (1.50–1.55 m) | |
+| Camello bactriano | — | 3.30 m | machos grandes | la malla no va por la cruz: va al alto de la giba del inventario (2.20 m) |
+| Elefante de guerra | 3.20 m | 6.00 m | elefante asiático macho (3.0–3.2 m) | en la simulación, el elefante |
+| Hiena | 0.90 m (est.) | 1.55 m | hiena manchada de Zambia | el color, de la imagen de la hiena rayada |
+| Gacela | 0.80 m (est.) | 1.12 m | gacela persa, machos | |
 
 Con id en el inventario, todavía sin especie en la simulación:
 
@@ -46,6 +52,8 @@ Con id en el inventario, todavía sin especie en la simulación:
 | Cierva (`animal.salvaje.cierva`) | 1.20 m (est.) | hembra del ciervo del Caspio, escalada del macho |
 | Vaca (`animal.ganado.vaca`) | 1.62 m | vacas de Chianina (900–1000 kg) |
 | Caballo estepario, variantes 2 y 3 | 1.58 m | como el caballo estepario |
+| Burro, variante 2 (`animal.montura.burro_2`) | 1.55 m (est.) | como el burro |
+| Zorro (`animal.salvaje.zorro`) | 0.50 m (est.) | zorro rojo, los machos más grandes |
 
 Las personas no siguen esta regla: el cuerpo común mide 1.70 m, el robusto 1.85 m y la mujer estándar 1.60 m.
 

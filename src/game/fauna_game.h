@@ -36,6 +36,9 @@ void fg_update(GameActions *ga, Combat *cb, Player *p, Troop *troop, const Terra
 void fg_new_day(GameActions *ga, char *log, size_t len);
 // La montura (src/sim/riding.h): agotada no galopa (el jugador no corre) hasta recobrar el aliento.
 bool fg_mount_winded(void);
+// Donde va la pelvis del jinete en este cuadro: el hueso asiento de la montura (tools/modelos/rigs.py), con su clip,
+// sobre la silla. false si no va montado o su modelo no tiene asiento.
+bool fg_mount_seat(const GameActions *ga, Props *props, const Terrain *t, float time, Vector3 *seat);
 // Sexo y lo heredado de un animal, para leer: «hembra · velocidad +12 % · aguante −3 %».
 const char *fg_traits_text(const Animal *a);
 

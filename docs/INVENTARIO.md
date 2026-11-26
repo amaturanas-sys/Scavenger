@@ -3,7 +3,7 @@
 > Generado por `tools/assets/inventario.py doc` a partir de [`assets/inventario.tsv`](../assets/inventario.tsv).
 > No editar a mano: edita el TSV y regenera.
 
-**736 objetos** · 362 con modelo · 374 pendientes.
+**736 objetos** · 363 con modelo · 373 pendientes.
 
 Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego lo carga solo y, mientras falte, dibuja un marcador con sus medidas. Convenciones de importación: [assets/models/README.md](../assets/models/README.md).
 
@@ -21,7 +21,7 @@ Cada objeto se reemplaza dejando su archivo en la ruta que marca su id; el juego
 | [Tótems](#totem) | 10 | 10 | 0 | 0 | 0 |
 | [Armaduras (por piezas)](#armadura) | 48 | 34 | 0 | 14 | 0 |
 | [Vestimenta (personalización)](#vestimenta) | 29 | 29 | 0 | 0 | 0 |
-| [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 33 | 0 | 0 | 0 |
+| [Accesorios: amuletos, tatuajes, arreos y mensajes](#accesorio) | 33 | 32 | 0 | 1 | 0 |
 | [Maquinaria de asedio](#asedio) | 5 | 5 | 0 | 0 | 0 |
 | [Utilería y consumibles](#utileria) | 175 | 79 | 0 | 96 | 0 |
 | [Personajes y NPCs](#personaje) | 47 | 43 | 0 | 4 | 0 |
@@ -609,7 +609,7 @@ Formato `clave:valor`, separadas por comas. Una clave puede repetirse (p. ej., d
 | `accesorio.tatuaje.grifo` | Tatuaje del grifo | 0.25x0.25x0 | 0 | pendiente | `uso:equipable` `formato:textura` `estilo:animal` | Calcomanía (PNG con alfa), no modelo. Permanente. |
 | `accesorio.tatuaje.tamga` | Tatuaje de la tamga | 0.25x0.25x0 | 0 | pendiente | `uso:equipable` `formato:textura` `estilo:animal` | Calcomanía (PNG con alfa), no modelo. Permanente. |
 | `accesorio.tatuaje.olas` | Tatuaje de olas | 0.25x0.25x0 | 0 | pendiente | `uso:equipable` `formato:textura` `estilo:animal` | Calcomanía (PNG con alfa), no modelo. Permanente. |
-| `accesorio.arreo.silla_montar` | Silla de montar | 0.5x0.3x0.6 | 200 | pendiente | `uso:equipable` `faccion:nomada` `material:cuero` |  |
+| `accesorio.arreo.silla_montar` | Silla de montar | 0.84x0.68x0.64 | 200 | importado | `uso:equipable` `faccion:nomada` `material:cuero` | La de la referencia del jinete del usuario (IMPORTED/References 3d/Model horserider 01.glb), a la escala del cuerpo y con los estribos colgando; va en el asiento de la montura (tools/modelos/jinete.py). |
 | `accesorio.arreo.brida` | Brida y riendas | 0.3x0.4x0.6 | 100 | pendiente | `uso:equipable` `material:cuero` |  |
 | `accesorio.arreo.estribos` | Estribos (par) | 0.15x0.2x0.1 | 60 | pendiente | `uso:equipable` `material:hierro` |  |
 | `accesorio.arreo.alforjas` | Alforjas | 0.6x0.4x0.3 | 120 | pendiente | `uso:equipable` `material:cuero` |  |

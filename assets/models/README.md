@@ -27,10 +27,13 @@ las medidas del inventario, frente +X, origen en el centro de la base), la deja 
 como `importado` y anota de dónde salió en `arte/modelos/models_manifest.json`. Las personas, los
 animales y los mecanismos esperan en `arte/modelos/para_riggear/` hasta tener esqueleto y clips; el cuerpo
 humano (`tools/modelos/humanoide.py`, con clips de la Universal Animation Library de Quaternius con `--ual`, y el cuerpo
-de mujer desde su maniquí femenino), los animales de `arte/fuentes/animales/modelos` (`tools/modelos/animales.py`) y los
-cuadrúpedos de `para_riggear` (`animales.py --para-riggear`: los caballos, los lobos, la vaca, el coyote, el jabalí, el
-oso polar, el perro salvaje y el tigre, rehechos en vóxeles) ya los tienen; su malla de pocas caras queda ahí, como
-fuente.
+de mujer desde su maniquí femenino), los animales de `arte/fuentes/animales/modelos` (`tools/modelos/animales.py`), los
+cuadrúpedos de `para_riggear` (`animales.py --para-riggear`: el coyote, el jabalí, el lobo 2, el oso polar, el perro
+salvaje y el tigre, rehechos en vóxeles) y los 17 de *Better animals* (`tools/modelos/rigs.py`: los caballos, los
+burros, los camellos, el elefante, el buey, la vaca, el perro pastor, el lobo, el oso, la hiena, el zorro y la gacela,
+con el esqueleto y los clips del rig de referencia del caballo o de la hiena) ya los tienen; la malla de pocas caras de
+los de `para_riggear` queda ahí, como fuente. Las monturas llevan además el hueso `asiento` (sin pesos): ahí pone el juego la silla de montar
+y la pelvis del jinete (`tools/modelos/jinete.py`, desde la referencia del jinete).
 `python3 tools/modelos/modelos.py check` (también en el CI) revisa triángulos, medidas, base y texturas.
 
 ## Cómo importar un modelo

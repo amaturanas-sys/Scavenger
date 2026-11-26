@@ -662,11 +662,147 @@ def test_glb_mallas(tmp):
         assert np.allclose(v, va, atol=1e-6) and np.array_equal(f, fa)
 
 
+def _cuadrupedo(patas, paso=0.04):
+    """Un cuadrupedo de cajas en una sola malla cerrada (como las de Hunyuan3D), de frente a +X: el cuerpo, la cabeza y
+    la cola, con las patas (x, z) dadas."""
+    import mcubes
+    partes = [((0.0, 1.0, 0.0), (1.2, 0.5, 0.4)), ((0.85, 1.35, 0.0), (0.5, 0.25, 0.22)), ((-0.8, 1.05, 0.0), (0.45, 0.08, 0.08))]
+    partes += [((x, 0.4, z), (0.12, 0.8, 0.12)) for x, z in patas]
+    xs, ys, zs = (np.arange(a, b, paso) for a, b in ((-1.2, 1.3), (-0.1, 1.8), (-0.4, 0.4)))
+    X, Y, Z = np.meshgrid(xs, ys, zs, indexing="ij")
+    lleno = np.zeros(X.shape, bool)
+    for (cx, cy, cz), (lx, ly, lz) in partes:
+        lleno |= (np.abs(X - cx) <= lx / 2) & (np.abs(Y - cy) <= ly / 2) & (np.abs(Z - cz) <= lz / 2)
+    vv, ff = mcubes.marching_cubes(lleno.astype(float), 0.5)
+    m = trimesh.Trimesh(vv * paso + [xs[0], ys[0], zs[0]], ff)
+    v = np.asarray(m.vertices, float)
+    return v - [0.0, v[:, 1].min(), 0.0], np.asarray(m.faces, np.int64)
+
+
+def test_medir_paso(tmp):
+    """animales.medir con las patas en un paso (las de adelante y las de atras escalonadas, como el burro de referencia de
+    Better animals): las dos de mas adelante son las delanteras, y de cada par, la de -Z es la izquierda."""
+    import animales
+    v, f = _cuadrupedo([(0.55, -0.13), (0.22, 0.13), (-0.25, -0.13), (-0.55, 0.13)])
+    m = animales.medir(animales.muestras(v, f))
+    pie = {n: m["ejes"][n][0] for n in animales.PATAS}
+    assert pie["di"][0] > 0.4 and pie["dd"][0] > 0.1 and pie["ti"][0] < -0.1 and pie["td"][0] < -0.4, pie
+    assert pie["di"][2] < 0 < pie["dd"][2] and pie["ti"][2] < 0 < pie["td"][2], pie
+
+
+def test_rigs_cuaterniones(tmp):
+    """rigs.py: el giro de un eje (q_eje), el de vuelta y adelante entre cuaternion y matriz, y nlerp en sus extremos."""
+    import rigs
+    q = rigs.q_eje(np.array([[0.0, 0.0, 1.0]]), np.array([90.0]))[0]
+    assert np.allclose(rigs.q_a_m(q) @ [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], atol=1e-9)  # +X a +Y, alrededor de +Z
+    r = rigs.qmul(q, rigs.q_eje(np.array([[1.0, 0.0, 0.0]]), np.array([35.0]))[0])
+    assert np.allclose(np.abs(rigs.m_a_q(rigs.q_a_m(r)) @ r), 1.0, atol=1e-9)
+    a, b = np.array([[0.0, 0.0, 0.0, 1.0]]), q[None]
+    assert np.allclose(rigs.nlerp(a, b, 0.0), a) and np.allclose(rigs.nlerp(a, b, 1.0), b)
+
+
+def _rig_de_prueba():
+    """Un rig de caballo minimo (rigs.Rig): la cadera, el tronco, la base del cuello con el omoplato, el cuello y la
+    cabeza; un clip de dos cuadros con la base del cuello girada 30 grados."""
+    import rigs
+    r = rigs.Rig()
+    r.nombres = ["root", "hips", "spine_3", "spine_4", "front_scapula_l", "spine_5", "spine_6", "head", "nose", "mouth_tip"]
+    r.padres = np.array([-1, 0, 1, 2, 3, 3, 5, 6, 7, 8])
+    pos = [(0, 0, 0), (-0.5, 1.0, 0), (0.3, 1.0, 0), (0.4, 1.1, 0), (0.35, 1.0, -0.1), (0.6, 1.3, 0), (0.8, 1.45, 0),
+           (1.0, 1.5, 0), (1.3, 1.3, 0), (1.35, 1.25, 0)]
+    r.bind = np.tile(np.eye(4), (len(pos), 1, 1))
+    r.bind[:, :3, 3] = pos
+    r.cadera = 1
+    L = rigs.local_de(r.bind, r.padres)
+    R = np.tile([0.0, 0.0, 0.0, 1.0], (2, len(pos), 1))
+    R[1, 3] = rigs.q_eje(np.array([[0.0, 0.0, 1.0]]), np.array([-30.0]))[0]
+    r.clips = {"Idle": {"t": np.array([0.0, 0.5]), "R": R, "T": np.tile(L[1][:3, 3], (2, 1))}}
+    return r
+
+
+def test_rigs_hombros_y_asiento(tmp):
+    """rigs.hombros_al_tronco: el omoplato pasa a colgar del tronco con la misma orientacion en el mundo en cada cuadro;
+    con_asiento: el hueso asiento, hijo del hueso del tronco mas cercano, quieto en su padre y donde se pidio."""
+    import rigs
+    r = _rig_de_prueba()
+    c = r.clips["Idle"]
+    W0 = rigs.fk(rigs.local_de(r.bind, r.padres), c["R"], c["T"], r.padres, r.cadera)
+    rigs.hombros_al_tronco(r)
+    k = r.nombres.index("front_scapula_l")
+    assert r.nombres[r.padres[k]] == "spine_3", r.padres
+    W1 = rigs.fk(rigs.local_de(r.bind, r.padres), c["R"], c["T"], r.padres, r.cadera)
+    assert np.allclose(W0[:, k, :3, :3], W1[:, k, :3, :3], atol=1e-9)
+    clips = {"idle": (c["t"], c["R"], c["T"])}
+    B, nombres, padres, clips = rigs.con_asiento(r.bind, list(r.nombres), r.padres, clips, np.array([0.25, 1.4, 0.0]))
+    j = nombres.index("asiento")
+    assert nombres[padres[j]] == "spine_3" and clips["idle"][1].shape[1] == len(nombres), (nombres[padres[j]], clips["idle"][1].shape)
+    W = rigs.fk(rigs.local_de(B, padres), clips["idle"][1], clips["idle"][2], padres, r.cadera)
+    assert np.allclose(W[:, j, :3, 3], [0.25, 1.4, 0.0], atol=1e-9)
+
+
+def test_rigs_cabeza_al_suelo(tmp):
+    """rigs.cabeza_al_suelo: el cuello baja (giro negativo, hasta su tope) y la boca queda mucho mas abajo, sin mover
+    el omoplato (colgado del tronco) ni la cadera."""
+    import rigs
+    r = rigs.hombros_al_tronco(_rig_de_prueba())
+    c = r.clips["Idle"]
+    R = np.tile(c["R"][:1], (2, 1, 1))  # quieto: el reposo
+    clip, g = rigs.cabeza_al_suelo((c["t"], R, c["T"]), r.bind, r.nombres, r.padres, r.cadera)
+    # El tope: el cuello (de su base a la nuca, que en reposo sube 33.7 grados) hasta 70 bajo la horizontal.
+    assert -103.7 - 1e-6 <= g < -20.0, g
+    L = rigs.local_de(r.bind, r.padres)
+    antes, despues = rigs.fk(L, R, c["T"], r.padres, r.cadera), rigs.fk(L, clip[1], clip[2], r.padres, r.cadera)
+    boca, omoplato = r.nombres.index("mouth_tip"), r.nombres.index("front_scapula_l")
+    assert despues[:, boca, 1, 3].max() < 0.6 * antes[:, boca, 1, 3].min(), (antes[:, boca, 1, 3], despues[:, boca, 1, 3])
+    assert np.allclose(antes[:, omoplato], despues[:, omoplato], atol=1e-9)
+
+
+def test_rigs_suavizar_pesos(tmp):
+    """rigs.suavizar_pesos: en una tira de triangulos que pasa de golpe de un hueso al otro, el paso se reparte en
+    varios vertices, y los pesos de cada uno siguen sumando 1."""
+    import rigs
+    n = 20
+    v = np.array([[i * 0.1, y, 0.0] for i in range(n) for y in (0.0, 0.1)])
+    f = np.array([[2 * i, 2 * i + 2, 2 * i + 1] for i in range(n - 1)] + [[2 * i + 1, 2 * i + 2, 2 * i + 3] for i in range(n - 1)])
+    juntas = np.zeros((2 * n, 4), np.int64)
+    juntas[2 * (n // 2):, 0] = 1
+    pesos = np.zeros((2 * n, 4))
+    pesos[:, 0] = 1.0
+    j2, p2 = rigs.suavizar_pesos(juntas, pesos, f, 2)
+    assert np.allclose(p2.sum(axis=1), 1.0)
+    w1 = np.array([p2[i][j2[i] == 1].sum() for i in range(2 * n)])
+    mezclados = ((w1 > 0.05) & (w1 < 0.95)).sum()
+    assert mezclados >= 4 and w1[0] < 0.05 and w1[-1] > 0.95, w1
+
+
+def test_jinete(tmp):
+    """jinete.py (con la referencia del usuario guardada en arte/fuentes/patron/jinete.glb): el asiento de la silla
+    entre las patas y sobre el lomo, como en la referencia; los estribos bajo la pelvis y a los costados; la silla, con
+    su origen en la base y el asiento adentro."""
+    import inventario
+    import jinete
+    med = jinete.medido()
+    assert 0.55 < med["parte"] < 0.75 and 0.08 < med["sobre_lomo"] < 0.25, (med["parte"], med["sobre_lomo"])
+    assert 0.45 < med["estribo_abajo"] < 0.7 and 0.2 < med["estribo_lado"] < 0.35, (med["estribo_abajo"], med["estribo_lado"])
+    v, f = _cuadrupedo([(0.45, -0.13), (0.45, 0.13), (-0.45, -0.13), (-0.45, 0.13)])
+    asiento = jinete.asiento_de(v, f)
+    assert 0.05 < asiento[0] < 0.4 and asiento[1] > 1.25 + med["sobre_lomo"], asiento  # el lomo de las cajas, a 1.25 m
+    adelante, arriba, costado = jinete.estribos_del_jinete()
+    assert arriba < -0.5 and abs(adelante) < 0.3 and 0.2 < costado < 0.35, (adelante, arriba, costado)
+    items, _ = inventario.load()
+    it = {i["id"]: i for i in items}[jinete.SILLA]
+    datos, en_silla, caja, n = jinete.silla(it)
+    assert n <= int(it["tris_max"]), n
+    largo = float(caja.split("x")[2])
+    assert 0.0 < en_silla[1] < float(caja.split("x")[1]) and abs(en_silla[0]) < 0.5 * largo, (en_silla, caja)
+
+
 def main():
     tests = [test_convertir, test_rotar_y_escala, test_check_model, test_cline, test_traer, test_suave, test_refs_anigen,
              test_refs_anigen_registro, test_adaptar_oga, test_animales, test_animales_fantasma, test_capa_de_afuera,
              test_tapar_rendijas, test_sanear, test_girar_casco, test_cabeza_signo, test_abertura, test_forro, test_penetran,
-             test_asoman, test_contacto, test_regla_casco, test_glb_mallas]
+             test_asoman, test_contacto, test_regla_casco, test_glb_mallas, test_medir_paso, test_rigs_cuaterniones,
+             test_rigs_hombros_y_asiento, test_rigs_cabeza_al_suelo, test_rigs_suavizar_pesos, test_jinete]
     failed = 0
     tmp = tempfile.mkdtemp(prefix="modelos-")
     try:

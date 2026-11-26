@@ -161,7 +161,7 @@ A caballo (v0.7.1):
 - **Cría:** una hembra y un macho adultos de la tribu, bien comidos, en el campamento: la hembra queda preñada y a los 3 días nace la cría, que hereda el promedio de sus padres con algo de azar. A los 4 días es adulta (antes no se ensilla, ni da leche). La mula y el elefante no se crían. Los informes del guardián lo cuentan.
 - **Arqueros a caballo:** rodean a unos 24 m y tiran al galope; si te acercas a menos de 11 m, se alejan (tirando hacia atrás) y vuelven. Salen de las tribus rivales, con los jinetes y en la escolta de las caravanas.
 
-Pruebas: `--montado lanza|pesada|parto|agotado` (galopa solo hacia delante), `--cria` (con `--minuto 29.9`: nace una cría al amanecer), `--enemigos arqueros_caballo`.
+Pruebas: `--montado lanza|pesada|parto|agotado` (galopa solo hacia delante; `--montado quieto`, sin moverse, y con `--giro-camara 90` la cámara de lado, para ver la silla y al jinete), `--cria` (con `--minuto 29.9`: nace una cría al amanecer), `--enemigos arqueros_caballo`.
 
 Las armas de la estepa (v0.8.0):
 - **Arco simple y arco compuesto reflejo:** el simple es el de siempre (el del equipo inicial). El reflejo tira más fuerte y es corto: a caballo tira como a pie, también el disparo parto. La empuñadura del arco toma el reflejo si lo tienes.

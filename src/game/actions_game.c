@@ -1700,9 +1700,14 @@ static Vector3 held_in_hand(Props *props, const InvItem *it, const BodySeg *seg,
     return held_between(props, it, body_point(seg->a, pos, yaw), body_point(seg->b, pos, yaw), yaw, light);
 }
 
-// El clip del protagonista y desde cuando (ga_draw_player): para su cuerpo y sus manos.
+// El clip del protagonista y desde cuando (ga_draw_player): para su cuerpo y sus manos. g_player_at: donde se dibujo
+// (montado, con la pelvis en el asiento); g_seat_lift: cuanto lo subio el asiento sobre el jugador (-1: a pie o sin).
 static AnimTrack g_player_track;
 static float g_player_time;
+static Vector3 g_player_at;
+static float g_seat_lift = -1.0f;
+
+float ga_seat_lift(void) { return g_seat_lift; }
 
 // Lo que lleva el jugador con el modelo del protagonista: su armadura y lo de sus manos, en los anclajes del patron,
 // con la pose de su animacion (ga_draw_gear); con la antorcha encendida, la llama en su punta.
@@ -1712,7 +1717,7 @@ static void draw_held_model(const GameActions *ga, Props *props, const Player *p
     const InvItem *r = h->right.id[0] ? inventory_find(ga->inv, h->right.id) : NULL;
     const InvItem *l = h->left.id[0] ? inventory_find(ga->inv, h->left.id) : NULL;
     bool r_out = hands_out(h, HAND_RIGHT), l_out = hands_out(h, HAND_LEFT);
-    Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
+    Vector3 pos = g_player_at; // donde se dibujo el cuerpo (ga_draw_player): montado, en el asiento
     float my = p->yaw - PI / 2.0f;
     ga_draw_gear(props, ga->inv, body, pos, my, &g_player_track, g_player_time, g_player_armor, r, r_out, l, l_out, light);
     if (l && l_out && l->hands != INV_HANDS_SHIELD && ga->torch_lit) { // la llama, en la punta de lo que lleva
@@ -1773,8 +1778,9 @@ int ga_lights(const GameActions *ga, const Props *props, const Troop *troop, con
     return n;
 }
 
-bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) {
+bool ga_draw_player(GameActions *ga, Props *props, const Player *p, const Vector3 *seat, float time) {
     const InvItem *body = inventory_find(ga->inv, "personaje.narrativo.protagonista");
+    g_seat_lift = -1.0f;
     if (!body || !props_has_model(props, body)) return false;
     Hands drawn = hands_drawn(&ga->hands); // la animacion, segun lo que esta fuera (el escudo solo, la espada sola)
     HumanoidState hs = {
@@ -1789,9 +1795,19 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time) 
     if (hs.mounted) hs.mount_speed = p->moving ? (p->stance == STANCE_RUN ? 8.5f : 4.0f) * ga_speed_scale(ga) : 0.0f;
     Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };
     const char *clip = anim_humanoid(&hs);
+    float my = p->yaw - PI / 2.0f;
+    if (hs.mounted && seat) { // la pelvis en el asiento de la montura (fg_mount_seat): sube y baja con su lomo
+        AnimTrack tr = g_player_track;
+        if (!tr.clip || strcmp(tr.clip, clip) != 0) tr = (AnimTrack){ clip, time, 1.0f, 0.0f };
+        Vector3 pelvis;
+        if (props_bone_point(props, body, (Vector3){ 0.0f, 0.0f, 0.0f }, my, &tr, time, "pelvis", &pelvis)) {
+            pos = Vector3Subtract(*seat, pelvis);
+            g_seat_lift = pos.y - p->pos.y;
+        }
+    }
     g_player_time = time;
-    props_draw_item_track(props, body, pos, p->yaw - PI / 2.0f, clip, time, anim_is_stroke(clip) ? ga->pl_stroke : 0.0f,
-                          &g_player_track);
+    g_player_at = pos;
+    props_draw_item_track(props, body, pos, my, clip, time, anim_is_stroke(clip) ? ga->pl_stroke : 0.0f, &g_player_track);
     return true;
 }
 

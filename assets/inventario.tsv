@@ -280,7 +280,7 @@ accesorio.tatuaje.ciervo	Tatuaje del ciervo	uso:equipable,formato:textura,estilo
 accesorio.tatuaje.grifo	Tatuaje del grifo	uso:equipable,formato:textura,estilo:animal	0.25x0.25x0	0	pendiente	Calcomanía (PNG con alfa), no modelo. Permanente.
 accesorio.tatuaje.tamga	Tatuaje de la tamga	uso:equipable,formato:textura,estilo:animal	0.25x0.25x0	0	pendiente	Calcomanía (PNG con alfa), no modelo. Permanente.
 accesorio.tatuaje.olas	Tatuaje de olas	uso:equipable,formato:textura,estilo:animal	0.25x0.25x0	0	pendiente	Calcomanía (PNG con alfa), no modelo. Permanente.
-accesorio.arreo.silla_montar	Silla de montar	uso:equipable,faccion:nomada,material:cuero	0.5x0.3x0.6	200	pendiente	
+accesorio.arreo.silla_montar	Silla de montar	uso:equipable,faccion:nomada,material:cuero	0.84x0.68x0.64	200	importado	La de la referencia del jinete del usuario (IMPORTED/References 3d/Model horserider 01.glb), a la escala del cuerpo y con los estribos colgando; va en el asiento de la montura (tools/modelos/jinete.py).
 accesorio.arreo.brida	Brida y riendas	uso:equipable,material:cuero	0.3x0.4x0.6	100	pendiente	
 accesorio.arreo.estribos	Estribos (par)	uso:equipable,material:hierro	0.15x0.2x0.1	60	pendiente	
 accesorio.arreo.alforjas	Alforjas	uso:equipable,material:cuero	0.6x0.4x0.3	120	pendiente	
