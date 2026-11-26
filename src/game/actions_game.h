@@ -293,8 +293,12 @@ Matrix ga_helmet_demo_matrix(Props *props, const InvItem *body, Vector3 pos, flo
 // no, una vara de su largo.
 void ga_draw_held_body(const GameActions *ga, Props *props, const BodyPose *b, Vector3 pos, float yaw, float time, Color light);
 // Dibuja al jugador con el modelo del protagonista y su animacion, si ya fue
-// importado. Devuelve false si no (el juego dibuja el marcador de siempre).
-bool ga_draw_player(GameActions *ga, Props *props, const Player *p, float time);
+// importado. Devuelve false si no (el juego dibuja el marcador de siempre). seat: montado, donde va su pelvis
+// (fg_mount_seat: el asiento de la montura, que sube y baja con su lomo); NULL, a draw_lift sobre el suelo.
+bool ga_draw_player(GameActions *ga, Props *props, const Player *p, const Vector3 *seat, float time);
+// Cuanto subio el asiento al jugador en el ultimo cuadro (para player.draw_lift: la camara, apuntar), o -1 si iba a pie
+// o la montura no tiene asiento.
+float ga_seat_lift(void);
 const char *ga_hands_text(const GameActions *ga);
 void ga_draw_hud(const GameActions *ga, const Props *props, const Troop *troop, const Player *p, int width, int height);
 

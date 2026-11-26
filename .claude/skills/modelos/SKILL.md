@@ -102,6 +102,55 @@ versión low-poly en `arte/modelos/para_riggear/<id>.glb`:
 3. traer el GLB riggeado: `traer <id> --archivo riggeado.glb --fuente rignet --riggeado` (no se
    convierte: se valida y se copia; tiene que venir ya en metros, +Y arriba, frente +X, origen en los pies).
 
+## Animales con un rig de referencia
+
+`tools/modelos/rigs.py` lleva un rig hecho a otra malla con el mismo plan de cuerpo, sin RigNet. Los rigs están en
+`arte/fuentes/animales/rigs` (el caballo, la hiena y el águila, de *Better animals*). Para cada malla:
+1. **El esqueleto:** busca las marcas de las dos mallas (patas, cadera, lomo, cuello, hocico, cola) y deforma una en
+   la otra con un warp de placas delgadas. Cada hueso va adonde el warp lleva el suyo.
+2. **Los pesos:** salen de la malla de referencia, deformada con el mismo warp, y se alisan sobre la superficie
+   (`suavizar_pesos`).
+3. **Los clips:** las rotaciones locales van tal cual, porque solo cambian los largos de los huesos. La cadera se
+   mueve a la escala de su altura, y las marchas van a su ritmo.
+
+Para un animal nuevo:
+1. Dejar su malla en `arte/fuentes/animales/mejores/<nombre>.glb`.
+2. Agregar su fila a `MEJORES`, con:
+   - de dónde sale;
+   - el rig;
+   - la altura a la cruz (`docs/TAMANOS.md`);
+   - el color:
+     - `"pintada"`: el de su malla de `para_riggear`;
+     - `(clave, sufijo)`: el de su imagen de referencia;
+     - un RGB liso.
+3. Correr `python3 tools/modelos/rigs.py <id>`. Escribe el GLB, la caja del inventario y la nota.
+4. Mirar sus clips de lado, cuadro a cuadro:
+   - las patas, en el suelo;
+   - al pastar, la boca toca el suelo (`cabeza_al_suelo`) sin abrir las patas;
+   - nada estirado.
+
+El `pastar` del caballo no es el Eating de la referencia, que abre las patas de adelante como una jirafa que bebe. Es
+el cuerpo del Idle, con la boca, las orejas y la cola del Eating, y el cuello bajado hasta el suelo.
+
+## La montura y el jinete
+
+`tools/modelos/jinete.py` mide la referencia del jinete del usuario (`arte/fuentes/patron/jinete.glb`):
+- **el asiento:** en qué punto entre las patas de atrás y las de adelante, y a qué altura sobre el lomo;
+- **los estribos:** adónde llegan los pies.
+
+Con esas medidas salen cuatro cosas:
+- **La silla de montar** (`accesorio.arreo.silla_montar`), con sus estribos.
+- **El hueso `asiento` de cada montura.** Lo agrega `rigs.py` con `asiento_de`; en el bactriano va en el valle entre
+  las gibas. El juego lo sigue en cada clip.
+- **`src/world/monturas.inc`:** dónde va el asiento en la silla y cuánto sube la pelvis del jinete sobre él.
+- **La pose `_montar` del jinete** (`humanoide.py`): las piernas llegan a los estribos con IK y las manos van
+  adelante, en las riendas.
+
+Si cambia la referencia:
+1. Correr `python3 tools/modelos/jinete.py --fuente "<Model horserider NN.glb>"`.
+2. Rehacer las monturas (`rigs.py`) y los cuerpos (`humanoide.py`).
+3. Mirarlo en el juego, montado y quieto, desde varios lados: `--montado quieto --giro-camara <grados>`.
+
 ## Cascos
 
 Los cascos son rígidos y van en la cabeza (`GEAR_HEAD`). Los calza `tools/modelos/patron.py` con el patrón

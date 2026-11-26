@@ -3,7 +3,7 @@
 > Generado por `tools/assets/animaciones.py doc` a partir de [`assets/animaciones.tsv`](../assets/animaciones.tsv)
 > y del [inventario](INVENTARIO.md). No editar a mano.
 
-**110 clips** en 4 tipos de esqueleto · **108 modelos animados**.
+**110 clips** en 4 tipos de esqueleto · **109 modelos animados**.
 
 ## Cómo se nombran y se usan
 
@@ -224,6 +224,7 @@
 | `animal.salvaje.leopardo_nieves` (Leopardo de las nieves) | cuadrupedo | 9 | 2 | idle, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
 | `animal.montura.mula` (Mula) | cuadrupedo | 11 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, atacar, echarse, recibir_golpe, morir |
 | `animal.montura.burro` (Burro) | cuadrupedo | 11 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, atacar, echarse, recibir_golpe, morir |
+| `animal.montura.burro_2` (Burro (variante 2)) | cuadrupedo | 11 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, montado_idle, atacar, echarse, recibir_golpe, morir |
 | `animal.ganado.becerro` (Becerro) | cuadrupedo | 10 | 2 | idle, pastar, caminar, trotar, galopar, saltar, encabritarse, forcejear_lazo, atacar, echarse, recibir_golpe, morir |
 | `animal.salvaje.perro_salvaje` (Perro asilvestrado) | cuadrupedo | 11 | 3 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, aullar, echarse, comer_presa, recibir_golpe, morir |
 | `animal.salvaje.puma` (Puma) | cuadrupedo | 11 | 2 | idle, caminar, trotar, galopar, acechar, saltar, encabritarse, forcejear_lazo, atacar, echarse, comer_presa, recibir_golpe, morir |

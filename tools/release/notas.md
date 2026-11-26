@@ -1,6 +1,14 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: los cascos, donde los puso el usuario
+## Novedades: los animales nuevos y el jinete en la silla
+
+- **Diecisiete animales nuevos:** los caballos, los burros, los camellos, el elefante, el buey, la vaca, el perro pastor, el lobo, el oso, la hiena, el zorro y la gacela tienen cuerpos nuevos, con el esqueleto y las animaciones de un caballo y de una hiena animados a mano.
+- **Pastan como deben:** bajan el cuello hasta que la boca toca el pasto, sin abrir las patas de adelante.
+- **La silla de montar:** cada montura lleva una silla de cuero con estribos, donde va en un caballo de verdad: detrás de la cruz, en el medio del lomo. En el camello bactriano, entre las dos gibas.
+- **El jinete, sentado:** ya no flota sobre la montura. Va sentado en la silla, con los pies en los estribos y las manos en las riendas, y sube y baja con el lomo del animal al paso, al trote y al galope. La cámara sigue su altura, también sobre el elefante.
+- **Los bandidos a caballo,** también: montan caballos de verdad, ensillados, y van sentados como tú.
+
+## De la v0.17.2: los cascos, donde los puso el usuario
 
 - **Cada casco en su lugar:** siete de los ocho cascos van exactamente donde el usuario los colocó a mano sobre el cuerpo: derechos, apoyados en la cabeza y con el borde unos milímetros sobre las cejas. El gorro de fieltro ya no flota: queda ceñido, con las orejeras sobre las orejas.
 - **El casco del culto,** que no tenía referencia, se calza con la regla que sale de los otros siete.
@@ -127,7 +135,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.17.2, la v0.17.1 y la v0.17.0).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.17.3, la v0.17.2 y la v0.17.1).
 
 ## Android
 

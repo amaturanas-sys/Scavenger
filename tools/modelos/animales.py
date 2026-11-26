@@ -58,35 +58,29 @@ import inventario  # noqa: E402
 import lowres  # noqa: E402
 
 # n: (archivo, ids del inventario, color). El color: "textura", (clave, sufijo) de la imagen de referencia (su nombre
-# contiene la clave y termina en sufijo + ".png"; sufijo "" es la que no lleva -1, -2...) o un RGB liso.
+# contiene la clave y termina en sufijo + ".png"; sufijo "" es la que no lleva -1, -2...) o un RGB liso. Los que
+# faltan (3, 8, 11, 12, 15, 17 a 20: la hiena, el dromedario, el buey, la gacela, el zorro, el camello bactriano, el
+# elefante, el oso y el mastin) los reemplazaron las mallas de IMPORTED/Better animals con un rig de referencia
+# (tools/modelos/rigs.py, MEJORES).
 FICHA = {
     1: ("01-glb.glb", ["animal.salvaje.leopardo_nieves"], "textura"),
     2: ("hy3d-model.glb", ["animal.salvaje.ibice_2"], ("Siberian mountain ibex", "")),
-    3: ("hy3d-model(12).glb", ["animal.salvaje.hiena"], ("striped hyena", "")),
     4: ("hy3d-model(13).glb", ["animal.salvaje.puma"], ("mountain cougar", "")),
     5: ("white_mesh.glb", ["animal.salvaje.ciervo"], ("red deer stag", "-1")),
     6: ("white_mesh(1).glb", ["animal.salvaje.cierva"], ("red deer hind", "")),
     7: ("white_mesh(2).glb", ["animal.montura.camello_bactriano_2"], ("Bactrian camel", "")),
-    8: ("white_mesh(3).glb", ["animal.montura.dromedario"], ("dromedary camel", "")),
     9: ("white_mesh(4).glb", ["animal.ganado.yak"], ("highland yak", "-1")),
     10: ("white_mesh(5).glb", ["animal.ganado.cabra"], ("cashmere goat", "-1")),
-    11: ("white_mesh(6).glb", ["animal.ganado.buey"], ("draft ox", "-2")),
-    12: ("white_mesh(7).glb", ["animal.salvaje.gacela"], ("goitered gazelle", "")),
     13: ("white_mesh(8).glb", ["animal.salvaje.ibice"], ("Siberian mountain ibex", "-1")),
     14: ("white_mesh(9).glb", ["animal.montura.mula"], ("pack mule", "")),
-    15: ("white_mesh(10).glb", ["animal.salvaje.zorro"], ("red fox", "-1")),
     16: ("white_mesh(11).glb", ["animal.salvaje.reno", "animal.montura.reno"], ("steppe reindeer", "")),
-    17: ("white_mesh(12).glb", ["animal.montura.camello_bactriano"], ("Bactrian camel", "-1")),
-    18: ("white_mesh(13).glb", ["animal.montura.elefante_guerra"], ("war elephant", "")),
-    19: ("white_mesh(14).glb", ["animal.salvaje.oso"], (96, 68, 44)),
-    20: ("white_mesh(15).glb", ["animal.ganado.perro_pastor"], (178, 142, 98)),
 }
 # Las variantes (id_2) que no estaban en el inventario: una fila como la de su especie.
 VARIANTES = {"animal.salvaje.ibice_2": "animal.salvaje.ibice",
              "animal.montura.camello_bactriano_2": "animal.montura.camello_bactriano"}
-PARA_RIGGEAR = ["animal.ganado.vaca", "animal.montura.caballo_estepario", "animal.montura.caballo_estepario_2",
-                "animal.montura.caballo_estepario_3", "animal.montura.caballo_guerra", "animal.salvaje.coyote",
-                "animal.salvaje.jabali", "animal.salvaje.lobo", "animal.salvaje.lobo_2", "animal.salvaje.oso_polar",
+# Sin la vaca, los caballos y el lobo, que reemplazaron las mallas de Better animals (rigs.py, MEJORES; sus mallas de
+# para_riggear quedan para el color de los caballos y el lobo, de los que no hay imagen).
+PARA_RIGGEAR = ["animal.salvaje.coyote", "animal.salvaje.jabali", "animal.salvaje.lobo_2", "animal.salvaje.oso_polar",
                 "animal.salvaje.perro_salvaje", "animal.salvaje.tigre"]
 PATAS = ("di", "dd", "ti", "td")  # delantera / trasera, izquierda (-Z) / derecha (+Z)
 # Los que van centrados por sus huellas (el medio de las patas en el suelo) y no por los hombros y la cadera: el oso
@@ -193,7 +187,9 @@ def color_de_imagen(v, ruta):
     py = np.clip(np.round(y1 - (v[:, 1] - lo[1]) / (hi[1] - lo[1]) * (y1 - y0)), 0, img.shape[0] - 1).astype(int)
     suave = ndimage.uniform_filter(img, size=(5, 5, 1))
     if fondo[1] > fondo[0] + 40 and fondo[1] > fondo[2] + 40:  # fondo verde: sin el verde que derrama en el animal
-        suave[..., 1] = np.minimum(suave[..., 1], np.maximum(suave[..., 0], suave[..., 2]))
+        # (hasta el promedio del rojo y el azul: con el mayor de los dos, el blanco de la vaca quedaba amarillo y, con
+        # la luz horneada, oliva)
+        suave[..., 1] = np.minimum(suave[..., 1], 0.5 * (suave[..., 0] + suave[..., 2]))
     return suave[iy[py, px], ix[py, px]]
 
 
@@ -309,11 +305,13 @@ def medir(P):
         for k in range(4):
             if (grupo == k).any():
                 centros[k] = bajo[grupo == k][:, [0, 2]].mean(0)
-    orden = [int(np.argmin([np.hypot(c[0] - x, c[1] - z) for c in centros]))
-             for x, z in ((xm + L, -W), (xm + L, W), (xm - L, -W), (xm - L, W))]
-    if len(set(orden)) < 4:  # dos cuadrantes al mismo grupo: por los signos
-        orden = [int(np.argmax(centros[:, 0] * sx + centros[:, 1] * sz))
-                 for sx, sz in ((1, -0.5), (1, 0.5), (-1, -0.5), (-1, 0.5))]
+    # Cada grupo, por su lugar: los dos de mas adelante son las delanteras y, de cada par, la izquierda es la de -Z. (Con
+    # las patas en paso, una delantera mas adelantada que la otra, buscar el grupo mas cercano a cada esquina lejana daba
+    # el mismo a las dos esquinas de adelante: el burro de referencia de rigs.py.)
+    por_x = np.argsort(-centros[:, 0])
+    delanteras, traseras = por_x[:2], por_x[2:]
+    orden = [int(delanteras[np.argmin(centros[delanteras, 1])]), int(delanteras[np.argmax(centros[delanteras, 1])]),
+             int(traseras[np.argmin(centros[traseras, 1])]), int(traseras[np.argmax(centros[traseras, 1])])]
     separacion = min(np.ptp(centros[:, 0]), np.ptp(centros[:, 1]))
     radio = 0.45 * max(separacion, 0.05 * L)
     ejes = {}

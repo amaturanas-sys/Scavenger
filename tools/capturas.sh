@@ -34,6 +34,8 @@ shot 13_equipo 30 --equipo --heridas
 shot 14_jinetes 40 --enemigos jinetes
 shot 15_botin 30 --botin
 shot 16_galeria 40 --galeria
+# A caballo (v0.17.3): el jugador en la silla de su caballo, quieto y de lado.
+shot jinete 40 --montado quieto --giro-camara 90 --vista cerca
 # Las manos (docs/PLAN_TACTICO_Y_CUEVAS.md, A1): los cuatro botones con el escudo solo (la espada al cinto),
 # la espada sola (el escudo a la espalda), todo guardado y con un rehen.
 shot manos_escudo 40 --enemigos bandidos --manos escudo

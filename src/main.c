@@ -123,6 +123,7 @@ typedef struct {
     float lift;                  // el punto que mira, sobre los ojos (el de la vista)
     float eye;                   // la altura de los ojos, suave (agacharse no salta)
     float ride;                  // 0 a pie, 1 a caballo: mas alto y mas lejos
+    float ride_lift;             // m: lo que sube el jinete (player.draw_lift a caballo), suave
     float bump;                  // rad: lo que sube sobre una obra que tiene detras (una yurta, una tienda)
 } CameraRig;
 
@@ -313,9 +314,10 @@ static void camera_update(CameraRig *rig, Camera3D *cam, const Player *p, const 
     float k = 1.0f - expf(-8.0f * dt);
     rig->eye += (player_eye_height(p) - rig->eye) * k;
     rig->ride += ((p->draw_lift > 0.0f ? 1.0f : 0.0f) - rig->ride) * k;
+    if (p->draw_lift > 0.0f) rig->ride_lift += (p->draw_lift - rig->ride_lift) * k; // en el elefante, mas arriba
     float dist = rig->dist + rig->ride * CAMVIEW_MOUNTED;
 
-    Vector3 target = { p->pos.x, p->pos.y + rig->eye + rig->lift + rig->ride * RIDE_LIFT, p->pos.z };
+    Vector3 target = { p->pos.x, p->pos.y + rig->eye + rig->lift + rig->ride * rig->ride_lift, p->pos.z };
     // Con una obra detras (una yurta, una tienda), la camara sube por encima antes que meterse adentro o pegarse a la
     // nuca: la menor inclinacion de mas que deja libre el brazo; sube rapido y baja suave.
     Blockers blk;
@@ -1067,7 +1069,8 @@ int main(int argc, char **argv) {
     const char *start_goto = NULL;    // --ir lugar: a un sitio del mundo (ver go_to)
     const char *start_trade = NULL;   // --comerciar: raiz, vender, comprar, ciudad, caravana, asaltar, saquear o campos (src/game/trade_game.h)
     const char *start_siege = NULL;   // --asedio: puerta, trepa, escala, fuego, quemada, salida, rendicion, tomada, expedicion o ejercito (src/game/city_game.h)
-    const char *start_ride = NULL;    // --montado: lanza, pesada, parto o agotado (src/game/combat_game.h); galopa solo hacia delante
+    const char *start_ride = NULL;    // --montado: lanza, pesada, parto, agotado (al paso) o quieto (src/game/combat_game.h); galopa solo hacia delante
+    float start_cam_turn = 0.0f;      // --giro-camara grados: con --montado, la camara girada respecto del jinete (90: de lado)
     bool start_breed = false;         // --cria: en el campamento inicial, una yegua por parir, un semental y un potro por crecer
     bool start_forge = false;         // --forja: la forja movil, hierro, carbon y un sable fragil empuñado; pica la veta y hace puntas
     const char *start_migrate = NULL; // --migrar: marcha (levanta el campamento inicial y camina) o plantar (y lo planta a 170 m)
@@ -1175,6 +1178,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--comerciar") && i + 1 < argc) start_trade = argv[++i];
         else if (!strcmp(argv[i], "--asedio") && i + 1 < argc) start_siege = argv[++i];
         else if (!strcmp(argv[i], "--montado") && i + 1 < argc) start_ride = argv[++i];
+        else if (!strcmp(argv[i], "--giro-camara") && i + 1 < argc) start_cam_turn = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--cria")) start_breed = true;
         else if (!strcmp(argv[i], "--forja")) start_forge = true; // con --ir veta, la pica
         else if (!strcmp(argv[i], "--migrar") && i + 1 < argc) start_migrate = argv[++i];
@@ -1575,7 +1579,7 @@ int main(int argc, char **argv) {
             start_breed = false;
         }
         if (start_ride && frame == 6) { // prueba: a caballo (la lanza en ristre, el disparo parto o la montura agotada)
-            rig.yaw = player.yaw;
+            rig.yaw = player.yaw + start_cam_turn * DEG2RAD; // --giro-camara: de lado, para ver la silla y el jinete
             cb_test_ride(&g_combat, &g_actions, &player, &terrain, start_ride, log, sizeof(log));
         }
         if (start_trade && frame == 6) { // prueba: el comercio, una caravana, su asalto o el saqueo de un campamento rival
@@ -1664,13 +1668,14 @@ int main(int argc, char **argv) {
             bool menu = ga_menu_open(&g_actions) || hud_picker_open();
             bool blocked = hud_picker_open() || ga_blocks_input(&g_actions) || hz_blocks_input(&g_hazards) || cb_blocks_input(&g_combat) || orbital;
             PlayerInput in = blocked ? (PlayerInput){ 0 } : player_read_input();
-            if (start_ride && frame > 6 && g_actions.mounted >= 0) in.move_z = 1.0f, in.run = true; // prueba: al galope
+            if (start_ride && strcmp(start_ride, "quieto") && frame > 6 && g_actions.mounted >= 0) in.move_z = 1.0f, in.run = true; // prueba: al galope
             if (start_migrate && !strcmp(start_migrate, "marcha") && frame > 8) in.move_z = 1.0f; // prueba: en marcha, al paso
             if (start_walk != 0.0f && frame > 6) in.move_z = start_walk; // prueba: caminar (por la boca de una cueva, adentro)
             if (g_actions.mounted >= 0 && fg_mount_winded()) in.run = false; // la montura agotada no galopa
             player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards) * cb_speed_scale(&g_combat);
             player_set_endurance(health_endurance_scale(&g_combat.player)); // las secuelas (el tiburon) cansan mas
-            player.draw_lift = g_actions.mounted >= 0 ? RIDE_LIFT : 0.0f;
+            // Montado, lo que el asiento de la montura subio al jinete en el ultimo cuadro (sin asiento, RIDE_LIFT).
+            player.draw_lift = g_actions.mounted < 0 ? 0.0f : ga_seat_lift() > 0.0f ? ga_seat_lift() : RIDE_LIFT;
             // N: la vista de la camara siguiente (Mayus+N: la anterior); queda para la proxima partida.
             if (!menu && !ig_blocks_input(&g_actions) && !g_actions.dlg.open && !orbital && !pg_active() &&
                 input_action_pressed(KA_CAMERA)) {
@@ -1990,7 +1995,9 @@ int main(int argc, char **argv) {
             for (int row = 0; row < (kit_region >= 0 ? 1 : REGION_COUNT); row++)
                 for (int v = 0; v < BK_VARIANTS; v++)
                     voxs_draw_kit((BkType)kit_type, (Region)(kit_region >= 0 ? kit_region : row), v, kit_spot(&terrain, kit_type, row, v), 0.0f, 1.0f, WHITE);
-        bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, (float)GetTime());
+        Vector3 seat; // montado: la pelvis del jinete, en el asiento de la montura (con su clip, antes de dibujarla)
+        bool seated = !gallery_mode && fg_mount_seat(&g_actions, &g_props, &terrain, (float)GetTime(), &seat);
+        bool player_model = !gallery_mode && ga_draw_player(&g_actions, &g_props, &player, seated ? &seat : NULL, (float)GetTime());
         if (gallery_mode && !patron_demo && !helmet_body) player_draw(&player); // con --patron o un casco puesto, sin el jugador (tapaba la prueba)
         else if (!gallery_mode) cb_draw_world(&g_combat, &g_props, &g_actions, &terrain, &player, player_model, (float)GetTime());
         if (!gallery_mode) forge_draw_world(&terrain, player.pos); // las vetas de hierro cercanas

@@ -268,12 +268,33 @@ def clip_de_poses(esq, poses, tiempos, interp="LINEAR"):
     return chans
 
 
+def pierna_a(esq, T, R, lado, destino, polo):
+    """La pierna de un lado con el tobillo en destino (dos huesos: el muslo y la pantorrilla, con sus largos) y la
+    rodilla hacia polo; el pie, con el giro que tenia en el mundo (plano y hacia adelante)."""
+    i_pie = esq.idx["foot_" + lado]
+    P, Q = esq.mundo(T, R)
+    cadera, rodilla, tobillo = P[esq.idx["thigh_" + lado]], P[esq.idx["calf_" + lado]], P[i_pie]
+    q_pie = Q[i_pie].copy()
+    a, b = np.linalg.norm(rodilla - cadera), np.linalg.norm(tobillo - rodilla)
+    u = (destino - cadera) / np.linalg.norm(destino - cadera)
+    d = min(float(np.linalg.norm(destino - cadera)), a + b - 1e-4)
+    x = (a * a - b * b + d * d) / (2.0 * d)
+    n = np.asarray(polo, float) - (np.asarray(polo, float) @ u) * u
+    n /= np.linalg.norm(n)
+    apuntar(esq, T, R, "thigh_" + lado, "calf_" + lado, cadera + u * x + n * np.sqrt(max(a * a - x * x, 0.0)))
+    apuntar(esq, T, R, "calf_" + lado, "foot_" + lado, cadera + u * d)
+    _, Q = esq.mundo(T, R)
+    R[i_pie] = qmul(qconj(Q[esq.parent[i_pie]]), q_pie)
+
+
 def sintetizar(esq):
     """Los clips que la biblioteca no tiene, armados con poses (en el espacio del esqueleto: el frente a +Z, la
     derecha a -X):
     - _patada: de la guardia (Fighting_Idle), la rodilla derecha arriba, la pierna extendida al frente y de vuelta;
     - _caer: el primer cuadro de Jump_Land (en el aire), quieto;
-    - _montar: a horcajadas, los muslos adelante y abiertos y las piernas colgando (desde Idle_A)."""
+    - _montar: a horcajadas, desde Idle_A: cada tobillo, donde lo pone el estribo de la referencia del jinete del
+      usuario respecto de la pelvis (jinete.estribos_del_jinete: bajo el asiento y a su costado), con la rodilla
+      adelante y afuera, alrededor del lomo, y el pie plano; las manos adelante, sobre la cruz (las riendas)."""
     def pierna(T, R, lado, muslo, pantorrilla):
         P, _ = esq.mundo(T, R)
         cadera = P[esq.idx["thigh_" + lado]]
@@ -289,10 +310,20 @@ def sintetizar(esq):
     esq.clips["_patada"] = clip_de_poses(esq, [(T0, R0), (T1, R1), (T2, R2), (T2, R2), (T0, R0)], [0.0, 0.16, 0.3, 0.38, 0.62])
     Tc, Rc = esq.pose_inicial("Jump_Land")
     esq.clips["_caer"] = clip_de_poses(esq, [(Tc, Rc), (Tc, Rc)], [0.0, 0.5])
+    import jinete
     Tm, Rm = esq.pose_inicial("Idle_A")
+    P, _ = esq.mundo(Tm, Rm)
+    pelvis = P[esq.idx["pelvis"]]
+    # Los estribos, en metros del protagonista: a las unidades del esqueleto, por lo alto de la pelvis.
+    adelante, arriba, costado = jinete.estribos_del_jinete() * (pelvis[1] / jinete.pelvis_del_protagonista())
     for lado, sg in (("l", 1.0), ("r", -1.0)):
-        pierna(Tm, Rm, lado, (sg * 0.45, -0.25, 1.0), (sg * 0.12, -1.0, -0.15))
-    Tm[esq.idx["pelvis"]] = Tm[esq.idx["pelvis"]] - np.array([0.0, 0.0, 0.0])
+        pierna_a(esq, Tm, Rm, lado, pelvis + np.array([sg * costado, arriba, adelante]), (sg * 0.35, 0.0, 1.0))
+        P, _ = esq.mundo(Tm, Rm)
+        hombro = P[esq.idx["upperarm_" + lado]]
+        apuntar(esq, Tm, Rm, "upperarm_" + lado, "lowerarm_" + lado, hombro + np.array([sg * 0.1, -1.0, 0.1]))
+        P, _ = esq.mundo(Tm, Rm)
+        codo = P[esq.idx["lowerarm_" + lado]]
+        apuntar(esq, Tm, Rm, "lowerarm_" + lado, "hand_" + lado, codo + np.array([-sg * 0.3, -1.0, 1.0]))
     esq.clips["_montar"] = clip_de_poses(esq, [(Tm, Rm), (Tm, Rm)], [0.0, 0.5])
 
 

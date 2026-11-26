@@ -23,6 +23,9 @@
 #include "ui/icons.h"
 #include "ui/theme.h"
 #include "sim/lang.h"
+#include "world/monturas.inc" // el asiento en la silla y la holgura del jinete (tools/modelos/jinete.py)
+
+#define SADDLE_ID "accesorio.arreo.silla_montar"
 
 #define POP_TARGET 30        // animales salvajes vivos alrededor del jugador (hasta GA_MAX_ANIMALS con los de la tribu)
 #define POP_RADIUS 200.0f
@@ -953,6 +956,53 @@ static const InvItem *animal_item(const GameActions *ga, Props *props, const Ani
     return it;
 }
 
+// Donde se dibuja un animal (sus pies): en el suelo o, en el agua, flotando o vadeando (top: su alto).
+static Vector3 animal_pos(const Animal *a, const SpeciesDef *d, const Terrain *t, float top, float time, int i) {
+    Vector3 pos = { a->x, terrain_height(t, a->x, a->z), a->z };
+    // En el agua, los anfibios flotan: solo asoma el lomo (el cocodrilo, los ojos). Los de tierra que nadan, el
+    // lomo y la cabeza; el que cayo por el hielo, la cabeza, forcejeando.
+    float depth = water_depth_cb((void *)t, a->x, a->z);
+    if (d->aquatic && depth > 0.3f && a->state != ANIMAL_DEAD)
+        pos.y = terrain_water(t, a->x, a->z) - (a->species == SPECIES_CROCODILE && a->mode != MODE_CHASE ? 0.42f : 0.25f);
+    else if (a->sunk > 0.0f && a->state != ANIMAL_DEAD)
+        pos.y = fmaxf(pos.y, terrain_water(t, a->x, a->z) - top * (0.7f + 0.08f * sinf(time * 6.0f + (float)i)));
+    else if (!d->aquatic && !d->flier && depth > species_wade(d) && a->state != ANIMAL_DEAD)
+        pos.y = terrain_water(t, a->x, a->z) - top * 0.62f;
+    return pos;
+}
+
+// El asiento de un animal con el clip de este cuadro (el hueso asiento de las monturas: tools/modelos/rigs.py), donde
+// va la pelvis del jinete. Como props_draw_item_track: si cambio de clip, el nuevo desde ahora.
+static bool animal_seat(Props *props, const InvItem *it, const Animal *a, Vector3 at, float tt, const AnimTrack *last,
+                        Vector3 *seat) {
+    const char *clip = anim_animal(a);
+    AnimTrack tr = *last;
+    if (!tr.clip || strcmp(tr.clip, clip) != 0) tr = (AnimTrack){ clip, tt, 1.0f, 0.0f };
+    return props_bone_point(props, it, at, a->yaw - PI / 2.0f, &tr, tt, "asiento", seat);
+}
+
+bool fg_mount_seat(const GameActions *ga, Props *props, const Terrain *t, float time, Vector3 *seat) {
+    if (ga->mounted < 0) return false;
+    int i = ga->mounted;
+    const Animal *a = &ga->animals[i];
+    const InvItem *it = animal_item(ga, props, a, i);
+    if (!it || !props_has_model(props, it)) return false;
+    Vector3 pos = animal_pos(a, species_def(a->species), t, it->h, time, i);
+    return animal_seat(props, it, a, (Vector3){ pos.x, pos.y + a->alt, pos.z }, time + (float)i * 0.37f, &g_animal_track[i], seat);
+}
+
+// La silla (tools/modelos/jinete.py) en el asiento de su montura: su asiento, la holgura del jinete debajo de la pelvis.
+static bool draw_saddle(Props *props, const InvItem *saddle, Vector3 seat, float yaw) {
+    if (!saddle || !props_has_model(props, saddle)) return false;
+    Vector3 off = Vector3RotateByAxisAngle((Vector3){ SADDLE_SEAT_X, SADDLE_SEAT_Y + RIDER_SEAT_CLEARANCE, 0.0f }, (Vector3){ 0, 1, 0 }, yaw);
+    props_draw_item(props, saddle, Vector3Subtract(seat, off), yaw, 1.0f);
+    return true;
+}
+
+bool fg_draw_saddle(const GameActions *ga, Props *props, Vector3 seat, float yaw) {
+    return draw_saddle(props, inventory_find(ga->inv, SADDLE_ID), seat, yaw);
+}
+
 void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float time) {
     for (int i = 0; i < GA_MAX_SWARMS; i++) {
         const Swarm *s = &ga->swarms[i];
@@ -960,22 +1010,15 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
         const char *nest = swarm_def(s->kind)->nest;
         draw_swarm(s, props, nest ? inventory_find(ga->inv, nest) : NULL, t, time);
     }
+    const InvItem *saddle = inventory_find(ga->inv, SADDLE_ID);
     for (int i = 0; i < ga->animal_count; i++) {
         const Animal *a = &ga->animals[i];
         if (!a->used) continue;
         const SpeciesDef *d = species_def(a->species);
         const InvItem *it = animal_item(ga, props, a, i);
-        Vector3 pos = { a->x, terrain_height(t, a->x, a->z), a->z };
         float top = it ? it->h : d->size * 0.6f;
-        // En el agua, los anfibios flotan: solo asoma el lomo (el cocodrilo, los ojos). Los de tierra que nadan, el
-        // lomo y la cabeza; el que cayo por el hielo, la cabeza, forcejeando.
-        float depth = water_depth_cb((void *)t, a->x, a->z);
-        if (d->aquatic && depth > 0.3f && a->state != ANIMAL_DEAD)
-            pos.y = terrain_water(t, a->x, a->z) - (a->species == SPECIES_CROCODILE && a->mode != MODE_CHASE ? 0.42f : 0.25f);
-        else if (a->sunk > 0.0f && a->state != ANIMAL_DEAD)
-            pos.y = fmaxf(pos.y, terrain_water(t, a->x, a->z) - top * (0.7f + 0.08f * sinf(time * 6.0f + (float)i)));
-        else if (!d->aquatic && !d->flier && depth > species_wade(d) && a->state != ANIMAL_DEAD)
-            pos.y = terrain_water(t, a->x, a->z) - top * 0.62f;
+        Vector3 pos = animal_pos(a, d, t, top, time, i);
+        bool saddled = false; // la silla, en su asiento (si no tiene, el marcador de siempre)
         if (it && props_has_model(props, it)) {
             // El modelo mira a +X; el animal avanza segun yaw (0 = +Z). El ataque, entero en lo que dura (attack_anim);
             // muerto, el clip desde que murio (corpse): cae una vez y queda en el suelo.
@@ -985,6 +1028,9 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
             if (a->state == ANIMAL_DEAD) *tr = (AnimTrack){ clip, tt - a->corpse, 1.0f, 0.0f };
             Vector3 at = { pos.x, pos.y + a->alt, pos.z };
             props_draw_item_track(props, it, at, a->yaw - PI / 2.0f, clip, tt, !strcmp(clip, "atacar") ? a->attack_anim : 0.0f, tr);
+            Vector3 seat;
+            if (a->state == ANIMAL_SADDLED && animal_seat(props, it, a, at, tt, tr, &seat))
+                saddled = draw_saddle(props, saddle, seat, a->yaw - PI / 2.0f);
         } else {
             // Sin modelo: el mismo cuerpo de capsulas que reciben los impactos.
             BodyPose b;
@@ -1007,8 +1053,9 @@ void fg_draw_world(const GameActions *ga, Props *props, const Terrain *t, float 
         }
         if (a->state == ANIMAL_DEAD) continue;
         float y = pos.y + a->alt + top;
-        if (a->state != ANIMAL_WILD) DrawCube((Vector3){ pos.x, y + 0.1f, pos.z }, 0.12f, 0.12f, 0.12f, UI_TURQUOISE);
-        if (a->state == ANIMAL_SADDLED)
+        // La marca de los de la tribu, encima; en la que monta el jugador no (asomaba por la cadera del jinete).
+        if (a->state != ANIMAL_WILD && i != ga->mounted) DrawCube((Vector3){ pos.x, y + 0.1f, pos.z }, 0.12f, 0.12f, 0.12f, UI_TURQUOISE);
+        if (a->state == ANIMAL_SADDLED && !saddled)
             DrawCube((Vector3){ pos.x, pos.y + top * 0.75f, pos.z }, 0.5f, 0.15f, 0.6f, (Color){ 120, 70, 40, 255 });
         if (a->state == ANIMAL_BOUND) { // la cuerda del lazo, a una estaca
             Vector3 stake = { pos.x + 1.2f, pos.y, pos.z + 1.2f };
