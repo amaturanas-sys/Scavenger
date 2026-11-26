@@ -1076,6 +1076,10 @@ int main(int argc, char **argv) {
     const char *start_migrate = NULL; // --migrar: marcha (levanta el campamento inicial y camina) o plantar (y lo planta a 170 m)
     bool start_diag = false;          // --diagnostico: el panel de Ctrl+D abierto
     int start_picker = -1;
+    int start_slot = -1;              // --usar-casilla N: pulsa la casilla N de la barra rapida (1..9, 0 la decima) en el cuadro 30
+    int start_slot_frame = 30;
+    struct { KeyAction a; int frame, hold; } start_keys[6]; // --tecla h|j|k|l|f|t cuadro [cuadros abajo]
+    int start_key_n = 0;
     float start_heading = -1.0f;      // --rumbo grados: hacia donde mira la camara (0 sur, 90 este, 180 norte, 270 oeste)
     float start_pitch = -1.0f;        // --camara inclinacion: 0.05 casi de canto (se ve el cielo), 1.25 desde arriba
     int start_view = -1;              // --vista cerca|media|lejos (src/sim/camview.h); si no, la guardada
@@ -1157,6 +1161,20 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--sin-decorado")) g_no_decor = true; // sin el decorado de OpenGameArt (src/sim/decor.h)
         else if (!strcmp(argv[i], "--censo-decorado")) g_decor_census = true; // cuantos de cada modelo en el mundo entero, y sale
         else if (!strcmp(argv[i], "--selector") && i + 1 < argc) start_picker = atoi(argv[++i]) - 1; // prueba: el selector de una casilla
+        else if (!strcmp(argv[i], "--tecla") && i + 2 < argc && start_key_n < 6) { // prueba: una accion de combate o F/T en un cuadro
+            const char *k = argv[++i];
+            int at = atoi(argv[++i]), hold = 1;
+            if (i + 1 < argc && argv[i + 1][0] != '-') hold = atoi(argv[++i]);
+            KeyAction a = !strcmp(k, "h") ? KA_ATTACK : !strcmp(k, "j") ? KA_PARRY : !strcmp(k, "k") ? KA_BLOCK : !strcmp(k, "l") ? KA_CHARGE
+                        : !strcmp(k, "t") ? KA_THROW : KA_INTERACT;
+            start_keys[start_key_n].a = a, start_keys[start_key_n].frame = at, start_keys[start_key_n].hold = hold;
+            start_key_n++;
+        }
+        else if (!strcmp(argv[i], "--usar-casilla") && i + 1 < argc) { // prueba: la tecla de una casilla (el odre, 3); [cuadro]
+            int n = atoi(argv[++i]);
+            start_slot = n == 0 ? 9 : n - 1;
+            if (i + 1 < argc && argv[i + 1][0] != '-') start_slot_frame = atoi(argv[++i]);
+        }
         else if (!strcmp(argv[i], "--rumbo") && i + 1 < argc) start_heading = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--camara") && i + 1 < argc) start_pitch = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--vista") && i + 1 < argc) {
@@ -1427,6 +1445,9 @@ int main(int argc, char **argv) {
         frame++;
         hud_frame_begin();
         if (start_picker >= 0 && frame == 10) hud_open_picker(start_picker), start_picker = -1;
+        if (start_slot >= 0 && frame == start_slot_frame) hud_test_press(start_slot), start_slot = -1;
+        for (int k = 0; k < start_key_n; k++)
+            if (frame == start_keys[k].frame) input_test_hold(start_keys[k].a, start_keys[k].hold);
         if (start_pause && frame == 10 && in_game) { // prueba: la pausa (o guardar) sobre la partida
             if (start_pause == 3) {
                 show_controls = true;

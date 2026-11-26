@@ -31,6 +31,7 @@ typedef struct {
     InvState state;
     bool texture; // formato:textura (calcomania o textura, no modelo)
     bool voxel;   // formato:voxel (un .vox de MagicaVoxel en lugar del GLB: src/world/voxmodel.h)
+    bool collect; // uso:recolectable (el odre, la leña, las velas...): al tomarlo, a la mochila, no a los brazos
     InvHands hands;
 } InvItem;
 

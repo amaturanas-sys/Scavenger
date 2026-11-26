@@ -26,6 +26,13 @@ int ig_count(const GameActions *ga, const Props *props, const Player *p, const c
 int ig_use(GameActions *ga, const Props *props, const Player *p, const char *id, int n);
 // Guarda n donde quepa (mochila, bolsillos, alforjas, carreta, campamento). Devuelve cuantas cupieron.
 int ig_store(GameActions *ga, const Props *props, const Player *p, const char *id, int n, float condition);
+// Lo tuyo: los bolsillos y la mochila (si esta a mano). Cuantos hay de algo ahi, y guardar ahi (devuelve cuantos
+// cupieron; primero la mochila).
+int ig_own_count(GameActions *ga, const Props *props, const Player *p, const char *id);
+int ig_store_own(GameActions *ga, const Props *props, const Player *p, const char *id, int n, float condition);
+// Pasa hasta n de algo de los contenedores cercanos que no son tuyos (las alforjas, la carreta, el acopio del
+// campamento, la mochila de la escolta) a los tuyos. Devuelve cuantos pasaron (los que caben).
+int ig_pour_to_own(GameActions *ga, const Props *props, const Player *p, const char *id, int n);
 float ig_carried_kg(const GameActions *ga);
 float ig_speed_scale(const GameActions *ga); // la carga frena
 // Suma de tatuajes, joyas y habilidades activas en curso (src/game/talents_game.c).

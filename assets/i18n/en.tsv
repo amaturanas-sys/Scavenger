@@ -1843,6 +1843,8 @@ Estás %s: pon el odre en la barra rápida para beber.	You are %s: put the water
 Fiebre y retortijones: espíritus malditos del agua. Toma hierbas (B), descansa y bebe agua hervida.	Fever and cramps: cursed spirits from the water. Take herbs (B), rest and drink boiled water.
 Las hierbas alivian la fiebre.	The herbs ease the fever.
 Las hierbas echan a los espíritus malditos.	The herbs drive out the cursed spirits.
+Llenas el odre de lo que hay a mano: +%d agua hervida, +%d cruda (hiérvela antes de beberla).	You fill the waterskin from what is at hand: +%d boiled water, +%d raw (boil it before drinking).
+Llenas el odre de lo que hay a mano: +%d agua hervida.	You fill the waterskin from what is at hand: +%d boiled water.
 No tienes hierbas para echar a los espíritus. Descansa y bebe agua hervida.	You have no herbs to drive out the spirits. Rest and drink boiled water.
 No tienes nada que beber: llena el odre en la orilla o en un pozo (%s, mirando al agua).	You have nothing to drink: fill the waterskin at the shore or at a well (%s, facing the water).
 No tienes nada que beber: pon el odre en la barra rápida y llénalo en la orilla o en un pozo.	You have nothing to drink: put the waterskin on the quick bar and fill it at the shore or at a well.

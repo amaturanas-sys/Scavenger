@@ -106,7 +106,7 @@ Las versiones nuevas del juego cargan las partidas de las anteriores: cada bloqu
 | Objetivo siguiente / anterior | O / Mayús+O; un clic corto, derecho / izquierdo (o un toque); Ctrl+E / Ctrl+Q; Ctrl sola: elegir o soltar | — |
 | Entrar en una cueva | F junto a la boca: se carga aparte (adentro, F toma y enciende, y Enter habla con los prisioneros; se sale caminando por la boca) | — |
 | Esconderse | agachado (X) tras rocas o matas; con sigilo (C) o agachado, en la hierba alta | — |
-| Beber / llenar el odre | la casilla del odre en la barra rápida (3 de serie): junto al agua o a un pozo lo llena si le queda lugar; si no, bebe | — |
+| Beber / llenar el odre | la casilla del odre en la barra rápida (3 de serie): si a tus odres les queda lugar, los llena mirando al agua, junto a un pozo o de un recipiente con agua a mano (el acopio, la carreta, las alforjas); si no, bebe | — |
 | Tomar hierbas contra los espíritus del agua | B, sin heridas que vendar | — |
 | Vista orbital del mundo | F5 o Ctrl+M (flechas: girar e inclinar) | — |
 | Pausa / controles | Esc, Atrás o Ctrl+P / F1 o Ctrl+H | — |
@@ -810,7 +810,7 @@ Pruebas: `--semilla N` fija el mundo; `--ir lugar` lleva a `estepa`, `meandro`, 
 
 El agua:
 - **La sed** baja con el tiempo, más con calor y corriendo. Con sed vas más lento y te cansas; con la sed a cero te desmayas y la tribu te lleva al campamento a beber.
-- **La casilla del odre** (`3` de serie) **bebe** lo más seguro que tengas a mano: agua hervida, agua con vino, airag, cerveza, leche, vino y, al final, agua cruda. En la orilla o junto a un pozo llena el odre si le queda lugar; lleno (o sin odre), bebes de allí.
+- **La casilla del odre** (`3` de serie) **bebe** lo más seguro que tengas a mano: agua hervida, agua con vino, airag, cerveza, leche, vino y, al final, agua cruda. Si a tus odres les queda lugar, los llena en la orilla mirando al agua, junto a un pozo o de un recipiente con agua a mano (el acopio del campamento, la carreta, las alforjas: primero la hervida); llenos (o sin odre), bebes de allí. Cuenta solo lo que llevas encima: el agua del acopio no llena tus odres. Un odre del suelo, con `F`, va a la mochila.
 - **Espíritus malditos:** el agua que corre por los suelos (ríos, lagos) puede traerlos, más con calor. Se incuban uno o dos minutos y luego dan fiebre: más lento, más sed, te cansas. Se van solos en unos minutos (antes descansando); las hierbas (`B`, sin heridas que vendar) los cortan.
 - **Hervir el agua los elimina** (`L`, «Hervir agua», junto a un fuego, una leña). El alcohol también: la cerveza, el vino, el airag y el agua con vino son seguros. «Llenar el odre» en la orilla da agua cruda (3 tragos por odre).
 - **El exceso de alcohol** emborracha: torpe (menos daño y peor puntería), fatigado y te tambaleas al andar. Se pasa con el tiempo.

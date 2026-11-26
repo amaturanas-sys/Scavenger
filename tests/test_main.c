@@ -2631,6 +2631,11 @@ static void test_inventory_repo_file_is_valid(void) {
         for (int j = i + 1; j < inv.count; j++) CHECK(strcmp(it->id, inv.items[j].id) != 0);
     }
     CHECK(inventory_find(&inv, "estructura.vivienda.yurta_comun") != NULL);
+    // uso:recolectable: el odre y la leña van a la mochila al tomarlos; el cofre y el caldero, en brazos.
+    const InvItem *odre = inventory_find(&inv, "utileria.objeto.odre"), *cofre = inventory_find(&inv, "utileria.objeto.cofre");
+    const InvItem *lena = inventory_find(&inv, "utileria.objeto.lena"), *caldero = inventory_find(&inv, "utileria.objeto.caldero");
+    CHECK(odre && odre->collect && lena && lena->collect);
+    CHECK(cofre && !cofre->collect && caldero && !caldero->collect);
     // Todo lo que nombran las acciones existe en el inventario.
     for (int a = 0; a < ACTION_COUNT; a++) {
         const ActionDef *d = action_def((ActionId)a);

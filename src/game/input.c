@@ -8,6 +8,10 @@
 #define DRAG_PIXELS 6.0f // lo que se mueve el raton con el boton derecho antes de girar la camara
 
 static bool g_injected[IN_COUNT];
+// Prueba (--tecla): una accion pulsada sola, mantenida unos cuadros. pending: pulsada en el proximo cuadro; hold:
+// cuadros que sigue abajo; edge y released: el cuadro en que baja y el que sube.
+static bool g_test_pending[KA_COUNT], g_test_edge[KA_COUNT], g_test_released[KA_COUNT];
+static int g_test_hold[KA_COUNT];
 static int g_last_key;
 static bool g_right_drag; // el boton derecho ya arrastra (gira la camara)
 static float g_right_moved;
@@ -22,8 +26,19 @@ void input_inject(InputAction a) {
     if ((unsigned)a < IN_COUNT) g_injected[a] = true;
 }
 
+void input_test_hold(KeyAction a, int frames) {
+    if ((unsigned)a >= KA_COUNT || frames < 1) return;
+    g_test_pending[a] = true;
+    g_test_hold[a] = frames;
+}
+
 void input_update(void) {
     g_enter_used = false;
+    for (int a = 0; a < KA_COUNT; a++) {
+        g_test_edge[a] = g_test_pending[a], g_test_pending[a] = false;
+        g_test_released[a] = false;
+        if (!g_test_edge[a] && g_test_hold[a] > 0 && --g_test_hold[a] == 0) g_test_released[a] = true;
+    }
     bool other = IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || GetMouseWheelMove() != 0.0f;
     for (int k = GetKeyPressed(); k; k = GetKeyPressed()) {
         g_last_key = k;
@@ -55,9 +70,9 @@ static bool action_key(KeyAction a, bool (*test)(int)) {
     return key && keymap_matches(a, b->key, input_mods());
 }
 
-bool input_action_pressed(KeyAction a) { return action_key(a, IsKeyPressed); }
-bool input_action_down(KeyAction a) { return action_key(a, IsKeyDown); }
-bool input_action_released(KeyAction a) { return action_key(a, IsKeyReleased); }
+bool input_action_pressed(KeyAction a) { return ((unsigned)a < KA_COUNT && g_test_edge[a]) || action_key(a, IsKeyPressed); }
+bool input_action_down(KeyAction a) { return ((unsigned)a < KA_COUNT && g_test_hold[a] > 0) || action_key(a, IsKeyDown); }
+bool input_action_released(KeyAction a) { return ((unsigned)a < KA_COUNT && g_test_released[a]) || action_key(a, IsKeyReleased); }
 
 bool input_enter_pressed(void) { return !g_enter_used && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)); }
 void input_use_enter(void) { g_enter_used = true; }

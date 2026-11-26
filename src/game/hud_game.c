@@ -326,6 +326,9 @@ static void use_slot(GameActions *ga, const Props *props, const Player *p, int k
     }
 }
 
+static int g_test_slot = -1; // prueba (--usar-casilla): la casilla que se pulsa sola en el proximo cuadro
+void hud_test_press(int slot) { g_test_slot = slot; }
+
 bool hud_picker_open(void) { return g_picking >= 0; }
 void hud_open_picker(int slot) { g_picking = slot >= 0 && slot < HUD_QUICK_SLOTS ? slot : -1, g_pick_cursor = 0; }
 
@@ -350,8 +353,10 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
     if (!input_ok || input_debug() || input_ctrl() || ga->menu_open) return;
     if (input_action_down(KA_ESCORT)) return; // Y+1..3: ordenes a la escolta (src/game/hazards_game.c)
     unsigned mods = input_mods();
+    int test = g_test_slot;
+    g_test_slot = -1;
     for (int k = 0; k < HUD_QUICK_SLOTS; k++) {
-        if (!IsKeyPressed(quickbar_key(k))) continue;
+        if (!IsKeyPressed(quickbar_key(k)) && k != test) continue;
         const QbSlot *s = &g_slots[k];
         if ((mods & KM_ALT) || s->kind == QB_EMPTY) g_picking = k, g_pick_cursor = 0; // vacia (o Alt): elegir
         else if ((mods & KM_SHIFT) && wields(ga, s)) { // Mayús: el arma empuñada, a la otra mano
