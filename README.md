@@ -152,7 +152,7 @@ Combate de cuatro botones, como en las hojas del sistema táctico (v0.12.0, [doc
 - **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar. El abatido despierta a los 30-90 s, herido, y huye a avisar a los suyos. Junto a él, `F` lo toma prisionero y `H` lo remata (a la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran).
 - **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+V` encender la flecha junto a un fuego · `P` equipo · `I` inventario · `Tab` menú de acciones · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
 
-Pruebas: `--tecla k 30 200 --giro-camara 270 --vista cerca` (la guardia, de lado), `--aguante 0.06 --tecla k 30 400` (la guardia que se cansa y cae), `--usar-casilla 5 20 --tecla j 40 60` (la lanza en alto y arrojada; con `--enemigos bandidos --objetivo`, a un bandido), `--usar-casilla 5 20 --tecla h 60 2` (la estocada) y `--ultimo-aliento rodillas|en_pie|muerte`.
+Pruebas: `--tecla k 30 200 --giro-camara 270 --vista cerca` (la guardia, de lado), `--aguante 0.01 --tecla k 21 400` (la guardia que se cansa y cae, hacia el cuadro 60), `--usar-casilla 5 20 --tecla j 40 60` (la lanza en alto y arrojada; con `--enemigos bandidos --objetivo`, a un bandido), `--usar-casilla 5 20 --tecla h 60 2` (la estocada) y `--ultimo-aliento rodillas|en_pie|muerte`.
 
 Combate montado: a caballo se golpea con el arma (`H`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo. Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
 
@@ -267,6 +267,22 @@ Las casas y los campos por persona (v0.10.4 y v0.10.7):
 El objetivo con Ctrl+Q y Ctrl+E (v0.10.5): en combate, `Ctrl+Q` pasa al enemigo anterior y `Ctrl+E` al siguiente, además de `Tab` y `Mayús+Tab` (desde la v0.12.0, `O` y `Mayús+O`). La v0.10.6 no cambió el juego (solo la documentación de la tubería de modelos de la v0.9.3).
 
 Personajes con equipamiento, sin conectar (v0.10.8): `src/entities/` tiene la base de un sistema de personajes 3D con piezas de armadura en los huesos y texturas por material. Nada del juego lo usa todavía: espera los cuerpos riggeados y los modelos de cada pieza (ver `docs/ARQUITECTURA.md`).
+
+Los arreglos del combate (v0.17.4): lo que el usuario pidió arreglar antes de seguir.
+- **El odre:** su casilla lo llena frente al agua, un pozo o un recipiente con agua a mano (el acopio, la carreta, las
+  alforjas), y `F` sobre un odre en el suelo lo guarda en la mochila (antes quedaba en la mano, para lanzarlo).
+- **La guardia (`K`):** mientras la mantienes, el escudo en alto delante del pecho, de frente. Cansa: sostenerla gasta
+  aguante y cada golpe parado más, según su fuerza; sin aguante el brazo cede, la guardia cae y `K` queda en gris
+  hasta recobrar el aliento.
+- **La lanza ligera, aparte del escudo:** es su propia casilla (la 5) y va en la mano derecha sin tocar el escudo (la 2).
+  Golpea de punta, también el golpe pesado, y perfora la armadura. `J` la arroja: mantener la pone en alto sobre el
+  hombro y apunta; soltar la lanza. Queda clavada donde cae y `F` la recoge.
+- **El último aliento:** la primera vez que te quedas sin vida caes de rodillas 10 s; te levantas pegando más fuerte,
+  más lento, cansándote antes y con la vista en túnel hasta sanar. Si caes otra vez antes, mueres.
+- **Las poses de las armas,** con el reposo de cada cuerpo: la lanza apunta adelante y el escudo mira al frente (antes
+  se torcían hasta 30 grados). Una página nueva del instructivo lo explica todo.
+
+Pruebas: las del apartado del combate (más arriba: `--aguante`, `--ultimo-aliento`, `--usar-casilla 5 20 --tecla j 40 60`).
 
 Los animales de *Better animals* y el jinete en la silla (v0.17.3): las mallas y los rigs que subió el usuario a
 `IMPORTED/Better animals/Modelos`, y su referencia del jinete (`IMPORTED/References 3d`).

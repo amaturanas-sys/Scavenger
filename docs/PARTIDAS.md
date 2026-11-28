@@ -190,7 +190,7 @@ Las cuevas no se guardan: salen de la semilla del mundo, como los ríos. Guardad
 al jugador en la boca, afuera, y allí aparece al cargarla. El resumen suma la línea de cada cueva con algo hecho o con
 guardias, solo si no es cero (los resúmenes viejos no cambian).
 
-Los arreglos después de la v0.17.3 (la guardia que se cansa, la lanza que se arroja y el último aliento) agregaron, sin
+La v0.17.4 (los arreglos del combate: la guardia que se cansa, la lanza que se arroja y el último aliento) agregó, sin
 migraciones y al final de cada struct:
 - a `Combat`, el último aliento (`breath`: su fase y su reloj) y `guard_break` (lo que falta para volver a cubrirse). En
   cero, nadie está de rodillas ni con la guardia rota;

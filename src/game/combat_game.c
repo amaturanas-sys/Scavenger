@@ -2923,7 +2923,7 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
                                         : T("G agarra por la espalda (sin que te vean, o a uno aturdido). La mochila va con Mayús+G."));
     }
     g_jolt = false;
-    if (cb->hostage) snprintf(g_hint, sizeof(g_hint), "%s", T("Rehén: G lo suelta · H lo ejecuta · I lo empuja"));
+    if (cb->hostage) snprintf(g_hint, sizeof(g_hint), "%s", T("Rehén: G lo suelta · H lo ejecuta · J lo empuja"));
     else if (back) snprintf(g_hint, sizeof(g_hint), "%s", T("Por la espalda: H lo ejecuta en silencio · G lo toma de rehén"));
     if (rd && can_act && input_action_pressed(KA_LIGHT_ARROW)) light_arrow(cb, ga, rd, log, log_len);
     if (cb->arrow_lit) {

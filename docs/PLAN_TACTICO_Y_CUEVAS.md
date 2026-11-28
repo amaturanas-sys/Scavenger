@@ -52,7 +52,7 @@ Pedido (2 de noviembre de 2026): cinco hojas del cuaderno del usuario y un docum
   - Empuñar algo saca solo eso (la antorcha en la izquierda no desenfunda la espada).
   - Enfundar todo sigue existiendo: con algo fuera lo guarda todo, y otra vez lo saca todo (las empuñaduras de la barra y la acción del menú).
   - Pasar el arma a la otra mano lleva consigo si estaba guardada.
-- **La barra de serie** (partidas nuevas): `1` la espada (el mejor sable que tengas), `2` el escudo, `3` el odre, `4` el arco, `5` la lanza (sola, después de la v0.17.3: el escudo es el de la casilla `2`, cada arma en su mano), `6` la antorcha. Una casilla con un arma o un escudo lo pone en su mano; si ya está en ella, lo guarda o lo saca sin tocar la otra. Las partidas de antes conservan su barra: su casilla «sable y escudo» enfunda los dos, y `Alt+número` la cambia; la de «lanza y escudo» vuelve como la lanza sola.
+- **La barra de serie** (partidas nuevas): `1` la espada (el mejor sable que tengas), `2` el escudo, `3` el odre, `4` el arco, `5` la lanza (sola desde la v0.17.4: el escudo es el de la casilla `2`, cada arma en su mano), `6` la antorcha. Una casilla con un arma o un escudo lo pone en su mano; si ya está en ella, lo guarda o lo saca sin tocar la otra. Las partidas de antes conservan su barra: su casilla «sable y escudo» enfunda los dos, y `Alt+número` la cambia; la de «lanza y escudo» vuelve como la lanza sola.
 - **Lo que hacen los cuatro botones:**
 
   | En la mano | `H` | `I` | `J` | `K` |

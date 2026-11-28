@@ -317,7 +317,7 @@ Desde `build/` (antes, `cmake -E copy_directory ../assets assets`), con `xvfb-ru
 | Combate | `--enemigos bandidos`, `culto`, `lobos`, `arqueros` |
 | El sistema táctico | `--manos escudo` (`espada`, `nada`), `--rehen`, `--objetivo`, `--cubierto`, `--inventario` (la fila de la barra) |
 | Teclas y casillas | `--tecla h\|j\|k\|l\|f\|t <cuadro> [cuadros]`: pulsa la tecla en ese cuadro y la mantiene esos cuadros (`--tecla k 30 200`, la guardia en alto); `--usar-casilla N [cuadro]`: toca la casilla N de la barra (`--usar-casilla 5 20`, la lanza en la mano; con `--tecla j 40 60`, la apunta y la arroja). A pie, `--giro-camara <grados>` gira al jugador en el cuadro 6 (180: de frente; 90 y 270: de lado) para ver la guardia o la estocada; `--vista cerca` |
-| La guardia que se cansa | `--aguante 0.06 --tecla k 30 400`: el aguante casi vacío en el cuadro 20; a los pocos cuadros de sostener `K`, la guardia cae («Se te cansa el brazo...», el clip `guardia_rota`) y `K` queda gris hasta recobrar el aliento |
+| La guardia que se cansa | `--aguante 0.01 --tecla k 21 400`: el aguante casi vacío en el cuadro 20 y `K` sostenida desde el 21; al medio segundo la guardia cae («Se te cansa el brazo...», el clip `guardia_rota`) y `K` queda gris hasta recobrar el aliento (1,8 s). El juego avanza con el tiempo de cada cuadro: con `--frames 60 --screenshot`, la captura la muestra caída a cualquier ritmo entre 20 y 60 fps |
 | El último aliento | `--ultimo-aliento rodillas` (de rodillas, con la cuenta y el halo oscuro), `en_pie` (levantado, con el halo de túnel) o `muerte` (cae muerto y vuelve donde descansaba), en el cuadro 20 |
 | Las cuevas | `--ir boca-forajidos` (`animal`, `abandonada`, `tribu`, `imperio`): la boca, afuera (`boca-<tipo>-ladera`: la de ese tipo con más desnivel; con `-lado` al final, desde un costado); `--cueva forajidos:0 --antorcha`: adentro (lugar: una sala o `boca`, `pasilloN`, `celda`, `dialogo`, `nido`, `cofre`, `fogata`, `estalagmita`, `huesos`, `roca`…); `--cueva-f` pulsa F; `--explorar`: F en la boca más cercana (carga la cueva); `--caminar adelante` (o `atras`). La línea `CUEVA` de la consola dice lo que pesa cada cueva cargada |
 | El sonido | Cualquier captura (`--screenshot`) dice en la consola lo que suena (`Sonido: viento 0.36, rio 0.35 (el rio a 29 m...)`) y cuántas veces se pidió cada sonido suelto (`Sonidos sueltos: paso_tierra_1 x9...`), aun sin tarjeta de sonido. Con `--ir cascada`, `meandro`, `bosque`, `mar` o `--cueva forajidos:fogata`; la noche, la lluvia o la tormenta, con `--dia` y `--minuto`; los pasos, con `--caminar adelante`. Los sonidos se rehacen con `python3 tools/sonido/sonidos.py <IMPORTED/Sound/SFX>` |
@@ -501,7 +501,9 @@ traba.
     modelos (v0.17.1);
   - los cascos donde los colocó el usuario en sus referencias, y la regla para los que no tienen (v0.17.2);
   - los 17 animales de *Better animals* con los rigs de referencia del usuario, y la silla y el jinete sentado en ella,
-    desde su referencia del jinete, también para los jinetes enemigos (v0.17.3).
+    desde su referencia del jinete, también para los jinetes enemigos (v0.17.3);
+  - los arreglos del combate: el odre que se llena con su casilla, la guardia que se cansa, la lanza aparte del escudo
+    que golpea de punta y se arroja con `J`, el último aliento y la muerte (v0.17.4).
 - **En archivo, sin fusionar** (rama `cline/rescate-codespace`):
   - el VAT de Copilot: un renderer y sus shaders sin conectar, sin herramienta que hornee las texturas y
     con modelos vacíos;
