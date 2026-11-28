@@ -51,7 +51,7 @@ static const char *PRESETS[][2] = {
     { "arma.distancia.arco_simple", NULL },              // arco (dos manos)
     { "arma.distancia.ballesta", NULL },                 // ballesta
     { "arma.distancia.honda", NULL },                    // honda
-    { "arma.larga.lanza", "escudo.mano.cuero" },         // lanza y escudo
+    { "arma.larga.lanza", NULL },                        // GA_GRIP_SPEAR: la lanza sola (el escudo, aparte: casilla 2)
     { NULL, NULL },                                      // desarmado
 };
 #define PRESET_COUNT ((int)(sizeof(PRESETS) / sizeof(PRESETS[0])))
@@ -203,11 +203,12 @@ static bool is_resource(const char *id) {
 }
 
 // Lo que al tomarlo va a la mochila (o donde quepa): materiales, comida, armas, armaduras,
-// municion, amuletos y las matas de hierbas. Lo demas (un odre, un cofre) se lleva en brazos.
+// municion, amuletos, las matas de hierbas y los objetos recolectables (uso:recolectable: el odre, la
+// leña, las velas, la aljaba...). Lo demas (un cofre, un caldero) se lleva en brazos.
 static bool goes_to_bags(const InvItem *it) {
     if (!strcmp(it->id, "mapa.vegetacion.mata_hierbas")) return true;
     if (!item_storable(it)) return false;
-    return strncmp(it->id, "utileria.objeto.", 16) != 0 || !strcmp(it->id, "utileria.objeto.lena");
+    return strncmp(it->id, "utileria.objeto.", 16) != 0 || it->collect;
 }
 
 static int count_props(const Props *props, const char *id) {
@@ -361,7 +362,8 @@ static void start_action(GameActions *ga, ActionId a, const Props *props, const 
         snprintf(log, len, T("En la cueva no se puede: %s."), T(d->name));
         return;
     }
-    if (d->requires && !has_item(ga, d->requires)) {
+    // Lo que pide la accion (el odre, la criba...): de la tribu (el acopio, lo de siempre) o encima (la mochila).
+    if (d->requires && !has_item(ga, d->requires) && ig_count(ga, props, p, d->requires) <= 0) {
         snprintf(log, len, T("Te falta: %s."), item_name(ga, d->requires));
         return;
     }
@@ -650,12 +652,13 @@ static void finish_action(GameActions *ga, Props *props, const Terrain *t, const
     }
     case ACTION_ICE_FISH: fg_ice_fish(ga, p, fg_ice_hole_near(ga, p), log, len); break;
     case ACTION_FILL_WATER: {
+        // En tus odres (los bolsillos y la mochila), no en el acopio.
         if (ga->terrain && wg_at_well(ga->terrain, p->pos.x, p->pos.z)) { // el pozo: agua limpia, como hervida
-            int n = ig_store(ga, props, p, "utileria.consumible.agua_hervida", wg_water_room(ga, props, p), 1.0f);
+            int n = ig_store_own(ga, props, p, "utileria.consumible.agua_hervida", wg_water_room(ga, props, p), 1.0f);
             snprintf(log, len, T("Sacas agua del pozo: +%d agua limpia (no hace falta hervirla)."), n);
             break;
         }
-        int n = ig_store(ga, props, p, "utileria.consumible.agua", wg_water_room(ga, props, p), 1.0f);
+        int n = ig_store_own(ga, props, p, "utileria.consumible.agua", wg_water_room(ga, props, p), 1.0f);
         snprintf(log, len, T("Llenas el odre: +%d agua cruda. Hiérvela junto a un fuego antes de beberla (o bebe con riesgo)."), n);
         break;
     }
@@ -1791,6 +1794,7 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, const Vector
         .down = ga->pl_down, .hit = ga->pl_hit, .attacking = ga->pl_attacking, .spear = ga->pl_spear,
         .blocking = ga->pl_blocking, .limping = ga->pl_limping, .ranged = ga->pl_ranged, .move = ga->pl_move, .holding = ga->pl_holding,
         .knocked = ga->pl_knocked, .swapping = ga->swap_anim > 0.0f,
+        .dead = ga->pl_dead, .guard_broken = ga->pl_guard_broken, .javelin = ga->pl_javelin,
     };
     if (hs.mounted) hs.mount_speed = p->moving ? (p->stance == STANCE_RUN ? 8.5f : 4.0f) * ga_speed_scale(ga) : 0.0f;
     Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };

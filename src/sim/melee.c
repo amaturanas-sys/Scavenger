@@ -48,6 +48,12 @@ float melee_combo_cooldown(const char *id, float base, int step) {
 
 static float roll(Rng *rng) { return rng_float(rng); }
 
+float melee_guard_cost(float force, bool heavy, bool shield) {
+    if (force <= 0.0f) return 0.0f;
+    // Unos 0,06 de aguante por un golpe de sable contra el escudo: unos quince seguidos lo agotan; el pesado, el doble.
+    return force * (shield ? 0.0035f : 0.006f) * (heavy ? 1.5f : 1.0f);
+}
+
 MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, const char *weapon, int combo_step,
                           Rng *rng) {
     MeleeResult r;
@@ -70,13 +76,13 @@ MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, c
         r.landed = true;
         if (shield_guard) {
             r.blocked = heavy || roll(rng) < 0.85f;
+            if (r.blocked) r.guard_cost = melee_guard_cost(dmg, heavy, true); // la fuerza del golpe, en el brazo
             if (heavy) r.staggered = true, dmg *= 0.3f; // el pesado rompe la guardia
             else if (r.blocked) dmg = 0.0f;
-            if (r.blocked) r.guard_cost = heavy ? 0.08f : 0.03f;
         } else if (guard) { // parada con el arma: aguanta la mitad y cansa; el pesado, ademas, desequilibra
             r.blocked = true;
+            r.guard_cost = melee_guard_cost(dmg, heavy, false);
             dmg *= 0.5f;
-            r.guard_cost = heavy ? 0.18f : 0.1f;
             if (heavy) r.staggered = true;
         }
         r.damage = dmg * down_k;
@@ -96,6 +102,7 @@ MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, c
         if (shield_guard) { // contra el escudo: lo aparta y le quita la guardia, sin tumbarlo
             r.blocked = true;
             r.staggered = true;
+            r.guard_cost = melee_guard_cost(2.0f * md->damage * att->strength, false, true); // el empujon, en el brazo
         } else {
             r.damage = md->damage * att->strength * down_k;
             r.staggered = true;
@@ -107,12 +114,14 @@ MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, c
         r.damage = md->damage * att->strength * down_k * (shield_guard ? 0.5f : 1.0f);
         r.knocked_down = roll(rng) < (shield_guard ? 0.8f : 0.9f) / mass;
         r.staggered = !r.knocked_down;
+        if (shield_guard) r.guard_cost = melee_guard_cost(2.0f * md->damage * att->strength, true, true);
         break;
     case MOVE_SHIELD_BASH:
         if (!att->shield) break;
         r.landed = true;
         if (shield_guard) { // escudo contra escudo: los dos se desequilibran
             r.blocked = r.staggered = r.attacker_staggered = true;
+            r.guard_cost = melee_guard_cost(md->damage * att->strength, false, true);
         } else {
             r.damage = md->damage * att->strength * down_k;
             r.staggered = true;
@@ -125,6 +134,7 @@ MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, c
         r.damage = md->damage * att->strength * down_k * (shield_guard ? 0.4f : 1.0f);
         r.knocked_down = roll(rng) < (shield_guard ? 0.35f : 0.65f) * att->strength / mass;
         r.staggered = true;
+        if (shield_guard) r.guard_cost = melee_guard_cost(2.0f * md->damage * att->strength, true, true);
         break;
     case MOVE_GRAPPLE: {
         // Que agarra: el escudo con el que se cubre, el brazo con el que golpea, o una extremidad.

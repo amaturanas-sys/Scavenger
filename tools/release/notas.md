@@ -1,6 +1,15 @@
 Versión @VERSION@ de **SCAVENGERS THRIVE — THEY COME FROM THE STEPPES**: la tribu acampa en la estepa central de un mundo de cinco regiones que cambia en cada partida nueva.
 
-## Novedades: los animales nuevos y el jinete en la silla
+## Novedades: los arreglos del combate
+
+- **El odre:** con su casilla (la 3) bebes, y frente al agua, a un pozo o a un recipiente con agua a mano (el acopio, la carreta, las alforjas) lo llenas. `F` sobre un odre en el suelo lo guarda en la mochila; antes quedaba en la mano, para lanzarlo.
+- **La guardia (`K`):** mientras la mantienes, el personaje sostiene el escudo en alto delante del pecho y para los golpes de frente; sin escudo, para con el arma. Cansa: sostenerla gasta aguante, y cada golpe parado más, según su fuerza. Sin aguante el brazo cede y la guardia cae hasta que recobras el aliento.
+- **La lanza ligera, aparte del escudo:** cada arma va en su mano. La lanza tiene su casilla (la 5) y el escudo la suya (la 2). Con la lanza, `H` da estocadas de punta que perforan la armadura y `J` la arroja: mantener la levanta sobre el hombro para apuntar y soltar la lanza. Queda clavada donde cae y `F` la recoge.
+- **El último aliento:** la primera vez que te quedas sin vida caes de rodillas, y a los 10 s te levantas: pegas más fuerte, pero vas más lento, te cansas antes y ves en túnel hasta sanar.
+- **La muerte:** si vuelves a caer antes de sanar, mueres. Vuelves donde descansabas, y tus huesos quedan donde caíste.
+- **Las poses de las armas:** la lanza apunta adelante y el escudo mira al frente en todos los cuerpos (antes se torcían hasta 30 grados). Una página nueva del instructivo lo explica.
+
+## De la v0.17.3: los animales nuevos y el jinete en la silla
 
 - **Diecisiete animales nuevos:** los caballos, los burros, los camellos, el elefante, el buey, la vaca, el perro pastor, el lobo, el oso, la hiena, el zorro y la gacela tienen cuerpos nuevos, con el esqueleto y las animaciones de un caballo y de una hiena animados a mano.
 - **Pastan como deben:** bajan el cuello hasta que la boca toca el pasto, sin abrir las patas de adelante.
@@ -135,7 +144,7 @@ Cada boca de cueva se puso junto a cuatro imágenes de referencia y se cambió l
 
 Sigue lo de la v0.14.4 (cada cueva por dentro como sus referencias), la v0.14.3 (las cuevas por dentro según su tipo), la v0.14.2 (los bordes del mundo), la v0.14.1 (los árboles de voxeles, más hierbas y pasto, los carros a escala) y la v0.14.0 (la cámara cerca con `N`, `F` para las cosas y `Enter` para la gente, los asentamientos antiguos, las estructuras de voxeles, las cuevas grandes y los controles de combate).
 
-Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.17.3, la v0.17.2 y la v0.17.1).
+Las partidas de antes cargan igual: lo que ya estaba en el mundo queda en su lugar, y la casilla de la lanza con escudo pasa a ser la de la lanza sola. El detalle, en el [README](https://github.com/amaturanas-sys/Scavenger/blob/v@VERSION@/README.md#controles) (en «Controles», los apartados de la v0.17.4, la v0.17.3 y la v0.17.2).
 
 ## Android
 
@@ -162,7 +171,7 @@ Descomprime **`scavengers-thrive-@VERSION@-windows.zip`** y ejecuta `ScavengersT
 | Moverse / correr / saltar | WASD · Shift · Espacio |
 | Sigilo; junto a un obstáculo, cubrirse | C |
 | Cámara | Q / E, clic derecho + arrastrar, rueda · N: cerca, media o lejos |
-| Combate | H ataque · J parry · K bloqueo · L carga o patada |
+| Combate | H ataque · J parry (con la lanza, arrojarla) · K guardia, mantenida · L carga o patada |
 | Objetivo | O · un clic corto · Ctrl sola: elegir o soltar |
 | Acciones, obras, fabricar | Tab |
 | Inventario | I |

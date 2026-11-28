@@ -6,9 +6,11 @@
 //    cortas (daga, cuchillo, sable) los combos son mas rapidos; con largas (lanza,
 //    espada, guja) llegan mas lejos y el remate puede tumbar;
 //  - golpe pesado (mantener H): mas daño y rompe la guardia del escudo;
-//  - bloqueo (K): con escudo cubre el frente; sin escudo para con el arma, que aguanta
-//    la mitad del golpe y cansa (gasta aguante);
-//  - parry (J): el rival anuncia su golpe (levanta el arma un momento); en la ventana
+//  - bloqueo (K, mantenida): con escudo cubre el frente; sin escudo para con el arma, que
+//    aguanta la mitad del golpe; los dos cansan (gastan aguante) al sostenerlos y con cada
+//    golpe, segun su fuerza (melee_guard_cost), y sin aguante la guardia cae;
+//  - parry (J; con una lanza ligera en la mano, J la arroja: src/sim/ballistics.h, throw_def):
+//    el rival anuncia su golpe (levanta el arma un momento); en la ventana
 //    justa, antes de que caiga, el parry le gana: con hacha o guja le engancha el
 //    escudo y se lo arranca, con las manos o una daga le hace una llave y lo tumba
 //    (desarmado), con las demas armas desvia el golpe y lo deja abierto, y solo con el
@@ -107,6 +109,12 @@ float melee_combo_cooldown(const char *inv_id, float base, int step);
 // Resuelve un movimiento de att contra def. weapon: el arma usada en los golpes.
 MeleeResult melee_resolve(MeleeMove m, const Fighter *att, const Fighter *def, const char *weapon, int combo_step,
                           Rng *rng);
+
+// La guardia se cansa: sostenerla gasta aguante (GUARD_HOLD_COST por segundo: con el escudo en alto y sin golpes,
+// aguanta medio minuto) y cada golpe parado, segun su fuerza (el daño que traia: un sable, unas 16; el pesado, casi el
+// doble y pesa mas) y si lo para el escudo o el arma (que cansa casi el doble). Sin aguante, la guardia cae.
+#define GUARD_HOLD_COST (1.0f / 30.0f)
+float melee_guard_cost(float force, bool heavy, bool shield);
 
 // Parry. El rival anuncia el golpe durante MELEE_WINDUP s (levanta el arma); el parry gana si
 // llega cuando al golpe le quedan PARRY_WINDOW s o menos. A destiempo, el que para queda

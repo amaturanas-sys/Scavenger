@@ -53,6 +53,7 @@ void hud_update(GameActions *ga, const Props *props, const Player *p, bool input
 void hud_quickbar(GameActions *ga, const Props *props, const Player *p, int x, int y);
 bool hud_picker_open(void);
 void hud_open_picker(int slot); // 0..8 (prueba: --selector N)
+void hud_test_press(int slot);  // 0..9: pulsa esa casilla en el proximo cuadro (prueba: --usar-casilla N)
 void hud_draw_picker(GameActions *ga, const Props *props, const Player *p, int w, int h);
 // Una partida cargada: sus n casillas (NULL o dañadas: las de serie).
 void hud_load(const QbSlot *s, int n);

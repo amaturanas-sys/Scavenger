@@ -42,6 +42,8 @@ unsigned input_mods(void); // KM_SHIFT | KM_CTRL | KM_ALT apretados
 bool input_action_pressed(KeyAction a);
 bool input_action_down(KeyAction a);
 bool input_action_released(KeyAction a);
+// Prueba (--tecla): la accion se pulsa en el proximo cuadro y queda abajo frames cuadros (1: un toque).
+void input_test_hold(KeyAction a, int frames);
 // Enter (o el de la parte numerica): aceptar en un dialogo. Un Enter ya usado en este cuadro
 // (input_use_enter: el que abrio un dialogo, KA_TALK, o el que acepto en el selector de la barra
 // rapida) no acepta ni habla otra vez: los dialogos se atienden despues que las acciones.

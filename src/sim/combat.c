@@ -24,9 +24,9 @@ WeaponStats weapon_stats(const char *id) {
     else if (strstr(id, "hacha")) w = stats(20.0f, 1.5f, 0.95f, WOUND_CUT);
     else if (strstr(id, "maza")) w = stats(20.0f, 1.5f, 1.0f, WOUND_BRUISE), w.crush = true;
     else if (strstr(id, "espada")) w = stats(24.0f, 1.9f, 1.0f, WOUND_CUT);
-    else if (strstr(id, "lanza_pesada")) w = stats(26.0f, 3.6f, 1.4f, WOUND_CUT), w.spear = w.mounted_only = true; // 4 m
+    else if (strstr(id, "lanza_pesada")) w = stats(26.0f, 3.6f, 1.4f, WOUND_CUT), w.spear = w.mounted_only = w.pierce = true; // 4 m
     else if (strstr(id, "lanza") || strstr(id, "pica") || strstr(id, "guja") || strstr(id, "alabarda"))
-        w = stats(22.0f, 2.6f, 1.1f, WOUND_CUT), w.spear = true;
+        w = stats(22.0f, 2.6f, 1.1f, WOUND_CUT), w.spear = true, w.pierce = strstr(id, "lanza") || strstr(id, "pica"); // la estocada: de punta
     else if (!strncmp(id, "arma.distancia.", 15)) return unarmed; // cuerpo a cuerpo, un arco no corta
     // El metal mejor corta mas: bronce y acero (el wootz, mas); las armas especiales, mas aun.
     if (strstr(id, "bronce")) w.damage *= 1.1f;

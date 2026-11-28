@@ -175,6 +175,36 @@ int ig_store(GameActions *ga, const Props *props, const Player *p, const char *i
     return stored;
 }
 
+int ig_own_count(GameActions *ga, const Props *props, const Player *p, const char *id) {
+    Cont c[CONT_MAX];
+    containers(ga, props, p, c); // 0: los bolsillos; 1: la mochila (la de capacidad 0 si no esta a mano)
+    return bag_count(c[0].bag, id) + bag_count(c[1].bag, id);
+}
+
+int ig_store_own(GameActions *ga, const Props *props, const Player *p, const char *id, int n, float condition) {
+    Cont c[CONT_MAX];
+    containers(ga, props, p, c);
+    int stored = put_into(ga, &c[1], id, n, condition, 0); // primero la mochila
+    return stored + put_into(ga, &c[0], id, n - stored, condition, 0);
+}
+
+int ig_pour_to_own(GameActions *ga, const Props *props, const Player *p, const char *id, int n) {
+    Cont c[CONT_MAX];
+    int k = containers(ga, props, p, c), moved = 0;
+    for (int i = 2; i < k && moved < n; i++) { // los que no son tuyos: alforjas, carreta, acopio, la escolta
+        int have = c[i].type == C_BAG ? bag_count(c[i].bag, id) : stock_count(ga_stock_c(ga), id);
+        int want = have < n - moved ? have : n - moved;
+        if (want <= 0) continue;
+        int fit = put_into(ga, &c[1], id, want, 1.0f, 0);
+        fit += put_into(ga, &c[0], id, want - fit, 1.0f, 0);
+        if (fit <= 0) break; // lo tuyo, lleno
+        if (c[i].type == C_BAG) bag_take(c[i].bag, id, fit, NULL);
+        else stock_take(ga_stock(ga), id, fit);
+        moved += fit;
+    }
+    return moved;
+}
+
 float ig_carried_kg(const GameActions *ga) {
     return bag_kg(&ga->pockets, ga->inv) + (ga->pack_where == PACKW_WORN ? bag_kg(&ga->backpack, ga->inv) : 0.0f);
 }

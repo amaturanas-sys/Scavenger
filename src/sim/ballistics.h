@@ -15,7 +15,15 @@
 
 #define GRAVITY 9.81f
 
-typedef enum { PROJ_ARROW, PROJ_BOLT, PROJ_BALL, PROJ_STONE, PROJ_COUNT } ProjectileKind;
+// Crecen al final (se guardan como numeros en los disparos en vuelo, docs/PARTIDAS.md).
+typedef enum {
+    PROJ_ARROW,
+    PROJ_BOLT,
+    PROJ_BALL,
+    PROJ_STONE,
+    PROJ_JAVELIN, // la lanza ligera arrojada (J con ella en la mano): pesa, vuela despacio y pega fuerte
+    PROJ_COUNT
+} ProjectileKind;
 
 typedef struct {
     const char *name;   // UTF-8
@@ -40,6 +48,10 @@ typedef struct {
 const ProjectileDef *projectile_def(ProjectileKind k);
 // Definicion del arma a distancia por id del inventario, o NULL si no dispara.
 const RangedDef *ranged_def(const char *weapon_id);
+// La lanza que tambien se arroja (la jabalina: la ligera y las de punta de bronce y de acero; la pesada, no), o NULL.
+// No es un arma a distancia (ranged_def la deja en NULL: en la mano pelea cuerpo a cuerpo); J la arroja, como una
+// flecha: mantener prepara el tiro (power y draw_time) y soltar la lanza. Su municion es ella misma.
+const RangedDef *throw_def(const char *weapon_id);
 
 typedef struct {
     V3 pos, vel;

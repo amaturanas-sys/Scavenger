@@ -40,6 +40,8 @@ typedef struct {
     bool swapping;    // pasando el arma a la otra mano
     bool holding;     // sujeta a un rehen por el cuello (G con la espalda ganada)
     bool held;        // es el rehen: sujetado por el cuello
+    bool guard_broken; // la guardia cae (sin aguante): el brazo del escudo, apartado
+    int javelin;      // la lanza ligera: 1 en alto, lista para arrojarla (J mantenida); 2 arrojandola
 } HumanoidState;
 
 // Clip para un humano (jugador o NPC) segun lo que esta haciendo.

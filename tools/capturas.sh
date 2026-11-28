@@ -44,6 +44,18 @@ shot manos_nada 40 --enemigos bandidos --manos nada
 shot manos_rehen 60 --enemigos bandidos --rehen
 montage "$OUT"/manos_{escudo,espada,nada,rehen}.png -tile 2x2 -geometry +0+0 -depth 8 "$OUT/las_manos.png" 2>/dev/null &&
     echo "  las_manos.png"
+# Los arreglos del combate (v0.17.4): la guardia en alto (K mantenida) y la que cae sin aguante; la lanza ligera, que
+# golpea de punta (H) y se levanta sobre el hombro para arrojarla (J); el ultimo aliento, de rodillas con su cuenta, y
+# en pie con la vista en tunel. La guardia rota dura 1,8 s (hasta recobrar un 30 % de aguante) y el juego avanza con el
+# tiempo de cada cuadro: con 0,01 de aguante y K desde el cuadro 21, el cuadro 60 cae en esa ventana de 20 a 60 fps.
+shot combate_guardia 60 --tecla k 30 200 --giro-camara 225 --vista cerca
+shot combate_guardia_rota 60 --aguante 0.01 --tecla k 21 400 --giro-camara 225 --vista cerca
+shot combate_estocada 68 --usar-casilla 5 20 --tecla h 60 2 --giro-camara 270 --vista cerca
+shot combate_apuntar 80 --usar-casilla 5 20 --tecla j 40 60 --giro-camara 270 --vista cerca
+shot combate_rodillas 150 --ultimo-aliento rodillas --giro-camara 225 --vista media
+shot combate_en_pie 150 --ultimo-aliento en_pie --vista media
+montage "$OUT"/combate_{guardia,guardia_rota,estocada,apuntar,rodillas,en_pie}.png -tile 2x3 -geometry +0+0 -depth 8 \
+    "$OUT/el_combate.png" 2>/dev/null && echo "  el_combate.png"
 # El sistema tactico (A2 a A4): la fila de la barra rapida en el inventario (1-0), el objetivo elegido (O) y la cobertura
 # junto a una roca del mundo (C).
 shot tactico_barra 30 --inventario

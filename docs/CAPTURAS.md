@@ -62,14 +62,27 @@ El del patrón del usuario, en el cuerpo común (`assets/models/README.md`, «El
 
 ### Las manos
 
-Los cuatro botones (`H I J K`, abajo a la derecha) según lo que está fuera; la espada y el escudo se guardan por separado (`1` y `2`, [PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), A1). El montaje: [`capturas/las_manos.png`](capturas/las_manos.png).
+Los cuatro botones (`H J K L`, abajo a la derecha) según lo que está fuera; la espada y el escudo se guardan por separado (`1` y `2`, [PLAN_TACTICO_Y_CUEVAS.md](PLAN_TACTICO_Y_CUEVAS.md), A1). El montaje: [`capturas/las_manos.png`](capturas/las_manos.png).
 
 | | |
 |---|---|
 | ![Escudo solo](capturas/manos_escudo.png) | **El escudo solo** (`--enemigos bandidos --manos escudo`): la espada al cinto; puñetazo, parry con el escudo, cubrirse y carga. |
 | ![Espada sola](capturas/manos_espada.png) | **La espada sola** (`--manos espada`): el escudo a la espalda; golpe, parry, parar con el arma y patada. |
 | ![Nada](capturas/manos_nada.png) | **Todo guardado** (`--manos nada`): puñetazo, la llave y patada; sin bloqueo. |
-| ![Rehén](capturas/manos_rehen.png) | **Con un rehén** (`--enemigos bandidos --rehen`): `H` lo ejecuta, `I` lo empuja, `G` lo suelta. |
+| ![Rehén](capturas/manos_rehen.png) | **Con un rehén** (`--enemigos bandidos --rehen`): `H` lo ejecuta, `J` lo empuja, `G` lo suelta. |
+
+### La guardia, la lanza y el último aliento (v0.17.4)
+
+Los arreglos del combate: la guardia que se sostiene y se cansa, la lanza ligera aparte del escudo (la casilla `5`) y lo que pasa al quedarse sin vida. El montaje: [`capturas/el_combate.png`](capturas/el_combate.png).
+
+| | |
+|---|---|
+| ![Guardia](capturas/combate_guardia.png) | **La guardia** (`--tecla k 30 200`, `K` mantenida): el escudo en alto delante del pecho, de frente, mientras se sostiene la tecla. |
+| ![Guardia rota](capturas/combate_guardia_rota.png) | **La guardia que cae** (`--aguante 0.01 --tecla k 21 400`): sin aguante el brazo cede, el escudo baja y `K` queda en gris hasta recobrar el aliento. |
+| ![Estocada](capturas/combate_estocada.png) | **La estocada** (`--usar-casilla 5 20 --tecla h 60 2`): la lanza en la mano derecha, sin tocar el escudo, golpea de punta. |
+| ![Apuntar](capturas/combate_apuntar.png) | **Arrojar la lanza** (`--usar-casilla 5 20 --tecla j 40 60`): mantener `J` la levanta sobre el hombro y apunta con la cámara; al soltar, vuela. |
+| ![De rodillas](capturas/combate_rodillas.png) | **El último aliento** (`--ultimo-aliento rodillas`): de rodillas, con la cuenta para levantarse y el halo oscuro. |
+| ![En pie](capturas/combate_en_pie.png) | **En pie, con la vista en túnel** (`--ultimo-aliento en_pie`): «último aliento» en la salud hasta sanar; si cae otra vez antes, muere. |
 
 ### La barra, el objetivo y la cobertura
 

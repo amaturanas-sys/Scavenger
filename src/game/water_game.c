@@ -18,10 +18,22 @@
 #define PER_ODRE 3
 #define DRY_FAINT 20.0f // s con la sed a cero, hasta desmayarse
 
+// Solo lo que llevas encima (los bolsillos y la mochila): el agua del acopio o de la carreta no va en tus odres.
 int wg_water_room(GameActions *ga, const Props *props, const Player *p) {
-    int odres = ig_count(ga, props, p, ODRE_ID);
-    int room = odres * PER_ODRE - ig_count(ga, props, p, RAW_ID) - ig_count(ga, props, p, BOILED_ID);
+    int odres = ig_own_count(ga, props, p, ODRE_ID);
+    int room = odres * PER_ODRE - ig_own_count(ga, props, p, RAW_ID) - ig_own_count(ga, props, p, BOILED_ID);
     return room > 0 ? room : 0;
+}
+
+// Un recipiente con agua a mano (el acopio del campamento, la carreta, las alforjas, la mochila de la escolta): de
+// ahi a tus odres, primero la hervida. true si paso algo.
+static bool fill_from_stores(GameActions *ga, const Props *props, const Player *p, int room, char *log, size_t len) {
+    int boiled = ig_pour_to_own(ga, props, p, BOILED_ID, room);
+    int raw = room > boiled ? ig_pour_to_own(ga, props, p, RAW_ID, room - boiled) : 0;
+    if (boiled + raw <= 0) return false;
+    if (raw > 0) snprintf(log, len, T("Llenas el odre de lo que hay a mano: +%d agua hervida, +%d cruda (hiérvela antes de beberla)."), boiled, raw);
+    else snprintf(log, len, T("Llenas el odre de lo que hay a mano: +%d agua hervida."), boiled);
+    return true;
 }
 
 bool wg_at_well(const Terrain *t, float x, float z) {
@@ -125,13 +137,15 @@ void wg_update(GameActions *ga, Troop *troop, Player *p, const Props *props, con
     ThirstLevel was_thirst = thirst_level(&ga->hydro);
     hydration_update(&ga->hydro, heat_thirst_scale(&hz->heat) * (p->stance == STANCE_RUN && p->moving ? 1.3f : 1.0f), !p->moving, dt);
     if (input_ok && g_drink_req) drink(ga, props, p, hz, c, log, len);
-    // La casilla del odre (las hojas: «3 para beber; 3 junto a un punto de agua, llenar»): en la orilla
-    // mirando al agua o junto a un pozo, la accion de llenarlo (con su tiempo) si queda lugar en los
-    // odres; si no, beber (sin odre, del rio o del pozo).
+    // La casilla del odre (las hojas: «3 para beber; 3 junto a un punto de agua, llenar»): si queda lugar
+    // en tus odres, lo llena junto a un pozo o en la orilla mirando al agua (la accion, con su tiempo), o al
+    // momento de un recipiente con agua a mano (el acopio, la carreta, las alforjas); si no, bebe (sin odre,
+    // del rio o del pozo).
     if (input_ok && g_odre_req) {
         bool water = !ga_in_cave() && ga->terrain && (wg_at_well(ga->terrain, p->pos.x, p->pos.z) || gems_water_ahead(ga->terrain, p)); // en una cueva, bebe
-        if (water && wg_water_room(ga, props, p) > 0) ga_quick_request_action(ACTION_FILL_WATER);
-        else drink(ga, props, p, hz, c, log, len);
+        int room = wg_water_room(ga, props, p);
+        if (water && room > 0) ga_quick_request_action(ACTION_FILL_WATER);
+        else if (room <= 0 || !fill_from_stores(ga, props, p, room, log, len)) drink(ga, props, p, hz, c, log, len);
     }
     g_drink_req = g_odre_req = false;
     if (!was_sick && hydration_sick(&ga->hydro))

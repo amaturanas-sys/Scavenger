@@ -493,13 +493,14 @@ bool fg_ice_fish(GameActions *ga, const Player *p, int hole, char *log, size_t l
     return true;
 }
 
-bool fg_shot_water(GameActions *ga, const Terrain *t, Vector3 at, char *log, size_t len) {
+bool fg_shot_water(GameActions *ga, const Terrain *t, Vector3 at, bool spear, char *log, size_t len) {
     for (int i = 0; i < GA_MAX_SWARMS; i++) {
         Swarm *s = &ga->swarms[i];
         if (!s->used || s->kind != SWARM_FISH || dist_xz(s->cx, s->cz, at.x, at.z) > 4.0f) continue;
         if (swarm_catch(s, at.x, terrain_water(t, at.x, at.z) - 0.3f, at.z, 1.2f, 1)) {
             ig_store(ga, NULL, &(Player){ .pos = at }, FRESH_MEAT_ID, 1, 1.0f);
-            snprintf(log, len, "%s", T("¡La flecha atraviesa un pez! (+1 carne fresca)"));
+            snprintf(log, len, "%s", spear ? T("¡La lanza atraviesa un pez! (+1 carne fresca; la lanza se hunde)")
+                                           : T("¡La flecha atraviesa un pez! (+1 carne fresca)"));
             return true;
         }
     }

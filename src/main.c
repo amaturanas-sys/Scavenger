@@ -1053,6 +1053,8 @@ int main(int argc, char **argv) {
     bool start_wounds = false, start_aim = false, start_lake = false, start_fire = false, start_menu = false;
     bool start_crouch = false, start_target = false;
     int start_back = 0; // prueba: 1 a la espalda del primer enemigo, 2 ademas con el de rehen
+    const char *start_breath = NULL; // prueba: --ultimo-aliento rodillas|en_pie|muerte (al cuadro 20)
+    float start_stamina = -1.0f;     // prueba: --aguante 0..1 (al cuadro 20): la guardia que se cansa (K)
     const char *start_hands = NULL; // prueba: "escudo" (la espada enfundada), "espada" (el escudo a la espalda) o "nada"
     bool start_cover = false; // prueba: junto al obstaculo mas cercano, a cubierto (C, A4)
     const char *start_cave = NULL; // prueba: --cueva tipo[:lugar] (src/game/cave_game.h, cv_test_enter)
@@ -1070,12 +1072,16 @@ int main(int argc, char **argv) {
     const char *start_trade = NULL;   // --comerciar: raiz, vender, comprar, ciudad, caravana, asaltar, saquear o campos (src/game/trade_game.h)
     const char *start_siege = NULL;   // --asedio: puerta, trepa, escala, fuego, quemada, salida, rendicion, tomada, expedicion o ejercito (src/game/city_game.h)
     const char *start_ride = NULL;    // --montado: lanza, pesada, parto, agotado (al paso) o quieto (src/game/combat_game.h); galopa solo hacia delante
-    float start_cam_turn = 0.0f;      // --giro-camara grados: con --montado, la camara girada respecto del jinete (90: de lado)
+    float start_cam_turn = 0.0f;      // --giro-camara grados: la camara girada respecto del jinete (--montado) o del jugador (90: de lado)
     bool start_breed = false;         // --cria: en el campamento inicial, una yegua por parir, un semental y un potro por crecer
     bool start_forge = false;         // --forja: la forja movil, hierro, carbon y un sable fragil empuñado; pica la veta y hace puntas
     const char *start_migrate = NULL; // --migrar: marcha (levanta el campamento inicial y camina) o plantar (y lo planta a 170 m)
     bool start_diag = false;          // --diagnostico: el panel de Ctrl+D abierto
     int start_picker = -1;
+    int start_slot = -1;              // --usar-casilla N: pulsa la casilla N de la barra rapida (1..9, 0 la decima) en el cuadro 30
+    int start_slot_frame = 30;
+    struct { KeyAction a; int frame, hold; } start_keys[6]; // --tecla h|j|k|l|f|t cuadro [cuadros abajo]
+    int start_key_n = 0;
     float start_heading = -1.0f;      // --rumbo grados: hacia donde mira la camara (0 sur, 90 este, 180 norte, 270 oeste)
     float start_pitch = -1.0f;        // --camara inclinacion: 0.05 casi de canto (se ve el cielo), 1.25 desde arriba
     int start_view = -1;              // --vista cerca|media|lejos (src/sim/camview.h); si no, la guardada
@@ -1132,6 +1138,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--objetivo")) start_target = true;
         else if (!strcmp(argv[i], "--espalda")) start_back = 1;
         else if (!strcmp(argv[i], "--rehen")) start_back = 2;
+        else if (!strcmp(argv[i], "--ultimo-aliento") && i + 1 < argc) start_breath = argv[++i];
+        else if (!strcmp(argv[i], "--aguante") && i + 1 < argc) start_stamina = fminf(1.0f, fmaxf(0.0f, (float)atof(argv[++i])));
         else if (!strcmp(argv[i], "--manos") && i + 1 < argc) start_hands = argv[++i];
         else if (!strcmp(argv[i], "--cueva") && i + 1 < argc) start_cave = argv[++i];
         else if (!strcmp(argv[i], "--antorcha")) start_torch = true;
@@ -1157,6 +1165,20 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--sin-decorado")) g_no_decor = true; // sin el decorado de OpenGameArt (src/sim/decor.h)
         else if (!strcmp(argv[i], "--censo-decorado")) g_decor_census = true; // cuantos de cada modelo en el mundo entero, y sale
         else if (!strcmp(argv[i], "--selector") && i + 1 < argc) start_picker = atoi(argv[++i]) - 1; // prueba: el selector de una casilla
+        else if (!strcmp(argv[i], "--tecla") && i + 2 < argc && start_key_n < 6) { // prueba: una accion de combate o F/T en un cuadro
+            const char *k = argv[++i];
+            int at = atoi(argv[++i]), hold = 1;
+            if (i + 1 < argc && argv[i + 1][0] != '-') hold = atoi(argv[++i]);
+            KeyAction a = !strcmp(k, "h") ? KA_ATTACK : !strcmp(k, "j") ? KA_PARRY : !strcmp(k, "k") ? KA_BLOCK : !strcmp(k, "l") ? KA_CHARGE
+                        : !strcmp(k, "t") ? KA_THROW : KA_INTERACT;
+            start_keys[start_key_n].a = a, start_keys[start_key_n].frame = at, start_keys[start_key_n].hold = hold;
+            start_key_n++;
+        }
+        else if (!strcmp(argv[i], "--usar-casilla") && i + 1 < argc) { // prueba: la tecla de una casilla (el odre, 3); [cuadro]
+            int n = atoi(argv[++i]);
+            start_slot = n == 0 ? 9 : n - 1;
+            if (i + 1 < argc && argv[i + 1][0] != '-') start_slot_frame = atoi(argv[++i]);
+        }
         else if (!strcmp(argv[i], "--rumbo") && i + 1 < argc) start_heading = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--camara") && i + 1 < argc) start_pitch = (float)atof(argv[++i]);
         else if (!strcmp(argv[i], "--vista") && i + 1 < argc) {
@@ -1427,6 +1449,9 @@ int main(int argc, char **argv) {
         frame++;
         hud_frame_begin();
         if (start_picker >= 0 && frame == 10) hud_open_picker(start_picker), start_picker = -1;
+        if (start_slot >= 0 && frame == start_slot_frame) hud_test_press(start_slot), start_slot = -1;
+        for (int k = 0; k < start_key_n; k++)
+            if (frame == start_keys[k].frame) input_test_hold(start_keys[k].a, start_keys[k].hold);
         if (start_pause && frame == 10 && in_game) { // prueba: la pausa (o guardar) sobre la partida
             if (start_pause == 3) {
                 show_controls = true;
@@ -1673,7 +1698,8 @@ int main(int argc, char **argv) {
             if (start_walk != 0.0f && frame > 6) in.move_z = start_walk; // prueba: caminar (por la boca de una cueva, adentro)
             if (g_actions.mounted >= 0 && fg_mount_winded()) in.run = false; // la montura agotada no galopa
             player.speed_scale = ga_speed_scale(&g_actions) * hz_speed_scale(&g_hazards) * cb_speed_scale(&g_combat);
-            player_set_endurance(health_endurance_scale(&g_combat.player)); // las secuelas (el tiburon) cansan mas
+            // Las secuelas (el tiburon) y el ultimo aliento (src/sim/health.h) cansan mas.
+            player_set_endurance(health_endurance_scale(&g_combat.player) * last_breath_endurance_scale(&g_combat.breath));
             // Montado, lo que el asiento de la montura subio al jinete en el ultimo cuadro (sin asiento, RIDE_LIFT).
             player.draw_lift = g_actions.mounted < 0 ? 0.0f : ga_seat_lift() > 0.0f ? ga_seat_lift() : RIDE_LIFT;
             // N: la vista de la camara siguiente (Mayus+N: la anterior); queda para la proxima partida.
@@ -1818,6 +1844,10 @@ int main(int argc, char **argv) {
             }
             if (start_back && frame == 30 && !gallery_mode) // prueba: la espalda ganada (y el rehen)
                 cb_test_back(&g_combat, &player, start_back == 2, log, sizeof(log));
+            if (start_breath && frame == 20 && !gallery_mode) // prueba: el ultimo aliento (de rodillas, en pie o la muerte)
+                cb_test_breath(&g_combat, start_breath);
+            if (start_stamina >= 0.0f && frame == 20 && !gallery_mode) // prueba: el aguante que queda (sano, rinde 1)
+                player_stamina_spend(player_stamina() - start_stamina);
             if (start_cover && frame == 25 && !gallery_mode) { // prueba: el obstaculo mas cercano (un tronco, una roca, una peña), y C
                 Vector3 cc;
                 float cr;
@@ -1850,6 +1880,8 @@ int main(int argc, char **argv) {
                 player.crouching = true;
                 if (frame == 3) player.yaw = rig.yaw + PI / 2;
             }
+            if (start_cam_turn != 0.0f && !start_ride && frame == 6 && !gallery_mode) // --giro-camara a pie: gira el jugador
+                player.yaw = rig.yaw - start_cam_turn * DEG2RAD;                      // (de lado: la guardia o la estocada)
             if (last_champion != prev_champion) show_card = true; // ficha al conocerlo
             advance_days(&troop, &rng, &day, world_time, &terrain, log, sizeof(log));
             if (input_action_pressed(KA_CARD) && !ig_blocks_input(&g_actions)) // U: la ficha del gran guerrero (en el inventario, U cambia la mochila)
@@ -2081,6 +2113,7 @@ int main(int argc, char **argv) {
         } else if (!menu_visible(&menu) && pg_active()) {
             pg_draw_hud(&g_actions, VIRTUAL_W, VIRTUAL_H); // la vista aerea: solo lo de la obra
         } else if (!menu_visible(&menu)) {
+            cb_draw_tunnel(&g_combat, VIRTUAL_W, VIRTUAL_H); // el ultimo aliento: el halo, debajo de todo el HUD
             draw_hud(&troop, world_time, ga_hands_text(&g_actions), log, log_age,
                      g_actions.menu_open || g_actions.inv_open || g_actions.equip_open, dlg_panel(&g_actions.dlg, VIRTUAL_H));
             if (cv_inside()) cv_draw_plan(&terrain, VIRTUAL_W - MINIMAP_RADIUS - 10, MINIMAP_RADIUS + 13, MINIMAP_RADIUS); // el plano de la cueva

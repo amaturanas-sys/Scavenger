@@ -187,6 +187,9 @@ typedef struct {
     // Estado de combate y salud del jugador para la animacion (lo pone src/game/combat_game.c).
     bool pl_down, pl_hit, pl_blocking, pl_limping, pl_spear, pl_knocked;
     bool pl_holding; // sujeta a un rehen (src/game/combat_game.c)
+    bool pl_dead;         // cae muerto (el ultimo aliento se acabo: src/sim/health.h)
+    bool pl_guard_broken; // la guardia cae sin aguante
+    int pl_javelin;       // la lanza ligera: 1 en alto (J mantenida), 2 arrojandola
     int escort_order; // SquadOrder (src/sim/squad.h): la escolta ataca, defiende o sigue sin pelear (Y+1..3)
     int pl_attacking, pl_ranged, pl_move;
     float pl_stroke; // lo que le queda al golpe o movimiento en curso (s): su clip cabe entero (props_draw_item_track)
@@ -310,6 +313,9 @@ typedef struct {
     bool available;           // lo tiene (equipo o acopio)
     bool active;              // es lo que empuña ahora
 } GaGrip;
+// La empuñadura de la lanza (la 7 de X): hasta la v0.17.3 juntaba la lanza y el escudo; ahora es la lanza sola, y la
+// casilla guardada con ella vuelve como la lanza suelta (hud_load): cada arma, un objeto en su mano.
+#define GA_GRIP_SPEAR 6
 int ga_grip_count(void);
 GaGrip ga_grip(const GameActions *ga, int k);
 bool ga_has_item(const GameActions *ga, const char *id); // en el equipo o en el acopio

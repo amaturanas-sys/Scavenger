@@ -959,6 +959,34 @@ static void test_ballistics_trajectories(void) {
     CHECK(!ballistic_solve(PROJ_STONE, from, (V3){ 0, 0, 2000.0f }, vs, &pitch));
 }
 
+// La lanza ligera tambien se arroja (J con ella en la mano): no es un arma a distancia (en la mano pelea cuerpo a
+// cuerpo), sale despacio, pega mas fuerte que una flecha y llega mas cerca; su municion es ella misma.
+static void test_ballistics_javelin(void) {
+    const RangedDef *jv = throw_def("arma.larga.lanza");
+    CHECK(jv && jv->projectile == PROJ_JAVELIN && throw_def("arma.larga.lanza_acero") && throw_def("arma.larga.lanza_bronce"));
+    CHECK(!throw_def("arma.larga.lanza_pesada") && !throw_def("arma.larga.guja") && !throw_def("arma.corta.sable") && !throw_def("") &&
+          !throw_def(NULL));
+    CHECK(!ranged_def("arma.larga.lanza") && !strcmp(projectile_def(PROJ_JAVELIN)->ammo, "arma.larga.lanza"));
+    float v = ranged_muzzle_speed(jv, 1.0f), va = ranged_muzzle_speed(ranged_def("arma.distancia.arco_simple"), 1.0f);
+    CHECK(v > 15.0f && v < 30.0f && v < va * 0.5f);
+    Projectile jav, arrow;
+    projectile_launch(&jav, PROJ_JAVELIN, (V3){ 0, 1.5f, 0 }, 0.0f, 0.0f, v);
+    projectile_launch(&arrow, PROJ_ARROW, (V3){ 0, 1.5f, 0 }, 0.0f, 0.0f, va);
+    CHECK(projectile_damage(&jav) > projectile_damage(&arrow));
+    CHECK(ranged_muzzle_speed(jv, 0.2f) < v * 0.6f); // sin preparar el tiro, sale floja
+    // A 30 grados cae entre 20 y 55 m; con la mira, da a un blanco a 18 m; a 90 m no llega.
+    V3 pts[400];
+    int n = ballistic_trace(PROJ_JAVELIN, (V3){ 0, 1.5f, 0 }, 0.0f, 0.52f, v, 0.02f, 0.0f, pts, 400);
+    CHECK(n > 2 && pts[n - 1].z > 20.0f && pts[n - 1].z < 55.0f);
+    float pitch = 0.0f;
+    CHECK(ballistic_solve(PROJ_JAVELIN, (V3){ 0, 1.5f, 0 }, (V3){ 0, 1.2f, 18.0f }, v, &pitch) && pitch > 0.0f && pitch < 0.6f);
+    CHECK(!ballistic_solve(PROJ_JAVELIN, (V3){ 0, 1.5f, 0 }, (V3){ 0, 1.2f, 90.0f }, v, &pitch));
+    // La estocada de la lanza y de la pica entra de punta (la armadura la para como a un proyectil); la guja y la
+    // alabarda cortan.
+    CHECK(weapon_stats("arma.larga.lanza").pierce && weapon_stats("arma.larga.lanza_pesada").pierce);
+    CHECK(weapon_stats("arma.larga.lanza").spear && !weapon_stats("arma.larga.guja").pierce && weapon_stats("arma.larga.guja").spear);
+}
+
 static void test_memmap_markers_toggle(void) {
     MemoryMap m;
     memmap_init(&m);
@@ -1747,6 +1775,45 @@ static void test_health_venom(void) {
     CHECK(health_treat(&h) >= 1 && h.venom < before * 0.6f);
     for (int i = 0; i < 1200; i++) health_update(&h, &r, 0.1f, false, 0.0f);
     CHECK(!health_poisoned(&h) && h.hp > 80.0f); // se pasa y vuelve a sanar
+}
+
+// El ultimo aliento del jugador: la primera vez sin vida, de rodillas (aunque el golpe fuera de muerte) y en pie a los
+// 10 s con fuerzas; si vuelve a quedarse sin vida antes de sanar, cae muerto; si sana, el ultimo aliento vuelve.
+static void test_health_last_breath(void) {
+    Rng r;
+    rng_seed(&r, 3);
+    Health h;
+    health_init(&h, 100.0f);
+    LastBreath lb = { BREATH_NONE, 0.0f };
+    CHECK(last_breath_update(&lb, &h, 0.1f) == BREATH_EV_NONE && lb.phase == BREATH_NONE);
+    CHECK(last_breath_damage_scale(&lb) == 1.0f && last_breath_speed_scale(&lb) == 1.0f && last_breath_vignette(&lb) == 0.0f);
+    CHECK(health_hit(&h, &r, 30.0f, WOUND_CUT, PART_THORAX) >= 0 && health_bleeding(&h)); // una herida que sangra
+    h.hp = -80.0f, h.dead = h.down = true; // un golpe de muerte
+    CHECK(last_breath_update(&lb, &h, 0.1f) == BREATH_EV_KNEEL && lb.phase == BREATH_KNEEL && !h.dead && h.down);
+    bool still = true;
+    for (int i = 0; i < 98; i++) still &= last_breath_update(&lb, &h, 0.1f) == BREATH_EV_NONE; // unos 9,8 s de rodillas
+    CHECK(still && h.down && !h.dead && last_breath_vignette(&lb) > 0.5f);
+    CHECK(last_breath_update(&lb, &h, 0.3f) == BREATH_EV_RISE && lb.phase == BREATH_RISEN && !h.down && !h.dead);
+    CHECK(h.hp >= LAST_BREATH_HP * h.hp_max - 1e-3f && h.blood >= LAST_BREATH_BLOOD && !health_bleeding(&h));
+    CHECK(last_breath_damage_scale(&lb) > 1.2f && last_breath_speed_scale(&lb) < 1.0f && last_breath_endurance_scale(&lb) < 1.0f);
+    CHECK(last_breath_vignette(&lb) > 0.3f && last_breath_update(&lb, &h, 0.1f) == BREATH_EV_NONE); // en pie, sin sanar
+    // Sin sanar, otra vez sin vida: cae muerto, y a los LAST_BREATH_DEATH s el juego lo devuelve.
+    LastBreath again = lb;
+    Health h2 = h;
+    h2.hp = 0.0f, h2.down = true;
+    CHECK(last_breath_update(&again, &h2, 0.1f) == BREATH_EV_FALL && again.phase == BREATH_DYING && h2.dead);
+    int steps = 0;
+    BreathEvent ev = BREATH_EV_NONE;
+    while ((ev = last_breath_update(&again, &h2, 0.1f)) == BREATH_EV_NONE && steps < 100) steps++;
+    CHECK(ev == BREATH_EV_DEAD && again.phase == BREATH_NONE && steps >= 33 && steps <= 36);
+    // Si sana (la vida y la sangre arriba), el ultimo aliento vuelve a estar ahi: sin vida, de rodillas otra vez.
+    h.hp = 0.8f * h.hp_max, h.blood = 0.9f;
+    CHECK(last_breath_update(&lb, &h, 0.1f) == BREATH_EV_HEALED && lb.phase == BREATH_NONE);
+    CHECK(last_breath_damage_scale(&lb) == 1.0f && last_breath_vignette(&lb) == 0.0f);
+    h.hp = 0.0f, h.down = true;
+    CHECK(last_breath_update(&lb, &h, 0.1f) == BREATH_EV_KNEEL);
+    LastBreath bad = { 99, 0.0f }; // una fase que no existe (una partida rota): vuelve a la normal
+    CHECK(last_breath_update(&bad, &h, 0.1f) == BREATH_EV_NONE && bad.phase == BREATH_NONE);
 }
 
 // Acuaticos y venenosos: el cocodrilo no se aleja de su orilla; la tortuga se salva
@@ -2631,6 +2698,11 @@ static void test_inventory_repo_file_is_valid(void) {
         for (int j = i + 1; j < inv.count; j++) CHECK(strcmp(it->id, inv.items[j].id) != 0);
     }
     CHECK(inventory_find(&inv, "estructura.vivienda.yurta_comun") != NULL);
+    // uso:recolectable: el odre y la leña van a la mochila al tomarlos; el cofre y el caldero, en brazos.
+    const InvItem *odre = inventory_find(&inv, "utileria.objeto.odre"), *cofre = inventory_find(&inv, "utileria.objeto.cofre");
+    const InvItem *lena = inventory_find(&inv, "utileria.objeto.lena"), *caldero = inventory_find(&inv, "utileria.objeto.caldero");
+    CHECK(odre && odre->collect && lena && lena->collect);
+    CHECK(cofre && !cofre->collect && caldero && !caldero->collect);
     // Todo lo que nombran las acciones existe en el inventario.
     for (int a = 0; a < ACTION_COUNT; a++) {
         const ActionDef *d = action_def((ActionId)a);
@@ -2732,6 +2804,27 @@ static void test_anim_index_states(void) {
     CHECK(!strcmp(anim_humanoid(&s), "construir"));
     s.hidden = true;
     CHECK(!strcmp(anim_humanoid(&s), "acechar_idle"));
+    // La lanza golpea de punta tambien en el golpe pesado; J la pone en alto y la arroja; la guardia en alto se sostiene
+    // (bucle) y cae sin aguante; de rodillas (el ultimo aliento) y muerto.
+    memset(&s, 0, sizeof(s));
+    s.doing = s.building = -1;
+    s.grounded = true;
+    s.spear = true, s.move = MOVE_HEAVY + 1;
+    CHECK(!strcmp(anim_humanoid(&s), "estocada_lanza"));
+    s.spear = false;
+    CHECK(!strcmp(anim_humanoid(&s), "ataque_pesado"));
+    s.move = 0, s.javelin = 1;
+    CHECK(!strcmp(anim_humanoid(&s), "apuntar_lanza") && anim_loops("apuntar_lanza"));
+    s.javelin = 2;
+    CHECK(!strcmp(anim_humanoid(&s), "lanzar_lanza") && !anim_loops("lanzar_lanza"));
+    s.javelin = 0, s.blocking = true;
+    CHECK(!strcmp(anim_humanoid(&s), "bloquear") && anim_loops("bloquear"));
+    s.guard_broken = true;
+    CHECK(!strcmp(anim_humanoid(&s), "guardia_rota") && !anim_loops("guardia_rota"));
+    s.down = true;
+    CHECK(!strcmp(anim_humanoid(&s), "abatido") && anim_loops("abatido"));
+    s.dead = true;
+    CHECK(!strcmp(anim_humanoid(&s), "morir") && !anim_loops("morir"));
 
     Animal a;
     animal_init(&a, SPECIES_HORSE, 0, 0);
@@ -2773,6 +2866,9 @@ static void test_anim_index_names_exist(void) {
         CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
         // La espalda y los rehenes: quien sujeta y quien es sujetado.
         s.holding = bits % 29 == 0, s.held = bits % 31 == 0;
+        CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
+        // La guardia que cae y la lanza en alto o arrojada.
+        s.guard_broken = bits % 37 == 0, s.javelin = bits % 3;
         CHECK(clip_indexed(text, "humanoide", anim_humanoid(&s)));
     }
     for (int sp = 0; sp < SPECIES_COUNT; sp++) {
@@ -3944,6 +4040,33 @@ static void test_melee_weapon_block_costs_stamina(void) {
     def.shield = false, def.facing = -1.0f;
     MeleeResult back = melee_resolve(MOVE_LIGHT, &att, &def, "arma.corta.sable", 1, &rng);
     CHECK(!back.blocked && back.guard_cost == 0.0f);
+}
+
+// La guardia se cansa: cada golpe parado cuesta aguante segun su fuerza, y sostenerla tambien; sin aguante, cae.
+static void test_melee_guard_fatigue(void) {
+    CHECK(melee_guard_cost(0.0f, false, true) == 0.0f);
+    CHECK(melee_guard_cost(30.0f, false, true) > melee_guard_cost(15.0f, false, true));  // mas fuerza, mas cansa
+    CHECK(melee_guard_cost(20.0f, true, true) > melee_guard_cost(20.0f, false, true));   // el pesado, mas
+    CHECK(melee_guard_cost(20.0f, false, false) > melee_guard_cost(20.0f, false, true)); // con el arma, mas que con el escudo
+    // Un aguante lleno: entre diez y veinticinco golpes de sable parados con el escudo, y medio minuto de guardia en alto.
+    float c = melee_guard_cost(weapon_stats("arma.corta.sable").damage, false, true);
+    CHECK(c > 1.0f / 25.0f && c < 1.0f / 10.0f);
+    CHECK(GUARD_HOLD_COST * 20.0f < 1.0f && GUARD_HOLD_COST * 40.0f > 1.0f);
+    // En las reglas: el golpe pesado parado cobra segun la fuerza de quien lo da; la patada, el golpe y la carga con
+    // escudo contra un escudo en guardia, tambien.
+    Rng rng;
+    rng_seed(&rng, 21);
+    Fighter att = { .armed = true, .shield = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f };
+    Fighter def = { .armed = true, .shield = true, .blocking = true, .facing = 1.0f, .strength = 1.0f, .health = 1.0f };
+    MeleeResult kick = melee_resolve(MOVE_KICK, &att, &def, "", 1, &rng);
+    MeleeResult bash = melee_resolve(MOVE_SHIELD_BASH, &att, &def, "", 1, &rng);
+    MeleeResult charge = melee_resolve(MOVE_SHIELD_CHARGE, &att, &def, "", 1, &rng);
+    CHECK(kick.guard_cost > 0.0f && bash.guard_cost > 0.0f && charge.guard_cost > kick.guard_cost);
+    Fighter strong = att;
+    strong.strength = 2.0f;
+    MeleeResult a = melee_resolve(MOVE_HEAVY, &att, &def, "arma.corta.sable", 1, &rng);
+    MeleeResult b = melee_resolve(MOVE_HEAVY, &strong, &def, "arma.corta.sable", 1, &rng);
+    CHECK(a.blocked && b.blocked && b.guard_cost > a.guard_cost * 1.9f); // el doble de fuerza, el doble de cansancio
 }
 
 static void test_target_cycle(void) {
@@ -7084,6 +7207,7 @@ int main(void) {
     RUN(test_animals_livestock);
     RUN(test_animals_body);
     RUN(test_health_venom);
+    RUN(test_health_last_breath);
     RUN(test_animals_water_and_venom);
     RUN(test_animals_keep_out_of_lakes);
     RUN(test_animals_swim_and_ice);
@@ -7119,6 +7243,7 @@ int main(void) {
     RUN(test_body_zones_raycast);
     RUN(test_armor_pieces_materials);
     RUN(test_ballistics_trajectories);
+    RUN(test_ballistics_javelin);
     RUN(test_save_blocks_newer_structs);
     RUN(test_save_blocks_same_struct);
     RUN(test_save_blocks_nested_and_frozen);
@@ -7132,6 +7257,7 @@ int main(void) {
     RUN(test_cover_rules_a4);
     RUN(test_melee_parry_window);
     RUN(test_melee_weapon_block_costs_stamina);
+    RUN(test_melee_guard_fatigue);
     RUN(test_target_cycle);
     RUN(test_stealth_back_cone);
     RUN(test_stealth_silent_kill_alerts_near_only);

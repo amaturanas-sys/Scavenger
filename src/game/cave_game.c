@@ -140,6 +140,7 @@ static void move_inside(const GameActions *ga, const Cave *c, Player *q, PlayerI
         float target = atan2f(vx, vz), diff = atan2f(sinf(target - q->yaw), cosf(target - q->yaw));
         q->yaw += diff * fminf(1.0f, 10.0f * dt);
     }
+    player_stamina_guard(false); // adentro no hay guardia (el combate espera afuera)
     player_stamina_tick(q->stance == STANCE_RUN, q->moving, dt);
     float y = q->pos.y;
     int where = 0;

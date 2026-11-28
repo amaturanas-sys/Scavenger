@@ -190,6 +190,19 @@ Las cuevas no se guardan: salen de la semilla del mundo, como los ríos. Guardad
 al jugador en la boca, afuera, y allí aparece al cargarla. El resumen suma la línea de cada cueva con algo hecho o con
 guardias, solo si no es cero (los resúmenes viejos no cambian).
 
+La v0.17.4 (los arreglos del combate: la guardia que se cansa, la lanza que se arroja y el último aliento) agregó, sin
+migraciones y al final de cada struct:
+- a `Combat`, el último aliento (`breath`: su fase y su reloj) y `guard_break` (lo que falta para volver a cubrirse). En
+  cero, nadie está de rodillas ni con la guardia rota;
+- a `Shot`, `item`: la lanza que vuela (vacío en las flechas), para dejarla en el suelo donde cae;
+- a `GameActions`, `pl_dead`, `pl_guard_broken` y `pl_javelin`, lo que anima al jugador (los copia el juego en cada cuadro).
+
+Además, la lanza y el escudo dejaron de ser un conjunto. La empuñadura «lanza y escudo» de la barra rápida
+(`QB_GRIP` 6, `GA_GRIP_SPEAR`) ahora es la lanza sola, y al cargar una partida su casilla pasa a ser la lanza como objeto
+(`QB_ITEM arma.larga.lanza`, `hud_load` en `src/game/hud_game.c`): usarla pone la lanza en la mano derecha sin tocar el
+escudo. Es lo único que cambió en los resúmenes de las partidas de referencia (la línea `barra`: `[1 6 ]` pasó a
+`[2 0 arma.larga.lanza]`), y se rehicieron con `--rehacer-resumenes`.
+
 ## El esquema congelado de las partidas planas
 
 `src/game/save_v1.inc` describe con números fijos los structs de las partidas planas (formato 1, hasta la v0.4.3). Se volcó una sola vez, con `sf_dump_c`, desde el esquema de la v0.4.4, que era idéntico al de la v0.4.3, y **no se regenera**: describe archivos viejos, no los structs de hoy.

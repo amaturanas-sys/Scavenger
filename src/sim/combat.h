@@ -14,9 +14,9 @@ typedef struct {
     float reach;    // alcance (m)
     float cooldown; // segundos entre golpes
     WoundKind wound;
-    bool spear;     // arma de asta: estocada
+    bool spear;     // arma de asta: estocada (la lanza y la pica, de punta: pierce; la guja y la alabarda, de filo)
     // Las armas de la estepa (fase 7):
-    bool pierce;       // pico: contra la armadura entra como una punta (el sagaris)
+    bool pierce;       // de punta: contra la armadura entra como una punta (el pico del sagaris, la estocada de la lanza)
     bool crush;        // cabeza pesada: abate mas y el casco para la mitad (la maza)
     bool stun;         // el golpe que entra aturde (el martillo del sagaris)
     bool clean_cut;    // corte limpio a caballo: no se traba y suma inercia (el sable)

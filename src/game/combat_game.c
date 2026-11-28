@@ -31,8 +31,7 @@
 
 #define HERBS_ID "utileria.consumible.hierbas"
 #define CAMP_RADIUS 14.0f
-#define DOWN_WAKE_SECONDS 25.0f // abatido y solo: muere y vuelve a su lugar de descanso
-#define DOWN_HELP_SECONDS 5.0f  // con la escolta cerca: lo levantan
+#define GUARD_BREAK_SECONDS 0.9f // la guardia cae sin aguante: el escudo apartado, sin poder cubrirse
 #define CORPSE_SECONDS 30.0f
 #define NPC_FAR 150.0f      // m: mas lejos, la IA del campamento va a menos frecuencia (y no se dibuja)
 #define GUARD_WALK 1.8f     // m/s haciendo la ronda
@@ -85,12 +84,19 @@ void cb_init(Combat *cb, unsigned seed) {
 bool cb_blocks_input(const Combat *cb) { return cb->player.down || cb->knock > 0.0f; } // abatido o derribado
 
 float cb_speed_scale(const Combat *cb) {
-    float s = health_speed_scale(&cb->player) * armor_speed_scale(&cb->armor);
+    // El ultimo aliento (src/sim/health.h): en pie, mas lento hasta sanar.
+    float s = health_speed_scale(&cb->player) * armor_speed_scale(&cb->armor) * last_breath_speed_scale(&cb->breath);
     if (cb->charge_timer > 0.0f) return s * 1.5f; // la carga con escudo, a toda carrera
     if (cb->blocking || cb->aiming) s *= 0.5f;
     if (cb->stagger > 0.0f) s *= 0.6f;
     if (cb->hostage) s *= HOSTAGE_SPEED; // con un rehen a cuestas
     return cb->player.down ? 1.0f : s;
+}
+
+// La fuerza de los golpes del jugador: las heridas de los brazos y la sangre (src/sim/health.h), y el ultimo aliento,
+// que saca fuerzas de donde no hay.
+static float player_attack_scale(const Combat *cb) {
+    return health_attack_scale(&cb->player) * last_breath_damage_scale(&cb->breath);
 }
 
 static void lower_first(char *s) {
@@ -599,6 +605,11 @@ static const RangedDef *drawn_ranged(const GameActions *ga) {
     return hands_out(&ga->hands, HAND_RIGHT) ? ranged_def(ga->hands.right.id) : NULL;
 }
 
+// La lanza ligera en la mano del arma (fuera): J la arroja en vez del parry (src/sim/ballistics.h, throw_def), o NULL.
+static const RangedDef *javelin_in_hand(const GameActions *ga) {
+    return hands_out(&ga->hands, HAND_RIGHT) ? throw_def(ga->hands.right.id) : NULL;
+}
+
 static Fighter fighter_player(const Combat *cb, const Player *p, const GameActions *ga, Vector3 from) {
     Fighter f = { 0 };
     f.ring = player_ring(ga);
@@ -1006,7 +1017,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
     int an = m == MOVE_GRAPPLE || m == MOVE_HOOK || m == MOVE_SHIELD_BASH ? -1 : fg_melee_target(ga, t, p->pos, p->yaw, reach, &ad);
     if (an >= 0 && (!e || ad < ed)) {
         float base = m == MOVE_LIGHT || m == MOVE_HEAVY ? w.damage * (m == MOVE_HEAVY ? 1.8f : melee_combo_scale(step)) : md->damage;
-        float dmg = combat_damage(base, hand * momentum * (1.0f + ig_stat(ga, STAT_MELEE)) * (1.0f - 0.35f * wg_clumsy(ga)), health_attack_scale(&cb->player),
+        float dmg = combat_damage(base, hand * momentum * (1.0f + ig_stat(ga, STAT_MELEE)) * (1.0f - 0.35f * wg_clumsy(ga)), player_attack_scale(cb),
                                   false, &cb->rng);
         fg_hurt(ga, an, dmg, m == MOVE_LIGHT || m == MOVE_HEAVY ? w.wound : WOUND_BRUISE, PART_RANDOM, 0, log, len);
         return;
@@ -1021,7 +1032,7 @@ static void player_move(Combat *cb, Player *p, GameActions *ga, const Terrain *t
         return;
     }
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
-    me.strength *= health_attack_scale(&cb->player) * hand;
+    me.strength *= player_attack_scale(cb) * hand;
     if (m == MOVE_GRAPPLE) me.strength *= 1.0f + ig_stat(ga, STAT_GRAPPLE_POWER); // amuletos del tigre y del oso
     me.strength *= momentum * (1.0f + ig_stat(ga, STAT_MELEE)) * (1.0f - 0.35f * wg_clumsy(ga)); // tatuajes, joyas, el aullido; borracho, menos
     MeleeResult r = melee_resolve(m, &me, &foe, weapon, step, &cb->rng);
@@ -1169,7 +1180,7 @@ static void player_parry(Combat *cb, Player *p, GameActions *ga, Props *props, c
     p->yaw = atan2f(e->pos.x - p->pos.x, e->pos.z - p->pos.z);
     ParryKind k = hands_parry_kind(&ga->hands); // con el arma, el del arma; solo el escudo, el del escudo
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
-    me.strength *= health_attack_scale(&cb->player) * (1.0f + ig_stat(ga, STAT_GRAPPLE_POWER));
+    me.strength *= player_attack_scale(cb) * (1.0f + ig_stat(ga, STAT_GRAPPLE_POWER));
     MeleeResult r = melee_parry(k, &me, &foe, &cb->rng);
     au_play(k == PARRY_GRAPPLE ? SND_PUNO : SND_PARRY, &e->pos, 1.0f);
     // El golpe del rival no llega a caer.
@@ -1187,13 +1198,18 @@ static void player_parry(Combat *cb, Player *p, GameActions *ga, Props *props, c
 }
 
 // Cuanto pasa de un ataque la guardia del jugador (1: todo). Con escudo, de frente, casi nada; con
-// el arma, la mitad (y cansa); contra flechas el arma no sirve.
-static float player_guard(Combat *cb, const Player *p, const GameActions *ga, Vector3 from, bool projectile) {
+// el arma, la mitad; contra flechas el arma no sirve. Lo que para cansa segun la fuerza que traia (force: su daño;
+// src/sim/melee.h, melee_guard_cost): un zarpazo de oso o una lanza, mas que una flecha.
+static float player_guard(Combat *cb, const Player *p, const GameActions *ga, Vector3 from, bool projectile, float force) {
     if (!cb->blocking) return 1.0f;
     float facing = facing_to(p->pos, p->yaw, from);
-    if (player_has_shield(ga)) return rng_float(&cb->rng) < combat_block_chance(true, facing) ? (projectile ? 0.1f : 0.15f) : 1.0f;
+    if (player_has_shield(ga)) {
+        if (rng_float(&cb->rng) >= combat_block_chance(true, facing)) return 1.0f;
+        player_stamina_spend(melee_guard_cost(force, false, true));
+        return projectile ? 0.1f : 0.15f;
+    }
     if (projectile || facing <= 0.35f) return 1.0f;
-    player_stamina_spend(0.1f);
+    player_stamina_spend(melee_guard_cost(force, false, false));
     return 0.5f;
 }
 
@@ -1203,7 +1219,7 @@ void cb_beast_strike(Combat *cb, Player *p, GameActions *ga, Troop *troop, int k
     lower_name(who, name, sizeof(name));
     if (kind == 0) { // el jugador: el escudo y la armadura cuentan
         if (cb->player.down) return;
-        float guard = player_guard(cb, p, ga, from, false);
+        float guard = player_guard(cb, p, ga, from, false, dmg);
         bool blocked = guard < 1.0f;
         dmg *= guard;
         float absorbed = 0.0f;
@@ -1351,7 +1367,7 @@ static void pose_member(BodyPose *b, const Npc *n, const Member *m, const Troop 
 static void shot_hits_player(Combat *cb, Shot *s, int part, Player *p, const GameActions *ga, char *log, size_t len) {
     const ProjectileDef *pd = projectile_def(s->p.kind);
     float dmg = projectile_damage(&s->p);
-    dmg *= player_guard(cb, p, ga, to_vec(s->p.pos), true); // el escudo la frena
+    dmg *= player_guard(cb, p, ga, to_vec(s->p.pos), true, dmg); // el escudo la frena (y el brazo lo siente)
     float absorbed = 0.0f;
     bool broke = false;
     int wi = combat_apply_hit(&cb->player, &cb->armor, &cb->rng, dmg, pd->wound, part, true, &absorbed, &broke);
@@ -1363,8 +1379,24 @@ static void shot_hits_player(Combat *cb, Shot *s, int part, Player *p, const Gam
     else snprintf(log, len, T("¡Una %s te alcanza! %s."), lower_name(T(pd->name), what, sizeof(what)), d);
 }
 
-static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, const Terrain *t, float time, float dt,
-                         char *log, size_t len) {
+// La lanza arrojada, al terminar su vuelo: queda en el suelo, derecha donde cayo (F la recoge); en el agua honda se
+// hunde. true si se hundio.
+static bool drop_javelin(Shot *s, Props *props, const Terrain *t) {
+    if (!s->item[0]) return false;
+    float x = s->p.pos.x, z = s->p.pos.z;
+    bool sunk = terrain_deep_water(t, x, z, 0.25f);
+    if (props && !sunk) props_add(props, s->item, (Vector3){ x, terrain_height(t, x, z), z }, atan2f(s->p.vel.x, s->p.vel.z));
+    s->item[0] = '\0';
+    return sunk;
+}
+
+// El daño de un disparo: el de su energia; lo que arroja el jugador con el ultimo aliento, mas.
+static float shot_damage(const Combat *cb, const Shot *s) {
+    return projectile_damage(&s->p) * (s->owner == 0 ? last_breath_damage_scale(&cb->breath) : 1.0f);
+}
+
+static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *props, const Terrain *t, float time,
+                         float dt, char *log, size_t len) {
     for (int si = 0; si < CB_MAX_SHOTS; si++) {
         Shot *s = &cb->shots[si];
         if (!s->p.alive) continue;
@@ -1382,8 +1414,8 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
         float reach = sqrtf(d.x * d.x + d.y * d.y + d.z * d.z) * 0.5f + 2.5f;
         float best_t = 2.0f;
         int kind = -1, idx = -1, part = -1; // kind: 0 jugador, 1 integrante, 2 enemigo, 3 animal
-        // Jugador.
-        if (s->owner != 0 && dist2(mid, p->pos) < reach) {
+        // Jugador (de rodillas o cayendo muerto, ya no: nadie lo remata).
+        if (s->owner != 0 && !cb->player.down && dist2(mid, p->pos) < reach) {
             BodyPose b;
             pose_player(&b, cb, p, time);
             float tt;
@@ -1425,6 +1457,8 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             Vector3 hit_at = to_vec(s->p.pos);
             au_play(SND_FLECHA, &hit_at, 1.0f); // se clava en un cuerpo (o en el pavés)
             const ProjectileDef *pd = projectile_def(s->p.kind);
+            float dmg = shot_damage(cb, s);
+            drop_javelin(s, props, t); // la lanza, despues del golpe, cae ahi
             if (kind == 2 && pavise_blocks(cb, &cb->enemies[idx], d)) { // se clava en el pavés
                 Enemy *e = &cb->enemies[idx];
                 if (e->target < 0 && s->owner == 0) e->target = 0;
@@ -1446,7 +1480,7 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
                 shot_hits_player(cb, s, part, p, ga, log, len);
             } else if (kind == 1) {
                 Member *m = &troop->members[idx];
-                combat_apply_hit(&m->health, &m->armor, &cb->rng, projectile_damage(&s->p), pd->wound, part, true, NULL, NULL);
+                combat_apply_hit(&m->health, &m->armor, &cb->rng, dmg, pd->wound, part, true, NULL, NULL);
                 ga->npcs[idx].hurt_anim = 0.3f;
                 char what[32];
                 if (s->p.kind == PROJ_BOLT) snprintf(log, len, T("Un virote alcanza a %s en %s."), m->name, part_name((BodyPart)part, false));
@@ -1455,13 +1489,12 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
                              part_name((BodyPart)part, false));
             } else if (kind == 3) {
                 int owner = s->owner > 0 ? s->owner : s->owner == 0 ? 0 : -1;
-                fg_hurt(ga, idx, projectile_damage(&s->p), pd->wound, part, owner, s->owner == 0 ? log : NULL, len);
+                fg_hurt(ga, idx, dmg, pd->wound, part, owner, s->owner == 0 ? log : NULL, len);
             } else {
                 Enemy *e = &cb->enemies[idx];
                 float absorbed = 0.0f;
                 bool broke = false;
-                int wi = combat_apply_hit(&e->h, &e->armor, &cb->rng, projectile_damage(&s->p), pd->wound, part, true,
-                                          &absorbed, &broke);
+                int wi = combat_apply_hit(&e->h, &e->armor, &cb->rng, dmg, pd->wound, part, true, &absorbed, &broke);
                 e->hit_anim = 0.3f;
                 e->shown = 6.0f;
                 if (s->owner == 0 && e->target < 0) e->target = 0;
@@ -1472,7 +1505,8 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
                     lower_name(T(enemy_def(e->kind)->name), who, sizeof(who));
                     if (was_down && e->state == EN_DEAD) { // rematar de un flechazo tambien es rematar
                         troop_finish_downed(troop);
-                        snprintf(log, len, T("Rematas al %s de un flechazo. Deja botín (F)."), who);
+                        snprintf(log, len, s->p.kind == PROJ_JAVELIN ? T("Rematas al %s de un lanzazo. Deja botín (F).")
+                                                                     : T("Rematas al %s de un flechazo. Deja botín (F)."), who);
                     } else if (e->state == EN_DEAD) snprintf(log, len, T("¡Diana! Matas al %s (%s)."), who, part_name((BodyPart)part, e->h.beast));
                     else if (e->state == EN_DOWN && !was_down) snprintf(log, len, T("¡Diana! El %s cae abatido (%s)."), who, part_name((BodyPart)part, e->h.beast));
                     else describe_hit(&e->h, wi, absorbed, broke, dsc, sizeof(dsc)), snprintf(log, len, T("Le das al %s: %s."), who, dsc);
@@ -1495,6 +1529,7 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             au_play(SND_FLECHA, &wall_at, 0.7f);
             s->stuck = true;
             s->life = 0.0f;
+            if (s->item[0]) s->p.alive = false, drop_javelin(s, props, t); // la lanza rebota en el muro y cae al pie
             continue;
         }
         // Suelo: se clava (o se hunde en el agua).
@@ -1509,12 +1544,20 @@ static void update_shots(Combat *cb, Player *p, GameActions *ga, Troop *troop, c
             Vector3 fell = to_vec(s->p.pos);
             bool wet = terrain_deep_water(t, s->p.pos.x, s->p.pos.z, 0.25f);
             au_play(wet ? SND_CHAPOTEO : SND_FLECHA, &fell, wet ? 0.6f : 0.45f);
-            if (wet) {
+            if (s->item[0]) { // la lanza se clava (queda en el suelo: F) o se hunde (quiza atraviese un pez)
+                bool javelin = s->owner == 0;
+                s->p.alive = false;
+                bool fish = wet && javelin && fg_shot_water(ga, t, to_vec(s->p.pos), true, log, len);
+                drop_javelin(s, props, t);
+                if (javelin && !fish) // el mensaje de ahora (log sigue mostrando el ultimo: «Arrojas la lanza»)
+                    snprintf(log, len, "%s", wet ? T("La lanza se hunde en el agua.") : T("La lanza se clava en el suelo: F para recogerla."));
+            } else if (wet) {
                 s->p.alive = false; // al agua (quiza atraviese un pez)
-                if (s->owner == 0) fg_shot_water(ga, t, to_vec(s->p.pos), log, len);
+                if (s->owner == 0) fg_shot_water(ga, t, to_vec(s->p.pos), false, log, len);
             }
         } else if (s->life > SHOT_LIFE) {
             s->p.alive = false;
+            drop_javelin(s, props, t);
         }
     }
 }
@@ -1588,6 +1631,50 @@ static void player_ranged(Combat *cb, Player *p, GameActions *ga, const Props *p
         cb->aiming = false;
     }
     if (!held) cb->draw = 0.0f;
+}
+
+// J con la lanza ligera en la mano (jd: src/sim/ballistics.h, throw_def): mantener la pone en alto, sobre el hombro, y
+// prepara el tiro (la mira, como con las flechas: con objetivo, la caida calculada; sin el, la camara); soltar la
+// arroja. La mano queda vacia y la lanza cae donde termina su vuelo (F la recoge: drop_javelin). Un toque en la casilla
+// J del HUD la prepara y la suelta sola, a plena fuerza.
+static float g_throw_anim; // s de la animacion de arrojarla (lanzar_lanza)
+static bool g_hud_throw;
+
+static void player_javelin(Combat *cb, Player *p, GameActions *ga, Props *props, const RangedDef *jd, bool can_act,
+                           float cam_yaw, float cam_pitch, float dt, char *log, size_t len) {
+    if (g_hud_parry && !cb->aiming) g_hud_throw = true;
+    bool held = input_action_down(KA_PARRY) || (g_hud_throw && cb->draw < jd->draw_time);
+    if (!held) g_hud_throw = false;
+    if (!can_act) {
+        cb->aiming = g_hud_throw = false;
+        cb->draw = 0.0f;
+        return;
+    }
+    cb->aim_pitch = aim_pitch_from_camera(cam_pitch);
+    bool was_aiming = cb->aiming;
+    if (held && !was_aiming && p->covered) p->covered = false, p->peeking = true; // te asomas para arrojarla (A4)
+    cb->aiming = held;
+    if (cb->aiming) {
+        if (!aim_at_target(cb, ga, ga->terrain, p, jd, fminf(1.0f, cb->draw / jd->draw_time))) p->yaw = cam_yaw;
+        cb->draw += dt;
+        return;
+    }
+    if (was_aiming && cb->draw > 0.05f) {
+        float charge = fminf(1.0f, cb->draw / jd->draw_time);
+        aim_at_target(cb, ga, ga->terrain, p, jd, charge);
+        float steady = (ga->mounted >= 0 ? 1.8f : 1.0f) * (1.0f + 1.5f * wg_clumsy(ga)); // a caballo, menos certera
+        char id[INV_ID_LEN];
+        snprintf(id, sizeof(id), "%s", ga->hands.right.id); // la mano se vacia: se copia antes
+        Shot *sh = fire(cb, jd, aim_origin(p->pos, p->yaw), p->yaw, cb->aim_pitch, charge, 0, false, steady);
+        if (sh) {
+            snprintf(sh->item, sizeof(sh->item), "%s", id);
+            if (ig_use(ga, props, p, id, 1) < 1 && bag_take(&ga->armory, id, 1, NULL) < 1) stock_take(ga_stock(ga), id, 1);
+            hands_clear(&ga->hands, HAND_RIGHT);
+            g_throw_anim = 0.6f;
+            snprintf(log, len, "%s", charge >= 0.95f ? T("¡Arrojas la lanza con todas tus fuerzas!") : T("Arrojas la lanza."));
+        }
+    }
+    cb->draw = 0.0f;
 }
 
 // --------------------------------------------------------------- enemigos
@@ -2352,10 +2439,35 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
         cb->player.hp_max = want;
     }
     health_update(&cb->player, &cb->rng, dt, !p->moving, healer + ig_stat(ga, STAT_STAMINA_REGEN));
-    // Desangrado: muere (ver player_dies).
-    if (cb->player.dead) {
-        player_dies(cb, p, ga, troop, t, camp_fire, T("Te desangras."), log, len);
+    // El ultimo aliento (src/sim/health.h): la primera vez sin vida (un golpe o la sangre), de rodillas; despues, en pie
+    // hasta sanar; sin vida otra vez, cae muerto y vuelve a su lugar de descanso (player_dies).
+    switch (last_breath_update(&cb->breath, &cb->player, dt)) {
+    case BREATH_EV_KNEEL:
+        if (ga->mounted >= 0) ga->animals[ga->mounted].ridden = false, ga->mounted = -1; // cae del caballo
+        cb->blocking = cb->aiming = false, cb->knock = cb->charge_timer = cb->draw = 0.0f;
+        snprintf(log, len, "%s", T("Caes de rodillas: es tu último aliento. Nadie remata a quien está así; respira..."));
+        break;
+    case BREATH_EV_RISE: {
+        const Member *helper = NULL; // la escolta, cerca: te venda al levantarte
+        for (int k = 0; k < troop->count && k < TROOP_MAX && !helper; k++)
+            if (ga->npcs[k].escort && troop->members[k].status == STATUS_ACTIVE && !troop->members[k].health.down &&
+                dist2(ga->npcs[k].pos, p->pos) < 20.0f)
+                helper = &troop->members[k];
+        if (helper) health_treat(&cb->player);
+        if (helper) snprintf(log, len, T("Te levantas con tu último aliento y %s te venda. Pegas más fuerte, pero vas más lento: sana antes de caer otra vez."), helper->name);
+        else snprintf(log, len, "%s", T("Te levantas con tu último aliento: pegas más fuerte, pero vas más lento y te cansas antes. Sana antes de caer otra vez."));
+        break;
+    }
+    case BREATH_EV_HEALED: snprintf(log, len, "%s", T("Te recuperas del último aliento: la vista se aclara."));
+        break;
+    case BREATH_EV_FALL:
+        cb->blocking = cb->aiming = false, cb->knock = cb->charge_timer = cb->draw = 0.0f;
+        snprintf(log, len, "%s", T("Ya no te quedan fuerzas: caes."));
+        break;
+    case BREATH_EV_DEAD:
+        player_dies(cb, p, ga, troop, t, camp_fire, T("Caíste sin haber sanado de tu último aliento."), log, len);
         return;
+    default: break;
     }
     // El curandero del campamento atiende al jugador.
     cb->healer_timer -= dt;
@@ -2376,25 +2488,16 @@ static void update_player(Combat *cb, Player *p, GameActions *ga, Troop *troop, 
     } else {
         tending = false;
     }
-    if (!cb->player.down) {
-        cb->down_timer = 0.0f;
-        return;
+    cb->down_timer = cb->player.down ? cb->down_timer + dt : 0.0f; // cuanto lleva en el suelo (de rodillas o cayendo)
+}
+
+void cb_test_breath(Combat *cb, const char *what) {
+    if (!what) return;
+    if (!strcmp(what, "en_pie") || !strcmp(what, "muerte")) { // ya levantado con el ultimo aliento
+        cb->breath.phase = BREATH_RISEN, cb->breath.timer = 0.0f;
+        cb->player.hp = LAST_BREATH_HP * cb->player.hp_max, cb->player.blood = LAST_BREATH_BLOOD;
     }
-    // Abatido: la escolta te levanta; si estas solo, despiertas en el campamento.
-    cb->down_timer += dt;
-    const Member *helper = NULL;
-    for (int k = 0; k < troop->count && k < TROOP_MAX; k++) {
-        const Npc *n = &ga->npcs[k];
-        const Member *m = &troop->members[k];
-        if (n->escort && m->status == STATUS_ACTIVE && !m->health.down && dist2(n->pos, p->pos) < 20.0f) helper = m;
-    }
-    if (helper && cb->down_timer > DOWN_HELP_SECONDS) {
-        health_treat(&cb->player);
-        health_revive(&cb->player);
-        snprintf(log, len, T("%s te levanta y te venda. ¡Sigue en pie!"), helper->name);
-    } else if (!helper && cb->down_timer > DOWN_WAKE_SECONDS) {
-        player_dies(cb, p, ga, troop, t, camp_fire, T("Nadie llega a socorrerte."), log, len);
-    }
+    if (strcmp(what, "en_pie") != 0) cb->player.hp = 0.0f, cb->player.down = true; // sin vida: de rodillas (o cae muerto)
 }
 
 // Los cuatro botones con un arma de mano (o sin armas): H ataque (suelta pronto, golpe y combo;
@@ -2453,7 +2556,8 @@ static void player_melee_input(Combat *cb, Player *p, GameActions *ga, Troop *tr
     bool running = p->stance == STANCE_RUN && p->moving;
     bool h_press = input_action_pressed(KA_ATTACK) || g_hud_attack_press;
     bool h_down = input_action_down(KA_ATTACK) || g_hud_attack_down;
-    bool parry_press = input_action_pressed(KA_PARRY) || g_hud_parry;    // J
+    // J: el parry (con la lanza ligera en la mano, J la arroja: player_javelin; con un rehen, lo empuja).
+    bool parry_press = (input_action_pressed(KA_PARRY) || g_hud_parry) && (cb->hostage || !javelin_in_hand(ga));
     bool charge_press = input_action_pressed(KA_CHARGE) || g_hud_charge; // L
     if (!can_fight) {
         cb->v_hold = 0.0f;
@@ -2617,7 +2721,7 @@ static void lance_charge(Combat *cb, Player *p, GameActions *ga, const Terrain *
         return;
     }
     Fighter me = fighter_player(cb, p, ga, e->pos), foe = fighter_enemy(e, p->pos);
-    me.strength *= lance_charge_damage(1.0f, speed) * health_attack_scale(&cb->player) * (1.0f + ig_stat(ga, STAT_MELEE));
+    me.strength *= lance_charge_damage(1.0f, speed) * player_attack_scale(cb) * (1.0f + ig_stat(ga, STAT_MELEE));
     MeleeResult r = melee_resolve(MOVE_HEAVY, &me, &foe, weapon, 1, &cb->rng);
     melee_sound(&r, MOVE_HEAVY, weapon, e->pos);
     bool heavy = w.mounted_only; // la lanza pesada
@@ -2724,6 +2828,8 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     cb->stagger = fmaxf(0.0f, cb->stagger - dt);
     cb->parry_cd = fmaxf(0.0f, cb->parry_cd - dt);
     cb->exposed = fmaxf(0.0f, cb->exposed - dt);
+    cb->guard_break = fmaxf(0.0f, cb->guard_break - dt);
+    g_throw_anim = fmaxf(0.0f, g_throw_anim - dt);
     if (cb->knock > 0.0f && (cb->knock -= dt) <= 0.0f && !cb->player.down) snprintf(log, log_len, "%s", T("Te levantas."));
     cb->knock = fmaxf(0.0f, cb->knock);
     // Velocidad real (para la inercia a caballo); un salto grande es un viaje, no una carrera.
@@ -2782,13 +2888,24 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     // Q/E: cambiar objetivo (izquierda/derecha)
     if (input_action_pressed(KA_TARGET_LEFT) && input_ok) cb_cycle_target(cb, ga, t, p, TARGET_LEFT, log, log_len);
     if (input_action_pressed(KA_TARGET_RIGHT) && input_ok) cb_cycle_target(cb, ga, t, p, TARGET_RIGHT, log, log_len);
-    // K: cubrirse. Con escudo, de frente; sin escudo, con el arma de mano, que cansa (agotado no se
-    // puede). A distancia, K baja el arma y solo cubre el escudo.
+    // K (mantenida): cubrirse. Con escudo, de frente; sin escudo, con el arma de mano. Los dos cansan: sostener la
+    // guardia gasta aguante y cada golpe parado, segun su fuerza (src/sim/melee.h, melee_guard_cost). Sin aguante la
+    // guardia cae (el golpe le aparta el escudo) y no vuelve hasta recobrar el aire. A distancia, K baja el arma y solo
+    // cubre el escudo.
     bool shield = player_has_shield(ga);
     bool melee_weapon = !rd && hands_attack_weapon(&ga->hands, 1, NULL)[0] != '\0';
     bool guard_key = input_action_down(KA_BLOCK) || g_hud_block;
+    bool was_blocking = cb->blocking;
     cb->blocking = can_act && guard_key && !ga->hands.sheathed && cb->stagger <= 0.0f && cb->exposed <= 0.0f && !cb->hostage &&
-                   (shield || (melee_weapon && !player_winded()));
+                   cb->guard_break <= 0.0f && (shield || melee_weapon) && !player_winded();
+    if (was_blocking && guard_key && player_winded() && !cb->player.down) { // el brazo ya no aguanta: la guardia cae
+        cb->blocking = false;
+        cb->guard_break = GUARD_BREAK_SECONDS;
+        cb->stagger = fmaxf(cb->stagger, GUARD_BREAK_SECONDS);
+        snprintf(log, log_len, "%s", shield ? T("Se te cansa el brazo: el escudo baja y quedas sin guardia (recobra el aliento).")
+                                           : T("Se te cansa el brazo: bajas el arma y quedas sin guardia (recobra el aliento)."));
+    }
+    player_stamina_guard(cb->blocking);
     // G: agarrar por la espalda (rehen) o soltarlo. Un golpe fuerte, caer o montar lo sueltan.
     Enemy *back = !cb->hostage && ga->mounted < 0 ? back_open(cb, p) : NULL;
     g_back = back ? (int)(back - cb->enemies) + 1 : 0;
@@ -2806,7 +2923,7 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
                                         : T("G agarra por la espalda (sin que te vean, o a uno aturdido). La mochila va con Mayús+G."));
     }
     g_jolt = false;
-    if (cb->hostage) snprintf(g_hint, sizeof(g_hint), "%s", T("Rehén: G lo suelta · H lo ejecuta · I lo empuja"));
+    if (cb->hostage) snprintf(g_hint, sizeof(g_hint), "%s", T("Rehén: G lo suelta · H lo ejecuta · J lo empuja"));
     else if (back) snprintf(g_hint, sizeof(g_hint), "%s", T("Por la espalda: H lo ejecuta en silencio · G lo toma de rehén"));
     if (rd && can_act && input_action_pressed(KA_LIGHT_ARROW)) light_arrow(cb, ga, rd, log, log_len);
     if (cb->arrow_lit) {
@@ -2824,12 +2941,17 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
         if (kick && can_act && cb->attack_cd <= 0.0f && cb->stagger <= 0.0f && ga->mounted < 0)
             player_move(cb, p, ga, t, props, MOVE_KICK, log, log_len);
     } else {
-        cb->aiming = false;
+        // J con la lanza ligera en la mano: arrojarla, como una flecha; mientras se prepara, ni golpe ni parry.
+        const RangedDef *jd = cb->hostage ? NULL : javelin_in_hand(ga);
+        if (jd) player_javelin(cb, p, ga, props, jd, can_act && cb->stagger <= 0.0f && cb->exposed <= 0.0f && !cb->blocking, cam_yaw,
+                               cam_pitch, dt, log, log_len);
+        else cb->aiming = g_hud_throw = false;
         // Golpear, parar o cargar desde la cobertura te saca de ella (A4).
         if (p->covered && (input_action_pressed(KA_ATTACK) || input_action_pressed(KA_PARRY) || input_action_pressed(KA_CHARGE) ||
                            g_hud_attack_press || g_hud_parry || g_hud_charge))
             p->covered = p->peeking = false;
-        player_melee_input(cb, p, ga, troop, t, props, can_act && cb->stagger <= 0.0f && cb->exposed <= 0.0f, dt, log, log_len);
+        if (!cb->aiming)
+            player_melee_input(cb, p, ga, troop, t, props, can_act && cb->stagger <= 0.0f && cb->exposed <= 0.0f, dt, log, log_len);
     }
     // Asomado con el arco: al dejar de apuntar (la flecha suelta), vuelves a cubrirte si sigues junto al
     // obstaculo (A4).
@@ -2852,12 +2974,15 @@ void cb_update(Combat *cb, Player *p, GameActions *ga, Troop *troop, Props *prop
     (void)winter;
     update_formations(cb, t, dt);
     update_enemies(cb, p, ga, troop, props, t, night, dt, log, log_len);
-    update_shots(cb, p, ga, troop, t, time, dt, log, log_len);
+    update_shots(cb, p, ga, troop, props, t, time, dt, log, log_len);
     update_companions(cb, ga, troop, props, p, t, dt, log, log_len);
     if (!cb->player.down) dg_track_rest(ga, props, p->pos, camp_fire, dt);
     update_player(cb, p, ga, troop, t, camp_fire, dt, log, log_len);
     // Animacion del jugador.
     ga->pl_down = cb->player.down;
+    ga->pl_dead = cb->breath.phase == BREATH_DYING; // cae muerto (de rodillas, con el ultimo aliento: abatido)
+    ga->pl_guard_broken = cb->guard_break > 0.0f;
+    ga->pl_javelin = cb->aiming && javelin_in_hand(ga) ? 1 : g_throw_anim > 0.0f ? 2 : 0;
     ga->pl_hit = cb->hit_anim > 0.0f;
     ga->pl_attacking = cb->attack_anim > 0.0f ? cb->combo : 0;
     ga->pl_blocking = cb->blocking || cb->charge_timer > 0.0f;
@@ -2946,6 +3071,13 @@ static void draw_shot(const Shot *s) {
     float l = sqrtf(d.x * d.x + d.y * d.y + d.z * d.z);
     if (l < 1e-4f) return;
     Vector3 tip = to_vec(s->p.pos);
+    if (s->p.kind == PROJ_JAVELIN) { // la lanza en vuelo: el asta entera (2,4 m) y la punta de hierro, sin plumas
+        Vector3 butt = { tip.x - d.x / l * 2.4f, tip.y - d.y / l * 2.4f, tip.z - d.z / l * 2.4f };
+        Vector3 neck = Vector3Lerp(butt, tip, 0.9f);
+        DrawCylinderEx(butt, neck, 0.02f, 0.02f, 5, (Color){ 128, 94, 58, 255 });
+        DrawCylinderEx(neck, tip, 0.035f, 0.0f, 5, (Color){ 150, 150, 158, 255 });
+        return;
+    }
     float len = s->p.kind == PROJ_STONE || s->p.kind == PROJ_BALL ? 0.0f : (s->p.kind == PROJ_BOLT ? 0.4f : 0.75f);
     if (len <= 0.0f) {
         DrawSphere(tip, s->p.kind == PROJ_STONE ? 0.04f : 0.02f, (Color){ 120, 116, 108, 255 });
@@ -3063,6 +3195,7 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
                                  .mounted = e->mounted && !dead,
                                  .building = -1, .dead = dead, .down = downed, .hit = e->hit_anim > 0.0f || struggling,
                                  .attacking = (e->attack_anim > 0.0f || e->windup > 0.0f) && !def->ranged ? 1 + i % 3 : 0,
+                                 .spear = e->armed && def->weapon && weapon_stats(def->weapon).spear, // la lanza: de punta
                                  .ranged = def->ranged && e->target >= 0 && e->speed < 0.2f ? 1 : 0,
                                  .limping = health_speed_scale(&e->h) < 0.85f,
                                  .grip = e->shield ? GRIP_WEAPON_SHIELD : e->armed ? GRIP_ONE_HANDED : GRIP_EMPTY,
@@ -3132,8 +3265,9 @@ void cb_draw_world(const Combat *cb, Props *props, const GameActions *ga, const 
         DrawCylinderEx(a, b, 0.035f, 0.025f, 5, (Color){ 120, 86, 54, 255 });
         DrawCylinderEx(b, (Vector3){ b.x + f.x * 0.35f, b.y - 0.03f, b.z + f.z * 0.35f }, 0.045f, 0.0f, 5, (Color){ 190, 190, 196, 255 });
     }
-    // La mira: la curva que hara el proyectil con la tension actual.
+    // La mira: la curva que hara el proyectil con la tension actual (la flecha, o la lanza que se va a arrojar).
     const RangedDef *rd = drawn_ranged(ga);
+    if (!rd) rd = javelin_in_hand(ga);
     if (cb->aiming && rd) {
         float charge = rd->draw_time > 0.0f ? fminf(1.0f, cb->draw / rd->draw_time) : 1.0f;
         V3 pts[90];
@@ -3212,11 +3346,35 @@ void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop
     }
 }
 
+// El ultimo aliento (src/sim/health.h): la vista se cierra como un tunel. Anillos de oscuridad escalonados (pixel a
+// pixel, como la interfaz: sin degradados ni texturas), en elipse a la medida de la pantalla; k [0, 1], cuanto se
+// cierra.
+static void draw_tunnel(int w, int h, float k) {
+    if (k <= 0.0f) return;
+    const int steps = 8;
+    // El claro del centro, mas chico cuanto mas; la sombra entera desde r1 (a 0,7, el medio de los bordes ya va a la
+    // mitad y las esquinas a tres cuartos).
+    float r0 = (float)h * (0.46f - 0.22f * k), r1 = (float)h * 0.58f;
+    rlPushMatrix();
+    rlTranslatef((float)w * 0.5f, (float)h * 0.5f, 0.0f);
+    rlScalef((float)w / (float)h, 1.0f, 1.0f); // los circulos, en elipse: las esquinas quedan tan oscuras como los bordes
+    for (int i = 0; i < steps; i++) {
+        float a = powf((float)(i + 1) / (float)steps, 1.3f) * fminf(1.0f, k * 1.1f);
+        float ri = r0 + (r1 - r0) * (float)i / (float)steps;
+        float ro = i == steps - 1 ? (float)h * 1.5f : r0 + (r1 - r0) * (float)(i + 1) / (float)steps;
+        DrawRing((Vector2){ 0.0f, 0.0f }, ri, ro, 0.0f, 360.0f, 64, (Color){ 8, 4, 6, (unsigned char)(250.0f * a) });
+    }
+    rlPopMatrix();
+}
+
+void cb_draw_tunnel(const Combat *cb, int w, int h) { draw_tunnel(w, h, last_breath_vignette(&cb->breath)); }
+
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h) {
     (void)troop;
     const Health *ph = &cb->player;
-    const char *txt = TextFormat("%s%s%s", health_state_name(ph), health_bleeding(ph) ? T(" · sangra") : "",
-                                 ph->sequela > 0.0f ? T(" · secuelas") : ""); // la mordida del tiburon: no se curan solas
+    const char *txt = TextFormat("%s%s%s%s", health_state_name(ph), health_bleeding(ph) ? T(" · sangra") : "",
+                                 ph->sequela > 0.0f ? T(" · secuelas") : "", // la mordida del tiburon: no se curan solas
+                                 cb->breath.phase == BREATH_RISEN ? T(" · último aliento") : "");
     Color col = health_bleeding(ph) || ph->down ? UI_CARNELIAN : ph->wound_count || ph->sequela > 0.0f ? UI_GOLD : UI_BONE;
     hud_vital(health_bleeding(ph) ? ICON_SANGRE : ICON_VIDA, txt, col, fmaxf(0.0f, ph->hp) / ph->hp_max, UI_CARNELIAN, right_x, y);
     DrawRectangle(right_x - 80, y + 18, (int)(80 * ph->blood), 2, UI_LAPIS); // sangre
@@ -3239,10 +3397,13 @@ void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, in
 
     if (g_hint[0] && !ph->down && !ga_in_cave()) ui_text_centered(g_hint, w / 2, h - 96, 10, UI_TURQUOISE); // en la cueva, el combate espera afuera
 
-    if (ph->down) {
-        DrawRectangle(0, 0, w, h, (Color){ 60, 0, 0, 90 });
-        ui_text_centered(T("Estás abatido"), w / 2, h / 2 - 30, 20, UI_CARNELIAN);
-        ui_text_centered(T("Si tu escolta está cerca, te levantará; si no, la tribu te buscará."), w / 2, h / 2 - 6, 10, UI_BONE);
+    if (cb->breath.phase == BREATH_KNEEL) { // de rodillas: cuanto falta para levantarse
+        int left = (int)ceilf(LAST_BREATH_KNEEL - cb->breath.timer);
+        ui_text_centered(T("Último aliento"), w / 2, h / 2 - 30, 20, UI_CARNELIAN);
+        ui_text_centered(TextFormat(T("De rodillas, recobras el aliento: te levantas en %d s."), left > 0 ? left : 0), w / 2, h / 2 - 6, 10, UI_BONE);
+        ui_text_centered(T("Si vuelves a quedarte sin vida antes de sanar, caerás muerto."), w / 2, h / 2 + 8, 10, UI_BONE_DIM);
+    } else if (cb->breath.phase == BREATH_DYING) {
+        ui_text_centered(T("Caes"), w / 2, h / 2 - 30, 20, UI_CARNELIAN);
     }
 }
 
@@ -3298,6 +3459,13 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
             icon = ICON_PATADA;
             title = T("Empujar al rehén");
             detail = T("J: lo empujas y cae de bruces, aturdido.");
+        } else if (i == 1 && javelin_in_hand(ga)) { // J con la lanza ligera en la mano: arrojarla
+            key = keymap_text(KA_PARRY);
+            icon = ICON_LANZA;
+            on = cb->aiming;
+            ok = free && cb->attack_cd <= 0.0f;
+            title = T("Arrojar la lanza");
+            detail = T("J mantener: la lanza en alto, apuntando (con objetivo, la caída se calcula sola); soltar: la arrojas. Queda donde cae: F la recoge.");
         } else if (i == 1) { // J: parry
             key = keymap_text(KA_PARRY);
             icon = ICON_PARADA;
@@ -3318,11 +3486,11 @@ void cb_draw_buttons(const Combat *cb, const GameActions *ga, int w, int h) {
             key = keymap_text(KA_BLOCK);
             icon = shield ? ICON_ESCUDO : ICON_COBERTURA;
             on = cb->blocking;
-            ok = free && !ga->hands.sheathed && !holding && (shield || rd || (weapon[0] && !player_winded()));
+            ok = free && !ga->hands.sheathed && !holding && (rd || ((shield || weapon[0]) && !player_winded() && cb->guard_break <= 0.0f));
             title = rd ? T("Bajar el arma") : shield ? T("Cubrirse") : T("Parar con el arma");
             detail = rd       ? T("K: baja el arma (si llevas escudo, te cubre).")
-                     : shield ? T("K mantener: el escudo cubre el frente. Con H, golpe de escudo.")
-                              : T("K mantener: paras con el arma; aguanta la mitad y cansa.");
+                     : shield ? T("K mantener: el escudo en alto cubre el frente; cansa (cada golpe, según su fuerza) y sin aguante la guardia cae. Con H, golpe de escudo.")
+                              : T("K mantener: paras con el arma; aguanta la mitad y cansa más que el escudo.");
         } else if (riding && lance_in_hand(ga)) { // L a caballo con lanza: en ristre
             key = keymap_text(KA_CHARGE);
             icon = ICON_LANZA;

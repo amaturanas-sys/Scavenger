@@ -19,8 +19,8 @@
 - El cuerpo de mujer (personaje.base.cuerpo_mujer): el maniqui femenino de la Universal Animation Library 2
   (Mannequin_F.glb, CC0), con el rig de la biblioteca (PAR_UAL: los huesos del maniqui; los dedos, a la mano).
 - --ual: UAL1_Standard.glb y UAL2_Standard.glb (arte/fuentes/animaciones, CC0, el mismo rig): los clips de DE_UAL
-  (llevar, hablar, lanzar, forjar, la estocada, el remate, construir, curar, encender, ensillar, cocinar), llevados al
-  maniqui como los de la malla; a una malla sin clips (el maniqui femenino), tambien idle, caminar y correr.
+  (llevar, hablar, lanzar, arrojar la lanza, forjar, el remate, construir, curar, encender, ensillar, cocinar), llevados
+  al maniqui como los de la malla; a una malla sin clips (el maniqui femenino), tambien idle, caminar y correr.
 
 Lo que hace, para cada id del inventario (personaje.base.cuerpo_comun, personaje.narrativo.protagonista...):
 1. Pone el esqueleto en pose T (desde el primer cuadro de Idle_A, girando cada hueso de los brazos y las piernas lo
@@ -32,8 +32,8 @@ Lo que hace, para cada id del inventario (personaje.base.cuerpo_comun, personaje
 4. La pose de reposo es la T con los brazos abajo: las medidas del inventario.
 5. El frente a +X (el del juego, tambien para los animados) y el alto del inventario.
 6. Los clips, con los nombres del juego (assets/animaciones.tsv); los que la biblioteca no tiene, con el mas
-   parecido (CLIPS) o armados con poses (sintetizar: la patada, la caida y el jinete a horcajadas). Sin el
-   desplazamiento de la raiz: el juego mueve al personaje.
+   parecido (CLIPS) o armados con poses (sintetizar: la patada, la caida, el jinete a horcajadas, la guardia con el
+   escudo, la estocada y la lanza en alto). Sin el desplazamiento de la raiz: el juego mueve al personaje.
 """
 import json
 import os
@@ -64,7 +64,8 @@ CLIPS = {
     "encender": "Farm_Harvest", "ensillar": "Farm_Harvest", "construir": "Farm_Harvest", "forjar": "Sword_Regular_B",
     "cocinar": "Farm_Harvest", "curar": "Farm_Harvest", "ataque_una_1": "Sword_Regular_A", "ataque_una_2": "Sword_Regular_B",
     "ataque_una_3": "Sword_Attack", "ataque_dos_1": "Sword_Attack", "ataque_dos_2": "Sword_Regular_B",
-    "ataque_dos_3": "Sword_Regular_A", "estocada_lanza": "Punch_Jab", "bloquear": "Sword_Block", "agarre": "Punch_Cross",
+    "ataque_dos_3": "Sword_Regular_A", "estocada_lanza": "_estocada", "bloquear": "_guardia", "agarre": "Punch_Cross",
+    "apuntar_lanza": "_apuntar_lanza", "lanzar_lanza": "Throw_Object", "guardia_rota": "Idle_Shield_Break",
     "derribo": "Shield_Dash_RM", "proyeccion": "Throw_Object", "ataque_pesado": "Sword_Attack_RM", "patada": "_patada",
     "patada_carrera": "_patada", "golpe_escudo": "Shield_OneShot", "carga_escudo": "Shield_Dash_RM",
     "enganchar_escudo": "Defend", "parry": "Sword_Block", "desvio": "Defend", "apunalar_espalda": "Punch_Jab",
@@ -114,7 +115,7 @@ DE_UAL = {
     "lanzar_lazo": ("OverhandThrow", None),
     "lanzar_trepa": ("OverhandThrow", None),
     "forjar": ("TreeChopping_Loop", None),          # golpes desde arriba, uno tras otro (era un tajo de espada)
-    "estocada_lanza": ("Sword_Dash", None),         # se tira adelante con el brazo extendido (era un puñetazo)
+    "lanzar_lanza": ("OverhandThrow", (0.3, 1.33)), # desde el brazo atras (apuntar_lanza): suelta la lanza y acompaña
     "ataque_una_3": ("Sword_Regular_C", None),      # el remate del combo, distinto de los otros dos
     "construir": ("Fixing_Kneeling", (1.0, 4.1)),   # de rodillas, trabajando con las manos (sin pararse en el bucle)
     "agacharse_trabajar": ("Fixing_Kneeling", (1.0, 4.1)),
@@ -125,7 +126,7 @@ DE_UAL = {
 }
 # Los rapidos (golpes, lanzamientos, martillazos), a 24 cuadros por segundo; los lentos, a 15 (el GLB pesa menos y el
 # juego interpola).
-UAL_RAPIDOS = {"lanzar", "lanzar_lazo", "lanzar_trepa", "forjar", "estocada_lanza", "ataque_una_3", "correr"}
+UAL_RAPIDOS = {"lanzar", "lanzar_lazo", "lanzar_trepa", "lanzar_lanza", "forjar", "ataque_una_3", "correr"}
 # Los de una malla sin clips propios (el maniqui femenino): los de su biblioteca, en vez de los de exported-model.glb.
 DE_UAL_SIN_MALLA = {"idle": ("Idle_Loop", None), "caminar": ("Walk_Loop", None), "correr": ("Sprint_Loop", None)}
 TIP = {"pelvis": "spine_01", "spine_01": "spine_02", "spine_02": "spine_03", "spine_03": "neck_01", "neck_01": "head",
@@ -287,6 +288,75 @@ def pierna_a(esq, T, R, lado, destino, polo):
     R[i_pie] = qmul(qconj(Q[esq.parent[i_pie]]), q_pie)
 
 
+def qeje(eje, ang):
+    """El giro de ang radianes alrededor de eje (normalizado)."""
+    eje = np.asarray(eje, float) / np.linalg.norm(eje)
+    return np.array([*(eje * np.sin(ang / 2.0)), np.cos(ang / 2.0)])
+
+
+def girar_a(esq, T, R, hueso, q_mundo):
+    """El hueso con ese giro en el mundo (sus hijos lo siguen)."""
+    _, Q = esq.mundo(T, R)
+    i = esq.idx[hueso]
+    p = esq.parent[i]
+    R[i] = qmul(qconj(Q[p]), q_mundo) if p >= 0 else np.asarray(q_mundo, float)
+    R[i] /= np.linalg.norm(R[i])
+
+
+def girar(esq, T, R, hueso, eje, ang):
+    """Gira el hueso (y lo que cuelga de el) ang radianes alrededor de eje, en el mundo."""
+    _, Q = esq.mundo(T, R)
+    girar_a(esq, T, R, hueso, qmul(qeje(eje, ang), Q[esq.idx[hueso]]))
+
+
+def reposo(esq):
+    """La pose de reposo del GLB (la de las matrices inversas de union) como la arma armar, pero sin la malla: desde
+    Idle_A, los brazos en T y despues abajo, un poco abiertos. Lo que se lleva en la mano o en el antebrazo va con su
+    hueso en esa pose (src/world/anclajes.inc): la lanza de la mano derecha, horizontal y hacia adelante (+Z, con el
+    brazo colgando); el escudo del antebrazo izquierdo, mirando afuera (+X). Los giros de la mano o del antebrazo,
+    respecto de esta pose, dicen hacia donde quedan. Es una aproximacion: armar encaja los brazos en los de la malla y
+    su mano y su antebrazo giran hasta 30 grados distinto; por eso armar vuelve a armar las poses de las armas con su
+    propio reposo (sintetizar_armas)."""
+    T, R = esq.pose_inicial("Idle_A")
+    for lado, sg in (("l", 1.0), ("r", -1.0)):
+        for paso in ((sg, 0.0, 0.0), (sg * 0.2, -1.0, 0.0)):  # en T (los brazos de la malla) y abajo (el reposo)
+            P, _ = esq.mundo(T, R)
+            hombro = P[esq.idx["upperarm_" + lado]]
+            destino = hombro + np.array(paso)
+            for b, c in (("upperarm_", "lowerarm_"), ("lowerarm_", "hand_"), ("hand_", "middle_01_")):
+                apuntar(esq, T, R, b + lado, c + lado, destino + (destino - hombro) * (0.3 if b == "hand_" else 0.0))
+    return esq.mundo(T, R)[1]
+
+
+def brazo(esq, T, R, lado, dir_brazo, dir_antebrazo):
+    """El brazo de un lado con el brazo (del hombro al codo) y el antebrazo (del codo a la muñeca) en esas direcciones
+    del mundo; la mano, siguiendo al antebrazo."""
+    for hueso, hijo, d in (("upperarm_", "lowerarm_", dir_brazo), ("lowerarm_", "hand_", dir_antebrazo)):
+        P, _ = esq.mundo(T, R)
+        apuntar(esq, T, R, hueso + lado, hijo + lado, P[esq.idx[hueso + lado]] + np.asarray(d, float))
+
+
+def torcer_hacia(esq, T, R, hueso, hijo, q_reposo, en_reposo, destino):
+    """Gira el hueso sobre su propio eje (de el a su hijo, que no se mueve) para que lo que en el reposo miraba hacia
+    en_reposo (la cara del escudo del antebrazo) mire lo mas posible hacia destino."""
+    P, Q = esq.mundo(T, R)
+    i, c = esq.idx[hueso], esq.idx[hijo]
+    eje = (P[c] - P[i]) / np.linalg.norm(P[c] - P[i])
+    n = qrot(qmul(Q[i], qconj(q_reposo)), np.asarray(en_reposo, float))
+    def en_plano(v):
+        v = np.asarray(v, float) - (np.asarray(v, float) @ eje) * eje
+        return v / np.linalg.norm(v)
+    a, b = en_plano(n), en_plano(destino)
+    girar_a(esq, T, R, hueso, qmul(qeje(eje, float(np.arctan2(np.cross(a, b) @ eje, a @ b))), Q[i]))
+
+
+def pies_quietos(esq, T, R, tobillos):
+    """Las dos piernas con los tobillos donde estaban (tobillos: {lado: punto}), las rodillas adelante: la pelvis se
+    mueve (una estocada, la guardia) sin que los pies resbalen."""
+    for lado, sg in (("l", 1.0), ("r", -1.0)):
+        pierna_a(esq, T, R, lado, tobillos[lado], (sg * 0.15, 0.0, 1.0))
+
+
 def sintetizar(esq):
     """Los clips que la biblioteca no tiene, armados con poses (en el espacio del esqueleto: el frente a +Z, la
     derecha a -X):
@@ -325,6 +395,65 @@ def sintetizar(esq):
         codo = P[esq.idx["lowerarm_" + lado]]
         apuntar(esq, Tm, Rm, "lowerarm_" + lado, "hand_" + lado, codo + np.array([-sg * 0.3, -1.0, 1.0]))
     esq.clips["_montar"] = clip_de_poses(esq, [(Tm, Rm), (Tm, Rm)], [0.0, 0.5])
+    sintetizar_armas(esq)
+
+
+def sintetizar_armas(esq, QR=None):
+    """La guardia, la estocada y la lanza en alto, armadas desde Idle_Shield (el pie izquierdo adelante), con lo que se
+    lleva orientado desde el reposo del GLB (QR: el giro en el mundo de cada hueso en ese reposo, sin el cuarto de vuelta
+    de la raiz; armar pasa el de cada cuerpo, el de su malla, porque reposo(esq), el del esqueleto solo, gira la mano y el
+    antebrazo hasta 30 grados distinto): la lanza de la mano derecha queda horizontal y hacia adelante con la mano en el
+    giro del reposo (en alto, dada vuelta), y el escudo del antebrazo izquierdo mira al frente (torcer_hacia).
+    - _guardia (bloquear, mientras se mantiene K): un poco agachado e inclinado adelante, el brazo izquierdo adelante y
+      el antebrazo cruzado delante del pecho, hacia la derecha y arriba: el escudo en alto, de frente;
+    - _estocada (estocada_lanza): la mano derecha atras de la cadera, y adelante: el brazo empuja, el hombro derecho
+      gira adelante y la pelvis carga sobre la pierna de adelante, sin que los pies resbalen; y vuelve;
+    - _apuntar_lanza: el brazo derecho afuera y el antebrazo arriba, la lanza sobre el hombro apuntando adelante (un
+      poco arriba), el hombro derecho atras; el escudo, como en la guardia."""
+    QR = reposo(esq) if QR is None else QR
+    q_mano, q_antebrazo = QR[esq.idx["hand_r"]], QR[esq.idx["lowerarm_l"]]
+    X, Y, Z = np.eye(3)
+    pel = esq.idx["pelvis"]
+    raiz = esq.parent[pel]
+
+    def base(bajar=0.0, adelante=0.0, giro=0.0, inclinar=0.0):
+        """Idle_Shield con la pelvis mas abajo y adelante (en unidades del esqueleto: ~1,9 m), el tronco girado (el
+        hombro derecho adelante con giro > 0) e inclinado adelante, y los pies donde estaban."""
+        T, R = esq.pose_inicial("Idle_Shield")
+        P, Q = esq.mundo(T, R)
+        tobillos = {l: P[esq.idx["foot_" + l]].copy() for l in ("l", "r")}
+        T[pel] = T[pel] + qrot(qconj(Q[raiz]), np.array([0.0, -bajar, adelante]))
+        girar(esq, T, R, "spine_01", Y, giro)
+        girar(esq, T, R, "spine_01", X, inclinar)
+        pies_quietos(esq, T, R, tobillos)
+        return T, R
+
+    def escudo_al_frente(T, R, abajo=0.0):
+        """El brazo izquierdo adelante y el antebrazo cruzado delante del pecho, casi horizontal; la cara del escudo, al
+        frente. La cara solo gira alrededor del antebrazo (es perpendicular a el): con el antebrazo hacia adelante
+        (0,48), quedaba 30 grados hacia afuera; cruzado (0,1), a unos 8."""
+        brazo(esq, T, R, "l", (0.25, -0.45 - abajo, 0.86), (-0.9, 0.42 - abajo, 0.1))
+        torcer_hacia(esq, T, R, "lowerarm_l", "hand_l", q_antebrazo, X, (0.0, 0.15, 1.0))
+
+    Tg, Rg = base(bajar=0.025, inclinar=0.1)
+    escudo_al_frente(Tg, Rg)
+    esq.clips["_guardia"] = clip_de_poses(esq, [(Tg, Rg), (Tg, Rg)], [0.0, 0.5])
+
+    def estocada(T, R, d_brazo, d_antebrazo):
+        brazo(esq, T, R, "r", d_brazo, d_antebrazo)
+        # La mano como en el reposo (la lanza horizontal, adelante), y la punta 0,15 rad hacia adentro: desde la cadera
+        # derecha, la lanza cruza delante del cuerpo hacia el blanco.
+        girar_a(esq, T, R, "hand_r", qmul(qeje(Y, 0.15), q_mano))
+        return T, R
+    Ta, Ra = estocada(*base(giro=-0.15), (-0.15, -0.75, -0.65), (-0.05, -1.0, 0.1))  # atras de la cadera
+    Tb, Rb = estocada(*base(bajar=0.02, adelante=0.045, giro=0.3, inclinar=0.12), (-0.12, -0.35, 0.93), (0.0, -0.8, 0.6))
+    esq.clips["_estocada"] = clip_de_poses(esq, [(Ta, Ra), (Ta, Ra), (Tb, Rb), (Tb, Rb), (Ta, Ra)], [0.0, 0.08, 0.2, 0.3, 0.55])
+
+    Tl, Rl = base(giro=-0.3, inclinar=-0.04)
+    escudo_al_frente(Tl, Rl, abajo=0.1)
+    brazo(esq, Tl, Rl, "r", (-0.8, 0.25, -0.3), (0.1, 1.0, -0.05))
+    girar_a(esq, Tl, Rl, "hand_r", qmul(qeje(X, -0.15), qmul(qeje(Z, np.pi), q_mano)))  # dada vuelta: la mano arriba
+    esq.clips["_apuntar_lanza"] = clip_de_poses(esq, [(Tl, Rl), (Tl, Rl)], [0.0, 0.5])
 
 
 # ------------------------------------------------------------------ la malla
@@ -705,6 +834,9 @@ def armar(esq, malla_t, it, log=print, ual=()):
         abajo = hombro + np.array([sg * 0.2, -1.0, 0.0])
         for b, c in (("upperarm_", "lowerarm_"), ("lowerarm_", "hand_"), ("hand_", "middle_01_")):
             apuntar(esq, TI, RI, b + lado, c + lado, abajo + (abajo - hombro) * (0.3 if b == "hand_" else 0.0))
+    # La guardia, la estocada y la lanza en alto, otra vez con el giro de la mano y del antebrazo en ESTE reposo (el de la
+    # malla de este cuerpo): lo que se lleva en ellos (src/world/anclajes.inc) sale de este reposo.
+    sintetizar_armas(esq, esq.mundo(TI, RI)[1])
     RI[root] = qmul(yaw, RI[root])
     PI, QI = esq.mundo(TI, RI)
     # Cada vertice, llevado por sus huesos de la pose T a la de reposo.

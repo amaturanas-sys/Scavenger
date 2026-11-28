@@ -78,6 +78,7 @@ static bool parse_line(const char *p, const char *eol, InvItem *it) {
         if (!strcmp(state, STATE_NAMES[s])) it->state = (InvState)s;
     it->texture = strstr(tags, "formato:textura") != NULL;
     it->voxel = strstr(tags, "formato:voxel") != NULL;
+    it->collect = strstr(tags, "uso:recolectable") != NULL;
     it->hands = strstr(tags, "manos:una")      ? INV_HANDS_ONE
                 : strstr(tags, "manos:dos")    ? INV_HANDS_TWO
                 : strstr(tags, "manos:escudo") ? INV_HANDS_SHIELD
