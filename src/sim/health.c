@@ -182,6 +182,57 @@ void health_revive(Health *h) {
     h->down = false;
 }
 
+BreathEvent last_breath_update(LastBreath *lb, Health *h, float dt) {
+    lb->timer += dt;
+    switch (lb->phase) {
+    case BREATH_NONE:
+        if (!h->down && !h->dead) return BREATH_EV_NONE;
+        // La primera vez, de rodillas: aunque el golpe fuera de muerte, todavia no.
+        lb->phase = BREATH_KNEEL, lb->timer = 0.0f;
+        h->dead = false, h->down = true;
+        return BREATH_EV_KNEEL;
+    case BREATH_KNEEL:
+        h->dead = false, h->down = true; // de rodillas ni se muere ni se levanta antes de tiempo
+        if (lb->timer < LAST_BREATH_KNEEL) return BREATH_EV_NONE;
+        lb->phase = BREATH_RISEN, lb->timer = 0.0f;
+        h->hp = fmaxf(h->hp, LAST_BREATH_HP * h->hp_max);
+        h->blood = fmaxf(h->blood, LAST_BREATH_BLOOD);
+        for (int i = 0; i < h->wound_count; i++) h->wounds[i].bleeding = false; // se las aprieta: ya no sangran
+        h->down = false;
+        return BREATH_EV_RISE;
+    case BREATH_RISEN:
+        if (h->down || h->dead) { // sin haber sanado, otra vez sin vida: cae muerto
+            lb->phase = BREATH_DYING, lb->timer = 0.0f;
+            h->dead = h->down = true;
+            return BREATH_EV_FALL;
+        }
+        if (h->hp < LAST_BREATH_HEALED * h->hp_max || h->blood < LAST_BREATH_HEALED) return BREATH_EV_NONE;
+        lb->phase = BREATH_NONE, lb->timer = 0.0f; // sano: el ultimo aliento vuelve a estar ahi
+        return BREATH_EV_HEALED;
+    case BREATH_DYING:
+        h->dead = h->down = true;
+        if (lb->timer < LAST_BREATH_DEATH) return BREATH_EV_NONE;
+        lb->phase = BREATH_NONE, lb->timer = 0.0f;
+        return BREATH_EV_DEAD; // el juego lo lleva a su lugar de descanso y lo revive
+    default:
+        lb->phase = BREATH_NONE, lb->timer = 0.0f;
+        return BREATH_EV_NONE;
+    }
+}
+
+float last_breath_damage_scale(const LastBreath *lb) { return lb->phase == BREATH_RISEN ? 1.35f : 1.0f; }
+float last_breath_speed_scale(const LastBreath *lb) { return lb->phase == BREATH_RISEN ? 0.8f : 1.0f; }
+float last_breath_endurance_scale(const LastBreath *lb) { return lb->phase == BREATH_RISEN ? 0.6f : 1.0f; }
+
+float last_breath_vignette(const LastBreath *lb) {
+    switch (lb->phase) {
+    case BREATH_KNEEL: return clampf(lb->timer / 2.0f, 0.0f, 1.0f) * 0.85f; // se le nubla la vista
+    case BREATH_RISEN: return 0.7f;                                         // el tunel, hasta sanar
+    case BREATH_DYING: return 0.85f + 0.15f * clampf(lb->timer / LAST_BREATH_DEATH, 0.0f, 1.0f);
+    default: return 0.0f;
+    }
+}
+
 bool health_bleeding(const Health *h) {
     for (int i = 0; i < h->wound_count; i++)
         if (h->wounds[i].bleeding) return true;

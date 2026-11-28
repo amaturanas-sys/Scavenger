@@ -10,8 +10,24 @@ const ProjectileDef *projectile_def(ProjectileKind k) {
         [PROJ_BOLT] = { N_("Virote"), "proyectil.virote.comun", 0.060f, 0.00015f, 3.2f, WOUND_CUT },
         [PROJ_BALL] = { N_("Bala"), "proyectil.bala.mosquete", 0.030f, 0.00008f, 3.0f, WOUND_CUT },
         [PROJ_STONE] = { N_("Piedra"), "proyectil.piedra.honda", 0.050f, 0.00030f, 3.0f, WOUND_BRUISE },
+        // La lanza ligera, de unos 800 g: sale a unos 22 m/s, el aire casi no la frena y llega con mas energia que una
+        // flecha (unos 190 J): una punta que entra (WOUND_CUT, y la armadura la para como a un proyectil).
+        [PROJ_JAVELIN] = { N_("Lanza"), "arma.larga.lanza", 0.80f, 0.0006f, 2.8f, WOUND_CUT },
     };
     return &defs[(unsigned)k < PROJ_COUNT ? k : 0];
+}
+
+const RangedDef *throw_def(const char *id) {
+    // Se prepara el tiro en medio segundo (el brazo atras); a plena fuerza, unos 190 J.
+    static const RangedDef defs[] = {
+        { "arma.larga.lanza", PROJ_JAVELIN, 190.0f, 0.5f, 0.6f, 0.03f, 0.6f },
+        { "arma.larga.lanza_bronce", PROJ_JAVELIN, 190.0f, 0.5f, 0.6f, 0.03f, 0.6f },
+        { "arma.larga.lanza_acero", PROJ_JAVELIN, 190.0f, 0.5f, 0.6f, 0.03f, 0.6f },
+    };
+    if (!id || !id[0]) return NULL;
+    for (size_t i = 0; i < sizeof(defs) / sizeof(defs[0]); i++)
+        if (!strcmp(defs[i].weapon, id)) return &defs[i];
+    return NULL;
 }
 
 const RangedDef *ranged_def(const char *id) {

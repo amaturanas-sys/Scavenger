@@ -47,8 +47,11 @@ humanoide	ataque_una_3	Combo a una mano, golpe 3 (remate).	no	*	obligatoria	comb
 humanoide	ataque_dos_1	Combo a dos manos, golpe 1.	no	*	obligatoria	combate
 humanoide	ataque_dos_2	Combo a dos manos, golpe 2.	no	*	obligatoria	combate
 humanoide	ataque_dos_3	Combo a dos manos, golpe 3.	no	*	obligatoria	combate
-humanoide	estocada_lanza	Estocada con lanza.	no	*	obligatoria	combate
-humanoide	bloquear	Cubrirse con el escudo o el arma.	si	*	obligatoria	bloqueo (J)
+humanoide	estocada_lanza	Estocada con lanza: la punta adelante, el brazo empuja y el cuerpo carga (golpe y golpe pesado).	no	*	obligatoria	combate
+humanoide	apuntar_lanza	La lanza ligera en alto, sobre el hombro, lista para arrojarla.	si	*	obligatoria	arrojar la lanza (J mantenida)
+humanoide	lanzar_lanza	Arrojar la lanza ligera por encima del hombro.	no	*	obligatoria	arrojar la lanza (J soltada)
+humanoide	bloquear	Cubrirse: el escudo en alto, delante del pecho, mientras se mantiene la tecla (o el arma cruzada).	si	*	obligatoria	bloqueo (K)
+humanoide	guardia_rota	Sin aguante, el golpe le aparta el escudo: la guardia cae.	no	*	obligatoria	bloqueo (K)
 humanoide	agarre	Agarrar al rival (grappling).	no	*	obligatoria	parry (K) con las manos o una daga
 humanoide	derribo	Derribar al rival agarrado.	no	*	obligatoria	parry (K) con las manos o una daga
 humanoide	proyeccion	Proyectar al rival por encima.	no	*	obligatoria	combate
@@ -58,7 +61,7 @@ humanoide	patada_carrera	Patada a la carrera, con inercia (tumba aun con escudo)
 humanoide	golpe_escudo	Empujón con el escudo (aturde).	no	*	obligatoria	bloqueo + ataque (J y H)
 humanoide	carga_escudo	Carga tras el escudo, que empuja.	no	*	obligatoria	carga o patada (L) con escudo
 humanoide	enganchar_escudo	Enganchar el escudo enemigo con el arma y tirar.	no	*	obligatoria	parry (K) con hacha o guja
-humanoide	parry	Parry: el arma se cruza ante el golpe que llega (en la ventana justa).	no	*	obligatoria	parry (K)
+humanoide	parry	Parry: el arma se cruza ante el golpe que llega (en la ventana justa).	no	*	obligatoria	parry (J)
 humanoide	desvio	Desvío: el golpe enemigo resbala por el arma y el rival queda abierto.	no	*	obligatoria	parry (K) con otras armas
 humanoide	apunalar_espalda	Por la espalda: tapa la boca y apuñala; el otro cae sin un grito.	no	*	obligatoria	K con la espalda ganada; K con un rehén
 humanoide	sujetar_rehen	Sujeta a un rehén por el cuello, delante, con el brazo libre.	si	*	obligatoria	G con la espalda ganada
@@ -72,8 +75,8 @@ humanoide	recargar_ballesta	Recargar la ballesta.	no	*	obligatoria	combate a dis
 humanoide	disparar_mosquete	Disparar el mosquete.	no	*	opcional	combate a distancia
 humanoide	recargar_mosquete	Recargar el mosquete.	no	*	opcional	combate a distancia
 humanoide	recibir_golpe	Reacción al golpe.	no	*	obligatoria	combate
-humanoide	morir	Caer muerto.	no	*	obligatoria	combate
-humanoide	abatido	En el suelo, herido sin poder levantarse (respira, se queja).	si	*	obligatoria	salud
+humanoide	morir	Caer muerto (el jugador, si se queda sin vida otra vez antes de sanar del último aliento).	no	*	obligatoria	combate
+humanoide	abatido	De rodillas, herido sin poder levantarse (respira, se queja); el último aliento del jugador.	si	*	obligatoria	salud
 humanoide	cojear	Caminar cojeando por una herida en la pierna.	si	*	obligatoria	salud
 humanoide	vendar	Vendar una herida (propia o ajena).	no	*	opcional	salud
 humanoide	hablar	Gesticular al hablar.	si	*	obligatoria	diálogos

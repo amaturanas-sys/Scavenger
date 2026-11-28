@@ -1,14 +1,17 @@
 // Combate, salud y heridas en el juego. Conecta src/sim/health.h y
 // src/sim/combat.h con el jugador, la tribu, los enemigos y la interfaz:
-//  - salud del jugador: vida, sangre y heridas; abatido, lo levanta la escolta
-//    o despierta en el campamento;
+//  - salud del jugador: vida, sangre y heridas; la primera vez que se queda sin vida, el ultimo
+//    aliento (src/sim/health.h): de rodillas 10 s y en pie con mas fuerza, mas lento y viendo como
+//    por un tunel; si se queda sin vida otra vez antes de sanar, cae muerto y vuelve a su lugar de
+//    descanso;
 //  - cuerpo a cuerpo (src/sim/melee.h) con cuatro botones, como en las hojas
-//    (docs/PLAN_TACTICO_Y_CUEVAS.md): H ataque (combo; mantener: pesado), J parry en
-//    la ventana justa del golpe que anuncia el rival (engancha, hace la llave o
-//    desvia, segun el arma; solo con el escudo, lo desvia y lo aturde), K bloqueo
-//    (escudo, o el arma, que cansa), L carga con escudo o patada; K + H golpe de
-//    escudo; lo que hacen depende de lo que esta fuera (la espada, el escudo o los
-//    dos); los enemigos y la escolta usan las mismas reglas;
+//    (docs/PLAN_TACTICO_Y_CUEVAS.md): H ataque (combo; mantener: pesado; con lanza, de punta), J
+//    parry en la ventana justa del golpe que anuncia el rival (engancha, hace la llave o desvia,
+//    segun el arma; solo con el escudo, lo desvia y lo aturde; con la lanza ligera en la mano, J la
+//    arroja: mantener prepara el tiro, soltar la lanza), K bloqueo mantenido (escudo, o el arma:
+//    los dos cansan, al sostenerlos y con cada golpe; sin aguante la guardia cae), L carga con
+//    escudo o patada; K + H golpe de escudo; lo que hacen depende de lo que esta fuera (la espada,
+//    el escudo o los dos); los enemigos y la escolta usan las mismas reglas;
 //  - objetivo: O pasa al siguiente (Mayus+O, al anterior); clic izquierdo/derecho recorren
 //    como Ctrl+Q/Ctrl+E y Ctrl inicia o suelta la seleccion; anillo bajo los pies y su barra resaltada;
 //    se pierde a 25 m;
@@ -130,6 +133,7 @@ typedef struct {
     V3 dir;     // direccion al clavarse (para dibujarlo)
     bool burning; // flecha encendida: quema y prende lo que toca
     bool parthian; // del jugador, al galope y hacia atras: el disparo parto (src/sim/riding.h)
+    char item[INV_ID_LEN]; // la lanza arrojada (su id): al terminar el vuelo queda en el suelo y se recoge con F
 } Shot;
 
 typedef struct {
@@ -179,6 +183,9 @@ typedef struct {
     float couch_cd;    // espera hasta la proxima carga
     // El ejercito de los reinos (fase 8b).
     Formation formations[CB_FORMATIONS];
+    // El ultimo aliento del jugador (src/sim/health.h) y la guardia que cae sin aguante (s que dura la animacion).
+    LastBreath breath;
+    float guard_break;
 } Combat;
 
 void cb_init(Combat *cb, unsigned seed);
@@ -199,6 +206,9 @@ void cb_test_raid(Combat *cb, const GameActions *ga, const Player *p, const Terr
 // Prueba (--espalda, --rehen): el jugador, en sigilo, a la espalda del primer enemigo, que no lo
 // vio; con hostage, ademas lo toma de rehen.
 void cb_test_back(Combat *cb, Player *p, bool hostage, char *log, size_t len);
+// Prueba (--ultimo-aliento): "rodillas" deja al jugador sin vida (cae de rodillas); "en_pie", ya levantado con el
+// ultimo aliento; "muerte", levantado y sin vida otra vez (cae muerto).
+void cb_test_breath(Combat *cb, const char *what);
 // O: el objetivo siguiente (dir 1) o el anterior (-1, Mayus+O), en orden alrededor del jugador.
 void cb_cycle_target(Combat *cb, const GameActions *ga, const Terrain *t, const Player *p,
                      int dir, char *log, size_t len);
@@ -234,6 +244,9 @@ void cb_draw_overlay(const Combat *cb, const GameActions *ga, const Troop *troop
 float cb_capture_dist(void);
 void cb_request_capture(void);
 void cb_request_bandage(void);     // como pulsar B (desde el HUD)
+// El halo oscuro del ultimo aliento (vision en tunel, src/sim/health.h: last_breath_vignette), sobre la escena y
+// debajo de todo el HUD: main lo dibuja antes que el resto.
+void cb_draw_tunnel(const Combat *cb, int w, int h);
 void cb_draw_hud(const Combat *cb, const GameActions *ga, const Troop *troop, int right_x, int y, int w, int h);
 // Prueba: hace aparecer enemigos cerca del jugador ("bandidos", "culto", "arqueros"),
 // o fieras por nombre ("lobos", "tigre", "jabali"...).

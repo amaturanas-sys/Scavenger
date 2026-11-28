@@ -50,9 +50,12 @@ bool player_winded(void);
 void player_stamina_spend(float amount);
 // Gasta (corriendo) o recupera el aguante en dt: lo hace player_update; en una cueva, src/game/cave_game.c.
 void player_stamina_tick(bool running, bool moving, float dt);
-// Cuanto rinde el aguante [0,3, 1]: con secuelas (src/sim/health.h, health_endurance_scale) correr y saltar cansan
-// mas y se recupera mas despacio. Lo pone main cada cuadro.
+// Cuanto rinde el aguante [0,3, 1]: con secuelas (src/sim/health.h, health_endurance_scale) o con el ultimo aliento
+// (last_breath_endurance_scale) correr y saltar cansan mas y se recupera mas despacio. Lo pone main cada cuadro.
 void player_set_endurance(float k);
+// La guardia en alto (K, la pone src/game/combat_game.c cada cuadro): mientras dura, gasta aguante (GUARD_HOLD_COST
+// por segundo, src/sim/melee.h) en vez de recobrarlo.
+void player_stamina_guard(bool guarding);
 const char *stance_name(Stance s);
 
 #endif

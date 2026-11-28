@@ -92,6 +92,30 @@ void health_daily(Health *h, float healer);
 // Revive a alguien abatido (no muerto): queda con poca vida y sangre.
 void health_revive(Health *h);
 
+// El ultimo aliento del jugador. La primera vez que se queda sin vida no cae: queda de rodillas LAST_BREATH_KNEEL s
+// (abatido: nadie lo remata) y se levanta sacando fuerzas, con la vida y la sangre justas y las heridas apretadas (no
+// sangran, pero no estan vendadas). Hasta que sana (la vida y la sangre sobre LAST_BREATH_HEALED), pega mas fuerte, va
+// mas lento, el aguante le rinde menos y ve como por un tunel; si en ese tiempo vuelve a quedarse sin vida, cae muerto:
+// LAST_BREATH_DEATH s la animacion de morir, y el juego lo devuelve a su lugar de descanso (src/game/death_game.c).
+// Las fases crecen al final (se guardan como numeros, docs/PARTIDAS.md).
+typedef enum { BREATH_NONE, BREATH_KNEEL, BREATH_RISEN, BREATH_DYING } BreathPhase;
+typedef enum { BREATH_EV_NONE, BREATH_EV_KNEEL, BREATH_EV_RISE, BREATH_EV_HEALED, BREATH_EV_FALL, BREATH_EV_DEAD } BreathEvent;
+typedef struct {
+    int phase;   // BreathPhase
+    float timer; // s en la fase de ahora
+} LastBreath;
+#define LAST_BREATH_KNEEL 10.0f
+#define LAST_BREATH_HP 0.35f     // la vida con que se levanta (de la maxima)
+#define LAST_BREATH_BLOOD 0.5f   // y la sangre
+#define LAST_BREATH_HEALED 0.7f  // sanado: la vida (de la maxima) y la sangre, sobre esto
+#define LAST_BREATH_DEATH 3.5f   // s cayendo muerto antes de volver
+// Cada cuadro, despues de health_update: lo que paso (de rodillas, en pie, sanado, cae muerto, ya murio).
+BreathEvent last_breath_update(LastBreath *lb, Health *h, float dt);
+float last_breath_damage_scale(const LastBreath *lb);    // en pie con el ultimo aliento, 1,35; si no, 1
+float last_breath_speed_scale(const LastBreath *lb);     // en pie con el ultimo aliento, 0,8; si no, 1
+float last_breath_endurance_scale(const LastBreath *lb); // cuanto rinde el aguante: con el ultimo aliento, 0,6
+float last_breath_vignette(const LastBreath *lb);        // [0, 1]: cuanto se oscurece el borde de la vista
+
 // Las secuelas: lo que deja una herida terrible y no se va con el descanso (docs/AGUA.md, fase 5). Cada
 // mordida del tiburon suma SEQUELA_BITE (hasta 1). Con todas: un cuarto menos de velocidad y el aguante rinde
 // algo mas de la mitad. Solo las curan el curandero del campamento (de a poco, health_sequela_tend) o el

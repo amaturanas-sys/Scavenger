@@ -134,21 +134,25 @@ Menús: son **iconos**. Pasa el ratón por encima (o elige con las flechas) y su
 
 Combate de cuatro botones, como en las hojas del sistema táctico (v0.12.0, [docs/PLAN_TACTICO_Y_CUEVAS.md](docs/PLAN_TACTICO_Y_CUEVAS.md)): las teclas o las cuatro casillas de abajo a la derecha, que se tocan en tableta. Lo que hace cada una depende de lo que tengas fuera: la espada (`1`), el escudo (`2`) o los dos; cada uno se guarda sin tocar al otro.
 
-| En la mano | `H` | `I` | `J` | `K` |
+| En la mano | `H` | `J` | `K` | `L` |
 |---|---|---|---|---|
 | La espada sola | golpe | parry | parar con el arma | patada |
 | El escudo solo (la espada enfundada) | puñetazo | parry con el escudo | cubrirse con el escudo | carga con escudo |
 | La espada y el escudo | golpe | parry con la espada | cubrirse con el escudo | carga con escudo |
+| La lanza ligera (con o sin el escudo) | estocada | arrojar la lanza | cubrirse con el escudo (sin él, parar con la lanza) | carga con escudo (sin él, patada) |
 
-- **`H`, ataque:** golpe; tres seguidos, combo; mantener, golpe pesado. Con arco, ballesta u honda: mantener para tensar y soltar para disparar; con objetivo, la mira calcula sola la caída; sin él, la cámara alza la mira. Elegir el arco guarda solos la espada y el escudo.
-- **`J`, parry:** justo antes del golpe enemigo, desvía o engancha el ataque en la ventana justa.
-- **`K`, bloqueo (mantener):** con el escudo en el brazo cubre el frente (`K`+`H`: golpe de escudo); sin él paras con el arma, que aguanta la mitad del golpe y cansa. Con arma a distancia, `K` la baja.
+- **`H`, ataque:** golpe; tres seguidos, combo; mantener, golpe pesado. Con la lanza, de punta: el golpe y el pesado son estocadas (perforan la armadura). Con arco, ballesta u honda: mantener para tensar y soltar para disparar; con objetivo, la mira calcula sola la caída; sin él, la cámara alza la mira. Elegir el arco guarda solos la espada y el escudo.
+- **`J`, parry:** justo antes del golpe enemigo, desvía o engancha el ataque en la ventana justa. **Con la lanza ligera en la mano, `J` la arroja:** mantener la pone en alto sobre el hombro y apunta (con objetivo, la caída se calcula sola); soltar la arroja, como una flecha. La mano queda vacía y la lanza queda clavada donde cae (`F` la recoge); en el agua honda se hunde.
+- **`K`, bloqueo (mantener):** mientras lo mantienes, sostienes el escudo en alto, delante del pecho, y cubre el frente (`K`+`H`: golpe de escudo); sin él paras con el arma, que aguanta la mitad del golpe y cansa más. La guardia no dura para siempre: sostenerla gasta aguante y cada golpe parado gasta más, según su fuerza. Sin aguante el brazo cede: la guardia cae, quedas un momento sin ella y no vuelve hasta recobrar el aliento. Con arma a distancia, `K` la baja.
 - **`L`, carga o patada:** con el escudo en el brazo, carga que empuja y tumba al primero que encuentra; sin él, patada (corriendo, con inercia).
 - **Objetivo:** `O` pasa al enemigo siguiente (`Mayús+O`, al anterior; también `Ctrl+E` y `Ctrl+Q`); también se elige con un clic o un toque. Un anillo dorado lo marca y su barra se resalta; los golpes van a él y las flechas lo buscan. Se pierde a 25 m o si muere.
 - **La espalda:** por detrás los enemigos solo te oyen (en sigilo o agachado casi nada). A menos de 2 m de la espalda de uno que no te vio (o aturdido) aparece una daga sobre él: `H` lo mata en silencio (solo lo oyen los que están a menos de 6 m) y `G` lo toma de rehén.
 - **Rehén:** te cubres con él; los suyos no se acercan y no disparan si los tapa (si disparan, fallan más). Vas lento y con una sola mano. `G` lo toma o lo suelta, `H` lo ejecuta y `J` lo empuja; un golpe fuerte te lo quita.
+- **Último aliento:** la primera vez que te quedas sin vida (por un golpe o por la sangre) caes de rodillas: nadie remata a quien está así, la vista se oscurece en los bordes y a los 10 s te levantas con un tercio de la vida, las heridas sin sangrar y, si la escolta está cerca, vendado. Mientras dura pegas un 35 % más fuerte, pero vas más lento, te cansas antes y ves como por un túnel. Se pasa al sanar (70 % de vida y de sangre). Si vuelves a quedarte sin vida antes de sanar, caes muerto: vuelves donde descansabas (el campamento o una vivienda de la tribu), tus huesos quedan donde caíste y la tribu pierde moral.
 - **Abatidos:** las mazas, las patadas, los escudos y las heridas que no son mortales tumban sin matar. El abatido despierta a los 30-90 s, herido, y huye a avisar a los suyos. Junto a él, `F` lo toma prisionero y `H` lo remata (a la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran).
 - **Además:** `B` vendar (a ti o a un compañero cercano) · `Mayús+V` encender la flecha junto a un fuego · `P` equipo · `I` inventario · `Tab` menú de acciones · `9` enemigos de prueba (`Shift+9` lobos, `Ctrl+9` culto, `Alt+9` arqueros, `Ctrl+Shift+9` jinetes).
+
+Pruebas: `--tecla k 30 200 --giro-camara 270 --vista cerca` (la guardia, de lado), `--aguante 0.06 --tecla k 30 400` (la guardia que se cansa y cae), `--usar-casilla 5 20 --tecla j 40 60` (la lanza en alto y arrojada; con `--enemigos bandidos --objetivo`, a un bandido), `--usar-casilla 5 20 --tecla h 60 2` (la estocada) y `--ultimo-aliento rodillas|en_pie|muerte`.
 
 Combate montado: a caballo se golpea con el arma (`H`; mantener: pesado), con +0.9 m de alcance y la inercia del galope (hasta ×1.8); con lanza por encima de 6 m/s el golpe suele derribar; al galope arrollas a quien tengas delante. Los golpes enemigos a veces dan a tu montura y un derribo te tira del caballo. Los jinetes bandidos derribados pierden el caballo, que queda suelto para echarle el lazo.
 

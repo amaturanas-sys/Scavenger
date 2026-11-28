@@ -51,7 +51,7 @@ static const char *PRESETS[][2] = {
     { "arma.distancia.arco_simple", NULL },              // arco (dos manos)
     { "arma.distancia.ballesta", NULL },                 // ballesta
     { "arma.distancia.honda", NULL },                    // honda
-    { "arma.larga.lanza", "escudo.mano.cuero" },         // lanza y escudo
+    { "arma.larga.lanza", NULL },                        // GA_GRIP_SPEAR: la lanza sola (el escudo, aparte: casilla 2)
     { NULL, NULL },                                      // desarmado
 };
 #define PRESET_COUNT ((int)(sizeof(PRESETS) / sizeof(PRESETS[0])))
@@ -1794,6 +1794,7 @@ bool ga_draw_player(GameActions *ga, Props *props, const Player *p, const Vector
         .down = ga->pl_down, .hit = ga->pl_hit, .attacking = ga->pl_attacking, .spear = ga->pl_spear,
         .blocking = ga->pl_blocking, .limping = ga->pl_limping, .ranged = ga->pl_ranged, .move = ga->pl_move, .holding = ga->pl_holding,
         .knocked = ga->pl_knocked, .swapping = ga->swap_anim > 0.0f,
+        .dead = ga->pl_dead, .guard_broken = ga->pl_guard_broken, .javelin = ga->pl_javelin,
     };
     if (hs.mounted) hs.mount_speed = p->moving ? (p->stance == STANCE_RUN ? 8.5f : 4.0f) * ga_speed_scale(ga) : 0.0f;
     Vector3 pos = { p->pos.x, p->pos.y + p->draw_lift, p->pos.z };

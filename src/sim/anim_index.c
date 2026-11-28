@@ -13,7 +13,7 @@ bool anim_loops(const char *clip) {
         "enganchar_escudo", "parry", "desvio", "apunalar_espalda", "rematar", "derribado", "cambiar_mano", "disparar_arco",
         "disparar_ballesta", "recargar_ballesta", "disparar_mosquete", "recargar_mosquete", "recibir_golpe", "morir",
         "vendar", "celebrar", "encabritarse", "atacar", "aullar", "despegar", "atacar_picado", "disparar", "golpear",
-        "abrir", "cerrar",
+        "abrir", "cerrar", "guardia_rota", "lanzar_lanza",
     };
     if (!clip) return true;
     for (size_t i = 0; i < sizeof(ONCE) / sizeof(ONCE[0]); i++)
@@ -69,11 +69,14 @@ const char *anim_humanoid(const HumanoidState *s) {
     if (s->down) return "abatido";
     if (s->knocked) return "derribado";
     if (s->held) return "rehen";
+    if (s->guard_broken) return "guardia_rota"; // sin aguante, el golpe le aparta el escudo
     if (s->hit) return "recibir_golpe";
     if (s->climbing) return s->climb_top ? "trepar_cima" : "trepar_cuerda";
     if (s->mounted) return s->mount_speed > 6.0f ? "jinete_galope" : s->mount_speed > 0.3f ? "jinete_paso" : "jinete_idle";
     if (!s->grounded) return "caer";
     if (s->doing >= 0) return anim_for_action((ActionId)s->doing);
+    // La lanza golpea de punta tambien en el golpe pesado: una estocada, no un tajo.
+    if (s->spear && s->move == MOVE_HEAVY + 1) return "estocada_lanza";
     // patada, escudo, agarre, parry, desvio...: el clip de cada movimiento esta en su tabla (src/sim/melee.c)
     if (s->move > 1 && s->move <= MOVE_COUNT) return move_def((MeleeMove)(s->move - 1))->clip;
     if (s->attacking > 0) {
@@ -85,6 +88,7 @@ const char *anim_humanoid(const HumanoidState *s) {
     }
     if (s->swapping) return "cambiar_mano";
     if (s->holding) return "sujetar_rehen";
+    if (s->javelin) return s->javelin == 2 ? "lanzar_lanza" : "apuntar_lanza"; // J con la lanza ligera: en alto y arrojarla
     if (s->ranged) return s->ranged == 2 ? "disparar_ballesta" : s->ranged == 3 ? "disparar_mosquete" : "disparar_arco";
     if (s->blocking) return "bloquear";
     if (s->hidden && !s->moving) return "acechar_idle";

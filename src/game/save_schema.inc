@@ -595,6 +595,9 @@ static const SfField SF_F_GameActions[] = {
     SF_ONE(GameActions, pl_spear, "bool", SF_BOOL, NULL),
     SF_ONE(GameActions, pl_knocked, "bool", SF_BOOL, NULL),
     SF_ONE(GameActions, pl_holding, "bool", SF_BOOL, NULL),
+    SF_ONE(GameActions, pl_dead, "bool", SF_BOOL, NULL),
+    SF_ONE(GameActions, pl_guard_broken, "bool", SF_BOOL, NULL),
+    SF_ONE(GameActions, pl_javelin, "int", SF_INT, NULL),
     SF_ONE(GameActions, escort_order, "int", SF_INT, NULL),
     SF_ONE(GameActions, pl_attacking, "int", SF_INT, NULL),
     SF_ONE(GameActions, pl_ranged, "int", SF_INT, NULL),
@@ -706,6 +709,7 @@ static const SfField SF_F_Shot[] = {
     SF_ONE(Shot, dir, "V3", SF_STRUCT, &SF_T_V3),
     SF_ONE(Shot, burning, "bool", SF_BOOL, NULL),
     SF_ONE(Shot, parthian, "bool", SF_BOOL, NULL),
+    SF_ARR(Shot, item, "char", SF_TEXT, NULL),
 };
 static const SfType SF_T_Shot = SF_TYPE(Shot, SF_F_Shot);
 
@@ -723,6 +727,13 @@ static const SfField SF_F_Formation[] = {
     SF_ONE(Formation, foe, "Vector3", SF_BYTES, NULL),
 };
 static const SfType SF_T_Formation = SF_TYPE(Formation, SF_F_Formation);
+
+// LastBreath (src/sim/health.h)
+static const SfField SF_F_LastBreath[] = {
+    SF_ONE(LastBreath, phase, "int", SF_INT, NULL),
+    SF_ONE(LastBreath, timer, "float", SF_FLOAT, NULL),
+};
+static const SfType SF_T_LastBreath = SF_TYPE(LastBreath, SF_F_LastBreath);
 
 // Combat (src/game/combat_game.h)
 static const SfField SF_F_Combat[] = {
@@ -772,6 +783,8 @@ static const SfField SF_F_Combat[] = {
     SF_ONE(Combat, couch, "float", SF_FLOAT, NULL),
     SF_ONE(Combat, couch_cd, "float", SF_FLOAT, NULL),
     SF_ARR(Combat, formations, "Formation", SF_STRUCT, &SF_T_Formation),
+    SF_ONE(Combat, breath, "LastBreath", SF_STRUCT, &SF_T_LastBreath),
+    SF_ONE(Combat, guard_break, "float", SF_FLOAT, NULL),
 };
 static const SfType SF_T_Combat = SF_TYPE(Combat, SF_F_Combat);
 

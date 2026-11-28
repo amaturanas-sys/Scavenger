@@ -959,6 +959,7 @@ Una escala apoyada en la muralla: F para subir.	A ladder against the wall: F to 
  · recargando	 · reloading
  · sangra	 · bleeding
  · secuelas	 · lasting injury
+ · último aliento	 · last breath
 %s Mueres. Vuelves en %s; tus huesos quedan donde caíste (moral -8).	%s You die. You return at %s; your bones stay where you fell (morale -8).
 %s del %s contra tu guardia: la pierdes.	%s from the %s against your guard: you lose it.
 %s del %s: ¡te derriba!	%s by the %s: you go down!
@@ -966,7 +967,6 @@ Una escala apoyada en la muralla: F para subir.	A ladder against the wall: F to 
 %s le arranca el escudo al %s.	%s rips the shield from the %s.
 %s mató a un %s.	%s killed a %s.
 %s murió de sus heridas. La tribu está de luto (moral -6).	%s died of their wounds. The tribe mourns (morale -6).
-%s te levanta y te venda. ¡Sigue en pie!	%s lifts you up and binds you. Keep going!
 %s te venda las heridas.	%s binds your wounds.
 %s terminó de tratar tus secuelas: vuelves a tener todo tu aguante.	%s finished treating your lasting injury: your full stamina is back.
 %s trata tus secuelas: quédate en el campamento hasta que ceda.	%s is treating your lasting injury: stay in camp until it eases.
@@ -989,16 +989,22 @@ Agarrar: rehén	Grab: hostage
 Agarras al %s por el cuello: es tu rehén.	You grab the %s by the neck: your hostage.
 Agarre	Grapple
 Arma	Weapon
+Arrojar la lanza	Throw the spear
+Arrojas la lanza.	You throw the spear.
 Arrollas al %s con el caballo: queda abatido.	You ride down the %s: it lies downed.
 Arrollas al %s con el caballo: queda en el suelo. Deja botín (F).	You ride down the %s: it stays down. Loot dropped (F).
 Atacar	Attack
 Atas al %s y lo tomas prisionero; lo que llevaba queda en el suelo (F).	You tie up the %s and take them prisoner; what they carried stays on the ground (F).
 Bajar el arma	Lower the weapon
+Caes	You fall
+Caes de rodillas: es tu último aliento. Nadie remata a quien está así; respira...	You drop to your knees: this is your last breath. No one finishes off a fighter like this; breathe...
 Carga con escudo	Shield charge
+Caíste sin haber sanado de tu último aliento.	You fell before healing from your last breath.
 Con esta lluvia la flecha no prende.	The arrow won't light in this rain.
 Con un arma a distancia en las manos no puedes agarrar a nadie.	You can't grab anyone with a ranged weapon in your hands.
 Con un arma a distancia no hay parry.	No parry with a ranged weapon.
 Cubrirse	Guard
+De rodillas, recobras el aliento: te levantas en %d s.	On your knees, you catch your breath: you rise in %d s.
 Desvías el golpe del %s: ¡queda abierto!	You deflect the %s's blow: it's wide open!
 Disparar	Shoot
 Ejecutar al rehén	Execute the hostage
@@ -1017,7 +1023,6 @@ El virote se clava en el pavés del %s.	The bolt sticks in the %s's pavise.
 Empujar al rehén	Shove the hostage
 Empujas al %s: cae de bruces.	You shove the %s: they fall flat on their face.
 Escudo contra escudo: los dos os tambaleáis.	Shield against shield: you both stagger.
-Estás abatido	You are down
 Flecha encendida: dispara antes de que se apague.	Arrow lit: shoot before it goes out.
 G agarra por la espalda (sin que te vean, o a uno aturdido). La mochila va con Mayús+G.	G grabs from behind (unseen, or a stunned foe). The backpack is Shift+G.
 G: lo agarras por el cuello y te cubres con él; los suyos no se acercan ni disparan.	G: grab them by the neck and shield yourself; their own won't come closer or shoot.
@@ -1036,9 +1041,10 @@ J justo antes del golpe enemigo: desvías y queda abierto un segundo. A destiemp
 J justo antes del golpe enemigo: enganchas su escudo y se lo arrancas. A destiempo, quedas expuesto.	J just before the enemy's blow: hook their shield and tear it away. Mistimed, you're exposed.
 J justo antes del golpe enemigo: llave y derribo, y lo desarmas. A destiempo, quedas expuesto.	J just before the enemy's blow: lock and take them down, disarming them. Mistimed, you're exposed.
 J justo antes del golpe enemigo: lo desvías con el escudo y lo aturdes con el canto. A destiempo, quedas expuesto.	J just before the enemy's blow: turn it aside with the shield and stun them with its rim. Mistimed, you're exposed.
+J mantener: la lanza en alto, apuntando (con objetivo, la caída se calcula sola); soltar: la arrojas. Queda donde cae: F la recoge.	J hold: raise the spear and aim (with a target, the drop is worked out for you); release: throw it. It stays where it lands: F picks it up.
 J: lo empujas y cae de bruces, aturdido.	J: shove them and leave them stunned on the ground.
-K mantener: el escudo cubre el frente. Con H, golpe de escudo.	K hold: the shield covers your front. With H, shield bash.
-K mantener: paras con el arma; aguanta la mitad y cansa.	K hold: parry with your weapon; it stops half the blow and tires you.
+K mantener: el escudo en alto cubre el frente; cansa (cada golpe, según su fuerza) y sin aguante la guardia cae. Con H, golpe de escudo.	K hold: the raised shield covers your front; it tires you (each blow, by its force) and without stamina your guard drops. With H, shield bash.
+K mantener: paras con el arma; aguanta la mitad y cansa más que el escudo.	K hold: parry with your weapon; it stops half and tires you more than a shield.
 K: baja el arma (si llevas escudo, te cubre).	K: lower the weapon (with a shield, it covers you).
 L: bajas la lanza. Al galope, el primero que tengas delante recibe todo el peso de la carrera y casi siempre cae.	L: lower the lance. At a gallop, the first one ahead takes the full weight of the charge and almost always falls.
 L: carga con el escudo; empuja y tumba al primero que encuentra.	L: shield charge; shove and knock down the first one in the way.
@@ -1047,6 +1053,8 @@ La %s se clava en el pavés del %s.	The %s sticks in the %s's pavise.
 La flecha encendida se apagó.	The fire arrow went out.
 La flecha ya arde: ¡dispara!	The arrow is burning: shoot!
 La lanza pesada solo sirve a caballo: monta (R) y ponla en ristre (K).	The heavy lance only works on horseback: mount (R) and couch it (K).
+La lanza se clava en el suelo: F para recogerla.	The spear sticks in the ground: F to pick it up.
+La lanza se hunde en el agua.	The spear sinks into the water.
 La lluvia apaga la flecha.	The rain puts out the arrow.
 La tribu no tiene sitio para más gente.	The tribe has no room for more people.
 Lanza en ristre	Couched lance
@@ -1056,7 +1064,6 @@ Le das al %s: %s.	You hit the %s: %s.
 Levantas a %s, pero sin hierbas sigue sangrando.	You lift %s, but without herbs the bleeding goes on.
 Levantas y vendas a %s.	You lift and bind %s.
 Matas al %s: deja botín (F para recogerlo).	You kill the %s: it leaves loot (F to pick it up).
-Nadie llega a socorrerte.	No one comes to help you.
 No hay heridas que vendar.	No wounds to bind.
 No llevas hierbas curativas (I: inventario).	You carry no healing herbs (I: inventory).
 No logras arrancarle el escudo al %s.	You fail to rip away the %s's shield.
@@ -1081,8 +1088,11 @@ Puñetazo	Punch
 Rehén: G lo suelta · H lo ejecuta · I lo empuja	Hostage: G lets go · H executes · I shoves
 Rematar	Finish off
 Rematas al %s de un flechazo. Deja botín (F).	You finish the %s with an arrow. It leaves loot (F).
+Rematas al %s de un lanzazo. Deja botín (F).	You finish the %s with a thrown spear. It leaves loot (F).
 Rematas al %s: deja botín (F). La tribu lo ve.	You finish the %s: it leaves loot (F). The tribe sees it.
-Si tu escolta está cerca, te levantará; si no, la tribu te buscará.	If your escort is near, they'll lift you; if not, the tribe will find you.
+Se te cansa el brazo: bajas el arma y quedas sin guardia (recobra el aliento).	Your arm tires: you lower your weapon and lose your guard (catch your breath).
+Se te cansa el brazo: el escudo baja y quedas sin guardia (recobra el aliento).	Your arm tires: the shield drops and you lose your guard (catch your breath).
+Si vuelves a quedarte sin vida antes de sanar, caerás muerto.	If you run out of health again before healing, you will fall dead.
 Sin escudo no puedes hacer eso.	You can't do that without a shield.
 Solo las flechas y los virotes se encienden.	Only arrows and bolts can be lit.
 Soltar al rehén	Let the hostage go
@@ -1090,9 +1100,11 @@ Sueltas al %s.	You let the %s go.
 Sueltas al rehén para montar.	You let the hostage go to mount.
 Sueltas el objetivo.	You release the target.
 Te ataca un %s: %s.	A %s attacks you: %s.
-Te desangras.	You bleed out.
 Te hieren: %s.	You're wounded: %s.
+Te levantas con tu último aliento y %s te venda. Pegas más fuerte, pero vas más lento: sana antes de caer otra vez.	You rise on your last breath and %s bandages you. You hit harder, but you are slower: heal before you fall again.
+Te levantas con tu último aliento: pegas más fuerte, pero vas más lento y te cansas antes. Sana antes de caer otra vez.	You rise on your last breath: you hit harder, but you are slower and tire sooner. Heal before you fall again.
 Te levantas.	You get up.
+Te recuperas del último aliento: la vista se aclara.	You recover from your last breath: your sight clears.
 Te untas el ungüento: cierra las heridas y corta el veneno.	You apply the salve: it closes wounds and stops poison.
 Te vendas %d herida%s con hierbas curativas.	You bind %d wound%s with healing herbs.
 Te zafas del agarre del %s.	You break the %s's hold.
@@ -1104,12 +1116,14 @@ Un %s tumba a un %s.	A %s knocks down a %s.
 Un virote alcanza a %s en %s.	A bolt hits %s in the %s.
 Una %s alcanza a %s en %s.	A %s hits %s in %s.
 Vendas las heridas de %s.	You bind %s's wounds.
+Ya no te quedan fuerzas: caes.	You have no strength left: you fall.
 golpe	strike
 la armadura para el golpe%s	the armor stops the blow%s
 patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡%s cae herido! Acércate y pulsa B para levantarlo.	%s is down! Get close and press B to lift them.
 ¡Arqueros a caballo! Rodean y tiran; si te acercas, se alejan al galope.	Horse archers! They circle and shoot; if you close in, they gallop away.
 ¡Arqueros! Busca cubrirte o acércate rápido.	Archers! Take cover or close in fast.
+¡Arrojas la lanza con todas tus fuerzas!	You hurl the spear with all your strength!
 ¡Arrollas al %s con el caballo!	You ride down the %s!
 ¡Asalto! Fanáticos del culto van hacia %s.	Raid! Cult fanatics are heading for %s.
 ¡Asalto! Una banda va hacia %s.	Raid! A band is heading for %s.
@@ -1141,6 +1155,7 @@ patada con el escudo: pierde la guardia	kick with the shield: loses guard
 ¡Un %s derriba a %s! Acércate y pulsa B.	A %s knocks down %s! Get close and press B.
 ¡Un virote te alcanza! %s.	A bolt hits you! %s.
 ¡Una %s te alcanza! %s.	A %s hits you! %s.
+Último aliento	Last breath
 # --- src/game/death_game.c
 el campamento	the camp
 # --- src/game/dialog.c
@@ -1223,6 +1238,7 @@ hembra	female
 macho	male
 ¡El %s de la tribu rompió el hielo y cayó al agua helada!	The tribe's %s broke through the ice and fell into the freezing water!
 ¡La flecha atraviesa un pez! (+1 carne fresca)	Your arrow spears a fish! (+1 fresh meat)
+¡La lanza atraviesa un pez! (+1 carne fresca; la lanza se hunde)	Your spear runs through a fish! (+1 fresh meat; the spear sinks)
 ¡Las abejas defienden la colmena! Hace falta humo (antorcha encendida).	The bees defend the hive! You need smoke (lit torch).
 ¡Pescaste un pez! (+1 carne fresca)	You caught a fish! (+1 fresh meat)
 ¡Pescaste un pez! Pero no te cabe: lo sueltas.	You caught a fish! But no room: you let it go.
@@ -1525,7 +1541,7 @@ tienes %d, hacen falta %d · potencia x%.2f	you have %d, %d needed · power x%.2
 ¿Qué pieza? Cada una va en su hueco y pesa distinto.	Which piece? Each goes in its own slot and weighs differently.
 # --- src/game/title_menu.c
 %s el hueco %d	%s slot %d
-1 a 9 y 0: la barra rápida. De serie, 1 la espada (otra vez: la enfundas), 2 el escudo (al brazo o a la espalda) y 3 el odre; cada uno se guarda sin tocar al otro · Mayús+número: a la otra mano · Alt+número o vacía: elegir qué va · en el inventario (I), un número pone ahí lo elegido	1 to 9 and 0: the quick bar. By default, 1 is the sword (again: sheathe it), 2 the shield (arm or back) and 3 the waterskin; each is put away independently · Shift+number: to the other hand · Alt+number or empty: choose what goes there · in the inventory (I), a number assigns the selected item
+1 a 9 y 0: la barra rápida. De serie, 1 la espada (otra vez: la enfundas), 2 el escudo (al brazo o a la espalda), 3 el odre y 5 la lanza; cada uno se guarda sin tocar al otro · Mayús+número: a la otra mano · Alt+número o vacía: elegir qué va · en el inventario (I), un número pone ahí lo elegido	1 to 9 and 0: the quick bar. By default, 1 is the sword (again: sheathe it), 2 the shield (arm or back), 3 the waterskin and 5 the spear; each is put away independently · Shift+number: to the other hand · Alt+number or empty: choose what goes there · in the inventory (I), a number assigns the selected item
 1 espada · 2 escudo · 3 odre	1 sword · 2 shield · 3 waterskin
 3, el odre de la barra rápida, bebe lo más seguro que tengas; en la orilla o junto a un pozo lo llena, y lleno, bebes de allí. Con calor da más sed; sin agua te desmayas.	3, the waterskin on the quick bar, drinks the safest thing you have; at the shore or by a well it fills the waterskin, and once it is full you drink from there. Heat makes you thirstier; without water you faint.
 A / D o flechas	A / D or arrows
@@ -1576,7 +1592,7 @@ Controles	Controls
 Controles y reglas del juego	Controls and game rules
 Correr, saltar y golpear gastan aguante (la barra de abajo a la derecha): agotado, no corres hasta recobrar el aliento.	Running, jumping and striking spend stamina (the lowest bar on the right): exhausted, you can't run until you catch your breath.
 Cría: una hembra y un macho de la tribu, bien comidos, en el campamento. A los 3 días nace la cría, que hereda la velocidad y el aguante de sus padres; a los 4 es adulta. La mula no se cría.	Breeding: a well-fed female and male of the tribe in camp. In 3 days the young is born, inheriting its parents' speed and stamina; in 4 more it is grown. Mules don't breed.
-Cuatro botones (teclas o las casillas de abajo a la derecha): H ataque, J parry, K bloqueo, L carga o patada. Lo que hacen depende de lo que tengas fuera: la espada, el escudo o los dos.	Four buttons (keys or the tiles at bottom right): H attack, J parry, K block, L charge or kick. Their actions depend on what you have drawn: sword, shield or both.
+Cuatro botones (teclas o las casillas de abajo a la derecha): H ataque, J parry, K bloqueo, L carga o patada. Lo que hacen depende de lo que tengas fuera: la espada, la lanza, el escudo o el arma y el escudo.	Four buttons (keys or the tiles at bottom right): H attack, J parry, K block, L charge or kick. Their actions depend on what you have drawn: sword, spear, shield, or a weapon and the shield.
 Daga de anillo: en la mano torpe pega como en la buena; llaves más firmes, el rehén no se te suelta con cualquier golpe y la ejecución apenas se oye.	Ring-pommel dagger: in the off hand it strikes like the good one; firmer holds, a hostage doesn't slip away at every blow, and executions are barely heard.
 Dejar la partida (lo no guardado se pierde)	Leave the game (unsaved progress is lost)
 Día %d · %s · tribu de %d	Day %d · %s · tribe of %d
@@ -1639,11 +1655,13 @@ I inventario · P equipo	I inventory · P equipment
 I inventario · Y+1-3 escolta	I inventory · Y+1-3 escort
 Idioma	Language
 Instructivo	Guide
+J con la lanza: mantener la pone en alto, sobre el hombro, y apunta (con objetivo, la caída se calcula sola); soltar la arroja. Queda clavada donde cae y F la recoge; en el agua honda se hunde.	J with the spear: hold to raise it over your shoulder and aim (with a target, the drop is worked out for you); release to throw it. It sticks where it lands and F picks it up; in deep water it sinks.
 J justo antes del golpe enemigo (el rombo dorado destella): hacha o guja le arrancan el escudo; manos o daga, llave y derribo; las demás desvían; solo con el escudo (la espada enfundada) lo desvías y lo aturdes con el canto. A destiempo quedas expuesto.	J just before the enemy's blow (the golden diamond flashes): an axe or glaive tears away their shield; bare hands or a dagger lock and take them down; other weapons deflect; with only the shield (sword sheathed), deflect and stun them with its rim. Mistimed, you're exposed.
 J parry · K bloqueo	J parry · K block
 Joyas (cambiables): el orfebre (F) hace anillos (dos por mano), brazaletes, collar, aretes y hebilla con metal y una piedra; el druida las encanta con un efecto pasivo o activo.	Jewels (swappable): the goldsmith (F) makes rings (two per hand), bracelets, necklace, earrings and buckle from metal and a gem; the druid enchants them with a passive or active effect.
 Junto a un abatido: F lo toma prisionero (lo que lleva queda en el suelo); H lo remata. A la tribu le importa: los compasivos y los devotos lo reprueban, los sanguinarios lo celebran.	Next to a downed foe: F takes them prisoner (what they carry stays on the ground); H finishes them. The tribe cares: the merciful and the devout disapprove, the bloodthirsty cheer.
-K mantener: con escudo cubre el frente (K + H: golpe de escudo); sin escudo paras con el arma: aguanta la mitad y cansa	K hold: with a shield, cover your front (K + H: shield bash); without one, parry with your weapon: it stops half and tires you
+K mantener: el escudo en alto cubre el frente (K + H: golpe de escudo); sin escudo paras con el arma (aguanta la mitad). Cansa, más con cada golpe: sin aguante la guardia cae hasta recobrar el aliento.	K hold: the raised shield covers your front (K + H: shield bash); without one, parry with your weapon (it stops half). It tires you, more with each blow: without stamina your guard drops until you catch your breath.
+K mantenida: el escudo en alto, delante del pecho. Cansa, y cada golpe parado más, según su fuerza: sin aguante la guardia cae y K queda en gris hasta recobrar el aliento.	K held: the shield up, in front of your chest. It tires you, and each blocked blow more, by its force: without stamina the guard drops and K stays grey until you catch your breath.
 L carga o patada · Ctrl objetivo	L charge or kick · Ctrl target
 L: con el escudo en el brazo, carga que empuja; sin él, patada (corriendo, con inercia: tumba aun con escudo)	L: with a shield on your arm, charge and shove; without one, kick (running momentum can knock down even a shielded foe)
 La armadura va por piezas (casco, gorjal, coraza, hombreras, brazales, guantes, faldar, grebas, botas). Cada material para distinto el corte, el golpe y la flecha, y se gasta con los impactos.	Armour comes in pieces (helmet, gorget, cuirass, pauldrons, bracers, gauntlets, skirt, greaves, boots). Each material stops cuts, blows and arrows differently, and wears with hits.
@@ -1652,6 +1670,8 @@ La escolta y la guardia	The escort and the guard
 La espalda, rehenes y abatidos	Backstabs, hostages and the downed
 La estepa	The steppe
 La forja	The forge
+La guardia, la lanza y el último aliento	The guard, the spear and the last breath
+La lanza ligera va aparte del escudo (5 la lanza, 2 el escudo). H con ella: estocadas de punta, que perforan la armadura.	The light spear is separate from the shield (5 the spear, 2 the shield). H with it: point-first thrusts that pierce armor.
 La lluvia apaga todo fuego: antorchas, fogatas, hornos y flechas.	Rain puts out every fire: torches, campfires, furnaces and arrows.
 La moral y la lealtad deciden si la tribu se rebela.	Morale and loyalty decide whether the tribe rebels.
 La tribu bebe del acopio o del río cercano (hervida si hay leña). Los animales beben junto al agua; F con agua les da de beber.	The tribe drinks from the store or a nearby river (boiled if there is firewood). Animals drink by the water; F with water gives them a drink.
@@ -1686,6 +1706,7 @@ Los soldados que se quedan en el campamento hacen la guardia: rondan un anillo a
 M mapa · N cámara · U ficha	M map · N camera · U card
 Mayús+G deja la mochila en el suelo, en la carreta o en un animal de carga (más ligero para pelear) y la recoge · U en el inventario: cambiar de mochila	Shift+G drops the backpack on the ground, the cart or a pack animal (lighter for fighting) and picks it up · U in the inventory: switch backpack
 Mayús+V junto a un fuego enciende la flecha: quema y prende lo que toca.	Shift+V near a fire lights the arrow: it burns and ignites what it touches.
+Mientras dura pegas un 35 por ciento más fuerte, pero vas más lento, te cansas antes y ves como por un túnel. Se pasa al sanar: con el 70 por ciento de la vida y de la sangre.	While it lasts you hit 35 percent harder, but you are slower, tire sooner and see as if through a tunnel. It passes when you heal: at 70 percent of your health and blood.
 Migrar: cargan yurtas, tiendas, chozas y el acopio, y te siguen con el rebaño; Enter junto al guardián lo planta donde quieras.	Migrate: yurts, tents, huts and the store are loaded and follow you with the herd; Enter next to the keeper pitches it anywhere.
 Monturas (caballo, mula, burro, buey, camello, elefante): lazo y silla; R monta y desmonta.	Mounts (horse, mule, donkey, ox, camel, elephant): lasso and saddle; R mounts and dismounts.
 Mueve la obra con el puntero, el dedo o WASD; Q/E la giran; Mayús (o la casilla) la alinea a una rejilla de 2 m.	Move the building with the pointer, your finger or WASD; Q/E turn it; Shift (or the tile) snaps it to a 2 m grid.
@@ -1713,6 +1734,7 @@ Salir al título	Back to title
 Salir del juego	Quit game
 Se fabrican a mano (Tab, Fabricar) con las pieles del despiece, la lana de las cabras (los pastores las esquilan) y la seda del botín.	Made by hand (Tab, Craft) from butchered pelts, goat wool (herders shear the goats) and looted silk.
 Serpientes, escorpiones, arañas y avispas envenenan: véndate (B).	Snakes, scorpions, spiders and wasps are venomous: bandage yourself (B).
+Si vuelves a caer antes de sanar, mueres: vuelves donde descansabas y tus huesos quedan donde caíste.	If you fall again before healing, you die: you return where you last rested and your bones stay where you fell.
 Sin soldados, sin grano o en revuelta, exígele la rendición (F en la puerta o en el palacio): te paga tributo y su fundición es tu taller.	Without soldiers, without grain or in revolt, demand its surrender (F at the gate or the palace): it pays you tribute and its foundry is your workshop.
 Socavones de nieve y arena movediza aparecen cada día en otro lugar.	Snow sinkholes and quicksand appear somewhere new every day.
 Sonido	Sound
@@ -1742,6 +1764,7 @@ Y llama a dos integrantes de escolta (Y otra vez: vuelven al campamento). Pelean
 Y: dos integrantes te escoltan · Mayús+Y: despachar o mandar un mensajero · U: ficha del gran guerrero	Y: two members escort you · Shift+Y: dispatch or send a messenger · U: great warrior card
 en silencio	muted
 Órdenes (Y+1, Y+2, Y+3, o las casillas sobre la barra rápida): atacar, defender o seguir.	Orders (Y+1, Y+2, Y+3, or the tiles above the quick bar): attack, defend or follow.
+Último aliento: la primera vez que te quedas sin vida caes de rodillas; nadie te remata y la vista se oscurece en los bordes. A los 10 s te levantas con un tercio de la vida y las heridas sin sangrar (si la escolta está cerca, te venda).	Last breath: the first time you run out of health you drop to your knees; no one finishes you off and your sight darkens at the edges. After 10 s you rise with a third of your health and your wounds no longer bleeding (if your escort is near, they bandage you).
 # --- src/game/trade_game.c
  · aquí abunda	 · plentiful here
  · aquí escasea	 · scarce here
@@ -2084,6 +2107,7 @@ oro	gold
 # --- src/sim/ballistics.c
 Bala	Ball
 Flecha	Arrow
+Lanza	Spear
 Piedra	Stone
 Virote	Bolt
 # --- src/sim/buildkit.c

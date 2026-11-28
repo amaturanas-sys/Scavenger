@@ -53,8 +53,9 @@ int fg_raycast(const GameActions *ga, const Terrain *t, V3 a, V3 d, float *tt, i
 void fg_hurt(GameActions *ga, int idx, float dmg, WoundKind w, int part, int attacker, char *log, size_t len);
 // Pescar con un golpe delante (lanza: mas facil). true si habia peces (pescara o no).
 bool fg_fish(GameActions *ga, const Terrain *t, Vector3 pos, float yaw, float reach, bool spear, char *log, size_t len);
-// Un proyectil que cae al agua en at puede atravesar un pez.
-bool fg_shot_water(GameActions *ga, const Terrain *t, Vector3 at, char *log, size_t len);
+// Un proyectil que cae al agua en at puede atravesar un pez (spear: la lanza arrojada; si no, la flecha). true si lo
+// atraveso (y lo dice en log).
+bool fg_shot_water(GameActions *ga, const Terrain *t, Vector3 at, bool spear, char *log, size_t len);
 // La pesca en el hielo (docs/AGUA.md, fase 3). El sitio delante del jugador donde abrir un agujero: sobre el
 // hielo que aguanta, con agua honda debajo y lejos de otro agujero. false si no hay.
 bool fg_ice_hole_spot(const GameActions *ga, const Terrain *t, const Player *p, Vector3 *at);

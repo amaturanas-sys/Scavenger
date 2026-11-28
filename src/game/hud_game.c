@@ -119,7 +119,7 @@ static void default_slots(void) {
     g_slots[1] = (QbSlot){ QB_ITEM, 0, "escudo.mano.mimbre" };
     g_slots[2] = (QbSlot){ QB_ITEM, 0, "utileria.objeto.odre" };
     g_slots[3] = (QbSlot){ QB_GRIP, 3, "" }; // arco
-    g_slots[4] = (QbSlot){ QB_GRIP, 6, "" }; // lanza y escudo
+    g_slots[4] = (QbSlot){ QB_ITEM, 0, "arma.larga.lanza" }; // la lanza, en la derecha (el escudo es el de la casilla 2)
     g_slots[5] = (QbSlot){ QB_ITEM, 0, "utileria.objeto.antorcha" };
     g_slots_set = true;
 }
@@ -453,6 +453,8 @@ void hud_load(const QbSlot *s, int n) {
         if (s[k].kind == QB_SKILL && (s[k].grip < 0 || s[k].grip >= ABIL_COUNT)) return;
         slots[k] = s[k];
         slots[k].id[INV_ID_LEN - 1] = '\0';
+        // La lanza y el escudo juntos (hasta la v0.17.3): ahora la lanza suelta, y el escudo va en su casilla.
+        if (slots[k].kind == QB_GRIP && slots[k].grip == GA_GRIP_SPEAR) slots[k] = (QbSlot){ QB_ITEM, 0, "arma.larga.lanza" };
     }
     memcpy(g_slots, slots, sizeof(g_slots));
 }

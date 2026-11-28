@@ -5,6 +5,7 @@
 #include "game/input.h"
 #include "raymath.h"
 #include "sim/lang.h"
+#include "sim/melee.h"
 
 #define WALK_SPEED 4.0f
 #define RUN_SPEED 8.5f
@@ -48,8 +49,10 @@ PlayerInput player_read_input(void) {
 static float g_stamina = 1.0f;
 static bool g_winded;
 static float g_endurance = 1.0f; // cuanto rinde el aguante (las secuelas lo bajan: player_set_endurance)
+static bool g_guarding;          // la guardia en alto (K): gasta aguante y no se recobra aire (src/sim/melee.h)
 
 void player_set_endurance(float k) { g_endurance = k < 0.3f ? 0.3f : k > 1.0f ? 1.0f : k; }
+void player_stamina_guard(bool guarding) { g_guarding = guarding; }
 
 float player_stamina(void) { return g_stamina; }
 bool player_winded(void) { return g_winded; }
@@ -60,7 +63,8 @@ void player_stamina_spend(float amount) {
 
 void player_stamina_tick(bool running, bool moving, float dt) {
     if (g_winded && g_stamina >= STAMINA_RECOVER) g_winded = false;
-    if (running) player_stamina_spend(STAMINA_RUN_COST * dt);
+    if (g_guarding) player_stamina_spend(GUARD_HOLD_COST * dt); // sostener la guardia cansa: no se recobra aire
+    else if (running) player_stamina_spend(STAMINA_RUN_COST * dt);
     else g_stamina = fminf(1.0f, g_stamina + (moving ? STAMINA_REGEN_WALK : STAMINA_REGEN_REST) * g_endurance * dt);
 }
 
